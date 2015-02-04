@@ -1,3 +1,10 @@
-# fuel-qa
+Tests documentation
+-------------------
 
-Hello, this is repo for fuel-qa!
+[Devops documentation](http://docs.mirantis.com/fuel-dev/devops.html)
+
+For 'make iso'
+--------------
+
+[Building ISO documentation](http://docs.mirantis.com/fuel-dev/develop/env.html#building-the-fuel-iso)
+
