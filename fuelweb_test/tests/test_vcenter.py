@@ -21,8 +21,7 @@ from proboscis import test
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
 from fuelweb_test.helpers import os_actions
 from fuelweb_test import logger
-from fuelweb_test.settings import DEPLOYMENT_MODE_SIMPLE
-from fuelweb_test.settings import DEPLOYMENT_MODE_HA
+from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import VCENTER_IP
 from fuelweb_test.settings import VCENTER_USERNAME
 from fuelweb_test.settings import VCENTER_PASSWORD
@@ -34,10 +33,10 @@ from fuelweb_test.tests.base_test_case import TestBasic
 @test(groups=["vcenter"])
 class VcenterDeploy(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
-          groups=["smoke", "vcenter_one_node_simple"])
+          groups=["smoke", "vcenter_one_node"])
     @log_snapshot_on_error
-    def vcenter_one_node_simple(self):
-        """Deploy vcenter cluster with controller node only
+    def vcenter_one_node(self):
+        """Deploy cluster with controller node only
 
         Scenario:
             1. Create cluster
@@ -45,7 +44,6 @@ class VcenterDeploy(TestBasic):
             3. Deploy the cluster
             4. Verify that the cluster was set up correctly, there are no
                dead services
-            5. Create instance and delete instance
 
         """
         self.env.revert_snapshot("ready_with_1_slaves")
@@ -53,7 +51,7 @@ class VcenterDeploy(TestBasic):
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE_SIMPLE,
+            mode=DEPLOYMENT_MODE,
             settings={
                 'host_ip': VCENTER_IP,
                 'vc_user': VCENTER_USERNAME,
@@ -75,7 +73,7 @@ class VcenterDeploy(TestBasic):
         time.sleep(60)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['smoke', 'sanity'])
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["vcenter_multiple_cluster"])
@@ -99,7 +97,7 @@ class VcenterDeploy(TestBasic):
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE_SIMPLE,
+            mode=DEPLOYMENT_MODE,
             settings={
                 'host_ip': VCENTER_IP,
                 'vc_user': VCENTER_USERNAME,
@@ -121,7 +119,7 @@ class VcenterDeploy(TestBasic):
         # Fix me. Later need to change sleep with wait function.
         time.sleep(60)
 
-        ctrl_ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
+        ctrl_ip = self.fuel_web.get_public_vip(cluster_id)
         logger.info("Controller IP is {}".format(ctrl_ip))
         os = os_actions.OpenStackActions(ctrl_ip)
         hypervisors = os.get_hypervisors()
@@ -196,7 +194,7 @@ class VcenterDeploy(TestBasic):
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE_SIMPLE,
+            mode=DEPLOYMENT_MODE,
             settings={
                 'volumes_vmdk': True,
                 'volumes_lvm': False,
@@ -225,7 +223,7 @@ class VcenterDeploy(TestBasic):
         time.sleep(60)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['smoke', 'sanity'])
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["vcenter_ha"])
@@ -245,7 +243,7 @@ class VcenterDeploy(TestBasic):
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE_HA,
+            mode=DEPLOYMENT_MODE,
             settings={
                 'host_ip': VCENTER_IP,
                 'vc_user': VCENTER_USERNAME,
@@ -277,9 +275,9 @@ class VcenterDeploy(TestBasic):
             cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["vcenter_simple_add_cinder"])
+          groups=["vcenter_add_cinder"])
     @log_snapshot_on_error
-    def vcenter_simple_add_cinder(self):
+    def vcenter_add_cinder(self):
         """Deploy cluster with one controller and cinder node
 
         Scenario:
@@ -297,7 +295,7 @@ class VcenterDeploy(TestBasic):
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE_SIMPLE,
+            mode=DEPLOYMENT_MODE,
             settings={
                 'volumes_lvm': False,
                 'volumes_vmdk': True,
@@ -327,7 +325,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['smoke', 'sanity'])
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_ha_deployment_with_cinder"])
@@ -349,7 +347,7 @@ class VcenterDeploy(TestBasic):
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE_HA,
+            mode=DEPLOYMENT_MODE,
             settings={
                 'volumes_lvm': False,
                 'volumes_vmdk': True,
@@ -381,9 +379,9 @@ class VcenterDeploy(TestBasic):
             cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["vcenter_simple_stop_deployment"])
+          groups=["vcenter_stop_deployment"])
     @log_snapshot_on_error
-    def vcenter_simple_stop_deployment(self):
+    def vcenter_stop_deployment(self):
         """Deploy cluster, stop running deployment process, start deployment
            again
 
@@ -403,7 +401,7 @@ class VcenterDeploy(TestBasic):
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE_SIMPLE,
+            mode=DEPLOYMENT_MODE,
             settings={
                 'volumes_lvm': False,
                 'volumes_vmdk': True,
@@ -428,23 +426,22 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.provisioning_cluster_wait(cluster_id)
         self.fuel_web.deploy_task_wait(cluster_id=cluster_id, progress=40)
         self.fuel_web.stop_deployment_wait(cluster_id)
-        self.fuel_web.wait_nodes_get_online_state(
-            self.env.get_virtual_environment().nodes().slaves[:2])
+        self.fuel_web.wait_nodes_get_online_state(self.env.nodes().slaves[:2])
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["vcenter_vlan_simple", "vcenter_vlan"])
+          groups=["vcenter_one_node_vlan", ])
     @log_snapshot_on_error
-    def vcenter_vlan_simple(self):
-        """Deploy a cluster in Simple mode with 1 controller node,
+    def vcenter_one_node_vlan(self):
+        """Deploy a cluster with 1 controller node,
             1 cinder node, vCenter and VlanManager enabled.
             Verify that it works.
 
         Scenario:
-            1. Create a Simple cluster with vCenter as a hypervisor
+            1. Create a cluster with vCenter as a hypervisor
             2. Add 1 node with controller and 1 node with cinder roles
             3. Set Nova-Network VlanManager as a network backend
             4. Deploy the cluster
@@ -456,7 +453,7 @@ class VcenterDeploy(TestBasic):
         # Configure a cluster.
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE_SIMPLE,
+            mode=DEPLOYMENT_MODE,
             settings={
                 'volumes_vmdk': True,
                 'volumes_lvm': False,
@@ -506,10 +503,10 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['smoke', 'sanity'])
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["vcenter_vlan_ha", "vcenter_vlan"])
+          groups=["vcenter_vlan_ha", ])
     @log_snapshot_on_error
     def vcenter_vlan_ha(self):
         """Deploy a cluster in HA mode with 2 controller node,
@@ -517,7 +514,7 @@ class VcenterDeploy(TestBasic):
             Verify that it works.
 
         Scenario:
-            1. Create a Simple cluster with vCenter as a hypervisor
+            1. Create a cluster with vCenter as a hypervisor
             2. Add 3 nodes with roles:
                  2 controller
                  1 controller+cinder
@@ -531,7 +528,7 @@ class VcenterDeploy(TestBasic):
         # Configure a cluster.
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE_HA,
+            mode=DEPLOYMENT_MODE,
             settings={
                 'volumes_vmdk': True,
                 'volumes_lvm': False,
