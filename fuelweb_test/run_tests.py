@@ -1,3 +1,4 @@
+
 def import_tests():
     from tests import test_admin_node  # noqa
     from tests import test_ceph  # noqa
@@ -22,12 +23,13 @@ def import_tests():
     from tests.plugins.plugin_glusterfs import test_plugin_glusterfs  # noqa
     from tests.plugins.plugin_lbaas import test_plugin_lbaas  # noqa
     from tests import test_multiple_networks  # noqa
+    from tests.gd_based_tests import test_neutron  # noqa
+    from tests.gd_based_tests import test_neutron_vlan_ceph_mongo  # noqa
 
 
 def run_tests():
     from proboscis import TestProgram  # noqa
     import_tests()
-
     # Run Proboscis and exit.
     TestProgram().run_and_exit()
 
