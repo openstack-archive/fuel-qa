@@ -193,7 +193,7 @@ class NeutronGreHa(TestBasic):
         assert_equal(str(cluster['net_provider']), 'neutron')
 
         self.fuel_web.verify_network(cluster_id)
-        devops_node = self.fuel_web.get_nailgun_primary_controller(
+        devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
@@ -324,7 +324,7 @@ class NeutronVlanHa(TestBasic):
             cluster_id, self.env.d_env.get_ssh_to_remote(_ip))
 
         self.fuel_web.verify_network(cluster_id)
-        devops_node = self.fuel_web.get_nailgun_primary_controller(
+        devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
