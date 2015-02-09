@@ -113,6 +113,7 @@ def get_test_method_name():
     # right under the class name 'NoneType' (when proboscis
     # run the test method with unittest.FunctionTestCase)
     stack = inspect.stack()
+    logger.debug('!!!!!!!!!!!!!!!!!!!!!!!stack is {0}'.format(stack))
     method = ''
     for m in stack:
         if 'self' in m[0].f_locals:
