@@ -22,6 +22,7 @@ ENV_NAME = os.environ.get("ENV_NAME", "fuel_system_test")
 
 ISO_PATH = os.environ.get('ISO_PATH')
 DNS = os.environ.get('DNS', '8.8.8.8')
+PUBLIC_TEST_IP = os.environ.get('PUBLIC_TEST_IP', '8.8.8.8')
 
 OPENSTACK_RELEASE_CENTOS = 'centos'
 OPENSTACK_RELEASE_UBUNTU = 'ubuntu'
