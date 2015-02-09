@@ -41,11 +41,15 @@ def import_tests():
     from tests.plugins.plugin_lbaas import test_plugin_lbaas  # noqa
     from tests.plugins.plugin_reboot import test_plugin_reboot_task  # noqa
     from tests import test_multiple_networks  # noqa
+    from tests.gd_based_tests import test_neutron  # noqa
+    from tests.gd_based_tests import test_neutron_vlan_ceph_mongo  # noqa
     from tests.tests_patching import test_patching  # noqa
 
 
 def run_tests():
     from proboscis import TestProgram  # noqa
+    import_tests()
+
     # Run Proboscis and exit.
     TestProgram().run_and_exit()
 
