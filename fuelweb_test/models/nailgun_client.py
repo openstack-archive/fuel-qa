@@ -370,3 +370,58 @@ class NailgunClient(object):
         if user_email:
             settings['settings']['statistics']['email']['value'] = user_email
         self.update_settings(data=settings)
+
+    @logwrap
+    @json_parse
+    def get_cluster_deployment_tasks(self, cluster_id):
+        """ Get list of all deployment tasks for cluster."""
+        return self.client.get(
+            '/api/clusters/{}/deployment_tasks'.format(cluster_id))
+
+    @logwrap
+    @json_parse
+    def get_release_deployment_tasks(self, release_id):
+        """ Get list of all deployment tasks for release."""
+        return self.client.get(
+            '/api/releases/{}/deployment_tasks'.format(release_id))
+
+    @logwrap
+    @json_parse
+    def get_end_deployment_tasks(self, cluster_id, end):
+        """ Get list of all deployment tasks for cluster with end parameter.
+        If  end=netconfig, return all tasks from the graph included netconfig
+        """
+        return self.client.get(
+            '/api/clusters/{0}/deployment_tasks?end={1}'.format(
+                cluster_id, end))
+
+    @logwrap
+    @json_parse
+    def get_orchestrator_deployment_info(self, cluster_id):
+        return self.client.get(
+            '/api/clusters/{}/orchestrator/deployment'.format(cluster_id))
+
+    @logwrap
+    @json_parse
+    def get_orchestrator_deployment_default(self, cluster_id):
+        return self.client.get(
+            '/api/clusters/{}/orchestrator/deployment'.format(cluster_id))
+
+    @logwrap
+    @json_parse
+    def put_deployment_tasks_for_cluster(self, cluster_id, data, node_id):
+        """ Put  task to be executed on the nodes from cluster.:
+        Params:
+        cluster_id : Cluster id,
+        node_id: Node ids where task should be run, can be node_id=1,
+        or node_id =1,2,3,
+        data: tasks ids"""
+        return self.client.put(
+            '/api/clusters/{0}/deploy_tasks?nodes={1}'.format(
+                cluster_id, node_id), data)
+
+    @logwrap
+    @json_parse
+    def put_deployment_tasks_for_release(self, release_id, data):
+        return self.client.put(
+            '/api/releases/{}/deployment_tasks'.format(release_id), data)
