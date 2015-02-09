@@ -36,6 +36,7 @@ from fuelweb_test import settings
 from fuelweb_test.helpers.regenerate_repo import CustomRepo
 from fuelweb_test.helpers.utils import pull_out_logs_via_ssh
 from fuelweb_test.helpers.utils import store_astute_yaml
+from fuelweb_test.helpers.utils import timestat
 
 
 def save_logs(url, filename):
@@ -59,7 +60,7 @@ def log_snapshot_on_error(func):
     def wrapper(*args, **kwargs):
         logger.info("\n" + "<" * 5 + "#" * 30 + "[ {} ]"
                     .format(func.__name__) + "#" * 30 + ">" * 5 + "\n{}"
-                    .format(func.__doc__))
+                    .format(''.join(func.__doc__)))
         try:
             return func(*args, **kwargs)
         except SkipTest:
@@ -295,4 +296,12 @@ def download_astute_yaml(func):
         if settings.STORE_ASTUTE_YAML:
             store_astute_yaml(args[0].env)
         return result
+    return wrapper
+
+
+def duration(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        with timestat(func.__name__):
+            return func(*args, **kwargs)
     return wrapper

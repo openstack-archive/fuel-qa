@@ -15,6 +15,8 @@
 import inspect
 import time
 import traceback
+import yaml
+import os.path
 
 from proboscis import asserts
 
@@ -120,3 +122,69 @@ def get_test_method_name():
                 break
             method = m[3]
     return method
+
+
+def update_yaml(yaml_tree=[], yaml_value='', is_uniq=True,
+                yaml_file=settings.TIMESTAT_YAML_PATH):
+    yaml_data = {}
+    if os.path.isfile(yaml_file):
+        with open(yaml_file, 'r') as f:
+            yaml_data = yaml.load(f)
+
+    # Walk through the 'yaml_data' dict, find or create a tree using
+    # sub-keys in order provided in 'yaml_tree' list
+    item = yaml_data
+    for n in yaml_tree[:-1]:
+        if n not in item:
+            item[n] = {}
+        item = item[n]
+
+    if is_uniq:
+        last = yaml_tree[-1]
+    else:
+        # Create an uniq suffix in range '_00' to '_99'
+        for n in range(100):
+            last = yaml_tree[-1] + '_' + str(n).zfill(2)
+            if last not in item:
+                break
+
+    item[last] = yaml_value
+    with open(yaml_file, 'w') as f:
+        yaml.dump(yaml_data, f, default_flow_style=False)
+
+
+class timestat(object):
+
+    def __init__(self, name=None, is_uniq=False):
+        if name:
+            self.name = name
+        else:
+            self.name = 'timestat'
+        self.is_uniq = is_uniq
+
+    def __enter__(self):
+        self.begin_time = time.time()
+
+    def __exit__(self, exp_type, exp_value, traceback):
+        self.end_time = time.time()
+        self.total_time = self.end_time - self.begin_time
+
+        # Create a path where the 'self.total_time' will be stored.
+        yaml_path = []
+
+        # There will be a list of one or two yaml subkeys:
+        # - first key name is the method name of the test
+        method_name = get_test_method_name()
+        if method_name:
+            yaml_path.append(method_name)
+
+        # - second (subkey) name is provided from the decorator (the name of
+        # the just executed function), or manually.
+        yaml_path.append(self.name)
+
+        try:
+            update_yaml(yaml_path, '{:.2f}'.format(self.total_time),
+                        self.is_uniq)
+        except Exception:
+            logger.error("Error storing time statistic for {0}"
+                         " {1}".format(yaml_path, traceback.format_exc()))
