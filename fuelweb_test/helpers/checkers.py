@@ -1013,3 +1013,23 @@ def check_nova_dhcp_lease(remote, instance_ip, instance_mac, node_dhcp_ip):
     res_str = ''.join(res['stdout'])
     logger.debug("DHCP server answer: {}".format(res_str))
     return ' ack ' in res_str
+
+
+def check_node(remote, node_id):
+    logger.debug("Check that cluster contains node with ID:{0} ".
+                 format(node_id))
+    node = remote.execute(
+        'dockerctl shell cobbler bash -c "cobbler system list" | grep '
+        '-w "node-{0}"'.format(node_id))
+    return int(node['exit_code']) == 0
+
+
+def check_cluster_presence(cluster_id, postgres_actions):
+    logger.debug("Check cluster deletion")
+    try:
+        int((postgres_actions.run_query(
+            db='nailgun',
+            query="select id from clusters where id={0}".format(cluster_id))))
+        return True
+    except ValueError:
+        return False
