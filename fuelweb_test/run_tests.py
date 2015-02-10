@@ -42,6 +42,7 @@ def import_tests():
     from tests.plugins.plugin_reboot import test_plugin_reboot_task  # noqa
     from tests import test_multiple_networks  # noqa
     from tests.tests_patching import test_patching  # noqa
+    from tests import test_cli  # noqa
 
 
 def run_tests():
