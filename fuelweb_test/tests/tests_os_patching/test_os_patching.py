@@ -27,6 +27,7 @@ from fuelweb_test.helpers import utils
 from fuelweb_test import settings as hlp_data
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
+from fuelweb_test import settings
 
 
 @test(groups=["os_patching"])
@@ -278,7 +279,10 @@ class TestPatch(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         # 14. Create snapshot
-        self.env.make_snapshot('{0}_and_patch'.format(self.snapshot))
+        self.env.d_env.make_snapshot(
+            '{0}_and_patch'.format(self.snapshot),
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     # TODO (tleontovich) enable if rollback will be available
     #@test(depends_on=[deploy_and_patch])
@@ -361,7 +365,10 @@ class TestPatch(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id,)
 
-        self.env.make_snapshot('{0}_and_rollback'.format(self.snapshot))
+        self.env.d_env.make_snapshot(
+            '{0}_and_rollback'.format(self.snapshot),
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @factory

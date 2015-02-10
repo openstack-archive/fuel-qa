@@ -27,9 +27,7 @@ from fuelweb_test.helpers.checkers import check_mysql
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
 from fuelweb_test.helpers import os_actions
 from fuelweb_test import logger
-from fuelweb_test.settings import DEPLOYMENT_MODE
-from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
-from fuelweb_test.settings import NEUTRON_ENABLE
+from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -62,17 +60,17 @@ class TestHaFailover(TestBasic):
 
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        settings = None
+        _settings = None
 
-        if NEUTRON_ENABLE:
-            settings = {
+        if settings.NEUTRON_ENABLE:
+            _settings = {
                 "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE
+                "net_segment_type": settings.NEUTRON_SEGMENT_TYPE
             }
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
-            settings=settings
+            mode=settings.DEPLOYMENT_MODE,
+            settings=_settings
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -87,7 +85,7 @@ class TestHaFailover(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         public_vip = self.fuel_web.get_public_vip(cluster_id)
         os_conn = os_actions.OpenStackActions(public_vip)
-        if NEUTRON_ENABLE:
+        if settings.NEUTRON_ENABLE:
             self.fuel_web.assert_cluster_ready(
                 os_conn, smiles_count=14, networks_count=2, timeout=300)
         else:
@@ -101,7 +99,10 @@ class TestHaFailover(TestBasic):
         # on the admin node has over before creating a snapshot.
         time.sleep(5 * 60)
 
-        self.env.make_snapshot("deploy_ha", is_make=True)
+        self.env.d_env.make_snapshot(
+            "deploy_ha",
+            is_make=True,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(depends_on_groups=['deploy_ha'],
           groups=["ha_destroy_controllers"])
