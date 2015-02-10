@@ -30,12 +30,13 @@ class TestRailProject():
                 return project
         return None
 
-    def test_run_struct(self, name, suite, milestone, description, config_ids,
-                        include_all=True, assignedto=None, case_ids=None):
+    def test_run_struct(self, name, suite, milestone_id, description,
+                        config_ids, include_all=True, assignedto=None,
+                        case_ids=None):
         struct = {
             'name': name,
             'suite_id': self.get_suite(suite)['id'],
-            'milestone_id': self.get_milestone(milestone)['id'],
+            'milestone_id': milestone_id,
             'description': description,
             'include_all': include_all,
             'config_ids': config_ids
@@ -130,6 +131,10 @@ class TestRailProject():
             project_id=self.project['id'])
         return self.client.send_get(plans_uri)
 
+    def get_plans_by_milestone(self, milestone_id):
+        plans = self.get_plans()
+        return [plan for plan in plans if plan['milestone_id'] == milestone_id]
+
     def get_plan(self, plan_id):
         plan_uri = 'get_plan/{plan_id}'.format(plan_id=plan_id)
         return self.client.send_get(plan_uri)
@@ -139,13 +144,13 @@ class TestRailProject():
             if plan['name'] == name:
                 return self.get_plan(plan['id'])
 
-    def add_plan(self, name, description, milestone, entires):
+    def add_plan(self, name, description, milestone_id, entires):
         add_plan_uri = 'add_plan/{project_id}'.format(
             project_id=self.project['id'])
         new_plan = {
             'name': name,
             'description': description,
-            'milestone_id': self.get_milestone(milestone)['id'],
+            'milestone_id': milestone_id,
             'entries': entires
         }
         return self.client.send_post(add_plan_uri, new_plan)
@@ -172,18 +177,27 @@ class TestRailProject():
             if run['name'] == name:
                 return run
 
+    def get_previous_runs(self, milestone_id, config_id):
+        all_runs = []
+        for plan in self.get_plans_by_milestone(milestone_id=milestone_id):
+            run_ids = [run for run in
+                       self.get_plan(plan_id=plan['id'])['entries'][0]['runs']
+                       if config_id in run['config_ids']]
+            all_runs.extend(run_ids)
+        return all_runs
+
     def add_run(self, new_run):
         add_run_uri = 'add_run/{project_id}'.format(
             project_id=self.project['id'])
         return self.client.send_post(add_run_uri, new_run)
 
-    def update_run(self, name, milestone=None, description=None,
+    def update_run(self, name, milestone_id=None, description=None,
                    config_ids=None, include_all=None, case_ids=None):
         tests_run = self.get_run(name)
         update_run_uri = 'update_run/{run_id}'.format(run_id=tests_run['id'])
         update_run = {}
-        if milestone:
-            update_run['milestone_id'] = self.get_milestone(milestone)['id']
+        if milestone_id:
+            update_run['milestone_id'] = milestone_id
         if description:
             update_run['description'] = description
         if include_all is not None:
@@ -194,18 +208,18 @@ class TestRailProject():
             update_run['config_ids'] = config_ids
         return self.client.send_post(update_run_uri, update_run)
 
-    def create_or_update_run(self, name, suite, milestone, description,
+    def create_or_update_run(self, name, suite, milestone_id, description,
                              config_ids, include_all=True, assignedto=None,
                              case_ids=None):
         if self.get_run(name):
             self.update_run(name=name,
-                            milestone=milestone,
+                            milestone_id=milestone_id,
                             description=description,
                             config_ids=config_ids,
                             include_all=include_all,
                             case_ids=case_ids)
         else:
-            self.add_run(self.test_run_struct(name, suite, milestone,
+            self.add_run(self.test_run_struct(name, suite, milestone_id,
                                               description, config_ids,
                                               include_all=include_all,
                                               assignedto=assignedto,
@@ -258,6 +272,14 @@ class TestRailProject():
             run_id=run_id, case_id=case_id)
         return self.client.send_get(results_case_uri)
 
+    def get_all_results_for_case(self, run_ids, case_id):
+        all_results = []
+        for run_id in run_ids:
+            results = self.get_results_for_case(run_id=run_id,
+                                                case_id=case_id)
+            all_results.extend(results)
+        return all_results
+
     def add_results_for_test(self, test_id, test_results):
         add_results_test_uri = 'add_result/{test_id}'.format(test_id=test_id)
         new_results = {
@@ -281,7 +303,8 @@ class TestRailProject():
                 'status_id': self.get_status(results.status)['id'],
                 'comment': results.url,
                 'elapsed': results.duration,
-                'version': results.version
+                'version': results.version,
+                'custom_launchpad_bug': results.launchpad_bug
             }
             new_results['results'].append(new_result)
         return self.client.send_post(add_results_test_uri, new_results)
