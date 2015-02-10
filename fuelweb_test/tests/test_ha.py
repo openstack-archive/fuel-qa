@@ -102,7 +102,7 @@ class TestHaVLAN(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot("deploy_ha_vlan")
+        self.env.d_env.make_snapshot("deploy_ha_vlan")
 
 
 @test(groups=["thread_4", "ha"])
@@ -172,7 +172,7 @@ class TestHaFlat(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot("deploy_ha_flat")
+        self.env.d_env.make_snapshot("deploy_ha_flat")
 
 
 @test(groups=["thread_4", "ha", "image_based"])
@@ -235,7 +235,7 @@ class TestHaFlatAddCompute(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot("ha_flat_add_compute")
+        self.env.d_env.make_snapshot("ha_flat_add_compute")
 
 
 @test(groups=["thread_4", "ha"])
@@ -328,7 +328,7 @@ class TestHaFlatScalability(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'sanity'])
 
-        self.env.make_snapshot("ha_flat_scalability")
+        self.env.d_env.make_snapshot("ha_flat_scalability")
 
 
 @test(groups=["known_issues", "ha"])
@@ -361,8 +361,8 @@ class BackupRestoreHa(TestBasic):
             'novaHaFlat', 'novaHaFlat', 'novaHaFlat')
         self.fuel_web.assert_cluster_ready(
             os_conn, smiles_count=16, networks_count=1, timeout=300)
-        self.fuel_web.backup_master(self.env.get_admin_remote())
-        checkers.backup_check(self.env.get_admin_remote())
+        self.fuel_web.backup_master(self.env.d_env.get_admin_remote())
+        checkers.backup_check(self.env.d_env.get_admin_remote())
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[5:6])
         self.fuel_web.update_nodes(
@@ -372,10 +372,11 @@ class BackupRestoreHa(TestBasic):
         assert_equal(
             6, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
 
-        self.fuel_web.restore_master(self.env.get_admin_remote())
-        checkers.restore_check_sum(self.env.get_admin_remote())
-        self.fuel_web.restore_check_nailgun_api(self.env.get_admin_remote())
-        checkers.iptables_check(self.env.get_admin_remote())
+        self.fuel_web.restore_master(self.env.d_env.get_admin_remote())
+        checkers.restore_check_sum(self.env.d_env.get_admin_remote())
+        self.fuel_web.restore_check_nailgun_api(
+            self.env.d_env.get_admin_remote())
+        checkers.iptables_check(self.env.d_env.get_admin_remote())
 
         assert_equal(
             5, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
@@ -391,4 +392,4 @@ class BackupRestoreHa(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot("backup_restore_ha_flat")
+        self.env.d_env.make_snapshot("backup_restore_ha_flat")

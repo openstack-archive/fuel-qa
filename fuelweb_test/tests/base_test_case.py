@@ -56,7 +56,7 @@ class SetupEnvironment(TestBasic):
         """
         self.check_run("empty")
         self.env.setup_environment()
-        self.env.make_snapshot("empty", is_make=True)
+        self.env.d_env.make_snapshot("empty", is_make=True)
 
     @test(depends_on=[setup_master])
     @log_snapshot_on_error
@@ -81,7 +81,7 @@ class SetupEnvironment(TestBasic):
             )
         self.fuel_web.get_nailgun_version()
 
-        self.env.make_snapshot("ready", is_make=True)
+        self.env.d_env.make_snapshot("ready", is_make=True)
 
     @test(depends_on=[prepare_release],
           groups=["prepare_slaves_1"])
@@ -99,7 +99,7 @@ class SetupEnvironment(TestBasic):
         self.check_run("ready_with_1_slaves")
         self.env.revert_snapshot("ready")
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:1])
-        self.env.make_snapshot("ready_with_1_slaves", is_make=True)
+        self.env.d_env.make_snapshot("ready_with_1_slaves", is_make=True)
 
     @test(depends_on=[prepare_release],
           groups=["prepare_slaves_3"])
@@ -117,7 +117,7 @@ class SetupEnvironment(TestBasic):
         self.check_run("ready_with_3_slaves")
         self.env.revert_snapshot("ready")
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:3])
-        self.env.make_snapshot("ready_with_3_slaves", is_make=True)
+        self.env.d_env.make_snapshot("ready_with_3_slaves", is_make=True)
 
     @test(depends_on=[prepare_release],
           groups=["prepare_slaves_5"])
@@ -135,7 +135,7 @@ class SetupEnvironment(TestBasic):
         self.check_run("ready_with_5_slaves")
         self.env.revert_snapshot("ready")
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:5])
-        self.env.make_snapshot("ready_with_5_slaves", is_make=True)
+        self.env.d_env.make_snapshot("ready_with_5_slaves", is_make=True)
 
     @test(depends_on=[prepare_release],
           groups=["prepare_slaves_9"])
@@ -153,4 +153,4 @@ class SetupEnvironment(TestBasic):
         self.check_run("ready_with_9_slaves")
         self.env.revert_snapshot("ready")
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:9])
-        self.env.make_snapshot("ready_with_9_slaves", is_make=True)
+        self.env.d_env.make_snapshot("ready_with_9_slaves", is_make=True)

@@ -34,7 +34,7 @@ class TestPuppetModule{{ module.name|title }}(unittest.TestCase):  # flake8: noq
                             "--modulepath='{{ internal_modules_path }}'"
 
         if not self.env.d_env.has_snapshot("before_test"):
-            self.env.make_snapshot(snapshot_name="before_test")
+            self.env.d_env.make_snapshot(snapshot_name="before_test")
 {% for test in module.tests %}  # flake8: noqa
     def test_{{ test.name|title }}(self):  # flake8: noqa
         manifest = \

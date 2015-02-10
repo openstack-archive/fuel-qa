@@ -56,7 +56,8 @@ class TestMultipleClusterNets(TestBasic):
                      "Only one admin network is used for discovering slaves:"
                      " '{0}'".format(set(nodes_addresses)))
 
-        self.env.make_snapshot("multiple_cluster_net_setup", is_make=True)
+        self.env.d_env.make_snapshot(
+            "multiple_cluster_net_setup", is_make=True)
 
     @test(depends_on=[multiple_cluster_net_setup],
           groups=["multiple_cluster_networks",
@@ -112,7 +113,8 @@ class TestMultipleClusterNets(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
-        self.env.make_snapshot("deploy_neutron_gre_ha_nodegroups")
+        self.env.d_env.make_snapshot(
+            "deploy_neutron_gre_ha_nodegroups")
 
     @test(depends_on=[multiple_cluster_net_setup],
           groups=["multiple_cluster_networks",
@@ -170,4 +172,5 @@ class TestMultipleClusterNets(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
-        self.env.make_snapshot("deploy_neutron_gre_ha_nodegroups")
+        self.env.d_env.make_snapshot(
+            "deploy_neutron_gre_ha_nodegroups")

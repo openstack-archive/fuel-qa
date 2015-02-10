@@ -101,7 +101,7 @@ class TestHaFailover(TestBasic):
         # on the admin node has over before creating a snapshot.
         time.sleep(5 * 60)
 
-        self.env.make_snapshot("deploy_ha", is_make=True)
+        self.env.d_env.make_snapshot("deploy_ha", is_make=True)
 
     @test(depends_on_groups=['deploy_ha'],
           groups=["ha_destroy_controllers"])

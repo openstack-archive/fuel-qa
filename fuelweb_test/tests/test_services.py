@@ -128,7 +128,7 @@ class SaharaHAOneController(TestBasic):
                 cluster_id=cluster_id, test_sets=['platform_tests'],
                 test_name=path_to_tests + test_name, timeout=60 * 200)
 
-        self.env.make_snapshot("deploy_sahara_ha_one_controller_gre")
+        self.env.d_env.make_snapshot("deploy_sahara_ha_one_controller_gre")
 
 
 @test(groups=["services", "services.sahara", "services_ha"])
@@ -232,7 +232,7 @@ class SaharaHA(TestBasic):
                 cluster_id=cluster_id, test_sets=['platform_tests'],
                 test_name=path_to_tests + test_name, timeout=60 * 200)
 
-        self.env.make_snapshot("deploy_sahara_ha_gre")
+        self.env.d_env.make_snapshot("deploy_sahara_ha_gre")
 
 
 @test(groups=["services", "services.murano", "services_ha_one_controller"])
@@ -355,7 +355,7 @@ class MuranoHAOneController(TestBasic):
                 cluster_id=cluster_id, test_sets=['platform_tests'],
                 test_name=test_name, timeout=60 * 36)
 
-        self.env.make_snapshot("deploy_murano_ha_one_controller_gre")
+        self.env.d_env.make_snapshot("deploy_murano_ha_one_controller_gre")
 
 
 @test(groups=["services", "services.murano", "services_ha"])
@@ -477,7 +477,7 @@ class MuranoHA(TestBasic):
                 cluster_id=cluster_id, test_sets=['platform_tests'],
                 test_name=test_name, timeout=60 * 36)
 
-        self.env.make_snapshot("deploy_murano_ha_with_gre")
+        self.env.d_env.make_snapshot("deploy_murano_ha_with_gre")
 
 
 class OSTFCeilometerHelper(TestBasic):
@@ -599,7 +599,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
                      ' to size after {1}'.format(mongo_disk_gb, partitions))
 
         self.run_tests(cluster_id)
-        self.env.make_snapshot(
+        self.env.d_env.make_snapshot(
             "deploy_ceilometer_ha_one_controller_with_mongo")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
@@ -644,7 +644,8 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
             service_name='ceilometer-api')
 
         self.run_tests(cluster_id)
-        self.env.make_snapshot("deploy_ceilometer_ha_one_controller_mulirole")
+        self.env.d_env.make_snapshot(
+            "deploy_ceilometer_ha_one_controller_mulirole")
 
 
 @test(groups=["services", "services.ceilometer", "services_ha"])
@@ -698,7 +699,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             service_name='ceilometer-api')
 
         self.run_tests(cluster_id)
-        self.env.make_snapshot("deploy_ceilometer_ha_with_mongo")
+        self.env.d_env.make_snapshot("deploy_ceilometer_ha_with_mongo")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ceilometer_ha_multirole"])
@@ -745,7 +746,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             service_name='ceilometer-api')
 
         self.run_tests(cluster_id)
-        self.env.make_snapshot("deploy_ceilometer_ha_mulirole")
+        self.env.d_env.make_snapshot("deploy_ceilometer_ha_mulirole")
 
 
 @test(groups=["services", "services.heat", "services_ha_one_controller"])
@@ -832,7 +833,7 @@ class HeatHAOneController(TestBasic):
                 cluster_id=cluster_id, test_sets=['platform_tests'],
                 test_name=test_name, timeout=60 * 60)
 
-        self.env.make_snapshot("deploy_heat_ha_one_controller_neutron")
+        self.env.d_env.make_snapshot("deploy_heat_ha_one_controller_neutron")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_heat_ha_one_controller_nova"])
@@ -911,7 +912,7 @@ class HeatHAOneController(TestBasic):
                 cluster_id=cluster_id, test_sets=['platform_tests'],
                 test_name=test_name, timeout=60 * 60)
 
-        self.env.make_snapshot("deploy_heat_ha_one_controller_nova")
+        self.env.d_env.make_snapshot("deploy_heat_ha_one_controller_nova")
 
 
 @test(groups=["services", "services.heat", "services_ha"])
@@ -1000,4 +1001,4 @@ class HeatHA(TestBasic):
                 cluster_id=cluster_id, test_sets=['platform_tests'],
                 test_name=test_name, timeout=60 * 60)
 
-        self.env.make_snapshot("deploy_heat_ha")
+        self.env.d_env.make_snapshot("deploy_heat_ha")
