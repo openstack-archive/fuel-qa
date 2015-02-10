@@ -817,3 +817,25 @@ def check_stats_private_info(collector_remote, postgres_actions,
 def check_kernel(kernel, expected_kernel):
     assert_equal(kernel, expected_kernel,
                  "kernel version is wrong, it is {0}".format(kernel))
+
+
+def check_node(remote, hostname, cmd=None):
+    logger.info("Check {0} existence in the list".format(hostname))
+    if cmd:
+        node = remote.execute(
+            'dockerctl shell cobbler bash -c "cobbler system list" | grep {0}'.
+            format(hostname))
+    else:
+        node = remote.execute('fuel node | grep {0}'.format(hostname))
+    return int(node['exit_code']) == 0
+
+
+def check_cluster_presence(cluster_id, postgres_actions):
+    logger.info("Check cluster deletion")
+    try:
+        int((postgres_actions.run_query(
+            db='nailgun',
+            query="select id from clusters where id={0};".format(cluster_id))))
+        return True
+    except ValueError:
+        return False
