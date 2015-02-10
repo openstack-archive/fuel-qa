@@ -22,9 +22,8 @@ from fuelweb_test.helpers.decorators import log_snapshot_on_error
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers import checkers
 from fuelweb_test import logger
-from fuelweb_test.settings import DEPLOYMENT_MODE_SIMPLE
+from fuelweb_test import settings
 from fuelweb_test.settings import LBAAS_PLUGIN_PATH
-from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -114,20 +113,20 @@ class LbaasPlugin(TestBasic):
         # copy plugin to the master node
 
         checkers.upload_tarball(
-            self.env.get_admin_remote(), LBAAS_PLUGIN_PATH, '/var')
+            self.env.d_env.get_admin_remote(), LBAAS_PLUGIN_PATH, '/var')
 
         # install plugin
 
         checkers.install_plugin_check_code(
-            self.env.get_admin_remote(),
+            self.env.d_env.get_admin_remote(),
             plugin=os.path.basename(LBAAS_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE_SIMPLE,
+            mode=settings.DEPLOYMENT_MODE_SIMPLE,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE,
+                "net_segment_type": settings.NEUTRON_SEGMENT_TYPE,
             }
         )
 
@@ -164,7 +163,10 @@ class LbaasPlugin(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_vlan_lbaas_simple")
+        self.env.d_env.make_snapshot(
+            "deploy_neutron_vlan_lbaas_simple",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_neutron_lbaas_simple_reset_ready"])
@@ -198,20 +200,20 @@ class LbaasPlugin(TestBasic):
         # copy plugin to the master node
 
         checkers.upload_tarball(
-            self.env.get_admin_remote(), LBAAS_PLUGIN_PATH, '/var')
+            self.env.d_env.get_admin_remote(), LBAAS_PLUGIN_PATH, '/var')
 
         # install plugin
 
         checkers.install_plugin_check_code(
-            self.env.get_admin_remote(),
+            self.env.d_env.get_admin_remote(),
             plugin=os.path.basename(LBAAS_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE_SIMPLE,
+            mode=settings.DEPLOYMENT_MODE_SIMPLE,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE,
+                "net_segment_type": settings.NEUTRON_SEGMENT_TYPE,
             }
         )
 
@@ -264,4 +266,7 @@ class LbaasPlugin(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_lbaas_simple_reset_ready")
+        self.env.d_env.make_snapshot(
+            "deploy_neutron_lbaas_simple_reset_ready",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
