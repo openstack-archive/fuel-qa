@@ -27,6 +27,14 @@ JENKINS = {
 }
 
 
+class LaunchpadSettings():
+    project = os.environ.get('LAUNCHPAD_PROJECT', 'fuel')
+    milestone = os.environ.get('LAUNCHPAD_MILESTONE', '6.1')
+    closed_statuses = [
+        os.environ.get('LAUNCHPAD_RELEASED_STATUS', 'Fix Released')
+    ]
+
+
 class TestRailSettings():
     url = os.environ.get('TESTRAIL_URL', 'https://mirantis.testrail.com')
     user = os.environ.get('TESTRAIL_USER', 'user@example.com')
