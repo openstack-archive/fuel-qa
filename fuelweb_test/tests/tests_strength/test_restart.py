@@ -169,7 +169,7 @@ class CephRestart(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
 
-        self.env.make_snapshot("ceph_ha")
+        self.env.d_env.make_snapshot("ceph_ha")
 
 
 @test(groups=["thread_1"])
