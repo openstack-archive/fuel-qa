@@ -82,7 +82,7 @@ class CephCompact(TestBasic):
         # Run ostf
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("ceph_ha_one_controller_compact")
+        self.env.d_env.make_snapshot("ceph_ha_one_controller_compact")
 
 
 @test(groups=["thread_3", "ceph"])
@@ -156,8 +156,8 @@ class CephCompactWithCinder(TestBasic):
         # Run ostf
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("ceph_ha_one_controller_with_cinder",
-                               is_make=True)
+        self.env.d_env.make_snapshot("ceph_ha_one_controller_with_cinder",
+                                     is_make=True)
 
 
 @test(groups=["thread_3", "ceph", "image_based"])
@@ -228,7 +228,7 @@ class CephHA(TestBasic):
         # Run ostf
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("ceph_ha", is_make=True)
+        self.env.d_env.make_snapshot("ceph_ha", is_make=True)
 
 
 @test(groups=["thread_4", "ceph"])
@@ -297,7 +297,7 @@ class CephRadosGW(TestBasic):
             'client.radosgw.gateway"')['stdout']) == 3
         assert_true(radosgw_started(), 'radosgw daemon started')
 
-        self.env.make_snapshot("ceph_rados_gw")
+        self.env.d_env.make_snapshot("ceph_rados_gw")
 
 
 @test(groups=["thread_1", "ceph_migration"])
@@ -488,7 +488,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         assert_true(os.verify_srv_deleted(new_srv),
                     "Verify server was deleted")
 
-        self.env.make_snapshot(
+        self.env.d_env.make_snapshot(
             "vm_backed_with_ceph_live_migration")
 
 

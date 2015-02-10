@@ -92,7 +92,7 @@ class EnvironmentAction(base_test_case.TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_flat_stop_reset_on_deploying")
+        self.env.d_env.make_snapshot("deploy_flat_stop_reset_on_deploying")
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_flat_stop_reset_on_provisioning"])
@@ -153,7 +153,8 @@ class EnvironmentAction(base_test_case.TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_flat_stop_reset_on_provisioning")
+        self.env.d_env.make_snapshot(
+            "deploy_flat_stop_reset_on_provisioning")
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_reset_on_ready"])
@@ -214,7 +215,7 @@ class EnvironmentAction(base_test_case.TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_reset_on_ready")
+        self.env.d_env.make_snapshot("deploy_reset_on_ready")
 
 
 @test(groups=["cluster_actions"])
@@ -280,4 +281,4 @@ class EnvironmentActionOnHA(base_test_case.TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot("deploy_stop_reset_on_ha")
+        self.env.d_env.make_snapshot("deploy_stop_reset_on_ha")

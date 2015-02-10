@@ -278,7 +278,7 @@ class TestPatch(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         # 14. Create snapshot
-        self.env.make_snapshot('{0}_and_patch'.format(self.snapshot))
+        self.env.d_env.make_snapshot('{0}_and_patch'.format(self.snapshot))
 
     # TODO (tleontovich) enable if rollback will be available
     #@test(depends_on=[deploy_and_patch])
@@ -361,7 +361,8 @@ class TestPatch(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id,)
 
-        self.env.make_snapshot('{0}_and_rollback'.format(self.snapshot))
+        self.env.d_env.make_snapshot(
+            '{0}_and_rollback'.format(self.snapshot))
 
 
 @factory
