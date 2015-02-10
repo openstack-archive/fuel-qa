@@ -18,9 +18,7 @@ from proboscis.asserts import assert_equal
 
 from fuelweb_test.helpers.decorators import check_fuel_statistics
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
-from fuelweb_test.settings import DEPLOYMENT_MODE_HA
-from fuelweb_test.settings import MULTIPLE_NETWORKS
-from fuelweb_test.settings import NODEGROUPS
+from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 
@@ -42,7 +40,7 @@ class TestMultipleClusterNets(TestBasic):
 
         """
 
-        if not MULTIPLE_NETWORKS:
+        if not settings.MULTIPLE_NETWORKS:
             raise SkipTest()
         self.env.revert_snapshot("ready_with_5_slaves")
 
@@ -56,7 +54,10 @@ class TestMultipleClusterNets(TestBasic):
                      "Only one admin network is used for discovering slaves:"
                      " '{0}'".format(set(nodes_addresses)))
 
-        self.env.make_snapshot("multiple_cluster_net_setup", is_make=True)
+        self.env.d_env.make_snapshot(
+            "multiple_cluster_net_setup",
+            is_make=True,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(depends_on=[multiple_cluster_net_setup],
           groups=["multiple_cluster_networks",
@@ -79,13 +80,13 @@ class TestMultipleClusterNets(TestBasic):
 
         """
 
-        if not MULTIPLE_NETWORKS:
+        if not settings.MULTIPLE_NETWORKS:
             raise SkipTest()
         self.env.revert_snapshot("multiple_cluster_net_setup")
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE_HA,
+            mode=settings.DEPLOYMENT_MODE_HA,
             settings={
                 "net_provider": 'neutron',
                 "net_segment_type": 'gre',
@@ -95,8 +96,8 @@ class TestMultipleClusterNets(TestBasic):
             }
         )
 
-        nodegroup1 = NODEGROUPS[0]['name']
-        nodegroup2 = NODEGROUPS[1]['name']
+        nodegroup1 = settings.NODEGROUPS[0]['name']
+        nodegroup2 = settings.NODEGROUPS[1]['name']
 
         self.fuel_web.update_nodes(
             cluster_id,
@@ -112,7 +113,10 @@ class TestMultipleClusterNets(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
-        self.env.make_snapshot("deploy_neutron_gre_ha_nodegroups")
+        self.env.d_env.make_snapshot(
+            "deploy_neutron_gre_ha_nodegroups",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(depends_on=[multiple_cluster_net_setup],
           groups=["multiple_cluster_networks",
@@ -134,13 +138,13 @@ class TestMultipleClusterNets(TestBasic):
 
         """
 
-        if not MULTIPLE_NETWORKS:
+        if not settings.MULTIPLE_NETWORKS:
             raise SkipTest()
         self.env.revert_snapshot("multiple_cluster_net_setup")
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE_HA,
+            mode=settings.DEPLOYMENT_MODE_HA,
             settings={
                 'volumes_ceph': True,
                 'images_ceph': True,
@@ -153,8 +157,8 @@ class TestMultipleClusterNets(TestBasic):
             }
         )
 
-        nodegroup1 = NODEGROUPS[0]['name']
-        nodegroup2 = NODEGROUPS[1]['name']
+        nodegroup1 = settings.NODEGROUPS[0]['name']
+        nodegroup2 = settings.NODEGROUPS[1]['name']
 
         self.fuel_web.update_nodes(
             cluster_id,
@@ -170,4 +174,7 @@ class TestMultipleClusterNets(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
-        self.env.make_snapshot("deploy_neutron_gre_ha_nodegroups")
+        self.env.d_env.make_snapshot(
+            "deploy_neutron_gre_ha_nodegroups",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)

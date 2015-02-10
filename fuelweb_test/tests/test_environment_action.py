@@ -20,7 +20,7 @@ from proboscis import test
 from fuelweb_test.helpers.decorators import check_fuel_statistics
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
 from fuelweb_test.helpers import os_actions
-from fuelweb_test import settings as hlp_data
+from fuelweb_test import settings
 from fuelweb_test import logger
 from fuelweb_test.tests import base_test_case
 
@@ -55,7 +55,7 @@ class EnvironmentAction(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_data.DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
             settings={
                 'tenant': 'stop_deploy',
                 'user': 'stop_deploy',
@@ -92,7 +92,10 @@ class EnvironmentAction(base_test_case.TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_flat_stop_reset_on_deploying")
+        self.env.d_env.make_snapshot(
+            "deploy_flat_stop_reset_on_deploying",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_flat_stop_reset_on_provisioning"])
@@ -119,7 +122,7 @@ class EnvironmentAction(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_data.DEPLOYMENT_MODE
+            mode=settings.DEPLOYMENT_MODE
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -153,7 +156,10 @@ class EnvironmentAction(base_test_case.TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_flat_stop_reset_on_provisioning")
+        self.env.d_env.make_snapshot(
+            "deploy_flat_stop_reset_on_provisioning",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_reset_on_ready"])
@@ -181,7 +187,7 @@ class EnvironmentAction(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_data.DEPLOYMENT_MODE
+            mode=settings.DEPLOYMENT_MODE
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -214,7 +220,10 @@ class EnvironmentAction(base_test_case.TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_reset_on_ready")
+        self.env.d_env.make_snapshot(
+            "deploy_reset_on_ready",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["cluster_actions"])
@@ -244,7 +253,7 @@ class EnvironmentActionOnHA(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_data.DEPLOYMENT_MODE_HA
+            mode=settings.DEPLOYMENT_MODE_HA
 
         )
         self.fuel_web.update_nodes(
@@ -280,4 +289,7 @@ class EnvironmentActionOnHA(base_test_case.TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot("deploy_stop_reset_on_ha")
+        self.env.d_env.make_snapshot(
+            "deploy_stop_reset_on_ha",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
