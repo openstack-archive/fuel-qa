@@ -115,4 +115,4 @@ class HAOneControllerZabbix(TestBasic):
             cookie=login_resp.headers.get('Set-Cookie'))
         assert_equals(event_resp.code, 200)
 
-        self.env.make_snapshot("deploy_ha_one_controller_zabbix")
+        self.env.d_env.make_snapshot("deploy_ha_one_controller_zabbix")

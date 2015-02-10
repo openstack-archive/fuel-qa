@@ -135,7 +135,8 @@ class HAOneControllerFlat(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_ha_one_controller_flat", is_make=True)
+        self.env.d_env.make_snapshot(
+            "deploy_ha_one_controller_flat", is_make=True)
 
     @test(depends_on=[deploy_ha_one_controller_flat],
           groups=["ha_one_controller_flat_create_instance"])
@@ -317,7 +318,8 @@ class HAOneControllerFlat(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("ha_one_controller_flat_add_compute")
+        self.env.d_env.make_snapshot(
+            "ha_one_controller_flat_add_compute")
 
 
 @test(groups=["thread_2"])
@@ -380,7 +382,8 @@ class HAOneControllerVlan(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_ha_one_controller_vlan", is_make=True)
+        self.env.d_env.make_snapshot(
+            "deploy_ha_one_controller_vlan", is_make=True)
 
     @test(depends_on=[deploy_ha_one_controller_vlan],
           groups=["deploy_base_os_node"])
@@ -423,7 +426,7 @@ class HAOneControllerVlan(TestBasic):
         assert_true("base-os" in result[0],
                     "Role mismatch. Node slave-03 is not base-os")
 
-        self.env.make_snapshot("deploy_base_os_node")
+        self.env.d_env.make_snapshot("deploy_base_os_node")
 
 
 @test(groups=["thread_2", "multirole"])
@@ -472,7 +475,7 @@ class MultiroleControllerCinder(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_multirole_controller_cinder")
+        self.env.d_env.make_snapshot("deploy_multirole_controller_cinder")
 
 
 @test(groups=["thread_2", "multirole"])
@@ -515,7 +518,7 @@ class MultiroleComputeCinder(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_multirole_compute_cinder")
+        self.env.d_env.make_snapshot("deploy_multirole_compute_cinder")
 
 
 @test(groups=["thread_2"])
@@ -575,7 +578,7 @@ class FloatingIPs(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_floating_ips")
+        self.env.d_env.make_snapshot("deploy_floating_ips")
 
 
 @test(groups=["ha_one_controller"])
@@ -629,7 +632,7 @@ class HAOneControllerCinder(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_ha_one_controller_cinder")
+        self.env.d_env.make_snapshot("deploy_ha_one_controller_cinder")
 
 
 @test(groups=["thread_1"])
@@ -685,7 +688,7 @@ class NodeMultipleInterfaces(TestBasic):
 
         self.fuel_web.verify_network(cluster_id)
 
-        self.env.make_snapshot("deploy_node_multiple_interfaces")
+        self.env.d_env.make_snapshot("deploy_node_multiple_interfaces")
 
 
 @test(groups=["thread_1"])
@@ -974,8 +977,8 @@ class BackupRestoreHAOneController(TestBasic):
             'novaSimpleFlat', 'novaSimpleFlat', 'novaSimpleFlat')
         self.fuel_web.assert_cluster_ready(
             os_conn, smiles_count=6, networks_count=1, timeout=300)
-        self.fuel_web.backup_master(self.env.get_admin_remote())
-        checkers.backup_check(self.env.get_admin_remote())
+        self.fuel_web.backup_master(self.env.d_env.get_admin_remote())
+        checkers.backup_check(self.env.d_env.get_admin_remote())
 
         self.fuel_web.update_nodes(
             cluster_id, {'slave-03': ['compute']}, True, False)
@@ -983,10 +986,11 @@ class BackupRestoreHAOneController(TestBasic):
         assert_equal(
             3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
 
-        self.fuel_web.restore_master(self.env.get_admin_remote())
-        checkers.restore_check_sum(self.env.get_admin_remote())
-        self.fuel_web.restore_check_nailgun_api(self.env.get_admin_remote())
-        checkers.iptables_check(self.env.get_admin_remote())
+        self.fuel_web.restore_master(self.env.d_env.get_admin_remote())
+        checkers.restore_check_sum(self.env.d_env.get_admin_remote())
+        self.fuel_web.restore_check_nailgun_api(
+            self.env.d_env.get_admin_remote())
+        checkers.iptables_check(self.env.d_env.get_admin_remote())
 
         assert_equal(
             2, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
@@ -998,4 +1002,4 @@ class BackupRestoreHAOneController(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("ha_one_controller_backup_restore")
+        self.env.d_env.make_snapshot("ha_one_controller_backup_restore")
