@@ -1053,3 +1053,23 @@ def check_repo_managment(remote):
     else:
         cmd = "yum -y clean all && yum check-update > /dev/null 2>&1"
     remote.check_call(cmd)
+
+
+def check_node(remote, node_id):
+    logger.debug("Check that cluster contains node with ID:{0} ".
+                 format(node_id))
+    node = remote.execute(
+        'dockerctl shell cobbler bash -c "cobbler system list" | grep '
+        '-w "node-{0}"'.format(node_id))
+    return int(node['exit_code']) == 0
+
+
+def check_cluster_presence(cluster_id, postgres_actions):
+    logger.debug("Check cluster presence")
+    try:
+        postgres_actions.run_query(
+            db='nailgun',
+            query="select id from clusters where id={0}".format(cluster_id))
+        return True
+    except ValueError:
+        return False
