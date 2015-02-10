@@ -21,6 +21,7 @@ from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
+from fuelweb_test import settings
 
 
 @test(groups=["thread_1", "neutron", "smoke_neutron"])
@@ -81,7 +82,10 @@ class NeutronGre(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_gre")
+        self.env.d_env.make_snapshot(
+            "deploy_neutron_gre",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["thread_1", "neutron"])
@@ -138,7 +142,10 @@ class NeutronVlan(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_vlan")
+        self.env.d_env.make_snapshot(
+            "deploy_neutron_vlan",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["neutron", "ha", "ha_neutron", "image_based"])
@@ -201,7 +208,10 @@ class NeutronGreHa(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_gre_ha")
+        self.env.d_env.make_snapshot(
+            "deploy_neutron_gre_ha",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["thread_6", "neutron", "ha", "ha_neutron"])
@@ -265,7 +275,10 @@ class NeutronGreHaPublicNetwork(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_gre_ha_public_network")
+        self.env.d_env.make_snapshot(
+            "deploy_neutron_gre_ha_public_network",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["neutron", "ha", "ha_neutron"])
@@ -330,7 +343,10 @@ class NeutronVlanHa(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_vlan_ha")
+        self.env.d_env.make_snapshot(
+            "deploy_neutron_vlan_ha",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["thread_6", "neutron", "ha", "ha_neutron"])
@@ -396,4 +412,7 @@ class NeutronVlanHaPublicNetwork(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_vlan_ha_public_network")
+        self.env.d_env.make_snapshot(
+            "deploy_neutron_vlan_ha_public_network",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)

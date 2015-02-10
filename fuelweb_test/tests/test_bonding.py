@@ -17,9 +17,7 @@ from proboscis import SkipTest
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
-from fuelweb_test.settings import DEPLOYMENT_MODE
-from fuelweb_test.settings import OPENSTACK_RELEASE
-from fuelweb_test.settings import OPENSTACK_RELEASE_REDHAT
+from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -46,7 +44,7 @@ class BondingHAOneController(TestBasic):
 
         """
 
-        if OPENSTACK_RELEASE == OPENSTACK_RELEASE_REDHAT:
+        if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_REDHAT:
             raise SkipTest()
 
         self.env.revert_snapshot("ready_with_3_slaves")
@@ -55,7 +53,7 @@ class BondingHAOneController(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
                 "net_segment_type": segment_type,
@@ -113,7 +111,10 @@ class BondingHAOneController(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_bonding_active_backup")
+        self.env.d_env.make_snapshot(
+            "deploy_bonding_active_backup",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_bonding_balance_slb"])
@@ -135,7 +136,7 @@ class BondingHAOneController(TestBasic):
 
         """
 
-        if OPENSTACK_RELEASE == OPENSTACK_RELEASE_REDHAT:
+        if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_REDHAT:
             raise SkipTest()
 
         self.env.revert_snapshot("ready_with_3_slaves")
@@ -144,7 +145,7 @@ class BondingHAOneController(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
                 "net_segment_type": segment_type,
@@ -202,7 +203,10 @@ class BondingHAOneController(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_bonding_balance_slb")
+        self.env.d_env.make_snapshot(
+            "deploy_bonding_balance_slb",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["bonding_ha", "bonding"])
@@ -227,7 +231,7 @@ class BondingHA(TestBasic):
 
         """
 
-        if OPENSTACK_RELEASE == OPENSTACK_RELEASE_REDHAT:
+        if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_REDHAT:
             raise SkipTest()
 
         self.env.revert_snapshot("ready_with_5_slaves")
@@ -236,7 +240,7 @@ class BondingHA(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
                 "net_segment_type": segment_type,
@@ -297,7 +301,10 @@ class BondingHA(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_bonding_ha_active_backup")
+        self.env.d_env.make_snapshot(
+            "deploy_bonding_ha_active_backup",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_bonding_ha_balance_slb"])
@@ -319,7 +326,7 @@ class BondingHA(TestBasic):
 
         """
 
-        if OPENSTACK_RELEASE == OPENSTACK_RELEASE_REDHAT:
+        if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_REDHAT:
             raise SkipTest()
 
         self.env.revert_snapshot("ready_with_5_slaves")
@@ -328,7 +335,7 @@ class BondingHA(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
                 "net_segment_type": segment_type,
@@ -388,4 +395,7 @@ class BondingHA(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_bonding_ha_balance_slb")
+        self.env.d_env.make_snapshot(
+            "deploy_bonding_ha_balance_slb",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)

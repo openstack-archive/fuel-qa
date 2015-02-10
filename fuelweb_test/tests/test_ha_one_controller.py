@@ -24,7 +24,7 @@ from devops.helpers.helpers import tcp_ping
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
 from fuelweb_test.helpers.eb_tables import Ebtables
 from fuelweb_test.helpers import os_actions
-from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test import settings
 from fuelweb_test.settings import NODE_VOLUME_SIZE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -56,7 +56,7 @@ class OneNodeDeploy(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE
+            mode=settings.DEPLOYMENT_MODE
         )
         logger.info('cluster is %s' % str(cluster_id))
         self.fuel_web.update_nodes(
@@ -108,7 +108,7 @@ class HAOneControllerFlat(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
             settings=data
         )
         self.fuel_web.update_nodes(
@@ -135,7 +135,10 @@ class HAOneControllerFlat(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_ha_one_controller_flat", is_make=True)
+        self.env.d_env.make_snapshot(
+            "deploy_ha_one_controller_flat",
+            is_make=True,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(depends_on=[deploy_ha_one_controller_flat],
           groups=["ha_one_controller_flat_create_instance"])
@@ -229,7 +232,7 @@ class HAOneControllerFlat(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE
+            mode=settings.DEPLOYMENT_MODE
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -287,7 +290,7 @@ class HAOneControllerFlat(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
             settings=data
         )
         self.fuel_web.update_nodes(
@@ -317,7 +320,10 @@ class HAOneControllerFlat(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("ha_one_controller_flat_add_compute")
+        self.env.d_env.make_snapshot(
+            "ha_one_controller_flat_add_compute",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["thread_2"])
@@ -353,7 +359,7 @@ class HAOneControllerVlan(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
             settings=data
         )
         self.fuel_web.update_nodes(
@@ -380,7 +386,10 @@ class HAOneControllerVlan(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_ha_one_controller_vlan", is_make=True)
+        self.env.d_env.make_snapshot(
+            "deploy_ha_one_controller_vlan",
+            is_make=True,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(depends_on=[deploy_ha_one_controller_vlan],
           groups=["deploy_base_os_node"])
@@ -423,7 +432,10 @@ class HAOneControllerVlan(TestBasic):
         assert_true("base-os" in result[0],
                     "Role mismatch. Node slave-03 is not base-os")
 
-        self.env.make_snapshot("deploy_base_os_node")
+        self.env.d_env.make_snapshot(
+            "deploy_base_os_node",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["thread_2", "multirole"])
@@ -456,7 +468,7 @@ class MultiroleControllerCinder(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
             settings=data
         )
         self.fuel_web.update_nodes(
@@ -472,7 +484,10 @@ class MultiroleControllerCinder(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_multirole_controller_cinder")
+        self.env.d_env.make_snapshot(
+            "deploy_multirole_controller_cinder",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["thread_2", "multirole"])
@@ -499,7 +514,7 @@ class MultiroleComputeCinder(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE
+            mode=settings.DEPLOYMENT_MODE
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -515,7 +530,10 @@ class MultiroleComputeCinder(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_multirole_compute_cinder")
+        self.env.d_env.make_snapshot(
+            "deploy_multirole_compute_cinder",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["thread_2"])
@@ -543,7 +561,7 @@ class FloatingIPs(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
             settings={
                 'tenant': 'floatingip',
                 'user': 'floatingip',
@@ -575,7 +593,10 @@ class FloatingIPs(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_floating_ips")
+        self.env.d_env.make_snapshot(
+            "deploy_floating_ips",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["ha_one_controller"])
@@ -604,7 +625,7 @@ class HAOneControllerCinder(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE
+            mode=settings.DEPLOYMENT_MODE
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -629,7 +650,10 @@ class HAOneControllerCinder(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_ha_one_controller_cinder")
+        self.env.d_env.make_snapshot(
+            "deploy_ha_one_controller_cinder",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["thread_1"])
@@ -665,7 +689,7 @@ class NodeMultipleInterfaces(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE
+            mode=settings.DEPLOYMENT_MODE
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -685,7 +709,10 @@ class NodeMultipleInterfaces(TestBasic):
 
         self.fuel_web.verify_network(cluster_id)
 
-        self.env.make_snapshot("deploy_node_multiple_interfaces")
+        self.env.d_env.make_snapshot(
+            "deploy_node_multiple_interfaces",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["thread_1"])
@@ -751,7 +778,7 @@ class NodeDiskSizes(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE
+            mode=settings.DEPLOYMENT_MODE
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -916,7 +943,7 @@ class UntaggedNetworksNegative(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE
+            mode=settings.DEPLOYMENT_MODE
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -985,7 +1012,8 @@ class BackupRestoreHAOneController(TestBasic):
 
         self.fuel_web.restore_master(self.env.get_admin_remote())
         checkers.restore_check_sum(self.env.get_admin_remote())
-        self.fuel_web.restore_check_nailgun_api(self.env.get_admin_remote())
+        self.fuel_web.restore_check_nailgun_api(
+            self.env.get_admin_remote())
         checkers.iptables_check(self.env.get_admin_remote())
 
         assert_equal(
@@ -998,4 +1026,7 @@ class BackupRestoreHAOneController(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("ha_one_controller_backup_restore")
+        self.env.d_env.make_snapshot(
+            "ha_one_controller_backup_restore",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)

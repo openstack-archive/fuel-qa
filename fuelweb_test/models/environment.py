@@ -28,7 +28,6 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
 from fuelweb_test.helpers import checkers
-from fuelweb_test.helpers.decorators import revert_info
 from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers.eb_tables import Ebtables
@@ -82,17 +81,6 @@ class EnvironmentModel(object):
             self.sync_node_time(self.get_ssh_to_remote(node["ip"]))
 
         return self.nailgun_nodes(devops_nodes)
-
-    @logwrap
-    def get_admin_remote(self, login=settings.SSH_CREDENTIALS['login'],
-                         password=settings.SSH_CREDENTIALS['password']):
-        """SSH to admin node
-        :rtype : SSHClient
-        """
-        return self.d_env.nodes().admin.remote(
-            self.d_env.admin_net,
-            login=login,
-            password=password)
 
     @logwrap
     def get_admin_node_ip(self):
@@ -200,24 +188,6 @@ class EnvironmentModel(object):
                 self.d_env.get_network(
                     name=net_name).ip_network).netmask)
 
-    def make_snapshot(self, snapshot_name, description="", is_make=False):
-        if settings.MAKE_SNAPSHOT or is_make:
-            self.d_env.suspend(verbose=False)
-            time.sleep(10)
-
-            self.d_env.snapshot(snapshot_name, force=True)
-            revert_info(snapshot_name, self.get_admin_node_ip(), description)
-
-        if settings.FUEL_STATS_CHECK:
-            self.d_env.resume()
-            try:
-                self.d_env.nodes().admin.await(
-                    self.d_env.admin_net, timeout=60)
-            except Exception:
-                logger.error('Admin node is unavailable via SSH after '
-                             'environment resume ')
-                raise
-
     def nailgun_nodes(self, devops_nodes):
         return map(
             lambda node: self.fuel_web.get_nailgun_node_by_devops_node(node),
@@ -289,7 +259,8 @@ class EnvironmentModel(object):
         except Exception:
             logger.debug('Accessing admin node using SSH credentials:'
                          ' FAIL, trying to change password from default')
-            remote = self.get_admin_remote(login='root', password='r00tme')
+            remote = self.get_admin_remote(
+                login='root', password='r00tme')
             self.execute_remote_cmd(
                 remote, 'echo -e "{1}\\n{1}" | passwd {0}'
                 .format(settings.SSH_CREDENTIALS['login'],
@@ -423,9 +394,9 @@ class EnvironmentModel(object):
             )['exit_code'],
             timeout=(float(settings.PUPPET_TIMEOUT))
         )
-        result = self.get_admin_remote().execute("grep 'Fuel node deployment "
-                                                 "complete' '%s'" % log_path
-                                                 )['exit_code']
+        result = self.get_admin_remote().execute(
+            "grep 'Fuel node deployment complete' '%s'" % log_path
+        )['exit_code']
         if result != 0:
             raise Exception('Fuel node deployment failed.')
 

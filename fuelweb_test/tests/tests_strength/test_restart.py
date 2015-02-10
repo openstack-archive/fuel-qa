@@ -17,7 +17,6 @@ from fuelweb_test.helpers.decorators import log_snapshot_on_error
 from fuelweb_test import logger
 from fuelweb_test import ostf_test_mapping as map_ostf
 from fuelweb_test import settings
-from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -169,7 +168,10 @@ class CephRestart(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
 
-        self.env.make_snapshot("ceph_ha")
+        self.env.d_env.make_snapshot(
+            "ceph_ha",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["thread_1"])
@@ -201,7 +203,7 @@ class HAOneControllerFlatRestart(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE
+            mode=settings.DEPLOYMENT_MODE
         )
         self.fuel_web.update_nodes(
             cluster_id,
