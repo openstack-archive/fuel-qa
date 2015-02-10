@@ -85,9 +85,11 @@ def log_snapshot_on_error(func):
                 finally:
                     logger.debug(args)
                     try:
-                        args[0].env.make_snapshot(snapshot_name=name[-50:],
-                                                  description=description,
-                                                  is_make=True)
+                        args[0].env.d_env.make_snapshot(
+                            snapshot_name=name[-50:],
+                            description=description,
+                            is_make=True,
+                            fuel_stats_check=settings.FUEL_STATS_CHECK)
                     except:
                         logger.error("Error making the environment snapshot:"
                                      " {0}".format(traceback.format_exc()))

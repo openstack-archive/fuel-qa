@@ -137,7 +137,10 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
                                               get_public_vip(cluster_id))
         self.fuel_web.assert_cluster_ready(
             os_conn, smiles_count=16, networks_count=1, timeout=300)
-        self.env.make_snapshot("deploy_ha_flat_dns_ntp", is_make=True)
+        self.env.d_env.make_snapshot(
+            "deploy_ha_flat_dns_ntp",
+            is_make=True,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(depends_on=[deploy_ha_flat_dns_ntp],
           groups=["external_dns_ha_flat"], enabled=False)

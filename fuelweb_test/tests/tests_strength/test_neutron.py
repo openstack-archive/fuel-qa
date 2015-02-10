@@ -127,7 +127,10 @@ class TestNeutronFailover(base_test_case.TestBasic):
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.env.make_snapshot("deploy_ha_neutron", is_make=True)
+        self.env.d_env.make_snapshot(
+            "deploy_ha_neutron",
+            is_make=True,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(depends_on=[deploy_ha_neutron],
           groups=["neutron_l3_migration"])

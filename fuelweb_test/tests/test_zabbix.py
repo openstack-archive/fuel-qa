@@ -23,6 +23,7 @@ from fuelweb_test import settings as hlp
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
+from fuelweb_test import settings
 
 
 @test(groups=["thread_2"])
@@ -115,4 +116,7 @@ class HAOneControllerZabbix(TestBasic):
             cookie=login_resp.headers.get('Set-Cookie'))
         assert_equals(event_resp.code, 200)
 
-        self.env.make_snapshot("deploy_ha_one_controller_zabbix")
+        self.env.d_env.make_snapshot(
+            "deploy_ha_one_controller_zabbix",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
