@@ -14,6 +14,7 @@
 
 from fuelweb_test.helpers.decorators import debug
 from fuelweb_test.helpers.decorators import upload_manifests
+from fuelweb_test import settings
 from fuelweb_test.models.pp_environment import PuppetEnvironment
 
 import logging
@@ -34,7 +35,10 @@ class TestPuppetModule{{ module.name|title }}(unittest.TestCase):  # flake8: noq
                             "--modulepath='{{ internal_modules_path }}'"
 
         if not self.env.d_env.has_snapshot("before_test"):
-            self.env.make_snapshot(snapshot_name="before_test")
+            self.env.d_env.make_snapshot(
+            snapshot_name="before_test",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 {% for test in module.tests %}  # flake8: noqa
     def test_{{ test.name|title }}(self):  # flake8: noqa
         manifest = \
