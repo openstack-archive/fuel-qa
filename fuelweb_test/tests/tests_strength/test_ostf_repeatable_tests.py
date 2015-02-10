@@ -63,7 +63,7 @@ class OstfRepeatableTests(base_test_case.TestBasic):
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf_repeatably(cluster_id)
 
-        self.env.make_snapshot("create_delete_ip_n_times_nova_vlan")
+        self.env.d_env().make_snapshot("create_delete_ip_n_times_nova_vlan")
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["create_delete_ip_n_times_nova_flat"])
@@ -102,7 +102,7 @@ class OstfRepeatableTests(base_test_case.TestBasic):
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf_repeatably(cluster_id)
 
-        self.env.make_snapshot("create_delete_ip_n_times_nova_flat")
+        self.env.d_env().make_snapshot("create_delete_ip_n_times_nova_flat")
 
     @test(groups=["run_ostf_n_times_against_custom_environment"])
     @log_snapshot_on_error

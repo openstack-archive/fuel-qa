@@ -101,7 +101,7 @@ class TestHaFailover(TestBasic):
         # on the admin node has over before creating a snapshot.
         time.sleep(5 * 60)
 
-        self.env.make_snapshot("deploy_ha", is_make=True)
+        self.env.d_env().make_snapshot("deploy_ha", is_make=True)
 
     @test(depends_on_groups=['deploy_ha'],
           groups=["ha_destroy_controllers"])
@@ -121,14 +121,14 @@ class TestHaFailover(TestBasic):
         Duration 35m
         """
 
-        for devops_node in self.env.get_virtual_environment(
+        for devops_node in self.env.d_env(
         ).nodes().slaves[:2]:
             self.env.revert_snapshot("deploy_ha")
             devops_node.suspend(False)
             self.fuel_web.assert_pacemaker(
-                self.env.get_virtual_environment().nodes(
+                self.env.d_env().nodes(
                 ).slaves[2].name,
-                set(self.env.get_virtual_environment(
+                set(self.env.d_env(
                 ).nodes().slaves[:3]) - {devops_node},
                 [devops_node])
 
@@ -143,7 +143,7 @@ class TestHaFailover(TestBasic):
             # Wait until MySQL Galera is UP on online controllers
             self.fuel_web.wait_mysql_galera_is_up(
                 [n.name for n in
-                 set(self.env.get_virtual_environment(
+                 set(self.env.d_env(
                  ).nodes().slaves[:3]) - {devops_node}])
 
             self.fuel_web.run_ostf(
@@ -169,16 +169,16 @@ class TestHaFailover(TestBasic):
 
         """
 
-        for devops_node in self.env.get_virtual_environment(
+        for devops_node in self.env.d_env(
         ).nodes().slaves[:2]:
             self.env.revert_snapshot("deploy_ha")
 
             remote = self.fuel_web.get_ssh_for_node(devops_node.name)
             remote.check_call('ifconfig eth2 down')
             self.fuel_web.assert_pacemaker(
-                self.env.get_virtual_environment(
+                self.env.d_env(
                 ).nodes().slaves[2].name,
-                set(self.env.get_virtual_environment(
+                set(self.env.d_env(
                 ).nodes().slaves[:3]) - {devops_node},
                 [devops_node])
 
@@ -216,7 +216,7 @@ class TestHaFailover(TestBasic):
             self.fuel_web.client.get_cluster_id(self.__class__.__name__)
         logger.debug('Cluster id is {0}'.format(cluster_id))
         interfaces = ('hapr-p', 'hapr-m')
-        slaves = self.env.get_virtual_environment(
+        slaves = self.env.d_env(
         ).nodes().slaves[:3]
         logger.debug("Current nodes are {0}".format([i.name for i in slaves]))
         ips_amount = 0
@@ -305,7 +305,7 @@ class TestHaFailover(TestBasic):
         """
         self.env.revert_snapshot("deploy_ha")
 
-        for devops_node in self.env.get_virtual_environment(
+        for devops_node in self.env.d_env(
         ).nodes().slaves[:3]:
             remote = self.fuel_web.get_ssh_for_node(devops_node.name)
             logger.info('Terminating MySQL on {0}'.format(devops_node.name))
@@ -347,7 +347,7 @@ class TestHaFailover(TestBasic):
         """
         self.env.revert_snapshot("deploy_ha")
 
-        for devops_node in self.env.get_virtual_environment(
+        for devops_node in self.env.d_env(
         ).nodes().slaves[:3]:
             remote = self.fuel_web.get_ssh_for_node(devops_node.name)
             remote.check_call('kill -9 $(pidof haproxy)')
@@ -381,10 +381,10 @@ class TestHaFailover(TestBasic):
         """
         self.env.revert_snapshot("deploy_ha")
 
-        devops_ctrls = self.env.get_virtual_environment(
+        devops_ctrls = self.env.d_env(
         ).nodes().slaves[:3]
         pcm_nodes = ' '.join(self.fuel_web.get_pcm_nodes(
-            self.env.get_virtual_environment(
+            self.env.d_env(
             ).nodes().slaves[0].name, pure=True)['Online'])
         logger.debug("pacemaker nodes are {0}".format(pcm_nodes))
         for devops_node in devops_ctrls:
@@ -447,7 +447,7 @@ class TestHaFailover(TestBasic):
             ' monitor 2>&1"'.format(heat_name)
 
         remote = self.fuel_web.get_ssh_for_node(
-            self.env.get_virtual_environment(
+            self.env.d_env(
             ).nodes().slaves[0].name)
         pid = ''.join(remote.execute('pgrep heat-engine')['stdout'])
         get_ocf_status = ''.join(
@@ -506,7 +506,7 @@ class TestHaFailover(TestBasic):
 
         """
         self.env.revert_snapshot("deploy_ha")
-        for devops_node in self.env.get_virtual_environment(
+        for devops_node in self.env.d_env(
         ).nodes().slaves[3:5]:
             remote = self.fuel_web.get_ssh_for_node(devops_node.name)
             remote.execute("kill -9 `pgrep nova-compute`")

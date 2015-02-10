@@ -76,7 +76,7 @@ def log_snapshot_on_error(func):
                     logger.error("Fetching of diagnostic snapshot failed: {0}".
                                  format(traceback.format_exc()))
                     try:
-                        admin_remote = args[0].env.get_admin_remote()
+                        admin_remote = args[0].env.d_env().get_admin_remote()
                         pull_out_logs_via_ssh(admin_remote, name)
                     except:
                         logger.error("Fetching of raw logs failed: {0}".
@@ -84,9 +84,10 @@ def log_snapshot_on_error(func):
                 finally:
                     logger.debug(args)
                     try:
-                        args[0].env.make_snapshot(snapshot_name=name[-50:],
-                                                  description=description,
-                                                  is_make=True)
+                        args[0].env.d_env().make_snapshot(
+                            snapshot_name=name[-50:],
+                            description=description,
+                            is_make=True)
                     except:
                         logger.error("Error making the environment snapshot:"
                                      " {0}".format(traceback.format_exc()))
@@ -118,7 +119,7 @@ def upload_manifests(func):
                     logger.warning("Can't upload manifests: method of "
                                    "unexpected class is decorated.")
                     return result
-                remote = environment.get_admin_remote()
+                remote = environment.d_env().get_admin_remote()
                 remote.execute('rm -rf /etc/puppet/modules/*')
                 remote.upload(settings.UPLOAD_MANIFESTS_PATH,
                               '/etc/puppet/modules/')
@@ -136,25 +137,6 @@ def upload_manifests(func):
     return wrapper
 
 
-def revert_info(snapshot_name, description=""):
-    logger.info("<" * 5 + "*" * 100 + ">" * 5)
-    logger.info("{} Make snapshot: {}".format(description, snapshot_name))
-    logger.info("You could revert this snapshot using [{command}]".format(
-        command="dos.py revert {env} --snapshot-name {name} && "
-        "dos.py resume {env} && virsh net-dumpxml {env}_admin | "
-        "grep -P {pattern} -o "
-        "| awk {awk_command}".format(
-            env=settings.ENV_NAME,
-            name=snapshot_name,
-            pattern="\"(\d+\.){3}\"",
-            awk_command="'{print \"Admin node IP: \"$0\"2\"}'"
-        )
-    )
-    )
-
-    logger.info("<" * 5 + "*" * 100 + ">" * 5)
-
-
 def update_ostf(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -165,7 +147,7 @@ def update_ostf(func):
                     raise ValueError('REFSPEC should be set for CI tests.')
                 logger.info("Uploading new patchset from {0}"
                             .format(settings.GERRIT_REFSPEC))
-                remote = args[0].environment.get_admin_remote()
+                remote = args[0].environment.d_env().get_admin_remote()
                 remote.upload(settings.PATCH_PATH.rstrip('/'),
                               '/var/www/nailgun/fuel-ostf')
                 remote.execute('dockerctl shell ostf '

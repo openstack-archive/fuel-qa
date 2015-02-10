@@ -79,7 +79,7 @@ class NeutronGre(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_gre")
+        self.env.d_env().make_snapshot("deploy_neutron_gre")
 
 
 @test(groups=["thread_1", "neutron"])
@@ -136,7 +136,7 @@ class NeutronVlan(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_vlan")
+        self.env.d_env().make_snapshot("deploy_neutron_vlan")
 
 
 @test(groups=["neutron", "ha", "ha_neutron", "image_based"])
@@ -194,7 +194,7 @@ class NeutronGreHa(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_gre_ha")
+        self.env.d_env().make_snapshot("deploy_neutron_gre_ha")
 
 
 @test(groups=["thread_6", "neutron", "ha", "ha_neutron"])
@@ -258,7 +258,7 @@ class NeutronGreHaPublicNetwork(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_gre_ha_public_network")
+        self.env.d_env().make_snapshot("deploy_neutron_gre_ha_public_network")
 
 
 @test(groups=["neutron", "ha", "ha_neutron"])
@@ -318,7 +318,7 @@ class NeutronVlanHa(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_vlan_ha")
+        self.env.d_env().make_snapshot("deploy_neutron_vlan_ha")
 
 
 @test(groups=["thread_6", "neutron", "ha", "ha_neutron"])
@@ -384,4 +384,4 @@ class NeutronVlanHaPublicNetwork(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_vlan_ha_public_network")
+        self.env.d_env().make_snapshot("deploy_neutron_vlan_ha_public_network")

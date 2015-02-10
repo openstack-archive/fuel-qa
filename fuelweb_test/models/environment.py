@@ -28,7 +28,6 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
 from fuelweb_test.helpers import checkers
-from fuelweb_test.helpers.decorators import revert_info
 from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers.eb_tables import Ebtables
@@ -49,11 +48,11 @@ class EnvironmentModel(object):
 
     @property
     def nailgun_actions(self):
-        return NailgunActions(self.get_admin_remote())
+        return NailgunActions(self.d_env().get_admin_remote())
 
     @property
     def postgres_actions(self):
-        return PostgresActions(self.get_admin_remote())
+        return PostgresActions(self.d_env().get_admin_remote())
 
     @property
     def admin_node_ip(self):
@@ -62,7 +61,7 @@ class EnvironmentModel(object):
     @logwrap
     def add_syslog_server(self, cluster_id, port=5514):
         self.fuel_web.add_syslog_server(
-            cluster_id, self.get_virtual_environment().router(), port)
+            cluster_id, self.d_env().router(), port)
 
     def bootstrap_nodes(self, devops_nodes, timeout=600):
         """Lists registered nailgun nodes
@@ -84,22 +83,11 @@ class EnvironmentModel(object):
         return self.nailgun_nodes(devops_nodes)
 
     @logwrap
-    def get_admin_remote(self, login=settings.SSH_CREDENTIALS['login'],
-                         password=settings.SSH_CREDENTIALS['password']):
-        """SSH to admin node
-        :rtype : SSHClient
-        """
-        return self.get_virtual_environment().nodes().admin.remote(
-            self.get_virtual_environment().admin_net,
-            login=login,
-            password=password)
-
-    @logwrap
     def get_admin_node_ip(self):
         return str(
-            self.get_virtual_environment().nodes(
+            self.d_env().nodes(
             ).admin.get_ip_address_by_network_name(
-                self.get_virtual_environment().admin_net))
+                self.d_env().admin_net))
 
     @logwrap
     def get_ebtables(self, cluster_id, devops_nodes):
@@ -109,13 +97,13 @@ class EnvironmentModel(object):
     def get_keys(self, node, custom=None, build_images=None):
         params = {
             'ip': node.get_ip_address_by_network_name(
-                self.get_virtual_environment().admin_net),
-            'mask': self.get_net_mask(self.get_virtual_environment(
+                self.d_env().admin_net),
+            'mask': self.get_net_mask(self.d_env(
             ).admin_net),
-            'gw': self.get_virtual_environment().router(),
-            'hostname': '.'.join((self.get_virtual_environment().hostname,
-                                  self.get_virtual_environment().domain)),
-            'nat_interface': self.get_virtual_environment().nat_interface,
+            'gw': self.d_env().router(),
+            'hostname': '.'.join((self.d_env().hostname,
+                                  self.d_env().domain)),
+            'nat_interface': self.d_env().nat_interface,
             'dns1': settings.DNS,
             'showmenu': 'yes' if custom else 'no',
             'build_images': '1' if build_images else '0'
@@ -144,7 +132,7 @@ class EnvironmentModel(object):
             self._keys = []
             for key_string in ['/root/.ssh/id_rsa',
                                '/root/.ssh/bootstrap.rsa']:
-                with self.get_admin_remote().open(key_string) as f:
+                with self.d_env().get_admin_remote().open(key_string) as f:
                     self._keys.append(RSAKey.from_private_key(f))
         return self._keys
 
@@ -171,7 +159,7 @@ class EnvironmentModel(object):
     def get_ssh_to_remote_by_name(self, node_name):
         return self.get_ssh_to_remote(
             self.fuel_web.get_nailgun_node_by_devops_node(
-                self.get_virtual_environment().get_node(name=node_name))['ip']
+                self.d_env().get_node(name=node_name))['ip']
         )
 
     def get_target_devs(self, devops_nodes):
@@ -180,7 +168,7 @@ class EnvironmentModel(object):
                 val for var in map(lambda node: node.interfaces, devops_nodes)
                 for val in var]]
 
-    def get_virtual_environment(self):
+    def d_env(self):
         if self._virtual_environment is None:
             try:
                 return Environment.get(name=settings.ENV_NAME)
@@ -192,30 +180,14 @@ class EnvironmentModel(object):
     def _get_network(self, net_name):
         return str(
             IPNetwork(
-                self.get_virtual_environment().get_network(name=net_name).
+                self.d_env().get_network(name=net_name).
                 ip_network))
 
     def get_net_mask(self, net_name):
         return str(
             IPNetwork(
-                self.get_virtual_environment().get_network(
+                self.d_env().get_network(
                     name=net_name).ip_network).netmask)
-
-    def make_snapshot(self, snapshot_name, description="", is_make=False):
-        if settings.MAKE_SNAPSHOT or is_make:
-            self.get_virtual_environment().suspend(verbose=False)
-            time.sleep(10)
-            self.get_virtual_environment().snapshot(snapshot_name, force=True)
-            revert_info(snapshot_name, description)
-        if settings.FUEL_STATS_CHECK:
-            self.get_virtual_environment().resume()
-            try:
-                self.get_virtual_environment().nodes().admin.await(
-                    self.get_virtual_environment().admin_net, timeout=60)
-            except Exception:
-                logger.error('Admin node is unavailable via SSH after '
-                             'environment resume ')
-                raise
 
     def nailgun_nodes(self, devops_nodes):
         return map(
@@ -224,20 +196,20 @@ class EnvironmentModel(object):
         )
 
     def revert_snapshot(self, name):
-        if self.get_virtual_environment().has_snapshot(name):
+        if self.d_env().has_snapshot(name):
             logger.info('We have snapshot with such name %s' % name)
 
-            self.get_virtual_environment().revert(name)
+            self.d_env().revert(name)
             logger.info('Starting snapshot reverting ....')
 
-            self.get_virtual_environment().resume()
+            self.d_env().resume()
             logger.info('Starting snapshot resuming ...')
 
-            admin = self.get_virtual_environment().nodes().admin
+            admin = self.d_env().nodes().admin
 
             try:
                 admin.await(
-                    self.get_virtual_environment().admin_net, timeout=10 * 60,
+                    self.d_env().admin_net, timeout=10 * 60,
                     by_port=8000)
             except Exception as e:
                 logger.warning("From first time admin isn't reverted: "
@@ -245,11 +217,11 @@ class EnvironmentModel(object):
                 admin.destroy()
                 logger.info('Admin node was destroyed. Wait 10 sec.')
                 time.sleep(10)
-                self.get_virtual_environment().start(
-                    self.get_virtual_environment().nodes().admins)
+                self.d_env().start(
+                    self.d_env().nodes().admins)
                 logger.info('Admin node started second time.')
-                self.get_virtual_environment().nodes().admin.await(
-                    self.get_virtual_environment().admin_net, timeout=10 * 60,
+                self.d_env().nodes().admin.await(
+                    self.d_env().admin_net, timeout=10 * 60,
                     by_port=8000)
 
             self.set_admin_ssh_password()
@@ -262,7 +234,7 @@ class EnvironmentModel(object):
 
             self.sync_time_admin_node()
 
-            for node in self.get_virtual_environment().nodes(
+            for node in self.d_env().nodes(
             ).slaves:
                 if not node.driver.node_active(node):
                     continue
@@ -281,7 +253,7 @@ class EnvironmentModel(object):
 
     def set_admin_ssh_password(self):
         try:
-            remote = self.get_admin_remote(
+            remote = self.d_env().get_admin_remote(
                 login=settings.SSH_CREDENTIALS['login'],
                 password=settings.SSH_CREDENTIALS['password'])
             self.execute_remote_cmd(remote, 'date')
@@ -289,7 +261,8 @@ class EnvironmentModel(object):
         except Exception:
             logger.debug('Accessing admin node using SSH credentials:'
                          ' FAIL, trying to change password from default')
-            remote = self.get_admin_remote(login='root', password='r00tme')
+            remote = self.d_env().get_admin_remote(
+                login='root', password='r00tme')
             self.execute_remote_cmd(
                 remote, 'echo -e "{1}\\n{1}" | passwd {0}'
                 .format(settings.SSH_CREDENTIALS['login'],
@@ -300,7 +273,7 @@ class EnvironmentModel(object):
                            settings.SSH_CREDENTIALS['password']))
 
     def set_admin_keystone_password(self):
-        remote = self.get_admin_remote()
+        remote = self.d_env().get_admin_remote()
         try:
             self.fuel_web.client.get_releases()
         except exceptions.Unauthorized:
@@ -315,9 +288,9 @@ class EnvironmentModel(object):
     def setup_environment(self, custom=settings.CUSTOM_ENV,
                           build_images=settings.BUILD_IMAGES):
         # start admin node
-        admin = self.get_virtual_environment().nodes().admin
+        admin = self.d_env().nodes().admin
         admin.disk_devices.get(device='cdrom').volume.upload(settings.ISO_PATH)
-        self.get_virtual_environment().start(self.get_virtual_environment(
+        self.d_env().start(self.d_env(
         ).nodes().admins)
         logger.info("Waiting for admin node to start up")
         wait(lambda: admin.driver.node_active(admin), 60)
@@ -328,7 +301,7 @@ class EnvironmentModel(object):
         if custom:
             self.setup_customisation()
         # wait while installation complete
-        admin.await(self.get_virtual_environment().admin_net, timeout=10 * 60)
+        admin.await(self.d_env().admin_net, timeout=10 * 60)
         self.set_admin_ssh_password()
         self.wait_bootstrap()
         time.sleep(10)
@@ -351,14 +324,14 @@ class EnvironmentModel(object):
     @upload_manifests
     def wait_for_provisioning(self):
         _wait(lambda: _tcp_ping(
-            self.get_virtual_environment().nodes(
+            self.d_env().nodes(
             ).admin.get_ip_address_by_network_name
-            (self.get_virtual_environment().admin_net), 22), timeout=5 * 60)
+            (self.d_env().admin_net), 22), timeout=5 * 60)
 
     def setup_customisation(self):
         self.wait_for_provisioning()
         try:
-            remote = self.get_admin_remote()
+            remote = self.d_env().get_admin_remote()
             pid = remote.execute("pgrep 'fuelmenu'")['stdout'][0]
             pid.rstrip('\n')
             remote.execute("kill -sigusr1 {0}".format(pid))
@@ -382,7 +355,7 @@ class EnvironmentModel(object):
     @logwrap
     def sync_time_admin_node(self):
         logger.info("Sync time on revert for admin")
-        remote = self.get_admin_remote()
+        remote = self.d_env().get_admin_remote()
         self.execute_remote_cmd(remote, 'hwclock -s')
         # Sync time using ntpd
         try:
@@ -417,19 +390,19 @@ class EnvironmentModel(object):
             float(settings.PUPPET_TIMEOUT)))
         wait(
             lambda: not
-            self.get_admin_remote().execute(
+            self.d_env().get_admin_remote().execute(
                 "grep 'Fuel node deployment' '%s'" % log_path
             )['exit_code'],
             timeout=(float(settings.PUPPET_TIMEOUT))
         )
-        result = self.get_admin_remote().execute("grep 'Fuel node deployment "
-                                                 "complete' '%s'" % log_path
-                                                 )['exit_code']
+        result = self.d_env().get_admin_remote().execute(
+            "grep 'Fuel node deployment complete' '%s'" % log_path
+        )['exit_code']
         if result != 0:
             raise Exception('Fuel node deployment failed.')
 
     def dhcrelay_check(self):
-        admin_remote = self.get_admin_remote()
+        admin_remote = self.d_env().get_admin_remote()
         out = admin_remote.execute("dhcpcheck discover "
                                    "--ifaces eth0 "
                                    "--repeat 3 "
@@ -444,7 +417,7 @@ class EnvironmentModel(object):
 
     def get_fuel_settings(self, remote=None):
         if not remote:
-            remote = self.get_admin_remote()
+            remote = self.d_env().get_admin_remote()
         cmd = 'cat {cfg_file}'.format(cfg_file=settings.FUEL_SETTINGS_YAML)
         result = remote.execute(cmd)
         if result['exit_code'] == 0:
@@ -457,7 +430,7 @@ class EnvironmentModel(object):
 
     def admin_install_pkg(self, pkg_name):
         """Install a package <pkg_name> on the admin node"""
-        admin_remote = self.get_admin_remote()
+        admin_remote = self.d_env().get_admin_remote()
         remote_status = admin_remote.execute("rpm -q {0}'".format(pkg_name))
         if remote_status['exit_code'] == 0:
             logger.info("Package '{0}' already installed.".format(pkg_name))
@@ -472,7 +445,7 @@ class EnvironmentModel(object):
 
     def admin_run_service(self, service_name):
         """Start a service <service_name> on the admin node"""
-        admin_remote = self.get_admin_remote()
+        admin_remote = self.d_env().get_admin_remote()
         admin_remote.execute("service {0} start".format(service_name))
         remote_status = admin_remote.execute("service {0} status"
                                              .format(service_name))
@@ -490,7 +463,7 @@ class EnvironmentModel(object):
     # * adds 'nameservers' at start of resolv.conf if merge=True
     # * replaces resolv.conf with 'nameservers' if merge=False
     def modify_resolv_conf(self, nameservers=[], merge=True):
-        remote = self.get_admin_remote()
+        remote = self.d_env().get_admin_remote()
         resolv_conf = remote.execute('cat /etc/resolv.conf')
         assert_equal(0, resolv_conf['exit_code'], 'Executing "{0}" on the '
                      'admin node has failed with: {1}'
@@ -519,15 +492,15 @@ class EnvironmentModel(object):
 
     @logwrap
     def describe_second_admin_interface(self):
-        remote = self.get_admin_remote()
-        second_admin_network = self._get_network(self.get_virtual_environment(
+        remote = self.d_env().get_admin_remote()
+        second_admin_network = self._get_network(self.d_env(
         ).admin_net2).split('/')[0]
-        second_admin_netmask = self.get_net_mask(self.get_virtual_environment(
+        second_admin_netmask = self.get_net_mask(self.d_env(
         ).admin_net2)
-        second_admin_if = settings.INTERFACES.get(self.get_virtual_environment(
+        second_admin_if = settings.INTERFACES.get(self.d_env(
         ).admin_net2)
-        second_admin_ip = str(self.get_virtual_environment().nodes(
-        ).admin.get_ip_address_by_network_name(self.get_virtual_environment(
+        second_admin_ip = str(self.d_env().nodes(
+        ).admin.get_ip_address_by_network_name(self.d_env(
         ).admin_net2))
         logger.info(('Parameters for second admin interface configuration: '
                      'Network - {0}, Netmask - {1}, Interface - {2}, '

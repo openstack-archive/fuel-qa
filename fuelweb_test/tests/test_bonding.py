@@ -113,7 +113,7 @@ class BondingHAOneController(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_bonding_active_backup")
+        self.env.d_env().make_snapshot("deploy_bonding_active_backup")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_bonding_balance_slb"])
@@ -202,7 +202,7 @@ class BondingHAOneController(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_bonding_balance_slb")
+        self.env.d_env().make_snapshot("deploy_bonding_balance_slb")
 
 
 @test(groups=["bonding_ha", "bonding"])
@@ -297,7 +297,7 @@ class BondingHA(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_bonding_ha_active_backup")
+        self.env.d_env().make_snapshot("deploy_bonding_ha_active_backup")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_bonding_ha_balance_slb"])
@@ -388,4 +388,4 @@ class BondingHA(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_bonding_ha_balance_slb")
+        self.env.d_env().make_snapshot("deploy_bonding_ha_balance_slb")

@@ -27,7 +27,7 @@ class PuppetEnvironment(EnvironmentModel):
         self.os_image = os_image or settings.OS_IMAGE
         super(PuppetEnvironment, self).__init__(self.os_image)
         self.environment = \
-            super(PuppetEnvironment, self).get_virtual_environment()
+            super(PuppetEnvironment, self).d_env()
         self.start_env()
 
     @property
@@ -35,12 +35,12 @@ class PuppetEnvironment(EnvironmentModel):
         return os.environ.get('PPENV_NAME', 'pp-integration')
 
     def start_env(self):
-        self.get_virtual_environment().start(self.nodes())
+        self.d_env().start(self.d_env().nodes())
 
     def execute_cmd(self, command, debug=True):
         """Execute command on node."""
-        return self.get_admin_remote().execute(command,
-                                               verbose=debug)['exit_code']
+        return self.d_env().get_admin_remote().execute(
+            command, verbose=debug)['exit_code']
 
     def await(self, timeout=1200):
         wait(
@@ -51,5 +51,5 @@ if __name__ == "__main__":
     env = PuppetEnvironment(
         '/var/lib/libvirt/images/ubuntu-12.04.1-server-amd64-p2.qcow2')
     env.await()
-    env.make_snapshot(snapshot_name="test1")
+    env.d_env().make_snapshot(snapshot_name="test1")
     env.execute_cmd('apt-get install mc')

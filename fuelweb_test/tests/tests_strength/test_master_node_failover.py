@@ -73,7 +73,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         logger.info('PASS OSTF')
 
         logger.info('Destroy admin node...')
-        self.env.get_virtual_environment().nodes().admin.destroy()
+        self.env.d_env().nodes().admin.destroy()
         logger.info('Admin node destroyed')
 
         common_func = common.Common(

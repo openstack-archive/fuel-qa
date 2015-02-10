@@ -83,7 +83,7 @@ class SecurityChecks(object):
 
     @logwrap
     def verify_firewall(self, cluster_id):
-        admin_remote = self.environment.get_admin_remote()
+        admin_remote = self.environment.d_env().get_admin_remote()
         # Install NetCat
         if not self.environment.admin_install_pkg('nc') == 0:
             raise Exception('Can not install package "nc".')

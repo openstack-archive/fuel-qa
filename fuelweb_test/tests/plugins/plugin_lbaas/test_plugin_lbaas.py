@@ -114,12 +114,12 @@ class LbaasPlugin(TestBasic):
         # copy plugin to the master node
 
         checkers.upload_tarball(
-            self.env.get_admin_remote(), LBAAS_PLUGIN_PATH, '/var')
+            self.env.d_env().get_admin_remote(), LBAAS_PLUGIN_PATH, '/var')
 
         # install plugin
 
         checkers.install_plugin_check_code(
-            self.env.get_admin_remote(),
+            self.env.d_env().get_admin_remote(),
             plugin=os.path.basename(LBAAS_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
@@ -164,7 +164,7 @@ class LbaasPlugin(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_vlan_lbaas_simple")
+        self.env.d_env().make_snapshot("deploy_neutron_vlan_lbaas_simple")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_neutron_lbaas_simple_reset_ready"])
@@ -198,12 +198,12 @@ class LbaasPlugin(TestBasic):
         # copy plugin to the master node
 
         checkers.upload_tarball(
-            self.env.get_admin_remote(), LBAAS_PLUGIN_PATH, '/var')
+            self.env.d_env().get_admin_remote(), LBAAS_PLUGIN_PATH, '/var')
 
         # install plugin
 
         checkers.install_plugin_check_code(
-            self.env.get_admin_remote(),
+            self.env.d_env().get_admin_remote(),
             plugin=os.path.basename(LBAAS_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
@@ -247,7 +247,7 @@ class LbaasPlugin(TestBasic):
         self.fuel_web.stop_reset_env_wait(cluster_id)
 
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.get_virtual_environment().nodes().slaves[:2])
+            self.env.d_env().nodes().slaves[:2])
 
         self.fuel_web.update_nodes(
             cluster_id,
@@ -264,4 +264,5 @@ class LbaasPlugin(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_lbaas_simple_reset_ready")
+        self.env.d_env().make_snapshot(
+            "deploy_neutron_lbaas_simple_reset_ready")

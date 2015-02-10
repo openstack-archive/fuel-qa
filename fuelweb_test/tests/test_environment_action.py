@@ -75,7 +75,7 @@ class EnvironmentAction(base_test_case.TestBasic):
         self.fuel_web.deploy_task_wait(cluster_id=cluster_id, progress=10)
         self.fuel_web.stop_deployment_wait(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.get_virtual_environment().nodes().slaves[:2])
+            self.env.d_env().nodes().slaves[:2])
 
         self.fuel_web.update_nodes(
             cluster_id,
@@ -92,7 +92,7 @@ class EnvironmentAction(base_test_case.TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_flat_stop_reset_on_deploying")
+        self.env.d_env().make_snapshot("deploy_flat_stop_reset_on_deploying")
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_flat_stop_reset_on_provisioning"])
@@ -137,7 +137,7 @@ class EnvironmentAction(base_test_case.TestBasic):
             logger.debug(traceback.format_exc())
 
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.get_virtual_environment().nodes().slaves[:2])
+            self.env.d_env().nodes().slaves[:2])
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -153,7 +153,8 @@ class EnvironmentAction(base_test_case.TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_flat_stop_reset_on_provisioning")
+        self.env.d_env().make_snapshot(
+            "deploy_flat_stop_reset_on_provisioning")
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_reset_on_ready"])
@@ -199,7 +200,7 @@ class EnvironmentAction(base_test_case.TestBasic):
 
         self.fuel_web.stop_reset_env_wait(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.get_virtual_environment().nodes().slaves[:2])
+            self.env.d_env().nodes().slaves[:2])
 
         self.fuel_web.update_vlan_network_fixed(
             cluster_id, amount=8, network_size=32)
@@ -214,7 +215,7 @@ class EnvironmentAction(base_test_case.TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_reset_on_ready")
+        self.env.d_env().make_snapshot("deploy_reset_on_ready")
 
 
 @test(groups=["cluster_actions"])
@@ -259,7 +260,7 @@ class EnvironmentActionOnHA(base_test_case.TestBasic):
         self.fuel_web.deploy_cluster_wait_progress(cluster_id, progress=10)
         self.fuel_web.stop_deployment_wait(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.get_virtual_environment().nodes().slaves[:3])
+            self.env.d_env().nodes().slaves[:3])
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -280,4 +281,4 @@ class EnvironmentActionOnHA(base_test_case.TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot("deploy_stop_reset_on_ha")
+        self.env.d_env().make_snapshot("deploy_stop_reset_on_ha")

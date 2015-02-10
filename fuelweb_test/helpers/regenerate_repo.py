@@ -75,7 +75,7 @@ class CustomRepo(object):
                     .format(settings.CUSTOM_PKGS_MIRROR))
 
         # Modify admin resolv.conf to use local host resolver
-        dns_server = self.env.get_virtual_environment().router()
+        dns_server = self.env.d_env().router()
         new_resolv_conf = ["nameserver {0}".format(dns_server)]
 
         # Set the local router as nameserver that will allow
@@ -216,7 +216,7 @@ class CustomRepo(object):
         total_pkgs = len(self.pkgs_list)
         logger.info('Found {0} custom package(s)'.format(total_pkgs))
 
-        remote = self.env.get_admin_remote()
+        remote = self.env.d_env().get_admin_remote()
         for npkg, pkg in enumerate(self.pkgs_list):
             # TODO: Previous versions of the updating packages must be removed
             # to avoid unwanted packet manager dependences resolution
@@ -248,7 +248,7 @@ class CustomRepo(object):
     def update_yaml(self, yaml_versions):
             # Update the corresponding .yaml with the new package version.
         for pkg in self.pkgs_list:
-            remote = self.env.get_admin_remote()
+            remote = self.env.d_env().get_admin_remote()
             result = remote.execute('grep -e "^{0}: " {1}'
                                     ''.format(pkg["package:"], yaml_versions))
             if result['exit_code'] == 0:
@@ -276,7 +276,7 @@ class CustomRepo(object):
         # Uploading scripts that prepare local repositories:
         # 'regenerate_centos_repo' and 'regenerate_ubuntu_repo'
         try:
-            remote = self.env.get_admin_remote()
+            remote = self.env.d_env().get_admin_remote()
             remote.upload('{0}/{1}'.format(self.path_scripts,
                                            regenerate_script),
                           self.remote_path_scripts)
@@ -321,7 +321,7 @@ class CustomRepo(object):
         """ Check puppet-agent.log files on all nodes for package
             dependency errors during a cluster deployment (ubuntu)"""
 
-        remote = self.env.get_admin_remote()
+        remote = self.env.d_env().get_admin_remote()
 
         err_start = 'The following packages have unmet dependencies:'
         err_end = ('Unable to correct problems,'
@@ -364,7 +364,7 @@ class CustomRepo(object):
         """ Check puppet-agent.log files on all nodes for package
             dependency errors during a cluster deployment (centos)"""
 
-        remote = self.env.get_admin_remote()
+        remote = self.env.d_env().get_admin_remote()
 
         cmd = ('fgrep -h -e "Error: Package: " -e " Requires: " /var/log/'
                'docker-logs/remote/node-*/puppet*.log')

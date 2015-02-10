@@ -53,13 +53,13 @@ class ExamplePlugin(TestBasic):
         # copy plugin to the master node
 
         checkers.upload_tarball(
-            self.env.get_admin_remote(),
+            self.env.d_env().get_admin_remote(),
             EXAMPLE_PLUGIN_PATH, '/var')
 
         # install plugin
 
         checkers.install_plugin_check_code(
-            self.env.get_admin_remote(),
+            self.env.d_env().get_admin_remote(),
             plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
 
         segment_type = 'vlan'
@@ -110,7 +110,8 @@ class ExamplePlugin(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_ha_one_controller_neutron_example")
+        self.env.d_env().make_snapshot(
+            "deploy_ha_one_controller_neutron_example")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_nova_example_ha"])
@@ -139,12 +140,12 @@ class ExamplePlugin(TestBasic):
         # copy plugin to the master node
 
         checkers.upload_tarball(
-            self.env.get_admin_remote(), EXAMPLE_PLUGIN_PATH, '/var')
+            self.env.d_env().get_admin_remote(), EXAMPLE_PLUGIN_PATH, '/var')
 
         # install plugin
 
         checkers.install_plugin_check_code(
-            self.env.get_admin_remote(),
+            self.env.d_env().get_admin_remote(),
             plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
@@ -194,7 +195,7 @@ class ExamplePlugin(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_nova_example_ha")
+        self.env.d_env().make_snapshot("deploy_nova_example_ha")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_example_ha_add_node"])
@@ -226,12 +227,12 @@ class ExamplePlugin(TestBasic):
         # copy plugin to the master node
 
         checkers.upload_tarball(
-            self.env.get_admin_remote(), EXAMPLE_PLUGIN_PATH, '/var')
+            self.env.d_env().get_admin_remote(), EXAMPLE_PLUGIN_PATH, '/var')
 
         # install plugin
 
         checkers.install_plugin_check_code(
-            self.env.get_admin_remote(),
+            self.env.d_env().get_admin_remote(),
             plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
@@ -310,4 +311,4 @@ class ExamplePlugin(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_example_ha_add_node")
+        self.env.d_env().make_snapshot("deploy_neutron_example_ha_add_node")
