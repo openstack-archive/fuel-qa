@@ -82,7 +82,7 @@ class CephCompact(TestBasic):
         # Run ostf
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("ceph_ha_one_controller_compact")
+        self.env.d_env().make_snapshot("ceph_ha_one_controller_compact")
 
 
 @test(groups=["thread_3", "ceph"])
@@ -113,7 +113,7 @@ class CephCompactWithCinder(TestBasic):
 
         self.env.revert_snapshot("ready")
         self.env.bootstrap_nodes(
-            self.env.get_virtual_environment().nodes().slaves[:4])
+            self.env.d_env().nodes().slaves[:4])
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -156,7 +156,7 @@ class CephCompactWithCinder(TestBasic):
         # Run ostf
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("ceph_ha_one_controller_with_cinder",
+        self.env.d_env().make_snapshot("ceph_ha_one_controller_with_cinder",
                                is_make=True)
 
 
@@ -188,7 +188,7 @@ class CephHA(TestBasic):
 
         self.env.revert_snapshot("ready")
         self.env.bootstrap_nodes(
-            self.env.get_virtual_environment().nodes().slaves[:6])
+            self.env.d_env().nodes().slaves[:6])
         csettings = {}
         if settings.NEUTRON_ENABLE:
             csettings = {
@@ -228,7 +228,7 @@ class CephHA(TestBasic):
         # Run ostf
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("ceph_ha", is_make=True)
+        self.env.d_env().make_snapshot("ceph_ha", is_make=True)
 
 
 @test(groups=["thread_4", "ceph"])
@@ -313,7 +313,7 @@ class CephRadosGW(TestBasic):
             'client.radosgw.gateway"')['stdout']) == 3
         assert_true(radosgw_started(), 'radosgw daemon started')
 
-        self.env.make_snapshot("ceph_rados_gw")
+        self.env.d_env().make_snapshot("ceph_rados_gw")
 
 
 @test(groups=["thread_1", "ceph_migration"])
@@ -504,7 +504,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         assert_true(os.verify_srv_deleted(new_srv),
                     "Verify server was deleted")
 
-        self.env.make_snapshot(
+        self.env.d_env().make_snapshot(
             "vm_backed_with_ceph_live_migration")
 
 
@@ -570,7 +570,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
 
             logger.info("Warm-restart nodes")
             self.fuel_web.warm_restart_nodes(
-                [self.fuel_web.environment.get_virtual_environment().
+                [self.fuel_web.environment.d_env().
                     get_node(name=node)])
 
             logger.info("Get partitions for {node} once again".format(
@@ -591,7 +591,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
 
             logger.info("Cold-restart nodes")
             self.fuel_web.cold_restart_nodes(
-                [self.fuel_web.environment.get_virtual_environment().
+                [self.fuel_web.environment.d_env().
                     get_node(name=node)])
 
             after_reboot_partitions = [checkers.get_ceph_partitions(

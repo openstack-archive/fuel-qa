@@ -120,7 +120,7 @@ class GlusterfsPlugin(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_ha_one_controller_glusterfs")
+        self.env.d_env().make_snapshot("deploy_ha_one_controller_glusterfs")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_glusterfs_ha"])
@@ -223,4 +223,4 @@ class GlusterfsPlugin(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_glusterfs_ha")
+        self.env.d_env().make_snapshot("deploy_glusterfs_ha")

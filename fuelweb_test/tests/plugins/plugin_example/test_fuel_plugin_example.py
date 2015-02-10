@@ -110,7 +110,8 @@ class ExamplePlugin(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_ha_one_controller_neutron_example")
+        self.env.d_env().make_snapshot(
+            "deploy_ha_one_controller_neutron_example")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_nova_example_ha"])
@@ -194,7 +195,7 @@ class ExamplePlugin(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_nova_example_ha")
+        self.env.d_env().make_snapshot("deploy_nova_example_ha")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_example_ha_add_node"])
@@ -310,4 +311,4 @@ class ExamplePlugin(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_example_ha_add_node")
+        self.env.d_env().make_snapshot("deploy_neutron_example_ha_add_node")

@@ -92,7 +92,7 @@ class TestHaVLAN(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot("deploy_ha_vlan")
+        self.env.d_env().make_snapshot("deploy_ha_vlan")
 
 
 @test(groups=["thread_4", "ha"])
@@ -157,7 +157,7 @@ class TestHaFlat(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot("deploy_ha_flat")
+        self.env.d_env().make_snapshot("deploy_ha_flat")
 
 
 @test(groups=["thread_4", "ha", "image_based"])
@@ -208,7 +208,7 @@ class TestHaFlatAddCompute(TestBasic):
             os_conn, smiles_count=16, networks_count=1, timeout=300)
 
         self.env.bootstrap_nodes(
-            self.env.get_virtual_environment().nodes().slaves[5:6])
+            self.env.d_env().nodes().slaves[5:6])
         self.fuel_web.update_nodes(
             cluster_id, {'slave-06': ['compute']}, True, False
         )
@@ -220,7 +220,7 @@ class TestHaFlatAddCompute(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot("ha_flat_add_compute")
+        self.env.d_env().make_snapshot("ha_flat_add_compute")
 
 
 @test(groups=["thread_4", "ha"])
@@ -268,11 +268,11 @@ class TestHaFlatScalability(TestBasic):
             True, False
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        for devops_node in self.env.get_virtual_environment(
+        for devops_node in self.env.d_env(
         ).nodes().slaves[:3]:
             self.fuel_web.assert_pacemaker(
                 devops_node.name,
-                self.env.get_virtual_environment(
+                self.env.d_env(
                 ).nodes().slaves[:3], [])
 
         self.fuel_web.update_nodes(
@@ -281,11 +281,11 @@ class TestHaFlatScalability(TestBasic):
             True, False
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        for devops_node in self.env.get_virtual_environment(
+        for devops_node in self.env.d_env(
         ).nodes().slaves[:5]:
             self.fuel_web.assert_pacemaker(
                 devops_node.name,
-                self.env.get_virtual_environment(
+                self.env.d_env(
                 ).nodes().slaves[:5], [])
             ret = self.fuel_web.get_pacemaker_status(devops_node.name)
             assert_true(
@@ -301,7 +301,7 @@ class TestHaFlatScalability(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'sanity'])
 
-        self.env.make_snapshot("ha_flat_scalability")
+        self.env.d_env().make_snapshot("ha_flat_scalability")
 
 
 @test(groups=["known_issues", "ha"])
@@ -337,7 +337,7 @@ class BackupRestoreHa(TestBasic):
         self.fuel_web.backup_master(self.env.get_admin_remote())
         checkers.backup_check(self.env.get_admin_remote())
         self.env.bootstrap_nodes(
-            self.env.get_virtual_environment().nodes().slaves[5:6])
+            self.env.d_env().nodes().slaves[5:6])
         self.fuel_web.update_nodes(
             cluster_id, {'slave-06': ['compute']}, True, False
         )
@@ -354,7 +354,7 @@ class BackupRestoreHa(TestBasic):
             5, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
 
         self.env.bootstrap_nodes(
-            self.env.get_virtual_environment().nodes().slaves[5:6])
+            self.env.d_env().nodes().slaves[5:6])
         self.fuel_web.update_nodes(
             cluster_id, {'slave-06': ['compute']}, True, False
         )
@@ -364,4 +364,4 @@ class BackupRestoreHa(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot("backup_restore_ha_flat")
+        self.env.d_env().make_snapshot("backup_restore_ha_flat")

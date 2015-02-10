@@ -52,7 +52,7 @@ class OneNodeDeploy(TestBasic):
         self.env.revert_snapshot("ready")
         self.fuel_web.client.get_root()
         self.env.bootstrap_nodes(
-            self.env.get_virtual_environment().nodes().slaves[:1])
+            self.env.d_env().nodes().slaves[:1])
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -135,7 +135,8 @@ class HAOneControllerFlat(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_ha_one_controller_flat", is_make=True)
+        self.env.d_env().make_snapshot(
+            "deploy_ha_one_controller_flat", is_make=True)
 
     @test(depends_on=[deploy_ha_one_controller_flat],
           groups=["ha_one_controller_flat_create_instance"])
@@ -245,7 +246,7 @@ class HAOneControllerFlat(TestBasic):
             os_conn, smiles_count=6, networks_count=1, timeout=300)
 
         ebtables = self.env.get_ebtables(
-            cluster_id, self.env.get_virtual_environment(
+            cluster_id, self.env.d_env(
             ).nodes().slaves[:2])
         ebtables.restore_vlans()
         try:
@@ -318,7 +319,8 @@ class HAOneControllerFlat(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("ha_one_controller_flat_add_compute")
+        self.env.d_env().make_snapshot(
+            "ha_one_controller_flat_add_compute")
 
 
 @test(groups=["thread_2"])
@@ -381,7 +383,7 @@ class HAOneControllerVlan(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_ha_one_controller_vlan")
+        self.env.d_env().make_snapshot("deploy_ha_one_controller_vlan")
 
 
 @test(groups=["thread_2", "multirole"])
@@ -430,7 +432,7 @@ class MultiroleControllerCinder(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_multirole_controller_cinder")
+        self.env.d_env().make_snapshot("deploy_multirole_controller_cinder")
 
 
 @test(groups=["thread_2", "multirole"])
@@ -473,7 +475,7 @@ class MultiroleComputeCinder(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_multirole_compute_cinder")
+        self.env.d_env().make_snapshot("deploy_multirole_compute_cinder")
 
 
 @test(groups=["thread_2"])
@@ -533,7 +535,7 @@ class FloatingIPs(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_floating_ips")
+        self.env.d_env().make_snapshot("deploy_floating_ips")
 
 
 @test(groups=["ha_one_controller"])
@@ -587,7 +589,7 @@ class HAOneControllerCinder(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_ha_one_controller_cinder")
+        self.env.d_env().make_snapshot("deploy_ha_one_controller_cinder")
 
 
 @test(groups=["thread_1"])
@@ -643,7 +645,7 @@ class NodeMultipleInterfaces(TestBasic):
 
         self.fuel_web.verify_network(cluster_id)
 
-        self.env.make_snapshot("deploy_node_multiple_interfaces")
+        self.env.d_env().make_snapshot("deploy_node_multiple_interfaces")
 
 
 @test(groups=["thread_1"])
@@ -787,7 +789,7 @@ class MultinicBootstrap(TestBasic):
         """
         self.env.revert_snapshot("ready")
 
-        slave = self.env.get_virtual_environment().nodes().slaves[0]
+        slave = self.env.d_env().nodes().slaves[0]
         mac_addresses = [interface.mac_address for interface in
                          slave.interfaces.filter(network__name='internal')]
         try:
@@ -796,7 +798,7 @@ class MultinicBootstrap(TestBasic):
             for mac in mac_addresses:
                 Ebtables.restore_mac(mac)
                 slave.destroy(verbose=False)
-                self.env.get_virtual_environment(
+                self.env.d_env(
                 ).nodes().admins[0].revert("ready")
                 nailgun_slave = self.env.bootstrap_nodes([slave])[0]
                 assert_equal(mac.upper(), nailgun_slave['mac'].upper())
@@ -957,4 +959,4 @@ class BackupRestoreHAOneController(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("ha_one_controller_backup_restore")
+        self.env.d_env().make_snapshot("ha_one_controller_backup_restore")
