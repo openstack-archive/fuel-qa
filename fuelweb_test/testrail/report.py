@@ -29,7 +29,7 @@ from testrail_client import TestRailProject
 
 class TestResult():
     def __init__(self, name, group, status, duration, url=None,
-                 version=None, description=None):
+                 version=None, description=None, launchpad_bug=None):
         self.name = name
         self.group = group
         self._status = status
@@ -37,6 +37,7 @@ class TestResult():
         self.url = url
         self.version = version
         self.description = description
+        self.launchpad_bug = launchpad_bug
         self.available_statuses = {
             'passed': ['passed', 'fixed'],
             'failed': ['failed', 'regression'],
@@ -84,9 +85,9 @@ def retry(count=3):
     return wrapped
 
 
-def get_downstream_builds(jenkins_build_data):
-    return [{'name': b['jobName'], 'number': b['buildNumber']}
-            for b in jenkins_build_data['subBuilds']]
+def get_downstream_builds(jenkins_build_data, status=None):
+    return [{'name': b['jobName'], 'number': b['buildNumber'],
+             'result': b['result']} for b in jenkins_build_data['subBuilds']]
 
 
 def get_version(jenkins_build_data):
@@ -120,9 +121,13 @@ def get_tests_results(systest_build):
     return tests_results
 
 
-def publish_results(project, test_plan, tests_suite, config_id, results):
+def publish_results(project, milestone_id, test_plan,
+                    tests_suite, config_id, results):
     test_run_id = [run['id'] for run in test_plan['entries'][0]['runs'] if
                    config_id in run['config_ids']][0]
+    previous_tests_runs = project.get_previous_runs(milestone_id=milestone_id,
+                                                    config_id=config_id)
+    cases = project.get_cases(suite=tests_suite)
     tests = project.get_tests(run_id=test_run_id)
     results_to_publish = []
 
@@ -136,8 +141,16 @@ def publish_results(project, test_plan, tests_suite, config_id, results):
             continue
         existing_results_versions = [r['version'] for r in
                                      project.get_results_for_test(test['id'])]
-        if result.version not in existing_results_versions:
-            results_to_publish.append(result)
+        if result.version in existing_results_versions:
+            continue
+        if result.status != 'passed':
+            previous_results = project.get_all_results_for_case(
+                run_ids=[run['id'] for run in previous_tests_runs],
+                case_id=project.get_case_by_group(suite=tests_suite,
+                                                  group=result.group,
+                                                  cases=cases)['id'])
+            result.launchpad_bug = get_existing_bug_link(previous_results)
+        results_to_publish.append(result)
     try:
         if len(results_to_publish) > 0:
             project.add_results_for_cases(run_id=test_run_id,
@@ -149,6 +162,16 @@ def publish_results(project, test_plan, tests_suite, config_id, results):
         ))
         raise
     return results_to_publish
+
+
+def get_existing_bug_link(previous_results):
+    results_with_bug = [result for result in previous_results if
+                        result["custom_launchpad_bug"] is not None]
+    if results_with_bug:
+        return sorted(
+            results_with_bug,
+            key=lambda k: k['created_on']
+        )[-1]['custom_launchpad_bug']
 
 
 def main():
@@ -164,6 +187,8 @@ def main():
                       help='Jenkins swarm runner build number')
     parser.add_option("-w", "--view", dest="jenkins_view", default=False,
                       help="Get system tests jobs from Jenkins view")
+    parser.add_option("-l", "--live", dest="live_report", action="store_true",
+                      help="Get tests results from running swarm")
     parser.add_option("-v", "--verbose",
                       action="store_true", dest="verbose", default=False,
                       help="Enable debug output")
@@ -172,6 +197,9 @@ def main():
 
     if options.verbose:
         logger.setLevel(DEBUG)
+
+    if options.live_report:
+        options.build_number = 'latest_started'
 
     tests_results_centos = []
     tests_results_ubuntu = []
@@ -194,6 +222,11 @@ def main():
     milestone, iso_number = get_version(runner_build.build_data)
 
     for systest_build in tests_jobs:
+        if systest_build['result'] is None:
+            logger.debug("Skipping '{0}' job (build #{1}) because it's still "
+                         "running...".format(systest_build['name'],
+                                             systest_build['number'],))
+            continue
         if 'centos' in systest_build['name'].lower():
             tests_results_centos.extend(get_tests_results(systest_build))
         elif 'ubuntu' in systest_build['name'].lower():
@@ -204,8 +237,12 @@ def main():
                               password=TestRailSettings.password,
                               project=TestRailSettings.project)
 
+    milestone = project.get_milestone(name=milestone)
+
     test_plan_name = '{milestone} {case_group} iso #{iso_number}'.format(
-        milestone=milestone, case_group=case_group, iso_number=iso_number)
+        milestone=milestone['name'],
+        case_group=case_group,
+        iso_number=iso_number)
 
     operation_systems = [{'name': config['name'], 'id': config['id']}
                          for config in project.get_config_by_name(
@@ -215,7 +252,7 @@ def main():
         plan_entries = [project.test_run_struct(
             name='{case_group}'.format(case_group=case_group),
             suite=case_group,
-            milestone=milestone,
+            milestone_id=milestone['id'],
             description='Results of system tests ({case_group}) on iso # '
                         '"{iso_number}"'.format(case_group=case_group,
                                                 iso_number=iso_number),
@@ -224,7 +261,7 @@ def main():
 
         test_plan = project.add_plan(test_plan_name,
                                      description='',
-                                     milestone=milestone,
+                                     milestone_id=milestone['id'],
                                      entires=[
                                          {
                                              'suite_id': project.get_suite(
@@ -240,19 +277,23 @@ def main():
     logger.debug('Uploading tests results to TestRail...')
     for os in operation_systems:
         if 'centos' in os['name'].lower():
-            tests_results_centos = publish_results(project=project,
-                                                   test_plan=test_plan,
-                                                   tests_suite=case_group,
-                                                   config_id=os['id'],
-                                                   results=tests_results_centos
-                                                   )
+            tests_results_centos = publish_results(
+                project=project,
+                milestone_id=milestone['id'],
+                test_plan=test_plan,
+                tests_suite=case_group,
+                config_id=os['id'],
+                results=tests_results_centos
+            )
         if 'ubuntu' in os['name'].lower():
-            tests_results_ubuntu = publish_results(project=project,
-                                                   test_plan=test_plan,
-                                                   tests_suite=case_group,
-                                                   config_id=os['id'],
-                                                   results=tests_results_ubuntu
-                                                   )
+            tests_results_ubuntu = publish_results(
+                project=project,
+                milestone_id=milestone['id'],
+                test_plan=test_plan,
+                tests_suite=case_group,
+                config_id=os['id'],
+                results=tests_results_ubuntu
+            )
 
     logger.debug('Added new results for tests (CentOS): {tests}'.format(
         tests=[r.group for r in tests_results_centos]

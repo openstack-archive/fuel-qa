@@ -46,6 +46,9 @@ class Build():
         if number == 'latest':
             job_info = self.get_job_info(depth=0)
             self.number = job_info["lastCompletedBuild"]["number"]
+        elif number == 'latest_started':
+            job_info = self.get_job_info(depth=0)
+            self.number = job_info["lastBuild"]["number"]
         else:
             self.number = int(number)
 
