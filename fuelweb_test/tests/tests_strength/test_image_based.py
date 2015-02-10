@@ -65,7 +65,7 @@ class RepeatableImageBased(TestBasic):
         wait(lambda: not self.fuel_web.client.list_nodes(), timeout=5 * 60)
         #wait for nodes to appear after bootstrap
         wait(lambda: len(self.fuel_web.client.list_nodes()) == 5,
-             timeout=5 * 60)
+             timeout=10 * 60)
         for node in self.fuel_web.client.list_nodes():
             wait(lambda: self.fuel_web.is_node_discovered(node),
                  timeout=2 * 60)
