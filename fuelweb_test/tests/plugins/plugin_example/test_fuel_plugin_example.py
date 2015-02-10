@@ -19,7 +19,7 @@ from proboscis import test
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
 from fuelweb_test.helpers import checkers
-from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test import settings
 from fuelweb_test.settings import EXAMPLE_PLUGIN_PATH
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -53,19 +53,19 @@ class ExamplePlugin(TestBasic):
         # copy plugin to the master node
 
         checkers.upload_tarball(
-            self.env.get_admin_remote(),
+            self.env.d_env.get_admin_remote(),
             EXAMPLE_PLUGIN_PATH, '/var')
 
         # install plugin
 
         checkers.install_plugin_check_code(
-            self.env.get_admin_remote(),
+            self.env.d_env.get_admin_remote(),
             plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
 
         segment_type = 'vlan'
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
                 "net_segment_type": segment_type,
@@ -110,7 +110,10 @@ class ExamplePlugin(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_ha_one_controller_neutron_example")
+        self.env.d_env.make_snapshot(
+            "deploy_ha_one_controller_neutron_example",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_nova_example_ha"])
@@ -139,17 +142,17 @@ class ExamplePlugin(TestBasic):
         # copy plugin to the master node
 
         checkers.upload_tarball(
-            self.env.get_admin_remote(), EXAMPLE_PLUGIN_PATH, '/var')
+            self.env.d_env.get_admin_remote(), EXAMPLE_PLUGIN_PATH, '/var')
 
         # install plugin
 
         checkers.install_plugin_check_code(
-            self.env.get_admin_remote(),
+            self.env.d_env.get_admin_remote(),
             plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
         )
 
         attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
@@ -194,7 +197,10 @@ class ExamplePlugin(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_nova_example_ha")
+        self.env.d_env.make_snapshot(
+            "deploy_nova_example_ha",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_example_ha_add_node"])
@@ -226,17 +232,17 @@ class ExamplePlugin(TestBasic):
         # copy plugin to the master node
 
         checkers.upload_tarball(
-            self.env.get_admin_remote(), EXAMPLE_PLUGIN_PATH, '/var')
+            self.env.d_env.get_admin_remote(), EXAMPLE_PLUGIN_PATH, '/var')
 
         # install plugin
 
         checkers.install_plugin_check_code(
-            self.env.get_admin_remote(),
+            self.env.d_env.get_admin_remote(),
             plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
                 "net_segment_type": 'gre',
@@ -310,4 +316,7 @@ class ExamplePlugin(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_example_ha_add_node")
+        self.env.d_env.make_snapshot(
+            "deploy_neutron_example_ha_add_node",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)

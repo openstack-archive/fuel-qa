@@ -16,7 +16,7 @@
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
-from fuelweb_test import settings as hlp_date
+from fuelweb_test import settings
 from fuelweb_test.tests import base_test_case
 
 
@@ -47,7 +47,7 @@ class OstfRepeatableTests(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_date.DEPLOYMENT_MODE
+            mode=settings.DEPLOYMENT_MODE
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -63,7 +63,10 @@ class OstfRepeatableTests(base_test_case.TestBasic):
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf_repeatably(cluster_id)
 
-        self.env.make_snapshot("create_delete_ip_n_times_nova_vlan")
+        self.env.d_env.make_snapshot(
+            "create_delete_ip_n_times_nova_vlan",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["create_delete_ip_n_times_nova_flat"])
@@ -88,7 +91,7 @@ class OstfRepeatableTests(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_date.DEPLOYMENT_MODE
+            mode=settings.DEPLOYMENT_MODE
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -102,11 +105,14 @@ class OstfRepeatableTests(base_test_case.TestBasic):
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf_repeatably(cluster_id)
 
-        self.env.make_snapshot("create_delete_ip_n_times_nova_flat")
+        self.env.d_env.make_snapshot(
+            "create_delete_ip_n_times_nova_flat",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(groups=["run_ostf_n_times_against_custom_environment"])
     @log_snapshot_on_error
     def run_ostf_n_times_against_custom_deployment(self):
         cluster_id = self.fuel_web.client.get_cluster_id(
-            hlp_date.DEPLOYMENT_NAME)
+            settings.DEPLOYMENT_NAME)
         self.fuel_web.run_ostf_repeatably(cluster_id)

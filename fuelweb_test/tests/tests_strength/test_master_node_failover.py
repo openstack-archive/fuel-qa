@@ -137,7 +137,10 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
                                               get_public_vip(cluster_id))
         self.fuel_web.assert_cluster_ready(
             os_conn, smiles_count=16, networks_count=1, timeout=300)
-        self.env.make_snapshot("deploy_ha_flat_dns_ntp", is_make=True)
+        self.env.d_env.make_snapshot(
+            "deploy_ha_flat_dns_ntp",
+            is_make=True,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(depends_on=[deploy_ha_flat_dns_ntp],
           groups=["external_dns_ha_flat"], enabled=False)
@@ -154,7 +157,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
 
         self.env.revert_snapshot("deploy_ha_flat_dns_ntp")
 
-        remote = self.env.get_admin_remote()
+        remote = self.env.d_env.get_admin_remote()
         remote_slave = self.env.get_ssh_to_remote_by_name('slave-01')
         remote.execute("dockerctl shell cobbler killall dnsmasq")
         checkers.external_dns_check(remote_slave)
@@ -175,7 +178,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         self.env.revert_snapshot("deploy_ha_flat_dns_ntp")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
-        remote = self.env.get_admin_remote()
+        remote = self.env.d_env.get_admin_remote()
         remote_slave = self.env.get_ssh_to_remote_by_name('slave-01')
         vip = self.fuel_web.get_public_vip(cluster_id)
         remote.execute("pkill -9 ntpd")
