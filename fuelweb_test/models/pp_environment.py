@@ -50,5 +50,8 @@ if __name__ == "__main__":
     env = PuppetEnvironment(
         '/var/lib/libvirt/images/ubuntu-12.04.1-server-amd64-p2.qcow2')
     env.await()
-    env.make_snapshot(snapshot_name="test1")
+    env.d_env.make_snapshot(
+        "test1",
+        is_make=settings.MAKE_SNAPSHOT,
+        fuel_stats_check=settings.FUEL_STATS_CHECK)
     env.execute_cmd('apt-get install mc')

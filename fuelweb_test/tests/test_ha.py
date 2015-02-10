@@ -25,6 +25,7 @@ from fuelweb_test.settings import DEPLOYMENT_MODE_HA
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
+from fuelweb_test import settings
 
 
 @test(groups=["thread_3", "ha", "bvt_1"])
@@ -102,7 +103,10 @@ class TestHaVLAN(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot("deploy_ha_vlan")
+        self.env.d_env.make_snapshot(
+            "deploy_ha_vlan",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["thread_4", "ha"])
@@ -172,7 +176,10 @@ class TestHaFlat(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot("deploy_ha_flat")
+        self.env.d_env.make_snapshot(
+            "deploy_ha_flat",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["thread_4", "ha", "image_based"])
@@ -235,7 +242,10 @@ class TestHaFlatAddCompute(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot("ha_flat_add_compute")
+        self.env.d_env.make_snapshot(
+            "ha_flat_add_compute",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["thread_4", "ha"])
@@ -328,7 +338,10 @@ class TestHaFlatScalability(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'sanity'])
 
-        self.env.make_snapshot("ha_flat_scalability")
+        self.env.d_env.make_snapshot(
+            "ha_flat_scalability",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["known_issues", "ha"])
@@ -391,4 +404,7 @@ class BackupRestoreHa(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot("backup_restore_ha_flat")
+        self.env.d_env.make_snapshot(
+            "backup_restore_ha_flat",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)

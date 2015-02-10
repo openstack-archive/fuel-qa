@@ -27,6 +27,7 @@ from fuelweb_test.helpers import os_actions
 from fuelweb_test import logger
 from fuelweb_test import settings as hlp_data
 from fuelweb_test.tests import base_test_case as base_test_data
+from fuelweb_test import settings
 
 
 @test(groups=["upgrade"])
@@ -123,7 +124,10 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         create_diagnostic_snapshot(
             self.env, "pass", "upgrade_ha_one_controller_env")
 
-        self.env.make_snapshot("upgrade_ha_one_controller")
+        self.env.d_env.make_snapshot(
+            "upgrade_ha_one_controller",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(groups=["upgrade_ha_one_controller_delete_node"])
     @log_snapshot_on_error
@@ -180,7 +184,10 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             timeout=10 * 60
         )
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
-        self.env.make_snapshot("upgrade_ha_one_controller_delete_node")
+        self.env.d_env.make_snapshot(
+            "upgrade_ha_one_controller_delete_node",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(groups=["upgrade_ha"])
     @log_snapshot_on_error
@@ -270,7 +277,10 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
-        self.env.make_snapshot("upgrade_ha")
+        self.env.d_env.make_snapshot(
+            "upgrade_ha",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(groups=["deploy_ha_after_upgrade"])
     @log_snapshot_on_error
@@ -353,7 +363,10 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             self.check_upgraded_kernel(self.env.get_admin_remote(), remote)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
-        self.env.make_snapshot("deploy_ha_after_upgrade")
+        self.env.d_env.make_snapshot(
+            "deploy_ha_after_upgrade",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
 
 @test(groups=["rollback"])
@@ -413,7 +426,10 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("rollback_automatic_ha")
+        self.env.d_env.make_snapshot(
+            "rollback_automatic_ha",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
 
     @test(groups=["rollback_automatic_ha_one_controller"])
     @log_snapshot_on_error
@@ -479,4 +495,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             checkers.check_kernel(kernel, expected_kernel)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("rollback_automatic_ha_one_controller")
+        self.env.d_env.make_snapshot(
+            "rollback_automatic_ha_one_controller",
+            is_make=settings.MAKE_SNAPSHOT,
+            fuel_stats_check=settings.FUEL_STATS_CHECK)
