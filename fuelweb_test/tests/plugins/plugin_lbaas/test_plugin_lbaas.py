@@ -247,7 +247,7 @@ class LbaasPlugin(TestBasic):
         self.fuel_web.stop_reset_env_wait(cluster_id)
 
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.get_virtual_environment().nodes().slaves[:2])
+            self.env.d_env.nodes().slaves[:2])
 
         self.fuel_web.update_nodes(
             cluster_id,
