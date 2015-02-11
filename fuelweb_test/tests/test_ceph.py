@@ -113,7 +113,7 @@ class CephCompactWithCinder(TestBasic):
 
         self.env.revert_snapshot("ready")
         self.env.bootstrap_nodes(
-            self.env.get_virtual_environment().nodes().slaves[:4])
+            self.env.d_env.nodes().slaves[:4])
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -188,7 +188,7 @@ class CephHA(TestBasic):
 
         self.env.revert_snapshot("ready")
         self.env.bootstrap_nodes(
-            self.env.get_virtual_environment().nodes().slaves[:6])
+            self.env.d_env.nodes().slaves[:6])
         csettings = {}
         if settings.NEUTRON_ENABLE:
             csettings = {
@@ -570,8 +570,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
 
             logger.info("Warm-restart nodes")
             self.fuel_web.warm_restart_nodes(
-                [self.fuel_web.environment.get_virtual_environment().
-                    get_node(name=node)])
+                [self.fuel_web.environment.d_env.get_node(name=node)])
 
             logger.info("Get partitions for {node} once again".format(
                 node=node
@@ -591,8 +590,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
 
             logger.info("Cold-restart nodes")
             self.fuel_web.cold_restart_nodes(
-                [self.fuel_web.environment.get_virtual_environment().
-                    get_node(name=node)])
+                [self.fuel_web.environment.d_env.get_node(name=node)])
 
             after_reboot_partitions = [checkers.get_ceph_partitions(
                 self.env.get_ssh_to_remote_by_name(node),

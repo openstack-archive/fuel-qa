@@ -73,8 +73,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 
         # For upgrade jobs *from* 6.1, change snapshot name to
         # "ceph_ha_one_controller_compact"
-        if not self.env.get_virtual_environment().has_snapshot(
-                'ceph_multinode_compact'):
+        if not self.env.d_env.has_snapshot('ceph_multinode_compact'):
             raise SkipTest()
         self.env.revert_snapshot("ceph_multinode_compact")
 
@@ -101,11 +100,11 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                                            hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.get_virtual_environment().nodes().slaves[:3])
+            self.env.d_env.nodes().slaves[:3])
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nailgun_upgrade_migration()
         self.env.bootstrap_nodes(
-            self.env.get_virtual_environment().nodes().slaves[3:4])
+            self.env.d_env.nodes().slaves[3:4])
         self.fuel_web.update_nodes(
             cluster_id, {'slave-04': ['compute']},
             True, False
@@ -144,8 +143,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 
         # For upgrade jobs *from* 6.1, change snapshot name to
         # "ceph_ha_one_controller_compact"
-        if not self.env.get_virtual_environment().has_snapshot(
-                'ceph_multinode_compact'):
+        if not self.env.d_env.has_snapshot('ceph_multinode_compact'):
             raise SkipTest()
         self.env.revert_snapshot("ceph_multinode_compact")
 
@@ -169,7 +167,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                                            hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.get_virtual_environment().nodes().slaves[:3])
+            self.env.d_env.nodes().slaves[:3])
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nailgun_upgrade_migration()
         nailgun_nodes = self.fuel_web.update_nodes(
@@ -199,8 +197,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             7. Run OSTF
 
         """
-        if not self.env.get_virtual_environment().has_snapshot(
-                'deploy_neutron_gre_ha'):
+        if not self.env.d_env.has_snapshot('deploy_neutron_gre_ha'):
             raise SkipTest()
 
         self.env.revert_snapshot("deploy_neutron_gre_ha")
@@ -227,7 +224,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.get_virtual_environment().nodes().slaves[:5])
+            self.env.d_env.nodes().slaves[:5])
         self.fuel_web.assert_nailgun_upgrade_migration()
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
@@ -237,7 +234,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         added_release = [id for id in available_releases_after
                          if id not in available_releases_before]
         self.env.bootstrap_nodes(
-            self.env.get_virtual_environment().nodes().slaves[5:7])
+            self.env.d_env.nodes().slaves[5:7])
         data = {
             'tenant': 'novaSimpleVlan',
             'user': 'novaSimpleVlan',
@@ -291,8 +288,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 
         # For upgrade jobs *from* 6.1, change snapshot name to
         # "ceph_ha_one_controller_compact"
-        if not self.env.get_virtual_environment().has_snapshot(
-                'ceph_multinode_compact'):
+        if not self.env.d_env.has_snapshot('ceph_multinode_compact'):
             raise SkipTest()
         self.env.revert_snapshot("ceph_multinode_compact")
 
@@ -318,7 +314,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                                            hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.get_virtual_environment().nodes().slaves[:3])
+            self.env.d_env.nodes().slaves[:3])
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nailgun_upgrade_migration()
         available_releases_after = self.fuel_web.get_releases_list_for_os(
@@ -326,7 +322,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         added_release = [id for id in available_releases_after
                          if id not in available_releases_before]
         self.env.bootstrap_nodes(
-            self.env.get_virtual_environment().nodes().slaves[3:9])
+            self.env.d_env.nodes().slaves[3:9])
         segment_type = 'vlan'
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -377,8 +373,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             7. Run OSTF
 
         """
-        if not self.env.get_virtual_environment().has_snapshot(
-                'deploy_neutron_gre_ha'):
+        if not self.env.d_env.has_snapshot('deploy_neutron_gre_ha'):
             raise SkipTest()
 
         self.env.revert_snapshot("deploy_neutron_gre_ha")
@@ -402,16 +397,15 @@ class RollbackFuelMaster(base_test_data.TestBasic):
                                            hlp_data.UPGRADE_FUEL_FROM)
         logger.debug("all containers are ok")
         _wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
-            self.env.get_virtual_environment(
-            ).nodes().slaves[0]), timeout=120)
+            self.env.d_env.nodes().slaves[0]), timeout=120)
         logger.debug("all services are up now")
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.get_virtual_environment().nodes().slaves[:5])
+            self.env.d_env.nodes().slaves[:5])
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_FROM)
 
         self.env.bootstrap_nodes(
-            self.env.get_virtual_environment().nodes().slaves[5:6])
+            self.env.d_env.nodes().slaves[5:6])
         self.fuel_web.update_nodes(
             cluster_id, {'slave-06': ['cinder']},
             True, False
@@ -436,8 +430,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             7. Run OSTF
 
         """
-        if not self.env.get_virtual_environment().has_snapshot(
-                'deploy_neutron_gre'):
+        if not self.env.d_env.has_snapshot('deploy_neutron_gre'):
             raise SkipTest()
 
         self.env.revert_snapshot("deploy_neutron_gre")
@@ -466,16 +459,15 @@ class RollbackFuelMaster(base_test_data.TestBasic):
                                            hlp_data.UPGRADE_FUEL_FROM)
         logger.debug("all containers are ok")
         _wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
-            self.env.get_virtual_environment(
-            ).nodes().slaves[0]), timeout=120)
+            self.env.d_env.nodes().slaves[0]), timeout=120)
         logger.debug("all services are up now")
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.get_virtual_environment().nodes().slaves[:3])
+            self.env.d_env.nodes().slaves[:3])
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_FROM)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
         self.env.bootstrap_nodes(
-            self.env.get_virtual_environment().nodes().slaves[3:4])
+            self.env.d_env.nodes().slaves[3:4])
         self.fuel_web.update_nodes(
             cluster_id, {'slave-04': ['cinder']},
             True, False
