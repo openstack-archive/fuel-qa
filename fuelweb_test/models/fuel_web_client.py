@@ -496,7 +496,7 @@ class FuelWebClient(object):
     def get_nailgun_node_roles(self, nodes_dict):
         nailgun_node_roles = []
         for node_name in nodes_dict:
-            slave = self.environment.get_virtual_environment().\
+            slave = self.environment.d_env.\
                 get_node(name=node_name)
             node = self.get_nailgun_node_by_devops_node(slave)
             nailgun_node_roles.append((node, nodes_dict[node_name]))
@@ -506,7 +506,7 @@ class FuelWebClient(object):
     def get_nailgun_node_by_name(self, node_name):
         logger.info('Get nailgun node by %s devops node', node_name)
         return self.get_nailgun_node_by_devops_node(
-            self.environment.get_virtual_environment().get_node(
+            self.environment.d_env.get_node(
                 name=node_name))
 
     @logwrap
@@ -557,7 +557,7 @@ class FuelWebClient(object):
     @logwrap
     def get_ssh_for_node(self, node_name):
         ip = self.get_nailgun_node_by_devops_node(
-            self.environment.get_virtual_environment().
+            self.environment.d_env.
             get_node(name=node_name))['ip']
         return self.environment.get_ssh_to_remote(ip)
 
@@ -672,7 +672,7 @@ class FuelWebClient(object):
                 node_roles = nodes_dict[node_name]
                 node_group = 'default'
 
-            devops_node = self.environment.get_virtual_environment().\
+            devops_node = self.environment.d_env.\
                 get_node(name=node_name)
 
             wait(lambda:
@@ -954,11 +954,10 @@ class FuelWebClient(object):
         if jbond:
             if net_config['name'] == 'public':
                 net_config['gateway'] = \
-                    self.environment.get_virtual_environment().router('public')
+                    self.environment.d_env.router('public')
         else:
             net_config['vlan_start'] = None
-            net_config['gateway'] = self.environment.get_virtual_environment(
-            ).router(net_name)
+            net_config['gateway'] = self.environment.d_env.router(net_name)
 
     def get_range(self, ip_network, ip_range=0):
         net = list(IPNetwork(ip_network))
@@ -1398,13 +1397,13 @@ class FuelWebClient(object):
         fqdn = re.search(service_name, ret).group(1)
         logger.debug('fdqn is {0}'.format(fqdn))
         devops_node = self.find_devops_node_by_nailgun_fqdn(
-            fqdn, self.environment.get_virtual_environment().nodes().slaves)
+            fqdn, self.environment.d_env.nodes().slaves)
         return devops_node
 
     @logwrap
     def get_fqdn_by_hostname(self, hostname):
-        if self.environment.get_virtual_environment().domain not in hostname:
-            hostname += "." + self.environment.get_virtual_environment().domain
+        if self.environment.d_env.domain not in hostname:
+            hostname += "." + self.environment.d_env.domain
             return hostname
         else:
             return hostname
