@@ -75,7 +75,7 @@ class EnvironmentAction(base_test_case.TestBasic):
         self.fuel_web.deploy_task_wait(cluster_id=cluster_id, progress=10)
         self.fuel_web.stop_deployment_wait(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.get_virtual_environment().nodes().slaves[:2])
+            self.env.d_env.nodes().slaves[:2])
 
         self.fuel_web.update_nodes(
             cluster_id,
@@ -137,7 +137,7 @@ class EnvironmentAction(base_test_case.TestBasic):
             logger.debug(traceback.format_exc())
 
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.get_virtual_environment().nodes().slaves[:2])
+            self.env.d_env.nodes().slaves[:2])
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -199,7 +199,7 @@ class EnvironmentAction(base_test_case.TestBasic):
 
         self.fuel_web.stop_reset_env_wait(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.get_virtual_environment().nodes().slaves[:2])
+            self.env.d_env.nodes().slaves[:2])
 
         self.fuel_web.update_vlan_network_fixed(
             cluster_id, amount=8, network_size=32)
@@ -259,7 +259,7 @@ class EnvironmentActionOnHA(base_test_case.TestBasic):
         self.fuel_web.deploy_cluster_wait_progress(cluster_id, progress=10)
         self.fuel_web.stop_deployment_wait(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.get_virtual_environment().nodes().slaves[:3])
+            self.env.d_env.nodes().slaves[:3])
         self.fuel_web.update_nodes(
             cluster_id,
             {
