@@ -30,9 +30,9 @@ from fuelweb_test import logwrap
 def configure_second_admin_cobbler(self):
     dhcp_template = '/etc/cobbler/dnsmasq.template'
     remote = self.get_admin_remote()
-    main_admin_ip = str(self.nodes().admin.
+    main_admin_ip = str(self.d_env.nodes().admin.
                         get_ip_address_by_network_name(self.admin_net))
-    second_admin_ip = str(self.nodes().admin.
+    second_admin_ip = str(self.d_env.nodes().admin.
                           get_ip_address_by_network_name(self.admin_net2))
     second_admin_network = self._get_network(self.admin_net2).split('/')[0]
     second_admin_netmask = self.get_net_mask(self.admin_net2)
