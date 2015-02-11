@@ -40,7 +40,7 @@ class TestBasic(object):
 
         """
         if snapshot_name:
-            if self.env.get_virtual_environment().has_snapshot(snapshot_name):
+            if self.env.d_env.has_snapshot(snapshot_name):
                 raise SkipTest()
 
 
@@ -98,8 +98,7 @@ class SetupEnvironment(TestBasic):
         """
         self.check_run("ready_with_1_slaves")
         self.env.revert_snapshot("ready")
-        self.env.bootstrap_nodes(self.env.get_virtual_environment(
-        ).nodes().slaves[:1])
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:1])
         self.env.make_snapshot("ready_with_1_slaves", is_make=True)
 
     @test(depends_on=[prepare_release],
@@ -117,8 +116,7 @@ class SetupEnvironment(TestBasic):
         """
         self.check_run("ready_with_3_slaves")
         self.env.revert_snapshot("ready")
-        self.env.bootstrap_nodes(self.env.get_virtual_environment(
-        ).nodes().slaves[:3])
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:3])
         self.env.make_snapshot("ready_with_3_slaves", is_make=True)
 
     @test(depends_on=[prepare_release],
@@ -136,8 +134,7 @@ class SetupEnvironment(TestBasic):
         """
         self.check_run("ready_with_5_slaves")
         self.env.revert_snapshot("ready")
-        self.env.bootstrap_nodes(self.env.get_virtual_environment(
-        ).nodes().slaves[:5])
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:5])
         self.env.make_snapshot("ready_with_5_slaves", is_make=True)
 
     @test(depends_on=[prepare_release],
@@ -155,6 +152,5 @@ class SetupEnvironment(TestBasic):
         """
         self.check_run("ready_with_9_slaves")
         self.env.revert_snapshot("ready")
-        self.env.bootstrap_nodes(self.env.get_virtual_environment(
-        ).nodes().slaves[:9])
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:9])
         self.env.make_snapshot("ready_with_9_slaves", is_make=True)

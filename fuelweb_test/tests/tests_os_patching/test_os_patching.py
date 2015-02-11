@@ -93,7 +93,7 @@ class TestPatch(TestBasic):
         # Get cluster nodes
         nailgun_nodes = [
             self.fuel_web.get_nailgun_node_by_devops_node(node)
-            for node in self.env.nodes().slaves
+            for node in self.env.d_env.nodes().slaves
             if self.fuel_web.get_nailgun_node_by_devops_node(node)]
 
         # Try to remember installed nova-packages before update
@@ -310,7 +310,7 @@ class TestPatch(TestBasic):
         # Get cluster nodes
         nailgun_nodes = [
             self.fuel_web.get_nailgun_node_by_devops_node(node)
-            for node in self.env.nodes().slaves
+            for node in self.env.d_env.nodes().slaves
             if self.fuel_web.get_nailgun_node_by_devops_node(node)]
 
         logger.info("Find next nodes {0}".format(nailgun_nodes))

@@ -193,7 +193,7 @@ class NeutronGreHa(TestBasic):
 
         self.fuel_web.verify_network(cluster_id)
         devops_node = self.fuel_web.get_nailgun_primary_controller(
-            self.env.get_virtual_environment().nodes().slaves[0])
+            self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
         remote = self.env.get_ssh_to_remote_by_name(devops_node.name)
         checkers.check_swift_ring(remote)
@@ -322,7 +322,7 @@ class NeutronVlanHa(TestBasic):
 
         self.fuel_web.verify_network(cluster_id)
         devops_node = self.fuel_web.get_nailgun_primary_controller(
-            self.env.get_virtual_environment().nodes().slaves[0])
+            self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
         remote = self.env.get_ssh_to_remote_by_name(devops_node.name)
         checkers.check_swift_ring(remote)
