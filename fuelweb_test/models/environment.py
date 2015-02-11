@@ -206,7 +206,7 @@ class EnvironmentModel(object):
             self.get_virtual_environment().suspend(verbose=False)
             time.sleep(10)
             self.get_virtual_environment().snapshot(snapshot_name, force=True)
-            revert_info(snapshot_name, description)
+            revert_info(snapshot_name, self.get_admin_node_ip(), description)
         if settings.FUEL_STATS_CHECK:
             self.get_virtual_environment().resume()
             try:
