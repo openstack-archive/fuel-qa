@@ -75,11 +75,19 @@ class Common(object):
                      format(local_path, image))
         with open('{0}/{1}'.format(local_path, image)) as fimage:
             LOGGER.debug('Try to open image')
-            self.glance.images.create(
+            image = self.glance.images.create(
                 name=image_name, is_public=True,
                 disk_format='qcow2',
                 container_format='bare', data=fimage,
                 properties=properties)
+        return image
+
+    def update_image(self, image, **kwargs):
+        self.glance.images.update(image.id, **kwargs)
+        return self.glance.images.get(image.id)
+
+    def delete_image(self, image_id):
+        return self.glance.images.delete(image_id)
 
     def create_key(self, key_name):
         LOGGER.debug('Try to create key {0}'.format(key_name))
@@ -139,3 +147,10 @@ class Common(object):
     def delete_instance(self, server):
         LOGGER.debug('Try to create instance')
         self.nova.servers.delete(server)
+
+    def create_flavor(self, name, ram, vcpus, disk, flavorid="auto"):
+        flavor = self.nova.flavors.create(name, ram, vcpus, disk, flavorid)
+        return flavor
+
+    def delete_flavor(self, flavor):
+        return self.nova.flavors.delete(flavor)

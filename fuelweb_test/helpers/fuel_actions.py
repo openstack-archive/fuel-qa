@@ -101,6 +101,7 @@ class NailgunActions(BaseActions):
                 r'https?://\{collector_server\}',
                 '{0}://{1}:{2}'.format(protocol, host, port),
                 p.split(': ')[1])[1:-1]
+        parameters['OSWL_COLLECT_PERIOD'] = 0
         logger.debug('Custom collector parameters: {0}'.format(parameters))
         self.update_nailgun_settings_once(parameters)
         if ssl:
@@ -125,6 +126,14 @@ class NailgunActions(BaseActions):
             logger.error(("Fuel stats were sent with errors! Check its log"
                          "s in {0} for details.").format(log_file))
             raise
+
+    def force_oswl_collect(self, resources=['vm', 'flavor', 'volume',
+                                            'image', 'tenant',
+                                            'keystone_user']):
+        for resource in resources:
+            cmd = 'supervisorctl restart oswl' \
+                  '_{0}_collectord'.format(resource)
+            self.execute_in_container(cmd, exit_code=0)
 
 
 class PostgresActions(BaseActions):
