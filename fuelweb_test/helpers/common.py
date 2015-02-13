@@ -139,3 +139,7 @@ class Common(object):
     def delete_instance(self, server):
         LOGGER.debug('Try to create instance')
         self.nova.servers.delete(server)
+
+    def create_flavor(self, name, ram, vcpus, disk, flavorid="auto"):
+        flavor = self.nova.flavors.create(name, ram, vcpus, disk, flavorid)
+        return flavor
