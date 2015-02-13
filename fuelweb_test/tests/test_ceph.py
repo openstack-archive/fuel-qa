@@ -14,6 +14,7 @@
 
 import proboscis
 import time
+from os.path import expanduser
 
 from proboscis.asserts import assert_true, assert_false
 from proboscis import SkipTest
@@ -164,7 +165,7 @@ class CephCompactWithCinder(TestBasic):
 class CephHA(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_release],
-          groups=["ceph_ha", "ha_nova_ceph", "ha_neutron_ceph"])
+          groups=["ceph_ha"])
     @log_snapshot_on_error
     def ceph_ha(self):
         """Deploy ceph with cinder in HA mode
@@ -175,7 +176,6 @@ class CephHA(TestBasic):
             3. Add 1 node with ceph OSD roles
             4. Add 2 nodes with compute and ceph OSD roles
             5. Deploy the cluster
-            6. Check ceph status
 
         Duration 90m
         Snapshot ceph_ha
@@ -223,13 +223,84 @@ class CephHA(TestBasic):
         )
         # Depoy cluster
         self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.env.make_snapshot("ceph_ha", is_make=True)
+
+    @test(depends_on=[ceph_ha],
+          groups=["ha_nova_ceph", "ha_neutron_ceph", "check_ceph_ha"])
+    @log_snapshot_on_error
+    def check_ceph_ha(self):
+        """Check ceph with cinder in HA mode
+
+        Scenario:
+            1. Revert snapshot with ceph cluster in HA mode
+            2. Check ceph status
+
+        Snapshot check_ceph_ha
+
+        """
+        self.env.revert_snapshot("ceph_ha")
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
         self.fuel_web.check_ceph_status(cluster_id)
 
         # Run ostf
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("ceph_ha", is_make=True)
+    @test(depends_on=[ceph_ha],
+          groups=["openstack_stat"])
+    @log_snapshot_on_error
+    def check_openstack_stat(self):
+        """Check openstack statistic on fuel and collector side
 
+        Scenario:
+            1. Revert ceph_ha env
+            2. Create all openstack resources that are collected
+            3. Check that all info was collected on fuel side
+            4. Check that info was sent to collector
+            5. Check that info is properly saved on collector side
+
+        Snapshot check_openstack_stat
+
+        """
+        self.env.revert_snapshot("ceph_ha")
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id), 'cephHA', 'cephHA', 'cephHA')
+
+        #create instance
+        if settings.NEUTRON_ENABLE:
+            instance = os_conn.create_instance(neutron_network=True)
+        else:
+            instance = os_conn.create_instance()
+
+        #create flavor
+        flavor = os_conn.create_flavor('openstackstat', 1024, 1, 1)
+
+        #create volume
+        volume = os_conn.create_volume()
+
+        #create image
+        os_conn.image_import(
+            settings.SERVTEST_LOCAL_PATH,
+            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE,
+            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_NAME,
+            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_META)
+
+        #create tenant and user
+        os_conn.create_user_and_tenant('openstack_tenant', 'openstack_user',
+                                       'qwerty')
+
+        self.env.nailgun_actions.force_oswl_collect(resources=['vm', 'flavor'])
+        self.env.nailgun_actions.force_fuel_stats_sending()
+        remote_collector = self.env.d_env.get_ssh_to_remote_by_key(
+            settings.FUEL_STATS_HOST,
+            '{0}/.ssh/id_rsa'.format(expanduser("~")))
+        master_uid = self.env.get_masternode_uuid()
+        checkers.check_oswl_stat(self.env.postgres_actions, remote_collector,
+                                 master_uid,
+                                 resources=['vm', 'flavor'])
+        
 
 @test(groups=["thread_4", "ceph"])
 class CephRadosGW(TestBasic):

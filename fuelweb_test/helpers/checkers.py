@@ -587,6 +587,9 @@ def execute_query_on_collector(collector_remote, master_uuid, query,
         query = "{0} where master_node_uid = '{1}';".format(query, master_uuid)
     cmd = 'PGPASSWORD={0} psql -qt -h 127.0.0.1 -U {1} -d {2} -c "{3}"'.\
         format(collector_db_pass, collector_db_user, collector_db, query)
+    logger.debug('query collector is {0}'.format(cmd))
+    logger.debug('it returns {0}'.format(collector_remote.execute(cmd)['stdout']))
+    logger.debug('whole output is {0}'.format(collector_remote.execute(cmd)))
     return ''.join(collector_remote.execute(cmd)['stdout']).strip()
 
 
@@ -868,3 +871,73 @@ def check_swift_ring(remote):
         assert_true(float(balance) == 0,
                     "swift ring builder {1} is not ok,"
                     " balance is {0}".format(balance, ring))
+
+
+def check_oswl_stat(postgres_actions, remote_collector, master_uid,
+                             resources=['vm', 'flavor', 'volume', 'image',
+                                        'tenant', 'keystone_user']):
+    logger.info("Checking that all resources were added...")
+    expected_resource_count = {
+        'vm': 0,
+        'flavor': 6,
+        'volume': 0,
+        'image': 0,
+        'tenant': 2,
+        'user': 1
+    }
+    for resource in resources:
+        q = "select resource_data from oswl_stats where" \
+            " resource_type = '\"'\"'{0}'\"'\"';".format(resource)
+        q2 = "select resource_data from oswl_stats where" \
+            " id=1;".format(resource)
+        resource_data = json.loads(postgres_actions.run_query('nailgun', q))
+        
+        logger.debug('db return {0}'.format(resource_data))
+        assert_true(len(resource_data['added']) > 0,
+                    "resource {0} wasn't added,"
+                    " added is {1}".format(resource, resource_data['added']))
+        assert_true(len(resource_data['current']) >
+                    expected_resource_count[resource],
+                    "number of resources in current {0},"
+                    " expected is {1}".format(len(resource_data['current']),
+                                              expected_resource_count[
+                                                  resource]))
+
+    #check stat on collector side
+    sent_logs_count = postgres_actions.count_sent_action_logs(
+        table='oswl_stats')
+    logger.info("Number of logs that were sent to collector: {}".format(
+        sent_logs_count
+    ))
+    logs = execute_query_on_collector(remote_collector, master_uuid=None,
+                                      query=
+                                      "select count(*) from oswl_stats where"
+                                      " master_node_uid='{0}'".format(
+                                          master_uid))
+    logger.info("Number of logs that were saved"
+                " on collector: {}".format(logs))
+    assert_true(sent_logs_count <= int(logs),
+                ("Count of action logs in Nailgun DB ({0}) is bigger than on "
+                 "Collector ({1}), but should be less or equal").format(
+                    sent_logs_count, logs))
+    for resource in resources:
+        q = "select resource_data from oswl_stats where" \
+            " resource_type='{0}'" \
+            " and master_node_uid='{1}'".format(resource, master_uid)
+        resource_data = json.loads(execute_query_on_collector(
+            remote_collector, master_uuid=None, query=q))
+
+        logger.debug('resource data on'
+                     ' collector is {0}'.format(resource_data))
+        
+        assert_true(len(resource_data['added']) > 0,
+                    "resource {0} wasn't added,"
+                    " added is {1}".format(resource, resource_data['added']))
+        assert_true(len(resource_data['current']) >
+                    expected_resource_count[resource],
+                    "number of resources in current {0},"
+                    " expected is {1}".format(len(resource_data['current']),
+                                              expected_resource_count[
+                                                  resource]))
+
+    logger.info("OSWL stats were properly saved to collector's database.")
