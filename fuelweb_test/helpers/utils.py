@@ -92,7 +92,7 @@ def pull_out_logs_via_ssh(admin_remote, name,
 @logwrap
 def store_astute_yaml(env):
     func_name = get_test_method_name()
-    for node in env.nodes().slaves:
+    for node in env.get_virtual_environment().nodes().slaves:
         nailgun_node = env.fuel_web.get_nailgun_node_by_devops_node(node)
         if node.driver.node_active(node) and nailgun_node['roles']:
             try:
