@@ -34,37 +34,16 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["thread_5", "ha", "neutron_failover", "ha_nova_destructive",
-              "ha_neutron_destructive"])
 class TestHaFailover(TestBasic):
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_ha"])
-    @log_snapshot_on_error
-    def deploy_ha(self):
-        """Prepare cluster in HA mode for failover tests
+    def deploy_ha(self, network='neutron'):
 
-        Scenario:
-            1. Create cluster
-            2. Add 3 nodes with controller roles
-            3. Add 2 nodes with compute roles
-            4. Deploy the cluster
-            8. Make snapshot
-
-        Duration 70m
-        Snapshot deploy_ha
-
-        """
-        try:
-            self.check_run("deploy_ha")
-        except SkipTest:
-            return
-
+        self.check_run(self.snapshot_name)
         self.env.revert_snapshot("ready_with_5_slaves")
 
         settings = None
 
-        if NEUTRON_ENABLE:
+        if network == 'neutron':
             settings = {
                 "net_provider": 'neutron',
                 "net_segment_type": NEUTRON_SEGMENT_TYPE
@@ -101,29 +80,16 @@ class TestHaFailover(TestBasic):
         # on the admin node has over before creating a snapshot.
         time.sleep(5 * 60)
 
-        self.env.make_snapshot("deploy_ha", is_make=True)
+        self.env.make_snapshot(self.snapshot_name, is_make=True)
 
-    @test(depends_on_groups=['deploy_ha'],
-          groups=["ha_destroy_controllers"])
-    @log_snapshot_on_error
     def ha_destroy_controllers(self):
-        """Destroy two controllers and check pacemaker status is correct
-
-        Scenario:
-            1. Destroy first controller
-            2. Check pacemaker status
-            3. Run OSTF
-            4. Revert environment
-            5. Destroy second controller
-            6. Check pacemaker status
-            7. Run OSTF
-
-        Duration 35m
-        """
+        if not self.env.get_virtual_environment().has_snapshot(
+                self.snapshot_name):
+            raise SkipTest()
 
         for devops_node in self.env.get_virtual_environment(
         ).nodes().slaves[:2]:
-            self.env.revert_snapshot("deploy_ha")
+            self.env.revert_snapshot(self.snapshot_name)
             devops_node.suspend(False)
             self.fuel_web.assert_pacemaker(
                 self.env.get_virtual_environment().nodes(
@@ -151,27 +117,14 @@ class TestHaFailover(TestBasic):
                 test_sets=['ha', 'smoke', 'sanity'],
                 should_fail=1)
 
-    @test(depends_on_groups=['deploy_ha'],
-          groups=["ha_disconnect_controllers"])
-    @log_snapshot_on_error
     def ha_disconnect_controllers(self):
-        """Disconnect controllers and check pacemaker status is correct
-
-        Scenario:
-            1. Disconnect eth3 of the first controller
-            2. Check pacemaker status
-            3. Revert environment
-            4. Disconnect eth3 of the second controller
-            5. Check pacemaker status
-            6. Run OSTF
-
-        Duration 45m
-
-        """
+        if not self.env.get_virtual_environment().has_snapshot(
+                self.snapshot_name):
+            raise SkipTest()
 
         for devops_node in self.env.get_virtual_environment(
         ).nodes().slaves[:2]:
-            self.env.revert_snapshot("deploy_ha")
+            self.env.revert_snapshot(self.snapshot_name)
 
             remote = self.fuel_web.get_ssh_for_node(devops_node.name)
             remote.check_call('ifconfig eth2 down')
@@ -192,26 +145,14 @@ class TestHaFailover(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-    @test(depends_on_groups=['deploy_ha'],
-          groups=["ha_delete_vips"])
-    @log_snapshot_on_error
     def ha_delete_vips(self):
-        """Delete all management and public VIPs on all controller nodes.
-        Verify that they are restored.
-        Verify total amount of secondary IPs. Should be 2:
-        management and public
+        if not self.env.get_virtual_environment().has_snapshot(
+                self.snapshot_name):
+            raise SkipTest()
 
-        Scenario:
-            1. Delete all secondary VIP
-            2. Wait while it is being restored
-            3. Verify it is restored
-            4. Run OSTF
-
-        Duration 30m
-
-        """
-        logger.debug('Start reverting of deploy_ha snapshot')
-        self.env.revert_snapshot("deploy_ha")
+        logger.debug('Start reverting of {0} snapshot'
+                     .format(self.snapshot_name))
+        self.env.revert_snapshot(self.snapshot_name)
         cluster_id = \
             self.fuel_web.client.get_cluster_id(self.__class__.__name__)
         logger.debug('Cluster id is {0}'.format(cluster_id))
@@ -282,28 +223,17 @@ class TestHaFailover(TestBasic):
                     test_sets=['ha', 'smoke', 'sanity'],
                     should_fail=1)
                 # Revert initial state. VIP could be moved to other controller
-                self.env.revert_snapshot("deploy_ha")
+                self.env.revert_snapshot(self.snapshot_name)
         assert_equal(ips_amount, 2,
                      'Not all VIPs were found: expect - 2, found {0}'.format(
                          ips_amount))
 
-    @test(depends_on_groups=['deploy_ha'],
-          groups=["ha_mysql_termination"])
-    @log_snapshot_on_error
     def ha_mysql_termination(self):
-        """Terminate mysql on all controllers one by one
+        if not self.env.get_virtual_environment().has_snapshot(
+                self.snapshot_name):
+            raise SkipTest()
 
-        Scenario:
-            1. Terminate mysql
-            2. Wait while it is being restarted
-            3. Verify it is restarted
-            4. Go to another controller
-            5. Run OSTF
-
-        Duration 15m
-
-        """
-        self.env.revert_snapshot("deploy_ha")
+        self.env.revert_snapshot(self.snapshot_name)
 
         for devops_node in self.env.get_virtual_environment(
         ).nodes().slaves[:3]:
@@ -329,23 +259,12 @@ class TestHaFailover(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-    @test(depends_on_groups=['deploy_ha'],
-          groups=["ha_haproxy_termination"])
-    @log_snapshot_on_error
     def ha_haproxy_termination(self):
-        """Terminate haproxy on all controllers one by one
+        if not self.env.get_virtual_environment().has_snapshot(
+                self.snapshot_name):
+            raise SkipTest()
 
-        Scenario:
-            1. Terminate haproxy
-            2. Wait while it is being restarted
-            3. Verify it is restarted
-            4. Go to another controller
-            5. Run OSTF
-
-        Duration 25m
-
-        """
-        self.env.revert_snapshot("deploy_ha")
+        self.env.revert_snapshot(self.snapshot_name)
 
         for devops_node in self.env.get_virtual_environment(
         ).nodes().slaves[:3]:
@@ -365,21 +284,12 @@ class TestHaFailover(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-    @test(depends_on_groups=['deploy_ha'],
-          groups=["ha_pacemaker_configuration"])
-    @log_snapshot_on_error
     def ha_pacemaker_configuration(self):
-        """Verify resources are configured
+        if not self.env.get_virtual_environment().has_snapshot(
+                self.snapshot_name):
+            raise SkipTest()
 
-        Scenario:
-            1. SSH to controller node
-            2. Verify resources are configured
-            3. Go to next controller
-
-        Duration 15m
-
-        """
-        self.env.revert_snapshot("deploy_ha")
+        self.env.revert_snapshot(self.snapshot_name)
 
         devops_ctrls = self.env.get_virtual_environment(
         ).nodes().slaves[:3]
@@ -414,26 +324,12 @@ class TestHaFailover(TestBasic):
                 " \[ {0} \]".format(pcm_nodes), config), None,
                 'haproxy is not configured right')
 
-    @test(enabled=False, depends_on_groups=['deploy_ha'],
-          groups=["ha_pacemaker_restart_heat_engine"])
-    @log_snapshot_on_error
     def ha_pacemaker_restart_heat_engine(self):
-        """Verify heat engine service is restarted
-         by pacemaker on amqp connection loss
+        if not self.env.get_virtual_environment().has_snapshot(
+                self.snapshot_name):
+            raise SkipTest()
 
-        Scenario:
-            1. SSH to any controller
-            2. Check heat-engine status
-            3. Block heat-engine amqp connections
-            4. Check heat-engine was stopped on current controller
-            5. Unblock heat-engine amqp connections
-            6. Check heat-engine process is running with new pid
-            7. Check amqp connection re-appears for heat-engine
-
-        Duration 15m
-
-        """
-        self.env.revert_snapshot("deploy_ha")
+        self.env.revert_snapshot(self.snapshot_name)
         ocf_success = "DEBUG: OpenStack Orchestration Engine" \
                       " (heat-engine) monitor succeeded"
         ocf_error = "ERROR: OpenStack Heat Engine is not connected to the" \
@@ -490,22 +386,12 @@ class TestHaFailover(TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-    @test(depends_on_groups=['deploy_ha'],
-          groups=["ha_check_monit"])
-    @log_snapshot_on_error
     def ha_check_monit(self):
-        """Verify monit restarted nova
-         service if it was killed
+        if not self.env.get_virtual_environment().has_snapshot(
+                self.snapshot_name):
+            raise SkipTest()
 
-        Scenario:
-            1. SSH to every compute node in cluster
-            2. Kill nova-compute service
-            3. Check service is restarted by monit
-
-        Duration 25m
-
-        """
-        self.env.revert_snapshot("deploy_ha")
+        self.env.revert_snapshot(self.snapshot_name)
         for devops_node in self.env.get_virtual_environment(
         ).nodes().slaves[3:5]:
             remote = self.fuel_web.get_ssh_for_node(devops_node.name)
@@ -519,3 +405,344 @@ class TestHaFailover(TestBasic):
                 "grep \"nova-compute.*trying to restart\" "
                 "/var/log/monit.log")['stdout']) > 0,
                 'Nova service was not restarted')
+
+
+@test(groups=["ha", "neutron_failover", "ha_neutron_destructive"])
+class TestHaNeutronFailover(TestHaFailover):
+    snapshot_name = "prepare_ha_neutron"
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["deploy_ha", "prepare_ha_neutron"])
+    @log_snapshot_on_error
+    def prepare_ha_neutron(self):
+        """Prepare cluster in HA/Neutron mode for failover tests
+
+        Scenario:
+            1. Create cluster
+            2. Add 3 nodes with controller roles
+            3. Add 2 nodes with compute roles
+            4. Deploy the cluster
+            8. Make snapshot
+
+        Duration 70m
+        Snapshot prepare_ha_neutron
+        """
+        if not NEUTRON_ENABLE:
+            logger.info("'NEUTRON_ENABLE' is not set, skip the test.")
+            raise SkipTest()
+        super(self.__class__, self).deploy_ha(network='neutron')
+
+    @test(depends_on_groups=['prepare_ha_neutron'],
+          groups=["ha_neutron_destroy_controllers", "ha_destroy_controllers"])
+    @log_snapshot_on_error
+    def ha_neutron_destroy_controllers(self):
+        """Destroy two controllers and check pacemaker status is correct
+
+        Scenario:
+            1. Destroy first controller
+            2. Check pacemaker status
+            3. Run OSTF
+            4. Revert environment
+            5. Destroy second controller
+            6. Check pacemaker status
+            7. Run OSTF
+
+        Duration 35m
+        """
+        super(self.__class__, self).ha_destroy_controllers()
+
+    @test(depends_on_groups=['prepare_ha_neutron'],
+          groups=["ha_neutron_disconnect_controllers",
+                  "ha_disconnect_controllers"])
+    @log_snapshot_on_error
+    def ha_neutron_disconnect_controllers(self):
+        """Disconnect controllers and check pacemaker status is correct
+
+        Scenario:
+            1. Disconnect eth3 of the first controller
+            2. Check pacemaker status
+            3. Revert environment
+            4. Disconnect eth3 of the second controller
+            5. Check pacemaker status
+            6. Run OSTF
+
+        Duration 45m
+        """
+        super(self.__class__, self).ha_disconnect_controllers()
+
+
+    @test(depends_on_groups=['prepare_ha_neutron'],
+          groups=["ha_neutron_delete_vips", "ha_delete_vips"])
+    @log_snapshot_on_error
+    def ha_neutron_delete_vips(self):
+        """Delete all management and public VIPs on all controller nodes.
+        Verify that they are restored.
+        Verify total amount of secondary IPs. Should be 2:
+        management and public
+
+        Scenario:
+            1. Delete all secondary VIP
+            2. Wait while it is being restored
+            3. Verify it is restored
+            4. Run OSTF
+
+        Duration 30m
+        """
+        super(self.__class__, self).ha_delete_vips()
+
+    @test(depends_on_groups=['prepare_ha_neutron'],
+          groups=["ha_neutron_mysql_termination", "ha_mysql_termination"])
+    @log_snapshot_on_error
+    def ha_neutron_mysql_termination(self):
+        """Terminate mysql on all controllers one by one
+
+        Scenario:
+            1. Terminate mysql
+            2. Wait while it is being restarted
+            3. Verify it is restarted
+            4. Go to another controller
+            5. Run OSTF
+
+        Duration 15m
+        """
+        super(self.__class__, self).ha_mysql_termination()
+
+    @test(depends_on_groups=['prepare_ha_neutron'],
+          groups=["ha_neutron_haproxy_termination", "ha_haproxy_termination"])
+    @log_snapshot_on_error
+    def ha_neutron_haproxy_termination(self):
+        """Terminate haproxy on all controllers one by one
+
+        Scenario:
+            1. Terminate haproxy
+            2. Wait while it is being restarted
+            3. Verify it is restarted
+            4. Go to another controller
+            5. Run OSTF
+
+        Duration 25m
+        """
+        super(self.__class__, self).ha_haproxy_termination()
+
+    @test(depends_on_groups=['prepare_ha_neutron'],
+          groups=["ha_neutron_pacemaker_configuration",
+                  "ha_pacemaker_configuration"])
+    @log_snapshot_on_error
+    def ha_neutron_pacemaker_configuration(self):
+        """Verify resources are configured
+
+        Scenario:
+            1. SSH to controller node
+            2. Verify resources are configured
+            3. Go to next controller
+
+        Duration 15m
+        """
+        super(self.__class__, self).ha_pacemaker_configuration()
+
+    @test(enabled=False, depends_on_groups=['prepare_ha_neutron'],
+          groups=["ha_neutron_pacemaker_restart_heat_engine",
+                  "ha_pacemaker_restart_heat_engine"])
+    @log_snapshot_on_error
+    def ha_neutron_pacemaker_restart_heat_engine(self):
+        """Verify heat engine service is restarted
+         by pacemaker on amqp connection loss
+
+        Scenario:
+            1. SSH to any controller
+            2. Check heat-engine status
+            3. Block heat-engine amqp connections
+            4. Check heat-engine was stopped on current controller
+            5. Unblock heat-engine amqp connections
+            6. Check heat-engine process is running with new pid
+            7. Check amqp connection re-appears for heat-engine
+
+        Duration 15m
+        """
+        super(self.__class__, self).ha_pacemaker_restart_heat_engine()
+
+    @test(depends_on_groups=['prepare_ha_neutron'],
+          groups=["ha_neutron_check_monit", "ha_check_monit"])
+    @log_snapshot_on_error
+    def ha_neutron_check_monit(self):
+        """Verify monit restarted nova
+         service if it was killed
+
+        Scenario:
+            1. SSH to every compute node in cluster
+            2. Kill nova-compute service
+            3. Check service is restarted by monit
+
+        Duration 25m
+        """
+        super(self.__class__, self).ha_check_monit()
+
+
+@test(groups=["thread_5", "ha", "ha_nova_destructive"])
+class TestHaNovaFailover(TestHaFailover):
+    snapshot_name = "prepare_ha_nova"
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["prepare_ha_nova"])
+    @log_snapshot_on_error
+    def prepare_ha_nova(self):
+        """Prepare cluster in HA/Nova mode for failover tests
+
+        Scenario:
+            1. Create cluster
+            2. Add 3 nodes with controller roles
+            3. Add 2 nodes with compute roles
+            4. Deploy the cluster
+            8. Make snapshot
+
+        Duration 70m
+        Snapshot prepare_ha_nova
+        """
+        if NEUTRON_ENABLE:
+            logger.info("'NEUTRON_ENABLE' is set, skip the test.")
+            raise SkipTest()
+        super(self.__class__, self).deploy_ha(network='nova_network')
+
+    @test(depends_on_groups=['prepare_ha_nova'],
+          groups=["ha_nova_destroy_controllers"])
+    @log_snapshot_on_error
+    def ha_nova_destroy_controllers(self):
+        """Destroy two controllers and check pacemaker status is correct
+
+        Scenario:
+            1. Destroy first controller
+            2. Check pacemaker status
+            3. Run OSTF
+            4. Revert environment
+            5. Destroy second controller
+            6. Check pacemaker status
+            7. Run OSTF
+
+        Duration 35m
+        """
+        super(self.__class__, self).ha_destroy_controllers()
+
+    @test(depends_on_groups=['prepare_ha_nova'],
+          groups=["ha_nova_disconnect_controllers"])
+    @log_snapshot_on_error
+    def ha_nova_disconnect_controllers(self):
+        """Disconnect controllers and check pacemaker status is correct
+
+        Scenario:
+            1. Disconnect eth3 of the first controller
+            2. Check pacemaker status
+            3. Revert environment
+            4. Disconnect eth3 of the second controller
+            5. Check pacemaker status
+            6. Run OSTF
+
+        Duration 45m
+        """
+        super(self.__class__, self).ha_disconnect_controllers()
+
+
+    @test(depends_on_groups=['prepare_ha_nova'],
+          groups=["ha_nova_delete_vips"])
+    @log_snapshot_on_error
+    def ha_nova_delete_vips(self):
+        """Delete all management and public VIPs on all controller nodes.
+        Verify that they are restored.
+        Verify total amount of secondary IPs. Should be 2:
+        management and public
+
+        Scenario:
+            1. Delete all secondary VIP
+            2. Wait while it is being restored
+            3. Verify it is restored
+            4. Run OSTF
+
+        Duration 30m
+        """
+        super(self.__class__, self).ha_delete_vips()
+
+    @test(depends_on_groups=['prepare_ha_nova'],
+          groups=["ha_nova_mysql_termination"])
+    @log_snapshot_on_error
+    def ha_nova_mysql_termination(self):
+        """Terminate mysql on all controllers one by one
+
+        Scenario:
+            1. Terminate mysql
+            2. Wait while it is being restarted
+            3. Verify it is restarted
+            4. Go to another controller
+            5. Run OSTF
+
+        Duration 15m
+        """
+        super(self.__class__, self).ha_mysql_termination()
+
+    @test(depends_on_groups=['prepare_ha_nova'],
+          groups=["ha_nova_haproxy_termination"])
+    @log_snapshot_on_error
+    def ha_nova_haproxy_termination(self):
+        """Terminate haproxy on all controllers one by one
+
+        Scenario:
+            1. Terminate haproxy
+            2. Wait while it is being restarted
+            3. Verify it is restarted
+            4. Go to another controller
+            5. Run OSTF
+
+        Duration 25m
+        """
+        super(self.__class__, self).ha_haproxy_termination()
+
+    @test(depends_on_groups=['prepare_ha_nova'],
+          groups=["ha_nova_pacemaker_configuration"])
+    @log_snapshot_on_error
+    def ha_nova_pacemaker_configuration(self):
+        """Verify resources are configured
+
+        Scenario:
+            1. SSH to controller node
+            2. Verify resources are configured
+            3. Go to next controller
+
+        Duration 15m
+        """
+        super(self.__class__, self).ha_pacemaker_configuration()
+
+    @test(enabled=False, depends_on_groups=['prepare_ha_nova'],
+          groups=["ha_nova_pacemaker_restart_heat_engine"])
+    @log_snapshot_on_error
+    def ha_nova_pacemaker_restart_heat_engine(self):
+        """Verify heat engine service is restarted
+         by pacemaker on amqp connection loss
+
+        Scenario:
+            1. SSH to any controller
+            2. Check heat-engine status
+            3. Block heat-engine amqp connections
+            4. Check heat-engine was stopped on current controller
+            5. Unblock heat-engine amqp connections
+            6. Check heat-engine process is running with new pid
+            7. Check amqp connection re-appears for heat-engine
+
+        Duration 15m
+        """
+        super(self.__class__, self).ha_pacemaker_restart_heat_engine()
+
+    @test(depends_on_groups=['prepare_ha_nova'],
+          groups=["ha_nova_check_monit"])
+    @log_snapshot_on_error
+    def ha_nova_check_monit(self):
+        """Verify monit restarted nova
+         service if it was killed
+
+        Scenario:
+            1. SSH to every compute node in cluster
+            2. Kill nova-compute service
+            3. Check service is restarted by monit
+
+        Duration 25m
+        """
+        super(self.__class__, self).ha_check_monit()
+
+

@@ -31,7 +31,8 @@ class TestBasic(object):
         self.env = EnvironmentModel()
         self.fuel_web = self.env.fuel_web
 
-    def check_run(self, snapshot_name):
+    def check_run(self, snapshot_name,
+                  skip_if_exists=True, skip_if_absent=False):
         """Checks if run of current test is required.
 
         :param snapshot_name: Name of the snapshot the function should make
