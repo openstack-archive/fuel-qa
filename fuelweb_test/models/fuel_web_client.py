@@ -1372,6 +1372,36 @@ class FuelWebClient(object):
                          'Cidr after deployment is not equal'
                          ' to cidr by default')
 
+    @logwrap
+    def check_fixed_nova_splited_cidr(self, cluster_id, remote):
+        nailgun_cidr = self.client.get_networks(
+            cluster_id).get("networking_parameters").get(
+            "fixed_networks_cidr")
+        logger.debug('nailgun cidr is {0}'.format(nailgun_cidr))
+        slave_cidr = remote.execute(". openrc; nova net-list | "
+                                    "awk '$4 {print $6}'")['stdout']
+        logger.debug('slave cidr is {0}'.format(slave_cidr))
+
+        subnets_list = slave_cidr[1:]
+        logger.debug('slave list is {0}'.format(subnets_list))
+        # Check that all subnets are included in nailgun_cidr
+        for sub in subnets_list:
+            logger.debug("Check that subnet {0} is part of network {1}"
+                         .format(sub.strip(), nailgun_cidr))
+            assert_true(IPNetwork(sub) in IPNetwork(nailgun_cidr),
+                        'Something goes wrong. Seems subnet {0} is out '
+                        'of net {1}'.format(sub, nailgun_cidr))
+        # Check that any subnet doesn't include any other subnet
+        subnets_pairs = [(subnets_list[x1].strip(), subnets_list[x2].strip())
+                         for x1 in range(len(subnets_list))
+                         for x2 in range(len(subnets_list))
+                         if x1 != x2]
+        for p in subnets_pairs:
+            logger.debug("Check if the subnet {0} is part of the subnet {1}"
+                         .format(p[0], p[1]))
+            assert_true(IPNetwork(p[0]) not in IPNetwork(p[1]),
+                        "Subnet {0} is part of subnet {1}".format(p[0], p[1]))
+
     def update_internal_network(self, cluster_id, cidr, gateway=None):
         net_provider = self.client.get_cluster(cluster_id)['net_provider']
         net_config = self.client.get_networks(cluster_id)
