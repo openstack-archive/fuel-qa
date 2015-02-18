@@ -1343,11 +1343,20 @@ class FuelWebClient(object):
         assert_true(build_number, 'api version returned empty data')
 
     @logwrap
+    def get_nailgun_cidr_nova(self, cluster_id):
+        return self.client.get_networks(cluster_id).\
+            get("networking_parameters").get("fixed_networks_cidr")
+
+    @logwrap
+    def get_nailgun_cidr_neutron(self, cluster_id):
+        return self.client.get_networks(cluster_id).\
+            get("networking_parameters").get("internal_cidr")
+
+    @logwrap
     def check_fixed_network_cidr(self, cluster_id, remote):
         net_provider = self.client.get_cluster(cluster_id)['net_provider']
         if net_provider == 'nova_network':
-            nailgun_cidr = self.client.get_networks(cluster_id).\
-                get("networking_parameters").get("fixed_networks_cidr")
+            nailgun_cidr = self.get_nailgun_cidr_nova(cluster_id)
             logger.debug('nailgun cidr is {0}'.format(nailgun_cidr))
             slave_cidr = ''.join(remote.execute(". openrc; nova net-list"
                                                 " | awk '$4 =="
@@ -1359,8 +1368,7 @@ class FuelWebClient(object):
                          'Cidr after deployment is not equal'
                          ' to cidr by default')
         elif net_provider == 'neutron':
-            nailgun_cidr = self.client.get_networks(cluster_id).\
-                get("networking_parameters").get("internal_cidr")
+            nailgun_cidr = self.get_nailgun_cidr_neutron(cluster_id)
             logger.debug('nailgun cidr is {0}'.format(nailgun_cidr))
             slave_cidr = ''.join(remote.execute(". openrc; neutron"
                                                 " subnet-list | awk '$4 =="
@@ -1371,6 +1379,33 @@ class FuelWebClient(object):
             assert_equal(nailgun_cidr, slave_cidr.rstrip(),
                          'Cidr after deployment is not equal'
                          ' to cidr by default')
+
+    @logwrap
+    def check_fixed_nova_splited_cidr(self, os_conn, nailgun_cidr, remote):
+        logger.debug('Nailgun cidr for nova: {0}'.format(nailgun_cidr))
+
+        subnets_list = [net.cidr for net in os_conn.get_nova_network_list()]
+        logger.debug('Nova subnets list: {0}'.format(subnets_list))
+
+        # Check that all subnets are included in nailgun_cidr
+        for subnet in subnets_list:
+            logger.debug("Check that subnet {0} is part of network {1}"
+                         .format(subnet, nailgun_cidr))
+            assert_true(IPNetwork(subnet) in IPNetwork(nailgun_cidr),
+                        'Something goes wrong. Seems subnet {0} is out '
+                        'of net {1}'.format(subnet, nailgun_cidr))
+
+        # Check that any subnet doesn't include any other subnet
+        subnets_pairs = [(subnets_list[x1], subnets_list[x2])
+                         for x1 in range(len(subnets_list))
+                         for x2 in range(len(subnets_list))
+                         if x1 != x2]
+        for subnet1, subnet2 in subnets_pairs:
+            logger.debug("Check if the subnet {0} is part of the subnet {1}"
+                         .format(subnet1, subnet2))
+            assert_true(IPNetwork(subnet1) not in IPNetwork(subnet2),
+                        "Subnet {0} is part of subnet {1}"
+                        .format(subnet1, subnet2))
 
     def update_internal_network(self, cluster_id, cidr, gateway=None):
         net_provider = self.client.get_cluster(cluster_id)['net_provider']
