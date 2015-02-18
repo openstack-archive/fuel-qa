@@ -87,6 +87,10 @@ class TestHaVLAN(TestBasic):
         self.fuel_web.assert_cluster_ready(
             os_conn, smiles_count=16, networks_count=8, timeout=300)
 
+        self.fuel_web.check_fixed_nova_splited_cidr(
+            os_conn, self.fuel_web.get_nailgun_cidr_nova(cluster_id),
+            self.env.get_ssh_to_remote_by_name('slave-01'))
+
         self.fuel_web.verify_network(cluster_id)
         devops_node = self.fuel_web.get_nailgun_primary_controller(
             self.env.get_virtual_environment().nodes().slaves[0])
