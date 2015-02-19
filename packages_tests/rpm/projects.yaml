@@ -1,0 +1,9 @@
+projects:
+  - name: neutron
+    packages:
+      - openstack-neutron
+      - python-neutron
+  - name: nova
+    packages:
+      - nova-api
+      - nova-compute
