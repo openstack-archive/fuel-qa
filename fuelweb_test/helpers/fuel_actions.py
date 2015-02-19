@@ -280,3 +280,20 @@ class FuelPluginBuilder(object):
 
         with open(new_file, 'w') as f_new:
             yaml.dump(origin_yaml, f_new)
+
+
+class CobblerActions(BaseActions):
+    def __init__(self, admin_remote):
+        super(CobblerActions, self).__init__(admin_remote)
+        self.container = 'cobbler'
+
+    def add_dns_upstream_server(self, dns_server_ip):
+        self.execute_in_container(
+            command="sed '$anameserver {0}' -i /etc/dnsmasq.upstream".format(
+                dns_server_ip),
+            exit_code=0,
+        )
+        self.execute_in_container(
+            command='service dnsmasq restart',
+            exit_code=0
+        )
