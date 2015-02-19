@@ -1,0 +1,19 @@
+system_tests:
+  type: deployment
+  components:
+   - neutron
+integration_tests.conf:
+  authors:
+    skolekonov@mirantis.com:
+      lines_added: 1
+      name: Sergey Kolekonov
+  link: https://review.fuel-infra.org/gitweb?p=openstack-build/neutron-build.git;a=blob;f=tests/integration_tests.conf;hb=ea24413f348c84c3de410d6c78b4f3d59c2cfd0d
+runtests.sh:
+  authors:
+    skolekonov@mirantis.com:
+      lines_added: 344
+      name: Sergey Kolekonov
+    sotpuschennikov@mirantis.com:
+      lines_added: 1
+      name: Sergey Otpuschennikov
+  link: https://review.fuel-infra.org/gitweb?p=openstack-build/neutron-build.git;a=blob;f=tests/runtests.sh;hb=ea24413f348c84c3de410d6c78b4f3d59c2cfd0d
