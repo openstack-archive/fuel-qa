@@ -364,3 +364,13 @@ STORE_ASTUTE_YAML = os.environ.get('STORE_ASTUTE_YAML', 'false') == 'true'
 
 EXTERNAL_DNS = os.environ.get('EXTERNAL_DNS', '208.67.220.220')
 EXTERNAL_NTP = os.environ.get('EXTERNAL_NTP', 'ua.pool.ntp.org')
+
+PATCHING_PKGS_TOOLS = ['yum-utils', 'dpkg', 'dpkg-devel', 'createrepo']
+PATCHING_WEB_DIR = os.environ.get("PATCHING_WEB_DIR", "/var/www/nailgun/")
+PATCHING_MIRROR = os.environ.get("PATCHING_MIRROR", CUSTOM_PKGS_MIRROR)
+PATCHING_BUG_ID = os.environ.get("PATCHING_BUG_ID", None)
+PATCHING_PKGS_TESTS = os.environ.get("PATCHING_PKGS_TESTS", "./packages_tests")
+PATCHING_APPLY_TESTS = os.environ.get("PATCHING_APPLY_TESTS",
+                                      "./patching_tests")
+PATCHING_PKGS = os.environ.get("PATCHING_PKGS", None)
+PATCHING_SNAPSHOT = os.environ.get("PATCHING_SNAPSHOT", None)
