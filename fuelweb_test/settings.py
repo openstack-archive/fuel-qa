@@ -369,3 +369,12 @@ EXTERNAL_NTP = os.environ.get('EXTERNAL_NTP', 'ua.pool.ntp.org')
 TIMESTAT_PATH_YAML = os.environ.get(
     'TIMESTAT_PATH_YAML', os.path.join(
         LOGS_DIR, 'timestat_{}.yaml'.format(time.strftime("%Y%m%d"))))
+PATCHING_WEB_DIR = os.environ.get("PATCHING_WEB_DIR", "/var/www/nailgun/")
+PATCHING_MIRRORS = os.environ.get("PATCHING_MIRRORS",
+                                  CUSTOM_PKGS_MIRROR).split()
+PATCHING_BUG_ID = os.environ.get("PATCHING_BUG_ID", None)
+PATCHING_PKGS_TESTS = os.environ.get("PATCHING_PKGS_TESTS", "./packages_tests")
+PATCHING_APPLY_TESTS = os.environ.get("PATCHING_APPLY_TESTS",
+                                      "./patching_tests")
+PATCHING_PKGS = os.environ.get("PATCHING_PKGS", None)
+PATCHING_SNAPSHOT = os.environ.get("PATCHING_SNAPSHOT", None)
