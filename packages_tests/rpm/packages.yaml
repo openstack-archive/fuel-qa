@@ -1,0 +1,24 @@
+provisioning:
+  projects:
+    - name: linux
+      packages:
+        - bash
+deployment:
+  projects:
+    - name: neutron
+      packages:
+        - openstack-neutron
+        - python-neutron
+    - name: nova
+      packages:
+        - nova-api
+        - nova-compute
+master:
+  projects:
+    - name: nailgun
+      packages:
+        - nailgun
+bootstrap:
+  projects:
+    - name: nailgun-agent
+      packages: nailgun-agent
