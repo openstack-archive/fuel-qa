@@ -125,3 +125,20 @@ class PostgresActions(BaseActions):
     def count_sent_action_logs(self, table='action_logs'):
         q = "select count(id) from {0} where is_sent = True".format(table)
         return int(self.run_query('nailgun', q))
+
+
+class CobblerActions(BaseActions):
+    def __init__(self, admin_remote):
+        super(CobblerActions, self).__init__(admin_remote)
+        self.container = 'cobbler'
+
+    def add_dns_upstream_server(self, dsn_server_ip):
+        self.execute_in_container(
+            command="sed '$anameserver {0}' -i /etc/dnsmasq.upstream".format(
+                dsn_server_ip),
+            exit_code=0,
+        )
+        self.execute_in_container(
+            command='service dnsmasq reload',
+            exit_code=0
+        )
