@@ -1045,11 +1045,11 @@ class FuelWebClient(object):
 
         return ip_ranges, expected_ips
 
-    def warm_restart_nodes(self, devops_nodes):
-        logger.info('Reboot (warm restart) nodes %s',
+    def warm_shutdown_nodes(self, devops_nodes):
+        logger.info('Shutting down (warm) nodes %s',
                     [n.name for n in devops_nodes])
         for node in devops_nodes:
-            logger.info('Shutdown node %s', node.name)
+            logger.debug('Shutdown node %s', node.name)
             remote = self.get_ssh_for_node(node.name)
             remote.check_call('/sbin/shutdown -Ph now')
 
@@ -1058,14 +1058,23 @@ class FuelWebClient(object):
             wait(
                 lambda: not self.get_nailgun_node_by_devops_node(node)[
                     'online'], timeout=60 * 10)
-            logger.info('Start %s node', node.name)
             node.destroy()
-            node.create()
 
+    def warm_start_nodes(self, devops_nodes):
+        logger.info('Starting nodes %s', [n.name for n in devops_nodes])
+        for node in devops_nodes:
+            node.create()
         for node in devops_nodes:
             wait(
                 lambda: self.get_nailgun_node_by_devops_node(node)['online'],
                 timeout=60 * 10)
+            logger.debug('Node {0} became online.'.format(node.name))
+
+    def warm_restart_nodes(self, devops_nodes):
+        logger.info('Reboot (warm restart) nodes %s',
+                    [n.name for n in devops_nodes])
+        self.warm_shutdown_nodes(devops_nodes)
+        self.warm_start_nodes(devops_nodes)
 
     def cold_restart_nodes(self, devops_nodes):
         logger.info('Cold restart nodes %s',
