@@ -68,22 +68,22 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude):
 
 def upload_tests_descriptions(testrail_project, section_id, tests):
     existing_cases = [case['custom_test_group'] for case in
-                      testrail_project.get_cases(TestRailSettings.test_suite,
+                      testrail_project.get_cases(TestRailSettings.tests_suite,
                                                  section_id=section_id)]
     for test_case in tests:
         if test_case['custom_test_group'] in existing_cases:
             logger.debug('Skipping uploading "{0}" test case because it '
                          'already exists in "{1}" tests section.'.format(
                              test_case['custom_test_group'],
-                             TestRailSettings.test_suite))
+                             TestRailSettings.tests_suite))
             continue
 
         logger.debug('Uploading test "{0}" to TestRail project "{1}", '
                      'suite "{2}", section "{3}"'.format(
                          test_case["custom_test_group"],
                          TestRailSettings.project,
-                         TestRailSettings.test_suite,
-                         TestRailSettings.test_section))
+                         TestRailSettings.tests_suite,
+                         TestRailSettings.tests_section))
         testrail_project.add_case(section_id=section_id, case=test_case)
 
 
@@ -96,8 +96,8 @@ def main():
     )
 
     testrail_section = testrail_project.get_section_by_name(
-        suite=TestRailSettings.test_suite,
-        section_name=TestRailSettings.test_section
+        suite=TestRailSettings.tests_suite,
+        section_name=TestRailSettings.tests_section
     )
 
     testrail_milestone = testrail_project.get_milestone(
@@ -105,8 +105,8 @@ def main():
 
     tests_descriptions = get_tests_descriptions(
         milestone_id=testrail_milestone,
-        tests_include=TestRailSettings.test_include,
-        tests_exclude=TestRailSettings.test_exclude
+        tests_include=TestRailSettings.tests_include,
+        tests_exclude=TestRailSettings.tests_exclude
     )
 
     upload_tests_descriptions(testrail_project=testrail_project,

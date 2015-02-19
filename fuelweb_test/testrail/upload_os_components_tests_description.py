@@ -128,8 +128,8 @@ def main():
 
     tests_descriptions = get_tests_descriptions(
         milestone_id=testrail_milestone,
-        tests_include=TestRailSettings.test_include,
-        tests_exclude=TestRailSettings.test_exclude
+        tests_include=TestRailSettings.tests_include,
+        tests_exclude=TestRailSettings.tests_exclude
     )
 
     upload_tests_descriptions(testrail_project=testrail_project,
