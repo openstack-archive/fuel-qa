@@ -30,12 +30,12 @@ class TestRailProject():
                 return project
         return None
 
-    def test_run_struct(self, name, suite, milestone_id, description,
+    def test_run_struct(self, name, suite_id, milestone_id, description,
                         config_ids, include_all=True, assignedto=None,
                         case_ids=None):
         struct = {
             'name': name,
-            'suite_id': self.get_suite(suite)['id'],
+            'suite_id': suite_id,
             'milestone_id': milestone_id,
             'description': description,
             'include_all': include_all,
@@ -52,15 +52,25 @@ class TestRailProject():
         users_uri = 'get_users'
         return self.client.send_get(uri=users_uri)
 
-    def get_user(self, name):
+    def get_user(self, user_id):
+        user_uri = 'get_user/{user_id}'.format(user_id=user_id)
+        return self.client.send_get(uri=user_uri)
+
+    def get_user_by_name(self, name):
         for user in self.get_users():
             if user['name'] == name:
-                return user
+                return self.get_user(user_id=user['id'])
 
     def get_configs(self):
         configs_uri = 'get_configs/{project_id}'.format(
             project_id=self.project['id'])
         return self.client.send_get(configs_uri)
+
+    def get_config(self, config_id):
+        for configs in self.get_configs():
+            for config in configs['configs']:
+                if config['id'] == int(config_id):
+                    return config
 
     def get_config_by_name(self, name):
         for config in self.get_configs():
@@ -72,24 +82,34 @@ class TestRailProject():
             project_id=self.project['id'])
         return self.client.send_get(uri=milestones_uri)
 
-    def get_milestone(self, name):
+    def get_milestone(self, milestone_id):
+        milestone_uri = 'get_milestone/{milestone_id}'.format(
+            milestone_id=milestone_id)
+        return self.client.send_get(uri=milestone_uri)
+
+    def get_milestone_by_name(self, name):
         for milestone in self.get_milestones():
             if milestone['name'] == name:
-                return milestone
+                return self.get_milestone(milestone_id=milestone['id'])
 
     def get_suites(self):
         suites_uri = 'get_suites/{project_id}'.format(
             project_id=self.project['id'])
         return self.client.send_get(uri=suites_uri)
 
-    def get_suite(self, name):
+    def get_suite(self, suite_id):
+        suite_uri = 'get_suite/{suite_id}'.format(suite_id=suite_id)
+        return self.client.send_get(uri=suite_uri)
+
+    def get_suite_by_name(self, name):
         for suite in self.get_suites():
             if suite['name'] == name:
-                return suite
+                return self.get_suite(suite_id=suite['id'])
 
-    def get_sections(self, suite):
+    def get_sections(self, suite_id):
         sections_uri = 'get_sections/{project_id}&suite_id={suite_id}'.format(
-            project_id=self.project['id'], suite_id=self.get_suite(suite)['id']
+            project_id=self.project['id'],
+            suite_id=suite_id
         )
         return self.client.send_get(sections_uri)
 
@@ -97,14 +117,15 @@ class TestRailProject():
         section_uri = 'get_section/{section_id}'.format(section_id=section_id)
         return self.client.send_get(section_uri)
 
-    def get_section_by_name(self, suite, section_name):
-        for section in self.get_sections(suite=suite):
+    def get_section_by_name(self, suite_id, section_name):
+        for section in self.get_sections(suite_id=suite_id):
             if section['name'] == section_name:
-                return section
+                return self.get_section(section_id=section['id'])
 
-    def get_cases(self, suite, section_id=None):
+    def get_cases(self, suite_id, section_id=None):
         cases_uri = 'get_cases/{project_id}&suite_id={suite_id}'.format(
-            project_id=self.project['id'], suite_id=self.get_suite(suite)['id']
+            project_id=self.project['id'],
+            suite_id=suite_id
         )
         if section_id:
             cases_uri = '{0}&section_id={section_id}'.format(
@@ -112,15 +133,19 @@ class TestRailProject():
             )
         return self.client.send_get(cases_uri)
 
-    def get_case_by_name(self, suite, name, cases=None):
-        for case in cases or self.get_cases(suite):
-            if case['title'] == name:
-                return case
+    def get_case(self, case_id):
+        case_uri = 'get_case/{case_id}'.format(case_id=case_id)
+        return self.client.send_get(case_uri)
 
-    def get_case_by_group(self, suite, group, cases=None):
-        for case in cases or self.get_cases(suite):
+    def get_case_by_name(self, suite_id, name, cases=None):
+        for case in cases or self.get_cases(suite_id):
+            if case['title'] == name:
+                return self.get_case(case_id=case['id'])
+
+    def get_case_by_group(self, suite_id, group, cases=None):
+        for case in cases or self.get_cases(suite_id):
             if case['custom_test_group'] == group:
-                return case
+                return self.get_case(case_id=case['id'])
 
     def add_case(self, section_id, case):
         add_case_uri = 'add_case/{section_id}'.format(section_id=section_id)
@@ -131,37 +156,39 @@ class TestRailProject():
             project_id=self.project['id'])
         return self.client.send_get(plans_uri)
 
-    def get_plans_by_milestone(self, milestone_id):
-        plans = self.get_plans()
-        return [plan for plan in plans if plan['milestone_id'] == milestone_id]
-
     def get_plan(self, plan_id):
         plan_uri = 'get_plan/{plan_id}'.format(plan_id=plan_id)
         return self.client.send_get(plan_uri)
+
+    def get_plans_by_milestone(self, milestone_id):
+        plans = self.get_plans()
+        return [self.get_plan(plan['id']) for plan in plans
+                if plan['milestone_id'] == milestone_id]
 
     def get_plan_by_name(self, name):
         for plan in self.get_plans():
             if plan['name'] == name:
                 return self.get_plan(plan['id'])
 
-    def add_plan(self, name, description, milestone_id, entires):
+    def add_plan(self, name, description, milestone_id, entries):
         add_plan_uri = 'add_plan/{project_id}'.format(
             project_id=self.project['id'])
         new_plan = {
             'name': name,
             'description': description,
             'milestone_id': milestone_id,
-            'entries': entires
+            'entries': entries
         }
         return self.client.send_post(add_plan_uri, new_plan)
 
-    def add_plan_entry(self, plan_id, suite_id, runs):
+    def add_plan_entry(self, plan_id, suite_id, config_ids, runs):
         add_plan_entry_uri = 'add_plan_entry/{plan_id}'.format(plan_id=plan_id)
         new_entry = {
             'suite_id': suite_id,
-            'runs': runs
+            'config_ids': config_ids,
+            'runs': runs,
         }
-        self.client.send_post(add_plan_entry_uri, new_entry)
+        return self.client.send_post(add_plan_entry_uri, new_entry)
 
     def delete_plan(self, plan_id):
         delete_plan_uri = 'delete_plan/{plan_id}'.format(plan_id=plan_id)
@@ -172,18 +199,23 @@ class TestRailProject():
             project_id=self.project['id'])
         return self.client.send_get(uri=runs_uri)
 
-    def get_run(self, name):
+    def get_run(self, run_id):
+        run_uri = 'get_run/{run_id}'.format(run_id=run_id)
+        return self.client.send_get(uri=run_uri)
+
+    def get_run_by_name(self, name):
         for run in self.get_runs():
             if run['name'] == name:
-                return run
+                return self.get_run(run_id=run['id'])
 
-    def get_previous_runs(self, milestone_id, config_id):
+    def get_previous_runs(self, milestone_id, suite_id, config_id):
         all_runs = []
         for plan in self.get_plans_by_milestone(milestone_id=milestone_id):
-            run_ids = [run for run in
-                       self.get_plan(plan_id=plan['id'])['entries'][0]['runs']
-                       if config_id in run['config_ids']]
-            all_runs.extend(run_ids)
+            for entry in plan['entries']:
+                if entry['suite_id'] == suite_id:
+                    run_ids = [run for run in entry['runs'] if
+                               config_id in run['config_ids']]
+                    all_runs.extend(run_ids)
         return all_runs
 
     def add_run(self, new_run):
@@ -248,12 +280,12 @@ class TestRailProject():
     def get_test_by_name(self, run_id, name):
         for test in self.get_tests(run_id):
             if test['title'] == name:
-                return test
+                return self.get_test(test_id=test['id'])
 
     def get_test_by_group(self, run_id, group, tests=None):
         for test in tests or self.get_tests(run_id):
             if test['custom_test_group'] == group:
-                return test
+                return self.get_test(test_id=test['id'])
 
     def get_results_for_test(self, test_id, run_results=None):
         if run_results:
@@ -290,14 +322,14 @@ class TestRailProject():
         }
         return self.client.send_post(add_results_test_uri, new_results)
 
-    def add_results_for_cases(self, run_id, tests_suite, tests_results):
+    def add_results_for_cases(self, run_id, suite_id, tests_results):
         add_results_test_uri = 'add_results_for_cases/{run_id}'.format(
             run_id=run_id)
         new_results = {'results': []}
-        tests_cases = self.get_cases(tests_suite)
+        tests_cases = self.get_cases(suite_id)
         for results in tests_results:
             new_result = {
-                'case_id': self.get_case_by_group(suite=tests_suite,
+                'case_id': self.get_case_by_group(suite_id=suite_id,
                                                   group=results.group,
                                                   cases=tests_cases)['id'],
                 'status_id': self.get_status(results.status)['id'],
