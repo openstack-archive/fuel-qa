@@ -24,6 +24,8 @@ logger.addHandler(ch)
 
 JENKINS = {
     'url': os.environ.get('JENKINS_URL', 'http://localhost/'),
+    'version_artifact': os.environ.get('JENKINS_VERSION_ARTIFACT',
+                                       'version.yaml.txt')
 }
 
 

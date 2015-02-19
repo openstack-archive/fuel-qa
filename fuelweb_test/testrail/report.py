@@ -16,13 +16,17 @@
 
 import functools
 import re
+import yaml
 
 from logging import DEBUG
 from optparse import OptionParser
 
 from builds import Build
+from builds import get_build_artifact
+from builds import get_downstream_builds_from_html
 from builds import get_jobs_for_view
 from launchpad_client import LaunchpadBug
+from settings import JENKINS
 from settings import LaunchpadSettings
 from settings import logger
 from settings import TestRailSettings
@@ -88,6 +92,9 @@ def retry(count=3):
 
 
 def get_downstream_builds(jenkins_build_data, status=None):
+    if 'subBuilds' not in jenkins_build_data.keys():
+        return get_downstream_builds_from_html(jenkins_build_data['url'])
+
     return [{'name': b['jobName'], 'number': b['buildNumber'],
              'result': b['result']} for b in jenkins_build_data['subBuilds']]
 
@@ -99,6 +106,13 @@ def get_version(jenkins_build_data):
                 p['name'].lower() == 'magnet_link'][0]
     return (re.search(r'.*\bfuel-(\d+\.\d+)-(\d+)-.*', iso_link).group(1),
             int(re.search(r'.*\bfuel-(\d+\.\d+)-(\d+)-.*', iso_link).group(2)))
+
+
+def get_version_from_artifacts(jenkins_build_data):
+    version = yaml.load(get_build_artifact(
+        url=jenkins_build_data['url'], artifact=JENKINS['version_artifact']))
+    return version['VERSION']['release'], \
+        int(version['VERSION']['build_number'])
 
 
 @retry(count=3)
@@ -201,8 +215,8 @@ def get_existing_bug_link(previous_results):
 def main():
 
     parser = OptionParser(
-        description="Publish results of Jenkins build to TestRail."
-        " See conf.py for configuration."
+        description="Publish results of system tests from Jenkins build to "
+                    "TestRail. See settings.py for configuration."
     )
     parser.add_option('-j', '--job-name', dest='job_name', default=None,
                       help='Jenkins swarm runner job name')
@@ -243,14 +257,26 @@ def main():
                      " or Jenkins view with system tests jobs (-w). Exiting..")
         return
 
-    milestone, iso_number = get_version(runner_build.build_data)
+    if any([artifact for artifact in runner_build.build_data['artifacts']
+            if artifact['fileName'] == JENKINS['version_artifact']]):
+        milestone, iso_number = get_version_from_artifacts(
+            runner_build.build_data)
+    else:
+        milestone, iso_number = get_version(runner_build.build_data)
 
     for systest_build in tests_jobs:
-        if systest_build['result'] is None:
-            logger.debug("Skipping '{0}' job (build #{1}) because it's still "
-                         "running...".format(systest_build['name'],
-                                             systest_build['number'],))
-            continue
+        if options.job_name:
+            if 'result' not in systest_build.keys():
+                logger.debug("Skipping '{0}' job because it does't run tests "
+                             "(build #{1} contains no results)".format(
+                                 systest_build['name'],
+                                 systest_build['number']))
+                continue
+            if systest_build['result'] is None:
+                logger.debug("Skipping '{0}' job (build #{1}) because it's sti"
+                             "ll running...".format(systest_build['name'],
+                                                    systest_build['number'],))
+                continue
         if 'centos' in systest_build['name'].lower():
             tests_results_centos.extend(get_tests_results(systest_build))
         elif 'ubuntu' in systest_build['name'].lower():
@@ -299,6 +325,7 @@ def main():
         test_plan = project.get_plan_by_name(test_plan_name)
 
     logger.debug('Uploading tests results to TestRail...')
+
     for os in operation_systems:
         if 'centos' in os['name'].lower():
             tests_results_centos = publish_results(
