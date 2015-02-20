@@ -490,7 +490,7 @@ class TestHaFailover(TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-    @test(depends_on_groups=['deploy_ha'],
+    @test(enabled=False, depends_on_groups=['deploy_ha'],
           groups=["ha_check_monit"])
     @log_snapshot_on_error
     def ha_check_monit(self):
