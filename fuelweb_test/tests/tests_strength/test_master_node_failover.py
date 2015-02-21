@@ -98,7 +98,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         common_func.delete_instance(server)
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_ha_flat_dns_ntp"])
+          groups=["deploy_ha_flat_dns_ntp"], enabled=False)
     @log_snapshot_on_error
     def deploy_ha_flat_dns_ntp(self):
         """Use external ntp and dns in ha mode
@@ -140,7 +140,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         self.env.make_snapshot("deploy_ha_flat_dns_ntp", is_make=True)
 
     @test(depends_on=[deploy_ha_flat_dns_ntp],
-          groups=["external_dns_ha_flat"])
+          groups=["external_dns_ha_flat"], enabled=False)
     @log_snapshot_on_error
     def external_dns_ha_flat(self):
         """Check external dns in ha mode
@@ -160,7 +160,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         checkers.external_dns_check(remote_slave)
 
     @test(depends_on=[deploy_ha_flat_dns_ntp],
-          groups=["external_ntp_ha_flat"])
+          groups=["external_ntp_ha_flat"], enabled=False)
     @log_snapshot_on_error
     def external_ntp_ha_flat(self):
         """Check external ntp in ha mode
