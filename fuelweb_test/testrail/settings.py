@@ -20,10 +20,13 @@ ch = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+logger.setLevel(logging.INFO)
 
 
 JENKINS = {
     'url': os.environ.get('JENKINS_URL', 'http://localhost/'),
+    'version_artifact': os.environ.get('JENKINS_VERSION_ARTIFACT',
+                                       'version.yaml.txt')
 }
 
 
@@ -41,7 +44,8 @@ class TestRailSettings(object):
     password = os.environ.get('TESTRAIL_PASSWORD', 'password')
     project = os.environ.get('TESTRAIL_PROJECT', 'Mirantis OpenStack')
     milestone = os.environ.get('TESTRAIL_MILESTONE', '6.1')
-    test_suite = os.environ.get('TESTRAIL_TEST_SUITE', 'Swarm')
-    test_section = os.environ.get('TESTRAIL_TEST_SECTION', 'all cases')
-    test_include = os.environ.get('TESTRAIL_TEST_INCLUDE', None)
-    test_exclude = os.environ.get('TESTRAIL_TEST_EXCLUDE', None)
+    tests_suite = os.environ.get('TESTRAIL_TEST_SUITE', 'Swarm')
+    tests_section = os.environ.get('TESTRAIL_TEST_SECTION', 'all cases')
+    tests_include = os.environ.get('TESTRAIL_TEST_INCLUDE', None)
+    tests_exclude = os.environ.get('TESTRAIL_TEST_EXCLUDE', None)
+    previous_results_depth = os.environ.get('TESTRAIL_TESTS_DEPTH', 5)

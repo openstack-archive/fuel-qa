@@ -109,8 +109,9 @@ def upload_tests_descriptions(testrail_project, tests):
         else:
             test_suite = "OpenStack Components Functional Automated Tests"
 
+        suite = testrail_project.get_suite_by_name(test_suite)
         section = testrail_project.get_section_by_name(
-            suite=test_suite, section_name=test_case["custom_test_group"])
+            suite_id=suite['id'], section_name=test_case["custom_test_group"])
 
         testrail_project.add_case(section_id=section["id"], case=test_case)
 
@@ -123,13 +124,13 @@ def main():
         project=TestRailSettings.project
     )
 
-    testrail_milestone = testrail_project.get_milestone(
-        name=TestRailSettings.milestone)['id']
+    testrail_milestone = testrail_project.get_milestone_by_name(
+        name=TestRailSettings.milestone)
 
     tests_descriptions = get_tests_descriptions(
-        milestone_id=testrail_milestone,
-        tests_include=TestRailSettings.test_include,
-        tests_exclude=TestRailSettings.test_exclude
+        milestone_id=testrail_milestone['id'],
+        tests_include=TestRailSettings.tests_include,
+        tests_exclude=TestRailSettings.tests_exclude
     )
 
     upload_tests_descriptions(testrail_project=testrail_project,
