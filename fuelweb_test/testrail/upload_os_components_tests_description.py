@@ -62,9 +62,19 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude):
         git clone https://github.com/openstack/nova && \\
         cd nova/nova/tests/functional && egrep -r \"def test\" ./*
     """
+    glance_functional_cmd = """rm -rf glance && \\
+        git clone https://github.com/openstack/glance && \\
+        cd glance/glance/tests/functional && egrep -r \"def test\" ./*
+    """
+    heat_functional_cmd = """rm -rf heat && \\
+        git clone https://github.com/openstack/heat && \\
+        cd heat/heat_integrationtests/functional && egrep -r "def test" ./*
+    """
 
     for t in [{"suite": "Tempest", "cmd": tempest_cmd},
-              {"suite": "Nova", "cmd": nova_functional_cmd}]:
+              {"suite": "Nova", "cmd": nova_functional_cmd},
+              {"suite": "Glance", "cmd": glance_functional_cmd},
+              {"suite": "Heat", "cmd": heat_functional_cmd}]:
         p = subprocess.Popen(t["cmd"], shell=True, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
 
@@ -105,9 +115,9 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude):
 def upload_tests_descriptions(testrail_project, tests):
     for test_case in tests:
         if "Tempest" in test_case["title"]:
-            test_suite = "Tempest Tests"
+            test_suite = "OpenStack Tempest Tests"
         else:
-            test_suite = "OpenStack Components Functional Automated Tests"
+            test_suite = "OpenStack Functional Automated Tests"
 
         section = testrail_project.get_section_by_name(
             suite=test_suite, section_name=test_case["custom_test_group"])
