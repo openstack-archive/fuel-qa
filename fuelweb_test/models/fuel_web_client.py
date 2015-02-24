@@ -38,6 +38,7 @@ from fuelweb_test import ostf_test_mapping as map_ostf
 from fuelweb_test.settings import ATTEMPTS
 from fuelweb_test.settings import BONDING
 from fuelweb_test.settings import DEPLOYMENT_MODE_SIMPLE
+from fuelweb_test.settings import DEPLOYMENT_MODE_HA
 from fuelweb_test.settings import KVM_USE
 from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import NEUTRON
@@ -1392,8 +1393,28 @@ class FuelWebClient(object):
                 = gateway
             self.client.update_network(*data)
 
+    def get_cluster_mode(self, cluster_id):
+        return self.client.get_cluster(cluster_id)['mode']
+
+    def get_public_ip(self, cluster_id):
+        # Find a controller and get it's IP for public network
+        network_data = [
+            node['network_data']
+            for node in self.client.list_cluster_nodes(cluster_id)
+            if "controller" in node['roles']][0]
+        pub_ip = [net['ip'] for net in network_data
+                  if "public" in net['name']][0]
+        return pub_ip.split('/')[0]
+
     def get_public_vip(self, cluster_id):
-        return self.client.get_networks(cluster_id)['public_vip']
+        if self.get_cluster_mode(cluster_id) == DEPLOYMENT_MODE_HA:
+            return self.client.get_networks(cluster_id)['public_vip']
+        else:
+            logger.error("Public VIP for cluster '{0}' not found, searching "
+                         "for public IP on the controller".format(cluster_id))
+            ip = self.get_public_ip(cluster_id)
+            logger.info("Public IP found: {0}".format(ip))
+            return ip
 
     @logwrap
     def get_controller_with_running_service(self, slave, service_name):
