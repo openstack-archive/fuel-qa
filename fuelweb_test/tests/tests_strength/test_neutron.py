@@ -74,8 +74,9 @@ class TestNeutronFailover(base_test_case.TestBasic):
     def check_instance_connectivity(cls, remote, dhcp_namespace, instance_ip):
         cmd = ". openrc; ip netns exec {0} ssh -i /root/.ssh/webserver_rsa" \
               " -o 'StrictHostKeyChecking no'" \
-              " cirros@{1} \"ping -c 1 8.8.8.8\"".format(dhcp_namespace,
-                                                         instance_ip)
+              " cirros@{1} \"ping -c 1 {2}\"".format(dhcp_namespace,
+                                                     instance_ip,
+                                                     settings.PUBLIC_TEST_IP)
         wait(lambda: remote.execute(cmd)['exit_code'] == 0, timeout=2 * 60)
         res = remote.execute(cmd)
         assert_equal(0, res['exit_code'],
