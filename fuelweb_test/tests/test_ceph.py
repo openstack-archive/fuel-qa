@@ -18,6 +18,8 @@ import time
 from proboscis.asserts import assert_true, assert_false
 from proboscis import SkipTest
 from proboscis import test
+from devops.helpers.helpers import tcp_ping
+from devops.helpers.helpers import wait
 
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers import checkers
@@ -400,12 +402,21 @@ class VmBackedWithCephMigrationBasic(TestBasic):
             scenario='./fuelweb_test/helpers/instance_initial_scenario')
         logger.info("Srv is currently in status: %s" % srv.status)
 
+        srv_remote_node = self.env.get_ssh_to_remote_by_name(
+            self.fuel_web.find_devops_node_by_nailgun_fqdn(
+                os.get_srv_hypervisor_name(srv),
+                self.env.d_env.nodes().slaves[:3]).name)
+        srv_instance_ip = os.get_nova_instance_ip(srv)
+        srv_instance_mac = os.get_instance_mac(srv_remote_node, srv)
+        res = ''.join(srv_remote_node.execute('ip r | fgrep br100')['stdout'])
+        srv_node_dhcp_ip = res.split()[-1]
+
         logger.info("Assigning floating ip to server")
         floating_ip = os.assign_floating_ip(srv)
         srv_host = os.get_srv_host_name(srv)
         logger.info("Server is on host %s" % srv_host)
 
-        time.sleep(100)
+        wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120)
 
         md5before = os.get_md5sum(
             "/home/test_file",
@@ -418,6 +429,8 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         logger.info("Migrating server")
         new_srv = os.migrate_server(srv, avail_hosts[0], timeout=200)
         logger.info("Check cluster and server state after migration")
+
+        wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120)
 
         md5after = os.get_md5sum(
             "/home/test_file",
@@ -432,9 +445,11 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
         res = os.execute_through_host(
             self.env.get_ssh_to_remote_by_name("slave-01"),
-            floating_ip.ip, "ping -q -c3 -w10 %s | grep 'received' |"
-            " grep -v '0 packets received'", creds)
-        logger.info("Ping 8.8.8.8 result on vm is: %s" % res)
+            floating_ip.ip, "ping -q -c3 -w10 {0} | grep 'received' |"
+            " grep -v '0 packets received'"
+            .format(settings.PUBLIC_TEST_IP), creds)
+        logger.info("Ping {0} result on vm is: {1}"
+                    .format(settings.PUBLIC_TEST_IP, res))
 
         logger.info("Check Ceph health is ok after migration")
         self.fuel_web.check_ceph_status(cluster_id)
@@ -447,8 +462,18 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         assert_true(os.verify_srv_deleted(new_srv),
                     "Verify server was deleted")
 
-        # Create new server
-
+        # Check if the dhcp lease for instance still remains
+        # on the previous compute node. Related Bug: #1391010
+        assert_false(checkers.check_nova_dhcp_lease(srv_remote_node,
+                                                    srv_instance_ip,
+                                                    srv_instance_mac,
+                                                    srv_node_dhcp_ip),
+                     "Instance has been deleted, but it\'s DHCP lease "
+                     "for IP:{0} with MAC:{1} still remains on the "
+                     "compute node {2}".format(srv_instance_ip,
+                                               srv_instance_mac,
+                                               srv_host))
+        # Create a new server
         logger.info("Create new server")
         srv = os.create_server_for_migration(
             scenario='./fuelweb_test/helpers/instance_initial_scenario')
@@ -464,7 +489,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         logger.info("Attach volume to server")
         os.attach_volume(vol, srv)
 
-        time.sleep(100)
+        wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120)
         logger.info("Create filesystem and mount volume")
         os.execute_through_host(
             self.env.get_ssh_to_remote_by_name('slave-01'),
@@ -481,6 +506,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         new_srv = os.migrate_server(srv, avail_hosts[0], timeout=120)
         logger.info("Check cluster and server state after migration")
 
+        wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120)
         logger.info("Mount volume after migration")
         out = os.execute_through_host(
             self.env.get_ssh_to_remote_by_name('slave-01'),
