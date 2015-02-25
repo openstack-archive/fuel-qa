@@ -27,6 +27,7 @@ from fuelweb_test.settings import EXTERNAL_NTP
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import POOLS
+from fuelweb_test.settings import PUBLIC_TEST_IP
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
@@ -832,7 +833,8 @@ def external_dns_check(remote_slave):
     assert_equal(ext_dns_ip, EXTERNAL_DNS,
                  "/etc/resolv.dnsmasq.conf does not contain external dns ip")
     command_hostname = ''.join(
-        remote_slave.execute("host 8.8.8.8 | awk {'print $5'}")
+        remote_slave.execute("host {0} | awk {'print $5'}"
+                             .format(PUBLIC_TEST_IP))
         ["stdout"]).rstrip()
     hostname = 'google-public-dns-a.google.com.'
     assert_equal(command_hostname, hostname,
@@ -958,3 +960,24 @@ def check_oswl_stat(postgres_actions, remote_collector, master_uid,
                                                   operation][resource]))
 
     logger.info("OSWL stats were properly saved to collector's database.")
+
+
+@logwrap
+def check_nova_dhcp_lease(remote, instance_ip, instance_mac, node_dhcp_ip):
+    logger.debug("Checking DHCP server {0} for lease {1} with MAC address {2}"
+                 .format(node_dhcp_ip, instance_ip, instance_mac))
+    res = remote.execute('ip link add dhcptest0 type veth peer name dhcptest1;'
+                         'brctl addif br100 dhcptest0;'
+                         'ifconfig dhcptest0 up;'
+                         'ifconfig dhcptest1 hw ether {1};'
+                         'ifconfig dhcptest1 up;'
+                         'dhcpcheck request dhcptest1 {2} --range_start {0} '
+                         '--range_end 255.255.255.255 | fgrep \" {2} \";'
+                         'ifconfig dhcptest1 down;'
+                         'ifconfig dhcptest0 down;'
+                         'brctl delif br100 dhcptest0;'
+                         'ip link delete dhcptest0;'
+                         .format(instance_ip, instance_mac, node_dhcp_ip))
+    res_str = ''.join(res['stdout'])
+    logger.debug("DHCP server answer: {}".format(res_str))
+    return ' ack ' in res_str
