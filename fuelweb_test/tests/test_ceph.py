@@ -164,7 +164,7 @@ class CephCompactWithCinder(TestBasic):
 class CephHA(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_release],
-          groups=["ceph_ha", "ha_nova_ceph", "ha_neutron_ceph", "bvt_2"])
+          groups=["ceph_ha", "ha_nova_ceph", "ha_neutron_ceph"])
     @log_snapshot_on_error
     def ceph_ha(self):
         """Deploy ceph with cinder in HA mode
@@ -234,30 +234,28 @@ class CephHA(TestBasic):
 @test(groups=["thread_4", "ceph"])
 class CephRadosGW(TestBasic):
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["ceph_rados_gw"])
+    @test(depends_on=[SetupEnvironment.prepare_release],
+          groups=["ceph_rados_gw", "bvt_2"])
     @log_snapshot_on_error
     def ceph_rados_gw(self):
-        """Deploy ceph ha with 1 controller with RadosGW for objects
+        """Deploy ceph HA with RadosGW for objects
 
         Scenario:
             1. Create cluster
-            2. Add 1 node with controller role
-            3. Add 1 node with compute role
-            4. Add 3 nodes with ceph-osd role
-            5. Deploy the cluster
-            6. Check ceph status
-            7. Run OSTF tests
-            8. Check the radosqw daemon is started
+            2. Add 3 node with controller role
+            3. Add 3 node with compute and ceph-osd role
+            4. Deploy the cluster
+            5. Check ceph status
+            6. Run OSTF tests
+            7. Check the radosqw daemon is started
 
-        Duration 40m
+        Duration 90m
         Snapshot ceph_rados_gw
 
         """
-        if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_REDHAT:
-            raise SkipTest()
-
-        self.env.revert_snapshot("ready_with_5_slaves")
+        self.env.revert_snapshot("ready")
+        self.env.bootstrap_nodes(
+            self.env.get_virtual_environment().nodes().slaves[:6])
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -267,6 +265,8 @@ class CephRadosGW(TestBasic):
                 'volumes_ceph': True,
                 'images_ceph': True,
                 'objects_ceph': True,
+                'net_provider': 'neutron',
+                'net_segment_type': 'vlan',
                 'tenant': 'rados',
                 'user': 'rados',
                 'password': 'rados'
@@ -276,35 +276,19 @@ class CephRadosGW(TestBasic):
             cluster_id,
             {
                 'slave-01': ['controller'],
-                'slave-02': ['compute'],
-                'slave-03': ['ceph-osd'],
-                'slave-04': ['ceph-osd'],
-                'slave-05': ['ceph-osd']
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute', 'ceph-osd'],
+                'slave-05': ['compute', 'ceph-osd'],
+                'slave-06': ['compute', 'ceph-osd']
             }
         )
         # Deploy cluster
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.check_ceph_status(cluster_id)
 
-        try:
-            self.fuel_web.run_single_ostf_test(
-                cluster_id, test_sets=['smoke'],
-                test_name=map_ostf.OSTF_TEST_MAPPING.get(
-                    'Create volume and attach it to instance'))
-        except AssertionError:
-            logger.debug("Test failed from first probe,"
-                         " we sleep 60 second try one more time "
-                         "and if it fails again - test will fails ")
-            time.sleep(60)
-            self.fuel_web.run_single_ostf_test(
-                cluster_id, test_sets=['smoke'],
-                test_name=map_ostf.OSTF_TEST_MAPPING.get(
-                    'Create volume and attach it to instance'))
-
         # Run ostf
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id,
-            test_sets=['smoke', 'sanity', 'platform_tests'])
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         # Check the radosqw daemon is started
         remote = self.fuel_web.get_ssh_for_node('slave-01')
