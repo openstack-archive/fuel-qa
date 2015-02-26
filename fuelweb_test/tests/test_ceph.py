@@ -391,9 +391,10 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
         time.sleep(100)
 
+        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         md5before = os.get_md5sum(
             "/home/test_file",
-            self.env.get_ssh_to_remote_by_name("slave-01"),
+            self.env.d_env.get_ssh_to_remote(_ip),
             floating_ip.ip, creds)
 
         logger.info("Get available computes")
@@ -403,9 +404,10 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         new_srv = os.migrate_server(srv, avail_hosts[0], timeout=200)
         logger.info("Check cluster and server state after migration")
 
+        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         md5after = os.get_md5sum(
             "/home/test_file",
-            self.env.get_ssh_to_remote_by_name("slave-01"),
+            self.env.d_env.get_ssh_to_remote(_ip),
             floating_ip.ip, creds)
 
         assert_true(
@@ -414,8 +416,9 @@ class VmBackedWithCephMigrationBasic(TestBasic):
             "Before migration md5 was equal to: {bef}"
             "Now it eqals: {aft}".format(bef=md5before, aft=md5after))
 
+        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         res = os.execute_through_host(
-            self.env.get_ssh_to_remote_by_name("slave-01"),
+            self.env.d_env.get_ssh_to_remote(_ip),
             floating_ip.ip, "ping -q -c3 -w10 %s | grep 'received' |"
             " grep -v '0 packets received'", creds)
         logger.info("Ping 8.8.8.8 result on vm is: %s" % res)
@@ -450,12 +453,14 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
         time.sleep(100)
         logger.info("Create filesystem and mount volume")
+        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         os.execute_through_host(
-            self.env.get_ssh_to_remote_by_name('slave-01'),
+            self.env.d_env.get_ssh_to_remote(_ip),
             floating_ip.ip, 'sudo sh /home/mount_volume.sh', creds)
 
+        _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
         os.execute_through_host(
-            self.env.get_ssh_to_remote_by_name('slave-01'),
+            self.env.d_env.get_ssh_to_remote(_ip),
             floating_ip.ip, 'sudo touch /mnt/file-on-volume', creds)
 
         logger.info("Get available computes")
@@ -466,14 +471,16 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         logger.info("Check cluster and server state after migration")
 
         logger.info("Mount volume after migration")
+        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         out = os.execute_through_host(
-            self.env.get_ssh_to_remote_by_name('slave-01'),
+            self.env.d_env.get_ssh_to_remote(_ip),
             floating_ip.ip, 'sudo mount /dev/vdb /mnt', creds)
 
         logger.info("out of mounting volume is: %s" % out)
 
+        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         assert_true("file-on-volume" in os.execute_through_host(
-                    self.env.get_ssh_to_remote_by_name('slave-01'),
+                    self.env.d_env.get_ssh_to_remote(_ip),
                     floating_ip.ip, "sudo ls /mnt", creds),
                     "File is abscent in /mnt")
 
@@ -548,8 +555,9 @@ class CheckCephPartitionsAfterReboot(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         for node in ["slave-02", "slave-03"]:
             logger.info("Get partitions for {node}".format(node=node))
+            _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
             before_reboot_partitions = [checkers.get_ceph_partitions(
-                self.env.get_ssh_to_remote_by_name(node),
+                self.env.d_env.get_ssh_to_remote(_ip),
                 "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
 
             logger.info("Warm-restart nodes")
@@ -559,8 +567,9 @@ class CheckCephPartitionsAfterReboot(TestBasic):
             logger.info("Get partitions for {node} once again".format(
                 node=node
             ))
+            _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
             after_reboot_partitions = [checkers.get_ceph_partitions(
-                self.env.get_ssh_to_remote_by_name(node),
+                self.env.d_env.get_ssh_to_remote(_ip),
                 "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
 
             if before_reboot_partitions != after_reboot_partitions:
@@ -576,8 +585,9 @@ class CheckCephPartitionsAfterReboot(TestBasic):
             self.fuel_web.cold_restart_nodes(
                 [self.fuel_web.environment.d_env.get_node(name=node)])
 
+            _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
             after_reboot_partitions = [checkers.get_ceph_partitions(
-                self.env.get_ssh_to_remote_by_name(node),
+                self.env.d_env.get_ssh_to_remote(_ip),
                 "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
 
             if before_reboot_partitions != after_reboot_partitions:

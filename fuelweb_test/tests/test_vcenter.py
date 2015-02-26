@@ -164,7 +164,8 @@ class VcenterDeploy(TestBasic):
                         ips_for_check.append(net_prefs['addr'])
 
         # Wait until vm is booted
-        ssh = self.env.get_ssh_to_remote_by_name("slave-01")
+        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
+        ssh = self.env.d_env.get_ssh_to_remote(_ip)
         wait(
             lambda: not ssh.execute('curl -s -m1 http://' + ips_for_check[0] +
                                     ':22 |grep -iq "[a-z]"')['exit_code'],
@@ -320,8 +321,9 @@ class VcenterDeploy(TestBasic):
 
         # Verify ceilometer API
         for slave in ["slave-01", "slave-02", "slave-03"]:
+            _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
             checkers.verify_service(
-                self.env.get_ssh_to_remote_by_name(slave),
+                self.env.d_env.get_ssh_to_remote(_ip),
                 service_name='ceilometer-api')
 
         # Create list with ceilometer tests: test_classes
