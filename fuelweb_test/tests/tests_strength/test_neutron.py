@@ -153,7 +153,8 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         net_id = os_conn.get_network('net04')['id']
         devops_node = self.get_node_with_dhcp(self, os_conn, net_id)
-        remote = self.env.get_ssh_to_remote_by_name(devops_node.name)
+        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
+        remote = self.env.d_env.get_ssh_to_remote(_ip)
 
         dhcp_namespace = ''.join(remote.execute('ip netns | grep {0}'.format(
             net_id))['stdout']).rstrip()
@@ -170,7 +171,8 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         node_with_l3 = os_conn.get_l3_agent_hosts(router_id)[0]
         new_devops = self.get_node_with_l3(self, node_with_l3)
-        new_remote = self.env.get_ssh_to_remote_by_name(new_devops.name)
+        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
+        new_remote = self.env.d_env.get_ssh_to_remote(_ip)
 
         new_remote.execute("pcs resource ban p_neutron-l3-agent {0}".format(
             node_with_l3))
@@ -218,7 +220,8 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         net_id = os_conn.get_network('net04')['id']
         devops_node = self.get_node_with_dhcp(self, os_conn, net_id)
-        remote = self.env.get_ssh_to_remote_by_name(devops_node.name)
+        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
+        remote = self.env.d_env.get_ssh_to_remote(_ip)
 
         dhcp_namespace = ''.join(remote.execute('ip netns | grep {0}'.format(
             net_id))['stdout']).rstrip()
@@ -277,7 +280,8 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         net_id = os_conn.get_network('net04')['id']
         devops_node = self.get_node_with_dhcp(self, os_conn, net_id)
-        remote = self.env.get_ssh_to_remote_by_name(devops_node.name)
+        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
+        remote = self.env.d_env.get_ssh_to_remote(_ip)
 
         dhcp_namespace = ''.join(remote.execute('ip netns | grep {0}'.format(
             net_id))['stdout']).rstrip()
@@ -352,7 +356,8 @@ class TestNeutronFailover(base_test_case.TestBasic):
         instance = os_conn.create_server_for_migration(neutron=True)
         floating_ip = os_conn.assign_floating_ip(instance)
         logger.debug("instance floating ip is {0}".format(floating_ip.ip))
-        remote = self.env.get_ssh_to_remote_by_name('slave-01')
+        _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
+        remote = self.env.d_env.get_ssh_to_remote(_ip)
         mtu_cmd = r"cat /sys/class/net/$(ip r g {0} |" \
                   r" sed -rn" \
                   r" 's/.*dev\s+(\S+)\s.*/\1/p')/mtu".format(floating_ip.ip)
