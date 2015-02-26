@@ -89,13 +89,13 @@ class TestHaVLAN(TestBasic):
 
         self.fuel_web.check_fixed_nova_splited_cidr(
             os_conn, self.fuel_web.get_nailgun_cidr_nova(cluster_id),
-            self.env.get_ssh_to_remote_by_name('slave-01'))
+            self.env.d_env.get_ssh_to_remote_by_name('slave-01'))
 
         self.fuel_web.verify_network(cluster_id)
         devops_node = self.fuel_web.get_nailgun_primary_controller(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
-        remote = self.env.get_ssh_to_remote_by_name(devops_node.name)
+        remote = self.env.d_env.get_ssh_to_remote_by_name(devops_node.name)
         checkers.check_swift_ring(remote)
 
         self.fuel_web.run_ostf(
@@ -163,7 +163,7 @@ class TestHaFlat(TestBasic):
         devops_node = self.fuel_web.get_nailgun_primary_controller(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
-        remote = self.env.get_ssh_to_remote_by_name(devops_node.name)
+        remote = self.env.d_env.get_ssh_to_remote_by_name(devops_node.name)
         checkers.check_swift_ring(remote)
 
         self.fuel_web.security.verify_firewall(cluster_id)
@@ -279,7 +279,7 @@ class TestHaFlatScalability(TestBasic):
         devops_node = self.fuel_web.get_nailgun_primary_controller(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
-        remote = self.env.get_ssh_to_remote_by_name(devops_node.name)
+        remote = self.env.d_env.get_ssh_to_remote_by_name(devops_node.name)
         checkers.check_swift_ring(remote)
 
         self.fuel_web.update_nodes(
@@ -296,7 +296,7 @@ class TestHaFlatScalability(TestBasic):
         devops_node = self.fuel_web.get_nailgun_primary_controller(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
-        remote = self.env.get_ssh_to_remote_by_name(devops_node.name)
+        remote = self.env.d_env.get_ssh_to_remote_by_name(devops_node.name)
         checkers.check_swift_ring(remote)
 
         self.fuel_web.update_nodes(
@@ -321,7 +321,7 @@ class TestHaFlatScalability(TestBasic):
         devops_node = self.fuel_web.get_nailgun_primary_controller(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
-        remote = self.env.get_ssh_to_remote_by_name(devops_node.name)
+        remote = self.env.d_env.get_ssh_to_remote_by_name(devops_node.name)
         checkers.check_swift_ring(remote)
 
         self.fuel_web.run_ostf(

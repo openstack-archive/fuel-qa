@@ -74,7 +74,7 @@ class NeutronGre(TestBasic):
         assert_equal(str(cluster['net_provider']), 'neutron')
         # assert_equal(str(cluster['net_segment_type']), segment_type)
         self.fuel_web.check_fixed_network_cidr(
-            cluster_id, self.env.get_ssh_to_remote_by_name('slave-01'))
+            cluster_id, self.env.d_env.get_ssh_to_remote_by_name('slave-01'))
 
         self.fuel_web.verify_network(cluster_id)
 
@@ -195,7 +195,7 @@ class NeutronGreHa(TestBasic):
         devops_node = self.fuel_web.get_nailgun_primary_controller(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
-        remote = self.env.get_ssh_to_remote_by_name(devops_node.name)
+        remote = self.env.d_env.get_ssh_to_remote_by_name(devops_node.name)
         checkers.check_swift_ring(remote)
 
         self.fuel_web.run_ostf(
@@ -318,13 +318,13 @@ class NeutronVlanHa(TestBasic):
         assert_equal(str(cluster['net_provider']), 'neutron')
         # assert_equal(str(cluster['net_segment_type']), segment_type)
         self.fuel_web.check_fixed_network_cidr(
-            cluster_id, self.env.get_ssh_to_remote_by_name('slave-01'))
+            cluster_id, self.env.d_env.get_ssh_to_remote_by_name('slave-01'))
 
         self.fuel_web.verify_network(cluster_id)
         devops_node = self.fuel_web.get_nailgun_primary_controller(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
-        remote = self.env.get_ssh_to_remote_by_name(devops_node.name)
+        remote = self.env.d_env.get_ssh_to_remote_by_name(devops_node.name)
         checkers.check_swift_ring(remote)
 
         self.fuel_web.run_ostf(
@@ -387,7 +387,7 @@ class NeutronVlanHaPublicNetwork(TestBasic):
         assert_equal(str(cluster['net_provider']), 'neutron')
         # assert_equal(str(cluster['net_segment_type']), segment_type)
         self.fuel_web.check_fixed_network_cidr(
-            cluster_id, self.env.get_ssh_to_remote_by_name('slave-01'))
+            cluster_id, self.env.d_env.get_ssh_to_remote_by_name('slave-01'))
 
         self.fuel_web.verify_network(cluster_id)
 
