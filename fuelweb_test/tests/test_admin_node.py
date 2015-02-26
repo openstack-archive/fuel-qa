@@ -80,7 +80,8 @@ class TestAdminNode(TestBasic):
         if OPENSTACK_RELEASE_CENTOS not in OPENSTACK_RELEASE:
             raise SkipTest()
         self.env.revert_snapshot("empty")
-        ps_output = self.env.get_admin_remote().execute('ps ax')['stdout']
+        ps_output = self.env.d_env.get_admin_remote().execute(
+            'ps ax')['stdout']
         astute_master = filter(lambda x: 'astute master' in x, ps_output)
         logger.info("Found astute processes: %s" % astute_master)
         assert_equal(len(astute_master), 1)
@@ -110,12 +111,13 @@ class TestAdminNodeBackupRestore(TestBasic):
 
         """
         self.env.revert_snapshot("empty")
-        self.fuel_web.backup_master(self.env.get_admin_remote())
-        checkers.backup_check(self.env.get_admin_remote())
-        self.fuel_web.restore_master(self.env.get_admin_remote())
-        self.fuel_web.restore_check_nailgun_api(self.env.get_admin_remote())
-        checkers.restore_check_sum(self.env.get_admin_remote())
-        checkers.iptables_check(self.env.get_admin_remote())
+        self.fuel_web.backup_master(self.env.d_env.get_admin_remote())
+        checkers.backup_check(self.env.d_env.get_admin_remote())
+        self.fuel_web.restore_master(self.env.d_env.get_admin_remote())
+        self.fuel_web.restore_check_nailgun_api(
+            self.env.d_env.get_admin_remote())
+        checkers.restore_check_sum(self.env.d_env.get_admin_remote())
+        checkers.iptables_check(self.env.d_env.get_admin_remote())
 
 
 @test(groups=["setup_master_custom"])
