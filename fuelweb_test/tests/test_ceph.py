@@ -393,7 +393,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
         md5before = os.get_md5sum(
             "/home/test_file",
-            self.env.get_ssh_to_remote_by_name("slave-01"),
+            self.envd_env.get_ssh_to_remote_by_name("slave-01"),
             floating_ip.ip, creds)
 
         logger.info("Get available computes")
@@ -405,7 +405,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
         md5after = os.get_md5sum(
             "/home/test_file",
-            self.env.get_ssh_to_remote_by_name("slave-01"),
+            self.envd_env.get_ssh_to_remote_by_name("slave-01"),
             floating_ip.ip, creds)
 
         assert_true(
@@ -415,7 +415,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
             "Now it eqals: {aft}".format(bef=md5before, aft=md5after))
 
         res = os.execute_through_host(
-            self.env.get_ssh_to_remote_by_name("slave-01"),
+            self.envd_env.get_ssh_to_remote_by_name("slave-01"),
             floating_ip.ip, "ping -q -c3 -w10 %s | grep 'received' |"
             " grep -v '0 packets received'", creds)
         logger.info("Ping 8.8.8.8 result on vm is: %s" % res)
@@ -451,11 +451,11 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         time.sleep(100)
         logger.info("Create filesystem and mount volume")
         os.execute_through_host(
-            self.env.get_ssh_to_remote_by_name('slave-01'),
+            self.envd_env.get_ssh_to_remote_by_name('slave-01'),
             floating_ip.ip, 'sudo sh /home/mount_volume.sh', creds)
 
         os.execute_through_host(
-            self.env.get_ssh_to_remote_by_name('slave-01'),
+            self.envd_env.get_ssh_to_remote_by_name('slave-01'),
             floating_ip.ip, 'sudo touch /mnt/file-on-volume', creds)
 
         logger.info("Get available computes")
@@ -467,13 +467,13 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
         logger.info("Mount volume after migration")
         out = os.execute_through_host(
-            self.env.get_ssh_to_remote_by_name('slave-01'),
+            self.envd_env.get_ssh_to_remote_by_name('slave-01'),
             floating_ip.ip, 'sudo mount /dev/vdb /mnt', creds)
 
         logger.info("out of mounting volume is: %s" % out)
 
         assert_true("file-on-volume" in os.execute_through_host(
-                    self.env.get_ssh_to_remote_by_name('slave-01'),
+                    self.envd_env.get_ssh_to_remote_by_name('slave-01'),
                     floating_ip.ip, "sudo ls /mnt", creds),
                     "File is abscent in /mnt")
 
@@ -549,7 +549,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
         for node in ["slave-02", "slave-03"]:
             logger.info("Get partitions for {node}".format(node=node))
             before_reboot_partitions = [checkers.get_ceph_partitions(
-                self.env.get_ssh_to_remote_by_name(node),
+                self.envd_env.get_ssh_to_remote_by_name(node),
                 "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
 
             logger.info("Warm-restart nodes")
@@ -560,7 +560,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
                 node=node
             ))
             after_reboot_partitions = [checkers.get_ceph_partitions(
-                self.env.get_ssh_to_remote_by_name(node),
+                self.envd_env.get_ssh_to_remote_by_name(node),
                 "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
 
             if before_reboot_partitions != after_reboot_partitions:
@@ -577,7 +577,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
                 [self.fuel_web.environment.d_env.get_node(name=node)])
 
             after_reboot_partitions = [checkers.get_ceph_partitions(
-                self.env.get_ssh_to_remote_by_name(node),
+                self.envd_env.get_ssh_to_remote_by_name(node),
                 "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
 
             if before_reboot_partitions != after_reboot_partitions:

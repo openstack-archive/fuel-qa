@@ -44,7 +44,6 @@ from fuelweb_test import logger
 class EnvironmentModel(object):
     def __init__(self):
         self._virtual_environment = None
-        self._keys = None
         self.fuel_web = FuelWebClient(self.get_admin_node_ip(), self)
 
     @property
@@ -79,7 +78,7 @@ class EnvironmentModel(object):
         wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
 
         for node in self.nailgun_nodes(devops_nodes):
-            self.sync_node_time(self.get_ssh_to_remote(node["ip"]))
+            self.sync_node_time(self.d_env.get_ssh_to_remote(node["ip"]))
 
         return self.nailgun_nodes(devops_nodes)
 
@@ -135,42 +134,6 @@ class EnvironmentModel(object):
             " <Enter>\n"
         ) % params
         return keys
-
-    @logwrap
-    def get_private_keys(self, force=False):
-        if force or self._keys is None:
-            self._keys = []
-            for key_string in ['/root/.ssh/id_rsa',
-                               '/root/.ssh/bootstrap.rsa']:
-                with self.get_admin_remote().open(key_string) as f:
-                    self._keys.append(RSAKey.from_private_key(f))
-        return self._keys
-
-    @logwrap
-    def get_ssh_to_remote(self, ip):
-        return SSHClient(ip,
-                         username=settings.SSH_CREDENTIALS['login'],
-                         password=settings.SSH_CREDENTIALS['password'],
-                         private_keys=self.get_private_keys())
-
-    @logwrap
-    def get_ssh_to_remote_by_key(self, ip, keyfile):
-        try:
-            with open(keyfile) as f:
-                keys = [RSAKey.from_private_key(f)]
-                return SSHClient(ip, private_keys=keys)
-        except IOError:
-            logger.warning('Loading of SSH key from file failed. Trying to use'
-                           ' SSH agent ...')
-            keys = Agent().get_keys()
-            return SSHClient(ip, private_keys=keys)
-
-    @logwrap
-    def get_ssh_to_remote_by_name(self, node_name):
-        return self.get_ssh_to_remote(
-            self.fuel_web.get_nailgun_node_by_devops_node(
-                self.d_env.get_node(name=node_name))['ip']
-        )
 
     def get_target_devs(self, devops_nodes):
         return [

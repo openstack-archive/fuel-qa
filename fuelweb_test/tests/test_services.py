@@ -97,7 +97,7 @@ class SaharaHAOneController(TestBasic):
 
         LOGGER.debug('Verify Sahara service on controller')
         checkers.verify_service(
-            self.env.get_ssh_to_remote_by_name("slave-01"),
+            self.envd_env.get_ssh_to_remote_by_name("slave-01"),
             service_name='sahara-all')
 
         LOGGER.debug('Run all sanity and smoke tests')
@@ -202,7 +202,7 @@ class SaharaHA(TestBasic):
         LOGGER.debug('Verify Sahara service on all controllers')
         for slave in ["slave-01", "slave-02", "slave-03"]:
             checkers.verify_service(
-                self.env.get_ssh_to_remote_by_name(slave),
+                self.envd_env.get_ssh_to_remote_by_name(slave),
                 service_name='sahara-all')
 
         LOGGER.debug('Run all sanity and smoke tests')
@@ -302,7 +302,7 @@ class MuranoHAOneController(TestBasic):
         self.fuel_web.assert_cluster_ready(
             os_conn, smiles_count=5, networks_count=2, timeout=300)
         checkers.verify_service(
-            self.env.get_ssh_to_remote_by_name("slave-01"),
+            self.envd_env.get_ssh_to_remote_by_name("slave-01"),
             service_name='murano-api')
 
         common_func = Common(self.fuel_web.get_public_vip(cluster_id),
@@ -425,7 +425,7 @@ class MuranoHA(TestBasic):
             os_conn, smiles_count=13, networks_count=2, timeout=300)
         for slave in ["slave-01", "slave-02", "slave-03"]:
             checkers.verify_service(
-                self.env.get_ssh_to_remote_by_name(slave),
+                self.envd_env.get_ssh_to_remote_by_name(slave),
                 service_name='murano-api')
 
         common_func = Common(cluster_vip, data['user'], data['password'],
@@ -589,11 +589,11 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         checkers.verify_service(
-            self.env.get_ssh_to_remote_by_name("slave-01"),
+            self.envd_env.get_ssh_to_remote_by_name("slave-01"),
             service_name='ceilometer-api')
 
         partitions = checkers.get_mongo_partitions(
-            self.env.get_ssh_to_remote_by_name("slave-03"), "vda5")
+            self.envd_env.get_ssh_to_remote_by_name("slave-03"), "vda5")
         assert_equal(partitions[0].rstrip(), mongo_disk_gb,
                      'Mongo size {0} before deployment is not equal'
                      ' to size after {1}'.format(mongo_disk_gb, partitions))
@@ -640,7 +640,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         checkers.verify_service(
-            self.env.get_ssh_to_remote_by_name("slave-01"),
+            self.envd_env.get_ssh_to_remote_by_name("slave-01"),
             service_name='ceilometer-api')
 
         self.run_tests(cluster_id)
@@ -694,7 +694,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         checkers.verify_service(
-            self.env.get_ssh_to_remote_by_name("slave-01"),
+            self.envd_env.get_ssh_to_remote_by_name("slave-01"),
             service_name='ceilometer-api')
 
         self.run_tests(cluster_id)
@@ -741,7 +741,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         checkers.verify_service(
-            self.env.get_ssh_to_remote_by_name("slave-01"),
+            self.envd_env.get_ssh_to_remote_by_name("slave-01"),
             service_name='ceilometer-api')
 
         self.run_tests(cluster_id)
@@ -804,11 +804,11 @@ class HeatHAOneController(TestBasic):
             os_conn, smiles_count=5, networks_count=2, timeout=300)
 
         checkers.verify_service(
-            self.env.get_ssh_to_remote_by_name("slave-01"),
+            self.envd_env.get_ssh_to_remote_by_name("slave-01"),
             service_name='heat-api', count=3)
 
         checkers.verify_service(
-            self.env.get_ssh_to_remote_by_name("slave-01"),
+            self.envd_env.get_ssh_to_remote_by_name("slave-01"),
             service_name='ceilometer-api')
 
         LOGGER.debug('Run Heat OSTF platform tests')
@@ -883,11 +883,11 @@ class HeatHAOneController(TestBasic):
             os_conn, smiles_count=6, networks_count=1, timeout=300)
 
         checkers.verify_service(
-            self.env.get_ssh_to_remote_by_name("slave-01"),
+            self.envd_env.get_ssh_to_remote_by_name("slave-01"),
             service_name='heat-api', count=3)
 
         checkers.verify_service(
-            self.env.get_ssh_to_remote_by_name("slave-01"),
+            self.envd_env.get_ssh_to_remote_by_name("slave-01"),
             service_name='ceilometer-api')
 
         LOGGER.debug('Run Heat OSTF platform tests')
@@ -974,11 +974,11 @@ class HeatHA(TestBasic):
 
         for slave in ["slave-01", "slave-02", "slave-03"]:
             checkers.verify_service(
-                self.env.get_ssh_to_remote_by_name(slave),
+                self.envd_env.get_ssh_to_remote_by_name(slave),
                 service_name='heat-api', count=3)
 
             checkers.verify_service(
-                self.env.get_ssh_to_remote_by_name(slave),
+                self.envd_env.get_ssh_to_remote_by_name(slave),
                 service_name='ceilometer-api')
 
         LOGGER.debug('Run Heat OSTF platform tests')

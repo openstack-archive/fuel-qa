@@ -126,7 +126,7 @@ class HAOneControllerFlat(TestBasic):
         self.fuel_web.assert_cluster_ready(
             os_conn, smiles_count=6, networks_count=1, timeout=300)
         self.fuel_web.check_fixed_network_cidr(
-            cluster_id, self.env.get_ssh_to_remote_by_name('slave-01'))
+            cluster_id, self.envd_env.get_ssh_to_remote_by_name('slave-01'))
 
         self.fuel_web.verify_network(cluster_id)
 
@@ -163,7 +163,7 @@ class HAOneControllerFlat(TestBasic):
             self.fuel_web.get_public_vip(cluster_id),
             data['user'], data['password'], data['tenant'])
 
-        remote = self.env.get_ssh_to_remote_by_name('slave-01')
+        remote = self.envd_env.get_ssh_to_remote_by_name('slave-01')
         remote.execute("echo 'Hello World' > /root/test.txt")
         server_files = {"/root/test.txt": 'Hello World'}
         instance = os.create_server_for_migration(file=server_files)
@@ -416,7 +416,7 @@ class HAOneControllerVlan(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        remote = self.env.get_ssh_to_remote_by_name('slave-03')
+        remote = self.envd_env.get_ssh_to_remote_by_name('slave-03')
 
         result = remote.execute('readlink /etc/astute.yaml')['stdout']
 
@@ -623,7 +623,7 @@ class HAOneControllerCinder(TestBasic):
             os_conn, smiles_count=6, networks_count=1, timeout=300)
 
         self.fuel_web.check_fixed_network_cidr(
-            cluster_id, self.env.get_ssh_to_remote_by_name('slave-01'))
+            cluster_id, self.envd_env.get_ssh_to_remote_by_name('slave-01'))
         self.fuel_web.verify_network(cluster_id)
         self.env.verify_network_configuration("slave-01")
 
