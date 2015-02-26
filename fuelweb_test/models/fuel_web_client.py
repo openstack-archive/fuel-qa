@@ -561,7 +561,7 @@ class FuelWebClient(object):
     def get_ssh_for_node(self, node_name):
         ip = self.get_nailgun_node_by_devops_node(
             self.environment.d_env.get_node(name=node_name))['ip']
-        return self.environment.get_ssh_to_remote(ip)
+        return self.environment.d_env.get_ssh_to_remote(ip)
 
     @logwrap
     def get_ssh_for_role(self, nodes_dict, role):
@@ -1172,7 +1172,7 @@ class FuelWebClient(object):
         else:
             cmd = 'service ceph restart'
         for node in ceph_nodes:
-            remote = self.environment.get_ssh_to_remote(node['ip'])
+            remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
             self.environment.sync_node_time(remote)
             result = remote.execute(cmd)
             if not result['exit_code'] == 0:
@@ -1190,7 +1190,7 @@ class FuelWebClient(object):
 
         logger.info('Waiting until Ceph service become up...')
         for node in ceph_nodes:
-            remote = self.environment.get_ssh_to_remote(node['ip'])
+            remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
             try:
                 wait(lambda: checkers.check_ceph_ready(remote) is True,
                      interval=20, timeout=600)
@@ -1202,7 +1202,7 @@ class FuelWebClient(object):
         logger.info('Ceph service is ready')
         logger.info('Checking Ceph Health...')
         for node in ceph_nodes:
-            remote = self.environment.get_ssh_to_remote(node['ip'])
+            remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
             health_status = checkers.get_ceph_health(remote)
             if 'HEALTH_OK' in health_status:
                 continue
@@ -1235,7 +1235,7 @@ class FuelWebClient(object):
 
         logger.info('Checking Ceph OSD Tree...')
         for node in ceph_nodes:
-            remote = self.environment.get_ssh_to_remote(node['ip'])
+            remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
             checkers.check_ceph_disks(remote, [n['id'] for n in ceph_nodes])
         logger.info('Ceph cluster status is OK')
 
