@@ -29,13 +29,17 @@ from fuelweb_test import logwrap
 @logwrap
 def configure_second_admin_cobbler(self):
     dhcp_template = '/etc/cobbler/dnsmasq.template'
-    remote = self.get_admin_remote()
-    main_admin_ip = str(self.d_env.nodes().admin.
-                        get_ip_address_by_network_name(self.admin_net))
-    second_admin_ip = str(self.d_env.nodes().admin.
-                          get_ip_address_by_network_name(self.admin_net2))
-    second_admin_network = self._get_network(self.admin_net2).split('/')[0]
-    second_admin_netmask = self.get_net_mask(self.admin_net2)
+    remote = self.d_env.get_admin_remote()
+    admin_net = self.d_env.admin_net
+    admin_net2 = self.d_env.admin_net2
+    main_admin_ip = str(
+        self.d_env.nodes().admin.get_ip_address_by_network_name(admin_net))
+    second_admin_ip = str(
+        self.d_env.nodes().admin.get_ip_address_by_network_name(admin_net2))
+
+    admin_net2_object = self.d_env.get_network(name=admin_net2)
+    second_admin_network = admin_net2_object.ip_network.split('/')[0]
+    second_admin_netmask = admin_net2_object.netmask
     network = IPNetwork('{0}/{1}'.format(second_admin_network,
                                          second_admin_netmask))
     discovery_subnet = [net for net in network.iter_subnets(1)][-1]
@@ -56,7 +60,7 @@ def configure_second_admin_cobbler(self):
 
 @logwrap
 def configure_second_admin_firewall(self, network, netmask):
-    remote = self.get_admin_remote()
+    remote = self.d_env.get_admin_remote()
     # Allow forwarding and correct remote logging
     # for nodes from the second admin network
     rules = [
@@ -71,10 +75,10 @@ def configure_second_admin_firewall(self, network, netmask):
         format(network, netmask),
         ('-I FORWARD -i {0} -o docker0 -p tcp -m state --state NEW -m tcp'
          ' --dport 514 -m comment --comment "rsyslog-tcp-514-accept" -j '
-         'ACCEPT').format(settings.INTERFACES.get(self.admin_net2)),
+         'ACCEPT').format(settings.INTERFACES.get(self.d_env.admin_net2)),
         ('-I FORWARD -i {0} -o docker0 -p udp -m state --state NEW -m udp'
          ' --dport 514 -m comment --comment "rsyslog-udp-514-accept" -j '
-         'ACCEPT').format(settings.INTERFACES.get(self.admin_net2))
+         'ACCEPT').format(settings.INTERFACES.get(self.d_env.admin_net2))
     ]
 
     for rule in rules:
@@ -93,8 +97,8 @@ def configure_second_admin_firewall(self, network, netmask):
 
 @logwrap
 def configure_second_dhcrelay(self):
-    remote = self.get_admin_remote()
-    second_admin_if = settings.INTERFACES.get(self.admin_net2)
+    remote = self.d_env.get_admin_remote()
+    second_admin_if = settings.INTERFACES.get(self.d_env.admin_net2)
     sed_cmd = "/  interface:/a \  interface: {0}".format(second_admin_if)
     self.fuel_web.modify_python_file(remote, sed_cmd,
                                      settings.FUEL_SETTINGS_YAML)
