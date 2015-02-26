@@ -111,7 +111,7 @@ class GlusterfsPlugin(TestBasic):
 
         for node in ('slave-01', 'slave-03'):
             self.check_glusterfs_conf(
-                remote=self.env.get_ssh_to_remote_by_name(node),
+                remote=self.env.d_env.get_ssh_to_remote_by_name(node),
                 path='/etc/cinder/glusterfs',
                 gfs_endpoint=GLUSTER_CLUSTER_ENDPOINT)
 
@@ -195,7 +195,7 @@ class GlusterfsPlugin(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.check_glusterfs_conf(
-            remote=self.env.get_ssh_to_remote_by_name('slave-03'),
+            remote=self.env.d_env.get_ssh_to_remote_by_name('slave-03'),
             path='/etc/cinder/glusterfs',
             gfs_endpoint=GLUSTER_CLUSTER_ENDPOINT)
 
@@ -216,7 +216,7 @@ class GlusterfsPlugin(TestBasic):
 
         for node in ('slave-03', 'slave-04', 'slave-05'):
             self.check_glusterfs_conf(
-                remote=self.env.get_ssh_to_remote_by_name(node),
+                remote=self.env.d_env.get_ssh_to_remote_by_name(node),
                 path='/etc/cinder/glusterfs',
                 gfs_endpoint=GLUSTER_CLUSTER_ENDPOINT)
 
