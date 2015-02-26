@@ -561,7 +561,7 @@ class FuelWebClient(object):
     def get_ssh_for_node(self, node_name):
         ip = self.get_nailgun_node_by_devops_node(
             self.environment.d_env.get_node(name=node_name))['ip']
-        return self.environment.get_ssh_to_remote(ip)
+        return self.environment.d_env.get_ssh_to_remote(ip)
 
     @logwrap
     def get_ssh_for_role(self, nodes_dict, role):
@@ -888,7 +888,7 @@ class FuelWebClient(object):
 
     def common_net_settings(self, network_configuration):
         nc = network_configuration["networking_parameters"]
-        public = IPNetwork(self.environment._get_network("public"))
+        public = IPNetwork(self.environment.d_env._get_network("public"))
 
         float_range = public if not BONDING else list(public.subnet(27))[0]
         nc["floating_ranges"] = self.get_range(float_range, 1)
@@ -903,7 +903,7 @@ class FuelWebClient(object):
                     self.net_settings(net_config, net_name)
             else:
                 pub_subnets = list(IPNetwork(
-                    self.environment._get_network("public")).subnet(27))
+                    self.environment.d_env._get_network("public")).subnet(27))
                 if "floating" == net_name:
                     self.net_settings(net_config, pub_subnets[0],
                                       floating=True, jbond=True)
@@ -928,7 +928,7 @@ class FuelWebClient(object):
                     self.net_settings(net_config, admin_net)
             else:
                 pub_subnets = list(IPNetwork(
-                    self.environment._get_network(public_net)).subnet(27))
+                    self.environment.d_env._get_network(public_net)).subnet(27))
 
                 if "floating" == net_name:
                     self.net_settings(net_config, pub_subnets[0],
@@ -943,7 +943,7 @@ class FuelWebClient(object):
         if jbond:
             ip_network = net_name
         else:
-            ip_network = IPNetwork(self.environment._get_network(net_name))
+            ip_network = IPNetwork(self.environment.d_env._get_network(net_name))
             if 'admin' in net_name:
                 net_config['ip_ranges'] = self.get_range(ip_network, 2)
 
@@ -973,7 +973,7 @@ class FuelWebClient(object):
 
     def get_floating_ranges(self, network_set=''):
         net_name = 'public{0}'.format(network_set)
-        net = list(IPNetwork(self.environment._get_network(net_name)))
+        net = list(IPNetwork(self.environment.d_env._get_network(net_name)))
         ip_ranges, expected_ips = [], []
 
         for i in [0, -20, -40]:
@@ -1022,7 +1022,8 @@ class FuelWebClient(object):
             wait(
                 lambda: self.get_nailgun_node_by_devops_node(node)['online'],
                 timeout=60 * 10)
-            remote = self.environment.get_ssh_to_remote_by_name(node.name)
+            remote = self.environment.d_env.get_ssh_to_remote_by_name(
+                node.name)
             try:
                 self.environment.sync_node_time(remote)
             except Exception as e:
@@ -1100,7 +1101,8 @@ class FuelWebClient(object):
                 return ''.join(result['stderr']).strip()
 
         for node_name in node_names:
-            remote = self.environment.get_ssh_to_remote_by_name(node_name)
+            remote = self.environment.d_env.get_ssh_to_remote_by_name(
+                node_name)
             try:
                 wait(lambda: _get_galera_status(remote) == 'ON',
                      timeout=30 * 4)
@@ -1116,7 +1118,8 @@ class FuelWebClient(object):
     def wait_cinder_is_up(self, node_names):
         logger.info("Waiting for all Cinder services up.")
         for node_name in node_names:
-            remote = self.environment.get_ssh_to_remote_by_name(node_name)
+            remote = self.environment.d_env.get_ssh_to_remote_by_name(
+                node_name)
             try:
                 wait(lambda: checkers.check_cinder_status(remote),
                      timeout=300)
@@ -1172,7 +1175,7 @@ class FuelWebClient(object):
         else:
             cmd = 'service ceph restart'
         for node in ceph_nodes:
-            remote = self.environment.get_ssh_to_remote(node['ip'])
+            remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
             self.environment.sync_node_time(remote)
             result = remote.execute(cmd)
             if not result['exit_code'] == 0:
@@ -1190,7 +1193,7 @@ class FuelWebClient(object):
 
         logger.info('Waiting until Ceph service become up...')
         for node in ceph_nodes:
-            remote = self.environment.get_ssh_to_remote(node['ip'])
+            remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
             try:
                 wait(lambda: checkers.check_ceph_ready(remote) is True,
                      interval=20, timeout=600)
@@ -1202,7 +1205,7 @@ class FuelWebClient(object):
         logger.info('Ceph service is ready')
         logger.info('Checking Ceph Health...')
         for node in ceph_nodes:
-            remote = self.environment.get_ssh_to_remote(node['ip'])
+            remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
             health_status = checkers.get_ceph_health(remote)
             if 'HEALTH_OK' in health_status:
                 continue
@@ -1235,7 +1238,7 @@ class FuelWebClient(object):
 
         logger.info('Checking Ceph OSD Tree...')
         for node in ceph_nodes:
-            remote = self.environment.get_ssh_to_remote(node['ip'])
+            remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
             checkers.check_ceph_disks(remote, [n['id'] for n in ceph_nodes])
         logger.info('Ceph cluster status is OK')
 
