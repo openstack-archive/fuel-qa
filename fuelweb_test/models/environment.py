@@ -64,7 +64,7 @@ class EnvironmentModel(object):
         self.fuel_web.add_syslog_server(
             cluster_id, self.d_env.router(), port)
 
-    def bootstrap_nodes(self, devops_nodes, timeout=600):
+    def bootstrap_nodes(self, devops_nodes, timeout=600, skip_timesync=False):
         """Lists registered nailgun nodes
         Start vms and wait until they are registered on nailgun.
         :rtype : List of registered nailgun nodes
@@ -78,8 +78,9 @@ class EnvironmentModel(object):
             time.sleep(2)
         wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
 
-        for node in self.nailgun_nodes(devops_nodes):
-            self.sync_node_time(self.get_ssh_to_remote(node["ip"]))
+        if not skip_timesync:
+            for node in self.nailgun_nodes(devops_nodes):
+                self.sync_node_time(self.get_ssh_to_remote(node["ip"]))
 
         return self.nailgun_nodes(devops_nodes)
 
@@ -224,43 +225,46 @@ class EnvironmentModel(object):
             devops_nodes
         )
 
-    def revert_snapshot(self, name):
-        if self.d_env.has_snapshot(name):
-            logger.info('We have snapshot with such name %s' % name)
+    def revert_snapshot(self, name, skip_timesync=False):
+        if not self.d_env.has_snapshot(name):
+            return False
 
-            self.d_env.revert(name)
-            logger.info('Starting snapshot reverting ....')
+        logger.info('We have snapshot with such name %s' % name)
 
-            self.d_env.resume()
-            logger.info('Starting snapshot resuming ...')
+        self.d_env.revert(name)
+        logger.info('Starting snapshot reverting ....')
 
-            admin = self.d_env.nodes().admin
+        self.d_env.resume()
+        logger.info('Starting snapshot resuming ...')
 
-            try:
-                admin.await(
-                    self.d_env.admin_net, timeout=10 * 60,
-                    by_port=8000)
-            except Exception as e:
-                logger.warning("From first time admin isn't reverted: "
-                               "{0}".format(e))
-                admin.destroy()
-                logger.info('Admin node was destroyed. Wait 10 sec.')
-                time.sleep(10)
-                self.d_env.start(
-                    self.d_env.nodes().admins)
-                logger.info('Admin node started second time.')
-                self.d_env.nodes().admin.await(
-                    self.d_env.admin_net, timeout=10 * 60,
-                    by_port=8000)
+        admin = self.d_env.nodes().admin
 
-            self.set_admin_ssh_password()
-            try:
-                _wait(self.fuel_web.client.get_releases,
-                      expected=EnvironmentError, timeout=300)
-            except exceptions.Unauthorized:
-                self.set_admin_keystone_password()
-                self.fuel_web.get_nailgun_version()
+        try:
+            admin.await(
+                self.d_env.admin_net, timeout=10 * 60,
+                by_port=8000)
+        except Exception as e:
+            logger.warning("From first time admin isn't reverted: "
+                           "{0}".format(e))
+            admin.destroy()
+            logger.info('Admin node was destroyed. Wait 10 sec.')
+            time.sleep(10)
+            self.d_env.start(
+                self.d_env.nodes().admins)
+            logger.info('Admin node started second time.')
+            self.d_env.nodes().admin.await(
+                self.d_env.admin_net, timeout=10 * 60,
+                by_port=8000)
 
+        self.set_admin_ssh_password()
+        try:
+            _wait(self.fuel_web.client.get_releases,
+                  expected=EnvironmentError, timeout=300)
+        except exceptions.Unauthorized:
+            self.set_admin_keystone_password()
+            self.fuel_web.get_nailgun_version()
+
+        if not skip_timesync:
             self.sync_time_admin_node()
 
             for node in self.d_env.nodes().slaves:
@@ -276,8 +280,7 @@ class EnvironmentModel(object):
                         ' {1}'.format(node.name, e))
                 self.run_nailgun_agent(
                     self.get_ssh_to_remote_by_name(node.name))
-            return True
-        return False
+        return True
 
     def set_admin_ssh_password(self):
         try:
