@@ -44,7 +44,6 @@ from fuelweb_test import logger
 class EnvironmentModel(object):
     def __init__(self):
         self._virtual_environment = None
-        self._keys = None
         self.fuel_web = FuelWebClient(self.get_admin_node_ip(), self)
 
     @property
@@ -135,23 +134,6 @@ class EnvironmentModel(object):
             " <Enter>\n"
         ) % params
         return keys
-
-    @logwrap
-    def get_private_keys(self, force=False):
-        if force or self._keys is None:
-            self._keys = []
-            for key_string in ['/root/.ssh/id_rsa',
-                               '/root/.ssh/bootstrap.rsa']:
-                with self.get_admin_remote().open(key_string) as f:
-                    self._keys.append(RSAKey.from_private_key(f))
-        return self._keys
-
-    @logwrap
-    def get_ssh_to_remote(self, ip):
-        return SSHClient(ip,
-                         username=settings.SSH_CREDENTIALS['login'],
-                         password=settings.SSH_CREDENTIALS['password'],
-                         private_keys=self.get_private_keys())
 
     @logwrap
     def get_ssh_to_remote_by_key(self, ip, keyfile):
