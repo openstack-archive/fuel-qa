@@ -38,7 +38,7 @@ class PuppetEnvironment(EnvironmentModel):
 
     def execute_cmd(self, command, debug=True):
         """Execute command on node."""
-        return self.get_admin_remote().execute(command,
+        return self.d_env.get_admin_remote().execute(command,
                                                verbose=debug)['exit_code']
 
     def await(self, timeout=1200):

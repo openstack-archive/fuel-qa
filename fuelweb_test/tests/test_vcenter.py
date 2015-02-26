@@ -163,7 +163,7 @@ class VcenterDeploy(TestBasic):
                         ips_for_check.append(net_prefs['addr'])
 
         # Wait until vm is booted
-        ssh = self.env.get_ssh_to_remote_by_name("slave-01")
+        ssh = self.env.d_env.get_ssh_to_remote_by_name("slave-01")
         wait(
             lambda: not ssh.execute('curl -s -m1 http://' + ips_for_check[0] +
                                     ':22 |grep -iq "[a-z]"')['exit_code'],
