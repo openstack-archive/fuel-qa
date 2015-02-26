@@ -52,7 +52,8 @@ class HAOneControllerZabbix(TestBasic):
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        node_ssh = self.env.get_ssh_to_remote(self.fuel_web.admin_node_ip)
+        node_ssh = self.env.d_env.get_ssh_to_remote(
+            self.fuel_web.admin_node_ip)
 
         # Turn on experimental mode
         checkers.check_enable_experimental_mode(

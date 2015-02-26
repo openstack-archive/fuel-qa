@@ -68,12 +68,12 @@ class GlusterfsPlugin(TestBasic):
         # copy plugin to the master node
 
         checkers.upload_tarball(
-            self.env.get_admin_remote(), GLUSTER_PLUGIN_PATH, '/var')
+            self.env.d_env.get_admin_remote(), GLUSTER_PLUGIN_PATH, '/var')
 
         # install plugin
 
         checkers.install_plugin_check_code(
-            self.env.get_admin_remote(),
+            self.env.d_env.get_admin_remote(),
             plugin=os.path.basename(GLUSTER_PLUGIN_PATH))
 
         settings = None
@@ -110,8 +110,9 @@ class GlusterfsPlugin(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         for node in ('slave-01', 'slave-03'):
+            _ip = self.fuel_web.get_nailgun_node(node)['ip']
             self.check_glusterfs_conf(
-                remote=self.env.get_ssh_to_remote_by_name(node),
+                remote=self.env.d_env.get_ssh_to_remote(_ip),
                 path='/etc/cinder/glusterfs',
                 gfs_endpoint=GLUSTER_CLUSTER_ENDPOINT)
 
@@ -153,12 +154,12 @@ class GlusterfsPlugin(TestBasic):
         # copy plugin to the master node
 
         checkers.upload_tarball(
-            self.env.get_admin_remote(), GLUSTER_PLUGIN_PATH, '/var')
+            self.env.d_env.get_admin_remote(), GLUSTER_PLUGIN_PATH, '/var')
 
         # install plugin
 
         checkers.install_plugin_check_code(
-            self.env.get_admin_remote(),
+            self.env.d_env.get_admin_remote(),
             plugin=os.path.basename(GLUSTER_PLUGIN_PATH))
 
         settings = None
@@ -194,8 +195,9 @@ class GlusterfsPlugin(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
+        _ip = self.fuel_web.get_nailgun_node_by_name("slave-03")['ip']
         self.check_glusterfs_conf(
-            remote=self.env.get_ssh_to_remote_by_name('slave-03'),
+            remote=self.env.d_env.get_ssh_to_remote(_ip),
             path='/etc/cinder/glusterfs',
             gfs_endpoint=GLUSTER_CLUSTER_ENDPOINT)
 
@@ -215,8 +217,9 @@ class GlusterfsPlugin(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         for node in ('slave-03', 'slave-04', 'slave-05'):
+            _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
             self.check_glusterfs_conf(
-                remote=self.env.get_ssh_to_remote_by_name(node),
+                remote=self.env.d_env.get_ssh_to_remote(_ip),
                 path='/etc/cinder/glusterfs',
                 gfs_endpoint=GLUSTER_CLUSTER_ENDPOINT)
 
