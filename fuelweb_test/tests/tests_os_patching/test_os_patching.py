@@ -68,7 +68,8 @@ class TestPatch(TestBasic):
         self.env.revert_snapshot(self.snapshot)
 
         logger.info("Start upload upgrade archive")
-        node_ssh = self.env.get_ssh_to_remote(self.fuel_web.admin_node_ip)
+        node_ssh = self.env.d_env.get_ssh_to_remote(
+            self.fuel_web.admin_node_ip)
 
         # 2. Upload tarball
         checkers.upload_tarball(

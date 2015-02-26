@@ -53,13 +53,13 @@ class ExamplePlugin(TestBasic):
         # copy plugin to the master node
 
         checkers.upload_tarball(
-            self.env.get_admin_remote(),
+            self.env.d_env.get_admin_remote(),
             EXAMPLE_PLUGIN_PATH, '/var')
 
         # install plugin
 
         checkers.install_plugin_check_code(
-            self.env.get_admin_remote(),
+            self.env.d_env.get_admin_remote(),
             plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
 
         segment_type = 'vlan'
@@ -95,14 +95,14 @@ class ExamplePlugin(TestBasic):
         logger.debug("Start to check service on node {0}".format('slave-01'))
         cmd_curl = 'curl localhost:8234'
         cmd = 'pgrep -f fuel-simple-service'
-        res_pgrep = self.env.get_ssh_to_remote_by_name(
+        res_pgrep = self.env.d_env.get_ssh_to_remote_by_name(
             'slave-01').execute(cmd)
         assert_equal(0, res_pgrep['exit_code'],
                      'Failed with error {0}'.format(res_pgrep['stderr']))
         assert_equal(1, len(res_pgrep['stdout']),
                      'Failed with error {0}'.format(res_pgrep['stderr']))
         # curl to service
-        res_curl = self.env.get_ssh_to_remote_by_name(
+        res_curl = self.env.d_env.get_ssh_to_remote_by_name(
             'slave-01').execute(cmd_curl)
         assert_equal(0, res_pgrep['exit_code'],
                      'Failed with error {0}'.format(res_curl['stderr']))
@@ -139,12 +139,12 @@ class ExamplePlugin(TestBasic):
         # copy plugin to the master node
 
         checkers.upload_tarball(
-            self.env.get_admin_remote(), EXAMPLE_PLUGIN_PATH, '/var')
+            self.env.d_env.get_admin_remote(), EXAMPLE_PLUGIN_PATH, '/var')
 
         # install plugin
 
         checkers.install_plugin_check_code(
-            self.env.get_admin_remote(),
+            self.env.d_env.get_admin_remote(),
             plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
@@ -176,7 +176,7 @@ class ExamplePlugin(TestBasic):
             logger.debug("Start to check service on node {0}".format(node))
             cmd_curl = 'curl localhost:8234'
             cmd = 'pgrep -f fuel-simple-service'
-            res_pgrep = self.env.get_ssh_to_remote_by_name(
+            res_pgrep = self.env.d_env.get_ssh_to_remote_by_name(
                 node).execute(cmd)
             assert_equal(0, res_pgrep['exit_code'],
                          'Failed with error {0} '
@@ -185,7 +185,7 @@ class ExamplePlugin(TestBasic):
                          'Failed with error {0} on the '
                          'node {1}'.format(res_pgrep['stderr'], node))
             # curl to service
-            res_curl = self.env.get_ssh_to_remote_by_name(
+            res_curl = self.env.d_env.get_ssh_to_remote_by_name(
                 node).execute(cmd_curl)
             assert_equal(0, res_pgrep['exit_code'],
                          'Failed with error {0} '
@@ -226,12 +226,12 @@ class ExamplePlugin(TestBasic):
         # copy plugin to the master node
 
         checkers.upload_tarball(
-            self.env.get_admin_remote(), EXAMPLE_PLUGIN_PATH, '/var')
+            self.env.d_env.get_admin_remote(), EXAMPLE_PLUGIN_PATH, '/var')
 
         # install plugin
 
         checkers.install_plugin_check_code(
-            self.env.get_admin_remote(),
+            self.env.d_env.get_admin_remote(),
             plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
@@ -265,14 +265,14 @@ class ExamplePlugin(TestBasic):
         logger.debug("Start to check service on node {0}".format('slave-01'))
         cmd_curl = 'curl localhost:8234'
         cmd = 'pgrep -f fuel-simple-service'
-        res_pgrep = self.env.get_ssh_to_remote_by_name(
+        res_pgrep = self.env.d_env.get_ssh_to_remote_by_name(
             'slave-01').execute(cmd)
         assert_equal(0, res_pgrep['exit_code'],
                      'Failed with error {0}'.format(res_pgrep['stderr']))
         assert_equal(1, len(res_pgrep['stdout']),
                      'Failed with error {0}'.format(res_pgrep['stderr']))
         # curl to service
-        res_curl = self.env.get_ssh_to_remote_by_name(
+        res_curl = self.env.d_env.get_ssh_to_remote_by_name(
             'slave-01').execute(cmd_curl)
         assert_equal(0, res_pgrep['exit_code'],
                      'Failed with error {0}'.format(res_curl['stderr']))
@@ -291,7 +291,7 @@ class ExamplePlugin(TestBasic):
             logger.debug("Start to check service on node {0}".format(node))
             cmd_curl = 'curl localhost:8234'
             cmd = 'pgrep -f fuel-simple-service'
-            res_pgrep = self.env.get_ssh_to_remote_by_name(
+            res_pgrep = self.env.d_env.get_ssh_to_remote_by_name(
                 node).execute(cmd)
             assert_equal(0, res_pgrep['exit_code'],
                          'Failed with error {0} '
@@ -300,7 +300,7 @@ class ExamplePlugin(TestBasic):
                          'Failed with error {0} on the '
                          'node {1}'.format(res_pgrep['stderr'], node))
             # curl to service
-            res_curl = self.env.get_ssh_to_remote_by_name(
+            res_curl = self.env.d_env.get_ssh_to_remote_by_name(
                 node).execute(cmd_curl)
             assert_equal(0, res_pgrep['exit_code'],
                          'Failed with error {0} '
