@@ -96,7 +96,7 @@ def store_astute_yaml(env):
         nailgun_node = env.fuel_web.get_nailgun_node_by_devops_node(node)
         if node.driver.node_active(node) and nailgun_node['roles']:
             try:
-                remote = env.get_ssh_to_remote_by_name(node.name)
+                remote = env.d_env.get_ssh_to_remote_by_name(node.name)
                 filename = '{0}/{1}-{2}.yaml'.format(settings.LOGS_DIR,
                                                      func_name, node.name)
                 logger.info("Storing {0}".format(filename))
