@@ -89,13 +89,13 @@ class TestHaVLAN(TestBasic):
 
         self.fuel_web.check_fixed_nova_splited_cidr(
             os_conn, self.fuel_web.get_nailgun_cidr_nova(cluster_id),
-            self.env.get_ssh_to_remote_by_name('slave-01'))
+            self.env.d_env.get_ssh_to_remote_by_name('slave-01'))
 
         self.fuel_web.verify_network(cluster_id)
         devops_node = self.fuel_web.get_nailgun_primary_controller(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
-        remote = self.env.get_ssh_to_remote_by_name(devops_node.name)
+        remote = self.env.d_env.get_ssh_to_remote_by_name(devops_node.name)
         checkers.check_swift_ring(remote)
 
         self.fuel_web.run_ostf(
@@ -163,7 +163,7 @@ class TestHaFlat(TestBasic):
         devops_node = self.fuel_web.get_nailgun_primary_controller(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
-        remote = self.env.get_ssh_to_remote_by_name(devops_node.name)
+        remote = self.env.d_env.get_ssh_to_remote_by_name(devops_node.name)
         checkers.check_swift_ring(remote)
 
         self.fuel_web.security.verify_firewall(cluster_id)
@@ -279,7 +279,7 @@ class TestHaFlatScalability(TestBasic):
         devops_node = self.fuel_web.get_nailgun_primary_controller(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
-        remote = self.env.get_ssh_to_remote_by_name(devops_node.name)
+        remote = self.env.d_env.get_ssh_to_remote_by_name(devops_node.name)
         checkers.check_swift_ring(remote)
 
         self.fuel_web.update_nodes(
@@ -296,7 +296,7 @@ class TestHaFlatScalability(TestBasic):
         devops_node = self.fuel_web.get_nailgun_primary_controller(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
-        remote = self.env.get_ssh_to_remote_by_name(devops_node.name)
+        remote = self.env.d_env.get_ssh_to_remote_by_name(devops_node.name)
         checkers.check_swift_ring(remote)
 
         self.fuel_web.update_nodes(
@@ -321,7 +321,7 @@ class TestHaFlatScalability(TestBasic):
         devops_node = self.fuel_web.get_nailgun_primary_controller(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
-        remote = self.env.get_ssh_to_remote_by_name(devops_node.name)
+        remote = self.env.d_env.get_ssh_to_remote_by_name(devops_node.name)
         checkers.check_swift_ring(remote)
 
         self.fuel_web.run_ostf(
@@ -361,8 +361,8 @@ class BackupRestoreHa(TestBasic):
             'novaHaFlat', 'novaHaFlat', 'novaHaFlat')
         self.fuel_web.assert_cluster_ready(
             os_conn, smiles_count=16, networks_count=1, timeout=300)
-        self.fuel_web.backup_master(self.env.get_admin_remote())
-        checkers.backup_check(self.env.get_admin_remote())
+        self.fuel_web.backup_master(self.env.d_env.get_admin_remote())
+        checkers.backup_check(self.env.d_env.get_admin_remote())
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[5:6])
         self.fuel_web.update_nodes(
@@ -372,10 +372,10 @@ class BackupRestoreHa(TestBasic):
         assert_equal(
             6, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
 
-        self.fuel_web.restore_master(self.env.get_admin_remote())
-        checkers.restore_check_sum(self.env.get_admin_remote())
-        self.fuel_web.restore_check_nailgun_api(self.env.get_admin_remote())
-        checkers.iptables_check(self.env.get_admin_remote())
+        self.fuel_web.restore_master(self.env.d_env.get_admin_remote())
+        checkers.restore_check_sum(self.env.d_env.get_admin_remote())
+        self.fuel_web.restore_check_nailgun_api(self.env.d_env.get_admin_remote())
+        checkers.iptables_check(self.env.d_env.get_admin_remote())
 
         assert_equal(
             5, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
