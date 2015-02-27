@@ -35,6 +35,7 @@ from fuelweb_test.helpers.eb_tables import Ebtables
 from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.fuel_actions import PostgresActions
 from fuelweb_test.helpers import multiple_networks_hacks
+from fuelweb_test.helpers.utils import install_pkg
 from fuelweb_test.models.fuel_web_client import FuelWebClient
 from fuelweb_test import settings
 from fuelweb_test import logwrap
@@ -459,17 +460,7 @@ class EnvironmentModel(object):
     def admin_install_pkg(self, pkg_name):
         """Install a package <pkg_name> on the admin node"""
         admin_remote = self.get_admin_remote()
-        remote_status = admin_remote.execute("rpm -q {0}'".format(pkg_name))
-        if remote_status['exit_code'] == 0:
-            logger.info("Package '{0}' already installed.".format(pkg_name))
-        else:
-            logger.info("Installing package '{0}' ...".format(pkg_name))
-            remote_status = admin_remote.execute("yum -y install {0}"
-                                                 .format(pkg_name))
-            logger.info("Installation of the package '{0}' has been"
-                        " completed with exit code {1}"
-                        .format(pkg_name, remote_status['exit_code']))
-        return remote_status['exit_code']
+        return install_pkg(admin_remote, pkg_name)
 
     def admin_run_service(self, service_name):
         """Start a service <service_name> on the admin node"""
