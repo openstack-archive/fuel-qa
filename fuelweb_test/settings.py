@@ -266,8 +266,8 @@ SERVTEST_SAHARA_VANILLA_2_IMAGE_META = {'_sahara_tag_2.4.1': 'True',
                                         '_sahara_tag_vanilla': 'True',
                                         '_sahara_username': 'ubuntu'}
 
-SERVTEST_MURANO_IMAGE = "ubuntu_14_04-murano-agent_stable_juno.qcow2"
-SERVTEST_MURANO_IMAGE_MD5 = '9f562f3f577dc32698c11a99d3f15070'
+SERVTEST_MURANO_IMAGE = "ubuntu_14_04-murano-agent_stable_juno_26_02_15.qcow2"
+SERVTEST_MURANO_IMAGE_MD5 = '3da5ec5984d6d19c1b88d0062c885a89'
 SERVTEST_MURANO_IMAGE_NAME = 'murano'
 SERVTEST_MURANO_IMAGE_META = {
     'murano_image_info': '{"type": "linux", "title": "murano"}'}
