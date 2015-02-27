@@ -13,6 +13,7 @@
 #    under the License.
 
 import functools
+import glob
 import inspect
 import json
 import os
@@ -130,6 +131,44 @@ def upload_manifests(func):
         except Exception:
             logger.error("Could not upload manifests")
             raise
+        return result
+    return wrapper
+
+
+def update_fuel(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        if settings.UPDATE_FUEL:
+            logger.info("Update fuel's packages from directory {0}."
+                        .format(settings.UPDATE_FUEL_PATH))
+
+            environment = get_current_env(args)
+            if not environment:
+                logger.warning("Decorator was triggered "
+                               "from unexpected class.")
+                return result
+
+            #TODO: remove this ugly shit
+            cr = CustomRepo(environment)
+            cr.install_tools(['createrepo'])
+
+            remote = environment.get_admin_remote()
+            remote.upload(settings.UPDATE_FUEL_PATH,
+                          settings.LOCAL_MIRROR_CENTOS)
+
+            cr.update_yaml(cr.centos_yaml_versions)
+            cr.regenerate_repo(cr.centos_script,
+                               settings.LOCAL_MIRROR_CENTOS)
+
+            try:
+                remote.execute("for container in $(dockerctl list); do"
+                               " dockerctl shell $container bash -c \"yum "
+                               "clean expire-cache;yum update -y\";dockerctl "
+                               "restart $container; done")
+
+            except Exception:
+                logger.exception("Fail update of Fuel's package(s).")
         return result
     return wrapper
 
