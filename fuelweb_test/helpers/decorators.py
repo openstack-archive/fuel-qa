@@ -13,6 +13,7 @@
 #    under the License.
 
 import functools
+import glob
 import inspect
 import json
 import os
@@ -35,6 +36,7 @@ from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers.regenerate_repo import CustomRepo
 from fuelweb_test.helpers.utils import get_current_env
+from fuelweb_test.helpers.utils import install_pkg
 from fuelweb_test.helpers.utils import pull_out_logs_via_ssh
 from fuelweb_test.helpers.utils import store_astute_yaml
 
@@ -130,6 +132,33 @@ def upload_manifests(func):
         except Exception:
             logger.error("Could not upload manifests")
             raise
+        return result
+    return wrapper
+
+
+def update_fuel(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        if settings.UPDATE_FUEL:
+            logger.info("Update fuel's packages from directory {0}."
+                        .format(settings.UPDATE_FUEL_PATH))
+
+            environment = get_current_env(args)
+            if not environment:
+                logger.warning("Decorator was triggered "
+                               "from unexpected class.")
+                return result
+            remote = environment.get_admin_remote()
+            remote.upload(settings.UPDATE_FUEL_PATH,
+                          '/var/fuel-pkgs')
+
+            pkg_list = glob.glob("/var/fuel-pkgs/*.rpm")
+
+            for pkg in pkg_list:
+                res = install_pkg(remote, pkg)
+                assert_equal(0, res, "Could not update package {0}."
+                             .format(pkg))
         return result
     return wrapper
 

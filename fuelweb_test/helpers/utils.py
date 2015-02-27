@@ -129,3 +129,23 @@ def get_current_env(args):
         return args[0].environment
     else:
         logger.warning("Unexpected class!")
+
+
+def install_pkg(remote, pkg_name):
+    """Install a package <pkg_name> on node
+
+    :param remote: SSHClient to remote node
+    :param pkg_name: name of a package
+    :return: exit code of installation
+    """
+    remote_status = remote.execute("rpm -q {0}'".format(pkg_name))
+    if remote_status['exit_code'] == 0:
+        logger.info("Package '{0}' already installed.".format(pkg_name))
+    else:
+        logger.info("Installing package '{0}' ...".format(pkg_name))
+        remote_status = remote.execute("yum -y install {0}"
+                                       .format(pkg_name))
+        logger.info("Installation of the package '{0}' has been"
+                    " completed with exit code {1}"
+                    .format(pkg_name, remote_status['exit_code']))
+    return remote_status['exit_code']
