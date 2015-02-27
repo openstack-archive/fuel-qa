@@ -29,6 +29,7 @@ from fuelweb_test.helpers import checkers
 from fuelweb_test import logwrap
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import custom_repo
+from fuelweb_test.helpers.decorators import update_fuel
 from fuelweb_test.helpers.decorators import download_astute_yaml
 from fuelweb_test.helpers.decorators import update_ostf
 from fuelweb_test.helpers.decorators import upload_manifests
@@ -305,6 +306,7 @@ class FuelWebClient(object):
     @logwrap
     @upload_manifests
     @update_ostf
+    @update_fuel
     def create_cluster(self,
                        name,
                        settings=None,
