@@ -17,6 +17,7 @@ import re
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import test
+from proboscis import SkipTest
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
@@ -129,6 +130,11 @@ class TestHaFlat(TestBasic):
         Snapshot deploy_ha_flat
 
         """
+        try:
+            self.check_run("deploy_ha_flat")
+        except SkipTest:
+            return
+
         self.env.revert_snapshot("ready_with_5_slaves")
 
         data = {
@@ -172,55 +178,83 @@ class TestHaFlat(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot("deploy_ha_flat")
+        self.env.make_snapshot("deploy_ha_flat", is_make=True)
+
+    @test(depends_on_groups=['deploy_ha_flat'],
+          groups=["ha_flat_addremove"])
+    @log_snapshot_on_error
+    def ha_flat_addremove(self):
+        """Add and re-add cinder / compute + cinder to HA cluster
+
+        Scenario:
+            1. Revert snapshot deploy_ha_flat with 3 controller
+               and 2 compute nodes
+            2. Add 'cinder' role to a new slave
+            3. Deploy changes
+            4. Remove the 'cinder' node
+               Remove a 'controller' node
+               Add 'controller'+'cinder' multirole to a new slave
+            5. Deploy changes
+            6. Run verify networks
+            7. Run OSTF
+
+        Duration 50m
+        """
+
+        self.env.revert_snapshot("deploy_ha_flat")
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[5:7])
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-06': ['cinder']})
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-06': ['cinder']}, False, True,)
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-03': ['controller']}, False, True,)
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-07': ['controller', 'cinder']})
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['ha', 'smoke', 'sanity'])
 
 
 @test(groups=["thread_4", "ha", "image_based"])
 class TestHaFlatAddCompute(TestBasic):
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+    @test(depends_on_groups=['deploy_ha_flat'],
           groups=["ha_flat_add_compute"])
     @log_snapshot_on_error
     def ha_flat_add_compute(self):
         """Add compute node to cluster in HA mode with flat nova-network
 
         Scenario:
-            1. Create cluster
-            2. Add 3 nodes with controller roles
-            3. Add 2 nodes with compute roles
-            4. Deploy the cluster
-            5. Validate cluster was set up correctly, there are no dead
-            services, there are no errors in logs
-            6. Add 1 node with compute role
-            7. Deploy the cluster
-            8. Run network verification
-            9. Run OSTF
+            1. Revert snapshot deploy_ha_flat with 3 controller
+               and 2 compute nodes
+            2. Add 1 node with compute role
+            3. Deploy the cluster
+            4. Run network verification
+            5. Run OSTF
 
-        Duration 80m
+        Duration 10m
         Snapshot ha_flat_add_compute
 
         """
-        self.env.revert_snapshot("ready_with_5_slaves")
-
-        cluster_id = self.fuel_web.create_cluster(
-            name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE_HA
-        )
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {
-                'slave-01': ['controller'],
-                'slave-02': ['controller'],
-                'slave-03': ['controller'],
-                'slave-04': ['compute'],
-                'slave-05': ['compute']
-            }
-        )
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id))
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=16, networks_count=1, timeout=300)
+        self.env.revert_snapshot("deploy_ha_flat")
+        cluster_id = self.fuel_web.get_last_created_cluster()
 
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[5:6])
