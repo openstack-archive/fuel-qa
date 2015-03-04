@@ -817,6 +817,7 @@ class HeatHAOneController(TestBasic):
                            'test_heat.'
                            'HeatSmokeTests')
         tests_names = ['test_actions',
+                       'test_advanced_actions',
                        'test_autoscaling',
                        'test_rollback',
                        'test_update']
@@ -896,6 +897,7 @@ class HeatHAOneController(TestBasic):
                            'test_heat.'
                            'HeatSmokeTests')
         tests_names = ['test_actions',
+                       'test_advanced_actions',
                        'test_autoscaling',
                        'test_rollback',
                        'test_update']
@@ -987,7 +989,10 @@ class HeatHA(TestBasic):
                            'test_heat.'
                            'HeatSmokeTests')
         tests_names = ['test_actions',
-                       'test_rollback']
+                       'test_advanced_actions',
+                       'test_autoscaling'
+                       'test_rollback',
+                       'test_update']
 
         test_classes = []
 
