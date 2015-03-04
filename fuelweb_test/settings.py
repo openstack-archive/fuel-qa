@@ -362,3 +362,15 @@ TIMESTAT_PATH_YAML = os.environ.get(
         LOGS_DIR, 'timestat_{}.yaml'.format(time.strftime("%Y%m%d"))))
 
 FUEL_PLUGIN_BUILDER_REPO = 'https://github.com/stackforge/fuel-plugins.git'
+
+# MIRROR_UBUNTU and EXTRA_DEB_REPOS - lists of repositories, separated by '|',
+# for example:
+# MIRROR_UBUNTU = 'deb http://... trusty main universe multiverse|deb ...'
+# If MIRROR_UBUNTU set, it will replace the default upstream repositories,
+# the first repo in string should point to upstream Ubuntu mirror
+# and use sections 'main universe multiverse'.
+# Repos from EXTRA_DEB_REPOS will be appended to the list of repositories.
+MIRROR_UBUNTU = os.environ.get('MIRROR_UBUNTU', '')
+EXTRA_DEB_REPOS = os.environ.get('EXTRA_DEB_REPOS', '')
+MIRROR_UBUNTU_PRIORITY = os.environ.get('MIRROR_UBUNTU_PRIORITY', '1001')
+EXTRA_DEB_REPOS_PRIORITY = os.environ.get('EXTRA_DEB_REPOS_PRIORITY', '1050')
