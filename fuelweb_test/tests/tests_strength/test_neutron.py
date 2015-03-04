@@ -104,8 +104,9 @@ class TestNeutronFailover(base_test_case.TestBasic):
         except SkipTest:
             return
         self.env.revert_snapshot("ready")
-        self.env.bootstrap_nodes(
-            self.env.d_env.nodes().slaves[:6])
+        nodes = [node.start() for node in self.env.d_env.nodes().slaves[:6]]
+        nailgun_nodes = self.env.nailgun_nodes(nodes)
+        self.env.d_env.bootstrap_nodes(nailgun_nodes)
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,

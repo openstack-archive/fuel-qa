@@ -21,6 +21,7 @@ from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
+from devops.utils.ssh import sync_node_time
 from netaddr import IPNetwork
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
@@ -1026,7 +1027,7 @@ class FuelWebClient(object):
             _ip = self.get_nailgun_node_by_name(node.name)['ip']
             remote = self.environment.d_env.get_ssh_to_remote(_ip)
             try:
-                self.environment.sync_node_time(remote)
+                sync_node_time(remote)
             except Exception as e:
                 logger.warning(
                     'Exception caught while trying to sync time on {0}:'
@@ -1177,7 +1178,7 @@ class FuelWebClient(object):
             cmd = 'service ceph restart'
         for node in ceph_nodes:
             remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
-            self.environment.sync_node_time(remote)
+            sync_node_time(remote)
             result = remote.execute(cmd)
             if not result['exit_code'] == 0:
                 raise Exception('Ceph restart failed on {0}: {1}'.

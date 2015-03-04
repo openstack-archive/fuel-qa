@@ -226,9 +226,9 @@ class TestHaFlatAddCompute(TestBasic):
             self.fuel_web.get_public_vip(cluster_id))
         self.fuel_web.assert_cluster_ready(
             os_conn, smiles_count=16, networks_count=1, timeout=300)
-
-        self.env.bootstrap_nodes(
-            self.env.d_env.nodes().slaves[5:6])
+        nodes = [node.start() for node in self.env.d_env.nodes().slaves[5:6]]
+        nailgun_nodes = self.env.nailgun_nodes(nodes)
+        self.env.d_env.bootstrap_nodes(nailgun_nodes)
         self.fuel_web.update_nodes(
             cluster_id, {'slave-06': ['compute']}, True, False
         )
@@ -372,10 +372,11 @@ class BackupRestoreHa(TestBasic):
             'novaHaFlat', 'novaHaFlat', 'novaHaFlat')
         self.fuel_web.assert_cluster_ready(
             os_conn, smiles_count=16, networks_count=1, timeout=300)
-        self.fuel_web.backup_master(self.env.d_env.get_admin_remote())
-        checkers.backup_check(self.env.d_env.get_admin_remote())
-        self.env.bootstrap_nodes(
-            self.env.d_env.nodes().slaves[5:6])
+        self.fuel_web.backup_master(self.env.get_admin_remote())
+        checkers.backup_check(self.env.get_admin_remote())
+        nodes = [node.start() for node in self.env.d_env.nodes().slaves[5:6]]
+        nailgun_nodes = self.env.nailgun_nodes(nodes)
+        self.env.d_env.bootstrap_nodes(nailgun_nodes)
         self.fuel_web.update_nodes(
             cluster_id, {'slave-06': ['compute']}, True, False
         )
@@ -391,9 +392,9 @@ class BackupRestoreHa(TestBasic):
 
         assert_equal(
             5, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
-
-        self.env.bootstrap_nodes(
-            self.env.d_env.nodes().slaves[5:6])
+        nodes = [node.start() for node in self.env.d_env.nodes().slaves[5:6]]
+        nailgun_nodes = self.env.nailgun_nodes(nodes)
+        self.env.d_env.bootstrap_nodes(nailgun_nodes)
         self.fuel_web.update_nodes(
             cluster_id, {'slave-06': ['compute']}, True, False
         )

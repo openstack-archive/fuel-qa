@@ -51,8 +51,9 @@ class OneNodeDeploy(TestBasic):
         """
         self.env.revert_snapshot("ready")
         self.fuel_web.client.get_root()
-        self.env.bootstrap_nodes(
-            self.env.d_env.nodes().slaves[:1])
+        nodes = [node.start() for node in self.env.d_env.nodes().slaves[:1]]
+        nailgun_nodes = self.env.nailgun_nodes(nodes)
+        self.env.d_env.bootstrap_nodes(nailgun_nodes)
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -844,7 +845,10 @@ class MultinicBootstrap(TestBasic):
                 Ebtables.restore_mac(mac)
                 slave.destroy(verbose=False)
                 self.env.d_env.nodes().admins[0].revert("ready")
-                nailgun_slave = self.env.bootstrap_nodes([slave])[0]
+                slave.start()
+                nailgun_nodes = self.env.nailgun_nodes([slave])
+                self.env.d_env.bootstrap_nodes(nailgun_nodes)
+                nailgun_slave = nailgun_nodes[0]
                 assert_equal(mac.upper(), nailgun_slave['mac'].upper())
                 Ebtables.block_mac(mac)
         finally:
