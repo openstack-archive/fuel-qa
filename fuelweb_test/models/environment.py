@@ -20,6 +20,7 @@ from devops.helpers.helpers import _wait
 from devops.helpers.helpers import SSHClient
 from devops.helpers.helpers import wait
 from devops.models import Environment
+from devops.utils.ssh import sync_node_time
 from ipaddr import IPNetwork
 from keystoneclient import exceptions
 from paramiko import Agent
@@ -58,30 +59,6 @@ class EnvironmentModel(object):
     @property
     def admin_node_ip(self):
         return self.fuel_web.admin_node_ip
-
-    @logwrap
-    def add_syslog_server(self, cluster_id, port=5514):
-        self.fuel_web.add_syslog_server(
-            cluster_id, self.d_env.router(), port)
-
-    def bootstrap_nodes(self, devops_nodes, timeout=600):
-        """Lists registered nailgun nodes
-        Start vms and wait until they are registered on nailgun.
-        :rtype : List of registered nailgun nodes
-        """
-        # self.dhcrelay_check()
-
-        for node in devops_nodes:
-            node.start()
-            # TODO(aglarendil): LP#1317213 temporary sleep
-            # remove after better fix is applied
-            time.sleep(2)
-        wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
-
-        for node in self.nailgun_nodes(devops_nodes):
-            self.sync_node_time(self.get_ssh_to_remote(node["ip"]))
-
-        return self.nailgun_nodes(devops_nodes)
 
     @logwrap
     def get_admin_remote(self, login=settings.SSH_CREDENTIALS['login'],
@@ -268,7 +245,7 @@ class EnvironmentModel(object):
                     continue
                 try:
                     logger.info("Sync time on revert for node %s" % node.name)
-                    self.sync_node_time(
+                    sync_node_time(
                         self.get_ssh_to_remote_by_name(node.name))
                 except Exception as e:
                     logger.warning(
@@ -329,7 +306,7 @@ class EnvironmentModel(object):
         # wait while installation complete
         admin.await(self.d_env.admin_net, timeout=10 * 60)
         self.set_admin_ssh_password()
-        self.wait_bootstrap()
+        self.d_env.wait_bootstrap()
         time.sleep(10)
         self.set_admin_keystone_password()
         self.sync_time_admin_node()
@@ -369,18 +346,6 @@ class EnvironmentModel(object):
 
     @retry(count=10, delay=60)
     @logwrap
-    def sync_node_time(self, remote):
-        self.execute_remote_cmd(remote, 'hwclock -s')
-        self.execute_remote_cmd(remote, 'NTPD=$(find /etc/init.d/ -regex \''
-                                        '/etc/init.d/\(ntp.?\|ntp-dev\)\');'
-                                        '$NTPD stop && ntpd -dqg && $NTPD '
-                                        'start')
-        self.execute_remote_cmd(remote, 'hwclock -w')
-        remote_date = remote.execute('date')['stdout']
-        logger.info("Node time: %s" % remote_date)
-
-    @retry(count=10, delay=60)
-    @logwrap
     def sync_time_admin_node(self):
         logger.info("Sync time on revert for admin")
         remote = self.get_admin_remote()
@@ -410,24 +375,6 @@ class EnvironmentModel(object):
             node=self.fuel_web.get_nailgun_node_by_name(node_name),
             remote=self.get_ssh_to_remote_by_name(node_name)
         )
-
-    def wait_bootstrap(self):
-        logger.info("Waiting while bootstrapping is in progress")
-        log_path = "/var/log/puppet/bootstrap_admin_node.log"
-        logger.info("Puppet timeout set in {0}".format(
-            float(settings.PUPPET_TIMEOUT)))
-        wait(
-            lambda: not
-            self.get_admin_remote().execute(
-                "grep 'Fuel node deployment' '%s'" % log_path
-            )['exit_code'],
-            timeout=(float(settings.PUPPET_TIMEOUT))
-        )
-        result = self.get_admin_remote().execute("grep 'Fuel node deployment "
-                                                 "complete' '%s'" % log_path
-                                                 )['exit_code']
-        if result != 0:
-            raise Exception('Fuel node deployment failed.')
 
     def dhcrelay_check(self):
         admin_remote = self.get_admin_remote()
