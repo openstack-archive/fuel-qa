@@ -58,6 +58,7 @@ class SetupEnvironment(TestBasic):
         self.check_run("empty")
         with timestat("setup_environment", is_uniq=True):
             self.env.setup_environment()
+
         self.env.make_snapshot("empty", is_make=True)
 
     @test(depends_on=[setup_master])

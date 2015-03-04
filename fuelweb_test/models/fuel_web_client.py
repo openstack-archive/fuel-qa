@@ -50,6 +50,12 @@ from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import OSTF_TEST_NAME
 from fuelweb_test.settings import OSTF_TEST_RETRIES_COUNT
 from fuelweb_test.settings import TIMEOUT
+from fuelweb_test.settings import MIRROR_UBUNTU
+from fuelweb_test.settings import EXTRA_DEB_REPOS
+from fuelweb_test.settings import CUSTOM_PKGS_MIRROR
+from fuelweb_test.settings import MIRROR_UBUNTU_PRIORITY
+from fuelweb_test.settings import EXTRA_DEB_REPOS_PRIORITY
+from fuelweb_test.settings import CUSTOM_DEB_REPOS_PRIORITY
 
 import fuelweb_test.settings as help_data
 
@@ -413,6 +419,51 @@ class FuelWebClient(object):
                 vc_clusters = attributes['editable']['vcenter']['cluster']
                 vc_clusters['value'] = help_data.VCENTER_CLUSTERS
 
+            if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE and \
+                    'repo_setup' in attributes['editable']:
+
+                repos_attr = attributes['editable']['repo_setup']['repos']
+
+                repos = []
+                # Add external Ubuntu repositories
+                if MIRROR_UBUNTU:
+                    for x, repo_str in enumerate(MIRROR_UBUNTU.split('|')):
+                        repo_value = self.parse_ubuntu_repo(
+                            repo_str, 'ubuntu-{0}'.format(x),
+                            MIRROR_UBUNTU_PRIORITY)
+                        if repo_value:
+                            repos.append(repo_value)
+                    # Keep other (not upstream) repos
+                    for repo_value in repos_attr['value']:
+                        if 'archive.ubuntu.com' not in repo_value['uri']:
+                            repos.append(repo_value)
+                else:
+                # Use defaults from Nailgun if MIRROR_UBUNTU is not set
+                    repos = repos_attr['value']
+
+                # Add extra Ubuntu repositories with higher priority
+                if EXTRA_DEB_REPOS:
+                    for x, repo_str in enumerate(EXTRA_DEB_REPOS.split('|')):
+                        repo_value = self.parse_ubuntu_repo(
+                            repo_str, 'extra-{0}'.format(x),
+                            EXTRA_DEB_REPOS_PRIORITY)
+                        if repo_value:
+                            repos.append(repo_value)
+
+                if CUSTOM_PKGS_MIRROR:
+                    repo_value = self.parse_ubuntu_repo(
+                        'deb {0} /'.format(CUSTOM_PKGS_MIRROR),
+                        'custom_pkgs_mirror', CUSTOM_DEB_REPOS_PRIORITY)
+                    if repo_value:
+                        repos.append(repo_value)
+
+                repos_attr['value'] = repos
+                for x, rep in enumerate(repos):
+                    logger.info(
+                        "Repository {0} '{1}': '{2} {3} {4} {5}', priority:{6}"
+                        .format(x, rep['name'], rep['type'], rep['uri'],
+                                rep['suite'], rep['section'], rep['priority']))
+
             logger.debug("Try to update cluster "
                          "with next attributes {0}".format(attributes))
             self.client.update_cluster_attributes(cluster_id, attributes)
@@ -435,6 +486,21 @@ class FuelWebClient(object):
         #    cluster_id, self.environment.get_host_node_ip(), port)
 
         return cluster_id
+
+    def parse_ubuntu_repo(self, repo_string, name, priority):
+        results = re.search(
+            '^(deb|deb-src)\s+'
+            '(\w+:\/\/[\w\-\.\/]+(?::\d+)?[\w\-\.\/]+)\s+'
+            '([\w\-\.\/]+)'
+            '\s*([\w\-\.\/\s]*)$',
+            repo_string.strip())
+        if results:
+            return {"name": name,
+                    "priority": priority,
+                    "type": results.group(1),
+                    "uri": results.group(2),
+                    "suite": results.group(3),
+                    "section": results.group(4) or ''}
 
     @download_astute_yaml
     @duration
