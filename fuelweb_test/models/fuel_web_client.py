@@ -50,6 +50,11 @@ from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import OSTF_TEST_NAME
 from fuelweb_test.settings import OSTF_TEST_RETRIES_COUNT
 from fuelweb_test.settings import TIMEOUT
+from fuelweb_test.settings import MIRROR_UBUNTU
+from fuelweb_test.settings import EXTRA_DEB_REPOS
+from fuelweb_test.settings import MIRROR_UBUNTU_PRIORITY
+from fuelweb_test.settings import EXTRA_DEB_REPOS_PRIORITY
+from fuelweb_test.settings import CUSTOM_PKGS_MIRROR
 
 import fuelweb_test.settings as help_data
 
@@ -413,6 +418,45 @@ class FuelWebClient(object):
                 vc_clusters = attributes['editable']['vcenter']['cluster']
                 vc_clusters['value'] = help_data.VCENTER_CLUSTERS
 
+            if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE and \
+                    'repo_setup' in attributes['editable']:
+                # Set the local router as nameserver that will allow
+                # the admin node to access the Mirantis internal mirrors.
+                dns_server = self.environment.d_env.router()
+                new_resolv_conf = ["nameserver {0}".format(dns_server)]
+                self.environment.modify_resolv_conf(new_resolv_conf)
+
+                repos = []
+                # Add external Ubuntu repositories
+                if MIRROR_UBUNTU:
+                    for x, repo_str in enumerate(MIRROR_UBUNTU.split('|')):
+                        repo_value = self.parse_ubuntu_repo(repo_str,
+                            'Upstream-{0}'.format(x), MIRROR_UBUNTU_PRIORITY)
+                        if repo_value:
+                            repos.append(repo_value)
+                else:
+                # Use defaults from Nailgun if MIRROR_UBUNTU is not set
+                    repos = attributes['editable']['repo_setup']\
+                        ['repos']['value']
+
+                # Add extra Ubuntu repositories with higher priority
+                if EXTRA_DEB_REPOS:
+                    for x, repo_str in enumerate(EXTRA_DEB_REPOS.split('|')):
+                        repo_value = self.parse_ubuntu_repo(
+                            repo_str, 'Extra-{0}'.format(x),
+                            EXTRA_DEB_REPOS_PRIORITY)
+                        if repo_value:
+                            repos.append(repo_value)
+
+                if CUSTOM_PKGS_MIRROR:
+                    repo_value = self.parse_ubuntu_repo(
+                        'deb {0} /'.format(CUSTOM_PKGS_MIRROR),
+                        'CUSTOM_PKGS_MIRROR', '1050')
+                    if repo_value:
+                        repos.append(repo_value)
+
+                attributes['editable']['repo_setup']['repos']['value'] = repos
+
             logger.debug("Try to update cluster "
                          "with next attributes {0}".format(attributes))
             self.client.update_cluster_attributes(cluster_id, attributes)
@@ -435,6 +479,21 @@ class FuelWebClient(object):
         #    cluster_id, self.environment.get_host_node_ip(), port)
 
         return cluster_id
+
+    def parse_ubuntu_repo(self, repo_string, name, priority):
+        results=re.search(
+            '^(deb|deb-src)\s+'
+            '(\w+:\/\/[\w\-\.\/]+(?::\d+)?[\w\-\.\/]+)\s+'
+            '([\w\-\.\/]+)'
+            '\s*([\w\-\.\/\s]*)$',
+            repo_string.strip())
+        if results:
+            return {"name": name,
+                    "priority": priority,
+                    "type": results.group(1),
+                    "uri": results.group(2),
+                    "suite": results.group(3),
+                    "section": results.group(4) or ''}
 
     @download_astute_yaml
     @duration
