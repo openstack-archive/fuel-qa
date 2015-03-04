@@ -15,6 +15,7 @@
 import yaml
 import re
 
+from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
 
 from fuelweb_test import logger
@@ -72,6 +73,34 @@ class BaseActions(object):
                          out=result['stdout'],
                          err=result['stderr']))
         return ''.join(result['stdout']).strip()
+
+
+class AdminActions(BaseActions):
+    """ All actions relating to the admin node.
+    """
+
+    def __init__(self, admin_remote):
+        super(AdminActions, self).__init__(admin_remote)
+
+    def modify_configs(self, router):
+        # Slave nodes sould use the gateway of 'admin' network as the default
+        # gateway during provisioning and as an additional DNS server.
+        # resolv.conf should contains nameserver that resolve intranet URLs.
+        config = '/etc/fuel/astute.yaml'
+        resolv = '/etc/resolv.conf'
+
+        # wait until fuelmenu fill the astute.yaml
+        cmd = "fgrep 'dhcp_gateway' {0}".format(config)
+        wait(lambda: not self.admin_remote.execute(cmd)['exit_code'], 60)
+
+        cmd = ("sed -i 's/dhcp_gateway:.*/dhcp_gateway: {0}/' {1} &&"
+               "sed -i 's/\\(DNS_UPSTREAM:\\) \\(.*\\)/\\1 {0} \\2/' {1} &&"
+               "sed -i 's/\\(nameserver\\) \\(.*\\)/\\1 {0} \\2/' {2}"
+               .format(router, config, resolv))
+        result = self.admin_remote.execute(cmd)
+        assert_equal(0, result['exit_code'],
+                     "Command [{cmd}] failed with the following result: {res}"
+                     .format(cmd=cmd, res=result))
 
 
 class NailgunActions(BaseActions):

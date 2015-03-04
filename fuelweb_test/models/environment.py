@@ -28,6 +28,7 @@ from fuelweb_test.helpers.decorators import revert_info
 from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers.eb_tables import Ebtables
+from fuelweb_test.helpers.fuel_actions import AdminActions
 from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.fuel_actions import PostgresActions
 from fuelweb_test.helpers import multiple_networks_hacks
@@ -41,6 +42,10 @@ class EnvironmentModel(object):
     def __init__(self):
         self._virtual_environment = None
         self.fuel_web = FuelWebClient(self.get_admin_node_ip(), self)
+
+    @property
+    def admin_actions(self):
+        return AdminActions(self.d_env.get_admin_remote())
 
     @property
     def nailgun_actions(self):
@@ -269,6 +274,7 @@ class EnvironmentModel(object):
         # wait while installation complete
         admin.await(self.d_env.admin_net, timeout=10 * 60)
         self.set_admin_ssh_password()
+        self.admin_actions.modify_configs(self.d_env.router())
         self.wait_bootstrap()
         time.sleep(10)
         self.set_admin_keystone_password()
