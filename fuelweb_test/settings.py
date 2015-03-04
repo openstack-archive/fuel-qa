@@ -369,3 +369,12 @@ EXTERNAL_NTP = os.environ.get('EXTERNAL_NTP', 'ua.pool.ntp.org')
 TIMESTAT_PATH_YAML = os.environ.get(
     'TIMESTAT_PATH_YAML', os.path.join(
         LOGS_DIR, 'timestat_{}.yaml'.format(time.strftime("%Y%m%d"))))
+
+# MIRROR_UBUNTU and EXTRA_DEB_REPOS - lists of repositories, separated by '|',
+# for example:
+# MIRROR_UBUNTU = 'deb http://.../ubuntu/x86_64 precise main|deb http://.../ /'
+MIRROR_UBUNTU = os.environ.get('MIRROR_UBUNTU', '')
+EXTRA_DEB_REPOS = os.environ.get('EXTRA_DEB_REPOS', '')
+MIRROR_UBUNTU_PRIORITY = os.environ.get('MIRROR_UBUNTU_PRIORITY', '1001')
+EXTRA_DEB_REPOS_PRIORITY = os.environ.get('EXTRA_DEB_REPOS_PRIORITY', '1002')
+CUSTOM_DEB_REPOS_PRIORITY = os.environ.get('CUSTOM_DEB_REPOS_PRIORITY', '1100')
