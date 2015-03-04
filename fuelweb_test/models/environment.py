@@ -329,7 +329,7 @@ class EnvironmentModel(object):
         # wait while installation complete
         admin.await(self.d_env.admin_net, timeout=10 * 60)
         self.set_admin_ssh_password()
-        self.wait_bootstrap()
+        self.d_env.wait_bootstrap()
         time.sleep(10)
         self.set_admin_keystone_password()
         self.sync_time_admin_node()
@@ -410,24 +410,6 @@ class EnvironmentModel(object):
             node=self.fuel_web.get_nailgun_node_by_name(node_name),
             remote=self.get_ssh_to_remote_by_name(node_name)
         )
-
-    def wait_bootstrap(self):
-        logger.info("Waiting while bootstrapping is in progress")
-        log_path = "/var/log/puppet/bootstrap_admin_node.log"
-        logger.info("Puppet timeout set in {0}".format(
-            float(settings.PUPPET_TIMEOUT)))
-        wait(
-            lambda: not
-            self.get_admin_remote().execute(
-                "grep 'Fuel node deployment' '%s'" % log_path
-            )['exit_code'],
-            timeout=(float(settings.PUPPET_TIMEOUT))
-        )
-        result = self.get_admin_remote().execute("grep 'Fuel node deployment "
-                                                 "complete' '%s'" % log_path
-                                                 )['exit_code']
-        if result != 0:
-            raise Exception('Fuel node deployment failed.')
 
     def dhcrelay_check(self):
         admin_remote = self.get_admin_remote()
