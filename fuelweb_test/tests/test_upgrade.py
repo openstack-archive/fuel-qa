@@ -103,8 +103,9 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             self.env.d_env.nodes().slaves[:3])
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nailgun_upgrade_migration()
-        self.env.bootstrap_nodes(
+        nailgun_nodes = self.env.nailgun_nodes(
             self.env.d_env.nodes().slaves[3:4])
+        self.env.d_env.bootstrap_nodes(nailgun_nodes)
         self.fuel_web.update_nodes(
             cluster_id, {'slave-04': ['compute']},
             True, False
@@ -233,8 +234,9 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             release_name=hlp_data.OPENSTACK_RELEASE)
         added_release = [id for id in available_releases_after
                          if id not in available_releases_before]
-        self.env.bootstrap_nodes(
+        nailgun_nodes = self.env.nailgun_nodes(
             self.env.d_env.nodes().slaves[5:7])
+        self.env.d_env.bootstrap_nodes(nailgun_nodes)
         data = {
             'tenant': 'novaSimpleVlan',
             'user': 'novaSimpleVlan',
@@ -321,8 +323,9 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             release_name=hlp_data.OPENSTACK_RELEASE)
         added_release = [id for id in available_releases_after
                          if id not in available_releases_before]
-        self.env.bootstrap_nodes(
+        nailgun_nodes = self.env.nailgun_nodes(
             self.env.d_env.nodes().slaves[3:9])
+        self.env.d_env.bootstrap_nodes(nailgun_nodes)
         segment_type = 'vlan'
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -404,8 +407,9 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_FROM)
 
-        self.env.bootstrap_nodes(
+        nailgun_nodes = self.env.nailgun_nodes(
             self.env.d_env.nodes().slaves[5:6])
+        self.env.d_env.bootstrap_nodes(nailgun_nodes)
         self.fuel_web.update_nodes(
             cluster_id, {'slave-06': ['cinder']},
             True, False
@@ -466,8 +470,9 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_FROM)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
-        self.env.bootstrap_nodes(
+        nailgun_nodes = self.env.nailgun_nodes(
             self.env.d_env.nodes().slaves[3:4])
+        self.env.d_env.bootstrap_nodes(nailgun_nodes)
         self.fuel_web.update_nodes(
             cluster_id, {'slave-04': ['cinder']},
             True, False

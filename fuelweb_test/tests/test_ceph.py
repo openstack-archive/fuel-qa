@@ -112,8 +112,9 @@ class CephCompactWithCinder(TestBasic):
             return
 
         self.env.revert_snapshot("ready")
-        self.env.bootstrap_nodes(
+        nailgun_nodes = self.env.nailgun_nodes(
             self.env.d_env.nodes().slaves[:4])
+        self.env.d_env.bootstrap_nodes(nailgun_nodes)
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -187,8 +188,9 @@ class CephHA(TestBasic):
             return
 
         self.env.revert_snapshot("ready")
-        self.env.bootstrap_nodes(
+        nailgun_nodes = self.env.nailgun_nodes(
             self.env.d_env.nodes().slaves[:6])
+        self.env.d_env.bootstrap_nodes(nailgun_nodes)
         csettings = {}
         if settings.NEUTRON_ENABLE:
             csettings = {
@@ -254,8 +256,9 @@ class CephRadosGW(TestBasic):
 
         """
         self.env.revert_snapshot("ready")
-        self.env.bootstrap_nodes(
+        nailgun_nodes = self.env.nailgun_nodes(
             self.env.d_env.nodes().slaves[:6])
+        self.env.d_env.bootstrap_nodes(nailgun_nodes)
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
