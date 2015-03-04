@@ -58,6 +58,17 @@ class SetupEnvironment(TestBasic):
         self.check_run("empty")
         with timestat("setup_environment", is_uniq=True):
             self.env.setup_environment()
+
+        # Slave nodes sould use the gateway of 'admin' network as the default
+        # gateway during provisioning and as an additional DNS server.
+        remote = self.env.d_env.get_admin_remote()
+        config = '/etc/fuel/astute.yaml'
+        cmd = ("sed -i 's/dhcp_gateway:.*/dhcp_gateway: {1}/' {0} &&"
+               "sed -i 's/\\(DNS_UPSTREAM:\\) \\(.*\\)/\\1 {1} \\2/' {0} &&"
+               "dockerctl restart cobbler"
+               .format(config, self.env.d_env.router()))
+        self.env.execute_remote_cmd(remote, cmd)
+
         self.env.make_snapshot("empty", is_make=True)
 
     @test(depends_on=[setup_master])
