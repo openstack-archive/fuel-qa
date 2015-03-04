@@ -364,3 +364,10 @@ STORE_ASTUTE_YAML = os.environ.get('STORE_ASTUTE_YAML', 'false') == 'true'
 
 EXTERNAL_DNS = os.environ.get('EXTERNAL_DNS', '208.67.220.220')
 EXTERNAL_NTP = os.environ.get('EXTERNAL_NTP', 'ua.pool.ntp.org')
+
+# MIRROR_UBUNTU and EXTRA_DEB_REPOS - lists of repositories, separated by '|', for example:
+#MIRROR_UBUNTU = 'deb http://10.109.10.2:8080/2014.2-6.1/ubuntu/x86_64 precise main|deb http://....'
+MIRROR_UBUNTU = os.environ.get('MIRROR_UBUNTU', '')
+EXTRA_DEB_REPOS = os.environ.get('EXTRA_DEB_REPOS', '')
+MIRROR_UBUNTU_PRIORITY = os.environ.get('MIRROR_UBUNTU_PRIORITY', '1001')
+EXTRA_DEB_REPOS_PRIORITY = os.environ.get('EXTRA_DEB_REPOS_PRIORITY', '1002')
