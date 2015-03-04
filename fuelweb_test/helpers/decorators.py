@@ -219,7 +219,6 @@ def custom_repo(func):
         try:
             if settings.CUSTOM_PKGS_MIRROR:
                 custom_pkgs.prepare_repository()
-
         except Exception:
             logger.error("Unable to get custom packages from {0}\n{1}"
                          .format(settings.CUSTOM_PKGS_MIRROR,
