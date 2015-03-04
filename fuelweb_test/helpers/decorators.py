@@ -217,7 +217,12 @@ def custom_repo(func):
     def wrapper(*args, **kwargs):
         custom_pkgs = CustomRepo(args[0].environment)
         try:
-            if settings.CUSTOM_PKGS_MIRROR:
+            # Perform prepare_repository() only if the cluster
+            # doesn't use "external Ubuntu repositories" feature.
+            client = args[0].environment.fuel_web.client
+            attributes = client.get_cluster_attributes(args[1])
+            if (settings.CUSTOM_PKGS_MIRROR and
+                'repo_setup' not in attributes['editable']):
                 custom_pkgs.prepare_repository()
 
         except Exception:
