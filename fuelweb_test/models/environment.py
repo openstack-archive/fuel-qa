@@ -252,6 +252,24 @@ class EnvironmentModel(object):
                 .format(settings.KEYSTONE_CREDS['username'],
                         settings.KEYSTONE_CREDS['password']))
 
+    def modify_configs(self):
+        # Slave nodes sould use the gateway of 'admin' network as the default
+        # gateway during provisioning and as an additional DNS server.
+        # resolv.conf should contains nameserver that resolve intranet URLs.
+        remote = self.d_env.get_admin_remote()
+        config = '/etc/fuel/astute.yaml'
+        resolv = '/etc/resolv.conf'
+
+        # wait until fuelmenu fill the astute.yaml
+        cmd = "fgrep 'dhcp_gateway' {0}".format(config)
+        wait(lambda: not remote.execute(cmd)['exit_code'], 60)
+
+        cmd = ("sed -i 's/dhcp_gateway:.*/dhcp_gateway: {0}/' {1} &&"
+               "sed -i 's/\\(DNS_UPSTREAM:\\) \\(.*\\)/\\1 {0} \\2/' {1} &&"
+               "sed -i 's/\\(nameserver\\) \\(.*\\)/\\1 {0} \\2/' {2}"
+               .format(self.d_env.router(), config, resolv))
+        self.execute_remote_cmd(remote, cmd)
+
     def setup_environment(self, custom=settings.CUSTOM_ENV,
                           build_images=settings.BUILD_IMAGES):
         # start admin node
@@ -269,6 +287,7 @@ class EnvironmentModel(object):
         # wait while installation complete
         admin.await(self.d_env.admin_net, timeout=10 * 60)
         self.set_admin_ssh_password()
+        self.modify_configs()
         self.wait_bootstrap()
         time.sleep(10)
         self.set_admin_keystone_password()
