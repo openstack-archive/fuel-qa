@@ -73,11 +73,25 @@ class NailgunClient(object):
             "/api/clusters/{}/attributes/".format(cluster_id)
         )
 
+    @json_parse
+    def get_cluster_vmware_attributes(self, cluster_id):
+        return self.client.get(
+            "/api/clusters/{}/vmware_attributes/".format(cluster_id)
+        )
+
     @logwrap
     @json_parse
     def update_cluster_attributes(self, cluster_id, attrs):
         return self.client.put(
             "/api/clusters/{}/attributes/".format(cluster_id),
+            attrs
+        )
+
+    @logwrap
+    @json_parse
+    def update_cluster_vmware_attributes(self, cluster_id, attrs):
+        return self.client.put(
+            "/api/clusters/{}/vmware_attributes/".format(cluster_id),
             attrs
         )
 
