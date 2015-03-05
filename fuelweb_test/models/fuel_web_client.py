@@ -311,7 +311,8 @@ class FuelWebClient(object):
                        release_name=help_data.OPENSTACK_RELEASE,
                        mode=DEPLOYMENT_MODE_SIMPLE,
                        port=514,
-                       release_id=None):
+                       release_id=None,
+                       vcenter_settings=None, ):
         """Creates a cluster
         :param name:
         :param release_name:
@@ -362,8 +363,10 @@ class FuelWebClient(object):
                     section = 'storage'
                 if option in ('tenant', 'password', 'user'):
                     section = 'access'
+                """
                 if option in ('vc_password', 'cluster', 'host_ip', 'vc_user'):
                     section = 'vcenter'
+                """
                 if option == 'assign_to_all_nodes':
                     section = 'public_network_assignment'
                 if option in ('dns_list'):
@@ -388,9 +391,10 @@ class FuelWebClient(object):
 
             if help_data.VCENTER_USE:
                 logger.info('Set Hypervisor type to vCenter')
-                hpv_data = attributes['editable']['common']['libvirt_type']
-                hpv_data['value'] = "vcenter"
+                hpv_data = attributes['editable']['common']['use_vcenter']
+                hpv_data['value'] = True
 
+                """
                 datacenter = attributes['editable']['storage']['vc_datacenter']
                 datacenter['value'] = help_data.VC_DATACENTER
 
@@ -410,7 +414,7 @@ class FuelWebClient(object):
                 vc_password['value'] = help_data.VC_PASSWORD
 
                 vc_clusters = attributes['editable']['vcenter']['cluster']
-                vc_clusters['value'] = help_data.VCENTER_CLUSTERS
+                vc_clusters['value'] = help_data.VCENTER_CLUSTERS """
 
             logger.debug("Try to update cluster "
                          "with next attributes {0}".format(attributes))

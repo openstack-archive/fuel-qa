@@ -657,3 +657,74 @@ class VcenterDeploy(TestBasic):
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_1],
+          groups=["smoke", "vcenter_one"])
+
+    def vcenter_one(self):
+        """Deploy cluster with controller node only
+
+        Scenario:
+            1. Create cluster
+            2. Add 1 node with controller role
+            3. Deploy the cluster
+            4. Verify that the cluster was set up correctly, there are no
+               dead services
+
+        """
+        self.env.revert_snapshot("ready_with_1_slaves")
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                'host_ip': VCENTER_IP,
+                'vc_user': VCENTER_USERNAME,
+                'vc_password': VCENTER_PASSWORD,
+                'cluster': VCENTER_CLUSTERS, },
+            vcenter_settings={
+                "glance": {
+                    "vcenter_username": "vcenter-glance-username",
+                    "datacenter": "vcenter-glance-datacenter",
+                    "vcenter_host": "vcenter-glance-host",
+                    "vcenter_password": "vcenter-glance-password",
+                    "datastore": "vcenter-glance-datastore"
+                    },
+                "availability_zones": [
+                    {"vcenter_username": "vcenter-user",
+                     "nova_computes": [
+                         {"datastore_regex": "data_regex1",
+                          "vsphere_cluster": "vsphere-cluster1",
+                          "service_name": "nova_service_name_1"
+                          },
+                         {"datastore_regex": "data_regex2",
+                          "vsphere_cluster": "vsphere-cluster2",
+                          "service_name": "nova_service_name_2"
+                          }
+                     ],
+                     "vcenter_host": "vcenter-host",
+                     "cinder": {"enable": true},
+                     "az_name": "vcenter",
+                     "vcenter_password": "vcenter-password"
+                     }
+                    ],
+                "network": {"esxi_vlan_interface": "esxi-net"}
+            }
+        )
+
+        logger.info("cluster is {}".format(cluster_id))
+        """
+        # Assign role to node
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller']}
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        # Wait until nova-compute get information about clusters
+        # Fix me. Later need to change sleep with wait function.
+        time.sleep(60)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])"""
