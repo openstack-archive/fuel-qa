@@ -132,8 +132,6 @@ class HAOneControllerFlat(TestBasic):
 
         self.fuel_web.verify_network(cluster_id)
 
-        self.env.verify_network_configuration("slave-01")
-
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
