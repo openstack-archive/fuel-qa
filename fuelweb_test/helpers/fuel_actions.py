@@ -46,6 +46,36 @@ class BaseActions(object):
                          ))
         return ''.join(result['stdout']).strip()
 
+    def copy_from_container(self, path_from, path_to, container=None):
+        if not container:
+            container = self.container
+        cmd = 'dockerctl copy {0}:{1} {2}'.format(container, path_from,
+                                                  path_to)
+        result = self.admin_remote.execute(cmd)
+        assert_equal(0, result['exit_code'],
+                     ('Command copy returned exit code "{e}", but '
+                      'expected "0". Output: {out}; {err} ').format(
+                         cmd=cmd,
+                         e=result['exit_code'],
+                         out=result['stdout'],
+                         err=result['stderr']))
+        return ''.join(result['stdout']).strip()
+
+    def copy_to_container(self, path_from, path_to, container=None):
+        if not container:
+            container = self.container
+        cmd = 'dockerctl copy {0} {1}:{2}'.format(path_from, container,
+                                                  path_to)
+        result = self.admin_remote.execute(cmd)
+        assert_equal(0, result['exit_code'],
+                     ('Command copy returned exit code "{e}", but '
+                      'expected "0". Output: {out}; {err} ').format(
+                         cmd=cmd,
+                         e=result['exit_code'],
+                         out=result['stdout'],
+                         err=result['stderr']))
+        return ''.join(result['stdout']).strip()
+
 
 class NailgunActions(BaseActions):
     def __init__(self, admin_remote):

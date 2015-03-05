@@ -1,0 +1,19 @@
+- role: ['controller', 'ceph-osd']
+  stage: pre_deployment
+  type: shell
+  parameters:
+      cmd: sleep 20
+      timeout: 30
+
+- role: ['controller', 'ceph-osd']
+  stage: pre_deployment
+  type: reboot
+  parameters:
+      timeout: 60
+
+- role: ['controller', 'ceph-osd']
+  stage: pre_deployment
+  type: shell
+  parameters:
+      cmd: sleep 50
+      timeout: 60
