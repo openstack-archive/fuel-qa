@@ -311,7 +311,8 @@ class FuelWebClient(object):
                        release_name=help_data.OPENSTACK_RELEASE,
                        mode=DEPLOYMENT_MODE_SIMPLE,
                        port=514,
-                       release_id=None):
+                       release_id=None,
+                       vcenter_value=None, ):
         """Creates a cluster
         :param name:
         :param release_name:
@@ -362,8 +363,6 @@ class FuelWebClient(object):
                     section = 'storage'
                 if option in ('tenant', 'password', 'user'):
                     section = 'access'
-                if option in ('vc_password', 'cluster', 'host_ip', 'vc_user'):
-                    section = 'vcenter'
                 if option == 'assign_to_all_nodes':
                     section = 'public_network_assignment'
                 if option in ('dns_list'):
@@ -387,34 +386,22 @@ class FuelWebClient(object):
                 hpv_data['value'] = "kvm"
 
             if help_data.VCENTER_USE:
-                logger.info('Set Hypervisor type to vCenter')
-                hpv_data = attributes['editable']['common']['libvirt_type']
-                hpv_data['value'] = "vcenter"
-
-                datacenter = attributes['editable']['storage']['vc_datacenter']
-                datacenter['value'] = help_data.VC_DATACENTER
-
-                datastore = attributes['editable']['storage']['vc_datastore']
-                datastore['value'] = help_data.VC_DATASTORE
-
-                imagedir = attributes['editable']['storage']['vc_image_dir']
-                imagedir['value'] = help_data.VC_IMAGE_DIR
-
-                host = attributes['editable']['storage']['vc_host']
-                host['value'] = help_data.VC_HOST
-
-                vc_user = attributes['editable']['storage']['vc_user']
-                vc_user['value'] = help_data.VC_USER
-
-                vc_password = attributes['editable']['storage']['vc_password']
-                vc_password['value'] = help_data.VC_PASSWORD
-
-                vc_clusters = attributes['editable']['vcenter']['cluster']
-                vc_clusters['value'] = help_data.VCENTER_CLUSTERS
+                logger.info('Enable Dual Hypervisors Modee')
+                hpv_data = attributes['editable']['common']['use_vcenter']
+                hpv_data['value'] = True
 
             logger.debug("Try to update cluster "
                          "with next attributes {0}".format(attributes))
             self.client.update_cluster_attributes(cluster_id, attributes)
+
+            if help_data.VCENTER_USE and vcenter_value:
+                logger.info('Configure vCenter')
+                vmware_attributes = \
+                    self.client.get_cluster_vmware_attributes(cluster_id)
+                vcenter_data = vmware_attributes['editable']
+                vcenter_data['value'] = vcenter_value
+                self.client.update_cluster_vmware_attributes(cluster_id,
+                                                             vmware_attributes)
 
             logger.debug("Attributes of cluster were updated,"
                          " going to update networks ...")
@@ -1484,7 +1471,7 @@ class FuelWebClient(object):
 
     @logwrap
     def get_nailgun_primary_controller(self, slave):
-        #returns controller that is primary in nailgun
+        # returns controller that is primary in nailgun
         remote = self.get_ssh_for_node(slave.name)
         data = yaml.load(''.join(
             remote.execute('cat /etc/astute.yaml')['stdout']))
