@@ -657,3 +657,67 @@ class VcenterDeploy(TestBasic):
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_1],
+          groups=["smoke", "vcenter_one"])
+
+    def vcenter_one(self):
+        """Deploy cluster with controller node only
+
+        Scenario:
+            1. Create cluster
+            2. Add 1 node with controller role
+            3. Deploy the cluster
+            4. Verify that the cluster was set up correctly, there are no
+               dead services
+
+        """
+        self.env.revert_snapshot("ready_with_1_slaves")
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            vcenter_value={
+                "glance": {
+                    "vcenter_username": "",
+                    "datacenter": "",
+                    "vcenter_host": "",
+                    "vcenter_password": "",
+                    "datastore": "", },
+                "availability_zones": [
+                    {"vcenter_username": "administrator@vsphere.local",
+                     "nova_computes": [
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster1",
+                          "service_name": "vmclaster"
+                          },
+                     ],
+                     "vcenter_host": "172.16.0.254",
+                     "cinder": {"enable": False},
+                     "az_name": "vcenter",
+                     "vcenter_password": "Qwer!1234"
+                     }
+                    ],
+                "network": {"esxi_vlan_interface": "vmnic0"}
+            }
+        )
+
+        logger.info("cluster is {}".format(cluster_id))
+
+        # Assign role to node
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller'], }
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        # FIXME when OSTF test will be fixed in bug #1405493
+        # When the bug will be fixed 'should_fail=1' and
+        # 'failed_test_name' parameter should be removed.
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
+            should_fail=1,
+            failed_test_name=[('vCenter: Launch instance, create snapshot,',
+                               ' launch instance from             snapshot')]
+        )
