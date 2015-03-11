@@ -142,7 +142,7 @@ class NeutronVlan(TestBasic):
         self.env.make_snapshot("deploy_neutron_vlan")
 
 
-@test(groups=["neutron", "ha", "ha_neutron", "image_based"])
+@test(groups=["neutron", "ha", "ha_neutron", "classic_provisioning"])
 class NeutronGreHa(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
