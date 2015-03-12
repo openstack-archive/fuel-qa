@@ -268,7 +268,8 @@ def main():
     operation_systems = [{'name': config['name'], 'id': config['id'],
                          'distro': config['name'].split()[0].lower()}
                          for config in project.get_config_by_name(
-                             'Operation System')['configs']]
+                             'Operation System')['configs'] if
+                         config['name'] in TestRailSettings.operation_systems]
     tests_results = {os['distro']: [] for os in operation_systems}
 
     # STEP #2

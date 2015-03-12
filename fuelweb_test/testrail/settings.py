@@ -34,7 +34,8 @@ class LaunchpadSettings(object):
     project = os.environ.get('LAUNCHPAD_PROJECT', 'fuel')
     milestone = os.environ.get('LAUNCHPAD_MILESTONE', '6.1')
     closed_statuses = [
-        os.environ.get('LAUNCHPAD_RELEASED_STATUS', 'Fix Released')
+        os.environ.get('LAUNCHPAD_RELEASED_STATUS', 'Fix Released'),
+        os.environ.get('LAUNCHPAD_INVALID_STATUS', 'Invalid')
     ]
 
 
@@ -49,3 +50,7 @@ class TestRailSettings(object):
     tests_include = os.environ.get('TESTRAIL_TEST_INCLUDE', None)
     tests_exclude = os.environ.get('TESTRAIL_TEST_EXCLUDE', None)
     previous_results_depth = os.environ.get('TESTRAIL_TESTS_DEPTH', 5)
+    operation_systems = [
+        os.environ.get('TESTRAIL_CENTOS_RELEASE', 'Centos 6.5'),
+        os.environ.get('TESTRAIL_UBUNTU_RELEASE', 'Ubuntu 14.04')
+    ]
