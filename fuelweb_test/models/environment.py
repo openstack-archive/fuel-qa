@@ -317,8 +317,7 @@ class EnvironmentModel(object):
                                 'timeout 600 ntpd -qg && crm '
                                 'resource start p_ntp ; } || { NTPD=$(find '
                                 '/etc/init.d/ -regex \'/etc/init.d/ntp.?\'); '
-                                '$NTPD stop; killall ntpd;  timeout 600 ntpd '
-                                '-qg && $NTPD start ; }')
+                                '$NTPD stop; ntpd -qg && $NTPD start ; }')
         self.execute_remote_cmd(remote, 'hwclock -w')
         remote_date = remote.execute('date')['stdout']
         logger.info("Node time: %s" % remote_date)
