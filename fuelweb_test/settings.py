@@ -361,3 +361,7 @@ TIMESTAT_PATH_YAML = os.environ.get(
         LOGS_DIR, 'timestat_{}.yaml'.format(time.strftime("%Y%m%d"))))
 
 FUEL_PLUGIN_BUILDER_REPO = 'https://github.com/stackforge/fuel-plugins.git'
+
+DOWNLOAD_LINK = os.environ.get(
+    'DOWNLOAD_LINK', 'http://releases.ubuntu.com/14.04.2/'
+                     'ubuntu-14.04.2-desktop-amd64.iso')
