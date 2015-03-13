@@ -958,3 +958,34 @@ def check_oswl_stat(postgres_actions, remote_collector, master_uid,
                                                   operation][resource]))
 
     logger.info("OSWL stats were properly saved to collector's database.")
+
+
+def get_file_size(remote, file_name, file_path):
+    file_size = remote.execute(
+        'stat -c "%s" {0}/{1}').format(file_path, file_name)
+    assert_equal(
+        int(file_size['exit_code']), 0, "Failed to get '{0}/{1}' file stats on"
+                                        " remote node".format(file_path,
+                                                              file_name))
+    return int(file_size['stdout'])
+
+
+@logwrap
+def check_ping(remote, host, deadline=10, size=56, timeout=1, interval=1):
+    """Check network connectivity from
+     remote to host using ICMP (ping)
+    :param remote: SSHClient
+    :param host: string IP address or host/domain name
+    :param deadline: time in seconds before ping exits
+    :param size: size of data to be sent
+    :param timeout: time to wait for a response, in seconds
+    :param interval: wait interval seconds between sending each packet
+    :return: bool: True if ping command
+    """
+    cmd = ("ping -W {timeout} -i {interval} -s {size} -c 1 -w {deadline} "
+           "{host}".format(host=host,
+                           size=size,
+                           timeout=timeout,
+                           interval=interval,
+                           deadline=deadline))
+    return int(remote.execute(cmd)['exit_code']) == 0
