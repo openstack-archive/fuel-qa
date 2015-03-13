@@ -703,8 +703,7 @@ class FuelWebClient(object):
             if node_group not in nodes_groups.keys():
                 nodes_groups[node_group] = []
             nodes_groups[node_group].append(node)
-            nodes_data.append(node_data)
-
+            
         # assume nodes are going to be updated for one cluster only
         cluster_id = nodes_data[-1]['cluster_id']
         node_ids = [str(node_info['id']) for node_info in nodes_data]

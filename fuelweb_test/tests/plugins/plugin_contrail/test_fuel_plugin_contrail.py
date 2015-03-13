@@ -31,9 +31,9 @@ from fuelweb_test.tests.base_test_case import TestBasic
 class ContrailPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
-          groups=["deploy_contrail_simple"])
+          groups=["deploy_contrail"])
     @log_snapshot_on_error
-    def deploy_contrail_simple(self):
+    def deploy_contrail(self):
         """Install Plugin
 
         Scenario:
@@ -66,6 +66,6 @@ class ContrailPlugin(TestBasic):
             }
         )
 
-        self.env.make_snapshot("deploy_contrail_simple")
+        self.env.make_snapshot("deploy_contrail")
 
 
