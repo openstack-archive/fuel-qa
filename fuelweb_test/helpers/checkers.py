@@ -284,7 +284,7 @@ def upload_tarball(node_ssh, tar_path, tar_target):
 
 @logwrap
 def check_archive_type(tar_path):
-    if os.path.splitext(tar_path)[1] not in [".tar", ".lrz", ".fp"]:
+    if os.path.splitext(tar_path)[1] not in [".tar", ".lrz", ".fp", ".rpm"]:
         raise Exception("Wrong archive type!")
 
 
