@@ -725,10 +725,12 @@ class FuelWebClient(object):
     @logwrap
     def update_nodes(self, cluster_id, nodes_dict,
                      pending_addition=True, pending_deletion=False,
-                     update_nodegroups=False):
+                     update_nodegroups=False, contrail=False):
+
         # update nodes in cluster
         nodes_data = []
         nodes_groups = {}
+        name = ''
         for node_name in nodes_dict:
             if MULTIPLE_NETWORKS:
                 node_roles = nodes_dict[node_name][0]
@@ -746,13 +748,19 @@ class FuelWebClient(object):
             assert_true(node['online'],
                         'Node {} is online'.format(node['mac']))
 
+            if contrail and nodes_dict[node_name][0] == 'base-os':
+                name = 'contrail-' + node_name.split('-')[1].strip('0')
+
+            else:
+                name = '{}_{}'.format(node_name, "_".join(node_roles))
+
             node_data = {
                 'cluster_id': cluster_id,
                 'id': node['id'],
                 'pending_addition': pending_addition,
                 'pending_deletion': pending_deletion,
                 'pending_roles': node_roles,
-                'name': '{}_{}'.format(node_name, "_".join(node_roles))
+                'name': name
             }
             nodes_data.append(node_data)
             if node_group not in nodes_groups.keys():
