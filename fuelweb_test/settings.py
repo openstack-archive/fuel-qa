@@ -374,3 +374,7 @@ MIRROR_UBUNTU = os.environ.get('MIRROR_UBUNTU', '')
 EXTRA_DEB_REPOS = os.environ.get('EXTRA_DEB_REPOS', '')
 MIRROR_UBUNTU_PRIORITY = os.environ.get('MIRROR_UBUNTU_PRIORITY', '1001')
 EXTRA_DEB_REPOS_PRIORITY = os.environ.get('EXTRA_DEB_REPOS_PRIORITY', '1050')
+
+DOWNLOAD_LINK = os.environ.get(
+    'DOWNLOAD_LINK', 'http://releases.ubuntu.com/14.04.2/'
+                     'ubuntu-14.04.2-desktop-amd64.iso')

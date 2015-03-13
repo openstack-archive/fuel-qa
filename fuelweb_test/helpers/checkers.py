@@ -29,6 +29,7 @@ from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import POOLS
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
+from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 from devops.error import TimeoutError
 from devops.helpers.helpers import wait
@@ -868,3 +869,15 @@ def check_swift_ring(remote):
         assert_true(float(balance) == 0,
                     "swift ring builder {1} is not ok,"
                     " balance is {0}".format(balance, ring))
+
+
+def check_file_size(remote_compute, file_name, file_path):
+    file_size_time1 = remote_compute.execute(
+        "du -sb {0}/{1}".format(file_path,
+                                file_name))['stdout'][0].split('/')[0].rstrip()
+    file_size_time2 = remote_compute.execute(
+        "du -sb {0}/{1}".format(file_path,
+                                file_name))['stdout'][0].split('/')[0].rstrip()
+    assert_not_equal(file_size_time1, file_size_time2,
+                     "File download was interrupted, size of downloading file "
+                     "does not change")
