@@ -15,6 +15,7 @@
 import re
 import time
 
+from devops.error import TimeoutError
 from devops.helpers.helpers import wait
 from devops.helpers.helpers import _wait
 from proboscis.asserts import assert_equal
@@ -22,11 +23,16 @@ from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 from proboscis import SkipTest
 
+from fuelweb_test.helpers.checkers import check_file_size
 from fuelweb_test.helpers.checkers import check_mysql
+from fuelweb_test.helpers.checkers import connectivity_check
 from fuelweb_test.helpers import os_actions
 from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test.settings import DOWNLOAD_LINK
+from fuelweb_test.settings import DNS
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
+from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
@@ -379,3 +385,45 @@ class TestHaFailoverBase(TestBasic):
                 "grep \"nova-compute.*trying to restart\" "
                 "/var/log/monit.log")['stdout']) > 0,
                 'Nova service was not restarted')
+
+    def check_virtual_router(self):
+        if not self.env.d_env.has_snapshot(self.snapshot_name):
+            raise SkipTest()
+
+        self.env.revert_snapshot(self.snapshot_name)
+        cmd = "ping -c 1 {0}".format(DNS)
+        for devops_node in self.env.d_env.nodes().slaves[:5]:
+            remote = self.fuel_web.get_ssh_for_node(devops_node.name)
+            wait(
+                lambda: remote.execute(cmd)['exit_code'] == 0, timeout=60 * 2)
+            res = remote.execute(cmd)
+            assert_equal(0, res['exit_code'],
+                         'instance has no connectivity, exit code {0}'.format(
+                             res['exit_code']))
+        remote_compute = self.fuel_web.get_ssh_for_node(
+            self.env.d_env.nodes().slaves[4].name)
+        devops_node = self.fuel_web.get_nailgun_primary_controller(
+            self.env.d_env.nodes().slaves[0])
+        file_name = DOWNLOAD_LINK.split('/')[-1]
+        if OPENSTACK_RELEASE == 'ubuntu':
+            file_path = '/root/tmp'
+            remote_compute.execute(
+                "screen -S download -d -m bash -c 'mkdir -p {0} &&"
+                " cd {1} && wget {2}'".format(file_path, file_path,
+                                              DOWNLOAD_LINK))
+            wait(
+                lambda: remote_compute.execute("ls -1 {0}/{1}".format(
+                    file_path, file_name))['exit_code'] == 0, timeout=60)
+            check_file_size(remote_compute, file_name, file_path)
+
+        devops_node.destroy()
+        try:
+            wait(
+                lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
+                    devops_node)['online'], timeout=60 * 6)
+        except TimeoutError:
+            raise TimeoutError(
+                "Primary controller was not destroyed")
+        connectivity_check(remote_compute, cmd)
+        if OPENSTACK_RELEASE == 'ubuntu':
+            check_file_size(remote_compute, file_name, file_path)
