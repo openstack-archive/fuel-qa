@@ -1346,6 +1346,7 @@ class FuelWebClient(object):
         return self.client.get_networks(cluster_id).\
             get("networking_parameters").get("internal_cidr")
 
+    @retry(count=3, delay=60)
     @logwrap
     def check_fixed_network_cidr(self, cluster_id, remote):
         net_provider = self.client.get_cluster(cluster_id)['net_provider']
