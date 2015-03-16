@@ -31,6 +31,7 @@ from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import custom_repo
 from fuelweb_test.helpers.decorators import download_astute_yaml
 from fuelweb_test.helpers.decorators import duration
+from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.decorators import update_ostf
 from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers.security import SecurityChecks
@@ -1346,6 +1347,7 @@ class FuelWebClient(object):
         return self.client.get_networks(cluster_id).\
             get("networking_parameters").get("internal_cidr")
 
+    @retry(count=3, delay=60)
     @logwrap
     def check_fixed_network_cidr(self, cluster_id, remote):
         net_provider = self.client.get_cluster(cluster_id)['net_provider']
