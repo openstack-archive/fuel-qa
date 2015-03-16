@@ -1364,13 +1364,17 @@ class FuelWebClient(object):
         elif net_provider == 'neutron':
             nailgun_cidr = self.get_nailgun_cidr_neutron(cluster_id)
             logger.debug('nailgun cidr is {0}'.format(nailgun_cidr))
+            slave_net_output = ''.join(
+                remote.execute(". openrc; neutron subnet-list"))
+            logger.debug('slave_net_output is {0}'.format(
+                slave_net_output))
             slave_cidr = ''.join(remote.execute(". openrc; neutron"
                                                 " subnet-list | awk '$4 =="
                                                 " \"net04__subnet\""
                                                 "{print $6}'")['stdout'])
             logger.debug('slave cidr is {0}'.format(
                 slave_cidr.rstrip()))
-            assert_equal(nailgun_cidr, slave_cidr.rstrip(),
+            assert_equal(nailgun_cidr, slave_net_output.rstrip(),
                          'Cidr after deployment is not equal'
                          ' to cidr by default')
 
