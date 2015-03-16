@@ -316,6 +316,10 @@ class NeutronVlanHa(TestBasic):
                                               '192.168.196.1')
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
+        #FIXME(bogdando) w/a LP #1432242
+        self.env.make_snapshot("deploy_neutron_vlan_ha")
+        self.env.revert_snapshot("deploy_neutron_vlan_ha")
+
         cluster = self.fuel_web.client.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
         # assert_equal(str(cluster['net_segment_type']), segment_type)
@@ -333,8 +337,6 @@ class NeutronVlanHa(TestBasic):
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
-
-        self.env.make_snapshot("deploy_neutron_vlan_ha")
 
 
 @test(groups=["thread_6", "neutron", "ha", "ha_neutron"])
