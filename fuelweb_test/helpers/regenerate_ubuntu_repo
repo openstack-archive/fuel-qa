@@ -1,6 +1,7 @@
 #!/bin/bash
 # Based on the method described here:
 # http://troubleshootingrange.blogspot.com/2012/09/hosting-simple-apt-repository-on-centos.html
+# Please install 'dpkg' and 'dpkg-devel' packages before use.
 
 set -e
 
@@ -9,11 +10,27 @@ REPO_PATH=$1
 REPONAME=$2
 
 BINDIR=${REPO_PATH}/dists/${REPONAME}/main
+release_header=`sed '/MD5Sum:/,$d' ${REPO_PATH}/dists/${REPONAME}/Release`
 
-binoverride=indices/override.${REPONAME}.main
-binoverride_udeb=indices/override.${REPONAME}.main.debian-installer
-extraoverride=indices/override.${REPONAME}.extra.main
-release_header=`head -8 ${REPO_PATH}/dists/${REPONAME}/Release`
+override_main="indices/override.${REPONAME}.main"
+override_udeb="indices/override.${REPONAME}.main.debian-installer"
+override_extra="indices/override.${REPONAME}.extra.main"
+
+if [ -f "${REPO_PATH}/${override_main}" ]; then
+    binoverride="${override_main}"
+else
+    binoverride=""
+fi
+if [ -f "${REPO_PATH}/${override_udeb}" ]; then
+    binoverride_udeb="${override_udeb}"
+else
+    binoverride_udeb=""
+fi
+if [ -f "${REPO_PATH}/${override_extra}" ]; then
+    extraoverride="--extra-override ${override_extra}"
+else
+    extraoverride=""
+fi
 
 package_deb=${BINDIR}/binary-${ARCH}/Packages
 package_udeb=${BINDIR}/debian-installer/binary-${ARCH}/Packages
@@ -21,20 +38,28 @@ package_udeb=${BINDIR}/debian-installer/binary-${ARCH}/Packages
 cd ${REPO_PATH}
 
 # Scan *.deb packages
-dpkg-scanpackages  -m --extra-override ${extraoverride} -a ${ARCH} pool/main ${binoverride}  > ${package_deb}.tmp 2>/dev/null
+dpkg-scanpackages  -m ${extraoverride} -a ${ARCH} pool/main ${binoverride} > ${package_deb}.tmp 2>/dev/null
 
 gzip -9c ${package_deb}.tmp > ${package_deb}.gz.tmp
-
-# Scan *.udeb packages
-dpkg-scanpackages --udeb -m -a ${ARCH} pool/debian-installer ${binoverride_udeb}  > ${package_udeb}.tmp 2>/dev/null
-
-gzip -9c ${package_udeb}.tmp > ${package_udeb}.gz.tmp
+bzip2 -ckz ${package_deb}.tmp > ${package_deb}.bz2.tmp
 
 # Replace original files with new ones
 mv --backup -f ${package_deb}.tmp ${package_deb}
 mv --backup -f ${package_deb}.gz.tmp ${package_deb}.gz
-mv --backup -f ${package_udeb}.tmp ${package_udeb}
-mv --backup -f ${package_udeb}.gz.tmp ${package_udeb}.gz
+mv --backup -f ${package_deb}.bz2.tmp ${package_deb}.bz2
+
+# Scan *.udeb packages
+if [ -d "${BINDIR}/debian-installer/binary-${ARCH}/"]; then
+    dpkg-scanpackages --udeb -m -a ${ARCH} pool/debian-installer ${binoverride_udeb}  > ${package_udeb}.tmp 2>/dev/null
+
+    gzip -9c ${package_udeb}.tmp > ${package_udeb}.gz.tmp
+    bzip2 -ckz ${package_udeb}.tmp > ${package_udeb}.bz2.tmp
+
+    # Replace original files with new ones
+    mv --backup -f ${package_udeb}.tmp ${package_udeb}
+    mv --backup -f ${package_udeb}.gz.tmp ${package_udeb}.gz
+    mv --backup -f ${package_udeb}.bz2.tmp ${package_udeb}.bz2
+fi
 
 # Generate release file
 cd ${REPO_PATH}/dists/${REPONAME}
