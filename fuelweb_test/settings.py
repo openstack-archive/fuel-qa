@@ -369,3 +369,5 @@ EXTERNAL_NTP = os.environ.get('EXTERNAL_NTP', 'ua.pool.ntp.org')
 TIMESTAT_PATH_YAML = os.environ.get(
     'TIMESTAT_PATH_YAML', os.path.join(
         LOGS_DIR, 'timestat_{}.yaml'.format(time.strftime("%Y%m%d"))))
+
+FUEL_PLUGIN_BUILDER_REPO = 'https://github.com/stackforge/fuel-plugins.git'
