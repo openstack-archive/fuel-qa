@@ -20,6 +20,7 @@ import time
 TIME_ZONE = 'UTC'
 
 ENV_NAME = os.environ.get("ENV_NAME", "fuel_system_test")
+VIRTUAL_ENV = os.environ.get("VIRTUAL_ENV", "")
 
 ISO_PATH = os.environ.get('ISO_PATH')
 DNS = os.environ.get('DNS', '8.8.8.8')
