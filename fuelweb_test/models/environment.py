@@ -466,7 +466,7 @@ class EnvironmentModel(object):
     def describe_second_admin_interface(self):
         remote = self.d_env.get_admin_remote()
         admin_net2_object = self.d_env.get_network(name=self.d_env.admin_net2)
-        second_admin_network = admin_net2_object.split('/')[0]
+        second_admin_network = admin_net2_object.ip.network
         second_admin_netmask = admin_net2_object.ip.netmask
         second_admin_if = settings.INTERFACES.get(self.d_env.admin_net2)
         second_admin_ip = str(self.d_env.nodes(
