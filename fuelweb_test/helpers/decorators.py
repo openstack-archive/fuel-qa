@@ -138,15 +138,16 @@ def upload_manifests(func):
 def revert_info(snapshot_name, master_ip, description=""):
     logger.info("<" * 5 + "*" * 100 + ">" * 5)
     logger.info("{} Make snapshot: {}".format(description, snapshot_name))
-    logger.info("You could revert and ssh to master node: [{command}]".format(
-        command="dos.py revert-resume {env} --snapshot-name {name} && "
-        "ssh root@{master_ip}".format(
-            env=settings.ENV_NAME,
-            name=snapshot_name,
-            master_ip=master_ip
-        )
-    )
-    )
+    command=("dos.py revert-resume {env} --snapshot-name {name} "
+             "&& ssh root@{master_ip}".format(
+                 env=settings.ENV_NAME,
+                 name=snapshot_name,
+                 master_ip=master_ip))
+    if settings.VIRTUAL_ENV:
+        command = ('source {venv}/bin/activate; {command}'
+                   .format(venv=settings.VIRTUAL_ENV, command=command))
+    logger.info("You could revert and ssh to master node: [{command}]"
+                .format(command=command))
 
     logger.info("<" * 5 + "*" * 100 + ">" * 5)
 
