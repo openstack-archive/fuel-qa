@@ -893,8 +893,8 @@ class FuelWebClient(object):
                 elif net_name in nets_wo_floating:
                     self.net_settings(net_config, net_name)
             else:
-                ip_obj = self.environment.d_env.get_network(name="public").ip
-                pub_subnets = list(ip_obj.subnet(27))
+                ipnet_obj = self.environment.d_env.get_network(name="public")
+                pub_subnets = list(ipnet_obj.subnet(27))
                 if "floating" == net_name:
                     self.net_settings(net_config, pub_subnets[0],
                                       floating=True, jbond=True)
@@ -918,8 +918,8 @@ class FuelWebClient(object):
                 elif net_name in 'fuelweb_admin':
                     self.net_settings(net_config, admin_net)
             else:
-                ip_obj = self.environment.d_env.get_network(name=public_net).ip
-                pub_subnets = list(ip_obj.subnet(27))
+                ipnet_obj = self.environment.d_env.get_network(name=public_net)
+                pub_subnets = list(ipnet_obj.subnet(27))
 
                 if "floating" == net_name:
                     self.net_settings(net_config, pub_subnets[0],
