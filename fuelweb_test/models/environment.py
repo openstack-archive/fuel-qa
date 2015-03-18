@@ -349,9 +349,9 @@ class EnvironmentModel(object):
         logger.info("Master node time: {0}".format(remote_date))
 
     def verify_network_configuration(self, node_name):
-        node = self.fuel_web.get_nailgun_node_by_name(node_name)['ip']
+        node = self.fuel_web.get_nailgun_node_by_name(node_name)
         checkers.verify_network_configuration(
-            node=self.fuel_web.get_nailgun_node_by_name(node),
+            node=node,
             remote=self.d_env.get_ssh_to_remote(node['ip'])
         )
 
