@@ -78,12 +78,59 @@ class VcenterDeploy(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        # FIXME when OSTF test will be fixed in bug #1431758
-        # When the bug will be fixed 'should_fail=1' and
-        # 'failed_test_name' parameter should be removed.
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
-            should_fail=1,
-            failed_test_name=[('vCenter: Launch instance, create snapshot, '
-                               'launch instance from             snapshot')]
+        )
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_1],
+          groups=["smoke", "vcenter_ceilometer"])
+    @log_snapshot_on_error
+    def vcenter_ceilometer(self):
+        """Deploy environment with vCenter and Ceilometer enabled
+
+        Scenario:
+            1. Create cluster with Ceilometer support
+            2. Add 1 node with controller role
+            3. Deploy the cluster
+            4. Run OSTF
+
+        """
+        self.env.revert_snapshot("ready_with_1_slaves")
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                'ceilometer': True
+            },
+            vcenter_value={
+                "availability_zones": [
+                    {"az_name": "vcenter",
+                     "vcenter_host": VCENTER_IP,
+                     "vcenter_username": VCENTER_USERNAME,
+                     "vcenter_password": VCENTER_PASSWORD,
+                     "nova_computes": [
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster1",
+                          "service_name": "cluster1",
+                          },
+                     ],
+                     "cinder": {"enable": False},
+                     }
+                ]
+            }
+        )
+
+        logger.info("cluster is {}".format(cluster_id))
+
+        # Assign role to node
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller'], }
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
         )
