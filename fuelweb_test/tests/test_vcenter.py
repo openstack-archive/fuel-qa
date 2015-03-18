@@ -78,12 +78,79 @@ class VcenterDeploy(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        # FIXME when OSTF test will be fixed in bug #1431758
-        # When the bug will be fixed 'should_fail=1' and
-        # 'failed_test_name' parameter should be removed.
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
-            should_fail=1,
-            failed_test_name=[('vCenter: Launch instance, create snapshot, '
-                               'launch instance from             snapshot')]
         )
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["smoke", "vcenter_ceilometer"])
+    @log_snapshot_on_error
+    def vcenter_ceilometer(self):
+        """Deploy environment with vCenter and Ceilometer enabled
+
+        Scenario:
+            1. Create cluster with Ceilometer support
+            2. Add 3 node with controller+MongoDB roles
+            3. Add a node with compute role
+            4. Add a node with Cinder+CinderVMDK roles
+            5. Deploy the cluster
+            6. Run OSTF
+
+        """
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                'ceilometer': True
+            },
+            vcenter_value={
+                "glance": {
+                    "vcenter_username": "",
+                    "datacenter": "",
+                    "vcenter_host": "",
+                    "vcenter_password": "",
+                    "datastore": "", },
+                "availability_zones": [
+                    {"vcenter_username": VCENTER_USERNAME,
+                     "nova_computes": [
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster1",
+                          "service_name": "vmcluster1"},
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster2",
+                          "service_name": "vmcluster2"},
+                         ],
+                     "vcenter_host": VCENTER_IP,
+                     "cinder": {"enable": True},
+                     "az_name": "vcenter",
+                     "vcenter_password": VCENTER_PASSWORD,
+                     }],
+                "network": {"esxi_vlan_interface": "vmnic0"}
+                }, )
+
+        logger.info("cluster is {}".format(cluster_id))
+
+        # Assign role to node
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller', 'mongo'],
+             'slave-02': ['controller', 'mongo'],
+             'slave-03': ['controller', 'mongo'], })
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        # FIXME when OSTF test will be fixed in bug #1431758
+        # When the bug will be fixed 'should_fail=2' and
+        # 'failed_test_name' parameter should be removed.
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
+            should_fail=2,
+            failed_test_name=[('vCenter: Check network connectivity from '
+                               'instance without floating             IP'),
+                              ('vCenter: Check network connectivity from '
+                               'instance via floating IP'), ]
+            )
