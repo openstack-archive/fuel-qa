@@ -32,6 +32,7 @@ def configure_second_admin_cobbler(self):
     remote = self.d_env.get_admin_remote()
     admin_net = self.d_env.admin_net
     admin_net2 = self.d_env.admin_net2
+    second_admin_if = settings.INTERFACES.get(admin_net2)
     main_admin_ip = str(
         self.d_env.nodes().admin.get_ip_address_by_network_name(admin_net))
     second_admin_ip = str(
@@ -45,11 +46,13 @@ def configure_second_admin_cobbler(self):
     discovery_subnet = [net for net in network.iter_subnets(1)][-1]
     first_discovery_address = str(discovery_subnet.network)
     last_discovery_address = str(discovery_subnet.broadcast - 1)
-    new_range = ('dhcp-range=internal2,{0},{1},{2}\\n'
+    new_range = ('interface={5}\\n'
+                 'dhcp-range=internal2,{0},{1},{2}\\n'
                  'dhcp-option=net:internal2,option:router,{3}\\n'
                  'dhcp-boot=net:internal2,pxelinux.0,boothost,{4}\\n').\
         format(first_discovery_address, last_discovery_address,
-               second_admin_netmask, second_admin_ip, main_admin_ip)
+               second_admin_netmask, second_admin_ip, main_admin_ip,
+               second_admin_if)
     cmd = ("dockerctl shell cobbler sed -r '$a \{0}' -i {1};"
            "dockerctl shell cobbler cobbler sync").format(new_range,
                                                           dhcp_template)
@@ -93,17 +96,3 @@ def configure_second_admin_firewall(self, network, netmask):
     assert_equal(result['exit_code'], 0,
                  ('Failed to save firewall configuration on master node:'
                   ' {0}').format(result))
-
-
-@logwrap
-def configure_second_dhcrelay(self):
-    remote = self.d_env.get_admin_remote()
-    second_admin_if = settings.INTERFACES.get(self.d_env.admin_net2)
-    sed_cmd = "/  interface:/a \  interface: {0}".format(second_admin_if)
-    self.fuel_web.modify_python_file(remote, sed_cmd,
-                                     settings.FUEL_SETTINGS_YAML)
-    cmd = ('supervisorctl restart dhcrelay_monitor; '
-           'pgrep -f "[d]hcrelay.*{0}"').format(second_admin_if)
-    result = remote.execute(cmd)
-    assert_equal(result['exit_code'], 0, ('Failed to start DHCP relay on '
-                 'second admin interface: {0}').format(result))
