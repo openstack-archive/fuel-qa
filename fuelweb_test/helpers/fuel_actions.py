@@ -28,12 +28,11 @@ class BaseActions(object):
         self.container = None
 
     def execute_in_container(self, command, container=None, exit_code=None,
-                             stdin=None):
+                             stdin=''):
         if not container:
             container = self.container
-        cmd = 'dockerctl shell {0} {1}'.format(container, command)
-        if stdin is not None:
-            cmd = 'echo "{0}" | {1}'.format(stdin, cmd)
+        cmd = ('echo "{2}" | dockerctl shell {0} {1}'
+               .format(container, command, stdin))
         result = self.admin_remote.execute(cmd)
         if exit_code is not None:
             assert_equal(exit_code,
