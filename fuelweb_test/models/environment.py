@@ -341,7 +341,7 @@ class EnvironmentModel(object):
                            ': {0}'.format(e))
             raise
         else:
-            self.execute_remote_cmd(remote, 'service ntpd stop && ntpd -dqg &&'
+            self.execute_remote_cmd(remote, 'sleep 30 && service ntpd stop && ntpd -dqg &&'
                                             ' service ntpd start')
             self.execute_remote_cmd(remote, 'hwclock -w')
 
