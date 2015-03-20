@@ -403,3 +403,10 @@ PATCHING_SNAPSHOT = os.environ.get("PATCHING_SNAPSHOT", None)
 DOWNLOAD_LINK = os.environ.get(
     'DOWNLOAD_LINK', 'http://releases.ubuntu.com/14.04.2/'
                      'ubuntu-14.04.2-desktop-amd64.iso')
+
+EMC_PLUGIN_PATH = os.environ.get('EMC_PLUGIN_PATH')
+EMC_SP_A_IP = os.environ.get('EMC_SP_A_IP')
+EMC_SP_B_IP = os.environ.get('EMC_SP_B_IP')
+EMC_USERNAME = os.environ.get('EMC_USERNAME')
+EMC_PASSWORD = os.environ.get('EMC_PASSWORD')
+EMC_POOL_NAME = os.environ.get('EMC_POOL_NAME', '')
