@@ -21,7 +21,7 @@ from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
-from netaddr import IPNetwork
+from ipaddr import IPNetwork
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
@@ -879,9 +879,12 @@ class FuelWebClient(object):
 
     def common_net_settings(self, network_configuration):
         nc = network_configuration["networking_parameters"]
-        public = self.environment.d_env.get_network(name="public").ip_network
+        public = self.environment.d_env.get_network(name="public").ip
 
-        float_range = public if not BONDING else list(public.subnet(27))[0]
+        if not BONDING:
+            float_range = public
+        else:
+            float_range = list(public.subnet(new_prefix=27))[0]
         nc["floating_ranges"] = self.get_range(float_range, 1)
 
     def set_network(self, net_config, net_name, net_pools=None):
