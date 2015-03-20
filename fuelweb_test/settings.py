@@ -384,3 +384,10 @@ PATCHING_APPLY_TESTS = os.environ.get("PATCHING_APPLY_TESTS",
                                       "./patching_tests")
 PATCHING_PKGS = os.environ.get("PATCHING_PKGS", None)
 PATCHING_SNAPSHOT = os.environ.get("PATCHING_SNAPSHOT", None)
+
+EMC_PLUGIN_PATH = os.environ.get('EMC_PLUGIN_PATH')
+EMC_SP_A_IP = os.environ.get('EMC_SP_A_IP')
+EMC_SP_B_IP = os.environ.get('EMC_SP_B_IP')
+EMC_USERNAME = os.environ.get('EMC_USERNAME')
+EMC_PASSWORD = os.environ.get('EMC_PASSWORD')
+EMC_POOL_NAME = os.environ.get('EMC_POOL_NAME', '')
