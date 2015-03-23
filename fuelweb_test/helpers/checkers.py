@@ -958,3 +958,21 @@ def check_oswl_stat(postgres_actions, remote_collector, master_uid,
                                                   operation][resource]))
 
     logger.info("OSWL stats were properly saved to collector's database.")
+
+
+def check_available_mode(remote):
+    command = ('umm status | grep runlevel &>/dev/null && echo "True" '
+               '|| echo "False"')
+    if remote.execute(command)['exit_code'] == 0:
+        return ''.join(remote.execute(command)['stdout']).strip()
+    else:
+        return ''.join(remote.execute(command)['stderr']).strip()
+
+
+def check_auto_mode(remote):
+    command = ('umm status | grep umm &>/dev/null && echo "True" '
+               '|| echo "False"')
+    if remote.execute(command)['exit_code'] == 0:
+        return remote.execute(command)['stdout']
+    else:
+        return remote.execute(command)['stderr']
