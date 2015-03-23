@@ -1568,3 +1568,39 @@ class FuelWebClient(object):
         devops_node = self.find_devops_node_by_nailgun_fqdn(
             fqdn, self.environment.d_env.nodes().slaves)
         return devops_node
+
+    @logwrap
+    def check_available_mode(self, slave):
+        remote = self.get_ssh_for_node(slave.name)
+        command = ('umm status | grep runlevel &>/dev/null && echo "True" '
+                   '|| echo "False"')
+        return remote.execute(command)
+
+    @logwrap
+    def check_auto_mode(self, slave):
+        remote = self.get_ssh_for_node(slave.name)
+        command = ('umm status | grep umm &>/dev/null && echo "True" '
+                   '|| echo "False"')
+        return remote.execute(command)
+
+    @logwrap
+    def maintenance_mode_for_nodes(self, slave):
+
+        remote = self.get_ssh_for_node(slave.name)
+        logger.info('Maintenance mode for node %s', slave.name)
+        remote.execute('umm on')
+        logger.info('Wait a %s node offline status', slave.name)
+        wait(
+            lambda: not self.get_nailgun_node_by_devops_node(slave)['online'],
+            timeout=60 * 10)
+
+        wait(lambda: remote, timeout=60 * 10)
+
+        assert_true(self.check_auto_mode(slave))
+        remote = self.get_ssh_for_node(slave.name)
+        remote.execute('umm off')
+
+        logger.info('Wait a %s node online status', slave.name)
+        wait(
+            lambda: self.get_nailgun_node_by_devops_node(slave)['online'],
+            timeout=60 * 10)
