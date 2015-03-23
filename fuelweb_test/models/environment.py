@@ -282,7 +282,6 @@ class EnvironmentModel(object):
         if settings.MULTIPLE_NETWORKS:
             self.describe_second_admin_interface()
             multiple_networks_hacks.configure_second_admin_cobbler(self)
-            multiple_networks_hacks.configure_second_dhcrelay(self)
         self.nailgun_actions.set_collector_address(
             settings.FUEL_STATS_HOST,
             settings.FUEL_STATS_PORT,
