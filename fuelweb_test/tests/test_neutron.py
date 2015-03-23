@@ -322,6 +322,7 @@ class NeutronVlanHa(TestBasic):
         _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
         self.fuel_web.check_fixed_network_cidr(
             cluster_id, self.env.d_env.get_ssh_to_remote(_ip))
+
         self.fuel_web.verify_network(cluster_id)
         devops_node = self.fuel_web.get_nailgun_primary_controller(
             self.env.d_env.nodes().slaves[0])
