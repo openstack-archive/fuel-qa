@@ -26,6 +26,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import os_actions
 from fuelweb_test import logwrap
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import custom_repo
@@ -1443,15 +1444,17 @@ class FuelWebClient(object):
                          'Cidr after deployment is not equal'
                          ' to cidr by default')
         elif net_provider == 'neutron':
+            os = os_actions.OpenStackActions(
+                self.get_public_vip(cluster_id))
             nailgun_cidr = self.get_nailgun_cidr_neutron(cluster_id)
             logger.debug('nailgun cidr is {0}'.format(nailgun_cidr))
-            slave_cidr = ''.join(remote.execute(". openrc; neutron"
-                                                " subnet-list | awk '$4 =="
-                                                " \"net04__subnet\""
-                                                "{print $6}'")['stdout'])
-            logger.debug('slave cidr is {0}'.format(
-                slave_cidr.rstrip()))
-            assert_equal(nailgun_cidr, slave_cidr.rstrip(),
+            subnet = os.get_subnet('net04__subnet')
+            logger.debug('net04__subnet: {0}'.format(
+                subnet))
+            assert_true(subnet, "net04__subnet does not exists")
+            logger.debug('cidr net04__subnet: {0}'.format(
+                subnet['cidr']))
+            assert_equal(nailgun_cidr, subnet['cidr'].rstrip(),
                          'Cidr after deployment is not equal'
                          ' to cidr by default')
 
