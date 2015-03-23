@@ -187,8 +187,15 @@ class OpenStackActions(common.Common):
         logger.info("Created volume")
         return self.cinder.volumes.get(volume.id)
 
+    def delete_volume(self, volume):
+        return self.cinder.volumes.delete(volume)
+
     def attach_volume(self, volume, server, mount='/dev/vdb'):
         self.cinder.volumes.attach(volume, server.id, mount)
+        return self.cinder.volumes.get(volume.id)
+
+    def extend_volume(self, volume, newsize):
+        self.cinder.volumes.extend(volume, newsize)
         return self.cinder.volumes.get(volume.id)
 
     def get_hosts_for_migr(self, srv_host_name):
@@ -255,12 +262,28 @@ class OpenStackActions(common.Common):
         return self.keystone.tenants.create(enabled=True,
                                             tenant_name=tenant_name)
 
+    def update_tenant(self, tenant_id, tenant_name=None, description=None,
+                      enabled=None, **kwargs):
+        self.keystone.tenants.update(tenant_id, tenant_name, description,
+                                     enabled)
+        return self.keystone.tenants.get(tenant_id)
+
+    def delete_tenant(self, tenant):
+        return self.keystone.tenants.delete(tenant)
+
     def create_user(self, username, passw, tenant):
         user = self.get_user(username)
         if user:
             return user
         return self.keystone.users.create(
             name=username, password=passw, tenant_id=tenant.id)
+
+    def update_user_enabled(self, user, enabled=True):
+        self.keystone.users.update_enabled(user, enabled)
+        return self.keystone.users.get(user)
+
+    def delete_user(self, user):
+        return self.keystone.users.delete(user)
 
     def create_user_and_tenant(self, tenant_name, username, password):
         tenant = self.create_tenant(tenant_name)
