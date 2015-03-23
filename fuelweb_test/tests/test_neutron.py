@@ -44,6 +44,10 @@ class NeutronGre(TestBasic):
         Snapshot deploy_neutron_gre
 
         """
+        if self.env.d_env.has_snapshot('deploy_neutron_gre'):
+            self.env.revert_snapshot("deploy_neutron_gre")
+            return
+
         self.env.revert_snapshot("ready_with_3_slaves")
 
         segment_type = 'gre'
@@ -82,7 +86,7 @@ class NeutronGre(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_gre")
+        self.env.make_snapshot("deploy_neutron_gre", is_make=True)
 
 
 @test(groups=["thread_1", "neutron"])

@@ -90,7 +90,7 @@ class AdminActions(BaseActions):
         resolv = '/etc/resolv.conf'
 
         # wait until fuelmenu fill the astute.yaml
-        cmd = "fgrep 'dhcp_gateway' {0}".format(config)
+        cmd = "fgrep 'dhcp' {0}".format(config)
         wait(lambda: not self.admin_remote.execute(cmd)['exit_code'], 60)
 
         cmd = ("sed -i 's/dhcp_gateway:.*/dhcp_gateway: {0}/' {1} &&"
