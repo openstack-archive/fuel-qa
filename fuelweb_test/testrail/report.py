@@ -113,8 +113,9 @@ def get_version_from_magnet_link(jenkins_build_data):
                   if 'parameters' in a.keys()][0]
     iso_link = [p['value'] for p in parameters if
                 p['name'].lower() == 'magnet_link'][0]
-    return (re.search(r'.*\bfuel-(\d+\.\d+)-(\d+)-.*', iso_link).group(1),
-            int(re.search(r'.*\bfuel-(\d+\.\d+)-(\d+)-.*', iso_link).group(2)))
+    match = re.search(r'.*\bfuel-(\d+(\.\d+)+)-(\d+)-.*', iso_link)
+    if match:
+        return match.group(1), int(match.group(3))
 
 
 def get_version_from_artifacts(jenkins_build_data, artifact):
