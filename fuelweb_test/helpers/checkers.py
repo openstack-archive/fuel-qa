@@ -1013,3 +1013,21 @@ def check_nova_dhcp_lease(remote, instance_ip, instance_mac, node_dhcp_ip):
     res_str = ''.join(res['stdout'])
     logger.debug("DHCP server answer: {}".format(res_str))
     return ' ack ' in res_str
+
+
+def check_available_mode(remote):
+    command = ('umm status | grep runlevel &>/dev/null && echo "True" '
+               '|| echo "False"')
+    if remote.execute(command)['exit_code'] == 0:
+        return ''.join(remote.execute(command)['stdout']).strip()
+    else:
+        return ''.join(remote.execute(command)['stderr']).strip()
+
+
+def check_auto_mode(remote):
+    command = ('umm status | grep umm &>/dev/null && echo "True" '
+               '|| echo "False"')
+    if remote.execute(command)['exit_code'] == 0:
+        return ''.join(remote.execute(command)['stdout']).strip()
+    else:
+        return ''.join(remote.execute(command)['stderr']).strip()
