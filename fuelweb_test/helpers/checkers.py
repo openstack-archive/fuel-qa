@@ -990,3 +990,21 @@ def check_ping(remote, host, deadline=10, size=56, timeout=1, interval=1):
                            interval=interval,
                            deadline=deadline))
     return int(remote.execute(cmd)['exit_code']) == 0
+
+
+def check_available_mode(remote):
+    command = ('umm status | grep runlevel &>/dev/null && echo "True" '
+               '|| echo "False"')
+    if remote.execute(command)['exit_code'] == 0:
+        return ''.join(remote.execute(command)['stdout']).strip()
+    else:
+        return ''.join(remote.execute(command)['stderr']).strip()
+
+
+def check_auto_mode(remote):
+    command = ('umm status | grep umm &>/dev/null && echo "True" '
+               '|| echo "False"')
+    if remote.execute(command)['exit_code'] == 0:
+        return remote.execute(command)['stdout']
+    else:
+        return remote.execute(command)['stderr']
