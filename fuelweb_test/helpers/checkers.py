@@ -875,7 +875,7 @@ def check_oswl_stat(postgres_actions, remote_collector, master_uid,
                     operation='current',
                     resources=['vm', 'flavor', 'volume', 'image',
                                'tenant', 'keystone_user']):
-    logger.info("Checking that all resources were added...")
+    logger.info("Checking that all resources were collected...")
     expected_resource_count = {
         'current':
         {'vm': 0,

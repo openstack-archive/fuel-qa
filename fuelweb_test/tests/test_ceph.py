@@ -283,11 +283,21 @@ class CephHA(TestBasic):
         volume = os_conn.create_volume()
 
         #create image
-        image = os_conn.image_import(
-            settings.SERVTEST_LOCAL_PATH,
-            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE,
-            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_NAME,
-            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_META)
+        devops_node = self.fuel_web.get_nailgun_primary_controller(
+            self.env.d_env.nodes().slaves[0])
+        slave = self.fuel_web.get_ssh_for_node(devops_node.name)
+        if settings.OPENSTACK_RELEASE_CENTOS in settings.OPENSTACK_RELEASE:
+            slave.execute(". openrc; glance image-create --name"
+                          " 'custom-image' --disk-format qcow2"
+                          " --container-format bare"
+                          " --file /opt/vm/cirros-x86_64-disk.img")
+        else:
+            slave.execute(". openrc; glance image-create --name"
+                          " 'custom-image' --disk-format qcow2"
+                          " --container-format bare --file"
+                          " /usr/share/cirros-testvm/cirros-x86_64-disk.img")
+
+        image = os_conn.get_image_by_name('custom-image')
 
         #create tenant and user
         tenant = os_conn.create_tenant("openstack_tenant")
