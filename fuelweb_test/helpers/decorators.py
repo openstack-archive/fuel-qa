@@ -188,7 +188,7 @@ def create_diagnostic_snapshot(env, status, name=""):
     url = "http://{}:8000{}".format(
         env.get_admin_node_ip(), task['message']
     )
-    log_file_name = '{status}_{name}-{time}.tar.gz'.format(
+    log_file_name = '{status}_{name}-{time}.tar.xz'.format(
         status=status,
         name=name,
         time=time.strftime("%Y_%m_%d__%H_%M_%S", time.gmtime())
