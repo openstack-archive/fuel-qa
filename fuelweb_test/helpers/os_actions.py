@@ -35,6 +35,11 @@ class OpenStackActions(common.Common):
             if image.name.startswith("TestVM"):
                 return image
 
+    def get_image_by_name(self, name):
+        for image in self.glance.images.list():
+            if image.name.startswith(name):
+                return image
+
     def get_hypervisors(self):
         hypervisors = self.nova.hypervisors.list()
         if hypervisors:
