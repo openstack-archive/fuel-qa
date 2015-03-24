@@ -64,24 +64,13 @@ def configure_second_admin_cobbler(self):
 @logwrap
 def configure_second_admin_firewall(self, network, netmask):
     remote = self.d_env.get_admin_remote()
-    # Allow forwarding and correct remote logging
-    # for nodes from the second admin network
+    # Allow input/forwarding for nodes from the second admin network
     rules = [
-        ('-t nat -I POSTROUTING -s {0}/{1} -p udp -m udp --dport 514 -m'
-         ' comment --comment "rsyslog-udp-514-unmasquerade" -j ACCEPT;').
-        format(network, netmask),
-        ('-t nat -I POSTROUTING -s {0}/{1} -p tcp -m tcp --dport 514 -m'
-         ' comment --comment "rsyslog-tcp-514-unmasquerade" -j ACCEPT;').
-        format(network, netmask),
+        ('-I INPUT -i {0} -m comment --comment "input from 2nd admin network" '
+         '-j ACCEPT').format(settings.INTERFACES.get(self.d_env.admin_net2))
         ('-t nat -I POSTROUTING -s {0}/{1} -o eth+ -m comment --comment '
          '"004 forward_admin_net2" -j MASQUERADE').
-        format(network, netmask),
-        ('-I FORWARD -i {0} -o docker0 -p tcp -m state --state NEW -m tcp'
-         ' --dport 514 -m comment --comment "rsyslog-tcp-514-accept" -j '
-         'ACCEPT').format(settings.INTERFACES.get(self.d_env.admin_net2)),
-        ('-I FORWARD -i {0} -o docker0 -p udp -m state --state NEW -m udp'
-         ' --dport 514 -m comment --comment "rsyslog-udp-514-accept" -j '
-         'ACCEPT').format(settings.INTERFACES.get(self.d_env.admin_net2))
+        format(network, netmask)
     ]
 
     for rule in rules:
