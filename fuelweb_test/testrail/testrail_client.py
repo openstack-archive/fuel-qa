@@ -122,6 +122,18 @@ class TestRailProject():
             if section['name'] == section_name:
                 return self.get_section(section_id=section['id'])
 
+    def create_section(self, suite_id, name, parent_id=None):
+        return self.client.send_post('add_section/' + str(self.project['id']),
+                                     dict(suite_id=suite_id, name=name,
+                                          parent_id=parent_id))
+
+    def delete_section(self, section_id):
+        return self.client.send_post('delete_section/' + str(section_id), {})
+
+    def create_suite(self, name, description=None):
+        return self.client.send_post('add_suite/' + str(self.project['id']),
+                                     dict(name=name, description=description))
+
     def get_cases(self, suite_id, section_id=None):
         cases_uri = 'get_cases/{project_id}&suite_id={suite_id}'.format(
             project_id=self.project['id'],
@@ -150,6 +162,9 @@ class TestRailProject():
     def add_case(self, section_id, case):
         add_case_uri = 'add_case/{section_id}'.format(section_id=section_id)
         return self.client.send_post(add_case_uri, case)
+
+    def delete_case(self, case_id):
+        return self.client.send_post('delete_case/' + str(case_id), None)
 
     def get_plans(self):
         plans_uri = 'get_plans/{project_id}'.format(
