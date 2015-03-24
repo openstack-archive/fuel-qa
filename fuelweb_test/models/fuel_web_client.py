@@ -360,8 +360,11 @@ class FuelWebClient(object):
 
             for option in settings:
                 section = False
-                if option in ('sahara', 'murano', 'ceilometer'):
+                if option in ('sahara', 'murano', 'ceilometer', 'mongo'):
                     section = 'additional_components'
+                if option in ('mongo_db_name', 'mongo_replset', 'mongo_user',
+                              'hosts_ip', 'mongo_password'):
+                    section = 'external_mongo'
                 if option in ('volumes_ceph', 'images_ceph', 'ephemeral_ceph',
                               'objects_ceph', 'osd_pool_size', 'volumes_lvm',
                               'volumes_vmdk', 'images_vcenter'):
