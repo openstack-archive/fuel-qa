@@ -326,6 +326,8 @@ UBUNTU_RELEASE = os.environ.get('UBUNTU_RELEASE', 'precise')
 UPDATE_TIMEOUT = os.environ.get('UPDATE_TIMEOUT', 3600)
 
 IMAGE_PROVISIONING = os.environ.get('IMAGE_PROVISIONING', 'false') == 'true'
+CLASSIC_PROVISIONING = os.environ.get('CLASSIC_PROVISIONING',
+                                      'false') == 'true'
 
 KEYSTONE_CREDS = {'username': os.environ.get('KEYSTONE_USERNAME', 'admin'),
                   'password': os.environ.get('KEYSTONE_PASSWORD', 'admin'),

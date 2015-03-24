@@ -78,7 +78,8 @@ class OneNodeDeploy(TestBasic):
 class HAOneControllerFlat(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_ha_one_controller_flat",
-                  "ha_one_controller_nova_flat", "image_based", "smoke_nova"])
+                  "ha_one_controller_nova_flat", "classic_provisioning",
+                  "smoke_nova"])
     @log_snapshot_on_error
     def deploy_ha_one_controller_flat(self):
         """Deploy cluster in HA mode with flat nova-network

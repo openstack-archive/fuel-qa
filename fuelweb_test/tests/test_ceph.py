@@ -161,7 +161,7 @@ class CephCompactWithCinder(TestBasic):
                                is_make=True)
 
 
-@test(groups=["thread_3", "ceph", "image_based"])
+@test(groups=["thread_3", "ceph", "classic_provisioning"])
 class CephHA(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_release],

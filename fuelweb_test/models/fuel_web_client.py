@@ -380,6 +380,9 @@ class FuelWebClient(object):
             if help_data.IMAGE_PROVISIONING:
                 attributes['editable']['provision']['method']['value'] = \
                     'image'
+            if help_data.CLASSIC_PROVISIONING:
+                attributes['editable']['provision']['method']['value'] = \
+                    'cobbler'
 
             logger.info('Set DEBUG MODE to %s', help_data.DEBUG_MODE)
             attributes['editable']['common']['debug']['value'] = \
