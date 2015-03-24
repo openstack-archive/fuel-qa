@@ -756,6 +756,68 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
         self.run_tests(cluster_id)
         self.env.make_snapshot("deploy_ceilometer_ha_mulirole")
 
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["deploy_ceilometer_ha_with_external_mongo"])
+    @log_snapshot_on_error
+    def deploy_ceilometer_ha_with_external_mongo(self):
+        """Deploy cluster in ha mode with Ceilometer and external Mongo
+
+        Scenario:
+            1. Create cluster. Set install Ceilometer, external Mongo option
+            2. Add 3 node with controller role
+            3. Add 1 nodes with compute and ceph roles
+            4. Add 1 node with ceph role
+            5. Deploy the cluster
+            6. Verify ceilometer api is running
+            7. Run OSTF
+
+        Duration 65m
+        Snapshot: deploy_ceilometer_ha_with_external_mongo
+
+        """
+
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings={
+                'ceilometer': True,
+                'tenant': 'ceilometerHA',
+                'user': 'ceilometerHA',
+                'password': 'ceilometerHA',
+                'volumes_ceph': True,
+                'images_ceph': True,
+                'volumes_lvm': False,
+                'osd_pool_size': 2,
+                'mongo': True,
+                'hosts_ip': settings.SERVTEST_EXTERNAL_MONGO_URLS,
+                'mongo_db_name': settings.SERVTEST_EXTERNAL_MONGO_DB_NAME,
+                'mongo_user': settings.SERVTEST_EXTERNAL_MONGO_USER,
+                'mongo_password': settings.SERVTEST_EXTERNAL_MONGO_PASS,
+                'mongo_replset': settings.SERVTEST_EXTERNAL_MONGO_REPL_SET
+            }
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute', 'ceph-osd'],
+                'slave-05': ['ceph-osd']
+            }
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
+        checkers.verify_service(
+            self.env.d_env.get_ssh_to_remote(_ip),
+            service_name='ceilometer-api')
+
+        self.run_tests(cluster_id)
+        self.env.make_snapshot("deploy_ceilometer_ha_with_external_mongo")
+
 
 @test(groups=["services", "services.heat", "services_ha_one_controller"])
 class HeatHAOneController(TestBasic):
