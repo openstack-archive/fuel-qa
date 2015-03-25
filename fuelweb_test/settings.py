@@ -346,10 +346,10 @@ LBAAS_PLUGIN_PATH = os.environ.get('LBAAS_PLUGIN_PATH')
 
 FUEL_STATS_CHECK = os.environ.get('FUEL_STATS_CHECK', 'false') == 'true'
 FUEL_STATS_ENABLED = os.environ.get('FUEL_STATS_ENABLED', 'true') == 'true'
-FUEL_STATS_SSL = os.environ.get('FUEL_STATS_SSL', 'true') == 'true'
+FUEL_STATS_SSL = os.environ.get('FUEL_STATS_SSL', 'false') == 'true'
 FUEL_STATS_HOST = os.environ.get('FUEL_STATS_HOST',
                                  '172.18.2.169')
-FUEL_STATS_PORT = os.environ.get('FUEL_STATS_PORT', '443')
+FUEL_STATS_PORT = os.environ.get('FUEL_STATS_PORT', '80')
 
 CUSTOM_ENV = os.environ.get('CUSTOM_ENV', 'false') == 'true'
 BUILD_IMAGES = os.environ.get('BUILD_IMAGES', 'false') == 'true'
