@@ -327,7 +327,7 @@ class EnvironmentModel(object):
             settings.FUEL_STATS_HOST,
             settings.FUEL_STATS_PORT,
             settings.FUEL_STATS_SSL)
-        #Restart statsenderd in order to apply new settings (Collector address)
+        # Restart statsenderd in order to apply new settings(Collector address)
         self.nailgun_actions.force_fuel_stats_sending()
         if settings.FUEL_STATS_ENABLED:
             self.fuel_web.client.send_fuel_stats(enabled=True)

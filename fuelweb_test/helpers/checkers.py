@@ -929,7 +929,7 @@ def check_oswl_stat(postgres_actions, remote_collector, master_uid,
                                               expected_resource_count[
                                                   operation][resource]))
 
-    #check stat on collector side
+    # check stat on collector side
     sent_logs_count = postgres_actions.count_sent_action_logs(
         table='oswl_stats')
     logger.info("Number of logs that were sent to collector: {}".format(
