@@ -242,7 +242,6 @@ class NeutronGre(TestBasic):
                 remote=self.fuel_web.get_ssh_for_node(node),
                 path=self.get_post_test(all_tasks, 'tools')[0]['cmd'])
              for node in nodes]
-         # check tools
 
         self.env.make_snapshot('run_tasks_end_with_hosts')
 

@@ -417,7 +417,7 @@ class FuelWebClient(object):
                         if 'archive.ubuntu.com' not in repo_value['uri']:
                             repos.append(repo_value)
                 else:
-                # Use defaults from Nailgun if MIRROR_UBUNTU is not set
+                    # Use defaults from Nailgun if MIRROR_UBUNTU is not set
                     repos = repos_attr['value']
 
                 # Add extra Ubuntu repositories with higher priority
