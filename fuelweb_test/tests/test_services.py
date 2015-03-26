@@ -1005,7 +1005,7 @@ class HeatHA(TestBasic):
                            'HeatSmokeTests')
         tests_names = ['test_actions',
                        'test_advanced_actions',
-                       'test_autoscaling'
+                       'test_autoscaling',
                        'test_rollback',
                        'test_update']
 
