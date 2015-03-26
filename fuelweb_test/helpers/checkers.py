@@ -921,17 +921,16 @@ def check_oswl_stat(postgres_actions, remote_collector, master_uid,
                                               expected_resource_count[
                                                   operation][resource]))
 
-    #check stat on collector side
+    # check stat on collector side
     sent_logs_count = postgres_actions.count_sent_action_logs(
         table='oswl_stats')
     logger.info("Number of logs that were sent to collector: {}".format(
         sent_logs_count
     ))
-    logs = execute_query_on_collector(remote_collector, master_uuid=None,
-                                      query=
-                                      "select count(*) from oswl_stats where"
-                                      " master_node_uid='{0}'".format(
-                                          master_uid))
+    query = ("select count(*) from oswl_stats "
+             "where master_node_uid='{0}'".format(master_uid))
+    logs = execute_query_on_collector(remote_collector,
+                                      master_uuid=None, query=query)
     logger.info("Number of logs that were saved"
                 " on collector: {}".format(logs))
     assert_true(sent_logs_count <= int(logs),
