@@ -264,6 +264,12 @@ SERVTEST_MURANO_IMAGE_NAME = 'murano'
 SERVTEST_MURANO_IMAGE_META = {
     'murano_image_info': '{"type": "linux", "title": "murano"}'}
 
+SERVTEST_EXTERNAL_MONGO_URLS = "172.18.10.137, 172.18.10.138, 172.18.10.139"
+SERVTEST_EXTERNAL_MONGO_DB_NAME = "ceilometer"
+SERVTEST_EXTERNAL_MONGO_USER = "ceilometer"
+SERVTEST_EXTERNAL_MONGO_PASS = "ceilometer"
+SERVTEST_EXTERNAL_MONGO_REPL_SET = '3'
+
 DEFAULT_IMAGES_CENTOS = os.environ.get(
     'DEFAULT_IMAGES_CENTOS',
     '/var/lib/libvirt/images/centos6.4-base.qcow2')
