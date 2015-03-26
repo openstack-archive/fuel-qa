@@ -118,7 +118,8 @@ class AdminActions(BaseActions):
                      .format(cmd=cmd, res=result))
 
         if FUEL_USE_LOCAL_NTPD:
-            #Try to use only ntpd on the host as the time sourse for admin node
+            # Try to use only ntpd on the host as the time source
+            # for admin node
             cmd = 'ntpdate -p 4 -t 0.2 -ub {0}'.format(router)
 
             if not self.admin_remote.execute(cmd)['exit_code']:

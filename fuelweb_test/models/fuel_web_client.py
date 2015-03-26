@@ -519,7 +519,7 @@ class FuelWebClient(object):
                         self.check_new_ubuntu_repo(repos, repo_value)):
                     repos.append(repo_value)
         else:
-        # Use defaults from Nailgun if MIRROR_UBUNTU is not set
+            # Use defaults from Nailgun if MIRROR_UBUNTU is not set
             repos = repos_attr['value']
         if help_data.EXTRA_DEB_REPOS:
             self.add_ubuntu_extra_mirrors(repos=repos)

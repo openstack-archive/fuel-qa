@@ -25,9 +25,9 @@ from fuelweb_test.tests.test_admin_node import TestAdminNodeCustomManifests
 
 @test(groups=["command_line"])
 class CommandLine(TestBasic):
-    @test(depends_on=
-          [TestAdminNodeCustomManifests.setup_with_custom_manifests],
-          groups=["hiera_deploy"])
+    @test(depends_on=[
+        TestAdminNodeCustomManifests.setup_with_custom_manifests],
+        groups=["hiera_deploy"])
     @log_snapshot_on_error
     def hiera_deploy(self):
         """Deploy cluster with controller node only
