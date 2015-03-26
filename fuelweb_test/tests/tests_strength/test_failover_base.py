@@ -333,9 +333,8 @@ class TestHaFailoverBase(TestBasic):
         remote.execute("iptables -I OUTPUT 1 -m owner --uid-owner heat -m"
                        " state --state NEW,ESTABLISHED,RELATED -j DROP")
 
-        wait(lambda: len(remote.execute
-            ("netstat -nap | grep {0} | grep :5673".
-             format(pid))['stdout']) == 0, timeout=300)
+        cmd = "netstat -nap | grep {0} | grep :5673".format(pid)
+        wait(lambda: len(remote.execute(cmd)['stdout']) == 0, timeout=300)
 
         get_ocf_status = ''.join(
             remote.execute(ocf_status)['stdout']).rstrip()

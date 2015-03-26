@@ -271,18 +271,18 @@ class CephHA(TestBasic):
             self.fuel_web.get_public_vip(cluster_id), 'cephHA', 'cephHA',
             'cephHA')
 
-        #Check resources addition
-        #create instance
+        # Check resources addition
+        # create instance
         server = os_conn.create_instance(
             neutron_network=settings.NEUTRON_ENABLE)
 
-        #create flavor
+        # create flavor
         flavor = os_conn.create_flavor('openstackstat', 1024, 1, 1)
 
-        #create volume
+        # create volume
         volume = os_conn.create_volume()
 
-        #create image
+        # create image
         devops_node = self.fuel_web.get_nailgun_primary_controller(
             self.env.d_env.nodes().slaves[0])
         slave = self.fuel_web.get_ssh_for_node(devops_node.name)
@@ -299,7 +299,7 @@ class CephHA(TestBasic):
 
         image = os_conn.get_image_by_name('custom-image')
 
-        #create tenant and user
+        # create tenant and user
         tenant = os_conn.create_tenant("openstack_tenant")
         user = os_conn.create_user('openstack_user', 'qwerty', tenant)
 
@@ -314,16 +314,16 @@ class CephHA(TestBasic):
                                  resources=['vm', 'flavor', 'volume', 'image',
                                             'tenant', 'keystone_user'])
 
-        #Check resources modification
-        #suspend instance
+        # Check resources modification
+        # suspend instance
         server.suspend()
-        #edit volume
+        # edit volume
         os_conn.extend_volume(volume, 2)
-        #edit image
+        # edit image
         os_conn.update_image(image, min_ram=333)
-        #edit user
+        # edit user
         os_conn.update_user_enabled(user, enabled=False)
-        #edit tenant
+        # edit tenant
         os_conn.update_tenant(tenant.id, enabled=False)
 
         self.env.nailgun_actions.force_oswl_collect()
@@ -333,18 +333,18 @@ class CephHA(TestBasic):
                                  resources=['vm', 'volume', 'image',
                                             'tenant', 'keystone_user'])
 
-        #Check resources deletion
-        #delete instance
+        # Check resources deletion
+        # delete instance
         server.delete()
-        #delete flavor
+        # delete flavor
         os_conn.delete_flavor(flavor)
-        #delete volume
+        # delete volume
         os_conn.delete_volume(volume)
-        #delete image
+        # delete image
         os_conn.delete_image(image.id)
-        #delete tenant
+        # delete tenant
         os_conn.delete_tenant(tenant)
-        #delete user
+        # delete user
         os_conn.delete_user(user)
 
         self.env.nailgun_actions.force_oswl_collect()

@@ -63,8 +63,7 @@ class TestPatch(TestBasic):
             logger.error('There is no shaphot found {0}'.format(self.snapshot))
             raise SkipTest('Can not find snapshot {0}'.format(self.snapshot))
 
-        #  1. Revert  environment
-
+        # 1. Revert  environment
         self.env.revert_snapshot(self.snapshot)
 
         logger.info("Start upload upgrade archive")
@@ -113,8 +112,8 @@ class TestPatch(TestBasic):
 
         # 6. Run upgrade script
 
-        checkers.run_script(node_ssh, '/var/tmp', 'upgrade.sh', password=
-                            hlp_data.KEYSTONE_CREDS['password'])
+        checkers.run_script(node_ssh, '/var/tmp', 'upgrade.sh',
+                            password=hlp_data.KEYSTONE_CREDS['password'])
         logger.info('Check if the upgrade complete.')
 
         checkers.wait_upgrade_is_done(node_ssh=node_ssh,
@@ -282,7 +281,7 @@ class TestPatch(TestBasic):
         self.env.make_snapshot('{0}_and_patch'.format(self.snapshot))
 
     # TODO (tleontovich) enable if rollback will be available
-    #@test(depends_on=[deploy_and_patch])
+    # @test(depends_on=[deploy_and_patch])
     @log_snapshot_on_error
     def deploy_and_rollback(self):
         """Rollback/Downgrade os on reverted env
