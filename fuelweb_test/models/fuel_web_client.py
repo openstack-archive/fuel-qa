@@ -380,9 +380,6 @@ class FuelWebClient(object):
                 if section:
                     attributes['editable'][section][option]['value'] =\
                         settings[option]
-            if help_data.IMAGE_PROVISIONING:
-                attributes['editable']['provision']['method']['value'] = \
-                    'image'
             if help_data.CLASSIC_PROVISIONING:
                 attributes['editable']['provision']['method']['value'] = \
                     'cobbler'
