@@ -296,6 +296,19 @@ class OpenStackActions(common.Common):
                 return net
         return None
 
+    def get_subnet(self, subnet_name):
+        subnet_list = self.neutron.list_subnets()
+        for subnet in subnet_list['subnets']:
+            if subnet['name'] == subnet_name:
+                return subnet
+        return None
+
+    def nova_get_net(self, net_name):
+        for net in self.nova.networks.list():
+            if net.human_id == net_name:
+                return net
+        return None
+
     def get_router(self, network):
         router_list = self.neutron.list_routers()
         for router in router_list['routers']:

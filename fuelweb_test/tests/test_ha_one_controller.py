@@ -126,9 +126,8 @@ class HAOneControllerFlat(TestBasic):
         self.fuel_web.assert_cluster_ready(
             os_conn, smiles_count=6, networks_count=1, timeout=300)
 
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         self.fuel_web.check_fixed_network_cidr(
-            cluster_id, self.env.d_env.get_ssh_to_remote(_ip))
+            cluster_id, os_conn)
 
         self.fuel_web.verify_network(cluster_id)
 
@@ -624,9 +623,8 @@ class HAOneControllerCinder(TestBasic):
         self.fuel_web.assert_cluster_ready(
             os_conn, smiles_count=6, networks_count=1, timeout=300)
 
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         self.fuel_web.check_fixed_network_cidr(
-            cluster_id, self.env.d_env.get_ssh_to_remote(_ip))
+            cluster_id, os_conn)
         self.fuel_web.verify_network(cluster_id)
         self.env.verify_network_configuration("slave-01")
 
