@@ -22,6 +22,7 @@ import xmlrpclib
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.models.environment import EnvironmentModel
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_CENTOS
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -135,3 +136,21 @@ class TestAdminNodeCustomManifests(TestBasic):
         Duration 20m
         """
         self.env.setup_environment(custom=True, build_images=True)
+
+
+@test(groups=["setup_master_usb", "thread_1"])
+class TestAdminNodeUSB(TestBasic):
+
+    def __init__(self):
+        self.env = EnvironmentModel(boot_from='usb')
+        self.fuel_web = self.env.fuel_web
+
+    @test(groups=["setup_master_usb"])
+    def setup_from_usb_drive(self):
+        """Setup master node from USB drive
+        Scenario:
+            1. Setup master node from USB
+
+        Duration 50m
+        """
+        self.env.setup_environment(iso_connect_as='usb')
