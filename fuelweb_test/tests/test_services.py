@@ -268,13 +268,6 @@ class MuranoHAOneController(TestBasic):
 
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        LOGGER.debug('Check MD5 of image')
-        check_image = checkers.check_image(
-            settings.SERVTEST_MURANO_IMAGE,
-            settings.SERVTEST_MURANO_IMAGE_MD5,
-            settings.SERVTEST_LOCAL_PATH)
-        asserts.assert_true(check_image, "Image verification failed")
-
         data = {
             'murano': True,
             'net_provider': 'neutron',
@@ -308,10 +301,6 @@ class MuranoHAOneController(TestBasic):
             self.env.d_env.get_ssh_to_remote(_ip),
             service_name='murano-api')
 
-        common_func = Common(self.fuel_web.get_public_vip(cluster_id),
-                             data['user'], data['password'],
-                             data['tenant'])
-
         LOGGER.debug('Run sanity and functional Murano OSTF tests')
         self.fuel_web.run_single_ostf_test(
             cluster_id=self.fuel_web.get_last_created_cluster(),
@@ -320,32 +309,11 @@ class MuranoHAOneController(TestBasic):
                        'MuranoSanityTests.test_create_and_delete_service')
         )
 
-        LOGGER.debug('Import Murano image')
-        common_func.image_import(
-            settings.SERVTEST_LOCAL_PATH,
-            settings.SERVTEST_MURANO_IMAGE,
-            settings.SERVTEST_MURANO_IMAGE_NAME,
-            settings.SERVTEST_MURANO_IMAGE_META)
-
-        LOGGER.debug('Boot instance with Murano image')
-
-        image_name = settings.SERVTEST_MURANO_IMAGE_NAME
-        srv = common_func.create_instance(flavor_name='test_murano_flavor',
-                                          ram=2048, vcpus=1, disk=20,
-                                          server_name='murano_instance',
-                                          image_name=image_name,
-                                          neutron_network=True)
-
-        wait(lambda: common_func.get_instance_detail(srv).status == 'ACTIVE',
-             timeout=60 * 60)
-
-        common_func.delete_instance(srv)
-
         LOGGER.debug('Run OSTF platform tests')
 
         test_class_main = ('fuel_health.tests.platform_tests'
                            '.test_murano_linux.MuranoDeployLinuxServicesTests')
-        tests_names = ['test_deploy_apache_service', ]
+        tests_names = ['test_deploy_dummy_app', ]
 
         test_classes = []
 
@@ -390,13 +358,6 @@ class MuranoHA(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        LOGGER.debug('Check MD5 of image')
-        check_image = checkers.check_image(
-            settings.SERVTEST_MURANO_IMAGE,
-            settings.SERVTEST_MURANO_IMAGE_MD5,
-            settings.SERVTEST_LOCAL_PATH)
-        asserts.assert_true(check_image, "Image verification failed")
-
         data = {
             'murano': True,
             'net_provider': 'neutron',
@@ -432,9 +393,6 @@ class MuranoHA(TestBasic):
                 self.env.d_env.get_ssh_to_remote(_ip),
                 service_name='murano-api')
 
-        common_func = Common(cluster_vip, data['user'], data['password'],
-                             data['tenant'])
-
         LOGGER.debug('Run sanity and functional Murano OSTF tests')
         self.fuel_web.run_single_ostf_test(
             cluster_id=self.fuel_web.get_last_created_cluster(),
@@ -443,32 +401,11 @@ class MuranoHA(TestBasic):
                        'MuranoSanityTests.test_create_and_delete_service')
         )
 
-        LOGGER.debug('Import Murano image')
-        common_func.image_import(
-            settings.SERVTEST_LOCAL_PATH,
-            settings.SERVTEST_MURANO_IMAGE,
-            settings.SERVTEST_MURANO_IMAGE_NAME,
-            settings.SERVTEST_MURANO_IMAGE_META)
-
-        LOGGER.debug('Boot instance with Murano image')
-
-        image_name = settings.SERVTEST_MURANO_IMAGE_NAME
-        srv = common_func.create_instance(flavor_name='test_murano_flavor',
-                                          ram=2048, vcpus=1, disk=20,
-                                          server_name='murano_instance',
-                                          image_name=image_name,
-                                          neutron_network=True)
-
-        wait(lambda: common_func.get_instance_detail(srv).status == 'ACTIVE',
-             timeout=60 * 60)
-
-        common_func.delete_instance(srv)
-
         LOGGER.debug('Run OSTF platform tests')
 
         test_class_main = ('fuel_health.tests.platform_tests'
                            '.test_murano_linux.MuranoDeployLinuxServicesTests')
-        tests_names = ['test_deploy_apache_service', ]
+        tests_names = ['test_deploy_dummy_app', ]
 
         test_classes = []
 
