@@ -23,6 +23,8 @@ ENV_NAME = os.environ.get("ENV_NAME", "fuel_system_test")
 VIRTUAL_ENV = os.environ.get("VIRTUAL_ENV", "")
 
 ISO_PATH = os.environ.get('ISO_PATH')
+# cdrom or usb
+ADMIN_BOOT_DEVICE = os.environ.get('ADMIN_BOOT_DEVICE', 'cdrom')
 DNS = os.environ.get('DNS', '8.8.8.8')
 
 OPENSTACK_RELEASE_CENTOS = 'centos'
