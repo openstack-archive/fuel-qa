@@ -102,23 +102,38 @@ def get_downstream_builds(jenkins_build_data, status=None):
 def get_version(jenkins_build_data):
     if any([artifact for artifact in jenkins_build_data['artifacts']
             if artifact['fileName'] == JENKINS['version_artifact']]):
-        return get_version_from_artifacts(jenkins_build_data,
-                                          artifact=JENKINS['version_artifact'])
+        return get_version_from_artifacts(jenkins_build_data)
     else:
-        return get_version_from_magnet_link(jenkins_build_data)
+        return get_version_from_parameters(jenkins_build_data)
 
 
-def get_version_from_magnet_link(jenkins_build_data):
+def get_job_parameter(jenkins_build_data, parameter):
     parameters = [a['parameters'] for a in jenkins_build_data['actions']
                   if 'parameters' in a.keys()][0]
-    iso_link = [p['value'] for p in parameters if
-                p['name'].lower() == 'magnet_link'][0]
-    match = re.search(r'.*\bfuel-(\d+(\.\d+)+)-(\d+)-.*', iso_link)
-    if match:
-        return match.group(1), int(match.group(3))
+    target_params = [p['value'] for p in parameters
+                     if p['name'].lower() == str(parameter).lower()]
+    if len(target_params) > 0:
+        return target_params[0]
 
 
-def get_version_from_artifacts(jenkins_build_data, artifact):
+def get_version_from_parameters(jenkins_build_data):
+    iso_link = get_job_parameter(jenkins_build_data, 'magnet_link')
+    if iso_link:
+        match = re.search(r'.*\bfuel-(\d+(\.\d+)+)-(\d+)-.*', iso_link)
+        if match:
+            return match.group(1), int(match.group(3))
+    upstream_job = get_job_parameter(jenkins_build_data, 'UPSTREAM_JOB_URL')
+    if upstream_job:
+        causes = [a['causes'] for a in jenkins_build_data['actions']
+                  if 'causes' in a.keys()][0]
+        if len(causes) > 0:
+            upstream_job_name = causes[0]['upstreamProject']
+            upstream_build_number = causes[0]['upstreamBuild']
+            upstream_build = Build(upstream_job_name, upstream_build_number)
+            return get_version_from_artifacts(upstream_build.build_data)
+
+
+def get_version_from_artifacts(jenkins_build_data):
     version = yaml.load(get_build_artifact(
         url=jenkins_build_data['url'], artifact=JENKINS['version_artifact']))
     return version['VERSION']['release'], \
