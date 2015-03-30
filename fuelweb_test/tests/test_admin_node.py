@@ -22,6 +22,7 @@ import xmlrpclib
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.models.environment import EnvironmentModel
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_CENTOS
 from fuelweb_test.tests.base_test_case import SetupEnvironment
