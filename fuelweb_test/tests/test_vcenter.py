@@ -98,11 +98,9 @@ class VcenterDeploy(TestBasic):
 
         Scenario:
             1. Create cluster with Ceilometer support
-            2. Add 3 node with controller+MongoDB roles
-            3. Add a node with compute role
-            4. Add a node with Cinder+CinderVMDK roles
-            5. Deploy the cluster
-            6. Run OSTF
+            2. Add 3 nodes with controller+MongoDB roles
+            3. Deploy the cluster
+            4. Run OSTF
 
         """
         self.env.revert_snapshot("ready_with_3_slaves")
@@ -155,6 +153,72 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha',
                                               'platform_tests'],
+            should_fail=2,
+            failed_test_name=[('vCenter: Check network connectivity from '
+                               'instance without floating             IP'),
+                              ('vCenter: Check network connectivity from '
+                               'instance via floating IP'), ])
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["smoke", "vcenter_cindervmdk"])
+    @log_snapshot_on_error
+    def vcenter_cindervmdk(self):
+        """Deploy environment with vCenter and CinderVMDK
+
+        Scenario:
+            1. Create cluster with vCenter support
+            2. Add 3 nodes with controller roles
+            3. Add a node with CinderVMDK roles
+            4. Deploy the cluster
+            5. Run network verification
+            6. Run OSTF
+
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            vcenter_value={
+                "glance": {
+                    "vcenter_username": "",
+                    "datacenter": "",
+                    "vcenter_host": "",
+                    "vcenter_password": "",
+                    "datastore": "", },
+                "availability_zones": [
+                    {"vcenter_username": VCENTER_USERNAME,
+                     "nova_computes": [
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster1",
+                          "service_name": "vmcluster1"}, ],
+                     "vcenter_host": VCENTER_IP,
+                     "cinder": {"enable": True},
+                     "az_name": "vcenter",
+                     "vcenter_password": VCENTER_PASSWORD,
+                     }],
+                "network": {"esxi_vlan_interface": "vmnic0"}}, )
+
+        logger.info("cluster is {}".format(cluster_id))
+
+        # Assign role to node
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller'],
+             'slave-02': ['controller'],
+             'slave-03': ['controller'],
+             'slave-04': ['cinder-vmware'], })
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.verify_network(cluster_id)
+
+        # FIXME when OSTF test will be fixed in bug #1433539
+        # When the bug will be fixed 'should_fail=2' and
+        # 'failed_test_name' parameter should be removed.
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
             should_fail=2,
             failed_test_name=[('vCenter: Check network connectivity from '
                                'instance without floating             IP'),
