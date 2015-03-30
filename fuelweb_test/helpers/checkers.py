@@ -67,6 +67,7 @@ def check_ceph_health(remote, health_status=['HEALTH_OK']):
 def check_ceph_disks(remote, nodes_ids):
     nodes_names = ['node-{0}'.format(node_id) for node_id in nodes_ids]
     disks_tree = get_osd_tree(remote)
+    osd_ids = get_osd_ids(remote)
     logger.debug("Disks output information: \\n{0}".format(disks_tree))
     disks_ids = []
     for node in disks_tree['nodes']:
@@ -74,6 +75,12 @@ def check_ceph_disks(remote, nodes_ids):
             disks_ids.extend(node['children'])
     for node in disks_tree['nodes']:
         if node['type'] == 'osd' and node['id'] in disks_ids:
+            assert_equal(node['status'], 'up', 'OSD node {0} is down'.
+                         format(node['id']))
+    for node in disks_tree['stray']:
+        if node['type'] == 'osd' and node['id'] in osd_ids:
+            logger.info("WARNING! Ceph OSD '{0}' has no parent host!".
+                        format(node['name']))
             assert_equal(node['status'], 'up', 'OSD node {0} is down'.
                          format(node['id']))
 
@@ -383,6 +390,12 @@ def restart_nailgun(remote):
 @logwrap
 def get_osd_tree(remote):
     cmd = 'ceph osd tree -f json'
+    return json.loads(''.join(remote.execute(cmd)['stdout']))
+
+
+@logwrap
+def get_osd_ids(remote):
+    cmd = 'ceph osd ls -f json'
     return json.loads(''.join(remote.execute(cmd)['stdout']))
 
 
