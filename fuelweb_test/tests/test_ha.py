@@ -93,7 +93,7 @@ class TestHaVLAN(TestBasic):
             self.env.d_env.get_ssh_to_remote(_ip))
 
         self.fuel_web.verify_network(cluster_id)
-        devops_node = self.fuel_web.get_nailgun_primary_controller(
+        devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
 
@@ -163,7 +163,7 @@ class TestHaFlat(TestBasic):
             os_conn, smiles_count=16, networks_count=1, timeout=300)
 
         self.fuel_web.verify_network(cluster_id)
-        devops_node = self.fuel_web.get_nailgun_primary_controller(
+        devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
 
@@ -281,7 +281,7 @@ class TestHaFlatScalability(TestBasic):
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        devops_node = self.fuel_web.get_nailgun_primary_controller(
+        devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
 
@@ -300,7 +300,7 @@ class TestHaFlatScalability(TestBasic):
                 devops_node.name,
                 self.env.d_env.nodes().slaves[:3], [])
 
-        devops_node = self.fuel_web.get_nailgun_primary_controller(
+        devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
 
@@ -327,7 +327,7 @@ class TestHaFlatScalability(TestBasic):
                           '\s+Started node', ret), 'vip public started')
 
         self.fuel_web.security.verify_firewall(cluster_id)
-        devops_node = self.fuel_web.get_nailgun_primary_controller(
+        devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))\
 
