@@ -734,47 +734,20 @@ class NodeDiskSizes(TestBasic):
                 assert_equal(disk['size'],
                              NODE_VOLUME_SIZE * 1024 - 500, 'Disk size')
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+    @test(depends_on=[deploy_ha_one_controller_cinder],
           groups=["check_nodes_disks"])
     @log_snapshot_on_error
     def check_nodes_disks(self):
         """Verify hard drive sizes for deployed nodes
 
         Scenario:
-            1. Create cluster in Ha mode with 1 controller
-            2. Add 1 node with controller role
-            3. Add 1 node with compute role
-            4. Add 1 node with cinder role
-            5. Deploy the cluster
-            6. Verify hard drive sizes for deployed nodes
+            1. Revert snapshot "deploy_ha_one_controller_cinder"
+            2. Verify hard drive sizes for deployed nodes
 
-        Duration 30m
+        Duration 15m
         """
 
-        self.env.revert_snapshot("ready_with_3_slaves")
-
-        cluster_id = self.fuel_web.create_cluster(
-            name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE
-        )
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {
-                'slave-01': ['controller'],
-                'slave-02': ['compute'],
-                'slave-03': ['cinder']
-            }
-        )
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id))
-
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=6, networks_count=1, timeout=300)
-
-        self.fuel_web.security.verify_firewall(cluster_id)
-
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.env.revert_snapshot("deploy_ha_one_controller_cinder")
 
         nodes_dict = {
             'slave-01': ['controller'],
