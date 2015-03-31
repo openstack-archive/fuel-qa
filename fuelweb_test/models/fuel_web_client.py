@@ -23,6 +23,7 @@ from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
 from ipaddr import IPNetwork
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
 
 from fuelweb_test.helpers import checkers
@@ -1061,9 +1062,15 @@ class FuelWebClient(object):
 
         for node in devops_nodes:
             logger.info('Wait a %s node offline status', node.name)
-            wait(
-                lambda: not self.get_nailgun_node_by_devops_node(node)[
-                    'online'], timeout=60 * 10)
+            try:
+                wait(
+                    lambda: not self.get_nailgun_node_by_devops_node(node)[
+                        'online'], timeout=60 * 10)
+            except TimeoutError:
+                assert_false(
+                    self.get_nailgun_node_by_devops_node(node)['online'],
+                    'Node {0} has not become '
+                    'offline after warm shutdown'.format(node.name))
             node.destroy()
 
     def warm_start_nodes(self, devops_nodes):
@@ -1071,9 +1078,15 @@ class FuelWebClient(object):
         for node in devops_nodes:
             node.create()
         for node in devops_nodes:
-            wait(
-                lambda: self.get_nailgun_node_by_devops_node(node)['online'],
-                timeout=60 * 10)
+            try:
+                wait(
+                    lambda: self.get_nailgun_node_by_devops_node(
+                        node)['online'], timeout=60 * 10)
+            except TimeoutError:
+                assert_true(
+                    self.get_nailgun_node_by_devops_node(node)['online'],
+                    'Node {0} has not become online '
+                    'after warm start'.format(node.name))
             logger.debug('Node {0} became online.'.format(node.name))
 
     def warm_restart_nodes(self, devops_nodes):
@@ -1090,14 +1103,26 @@ class FuelWebClient(object):
             node.destroy()
         for node in devops_nodes:
             logger.info('Wait a %s node offline status', node.name)
-            wait(lambda: not self.get_nailgun_node_by_devops_node(
-                 node)['online'], timeout=60 * 10)
+            try:
+                wait(lambda: not self.get_nailgun_node_by_devops_node(
+                     node)['online'], timeout=60 * 10)
+            except TimeoutError:
+                assert_false(
+                    self.get_nailgun_node_by_devops_node(node)['online'],
+                    'Node {0} has not become offline after '
+                    'cold restart'.format(node.name))
             logger.info('Start %s node', node.name)
             node.create()
         for node in devops_nodes:
-            wait(
-                lambda: self.get_nailgun_node_by_devops_node(node)['online'],
-                timeout=60 * 10)
+            try:
+                wait(
+                    lambda: self.get_nailgun_node_by_devops_node(
+                        node)['online'], timeout=60 * 10)
+            except TimeoutError:
+                assert_true(
+                    self.get_nailgun_node_by_devops_node(node)['online'],
+                    'Node {0} has not become online'
+                    ' after cold start'.format(node.name))
             _ip = self.get_nailgun_node_by_name(node.name)['ip']
             remote = self.environment.d_env.get_ssh_to_remote(_ip)
             try:
@@ -1157,9 +1182,14 @@ class FuelWebClient(object):
     def wait_nodes_get_online_state(self, nodes, timeout=4 * 60):
         for node in nodes:
             logger.info('Wait for %s node online status', node.name)
-            wait(lambda:
-                 self.get_nailgun_node_by_devops_node(node)['online'],
-                 timeout=timeout)
+            try:
+                wait(lambda:
+                     self.get_nailgun_node_by_devops_node(node)['online'],
+                     timeout)
+            except TimeoutError:
+                assert_true(
+                    self.get_nailgun_node_by_devops_node(node)['online'],
+                    'Node {0} has not become online'.format(node.name))
             node = self.get_nailgun_node_by_devops_node(node)
             assert_true(node['online'],
                         'Node {0} is online'.format(node['mac']))
@@ -1187,7 +1217,9 @@ class FuelWebClient(object):
             except TimeoutError:
                 logger.error("MySQL Galera isn't ready on {0}: {1}"
                              .format(node_name, _get_galera_status(remote)))
-                raise TimeoutError("MySQL Galera is down")
+                raise TimeoutError(
+                    "MySQL Galera isn't ready on {0}: {1}".format(
+                        node_name, _get_galera_status(remote)))
         return True
 
     @logwrap
@@ -1276,7 +1308,8 @@ class FuelWebClient(object):
             except TimeoutError:
                 logger.error('Ceph service is down on {0}'.format(
                     node['name']))
-                raise
+                raise TimeoutError('Ceph service is down on {0}'.format(
+                    node['name']))
 
         logger.info('Ceph service is ready')
         logger.info('Checking Ceph Health...')
@@ -1293,9 +1326,9 @@ class FuelWebClient(object):
                         wait(lambda: checkers.check_ceph_health(remote),
                              interval=30, timeout=recovery_timeout)
                     except TimeoutError:
-                        logger.error('Ceph HEALTH is bad on {0}'.format(
-                            node['name']))
-                        raise
+                        msg = 'Ceph HEALTH is bad on {0}'.format(node['name'])
+                        logger.error(msg)
+                        raise TimeoutError(msg)
                 elif checkers.check_ceph_health(remote, osd_recovery_status)\
                         and len(offline_nodes) > 0:
                     logger.info('Ceph is being recovered after osd node(s)'
@@ -1304,9 +1337,9 @@ class FuelWebClient(object):
                         wait(lambda: checkers.check_ceph_health(remote),
                              interval=30, timeout=recovery_timeout)
                     except TimeoutError:
-                        logger.error('Ceph HEALTH is bad on {0}'.format(
-                            node['name']))
-                        raise
+                        msg = 'Ceph HEALTH is bad on {0}'.format(node['name'])
+                        logger.error(msg)
+                        raise TimeoutError(msg)
             else:
                 assert_true(checkers.check_ceph_health(remote),
                             'Ceph health doesn\'t equal to "OK", please '
@@ -1391,27 +1424,36 @@ class FuelWebClient(object):
         remote.execute('sed -i "{0}" {1}'.format(modification, file))
 
     def backup_master(self, remote):
-        logger.info("Backup master node")
-        try:
-            remote.execute("echo CALC_MY_MD5SUM > /etc/fuel/data")
-            remote.execute("iptables-save > /etc/fuel/iptables-backup")
-            remote.execute("md5sum /etc/fuel/data | sed -n 1p "
-                           "| awk '{print $1}'>/etc/fuel/sum")
-            remote.execute('dockerctl backup')
-            remote.execute('rm -f /etc/fuel/data')
-        except Exception:
-            logger.error(traceback.format_exc())
-            raise
+        logger.debug("Start backup of master node")
+        assert_equal(
+            0, remote.execute(
+                "echo CALC_MY_MD5SUM > /etc/fuel/data")['exit_code'],
+            'command calc_my_mdsum failed')
+        assert_equal(
+            0, remote.execute(
+                "iptables-save > /etc/fuel/iptables-backup")['exit_code'],
+            'can not save iptables in iptables-backup')
+
+        assert_equal(0, remote.execute(
+            "md5sum /etc/fuel/data | sed -n 1p | "
+            "awk '{print $1}'>/etc/fuel/sum")['exit_code'],
+            'failed to create sum file')
+
+        assert_equal(0, remote.execute('dockerctl backup')['exit_code'],
+                     'dockerctl backup failed with non zero exit code')
+        assert_equal(0, remote.execute('rm -f /etc/fuel/data')['exit_code'],
+                     'Can not remove /etc/fuel/data')
+        logger.debug("Finish backup of master node")
 
     @logwrap
     def restore_master(self, remote):
-        logger.info("Restore master node")
+        logger.debug("Start restore master node")
         path = checkers.find_backup(remote)
-        try:
-            remote.execute('dockerctl restore {0}'.format(path))
-        except Exception:
-            logger.error(traceback.format_exc())
-            raise
+        assert_equal(
+            0,
+            remote.execute('dockerctl restore {0}'.format(path))['exit_code'],
+            'dockerctl restore finishes with non-zero exit code')
+        logger.debug("Finish restore master node")
 
     @logwrap
     def restore_check_nailgun_api(self, remote):
