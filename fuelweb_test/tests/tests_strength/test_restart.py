@@ -88,14 +88,20 @@ class CephRestart(TestBasic):
         """Deploy ceph with in HA mode
 
         Scenario:
-            1. Create cluster
-            2. Add 3 nodes with controller and ceph OSD roles
-            3. Add 1 node with ceph OSD roles
-            4. Add 2 nodes with compute and ceph OSD roles
-            5. Deploy the cluster
+            1. Revert from ceph_ha
+            2. Waiting up galera and cinder
+            3. Check ceph status
+            4. Run OSTF
+            5. Destroy osd-node
             6. Check ceph status
-            7. Cold retsart
-            8. Check ceph status
+            7. Run OSTF
+            8. Destroy one compute node
+            9. Check ceph status
+            10. Run OSTF
+            11. Cold restart
+            12. Waiting up galera and cinder
+            13. Run single OSTF - Create volume and attach it to instance
+            14. Run OSTF
 
         Duration 30m
         Snapshot ceph_ha
