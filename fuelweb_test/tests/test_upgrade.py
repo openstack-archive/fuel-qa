@@ -15,8 +15,10 @@
 import os
 
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
 from proboscis import test
 from proboscis import SkipTest
+from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
 
@@ -178,10 +180,15 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         task = self.fuel_web.deploy_cluster(cluster_id)
         self.fuel_web.assert_task_success(task)
         nodes = filter(lambda x: x["pending_deletion"] is True, nailgun_nodes)
-        wait(
-            lambda: self.fuel_web.is_node_discovered(nodes[0]),
-            timeout=10 * 60
-        )
+        try:
+            wait(
+                lambda: self.fuel_web.is_node_discovered(nodes[0]),
+                timeout=10 * 60
+            )
+        except TimeoutError:
+            assert_true(self.fuel_web.is_node_discovered(nodes[0]),
+                        'Node {0} is not discovered in timeout 10 *60'.format(
+                            nodes[0]))
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
         self.env.make_snapshot("upgrade_ha_one_controller_delete_node")
 
