@@ -111,6 +111,31 @@ def store_astute_yaml(env):
 
 
 @logwrap
+def store_packages_yaml(env):
+    func_name = "".join(get_test_method_name())
+    packages = {func_name: {}}
+    for node in env.d_env.nodes().slaves:
+        nailgun_node = env.fuel_web.get_nailgun_node_by_devops_node(node)
+        if node.driver.node_active(node) and nailgun_node['roles']:
+            try:
+                _ip = env.fuel_web.get_nailgun_node_by_name(node.name)['ip']
+                remote = env.d_env.get_ssh_to_remote(_ip)
+                filename = '{0}/packages.yaml'.format(settings.LOGS_DIR)
+                logger.info("Storing {0}".format(filename))
+                if settings.OPENSTACK_RELEASE_UBUNTU in\
+                        settings.OPENSTACK_RELEASE:
+                    cmd = 'dpkg -L'
+                else:
+                    cmd = 'rpm -qa'
+                node_packages = remote.execute(cmd)
+                packages[func_name][nailgun_node['roles']] = node_packages
+            except Exception:
+                logger.error(traceback.format_exc())
+    with open(settings.LOGS_DIR/'packages_{0}.yml'.format(
+            func_name), 'w') as outfile:
+        outfile.write(yaml.safe_dump(packages, default_flow_style=False))
+
+@logwrap
 def get_test_method_name():
     # Find the name of the current test in the stack. It can be found
     # right under the class name 'NoneType' (when proboscis
