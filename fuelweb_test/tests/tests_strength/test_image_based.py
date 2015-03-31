@@ -11,7 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
+import time
 from devops.helpers.helpers import wait
 from proboscis import test
 
@@ -66,32 +66,36 @@ class RepeatableImageBased(TestBasic):
         #wait for nodes to appear after bootstrap
         wait(lambda: len(self.fuel_web.client.list_nodes()) == 5,
              timeout=10 * 60)
-        for node in self.fuel_web.client.list_nodes():
-            wait(lambda: self.fuel_web.is_node_discovered(node),
-                 timeout=2 * 60)
-        cluster_id = self.fuel_web.create_cluster(
-            name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": 'vlan'
-            }
-        )
-
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {
-                'slave-01': ['controller'],
-                'slave-02': ['controller'],
-                'slave-03': ['controller'],
-                'slave-04': ['compute'],
-                'slave-05': ['compute']
-            }
-        )
+        self.fuel_web.warm_shutdown_nodes(self.env.d_env.nodes().slaves[:5])
 
         self.env.make_snapshot("deploy_after_delete", is_make=True)
 
         for i in range(0, 10):
             self.env.revert_snapshot("deploy_after_delete")
+            for node in self.env.d_env.nodes().slaves[:5]:
+                node.start()
+                time.sleep(2)
+            self.fuel_web.wait_nodes_get_online_state(
+                self.env.d_env.nodes().slaves[:5], timeout=6 * 60)
+
+            cluster_id = self.fuel_web.create_cluster(
+                name=self.__class__.__name__,
+                mode=DEPLOYMENT_MODE,
+                settings={
+                    "net_provider": 'neutron',
+                    "net_segment_type": 'vlan'
+                }
+            )
+
+            self.fuel_web.update_nodes(
+                cluster_id,
+                {
+                    'slave-01': ['controller'],
+                    'slave-02': ['controller'],
+                    'slave-03': ['controller'],
+                    'slave-04': ['compute'],
+                    'slave-05': ['compute']
+                }
+            )
             cluster_id = self.fuel_web.get_last_created_cluster()
             self.fuel_web.provisioning_cluster_wait(cluster_id)
