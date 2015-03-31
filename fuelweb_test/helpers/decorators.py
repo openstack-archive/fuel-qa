@@ -37,6 +37,7 @@ from fuelweb_test.helpers.regenerate_repo import CustomRepo
 from fuelweb_test.helpers.utils import get_current_env
 from fuelweb_test.helpers.utils import pull_out_logs_via_ssh
 from fuelweb_test.helpers.utils import store_astute_yaml
+from fuelweb_test.helpers.utils import store_packages_json
 from fuelweb_test.helpers.utils import timestat
 
 
@@ -296,6 +297,20 @@ def download_astute_yaml(func):
             else:
                 logger.warning("Can't download astute.yaml: "
                                "Unexpected class is decorated.")
+        return result
+    return wrapper
+
+
+def download_packages_json(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        environment = get_current_env(args)
+        if environment:
+            store_packages_json(environment)
+        else:
+            logger.warning("Can't collect packages: "
+                           "Unexpected class is decorated.")
         return result
     return wrapper
 
