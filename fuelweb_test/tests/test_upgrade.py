@@ -15,8 +15,10 @@
 import os
 
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
 from proboscis import test
 from proboscis import SkipTest
+from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
 
@@ -101,8 +103,15 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                                            hlp_data.UPGRADE_FUEL_FROM,
                                            hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
-        self.fuel_web.wait_nodes_get_online_state(
-            self.env.d_env.nodes().slaves[:3])
+        try:
+            self.fuel_web.wait_nodes_get_online_state(
+                self.env.d_env.nodes().slaves[:3])
+        except TimeoutError:
+            for node in self.env.d_env.nodes().slaves[:3]:
+                assert_true(
+                    self.get_nailgun_node_by_devops_node(node)['online'],
+                    'Node {0} is not online'.format(node['mac']))
+
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nailgun_upgrade_migration()
         self.env.bootstrap_nodes(
@@ -169,8 +178,14 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                                            hlp_data.UPGRADE_FUEL_FROM,
                                            hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
-        self.fuel_web.wait_nodes_get_online_state(
-            self.env.d_env.nodes().slaves[:3])
+        try:
+            self.fuel_web.wait_nodes_get_online_state(
+                self.env.d_env.nodes().slaves[:3])
+        except TimeoutError:
+            for node in self.env.d_env.nodes().slaves[:3]:
+                assert_true(
+                    self.get_nailgun_node_by_devops_node(node)['online'],
+                    'Node {0} is not online'.format(node['mac']))
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nailgun_upgrade_migration()
         nailgun_nodes = self.fuel_web.update_nodes(
@@ -178,10 +193,15 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         task = self.fuel_web.deploy_cluster(cluster_id)
         self.fuel_web.assert_task_success(task)
         nodes = filter(lambda x: x["pending_deletion"] is True, nailgun_nodes)
-        wait(
-            lambda: self.fuel_web.is_node_discovered(nodes[0]),
-            timeout=10 * 60
-        )
+        try:
+            wait(
+                lambda: self.fuel_web.is_node_discovered(nodes[0]),
+                timeout=10 * 60
+            )
+        except TimeoutError:
+            assert_true(self.fuel_web.is_node_discovered(nodes[0]),
+                        'Node {0} is not discovered in timeout 10 *60'.format(
+                            nodes[0]))
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
         self.env.make_snapshot("upgrade_ha_one_controller_delete_node")
 
@@ -226,8 +246,14 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                                            hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
-        self.fuel_web.wait_nodes_get_online_state(
-            self.env.d_env.nodes().slaves[:5])
+        try:
+            self.fuel_web.wait_nodes_get_online_state(
+                self.env.d_env.nodes().slaves[:5])
+        except TimeoutError:
+            for node in self.env.d_env.nodes().slaves[:5]:
+                assert_true(
+                    self.get_nailgun_node_by_devops_node(node)['online'],
+                    'Node {0} is not online'.format(node['mac']))
         self.fuel_web.assert_nailgun_upgrade_migration()
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
@@ -318,8 +344,14 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                                            hlp_data.UPGRADE_FUEL_FROM,
                                            hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
-        self.fuel_web.wait_nodes_get_online_state(
-            self.env.d_env.nodes().slaves[:3])
+        try:
+            self.fuel_web.wait_nodes_get_online_state(
+                self.env.d_env.nodes().slaves[:3])
+        except TimeoutError:
+            for node in self.env.d_env.nodes().slaves[:3]:
+                assert_true(
+                    self.get_nailgun_node_by_devops_node(node)['online'],
+                    'Node {0} is not online'.format(node['mac']))
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nailgun_upgrade_migration()
         available_releases_after = self.fuel_web.get_releases_list_for_os(
