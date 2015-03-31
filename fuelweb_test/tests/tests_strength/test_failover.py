@@ -186,6 +186,25 @@ class TestHaNeutronFailover(TestHaFailoverBase):
         """
         super(self.__class__, self).ha_check_monit()
 
+    @test(depends_on_groups=['prepare_ha_neutron'],
+          groups=["check_virtual_router"])
+    @log_snapshot_on_error
+    def ha_neutron_virtual_router(self):
+        """Verify connection is present and
+        downloading maintained by conntrackd
+         after primary controller destroy
+
+        Scenario:
+            1. SSH to compute node
+            2. Check Internet connectivity
+            3. Destroy primary controller
+            4. Check Internet connectivity
+
+        Duration 25m
+
+        """
+        super(self.__class__, self).check_virtual_router()
+
 
 @test(groups=["thread_5", "ha", "ha_nova_destructive"])
 class TestHaNovaFailover(TestHaFailoverBase):

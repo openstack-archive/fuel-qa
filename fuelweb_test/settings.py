@@ -391,3 +391,7 @@ PATCHING_APPLY_TESTS = os.environ.get("PATCHING_APPLY_TESTS",
                                       "./patching_tests")
 PATCHING_PKGS = os.environ.get("PATCHING_PKGS", None)
 PATCHING_SNAPSHOT = os.environ.get("PATCHING_SNAPSHOT", None)
+
+DOWNLOAD_LINK = os.environ.get(
+    'DOWNLOAD_LINK', 'http://releases.ubuntu.com/14.04.2/'
+                     'ubuntu-14.04.2-desktop-amd64.iso')
