@@ -111,6 +111,41 @@ def store_astute_yaml(env):
 
 
 @logwrap
+def store_packages_yaml(env):
+    func_name = "".join(get_test_method_name())
+    packages = {func_name: {}}
+    for node in env.d_env.nodes().slaves:
+        nailgun_node = env.fuel_web.get_nailgun_node_by_devops_node(node)
+        if node.driver.node_active(node) and nailgun_node['roles']:
+            try:
+                _ip = env.fuel_web.get_nailgun_node_by_name(node.name)['ip']
+                remote = env.d_env.get_ssh_to_remote(_ip)
+                if settings.OPENSTACK_RELEASE_UBUNTU in\
+                        settings.OPENSTACK_RELEASE:
+                    cmd = "pkg-query -W -f='${Package} '"
+                else:
+                    cmd = 'rpm -qa --qf "%{name} "'
+                node_packages = [i for i in ''.join(
+                    remote.execute(cmd)['stdout']).split()]
+                logger.debug("node packages are {0}".format(node_packages))
+                if len(nailgun_node['roles']) > 0:
+                    role = '_'.join(nailgun_node['roles'])
+                else:
+                    role = nailgun_node['roles'][0]
+                logger.debug('role is {0}'.format(role))
+                if role in packages[func_name].keys():
+                    packages[func_name][role].append(list(set(
+                        node_packages + packages[func_name][role])))
+                else:
+                    packages[func_name][role] = node_packages
+            except Exception:
+                logger.error(traceback.format_exc())
+    with open('{0}/packages_{1}.yml'.format(
+            settings.LOGS_DIR, func_name), 'w') as outfile:
+        outfile.write(yaml.safe_dump(packages, default_flow_style=False))
+
+
+@logwrap
 def get_test_method_name():
     # Find the name of the current test in the stack. It can be found
     # right under the class name 'NoneType' (when proboscis
