@@ -1154,12 +1154,12 @@ class FuelWebClient(object):
         self.assert_task_success(task, timeout=50 * 60, interval=30)
 
     @logwrap
-    def wait_nodes_get_online_state(self, nodes):
+    def wait_nodes_get_online_state(self, nodes, timeout=4 * 60):
         for node in nodes:
             logger.info('Wait for %s node online status', node.name)
             wait(lambda:
                  self.get_nailgun_node_by_devops_node(node)['online'],
-                 timeout=60 * 4)
+                 timeout=timeout)
             node = self.get_nailgun_node_by_devops_node(node)
             assert_true(node['online'],
                         'Node {0} is online'.format(node['mac']))
