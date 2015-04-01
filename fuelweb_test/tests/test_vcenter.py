@@ -224,3 +224,83 @@ class VcenterDeploy(TestBasic):
                                'instance without floating             IP'),
                               ('vCenter: Check network connectivity from '
                                'instance via floating IP'), ])
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["vcenter_dualhv_ceph"])
+    @log_snapshot_on_error
+    def vcenter_dualhv_ceph(self):
+        """Deploy environment in DualHypervisors mode \
+        (vCenter) with CephOSD as backend for Cinder and Glance
+
+        Scenario:
+            1. Create cluster with vCenter support
+            2. Configure CephOSD as backend for Glance and Cinder
+            3. Add 3 nodes with Controller+CephOSD roles
+            4. Add 2 nodes with compute role
+            6. Deploy the cluster
+            7. Run network verification
+            8. Run OSTF
+
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={'images_ceph': True,
+                      'volumes_ceph': True,
+                      'volumes_lvm': False},
+            vcenter_value={
+                "glance": {
+                    "vcenter_username": "",
+                    "datacenter": "",
+                    "vcenter_host": "",
+                    "vcenter_password": "",
+                    "datastore": "", },
+                "availability_zones": [
+                    {"vcenter_username": VCENTER_USERNAME,
+                     "nova_computes": [
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster1",
+                          "service_name": "vmcluster1"},
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster2",
+                          "service_name": "vmcluster2"}, ],
+                     "vcenter_host": VCENTER_IP,
+                     "cinder": {"enable": False},
+                     "az_name": "vcenter",
+                     "vcenter_password": VCENTER_PASSWORD,
+                     }],
+                "network": {"esxi_vlan_interface": "vmnic0"}}, )
+
+        logger.info("cluster is {}".format(cluster_id))
+
+        # Assign role to node
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller', 'ceph-osd'],
+             'slave-02': ['controller', 'ceph-osd'],
+             'slave-03': ['controller', 'ceph-osd'],
+             'slave-04': ['compute'],
+             'slave-05': ['compute']})
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.verify_network(cluster_id)
+
+        # FIXME when OSTF test will be fixed in bug #1433539
+        # When the bug will be fixed 'should_fail=4' and
+        # 'failed_test_name' parameter should be removed.
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
+            # timeout=60 * 60,
+            should_fail=4,
+            failed_test_name=[('vCenter: Check network connectivity from '
+                               'instance without floating             IP'),
+                              ('vCenter: Check network connectivity from '
+                               'instance via floating IP'),
+                              ('Check network connectivity from instance '
+                              'without floating IP'),
+                              ('Check network connectivity from instance '
+                              'via floating IP')])
