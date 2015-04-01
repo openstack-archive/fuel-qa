@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2015 Mirantis, Inc.
 #
@@ -284,7 +284,7 @@ class AbstractLog(object):
         :return: iter
         """
         for record in self.content:
-            yield record
+            yield record.decode()
 
     def parse(self, content):
         """
@@ -367,7 +367,8 @@ class AstuteLog(AbstractLog):
         """
         record = ''
         date_regexp = re.compile(r'^\d+-\d+-\S+\s')
-        for line in self.content:
+        for bline in self.content:
+            line = bline.decode()
             if re.match(date_regexp, line):
                 yield record
                 record = line
