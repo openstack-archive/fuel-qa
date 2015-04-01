@@ -13,29 +13,31 @@
 #    under the License.
 
 import subprocess
+
 from joblib import Parallel, delayed
+
 from settings import TestRailSettings
 from testrail_client import TestRailProject
 
 
 TEST_GROUPS = ["API", "CLI", "Scenario", "ThirdParty"]
-TEST_SECTIONS = ["Nova", "Glance", "Heat", "Sahara", "Ceilometer", "Cinder",
-                 "Network", "Keystone", "Object_storage", "Ironic", "Other"]
+TEST_SECTIONS = ["Ceilometer", "Cinder", "Glance", "Heat", "Ironic",
+                 "Keystone", "Network", "Nova", "Sahara", "Swift", "Other"]
 
 
 def generate_groups(line):
     section = "Other"
 
-    for group in [{"names": [".compute.", ], "tag": "Nova"},
+    for group in [{"names": [".telemetry.", ], "tag": "Ceilometer"},
+                  {"names": [".volume.", ], "tag": "Cinder"},
                   {"names": [".image.", ], "tag": "Glance"},
                   {"names": [".orchestration.", ], "tag": "Heat"},
                   {"names": [".baremetal.", ], "tag": "Ironic"},
+                  {"names": [".identity.", ], "tag": "Keystone"},
+                  {"names": [".network.", ], "tag": "Network"},
+                  {"names": [".compute.", ], "tag": "Nova"},
                   {"names": [".data_processing.", ], "tag": "Sahara"},
-                  {"names": ["identity", "tenant", "auth", "account",
-                             "credentials"],
-                   "tag": "Keystone"},
-                  {"names": [".telemetry.", ], "tag": "Ceilometer"},
-                  {"names": [".volume.", ], "tag": "Cinder"}]:
+                  {"names": [".object_storage.", ], "tag": "Swift"}]:
         for name in group["names"]:
             if name in line:
                 section = group["tag"]
