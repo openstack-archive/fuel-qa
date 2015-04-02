@@ -1195,7 +1195,7 @@ class FuelWebClient(object):
             try:
                 wait(lambda:
                      self.get_nailgun_node_by_devops_node(node)['online'],
-                     timeout)
+                     timeout=timeout)
             except TimeoutError:
                 assert_true(
                     self.get_nailgun_node_by_devops_node(node)['online'],

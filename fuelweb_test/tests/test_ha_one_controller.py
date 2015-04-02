@@ -34,7 +34,7 @@ from fuelweb_test import logger
 @test(groups=["thread_2"])
 class OneNodeDeploy(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_release],
-          groups=["deploy_one_node"])
+          groups=["deploy_one_node", 'master'])
     @log_snapshot_on_error
     def deploy_one_node(self):
         """Deploy cluster with controller node only
@@ -72,6 +72,7 @@ class OneNodeDeploy(TestBasic):
             cluster_id=cluster_id, test_sets=['sanity'],
             test_name=('fuel_health.tests.sanity.test_sanity_identity'
                        '.SanityIdentityTest.test_list_users'))
+        self.env.make_snapshot("deploy_one_node")
 
 
 @test(groups=["thread_2"])
@@ -98,6 +99,7 @@ class HAOneControllerFlat(TestBasic):
         Duration 30m
         Snapshot: deploy_ha_one_controller_flat
         """
+        self.check_run("deploy_ha_one_controller_flat")
         self.env.revert_snapshot("ready_with_3_slaves")
 
         data = {
