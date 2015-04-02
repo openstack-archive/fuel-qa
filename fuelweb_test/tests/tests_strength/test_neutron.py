@@ -241,6 +241,11 @@ class TestNeutronFailover(base_test_case.TestBasic):
         new_devops = self.get_node_with_l3(self, node_with_l3)
         self.fuel_web.warm_restart_nodes([new_devops])
 
+        wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+            new_devops)['online'], timeout=60 * 5)
+        self.fuel_web.wait_mysql_galera_is_up(['slave-01', 'slave-02',
+                                               'slave-03'])
+
         try:
             wait(lambda: not node_with_l3 == os_conn.get_l3_agent_hosts(
                 router_id)[0], timeout=60 * 3)
