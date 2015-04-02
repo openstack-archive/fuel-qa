@@ -14,6 +14,7 @@
 
 import os
 import re
+import sys
 import yaml
 import zlib
 from urllib2 import HTTPError
@@ -28,6 +29,7 @@ from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 
+from fuelweb_test import logger
 from fuelweb_test import settings
 
 
@@ -103,8 +105,13 @@ def map_test():
     if deployment_test:
         settings.PATCHING_SNAPSHOT = 'patching_after_{0}'.format(
             deployment_test.entry.method.im_func.func_name)
-        register(groups=['prepare_patching_environment'],
-                 depends_on=[deployment_test.entry.home])
+        if any(re.search(r'--group=patching_master_tests', arg)
+               for arg in sys.argv):
+            register(groups=['prepare_master_environment'],
+                     depends_on=[deployment_test.entry.home])
+        else:
+            register(groups=['prepare_patching_environment'],
+                     depends_on=[deployment_test.entry.home])
     else:
         raise Exception("Test with groups {0} not found.".format(tests_groups))
 
@@ -265,6 +272,25 @@ def connect_slaves_to_repo(environment, nodes, repo_name):
         remote = environment.d_env.get_ssh_to_remote(slave['ip'])
         for cmd in cmds:
             environment.execute_remote_cmd(remote, cmd, exit_code=0)
+
+
+def connect_admin_to_repo(environment, repo_name):
+    repo_ip = environment.get_admin_node_ip()
+    repo_port = '8080'
+    repourl = 'http://{master_ip}:{repo_port}/{repo_name}/'.format(
+        master_ip=repo_ip, repo_name=repo_name, repo_port=repo_port)
+
+    cmds = [
+        "yum-config-manager --add-repo {url}".format(url=repourl),
+        "echo -e 'gpgcheck=0\npriority=20' >>/etc/yum.repos.d/{ip}_{port}_"
+        "{repo}_.repo".format(ip=repo_ip, repo=repo_name, port=repo_port),
+        "yum -y clean all",
+        "yum check-update; [[ $? -eq 100 ]]"
+    ]
+
+    remote = environment.d_env.get_admin_remote()
+    for cmd in cmds:
+        environment.execute_remote_cmd(remote, cmd, exit_code=0)
 
 
 def update_packages(environment, remote, packages, exclude_packages=None):
@@ -459,9 +485,9 @@ def run_actions(environment, slaves, action_type='patch-scenario'):
             environment.fuel_web.warm_restart_nodes(devops_nodes)
 
 
-def apply_patches(environment, slaves):
+def apply_patches(environment, slaves=None):
     run_actions(environment, slaves, action_type='patch-scenario')
 
 
-def verify_fix(environment, slaves):
+def verify_fix(environment, slaves=None):
     run_actions(environment, slaves, action_type='verify-scenario')

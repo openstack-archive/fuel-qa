@@ -286,6 +286,17 @@ class FuelWebClient(object):
         return nodes
 
     @logwrap
+    def get_rabbit_running_nodes(self, ctrl_node):
+        remote = self.get_ssh_for_node(ctrl_node)
+        rabbit_status = remote.execute('rabbitmqctl cluster_status')['stdout']
+        rabbit_nodes = re.search(
+            "\{running_nodes,\[(.*)\]\}",
+            rabbit_status).group(1).replace("'", "").split(',')
+        logger.debug('rabbit nodes are {}'.format(rabbit_nodes))
+        nodes = [node.replace('rabbit@', "") for node in rabbit_nodes]
+        return nodes
+
+    @logwrap
     def assert_pacemaker(self, ctrl_node, online_nodes, offline_nodes):
         logger.info('Assert pacemaker status at devops node %s', ctrl_node)
         fqdn_names = lambda nodes: sorted([self.fqdn(n) for n in nodes])
