@@ -21,6 +21,7 @@ from proboscis.asserts import assert_equal
 from fuelweb_test import logger
 
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
+from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
 
 
 class BaseActions(object):
@@ -101,6 +102,23 @@ class AdminActions(BaseActions):
         assert_equal(0, result['exit_code'],
                      "Command [{cmd}] failed with the following result: {res}"
                      .format(cmd=cmd, res=result))
+
+        if FUEL_USE_LOCAL_NTPD:
+            #Try to use only ntpd on the host as the time sourse for admin node
+            cmd = 'ntpdate -p 4 -t 0.2 -ub {0}'.format(router)
+
+            if not self.admin_remote.execute(cmd)['exit_code']:
+                # Local ntpd on the host is alive, so
+                # remove all NTP sources and add the host instead.
+                cmd = ("sed -i '/^NTP/d' {0} &&"
+                       "echo 'NTP1: {1} minpoll 3 maxpoll 5' >> {0}"
+                       .format(config, router))
+                logger.info("Switching NTPD on the Fuel admin node to use "
+                            "{0} as the time source.".format(router))
+                result = self.admin_remote.execute(cmd)
+                assert_equal(0, result['exit_code'],
+                             "Command [{cmd}] failed with the following "
+                             "result: {res}".format(cmd=cmd, res=result))
 
 
 class NailgunActions(BaseActions):
