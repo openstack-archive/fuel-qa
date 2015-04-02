@@ -29,6 +29,7 @@ from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers.eb_tables import Ebtables
 from fuelweb_test.helpers.fuel_actions import AdminActions
+from fuelweb_test.helpers.fuel_actions import CobblerActions
 from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.fuel_actions import PostgresActions
 from fuelweb_test.helpers import multiple_networks_hacks
@@ -54,6 +55,10 @@ class EnvironmentModel(object):
     @property
     def postgres_actions(self):
         return PostgresActions(self.d_env.get_admin_remote())
+
+    @property
+    def cobbler_actions(self):
+        return CobblerActions(self.d_env.get_admin_remote())
 
     @property
     def admin_node_ip(self):
@@ -511,3 +516,9 @@ class EnvironmentModel(object):
         return self.postgres_actions.run_query(
             db='nailgun',
             query="select master_node_uid from master_node_settings limit 1;")
+
+    @logwrap
+    def enable_local_dns_resolving(self):
+        router_ip = self.d_env.router()
+        # Add router IP to the DNS servers list on master node
+        self.cobbler_actions.add_dns_upstream_server(router_ip)
