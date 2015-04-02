@@ -206,6 +206,21 @@ class TestHaNeutronFailover(TestHaFailoverBase):
         """
         super(self.__class__, self).check_virtual_router()
 
+    @test(depends_on_groups=['prepare_ha_neutron'],
+          groups=["check_neutron_package_loss"])
+    @log_snapshot_on_error
+    def ha_neutron_packages_loss(self):
+        """Check cluster recovery if br-mgmt loss 75% packages
+
+        Scenario:
+            1. SSH to controller
+            2. set 75 % package loss on br-mgmt
+            3. run ostf
+        Duration
+
+        """
+        super(self.__class__, self).ha_controller_loss_packages()
+
 
 @test(groups=["thread_5", "ha", "ha_nova_destructive"])
 class TestHaNovaFailover(TestHaFailoverBase):
