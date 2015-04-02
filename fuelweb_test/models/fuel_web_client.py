@@ -497,8 +497,8 @@ class FuelWebClient(object):
                     "suite": results.group(3),
                     "section": results.group(4) or ''}
 
-    @download_astute_yaml
-    @duration
+    #@download_astute_yaml
+    #@duration
     @custom_repo
     def deploy_cluster_wait(self, cluster_id, is_feature=False,
                             timeout=50 * 60, interval=30):
