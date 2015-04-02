@@ -16,12 +16,19 @@ import time
 
 from proboscis import test
 from proboscis.asserts import assert_is_not_none
+from proboscis.asserts import assert_true
 
+from devops.helpers.helpers import wait
+from devops.error import TimeoutError
 from fuelweb_test import logger
 from fuelweb_test import settings
+from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.helpers import patching
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
+from fuelweb_test.tests.test_ha_one_controller import HAOneControllerFlat
+from fuelweb_test.tests.test_ha_one_controller import OneNodeDeploy
 
 
 @test(groups=["patching"])
@@ -101,6 +108,113 @@ class PatchingTests(TestBasic):
         # Step #9
         # Run Rally benchmarks, compare new results with previous,
         # coming soon...
+
+
+@test(groups=["patching_master_tests"])
+class PatchingMasterTests(TestBasic):
+
+    def __init__(self):
+        self.snapshot_name = settings.PATCHING_SNAPSHOT
+        self.pkgs = settings.PATCHING_PKGS
+        super(PatchingMasterTests, self).__init__()
+
+    @test(groups=['prepare_master_environment'])
+    def prepare_patching_environment(self):
+        logger.debug('Creating snapshot of environment deployed for patching.')
+        self.env.make_snapshot(snapshot_name=self.snapshot_name,
+                               is_make=True)
+
+    @test(groups=["patching_test"],
+          depends_on_groups=['prepare_master_environment'])
+    @log_snapshot_on_error
+    def patching_test(self):
+        """Apply patches on deployed master
+
+        Scenario:
+        1. Download patched packages on master node and make local repositories
+        2. Perform actions required to apply patches
+        3. Verify that fix works
+        4. Run OSTF
+        5. Run network verification
+        6. Reset and delete cluster
+
+        Duration 30m
+        Snapshot prepare_5_slaves
+        """
+
+        if not self.env.revert_snapshot(self.snapshot_name):
+            raise PatchingTestException('Environment revert from snapshot "{0}'
+                                        '" failed.'.format(self.snapshot_name))
+
+        # Step #1
+        remote = self.env.d_env.get_admin_remote()
+        remote.execute("yum -y install yum-utils")
+        patching_repos = patching.add_remote_repositories(self.env)
+
+        for repo in patching_repos:
+            patching.connect_admin_to_repo(self.env, repo)
+
+        # Step #2
+        logger.info('Applying fix...')
+        patching.apply_patches(self.env)
+
+        # Step #3
+        logger.info('Verifying fix...')
+        patching.verify_fix(self.env)
+
+        # Step #4
+        active_nodes = []
+        for node in self.env.d_env.nodes().slaves:
+            if node.driver.node_active(node):
+                active_nodes.append(node)
+        logger.debug('active nodes are {}'.format(active_nodes))
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        if self.fuel_web.get_last_created_cluster():
+            self.fuel_web.run_ostf(cluster_id=cluster_id)
+            if len(self.fuel_web.client.list_cluster_nodes(cluster_id)) > 1:
+                self.fuel_web.verify_network(cluster_id)
+            self.fuel_web.stop_reset_env_wait(cluster_id)
+            self.fuel_web.wait_nodes_get_online_state(
+                active_nodes, timeout=10 * 60)
+            self.fuel_web.client.delete_cluster(cluster_id)
+
+        for node in self.env.d_env.nodes().slaves[0:3]:
+            if not node in active_nodes:
+                self.env.bootstrap_nodes([node])        
+        
+    @test(groups=["patching_master"],
+          depends_on_groups=['patching_test'])
+    @log_snapshot_on_error
+    def patching_master(self):
+        """
+        Empty test to run all master patching chain
+        """
+        segment_type = 'vlan'
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": segment_type,
+                'tenant': 'simpleVlan',
+                'user': 'simpleVlan',
+                'password': 'simpleVlan'
+            }
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['compute'],
+                'slave-03': ['compute']
+            }
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.verify_network(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id)
 
 
 class PatchingTestException(Exception):
