@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import time
+
 from proboscis import test
 from proboscis.asserts import assert_is_not_none
 
@@ -70,7 +72,7 @@ class PatchingTests(TestBasic):
         # Run Rally benchmarks, coming soon...
 
         # Step #3
-        patching.enable_local_dns_resolving(self.env)
+        self.env.enable_local_dns_resolving(self.env)
 
         # Step #4
         patching_repos = patching.add_remote_repositories(self.env)
@@ -92,7 +94,13 @@ class PatchingTests(TestBasic):
         patching.verify_fix(self.env, slaves)
 
         # Step #9
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        # If OSTF fails (sometimes services aren't ready after
+        # slaves nodes reboot) sleep 5 minutes and try again
+        try:
+            self.fuel_web.run_ostf(cluster_id=cluster_id)
+        except AssertionError:
+            time.sleep(300)
+            self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         # Step #10
         # Run Rally benchmarks, compare new results with previous,
