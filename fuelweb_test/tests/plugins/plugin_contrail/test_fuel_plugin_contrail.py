@@ -108,7 +108,94 @@ class ContrailPlugin(TestBasic):
             settings={
                 "net_provider": 'neutron',
                 "net_segment_type": segment_type,
-            }
+                }
         )
 
         self.env.make_snapshot("contrail_installed")
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["test_deploy_contrail"])
+    @log_snapshot_on_error
+    def deploy_contrail(self):
+        """Deploy a cluster with Plugin
+
+        Scenario:
+            1. Revert snapshot "ready_with_5_slaves"
+            2. Upload plugin to the master node
+            3. Install plugin and additional packages
+            4. Enable Neutron with VLAN segmentation
+            5. Create cluster
+            6. Add 3 nodes with Operating system role
+            and 1 node with controller role
+            7. Enable Contrail plugin
+            8. Deploy cluster with plugin
+
+        Duration 90 min
+        Snapshot  contrail_deployed
+
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        # copy plugin to the master node
+
+        checkers.upload_tarball(
+            self.env.d_env.get_admin_remote(),
+            CONTRAIL_PLUGIN_PATH, '/var')
+
+        # install plugin
+        checkers.install_plugin_check_code(
+            self.env.d_env.get_admin_remote(),
+            plugin=os.path.basename(CONTRAIL_PLUGIN_PATH))
+
+        # copy additional packages to the master node
+        self.upload_packages(
+            self.env.d_env.get_admin_remote(),
+            CONTRAIL_PLUGIN_PACK_UB_PATH,
+            self.master_path
+        )
+
+        self.upload_packages(
+            self.env.d_env.get_admin_remote(),
+            CONTRAIL_PLUGIN_PACK_CEN_PATH,
+            self.master_path
+        )
+
+        # install packages
+        self.install_packages(self.env.d_env.get_admin_remote(),
+                              self.master_path)
+
+        # create cluster
+        segment_type = 'vlan'
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": segment_type,
+            }
+        )
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['base-os'],
+                'slave-02': ['base-os'],
+                'slave-03': ['base-os'],
+                'slave-04': ['controller']
+            },
+            contrail=True
+        )
+
+        attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
+        if 'contrail' in attr['editable']:
+            logger.debug('we have contrail element')
+            plugin_data = attr['editable']['contrail']['metadata']
+            plugin_data['enabled'] = True
+            public_int = attr['editable']['contrail']['contrail_public_if']
+            public_int['value'] = 'eth1'
+
+        self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.env.make_snapshot("contrail_deployed")
