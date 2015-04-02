@@ -47,24 +47,27 @@ class ContrailPlugin(TestBasic):
         time.sleep(50)
         os.path.isfile(self.add_file)
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["install_contrail"])
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["deploy_contrail"])
     @log_snapshot_on_error
-    def install_contrail(self):
-        """Verify possibility to copy plugin to the master node and install
-        plugin on it. Verify that all steps were performed without any errors.
+    def deploy_contrail(self):
+        """Deploy a cluster with Plugin
 
         Scenario:
-            1. Revert snapshot "ready_with_3_slaves"
-            2. Upload contrail plugin to the master node
+            1. Revert snapshot "ready_with_5_slaves"
+            2. Upload plugin to the master node
             3. Install plugin and additional packages
             4. Create cluster
-        Snapshot deploy_contrail_simple
+            5. Add 3 nodes with Operating system role
+            and 1 node with controller role
+            6. Deploy cluster with plugin
+        Snapshot  deploy_contrail
 
         """
-        self.env.revert_snapshot("ready_with_3_slaves")
+        self.env.revert_snapshot("ready_with_5_slaves")
 
         # copy plugin to the master node
+
         checkers.upload_tarball(
             self.env.d_env.get_admin_remote(),
             CONTRAIL_PLUGIN_PATH, '/var')
@@ -87,7 +90,7 @@ class ContrailPlugin(TestBasic):
 
         # create plugin
         segment_type = 'vlan'
-        self.fuel_web.create_cluster(
+        cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
             settings={
@@ -96,4 +99,27 @@ class ContrailPlugin(TestBasic):
             }
         )
 
-        self.env.make_snapshot("install_contrail")
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['base-os'],
+                'slave-02': ['base-os'],
+                'slave-03': ['base-os'],
+                'slave-04': ['controller']
+            },
+            contrail=True
+        )
+
+        attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
+        if 'contrail' in attr['editable']:
+            logger.debug('we have contrail element')
+            plugin_data = attr['editable']['contrail']['metadata']
+            plugin_data['enabled'] = True
+            public_int = attr['editable']['contrail']['contrail_public_if']
+            public_int['value'] = 'eth1'
+
+        self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.env.make_snapshot("deploy_contrail")
