@@ -285,7 +285,7 @@ class CephHA(TestBasic):
         volume = os_conn.create_volume()
 
         #create image
-        devops_node = self.fuel_web.get_nailgun_primary_controller(
+        devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         slave = self.fuel_web.get_ssh_for_node(devops_node.name)
         if settings.OPENSTACK_RELEASE_CENTOS in settings.OPENSTACK_RELEASE:
