@@ -239,9 +239,7 @@ class SaharaHA(TestBasic):
 @test(groups=["services", "services.murano", "services_ha_one_controller"])
 class MuranoHAOneController(TestBasic):
     """Murano HA with 1 controller tests.
-    Don't recommend to start tests without kvm
-    Put Murano image before start
-    Murano OSTF platform tests  without Internet connection will be failed
+    Don't recommend to start tests without kvm.
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_murano_ha_one_controller_gre"])
@@ -256,8 +254,7 @@ class MuranoHAOneController(TestBasic):
             4. Deploy the cluster
             5. Verify Murano services
             6. Run OSTF
-            7. Register Murano image
-            8. Run OSTF Murano platform tests
+            7. Run OSTF Murano platform tests
 
         Duration 40m
         Snapshot: deploy_murano_ha_one_controller_gre
@@ -331,9 +328,7 @@ class MuranoHAOneController(TestBasic):
 @test(groups=["services", "services.murano", "services_ha"])
 class MuranoHA(TestBasic):
     """Murano HA tests.
-    Don't recommend to start tests without kvm
-    Put Murano image before start
-    Murano OSTF platform tests  without Internet connection will be failed
+    Don't recommend to start tests without kvm.
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_murano_ha_with_gre"])
@@ -348,8 +343,7 @@ class MuranoHA(TestBasic):
             4. Deploy the cluster
             5. Verify Murano services
             6. Run OSTF
-            7. Register Murano image
-            8. Run OSTF Murano platform tests
+            7. Run OSTF Murano platform tests
 
         Duration 100m
         Snapshot: deploy_murano_ha_with_gre
