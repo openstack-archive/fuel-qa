@@ -100,7 +100,16 @@ class TestHaVLAN(TestBasic):
 
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
         remote = self.env.d_env.get_ssh_to_remote(_ip)
-        checkers.check_swift_ring(remote)
+        for i in range(5):
+            try:
+                checkers.check_swift_ring(remote)
+                break
+            except AssertionError:
+                result = remote.execute(
+                    "/usr/local/bin/swift-rings-rebalance.sh")
+                logger.debug("command execution result is {0}".format(result))
+        else:
+            checkers.check_swift_ring(remote)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
@@ -175,7 +184,16 @@ class TestHaFlat(TestBasic):
 
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
         remote = self.env.d_env.get_ssh_to_remote(_ip)
-        checkers.check_swift_ring(remote)
+        for i in range(5):
+            try:
+                checkers.check_swift_ring(remote)
+                break
+            except AssertionError:
+                result = remote.execute(
+                    "/usr/local/bin/swift-rings-rebalance.sh")
+                logger.debug("command execution result is {0}".format(result))
+        else:
+            checkers.check_swift_ring(remote)
 
         self.fuel_web.security.verify_firewall(cluster_id)
 
@@ -321,13 +339,23 @@ class TestHaFlatScalability(TestBasic):
 
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
         remote = self.env.d_env.get_ssh_to_remote(_ip)
-        checkers.check_swift_ring(remote)
+        for i in range(5):
+            try:
+                checkers.check_swift_ring(remote)
+                break
+            except AssertionError:
+                result = remote.execute(
+                    "/usr/local/bin/swift-rings-rebalance.sh")
+                logger.debug("command execution result is {0}".format(result))
+        else:
+            checkers.check_swift_ring(remote)
 
         self.fuel_web.update_nodes(
             cluster_id, {'slave-02': ['controller'],
                          'slave-03': ['controller']},
             True, False
         )
+
         self.fuel_web.deploy_cluster_wait(cluster_id)
         for devops_node in self.env.d_env.nodes().slaves[:3]:
             self.fuel_web.assert_pacemaker(
@@ -340,7 +368,16 @@ class TestHaFlatScalability(TestBasic):
 
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
         remote = self.env.d_env.get_ssh_to_remote(_ip)
-        checkers.check_swift_ring(remote)
+        for i in range(5):
+            try:
+                checkers.check_swift_ring(remote)
+                break
+            except AssertionError:
+                result = remote.execute(
+                    "/usr/local/bin/swift-rings-rebalance.sh")
+                logger.debug("command execution result is {0}".format(result))
+        else:
+            checkers.check_swift_ring(remote)
 
         self.fuel_web.update_nodes(
             cluster_id, {'slave-04': ['controller'],
@@ -367,7 +404,16 @@ class TestHaFlatScalability(TestBasic):
 
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
         remote = self.env.d_env.get_ssh_to_remote(_ip)
-        checkers.check_swift_ring(remote)
+        for i in range(5):
+            try:
+                checkers.check_swift_ring(remote)
+                break
+            except AssertionError:
+                result = remote.execute(
+                    "/usr/local/bin/swift-rings-rebalance.sh")
+                logger.debug("command execution result is {0}".format(result))
+        else:
+            checkers.check_swift_ring(remote)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
