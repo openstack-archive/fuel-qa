@@ -36,6 +36,7 @@ if you do need to override them.
               Uses ENV_NAME variable is set.
 -j (name)   - Name of this job. Determines ISO name, Task name and used by tests.
               Uses Jenkins' JOB_NAME if not set
+-v          - Do not use virtual environment
 -V (dir)    - Path to python virtual environment
 -i (file)   - Full path to ISO file to build or use for tests.
               Made from iso dir and name if not set.
@@ -128,10 +129,12 @@ GlobalVariables() {
   # only show what commands would be executed but do nothing
   # this feature is usefull if you want to debug this script's behaviour
   DRY_RUN="${DRY_RUN:=no}"
+
+  VENV="${VENV:=yes}"
 }
 
 GetoptsVariables() {
-  while getopts ":w:j:i:t:o:a:A:m:U:r:b:V:l:dkKe:h" opt; do
+  while getopts ":w:j:i:t:o:a:A:m:U:r:b:V:l:dkKe:v:h" opt; do
     case $opt in
       w)
         WORKSPACE="${OPTARG}"
@@ -183,6 +186,9 @@ GetoptsVariables() {
         ;;
       d)
         DRY_RUN="yes"
+        ;;
+      v)
+        VENV="no"
         ;;
       h)
         ShowHelp
@@ -364,10 +370,12 @@ RunTest() {
     fi
 
     # run python virtualenv
-    if [ "${DRY_RUN}" = "yes" ]; then
-        echo . $VENV_PATH/bin/activate
-    else
-        . $VENV_PATH/bin/activate
+    if [ "${VENV}" = "yes" ]; then
+        if [ "${DRY_RUN}" = "yes" ]; then
+            echo . $VENV_PATH/bin/activate
+        else
+            . $VENV_PATH/bin/activate
+        fi
     fi
 
     if [ "${ENV_NAME}" = "" ]; then
