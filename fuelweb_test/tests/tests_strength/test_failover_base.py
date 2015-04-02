@@ -123,7 +123,9 @@ class TestHaFailoverBase(TestBasic):
             self.env.revert_snapshot(self.snapshot_name)
 
             remote = self.fuel_web.get_ssh_for_node(devops_node.name)
-            remote.check_call('ifconfig eth2 down')
+            cmd = ('iptables -I INPUT -i br-mgmt -j DROP && '
+                   'iptables -I OUTPUT -o br-mgmt -j DROP')
+            remote.check_call(cmd)
             self.fuel_web.assert_pacemaker(
                 self.env.d_env.nodes().slaves[2].name,
                 set(self.env.d_env.nodes().slaves[:3]) - {devops_node},
@@ -134,10 +136,18 @@ class TestHaFailoverBase(TestBasic):
 
         # Wait until MySQL Galera is UP on some controller
         self.fuel_web.wait_mysql_galera_is_up(['slave-01'])
+        try:
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha'])
+        except AssertionError:
+            time.sleep(600)
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha'])
 
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id,
-            test_sets=['ha', 'smoke', 'sanity'])
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['smoke', 'sanity'])
 
     def ha_delete_vips(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):

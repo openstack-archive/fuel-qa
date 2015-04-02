@@ -69,12 +69,13 @@ class TestHaNeutronFailover(TestHaFailoverBase):
         """Disconnect controllers and check pacemaker status is correct
 
         Scenario:
-            1. Disconnect eth3 of the first controller
+            1. Block traffic on br-mgmt of the first controller
             2. Check pacemaker status
             3. Revert environment
-            4. Disconnect eth3 of the second controller
+            4. Block traffic on br-mgmt of the second controller
             5. Check pacemaker status
-            6. Run OSTF
+            6. Wait until MySQL Galera is UP on some controller
+            7. Run OSTF
 
         Duration 45m
         """
@@ -251,16 +252,16 @@ class TestHaNovaFailover(TestHaFailoverBase):
           groups=["ha_nova_disconnect_controllers"])
     @log_snapshot_on_error
     def ha_nova_disconnect_controllers(self):
-        """Disconnect controllers and check pacemaker status is correct
+        """Disconnect controllers on environment with nova network
 
         Scenario:
-            1. Disconnect eth3 of the first controller
+            1. Block traffic on br-mgmt of the first controller
             2. Check pacemaker status
             3. Revert environment
-            4. Disconnect eth3 of the second controller
+            4. Block traffic on br-mgmt of the second controller
             5. Check pacemaker status
-            6. Run OSTF
-
+            6. Wait until MySQL Galera is UP on some controller
+            7. Run OSTF
         Duration 45m
         """
         super(self.__class__, self).ha_disconnect_controllers()
