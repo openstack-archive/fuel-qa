@@ -196,13 +196,15 @@ class TestRailProject():
         }
         return self.client.send_post(add_plan_uri, new_plan)
 
-    def add_plan_entry(self, plan_id, suite_id, config_ids, runs):
+    def add_plan_entry(self, plan_id, suite_id, config_ids, runs, name=None):
         add_plan_entry_uri = 'add_plan_entry/{plan_id}'.format(plan_id=plan_id)
         new_entry = {
             'suite_id': suite_id,
             'config_ids': config_ids,
-            'runs': runs,
+            'runs': runs
         }
+        if name:
+            new_entry['name'] = name
         return self.client.send_post(add_plan_entry_uri, new_entry)
 
     def delete_plan(self, plan_id):
@@ -302,6 +304,18 @@ class TestRailProject():
             if test['custom_test_group'] == group:
                 return self.get_test(test_id=test['id'])
 
+    def get_test_by_name_and_group(self, run_id, name, group):
+        for test in self.get_tests(run_id):
+            if test['title'] == name and test['custom_test_group'] == group:
+                return self.get_test(test_id=test['id'])
+
+    def get_tests_by_group(self, run_id, group, tests=None):
+        test_list = []
+        for test in tests or self.get_tests(run_id):
+            if test['custom_test_group'] == group:
+                test_list.append(self.get_test(test_id=test['id']))
+        return test_list
+
     def get_results_for_test(self, test_id, run_results=None):
         if run_results:
             for results in run_results:
@@ -331,7 +345,7 @@ class TestRailProject():
         add_results_test_uri = 'add_result/{test_id}'.format(test_id=test_id)
         new_results = {
             'status_id': self.get_status(test_results.status)['id'],
-            'comment': test_results.url,
+            'comment': test_results.url or test_results.description,
             'elapsed': test_results.duration,
             'version': test_results.version
         }
