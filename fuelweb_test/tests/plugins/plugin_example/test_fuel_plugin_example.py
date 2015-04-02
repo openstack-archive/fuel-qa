@@ -294,7 +294,7 @@ class ExamplePlugin(TestBasic):
             cmd_curl = 'curl localhost:8234'
             cmd = 'pgrep -f fuel-simple-service'
 
-            _ip = self.fuel_web.get_nailgun_node(node)['ip']
+            _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
             res_pgrep = self.env.d_env.get_ssh_to_remote(_ip).execute(cmd)
             assert_equal(0, res_pgrep['exit_code'],
                          'Failed with error {0} '

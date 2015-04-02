@@ -110,7 +110,7 @@ class GlusterfsPlugin(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         for node in ('slave-01', 'slave-03'):
-            _ip = self.fuel_web.get_nailgun_node(node)['ip']
+            _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
             self.check_glusterfs_conf(
                 remote=self.env.d_env.get_ssh_to_remote(_ip),
                 path='/etc/cinder/glusterfs',
