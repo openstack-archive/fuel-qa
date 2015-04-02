@@ -584,7 +584,7 @@ class FloatingIPs(TestBasic):
 class HAOneControllerCinder(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ha_one_controller_cinder",
-                  "ha_one_controller_nova_cinder"])
+                  "ha_one_controller_nova_cinder", 'master'])
     @log_snapshot_on_error
     def deploy_ha_one_controller_cinder(self):
         """Deploy cluster in HA mode with cinder
