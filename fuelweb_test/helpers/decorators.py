@@ -286,9 +286,7 @@ def check_fuel_statistics(func):
         fuel_settings = args[0].env.get_fuel_settings()
         nailgun_actions = args[0].env.nailgun_actions
         postgres_actions = args[0].env.postgres_actions
-        remote_collector = args[0].env.d_env.get_ssh_to_remote_by_key(
-            settings.FUEL_STATS_HOST,
-            '{0}/.ssh/id_rsa'.format(expanduser("~")))
+        remote_collector = args[0].env.collector
         master_uuid = args[0].env.get_masternode_uuid()
         logger.info("Master Node UUID: '{0}'".format(master_uuid))
         nailgun_actions.force_fuel_stats_sending()
