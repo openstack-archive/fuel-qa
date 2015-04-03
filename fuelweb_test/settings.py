@@ -357,6 +357,8 @@ FUEL_STATS_HOST = os.environ.get('FUEL_STATS_HOST',
                                  '172.18.2.169')
 FUEL_STATS_PORT = os.environ.get('FUEL_STATS_PORT', '80')
 
+ANALYTICS_IP = os.environ.get('ANALYTICS_IP', 'localhost:8082')
+
 CUSTOM_ENV = os.environ.get('CUSTOM_ENV', 'false') == 'true'
 BUILD_IMAGES = os.environ.get('BUILD_IMAGES', 'false') == 'true'
 

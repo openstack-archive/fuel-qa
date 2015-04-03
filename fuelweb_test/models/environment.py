@@ -33,6 +33,7 @@ from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.fuel_actions import PostgresActions
 from fuelweb_test.helpers import multiple_networks_hacks
 from fuelweb_test.models.fuel_web_client import FuelWebClient
+from fuelweb_test.models.collector_client import CollectorClient
 from fuelweb_test import settings
 from fuelweb_test import logwrap
 from fuelweb_test import logger
@@ -58,6 +59,10 @@ class EnvironmentModel(object):
     @property
     def admin_node_ip(self):
         return self.fuel_web.admin_node_ip
+
+    @property
+    def collector(self):
+        return CollectorClient(settings.ANALYTICS_IP, 'api/v1/json')
 
     @logwrap
     def add_syslog_server(self, cluster_id, port=5514):
