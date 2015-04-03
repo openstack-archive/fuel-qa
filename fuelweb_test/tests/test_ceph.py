@@ -38,7 +38,8 @@ class CephCompact(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ceph_ha_one_controller_compact",
-                  "ha_one_controller_nova_ceph"])
+                  "ha_one_controller_nova_ceph",
+                  "ceph_ha_one_controller_compact_neutron"])
     @log_snapshot_on_error
     def ceph_ha_one_controller_compact(self):
         """Deploy ceph in HA mode with 1 controller
