@@ -29,7 +29,6 @@ from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 
 from fuelweb_test import settings
-from fuel_actions import CobblerActions
 
 
 patching_validation_schema = {
@@ -76,11 +75,10 @@ def map_test():
     errata = get_errata(path=settings.PATCHING_APPLY_TESTS,
                         bug_id=settings.PATCHING_BUG_ID)
     verify_errata(errata)
-    if 'pkgs' in errata.keys():
-        if settings.OPENSTACK_RELEASE_CENTOS in settings.OPENSTACK_RELEASE:
-            settings.PATCHING_PKGS = set(errata['pkgs']['centos'])
-        else:
-            settings.PATCHING_PKGS = set(errata['pkgs']['ubuntu'])
+    if 'fixed-pkgs' in errata.keys():
+        distro = settings.OPENSTACK_RELEASE.lower()
+        settings.PATCHING_PKGS = set([re.split('=|<|>', package)[0] for package
+                                      in errata['fixed-pkgs'][distro]])
     available_packages = set()
     for repo in settings.PATCHING_MIRRORS:
         available_packages.update(get_repository_packages(repo))
@@ -209,14 +207,6 @@ def get_packages_tests(packages):
     return packages_tests
 
 
-def enable_local_dns_resolving(environment):
-    admin_remote = environment.d_env.get_admin_remote()
-    router_ip = environment.d_env.router()
-    # Add router IP to the DNS servers list on master node
-    fuel_cobbler_actions = CobblerActions(admin_remote=admin_remote)
-    fuel_cobbler_actions.add_dns_upstream_server(router_ip)
-
-
 def mirror_remote_repository(admin_remote, remote_repo_url, local_repo_path):
     repo_url = urlparse(remote_repo_url)
     cut_dirs = len(repo_url.path.strip('/').split('/'))
@@ -250,8 +240,8 @@ def connect_slaves_to_repo(environment, nodes, repo_name):
         master_ip=environment.get_admin_node_ip(), repo_name=repo_name)
     if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_UBUNTU:
         cmds = [
-            "sed -e '$adeb {repourl} /' -i /etc/apt/sources.list".format(
-                repourl=repourl),
+            "sed -e '$adeb {repourl} /' -i /etc/apt/sources.list.d/mos.list".
+            format(repourl=repourl),
             "apt-key add <(curl -s '{repourl}/Release.key')".format(
                 repourl=repourl),
             "apt-get update"
@@ -405,7 +395,7 @@ def validate_fix_apply_step(apply_step, environment, slaves):
 
 
 def get_errata(path, bug_id):
-    scenario_path = '{0}/bugs/{1}/errata.yaml'.format(path, bug_id)
+    scenario_path = '{0}/bugs/{1}/erratum.yaml'.format(path, bug_id)
     if 'http' in urlparse(settings.PATCHING_APPLY_TESTS):
         return yaml.load(urlopen(scenario_path).read())
     elif os.path.isdir(settings.PATCHING_APPLY_TESTS):
@@ -468,8 +458,3 @@ def apply_patches(environment, slaves):
 
 def verify_fix(environment, slaves):
     run_actions(environment, slaves, action_type='verify-scenario')
-
-
-class ApplyPatchActions(object):
-    def __init__(self):
-        pass
