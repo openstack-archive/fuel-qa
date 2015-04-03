@@ -104,7 +104,7 @@ class CephRestart(TestBasic):
             14. Run OSTF
 
         Duration 30m
-        Snapshot ceph_ha
+        Snapshot ceph_ha_restart
 
         """
         if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_REDHAT:
@@ -175,7 +175,7 @@ class CephRestart(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
 
-        self.env.make_snapshot("ceph_ha")
+        self.env.make_snapshot("ceph_ha_restart")
 
 
 @test(groups=["thread_1"])
