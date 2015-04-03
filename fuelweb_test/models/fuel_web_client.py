@@ -1165,7 +1165,7 @@ class FuelWebClient(object):
                         'Node {0} is online'.format(node['mac']))
 
     @logwrap
-    def wait_mysql_galera_is_up(self, node_names):
+    def wait_mysql_galera_is_up(self, node_names, timeout=30 * 4):
         def _get_galera_status(_remote):
             cmd = ("mysql --connect_timeout=5 -sse \"SELECT VARIABLE_VALUE "
                    "FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME"
@@ -1181,7 +1181,7 @@ class FuelWebClient(object):
             remote = self.environment.d_env.get_ssh_to_remote(_ip)
             try:
                 wait(lambda: _get_galera_status(remote) == 'ON',
-                     timeout=30 * 4)
+                     timeout=timeout)
                 logger.info("MySQL Galera is up on {host} node.".format(
                             host=node_name))
             except TimeoutError:
