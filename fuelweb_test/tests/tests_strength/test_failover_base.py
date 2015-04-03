@@ -411,7 +411,7 @@ class TestHaFailoverBase(TestBasic):
             )
         remote_compute = self.fuel_web.get_ssh_for_node(
             self.env.d_env.nodes().slaves[4].name)
-        devops_node = self.fuel_web.get_nailgun_primary_controller(
+        devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         file_name = DOWNLOAD_LINK.split('/')[-1]
         if OPENSTACK_RELEASE == OPENSTACK_RELEASE_UBUNTU:
