@@ -269,11 +269,16 @@ class TestHaFailoverBase(TestBasic):
             remote = self.fuel_web.get_ssh_for_node(devops_node.name)
             remote.check_call('kill -9 $(pidof haproxy)')
 
-            mysql_started = lambda: \
-                len(remote.check_call(
-                    'ps aux | grep "/usr/sbin/haproxy"')['stdout']) == 3
-            wait(mysql_started, timeout=20)
-            assert_true(mysql_started(), 'haproxy restarted')
+            def haproxy_started():
+                ret = remote.execute(
+                    '[ -f /var/run/haproxy.pid ] && '
+                    '[ "$(ps -p $(cat /var/run/haproxy.pid) -o pid=)" == '
+                    '"$(pidof haproxy)" ]'
+                    )
+                return ret['exit_code'] == 0
+
+            wait(haproxy_started, timeout=20)
+            assert_true(haproxy_started(), 'haproxy restarted')
 
         cluster_id = self.fuel_web.client.get_cluster_id(
             self.__class__.__name__)
