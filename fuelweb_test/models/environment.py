@@ -516,9 +516,3 @@ class EnvironmentModel(object):
         return self.postgres_actions.run_query(
             db='nailgun',
             query="select master_node_uid from master_node_settings limit 1;")
-
-    @logwrap
-    def enable_local_dns_resolving(self):
-        router_ip = self.d_env.router()
-        # Add router IP to the DNS servers list on master node
-        self.cobbler_actions.add_dns_upstream_server(router_ip)
