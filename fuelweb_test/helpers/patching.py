@@ -240,16 +240,21 @@ def connect_slaves_to_repo(environment, nodes, repo_name):
         master_ip=environment.get_admin_node_ip(), repo_name=repo_name)
     if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_UBUNTU:
         cmds = [
-            "sed -e '$adeb {repourl} /' -i /etc/apt/sources.list.d/mos.list".
-            format(repourl=repourl),
-            "apt-key add <(curl -s '{repourl}/Release.key')".format(
+            "echo -e '\ndeb {repourl} /' >> /etc/apt/sources.list".format(
                 repourl=repourl),
+            "apt-key add <(curl -s '{repourl}/Release.key') || :".format(
+                repourl=repourl),
+            # Set highest priority to all repositories located on master node
+            "echo -e 'Package: *\nPin: origin {0}\nPin-Priority: 1060' > "
+            "/etc/apt/preferences.d/custom_repo".format(
+                environment.get_admin_node_ip()),
             "apt-get update"
         ]
     else:
         cmds = [
-            "/usr/bin/yum-config-manager --add-repo {repourl} "
-            "--setopt=gpgcheck=0".format(repourl=repourl),
+            "yum-config-manager --add-repo {url}".format(url=repourl),
+            "echo -e 'gpgcheck=0\npriority=20' >>/etc/yum.repos.d/{ip}_{repo}_"
+            ".repo".format(ip=environment.get_admin_node_ip(), repo=repo_name),
             "yum -y clean all",
             "yum check-update; [[ $? -eq 100 ]]"
         ]
@@ -263,7 +268,7 @@ def connect_slaves_to_repo(environment, nodes, repo_name):
 def update_packages(environment, remote, packages, exclude_packages=None):
     if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_UBUNTU:
         cmds = [
-            'apt-get -y upgrade {0}'.format(' '.join(packages))
+            'apt-get -y install --only-upgrade {0}'.format(' '.join(packages))
         ]
         if exclude_packages:
             exclude_commands = ["apt-mark hold {0}".format(pkg)
