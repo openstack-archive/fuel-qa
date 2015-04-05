@@ -242,7 +242,7 @@ def connect_slaves_to_repo(environment, nodes, repo_name):
         cmds = [
             "sed -e '$adeb {repourl} /' -i /etc/apt/sources.list.d/mos.list".
             format(repourl=repourl),
-            "apt-key add <(curl -s '{repourl}/Release.key')".format(
+            "apt-key add <(curl -s '{repourl}/Release.key') || :".format(
                 repourl=repourl),
             "apt-get update"
         ]
