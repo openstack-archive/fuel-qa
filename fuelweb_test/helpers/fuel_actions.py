@@ -19,6 +19,7 @@ from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
 
 from fuelweb_test import logger
+from fuelweb_test import logwrap
 
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
@@ -83,6 +84,7 @@ class AdminActions(BaseActions):
     def __init__(self, admin_remote):
         super(AdminActions, self).__init__(admin_remote)
 
+    @logwrap
     def modify_configs(self, router):
         # Slave nodes sould use the gateway of 'admin' network as the default
         # gateway during provisioning and as an additional DNS server.
@@ -93,6 +95,9 @@ class AdminActions(BaseActions):
         # wait until fuelmenu fill the astute.yaml
         cmd = "fgrep 'dhcp_gateway' {0}".format(config)
         wait(lambda: not self.admin_remote.execute(cmd)['exit_code'], 60)
+        # wait until fuelmenu is finished
+        cmd = "ps -C fuelmenu"
+        wait(lambda: self.admin_remote.execute(cmd)['exit_code'], 60)
 
         cmd = ("sed -i 's/dhcp_gateway:.*/dhcp_gateway: {0}/' {1} &&"
                "sed -i 's/\\(DNS_UPSTREAM:\\) \\(.*\\)/\\1 {0} \\2/' {1} &&"
