@@ -16,6 +16,7 @@ from proboscis.asserts import assert_equal
 from proboscis import test
 
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -47,16 +48,17 @@ class NeutronGre(TestBasic):
         self.env.revert_snapshot("ready_with_3_slaves")
 
         segment_type = 'gre'
+        data = {
+            "net_provider": 'neutron',
+            "net_segment_type": segment_type,
+            'tenant': 'simpleGre',
+            'user': 'simpleGre',
+            'password': 'simpleGre'
+        }
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": segment_type,
-                'tenant': 'simpleGre',
-                'user': 'simpleGre',
-                'password': 'simpleGre'
-            }
+            settings=data
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -69,13 +71,15 @@ class NeutronGre(TestBasic):
         self.fuel_web.update_internal_network(cluster_id, '192.168.196.0/26',
                                               '192.168.196.1')
         self.fuel_web.deploy_cluster_wait(cluster_id)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id),
+            data['user'], data['password'], data['tenant'])
 
         cluster = self.fuel_web.client.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
         # assert_equal(str(cluster['net_segment_type']), segment_type)
-        _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
         self.fuel_web.check_fixed_network_cidr(
-            cluster_id, self.env.d_env.get_ssh_to_remote(_ip))
+            cluster_id, os_conn)
 
         self.fuel_web.verify_network(cluster_id)
 
@@ -327,10 +331,11 @@ class NeutronVlanHa(TestBasic):
 
         cluster = self.fuel_web.client.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
         # assert_equal(str(cluster['net_segment_type']), segment_type)
-        _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
         self.fuel_web.check_fixed_network_cidr(
-            cluster_id, self.env.d_env.get_ssh_to_remote(_ip))
+            cluster_id, os_conn)
 
         self.fuel_web.verify_network(cluster_id)
         devops_node = self.fuel_web.get_nailgun_primary_node(
@@ -408,9 +413,10 @@ class NeutronVlanHaPublicNetwork(TestBasic):
         cluster = self.fuel_web.client.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
         # assert_equal(str(cluster['net_segment_type']), segment_type)
-        _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
         self.fuel_web.check_fixed_network_cidr(
-            cluster_id, self.env.d_env.get_ssh_to_remote(_ip))
+            cluster_id, os_conn)
 
         self.fuel_web.verify_network(cluster_id)
 

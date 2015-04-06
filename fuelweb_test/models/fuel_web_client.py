@@ -1473,30 +1473,28 @@ class FuelWebClient(object):
             get("networking_parameters").get("internal_cidr")
 
     @logwrap
-    def check_fixed_network_cidr(self, cluster_id, remote):
+    def check_fixed_network_cidr(self, cluster_id, os_conn):
         net_provider = self.client.get_cluster(cluster_id)['net_provider']
         if net_provider == 'nova_network':
             nailgun_cidr = self.get_nailgun_cidr_nova(cluster_id)
             logger.debug('nailgun cidr is {0}'.format(nailgun_cidr))
-            slave_cidr = ''.join(remote.execute(". openrc; nova net-list"
-                                                " | awk '$4 =="
-                                                " \"novanetwork\"{print $6}'"
-                                                )['stdout'])
-            logger.debug('slave cidr is {0}'.format(
-                slave_cidr.rstrip()))
-            assert_equal(nailgun_cidr, slave_cidr.rstrip(),
+            net = os_conn.nova_get_net('novanetwork')
+            logger.debug('nova networks: {0}'.format(
+                net))
+            assert_equal(nailgun_cidr, net.cidr.rstrip(),
                          'Cidr after deployment is not equal'
                          ' to cidr by default')
+
         elif net_provider == 'neutron':
             nailgun_cidr = self.get_nailgun_cidr_neutron(cluster_id)
             logger.debug('nailgun cidr is {0}'.format(nailgun_cidr))
-            slave_cidr = ''.join(remote.execute(". openrc; neutron"
-                                                " subnet-list | awk '$4 =="
-                                                " \"net04__subnet\""
-                                                "{print $6}'")['stdout'])
-            logger.debug('slave cidr is {0}'.format(
-                slave_cidr.rstrip()))
-            assert_equal(nailgun_cidr, slave_cidr.rstrip(),
+            subnet = os_conn.get_subnet('net04__subnet')
+            logger.debug('net04__subnet: {0}'.format(
+                subnet))
+            assert_true(subnet, "net04__subnet does not exists")
+            logger.debug('cidr net04__subnet: {0}'.format(
+                subnet['cidr']))
+            assert_equal(nailgun_cidr, subnet['cidr'].rstrip(),
                          'Cidr after deployment is not equal'
                          ' to cidr by default')
 
