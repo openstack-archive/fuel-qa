@@ -32,6 +32,7 @@ def import_tests():
     from tests.tests_strength import test_restart  # noqa
     from tests.tests_strength import test_huge_environments  # noqa
     from tests.tests_strength import test_image_based  # noqa
+    from tests.tests_strength import test_cic_maintenance_mode  # noqa
     from tests import test_bonding  # noqa
     from tests.tests_strength import test_neutron  # noqa
     from tests import test_zabbix  # noqa
