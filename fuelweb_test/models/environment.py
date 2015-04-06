@@ -101,8 +101,12 @@ class EnvironmentModel(object):
         return Ebtables(self.get_target_devs(devops_nodes),
                         self.fuel_web.client.get_cluster_vlans(cluster_id))
 
-    def get_keys(self, node, custom=None, build_images=None):
+    def get_keys(self, node, custom=None, build_images=None,
+                 iso_connect_as='cdrom'):
         params = {
+            'ks': 'hd:LABEL="Mirantis_Fuel":/ks.cfg' if iso_connect_as == 'usb'
+            else 'cdrom:/ks.cfg',
+            'repo': 'hd:LABEL="Mirantis_Fuel":/',  # only required for USB boot
             'ip': node.get_ip_address_by_network_name(
                 self.d_env.admin_net),
             'mask': self.d_env.get_network(
@@ -115,21 +119,42 @@ class EnvironmentModel(object):
             'showmenu': 'yes' if custom else 'no',
             'build_images': '1' if build_images else '0'
         }
-        keys = (
-            "<Wait>\n"
-            "<Esc><Enter>\n"
-            "<Wait>\n"
-            "vmlinuz initrd=initrd.img ks=cdrom:/ks.cfg\n"
-            " ip=%(ip)s\n"
-            " netmask=%(mask)s\n"
-            " gw=%(gw)s\n"
-            " dns1=%(dns1)s\n"
-            " hostname=%(hostname)s\n"
-            " dhcp_interface=%(nat_interface)s\n"
-            " showmenu=%(showmenu)s\n"
-            " build_images=%(build_images)s\n"
-            " <Enter>\n"
-        ) % params
+        keys = ''
+        if(iso_connect_as == 'usb'):
+            keys = (
+                "<Wait>\n"  # USB boot uses boot_menu=yes for master node
+                "<F12>\n"
+                "2\n"
+                "<Esc><Enter>\n"
+                "<Wait>\n"
+                "vmlinuz initrd=initrd.img ks=%(ks)s\n"
+                " repo=%(repo)s\n"
+                " ip=%(ip)s\n"
+                " netmask=%(mask)s\n"
+                " gw=%(gw)s\n"
+                " dns1=%(dns1)s\n"
+                " hostname=%(hostname)s\n"
+                " dhcp_interface=%(nat_interface)s\n"
+                " showmenu=%(showmenu)s\n"
+                " build_images=%(build_images)s\n"
+                " <Enter>\n"
+            ) % params
+        else:  # cdrom case is default
+            keys = (
+                "<Wait>\n"
+                "<Esc>\n"
+                "<Wait>\n"
+                "vmlinuz initrd=initrd.img ks=%(ks)s\n"
+                " ip=%(ip)s\n"
+                " netmask=%(mask)s\n"
+                " gw=%(gw)s\n"
+                " dns1=%(dns1)s\n"
+                " hostname=%(hostname)s\n"
+                " dhcp_interface=%(nat_interface)s\n"
+                " showmenu=%(showmenu)s\n"
+                " build_images=%(build_images)s\n"
+                " <Enter>\n"
+            ) % params
         return keys
 
     def get_target_devs(self, devops_nodes):
@@ -144,7 +169,8 @@ class EnvironmentModel(object):
             try:
                 return Environment.get(name=settings.ENV_NAME)
             except Exception:
-                self._virtual_environment = Environment.describe_environment()
+                self._virtual_environment = Environment.describe_environment(
+                    boot_from=settings.ADMIN_BOOT_DEVICE)
                 self._virtual_environment.define()
         return self._virtual_environment
 
@@ -265,17 +291,24 @@ class EnvironmentModel(object):
                         settings.KEYSTONE_CREDS['password']))
 
     def setup_environment(self, custom=settings.CUSTOM_ENV,
-                          build_images=settings.BUILD_IMAGES):
+                          build_images=settings.BUILD_IMAGES,
+                          iso_connect_as=settings.ADMIN_BOOT_DEVICE):
         # start admin node
         admin = self.d_env.nodes().admin
-        admin.disk_devices.get(device='cdrom').volume.upload(settings.ISO_PATH)
+        if(iso_connect_as == 'usb'):
+            admin.disk_devices.get(device='disk',
+                                   bus='usb').volume.upload(settings.ISO_PATH)
+        else:  # cdrom is default
+            admin.disk_devices.get(
+                device='cdrom').volume.upload(settings.ISO_PATH)
         self.d_env.start(self.d_env.nodes().admins)
         logger.info("Waiting for admin node to start up")
         wait(lambda: admin.driver.node_active(admin), 60)
         logger.info("Proceed with installation")
         # update network parameters at boot screen
         admin.send_keys(self.get_keys(admin, custom=custom,
-                        build_images=build_images))
+                                      build_images=build_images,
+                                      iso_connect_as=iso_connect_as))
         if custom:
             self.setup_customisation()
         # wait while installation complete
