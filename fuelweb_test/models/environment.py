@@ -32,6 +32,8 @@ from fuelweb_test.helpers.fuel_actions import AdminActions
 from fuelweb_test.helpers.fuel_actions import CobblerActions
 from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.fuel_actions import PostgresActions
+from fuelweb_test.helpers.ntp import Ntp
+from fuelweb_test.helpers.ntp import NtpSync
 from fuelweb_test.helpers import multiple_networks_hacks
 from fuelweb_test.models.fuel_web_client import FuelWebClient
 from fuelweb_test import settings
@@ -77,6 +79,7 @@ class EnvironmentModel(object):
         # self.dhcrelay_check()
 
         for node in devops_nodes:
+            logger.info("Bootstrapping node: {}".format(node.name))
             node.start()
             # TODO(aglarendil): LP#1317213 temporary sleep
             # remove after better fix is applied
@@ -84,8 +87,7 @@ class EnvironmentModel(object):
         wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
 
         if not skip_timesync:
-            for node in self.nailgun_nodes(devops_nodes):
-                self.sync_node_time(self.d_env.get_ssh_to_remote(node["ip"]))
+            self.sync_time([node for node in self.nailgun_nodes(devops_nodes)])
 
         return self.nailgun_nodes(devops_nodes)
 
@@ -178,18 +180,16 @@ class EnvironmentModel(object):
 
         logger.info('We have snapshot with such name: %s' % name)
 
-        logger.info("Reverting of the snapshot '{0}' ....".format(name))
+        logger.info("Reverting the snapshot '{0}' ....".format(name))
         self.d_env.revert(name)
 
-        logger.info("Resuming of the snapshot '{0}' ....".format(name))
+        logger.info("Resuming the snapshot '{0}' ....".format(name))
         self.d_env.resume()
 
         admin = self.d_env.nodes().admin
 
         try:
-            admin.await(
-                self.d_env.admin_net, timeout=10 * 60,
-                by_port=8000)
+            admin.await(self.d_env.admin_net, timeout=30, by_port=8000)
         except Exception as e:
             logger.warning("From first time admin isn't reverted: "
                            "{0}".format(e))
@@ -211,23 +211,11 @@ class EnvironmentModel(object):
             self.fuel_web.get_nailgun_version()
 
         if not skip_timesync:
-            self.sync_time_admin_node()
+            nailgun_nodes = [self.fuel_web.get_nailgun_node_by_name(node.name)
+                             for node in self.d_env.nodes().slaves
+                             if node.driver.node_active(node)]
+            self.sync_time(nailgun_nodes)
 
-            for node in self.d_env.nodes().slaves:
-                if not node.driver.node_active(node):
-                    continue
-                try:
-                    logger.info("Sync time on revert for node %s" % node.name)
-                    _ip = self.fuel_web.get_nailgun_node_by_name(
-                        node.name)['ip']
-                    self.sync_node_time(
-                        self.d_env.get_ssh_to_remote(_ip))
-                except Exception as e:
-                    logger.warning(
-                        'Exception caught while trying to sync time on {0}:'
-                        ' {1}'.format(node.name, e))
-                _ip = self.fuel_web.get_nailgun_node_by_name(node.name)['ip']
-                self.run_nailgun_agent(self.d_env.get_ssh_to_remote(_ip))
         return True
 
     def set_admin_ssh_password(self):
@@ -285,7 +273,7 @@ class EnvironmentModel(object):
         self.wait_bootstrap()
         time.sleep(10)
         self.set_admin_keystone_password()
-        self.sync_time_admin_node()
+        self.sync_time()
         if settings.MULTIPLE_NETWORKS:
             self.describe_second_admin_interface()
             multiple_networks_hacks.configure_second_admin_cobbler(self)
@@ -319,46 +307,30 @@ class EnvironmentModel(object):
             logger.error("Could not kill pid of fuelmenu")
             raise
 
-    @retry(count=10, delay=60)
-    @logwrap
-    def sync_node_time(self, remote):
-        self.execute_remote_cmd(remote, 'hwclock -s')
-        self.execute_remote_cmd(remote,
-                                'crm_resource --list | grep -q "p_ntp" && '
-                                '{ crm resource stop p_ntp; killall ntpd;'
-                                'timeout 600 ntpd -qgddddd && crm '
-                                'resource start p_ntp ; } || { NTPD=$(find '
-                                '/etc/init.d/ -regex \'/etc/init.d/ntp.?\'); '
-                                '$NTPD stop; ntpd -qgddddd && $NTPD start ; }')
-        self.execute_remote_cmd(remote, 'hwclock -w')
-        remote_date = remote.execute('date')['stdout']
-        logger.info("Node time: %s" % remote_date)
+    @retry(count=3, delay=60)
+    def sync_time(self, nailgun_nodes=[]):
+        # with @retry, failure on any step of time synchronization causes
+        # restart the time synchronization starting from the admin node
 
-    @retry(count=10, delay=60)
-    @logwrap
-    def sync_time_admin_node(self):
-        logger.info("Sync time on revert for admin")
-        remote = self.d_env.get_admin_remote()
-        self.execute_remote_cmd(remote, 'hwclock -s')
-        # Sync time using ntpd
-        try:
-            # If public NTP servers aren't accessible ntpdate will fail and
-            # ntpd daemon shouldn't be restarted to avoid 'Server has gone
-            # too long without sync' error while syncing time from slaves
-            self.execute_remote_cmd(remote, "ntpdate -vu $(awk '/^server/ && "
-                                            "$2 !~ /127.*/ {print $2}' "
-                                            "/etc/ntp.conf)")
-        except AssertionError as e:
-            logger.warning('Error occurred while synchronizing time on master'
-                           ': {0}'.format(e))
-            raise
-        else:
-            self.execute_remote_cmd(remote, 'service ntpd stop && '
-                                            'service ntpd start')
-            self.execute_remote_cmd(remote, 'hwclock -w')
+        admin_ntp = Ntp().new(self.d_env.get_admin_remote(), 'admin')
+        controller_nodes = [
+            n for n in nailgun_nodes if "controller" in n['roles']]
+        other_nodes = [
+            n for n in nailgun_nodes if "controller" not in n['roles']]
 
-        remote_date = remote.execute('date')['stdout']
-        logger.info("Master node time: {0}".format(remote_date))
+        # 1. The first time source for the environment: admin node
+        logger.info("Synchronizing time on Fuel admin node")
+        NtpSync().do_sync_time([admin_ntp])
+
+        # 2. Controllers should be synchronized before providing time to others
+        if controller_nodes:
+            logger.info("Synchronizing time on all controllers")
+            NtpSync(self, controller_nodes).do_sync_time()
+
+        # 3. Synchronize time on all the rest nodes
+        if other_nodes:
+            logger.info("Synchronizing time on other active nodes")
+            NtpSync(self, other_nodes).do_sync_time()
 
     def verify_network_configuration(self, node_name):
         node = self.fuel_web.get_nailgun_node_by_name(node_name)
