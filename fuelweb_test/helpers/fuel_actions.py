@@ -75,6 +75,15 @@ class BaseActions(object):
                          err=result['stderr']))
         return ''.join(result['stdout']).strip()
 
+    @property
+    def is_container_ready(self):
+        result = self.admin_remote.execute("timeout 5 dockerctl check {0}"
+                                           .format(self.container))
+        return (result['exit_code'] == 0)
+
+    def wait_for_ready_container(self, timeout=300):
+        wait(lambda: self.is_container_ready, timeout)
+
 
 class AdminActions(BaseActions):
     """ All actions relating to the admin node.
