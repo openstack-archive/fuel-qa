@@ -846,7 +846,7 @@ def external_dns_check(remote_slave):
     assert_equal(ext_dns_ip, EXTERNAL_DNS,
                  "/etc/resolv.dnsmasq.conf does not contain external dns ip")
     command_hostname = ''.join(
-        remote_slave.execute("host {0} | awk {'print $5'}"
+        remote_slave.execute("host {0} | awk {{'print $5'}}"
                              .format(PUBLIC_TEST_IP))
         ["stdout"]).rstrip()
     hostname = 'google-public-dns-a.google.com.'
