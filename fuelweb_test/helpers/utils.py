@@ -138,7 +138,7 @@ def store_packages_json(env):
         logger.debug('role is {0}'.format(role))
         packages = get_node_packages(remote, func_name, role, packages)
     with open('{0}/packages.json'.format(
-            settings.LOGS_DIR), 'r+') as outfile:
+            settings.LOGS_DIR), 'w+') as outfile:
         try:
             file_packages = json.load(outfile)
         except ValueError:
