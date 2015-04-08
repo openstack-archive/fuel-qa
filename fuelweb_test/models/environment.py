@@ -229,6 +229,7 @@ class EnvironmentModel(object):
                 by_port=8000)
 
         self.set_admin_ssh_password()
+        self.nailgun_actions.wait_for_ready_container()
         try:
             _wait(self.fuel_web.client.get_releases,
                   expected=EnvironmentError, timeout=300)
@@ -316,6 +317,7 @@ class EnvironmentModel(object):
         self.set_admin_ssh_password()
         self.admin_actions.modify_configs(self.d_env.router())
         self.wait_bootstrap()
+        self.nailgun_actions.wait_for_ready_container()
         time.sleep(10)
         self.set_admin_keystone_password()
         self.sync_time_admin_node()
