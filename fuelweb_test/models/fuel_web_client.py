@@ -1152,7 +1152,7 @@ class FuelWebClient(object):
             return ' '.join(ret['stdout'])
         except DevopsCalledProcessError as err:
             logger.error(err)
-            raise err
+        return ''
 
     @logwrap
     def ip_address_del(self, node_name, namespace, interface, ip):
