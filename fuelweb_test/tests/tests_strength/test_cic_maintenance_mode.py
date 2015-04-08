@@ -79,7 +79,8 @@ class CICMaintenanceMode(TestBasic):
         self.env.make_snapshot("cic_maintenance_mode", is_make=True)
 
     @test(depends_on=[cic_maintenance_mode_env],
-          groups=["manual_cic_maintenance_mode"])
+          groups=["manual_cic_maintenance_mode",
+                  "positive_cic_maintenance_mode"])
     @log_snapshot_on_error
     def manual_cic_maintenance_mode(self):
         """Check manual maintenance mode for controller
@@ -166,7 +167,8 @@ class CICMaintenanceMode(TestBasic):
                                                               'sanity'])
 
     @test(depends_on=[cic_maintenance_mode_env],
-          groups=["auto_cic_maintenance_mode"])
+          groups=["auto_cic_maintenance_mode",
+                  "positive_cic_maintenance_mode"])
     @log_snapshot_on_error
     def auto_cic_maintenance_mode(self):
         """Check auto maintenance mode for controller
@@ -284,5 +286,152 @@ class CICMaintenanceMode(TestBasic):
                              " we sleep 1200 second try one more time"
                              " and if it fails again - test will fails ")
                 time.sleep(1200)
+                self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke',
+                                                              'sanity'])
+
+    @test(depends_on=[cic_maintenance_mode_env],
+          groups=["negative_manual_cic_maintenance_mode",
+                  "negative_cic_maintenance_mode"])
+    @log_snapshot_on_error
+    def manual_cic_maintenance_mode_negative(self):
+        """Check negative scenario for manual maintenance mode
+
+        Scenario:
+            1. Revert snapshot
+            2. Disable UMM
+            3. Switch in maintenance mode
+            4. Check the controller not switching in maintenance mode
+            5. Check the controller become available
+
+        Duration 45m
+        """
+        self.env.revert_snapshot('cic_maintenance_mode')
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        for nailgun_node in self.env.d_env.nodes().slaves[0:3]:
+            remote = self.fuel_web.get_ssh_for_node(nailgun_node.name)
+            assert_true('True' in check_available_mode(remote),
+                        "Maintenance mode is not available")
+
+            result = remote.execute('umm disable')
+            assert_equal(result['exit_code'], 0,
+                         'Failed to execute "{0}" on remote host: {1}'.
+                         format('umm disable', result))
+
+            assert_false('True' in check_available_mode(remote),
+                         "Maintenance mode not should available")
+            logger.info('Maintenance mode for node %s', nailgun_node.name)
+
+            result = remote.execute('umm on')
+            assert_equal(result['exit_code'], 0,
+                         'Failed to execute "{0}" on remote host: {1}'.
+                         format('umm on', result))
+
+            time.sleep(30)
+            assert_true(
+                self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
+                ['online'],
+                'Node {0} should be online after command "umm on"'.
+                format(nailgun_node.name))
+
+            try:
+                self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke',
+                                                              'sanity'])
+            except AssertionError:
+                logger.debug("Test failed from first probe,"
+                             " we sleep 300 second try one more time"
+                             " and if it fails again - test will fails ")
+                time.sleep(300)
+                self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke',
+                                                              'sanity'])
+
+    @test(depends_on=[cic_maintenance_mode_env],
+          groups=["negative_auto_cic_maintenance_mode",
+                  "negative_cic_maintenance_mode"])
+    @log_snapshot_on_error
+    def auto_cic_maintenance_mode_negative(self):
+        """Check negative scenario for auto maintenance mode
+
+        Scenario:
+            1. Revert snapshot
+            2. Disable UMM
+            3. Change UMM.CONF
+            4. Unexpected reboot
+            5. Check the controller not switching in maintenance mode
+            6. Check the controller become available
+
+        Duration 85m
+        """
+        self.env.revert_snapshot('cic_maintenance_mode')
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        for nailgun_node in self.env.d_env.nodes().slaves[0:3]:
+            remote = self.fuel_web.get_ssh_for_node(nailgun_node.name)
+            assert_true('True' in check_available_mode(remote),
+                        "Maintenance mode is not available")
+
+            logger.info('Change UMM.CONF on node %s', nailgun_node.name)
+            command1 = ("echo -e 'UMM=yes\nREBOOT_COUNT=0\n"
+                        "COUNTER_RESET_TIME=10' > /etc/umm.conf")
+
+            result = remote.execute(command1)
+            assert_equal(result['exit_code'], 0,
+                         'Failed to execute "{0}" on remote host: {1}'.
+                         format(command1, result))
+
+            result = remote.execute('umm disable')
+            assert_equal(result['exit_code'], 0,
+                         'Failed to execute "{0}" on remote host: {1}'.
+                         format('umm disable', result))
+
+            assert_false('True' in check_available_mode(remote),
+                         "Maintenance mode not should available")
+
+            logger.info('Unexpected reboot on node %s', nailgun_node.name)
+            command2 = ('reboot --force >/dev/null & ')
+            result = remote.execute(command2)
+            assert_equal(result['exit_code'], 0,
+                         'Failed to execute "{0}" on remote host: {1}'.
+                         format(command2, result))
+
+            time.sleep(60)
+            logger.info('Wait a %s node online status', nailgun_node.name)
+            try:
+                wait(
+                    lambda:
+                    self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
+                    ['online'], timeout=60 * 10)
+            except TimeoutError:
+                assert_true(
+                    self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
+                    ['online'],
+                    'Node {0} has not become online after unexpected '
+                    'reboot'.format(nailgun_node.name))
+
+            logger.info('Check that %s node not in maintenance mode after'
+                        ' unexpected reboot', nailgun_node.name)
+
+            remote = self.fuel_web.get_ssh_for_node(nailgun_node.name)
+            assert_false('True' in check_auto_mode(remote),
+                         "Maintenance mode should not switched")
+
+            # Wait until MySQL Galera is UP on some controller
+            self.fuel_web.wait_mysql_galera_is_up(
+                [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+            # Wait until Cinder services UP on a controller
+            self.fuel_web.wait_cinder_is_up(
+                [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+            try:
+                self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke',
+                                                              'sanity'])
+            except AssertionError:
+                logger.debug("Test failed from first probe,"
+                             " we sleep 300 second try one more time"
+                             " and if it fails again - test will fails ")
+                time.sleep(300)
                 self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke',
                                                               'sanity'])
