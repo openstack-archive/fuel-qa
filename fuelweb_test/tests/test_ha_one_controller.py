@@ -137,7 +137,7 @@ class HAOneControllerFlat(TestBasic):
 
         self.env.make_snapshot("deploy_ha_one_controller_flat", is_make=True)
 
-    @test(depends_on=[deploy_ha_one_controller_flat],
+    @test(enabled=False, depends_on=[deploy_ha_one_controller_flat],
           groups=["ha_one_controller_flat_create_instance"])
     @log_snapshot_on_error
     def ha_one_controller_flat_create_instance(self):
