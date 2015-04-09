@@ -783,7 +783,8 @@ class FuelWebClient(object):
         assert_true(
             all([node_id in cluster_node_ids for node_id in node_ids]))
 
-        self.update_nodes_interfaces(cluster_id, updated_nodes)
+        if not pending_deletion:
+            self.update_nodes_interfaces(cluster_id, updated_nodes)
         if update_nodegroups:
             self.update_nodegroups(nodes_groups)
 
@@ -890,7 +891,7 @@ class FuelWebClient(object):
             self.assert_task_failed(task, timeout, interval=10)
 
     @logwrap
-    def update_nodes_interfaces(self, cluster_id, nailgun_nodes=None):
+    def update_nodes_interfaces(self, cluster_id, nailgun_nodes=[]):
         net_provider = self.client.get_cluster(cluster_id)['net_provider']
         if NEUTRON == net_provider:
             assigned_networks = {
@@ -912,7 +913,7 @@ class FuelWebClient(object):
                 'eth4': ['storage'],
             }
 
-        if nailgun_nodes is None:
+        if not nailgun_nodes:
             nailgun_nodes = self.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.update_node_networks(node['id'], assigned_networks)
