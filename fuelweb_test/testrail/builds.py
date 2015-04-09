@@ -33,6 +33,21 @@ def get_jobs_for_view(view):
     jobs = [job["name"] for job in view_data["jobs"]]
     return jobs
 
+def get_test_for_view(url):
+    """Return list of jobs from specified view
+    """
+    view_url = "/".join([url, 'api/json'])
+    logger.debug("Request view data from {}".format(view_url))
+    req = urllib2.Request(view_url)
+    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    s = opener.open(req).read()
+    opener.close()
+    view_data = json.loads(s)
+    logger.info('_________Tests view_data is "{0}".'.format(view_data))
+    logger.info('_________Tests view_data is "{0}".'.format(view_data['result']))
+    logger.info('_________Tests view_data is "{0}".'.format(view_data['description']))
+    results = [job["name"] for job in view_data["description"]]
+    return jobs
 
 def get_downstream_builds_from_html(url):
     """Return list of downstream jobs builds from specified job
