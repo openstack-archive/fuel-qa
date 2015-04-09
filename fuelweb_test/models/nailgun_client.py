@@ -155,6 +155,16 @@ class NailgunClient(object):
 
     @logwrap
     @json_parse
+    def get_release(self, release_id):
+        return self.client.get("/api/releases/{}".format(release_id))
+
+    @logwrap
+    @json_parse
+    def put_release(self, release_id, data):
+        return self.client.put("/api/releases/{}".format(release_id),data)
+
+    @logwrap
+    @json_parse
     def get_releases_details(self, release_id):
         return self.client.get("/api/releases/{}".format(release_id))
 

@@ -20,6 +20,7 @@ from fuelweb_test.helpers.utils import timestat
 from fuelweb_test.models.environment import EnvironmentModel
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_REDHAT
+from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 
 
 class TestBasic(object):
@@ -82,6 +83,8 @@ class SetupEnvironment(TestBasic):
                 state='available'
             )
         self.fuel_web.get_nailgun_version()
+        if REPLACE_DEFAULT_REPOS:
+            self.fuel_web.replace_default_repos()
 
         self.env.make_snapshot("ready", is_make=True)
 
