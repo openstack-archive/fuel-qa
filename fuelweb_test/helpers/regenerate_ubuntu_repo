@@ -49,7 +49,7 @@ mv --backup -f ${package_deb}.gz.tmp ${package_deb}.gz
 mv --backup -f ${package_deb}.bz2.tmp ${package_deb}.bz2
 
 # Scan *.udeb packages
-if [ -d "${BINDIR}/debian-installer/binary-${ARCH}/"]; then
+if [ -d "${BINDIR}/debian-installer/binary-${ARCH}/" ]; then
     dpkg-scanpackages --udeb -m -a ${ARCH} pool/debian-installer ${binoverride_udeb}  > ${package_udeb}.tmp 2>/dev/null
 
     gzip -9c ${package_udeb}.tmp > ${package_udeb}.gz.tmp
