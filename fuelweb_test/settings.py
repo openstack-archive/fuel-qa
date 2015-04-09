@@ -387,8 +387,13 @@ FUEL_PLUGIN_BUILDER_REPO = 'https://github.com/stackforge/fuel-plugins.git'
 # Repos from EXTRA_DEB_REPOS will be appended to the list of repositories.
 MIRROR_UBUNTU = os.environ.get('MIRROR_UBUNTU', '')
 EXTRA_DEB_REPOS = os.environ.get('EXTRA_DEB_REPOS', '')
-MIRROR_UBUNTU_PRIORITY = os.environ.get('MIRROR_UBUNTU_PRIORITY', '1001')
-EXTRA_DEB_REPOS_PRIORITY = os.environ.get('EXTRA_DEB_REPOS_PRIORITY', '1050')
+MIRROR_UBUNTU_PRIORITY = os.environ.get('MIRROR_UBUNTU_PRIORITY', 1001)
+EXTRA_DEB_REPOS_PRIORITY = os.environ.get('EXTRA_DEB_REPOS_PRIORITY', 1050)
+EXTRA_RPM_REPOS = os.environ.get('EXTRA_RPM_REPOS', '')
+EXTRA_RPM_REPOS_PRIORITY = os.environ.get('EXTRA_RPM_REPOS_PRIORITY', 20)
+
+REPLACE_DEFAULT_REPOS = os.environ.get('REPLACE_DEFAULT_REPOS',
+                                       'true') == 'true'
 
 PATCHING_WEB_DIR = os.environ.get("PATCHING_WEB_DIR", "/var/www/nailgun/")
 PATCHING_MIRRORS = os.environ.get("PATCHING_MIRRORS",
