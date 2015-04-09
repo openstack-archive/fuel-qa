@@ -33,7 +33,6 @@ def get_jobs_for_view(view):
     jobs = [job["name"] for job in view_data["jobs"]]
     return jobs
 
-
 def get_downstream_builds_from_html(url):
     """Return list of downstream jobs builds from specified job
     """

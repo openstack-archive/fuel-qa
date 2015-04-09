@@ -266,8 +266,8 @@ def main():
 
     (options, args) = parser.parse_args()
 
-    if options.verbose:
-        logger.setLevel(DEBUG)
+    # if options.verbose:
+    logger.setLevel(DEBUG)
 
     if options.live_report and options.build_number == 'latest':
         options.build_number = 'latest_started'
@@ -279,6 +279,7 @@ def main():
                               user=TestRailSettings.user,
                               password=TestRailSettings.password,
                               project=TestRailSettings.project)
+    logger.info('Initializing TestRail Project configuration... done')
 
     tests_suite = project.get_suite_by_name(TestRailSettings.tests_suite)
     operation_systems = [{'name': config['name'], 'id': config['id'],
