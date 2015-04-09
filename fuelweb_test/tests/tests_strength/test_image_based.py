@@ -76,7 +76,7 @@ class RepeatableImageBased(TestBasic):
                 node.start()
                 time.sleep(2)
             self.fuel_web.wait_nodes_get_online_state(
-                self.env.d_env.nodes().slaves[:5], timeout=6 * 60)
+                self.env.d_env.nodes().slaves[:5], timeout=10 * 60)
 
             cluster_id = self.fuel_web.create_cluster(
                 name=self.__class__.__name__,
