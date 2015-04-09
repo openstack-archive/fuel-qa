@@ -246,6 +246,8 @@ DEBUG_MODE = os.environ.get('DEBUG_MODE', 'true') == 'true'
 VCENTER_IP = os.environ.get('VCENTER_IP')
 VCENTER_USERNAME = os.environ.get('VCENTER_USERNAME')
 VCENTER_PASSWORD = os.environ.get('VCENTER_PASSWORD')
+VCENTER_DATACENTER = os.environ.get('VC_DATACENTER')
+VCENTER_DATASTORE = os.environ.get('VC_DATASTORE')
 
 
 # Services tests
