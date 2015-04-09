@@ -20,6 +20,8 @@ from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import VCENTER_IP
 from fuelweb_test.settings import VCENTER_USERNAME
 from fuelweb_test.settings import VCENTER_PASSWORD
+from fuelweb_test.settings import VCENTER_DATACENTER
+from fuelweb_test.settings import VCENTER_DATASTORE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -319,3 +321,86 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
             timeout=60 * 60)
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["vcenter_vlan_cindervmdk"])
+    @log_snapshot_on_error
+    def vcenter_vlan_cindervmdk(self):
+        """Deploy enviroment of vcenter+qemu with nova vlan and vmware
+           datastore as backend for glance
+
+        Scenario:
+            1. Create cluster with vCenter support
+            2. Add 3 nodes with controller role
+            3. Add a node with compute role
+            4. Add a node with Cinder VMDK role
+            5. Set Nova-Network VlanManager as a network backend
+            6. Configure vCenter datastore as backend for glance
+            7. Deploy the cluster
+            8. Run network verification
+            9. Run OSTF
+
+        """
+
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={'images_vcenter': True},
+            vcenter_value={
+                "glance": {
+                    "vcenter_username": VCENTER_USERNAME,
+                    "datacenter": VCENTER_DATACENTER,
+                    "vcenter_host": VCENTER_IP,
+                    "vcenter_password": VCENTER_PASSWORD,
+                    "datastore": VCENTER_DATASTORE, },
+                "availability_zones": [
+                    {"vcenter_username": VCENTER_USERNAME,
+                     "nova_computes": [
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster1",
+                          "service_name": "vmcluster1"}, ],
+                     "vcenter_host": VCENTER_IP,
+                     "az_name": "vcenter",
+                     "vcenter_password": VCENTER_PASSWORD,
+                     }],
+                "network": {"esxi_vlan_interface": "vmnic0"}}, )
+
+        logger.info("cluster is {}".format(cluster_id))
+
+        # Assign role to nodes
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller'],
+             'slave-02': ['controller'],
+             'slave-03': ['controller'],
+             'slave-04': ['compute'],
+             'slave-05': ['cinder-vmware'], })
+
+        # Configure network interfaces.
+        # Public and Fixed networks are on the same interface
+        # because Nova will use the same vSwitch for PortGroups creating
+        # as a ESXi management interface is located in.
+        interfaces = {
+            'eth0': ["fuelweb_admin"],
+            'eth1': ["public", "fixed"],
+            'eth2': ["management", ],
+            'eth3': [],
+            'eth4': ["storage"],
+        }
+
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        for node in slave_nodes:
+            self.fuel_web.update_node_networks(node['id'], interfaces)
+
+        # Configure Nova-Network VLanManager.
+        self.fuel_web.update_vlan_network_fixed(
+            cluster_id, amount=8, network_size=32)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
