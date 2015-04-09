@@ -267,7 +267,7 @@ def main():
     (options, args) = parser.parse_args()
 
     if options.verbose:
-        logger.setLevel(DEBUG)
+    logger.setLevel(DEBUG)
 
     if options.live_report and options.build_number == 'latest':
         options.build_number = 'latest_started'
