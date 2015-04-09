@@ -385,6 +385,10 @@ class FuelWebClient(object):
                 attributes['editable']['provision']['method']['value'] = \
                     'cobbler'
 
+            if help_data.FUEL_USE_LOCAL_NTPD and ('ntp_list' not in settings):
+                attributes['editable']['external_ntp']['ntp_list']['value'] =\
+                    self.admin_node_ip
+
             logger.info('Set DEBUG MODE to %s', help_data.DEBUG_MODE)
             attributes['editable']['common']['debug']['value'] = \
                 help_data.DEBUG_MODE
@@ -1133,14 +1137,7 @@ class FuelWebClient(object):
                     self.get_nailgun_node_by_devops_node(node)['online'],
                     'Node {0} has not become online'
                     ' after cold start'.format(node.name))
-            _ip = self.get_nailgun_node_by_name(node.name)['ip']
-            remote = self.environment.d_env.get_ssh_to_remote(_ip)
-            try:
-                self.environment.sync_node_time(remote)
-            except Exception as e:
-                logger.warning(
-                    'Exception caught while trying to sync time on {0}:'
-                    ' {1}'.format(node.name, e))
+        self.environment.sync_time()
 
     @logwrap
     def ip_address_show(self, node_name, namespace, interface):
@@ -1286,21 +1283,6 @@ class FuelWebClient(object):
         logger.info("ISO version: %s" % self.client.get_api_version())
 
     @logwrap
-    def sync_ceph_time(self, ceph_nodes):
-        self.environment.sync_time_admin_node()
-        if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
-            cmd = 'service ceph-all restart'
-        else:
-            cmd = 'service ceph restart'
-        for node in ceph_nodes:
-            remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
-            self.environment.sync_node_time(remote)
-            result = remote.execute(cmd)
-            if not result['exit_code'] == 0:
-                raise Exception('Ceph restart failed on {0}: {1}'.
-                                format(node['name'], result['stderr']))
-
-    @logwrap
     def check_ceph_status(self, cluster_id, offline_nodes=[],
                           recovery_timeout=360):
         cluster_nodes = self.client.list_cluster_nodes(cluster_id)
@@ -1331,7 +1313,7 @@ class FuelWebClient(object):
             elif 'HEALTH_WARN' in health_status:
                 if checkers.check_ceph_health(remote, clock_skew_status):
                     logger.warning('Clock skew detected in Ceph.')
-                    self.sync_ceph_time(ceph_nodes)
+                    self.environment.sync_time(ceph_nodes)
                     try:
                         wait(lambda: checkers.check_ceph_health(remote),
                              interval=30, timeout=recovery_timeout)
