@@ -20,6 +20,7 @@ from fuelweb_test.helpers.utils import timestat
 from fuelweb_test.models.environment import EnvironmentModel
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_REDHAT
+from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 
 
 class TestBasic(object):
@@ -58,6 +59,10 @@ class SetupEnvironment(TestBasic):
         self.check_run("empty")
         with timestat("setup_environment", is_uniq=True):
             self.env.setup_environment()
+
+        if REPLACE_DEFAULT_REPOS:
+            self.fuel_web.replace_default_repos()
+
         self.env.make_snapshot("empty", is_make=True)
 
     @test(depends_on=[setup_master])
