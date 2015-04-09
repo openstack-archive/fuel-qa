@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-#    Copyright 2015 Mirantis, Inc.
+# Copyright 2015 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -18,6 +18,9 @@ import functools
 import re
 import yaml
 
+import json
+import urllib2
+
 from logging import DEBUG
 from optparse import OptionParser
 
@@ -25,54 +28,26 @@ from builds import Build
 from builds import get_build_artifact
 from builds import get_downstream_builds_from_html
 from builds import get_jobs_for_view
+from builds import get_test_for_view
 from launchpad_client import LaunchpadBug
 from settings import JENKINS
 from settings import LaunchpadSettings
 from settings import logger
 from settings import TestRailSettings
 from testrail_client import TestRailProject
+from report import TestResult
 
+# My metods
 
-class TestResult():
-    def __init__(self, name, group, status, duration, url=None,
-                 version=None, description=None, launchpad_bug=None):
-        self.name = name
-        self.group = group
-        self._status = status
-        self.duration = duration
-        self.url = url
-        self.version = version
-        self.description = description
-        self.launchpad_bug = launchpad_bug
-        self.available_statuses = {
-            'passed': ['passed', 'fixed'],
-            'failed': ['failed', 'regression'],
-            'skipped': ['skipped']
-        }
+def find_run_by_name_and_config(test_plan, run_name):
+    """This function finds the test run by its name and the specified
+    configuration (for example, Centos 6.5).
+    """
 
-    @property
-    def status(self):
-        for s in self.available_statuses.keys():
-            if self._status in self.available_statuses[s]:
-                return s
-        logger.error('Unsupported result status: "{0}"!'.format(self._status))
-        return self._status
-
-    @status.setter
-    def status(self, value):
-        self._status = value
-
-    def __str__(self):
-        result_dict = {
-            'name': self.name,
-            'group': self.group,
-            'status': self.status,
-            'duration': self.duration,
-            'url': self.url,
-            'version': self.version,
-            'description': self.description
-        }
-        return str(result_dict)
+    for entry in test_plan['entries']:
+        for run in entry['runs']:
+            if run['name'] == run_name:
+                return run
 
 
 def retry(count=3):
@@ -87,7 +62,9 @@ def retry(count=3):
                     i += 1
                     if i >= count:
                         raise
+
         return wrapper
+
     return wrapped
 
 
@@ -137,7 +114,7 @@ def get_version_from_artifacts(jenkins_build_data):
     version = yaml.load(get_build_artifact(
         url=jenkins_build_data['url'], artifact=JENKINS['version_artifact']))
     return version['VERSION']['release'], \
-        int(version['VERSION']['build_number'])
+           int(version['VERSION']['build_number'])
 
 
 @retry(count=3)
@@ -156,7 +133,7 @@ def get_tests_results(systest_build):
                              (test_build.build_data["description"]
                               or test['name']).split()),
             description=test_build.build_data["description"] or
-                test['name'],
+                        test['name'],
         )
         tests_results.append(test_result)
     return tests_results
@@ -191,7 +168,7 @@ def publish_results(project, milestone_id, test_plan,
             continue
         if result.status != 'passed':
             run_ids = [run['id'] for run in previous_tests_runs[0:
-                       int(TestRailSettings.previous_results_depth)]]
+            int(TestRailSettings.previous_results_depth)]]
             case_id = project.get_case_by_group(suite_id=suite_id,
                                                 group=result.group,
                                                 cases=cases)['id']
@@ -237,14 +214,19 @@ def get_existing_bug_link(previous_results):
             return
 
         for target in bug.targets:
-            if target['project'] == LaunchpadSettings.project and\
-               target['milestone'] == LaunchpadSettings.milestone and\
-               target['status'] not in LaunchpadSettings.closed_statuses:
+            if target['project'] == LaunchpadSettings.project and \
+                            target['milestone'] == LaunchpadSettings.milestone and \
+                            target['status'] not in LaunchpadSettings.closed_statuses:
                 return result["custom_launchpad_bug"]
 
 
-def main():
+def get_job_info(url):
+    job_url = "/".join([url, 'api/json'])
+    logger.debug("Request job info from {}".format(job_url))
+    return json.load(urllib2.urlopen(job_url))
 
+
+def main():
     parser = OptionParser(
         description="Publish results of system tests from Jenkins build to "
                     "TestRail. See settings.py for configuration."
@@ -281,123 +263,120 @@ def main():
                               project=TestRailSettings.project)
     logger.info('Initializing TestRail Project configuration... done')
 
-    tests_suite = project.get_suite_by_name(TestRailSettings.tests_suite)
     operation_systems = [{'name': config['name'], 'id': config['id'],
-                         'distro': config['name'].split()[0].lower()}
+                          'distro': config['name'].split()[0].lower()}
                          for config in project.get_config_by_name(
-                             'Operation System')['configs'] if
-                         config['name'] in TestRailSettings.operation_systems]
-    tests_results = {os['distro']: [] for os in operation_systems}
+            'Operation System')['configs']]
+    operation_systems_mile = {'6.1': ['Centos 6.5', 'Ubuntu 14.04'],
+                              '6.0.1': ['Centos 6.5', 'Ubuntu 12.04']}
+
+    tests_results = {}
 
     # STEP #2
     # Get tests results from Jenkins
-    logger.info('Getting tests results from Jenkins...')
-    if options.jenkins_view:
-        jobs = get_jobs_for_view(options.jenkins_view)
-        tests_jobs = [{'name': j, 'number': 'latest'}
-                      for j in jobs if 'system_test' in j]
-        runner_job = [j for j in jobs if 'runner' in j][0]
-        runner_build = Build(runner_job, 'latest')
-    elif options.job_name:
-        runner_build = Build(options.job_name, options.build_number)
-        tests_jobs = get_downstream_builds(runner_build.build_data)
-    else:
-        logger.error("Please specify either Jenkins swarm runner job name (-j)"
-                     " or Jenkins view with system tests jobs (-w). Exiting..")
-        return
+    runner_build = Build(options.job_name, options.build_number)
+    runs = runner_build.build_data['runs']  # Eto vse moi testi is jenkinsa
 
-    for systest_build in tests_jobs:
-        if options.job_name:
-            if 'result' not in systest_build.keys():
-                logger.debug("Skipping '{0}' job because it does't run tests "
-                             "(build #{1} contains no results)".format(
-                                 systest_build['name'],
-                                 systest_build['number']))
-                continue
-            if systest_build['result'] is None:
-                logger.debug("Skipping '{0}' job (build #{1}) because it's sti"
-                             "ll running...".format(systest_build['name'],
-                                                    systest_build['number'],))
-                continue
-        for os in tests_results.keys():
-            if os in systest_build['name'].lower():
-                tests_results[os].extend(get_tests_results(systest_build))
+    # Vibrasivaem nenuznoe i formiruem rezultati trestov iz nuznogo
+    for run_one in runs:
+        if '5.1' in run_one['url']:
+            continue
+        tests_result = get_job_info(run_one['url'])
+        if 'skipping' in tests_result['description']:
+            continue
+        tests_job = {'result': tests_result['result'],
+                     'name': options.job_name + '/' + tests_result['url'].split('/')[-3],
+                     'number': int(tests_result['url'].split('/')[-2]),
+                     'mile': tests_result['description'].split()[0].split('-')[0],
+                     'iso': int(tests_result['description'].split()[0].split('-')[1])}
+        if not tests_results.has_key(tests_job['mile']):
+            tests_results[tests_job['mile']] = {}
+        if not tests_results[tests_job['mile']].has_key(tests_job['iso']):
+            tests_results[tests_job['mile']][tests_job['iso']] = {}
+        for os in operation_systems:
+            if os['distro'] in tests_job['name'].lower() and os['name'] in operation_systems_mile[tests_job['mile']]:
+                if not tests_results[tests_job['mile']][tests_job['iso']].has_key(os['id']):
+                    tests_results[tests_job['mile']][tests_job['iso']][os['id']] = []
+                tests_results[tests_job['mile']][tests_job['iso']][os['id']]. \
+                    extend(get_tests_results(tests_job))
 
     # STEP #3
     # Create new TestPlan in TestRail (or get existing) and add TestRuns
-    milestone, iso_number = get_version(runner_build.build_data)
-    milestone = project.get_milestone_by_name(name=milestone)
-
-    test_plan_name = '{milestone} iso #{iso_number}'.format(
-        milestone=milestone['name'],
-        iso_number=iso_number)
-
-    test_plan = project.get_plan_by_name(test_plan_name)
-    if not test_plan:
-        test_plan = project.add_plan(test_plan_name,
-                                     description='/'.join([
-                                         JENKINS['url'],
-                                         'job',
-                                         '{0}.all'.format(milestone['name']),
-                                         str(iso_number)]),
-                                     milestone_id=milestone['id'],
-                                     entries=[]
-                                     )
-        logger.info('Created new TestPlan "{0}".'.format(test_plan_name))
-    else:
-        logger.info('Found existing TestPlan "{0}".'.format(test_plan_name))
-
-    plan_entries = []
-    all_cases = project.get_cases(suite_id=tests_suite['id'])
-    for os in operation_systems:
-        cases_ids = []
-        if options.manual_run:
-            all_results_groups = [r.group for r in tests_results[os['distro']]]
-            for case in all_cases:
-                if case['custom_test_group'] in all_results_groups:
-                    cases_ids.append(case['id'])
-        plan_entries.append(
-            project.test_run_struct(
-                name='{suite_name}'.format(suite_name=tests_suite['name']),
-                suite_id=tests_suite['id'],
-                milestone_id=milestone['id'],
-                description='Results of system tests ({tests_suite}) on is'
-                'o #"{iso_number}"'.format(tests_suite=tests_suite['name'],
-                                           iso_number=iso_number),
-                config_ids=[os['id']],
-                include_all=True,
-                case_ids=cases_ids
-            )
-        )
-
-    if not any(entry['suite_id'] == tests_suite['id']
-               for entry in test_plan['entries']):
-        if project.add_plan_entry(plan_id=test_plan['id'],
-                                  suite_id=tests_suite['id'],
-                                  config_ids=[os['id'] for os
-                                              in operation_systems],
-                                  runs=plan_entries):
+    for mile in tests_results.keys():
+        mile_tests_suite = TestRailSettings.tests_suite + mile
+        logger.info(mile_tests_suite)
+        tests_suite = project.get_suite_by_name(mile_tests_suite)
+        suite_name = '{suite_name}'.format(suite_name=tests_suite['name'])
+        for iso_number in tests_results[mile].keys():
+            milestone = project.get_milestone_by_name(name=mile)
+            config_ids = tests_results[mile][iso_number].keys()
+            # Pridumivaem imja testplana
+            test_plan_name = '{milestone} iso #{iso_number}'.format(
+                milestone=milestone['name'],
+                iso_number=iso_number)
+            # Uznaem est li takoy test_plan v testrail
+            test_plan = project.get_plan_by_name(test_plan_name)
+            # Esli takogo test_plan net, to sozdaem ego
+            if not test_plan:
+                test_plan = project.add_plan(test_plan_name,
+                                             description='/'.join([
+                                                 JENKINS['url'],
+                                                 'job',
+                                                 '{0}.all'.format(milestone['name']),
+                                                 str(iso_number)]),
+                                             milestone_id=milestone['id'],
+                                             entries=[]
+                                             )
+                logger.info('Created new TestPlan "{0}".'.format(test_plan_name))
+            else:
+                logger.info('Found existing TestPlan "{0}".'.format(test_plan_name))
+            plan_entries = []
+            for os_id in tests_results[mile][iso_number].keys():
+                cases_ids = []
+                plan_entries.append(
+                    project.test_run_struct(
+                        name=suite_name,
+                        suite_id=tests_suite['id'],
+                        milestone_id=milestone['id'],
+                        description='Results of system tests ({tests_suite}) on is'
+                        'o #"{iso_number}"'.format(tests_suite=tests_suite['name'],
+                                                   iso_number=iso_number),
+                        config_ids=[os_id],
+                        include_all=True,
+                        case_ids=cases_ids
+                    )
+                )
+            # Create a test plan entry with the test run
+            run = find_run_by_name_and_config(test_plan, suite_name)
+            if not run:
+                logger.info('Adding a test plan entry with test run '
+                            '"{0} " ...'.format(suite_name))
+                entry = project.add_plan_entry(plan_id=test_plan['id'],
+                                               suite_id=tests_suite['id'],
+                                               config_ids=config_ids,
+                                               runs=plan_entries)
+                logger.info('The test plan entry has been added.')
+                run = entry['runs'][0]
             test_plan = project.get_plan(test_plan['id'])
 
-    # STEP #4
-    # Upload tests results to TestRail
-    logger.info('Uploading tests results to TestRail...')
-    for os in operation_systems:
-        logger.info('Checking tests results for "{0}"...'.format(os['name']))
-        tests_results[os['distro']] = publish_results(
-            project=project,
-            milestone_id=milestone['id'],
-            test_plan=test_plan,
-            suite_id=tests_suite['id'],
-            config_id=os['id'],
-            results=tests_results[os['distro']]
-        )
-        logger.debug('Added new results for tests ({os}): {tests}'.format(
-            os=os['name'], tests=[r.group for r in tests_results[os['distro']]]
-        ))
+            # STEP #4
+            # Upload tests results to TestRail
+            logger.info('Uploading tests results to TestRail...')
+            for os_id in tests_results[mile][iso_number].keys():
+                logger.info('Checking tests results for "{0}"...'.format(os_id))
+                tests_results[mile][iso_number][os_id] = publish_results(
+                    project=project,
+                    milestone_id=milestone['id'],
+                    test_plan=test_plan,
+                    suite_id=tests_suite['id'],
+                    config_id=os_id,
+                    results=tests_results[mile][iso_number][os_id]
+                )
+                logger.debug('Added new results for tests ({os}): {tests}'.format(
+                    os=os_id, tests=[r.group for r in tests_results[mile][iso_number][os_id]]
+                ))
 
-    logger.info('Report URL: {0}'.format(test_plan['url']))
-
+            logger.info('Report URL: {0}'.format(test_plan['url']))
 
 if __name__ == "__main__":
     main()
