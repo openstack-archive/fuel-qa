@@ -188,7 +188,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
         super(self.__class__, self).ha_check_monit()
 
     @test(depends_on_groups=['prepare_ha_neutron'],
-          groups=["check_virtual_router"])
+          groups=["ha_neutron_virtual_router"])
     @log_snapshot_on_error
     def ha_neutron_virtual_router(self):
         """Verify connection is present and
