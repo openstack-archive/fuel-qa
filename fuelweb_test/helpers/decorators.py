@@ -34,6 +34,9 @@ from proboscis.asserts import assert_equal
 from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers.regenerate_repo import CustomRepo
+from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
+from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
+from fuelweb_test.helpers.utils import cond_upload
 from fuelweb_test.helpers.utils import get_current_env
 from fuelweb_test.helpers.utils import pull_out_logs_via_ssh
 from fuelweb_test.helpers.utils import store_astute_yaml
@@ -135,6 +138,44 @@ def upload_manifests(func):
     return wrapper
 
 
+def update_fuel(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        if settings.UPDATE_FUEL:
+            logger.info("Update fuel's packages from directory {0}."
+                        .format(settings.UPDATE_FUEL_PATH))
+            environment = get_current_env(args)
+            if not environment:
+                logger.warning("Decorator was triggered "
+                               "from unexpected class.")
+                return result
+
+            remote = environment.d_env.get_admin_remote()
+
+            cond_upload(remote,
+                        settings.UPDATE_FUEL_PATH,
+                        settings.LOCAL_MIRROR_CENTOS,
+                        "(?i).*\.rpm$")
+            regenerate_centos_repo(remote, settings.LOCAL_MIRROR_CENTOS)
+
+            cond_upload(remote,
+                        settings.UPDATE_FUEL_PATH,
+                        settings.LOCAL_MIRROR_UBUNTU,
+                        "(?i).*\.deb$")
+            regenerate_ubuntu_repo(remote, settings.LOCAL_MIRROR_UBUNTU)
+
+            try:
+                remote.execute("for container in $(dockerctl list); do"
+                               " dockerctl shell $container bash -c \"yum "
+                               "clean expire-cache;yum update -y\";dockerctl "
+                               "restart $container; done")
+            except Exception:
+                logger.exception("Fail update of Fuel's package(s).")
+        return result
+    return wrapper
+
+
 def revert_info(snapshot_name, master_ip, description=""):
     logger.info("<" * 5 + "*" * 100 + ">" * 5)
     logger.info("{} Make snapshot: {}".format(description, snapshot_name))
@@ -216,7 +257,7 @@ def retry(count=3, delay=30):
 def custom_repo(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        custom_pkgs = CustomRepo(args[0].environment)
+        custom_pkgs = CustomRepo(args[0].environment.d_env.get_admin_remote())
         try:
             if settings.CUSTOM_PKGS_MIRROR:
                 custom_pkgs.prepare_repository()
