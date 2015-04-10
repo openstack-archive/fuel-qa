@@ -88,7 +88,8 @@ class Ntp(object):
     def get_ntp(remote, node_name='node', admin_ip=None):
 
         # Detect how NTPD is managed - by init script or by pacemaker.
-        cmd = "ps -C pacemakerd"
+        cmd = "ps -C pacemakerd && crm_resource --resource p_ntp --locate"
+
         if remote.execute(cmd)['exit_code'] == 0:
             # Pacemaker service found
             cls = NtpPacemaker()
