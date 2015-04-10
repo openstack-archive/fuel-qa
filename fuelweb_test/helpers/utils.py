@@ -17,6 +17,8 @@ import time
 import traceback
 import yaml
 import os.path
+import posixpath
+import re
 
 from proboscis import asserts
 
@@ -209,3 +211,53 @@ class timestat(object):
         except Exception:
             logger.error("Error storing time statistic for {0}"
                          " {1}".format(yaml_path, traceback.format_exc()))
+
+
+def install_pkg(remote, pkg_name):
+    """Install a package <pkg_name> on node
+    :param remote: SSHClient to remote node
+    :param pkg_name: name of a package
+    :return: exit code of installation
+    """
+    remote_status = remote.execute("rpm -q '{0}'".format(pkg_name))
+    if remote_status['exit_code'] == 0:
+        logger.info("Package '{0}' already installed.".format(pkg_name))
+    else:
+        logger.info("Installing package '{0}' ...".format(pkg_name))
+        remote_status = remote.execute("yum -y install {0}"
+                                       .format(pkg_name))
+        logger.info("Installation of the package '{0}' has been"
+                    " completed with exit code {1}"
+                    .format(pkg_name, remote_status['exit_code']))
+    return remote_status['exit_code']
+
+
+def cond_upload(remote, source, target, condition=''):
+    # Upload files only if condition in regexp matches filenames
+    if remote.isdir(target):
+        target = posixpath.join(target, os.path.basename(source))
+
+    if not os.path.isdir(source):
+        if re.match(condition, source):
+            remote.upload(source, target)
+            return
+        else:
+            logger.debug("Pattern '{0}' doesn't match the file '{1}', "
+                         "uploading skipped.".format(condition, source))
+
+    for rootdir, subdirs, files in os.walk(source):
+        targetdir = os.path.normpath(
+            os.path.join(
+                target,
+                os.path.relpath(rootdir, source))).replace("\\", "/")
+
+        remote.mkdir(targetdir)
+
+        for entry in files:
+            local_path = os.path.join(rootdir, entry)
+            remote_path = posixpath.join(targetdir, entry)
+            if re.match(condition, local_path):
+                remote.upload(local_path, remote_path)
+            else:
+                logger.debug("Pattern '{0}' doesn't match the file '{1}', "
+                             "uploading skipped.".format(condition, local_path))
