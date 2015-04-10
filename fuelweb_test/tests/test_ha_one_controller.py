@@ -82,7 +82,7 @@ class HAOneControllerFlat(TestBasic):
                   "smoke_nova"])
     @log_snapshot_on_error
     def deploy_ha_one_controller_flat(self):
-        """Deploy cluster in HA mode with flat nova-network
+        """Deploy cluster in HA mode (one controller) with flat nova-network
 
         Scenario:
             1. Create cluster in HA mode with 1 controller
