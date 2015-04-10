@@ -94,6 +94,8 @@ class IO(object):
                 if cls.args.astute:
                     fuel_snapshot.parse_astute_log(
                         show_mcagent=cls.args.mcagent,
+                        show_full=cls.args.full,
+
                     )
 
                 cls.separator()
@@ -102,6 +104,7 @@ class IO(object):
                     fuel_snapshot.parse_puppet_logs(
                         enable_sort=cls.args.sort,
                         show_evals=cls.args.evals,
+                        show_full=cls.args.full,
                     )
 
     @classmethod
@@ -117,6 +120,7 @@ class IO(object):
             else:
                 fuel_logs.parse_astute_logs(
                     show_mcagent=cls.args.mcagent,
+                    show_full=cls.args.full,
                 )
 
         cls.separator()
@@ -128,6 +132,7 @@ class IO(object):
                 fuel_logs.parse_puppet_logs(
                     enable_sort=cls.args.sort,
                     show_evals=cls.args.evals,
+                    show_full=cls.args.full,
                 )
 
     @classmethod
@@ -218,6 +223,10 @@ class IO(object):
                             action="store_true",
                             default=False,
                             help='Redirect data to the "less" pager')
+        parser.add_argument("--full", "-f",
+                            action="store_true",
+                            default=False,
+                            help='Full output without filters')
         parser.add_argument('snapshots',
                             metavar='SNAPSHOT',
                             type=str,
@@ -340,6 +349,7 @@ class AstuteLog(AbstractLog):
 
     def __init__(self):
         self.show_mcagent = False
+        self.show_full = False
         super(AstuteLog, self).__init__()
 
     def parse(self, content):
@@ -351,14 +361,17 @@ class AstuteLog(AbstractLog):
         """
         self.content = content.splitlines()
         for record in self.each_record():
-            self.rpc_call(record)
-            self.rpc_cast(record)
-            self.task_status(record)
-            self.task_run(record)
-            self.hook_run(record)
-            if self.show_mcagent:
-                self.cmd_exec(record)
-                self.mc_agent_results(record)
+            if self.show_full:
+                self.add_record(record)
+            else:
+                self.rpc_call(record)
+                self.rpc_cast(record)
+                self.task_status(record)
+                self.task_run(record)
+                self.hook_run(record)
+                if self.show_mcagent:
+                    self.cmd_exec(record)
+                    self.mc_agent_results(record)
 
     def each_record(self):
         """
@@ -463,6 +476,7 @@ class PuppetLog(AbstractLog):
         self.log_name = None
         self.show_evals = False
         self.enable_sort = False
+        self.show_full = False
         super(PuppetLog, self).__init__()
 
     def parse(self, content):
@@ -474,12 +488,15 @@ class PuppetLog(AbstractLog):
         """
         self.content = content.splitlines()
         for record in self.each_record():
-            self.err_line(record)
-            self.catalog_start(record)
-            self.catalog_end(record)
-            self.catalog_modular(record)
-            if self.show_evals:
-                self.resource_evaluation(record)
+            if self.show_full:
+                self.add_record(record)
+            else:
+                self.err_line(record)
+                self.catalog_start(record)
+                self.catalog_end(record)
+                self.catalog_modular(record)
+                if self.show_evals:
+                    self.resource_evaluation(record)
 
     @staticmethod
     def node_name(string):
@@ -684,7 +701,7 @@ class FuelSnapshot(object):
         content = log.read()
         parser.parse(content)
 
-    def parse_astute_log(self, show_mcagent=False):
+    def parse_astute_log(self, show_mcagent=False, show_full=False):
         """
         Parse the Astute log from the archive
         :param show_mcagent: show or hide MCAgent debug
@@ -693,12 +710,13 @@ class FuelSnapshot(object):
         """
         astute_logs = AstuteLog()
         astute_logs.show_mcagent = show_mcagent
+        astute_logs.show_full = show_full
         for astute_log in self.astute_logs():
             self.parse_log(astute_log, astute_logs)
         astute_logs.output()
         astute_logs.clear()
 
-    def parse_puppet_logs(self, enable_sort=False, show_evals=False):
+    def parse_puppet_logs(self, enable_sort=False, show_evals=False, show_full=False):
         """
         Parse the Puppet logs found inside the archive
         :param enable_sort: enable sorting of logs by date
@@ -710,6 +728,7 @@ class FuelSnapshot(object):
         puppet_logs = PuppetLog()
         puppet_logs.show_evals = show_evals
         puppet_logs.enable_sort = enable_sort
+        puppet_logs.show_full = show_full
         for puppet_log in self.puppet_logs():
             puppet_logs.log_name = puppet_log.name
             self.parse_log(puppet_log, puppet_logs)
@@ -780,7 +799,7 @@ class FuelLogs(object):
         content = log_file.read()
         parser.parse(content)
 
-    def parse_astute_logs(self, show_mcagent=False):
+    def parse_astute_logs(self, show_mcagent=False, show_full=False):
         """
         Parse Astute log on the Fuel Master system
         :param show_mcagent: show MCAgent call debug
@@ -789,13 +808,14 @@ class FuelLogs(object):
         """
         astute_logs = AstuteLog()
         astute_logs.show_mcagent = show_mcagent
+        astute_logs.show_full = show_full
         for astute_log in self.astute_logs():
             with open(astute_log, 'r') as log:
                 self.parse_log(log, astute_logs)
         astute_logs.output()
         astute_logs.clear()
 
-    def parse_puppet_logs(self, enable_sort=False, show_evals=False):
+    def parse_puppet_logs(self, enable_sort=False, show_evals=False, show_full=False):
         """
         Parse Puppet logs on the Fuel Master system
         :param enable_sort: sort log files by date
@@ -807,6 +827,7 @@ class FuelLogs(object):
         puppet_logs = PuppetLog()
         puppet_logs.show_evals = show_evals
         puppet_logs.enable_sort = enable_sort
+        puppet_logs.show_full = show_full
         for puppet_log in self.puppet_logs():
             with open(puppet_log, 'r') as log:
                 puppet_logs.log_name = puppet_log
