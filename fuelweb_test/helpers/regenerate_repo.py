@@ -23,12 +23,27 @@ from xml.etree import ElementTree
 
 from fuelweb_test import logger
 from fuelweb_test import settings
+from fuelweb_test.helpers.utils import install_pkg
+
+
+def regenerate_ubuntu_repo(remote, path):
+    # Ubuntu
+    cr = CustomRepo(remote)
+    cr.install_tools(['dpkg', 'dpkg-devel'])
+    cr.regenerate_repo('regenerate_ubuntu_repo', path)
+
+
+def regenerate_centos_repo(remote, path):
+    # CentOS
+    cr = CustomRepo(remote)
+    cr.install_tools(['createrepo'])
+    cr.regenerate_repo('regenerate_centos_repo', path)
 
 
 class CustomRepo(object):
 
-    def __init__(self, environment):
-        self.env = environment
+    def __init__(self, remote):
+        self.remote = remote
         self.path_scripts = ('{0}/fuelweb_test/helpers/'
                              .format(os.environ.get("WORKSPACE", "./")))
         self.remote_path_scripts = '/tmp/'
@@ -74,14 +89,6 @@ class CustomRepo(object):
         logger.info("Custom mirror with new packages: {0}"
                     .format(settings.CUSTOM_PKGS_MIRROR))
 
-        # Modify admin resolv.conf to use local host resolver
-        dns_server = self.env.d_env.router()
-        new_resolv_conf = ["nameserver {0}".format(dns_server)]
-
-        # Set the local router as nameserver that will allow
-        # the admin node to access the Mirantis custom repositories.
-        old_resolv_conf = self.env.modify_resolv_conf(new_resolv_conf)
-
         if settings.OPENSTACK_RELEASE_UBUNTU in settings.OPENSTACK_RELEASE:
             # Ubuntu
             master_tools = ['dpkg', 'dpkg-devel']
@@ -102,15 +109,12 @@ class CustomRepo(object):
             self.update_yaml(self.centos_yaml_versions)
             self.regenerate_repo(self.centos_script, self.local_mirror_centos)
 
-        # Restore original admin resolv.conf
-        self.env.modify_resolv_conf(old_resolv_conf, merge=False)
-
     # Install tools to masternode
     def install_tools(self, master_tools=[]):
         logger.info("Installing necessary tools for {0}"
                     .format(settings.OPENSTACK_RELEASE))
         for master_tool in master_tools:
-            exit_code = self.env.admin_install_pkg(master_tool)
+            exit_code = install_pkg(remote, master_tool)
             assert_equal(0, exit_code, 'Cannot install package {0} '
                          'on admin node.'.format(master_tool))
 
@@ -216,7 +220,6 @@ class CustomRepo(object):
         total_pkgs = len(self.pkgs_list)
         logger.info('Found {0} custom package(s)'.format(total_pkgs))
 
-        remote = self.env.d_env.get_admin_remote()
         for npkg, pkg in enumerate(self.pkgs_list):
             # TODO: Previous versions of the updating packages must be removed
             # to avoid unwanted packet manager dependences resolution
@@ -240,7 +243,7 @@ class CustomRepo(object):
                        .format(pkgs_local_path + path_suff,
                                self.custom_pkgs_mirror,
                                pkg["filename:"])
-            wget_result = remote.execute(wget_cmd)
+            wget_result = self.remote.execute(wget_cmd)
             assert_equal(0, wget_result['exit_code'],
                          self.assert_msg(wget_cmd, wget_result['stderr']))
 
@@ -248,15 +251,14 @@ class CustomRepo(object):
     def update_yaml(self, yaml_versions):
             # Update the corresponding .yaml with the new package version.
         for pkg in self.pkgs_list:
-            remote = self.env.d_env.get_admin_remote()
-            result = remote.execute('grep -e "^{0}: " {1}'
+            result = self.remote.execute('grep -e "^{0}: " {1}'
                                     ''.format(pkg["package:"], yaml_versions))
             if result['exit_code'] == 0:
                 sed_cmd = ('sed -i \'s/^{0}: .*/{0}: "{1}"/\' {2}'
                            .format(pkg["package:"],
                                    pkg["version:"],
                                    yaml_versions))
-                sed_result = remote.execute(sed_cmd)
+                sed_result = self.remote.execute(sed_cmd)
                 assert_equal(0, sed_result['exit_code'],
                              self.assert_msg(sed_cmd, sed_result['stderr']))
             else:
@@ -266,7 +268,7 @@ class CustomRepo(object):
                             .format(pkg["package:"],
                                     pkg["version:"],
                                     yaml_versions))
-                echo_result = remote.execute(echo_cmd)
+                echo_result = self.remote.execute(echo_cmd)
                 assert_equal(0, echo_result['exit_code'],
                              self.assert_msg(echo_cmd,
                                              echo_result['stderr']))
@@ -276,11 +278,10 @@ class CustomRepo(object):
         # Uploading scripts that prepare local repositories:
         # 'regenerate_centos_repo' and 'regenerate_ubuntu_repo'
         try:
-            remote = self.env.d_env.get_admin_remote()
-            remote.upload('{0}/{1}'.format(self.path_scripts,
+            self.remote.upload('{0}/{1}'.format(self.path_scripts,
                                            regenerate_script),
                           self.remote_path_scripts)
-            remote.execute('chmod 755 {0}/{1}'.format(self.remote_path_scripts,
+            self.remote.execute('chmod 755 {0}/{1}'.format(self.remote_path_scripts,
                                                       regenerate_script))
         except Exception:
             logger.error('Could not upload scripts for updating repositories.'
@@ -292,7 +293,7 @@ class CustomRepo(object):
                                               regenerate_script,
                                               local_mirror_path,
                                               self.ubuntu_release)
-        script_result = remote.execute(script_cmd)
+        script_result = self.remote.execute(script_cmd)
         assert_equal(0, script_result['exit_code'],
                      self.assert_msg(script_cmd, script_result['stderr']))
 
@@ -321,15 +322,13 @@ class CustomRepo(object):
         """ Check puppet-agent.log files on all nodes for package
             dependency errors during a cluster deployment (ubuntu)"""
 
-        remote = self.env.d_env.get_admin_remote()
-
         err_start = 'The following packages have unmet dependencies:'
         err_end = ('Unable to correct problems,'
                    ' you have held broken packages.')
         cmd = ('fgrep -h -e " Depends: " -e "{0}" -e "{1}" '
                '/var/log/docker-logs/remote/node-*/'
                'puppet*.log'.format(err_start, err_end))
-        result = remote.execute(cmd)['stdout']
+        result = self.remote.execute(cmd)['stdout']
 
         err_deps = {}
         err_deps_key = ''
@@ -364,11 +363,9 @@ class CustomRepo(object):
         """ Check puppet-agent.log files on all nodes for package
             dependency errors during a cluster deployment (centos)"""
 
-        remote = self.env.d_env.get_admin_remote()
-
         cmd = ('fgrep -h -e "Error: Package: " -e " Requires: " /var/log/'
                'docker-logs/remote/node-*/puppet*.log')
-        result = remote.execute(cmd)['stdout']
+        result = self.remote.execute(cmd)['stdout']
 
         err_deps = {}
         err_deps_key = ''
