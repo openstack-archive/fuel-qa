@@ -403,3 +403,6 @@ PATCHING_SNAPSHOT = os.environ.get("PATCHING_SNAPSHOT", None)
 DOWNLOAD_LINK = os.environ.get(
     'DOWNLOAD_LINK', 'http://releases.ubuntu.com/14.04.2/'
                      'ubuntu-14.04.2-desktop-amd64.iso')
+
+UPDATE_FUEL = os.environ.get('UPDATE_FUEL', 'false') == 'true'
+UPDATE_FUEL_PATH = os.environ.get('UPDATE_FUEL_PATH', '~/fuel/pkgs/')
