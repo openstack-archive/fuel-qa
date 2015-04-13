@@ -26,6 +26,7 @@ def import_tests():
     from tests import test_services  # noqa
     from tests import test_ha_one_controller  # noqa
     from tests import test_vcenter  # noqa
+    from tests.tests_strength import test_reboot_cics  # noqa
     from tests.tests_strength import test_failover  # noqa
     from tests.tests_strength import test_master_node_failover  # noqa
     from tests.tests_strength import test_ostf_repeatable_tests  # noqa
