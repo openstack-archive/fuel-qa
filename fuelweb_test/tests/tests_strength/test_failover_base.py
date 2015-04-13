@@ -21,6 +21,7 @@ from devops.helpers.helpers import _wait
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
+from proboscis.asserts import assert_false
 from proboscis import SkipTest
 
 from fuelweb_test.helpers.checkers import get_file_size
@@ -452,3 +453,134 @@ class TestHaFailoverBase(TestBasic):
             assert_true(file_size2 > file_size1,
                         "File download was interrupted, size of downloading "
                         "does not change")
+
+    def check_alive_rabbit_node_not_kicked(self):
+        if not self.env.d_env.has_snapshot(self.snapshot_name):
+            raise SkipTest()
+
+        self.env.revert_snapshot(self.snapshot_name)
+
+        pcm_nodes = self.fuel_web.get_pcm_nodes(
+            self.env.d_env.nodes().slaves[0].name, pure=True)['Online']
+        logger.debug("pcm nodes are {}".format(pcm_nodes))
+        rabbit_nodes = [node.replace('.' + self.env.d_env.domain, "")
+                        for node in pcm_nodes]
+        logger.debug("rabbit nodes are {}".format(rabbit_nodes))
+
+        slave1_remote = self.fuel_web.get_ssh_for_node(
+            self.env.d_env.nodes().slaves[0].name)
+
+        slave1_name = ''.join(
+            slave1_remote.execute('hostname')['stdout']).strip()
+        logger.debug('slave1 name is {}'.format(slave1_name))
+        for rabbit_node in rabbit_nodes:
+            if rabbit_node in slave1_name:
+                rabbit_slave1_name = rabbit_node
+        logger.debug("rabbit node is {}".format(rabbit_slave1_name))
+
+        pcm_nodes.remove(slave1_name)
+
+        slave1_remote.execute('pcs resource unmanage'
+                              ' master_p_rabbitmq-server')
+        slave1_remote.execute('service corosync stop')
+
+        remote = self.env.d_env.get_admin_remote()
+        cmd = "grep 'Ignoring alive node rabbit@{0}' /var/log/remote" \
+              "/{1}/rabbit-fence.log".format(rabbit_slave1_name, pcm_nodes[0])
+        try:
+            wait(
+                lambda: not remote.execute(cmd)['exit_code'], timeout=2 * 60)
+        except TimeoutError:
+            result = remote.execute(cmd)
+            assert_equal(0, result['exit_code'],
+                         'alive rabbit node was not ignored,'
+                         ' result is {}'.format(result))
+        remote.execute("grep 'Got {0} that left"
+                       " cluster' /var/log/remote/{1}/"
+                       "rabbit-fence.log".format(slave1_name, pcm_nodes[0]))
+        remote.execute("grep 'Preparing to fence node rabbit@{0} from"
+                       " rabbit cluster' /var/log/remote/{1}/"
+                       "rabbit-fence.log".format(rabbit_slave1_name,
+                                                 pcm_nodes[0]))
+
+        rabbit_status = self.fuel_web.get_rabbit_running_nodes(
+            self.env.d_env.nodes().slaves[1].name)
+        logger.debug("rabbit status is {}".format(rabbit_status))
+        for rabbit_node in rabbit_nodes:
+            assert_true(rabbit_node in rabbit_status,
+                        "rabbit node {} is not in"
+                        " rabbit status".format(rabbit_node))
+
+        slave1_remote.execute("service corosync start")
+        slave1_remote.execute("service pacemaker restart")
+        self.fuel_web.assert_pacemaker(self.env.d_env.nodes().slaves[0].name,
+                                       self.env.d_env.nodes().slaves[:3], [])
+
+    def check_dead_rabbit_node_kicked(self):
+        if not self.env.d_env.has_snapshot(self.snapshot_name):
+            raise SkipTest()
+
+        self.env.revert_snapshot(self.snapshot_name)
+
+        pcm_nodes = self.fuel_web.get_pcm_nodes(
+            self.env.d_env.nodes().slaves[0].name, pure=True)['Online']
+        logger.debug("pcm nodes are {}".format(pcm_nodes))
+
+        rabbit_nodes = [node.replace('.' + self.env.d_env.domain, "")
+                        for node in pcm_nodes]
+        logger.debug("rabbit nodes are {}".format(rabbit_nodes))
+
+        slave1_remote = self.fuel_web.get_ssh_for_node(
+            self.env.d_env.nodes().slaves[0].name)
+
+        slave1_name = ''.join(
+            slave1_remote.execute('hostname')['stdout']).strip()
+        logger.debug('slave1 name is {}'.format(slave1_name))
+        for rabbit_node in rabbit_nodes:
+            if rabbit_node in slave1_name:
+                rabbit_slave1_name = rabbit_node
+        logger.debug("rabbit node is {}".format(rabbit_slave1_name))
+
+        pcm_nodes.remove(slave1_name)
+
+        slave1_remote.execute('pcs resource unmanage master_p_rabbitmq-server')
+        slave1_remote.execute('rabbitmqctl stop_app')
+        slave1_remote.execute('service corosync stop')
+
+        remote = self.env.d_env.get_admin_remote()
+
+        cmd = "grep 'Forgetting cluster node rabbit@{0}' /var/log/remote" \
+              "/{1}/rabbit-fence.log".format(rabbit_slave1_name, pcm_nodes[0])
+        try:
+            wait(
+                lambda: not remote.execute(cmd)['exit_code'], timeout=2 * 60)
+        except TimeoutError:
+            result = remote.execute(cmd)
+            assert_equal(0, result['exit_code'],
+                         'dead rabbit node was not removed,'
+                         ' result is {}'.format(result))
+
+        remote.execute("grep 'Got {0} that left cluster'"
+                       " /var/log/remote/{1}/"
+                       "rabbit-fence.log".format(slave1_name, pcm_nodes[0]))
+        remote.execute("grep 'Preparing to fence node rabbit@{0} from"
+                       " rabbit cluster' /var/log/remote/{1}/"
+                       "rabbit-fence.log".format(rabbit_slave1_name,
+                                                 pcm_nodes[0]))
+        remote.execute("grep 'Disconnecting node rabbit@{0}'"
+                       " /var/log/remote/{1}/"
+                       "rabbit-fence.log".format(rabbit_slave1_name,
+                                                 pcm_nodes[0]))
+
+        rabbit_nodes.remove(rabbit_slave1_name)
+        rabbit_status = self.fuel_web.get_rabbit_running_nodes(
+            self.env.d_env.nodes().slaves[1].name)
+        logger.debug("rabbit status is {}".format(rabbit_status))
+
+        for rabbit_node in rabbit_nodes:
+            assert_true(rabbit_node in rabbit_status,
+                        "rabbit node {} is not in"
+                        " rabbit status".format(rabbit_node))
+        assert_false(rabbit_slave1_name in rabbit_status,
+                     "rabbit node {0} is still in"
+                     " cluster".format(rabbit_slave1_name))
