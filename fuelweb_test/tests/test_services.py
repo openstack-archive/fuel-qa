@@ -595,7 +595,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
         Scenario:
             1. Create cluster. Set install Ceilometer option
             2. Add 3 node with controller role
-            3. Add 1 nodes with compute role
+            3. Add 1 node with compute and cinder roles
             4. Add 1 node with mongo role
             5. Deploy the cluster
             6. Verify ceilometer api is running
@@ -624,7 +624,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
                 'slave-01': ['controller'],
                 'slave-02': ['controller'],
                 'slave-03': ['controller'],
-                'slave-04': ['compute'],
+                'slave-04': ['compute', 'cinder'],
                 'slave-05': ['mongo']
             }
         )
