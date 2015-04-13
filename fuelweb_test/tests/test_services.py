@@ -624,7 +624,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
                 'slave-01': ['controller'],
                 'slave-02': ['controller'],
                 'slave-03': ['controller'],
-                'slave-04': ['compute'],
+                'slave-04': ['compute', 'cinder'],
                 'slave-05': ['mongo']
             }
         )
