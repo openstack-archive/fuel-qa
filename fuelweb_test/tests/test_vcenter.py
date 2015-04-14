@@ -304,3 +304,297 @@ class VcenterDeploy(TestBasic):
                                'without floating IP'),
                               ('Check network connectivity from instance '
                                'via floating IP')])
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["vcenter_add_delete_nodes"])
+    @log_snapshot_on_error
+    def vcenter_add_delete_nodes(self):
+        """Deploy enviroment of vcenter+qemu wnova vlan and default backend for
+           glance and with addition and deletion of different nodes with roles
+
+        Scenario:
+            1. Create cluster with vCenter support.
+            2. Add 1 node with controller role.
+            3. Deploy the cluster.
+            4. Run network verification.
+            5. Run OSTF.
+            6. Add 1 node with cinder role and redeploy cluster.
+            7. Run network verification.
+            8. Run OSTF.
+            9. Remove 1 node with cinder role.
+            10. Add 1 node with cinder-vmdk role and redeploy cluster.
+            11. Run network verification.
+            12. Run OSTF.
+            13. Add 1 node with cinder role and redeploy cluster.
+            14. Run network verification.
+            15. Run OSTF.
+            16. Remove nodes with roles: cinder-vmdk and cinder.
+            17. Add 1 node with compute role and redeploy cluster.
+            18. Run network verification.
+            19. Run OSTF.
+            20. Add 1 node with cinder role.
+            21. Run network verification.
+            22. Run OSTF.
+            23. Remove node with cinder role.
+            24. Add 1 node with cinder-vmdk role and redeploy cluster.
+            25. Run network verification.
+            26. Run OSTF.
+            27. Add 1 node with compute role, 1 node with cinder role and
+                redeploy cluster.
+            29. Run network verification.
+            30. Run OSTF.
+            31. Add 1 node with controller role and redeploy cluster.
+            32. Run network verification.
+            30. Run OSTF.
+
+        """
+
+        self.env.revert_snapshot("ready_with_9_slaves")
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            vcenter_value={
+                "glance": {
+                    "vcenter_username": "",
+                    "datacenter": "",
+                    "vcenter_host": "",
+                    "vcenter_password": "",
+                    "datastore": "", },
+                "availability_zones": [
+                    {"vcenter_username": VCENTER_USERNAME,
+                     "nova_computes": [
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster1",
+                          "service_name": "vmcluster1"}, ],
+                     "vcenter_host": VCENTER_IP,
+                     "az_name": "vcenter",
+                     "vcenter_password": VCENTER_PASSWORD,
+                     }],
+                "network": {"esxi_vlan_interface": "vmnic0"}}, )
+
+        logger.info("cluster is {}".format(cluster_id))
+
+        # Add role controler for node 1
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+            }
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        # FIXME when OSTF test will be fixed in bug #1433539
+        # When the bug will be fixed 'should_fail=2' and
+        # 'failed_test_name' parameter should be removed.
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
+            should_fail=2,
+            failed_test_name=[('vCenter: Check network connectivity from '
+                               'instance without floating             IP'),
+                              ('vCenter: Check network connectivity from '
+                               'instance via floating IP'), ])
+
+        #Add 1 node with cinder role and redeploy cluster
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-02': ['cinder'],
+            }
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        # FIXME when OSTF test will be fixed in bug #1433539
+        # When the bug will be fixed 'should_fail=2' and
+        # 'failed_test_name' parameter should be removed.
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
+            should_fail=2,
+            failed_test_name=[('vCenter: Check network connectivity from '
+                               'instance without floating             IP'),
+                              ('vCenter: Check network connectivity from '
+                               'instance via floating IP'), ])
+
+        #Remove 1 node with cinder role
+        self.fuel_web.update_nodes(
+            cluster_id, {'slave-02': ['cinder']}, False, True)
+
+        #Add 1 node with cinder-vmware role and redeploy cluster
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-02': ['cinder-vmware'],
+            }
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        # FIXME when OSTF test will be fixed in bug #1433539
+        # When the bug will be fixed 'should_fail=2' and
+        # 'failed_test_name' parameter should be removed.
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
+            should_fail=2,
+            failed_test_name=[('vCenter: Check network connectivity from '
+                               'instance without floating             IP'),
+                              ('vCenter: Check network connectivity from '
+                               'instance via floating IP'), ])
+
+        #Add 1 node with cinder role and redeploy cluster
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-03': ['cinder'],
+            }
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        # FIXME when OSTF test will be fixed in bug #1433539
+        # When the bug will be fixed 'should_fail=2' and
+        # 'failed_test_name' parameter should be removed.
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
+            should_fail=2,
+            failed_test_name=[('vCenter: Check network connectivity from '
+                               'instance without floating             IP'),
+                              ('vCenter: Check network connectivity from '
+                               'instance via floating IP'), ])
+
+        #remove nodes with roles: cinder-vmdk and cinder
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-02': ['cinder-vmware'],
+                'slave-03': ['cinder'],
+            },
+                False, True
+        )
+
+        # Add 1 node with compute role and redeploy cluster
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-02': ['compute'],
+            }
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        # FIXME when OSTF test will be fixed in bug #1433539
+        # When the bug will be fixed 'should_fail=2' and
+        # 'failed_test_name' parameter should be removed.
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
+            should_fail=2,
+            failed_test_name=[('vCenter: Check network connectivity from '
+                               'instance without floating             IP'),
+                              ('vCenter: Check network connectivity from '
+                               'instance via floating IP'), ])
+
+        #Add 1 node with cinder role and redeploy cluster
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-03': ['cinder'],
+            }
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        # FIXME when OSTF test will be fixed in bug #1433539
+        # When the bug will be fixed 'should_fail=2' and
+        # 'failed_test_name' parameter should be removed.
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
+            should_fail=2,
+            failed_test_name=[('vCenter: Check network connectivity from '
+                               'instance without floating             IP'),
+                              ('vCenter: Check network connectivity from '
+                               'instance via floating IP'), ])
+
+        #Remove node with cinder role
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-03': ['cinder'],
+            },
+                False, True
+        )
+
+        #Add 1 node with cinder-vmdk role and redeploy cluster
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-03': ['cinder-vmware'],
+            }
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        # FIXME when OSTF test will be fixed in bug #1433539
+        # When the bug will be fixed 'should_fail=2' and
+        # 'failed_test_name' parameter should be removed.
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
+            should_fail=2,
+            failed_test_name=[('vCenter: Check network connectivity from '
+                               'instance without floating             IP'),
+                              ('vCenter: Check network connectivity from '
+                               'instance via floating IP'), ])
+
+        #Add 1 node with compute role and 1 node with cinder role and redeploy
+        #cluster
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-04': ['compute'],
+                'slave-05': ['cinder'],
+            },
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        # FIXME when OSTF test will be fixed in bug #1433539
+        # When the bug will be fixed 'should_fail=2' and
+        # 'failed_test_name' parameter should be removed.
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
+            should_fail=2,
+            failed_test_name=[('vCenter: Check network connectivity from '
+                               'instance without floating             IP'),
+                              ('vCenter: Check network connectivity from '
+                               'instance via floating IP'), ])
+
+        #Add 1 node with controller role and redeploy cluster
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-06': ['compute'],
+            },
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        # FIXME when OSTF test will be fixed in bug #1433539
+        # When the bug will be fixed 'should_fail=2' and
+        # 'failed_test_name' parameter should be removed.
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
+            should_fail=2,
+            failed_test_name=[('vCenter: Check network connectivity from '
+                               'instance without floating             IP'),
+                              ('vCenter: Check network connectivity from '
+                               'instance via floating IP'), ])
