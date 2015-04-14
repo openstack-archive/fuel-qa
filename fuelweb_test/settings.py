@@ -371,6 +371,7 @@ STORE_ASTUTE_YAML = os.environ.get('STORE_ASTUTE_YAML', 'false') == 'true'
 EXTERNAL_DNS = os.environ.get('EXTERNAL_DNS', '208.67.220.220')
 EXTERNAL_NTP = os.environ.get('EXTERNAL_NTP', 'ua.pool.ntp.org')
 FUEL_USE_LOCAL_NTPD = os.environ.get('FUEL_USE_LOCAL_NTPD', 'true') == 'true'
+FUEL_USE_LOCAL_DNS = os.environ.get('FUEL_USE_LOCAL_DNS', 'true') == 'true'
 
 TIMESTAT_PATH_YAML = os.environ.get(
     'TIMESTAT_PATH_YAML', os.path.join(
