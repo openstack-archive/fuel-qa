@@ -634,3 +634,271 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
             timeout=60 * 60)
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
+          groups=["vcenter_add_delete_nodes"])
+    @log_snapshot_on_error
+    def vcenter_add_delete_nodes(self):
+        """Deploy enviroment of vcenter+qemu nova vlan and default backend for
+           glance and with addition and deletion of nodes with different roles
+
+        Scenario:
+            1. Create cluster with vCenter support.
+            2. Add 1 node with controller role.
+            3. Deploy the cluster.
+            4. Run OSTF.
+            5. Add 1 node with cinder role and redeploy cluster.
+            6. Run network verification.
+            7. Run OSTF.
+            8. Remove 1 node with cinder role.
+            9. Add 1 node with cinder-vmdk role and redeploy cluster.
+            10. Run network verification.
+            11. Run OSTF.
+            12. Add 1 node with cinder role and redeploy cluster.
+            13. Run network verification.
+            14. Run OSTF.
+            15. Remove nodes with roles: cinder-vmdk and cinder.
+            16. Add 1 node with compute role and redeploy cluster.
+            17. Run network verification.
+            18. Run OSTF.
+            19. Add 1 node with cinder role.
+            20. Run network verification.
+            21. Run OSTF.
+            22. Remove node with cinder role.
+            23. Add 1 node with cinder-vmdk role and redeploy cluster.
+            24. Run network verification.
+            25. Run OSTF.
+            26. Add 1 node with compute role, 1 node with cinder role and
+                redeploy cluster.
+            27. Run network verification.
+            28. Run OSTF.
+            29. Add 1 node with controller role and redeploy cluster.
+            30. Run network verification.
+            31. Run OSTF.
+
+        """
+
+        self.env.revert_snapshot("ready_with_9_slaves")
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            vcenter_value={
+                "glance": {
+                    "vcenter_username": "",
+                    "datacenter": "",
+                    "vcenter_host": "",
+                    "vcenter_password": "",
+                    "datastore": "", },
+                "availability_zones": [
+                    {"vcenter_username": VCENTER_USERNAME,
+                     "nova_computes": [
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster1",
+                          "service_name": "vmcluster1"}, ],
+                     "vcenter_host": VCENTER_IP,
+                     "az_name": "vcenter",
+                     "vcenter_password": VCENTER_PASSWORD,
+                     }],
+                "network": {"esxi_vlan_interface": "vmnic1"}}, )
+
+        logger.info("cluster is {}".format(cluster_id))
+
+        # Configure network interfaces.
+        # Public and Fixed networks are on the same interface
+        # because Nova will use the same vSwitch for PortGroups creating
+        # as a ESXi management interface is located in.
+        interfaces = {
+            'eth0': ["fuelweb_admin"],
+            'eth1': ["public", "fixed"],
+            'eth2': ["management", ],
+            'eth3': [],
+            'eth4': ["storage"],
+        }
+
+        # Add role controler for node 1
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+            }
+        )
+
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        for node in slave_nodes:
+            self.fuel_web.update_node_networks(node['id'], interfaces)
+
+        # Configure Nova-Network VLanManager.
+        self.fuel_web.update_vlan_network_fixed(
+            cluster_id, amount=8, network_size=32)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
+
+        # Add 1 node with cinder role and redeploy cluster
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-02': ['cinder'],
+            }
+        )
+
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        self.fuel_web.update_node_networks(slave_nodes[-1]['id'], interfaces)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.verify_network(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
+
+        # Remove 1 node with cinder role
+        self.fuel_web.update_nodes(
+            cluster_id, {'slave-02': ['cinder']}, False, True)
+
+        # Add 1 node with cinder-vmware role and redeploy cluster
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-03': ['cinder-vmware'],
+            }
+        )
+
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        self.fuel_web.update_node_networks(slave_nodes[-1]['id'], interfaces)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.verify_network(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
+
+        # Add 1 node with cinder role and redeploy cluster
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-02': ['cinder'],
+            }
+        )
+
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        self.fuel_web.update_node_networks(slave_nodes[-1]['id'], interfaces)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.verify_network(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
+
+        # Remove nodes with roles: cinder-vmdk and cinder
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-02': ['cinder'],
+             'slave-03': ['cinder-vmware'], }, False, True)
+
+        # Add 1 node with compute role and redeploy cluster
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-04': ['compute'],
+            }
+        )
+
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        self.fuel_web.update_node_networks(slave_nodes[-1]['id'], interfaces)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.verify_network(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
+
+        # Add 1 node with cinder role and redeploy cluster
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-03': ['cinder'],
+            }
+        )
+
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        self.fuel_web.update_node_networks(slave_nodes[-1]['id'], interfaces)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.verify_network(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
+
+        # Remove node with cinder role
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-03': ['cinder'], }, False, True)
+
+        # Add 1 node with cinder-vmdk role and redeploy cluster
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-02': ['cinder-vmware'],
+            }
+        )
+
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        self.fuel_web.update_node_networks(slave_nodes[-1]['id'], interfaces)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.verify_network(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
+
+        # Add 1 node with compute role and 1 node with cinder role and redeploy
+        # cluster
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-03': ['compute'],
+                'slave-05': ['cinder'],
+            },
+        )
+
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+
+        for node_index in range(-1, -3, -1):
+            self.fuel_web.update_node_networks(
+                slave_nodes[node_index]['id'], interfaces
+            )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.verify_network(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
+
+        # Add 1 node with controller role and redeploy cluster
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-06': ['compute'],
+            },
+        )
+
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        self.fuel_web.update_node_networks(slave_nodes[-1]['id'], interfaces)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.verify_network(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
