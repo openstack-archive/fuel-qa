@@ -178,18 +178,6 @@ class NeutronGre(TestBasic):
 
         self.fuel_web.assert_task_success(task_firewall)
 
-        task_ntp = self.fuel_web.client.put_deployment_tasks_for_cluster(
-            cluster_id, data=['ntp-client'],
-            node_id=str(nodes_ids).strip('[]'))
-
-        self.fuel_web.assert_task_success(task_ntp)
-
-        task_dns = self.fuel_web.client.put_deployment_tasks_for_cluster(
-            cluster_id, data=['dns-client'],
-            node_id=str(nodes_ids).strip('[]'))
-
-        self.fuel_web.assert_task_success(task_dns)
-
         all_tasks = self.fuel_web.client.get_cluster_deployment_tasks(
             cluster_id)
 
@@ -468,23 +456,11 @@ class NeutronGre(TestBasic):
         logger.debug('res info is {0}'.format(res))
         self.fuel_web.assert_task_success(task=res)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
-            cluster_id, start='dns-server',
-            end='ntp-server')
-        logger.debug("task list for ntp {0}".format(tasks))
-
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
-            cluster_id, data=[task['id'] for task in tasks],
+            cluster_id, data=['dns-server'],
             node_id='{0}'.format(controller_id[0]))
         logger.debug('res info is {0}'.format(res))
         self.fuel_web.assert_task_success(task=res)
-
-        for service in [task['id'] for task in tasks]:
-            if self.get_post_test(tasks, service):
-                [gd.run_check_from_task(
-                    remote=self.fuel_web.get_ssh_for_node(node),
-                    path=self.get_post_test(tasks, service)[0]['cmd'])
-                 for node in ['slave-01']]
 
         tasks = self.fuel_web.client.get_end_deployment_tasks(
             cluster_id, end='openstack-controller')
@@ -632,7 +608,7 @@ class NeutronGre(TestBasic):
 
         self.fuel_web.assert_task_success(task=res)
 
-        expected_task_list.append('opensstack-network')
+        expected_task_list.append('openstack-network')
 
         for task in expected_task_list:
             if self.get_post_test(tasks, task):
