@@ -416,7 +416,7 @@ class MuranoHA(TestBasic):
 
 class OSTFCeilometerHelper(TestBasic):
 
-    def run_tests(self, cluster_id):
+    def run_tests(self, cluster_id, skip_tests=None):
         """Method run smoke, sanity and platform Ceilometer tests."""
 
         LOGGER.debug('Run sanity and smoke tests')
@@ -448,11 +448,31 @@ class OSTFCeilometerHelper(TestBasic):
         all_tests = [test['id'] for test
                      in self.fuel_web.client.get_ostf_tests(cluster_id)]
 
-        for test_name in test_classes:
-            if test_name in all_tests:
-                self.fuel_web.run_single_ostf_test(
-                    cluster_id=cluster_id, test_sets=['platform_tests'],
-                    test_name=test_name, timeout=60 * 20)
+        for test_id in test_classes:
+            if test_id in all_tests:
+                if skip_tests and test_id.split('.')[-1] in skip_tests:
+
+                    all_status = self.fuel_web.run_single_ostf_test(
+                        cluster_id=cluster_id, test_sets=['platform_tests'],
+                        test_name=test_id, retries=True, timeout=60 * 20)
+
+                    test_name = next(
+                        test['name'] for test
+                        in self.fuel_web.client.get_ostf_tests(cluster_id)
+                        if test['id'] == test_id)
+
+                    status = next(test.values()[0]
+                                  for test in all_status
+                                  if test.keys()[0] == test_name)
+
+                    assert_equal(
+                        status, "skipped",
+                        'Test: "{}" must be skipped status, '
+                        'bud his status {}'.format(test_name, status))
+                else:
+                    self.fuel_web.run_single_ostf_test(
+                        cluster_id=cluster_id, test_sets=['platform_tests'],
+                        test_name=test_id, timeout=60 * 20)
 
 
 @test(groups=["services", "services.ceilometer", "services_ha_one_controller"])
@@ -635,7 +655,8 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             self.env.d_env.get_ssh_to_remote(_ip),
             service_name='ceilometer-api')
 
-        self.run_tests(cluster_id)
+        self.run_tests(cluster_id,
+                       skip_tests=['test_check_volume_notifications'])
         self.env.make_snapshot("deploy_ceilometer_ha_with_mongo")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
