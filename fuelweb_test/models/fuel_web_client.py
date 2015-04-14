@@ -387,6 +387,10 @@ class FuelWebClient(object):
                 attributes['editable']['external_ntp']['ntp_list']['value'] =\
                     self.admin_node_ip
 
+            if help_data.FUEL_USE_LOCAL_DNS and ('dns_list' not in settings):
+                attributes['editable']['external_dns']['dns_list']['value'] =\
+                    self.admin_node_ip
+
             logger.info('Set DEBUG MODE to %s', help_data.DEBUG_MODE)
             attributes['editable']['common']['debug']['value'] = \
                 help_data.DEBUG_MODE
