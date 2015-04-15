@@ -729,6 +729,23 @@ class FuelWebClient(object):
         return ''.join(remote.check_call('crm_resource --list')['stdout'])
 
     @logwrap
+    def get_pacemaker_resource_location(self, controller_node_name,
+                                        resource_name):
+        """Get devops nodes where the resource is running
+        """
+        logger.info('Get pacemaker resource %s life status at %s node',
+                    resource_name, controller_node_name)
+        remote = self.get_ssh_for_node(controller_node_name)
+        hosts = []
+        for line in remote.check_call(
+                'crm_resource --resource {0} '
+                '--locate --quiet'.format(resource_name))['stdout']:
+            hosts.append(
+                self.get_devops_node_by_nailgun_fqdn(line.strip()))
+        remote.clear()
+        return hosts
+
+    @logwrap
     def get_last_created_cluster(self):
         # return id of last created cluster
         logger.info('Get ID of a last created cluster')
@@ -783,19 +800,87 @@ class FuelWebClient(object):
         return None
 
     @logwrap
-    def find_devops_node_by_nailgun_fqdn(self, fqdn, devops_nodes):
-        def get_nailgun_node(fqdn):
-            for nailgun_node in self.client.list_nodes():
-                if nailgun_node['meta']['system']['fqdn'] == fqdn:
-                    return nailgun_node
+    def get_nailgun_node_by_fqdn(self, fqdn):
+        """Return nailgun node with fqdn
 
-        nailgun_node = get_nailgun_node(fqdn)
+        :type fqdn: String
+            :rtype : Dict
+        """
+        for nailgun_node in self.client.list_nodes():
+            if nailgun_node['meta']['system']['fqdn'] == fqdn:
+                return nailgun_node
+
+    @logwrap
+    def find_devops_node_by_nailgun_fqdn(self, fqdn, devops_nodes):
+        """Return devops node by nailgun fqdn
+
+        :type fqdn: String
+        :type devops_nodes: List
+            :rtype : Devops Node or None
+        """
+        nailgun_node = self.get_nailgun_node_by_fqdn(fqdn)
         macs = {i['mac'] for i in nailgun_node['meta']['interfaces']}
         for devops_node in devops_nodes:
             devops_macs = {i.mac_address.upper()
                            for i in devops_node.interfaces}
             if devops_macs == macs:
                 return devops_node
+
+    @logwrap
+    def get_devops_node_by_mac(self, mac_address):
+        """Return devops node by nailgun node
+
+        :type mac_address: String
+            :rtype : Node or None
+        """
+        for node in self.environment.d_env.nodes():
+            for iface in node.interfaces:
+                if iface.mac_address.lower() == mac_address.lower():
+                    return node
+
+    @logwrap
+    def get_devops_nodes_by_nailgun_nodes(self, nailgun_nodes):
+        """Return devops node by nailgun node
+
+        :type nailgun_node: List
+            :rtype : list of Nodes or None
+        """
+        d_nodes = [self.get_devops_node_by_nailgun_node(n) for n
+                   in nailgun_nodes]
+        d_nodes = [n for n in d_nodes if n is not None]
+        return d_nodes if len(d_nodes) == len(nailgun_nodes) else None
+
+    @logwrap
+    def get_devops_node_by_nailgun_node(self, nailgun_node):
+        """Return devops node by nailgun node
+
+        :type nailgun_node: Dict
+            :rtype : Node or None
+        """
+        if nailgun_node:
+            return self.get_devops_node_by_mac(nailgun_node['mac'])
+
+    @logwrap
+    def get_devops_node_by_nailgun_fqdn(self, fqdn):
+        """Return devops node with nailgun fqdn
+
+        :type fqdn: String
+            :rtype : Devops Node or None
+        """
+        return self.get_devops_node_by_nailgun_node(
+            self.get_nailgun_node_by_fqdn(fqdn))
+
+    @logwrap
+    def get_nailgun_cluster_nodes_by_roles(self, cluster_id, roles):
+        """Return list of nailgun nodes from cluster with cluster_id which have
+        a roles
+
+        :type cluster_id: Int
+        :type roles: List
+            :rtype : List
+        """
+        nodes = self.client.list_cluster_nodes(cluster_id=cluster_id)
+        return [n for n in nodes if set(roles) <= set(n['roles'])]
 
     @logwrap
     def get_ssh_for_node(self, node_name):
@@ -1313,16 +1398,38 @@ class FuelWebClient(object):
         self.environment.sync_time()
 
     @logwrap
-    def ip_address_show(self, node_name, namespace, interface):
+    def ip_address_show(self, node_name, interface, namespace=None):
+        """Return ip on interface in node with node_name inside namespace
+
+        :type node_name: String
+        :type namespace: String
+        :type interface: String
+            :rtype : String on None
+        """
         try:
             remote = self.get_ssh_for_node(node_name)
-            ret = remote.check_call(
-                'ip netns exec {0} ip -4 -o address show {1}'.format(
-                    namespace, interface))
-            return ' '.join(ret['stdout'])
+            if namespace:
+                cmd = 'ip netns exec {0} ip -4 ' \
+                      '-o address show {1}'.format(namespace, interface)
+            else:
+                cmd = 'ip -4 -o address show {1}'.format(interface)
+
+            ret = remote.check_call(cmd)
+            remote.clear()
+            ip_search = re.search(
+                'inet (?P<ip>\d+\.\d+\.\d+.\d+/\d+).*scope .* '
+                '{0}'.format(interface), ' '.join(ret['stdout']))
+            if ip_search is None:
+                    logger.debug("Ip show output does not match in regex. "
+                                 "Current value is None. On node {0} in netns "
+                                 "{1} for interface {2}".format(node_name,
+                                                                namespace,
+                                                                interface))
+                    return None
+            return ip_search.group('ip')
         except DevopsCalledProcessError as err:
             logger.error(err)
-        return ''
+        return None
 
     @logwrap
     def ip_address_del(self, node_name, namespace, interface, ip):
@@ -1332,6 +1439,7 @@ class FuelWebClient(object):
         remote.check_call(
             'ip netns exec {0} ip addr'
             ' del {1} dev {2}'.format(namespace, ip, interface))
+        remote.clear()
 
     @logwrap
     def provisioning_cluster_wait(self, cluster_id, progress=None):
