@@ -98,9 +98,9 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         common_func.delete_instance(server)
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_ha_flat_dns_ntp"])
+          groups=["deploy_ha_dns_ntp", "ha_neutron"])
     @log_snapshot_on_error
-    def deploy_ha_flat_dns_ntp(self):
+    def deploy_ha_dns_ntp(self):
         """Use external ntp and dns in ha mode
 
         Scenario:
@@ -114,13 +114,20 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
 
         self.env.revert_snapshot("ready_with_5_slaves")
 
+        net_provider_data = {
+            'ntp_list': settings.EXTERNAL_NTP,
+            'dns_list': settings.EXTERNAL_DNS
+        }
+        if settings.NEUTRON_ENABLE:
+            net_provider_data.update({
+                "net_provider": 'neutron',
+                "net_segment_type": settings.NEUTRON_SEGMENT_TYPE
+            })
+
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE_HA,
-            settings={
-                'ntp_list': settings.EXTERNAL_NTP,
-                'dns_list': settings.EXTERNAL_DNS
-            }
+            settings=net_provider_data
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -135,14 +142,21 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         os_conn = os_actions.OpenStackActions(self.fuel_web.
                                               get_public_vip(cluster_id))
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=16, networks_count=1, timeout=300)
-        self.env.make_snapshot("deploy_ha_flat_dns_ntp", is_make=True)
+        if settings.NEUTRON_ENABLE:
+            self.fuel_web.assert_cluster_ready(
+                os_conn, smiles_count=14, networks_count=2, timeout=300)
+        else:
+            self.fuel_web.assert_cluster_ready(
+                os_conn, smiles_count=16, networks_count=1, timeout=300)
 
-    @test(depends_on=[deploy_ha_flat_dns_ntp],
-          groups=["external_dns_ha_flat"])
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.env.make_snapshot("deploy_ha_dns_ntp", is_make=True)
+
+    @test(depends_on=[deploy_ha_dns_ntp],
+          groups=["external_dns_ha", "ha_neutron"])
     @log_snapshot_on_error
-    def external_dns_ha_flat(self):
+    def external_dns_ha(self):
         """Check external dns in ha mode
 
         Scenario:
@@ -152,7 +166,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
 
         """
 
-        self.env.revert_snapshot("deploy_ha_flat_dns_ntp")
+        self.env.revert_snapshot("deploy_ha_dns_ntp")
 
         remote = self.env.d_env.get_admin_remote()
         _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
@@ -160,10 +174,10 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         remote.execute("dockerctl shell cobbler killall dnsmasq")
         checkers.external_dns_check(remote_slave)
 
-    @test(depends_on=[deploy_ha_flat_dns_ntp],
-          groups=["external_ntp_ha_flat"])
+    @test(depends_on=[deploy_ha_dns_ntp],
+          groups=["external_ntp_ha", "ha_neutron"])
     @log_snapshot_on_error
-    def external_ntp_ha_flat(self):
+    def external_ntp_ha(self):
         """Check external ntp in ha mode
 
         Scenario:
@@ -173,7 +187,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
 
         """
 
-        self.env.revert_snapshot("deploy_ha_flat_dns_ntp")
+        self.env.revert_snapshot("deploy_ha_dns_ntp")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         remote = self.env.d_env.get_admin_remote()
