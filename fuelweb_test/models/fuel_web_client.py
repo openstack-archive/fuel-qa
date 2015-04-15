@@ -701,6 +701,23 @@ class FuelWebClient(object):
         return ''.join(remote.check_call('crm_resource --list')['stdout'])
 
     @logwrap
+    def get_pacemaker_resource_location(self, controller_node_name,
+                                        resource_name):
+        """Get devops nodes where resource are running
+        """
+        logger.info('Get pacemaker resource life status at %s node',
+                    controller_node_name)
+        remote = self.get_ssh_for_node(controller_node_name)
+        hosts = []
+        for line in remote.check_call(
+                'crm_resource --resource {0} '
+                '--locate'.format(resource_name))['stdout']:
+            hosts.append(
+                self.get_devops_node_by_nailgun_fqdn(line.split()[-1]))
+        remote.clear()
+        return hosts
+
+    @logwrap
     def get_last_created_cluster(self):
         # return id of last created cluster
         logger.info('Get ID of a last created cluster')
@@ -768,6 +785,32 @@ class FuelWebClient(object):
                            for i in devops_node.interfaces}
             if devops_macs == macs:
                 return devops_node
+
+    @logwrap
+    def get_devops_node_by_nailgun_node(self, nailgun_nodes):
+        ret = []
+        d_nodes = self.environment.d_env.nodes()
+        for n_node in nailgun_nodes:
+            for d_node in d_nodes:
+                for iface in d_node.interfaces:
+                    if iface.mac_address == n_node['mac']:
+                        ret.append(d_node)
+                        break
+        return ret
+
+    @logwrap
+    def get_devops_node_by_nailgun_fqdn(self, fqdn):
+        def get_nailgun_node(fqdn):
+            for nailgun_node in self.client.list_nodes():
+                if nailgun_node['meta']['system']['fqdn'] == fqdn:
+                    return nailgun_node
+        return self.get_devops_node_by_nailgun_node(
+            [get_nailgun_node(fqdn)])[0]
+
+    @logwrap
+    def get_nailgun_cluster_nodes_by_role(self, cluster_id, role):
+        nodes = self.client.list_cluster_nodes(cluster_id=cluster_id)
+        return [n for n in nodes if role in n['roles']]
 
     @logwrap
     def get_ssh_for_node(self, node_name):
@@ -1291,10 +1334,17 @@ class FuelWebClient(object):
             ret = remote.check_call(
                 'ip netns exec {0} ip -4 -o address show {1}'.format(
                     namespace, interface))
-            return ' '.join(ret['stdout'])
+            ip_search = re.search(
+                'inet (?P<ip>\d+\.\d+\.\d+.\d+/\d+) scope global '
+                '{0}'.format(interface), ' '.join(ret['stdout']))
+            if ip_search is None:
+                    logger.debug("Ip show output does not"
+                                 " match in regex. Current value is None")
+                    return None
+            return ip_search.group('ip')
         except DevopsCalledProcessError as err:
             logger.error(err)
-        return ''
+        return None
 
     @logwrap
     def ip_address_del(self, node_name, namespace, interface, ip):
@@ -1304,6 +1354,7 @@ class FuelWebClient(object):
         remote.check_call(
             'ip netns exec {0} ip addr'
             ' del {1} dev {2}'.format(namespace, ip, interface))
+        remote.clear()
 
     @logwrap
     def provisioning_cluster_wait(self, cluster_id, progress=None):
