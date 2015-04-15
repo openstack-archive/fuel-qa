@@ -18,7 +18,6 @@ import time
 from devops.error import TimeoutError
 from devops.helpers.helpers import wait
 from devops.helpers.helpers import _wait
-from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 from proboscis import SkipTest
@@ -160,76 +159,88 @@ class TestHaFailoverBase(TestBasic):
         cluster_id = \
             self.fuel_web.client.get_cluster_id(self.__class__.__name__)
         logger.debug('Cluster id is {0}'.format(cluster_id))
-        interfaces = ('hapr-p', 'hapr-m')
-        slaves = self.env.d_env.nodes().slaves[:3]
-        logger.debug("Current nodes are {0}".format([i.name for i in slaves]))
-        ips_amount = 0
-        for devops_node in slaves:
-            # Verify VIPs are started.
-            ret = self.fuel_web.get_pacemaker_status(devops_node.name)
-            logger.debug("Pacemaker status {0} for node {1}".format
-                         (ret, devops_node.name))
-            assert_true(
-                re.search('vip__management\s+\(ocf::fuel:ns_IPaddr2\):'
-                          '\s+Started node', ret),
-                'vip management not started. '
-                'Current pacemaker status is {0}'.format(ret))
-            assert_true(
-                re.search('vip__public\s+\(ocf::fuel:ns_IPaddr2\):'
-                          '\s+Started node', ret),
-                'vip public not started. '
-                'Current pacemaker status is {0}'.format(ret))
+        resources = {
+            "vip__management": {"iface": "hapr-m", "netns": "haproxy"},
+            "vip__public": {"iface": "hapr-p", "netns": "haproxy"}
+        }
+        nailgun_controllers = self.fuel_web.get_nailgun_cluster_nodes_by_role(
+            cluster_id=cluster_id,
+            role='controller')
+        devops_controllers = self.fuel_web.get_devops_node_by_nailgun_node(
+            nailgun_controllers)
 
-            for interface in interfaces:
-                # Look for management and public ip in namespace and remove it
-                logger.debug("Start to looking for ip of Vips")
-                addresses = self.fuel_web.ip_address_show(devops_node.name,
-                                                          interface=interface,
-                                                          namespace='haproxy')
-                logger.debug("Vip addresses is {0} for node {1} and interface"
-                             " {2}".format(addresses, devops_node.name,
-                                           interface))
-                ip_search = re.search(
-                    'inet (?P<ip>\d+\.\d+\.\d+.\d+/\d+) scope global '
-                    '{0}'.format(interface), addresses)
+        logger.debug("Current controller nodes are {0}".format(
+            [i.name for i in devops_controllers]))
 
-                if ip_search is None:
-                    logger.debug("Ip show output does not"
-                                 " match in regex. Current value is None")
-                    continue
-                ip = ip_search.group('ip')
-                logger.debug("Founded ip is {0}".format(ip))
+        for resource in resources:
+            for check_counter in xrange(1, 11):
+                active_nodes = self.fuel_web.get_pacemaker_resource_location(
+                    devops_controllers[0].name,
+                    resource)
+                assert_true(len(active_nodes) == 1,
+                            "Resource runned on {0} nodes, but shuld "
+                            "on one".format(len(active_nodes)))
+
+                logger.debug("Start to looking for ip of {0} "
+                             "on {1}".format(resource, active_nodes[0].name))
+                address = self.fuel_web.ip_address_show(
+                    active_nodes[0].name,
+                    interface=resources[resource]['iface'],
+                    namespace=resources[resource]['netns'])
+                assert_true(address is not None,
+                            "Resource {0} located on {1}, but interface"
+                            "doesn't have "
+                            "ip address".format(resource,
+                                                active_nodes[0].name))
+                logger.debug("Founded ip is {0}".format(address))
                 logger.debug("Start ip {0} deletion on node {1} and "
-                             "interface {2} ".format(ip, devops_node.name,
-                                                     interface))
+                             "interface {2} ".format(address,
+                                                     active_nodes[0].name,
+                                                     resources[resource]))
                 self.fuel_web.ip_address_del(
-                    node_name=devops_node.name,
-                    interface=interface,
-                    ip=ip, namespace='haproxy')
+                    node_name=active_nodes[0].name,
+                    interface=resources[resource]['iface'],
+                    ip=address, namespace=resources[resource]['netns'])
 
-                # The ip should be restored
-                ip_assigned = lambda nodes: \
-                    any([ip in self.fuel_web.ip_address_show(
-                        n.name, 'haproxy', interface)
-                        for n in nodes])
+                time.sleep(5)
+
+                def check_restore():
+                    new_nodes = self.fuel_web.get_pacemaker_resource_location(
+                        devops_controllers[0].name,
+                        resource)
+                    if len(new_nodes) != 1:
+                        return False
+                    new_address = self.fuel_web.ip_address_show(
+                        new_nodes[0].name,
+                        interface=resources[resource]['iface'],
+                        namespace=resources[resource]['netns'])
+                    if new_address is None:
+                        return False
+                    else:
+                        return True
+
                 logger.debug("Waiting while deleted ip restores ...")
-                wait(lambda: ip_assigned(slaves), timeout=30)
-                assert_true(ip_assigned(slaves),
-                            "IP isn't restored restored.")
-                ips_amount += 1
-
-                time.sleep(60)
-
-                # Run OSTF tests
-                self.fuel_web.run_ostf(
-                    cluster_id=cluster_id,
-                    test_sets=['ha', 'smoke', 'sanity'],
-                    should_fail=1)
-                # Revert initial state. VIP could be moved to other controller
-                self.env.revert_snapshot(self.snapshot_name)
-        assert_equal(ips_amount, 2,
-                     'Not all VIPs were found: expect - 2, found {0}'.format(
-                         ips_amount))
+                wait(check_restore, timeout=30)
+                new_nodes = self.fuel_web.get_pacemaker_resource_location(
+                    devops_controllers[0].name,
+                    resource)
+                assert_true(len(new_nodes) == 1,
+                            "After ip deletion resource runned on {0} "
+                            "nodes, but shuld "
+                            "on one. On {1} attempt".format(
+                                len(active_nodes),
+                                check_counter))
+                logger.info(
+                    "Resource was on {0}, migrate to {1}".format(
+                        active_nodes[0].name,
+                        new_nodes[0].name))
+            logger.info("Resource {0} restored "
+                        "{1} times".format(resource, check_counter))
+        # Run OSTF tests
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['ha', 'smoke', 'sanity'],
+            should_fail=1)
 
     def ha_mysql_termination(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
