@@ -85,13 +85,12 @@ class TestHaNeutronFailover(TestHaFailoverBase):
           groups=["ha_neutron_delete_vips", "ha_delete_vips"])
     @log_snapshot_on_error
     def ha_neutron_delete_vips(self):
-        """Delete all management and public VIPs on all controller nodes.
+        """Delete management and public VIPs 10 times.
         Verify that they are restored.
-        Verify total amount of secondary IPs. Should be 2:
-        management and public
+        Verify cluster by OSTF
 
         Scenario:
-            1. Delete all secondary VIP
+            1. Delete 10 time public and management VIPs
             2. Wait while it is being restored
             3. Verify it is restored
             4. Run OSTF
@@ -282,16 +281,15 @@ class TestHaNovaFailover(TestHaFailoverBase):
         super(self.__class__, self).ha_disconnect_controllers()
 
     @test(depends_on_groups=['prepare_ha_nova'],
-          groups=["ha_nova_delete_vips"])
+          groups=["ha_nova_delete_vips", "ha_delete_vips"])
     @log_snapshot_on_error
     def ha_nova_delete_vips(self):
-        """Delete all management and public VIPs on all controller nodes.
+        """Delete management and public VIPs 10 times.
         Verify that they are restored.
-        Verify total amount of secondary IPs. Should be 2:
-        management and public
+        Verify cluster by OSTF
 
         Scenario:
-            1. Delete all secondary VIP
+            1. Delete 10 time public and management VIPs
             2. Wait while it is being restored
             3. Verify it is restored
             4. Run OSTF
