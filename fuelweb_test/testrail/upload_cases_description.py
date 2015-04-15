@@ -18,18 +18,19 @@ from logging import DEBUG
 from optparse import OptionParser
 from proboscis import TestProgram
 
+from builds import Build
 from fuelweb_test.run_tests import import_tests
 from settings import logger
 from settings import TestRailSettings
 from testrail_client import TestRailProject
 
 
-def get_tests_descriptions(milestone_id, tests_include, tests_exclude):
+def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups):
     import_tests()
 
     tests = []
 
-    for case in TestProgram().cases:
+    for case in TestProgram(groups=groups).cases:
         if tests_include:
             if tests_include not in case.entry.home.func_name:
                 logger.debug("Skipping '{0}' test because it doesn't contain '"
@@ -66,12 +67,14 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude):
     return tests
 
 
-def upload_tests_descriptions(testrail_project, section_id, tests):
+def upload_tests_descriptions(testrail_project, section_id,
+                              tests, check_all_sections):
     tests_suite = testrail_project.get_suite_by_name(
         TestRailSettings.tests_suite)
+    check_section = None if check_all_sections else section_id
     existing_cases = [case['custom_test_group'] for case in
                       testrail_project.get_cases(suite_id=tests_suite['id'],
-                                                 section_id=section_id)]
+                                                 section_id=check_section)]
     for test_case in tests:
         if test_case['custom_test_group'] in existing_cases:
             logger.debug('Skipping uploading "{0}" test case because it '
@@ -89,7 +92,35 @@ def upload_tests_descriptions(testrail_project, section_id, tests):
         testrail_project.add_case(section_id=section_id, case=test_case)
 
 
+def get_tests_groups_from_jenkins(runner_name, build_number):
+    runner_build = Build(runner_name, build_number)
+    return [b['jobName'].split('.')[-1]
+            for b in runner_build.build_data['subBuilds']]
+
+
 def main():
+    parser = OptionParser(
+        description="Upload tests cases to TestRail. "
+                    "See settings.py for configuration."
+    )
+    parser.add_option("-v", "--verbose",
+                      action="store_true", dest="verbose", default=False,
+                      help="Enable debug output")
+    parser.add_option('-j', '--job-name', dest='job_name', default=None,
+                      help='Jenkins swarm runner job name')
+    parser.add_option('-N', '--build-number', dest='build_number',
+                      default='latest',
+                      help='Jenkins swarm runner build number')
+    parser.add_option('-o', '--check_one_section', action="store_true",
+                      dest='check_one_section', default=False,
+                      help='Look for existing test case only in specified '
+                           'section of test suite.')
+
+    (options, args) = parser.parse_args()
+
+    if options.verbose:
+        logger.setLevel(DEBUG)
+
     project = TestRailProject(
         url=TestRailSettings.url,
         user=TestRailSettings.user,
@@ -105,28 +136,20 @@ def main():
     testrail_milestone = project.get_milestone_by_name(
         name=TestRailSettings.milestone)
 
+    tests_groups = get_tests_groups_from_jenkins(
+        options.job_name, options.build_number) if options.job_name else []
+
     tests_descriptions = get_tests_descriptions(
         milestone_id=testrail_milestone['id'],
         tests_include=TestRailSettings.tests_include,
-        tests_exclude=TestRailSettings.tests_exclude
+        tests_exclude=TestRailSettings.tests_exclude,
+        groups=tests_groups
     )
 
     upload_tests_descriptions(testrail_project=project,
                               section_id=testrail_section['id'],
-                              tests=tests_descriptions)
+                              tests=tests_descriptions,
+                              check_all_sections=not options.check_one_section)
 
 if __name__ == '__main__':
-    parser = OptionParser(
-        description="Upload tests cases to TestRail. "
-                    "See settings.py for configuration."
-    )
-    parser.add_option("-v", "--verbose",
-                      action="store_true", dest="verbose", default=False,
-                      help="Enable debug output")
-
-    (options, args) = parser.parse_args()
-
-    if options.verbose:
-        logger.setLevel(DEBUG)
-
     main()
