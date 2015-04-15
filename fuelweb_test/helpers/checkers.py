@@ -881,7 +881,7 @@ def check_swift_ring(remote):
                 ring))['stdout'])
         logger.debug("swift ring builder information is {0}".format(res))
         balance = re.search('(\d+.\d+) balance', res).group(1)
-        assert_true(float(balance) == 0,
+        assert_true(float(balance) < 10,
                     "swift ring builder {1} is not ok,"
                     " balance is {0}".format(balance, ring))
 
