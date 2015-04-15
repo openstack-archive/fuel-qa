@@ -74,7 +74,7 @@ class OneNodeDeploy(TestBasic):
                        '.SanityIdentityTest.test_list_users'))
 
 
-@test(groups=["thread_2"])
+@test(groups=["thread_2", "thread_non_func_1_usb"])
 class HAOneControllerFlat(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_ha_one_controller_flat",
