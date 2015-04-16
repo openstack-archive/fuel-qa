@@ -35,6 +35,7 @@ from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.fuel_actions import PostgresActions
 from fuelweb_test.helpers.ntp import Ntp
 from fuelweb_test.helpers.ntp import GroupNtpSync
+from fuelweb_test.helpers.utils import timestat
 from fuelweb_test.helpers import multiple_networks_hacks
 from fuelweb_test.models.fuel_web_client import FuelWebClient
 from fuelweb_test.models.collector_client import CollectorClient
@@ -94,7 +95,9 @@ class EnvironmentModel(object):
             # TODO(aglarendil): LP#1317213 temporary sleep
             # remove after better fix is applied
             time.sleep(2)
-        wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
+
+        with timestat("wait_for_nodes_to_start_and_register_in_nailgun"):
+            wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
 
         if not skip_timesync:
             self.sync_time([node for node in self.nailgun_nodes(devops_nodes)])
