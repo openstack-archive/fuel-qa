@@ -83,7 +83,7 @@ class BaseActions(object):
         return (result['exit_code'] == 0)
 
     def wait_for_ready_container(self, timeout=300):
-        wait(lambda: self.is_container_ready, timeout)
+        wait(lambda: self.is_container_ready, timeout=timeout)
 
 
 class AdminActions(BaseActions):
@@ -366,3 +366,35 @@ class CobblerActions(BaseActions):
             command='service dnsmasq restart',
             exit_code=0
         )
+
+
+class DockerActions(object):
+    def __init__(self, admin_remote):
+        self.admin_remote = admin_remote
+
+    def list_containers(self):
+        return self.admin_remote.execute('dockerctl list')['stdout']
+
+    def wait_for_ready_containers(self, timeout=300):
+        cont_actions = []
+        for container in self.list_containers():
+            cont_action = BaseActions(self.admin_remote)
+            cont_action.container = container
+            cont_actions.append(cont_action)
+        wait(lambda: all([cont_action.is_container_ready
+                          for cont_action in cont_actions]), timeout=timeout)
+
+    def restart_container(self, container):
+        self.admin_remote.execute('dockerctl restart {0}'.format(container))
+        cont_action = BaseActions(self.admin_remote)
+        cont_action.container = container
+        cont_action.wait_for_ready_container()
+
+    def restart_containers(self):
+        for container in self.list_containers():
+            self.restart_container(container)
+
+    def execute_in_containers(self, cmd):
+        for container in self.list_containers():
+            self.admin_remote.execute(
+                "dockerctl shell {0} bash -c '{1}'".format(container, cmd))
