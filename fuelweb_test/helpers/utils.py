@@ -237,14 +237,19 @@ def cond_upload(remote, source, target, condition=''):
     if remote.isdir(target):
         target = posixpath.join(target, os.path.basename(source))
 
+    source = os.path.expanduser(source)
     if not os.path.isdir(source):
         if re.match(condition, source):
             remote.upload(source, target)
-            return
+            logger.debug("File '{0}' uploaded to the remote folder '{1}'"
+                         .format(source, target))
+            return 1
         else:
             logger.debug("Pattern '{0}' doesn't match the file '{1}', "
                          "uploading skipped".format(condition, source))
+            return 0
 
+    files_count = 0
     for rootdir, subdirs, files in os.walk(source):
         targetdir = os.path.normpath(
             os.path.join(
@@ -258,6 +263,10 @@ def cond_upload(remote, source, target, condition=''):
             remote_path = posixpath.join(targetdir, entry)
             if re.match(condition, local_path):
                 remote.upload(local_path, remote_path)
+                files_count += 1
+                logger.debug("File '{0}' uploaded to the remote folder '{1}'"
+                             .format(source, target))
             else:
                 logger.debug("Pattern '{0}' doesn't match the file '{1}', "
                              "uploading skipped".format(condition, local_path))
+    return files_count
