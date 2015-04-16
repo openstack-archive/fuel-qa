@@ -30,6 +30,7 @@ from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers.eb_tables import Ebtables
 from fuelweb_test.helpers.fuel_actions import AdminActions
 from fuelweb_test.helpers.fuel_actions import CobblerActions
+from fuelweb_test.helpers.fuel_actions import DockerActions
 from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.fuel_actions import PostgresActions
 from fuelweb_test.helpers.ntp import Ntp
@@ -61,6 +62,10 @@ class EnvironmentModel(object):
     @property
     def cobbler_actions(self):
         return CobblerActions(self.d_env.get_admin_remote())
+
+    @property
+    def docker_actions(self):
+        return DockerActions(self.d_env.get_admin_remote())
 
     @property
     def admin_node_ip(self):
@@ -305,7 +310,7 @@ class EnvironmentModel(object):
         self.set_admin_ssh_password()
         self.admin_actions.modify_configs(self.d_env.router())
         self.wait_bootstrap()
-        self.nailgun_actions.wait_for_ready_container()
+        self.docker_actions.wait_for_ready_containers()
         time.sleep(10)
         self.set_admin_keystone_password()
         self.sync_time()
