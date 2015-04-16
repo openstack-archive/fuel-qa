@@ -153,25 +153,41 @@ def update_fuel(func):
 
             remote = environment.d_env.get_admin_remote()
 
-            cond_upload(remote,
-                        settings.UPDATE_FUEL_PATH,
-                        settings.LOCAL_MIRROR_CENTOS,
-                        "(?i).*\.rpm$")
-            regenerate_centos_repo(remote, settings.LOCAL_MIRROR_CENTOS)
+            centos_files_count = cond_upload(
+                remote, settings.UPDATE_FUEL_PATH,
+                os.path.join(settings.LOCAL_MIRROR_CENTOS, 'Packages'),
+                "(?i).*\.rpm$")
 
-            cond_upload(remote,
-                        settings.UPDATE_FUEL_PATH,
-                        settings.LOCAL_MIRROR_UBUNTU,
-                        "(?i).*\.deb$")
-            regenerate_ubuntu_repo(remote, settings.LOCAL_MIRROR_UBUNTU)
+            ubuntu_files_count = cond_upload(
+                remote, settings.UPDATE_FUEL_PATH,
+                os.path.join(settings.LOCAL_MIRROR_UBUNTU, 'pool/main'),
+                "(?i).*\.deb$")
 
-            try:
-                remote.execute("for container in $(dockerctl list); do"
-                               " dockerctl shell $container bash -c \"yum "
-                               "clean expire-cache;yum update -y\";dockerctl "
-                               "restart $container; done")
-            except Exception:
-                logger.exception("Fail update of Fuel's package(s).")
+            if centos_files_count > 0:
+                regenerate_centos_repo(remote, settings.LOCAL_MIRROR_CENTOS)
+                try:
+                    logger.info("Updating packages in docker containers ...")
+                    res = remote.execute(
+                        "for container in $(dockerctl list);do dockerctl shell"
+                        " $container bash -c 'yum clean expire-cache;"
+                        "yum update -y'; dockerctl restart $container; done")
+                    logger.debug("Docker containers updating results: {}"
+                                 .format(res['stdout']))
+
+                except Exception:
+                    logger.exception("Fail update of Fuel's package(s).")
+
+                logger.info("Waiting for nailgun container ...")
+                environment.nailgun_actions.wait_for_ready_container()
+
+            if ubuntu_files_count > 0:
+                regenerate_ubuntu_repo(remote, settings.LOCAL_MIRROR_UBUNTU)
+                # Add auxiliary repository to the cluster attributes
+                if settings.OPENSTACK_RELEASE_UBUNTU not in \
+                        settings.OPENSTACK_RELEASE:
+                    logger.error("{0} .DEB files uploaded but won't be used"
+                                 " because of deploying wrong release!"
+                                 .format(ubuntu_files_count))
         return result
     return wrapper
 
