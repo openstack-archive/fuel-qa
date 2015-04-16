@@ -94,7 +94,11 @@ class EnvironmentModel(object):
             # TODO(aglarendil): LP#1317213 temporary sleep
             # remove after better fix is applied
             time.sleep(2)
+
+        start_time = time.time()
         wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
+        logger.info('It took %i seconds all nodes to start up and register'
+                    ' in nailgun' % (time.time() - start_time))
 
         if not skip_timesync:
             self.sync_time([node for node in self.nailgun_nodes(devops_nodes)])
