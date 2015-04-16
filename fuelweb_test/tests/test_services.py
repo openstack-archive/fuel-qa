@@ -549,7 +549,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-03")['ip']
         partitions = checkers.get_mongo_partitions(
-            self.env.d_env.get_ssh_to_remote("slave-03"), "vda5")
+            self.env.d_env.get_ssh_to_remote(_ip), "vda5")
         assert_equal(partitions[0].rstrip(), mongo_disk_gb,
                      'Mongo size {0} before deployment is not equal'
                      ' to size after {1}'.format(mongo_disk_gb, partitions))
