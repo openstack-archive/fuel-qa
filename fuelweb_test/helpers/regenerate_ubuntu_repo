@@ -7,14 +7,22 @@ set -e
 
 ARCH=amd64
 REPO_PATH=$1
-REPONAME=$2
+SUITE=$2
+SECTION=main
 
-BINDIR=${REPO_PATH}/dists/${REPONAME}/main
-release_header=`sed '/MD5Sum:/,$d' ${REPO_PATH}/dists/${REPONAME}/Release`
+BINDIR=${REPO_PATH}/dists/${SUITE}/${SECTION}
 
-override_main="indices/override.${REPONAME}.main"
-override_udeb="indices/override.${REPONAME}.main.debian-installer"
-override_extra="indices/override.${REPONAME}.extra.main"
+# Validate structure of the repo
+mkdir -p "${BINDIR}/binary-${ARCH}/"
+mkdir -p "${REPO_PATH}/pool/${SECTION}"
+RELEASE="${REPO_PATH}/dists/${SUITE}/Release"
+touch ${RELEASE}
+
+release_header=`sed '/MD5Sum:/,$d' ${RELEASE}`
+
+override_main="indices/override.${SUITE}.${SECTION}"
+override_udeb="indices/override.${SUITE}.${SECTION}.debian-installer"
+override_extra="indices/override.${SUITE}.extra.${SECTION}"
 
 if [ -f "${REPO_PATH}/${override_main}" ]; then
     binoverride="${override_main}"
@@ -38,7 +46,7 @@ package_udeb=${BINDIR}/debian-installer/binary-${ARCH}/Packages
 cd ${REPO_PATH}
 
 # Scan *.deb packages
-dpkg-scanpackages  -m ${extraoverride} -a ${ARCH} pool/main ${binoverride} > ${package_deb}.tmp 2>/dev/null
+dpkg-scanpackages  -m ${extraoverride} -a ${ARCH} pool/${SECTION} ${binoverride} > ${package_deb}.tmp 2>/dev/null
 
 gzip -9c ${package_deb}.tmp > ${package_deb}.gz.tmp
 bzip2 -ckz ${package_deb}.tmp > ${package_deb}.bz2.tmp
@@ -62,7 +70,7 @@ if [ -d "${BINDIR}/debian-installer/binary-${ARCH}/" ]; then
 fi
 
 # Generate release file
-cd ${REPO_PATH}/dists/${REPONAME}
+cd ${REPO_PATH}/dists/${SUITE}
 echo "$release_header" > Release.tmp
 
 # Generate hashes
@@ -72,7 +80,7 @@ c2=(md5 sha1 sha256 sha512)
 i=0
 while [ $i -lt ${#c1[*]} ]; do
     echo ${c1[i]}
-        for hashme in `find main -type f \( -not -name "*~" -name "Package*" -o -name "Release*" \)`; do
+        for hashme in `find ${SECTION} -type f \( -not -name "*~" -name "Package*" -o -name "Release*" \)`; do
         ohash=`openssl dgst -${c2[$i]} ${hashme}`
         chash="${ohash##* }"
         size=`stat -c %s ${hashme}`
