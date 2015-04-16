@@ -298,8 +298,8 @@ class CustomRepo(object):
         assert_equal(0, script_result['exit_code'],
                      self.assert_msg(script_cmd, script_result['stderr']))
 
-        logger.info('Local "{0}" repository {1} has been updated successfuly.'
-                    .format(settings.OPENSTACK_RELEASE, local_mirror_path))
+        logger.info('Local repository {0} has been updated successfuly.'
+                    .format(local_mirror_path))
 
     def assert_msg(self, cmd, err):
         return 'Executing \'{0}\' on the admin node has failed with: {1}'\

@@ -449,23 +449,24 @@ class FuelWebClient(object):
 
         return cluster_id
 
-    def add_local_ubuntu_mirror(self, cluster_id,
+    def add_local_ubuntu_mirror(self, cluster_id, name='Auxiliary',
                                 path=help_data.LOCAL_MIRROR_UBUNTU,
                                 suite='auxiliary', section='main',
                                 priority=help_data.EXTRA_DEB_REPOS_PRIORITY):
         # Append new mirror to attributes of currently creating Ubuntu cluster
         mirror_url = path.replace('/var/www/nailgun',
                                   'http://{0}:8080'.format(self.admin_node_ip))
-        mirror = 'deb {0} {1} {2}'.format(mirror_url, suite, section)
+        mirror = '{0},deb {1} {2} {3}'.format(name, mirror_url, suite, section)
 
         attributes = self.client.get_cluster_attributes(cluster_id)
 
         repos_attr = attributes['editable']['repo_setup']['repos']
         self.add_ubuntu_extra_mirrors(repos=repos_attr['value'], prefix=suite,
                                       mirrors=mirror, priority=priority)
+        self.report_ubuntu_repos(repos_attr)
         self.client.update_cluster_attributes(cluster_id, attributes)
 
-    def add_local_centos_mirror(self, cluster_id,
+    def add_local_centos_mirror(self, cluster_id, name='Auxiliary',
                                 path=help_data.LOCAL_MIRROR_CENTOS,
                                 repo_name='auxiliary',
                                 priority=help_data.EXTRA_RPM_REPOS_PRIORITY):
@@ -479,6 +480,7 @@ class FuelWebClient(object):
         repos_attr = attributes['editable']['repo_setup']['repos']
         self.add_centos_extra_mirrors(repos=repos_attr['value'],
                                       mirrors=mirror, priority=priority)
+        self.report_centos_repos(repos_attr)
         self.client.update_cluster_attributes(cluster_id, attributes)
 
     def replace_default_repos(self):
@@ -520,11 +522,7 @@ class FuelWebClient(object):
         if help_data.EXTRA_DEB_REPOS:
             self.add_ubuntu_extra_mirrors(repos=repos)
 
-        for x, rep in enumerate(repos):
-            logger.info(
-                "Ubuntu repo {0} '{1}': '{2} {3} {4} {5}', priority:{6}"
-                .format(x, rep['name'], rep['type'], rep['uri'],
-                        rep['suite'], rep['section'], rep['priority']))
+        self.report_ubuntu_repos(repos)
         return repos
 
     def replace_centos_repos(self, repos_attr):
@@ -532,12 +530,23 @@ class FuelWebClient(object):
         repos = repos_attr['value']
         if help_data.EXTRA_RPM_REPOS:
             self.add_centos_extra_mirrors(repos=repos)
+
+        self.report_centos_repos(repos)
+        return repos
+
+    def report_ubuntu_repos(self, repos):
+        for x, rep in enumerate(repos):
+            logger.info(
+                "Ubuntu repo {0} '{1}': '{2} {3} {4} {5}', priority:{6}"
+                .format(x, rep['name'], rep['type'], rep['uri'],
+                        rep['suite'], rep['section'], rep['priority']))
+
+    def report_centos_repos(self, repos):
         for x, rep in enumerate(repos):
             logger.info(
                 "Centos repo {0} '{1}': '{2} {3}', priority:{4}"
                 .format(x, rep['name'], rep['type'], rep['uri'],
                         rep['priority']))
-        return repos
 
     def add_ubuntu_mirrors(self, repos=[], mirrors=help_data.MIRROR_UBUNTU,
                            priority=help_data.MIRROR_UBUNTU_PRIORITY):
@@ -556,7 +565,12 @@ class FuelWebClient(object):
         for x, repo_str in enumerate(mirrors.split('|')):
             repo_value = self.parse_ubuntu_repo(
                 repo_str, '{0}-{1}'.format(prefix, x), priority)
+
             if repo_value and self.check_new_ubuntu_repo(repos, repo_value):
+                # Remove repos that use the same name
+                for repo in repos:
+                    if repo["name"] == repo_value["name"]:
+                        repos.remove(repo)
                 repos.append(repo_value)
         return repos
 
@@ -567,6 +581,10 @@ class FuelWebClient(object):
         for x, repo_str in enumerate(mirrors.split('|')):
             repo_value = self.parse_centos_repo(repo_str, priority)
             if repo_value and self.check_new_centos_repo(repos, repo_value):
+                # Remove repos that use the same name
+                for repo in repos:
+                    if repo["name"] == repo_value["name"]:
+                        repos.remove(repo)
                 repos.append(repo_value)
         return repos
 
@@ -591,29 +609,33 @@ class FuelWebClient(object):
         # Validate DEB repository string format
         results = re.search("""
             ^                 # [beginning of the string]
-            (deb|deb-src)     # group 1: type; search for 'deb' or 'deb-src'
+            ([\w\-\.\/]+)?    # group 1: optional repository name (for Nailgun)
+            ,?                # [optional comma separator]
+            (deb|deb-src)     # group 2: type; search for 'deb' or 'deb-src'
             \s+               # [space separator]
-            (                 # group 2: uri;
+            (                 # group 3: uri;
             \w+:\/\/          #   - protocol, i.e. 'http://'
             [\w\-\.\/]+       #   - hostname
             (?::\d+)          #   - port, i.e. ':8080', if exists
             ?[\w\-\.\/]+      #   - rest of the path, if exists
             )                 #   - end of group 2
             \s+               # [space separator]
-            ([\w\-\.\/]+)     # group 3: suite;
+            ([\w\-\.\/]+)     # group 4: suite;
             \s*               # [space separator], if exists
-            (                 # group 4: section;
+            (                 # group 5: section;
             [\w\-\.\/\s]*     #   - several space-separated names, or None
             )                 #   - end of group 4
+            ,?                # [optional comma separator]
+            (\d+)?            # group 6: optional priority of the repository
             $                 # [ending of the string]""",
                             repo_string.strip(), re.VERBOSE)
         if results:
-            return {"name": name,
-                    "priority": int(priority),
-                    "type": results.group(1),
-                    "uri": results.group(2),
-                    "suite": results.group(3),
-                    "section": results.group(4) or ''}
+            return {"name": results.group(1) or name,
+                    "priority": int(results.group(6) or priority),
+                    "type": results.group(2),
+                    "uri": results.group(3),
+                    "suite": results.group(4),
+                    "section": results.group(5) or ''}
         else:
             logger.error("Provided DEB repository has incorrect format: {}"
                          .format(repo_string))
@@ -631,11 +653,13 @@ class FuelWebClient(object):
             ?[\w\-\.\/]+      #   - rest of the path, if exists
             )                 #   - end of group 2
             \s*               # [space separator]
+            ,?                # [optional comma separator]
+            (\d+)?            # group 3: optional priority of the repository
             $                 # [ending of the string]""",
                             repo_string.strip(), re.VERBOSE)
         if results:
             return {"name": results.group(1),
-                    "priority": int(priority),
+                    "priority": int(results.group(3) or priority),
                     "type": 'rpm',
                     "uri": results.group(2)}
         else:
