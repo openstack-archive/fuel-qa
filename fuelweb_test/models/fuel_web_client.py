@@ -385,11 +385,11 @@ class FuelWebClient(object):
 
             if help_data.FUEL_USE_LOCAL_NTPD and ('ntp_list' not in settings):
                 attributes['editable']['external_ntp']['ntp_list']['value'] =\
-                    self.admin_node_ip
+                    self.environment.d_env.router(router_name="public")
 
             if help_data.FUEL_USE_LOCAL_DNS and ('dns_list' not in settings):
                 attributes['editable']['external_dns']['dns_list']['value'] =\
-                    self.admin_node_ip
+                    self.environment.d_env.router(router_name="public")
 
             logger.info('Set DEBUG MODE to %s', help_data.DEBUG_MODE)
             attributes['editable']['common']['debug']['value'] = \
