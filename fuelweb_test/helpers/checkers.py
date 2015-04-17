@@ -281,6 +281,8 @@ def check_upgraded_containers(remote, version_from, version_to):
 
 @logwrap
 def upload_tarball(node_ssh, tar_path, tar_target):
+    assert_true(tar_path, "Source path for uploading 'tar_path' is empty, "
+                "please check test settings!")
     check_archive_type(tar_path)
     try:
         logger.debug("Start to upload tar file")
