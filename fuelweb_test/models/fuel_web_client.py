@@ -383,13 +383,20 @@ class FuelWebClient(object):
                 attributes['editable']['provision']['method']['value'] = \
                     'cobbler'
 
-            if help_data.FUEL_USE_LOCAL_NTPD and ('ntp_list' not in settings):
+            public_gw = self.environment.d_env.router(router_name="public")
+
+            if help_data.FUEL_USE_LOCAL_NTPD and ('ntp_list' not in settings)\
+                    and checkers.is_ntpd_active(self.admin_remote, public_gw):
                 attributes['editable']['external_ntp']['ntp_list']['value'] =\
-                    self.admin_node_ip
+                    public_gw
+                logger.info("Configuring cluster #{0} to use NTP server {1}"
+                            .format(cluster_id, public_gw))
 
             if help_data.FUEL_USE_LOCAL_DNS and ('dns_list' not in settings):
                 attributes['editable']['external_dns']['dns_list']['value'] =\
-                    self.admin_node_ip
+                    public_gw
+                logger.info("Configuring cluster #{0} to use DNS server {1}"
+                            .format(cluster_id, public_gw))
 
             logger.info('Set DEBUG MODE to %s', help_data.DEBUG_MODE)
             attributes['editable']['common']['debug']['value'] = \
