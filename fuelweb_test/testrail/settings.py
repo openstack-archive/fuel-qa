@@ -46,7 +46,7 @@ class TestRailSettings(object):
     project = os.environ.get('TESTRAIL_PROJECT', 'Mirantis OpenStack')
     milestone = os.environ.get('TESTRAIL_MILESTONE', '6.1')
     tests_suite = os.environ.get('TESTRAIL_TEST_SUITE', 'Swarm 6.1')
-    tests_section = os.environ.get('TESTRAIL_TEST_SECTION', 'all cases')
+    tests_section = os.environ.get('TESTRAIL_TEST_SECTION', 'All')
     tests_include = os.environ.get('TESTRAIL_TEST_INCLUDE', None)
     tests_exclude = os.environ.get('TESTRAIL_TEST_EXCLUDE', None)
     previous_results_depth = os.environ.get('TESTRAIL_TESTS_DEPTH', 5)
