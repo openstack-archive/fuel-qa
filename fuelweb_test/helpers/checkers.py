@@ -1044,3 +1044,8 @@ def check_auto_mode(remote):
         return ''.join(remote.execute(command)['stdout']).strip()
     else:
         return ''.join(remote.execute(command)['stderr']).strip()
+
+
+def is_ntpd_active(remote, ntpd_ip):
+    cmd = 'ntpdate -d -p 4 -t 0.2 -u {0}'.format(ntpd_ip)
+    return (not remote.execute(cmd)['exit_code'])
