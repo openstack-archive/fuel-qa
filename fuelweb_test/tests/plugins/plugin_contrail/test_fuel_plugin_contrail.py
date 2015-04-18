@@ -54,11 +54,10 @@ class ContrailPlugin(TestBasic):
         os.path.isfile(self.add_ub_packag or self.add_cen_packeg)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["test_install_contrail"])
+          groups=["install_contrail"])
     @log_snapshot_on_error
     def install_contrail(self):
-        """Verify possibility to copy plugin to the master node and install
-        plugin on it. Verify that all steps were performed without any errors.
+        """Install Contrail Plugin and create cluster
 
         Scenario:
             1. Revert snapshot "ready_with_5_slaves"
@@ -68,7 +67,6 @@ class ContrailPlugin(TestBasic):
             5. Create cluster
 
         Duration 20 min
-        Snapshot contrail_installed
 
         """
         self.env.revert_snapshot("ready_with_5_slaves")
@@ -111,13 +109,13 @@ class ContrailPlugin(TestBasic):
             }
         )
 
-        self.env.make_snapshot("contrail_installed")
+        self.env.make_snapshot("install_contrail")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["test_deploy_contrail"])
+          groups=["deploy_contrail"])
     @log_snapshot_on_error
     def deploy_contrail(self):
-        """Deploy a cluster with Plugin
+        """Deploy a cluster with Contrail Plugin
 
         Scenario:
             1. Revert snapshot "ready_with_5_slaves"
@@ -131,7 +129,6 @@ class ContrailPlugin(TestBasic):
             8. Deploy cluster with plugin
 
         Duration 90 min
-        Snapshot  contrail_deployed
 
         """
         self.env.revert_snapshot("ready_with_5_slaves")
@@ -198,4 +195,4 @@ class ContrailPlugin(TestBasic):
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        self.env.make_snapshot("contrail_deployed")
+        self.env.make_snapshot("deploy_contrail")
