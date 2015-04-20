@@ -457,3 +457,45 @@ class TestHaFailoverBase(TestBasic):
             assert_true(file_size2 > file_size1,
                         "File download was interrupted, size of downloading "
                         "does not change")
+
+    def ha_controller_loss_packages(self, dev='br-mgmt', loss_percent='0.75'):
+        if not self.env.d_env.has_snapshot(self.snapshot_name):
+            raise SkipTest()
+
+        self.env.revert_snapshot(self.snapshot_name)
+
+        logger.debug(
+            'start to execute command on the slave'
+            ' for dev{0}, loss percent {1}'. format(dev, loss_percent))
+
+        remote = self.fuel_web.get_ssh_for_node(
+            self.env.d_env.nodes().slaves[:1].name)
+        cmd_input = ('iptables -I INPUT -m statistic --mode random '
+                     '--probability {0} -i '
+                     '{1} -j DROP'.format(loss_percent, dev))
+        cmd_output = ('iptables -I OUTPUT -m statistic --mode random '
+                      '--probability {0} -o '
+                      '{1} -j DROP'.format(loss_percent, dev))
+        try:
+            remote.check_call(cmd_input)
+            remote.check_call(cmd_output)
+        except:
+            logger.error('command failed to be executed'.format(
+                self.env.d_env.nodes().slaves[:1].name))
+            raise
+
+        cluster_id = self.fuel_web.client.get_cluster_id(
+            self.__class__.__name__)
+
+        # Wait until MySQL Galera is UP on some controller
+        self.fuel_web.wait_mysql_galera_is_up(['slave-02'])
+
+        try:
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha', 'smoke', 'sanity'])
+        except AssertionError:
+            time.sleep(400)
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha', 'smoke', 'sanity'])
