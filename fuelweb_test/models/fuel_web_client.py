@@ -30,6 +30,7 @@ from fuelweb_test.helpers import checkers
 from fuelweb_test import logwrap
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import custom_repo
+from fuelweb_test.helpers.decorators import check_repos_management
 from fuelweb_test.helpers.decorators import download_astute_yaml
 from fuelweb_test.helpers.decorators import download_packages_json
 from fuelweb_test.helpers.decorators import duration
@@ -682,6 +683,7 @@ class FuelWebClient(object):
     @download_packages_json
     @download_astute_yaml
     @duration
+    @check_repos_management
     @custom_repo
     def deploy_cluster_wait(self, cluster_id, is_feature=False,
                             timeout=50 * 60, interval=30):
