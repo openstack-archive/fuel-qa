@@ -111,10 +111,22 @@ class TestHaFailoverBase(TestBasic):
                  set(self.env.d_env.nodes().slaves[:3]) - {devops_node}],
                 timeout=300)
 
-            self.fuel_web.run_ostf(
-                cluster_id=cluster_id,
-                test_sets=['ha', 'smoke', 'sanity'],
-                should_fail=1)
+            logger.info("Waiting 300 sec before RabbitMQ cluster will up, "
+                        "then run OSTF")
+            time.sleep(300)
+            try:
+                self.fuel_web.run_ostf(
+                    cluster_id=cluster_id,
+                    test_sets=['ha', 'smoke', 'sanity'],
+                    should_fail=1)
+            except AssertionError:
+                logger.info("First run OSTF was failed. "
+                            "Waiting 600 sec and trying one more time")
+                time.sleep(300)
+                self.fuel_web.run_ostf(
+                    cluster_id=cluster_id,
+                    test_sets=['ha', 'smoke', 'sanity'],
+                    should_fail=1)
 
     def ha_disconnect_controllers(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
