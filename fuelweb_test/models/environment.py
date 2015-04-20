@@ -230,13 +230,14 @@ class EnvironmentModel(object):
 
         self.set_admin_ssh_password()
 
+        self.nailgun_actions.wait_for_ready_container()
+
         if not skip_timesync:
             nailgun_nodes = [self.fuel_web.get_nailgun_node_by_name(node.name)
                              for node in self.d_env.nodes().slaves
                              if node.driver.node_active(node)]
             self.sync_time(nailgun_nodes)
 
-        self.nailgun_actions.wait_for_ready_container()
         try:
             _wait(self.fuel_web.client.get_releases,
                   expected=EnvironmentError, timeout=300)
