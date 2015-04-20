@@ -112,6 +112,12 @@ class TestHaFailoverBase(TestBasic):
                  set(self.env.d_env.nodes().slaves[:3]) - {devops_node}],
                 timeout=300)
 
+            logger.info("Waiting 300 sec before RabbitMQ cluster will up, "
+                        "then run OSTF")
+            _wait(lambda:
+                  self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
+                  interval=30, timeout=300)
+
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
                 test_sets=['ha', 'smoke', 'sanity'],
