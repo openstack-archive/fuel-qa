@@ -132,6 +132,8 @@ def get_current_env(args):
         return args[0]
     elif args[0].__class__.__name__ == "FuelWebClient":
         return args[0].environment
+    elif args[0].__class__.__name__ == "NeutronGre":
+        return args[0].env
     else:
         logger.warning("Unexpected class!")
 
