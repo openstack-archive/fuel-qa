@@ -192,13 +192,9 @@ class HAOneControllerFlatRestart(TestBasic):
             2. Add 1 node with controller role
             3. Add 1 node with compute role
             4. Deploy the cluster
-            5. Validate cluster was set up correctly, there are no dead
-            services, there are no errors in logs
-            6. Turn off all nodes
-            7. Start all nodes
-            8. Run OSTF
-            9. Warm restart
-            10. Run OSTF
+            5. Warm restart
+            6. Wait for Galera is up
+            6. Run OSTF
 
         Duration 30m
 
@@ -221,6 +217,8 @@ class HAOneControllerFlatRestart(TestBasic):
         # Warm restart
         self.fuel_web.warm_restart_nodes(
             self.env.d_env.nodes().slaves[:2])
+
+        self.fuel_web.wait_mysql_galera_is_up(['slave-01'])
 
         try:
             self.fuel_web.run_single_ostf_test(
