@@ -1051,3 +1051,18 @@ def check_auto_mode(remote):
 def is_ntpd_active(remote, ntpd_ip):
     cmd = 'ntpdate -d -p 4 -t 0.2 -u {0}'.format(ntpd_ip)
     return (not remote.execute(cmd)['exit_code'])
+
+
+def check_repo_managment(remote):
+    """Check repo managment
+
+    run 'yum update' or 'apt-get update' exit code should be 0
+
+    :type devops_node: Node
+        :rtype True or False
+    """
+    if OPENSTACK_RELEASE == OPENSTACK_RELEASE_UBUNTU:
+        cmd = "apt-get update > /dev/null 2>&1"
+    else:
+        cmd = "yum update > /dev/null 2>&1"
+    remote.check_call(cmd)
