@@ -117,10 +117,10 @@ class NeutronGre(TestBasic):
         self.env.make_snapshot('step_1_create_3_node_cluster')
 
     @test(depends_on=[step_1_create_3_node_cluster_and_provision_nodes],
-          groups=['run_tasks_end_with_host'])
+          groups=['run_tasks_end_with_vips'])
     @log_snapshot_on_error
-    def run_tasks_end_with_hosts(self):
-        """Run tasks end with hosts all nodes of the cluster.
+    def run_tasks_end_with_vips(self):
+        """Run tasks end with vips.
           Depends:
           "step_1_create_3_node_cluster"
 
@@ -128,24 +128,22 @@ class NeutronGre(TestBasic):
             1. Revert snapshot "step 1 create_3_node_cluster_provision"
             2. Get cluster id
             3. Get cluster task list
-            4. Execute tasks ended with host on all nodes
-            5. Assert task hiera
-            6. Assert task globals
-            7. Assert task tools
-            8. Assert task logging
-            9. Assert task netconfig
-            10. Assert task firewall and hosts
-            11. Create snapshot
+            4. Execute tasks ended with vips on controller
+            5. Execute tasks ended with host on other nodes
+            6. Assert tasks completions
+            7. Create snapshot
 
-        Snapshot: "run_tasks_end_with_hosts"
+        Snapshot: "run_virtual_ips_controller"
         """
-        self.check_run_by_group('run_tasks_end_with_hosts',
-                                'run_tasks_end_with_host')
+        self.check_run_by_group('run_tasks_end_with_vips',
+                                'run_tasks_end_with_vips')
         self.env.revert_snapshot("step_1_create_3_node_cluster")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         # get task list:
+        task_controller = self.fuel_web.client.get_end_deployment_tasks(
+            cluster_id, end='virtual_ips')
 
         tasks = self.fuel_web.client.get_end_deployment_tasks(
             cluster_id, end='hosts')
@@ -154,27 +152,33 @@ class NeutronGre(TestBasic):
 
         data = [task['id'] for task in tasks]
 
-        for t in ['hiera', 'globals', 'netconfig', 'hosts']:
-            assert_true(t in data,
-                        message='Can not find task {0}'
-                                ' in task list {1}'.format(t, data))
+        controller_id = [n['id'] for n in
+                         self.fuel_web.client.list_cluster_nodes(cluster_id)
+                         if 'controller' in n['roles']]
 
-        nodes_ids = [n['id'] for n in
-                     self.fuel_web.client.list_cluster_nodes(cluster_id)]
+        computes_ids = [n['id'] for n in
+                        self.fuel_web.client.list_cluster_nodes(cluster_id)
+                        if 'controller' not in n['roles']]
+
+        c_task = self.fuel_web.client.put_deployment_tasks_for_cluster(
+            cluster_id, data=[task['id'] for task in task_controller],
+            node_id=str(controller_id).strip('[]'))
+
+        self.fuel_web.assert_task_success(c_task)
 
         task = self.fuel_web.client.put_deployment_tasks_for_cluster(
-            cluster_id, data=data, node_id=str(nodes_ids).strip('[]'))
+            cluster_id, data=data, node_id=str(computes_ids).strip('[]'))
 
         logger.debug('task info is {0}'.format(task))
         self.fuel_web.assert_task_success(task)
 
         task_tools = self.fuel_web.client.put_deployment_tasks_for_cluster(
-            cluster_id, data=['tools'], node_id=str(nodes_ids).strip('[]'))
+            cluster_id, data=['tools'], node_id=str(computes_ids).strip('[]'))
 
         self.fuel_web.assert_task_success(task_tools)
 
         task_firewall = self.fuel_web.client.put_deployment_tasks_for_cluster(
-            cluster_id, data=['firewall'], node_id=str(nodes_ids).strip('[]'))
+            cluster_id, data=['firewall'], node_id=str(computes_ids).strip('[]'))
 
         self.fuel_web.assert_task_success(task_firewall)
 
@@ -199,7 +203,7 @@ class NeutronGre(TestBasic):
                 path=self.get_post_test(tasks, 'globals')[0]['cmd'])
              for node in nodes]
 
-        # check netcondfig
+        # check netconfig
 
         if self.get_post_test(tasks, 'netconfig'):
             [gd.run_check_from_task(
@@ -230,114 +234,17 @@ class NeutronGre(TestBasic):
                 remote=self.fuel_web.get_ssh_for_node(node),
                 path=self.get_post_test(all_tasks, 'tools')[0]['cmd'])
              for node in nodes]
-         # check tools
 
-        self.env.make_snapshot('run_tasks_end_with_hosts')
+        # check cluster on controller
 
-    @test(depends_on=[run_tasks_end_with_hosts],
-          groups=['cluster_controller'])
-    @log_snapshot_on_error
-    def step_3_run_cluster_controller(self):
-        """Execute cluster task on controller, create snapshot
-          Depends:
-          "run_tasks_end_with_hosts"
+        post_cluster = self.get_post_test(all_tasks, 'cluster')
 
-          Scenario:
-            1. Revert snapshot "run_tasks_end_with_hosts"
-            2. Get cluster id
-            4. Execute cluster task on controller
-            5. Verify that task was finished with success.
-            6. Assert task execution
-            7. Create snapshot
-
-        Snapshot: "step_3_run_cluster_controller"
-        """
-        self.check_run_by_group('step_3_run_cluster_controller',
-                                'cluster_controller')
-
-        self.env.revert_snapshot("run_tasks_end_with_hosts")
-        cluster_id = self.fuel_web.get_last_created_cluster()
-        controller_id = [
-            n['id'] for n in
-            self.fuel_web.client.list_cluster_nodes(cluster_id)
-            if 'controller' in n['roles']]
-
-        self.sync_manifest_to_the_slaves(
-            cluster_id=cluster_id,
-            node_ids=controller_id)
-
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
-            cluster_id, end='cluster')
-
-        pre_cluster = self.get_pre_test(tasks, 'cluster')
-        post_cluster = self.get_post_test(tasks, 'cluster')
-        if pre_cluster:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=pre_cluster[0]['cmd'])
-             for node in ['slave-01']]
-
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
-            cluster_id, data=['cluster'],
-            node_id='{0}'.format(controller_id[0]))
-
-        self.fuel_web.assert_task_success(task=res)
         if post_cluster:
             [gd.run_check_from_task(
                 remote=self.fuel_web.get_ssh_for_node(node),
                 path=post_cluster[0]['cmd'])
              for node in ['slave-01']]
-        self.env.make_snapshot("step_3_run_cluster_controller")
-
-    @test(depends_on=[step_3_run_cluster_controller],
-          groups=['virtual_ips_controller'])
-    @log_snapshot_on_error
-    def step_4_run_virtual_ips_controller(self):
-        """Execute virtual_ips task on controller, create snapshot
-          Depends:
-          "step_3_run_cluster_controller"
-
-          Scenario:
-            1. Revert snapshot "step_3_run_cluster_controller"
-            2. Get cluster id
-            4. Execute virtual ips task on controller
-            5. Verify that task was finished with success.
-            6. Assert task execution
-            7. Create snapshot
-
-        Snapshot: "step_4_run_virtual_ips_controller"
-        """
-        self.check_run_by_group('step_4_run_virtual_ips_controller',
-                                'virtual_ips_controller')
-
-        self.env.revert_snapshot("step_3_run_cluster_controller")
-        cluster_id = self.fuel_web.get_last_created_cluster()
-        controller_id = [
-            n['id'] for n in
-            self.fuel_web.client.list_cluster_nodes(cluster_id)
-            if 'controller' in n['roles']]
-
-        self.sync_manifest_to_the_slaves(
-            cluster_id=cluster_id,
-            node_ids=controller_id)
-
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
-            cluster_id, end='virtual_ips')
-
-        pre_virtual_ips = self.get_pre_test(tasks, 'virtual_ips')
         post_virtual_ips = self.get_post_test(tasks, 'virtual_ips')
-        if pre_virtual_ips:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=pre_virtual_ips[0]['cmd'])
-             for node in ['slave-01']]
-
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
-            cluster_id, data=['virtual_ips'],
-            node_id='{0}'.format(controller_id[0]))
-
-        self.fuel_web.assert_task_success(task=res)
-
         if post_virtual_ips:
             try:
                 gd.run_check_from_task(
@@ -350,18 +257,18 @@ class NeutronGre(TestBasic):
                     remote=self.fuel_web.get_ssh_for_node('slave-01'),
                     path=post_virtual_ips[0]['cmd'])
 
-        self.env.make_snapshot("step_4_run_virtual_ips_controller")
+        self.env.make_snapshot("run_virtual_ips_controller")
 
-    @test(depends_on=[step_4_run_virtual_ips_controller],
+    @test(depends_on=[run_tasks_end_with_vips],
           groups=['cluster_haproxy_controller'])
     @log_snapshot_on_error
     def step_5_run_cluster_haproxy_controller(self):
         """Execute cluster-haproxy task on controller, create snapshot
           Depends:
-          "Step 4 run virtual_ips"
+          "run_virtual_ips_controller"
 
           Scenario:
-            1. Revert snapshot "step 4 run virtual ips controller"
+            1. Revert snapshot "run_virtual_ips_controller"
             2. Get cluster id
             4. Execute cluster-haproxy task on controller
             5. Verify that task was finished with success.
@@ -372,7 +279,7 @@ class NeutronGre(TestBasic):
         """
         self.check_run_by_group('step_5_run_cluster_haproxy_controller',
                                 'cluster_haproxy_controller')
-        self.env.revert_snapshot("step_4_run_virtual_ips_controller")
+        self.env.revert_snapshot("run_virtual_ips_controller")
         cluster_id = self.fuel_web.get_last_created_cluster()
         controller_id = [
             n['id'] for n in
