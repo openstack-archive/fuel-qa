@@ -386,7 +386,8 @@ class FuelWebClient(object):
             public_gw = self.environment.d_env.router(router_name="public")
 
             if help_data.FUEL_USE_LOCAL_NTPD and ('ntp_list' not in settings)\
-                    and checkers.is_ntpd_active(self.admin_remote, public_gw):
+                    and checkers.is_ntpd_active(
+                        self.environment.d_env.get_admin_remote(), public_gw):
                 attributes['editable']['external_ntp']['ntp_list']['value'] =\
                     public_gw
                 logger.info("Configuring cluster #{0} to use NTP server {1}"
