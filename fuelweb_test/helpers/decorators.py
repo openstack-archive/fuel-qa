@@ -23,6 +23,7 @@ import urllib2
 
 from devops.helpers import helpers
 from fuelweb_test.helpers.checkers import check_action_logs
+from fuelweb_test.helpers.checkers import check_repo_managment
 from fuelweb_test.helpers.checkers import check_stats_on_collector
 from fuelweb_test.helpers.checkers import check_stats_private_info
 from fuelweb_test.helpers.checkers import count_stats_on_collector
@@ -419,4 +420,18 @@ def duration(func):
     def wrapper(*args, **kwargs):
         with timestat(func.__name__):
             return func(*args, **kwargs)
+    return wrapper
+
+
+def check_repos_management(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        env = get_current_env(args)
+        nailgun_nodes = env.fuel_web.client.list_cluster_nodes(
+            env.fuel_web.get_last_created_cluster())
+        for n in nailgun_nodes:
+            check_repo_managment(
+                env.d_env.get_ssh_to_remote(n['ip']))
+        return result
     return wrapper
