@@ -57,7 +57,7 @@ class VcenterDeploy(TestBasic):
                      "nova_computes": [
                          {"datastore_regex": ".*",
                           "vsphere_cluster": "Cluster1",
-                          "service_name": "vmclaster"
+                          "service_name": "vmcluster"
                           },
                      ],
                      "vcenter_host": VCENTER_IP,
@@ -77,17 +77,8 @@ class VcenterDeploy(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        # FIXME when OSTF test will be fixed in bug #1433539
-        # When the bug will be fixed 'should_fail=2' and
-        # 'failed_test_name' parameter should be removed.
-
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
-            should_fail=2,
-            failed_test_name=[('vCenter: Check network connectivity from '
-                               'instance without floating             IP'),
-                              ('vCenter: Check network connectivity from '
-                               'instance via floating IP'), ])
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "vcenter_ceilometer"])
@@ -144,18 +135,9 @@ class VcenterDeploy(TestBasic):
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        # FIXME when OSTF test will be fixed in bug #1433539
-        # When the bug will be fixed 'should_fail=2' and
-        # 'failed_test_name' parameter should be removed.
-
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha',
-                                              'platform_tests'],
-            should_fail=2,
-            failed_test_name=[('vCenter: Check network connectivity from '
-                               'instance without floating             IP'),
-                              ('vCenter: Check network connectivity from '
-                               'instance via floating IP'), ])
+                                              'platform_tests'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["smoke", "vcenter_cindervmdk"])
@@ -210,17 +192,8 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
 
-        # FIXME when OSTF test will be fixed in bug #1433539
-        # When the bug will be fixed 'should_fail=2' and
-        # 'failed_test_name' parameter should be removed.
-
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
-            should_fail=2,
-            failed_test_name=[('vCenter: Check network connectivity from '
-                               'instance without floating             IP'),
-                              ('vCenter: Check network connectivity from '
-                               'instance via floating IP'), ])
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_dualhv_ceph"])
@@ -284,22 +257,9 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
 
-        # FIXME when OSTF test will be fixed in bug #1433539
-        # When the bug will be fixed 'should_fail=4' and
-        # 'failed_test_name' parameter should be removed.
-
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
-            timeout=60 * 60,
-            should_fail=4,
-            failed_test_name=[('vCenter: Check network connectivity from '
-                               'instance without floating             IP'),
-                              ('vCenter: Check network connectivity from '
-                               'instance via floating IP'),
-                              ('Check network connectivity from instance '
-                               'without floating IP'),
-                              ('Check network connectivity from instance '
-                               'via floating IP')])
+            timeout=60 * 60)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["vcenter_glance_backend"])
@@ -356,19 +316,6 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
 
-        # FIXME when OSTF test will be fixed in bug #1433539
-        # When the bug will be fixed 'should_fail=4' and
-        # 'failed_test_name' parameter should be removed.
-
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
-            timeout=60 * 60,
-            should_fail=4,
-            failed_test_name=[('vCenter: Check network connectivity from '
-                               'instance without floating             IP'),
-                              ('vCenter: Check network connectivity from '
-                               'instance via floating IP'),
-                              ('Check network connectivity from instance '
-                               'without floating IP'),
-                              ('Check network connectivity from instance '
-                               'via floating IP')])
+            timeout=60 * 60)
