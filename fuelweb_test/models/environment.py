@@ -323,10 +323,11 @@ class EnvironmentModel(object):
         if settings.MULTIPLE_NETWORKS:
             self.describe_second_admin_interface()
             multiple_networks_hacks.configure_second_admin_cobbler(self)
-        self.nailgun_actions.set_collector_address(
+        collector_settings = self.nailgun_actions.get_collector_settings(
             settings.FUEL_STATS_HOST,
             settings.FUEL_STATS_PORT,
             settings.FUEL_STATS_SSL)
+        self.admin_actions.set_collector_settings(collector_settings)
         #Restart statsenderd in order to apply new settings (Collector address)
         self.nailgun_actions.force_fuel_stats_sending()
         if settings.FUEL_STATS_ENABLED:

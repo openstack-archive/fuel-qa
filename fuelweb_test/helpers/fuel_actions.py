@@ -133,6 +133,23 @@ class AdminActions(BaseActions):
                              "Command [{cmd}] failed with the following "
                              "result: {res}".format(cmd=cmd, res=result))
 
+    @logwrap
+    def set_collector_settings(self, settings):
+        # temporary change Nailgun settings (until next container restart)
+        cfg_file = '/etc/fuel/version.yaml'
+        ng_settings = yaml.load(''.join(self.admin_remote.execute(
+            'cat {0}'.format(cfg_file))['stdout']))
+        ng_settings.update(settings)
+        logger.debug('Uploading new nailgun settings: {}'.format(
+            ng_settings))
+        cmd = 'echo "{0}" | tee {1}'.format(yaml.dump(ng_settings), cfg_file)
+        result = self.admin_remote.execute(cmd)
+        assert_equal(0, result['exit_code'],
+                     ('Command returned exit code "{e}", but '
+                      'expected "0". Output: {out}; {err} ').
+                     format(cmd=cmd, e=result['exit_code'],
+                            out=result['stdout'], err=result['stderr']))
+
 
 class NailgunActions(BaseActions):
     def __init__(self, admin_remote):
@@ -151,7 +168,7 @@ class NailgunActions(BaseActions):
                                   stdin=yaml.dump(ng_settings),
                                   exit_code=0)
 
-    def set_collector_address(self, host, port, ssl=False):
+    def get_collector_settings(self, host, port, ssl=False):
         cmd = ("awk '/COLLECTOR.*URL/' /usr/lib/python2.6"
                "/site-packages/nailgun/settings.yaml")
         protocol = 'http' if not ssl else 'https'
@@ -163,7 +180,6 @@ class NailgunActions(BaseActions):
                 p.split(': ')[1])[1:-1]
         parameters['OSWL_COLLECT_PERIOD'] = 0
         logger.debug('Custom collector parameters: {0}'.format(parameters))
-        self.update_nailgun_settings_once(parameters)
         if ssl:
             # if test collector server doesn't have trusted SSL cert
             # installed we have to use this hack in order to disable cert
@@ -171,6 +187,7 @@ class NailgunActions(BaseActions):
             cmd = ("sed -i '/elf.verify/ s/True/False/' /usr/lib/python2.6"
                    "/site-packages/requests/sessions.py")
             self.execute_in_container(cmd, exit_code=0)
+        return parameters
 
     def force_fuel_stats_sending(self):
         log_file = '/var/log/nailgun/statsenderd.log'
