@@ -34,7 +34,7 @@ from fuelweb_test import logger
 @test(groups=["thread_2"])
 class OneNodeDeploy(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_release],
-          groups=["deploy_one_node"])
+          groups=["deploy_one_node", 'master'])
     @log_snapshot_on_error
     def deploy_one_node(self):
         """Deploy cluster with controller node only
