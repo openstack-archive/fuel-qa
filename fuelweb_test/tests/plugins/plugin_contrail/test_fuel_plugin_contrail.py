@@ -20,6 +20,7 @@ from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers.common import Common
 from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import CONTRAIL_PLUGIN_PATH
@@ -40,8 +41,10 @@ class ContrailPlugin(TestBasic):
         'repositories/centos/Packages/contrail-setup*'
 
     def upload_packages(self, node_ssh, pack_path, master_path):
-        if os.path.splitext(pack_path)[1] in ".deb":
-            logger.debug("Start to upload deb packet to the master node")
+        if os.path.splitext(pack_path)[1] in [".deb", ".rpm"]:
+            pkg_name = os.path.basename(pack_path)
+            logger.debug("Uploading package {0} "
+                         "to master node".format(pkg_name))
             node_ssh.upload(pack_path, master_path)
         else:
             logger.error('Failed to upload file')
@@ -196,3 +199,143 @@ class ContrailPlugin(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.env.make_snapshot("deploy_contrail")
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["deploy_controller_compute_contrail"])
+    def deploy_controller_compute_contrail(self):
+        """Deploy cluster with 1 controller, 1 compute,
+        3 base-os and install contrail plugin
+
+        Scenario:
+            1. Revert snapshot "ready_with_5_slaves"
+            2. Upload plugin to the master node
+            3. Install plugin and additional packages
+            4. Enable Neutron with VLAN segmentation
+            5. Create cluster
+            6. Add 3 nodes with Operating system role,
+            1 node with controller role and 1 node with compute role
+            7. Enable Contrail plugin
+            8. Deploy cluster with plugin
+            9. Create net and subnet
+            10. Run OSTF tests
+
+        Duration 110 min
+
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        # copy plugin to the master node
+
+        checkers.upload_tarball(
+            self.env.d_env.get_admin_remote(),
+            CONTRAIL_PLUGIN_PATH, '/var')
+
+        # install plugin
+        checkers.install_plugin_check_code(
+            self.env.d_env.get_admin_remote(),
+            plugin=os.path.basename(CONTRAIL_PLUGIN_PATH))
+
+        # copy additional packages to the master node
+        self.upload_packages(
+            self.env.d_env.get_admin_remote(),
+            CONTRAIL_PLUGIN_PACK_UB_PATH,
+            self.master_path
+        )
+
+        self.upload_packages(
+            self.env.d_env.get_admin_remote(),
+            CONTRAIL_PLUGIN_PACK_CEN_PATH,
+            self.master_path
+        )
+
+        # install packages
+        self.install_packages(self.env.d_env.get_admin_remote(),
+                              self.master_path)
+
+        # create cluster
+        segment_type = 'vlan'
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": segment_type,
+            }
+        )
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['base-os'],
+                'slave-02': ['base-os'],
+                'slave-03': ['base-os'],
+                'slave-04': ['controller'],
+                'slave-05': ['compute', 'cinder']
+            },
+            contrail=True
+        )
+
+        # fill public field in contrail settings
+        attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
+        if 'contrail' in attr['editable']:
+            logger.debug('we have contrail element')
+            plugin_data = attr['editable']['contrail']['metadata']
+            plugin_data['enabled'] = True
+            public_int = attr['editable']['contrail']['contrail_public_if']
+            public_int['value'] = 'eth1'
+
+        self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
+
+        # deploy cluster
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        # create net and subnet
+        contr_ip = self.fuel_web.get_public_vip(cluster_id)
+        logger.info('The ip is %s', contr_ip)
+        net = Common(
+            controller_ip=contr_ip, user='admin',
+            password='admin', tenant='admin'
+        )
+
+        net.neutron.create_network(body={
+            'network': {
+                'name': 'net04',
+                'admin_state_up': True
+            }
+        })
+
+        network_id = ''
+        network_dic = net.neutron.list_networks()
+        for dd in network_dic['networks']:
+            if dd.get("name") == "net04":
+                network_id = dd.get("id")
+
+        if network_id == "":
+            logger.error('Network id empty')
+
+        logger.debug("id {0} to master node".format(network_id))
+
+        net.neutron.create_subnet(body={
+            'subnet': {
+                'network_id': network_id,
+                'ip_version': 4,
+                'cidr': '10.100.0.0/24',
+                'name': 'subnetname04'
+            }
+        })
+
+        # Tests using north-south connectivity are expected to fail because
+        # they require additional gateway nodes, and specific contrail
+        # settings. This mark is a workaround until it's verified
+        # and tested manually.
+        # When it will be done 'should_fail=2' and
+        # 'failed_test_name' parameter should be removed.
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            should_fail=2,
+            failed_test_name=[
+                ('Check network connectivity from instance via floating IP',
+                 'Launch instance with file injection')
+            ]
+        )
