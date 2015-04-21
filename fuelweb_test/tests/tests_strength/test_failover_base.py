@@ -469,7 +469,7 @@ class TestHaFailoverBase(TestBasic):
             ' for dev{0}, loss percent {1}'. format(dev, loss_percent))
 
         remote = self.fuel_web.get_ssh_for_node(
-            self.env.d_env.nodes().slaves[:1].name)
+            self.env.d_env.nodes().slaves[:1][0].name)
         cmd_input = ('iptables -I INPUT -m statistic --mode random '
                      '--probability {0} -i '
                      '{1} -j DROP'.format(loss_percent, dev))
