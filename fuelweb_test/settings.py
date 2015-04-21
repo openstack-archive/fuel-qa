@@ -393,6 +393,9 @@ MIRROR_UBUNTU_PRIORITY = os.environ.get('MIRROR_UBUNTU_PRIORITY', 1001)
 EXTRA_DEB_REPOS_PRIORITY = os.environ.get('EXTRA_DEB_REPOS_PRIORITY', 1050)
 EXTRA_RPM_REPOS = os.environ.get('EXTRA_RPM_REPOS', '')
 EXTRA_RPM_REPOS_PRIORITY = os.environ.get('EXTRA_RPM_REPOS_PRIORITY', 20)
+# Auxiliary repository priority will be set for a cluster if UPDATE_FUEL=true
+AUX_DEB_REPO_PRIORITY = os.environ.get('AUX_DEB_REPO_PRIORITY', 1150)
+AUX_RPM_REPO_PRIORITY = os.environ.get('AUX_RPM_REPO_PRIORITY', 15)
 
 REPLACE_DEFAULT_REPOS = os.environ.get('REPLACE_DEFAULT_REPOS',
                                        'true') == 'true'
