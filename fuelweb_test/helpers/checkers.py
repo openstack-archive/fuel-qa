@@ -623,25 +623,20 @@ def check_stats_on_collector(collector_remote, postgres_actions, master_uuid):
     logger.info("Number of logs that were sent to collector: {}".format(
         sent_logs_count
     ))
-    logs = execute_query_on_collector(collector_remote, master_uuid,
-                                      query="select count(*) from action_logs")
+    logs = collector_remote.get_action_logs_count(master_uuid)
     logger.info("Number of logs that were saved on collector: {}".format(logs))
     assert_true(sent_logs_count <= int(logs),
                 ("Count of action logs in Nailgun DB ({0}) is bigger than on "
                  "Collector ({1}), but should be less or equal").format(
                     sent_logs_count, logs))
 
-    sum_stats_count = execute_query_on_collector(
-        collector_remote, master_uuid=master_uuid,
-        query="select count(*) from installation_structures")
+    sum_stats_count = len(
+        [collector_remote.get_installation_info(master_uuid)['id']])
     assert_equal(int(sum_stats_count), 1,
                  "Installation structure wasn't saved on Collector side proper"
                  "ly: found: {0}, expected: 1 record.".format(sum_stats_count))
 
-    summ_stats_raw = execute_query_on_collector(
-        collector_remote, master_uuid,
-        query="select structure from installation_structures")
-    summ_stats = json.loads(summ_stats_raw)
+    summ_stats = collector_remote.get_installation_info_data(master_uuid)
     general_stats = {
         'clusters_num': int,
         'allocated_nodes_num': int,
@@ -802,10 +797,8 @@ def check_stats_private_info(collector_remote, postgres_actions,
 
     action_logs = [l.strip() for l in postgres_actions.run_query(
         'nailgun', 'select id from action_logs;').split('\n')]
-    sent_stats = execute_query_on_collector(
-        collector_remote, master_uuid,
-        query="SELECT structure from installation_structures"
-    )
+    sent_stats = str(collector_remote.get_installation_info_data(master_uuid))
+    logger.debug('installation structure is {0}'.format(sent_stats))
     used_networks = [POOLS[net_name][0] for net_name in POOLS.keys()]
     has_no_private_data = True
 
@@ -942,11 +935,8 @@ def check_oswl_stat(postgres_actions, remote_collector, master_uid,
     logger.info("Number of logs that were sent to collector: {}".format(
         sent_logs_count
     ))
-    logs = execute_query_on_collector(remote_collector, master_uuid=None,
-                                      query=
-                                      "select count(*) from oswl_stats where"
-                                      " master_node_uid='{0}'".format(
-                                          master_uid))
+    logger.debug('oswls are {}'.format(remote_collector.get_oswls(master_uid)))
+    logs = len(remote_collector.get_oswls(master_uid))
     logger.info("Number of logs that were saved"
                 " on collector: {}".format(logs))
     assert_true(sent_logs_count <= int(logs),
@@ -954,15 +944,11 @@ def check_oswl_stat(postgres_actions, remote_collector, master_uid,
                  "Collector ({1}), but should be less or equal").format(
                     sent_logs_count, logs))
     for resource in resources:
-        q = "select resource_data from oswl_stats where" \
-            " resource_type='{0}'" \
-            " and master_node_uid='{1}'".format(resource, master_uid)
-        resource_data = json.loads(execute_query_on_collector(
-            remote_collector, master_uuid=None, query=q))
+        resource_data = remote_collector.get_oswls_by_resource_data(
+            master_uid, resource)
 
         logger.debug('resource data on'
                      ' collector is {0}'.format(resource_data))
-
         assert_true(len(resource_data['added']) >
                     expected_resource_count[operation][resource],
                     "resource {0} wasn't added,"
