@@ -13,6 +13,7 @@
 #    under the License.
 
 import inspect
+import json
 import time
 import traceback
 import yaml
@@ -110,6 +111,44 @@ def store_astute_yaml(env):
                                  "{0} failed.".format(node.name))
             except Exception:
                 logger.error(traceback.format_exc())
+
+
+@logwrap
+def get_node_packages(remote, func_name, node_role, packages_dict):
+    if settings.OPENSTACK_RELEASE_UBUNTU in\
+            settings.OPENSTACK_RELEASE:
+        cmd = "dpkg-query -W -f='${Package} '"
+    else:
+        cmd = 'rpm -qa --qf "%{name} "'
+    node_packages = ''.join(remote.execute(cmd)['stdout']).split()
+    logger.debug("node packages are {0}".format(node_packages))
+    packages_dict[func_name][node_role] = node_packages\
+        if node_role not in packages_dict[func_name].keys()\
+        else list(set(packages_dict[func_name][node_role])
+                  | set(node_packages))
+    return packages_dict
+
+
+@logwrap
+def store_packages_json(env):
+    func_name = "".join(get_test_method_name())
+    packages = {func_name: {}}
+    cluster_id = env.fuel_web.get_last_created_cluster()
+    for nailgun_node in env.fuel_web.client.list_cluster_nodes(cluster_id):
+        remote = env.d_env.get_ssh_to_remote(nailgun_node['ip'])
+        role = '_'.join(nailgun_node['roles'])
+        logger.debug('role is {0}'.format(role))
+        packages = get_node_packages(remote, func_name, role, packages)
+    packages_file = '{0}/packages.json'.format(settings.LOGS_DIR)
+    if os.path.isfile(packages_file):
+        with open(packages_file, 'r') as outfile:
+            try:
+                file_packages = json.load(outfile)
+            except:
+                file_packages = {}
+        packages.update(file_packages)
+    with open(packages_file, 'w') as outfile:
+        json.dump(packages, outfile)
 
 
 @logwrap

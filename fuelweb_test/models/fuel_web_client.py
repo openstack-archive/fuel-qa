@@ -31,6 +31,7 @@ from fuelweb_test import logwrap
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import custom_repo
 from fuelweb_test.helpers.decorators import download_astute_yaml
+from fuelweb_test.helpers.decorators import download_packages_json
 from fuelweb_test.helpers.decorators import duration
 from fuelweb_test.helpers.decorators import update_ostf
 from fuelweb_test.helpers.decorators import update_fuel
@@ -678,6 +679,7 @@ class FuelWebClient(object):
             logger.error("Provided RPM repository has incorrect format: {}"
                          .format(repo_string))
 
+    @download_packages_json
     @download_astute_yaml
     @duration
     @custom_repo
