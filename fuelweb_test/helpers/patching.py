@@ -14,6 +14,7 @@
 
 import os
 import re
+import sys
 import yaml
 import zlib
 from urllib2 import HTTPError
@@ -22,13 +23,13 @@ from urlparse import urlparse
 from xml.dom.minidom import parseString
 
 from proboscis import register
-from proboscis import SkipTest
 from proboscis import TestProgram
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 
+from fuelweb_test import logger
 from fuelweb_test import settings
 
 
@@ -77,13 +78,15 @@ def map_test(target):
                         bug_id=settings.PATCHING_BUG_ID)
     verify_errata(errata)
     if not target == errata['target']:
-        raise SkipTest()
+        skip_patching_test(target, errata['target'])
     if 'fixed-pkgs' in errata.keys():
         distro = settings.OPENSTACK_RELEASE.lower()
         settings.PATCHING_PKGS = set([re.split('=|<|>', package)[0] for package
                                       in errata['fixed-pkgs'][distro]])
     available_packages = set()
+    logger.debug('{0}'.format(settings.PATCHING_MIRRORS))
     for repo in settings.PATCHING_MIRRORS:
+        logger.debug('Checking packages from "{0}" repository'.format(repo))
         available_packages.update(get_repository_packages(repo))
     if not settings.PATCHING_PKGS:
         settings.PATCHING_PKGS = available_packages
@@ -296,7 +299,9 @@ def connect_admin_to_repo(environment, repo_name):
 def update_packages(environment, remote, packages, exclude_packages=None):
     if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_UBUNTU:
         cmds = [
-            'apt-get -y install --only-upgrade {0}'.format(' '.join(packages))
+            'apt-get -o Dpkg::Options::="--force-confdef" '
+            '-o Dpkg::Options::="--force-confold" -y install '
+            '--only-upgrade {0}'.format(' '.join(packages))
         ]
         if exclude_packages:
             exclude_commands = ["apt-mark hold {0}".format(pkg)
@@ -491,3 +496,13 @@ def apply_patches(environment, slaves=None):
 
 def verify_fix(environment, slaves=None):
     run_actions(environment, slaves, action_type='verify-scenario')
+
+
+def skip_patching_test(target, errata_target):
+    # TODO(apanchenko):
+    # If 'target' from erratum doesn't match 'target' from tests we need to
+    # skip tests and return special exit code, so Jenkins is able to recognize
+    # test were skipped and it shouldn't vote to CRs (just leave comment)
+    logger.error('Tests for "{0}" were started, but patches are targeted to '
+                 '"{1}" according to erratum.'.format(target, errata_target))
+    sys.exit(123)
