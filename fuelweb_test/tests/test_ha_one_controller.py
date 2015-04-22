@@ -29,14 +29,15 @@ from fuelweb_test.settings import NODE_VOLUME_SIZE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
-
+from fuelweb_test.tests.test_ha_one_controller_base\
+    import HAOneControllerFlatBase
 
 @test(groups=["thread_2"])
 class OneNodeDeploy(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["deploy_one_node", 'master'])
     @log_snapshot_on_error
-    def deploy_one_node(self):
+    def deploy_one_node_base(self):
         """Deploy cluster with controller node only
 
         Scenario:
@@ -74,8 +75,8 @@ class OneNodeDeploy(TestBasic):
                        '.SanityIdentityTest.test_list_users'))
 
 
-@test(groups=["thread_2", "thread_non_func_1_usb"])
-class HAOneControllerFlat(TestBasic):
+@test(groups=["thread_2"])
+class HAOneControllerFlat(HAOneControllerFlatBase):
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_ha_one_controller_flat",
                   "ha_one_controller_nova_flat", "classic_provisioning",
@@ -98,44 +99,7 @@ class HAOneControllerFlat(TestBasic):
         Duration 30m
         Snapshot: deploy_ha_one_controller_flat
         """
-        self.env.revert_snapshot("ready_with_3_slaves")
-
-        data = {
-            'tenant': 'novaSimpleFlat',
-            'user': 'novaSimpleFlat',
-            'password': 'novaSimpleFlat'
-
-        }
-
-        cluster_id = self.fuel_web.create_cluster(
-            name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
-            settings=data
-        )
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {
-                'slave-01': ['controller'],
-                'slave-02': ['compute']
-            }
-        )
-        self.fuel_web.update_internal_network(cluster_id, '10.1.0.0/24')
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id),
-            data['user'], data['password'], data['tenant'])
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=6, networks_count=1, timeout=300)
-
-        self.fuel_web.check_fixed_network_cidr(
-            cluster_id, os_conn)
-
-        self.fuel_web.verify_network(cluster_id)
-
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
-
-        self.env.make_snapshot("deploy_ha_one_controller_flat", is_make=True)
+        super(self.__class__, self).deploy_ha_one_controller_flat_base()
 
     @test(enabled=False, depends_on=[deploy_ha_one_controller_flat],
           groups=["ha_one_controller_flat_create_instance"])
@@ -975,3 +939,28 @@ class BackupRestoreHAOneController(TestBasic):
             cluster_id=cluster_id)
 
         self.env.make_snapshot("ha_one_controller_backup_restore")
+
+
+@test(groups=["thread_non_func_1_usb"])
+class HAOneControllerFlatUSB(HAOneControllerFlatBase):
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3])
+    @log_snapshot_on_error
+    def deploy_ha_one_controller_flat_usb(self):
+        """Deploy cluster in HA mode (1 controller) with flat nova-network USB
+
+        Scenario:
+            1. Create cluster in HA mode with 1 controller
+            2. Add 1 node with controller role
+            3. Add 1 node with compute role
+            4. Deploy the cluster
+            5. Validate cluster was set up correctly, there are no dead
+            services, there are no errors in logs
+            6. Verify networks
+            7. Verify network configuration on controller
+            8. Run OSTF
+
+        Duration 30m
+        Snapshot: deploy_ha_one_controller_flat
+        """
+
+        super(self.__class__, self).deploy_ha_one_controller_flat_base()
