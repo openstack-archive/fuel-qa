@@ -36,7 +36,7 @@ class OneNodeDeploy(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["deploy_one_node", 'master'])
     @log_snapshot_on_error
-    def deploy_one_node(self):
+    def deploy_one_node_base(self):
         """Deploy cluster with controller node only
 
         Scenario:
@@ -49,6 +49,9 @@ class OneNodeDeploy(TestBasic):
         Duration 20m
 
         """
+        self.deploy_one_node_base()
+
+    def deploy_one_node_base(self):
         self.env.revert_snapshot("ready")
         self.fuel_web.client.get_root()
         self.env.bootstrap_nodes(
@@ -74,7 +77,7 @@ class OneNodeDeploy(TestBasic):
                        '.SanityIdentityTest.test_list_users'))
 
 
-@test(groups=["thread_2", "thread_non_func_1_usb"])
+@test(groups=["thread_2"])
 class HAOneControllerFlat(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_ha_one_controller_flat",
@@ -975,3 +978,28 @@ class BackupRestoreHAOneController(TestBasic):
             cluster_id=cluster_id)
 
         self.env.make_snapshot("ha_one_controller_backup_restore")
+
+
+@test(groups=["thread_non_func_1_usb"])
+class HAOneControllerFlatUSB(HAOneControllerFlat):
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3])
+    @log_snapshot_on_error
+    def deploy_ha_one_controller_flat_usb(self):
+        """Deploy cluster in HA mode (1 controller) with flat nova-network USB
+
+        Scenario:
+            1. Create cluster in HA mode with 1 controller
+            2. Add 1 node with controller role
+            3. Add 1 node with compute role
+            4. Deploy the cluster
+            5. Validate cluster was set up correctly, there are no dead
+            services, there are no errors in logs
+            6. Verify networks
+            7. Verify network configuration on controller
+            8. Run OSTF
+
+        Duration 30m
+        Snapshot: deploy_ha_one_controller_flat
+        """
+
+        super(self.__class__, self).deploy_ha_one_controller_flat()
