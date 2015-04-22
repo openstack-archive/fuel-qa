@@ -188,6 +188,11 @@ def update_fuel(func):
                         cmd='yum clean expire-cache; yum update -y')
                     environment.docker_actions.restart_containers()
 
+                    # Update packages on master node
+                    remote.execute(
+                        'yum -y install yum-plugin-priorities;'
+                        'yum clean expire-cache; yum update -y')
+
                 except Exception:
                     logger.exception("Fail update of Fuel's package(s).")
 
