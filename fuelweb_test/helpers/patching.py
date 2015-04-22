@@ -14,6 +14,7 @@
 
 import os
 import re
+import sys
 import yaml
 import zlib
 from urllib2 import HTTPError
@@ -29,6 +30,7 @@ from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 
+from fuelweb_test import logger
 from fuelweb_test import settings
 
 
@@ -83,7 +85,9 @@ def map_test(target):
         settings.PATCHING_PKGS = set([re.split('=|<|>', package)[0] for package
                                       in errata['fixed-pkgs'][distro]])
     available_packages = set()
+    logger.debug('{0}'.format(settings.PATCHING_MIRRORS))
     for repo in settings.PATCHING_MIRRORS:
+        logger.debug('Checking packages from "{0}" repository'.format(repo))
         available_packages.update(get_repository_packages(repo))
     if not settings.PATCHING_PKGS:
         settings.PATCHING_PKGS = available_packages
@@ -114,6 +118,14 @@ def map_test(target):
                      depends_on=[deployment_test.entry.home])
     else:
         raise Exception("Test with groups {0} not found.".format(tests_groups))
+
+
+def skip_patching_test():
+    # TODO(apanchenko):
+    # If 'target' from erratum doesn't match 'target' from tests we need to
+    # skip tests and return special exit code, so Jenkins is able to recognize
+    # test were skipped and it shouldn't vote to CRs (just leave comment)
+    sys.exit('123')
 
 
 def get_repository_packages(remote_repo_url):
@@ -296,7 +308,9 @@ def connect_admin_to_repo(environment, repo_name):
 def update_packages(environment, remote, packages, exclude_packages=None):
     if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_UBUNTU:
         cmds = [
-            'apt-get -y install --only-upgrade {0}'.format(' '.join(packages))
+            'apt-get -o Dpkg::Options::="--force-confdef" '
+            '-o Dpkg::Options::="--force-confold" -y install '
+            '--only-upgrade {0}'.format(' '.join(packages))
         ]
         if exclude_packages:
             exclude_commands = ["apt-mark hold {0}".format(pkg)
