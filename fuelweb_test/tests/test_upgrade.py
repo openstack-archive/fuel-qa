@@ -442,7 +442,79 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             3. Run upgrade on master
             4. Check that rollback starts automatically
             5. Check that cluster was not upgraded and run OSTf
-            6. Add 1 cinder node and re-deploy cluster
+            6. Add 1 ceph node and re-deploy cluster
+            7. Run OSTF
+
+        """
+        if not self.env.d_env.has_snapshot('ceph_multinode_compact'):
+            raise SkipTest()
+
+        self.env.revert_snapshot("ceph_multinode_compact")
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
+        remote = self.env.d_env.get_ssh_to_remote(_ip)
+        expected_kernel = UpgradeFuelMaster.get_slave_kernel(remote)
+
+        checkers.upload_tarball(self.env.d_env.get_admin_remote(),
+                                hlp_data.TARBALL_PATH, '/var')
+        checkers.check_tarball_exists(self.env.d_env.get_admin_remote(),
+                                      os.path.basename(hlp_data.
+                                                       TARBALL_PATH),
+                                      '/var')
+        checkers.untar(self.env.d_env.get_admin_remote(),
+                       os.path.basename(hlp_data.
+                                        TARBALL_PATH), '/var')
+        #we expect 255 exit code here because upgrade failed
+        # and exit status is 255
+        checkers.run_script(self.env.d_env.get_admin_remote(),
+                            '/var',
+                            'upgrade.sh',
+                            password=
+                            hlp_data.KEYSTONE_CREDS['password'],
+                            rollback=True, exit_code=255)
+        checkers.wait_rollback_is_done(self.env.d_env.get_admin_remote(), 3000)
+        checkers.check_upgraded_containers(self.env.d_env.get_admin_remote(),
+                                           hlp_data.UPGRADE_FUEL_TO,
+                                           hlp_data.UPGRADE_FUEL_FROM)
+        logger.debug("all containers are ok")
+        _wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+            self.env.d_env.nodes().slaves[0]), timeout=120)
+        logger.debug("all services are up now")
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:3])
+        self.fuel_web.assert_nodes_in_ready_state(cluster_id)
+        self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_FROM)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[3:4])
+        self.fuel_web.update_nodes(
+            cluster_id, {'slave-04': ['ceph-osd']},
+            True, False
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
+            _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
+            remote = self.env.d_env.get_ssh_to_remote(_ip)
+            kernel = UpgradeFuelMaster.get_slave_kernel(remote)
+            checkers.check_kernel(kernel, expected_kernel)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.env.make_snapshot("rollback_automatic_ha_one_controller")
+
+    @test(groups=["rollback_automatically_delete_node"])
+    @log_snapshot_on_error
+    def rollback_automatically_delete_node(self):
+        """Rollback automatically ha one controller deployed cluster
+           and delete node from cluster
+
+        Scenario:
+            1. Revert snapshot with deploy neutron gre env
+            2. Add raise exception to docker_engine.py file
+            3. Run upgrade on master
+            4. Check that rollback starts automatically
+            5. Check that cluster was not upgraded and run OSTf
+            6. Delete 1 node and re-deploy cluster
             7. Run OSTF
 
         """
@@ -486,18 +558,23 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_FROM)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
-        self.env.bootstrap_nodes(
-            self.env.d_env.nodes().slaves[3:4])
-        self.fuel_web.update_nodes(
-            cluster_id, {'slave-04': ['cinder']},
-            True, False
-        )
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        nailgun_nodes = self.fuel_web.update_nodes(
+            cluster_id, {'slave-03': ['compute', 'cinder']}, False, True)
+        task = self.fuel_web.deploy_cluster(cluster_id)
+        self.fuel_web.assert_task_success(task)
+        nodes = filter(lambda x: x["pending_deletion"] is True, nailgun_nodes)
+        try:
+            wait(lambda: len(self.fuel_web.client.list_nodes()) == 3,
+                 timeout=5 * 60)
+        except TimeoutError:
+            assert_true(len(self.fuel_web.client.list_nodes()) == 3,
+                        'Node {0} is not discovered in timeout 10 *60'.format(
+                            nodes[0]))
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
             _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
             remote = self.env.d_env.get_ssh_to_remote(_ip)
             kernel = UpgradeFuelMaster.get_slave_kernel(remote)
             checkers.check_kernel(kernel, expected_kernel)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
 
-        self.env.make_snapshot("rollback_automatic_ha_one_controller")
+        self.env.make_snapshot("rollback_automatically_delete_mode")
