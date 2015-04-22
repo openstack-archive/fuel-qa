@@ -254,7 +254,7 @@ class TestHaFailoverBase(TestBasic):
             self.__class__.__name__)
 
         self.fuel_web.wait_mysql_galera_is_up(['slave-01', 'slave-02',
-                                               'slave-03'])
+                                               'slave-03'], timeout=300)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
