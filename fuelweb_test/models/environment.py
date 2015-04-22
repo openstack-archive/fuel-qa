@@ -237,6 +237,19 @@ class EnvironmentModel(object):
             self.d_env.nodes().admin.await(
                 self.d_env.admin_net, timeout=10 * 60,
                 by_port=8000)
+            self.docker_actions.wait_for_ready_containers()
+            #set collector address in case of admin node destroy
+            self.nailgun_actions.set_collector_address(
+                settings.FUEL_STATS_HOST,
+                settings.FUEL_STATS_PORT,
+                settings.FUEL_STATS_SSL)
+            #Restart statsenderd in order to apply new collector address
+            self.nailgun_actions.force_fuel_stats_sending()
+            if settings.FUEL_STATS_ENABLED:
+                self.fuel_web.client.send_fuel_stats(enabled=True)
+                logger.info('Enabled sending of statistics to {0}:{1}'.format(
+                    settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
+                ))
 
         self.set_admin_ssh_password()
 
