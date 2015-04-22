@@ -14,6 +14,7 @@
 
 import os
 import re
+import sys
 import yaml
 import zlib
 from urllib2 import HTTPError
@@ -22,13 +23,13 @@ from urlparse import urlparse
 from xml.dom.minidom import parseString
 
 from proboscis import register
-from proboscis import SkipTest
 from proboscis import TestProgram
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 
+from fuelweb_test import logger
 from fuelweb_test import settings
 
 
@@ -77,14 +78,21 @@ def map_test(target):
                         bug_id=settings.PATCHING_BUG_ID)
     verify_errata(errata)
     if not target == errata['target']:
-        raise SkipTest()
+        skip_patching_test(target, errata['target'])
+    if target == 'master':
+    # On master node we have only CentOS containers, so always check
+    # only CentOS packages available for update
+        distro = settings.OPENSTACK_RELEASE_CENTOS
+    else:
+        distro = settings.OPENSTACK_RELEASE
     if 'fixed-pkgs' in errata.keys():
-        distro = settings.OPENSTACK_RELEASE.lower()
         settings.PATCHING_PKGS = set([re.split('=|<|>', package)[0] for package
-                                      in errata['fixed-pkgs'][distro]])
+                                      in errata['fixed-pkgs'][distro.lower()]])
     available_packages = set()
+    logger.debug('{0}'.format(settings.PATCHING_MIRRORS))
     for repo in settings.PATCHING_MIRRORS:
-        available_packages.update(get_repository_packages(repo))
+        logger.debug('Checking packages from "{0}" repository'.format(repo))
+        available_packages.update(get_repository_packages(repo, distro))
     if not settings.PATCHING_PKGS:
         settings.PATCHING_PKGS = available_packages
     else:
@@ -95,7 +103,7 @@ def map_test(target):
     assert_not_equal(len(settings.PATCHING_PKGS), 0,
                      "No packages found in repository(s) for patching:"
                      " '{0}'".format(settings.PATCHING_MIRRORS))
-    tests_groups = get_packages_tests(settings.PATCHING_PKGS)
+    tests_groups = get_packages_tests(settings.PATCHING_PKGS, distro)
     program = TestProgram(argv=['none'])
     deployment_test = None
     for my_test in program.plan.tests:
@@ -116,10 +124,10 @@ def map_test(target):
         raise Exception("Test with groups {0} not found.".format(tests_groups))
 
 
-def get_repository_packages(remote_repo_url):
+def get_repository_packages(remote_repo_url, repo_type):
     repo_url = urlparse(remote_repo_url)
     packages = []
-    if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_UBUNTU:
+    if repo_type == settings.OPENSTACK_RELEASE_UBUNTU:
         packages_url = '{0}/Packages'.format(repo_url.geturl())
         pkgs_raw = urlopen(packages_url).read()
         for pkg in pkgs_raw.split('\n'):
@@ -193,7 +201,7 @@ def get_package_test_info_local(package, pkg_type, tests_path):
     return tests
 
 
-def get_packages_tests(packages):
+def get_packages_tests(packages, distro):
     if 'http' in urlparse(settings.PATCHING_PKGS_TESTS):
         get_method = get_package_test_info_remote
     elif os.path.isdir(settings.PATCHING_PKGS_TESTS):
@@ -201,7 +209,7 @@ def get_packages_tests(packages):
     else:
         raise Exception("Path for packages tests doesn't look like URL or loca"
                         "l folder: '{0}'".format(settings.PATCHING_PKGS_TESTS))
-    if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_UBUNTU:
+    if distro == settings.OPENSTACK_RELEASE_UBUNTU:
         pkg_type = 'deb'
     else:
         pkg_type = 'rpm'
@@ -296,7 +304,9 @@ def connect_admin_to_repo(environment, repo_name):
 def update_packages(environment, remote, packages, exclude_packages=None):
     if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_UBUNTU:
         cmds = [
-            'apt-get -y install --only-upgrade {0}'.format(' '.join(packages))
+            'apt-get -o Dpkg::Options::="--force-confdef" '
+            '-o Dpkg::Options::="--force-confold" -y install '
+            '--only-upgrade {0}'.format(' '.join(packages))
         ]
         if exclude_packages:
             exclude_commands = ["apt-mark hold {0}".format(pkg)
@@ -491,3 +501,13 @@ def apply_patches(environment, slaves=None):
 
 def verify_fix(environment, slaves=None):
     run_actions(environment, slaves, action_type='verify-scenario')
+
+
+def skip_patching_test(target, errata_target):
+    # TODO(apanchenko):
+    # If 'target' from erratum doesn't match 'target' from tests we need to
+    # skip tests and return special exit code, so Jenkins is able to recognize
+    # test were skipped and it shouldn't vote to CRs (just leave comment)
+    logger.error('Tests for "{0}" were started, but patches are targeted to '
+                 '"{1}" according to erratum.'.format(target, errata_target))
+    sys.exit(123)
