@@ -15,6 +15,7 @@
 #    under the License.
 
 import optparse
+import time
 import urlparse
 from xml.etree import ElementTree
 
@@ -176,8 +177,23 @@ def main():
     # STEP #4
     # Upload the test results to TestRail
     LOG.info('Uploading the test results to TestRail...')
-    joblib.Parallel(n_jobs=options.threads_count)(joblib.delayed(
-        upload_test_result)(client, run, r) for r in test_results)
+    tries_count = 10
+    threads_count = options.threads_count
+    while tries_count > 0:
+        try:
+            joblib.Parallel(n_jobs=threads_count)(joblib.delayed(
+                upload_test_result)(client, run, r) for r in test_results)
+            break
+        except Exception as e:
+            tries_count -= 1
+            threads_count = int(threads_count * 3 / 4)
+
+            msg = 'Can not upload Tempest results to TestRail, error: {0}'
+            LOG.info(msg.format(e))
+
+            # wait while TestRail will be ready for new iteration
+            time.sleep(10)
+
     LOG.info('The results of Tempest tests have been uploaded.')
     LOG.info('Report URL: {0}'.format(test_plan['url']))
 
