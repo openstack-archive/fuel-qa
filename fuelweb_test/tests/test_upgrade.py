@@ -464,13 +464,12 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         checkers.untar(self.env.d_env.get_admin_remote(),
                        os.path.basename(hlp_data.
                                         TARBALL_PATH), '/var')
-        #we expect 255 exit code here because upgrade failed
+        # we expect 255 exit code here because upgrade failed
         # and exit status is 255
         checkers.run_script(self.env.d_env.get_admin_remote(),
                             '/var',
                             'upgrade.sh',
-                            password=
-                            hlp_data.KEYSTONE_CREDS['password'],
+                            password=hlp_data.KEYSTONE_CREDS['password'],
                             rollback=True, exit_code=255)
         checkers.wait_rollback_is_done(self.env.d_env.get_admin_remote(), 3000)
         checkers.check_upgraded_containers(self.env.d_env.get_admin_remote(),
