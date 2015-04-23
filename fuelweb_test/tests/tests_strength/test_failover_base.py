@@ -16,6 +16,7 @@ import re
 import time
 
 from devops.error import TimeoutError
+from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
 from devops.helpers.helpers import _wait
 from proboscis.asserts import assert_equal
@@ -79,6 +80,53 @@ class TestHaFailoverBase(TestBasic):
         self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.security.verify_firewall(cluster_id)
+
+        # Bug #1289297. Pause 5 min to make sure that all remain activity
+        # on the admin node has over before creating a snapshot.
+        time.sleep(5 * 60)
+
+        self.env.make_snapshot(self.snapshot_name, is_make=True)
+
+    def deploy_ha_ceph(self, network='neutron'):
+
+        self.check_run(self.snapshot_name)
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        settings = {
+            'volumes_ceph': True,
+            'images_ceph': True,
+            'volumes_lvm': False,
+        }
+
+        if network == 'neutron':
+            settings["net_provider"] = 'neutron'
+            settings["net_segment_type"] = NEUTRON_SEGMENT_TYPE
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings=settings
+        )
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller', 'ceph-osd'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute', 'ceph-osd'],
+                'slave-05': ['compute']
+            }
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        public_vip = self.fuel_web.get_public_vip(cluster_id)
+        os_conn = os_actions.OpenStackActions(public_vip)
+        if network == 'neutron':
+            self.fuel_web.assert_cluster_ready(
+                os_conn, smiles_count=14, networks_count=2, timeout=300)
+        else:
+            self.fuel_web.assert_cluster_ready(
+                os_conn, smiles_count=16, networks_count=1, timeout=300)
+        self.fuel_web.verify_network(cluster_id)
 
         # Bug #1289297. Pause 5 min to make sure that all remain activity
         # on the admin node has over before creating a snapshot.
@@ -496,6 +544,169 @@ class TestHaFailoverBase(TestBasic):
                 test_sets=['ha', 'smoke', 'sanity'])
         except AssertionError:
             time.sleep(400)
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha', 'smoke', 'sanity'])
+
+    def ha_sequential_rabbit_master_failover(self):
+        if not self.env.d_env.has_snapshot(self.snapshot_name):
+            raise SkipTest()
+
+        self.env.revert_snapshot(self.snapshot_name)
+
+        cluster_id = self.fuel_web.client.get_cluster_id(
+            self.__class__.__name__)
+
+        net_provider = self.fuel_web.client.get_cluster(
+            cluster_id)['net_provider']
+
+        # Wait until MySQL Galera is UP on some controller
+        self.fuel_web.wait_mysql_galera_is_up(['slave-02'])
+
+        # Check keystone is fine after revert
+        try:
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha', 'sanity'])
+        except AssertionError:
+            time.sleep(600)
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha', 'sanity'])
+
+        public_vip = self.fuel_web.get_public_vip(cluster_id)
+        os_conn = os_actions.OpenStackActions(public_vip)
+
+        # Create instance
+        instance = os_conn.create_server_for_migration(
+            neutron=(net_provider == 'neutron'))
+
+        # Check ping
+        logger.info("Assigning floating ip to server")
+        floating_ip = os_conn.assign_floating_ip(instance)
+
+        # check instance
+        try:
+            wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120)
+        except TimeoutError:
+            raise TimeoutError('Can not ping instance'
+                               ' by floating ip {0}'.format(floating_ip.ip))
+
+        # get master rabbit controller
+        master_rabbit = self.fuel_web.get_rabbit_master_node(
+            self.env.d_env.nodes().slaves[0].name)
+
+        # suspend devops node with master rabbit
+        master_rabbit.suspend(False)
+
+        # Wait until Nailgun marked suspended controller as offline
+        try:
+            wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
+                master_rabbit)['online'], timeout=60 * 5)
+        except TimeoutError:
+            raise TimeoutError('Node {0} does'
+                               ' not become offline '
+                               'in nailgun'.format(master_rabbit.name))
+
+        # check ha
+        try:
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha'])
+        except AssertionError:
+            time.sleep(300)
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha'], should_fail=2)
+
+        # check instance
+        try:
+            wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120)
+        except TimeoutError:
+            raise TimeoutError('Can not ping instance'
+                               ' by floating ip {0}'.format(floating_ip.ip))
+        active_slaves = [slave for slave
+                         in self.env.d_env.nodes().slaves[0:3]
+                         if slave.name != master_rabbit.name]
+        second_master_rabbit = self.fuel_web.get_rabbit_master_node(
+            active_slaves[0].name)
+
+        # suspend devops node with master rabbit
+        second_master_rabbit.suspend(False)
+
+        # Wait until Nailgun marked suspended controller as offline
+        try:
+            wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
+                second_master_rabbit)['online'], timeout=60 * 5)
+        except TimeoutError:
+            raise TimeoutError('Node {0} does'
+                               ' not become offline '
+                               'in nailgun'.format(second_master_rabbit.name))
+
+        # turn on 1-st master
+
+        master_rabbit.resume(False)
+
+        # Wait until Nailgun marked suspended controller as online
+        try:
+            wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+                master_rabbit)['online'], timeout=60 * 5)
+        except TimeoutError:
+            raise TimeoutError('Node {0} does'
+                               ' not become online '
+                               'in nailgun'.format(master_rabbit.name))
+
+        self.fuel_web.check_ceph_status(cluster_id)
+
+        # check ha
+        try:
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha'])
+        except AssertionError:
+            time.sleep(300)
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha'], should_fail=2)
+
+        # turn on second master
+
+        second_master_rabbit.resume(False)
+
+        # Wait until Nailgun marked suspended controller as online
+        try:
+            wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+                second_master_rabbit)['online'], timeout=60 * 5)
+        except TimeoutError:
+            raise TimeoutError('Node {0} does'
+                               ' not become online'
+                               'in nailgun'.format(second_master_rabbit.name))
+
+        self.fuel_web.check_ceph_status(cluster_id)
+        # check ha
+        try:
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha'])
+        except AssertionError:
+            time.sleep(300)
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha'])
+
+        # ping instance
+        wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120)
+
+        # delete instance
+        os_conn.delete_instance(instance)
+
+        # run ostf
+        try:
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha', 'smoke', 'sanity'])
+        except AssertionError:
+            time.sleep(300)
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
                 test_sets=['ha', 'smoke', 'sanity'])
