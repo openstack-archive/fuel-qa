@@ -1785,3 +1785,18 @@ class FuelWebClient(object):
         devops_node = self.find_devops_node_by_nailgun_fqdn(
             fqdn, self.environment.d_env.nodes().slaves)
         return devops_node
+
+    @logwrap
+    def get_rabbit_master_node(self, node, fqdn_needed=False):
+        remote = self.get_ssh_for_node(node)
+        cmd = 'crm resource status master_p_rabbitmq-server'
+        output = ''.join(remote.execute(cmd)['stdout'])
+        master_node = re.search(
+            'resource master_p_rabbitmq-server is running on: (.*) Master',
+            output).group(1)
+        if fqdn_needed:
+            return master_node
+        else:
+            devops_node = self.find_devops_node_by_nailgun_fqdn(
+                master_node, self.environment.d_env.nodes().slaves)
+            return devops_node

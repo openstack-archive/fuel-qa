@@ -399,3 +399,4 @@ class TestHaNovaFailover(TestHaFailoverBase):
 
         """
         super(self.__class__, self).ha_controller_loss_packages()
+
