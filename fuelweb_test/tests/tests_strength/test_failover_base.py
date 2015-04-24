@@ -149,15 +149,12 @@ class TestHaFailoverBase(TestBasic):
         try:
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
-                test_sets=['ha'])
+                test_sets=['sanity', 'smoke'], should_fail=1)
         except AssertionError:
             time.sleep(600)
-            self.fuel_web.run_ostf(
-                cluster_id=cluster_id,
-                test_sets=['ha'])
-
-        self.fuel_web.run_ostf(cluster_id=cluster_id,
-                               test_sets=['smoke', 'sanity'])
+            self.fuel_web.run_ostf(cluster_id=cluster_id,
+                                   test_sets=['smoke', 'sanity'],
+                                   should_fail=1)
 
     def ha_delete_vips(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
@@ -525,10 +522,10 @@ class TestHaFailoverBase(TestBasic):
                 cluster_id=cluster_id,
                 test_sets=['ha', 'smoke', 'sanity'])
         except AssertionError:
-            time.sleep(400)
+            time.sleep(600)
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
-                test_sets=['ha', 'smoke', 'sanity'])
+                test_sets=['smoke', 'sanity'])
 
     def check_alive_rabbit_node_not_kicked(self):
 
@@ -546,7 +543,7 @@ class TestHaFailoverBase(TestBasic):
 
         slave1_remote = self.fuel_web.get_ssh_for_node(
             self.env.d_env.nodes().slaves[0].name)
-
+        rabbit_slave1_name = None
         slave1_name = ''.join(
             slave1_remote.execute('hostname')['stdout']).strip()
         logger.debug('slave1 name is {}'.format(slave1_name))
