@@ -409,6 +409,7 @@ def find_backup(remote):
         arch_path = ''.join(
             remote.execute("ls -1u /var/backup/fuel/{0}/*.lrz".
                            format(arch_dir.strip()))["stdout"])
+        logger.debug('arch_path is {0}'.format(arch_path))
         return arch_path
     except Exception as e:
         logger.error('exception is {0}'.format(e))
@@ -420,22 +421,27 @@ def backup_check(remote):
     logger.info("Backup check archive status")
     path = find_backup(remote)
     assert_true(path, "Can not find backup. Path value {0}".format(path))
-    arch_result = None
-    try:
-        arch_result = ''.join(
-            remote.execute(("if [ -e {0} ]; then echo "
-                            " Archive exists; fi").
-                           format(path.rstrip()))["stdout"])
-    except Exception as e:
-        logger.error('exception is {0}'.format(e))
-        raise e
+    arch_result = ''.join(
+        remote.execute(("if [ -e {0} ]; "
+                        "then echo  Archive exists;"
+                        " fi").format(path.rstrip()))["stdout"])
     assert_true("Archive exists" in arch_result, "Archive does not exist")
 
 
 @logwrap
 def restore_check_sum(remote):
+    logger.debug('Check if removed file /etc/fuel/data was restored')
+    res = remote.execute("if [ -e /etc/fuel/data ]; "
+                         "then echo Restored!!;"
+                         " fi")
+    assert_true("Restored!!" in ''.join(res['stdout']).strip(),
+                'Test file /etc/fuel/data '
+                'was not restored!!! {0}'.format(res['stderr']))
     logger.info("Restore check md5sum")
     md5sum_backup = remote.execute("cat /etc/fuel/sum")
+    assert_true(''.join(md5sum_backup['stdout']).strip(),
+                'Command cat /etc/fuel/sum '
+                'failed with {0}'.format(md5sum_backup['stderr']))
     md5sum_restore = remote.execute("md5sum /etc/fuel/data | sed -n 1p "
                                     " | awk '{print $1}'")
     assert_equal(md5sum_backup, md5sum_restore,

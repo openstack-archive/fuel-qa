@@ -923,7 +923,7 @@ class UntaggedNetworksNegative(TestBasic):
 @test(groups=["known_issues"])
 class BackupRestoreHAOneController(TestBasic):
     @test(depends_on=[HAOneControllerFlat.deploy_ha_one_controller_flat],
-          groups=["ha_one_controller_backup_restore"])
+              groups=["ha_one_controller_backup_restore"])
     @log_snapshot_on_error
     def ha_one_controller_backup_restore(self):
         """Backup/restore master node with cluster in ha mode
@@ -949,7 +949,10 @@ class BackupRestoreHAOneController(TestBasic):
             'novaSimpleFlat', 'novaSimpleFlat', 'novaSimpleFlat')
         self.fuel_web.assert_cluster_ready(
             os_conn, smiles_count=6, networks_count=1, timeout=300)
+        # Execute master node backup
         self.fuel_web.backup_master(self.env.d_env.get_admin_remote())
+
+        # Check created backup
         checkers.backup_check(self.env.d_env.get_admin_remote())
 
         self.fuel_web.update_nodes(
