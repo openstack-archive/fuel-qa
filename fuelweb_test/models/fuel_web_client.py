@@ -1620,6 +1620,7 @@ class FuelWebClient(object):
 
         assert_equal(0, remote.execute('dockerctl backup')['exit_code'],
                      'dockerctl backup failed with non zero exit code')
+
         assert_equal(0, remote.execute('rm -f /etc/fuel/data')['exit_code'],
                      'Can not remove /etc/fuel/data')
         logger.debug("Finish backup of master node")
