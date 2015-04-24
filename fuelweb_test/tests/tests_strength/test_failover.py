@@ -221,6 +221,50 @@ class TestHaNeutronFailover(TestHaFailoverBase):
         """
         super(self.__class__, self).ha_controller_loss_packages()
 
+    @test(depends_on_groups=['prepare_ha_neutron'],
+          groups=["ha_neutron_check_alive_rabbit"])
+    @log_snapshot_on_error
+    def ha_neutron_check_alive_rabbit(self):
+        """Check alive rabbit node is not kicked from cluster
+           when corosync service on node dies
+
+        Scenario:
+            1. SSH to first controller and make master_p_rabbitmq-server
+               resource unmanaged
+            2. Stop corosync service on first controller
+            3. Check on master node that rabbit-fence.log contains
+               Ignoring alive node rabbit@node-1
+            4. On second controller check that rabbitmq cluster_status
+               contains all 3 nodes
+            5. On first controller start corosync service and restart pacemaker
+            6. Check that pcs status contains all 3 nodes
+
+        Duration 25m
+
+        """
+        super(self.__class__, self).check_alive_rabbit_node_not_kicked()
+
+    @test(depends_on_groups=['prepare_ha_neutron'],
+          groups=["ha_neutron_check_dead_rabbit"])
+    @log_snapshot_on_error
+    def ha_neutron_check_dead_rabbit(self):
+        """Check dead rabbit node is kicked from cluster
+           when corosync service on node dies
+
+        Scenario:
+            1. SSH to first controller and make master_p_rabbitmq-server
+               resource unmanaged
+            2. Stop rabbit and corosync service on first controller
+            3. Check on master node that rabbit-fence.log contains
+               Disconnecting rabbit@node-1
+            4. On second controller check that rabbitmq cluster_status
+               contains only 2 nodes
+
+        Duration 25m
+
+        """
+        super(self.__class__, self).check_dead_rabbit_node_kicked()
+
 
 @test(groups=["thread_5", "ha", "ha_nova_destructive"])
 class TestHaNovaFailover(TestHaFailoverBase):
@@ -399,3 +443,47 @@ class TestHaNovaFailover(TestHaFailoverBase):
 
         """
         super(self.__class__, self).ha_controller_loss_packages()
+
+    @test(depends_on_groups=['prepare_ha_nova'],
+          groups=["ha_nova_check_alive_rabbit"])
+    @log_snapshot_on_error
+    def ha_nova_check_alive_rabbit(self):
+        """Check alive rabbit node is not kicked from cluster
+           when corosync service on node dies
+
+        Scenario:
+            1. SSH to first controller and make master_p_rabbitmq-server
+               resource unmanaged
+            2. Stop corosync service on first controller
+            3. Check on master node that rabbit-fence.log contains
+               Ignoring alive node rabbit@node-1
+            4. On second controller check that rabbitmq cluster_status
+               contains all 3 nodes
+            5. On first controller start corosync service and restart pacemaker
+            6. Check that pcs status contains all 3 nodes
+
+        Duration 25m
+
+        """
+        super(self.__class__, self).check_alive_rabbit_node_not_kicked()
+
+    @test(depends_on_groups=['prepare_ha_nova'],
+          groups=["ha_nova_check_dead_rabbit"])
+    @log_snapshot_on_error
+    def ha_nova_check_dead_rabbit(self):
+        """Check dead rabbit node is kicked from cluster
+           when corosync service on node dies
+
+        Scenario:
+            1. SSH to first controller and make master_p_rabbitmq-server
+               resource unmanaged
+            2. Stop rabbit and corosync service on first controller
+            3. Check on master node that rabbit-fence.log contains
+               Disconnecting rabbit@node-1
+            4. On second controller check that rabbitmq cluster_status
+               contains only 2 nodes
+
+        Duration 25m
+
+        """
+        super(self.__class__, self).check_dead_rabbit_node_kicked()
