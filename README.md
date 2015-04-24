@@ -1,4 +1,4 @@
-Tests documentation
+Hello!
 -------------------
 
 [Devops documentation](http://docs.mirantis.com/fuel-dev/devops.html)
