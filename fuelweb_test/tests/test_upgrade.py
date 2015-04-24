@@ -34,23 +34,6 @@ from fuelweb_test.tests import base_test_case as base_test_data
 @test(groups=["upgrade"])
 class UpgradeFuelMaster(base_test_data.TestBasic):
     @classmethod
-    def check_upgraded_kernel(cls, admin_remote, slave_remote):
-        # the archive contains several versions of the kernel
-        # regular expression will pick the newer one
-        # that is actually gets installed
-        cmd = r"find /var/upgrade/repos/*/ubuntu/ -type f -name" \
-              r" 'linux-image-*.deb' -printf '%f\n' | sed -rn " \
-              r"'s/^linux-image-([0-9, \.]+(\-[0-9]+)?)-.*/\1/p' |" \
-              r" sort -rV | " \
-              r"head -1"
-        expected_kernel = ''.join(admin_remote.execute(
-            cmd)['stdout']).rstrip()
-        logger.debug("kernel version from repos is {0}".format(
-            expected_kernel))
-        kernel = UpgradeFuelMaster.get_slave_kernel(slave_remote)
-        checkers.check_kernel(kernel, expected_kernel)
-
-    @classmethod
     def get_slave_kernel(cls, slave_remote):
         kernel = ''.join(slave_remote.execute(
             r"uname -r | sed -rn"
@@ -276,8 +259,9 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
             _ip = self.fuel_web.get_nailgun_node_by_name('slave-06')['ip']
             remote = self.env.d_env.get_ssh_to_remote(_ip)
-            self.check_upgraded_kernel(
-                self.env.d_env.get_admin_remote(), remote)
+            kernel = self.get_slave_kernel(remote)
+            logger.debug("ubuntu kernel version"
+                         " on new node is {}".format(kernel))
         self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(
@@ -363,8 +347,9 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
             _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
             remote = self.env.d_env.get_ssh_to_remote(_ip)
-            self.check_upgraded_kernel(
-                self.env.d_env.get_admin_remote(), remote)
+            kernel = self.get_slave_kernel(remote)
+            logger.debug("ubuntu kernel version"
+                         " on new node is {}".format(kernel))
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
         self.env.make_snapshot("deploy_ha_after_upgrade")
