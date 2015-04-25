@@ -46,7 +46,7 @@ class GlusterfsPlugin(TestBasic):
           groups=["deploy_ha_one_controller_glusterfs"])
     @log_snapshot_on_error
     def deploy_ha_one_controller_glusterfs_simple(self):
-        """Deploy cluster in ha mode with glusterfs plugin
+        """Deploy cluster with one controller and glusterfs plugin
 
         Scenario:
             1. Upload plugin to the master node
@@ -96,6 +96,10 @@ class GlusterfsPlugin(TestBasic):
             plugin_enabled['enabled'] = True
             plugin_data = attr['editable']['external_glusterfs']['endpoint']
             plugin_data['value'] = GLUSTER_CLUSTER_ENDPOINT
+        else:
+            msg = "Plugin couldn't be enabled. " \
+                  "Check plugin version. Test aborted"
+            assert_true(False, msg)
 
         self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
 
@@ -182,6 +186,10 @@ class GlusterfsPlugin(TestBasic):
             plugin_enabled['enabled'] = True
             plugin_data = attr['editable']['external_glusterfs']['endpoint']
             plugin_data['value'] = GLUSTER_CLUSTER_ENDPOINT
+        else:
+            msg = "Plugin couldn't be enabled. " \
+                  "Check plugin version. Test aborted"
+            assert_true(False, msg)
 
         self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
 
