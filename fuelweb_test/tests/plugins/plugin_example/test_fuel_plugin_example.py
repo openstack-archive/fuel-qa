@@ -13,7 +13,7 @@
 #    under the License.
 import os
 
-from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_equal, assert_true
 from proboscis import test
 
 from fuelweb_test import logger
@@ -25,14 +25,14 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["plugins"])
+@test(groups=["fuel_plugins"])
 class ExamplePlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ha_controller_neutron_example"])
     @log_snapshot_on_error
     def deploy_ha_one_controller_neutron_example(self):
-        """Deploy cluster in ha mode with example plugin
+        """Deploy cluster with one controller and example plugin
 
         Scenario:
             1. Upload plugin to the master node
@@ -72,10 +72,11 @@ class ExamplePlugin(TestBasic):
             }
         )
 
+        msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
-        if 'fuel_plugin_example' in attr['editable']:
-            plugin_data = attr['editable']['fuel_plugin_example']['metadata']
-            plugin_data['enabled'] = True
+        assert_true('fuel_plugin_example' in attr['editable'], msg)
+        plugin_data = attr['editable']['fuel_plugin_example']['metadata']
+        plugin_data['enabled'] = True
 
         self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
 
@@ -153,10 +154,11 @@ class ExamplePlugin(TestBasic):
             mode=DEPLOYMENT_MODE,
         )
 
+        msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
-        if 'fuel_plugin_example' in attr['editable']:
-            plugin_data = attr['editable']['fuel_plugin_example']['metadata']
-            plugin_data['enabled'] = True
+        assert_true('fuel_plugin_example' in attr['editable'], msg)
+        plugin_data = attr['editable']['fuel_plugin_example']['metadata']
+        plugin_data['enabled'] = True
 
         self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
 
@@ -244,10 +246,11 @@ class ExamplePlugin(TestBasic):
             }
         )
 
+        msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
-        if 'fuel_plugin_example' in attr['editable']:
-            plugin_data = attr['editable']['fuel_plugin_example']['metadata']
-            plugin_data['enabled'] = True
+        assert_true('fuel_plugin_example' in attr['editable'], msg)
+        plugin_data = attr['editable']['fuel_plugin_example']['metadata']
+        plugin_data['enabled'] = True
 
         self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
 

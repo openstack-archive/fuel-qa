@@ -80,10 +80,11 @@ class ZabbixPlugin(TestBasic):
             settings=settings
         )
 
+        msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
-        if "zabbix_monitoring" in attr["editable"]:
-            plugin_data = attr["editable"]["zabbix_monitoring"]["metadata"]
-            plugin_data['enabled'] = True
+        assert_true("zabbix_monitoring" in attr["editable"], msg)
+        plugin_data = attr["editable"]["zabbix_monitoring"]["metadata"]
+        plugin_data['enabled'] = True
 
         self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
 

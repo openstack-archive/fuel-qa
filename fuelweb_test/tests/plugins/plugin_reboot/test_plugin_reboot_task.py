@@ -25,7 +25,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.helpers.fuel_actions import FuelPluginBuilder
 
 
-@test(groups=["plugins"])
+@test(groups=["fuel_plugins"])
 class RebootPlugin(TestBasic):
     """
     Test class for testing reboot task in plugins
@@ -83,10 +83,11 @@ class RebootPlugin(TestBasic):
             mode=DEPLOYMENT_MODE
         )
         # get plugins from fuel and enable our one
+        msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
-        if plugin_name in attr['editable']:
-            plugin_data = attr['editable'][plugin_name]['metadata']
-            plugin_data['enabled'] = True
+        asserts.assert_true(plugin_name in attr['editable'], msg)
+        plugin_data = attr['editable'][plugin_name]['metadata']
+        plugin_data['enabled'] = True
 
         self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
 
@@ -209,10 +210,11 @@ class RebootPlugin(TestBasic):
             mode=DEPLOYMENT_MODE
         )
         # get plugins from fuel and enable it
+        msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
-        if plugin_name in attr['editable']:
-            plugin_data = attr['editable'][plugin_name]['metadata']
-            plugin_data['enabled'] = True
+        asserts.assert_true(plugin_name in attr['editable'], msg)
+        plugin_data = attr['editable'][plugin_name]['metadata']
+        plugin_data['enabled'] = True
 
         self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
 

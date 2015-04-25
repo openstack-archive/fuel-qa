@@ -17,6 +17,7 @@ import os.path
 import time
 
 from proboscis import test
+from proboscis.asserts import assert_true
 
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
 from fuelweb_test.helpers import checkers
@@ -185,14 +186,14 @@ class ContrailPlugin(TestBasic):
             },
             contrail=True
         )
-
+        msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
-        if 'contrail' in attr['editable']:
-            logger.debug('we have contrail element')
-            plugin_data = attr['editable']['contrail']['metadata']
-            plugin_data['enabled'] = True
-            public_int = attr['editable']['contrail']['contrail_public_if']
-            public_int['value'] = 'eth1'
+        assert_true('contrail' in attr['editable'], msg)
+        logger.debug('we have contrail element')
+        plugin_data = attr['editable']['contrail']['metadata']
+        plugin_data['enabled'] = True
+        public_int = attr['editable']['contrail']['contrail_public_if']
+        public_int['value'] = 'eth1'
 
         self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
 
@@ -276,13 +277,14 @@ class ContrailPlugin(TestBasic):
         )
 
         # fill public field in contrail settings
+        msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
-        if 'contrail' in attr['editable']:
-            logger.debug('we have contrail element')
-            plugin_data = attr['editable']['contrail']['metadata']
-            plugin_data['enabled'] = True
-            public_int = attr['editable']['contrail']['contrail_public_if']
-            public_int['value'] = 'eth1'
+        assert_true('contrail' in attr['editable'], msg)
+        logger.debug('we have contrail element')
+        plugin_data = attr['editable']['contrail']['metadata']
+        plugin_data['enabled'] = True
+        public_int = attr['editable']['contrail']['contrail_public_if']
+        public_int['value'] = 'eth1'
 
         self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
 
