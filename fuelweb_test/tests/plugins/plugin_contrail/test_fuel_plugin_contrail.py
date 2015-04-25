@@ -17,6 +17,7 @@ import os.path
 import time
 
 from proboscis import test
+from proboscis.asserts import assert_true
 
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
 from fuelweb_test.helpers import checkers
@@ -193,6 +194,10 @@ class ContrailPlugin(TestBasic):
             plugin_data['enabled'] = True
             public_int = attr['editable']['contrail']['contrail_public_if']
             public_int['value'] = 'eth1'
+        else:
+            msg = "Plugin couldn't be enabled. " \
+                  "Check plugin version. Test aborted"
+            assert_true(False, msg)
 
         self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
 
@@ -283,6 +288,10 @@ class ContrailPlugin(TestBasic):
             plugin_data['enabled'] = True
             public_int = attr['editable']['contrail']['contrail_public_if']
             public_int['value'] = 'eth1'
+        else:
+            msg = "Plugin couldn't be enabled. " \
+                  "Check plugin version. Test aborted"
+            assert_true(False, msg)
 
         self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
 

@@ -136,6 +136,10 @@ class LbaasPlugin(TestBasic):
             logger.debug('we have lbaas element')
             plugin_data = attr['editable']['lbaas']['metadata']
             plugin_data['enabled'] = True
+        else:
+            msg = "Plugin couldn't be enabled. " \
+                  "Check plugin version. Test aborted"
+            asserts.assert_true(False, msg)
 
         self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
 
@@ -220,6 +224,10 @@ class LbaasPlugin(TestBasic):
             logger.debug('we have lbaas element')
             plugin_data = attr['editable']['lbaas']['metadata']
             plugin_data['enabled'] = True
+        else:
+            msg = "Plugin couldn't be enabled. " \
+                  "Check plugin version. Test aborted"
+            asserts.assert_true(False, msg)
 
         self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
 
