@@ -1794,3 +1794,17 @@ class FuelWebClient(object):
         devops_node = self.find_devops_node_by_nailgun_fqdn(
             fqdn, self.environment.d_env.nodes().slaves)
         return devops_node
+
+    def check_plugin_exists(self, cluster_id, plugin_name, section='editable'):
+        attr = self.client.get_cluster_attributes(cluster_id)[section]
+        return plugin_name in attr
+
+    def update_plugin_data(self, cluster_id, plugin_name, data):
+        attr = self.client.get_cluster_attributes(cluster_id)
+        for option, value in data.items():
+            plugin_data = attr['editable'][plugin_name]
+            path = option.split("/")
+            for p in path[:-1]:
+                plugin_data = plugin_data[p]
+            plugin_data[path[-1]] = value
+        self.client.update_cluster_attributes(cluster_id, attr)
