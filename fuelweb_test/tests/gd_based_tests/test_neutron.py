@@ -392,8 +392,10 @@ class NeutronGre(TestBasic):
                 remote=self.fuel_web.get_ssh_for_node(node),
                 path=post_openstack_haproxy[0]['cmd'])
              for node in ['slave-01']]
+        # for service in ['memcached', 'openstack-cinder', 'database'
+        #                 'rabbitmq', 'keystone', 'glance']:
         for service in ['memcached', 'openstack-cinder', 'database'
-                        'rabbitmq', 'keystone', 'glance']:
+                        'rabbitmq']:
             if self.get_post_test(tasks, service):
                 [gd.run_check_from_task(
                     remote=self.fuel_web.get_ssh_for_node(node),
