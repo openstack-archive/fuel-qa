@@ -46,13 +46,13 @@ def configure_second_admin_cobbler(self):
     discovery_subnet = [net for net in network.iter_subnets(1)][-1]
     first_discovery_address = str(discovery_subnet.network)
     last_discovery_address = str(discovery_subnet.broadcast - 1)
-    new_range = ('interface={5}\\n'
+    new_range = ('interface={4}\\n'
                  'dhcp-range=internal2,{0},{1},{2}\\n'
                  'dhcp-option=net:internal2,option:router,{3}\\n'
-                 'dhcp-boot=net:internal2,pxelinux.0,boothost,{4}\\n').\
+                 'pxe-service=net:internal2,x86PC,"Install",pxelinux,{3}\\n'
+                 'dhcp-boot=net:internal2,pxelinux.0,boothost,{3}\\n').\
         format(first_discovery_address, last_discovery_address,
-               second_admin_netmask, second_admin_ip, main_admin_ip,
-               second_admin_if)
+               second_admin_netmask, second_admin_ip, second_admin_if)
     cmd = ("dockerctl shell cobbler sed -r '$a \{0}' -i {1};"
            "dockerctl shell cobbler cobbler sync").format(new_range,
                                                           dhcp_template)
