@@ -14,6 +14,7 @@
 
 import time
 import yaml
+from devops.error import TimeoutError
 
 from devops.helpers.helpers import _tcp_ping
 from devops.helpers.helpers import _wait
@@ -216,6 +217,19 @@ class EnvironmentModel(object):
             devops_nodes
         )
 
+    def check_slaves_are_ready(self):
+        devops_nodes = [node for node in self.d_env.nodes().slaves
+                        if node.driver.node_active(node)]
+        for node in devops_nodes:
+            try:
+                wait(lambda:
+                     self.fuel_web.get_nailgun_node_by_devops_node(
+                         node)['online'], timeout=60 * 6)
+            except TimeoutError:
+                    raise TimeoutError(
+                        "Node {0} does not become online".format(node.name))
+        return True
+
     def revert_snapshot(self, name, skip_timesync=False):
         if not self.d_env.has_snapshot(name):
             return False
@@ -274,6 +288,7 @@ class EnvironmentModel(object):
             self.set_admin_keystone_password()
             self.fuel_web.get_nailgun_version()
 
+        _wait(lambda: self.check_slaves_are_ready(), timeout=60 * 6)
         return True
 
     def set_admin_ssh_password(self):
