@@ -420,24 +420,23 @@ class TestHaFailoverBase(TestBasic):
         devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         file_name = DOWNLOAD_LINK.split('/')[-1]
-        if OPENSTACK_RELEASE == OPENSTACK_RELEASE_UBUNTU:
-            file_path = '/root/tmp'
-            remote_compute.execute(
-                "screen -S download -d -m bash -c 'mkdir -p {0} &&"
-                " cd {0} && wget {1}'".format(file_path, DOWNLOAD_LINK))
-            try:
-                wait(
-                    lambda: remote_compute.execute("ls -1 {0}/{1}".format(
-                        file_path, file_name))['exit_code'] == 0, timeout=60)
-            except TimeoutError:
-                raise TimeoutError(
-                    "File download was not started")
-            file_size1 = get_file_size(remote_compute, file_name, file_path)
-            time.sleep(5)
-            file_size2 = get_file_size(remote_compute, file_name, file_path)
-            assert_true(file_size2 > file_size1,
-                        "File download was interrupted, size of downloading "
-                        "does not change")
+        file_path = '/root/tmp'
+        remote_compute.execute(
+            "screen -S download -d -m bash -c 'mkdir -p {0} &&"
+            " cd {0} && wget {1}'".format(file_path, DOWNLOAD_LINK))
+        try:
+            wait(
+                lambda: remote_compute.execute("ls -1 {0}/{1}".format(
+                    file_path, file_name))['exit_code'] == 0, timeout=60)
+        except TimeoutError:
+            raise TimeoutError(
+                "File download was not started")
+        file_size1 = get_file_size(remote_compute, file_name, file_path)
+        time.sleep(5)
+        file_size2 = get_file_size(remote_compute, file_name, file_path)
+        assert_true(file_size2 > file_size1,
+                    "File download was interrupted, size of downloading "
+                    "does not change")
         devops_node.destroy()
         try:
             wait(
