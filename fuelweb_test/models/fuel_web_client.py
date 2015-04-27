@@ -1744,6 +1744,14 @@ class FuelWebClient(object):
             logger.info("Public IP found: {0}".format(ip))
             return ip
 
+    def get_management_vrouter_vip(self, cluster_id):
+        if self.get_cluster_mode(cluster_id) == DEPLOYMENT_MODE_HA:
+            return self.client.get_networks(
+                cluster_id)['management_vrouter_vip']
+        else:
+            logger.error("Public management_vrouter_vip for cluster '{0}' not "
+                         "found controller".format(cluster_id))
+
     @logwrap
     def get_controller_with_running_service(self, slave, service_name):
         ret = self.get_pacemaker_status(slave.name)

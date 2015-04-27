@@ -856,7 +856,7 @@ def external_dns_check(remote_slave):
 
 
 @logwrap
-def external_ntp_check(remote_slave, vip):
+def external_ntp_check(remote_slave, vrouter_vip):
     logger.info("External ntp check")
     ext_ntp_ip = ''.join(
         remote_slave.execute("awk '/^server +{0}/{{print $2}}' "
@@ -864,7 +864,7 @@ def external_ntp_check(remote_slave, vip):
                              format(EXTERNAL_NTP))["stdout"]).rstrip()
     assert_equal(ext_ntp_ip, EXTERNAL_NTP,
                  "/etc/ntp.conf does not contain external ntp ip")
-    status = "ntpdate -s {0}".format(vip)
+    status = "ntpdate -s {0}".format(vrouter_vip)
     try:
         wait(
             lambda: not remote_slave.execute(status)['exit_code'], timeout=120)
