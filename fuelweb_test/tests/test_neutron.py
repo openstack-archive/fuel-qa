@@ -214,7 +214,8 @@ class NeutronGreHa(TestBasic):
             checkers.check_swift_ring(remote)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
+            cluster_id=cluster_id,
+            test_sets=['ha', 'smoke', 'sanity'])
 
         self.env.make_snapshot("deploy_neutron_gre_ha")
 
@@ -278,7 +279,8 @@ class NeutronGreHaPublicNetwork(TestBasic):
         self.fuel_web.security.verify_firewall(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
+            cluster_id=cluster_id,
+            test_sets=['ha', 'smoke', 'sanity'])
 
         self.env.make_snapshot("deploy_neutron_gre_ha_public_network")
 
@@ -355,7 +357,7 @@ class NeutronVlanHa(TestBasic):
             checkers.check_swift_ring(remote)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
+            cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
         self.env.make_snapshot("deploy_neutron_vlan_ha")
 
@@ -423,6 +425,6 @@ class NeutronVlanHaPublicNetwork(TestBasic):
         self.fuel_web.security.verify_firewall(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
+            cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
         self.env.make_snapshot("deploy_neutron_vlan_ha_public_network")
