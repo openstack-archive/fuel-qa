@@ -15,7 +15,7 @@
 import proboscis
 import time
 
-from proboscis.asserts import assert_true, assert_false
+from proboscis.asserts import assert_true, assert_false, assert_equal
 from proboscis import SkipTest
 from proboscis import test
 from devops.helpers.helpers import tcp_ping
@@ -415,8 +415,25 @@ class CephRadosGW(TestBasic):
         self.fuel_web.verify_network(cluster_id)
         # Deploy cluster
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.fuel_web.check_ceph_status(cluster_id)
+
+        # Network verification
         self.fuel_web.verify_network(cluster_id)
+
+        # HAProxy backend checking
+        controller_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])
+
+        for node in controller_nodes:
+            remote = self.env.d_env.get_ssh_to_remote(node['ip'])
+            logger.info("Check all HAProxy backends on {}".format(
+                node['meta']['system']['fqdn']))
+            haproxy_status = checkers.check_haproxy_backend(remote)
+            assert_equal(haproxy_status['exit_code'], 0,
+                         "HAProxy backends are DOWN. {0}".format(
+                             haproxy_status['stdout']))
+            remote.clear()
+
+        self.fuel_web.check_ceph_status(cluster_id)
 
         # Run ostf
         self.fuel_web.run_ostf(cluster_id=cluster_id,
@@ -428,6 +445,7 @@ class CephRadosGW(TestBasic):
             'ps aux | grep "/usr/bin/radosgw -n '
             'client.radosgw.gateway"')['stdout']) == 3
         assert_true(radosgw_started(), 'radosgw daemon started')
+        remote.clear()
 
         self.env.make_snapshot("ceph_rados_gw")
 
