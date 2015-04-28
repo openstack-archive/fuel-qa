@@ -53,7 +53,7 @@ class CommandLine(TestBasic):
             cluster_id,
             {'slave-01': ['controller']}
         )
-        remote = self.env.get_admin_remote()
+        remote = self.env.d_env.get_admin_remote()
         node_id = self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.nodes().slaves[0])['id']
         remote.execute('fuel node --node {0} --provision --env {1}'.format
