@@ -360,11 +360,10 @@ class EnvironmentModel(object):
         self.wait_for_provisioning()
         try:
             remote = self.d_env.get_admin_remote()
-            pid = remote.execute("pgrep 'fuelmenu'")['stdout'][0]
-            pid.rstrip('\n')
-            remote.execute("kill -sigusr1 {0}".format(pid))
+            cmd = "pkill -sigusr1 -f '^.*/fuelmenu$'"
+            wait(lambda: remote.execute(cmd)['exit_code'] == 0, timeout=60)
         except Exception:
-            logger.error("Could not kill pid of fuelmenu")
+            logger.error("Could not kill process of fuelmenu")
             raise
 
     @retry(count=3, delay=60)
