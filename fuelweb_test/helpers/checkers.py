@@ -1095,3 +1095,29 @@ def check_cluster_presence(cluster_id, postgres_actions):
         db='nailgun',
         query="select id from clusters where id={0}".format(cluster_id))
     return str(cluster_id) in query_result
+
+
+def check_haproxy_backend(remote,
+                          services=[], nodes=[],
+                          ignore_services=[], ignore_nodes=[]):
+    """Check DOWN state of HAProxy backends. Define names of service or nodes
+    if need check some specific service or node. Use ignore_services for ignore
+    service status on all nodes. Use ignore_nodes for ignore all services on
+    all nodes. Ignoring has a bigger priority.
+
+    :type remote: SSHClient
+    :type check_service: List
+    :type nodes_should_down: List
+        :rtype: Dict
+    """
+    cmd = ('echo "show stat" | socat unix-connect:/var/lib/haproxy/stats stdio'
+           '| egrep -v "BACKEND|FRONTEND" | grep ",DOWN,"')
+    if services:
+        cmd = '{}|egrep "{}"'.format(cmd, '|'.join(services))
+    if nodes:
+        cmd = '{}|egrep "{}"'.format(cmd, '|'.join(nodes))
+    if ignore_services:
+        cmd = '{}|egrep "{}"'.format(cmd, '|'.join(ignore_services))
+    if ignore_nodes:
+        cmd = '{}|egrep "{}"'.format(cmd, '|'.join(ignore_nodes))
+    return remote.execute(cmd)
