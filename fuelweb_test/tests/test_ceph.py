@@ -15,7 +15,7 @@
 import proboscis
 import time
 
-from proboscis.asserts import assert_true, assert_false
+from proboscis.asserts import assert_true, assert_false, assert_equal
 from proboscis import SkipTest
 from proboscis import test
 from devops.helpers.helpers import tcp_ping
@@ -414,6 +414,26 @@ class CephRadosGW(TestBasic):
         )
         # Deploy cluster
         self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        # Network verifycation
+        self.fuel_web.verify_network(cluster_id)
+
+        # HAProxy backend checking
+        cluster_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        controller_nodes = [n for n in cluster_nodes if 'controller' in
+                            n['roles']]
+        for node in controller_nodes:
+            remote = self.env.d_env.get_ssh_to_remote(node['ip'])
+            logger.info("Check all HAProxy backends on {}".format(
+                node['meta']['system']['fqdn']))
+            haproxy_status = checkers.check_haproxy_backend(remote)
+            assert_equal(haproxy_status['exit_code'], 0,
+                         haproxy_status['stdout'])
+            remote.clear()
+
+        devops_node = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+        logger.debug("devops node name is {0}".format(devops_node.name))
         self.fuel_web.check_ceph_status(cluster_id)
 
         # Run ostf
