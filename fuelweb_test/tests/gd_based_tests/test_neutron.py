@@ -85,7 +85,7 @@ class NeutronGre(TestBasic):
             1. Revert snapshot "ready_with_3_slaves"
             2. Create cluster with neutron
             3. Add 1 controller
-            4. Add 2 node with compute and cinder node
+            4. Add 1 node with compute and 1 cinder node
             5. Run provisioning task on all nodes, assert it is ready
             6. Create snapshot
 
@@ -110,8 +110,8 @@ class NeutronGre(TestBasic):
             cluster_id,
             {
                 'slave-01': ['controller'],
-                'slave-02': ['compute', 'cinder'],
-                'slave-03': ['compute', 'cinder']
+                'slave-02': ['compute'],
+                'slave-03': ['cinder']
             }
         )
 
@@ -582,11 +582,11 @@ class NeutronGre(TestBasic):
             [gd.run_check_from_task(
                 remote=self.fuel_web.get_ssh_for_node(node),
                 path=pre_top_compute[0]['cmd'])
-             for node in ['slave-02', 'slave-03']]
+             for node in ['slave-02']]
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['top-role-compute'],
-            node_id='{0},{1}'.format(compute_ids[0], compute_ids[1]))
+            node_id=str(compute_ids).strip('[]'))
         logger.debug('res info is {0}'.format(res))
 
         self.fuel_web.assert_task_success(task=res)
@@ -594,7 +594,7 @@ class NeutronGre(TestBasic):
             [gd.run_check_from_task(
                 remote=self.fuel_web.get_ssh_for_node(node),
                 path=post_top_compute[0]['cmd'])
-             for node in ['slave-02', 'slave-03']]
+             for node in ['slave-02']]
 
         pre_net = self.get_pre_test(tasks, 'openstack-network-compute')
         post_net = self.get_post_test(tasks, 'openstack-network-compute')
@@ -606,7 +606,7 @@ class NeutronGre(TestBasic):
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['openstack-network-compute'],
-            node_id='{0},{1}'.format(compute_ids[0], compute_ids[1]))
+            node_id=str(compute_ids).strip('[]'))
         logger.debug('res info is {0}'.format(res))
 
         self.fuel_web.assert_task_success(task=res)
@@ -615,7 +615,7 @@ class NeutronGre(TestBasic):
             [gd.run_check_from_task(
                 remote=self.fuel_web.get_ssh_for_node(node),
                 path=post_net[0]['cmd'])
-             for node in ['slave-02', 'slave-03']]
+             for node in ['slave-02']]
 
         self.env.make_snapshot("step_9_run_top_role_compute")
 
@@ -642,6 +642,9 @@ class NeutronGre(TestBasic):
 
         self.env.revert_snapshot('step_9_run_top_role_compute')
         cluster_id = self.get_cluster_id()
+        nodes_ids = [n['id'] for n in
+                     self.fuel_web.client.list_cluster_nodes(cluster_id)]
+
         cinder_ids = [
             n['id'] for n in
             self.fuel_web.client.list_cluster_nodes(cluster_id)
@@ -649,7 +652,7 @@ class NeutronGre(TestBasic):
 
         self.sync_manifest_to_the_slaves(
             cluster_id=cluster_id,
-            node_ids=cinder_ids)
+            node_ids=nodes_ids)
 
         tasks = self.fuel_web.client.get_end_deployment_tasks(
             cluster_id, end='top-role-cinder')
@@ -660,11 +663,11 @@ class NeutronGre(TestBasic):
             [gd.run_check_from_task(
                 remote=self.fuel_web.get_ssh_for_node(node),
                 path=pre_top_cinder[0]['cmd'])
-             for node in ['slave-02', 'slave-03']]
+             for node in ['slave-03']]
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['top-role-cinder'],
-            node_id='{0},{1}'.format(cinder_ids[0], cinder_ids[1]))
+            node_id=str(cinder_ids).strip('[]'))
         logger.debug('res info is {0}'.format(res))
 
         self.fuel_web.assert_task_success(task=res)
@@ -672,7 +675,7 @@ class NeutronGre(TestBasic):
             [gd.run_check_from_task(
                 remote=self.fuel_web.get_ssh_for_node(node),
                 path=post_top_cinder[0]['cmd'])
-             for node in ['slave-02', 'slave-03']]
+             for node in ['slave-03']]
 
         # Run post_deployment
         tasks = self.fuel_web.client.get_end_deployment_tasks(
@@ -680,11 +683,6 @@ class NeutronGre(TestBasic):
             end='post_deployment_end')
 
         data = [task['id'] for task in tasks]
-        nodes_ids = [n['id'] for n in
-                     self.fuel_web.client.list_cluster_nodes(cluster_id)]
-        self.sync_manifest_to_the_slaves(
-            cluster_id=cluster_id,
-            node_ids=nodes_ids)
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=data,
