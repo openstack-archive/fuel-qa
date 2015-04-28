@@ -81,6 +81,18 @@ class TestHaVLAN(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
+        # Network verifycation
+        self.fuel_web.verify_network(cluster_id)
+
+        # HAProxy backend checking
+        for node in self.env.d_env.nodes().slaves[:3]:
+            remote = node.remote()
+            logger.info("Check all HAProxy backends on {}".format(node.name))
+            haproxy_status = checkers.check_haproxy_backend(remote)
+            assert_equal(haproxy_status['exit_code'], 0,
+                         haproxy_status['stdout'])
+            remote.clear()
+
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id),
             data['user'], data['password'], data['tenant'])
@@ -93,7 +105,6 @@ class TestHaVLAN(TestBasic):
             os_conn, self.fuel_web.get_nailgun_cidr_nova(cluster_id),
             self.env.d_env.get_ssh_to_remote(_ip))
 
-        self.fuel_web.verify_network(cluster_id)
         devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
