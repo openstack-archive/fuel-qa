@@ -354,7 +354,7 @@ class EnvironmentModel(object):
         _wait(lambda: _tcp_ping(
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
-            (self.d_env.admin_net), 22), timeout=5 * 60)
+            (self.d_env.admin_net), 22), timeout=7 * 60)
 
     def setup_customisation(self):
         self.wait_for_provisioning()
