@@ -12,8 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import yaml
+import os
 import re
+import yaml
 
 from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
@@ -21,6 +22,9 @@ from proboscis.asserts import assert_equal
 from fuelweb_test import logger
 from fuelweb_test import logwrap
 
+from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
+from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
+from fuelweb_test.helpers.utils import cond_upload
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
 
@@ -133,6 +137,27 @@ class AdminActions(BaseActions):
                 assert_equal(0, result['exit_code'],
                              "Command [{cmd}] failed with the following "
                              "result: {res}".format(cmd=cmd, res=result))
+
+    @logwrap
+    def upload_packages(self, local_packages_dir, centos_repo_path,
+                        ubuntu_repo_path):
+        logger.info("Upload fuel's packages from directory {0}."
+                    .format(local_packages_dir))
+        centos_files_count = cond_upload(
+            self.admin_remote, local_packages_dir,
+            os.path.join(centos_repo_path, 'Packages'),
+            "(?i).*\.rpm$")
+
+        ubuntu_files_count = cond_upload(
+            self.admin_remote, local_packages_dir,
+            os.path.join(ubuntu_repo_path, 'pool/main'),
+            "(?i).*\.deb$")
+
+        if centos_files_count > 0:
+            regenerate_centos_repo(self.admin_remote, centos_repo_path)
+        if ubuntu_files_count > 0:
+            regenerate_ubuntu_repo(self.admin_remote, ubuntu_repo_path)
+        return centos_files_count, ubuntu_files_count
 
 
 class NailgunActions(BaseActions):
