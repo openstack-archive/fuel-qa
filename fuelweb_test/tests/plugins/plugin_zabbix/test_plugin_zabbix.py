@@ -30,6 +30,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 @test(groups=["plugins"])
 class ZabbixPlugin(TestBasic):
+    """Zabbix Plugin tests."""
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_zabbix_ha"])

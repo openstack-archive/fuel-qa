@@ -24,6 +24,7 @@ from fuelweb_test import logwrap
 
 class GroupNtpSync(object):
     """ Synchronize a group of nodes """
+
     ntps = []
 
     def __init__(self, env=None, nailgun_nodes=[]):
@@ -173,6 +174,7 @@ class Ntp(object):
 
 
 class NtpInitscript(Ntp):
+    """Init script for Ntp."""
 
     @logwrap
     def start(self):
@@ -190,6 +192,7 @@ class NtpInitscript(Ntp):
 
 
 class NtpPacemaker(Ntp):
+    """Ntp pacemaker."""
 
     @logwrap
     def start(self):

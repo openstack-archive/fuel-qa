@@ -25,6 +25,8 @@ from fuelweb_test.tests.test_admin_node import TestAdminNodeCustomManifests
 
 @test(groups=["command_line"])
 class CommandLine(TestBasic):
+    """Cli tests."""
+
     @test(depends_on=[
         TestAdminNodeCustomManifests.setup_with_custom_manifests],
         groups=["hiera_deploy"])

@@ -27,6 +27,8 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 
 @test(groups=["multiple_cluster_networks", "thread_7"])
 class TestMultipleClusterNets(TestBasic):
+    """Check master node deployment and configuration with 2 sets of nets."""
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["multiple_cluster_networks", "multiple_cluster_net_setup"])
     @log_snapshot_on_error

@@ -25,6 +25,8 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 @test(groups=["test_pullrequest"])
 class TestPullRequest(TestBasic):
+    """Deploy one-controller cluster in HA mode with Neutron GRE."""
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_pr_ha"])
     @log_snapshot_on_error

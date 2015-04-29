@@ -147,6 +147,7 @@ def _prepare_and_run(*testr_args):
 
 @test(groups=["tempest"])
 class TestByTempest(base_test_case.TestBasic):
+    """Tests for tempest."""
 
     def revert_snapshot(self):
         """ Prepare snapshot specified in environment"""

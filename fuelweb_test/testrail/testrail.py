@@ -29,6 +29,8 @@ import urllib2
 
 
 class APIClient:
+    """TestRail APIClient."""
+
     def __init__(self, base_url):
         self.user = ''
         self.password = ''
@@ -99,4 +101,5 @@ class APIClient:
 
 
 class APIError(Exception):
+    """Class to represent Exception."""
     pass

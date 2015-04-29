@@ -33,6 +33,8 @@ import time
 
 @test(groups=["gd", "gd_deploy_neutron_gre"])
 class NeutronGre(TestBasic):
+    """Test Neutron/Gre."""
+
     @classmethod
     def get_pre_test(cls, tasks, task_name):
         return [task['test_pre'] for task in tasks

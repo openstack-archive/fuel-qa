@@ -23,6 +23,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 @test(groups=["repeatable_image_based", "image_based"])
 class RepeatableImageBased(TestBasic):
+    """Provision new cluster many times after deletion the old one tests."""
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["repeatable_image_based", "image_based"])

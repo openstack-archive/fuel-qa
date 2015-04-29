@@ -34,6 +34,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 @test(groups=["thread_1", "ceph"])
 class CephCompact(TestBasic):
+    """Ceph tests."""
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ceph_ha_one_controller_compact",

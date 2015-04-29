@@ -20,6 +20,8 @@ from fuelweb_test import logwrap
 
 
 class LogServer(threading.Thread):
+    """Base class for logging server."""
+
     @logwrap
     def __init__(self, address="localhost", port=5514):
         super(LogServer, self).__init__()
@@ -69,6 +71,8 @@ class LogServer(threading.Thread):
 
 
 class TriggeredLogServer(LogServer):
+    """Triggered log server"""
+
     def __init__(self, address="localhost", port=5514):
         super(TriggeredLogServer, self).__init__(address, port)
         self.set_handler(self.handler)

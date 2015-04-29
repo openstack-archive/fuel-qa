@@ -44,6 +44,8 @@ from fuelweb_test import logger
 
 
 class EnvironmentModel(object):
+    """Environment Model."""
+
     def __init__(self):
         self._virtual_environment = None
         self.fuel_web = FuelWebClient(self.get_admin_node_ip(), self)
