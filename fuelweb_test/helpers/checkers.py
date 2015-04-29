@@ -103,7 +103,7 @@ def check_cinder_status(remote):
                    for x in cinder_services.split('\n')
                    if 'cinder' in x and 'enabled' in x
                    and len(x.split('enabled')))
-    return False
+    return {'status': False, 'result': result}
 
 
 @logwrap
