@@ -42,3 +42,9 @@ example_local.py
 
 # Local settings
 local_settings.py
+
+# Documentation
+doc/_build/
+
+# Logs
+sys_test.log

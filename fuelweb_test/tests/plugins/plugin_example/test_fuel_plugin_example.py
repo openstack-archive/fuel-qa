@@ -27,6 +27,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 @test(groups=["plugins"])
 class ExamplePlugin(TestBasic):
+    """ExamplePlugin."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ha_controller_neutron_example"])

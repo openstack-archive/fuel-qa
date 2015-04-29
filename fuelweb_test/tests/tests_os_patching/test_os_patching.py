@@ -31,6 +31,8 @@ from fuelweb_test import logger
 
 @test(groups=["os_patching"])
 class TestPatch(TestBasic):
+    """TestPatch."""  # TODO documentation
+
     def __init__(self, snapshot):
         super(TestPatch, self).__init__()
         self.snapshot = snapshot

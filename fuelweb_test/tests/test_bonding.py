@@ -26,6 +26,8 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 @test(groups=["bonding_ha_one_controller", "bonding"])
 class BondingHAOneController(TestBasic):
+    """BondingHAOneController."""  # TODO documentation
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_bonding_active_backup"])
     @log_snapshot_on_error
@@ -207,6 +209,8 @@ class BondingHAOneController(TestBasic):
 
 @test(groups=["bonding_ha", "bonding"])
 class BondingHA(TestBasic):
+    """Tests for HA bonding."""
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_bonding_ha_active_backup"])
     @log_snapshot_on_error

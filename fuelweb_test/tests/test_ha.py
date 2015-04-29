@@ -30,6 +30,7 @@ from fuelweb_test import logger
 
 @test(groups=["thread_3", "ha", "bvt_1"])
 class TestHaVLAN(TestBasic):
+    """TestHaVLAN."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha_vlan", "ha_nova_vlan"])
@@ -120,6 +121,7 @@ class TestHaVLAN(TestBasic):
 
 @test(groups=["thread_4", "ha"])
 class TestHaFlat(TestBasic):
+    """TestHaFlat."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha_flat", "ha_nova_flat"])
@@ -257,6 +259,7 @@ class TestHaFlat(TestBasic):
 
 @test(groups=["thread_4", "ha", "classic_provisioning"])
 class TestHaFlatAddCompute(TestBasic):
+    """TestHaFlatAddCompute."""  # TODO documentation
 
     @test(depends_on_groups=['deploy_ha_flat'],
           groups=["ha_flat_add_compute"])
@@ -297,6 +300,7 @@ class TestHaFlatAddCompute(TestBasic):
 
 @test(groups=["thread_4", "ha"])
 class TestHaFlatScalability(TestBasic):
+    """TestHaFlatScalability."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["ha_flat_scalability", "ha_nova_flat_scalability"])
@@ -424,6 +428,7 @@ class TestHaFlatScalability(TestBasic):
 
 @test(groups=["known_issues", "ha"])
 class BackupRestoreHa(TestBasic):
+    """BackupRestoreHa."""  # TODO documentation
 
     @test(depends_on=[TestHaFlat.deploy_ha_flat],
           groups=["known_issues", "backup_restore_ha_flat"])

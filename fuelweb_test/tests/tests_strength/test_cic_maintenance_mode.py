@@ -32,6 +32,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 @test(groups=["cic_maintenance_mode"])
 class CICMaintenanceMode(TestBasic):
+    """CICMaintenanceMode."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["cic_maintenance_mode_env"])
