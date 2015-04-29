@@ -27,6 +27,8 @@ from fuelweb_test import logger
 
 @test(groups=["known_issues"])
 class HAOneControllerZabbix(TestBasic):
+    """Deploy cluster in ha mode 1 controller with zabbix-server."""
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ha_one_controller_zabbix"])
     @log_snapshot_on_error

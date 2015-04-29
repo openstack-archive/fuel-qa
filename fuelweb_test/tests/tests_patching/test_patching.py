@@ -30,6 +30,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 @test(groups=["patching"])
 class PatchingTests(TestBasic):
+    """Tests for patching."""
 
     def __init__(self):
         self.snapshot_name = settings.PATCHING_SNAPSHOT

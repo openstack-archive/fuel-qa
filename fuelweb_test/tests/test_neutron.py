@@ -26,6 +26,7 @@ from fuelweb_test import logger
 
 @test(groups=["thread_1", "neutron", "smoke_neutron", "deployment"])
 class NeutronGre(TestBasic):
+    """Deploy cluster in ha mode with 1 controller and Neutron GRE."""
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_neutron_gre", "ha_one_controller_neutron_gre"])
@@ -91,6 +92,7 @@ class NeutronGre(TestBasic):
 
 @test(groups=["thread_1", "neutron"])
 class NeutronVlan(TestBasic):
+    """Deploy cluster in ha mode with 1 controller and Neutron VLAN."""
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_neutron_vlan", "ha_one_controller_neutron_vlan"])
@@ -148,6 +150,7 @@ class NeutronVlan(TestBasic):
 
 @test(groups=["neutron", "ha", "ha_neutron", "classic_provisioning"])
 class NeutronGreHa(TestBasic):
+    """Deploy cluster in HA mode with Neutron GRE."""
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_gre_ha", "ha_neutron_gre"])
@@ -221,6 +224,9 @@ class NeutronGreHa(TestBasic):
 
 @test(groups=["thread_6", "neutron", "ha", "ha_neutron"])
 class NeutronGreHaPublicNetwork(TestBasic):
+    """Deploy cluster in HA mode with Neutron GRE and public network
+    assigned to all nodes
+    """
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_gre_ha_public_network"])

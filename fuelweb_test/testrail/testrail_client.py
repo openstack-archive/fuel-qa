@@ -16,6 +16,8 @@ from testrail import APIClient
 
 
 class TestRailProject():
+    """TestRail project representation."""
+
     def __init__(self, url, user, password, project):
         self.client = APIClient(base_url=url)
         self.client.user = user

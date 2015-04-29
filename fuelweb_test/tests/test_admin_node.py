@@ -31,6 +31,8 @@ from fuelweb_test import logger
 
 @test(groups=["thread_1"])
 class TestAdminNode(TestBasic):
+    """Tests for admin node."""
+
     @test(depends_on=[SetupEnvironment.setup_master],
           groups=["test_cobbler_alive"])
     @log_snapshot_on_error

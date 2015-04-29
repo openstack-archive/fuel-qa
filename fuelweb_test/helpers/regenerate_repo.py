@@ -41,6 +41,7 @@ def regenerate_centos_repo(remote, path):
 
 
 class CustomRepo(object):
+    """Custom repository object."""
 
     def __init__(self, remote):
         self.remote = remote

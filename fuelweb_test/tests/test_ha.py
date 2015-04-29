@@ -30,6 +30,7 @@ from fuelweb_test import logger
 
 @test(groups=["thread_3", "ha", "bvt_1"])
 class TestHaVLAN(TestBasic):
+    """Deploy cluster in HA mode."""
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha_vlan", "ha_nova_vlan"])
@@ -120,6 +121,7 @@ class TestHaVLAN(TestBasic):
 
 @test(groups=["thread_4", "ha"])
 class TestHaFlat(TestBasic):
+    """Deploy cluster in HA mode with flat nova-network."""
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha_flat", "ha_nova_flat"])
@@ -257,6 +259,7 @@ class TestHaFlat(TestBasic):
 
 @test(groups=["thread_4", "ha", "classic_provisioning"])
 class TestHaFlatAddCompute(TestBasic):
+    """Add compute node to cluster in HA mode with flat nova-network."""
 
     @test(depends_on_groups=['deploy_ha_flat'],
           groups=["ha_flat_add_compute"])

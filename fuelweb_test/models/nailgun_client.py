@@ -21,6 +21,8 @@ from fuelweb_test.settings import OPENSTACK_RELEASE
 
 
 class NailgunClient(object):
+    """Nailgun Client"""
+
     def __init__(self, admin_node_ip, **kwargs):
         url = "http://{0}:8000".format(admin_node_ip)
         logger.info('Initiate Nailgun client with url %s', url)

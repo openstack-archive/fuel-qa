@@ -35,6 +35,8 @@ from fuelweb_test.tests.test_ha_one_controller_base\
 
 @test(groups=["thread_2"])
 class OneNodeDeploy(TestBasic):
+    """Deploy cluster with controller node only."""
+
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["deploy_one_node", 'master'])
     @log_snapshot_on_error
@@ -78,6 +80,8 @@ class OneNodeDeploy(TestBasic):
 
 @test(groups=["thread_2"])
 class HAOneControllerFlat(HAOneControllerFlatBase):
+    """Deploy cluster in HA mode (one controller) with flat nova-network."""
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_ha_one_controller_flat",
                   "ha_one_controller_nova_flat", "classic_provisioning",
@@ -288,6 +292,8 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
 
 @test(groups=["thread_2"])
 class HAOneControllerVlan(TestBasic):
+    """Deploy cluster in ha mode with nova-network VLAN Manager."""
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ha_one_controller_vlan",
                   "ha_one_controller_nova_vlan"])
@@ -395,6 +401,8 @@ class HAOneControllerVlan(TestBasic):
 
 @test(groups=["thread_2", "multirole"])
 class MultiroleControllerCinder(TestBasic):
+    """Deploy cluster in HA mode with multi-role controller and cinder."""
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_multirole_controller_cinder"])
     @log_snapshot_on_error
@@ -444,6 +452,7 @@ class MultiroleControllerCinder(TestBasic):
 
 @test(groups=["thread_2", "multirole"])
 class MultiroleComputeCinder(TestBasic):
+    """Deploy cluster in HA mode with multi-role compute and cinder."""
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_multirole_compute_cinder"])
     @log_snapshot_on_error
@@ -487,6 +496,7 @@ class MultiroleComputeCinder(TestBasic):
 
 @test(groups=["thread_2"])
 class FloatingIPs(TestBasic):
+    """Deploy cluster with non-default 3 floating IPs ranges."""
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_floating_ips"])
     @log_snapshot_on_error
@@ -547,6 +557,8 @@ class FloatingIPs(TestBasic):
 
 @test(groups=["ha_one_controller"])
 class HAOneControllerCinder(TestBasic):
+    """Deploy cluster in HA mode with cinder."""
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ha_one_controller_cinder",
                   "ha_one_controller_nova_cinder"])
@@ -601,6 +613,8 @@ class HAOneControllerCinder(TestBasic):
 
 @test(groups=["thread_1"])
 class NodeMultipleInterfaces(TestBasic):
+    """Deploy cluster with networks allocated on different interfaces."""
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_node_multiple_interfaces"])
     @log_snapshot_on_error
@@ -657,6 +671,8 @@ class NodeMultipleInterfaces(TestBasic):
 
 @test(groups=["thread_1"])
 class NodeDiskSizes(TestBasic):
+    """Verify nailgun notifications for discovered nodes."""
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["check_nodes_notifications"])
     @log_snapshot_on_error
@@ -752,6 +768,8 @@ class NodeDiskSizes(TestBasic):
 
 @test(groups=["thread_1"])
 class MultinicBootstrap(TestBasic):
+    """Verify slaves booting with blocked mac address."""
+
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["multinic_bootstrap_booting"])
     @log_snapshot_on_error
@@ -789,6 +807,8 @@ class MultinicBootstrap(TestBasic):
 
 @test(groups=["thread_2", "test"])
 class DeleteEnvironment(TestBasic):
+    """Delete existing environment and verify nodes returns to unallocated state."""
+
     @test(depends_on=[HAOneControllerFlat.deploy_ha_one_controller_flat],
           groups=["delete_environment"])
     @log_snapshot_on_error
@@ -824,6 +844,8 @@ class DeleteEnvironment(TestBasic):
 
 @test(groups=["thread_1"])
 class UntaggedNetworksNegative(TestBasic):
+    """Verify network verification fails with untagged network on eth0."""
+
     @test(
         depends_on=[SetupEnvironment.prepare_slaves_3],
         groups=["untagged_networks_negative"],
@@ -887,6 +909,8 @@ class UntaggedNetworksNegative(TestBasic):
 
 @test(groups=["known_issues"])
 class BackupRestoreHAOneController(TestBasic):
+    """Backup/restore master node with cluster in ha mode."""
+
     @test(depends_on=[HAOneControllerFlat.deploy_ha_one_controller_flat],
           groups=["ha_one_controller_backup_restore"])
     @log_snapshot_on_error
