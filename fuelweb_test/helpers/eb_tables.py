@@ -18,6 +18,8 @@ from fuelweb_test import logwrap
 
 
 class Ebtables(object):
+    """Ethernet bridge tables representation."""
+
     def __init__(self, target_devs, vlans):
         super(Ebtables, self).__init__()
         self.target_devs = target_devs

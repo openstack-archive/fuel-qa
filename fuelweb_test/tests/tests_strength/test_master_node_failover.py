@@ -26,6 +26,7 @@ from fuelweb_test.tests import base_test_case
 
 @test(groups=["thread_non_func_1_usb"])
 class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
+    """Test master node failover."""
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["non_functional",

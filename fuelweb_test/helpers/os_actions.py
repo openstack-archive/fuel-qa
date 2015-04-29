@@ -25,6 +25,8 @@ from fuelweb_test.helpers.decorators import retry
 
 
 class OpenStackActions(common.Common):
+    """OpenStack actions."""
+
     def __init__(self, controller_ip, user='admin',
                  passwd='admin', tenant='admin'):
         super(OpenStackActions, self).__init__(controller_ip,

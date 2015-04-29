@@ -27,9 +27,8 @@ from fuelweb_test.helpers.fuel_actions import FuelPluginBuilder
 
 @test(groups=["plugins"])
 class RebootPlugin(TestBasic):
-    """
-    Test class for testing reboot task in plugins
-    """
+    """Test class for testing reboot task in plugins."""
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_cluster_with_reboot_plugin"])
     def deploy_cluster_with_reboot_plugin(self):

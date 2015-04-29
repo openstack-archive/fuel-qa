@@ -80,8 +80,8 @@ def map_test(target):
     if not target == errata['target']:
         skip_patching_test(target, errata['target'])
     if target == 'master':
-    # On master node we have only CentOS containers, so always check
-    # only CentOS packages available for update
+        # On master node we have only CentOS containers, so always check
+        # only CentOS packages available for update
         distro = settings.OPENSTACK_RELEASE_CENTOS
     else:
         distro = settings.OPENSTACK_RELEASE

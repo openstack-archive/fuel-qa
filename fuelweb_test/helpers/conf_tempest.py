@@ -23,6 +23,7 @@ from fuelweb_test.helpers import os_actions
 
 
 class TempestConfigState(object):
+    """Tempest config state representation"""
 
     default_options = {'username': 'test',
                        'password': 'test',

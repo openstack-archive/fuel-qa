@@ -31,6 +31,8 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 @test(enabled=False, groups=["plugins"])
 class LbaasPlugin(TestBasic):
+    """Lbaas Plugin tests."""
+
     @classmethod
     def check_neutron_agents_statuses(cls, os_conn):
         agents_list = os_conn.list_agents()

@@ -59,6 +59,7 @@ import fuelweb_test.settings as help_data
 
 
 class FuelWebClient(object):
+    """Fuel Web Client"""
 
     def __init__(self, admin_node_ip, environment):
         self.admin_node_ip = admin_node_ip
