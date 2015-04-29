@@ -1428,7 +1428,10 @@ class FuelWebClient(object):
                 logger.info("All Cinder services up.")
             except TimeoutError:
                 logger.error("Cinder services not ready.")
-                raise TimeoutError("Cinder services not ready.")
+                raise TimeoutError(
+                    "Cinder services not ready. "
+                    "Current result {0}".format(
+                        checkers.check_cinder_status(remote)))
         return True
 
     def run_ostf_repeatably(self, cluster_id, test_name=None,
@@ -1468,6 +1471,18 @@ class FuelWebClient(object):
 
     def get_nailgun_version(self):
         logger.info("ISO version: %s" % self.client.get_api_version())
+
+    @logwrap
+    def run_ceph_task(self, cluster_id, offline_nodes):
+        ceph_id = [n['id'] for n in self.client.list_cluster_nodes(cluster_id)
+                   if 'ceph-osd'
+                      in n['roles'] and n['id'] not in offline_nodes]
+        res = self.client.put_deployment_tasks_for_cluster(
+            cluster_id, data=['top-role-ceph-osd'],
+            node_id=str(ceph_id).strip('[]'))
+        logger.debug('res info is {0}'.format(res))
+
+        self.assert_task_success(task=res)
 
     @logwrap
     def check_ceph_status(self, cluster_id, offline_nodes=[],
