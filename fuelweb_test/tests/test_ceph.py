@@ -34,6 +34,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 @test(groups=["thread_1", "ceph"])
 class CephCompact(TestBasic):
+    """CephCompact."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ceph_ha_one_controller_compact",
@@ -90,6 +91,7 @@ class CephCompact(TestBasic):
 
 @test(groups=["thread_3", "ceph"])
 class CephCompactWithCinder(TestBasic):
+    """CephCompactWithCinder."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["ceph_ha_one_controller_with_cinder"])
@@ -165,6 +167,7 @@ class CephCompactWithCinder(TestBasic):
 
 @test(groups=["thread_3", "ceph", "classic_provisioning"])
 class CephHA(TestBasic):
+    """CephHA."""  # TODO documentation1
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["ceph_ha"])
@@ -356,6 +359,7 @@ class CephHA(TestBasic):
 
 @test(groups=["thread_4", "ceph"])
 class CephRadosGW(TestBasic):
+    """CephRadosGW."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["ceph_rados_gw", "bvt_2"])
@@ -425,6 +429,7 @@ class CephRadosGW(TestBasic):
 
 @test(groups=["thread_1", "ceph_migration"])
 class VmBackedWithCephMigrationBasic(TestBasic):
+    """VmBackedWithCephMigrationBasic."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ceph_migration"])
@@ -641,6 +646,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
 @test(groups=["thread_1", "ceph_partitions"])
 class CheckCephPartitionsAfterReboot(TestBasic):
+    """CheckCephPartitionsAfterReboot."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ceph_partitions"])

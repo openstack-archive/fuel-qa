@@ -18,6 +18,8 @@ from fuelweb_test.helpers.http import HTTPClientZabbix
 
 
 class CollectorClient(object):
+    """CollectorClient."""  # TODO documentation
+
     def __init__(self, collector_ip, endpoint):
         url = "http://{0}/{1}".format(collector_ip, endpoint)
         self._client = HTTPClientZabbix(url=url)

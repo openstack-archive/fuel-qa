@@ -32,6 +32,8 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 @test(groups=["plugins"])
 class ContrailPlugin(TestBasic):
+    """ContrailPlugin."""  # TODO documentation
+
     master_path = '/var/www/nailgun/plugins/contrail-1.0'
     add_ub_packag = \
         '/var/www/nailgun/plugins/contrail-1.0/' \

@@ -26,6 +26,8 @@ from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
 
 
 class BaseActions(object):
+    """BaseActions."""  # TODO documentation
+
     def __init__(self, admin_remote):
         self.admin_remote = admin_remote
         self.container = None
@@ -136,6 +138,8 @@ class AdminActions(BaseActions):
 
 
 class NailgunActions(BaseActions):
+    """NailgunActions."""  # TODO documentation
+
     def __init__(self, admin_remote):
         super(NailgunActions, self).__init__(admin_remote)
         self.container = 'nailgun'
@@ -198,6 +202,8 @@ class NailgunActions(BaseActions):
 
 
 class PostgresActions(BaseActions):
+    """PostgresActions."""  # TODO documentation
+
     def __init__(self, admin_remote):
         super(PostgresActions, self).__init__(admin_remote)
         self.container = 'postgres'
@@ -353,6 +359,8 @@ class FuelPluginBuilder(object):
 
 
 class CobblerActions(BaseActions):
+    """CobblerActions."""  # TODO documentation
+
     def __init__(self, admin_remote):
         super(CobblerActions, self).__init__(admin_remote)
         self.container = 'cobbler'
@@ -370,6 +378,8 @@ class CobblerActions(BaseActions):
 
 
 class DockerActions(object):
+    """DockerActions."""  # TODO documentation
+
     def __init__(self, admin_remote):
         self.admin_remote = admin_remote
 

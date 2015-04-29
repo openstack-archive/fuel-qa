@@ -22,6 +22,7 @@ from fuelweb_test import settings
 
 class PuppetEnvironment(EnvironmentModel):
     """Create environment for puppet modules testing."""
+
     def __init__(self, os_image=None):
         """Constructor for create environment."""
         self.os_image = os_image or settings.OS_IMAGE

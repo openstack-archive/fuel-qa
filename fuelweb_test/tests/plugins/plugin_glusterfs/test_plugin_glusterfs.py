@@ -30,6 +30,8 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 @test(groups=["plugins"])
 class GlusterfsPlugin(TestBasic):
+    """GlusterfsPlugin."""  # TODO documentation
+
     @classmethod
     def check_glusterfs_conf(cls, remote, path, gfs_endpoint):
         cmd = ' cat {0}'.format(path)
