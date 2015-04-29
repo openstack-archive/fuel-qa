@@ -25,6 +25,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 @test(groups=["command_line"])
 class CommandLine(TestBasic):
+    """CommandLine."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.setup_with_custom_manifests],
           groups=["hiera_deploy"])

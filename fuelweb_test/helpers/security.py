@@ -23,6 +23,7 @@ from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 
 
 class SecurityChecks(object):
+    """SecurityChecks."""  # TODO documentation
 
     def __init__(self, nailgun_client, environment):
         self.client = nailgun_client

@@ -27,6 +27,7 @@ from fuelweb_test.tests import base_test_case
 
 @test(groups=["cluster_actions"])
 class EnvironmentAction(base_test_case.TestBasic):
+    """EnvironmentAction."""  # TODO documentation
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_flat_stop_reset_on_deploying",
@@ -219,6 +220,7 @@ class EnvironmentAction(base_test_case.TestBasic):
 
 @test(groups=["cluster_actions"])
 class EnvironmentActionOnHA(base_test_case.TestBasic):
+    """EnvironmentActionOnHA."""  # TODO documentation
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
           groups=["smoke", "deploy_stop_reset_on_ha"])

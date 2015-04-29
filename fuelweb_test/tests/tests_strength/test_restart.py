@@ -28,6 +28,7 @@ from proboscis import test
 
 @test(groups=["thread_3", "ceph"])
 class CephRestart(TestBasic):
+    """CephRestart."""  # TODO documentation
 
     @test(depends_on_groups=['ceph_ha_one_controller_with_cinder'],
           groups=["ceph_ha_one_controller_with_cinder_restart"])

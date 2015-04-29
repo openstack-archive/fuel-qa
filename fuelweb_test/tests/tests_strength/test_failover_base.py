@@ -39,6 +39,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 
 class TestHaFailoverBase(TestBasic):
+    """TestHaFailoverBase."""  # TODO documentation
 
     def deploy_ha(self, network='neutron'):
 

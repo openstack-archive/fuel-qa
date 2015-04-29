@@ -23,7 +23,8 @@ from fuelweb_test import logwrap
 
 
 class GroupNtpSync(object):
-    """ Synchronize a group of nodes """
+    """Synchronize a group of nodes."""
+
     ntps = []
 
     def __init__(self, env=None, nailgun_nodes=[]):
@@ -81,7 +82,7 @@ class GroupNtpSync(object):
 
 
 class Ntp(object):
-    """ Common methods to work with ntpd service """
+    """Common methods to work with ntpd service."""
 
     @staticmethod
     @logwrap
@@ -173,6 +174,7 @@ class Ntp(object):
 
 
 class NtpInitscript(Ntp):
+    """NtpInitscript."""  # TODO documentation
 
     @logwrap
     def start(self):
@@ -190,6 +192,7 @@ class NtpInitscript(Ntp):
 
 
 class NtpPacemaker(Ntp):
+    """NtpPacemaker."""  # TODO documentation
 
     @logwrap
     def start(self):

@@ -23,6 +23,8 @@ from fuelweb_test.helpers import os_actions
 
 @test(groups=["huge_environments"])
 class HugeEnvironments(base_test_case.TestBasic):
+    """HugeEnvironments."""  # TODO documentation
+
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_9],
           groups=["nine_nodes_mixed"])
     @log_snapshot_on_error
