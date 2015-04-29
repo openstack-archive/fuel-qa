@@ -33,6 +33,8 @@ from fuelweb_test.tests import base_test_case as base_test_data
 
 @test(groups=["upgrade"])
 class UpgradeFuelMaster(base_test_data.TestBasic):
+    """UpgradeFuelMaster."""  # TODO documentation
+
     @classmethod
     def get_slave_kernel(cls, slave_remote):
         kernel = ''.join(slave_remote.execute(
@@ -357,6 +359,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 
 @test(groups=["rollback"])
 class RollbackFuelMaster(base_test_data.TestBasic):
+    """RollbackFuelMaster."""  # TODO documentation
+
     @test(groups=["rollback_automatic_ha"])
     @log_snapshot_on_error
     def rollback_automatically_ha_env(self):

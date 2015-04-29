@@ -32,6 +32,8 @@ import time
 
 @test(groups=["gd", "gd_deploy_neutron_vlan_ceph_mongo"])
 class NeutronVlanCephMongo(TestBasic):
+    """NeutronVlanCephMongo."""  # TODO documentation
+
     @classmethod
     def get_pre_test(cls, tasks, task_name):
         return [task['test_pre'] for task in tasks

@@ -28,6 +28,8 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 @test(groups=["vcenter"])
 class VcenterDeploy(TestBasic):
+    """VcenterDeploy."""  # TODO documentation
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["smoke", "vcenter_smoke"])
     @log_snapshot_on_error

@@ -22,6 +22,7 @@ from fuelweb_test.tests import base_test_case
 
 @test(groups=["ostf_repeatable_tests"])
 class OstfRepeatableTests(base_test_case.TestBasic):
+    """OstfRepeatableTests."""  # TODO documentation
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["create_delete_ip_n_times_nova_vlan"])

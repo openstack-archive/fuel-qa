@@ -27,6 +27,7 @@ from proboscis.asserts import assert_equal
 
 
 class Common(object):
+    """Common."""  # TODO documentation
 
     def __init__(self, controller_ip, user, password, tenant):
         self.controller_ip = controller_ip

@@ -28,6 +28,7 @@ from fuelweb_test.tests import base_test_case
 
 @test(groups=["ha_neutron_destructive", "ha"])
 class TestNeutronFailover(base_test_case.TestBasic):
+    """TestNeutronFailover."""  # TODO documentation
 
     @classmethod
     def get_node_with_dhcp(cls, self, os_conn, net_id):
