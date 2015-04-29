@@ -26,6 +26,7 @@ from proboscis.asserts import assert_true
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import revert_info
 from fuelweb_test.helpers.decorators import retry
+from fuelweb_test.helpers.decorators import update_packages
 from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers.eb_tables import Ebtables
 from fuelweb_test.helpers.fuel_actions import AdminActions
@@ -349,6 +350,7 @@ class EnvironmentModel(object):
                 settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
             ))
 
+    @update_packages
     @upload_manifests
     def wait_for_provisioning(self):
         _wait(lambda: _tcp_ping(
