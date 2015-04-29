@@ -59,6 +59,8 @@ class CephRestart(TestBasic):
         self.fuel_web.warm_restart_nodes(
             self.env.d_env.nodes().slaves[:4])
 
+        self.fuel_web.run_ceph_task(cluster_id, offline_nodes=[])
+
         self.fuel_web.check_ceph_status(cluster_id)
 
         # Wait until Cinder services UP on a controller
@@ -132,6 +134,7 @@ class CephRestart(TestBasic):
             self.env.d_env.nodes().slaves[5])['online'], timeout=30 * 8)
         offline_nodes = [self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.nodes().slaves[5])['id']]
+        self.fuel_web.run_ceph_task(cluster_id, offline_nodes)
         self.fuel_web.check_ceph_status(cluster_id, offline_nodes)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
@@ -143,6 +146,7 @@ class CephRestart(TestBasic):
 
         offline_nodes.append(self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.nodes().slaves[4])['id'])
+        self.fuel_web.run_ceph_task(cluster_id, offline_nodes)
         self.fuel_web.check_ceph_status(cluster_id, offline_nodes)
 
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
@@ -150,6 +154,8 @@ class CephRestart(TestBasic):
         # Cold restart
         self.fuel_web.cold_restart_nodes(
             self.env.d_env.nodes().slaves[:4])
+
+        self.fuel_web.run_ceph_task(cluster_id, offline_nodes)
         self.fuel_web.check_ceph_status(cluster_id, offline_nodes)
 
         # Wait until MySQL Galera is UP on some controller
