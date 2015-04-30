@@ -1059,3 +1059,16 @@ def check_repo_managment(remote):
     else:
         cmd = "yum -y clean all && yum check-update > /dev/null 2>&1"
     remote.check_call(cmd)
+
+
+def check_public_ping(remotes):
+    """ Check if ping public vip
+    :type devops_nodes: Nodes
+    """
+    cmd = ('ruby /etc/puppet/modules/osnailyfacter/'
+           'modular/virtual_ips/public_vip_ping_post.rb')
+    for remote in remotes:
+        res = remote.execute(cmd)
+        assert_equal(0, res['exit_code'],
+                     'Public ping check failed:'
+                     ' {0} with {1}'.format(remote, res))
