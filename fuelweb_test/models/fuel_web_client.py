@@ -29,6 +29,7 @@ from proboscis.asserts import assert_true
 from fuelweb_test.helpers import checkers
 from fuelweb_test import logwrap
 from fuelweb_test import logger
+from fuelweb_test import quiet_logger
 from fuelweb_test.helpers.decorators import custom_repo
 from fuelweb_test.helpers.decorators import check_repos_management
 from fuelweb_test.helpers.decorators import download_astute_yaml
@@ -120,6 +121,21 @@ class FuelWebClient(object):
                 smiles_count=smiles_count,
                 networks_count=networks_count),
             timeout=timeout)
+
+    @logwrap
+    def assert_ha_services_ready(self, cluster_id, timeout=20 * 60):
+        """Wait until HA services are UP.
+        Should be used before run any other check for services."""
+        if self.get_cluster_mode(cluster_id) == DEPLOYMENT_MODE_HA:
+            logger.info('Waiting {0} sec. for OSTF HA tests are passed.'
+                        .format(timeout))
+            with quiet_logger:
+                _wait(lambda: self.run_ostf(cluster_id, test_sets=['ha']),
+                      timeout=timeout)
+            logger.info('OSTF HA tests are passed successfully.')
+        else:
+            logger.debug('Cluster {0} is not in HA mode, OSTF HA tests '
+                         'are skipped.'.format(cluster_id))
 
     @logwrap
     def assert_ostf_run_certain(self, cluster_id, tests_must_be_passed,
@@ -704,6 +720,7 @@ class FuelWebClient(object):
             logger.info('Deploy nodes of a cluster %s', cluster_id)
             task = self.client.deploy_nodes(cluster_id)
             self.assert_task_success(task, timeout=timeout, interval=interval)
+        self.assert_ha_services_ready(cluster_id)
 
     def deploy_cluster_wait_progress(self, cluster_id, progress):
         task = self.deploy_cluster(cluster_id)
