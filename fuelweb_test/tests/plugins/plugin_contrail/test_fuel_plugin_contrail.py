@@ -17,6 +17,7 @@ import os.path
 import time
 
 from proboscis import test
+from proboscis.asserts import assert_true
 
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
 from fuelweb_test.helpers import checkers
@@ -186,15 +187,15 @@ class ContrailPlugin(TestBasic):
             contrail=True
         )
 
-        attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
-        if 'contrail' in attr['editable']:
-            logger.debug('we have contrail element')
-            plugin_data = attr['editable']['contrail']['metadata']
-            plugin_data['enabled'] = True
-            public_int = attr['editable']['contrail']['contrail_public_if']
-            public_int['value'] = 'eth1'
-
-        self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
+        plugin_name = 'contrail'
+        msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
+        assert_true(
+            self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
+            msg)
+        logger.debug('we have contrail element')
+        options = {'metadata/enabled': True,
+                   'contrail_public_if/value': 'eth1'}
+        self.fuel_web.update_plugin_data(cluster_id, plugin_name, options)
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
@@ -276,15 +277,15 @@ class ContrailPlugin(TestBasic):
         )
 
         # fill public field in contrail settings
-        attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
-        if 'contrail' in attr['editable']:
-            logger.debug('we have contrail element')
-            plugin_data = attr['editable']['contrail']['metadata']
-            plugin_data['enabled'] = True
-            public_int = attr['editable']['contrail']['contrail_public_if']
-            public_int['value'] = 'eth1'
-
-        self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
+        plugin_name = 'contrail'
+        msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
+        assert_true(
+            self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
+            msg)
+        logger.debug('we have contrail element')
+        options = {'metadata/enabled': True,
+                   'contrail_public_if/value': 'eth1'}
+        self.fuel_web.update_plugin_data(cluster_id, plugin_name, options)
 
         # deploy cluster
         self.fuel_web.deploy_cluster_wait(cluster_id)
