@@ -442,7 +442,10 @@ class VcenterDeploy(TestBasic):
                      "nova_computes": [
                          {"datastore_regex": ".*",
                           "vsphere_cluster": "Cluster1",
-                          "service_name": "vmcluster1"}, ],
+                          "service_name": "vmcluster1"},
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster2",
+                          "service_name": "vmcluster2"}, ],
                      "vcenter_host": VCENTER_IP,
                      "az_name": "vcenter",
                      "vcenter_password": VCENTER_PASSWORD,
@@ -489,14 +492,14 @@ class VcenterDeploy(TestBasic):
           groups=["vcenter_vlan_cindervmdk_cinder_ceph"])
     @log_snapshot_on_error
     def vcenter_vlan_cindervmdk_cinder_ceph(self):
-        """Deploy enviroment of vcenter+qemu with nova vlan and CephOSD backend
-           for glance.
+        """Deploy enviroment of vcenter+qemu with
+           nova VlanManager and CephOSD backend for glance.
 
         Scenario:
             1. Create cluster with vCenter support
             2. Add 3 nodes with controller roles
-            3. Add a node with Cinder role and ceph-osd
-            4. Add a node with vCinder role and ceph-osd
+            3. Add a node with combination of cinder and ceph-osd
+            4. Add a node with combination of cinder-vmware and ceph-osd
             5. Set Nova-Network VlanManager as a network backend
             6. Deploy the cluster
             7. Run network verification
@@ -510,23 +513,23 @@ class VcenterDeploy(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings={'images_ceph': True,
-                      'volumes_ceph': False,
-                      'volumes_lvm': False,
-                      'images_vcenter': True},
+            settings={'images_ceph': True, },
             vcenter_value={
                 "glance": {
-                    "vcenter_username": VCENTER_USERNAME,
-                    "datacenter": VCENTER_DATACENTER,
-                    "vcenter_host": VCENTER_IP,
-                    "vcenter_password": VCENTER_PASSWORD,
-                    "datastore": VCENTER_DATASTORE, },
+                    "vcenter_username": "",
+                    "datacenter": "",
+                    "vcenter_host": "",
+                    "vcenter_password": "",
+                    "datastore": "", },
                 "availability_zones": [
                     {"vcenter_username": VCENTER_USERNAME,
                      "nova_computes": [
                          {"datastore_regex": ".*",
                           "vsphere_cluster": "Cluster1",
-                          "service_name": "vmcluster1"}, ],
+                          "service_name": "vmcluster1"},
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster2",
+                          "service_name": "vmcluster2"}, ],
                      "vcenter_host": VCENTER_IP,
                      "az_name": "vcenter",
                      "vcenter_password": VCENTER_PASSWORD,
