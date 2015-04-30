@@ -16,6 +16,7 @@ import yaml
 import re
 
 from devops.helpers.helpers import wait
+from devops.error import TimeoutError
 from proboscis.asserts import assert_equal
 
 from fuelweb_test import logger
@@ -382,8 +383,16 @@ class DockerActions(object):
             cont_action = BaseActions(self.admin_remote)
             cont_action.container = container
             cont_actions.append(cont_action)
-        wait(lambda: all([cont_action.is_container_ready
-                          for cont_action in cont_actions]), timeout=timeout)
+        try:
+            wait(lambda: all([cont_action.is_container_ready
+                              for cont_action in cont_actions]),
+                 timeout=timeout)
+        except TimeoutError:
+            failed_containers = [x.container for x in cont_actions
+                                 if not x.is_container_ready]
+            raise TimeoutError(
+                "Container(s) {0} failed to start in {1} seconds."
+                .format(failed_containers, timeout))
 
     def restart_container(self, container):
         self.admin_remote.execute('dockerctl restart {0}'.format(container))

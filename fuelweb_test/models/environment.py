@@ -235,12 +235,12 @@ class EnvironmentModel(object):
             admin.destroy()
             logger.info('Admin node was destroyed. Wait 10 sec.')
             time.sleep(10)
+
             admin.start()
             logger.info('Admin node started second time.')
-            self.d_env.nodes().admin.await(
-                self.d_env.admin_net, timeout=10 * 60,
-                by_port=8000)
-            self.docker_actions.wait_for_ready_containers()
+            self.d_env.nodes().admin.await(self.d_env.admin_net)
+            self.docker_actions.wait_for_ready_containers(timeout=600)
+
             # set collector address in case of admin node destroy
             if settings.FUEL_STATS_ENABLED:
                 self.nailgun_actions.set_collector_address(
