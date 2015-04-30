@@ -25,6 +25,7 @@ from fuelweb_test.helpers.checkers import check_auto_mode
 from fuelweb_test.helpers.checkers import check_available_mode
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
 from fuelweb_test import logger
+from fuelweb_test import ostf_test_mapping as map_ostf
 from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -157,6 +158,14 @@ class CICMaintenanceMode(TestBasic):
                 [n.name for n in self.env.d_env.nodes().slaves[0:3]])
 
             _wait(lambda:
+                  self.fuel_web.run_single_ostf_test(
+                      cluster_id, test_sets=['sanity'],
+                      test_name=map_ostf.OSTF_TEST_MAPPING.get(
+                          'Check that required services are running')),
+                  timeout=1500)
+            logger.debug("Required services are running")
+
+            _wait(lambda:
                   self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
                   timeout=1500)
             logger.debug("HA tests are pass now")
@@ -245,24 +254,6 @@ class CICMaintenanceMode(TestBasic):
                          'Failed to execute "{0}" on remote host: {1}'.
                          format(command3, result))
 
-            result = remote.execute('reboot')
-            assert_equal(result['exit_code'], 0,
-                         'Failed to execute "{0}" on remote host: {1}'.
-                         format('reboot', result))
-            logger.info('Wait a %s node offline status after reboot',
-                        nailgun_node.name)
-            try:
-                wait(
-                    lambda: not
-                    self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
-                    ['online'], timeout=90 * 10)
-            except TimeoutError:
-                assert_false(
-                    self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
-                    ['online'],
-                    'Node {0} has not become offline after reboot'.format(
-                        nailgun_node.name))
-
             logger.info('Wait a %s node online status', nailgun_node.name)
             try:
                 wait(
@@ -273,7 +264,7 @@ class CICMaintenanceMode(TestBasic):
                 assert_true(
                     self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
                     ['online'],
-                    'Node {0} has not become online after reboot'.format(
+                    'Node {0} has not become online after umm off'.format(
                         nailgun_node.name))
 
             # Wait until MySQL Galera is UP on some controller
@@ -283,6 +274,14 @@ class CICMaintenanceMode(TestBasic):
             # Wait until Cinder services UP on a controller
             self.fuel_web.wait_cinder_is_up(
                 [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+            _wait(lambda:
+                  self.fuel_web.run_single_ostf_test(
+                      cluster_id, test_sets=['sanity'],
+                      test_name=map_ostf.OSTF_TEST_MAPPING.get(
+                          'Check that required services are running')),
+                  timeout=1500)
+            logger.debug("Required services are running")
 
             _wait(lambda:
                   self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
@@ -335,7 +334,7 @@ class CICMaintenanceMode(TestBasic):
             logger.info('Maintenance mode for node %s', nailgun_node.name)
 
             result = remote.execute('umm on')
-            assert_equal(result['exit_code'], 0,
+            assert_equal(result['exit_code'], 1,
                          'Failed to execute "{0}" on remote host: {1}'.
                          format('umm on', result))
 
@@ -440,6 +439,14 @@ class CICMaintenanceMode(TestBasic):
             # Wait until Cinder services UP on a controller
             self.fuel_web.wait_cinder_is_up(
                 [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+            _wait(lambda:
+                  self.fuel_web.run_single_ostf_test(
+                      cluster_id, test_sets=['sanity'],
+                      test_name=map_ostf.OSTF_TEST_MAPPING.get(
+                          'Check that required services are running')),
+                  timeout=1500)
+            logger.debug("Required services are running")
 
             _wait(lambda:
                   self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
