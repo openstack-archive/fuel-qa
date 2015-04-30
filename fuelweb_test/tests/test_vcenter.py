@@ -489,14 +489,14 @@ class VcenterDeploy(TestBasic):
           groups=["vcenter_vlan_cindervmdk_cinder_ceph"])
     @log_snapshot_on_error
     def vcenter_vlan_cindervmdk_cinder_ceph(self):
-        """Deploy enviroment of vcenter+qemu with nova vlan and CephOSD backend
-           for glance.
+        """Deploy enviroment of vcenter+qemu with
+           nova VlanManager and CephOSD backend for glance.
 
         Scenario:
             1. Create cluster with vCenter support
             2. Add 3 nodes with controller roles
-            3. Add a node with Cinder role and ceph-osd
-            4. Add a node with vCinder role and ceph-osd
+            3. Add a node with ceph-osd role
+            4. Add a node with combination of cinder-vmware and ceph-osd
             5. Set Nova-Network VlanManager as a network backend
             6. Deploy the cluster
             7. Run network verification
@@ -511,9 +511,9 @@ class VcenterDeploy(TestBasic):
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
             settings={'images_ceph': True,
-                      'volumes_ceph': False,
-                      'volumes_lvm': False,
-                      'images_vcenter': True},
+                      'images_vcenter': False,
+                      'volumes_ceph': True,
+                      'volumes_lvm': False,}
             vcenter_value={
                 "glance": {
                     "vcenter_username": VCENTER_USERNAME,
@@ -541,7 +541,7 @@ class VcenterDeploy(TestBasic):
             {'slave-01': ['controller'],
              'slave-02': ['controller'],
              'slave-03': ['controller'],
-             'slave-04': ['cinder', 'ceph-osd'],
+             'slave-04': ['ceph-osd'],
              'slave-05': ['cinder-vmware', 'ceph-osd'], })
 
         # Configure network interfaces.
