@@ -33,9 +33,6 @@ from proboscis.asserts import assert_equal
 from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers.regenerate_repo import CustomRepo
-from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
-from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
-from fuelweb_test.helpers.utils import cond_upload
 from fuelweb_test.helpers.utils import get_current_env
 from fuelweb_test.helpers.utils import pull_out_logs_via_ssh
 from fuelweb_test.helpers.utils import store_astute_yaml
@@ -138,6 +135,53 @@ def upload_manifests(func):
     return wrapper
 
 
+def update_packages(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        if not settings.UPDATE_FUEL:
+                return result
+        try:
+            environment = get_current_env(args)
+            if not environment:
+                logger.warning("Can't update packages: method of "
+                               "unexpected class is decorated.")
+                return result
+
+            remote = environment.d_env.get_admin_remote()
+
+            centos_files_count, ubuntu_files_count = \
+                environment.admin_actions.upload_packages(
+                    local_packages_dir=settings.UPDATE_FUEL_PATH,
+                    centos_repo_path=settings.LOCAL_MIRROR_CENTOS,
+                    ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
+
+            if centos_files_count == 0:
+                return result
+
+            # Add temporary repo with new packages to YUM configuration
+            conf_file = '/etc/yum.repos.d/temporary.repo'
+            cmd = ("echo -e '[temporary]\nname=temporary\nbaseurl=file://{0}/"
+                   "\ngpgcheck=0\npriority=1' > {1}").format(
+                settings.LOCAL_MIRROR_CENTOS, conf_file)
+            environment.execute_remote_cmd(remote, cmd, exit_code=0)
+            update_command = 'yum clean expire-cache; yum update -y -d3'
+            result = remote.execute(update_command)
+            logger.debug('Result of "yum update" command on master node: '
+                         '{0}'.format(result))
+            assert_equal(int(result['exit_code']), 0,
+                         'Packages update failed, '
+                         'inspect logs for details')
+            environment.execute_remote_cmd(remote,
+                                           cmd='rm -f {0}'.format(conf_file),
+                                           exit_code=0)
+        except Exception:
+            logger.error("Could not update packages")
+            raise
+        return result
+    return wrapper
+
+
 def update_fuel(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -151,51 +195,28 @@ def update_fuel(func):
                                "from unexpected class.")
                 return result
 
+            centos_files_count, ubuntu_files_count = \
+                environment.admin_actions.upload_packages(
+                    local_packages_dir=settings.UPDATE_FUEL_PATH,
+                    centos_repo_path=settings.LOCAL_MIRROR_CENTOS,
+                    ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
+
             remote = environment.d_env.get_admin_remote()
-
-            centos_files_count = cond_upload(
-                remote, settings.UPDATE_FUEL_PATH,
-                os.path.join(settings.LOCAL_MIRROR_CENTOS, 'Packages'),
-                "(?i).*\.rpm$")
-
-            ubuntu_files_count = cond_upload(
-                remote, settings.UPDATE_FUEL_PATH,
-                os.path.join(settings.LOCAL_MIRROR_UBUNTU, 'pool/main'),
-                "(?i).*\.deb$")
-
             cluster_id = environment.fuel_web.get_last_created_cluster()
 
             if centos_files_count > 0:
-                regenerate_centos_repo(remote, settings.LOCAL_MIRROR_CENTOS)
-                try:
-                    logger.info("Updating packages in docker containers ...")
+                environment.docker_actions.execute_in_containers(
+                    cmd='yum -y install yum-plugin-priorities')
 
-                    # FIXME: remove or replace this hardcode of repo priorities
-                    # when Fuel admin node will provide
-                    remote.execute(
-                        "cd /etc/yum.repos.d/;"
-                        "for repo in auxiliary nailgun; do"
-                        "    sed -i '/^priority=.*/d' ./${repo}.repo;"
-                        "done;"
-                        "echo 'priority=20' >> ./nailgun.repo;"
-                        "echo 'priority=15' >> ./auxiliary.repo")
+                # Update docker containers and restart them
+                environment.docker_actions.execute_in_containers(
+                    cmd='yum clean expire-cache; yum update -y')
+                environment.docker_actions.restart_containers()
 
-                    environment.docker_actions.execute_in_containers(
-                        cmd='yum -y install yum-plugin-priorities')
-
-                    # Update docker containers and restart them
-
-                    environment.docker_actions.execute_in_containers(
-                        cmd='yum clean expire-cache; yum update -y')
-                    environment.docker_actions.restart_containers()
-
-                    # Update packages on master node
-                    remote.execute(
-                        'yum -y install yum-plugin-priorities;'
-                        'yum clean expire-cache; yum update -y')
-
-                except Exception:
-                    logger.exception("Fail update of Fuel's package(s).")
+                # Update packages on master node
+                remote.execute(
+                    'yum -y install yum-plugin-priorities;'
+                    'yum clean expire-cache; yum update -y')
 
                 # Add auxiliary repository to the cluster attributes
                 if settings.OPENSTACK_RELEASE_UBUNTU not in \
@@ -206,7 +227,6 @@ def update_fuel(func):
                         priority=settings.AUX_RPM_REPO_PRIORITY)
 
             if ubuntu_files_count > 0:
-                regenerate_ubuntu_repo(remote, settings.LOCAL_MIRROR_UBUNTU)
                 # Add auxiliary repository to the cluster attributes
                 if settings.OPENSTACK_RELEASE_UBUNTU in \
                         settings.OPENSTACK_RELEASE:
