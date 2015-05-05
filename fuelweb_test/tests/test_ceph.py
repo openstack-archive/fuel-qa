@@ -248,7 +248,9 @@ class CephHA(TestBasic):
         self.fuel_web.check_ceph_status(cluster_id)
 
         # Run ostf
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['ha', 'smoke', 'sanity'])
 
     @test(depends_on=[ceph_ha],
           groups=["openstack_stat"])
@@ -411,7 +413,8 @@ class CephRadosGW(TestBasic):
         self.fuel_web.check_ceph_status(cluster_id)
 
         # Run ostf
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
 
         # Check the radosqw daemon is started
         remote = self.fuel_web.get_ssh_for_node('slave-01')
