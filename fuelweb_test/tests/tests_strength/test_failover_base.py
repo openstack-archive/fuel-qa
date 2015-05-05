@@ -310,28 +310,32 @@ class TestHaFailoverBase(TestBasic):
             config = self.fuel_web.get_pacemaker_config(devops_node.name)
             logger.debug("config on node {0} is {1}".format(
                 devops_node.name, config))
-            assert_not_equal(re.search(
-                "vip__public\s+\(ocf::fuel:ns_IPaddr2\):\s+Started\s+"
-                "Clone Set:\s+clone_ping_vip__public\s+\[ping_vip__public\]"
-                "\s+Started:\s+\[ {0} \]".format(pcm_nodes), config), None,
-                'public vip is not configured right')
+            assert_not_equal(
+                re.search("vip__public\s+\(ocf::fuel:ns_IPaddr2\):\s+Started",
+                          config)
+                and
+                re.search("Clone Set:\s+clone_ping_vip__public\s+"
+                          "\[ping_vip__public\]\s+Started:\s+\[ {0} \]"
+                          .format(pcm_nodes), config),
+                None, 'Resource [vip__public] is not properly configured')
             assert_true(
                 'vip__management	(ocf::fuel:ns_IPaddr2):	Started'
-                in config, 'vip management is not configured right')
+                in config, 'Resource [vip__management] is not properly'
+                ' configured')
             assert_not_equal(re.search(
                 "Clone Set: clone_p_(heat|openstack-heat)-engine"
                 " \[p_(heat|openstack-heat)-engine\]\s+"
                 "Started: \[ {0} \]".format(
                     pcm_nodes), config), None,
-                'heat engine is not configured right')
+                'Some of [heat*] engine resources are not properly configured')
             assert_not_equal(re.search(
                 "Clone Set: clone_p_mysql \[p_mysql\]\s+Started:"
                 " \[ {0} \]".format(pcm_nodes), config), None,
-                'mysql is not configured right')
+                'Resource [p_mysql] is not properly configured')
             assert_not_equal(re.search(
                 "Clone Set: clone_p_haproxy \[p_haproxy\]\s+Started:"
                 " \[ {0} \]".format(pcm_nodes), config), None,
-                'haproxy is not configured right')
+                'Resource [p_haproxy] is not properly configured')
 
     def ha_pacemaker_restart_heat_engine(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
