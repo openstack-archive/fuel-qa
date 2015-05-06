@@ -19,15 +19,15 @@ from devops.error import TimeoutError
 from devops.helpers.helpers import wait
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
 from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
-from fuelweb_test.tests.test_admin_node import TestAdminNodeCustomManifests
 
 
 @test(groups=["command_line"])
 class CommandLine(TestBasic):
-    @test(depends_on=[
-        TestAdminNodeCustomManifests.setup_with_custom_manifests],
-        groups=["hiera_deploy"])
+
+    @test(depends_on=[SetupEnvironment.setup_with_custom_manifests],
+          groups=["hiera_deploy"])
     @log_snapshot_on_error
     def hiera_deploy(self):
         """Deploy cluster with controller node only
@@ -42,6 +42,9 @@ class CommandLine(TestBasic):
         Duration 20m
 
         """
+
+        self.env.revert_snapshot("empty_custom_manifests")
+
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[:1])
 

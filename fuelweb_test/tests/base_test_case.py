@@ -65,6 +65,23 @@ class SetupEnvironment(TestBasic):
 
         self.env.make_snapshot("empty", is_make=True)
 
+    @test(groups=["setup_master_custom_manifests"])
+    @log_snapshot_on_error
+    def setup_with_custom_manifests(self):
+        """Setup master node with custom manifests
+        Scenario:
+            1. Start installation of master
+            2. Enter "fuelmenu"
+            3. Upload custom manifests
+            4. Kill "fuelmenu" pid
+        Snapshot: empty_custom_manifests
+
+        Duration 20m
+        """
+        self.check_run("empty_custom_manifests")
+        self.env.setup_environment(custom=True, build_images=True)
+        self.env.make_snapshot("empty_custom_manifests", is_make=True)
+
     @test(depends_on=[setup_master])
     @log_snapshot_on_error
     def prepare_release(self):
