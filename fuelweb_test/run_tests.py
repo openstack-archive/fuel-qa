@@ -42,6 +42,7 @@ def import_tests():
     from tests.plugins.plugin_contrail import test_fuel_plugin_contrail  # noqa
     from tests.plugins.plugin_glusterfs import test_plugin_glusterfs  # noqa
     from tests.plugins.plugin_lbaas import test_plugin_lbaas  # noqa
+    from tests.plugins.plugin_lma_collector import test_plugin_lma_collector  # noqa
     from tests.plugins.plugin_reboot import test_plugin_reboot_task  # noqa
     from tests.plugins.plugin_zabbix import test_plugin_zabbix  # noqa
     from tests import test_multiple_networks  # noqa
