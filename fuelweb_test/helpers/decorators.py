@@ -63,7 +63,17 @@ def log_snapshot_on_error(func):
                     .format(func.__name__) + "#" * 30 + ">" * 5 + "\n{}"
                     .format(''.join(func.__doc__)))
         try:
-            return func(*args, **kwargs)
+            result = func(*args, **kwargs)
+
+            if settings.ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT:
+                if args[0].env is None:
+                    logger.warning("Can't get diagnostic snapshot: "
+                                   "unexpected class is decorated.")
+                    return result
+                args[0].env.resume_environment()
+                create_diagnostic_snapshot(args[0].env, "pass", func.__name__)
+            return result
+
         except SkipTest:
             raise SkipTest()
         except Exception as test_exception:
