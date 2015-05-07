@@ -223,6 +223,8 @@ class CICMaintenanceMode(TestBasic):
                          'Failed to execute "{0}" on remote host: {1}'.
                          format(command2, result))
 
+            logger.info('Wait a %s node offline status after unexpected '
+                        'reboot', nailgun_node.name)
             try:
                 wait(
                     lambda: not
@@ -325,6 +327,8 @@ class CICMaintenanceMode(TestBasic):
             assert_true('True' in check_available_mode(remote),
                         "Maintenance mode is not available")
 
+            logger.info('Maintenance mode for node %s is disable',
+                        nailgun_node.name)
             result = remote.execute('umm disable')
             assert_equal(result['exit_code'], 0,
                          'Failed to execute "{0}" on remote host: {1}'.
@@ -332,15 +336,14 @@ class CICMaintenanceMode(TestBasic):
 
             assert_false('True' in check_available_mode(remote),
                          "Maintenance mode should not be available")
-            logger.info('Maintenance mode for node %s', nailgun_node.name)
 
+            logger.info('Try to execute maintenance mode for node %s',
+                        nailgun_node.name)
             result = remote.execute('umm on')
             assert_equal(result['exit_code'], 1,
                          'Failed to execute "{0}" on remote host: {1}'.
                          format('umm on', result))
 
-            self.fuel_web.wait_nodes_get_online_state(
-                nailgun_node, timeout=6 * 60)
             # If we don't disable maintenance mode,
             # the node would have gone to reboot, so we just expect
             time.sleep(30)
@@ -411,20 +414,22 @@ class CICMaintenanceMode(TestBasic):
                          'Failed to execute "{0}" on remote host: {1}'.
                          format(command2, result))
 
-            # Wait reboot with force
-            time.sleep(60)
-            logger.info('Wait a %s node online status', nailgun_node.name)
+            logger.info('Wait a %s node offline status after unexpected '
+                        'reboot', nailgun_node.name)
             try:
                 wait(
-                    lambda:
+                    lambda: not
                     self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
                     ['online'], timeout=60 * 10)
             except TimeoutError:
-                assert_true(
+                assert_false(
                     self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
                     ['online'],
-                    'Node {0} has not become online after unexpected '
+                    'Node {0} has not become offline after unexpected'
                     'reboot'.format(nailgun_node.name))
+
+            logger.info('Wait a %s node online status', nailgun_node.name)
+            self.fuel_web.wait_nodes_get_online_state([nailgun_node])
 
             logger.info('Check that %s node not in maintenance mode after'
                         ' unexpected reboot', nailgun_node.name)
