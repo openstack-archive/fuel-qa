@@ -141,7 +141,7 @@ class ContrailPlugin(TestBasic):
                 'network_id': network_id,
                 'ip_version': 4,
                 'cidr': '10.100.0.0/24',
-                'name': 'subnetname04',
+                'name': 'subnet04',
             }
         })
 
@@ -177,7 +177,7 @@ class ContrailPlugin(TestBasic):
             1. Revert snapshot "install_contrail"
             2. Create cluster
             3. Add 3 nodes with Operating system role
-            and 1 node with controller role
+               and 1 node with controller role
             4. Enable Contrail plugin
             5. Deploy cluster with plugin
 
@@ -215,7 +215,7 @@ class ContrailPlugin(TestBasic):
             1. Revert snapshot "install_contrail"
             2. Create cluster
             3. Add 3 nodes with Operating system role, 1 node with controller
-            role and 1 node with compute + cinder role
+               role and 1 node with compute + cinder role
             4. Enable Contrail plugin
             5. Deploy cluster with plugin
             6. Create net and subnet
@@ -277,7 +277,7 @@ class ContrailPlugin(TestBasic):
             1. Revert snapshot "ready_with_9_slaves"
             2. Create cluster
             3. Add 3 nodes with Operating system role,
-            1 node with controller role and 2 nodes with compute role
+               1 node with controller role and 2 nodes with compute role
             4. Enable Contrail plugin
             5. Deploy cluster with plugin
             6. Remove 1 node with compute role.
@@ -352,21 +352,18 @@ class ContrailPlugin(TestBasic):
 
         Scenario:
             1. Revert snapshot "ready_with_9_slaves"
-            2. Upload plugin to the master node
-            3. Install plugin and additional packages
-            4. Enable Neutron with VLAN segmentation
-            5. Create cluster
-            6. Add 3 nodes with Operating system role and
-            1 node with controller role
-            7. Enable Contrail plugin
-            8. Deploy cluster with plugin
-            9. Add 1 node with compute role
+            2. Create cluster
+            3. Add 3 nodes with Operating system role and
+               1 node with controller role
+            4. Enable Contrail plugin
+            5. Deploy cluster with plugin
+            6. Add 1 node with compute role
+            7. Deploy cluster
+            8. Run OSTF tests
+            9. Add 2 nodes with controller role and
+               1 node with compute + cinder role
             10. Deploy cluster
             11. Run OSTF tests
-            12. Add 2 nodes with controller role and
-            1 node with compute + cinder role
-            13. Deploy cluster
-            14. Run OSTF tests
 
         Duration 140 min
 
@@ -440,6 +437,83 @@ class ContrailPlugin(TestBasic):
         # When it will be done 'should_fail=2' and
         # 'failed_test_name' parameter should be removed.
 
+        self.fuel_web.run_ostf(
+            cluster_id=self.cluster_id,
+            should_fail=2,
+            failed_test_name=[('Check network connectivity '
+                               'from instance via floating IP'),
+                              ('Launch instance with file injection')]
+        )
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
+          groups=["contrail_plugin_add_delete_controller_node"])
+    @log_snapshot_on_error
+    def contrail_plugin_add_delete_controller_node(self):
+        """Verify that Controller node can be
+        deleted and added after deploying
+
+        Scenario:
+            1. Revert snapshot "ready_with_9_slaves"
+            2. Create cluster
+            3. Add 3 nodes with Operating system role,
+               2 nodes with controller role and 1 node with compute role
+            4. Enable Contrail plugin
+            5. Deploy cluster with plugin
+            6. Remove 1 node with controller role.
+            7. Deploy cluster
+            8. Add 1 nodes with controller role
+            9. Deploy cluster
+            10. Run OSTF tests
+
+        Duration 140 min
+
+        """
+        self.env.revert_snapshot("ready_with_9_slaves")
+
+        self._prepare_contrail_plugin()
+
+        # create cluster: 3 nodes with Operating system role
+        # and 1 node with controller role
+        self.fuel_web.update_nodes(
+            self.cluster_id,
+            {
+                'slave-01': ['base-os'],
+                'slave-02': ['base-os'],
+                'slave-03': ['base-os'],
+                'slave-04': ['controller'],
+                'slave-05': ['controller'],
+                'slave-06': ['compute']
+            },
+            contrail=True
+        )
+
+        # fill public field in contrail settings
+        self._update_public_fields()
+
+        self.fuel_web.deploy_cluster_wait(self.cluster_id)
+
+        # create net and subnet
+        self._create_net_subnet(self.cluster_id)
+
+        #  remove one node with controller role
+        self.fuel_web.update_nodes(
+            self.cluster_id, {'slave-04': ['controller']}, False, True)
+
+        self.fuel_web.deploy_cluster_wait(self.cluster_id)
+
+        # add 1 node with controller role and redeploy cluster
+        self.fuel_web.update_nodes(
+            self.cluster_id, {'slave-07': ['controller']})
+
+        self.fuel_web.deploy_cluster_wait(self.cluster_id)
+
+        # TODO
+        # Tests using north-south connectivity are expected to fail because
+        # they require additional gateway nodes, and specific contrail
+        # settings. This mark is a workaround until it's verified
+        # and tested manually.
+        # When it will be done 'should_fail=2' and
+        # 'failed_test_name' parameter should be removed.
         self.fuel_web.run_ostf(
             cluster_id=self.cluster_id,
             should_fail=2,
