@@ -740,7 +740,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
                 'volumes_ceph': True,
                 'images_ceph': True,
                 'volumes_lvm': False,
-                'osd_pool_size': 2,
+                'osd_pool_size': "2",
                 'mongo': True,
                 'hosts_ip': settings.SERVTEST_EXTERNAL_MONGO_URLS,
                 'mongo_db_name': settings.SERVTEST_EXTERNAL_MONGO_DB_NAME,
