@@ -58,15 +58,25 @@ def parse_xml_report(path_to_report):
     return test_results
 
 
-def find_run_by_name_and_config(test_plan, run_name, config):
+def find_run_by_name_and_config_in_test_plan(test_plan, run_name, config):
     """This function finds the test run by its name and the specified
-    configuration (for example, Centos 6.5).
+    configuration (for example, Centos 6.5) in the specified test plan.
     """
 
     for entry in test_plan['entries']:
         for run in entry['runs']:
             if run['name'] == run_name and run['config'] == config:
                 return run
+
+
+def find_run_by_config_in_test_plan_entry(test_plan_entry, config):
+    """This function finds the test run by the specified configuration
+    (for example, Ubuntu 14.04) in the specified test plan entry.
+    """
+
+    for run in test_plan_entry['runs']:
+        if run['config'] == config:
+            return run
 
 
 def upload_test_result(client, test_run, test_result):
@@ -151,31 +161,41 @@ def main():
     else:
         LOG.info('The test plan found.')
 
-    # Define a test run
-    configs = client.get_config_by_name('Operation System')['configs']
-    config_ids = [c['id'] for c in configs if c['name'] == options.config]
-    run_name = 'Tempest - ' + options.run_name
-    run_structure = client.test_run_struct(name=run_name,
-                                           suite_id=tests_suite['id'],
-                                           milestone_id=milestone['id'],
-                                           description='Results of Tempest',
-                                           config_ids=config_ids)
+    # Get ID of each OS from list "TestRailSettings.operation_systems"
+    config_ids = []
+    for os_name in TestRailSettings.operation_systems:
+        for conf in client.get_config_by_name('Operation System')['configs']:
+            if conf['name'] == os_name:
+                config_ids.append(conf['id'])
+                break
 
-    # Create a test plan entry with the test run
-    run = find_run_by_name_and_config(test_plan, run_name, options.config)
+    # Define test runs for CentOS and Ubuntu
+    run_name = 'Tempest - ' + options.run_name
+    runs = []
+    for conf_id in config_ids:
+        run = client.test_run_struct(name=run_name,
+                                     suite_id=tests_suite['id'],
+                                     milestone_id=milestone['id'],
+                                     description='Tempest results',
+                                     config_ids=[conf_id])
+        runs.append(run)
+
+    # Create a test plan entry with the test runs
+    run = find_run_by_name_and_config_in_test_plan(test_plan,
+                                                   run_name, options.config)
     if not run:
         LOG.info('Adding a test plan entry with test run '
                  '"{0} ({1})" ...'.format(run_name, options.config))
         entry = client.add_plan_entry(plan_id=test_plan['id'],
                                       suite_id=tests_suite['id'],
                                       config_ids=config_ids,
-                                      runs=[run_structure],
+                                      runs=runs,
                                       name=run_name)
         LOG.info('The test plan entry has been added.')
-        run = entry['runs'][0]
+        run = find_run_by_config_in_test_plan_entry(entry, options.config)
 
     # STEP #4
-    # Upload the test results to TestRail
+    # Upload the test results to TestRail for the specified test run
     LOG.info('Uploading the test results to TestRail...')
     tries_count = 10
     threads_count = options.threads_count
