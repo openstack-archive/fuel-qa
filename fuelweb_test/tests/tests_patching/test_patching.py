@@ -23,6 +23,7 @@ from devops.helpers.helpers import wait
 from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers import patching
+from fuelweb_test.helpers import rally
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
 from fuelweb_test.helpers.utils import install_pkg
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -73,7 +74,14 @@ class PatchingTests(TestBasic):
         assert_is_not_none(cluster_id, 'Environment for patching not found.')
 
         # Step #2
-        # Run Rally benchmarks, coming soon...
+        rally_bench = rally.RallyBenchmarkTest(
+            name='patching',
+            container_repo=settings.RALLY_DOCKER_REPO,
+            environment=self.env,
+            cluster_id=cluster_id,
+            test_type='nova'
+        )
+        rally_bench.run()
 
         # Step #3
         patching_repos = patching.add_remote_repositories(self.env)

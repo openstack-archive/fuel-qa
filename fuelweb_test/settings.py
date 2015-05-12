@@ -427,3 +427,6 @@ EMC_SP_B_IP = os.environ.get('EMC_SP_B_IP')
 EMC_USERNAME = os.environ.get('EMC_USERNAME')
 EMC_PASSWORD = os.environ.get('EMC_PASSWORD')
 EMC_POOL_NAME = os.environ.get('EMC_POOL_NAME', '')
+
+RALLY_DOCKER_REPO = os.environ.get('RALLY_DOCKER_REPO', 'rallyforge/rally')
+RALLY_CONTAINER_NAME = os.environ.get('RALLY_CONTAINER_NAME', 'rally')

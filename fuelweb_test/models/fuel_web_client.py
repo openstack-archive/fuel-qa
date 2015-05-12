@@ -19,6 +19,7 @@ import yaml
 
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
+from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
 from ipaddr import IPNetwork
@@ -890,8 +891,8 @@ class FuelWebClient(object):
         a roles
 
         :type cluster_id: Int
-        :type roles: List
-            :rtype: List
+        :type roles: list
+            :rtype: list
         """
         nodes = self.client.list_cluster_nodes(cluster_id=cluster_id)
         return [n for n in nodes if set(roles) <= set(n['roles'])]
@@ -1852,6 +1853,9 @@ class FuelWebClient(object):
             logger.info("Public IP found: {0}".format(ip))
             return ip
 
+    def get_mgmt_vip(self, cluster_id):
+        return self.client.get_networks(cluster_id)['management_vip']
+
     @logwrap
     def get_controller_with_running_service(self, slave, service_name):
         ret = self.get_pacemaker_status(slave.name)
@@ -1916,3 +1920,25 @@ class FuelWebClient(object):
                 plugin_data = plugin_data[p]
             plugin_data[path[-1]] = value
         self.client.update_cluster_attributes(cluster_id, attr)
+
+    @logwrap
+    def get_alive_proxy(self, cluster_id, port='8888'):
+        alive_controllers = [node for node in
+                             self.get_nailgun_cluster_nodes_by_roles(
+                                 cluster_id,
+                                 roles=['controller', ]) if node['online']]
+        for controller in alive_controllers:
+            logger.debug('Trying to ping {0} {1}/tcp'.format(controller['ip'],
+                                                             port))
+            if tcp_ping(controller['ip'], port):
+                return "http://{0}:{1}".format(controller['ip'], port)
+
+    @logwrap
+    def get_cluster_credentials(self, cluster_id):
+        attributes = self.client.get_cluster_attributes(cluster_id)
+        username = attributes['editable']['access']['user']['value']
+        password = attributes['editable']['access']['password']['value']
+        tenant = attributes['editable']['access']['tenant']['value']
+        return {'username': username,
+                'password': password,
+                'tenant': tenant}
