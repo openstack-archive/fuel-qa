@@ -890,8 +890,8 @@ class FuelWebClient(object):
         a roles
 
         :type cluster_id: Int
-        :type roles: List
-            :rtype: List
+        :type roles: list
+            :rtype: list
         """
         nodes = self.client.list_cluster_nodes(cluster_id=cluster_id)
         return [n for n in nodes if set(roles) <= set(n['roles'])]
@@ -1872,6 +1872,9 @@ class FuelWebClient(object):
         return self.client.get_networks(
             cluster_id)['management_vrouter_vip']
 
+    def get_mgmt_vip(self, cluster_id):
+        return self.client.get_networks(cluster_id)['management_vip']
+
     @logwrap
     def get_controller_with_running_service(self, slave, service_name):
         ret = self.get_pacemaker_status(slave.name)
@@ -1951,3 +1954,38 @@ class FuelWebClient(object):
                 plugin_data = plugin_data[p]
             plugin_data[path[-1]] = value
         self.client.update_cluster_attributes(cluster_id, attr)
+
+    @logwrap
+    def get_alive_proxy(self, cluster_id, port='8888'):
+        online_controllers = [node for node in
+                              self.get_nailgun_cluster_nodes_by_roles(
+                                  cluster_id,
+                                  roles=['controller', ]) if node['online']]
+
+        have_alive_proxy = True if len(online_controllers) > 0 else False
+
+        admin_remote = self.environment.d_env.get_admin_remote()
+        check_proxy_cmd = ('[[ $(curl -s -w "%{{http_code}}" '
+                           '{0} -o /dev/null) -eq 200 ]]')
+
+        for controller in online_controllers:
+            proxy_url = 'http://{0}:{1}/'.format(controller['ip'], port)
+            logger.debug('Trying to connect to {0} from master node...'.format(
+                proxy_url))
+            if admin_remote.execute(
+                    check_proxy_cmd.format(proxy_url))['exit_code'] == 0:
+                return proxy_url
+
+        assert_true(have_alive_proxy,
+                    'There are no HTTP proxy available on online controllers: '
+                    '{0}'.format(online_controllers))
+
+    @logwrap
+    def get_cluster_credentials(self, cluster_id):
+        attributes = self.client.get_cluster_attributes(cluster_id)
+        username = attributes['editable']['access']['user']['value']
+        password = attributes['editable']['access']['password']['value']
+        tenant = attributes['editable']['access']['tenant']['value']
+        return {'username': username,
+                'password': password,
+                'tenant': tenant}

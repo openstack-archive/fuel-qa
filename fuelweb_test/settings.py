@@ -430,3 +430,6 @@ EMC_POOL_NAME = os.environ.get('EMC_POOL_NAME', '')
 
 ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT = os.environ.get(
     'ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT', 'false') == 'true'
+
+RALLY_DOCKER_REPO = os.environ.get('RALLY_DOCKER_REPO', 'rallyforge/rally')
+RALLY_CONTAINER_NAME = os.environ.get('RALLY_CONTAINER_NAME', 'rally')
