@@ -1168,9 +1168,14 @@ class FuelWebClient(object):
             assigned_networks = {
                 'eth1': ['public'],
                 'eth2': ['management'],
-                'eth3': ['private'],
                 'eth4': ['storage'],
             }
+
+            if self.client.get_networks(cluster_id).\
+                get("networking_parameters").\
+                get("segmentation_type") == \
+                    NEUTRON_SEGMENT['vlan']:
+                assigned_networks.update({'eth3': ['private']})
         else:
             assigned_networks = {
                 'eth1': ['public'],
@@ -1208,13 +1213,10 @@ class FuelWebClient(object):
 
     def update_net_settings(self, network_configuration, nodegroup=None,
                             cluster_id=None):
-        seg_type = network_configuration.get('networking_parameters', {}) \
-            .get('segmentation_type')
         if not nodegroup:
             for net in network_configuration.get('networks'):
                 self.set_network(net_config=net,
-                                 net_name=net['name'],
-                                 seg_type=seg_type)
+                                 net_name=net['name'])
 
             self.common_net_settings(network_configuration)
             return network_configuration
@@ -1229,8 +1231,7 @@ class FuelWebClient(object):
                         continue
                     self.set_network(net_config=net,
                                      net_name=net['name'],
-                                     net_pools=nodegroup['pools'],
-                                     seg_type=seg_type)
+                                     net_pools=nodegroup['pools'])
 
             self.common_net_settings(network_configuration)
             return network_configuration
@@ -1245,11 +1246,8 @@ class FuelWebClient(object):
             float_range = list(public.subnet(new_prefix=27))[0]
         nc["floating_ranges"] = self.get_range(float_range, 1)
 
-    def set_network(self, net_config, net_name, net_pools=None, seg_type=None):
+    def set_network(self, net_config, net_name, net_pools=None):
         nets_wo_floating = ['public', 'management', 'storage']
-        if seg_type == NEUTRON_SEGMENT['gre']:
-            nets_wo_floating.append('private')
-
         if not net_pools:
             if not BONDING:
                 if 'floating' == net_name:
