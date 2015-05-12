@@ -24,7 +24,7 @@ from fuelweb_test import logger
 from fuelweb_test.tests import base_test_case
 
 
-@test(groups=["thread_non_func_1_usb"])
+@test(groups=["thread_non_func_1"])
 class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
     """DeployHAOneControllerMasterNodeFail."""  # TODO documentation
 

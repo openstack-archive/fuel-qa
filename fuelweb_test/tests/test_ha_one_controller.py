@@ -971,7 +971,7 @@ class BackupRestoreHAOneController(TestBasic):
         self.env.make_snapshot("ha_one_controller_backup_restore")
 
 
-@test(groups=["thread_non_func_1_usb"])
+@test(groups=["thread_usb"])
 class HAOneControllerFlatUSB(HAOneControllerFlatBase):
     """HAOneControllerFlatUSB."""  # TODO documentation
 
