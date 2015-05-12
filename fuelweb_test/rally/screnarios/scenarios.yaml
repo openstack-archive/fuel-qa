@@ -1,0 +1,16 @@
+categories:
+  - undefined:
+     tags:
+     scenarios:
+       nova
+ - nova:
+     tags:
+       nova
+     scenarions:
+       nova
+ - neutron:
+     tags:
+       neutron
+     scenarios:
+       neutron
+       nova
