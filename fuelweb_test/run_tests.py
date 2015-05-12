@@ -38,6 +38,7 @@ def import_tests():
     from tests import test_zabbix  # noqa
     from tests import test_upgrade  # noqa
     from tests.plugins.plugin_emc import test_plugin_emc  # noqa
+    from tests.plugins.plugin_cisco_aci import test_plugin_cisco_aci  # noqa
     from tests.plugins.plugin_example import test_fuel_plugin_example  # noqa
     from tests.plugins.plugin_contrail import test_fuel_plugin_contrail  # noqa
     from tests.plugins.plugin_glusterfs import test_plugin_glusterfs  # noqa
