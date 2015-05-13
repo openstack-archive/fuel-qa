@@ -159,11 +159,14 @@ class NeutronGre(TestBasic):
 
         controller_id = [n['id'] for n in
                          self.fuel_web.client.list_cluster_nodes(cluster_id)
-                         if 'controller' in n['roles']]
+                         if 'controller' in n['pending_roles']]
 
         computes_ids = [n['id'] for n in
                         self.fuel_web.client.list_cluster_nodes(cluster_id)
-                        if 'controller' not in n['roles']]
+                        if 'controller' not in n['pending_roles']]
+
+        assert_true('cluster-vrouter' in [task['id']
+                                          for task in task_controller])
 
         c_task = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=[task['id'] for task in task_controller],
@@ -218,7 +221,7 @@ class NeutronGre(TestBasic):
             [gd.run_check_from_task(
                 remote=self.fuel_web.get_ssh_for_node(node),
                 path=self.get_post_test(tasks, 'netconfig')[0]['cmd'])
-             for node in nodes]
+            for node in nodes]
 
         # check firewall
 
@@ -309,6 +312,12 @@ class NeutronGre(TestBasic):
                 remote=self.fuel_web.get_ssh_for_node(node),
                 path=pre_cluster_haproxy[0]['cmd'])
              for node in ['slave-01']]
+
+        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+            cluster_id, data=['conntrackd'],
+            node_id='{0}'.format(controller_id[0]))
+        logger.debug('res info is {0}'.format(res))
+        self.fuel_web.assert_task_success(task=res)
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['cluster-haproxy'],
@@ -520,7 +529,7 @@ class NeutronGre(TestBasic):
         self.fuel_web.assert_task_success(task=res)
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
-            cluster_id, data=['api-proxy'],
+            cluster_id, data=['api-proxy', 'swift-rebalance-cron'],
             node_id='{0}'.format(controller_id[0]))
         logger.debug('res info is {0}'.format(res))
 
