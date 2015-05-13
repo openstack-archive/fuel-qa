@@ -193,6 +193,40 @@ class EnvironmentModel(object):
                 self._virtual_environment.define()
         return self._virtual_environment
 
+    def resume_environment(self):
+        self.d_env.resume()
+        admin = self.d_env.nodes().admin
+
+        try:
+            admin.await(self.d_env.admin_net, timeout=30, by_port=8000)
+        except Exception as e:
+            logger.warning("From first time admin isn't reverted: "
+                           "{0}".format(e))
+            admin.destroy()
+            logger.info('Admin node was destroyed. Wait 10 sec.')
+            time.sleep(10)
+
+            admin.start()
+            logger.info('Admin node started second time.')
+            self.d_env.nodes().admin.await(self.d_env.admin_net)
+            self.set_admin_ssh_password()
+            self.docker_actions.wait_for_ready_containers(timeout=600)
+
+            # set collector address in case of admin node destroy
+            if settings.FUEL_STATS_ENABLED:
+                self.nailgun_actions.set_collector_address(
+                    settings.FUEL_STATS_HOST,
+                    settings.FUEL_STATS_PORT,
+                    settings.FUEL_STATS_SSL)
+                # Restart statsenderd in order to apply new collector address
+                self.nailgun_actions.force_fuel_stats_sending()
+                self.fuel_web.client.send_fuel_stats(enabled=True)
+                logger.info('Enabled sending of statistics to {0}:{1}'.format(
+                    settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
+                ))
+        self.set_admin_ssh_password()
+        self.docker_actions.wait_for_ready_containers()
+
     def make_snapshot(self, snapshot_name, description="", is_make=False):
         if settings.MAKE_SNAPSHOT or is_make:
             self.d_env.suspend(verbose=False)
@@ -202,14 +236,7 @@ class EnvironmentModel(object):
             revert_info(snapshot_name, self.get_admin_node_ip(), description)
 
         if settings.FUEL_STATS_CHECK:
-            self.d_env.resume()
-            try:
-                self.d_env.nodes().admin.await(
-                    self.d_env.admin_net, timeout=60)
-            except Exception:
-                logger.error('Admin node is unavailable via SSH after '
-                             'environment resume ')
-                raise
+            self.resume_environment()
 
     def nailgun_nodes(self, devops_nodes):
         return map(
@@ -240,40 +267,7 @@ class EnvironmentModel(object):
         self.d_env.revert(name)
 
         logger.info("Resuming the snapshot '{0}' ....".format(name))
-        self.d_env.resume()
-
-        admin = self.d_env.nodes().admin
-
-        try:
-            admin.await(self.d_env.admin_net, timeout=30, by_port=8000)
-        except Exception as e:
-            logger.warning("From first time admin isn't reverted: "
-                           "{0}".format(e))
-            admin.destroy()
-            logger.info('Admin node was destroyed. Wait 10 sec.')
-            time.sleep(10)
-
-            admin.start()
-            logger.info('Admin node started second time.')
-            self.d_env.nodes().admin.await(self.d_env.admin_net)
-            self.docker_actions.wait_for_ready_containers(timeout=600)
-
-            # set collector address in case of admin node destroy
-            if settings.FUEL_STATS_ENABLED:
-                self.nailgun_actions.set_collector_address(
-                    settings.FUEL_STATS_HOST,
-                    settings.FUEL_STATS_PORT,
-                    settings.FUEL_STATS_SSL)
-                # Restart statsenderd in order to apply new collector address
-                self.nailgun_actions.force_fuel_stats_sending()
-                self.fuel_web.client.send_fuel_stats(enabled=True)
-                logger.info('Enabled sending of statistics to {0}:{1}'.format(
-                    settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
-                ))
-
-        self.set_admin_ssh_password()
-
-        self.docker_actions.wait_for_ready_containers()
+        self.resume_environment()
 
         if not skip_timesync:
             nailgun_nodes = [self.fuel_web.get_nailgun_node_by_name(node.name)

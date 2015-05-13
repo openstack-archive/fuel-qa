@@ -17,7 +17,7 @@ from proboscis import test
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers import os_actions
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import pre_post_actions
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -30,7 +30,7 @@ class NeutronGre(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_neutron_gre", "ha_one_controller_neutron_gre"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_neutron_gre(self):
         """Deploy cluster in ha mode with 1 controller and Neutron GRE
 
@@ -96,7 +96,7 @@ class NeutronVlan(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_neutron_vlan", "ha_one_controller_neutron_vlan"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_neutron_vlan(self):
         """Deploy cluster in ha mode with 1 controller and Neutron VLAN
 
@@ -154,7 +154,7 @@ class NeutronGreHa(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_gre_ha", "ha_neutron_gre"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_neutron_gre_ha(self):
         """Deploy cluster in HA mode with Neutron GRE
 
@@ -229,7 +229,7 @@ class NeutronGreHaPublicNetwork(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_gre_ha_public_network"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_neutron_gre_ha_with_public_network(self):
         """Deploy cluster in HA mode with Neutron GRE and public network
            assigned to all nodes
@@ -295,7 +295,7 @@ class NeutronVlanHa(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_vlan_ha", "ha_neutron_vlan"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_neutron_vlan_ha(self):
         """Deploy cluster in HA mode with Neutron VLAN
 
@@ -373,7 +373,7 @@ class NeutronVlanHaPublicNetwork(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_vlan_ha_public_network"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_neutron_vlan_ha_with_public_network(self):
         """Deploy cluster in HA mode with Neutron VLAN and public network
            assigned to all nodes

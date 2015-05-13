@@ -23,7 +23,7 @@ import requests
 from fuelweb_test import logger
 from fuelweb_test import settings as conf
 from fuelweb_test.helpers import checkers
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import pre_post_actions
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -34,7 +34,7 @@ class ZabbixPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_zabbix_ha"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_zabbix_ha(self):
         """Deploy cluster in ha mode with zabbix plugin
 

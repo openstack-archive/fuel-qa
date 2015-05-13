@@ -17,7 +17,7 @@ from proboscis.asserts import assert_equal, assert_true
 from proboscis import test
 
 from fuelweb_test import logger
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import pre_post_actions
 from fuelweb_test.helpers import checkers
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import EXAMPLE_PLUGIN_PATH
@@ -31,7 +31,7 @@ class ExamplePlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ha_controller_neutron_example"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_ha_one_controller_neutron_example(self):
         """Deploy cluster with one controller and example plugin
 
@@ -117,7 +117,7 @@ class ExamplePlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_nova_example_ha"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_nova_example_ha(self):
         """Deploy cluster in ha mode with example plugin
 
@@ -202,7 +202,7 @@ class ExamplePlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_example_ha_add_node"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_neutron_example_ha_add_node(self):
         """Deploy and scale cluster in ha mode with example plugin
 

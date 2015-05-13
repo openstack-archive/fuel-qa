@@ -14,7 +14,7 @@
 
 from proboscis import test
 
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import pre_post_actions
 from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import VCENTER_IP
@@ -32,7 +32,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["smoke", "vcenter_smoke"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def vcenter_smoke(self):
         """Deploy dual hypervisors cluster with controller node only
 
@@ -86,7 +86,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "vcenter_ceilometer"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def vcenter_ceilometer(self):
         """Deploy environment with vCenter and Ceilometer enabled
 
@@ -145,7 +145,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["smoke", "vcenter_cindervmdk"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def vcenter_cindervmdk(self):
         """Deploy environment with vCenter and CinderVMDK
 
@@ -201,7 +201,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_dualhv_ceph"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def vcenter_dualhv_ceph(self):
         """Deploy environment in DualHypervisors mode \
         (vCenter) with CephOSD as backend for Cinder and Glance
@@ -267,7 +267,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["vcenter_glance_backend"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def vcenter_glance_backend(self):
         """Deploy environment with vCenter as backend for glance
 
@@ -326,7 +326,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_vlan_cindervmdk"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def vcenter_vlan_cindervmdk(self):
         """Deploy enviroment of vcenter+qemu with nova vlan and vmware
            datastore as backend for glance
@@ -409,7 +409,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_vlan_cinder"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def vcenter_vlan_cinder(self):
         """Deploy enviroment of vcenter+qemu with nova vlan and vmware
            datastore as backend for glance with controler and cinder roles
@@ -492,7 +492,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_vlan_cindervmdk_cinder_ceph"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def vcenter_vlan_cindervmdk_cinder_ceph(self):
         """Deploy enviroment of vcenter+qemu with
            nova VlanManager and CephOSD backend for glance.
@@ -577,7 +577,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_glance_dualhv"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def vcenter_glance_dualhv(self):
         """Deploy environment with DualHypervisors mode \
         (vCenter), 2 Computes an vCenter Glance

@@ -18,7 +18,7 @@ from devops.helpers.helpers import wait
 from proboscis import asserts
 from proboscis import test
 
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import pre_post_actions
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers import checkers
 from fuelweb_test import logger
@@ -91,7 +91,7 @@ class LbaasPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_neutron_lbaas_simple"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_neutron_lbaas_simple(self):
         """Deploy cluster in simple mode with LbaaS plugin
 
@@ -171,7 +171,7 @@ class LbaasPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_neutron_lbaas_simple_reset_ready"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_neutron_lbaas_simple_reset_ready(self):
         """Deploy and re-deploy cluster in simple mode with LbaaS plugin
 

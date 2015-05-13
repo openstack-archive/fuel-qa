@@ -23,7 +23,7 @@ from devops.helpers.helpers import wait
 
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers import checkers
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import pre_post_actions
 from fuelweb_test import ostf_test_mapping as map_ostf
 from fuelweb_test import settings
 from fuelweb_test.settings import NEUTRON_ENABLE
@@ -40,7 +40,7 @@ class CephCompact(TestBasic):
           groups=["ceph_ha_one_controller_compact",
                   "ha_one_controller_nova_ceph",
                   "ceph_ha_one_controller_compact_neutron"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def ceph_ha_one_controller_compact(self):
         """Deploy ceph in HA mode with 1 controller
 
@@ -95,7 +95,7 @@ class CephCompactWithCinder(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["ceph_ha_one_controller_with_cinder"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def ceph_ha_one_controller_with_cinder(self):
         """Deploy ceph with cinder in ha mode with 1 controller
 
@@ -171,7 +171,7 @@ class CephHA(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["ceph_ha"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def ceph_ha(self):
         """Deploy ceph with cinder in HA mode
 
@@ -233,7 +233,7 @@ class CephHA(TestBasic):
 
     @test(depends_on=[ceph_ha],
           groups=["ha_nova_ceph", "ha_neutron_ceph", "check_ceph_ha"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def check_ceph_ha(self):
         """Check ceph with cinder in HA mode
 
@@ -257,7 +257,7 @@ class CephHA(TestBasic):
 
     @test(depends_on=[ceph_ha],
           groups=["openstack_stat"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def check_openstack_stat(self):
         """Check openstack statistic on fuel and collector side
 
@@ -365,7 +365,7 @@ class CephRadosGW(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["ceph_rados_gw", "bvt_2"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def ceph_rados_gw(self):
         """Deploy ceph HA with RadosGW for objects
 
@@ -436,7 +436,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ceph_migration"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def migrate_vm_backed_with_ceph(self):
         """Check VM backed with ceph migration in ha mode with 1 controller
 
@@ -653,7 +653,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ceph_partitions"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def check_ceph_partitions_after_reboot(self):
         """Check that Ceph OSD partitions are remounted after reboot
 

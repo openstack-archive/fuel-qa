@@ -23,7 +23,7 @@ from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
 
 from fuelweb_test.helpers import checkers
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import pre_post_actions
 from fuelweb_test.helpers.decorators import create_diagnostic_snapshot
 from fuelweb_test.helpers import os_actions
 from fuelweb_test import logger
@@ -44,7 +44,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         return kernel
 
     @test(groups=["upgrade_ha_one_controller"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def upgrade_ha_one_controller_env(self):
         """Upgrade ha one controller deployed cluster with ceph
 
@@ -117,7 +117,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.env.make_snapshot("upgrade_ha_one_controller")
 
     @test(groups=["upgrade_ha_one_controller_delete_node"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def upgrade_ha_one_controller_delete_node(self):
         """Upgrade ha 1 controller deployed cluster with ceph and
            delete node from old cluster
@@ -179,7 +179,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.env.make_snapshot("upgrade_ha_one_controller_delete_node")
 
     @test(groups=["upgrade_ha"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def upgrade_ha_env(self):
         """Upgrade ha deployed cluster
 
@@ -272,7 +272,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.env.make_snapshot("upgrade_ha")
 
     @test(groups=["deploy_ha_after_upgrade"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_ha_after_upgrade(self):
         """Upgrade and deploy new ha cluster
 
@@ -363,7 +363,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
     """RollbackFuelMaster."""  # TODO documentation
 
     @test(groups=["rollback_automatic_ha"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def rollback_automatically_ha_env(self):
         """Rollback manually ha deployed cluster
 
@@ -421,7 +421,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         self.env.make_snapshot("rollback_automatic_ha")
 
     @test(groups=["rollback_automatic_ha_one_controller"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def rollback_automatically_ha_one_controller_env(self):
         """Rollback automatically ha one controller deployed cluster
 
@@ -491,7 +491,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         self.env.make_snapshot("rollback_automatic_ha_one_controller")
 
     @test(groups=["rollback_automatically_delete_node"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def rollback_automatically_delete_node(self):
         """Rollback automatically ha one controller deployed cluster
            and delete node from cluster

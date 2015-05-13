@@ -21,7 +21,7 @@ from proboscis import test
 import xmlrpclib
 
 from fuelweb_test.helpers import checkers
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import pre_post_actions
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_CENTOS
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -35,7 +35,7 @@ class TestAdminNode(TestBasic):
 
     @test(depends_on=[SetupEnvironment.setup_master],
           groups=["test_cobbler_alive"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def test_cobbler_alive(self):
         """Test current installation has correctly setup cobbler
 
@@ -68,7 +68,7 @@ class TestAdminNode(TestBasic):
 
     @test(depends_on=[SetupEnvironment.setup_master],
           groups=["test_astuted_alive"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def test_astuted_alive(self):
         """Test astute master and worker processes are alive on master node
 
@@ -98,7 +98,7 @@ class TestAdminNode(TestBasic):
 class TestAdminNodeBackupRestore(TestBasic):
     @test(depends_on=[SetupEnvironment.setup_master],
           groups=["backup_restore_master_base"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def backup_restore_master_base(self):
         """Backup/restore master node
 

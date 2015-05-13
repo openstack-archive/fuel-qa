@@ -21,7 +21,7 @@ from proboscis import SkipTest
 
 
 from fuelweb_test import logger
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import pre_post_actions
 from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers import granular_deployment_checkers as gd
 from fuelweb_test.settings import DEPLOYMENT_MODE
@@ -77,7 +77,7 @@ class NeutronGre(TestBasic):
         return self.fuel_web.get_last_created_cluster()
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3])
-    @log_snapshot_on_error
+    @pre_post_actions
     def step_1_create_3_node_cluster_and_provision_nodes(self):
         """Create cluster with 3 node, provision it and create snapshot
           Depends:
@@ -123,7 +123,7 @@ class NeutronGre(TestBasic):
 
     @test(depends_on=[step_1_create_3_node_cluster_and_provision_nodes],
           groups=['run_tasks_end_with_vips'])
-    @log_snapshot_on_error
+    @pre_post_actions
     def run_tasks_end_with_vips(self):
         """Run tasks end with vips.
           Depends:
@@ -270,7 +270,7 @@ class NeutronGre(TestBasic):
 
     @test(depends_on=[run_tasks_end_with_vips],
           groups=['cluster_haproxy_controller'])
-    @log_snapshot_on_error
+    @pre_post_actions
     def step_5_run_cluster_haproxy_controller(self):
         """Execute cluster-haproxy task on controller, create snapshot
           Depends:
@@ -326,7 +326,7 @@ class NeutronGre(TestBasic):
 
     @test(depends_on=[step_5_run_cluster_haproxy_controller],
           groups=['openstack_haproxy_controller'])
-    @log_snapshot_on_error
+    @pre_post_actions
     def step_6_run_openstack_haproxy_controller(self):
         """Execute openstack-haproxy task on controller, create snapshot
           Depends:
@@ -408,7 +408,7 @@ class NeutronGre(TestBasic):
 
     @test(depends_on=[step_6_run_openstack_haproxy_controller],
           groups=['openstack_controller'])
-    @log_snapshot_on_error
+    @pre_post_actions
     def step_7_run_openstack_controller(self):
         """Execute openstack-controller task on controller, create snapshot
           Depends:
@@ -465,7 +465,7 @@ class NeutronGre(TestBasic):
 
     @test(depends_on=[step_7_run_openstack_controller],
           groups=['controller_remaining_tasks'])
-    @log_snapshot_on_error
+    @pre_post_actions
     def step_8_run_controller_remaining_tasks(self):
         """Execute controller_remaining_task task on controller
           Depends:
@@ -555,7 +555,7 @@ class NeutronGre(TestBasic):
 
     @test(depends_on=[step_8_run_controller_remaining_tasks],
           groups=['top_role_compute'])
-    @log_snapshot_on_error
+    @pre_post_actions
     def step_9_run_top_role_compute(self):
         """Execute top-role-compute task on computes, create snapshot
           Depends:
@@ -633,7 +633,7 @@ class NeutronGre(TestBasic):
 
     @test(depends_on=[step_9_run_top_role_compute],
           groups=['top_role_cinder'])
-    @log_snapshot_on_error
+    @pre_post_actions
     def step_10_run_top_role_cinder(self):
         """Execute top-role-cinder task on cinders, create snapshot
           Depends:
