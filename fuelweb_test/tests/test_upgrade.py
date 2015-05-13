@@ -402,7 +402,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
                                            hlp_data.UPGRADE_FUEL_FROM)
         logger.debug("all containers are ok")
         _wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
-            self.env.d_env.nodes().slaves[0]), timeout=120)
+            self.env.d_env.nodes().slaves[0]), timeout=300)
         logger.debug("all services are up now")
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:5])
@@ -467,7 +467,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
                                            hlp_data.UPGRADE_FUEL_FROM)
         logger.debug("all containers are ok")
         _wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
-            self.env.d_env.nodes().slaves[0]), timeout=120)
+            self.env.d_env.nodes().slaves[0]), timeout=300)
         logger.debug("all services are up now")
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:3])
@@ -538,7 +538,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
                                            hlp_data.UPGRADE_FUEL_FROM)
         logger.debug("all containers are ok")
         _wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
-            self.env.d_env.nodes().slaves[0]), timeout=120)
+            self.env.d_env.nodes().slaves[0]), timeout=300)
         logger.debug("all services are up now")
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:3])
