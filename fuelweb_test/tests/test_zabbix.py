@@ -25,11 +25,11 @@ from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
 
 
-@test(groups=["known_issues"])
+@test(enabled=False, groups=["known_issues"])
 class HAOneControllerZabbix(TestBasic):
     """HAOneControllerZabbix."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+    @test(enabled=False, depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ha_one_controller_zabbix"])
     @log_snapshot_on_error
     def deploy_ha_one_controller_zabbix(self):
