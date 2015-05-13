@@ -20,7 +20,7 @@ from proboscis import SkipTest
 
 
 from fuelweb_test import logger
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers import granular_deployment_checkers as gd
 from fuelweb_test.settings import DEPLOYMENT_MODE
@@ -73,7 +73,7 @@ class NeutronVlanCephMongo(TestBasic):
         self.fuel_web.assert_task_success(task=task_sync)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def step_1_create_5_node_cluster_provision(self):
         """Create cluster with 5 node provision and snapshot it
           Depends:
@@ -127,7 +127,7 @@ class NeutronVlanCephMongo(TestBasic):
 
     @test(depends_on=[step_1_create_5_node_cluster_provision],
           groups=['run_tasks_end_with_host_ha'])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def step_2_run_tasks_env_with_hosts(self):
         """Run tasks end with hosts all nodes of the cluster.
           Depends:
@@ -244,7 +244,7 @@ class NeutronVlanCephMongo(TestBasic):
 
     @test(depends_on=[step_2_run_tasks_env_with_hosts],
           groups=['top_role_mongo_single_ha'])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def step_3_run_top_role_mongo_single(self):
         """Run top role mongo task on controller nodes.
           Depends:
@@ -306,7 +306,7 @@ class NeutronVlanCephMongo(TestBasic):
 
     @test(depends_on=[step_3_run_top_role_mongo_single],
           groups=['top_role_primary_mongo_single_ha'])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def step_4_run_top_role_primary_mongo_single(self):
         """Run top role primary mongo task on controller node.
           Depends:
@@ -364,7 +364,7 @@ class NeutronVlanCephMongo(TestBasic):
 
     @test(depends_on=[step_4_run_top_role_primary_mongo_single],
           groups=['cluster_primary_controller_ha'])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def step_5_run_cluster_primary_controller(self):
         """Execute cluster task on primary controller, create snapshot
           Depends:
@@ -419,7 +419,7 @@ class NeutronVlanCephMongo(TestBasic):
 
     @test(depends_on=[step_5_run_cluster_primary_controller],
           groups=['virtual_ips_primary_controller_ha'])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def step_6_run_virtual_ips_primary_controller(self):
         """Execute virtual_ips task on primary controller, create snapshot
           Depends:
@@ -477,7 +477,7 @@ class NeutronVlanCephMongo(TestBasic):
 
     @test(depends_on=[step_6_run_virtual_ips_primary_controller],
           groups=['cluster_haproxy_primary_controller_ha'])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def step_7_run_cluster_haproxy_primary_controller(self):
         """Execute cluster-haproxy task on primary controller, create snapshot
           Depends:
@@ -541,7 +541,7 @@ class NeutronVlanCephMongo(TestBasic):
 
     @test(depends_on=[step_7_run_cluster_haproxy_primary_controller],
           groups=['openstack_haproxy_primary_controller_ha'])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def step_8_run_openstack_haproxy_primary_controller(self):
         """Execute openstack-haproxy task on primary controller
           Depends:
@@ -632,7 +632,7 @@ class NeutronVlanCephMongo(TestBasic):
 
     @test(depends_on=[step_8_run_openstack_haproxy_primary_controller],
           groups=['openstack_primary_controller_ha'])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def step_9_run_openstack_primary_controller(self):
         """Execute openstack-controller task on primary controller
           Depends:
@@ -695,7 +695,7 @@ class NeutronVlanCephMongo(TestBasic):
 
     @test(depends_on=[step_9_run_openstack_primary_controller],
           groups=['primary_controller_remaining_tasks_ha'])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def step_10_run_primary_controller_remaining_tasks(self):
         """Execute controller_remaining_tasks task on primary controller
           Depends:
@@ -787,7 +787,7 @@ class NeutronVlanCephMongo(TestBasic):
 
     @test(depends_on=[step_10_run_primary_controller_remaining_tasks],
           groups=['cluster_controller_ha'])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def step_11_run_cluster_controller(self):
         """Execute cluster task on controller, create snapshot
           Depends:
@@ -852,7 +852,7 @@ class NeutronVlanCephMongo(TestBasic):
 
     @test(depends_on=[step_11_run_cluster_controller],
           groups=['virtual_ips_controller_ha'])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def step_12_run_virtual_ips_controller(self):
         """Execute virtual_ips task on controller, create snapshot
           Depends:
@@ -915,7 +915,7 @@ class NeutronVlanCephMongo(TestBasic):
 
     @test(depends_on=[step_12_run_virtual_ips_controller],
           groups=['cluster_haproxy_controller_ha'])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def step_13_run_cluster_haproxy_controller(self):
         """Execute cluster-haproxy task on controller, create snapshot
           Depends:
@@ -980,7 +980,7 @@ class NeutronVlanCephMongo(TestBasic):
 
     @test(depends_on=[step_13_run_cluster_haproxy_controller],
           groups=['openstack_haproxy_controller_ha'])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def step_14_run_openstack_haproxy_controller(self):
         """Execute openstack-haproxy task on controller, create snapshot
           Depends:
@@ -1072,7 +1072,7 @@ class NeutronVlanCephMongo(TestBasic):
 
     @test(depends_on=[step_14_run_openstack_haproxy_controller],
           groups=['openstack_controller_ha'])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def step_15_run_openstack_controller(self):
         """Execute openstack-controller task on controller, create snapshot
           Depends:
@@ -1134,7 +1134,7 @@ class NeutronVlanCephMongo(TestBasic):
 
     @test(depends_on=[step_15_run_openstack_controller],
           groups=['controller_remaining_tasks_ha'])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def step_16_run_controller_remaining_tasks(self):
         """Execute controller_remaining_tasks task on controller
           Depends:
@@ -1224,7 +1224,7 @@ class NeutronVlanCephMongo(TestBasic):
 
     @test(depends_on=[step_16_run_controller_remaining_tasks],
           groups=['top_role_compute_ha'])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def step_17_run_top_role_compute(self):
         """Execute top-role-compute task on computes, create snapshot
           Depends:
@@ -1303,7 +1303,7 @@ class NeutronVlanCephMongo(TestBasic):
 
     @test(depends_on=[step_17_run_top_role_compute],
           groups=['top_role_ceph_osd_ha'])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def step_18_run_top_role_ceph_osd(self):
         """Execute top-role-ceph_osd task on ceph nodes
           Depends:
@@ -1360,7 +1360,7 @@ class NeutronVlanCephMongo(TestBasic):
 
     @test(depends_on=[step_18_run_top_role_ceph_osd],
           groups=['post_deployment_ha'])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def step_19_run_post_deployment(self):
         """Execute post_deployment tasks on all nodes
           Depends:

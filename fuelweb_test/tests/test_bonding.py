@@ -16,7 +16,7 @@ from proboscis.asserts import assert_equal
 from proboscis import SkipTest
 from proboscis import test
 
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_REDHAT
@@ -30,7 +30,7 @@ class BondingHAOneController(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_bonding_active_backup"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_bonding_active_backup(self):
         """Deploy cluster in ha mode with one controller bonding
 
@@ -119,7 +119,7 @@ class BondingHAOneController(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_bonding_balance_slb"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_bonding_balance_slb(self):
         """Deploy cluster in ha mode with 1 controller and  bonding
 
@@ -213,7 +213,7 @@ class BondingHA(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_bonding_ha_active_backup"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_bonding_ha_active_backup(self):
         """Deploy cluster in HA mode with bonding (active backup)
 
@@ -305,7 +305,7 @@ class BondingHA(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_bonding_ha_balance_slb"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_bonding_ha_balance_slb(self):
         """Deploy cluster in HA mode with bonding (balance SLB)
 

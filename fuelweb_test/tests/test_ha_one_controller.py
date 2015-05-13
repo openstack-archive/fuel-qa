@@ -21,7 +21,7 @@ from proboscis import test
 
 from fuelweb_test.helpers import checkers
 from devops.helpers.helpers import tcp_ping
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.eb_tables import Ebtables
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.settings import DEPLOYMENT_MODE
@@ -39,7 +39,7 @@ class OneNodeDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["deploy_one_node", 'master'])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_one_node(self):
         """Deploy cluster with controller node only
 
@@ -86,7 +86,7 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
           groups=["smoke", "deploy_ha_one_controller_flat",
                   "ha_one_controller_nova_flat", "classic_provisioning",
                   "smoke_nova"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_ha_one_controller_flat(self):
         """Deploy cluster in HA mode (one controller) with flat nova-network
 
@@ -108,7 +108,7 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
 
     @test(enabled=False, depends_on=[deploy_ha_one_controller_flat],
           groups=["ha_one_controller_flat_create_instance"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_one_controller_flat_create_instance(self):
         """Create instance with file injection
 
@@ -146,7 +146,7 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
 
     @test(depends_on=[deploy_ha_one_controller_flat],
           groups=["ha_one_controller_flat_node_deletion"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_one_controller_flat_node_deletion(self):
         """Remove compute from cluster in ha mode with flat nova-network
 
@@ -177,7 +177,7 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ha_one_controller_flat_blocked_vlan"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_one_controller_flat_blocked_vlan(self):
         """Verify network verification with blocked VLANs
 
@@ -225,7 +225,7 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ha_one_controller_flat_add_compute"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_one_controller_flat_add_compute(self):
         """Add compute node to cluster in ha mode
 
@@ -297,7 +297,7 @@ class HAOneControllerVlan(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ha_one_controller_vlan",
                   "ha_one_controller_nova_vlan"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_ha_one_controller_vlan(self):
         """Deploy cluster in ha mode with nova-network VLAN Manager
 
@@ -356,7 +356,7 @@ class HAOneControllerVlan(TestBasic):
 
     @test(depends_on=[deploy_ha_one_controller_vlan],
           groups=["deploy_base_os_node"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_base_os_node(self):
         """Add base-os node to cluster in HA mode with one controller
 
@@ -405,7 +405,7 @@ class MultiroleControllerCinder(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_multirole_controller_cinder"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_multirole_controller_cinder(self):
         """Deploy cluster in HA mode with multi-role controller and cinder
 
@@ -456,7 +456,7 @@ class MultiroleComputeCinder(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_multirole_compute_cinder"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_multirole_compute_cinder(self):
         """Deploy cluster in HA mode with multi-role compute and cinder
 
@@ -501,7 +501,7 @@ class FloatingIPs(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_floating_ips"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_floating_ips(self):
         """Deploy cluster with non-default 3 floating IPs ranges
 
@@ -564,7 +564,7 @@ class HAOneControllerCinder(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ha_one_controller_cinder",
                   "ha_one_controller_nova_cinder"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_ha_one_controller_cinder(self):
         """Deploy cluster in HA mode with cinder
 
@@ -619,7 +619,7 @@ class NodeMultipleInterfaces(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_node_multiple_interfaces"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_node_multiple_interfaces(self):
         """Deploy cluster with networks allocated on different interfaces
 
@@ -677,7 +677,7 @@ class NodeDiskSizes(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["check_nodes_notifications"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def check_nodes_notifications(self):
         """Verify nailgun notifications for discovered nodes
 
@@ -717,7 +717,7 @@ class NodeDiskSizes(TestBasic):
 
     @test(depends_on=[NodeMultipleInterfaces.deploy_node_multiple_interfaces],
           groups=["check_nodes_disks"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def check_nodes_disks(self):
         """Verify hard drive sizes for deployed nodes
 
@@ -774,7 +774,7 @@ class MultinicBootstrap(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["multinic_bootstrap_booting"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def multinic_bootstrap_booting(self):
         """Verify slaves booting with blocked mac address
 
@@ -813,7 +813,7 @@ class DeleteEnvironment(TestBasic):
 
     @test(depends_on=[HAOneControllerFlat.deploy_ha_one_controller_flat],
           groups=["delete_environment"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def delete_environment(self):
         """Delete existing environment
         and verify nodes returns to unallocated state
@@ -852,7 +852,7 @@ class UntaggedNetworksNegative(TestBasic):
         depends_on=[SetupEnvironment.prepare_slaves_3],
         groups=["untagged_networks_negative"],
         enabled=False)
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def untagged_networks_negative(self):
         """Verify network verification fails with untagged network on eth0
 
@@ -915,7 +915,7 @@ class BackupRestoreHAOneController(TestBasic):
 
     @test(depends_on=[HAOneControllerFlat.deploy_ha_one_controller_flat],
           groups=["ha_one_controller_backup_restore"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_one_controller_backup_restore(self):
         """Backup/restore master node with cluster in ha mode
 
@@ -976,7 +976,7 @@ class HAOneControllerFlatUSB(HAOneControllerFlatBase):
     """HAOneControllerFlatUSB."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_ha_one_controller_flat_usb(self):
         """Deploy cluster in HA mode (1 controller) with flat nova-network USB
 

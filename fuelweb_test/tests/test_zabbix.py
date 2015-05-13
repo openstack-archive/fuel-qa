@@ -15,7 +15,7 @@ from nose.tools import assert_equals
 
 from proboscis import test
 
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers import http
 from fuelweb_test.helpers import os_actions
@@ -31,7 +31,7 @@ class HAOneControllerZabbix(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ha_one_controller_zabbix"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_ha_one_controller_zabbix(self):
         """Deploy cluster in ha mode 1 controller with zabbix-server
 

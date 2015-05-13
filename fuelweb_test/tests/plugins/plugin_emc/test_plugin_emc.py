@@ -19,7 +19,7 @@ from proboscis import asserts
 from proboscis import test
 
 from fuelweb_test.helpers import checkers
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings as CONF
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -84,7 +84,7 @@ class EMCPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_emc_ha"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_emc_ha(self):
         """Deploy cluster in ha mode with emc plugin
 
