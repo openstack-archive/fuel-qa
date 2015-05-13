@@ -31,7 +31,7 @@ from testrail_client import TestRailProject
 LOG = logger
 
 
-def parse_xml_report(path_to_report):
+def parse_xml_report(path_to_report, mark_all_tests_failed=False):
     """This function parses the Tempest XML report and returns the list with
     TestResult objects. Each TestResult object corresponds to one of the tests
     and contains all the result information for the respective test.
@@ -39,6 +39,18 @@ def parse_xml_report(path_to_report):
 
     tree = ElementTree.parse(path_to_report)
     test_results = []
+
+    if mark_all_tests_failed:
+        for elem in tree.findall('testcase'):
+            test_result = report.TestResult(name=elem.get('name'),
+                                            group=elem.get('classname'),
+                                            status='failed',
+                                            description=None,
+                                            duration=1)
+            test_results.append(test_result)
+
+        return test_results
+
     for elem in tree.findall('testcase'):
         status = 'passed'
         description = None
@@ -111,6 +123,10 @@ def main():
     parser.add_option('-m', '--multithreading', dest='threads_count',
                       default=100, help='The count of threads '
                                         'for uploading the test results')
+    parser.add_option('-f', '--fail-all-tests', dest='all_tests_failed',
+                      action='store_true', help='Mark all Tempest tests as '
+                                                'failed regardless of genuine '
+                                                'results.')
 
     (options, args) = parser.parse_args()
 
@@ -137,7 +153,7 @@ def main():
     # STEP #2
     # Parse the test results
     LOG.info('Parsing the test results...')
-    test_results = parse_xml_report(options.path)
+    test_results = parse_xml_report(options.path, options.all_tests_failed)
     LOG.info('The test results have been parsed.')
 
     # STEP #3
