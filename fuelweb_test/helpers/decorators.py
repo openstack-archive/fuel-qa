@@ -51,11 +51,17 @@ def save_logs(url, filename):
         logger.error(e)
 
 
-def log_snapshot_on_error(func):
-    """Snapshot environment in case of error.
+def pre_post_actions(func):
+    """Pre- and post-actions for every test case.
 
-    Decorator to snapshot environment when error occurred in test.
-    And always fetch diagnostic snapshot from master node
+    Includes:
+      - Show test case method name and scenario from docstring.
+
+      - Create a diagnostic snapshot of environment in cases:
+            - if the test case passed;
+            - if error occurred in the test case.
+        Fetch logs from master node if creating the diagnostic
+        snapshot has failed.
     """
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -63,7 +69,17 @@ def log_snapshot_on_error(func):
                     .format(func.__name__) + "#" * 30 + ">" * 5 + "\n{}"
                     .format(''.join(func.__doc__)))
         try:
-            return func(*args, **kwargs)
+            result = func(*args, **kwargs)
+
+            if settings.ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT:
+                if args[0].env is None:
+                    logger.warning("Can't get diagnostic snapshot: "
+                                   "unexpected class is decorated.")
+                    return result
+                args[0].env.resume_environment()
+                create_diagnostic_snapshot(args[0].env, "pass", func.__name__)
+            return result
+
         except SkipTest:
             raise SkipTest()
         except Exception as test_exception:

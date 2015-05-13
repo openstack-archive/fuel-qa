@@ -23,7 +23,7 @@ from devops.helpers.helpers import wait
 from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers import patching
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import pre_post_actions
 from fuelweb_test.helpers.utils import install_pkg
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -45,7 +45,7 @@ class PatchingTests(TestBasic):
 
     @test(groups=["patching_environment"],
           depends_on_groups=['prepare_patching_environment'])
-    @log_snapshot_on_error
+    @pre_post_actions
     def patching_environment(self):
         """Apply patches on deployed environment
 
@@ -124,7 +124,7 @@ class PatchingMasterTests(TestBasic):
 
     @test(groups=["patching_test"],
           depends_on_groups=['prepare_master_environment'])
-    @log_snapshot_on_error
+    @pre_post_actions
     def patching_test(self):
         """Apply patches on deployed master
 
@@ -208,7 +208,7 @@ class PatchingMasterTests(TestBasic):
 
     @test(groups=["patching_master"],
           depends_on_groups=['patching_test'])
-    @log_snapshot_on_error
+    @pre_post_actions
     def patching_master(self):
         """
         Deploy cluster after master node patching

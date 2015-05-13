@@ -49,7 +49,7 @@ from xml.etree import ElementTree
 from proboscis import SkipTest
 from proboscis import test
 
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import pre_post_actions
 from fuelweb_test.models import nailgun_client as nc
 from fuelweb_test.tests import base_test_case
 from fuelweb_test.helpers import conf_tempest
@@ -158,7 +158,7 @@ class TestByTempest(base_test_case.TestBasic):
             raise SkipTest()
 
     @test(groups=["tempest_set"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def tempest_set(self):
         """Prepare cluster and launch Tempest tests from TEMPEST_TEST_SET
 
@@ -200,7 +200,7 @@ class TestByTempest(base_test_case.TestBasic):
         _prepare_and_run(tempest_set)
 
     @test(groups=["tempest_list"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def tempest_list(self):
         """Prepare cluster and launch Tempest tests from TEMPEST_TESTS_LIST
 

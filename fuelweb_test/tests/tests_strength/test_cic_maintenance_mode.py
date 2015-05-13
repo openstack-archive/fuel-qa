@@ -23,7 +23,7 @@ from proboscis import test
 
 from fuelweb_test.helpers.checkers import check_auto_mode
 from fuelweb_test.helpers.checkers import check_available_mode
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import pre_post_actions
 from fuelweb_test import logger
 from fuelweb_test import ostf_test_mapping as map_ostf
 from fuelweb_test import settings
@@ -37,7 +37,7 @@ class CICMaintenanceMode(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["cic_maintenance_mode_env"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def cic_maintenance_mode_env(self):
         """Deploy cluster in HA mode with 3 controller for maintenance mode
 
@@ -84,7 +84,7 @@ class CICMaintenanceMode(TestBasic):
     @test(depends_on=[cic_maintenance_mode_env],
           groups=["manual_cic_maintenance_mode",
                   "positive_cic_maintenance_mode"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def manual_cic_maintenance_mode(self):
         """Check manual maintenance mode for controller
 
@@ -185,7 +185,7 @@ class CICMaintenanceMode(TestBasic):
     @test(depends_on=[cic_maintenance_mode_env],
           groups=["auto_cic_maintenance_mode",
                   "positive_cic_maintenance_mode"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def auto_cic_maintenance_mode(self):
         """Check auto maintenance mode for controller
 
@@ -303,7 +303,7 @@ class CICMaintenanceMode(TestBasic):
     @test(depends_on=[cic_maintenance_mode_env],
           groups=["negative_manual_cic_maintenance_mode",
                   "negative_cic_maintenance_mode"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def negative_manual_cic_maintenance_mode(self):
         """Check negative scenario for manual maintenance mode
 
@@ -364,7 +364,7 @@ class CICMaintenanceMode(TestBasic):
     @test(depends_on=[cic_maintenance_mode_env],
           groups=["negative_auto_cic_maintenance_mode",
                   "negative_cic_maintenance_mode"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def negative_auto_cic_maintenance_mode(self):
         """Check negative scenario for auto maintenance mode
 

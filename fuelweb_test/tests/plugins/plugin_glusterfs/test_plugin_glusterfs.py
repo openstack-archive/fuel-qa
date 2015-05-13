@@ -17,7 +17,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import test
 
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import pre_post_actions
 from fuelweb_test.helpers import checkers
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import GLUSTER_CLUSTER_ENDPOINT
@@ -46,7 +46,7 @@ class GlusterfsPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ha_one_controller_glusterfs"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_ha_one_controller_glusterfs_simple(self):
         """Deploy cluster with one controller and glusterfs plugin
 
@@ -127,7 +127,7 @@ class GlusterfsPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_glusterfs_ha"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_glusterfs_ha(self):
         """Deploy cluster in ha mode with glusterfs plugin
 

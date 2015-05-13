@@ -21,7 +21,7 @@ from proboscis import SkipTest
 from proboscis import test
 
 from fuelweb_test.helpers import checkers
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import pre_post_actions
 from fuelweb_test.helpers import packages_fixture
 from fuelweb_test.helpers import utils
 from fuelweb_test import settings as hlp_data
@@ -38,7 +38,7 @@ class TestPatch(TestBasic):
         self.snapshot = snapshot
 
     @test
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_and_patch(self):
         """Update OS on reverted env
 
@@ -284,7 +284,7 @@ class TestPatch(TestBasic):
 
     # TODO (tleontovich) enable if rollback will be available
     # @test(depends_on=[deploy_and_patch])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_and_rollback(self):
         """Rollback/Downgrade os on reverted env
 

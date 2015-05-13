@@ -427,3 +427,7 @@ EMC_SP_B_IP = os.environ.get('EMC_SP_B_IP')
 EMC_USERNAME = os.environ.get('EMC_USERNAME')
 EMC_PASSWORD = os.environ.get('EMC_PASSWORD')
 EMC_POOL_NAME = os.environ.get('EMC_POOL_NAME', '')
+
+ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT = os.environ.get(
+    'ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT', 'false') == 'true'
+    

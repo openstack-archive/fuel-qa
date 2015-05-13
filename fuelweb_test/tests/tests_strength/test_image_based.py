@@ -15,7 +15,7 @@ import time
 from devops.helpers.helpers import wait
 from proboscis import test
 
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import pre_post_actions
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -27,7 +27,7 @@ class RepeatableImageBased(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["repeatable_image_based", "image_based"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def repeatable_image_based(self):
         """Provision new cluster many times after deletion the old one
 

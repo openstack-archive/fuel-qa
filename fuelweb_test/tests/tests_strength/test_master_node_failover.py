@@ -18,7 +18,7 @@ from proboscis import test
 from fuelweb_test.helpers import common
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers import os_actions
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import pre_post_actions
 from fuelweb_test import settings
 from fuelweb_test import logger
 from fuelweb_test.tests import base_test_case
@@ -100,7 +100,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha_dns_ntp", "ha_neutron"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_ha_dns_ntp(self):
         """Use external ntp and dns in ha mode
 
@@ -156,7 +156,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
 
     @test(depends_on=[deploy_ha_dns_ntp],
           groups=["external_dns_ha", "ha_neutron"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def external_dns_ha(self):
         """Check external dns in ha mode
 
@@ -177,7 +177,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
 
     @test(depends_on=[deploy_ha_dns_ntp],
           groups=["external_ntp_ha", "ha_neutron"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def external_ntp_ha(self):
         """Check external ntp in ha mode
 

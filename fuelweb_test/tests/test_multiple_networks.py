@@ -17,7 +17,7 @@ from proboscis import test
 from proboscis.asserts import assert_equal
 
 from fuelweb_test.helpers.decorators import check_fuel_statistics
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import pre_post_actions
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
 from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import NODEGROUPS
@@ -31,7 +31,7 @@ class TestMultipleClusterNets(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["multiple_cluster_networks", "multiple_cluster_net_setup"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def multiple_cluster_net_setup(self):
         """Check master node deployment and configuration with 2 sets of nets
 
@@ -68,7 +68,7 @@ class TestMultipleClusterNets(TestBasic):
     @test(depends_on=[multiple_cluster_net_setup],
           groups=["multiple_cluster_networks",
                   "multiple_cluster_net_neutron_gre_ha", "thread_7"])
-    @log_snapshot_on_error
+    @pre_post_actions
     @check_fuel_statistics
     def deploy_neutron_gre_ha_nodegroups(self):
         """Deploy HA environment with NeutronGRE and 2 nodegroups
@@ -124,7 +124,7 @@ class TestMultipleClusterNets(TestBasic):
     @test(depends_on=[multiple_cluster_net_setup],
           groups=["multiple_cluster_networks",
                   "multiple_cluster_net_ceph_ha", "thread_7"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_ceph_ha_nodegroups(self):
         """Deploy HA environment with NeutronGRE, Ceph and 2 nodegroups
 

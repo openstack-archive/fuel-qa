@@ -19,7 +19,7 @@ import time
 from proboscis import test
 from proboscis.asserts import assert_true
 
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import pre_post_actions
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.common import Common
 from fuelweb_test import logger
@@ -149,7 +149,7 @@ class ContrailPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["install_contrail"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def install_contrail(self):
         """Install Contrail Plugin and create cluster
 
@@ -171,7 +171,7 @@ class ContrailPlugin(TestBasic):
 
     @test(depends_on=[install_contrail],
           groups=["deploy_contrail"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_contrail(self):
         """Deploy a cluster with Contrail Plugin
 
@@ -208,7 +208,7 @@ class ContrailPlugin(TestBasic):
 
     @test(depends_on=[install_contrail],
           groups=["deploy_controller_compute_contrail"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_controller_compute_contrail(self):
         """Deploy cluster with 1 controller, 1 compute,
         3 base-os and install contrail plugin
@@ -270,7 +270,7 @@ class ContrailPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["contrail_plugin_add_delete_compute_node"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def contrail_plugin_add_delete_compute_node(self):
         """Verify that Compute node can be
         deleted and added after deploying
@@ -348,7 +348,7 @@ class ContrailPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["deploy_ha_contrail_plugin"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def deploy_ha_contrail_plugin(self):
         """Deploy HA Environment with Contrail Plugin
 
@@ -449,7 +449,7 @@ class ContrailPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["contrail_plugin_add_delete_controller_node"])
-    @log_snapshot_on_error
+    @pre_post_actions
     def contrail_plugin_add_delete_controller_node(self):
         """Verify that Controller node can be
         deleted and added after deploying
