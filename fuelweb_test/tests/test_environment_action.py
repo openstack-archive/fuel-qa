@@ -18,7 +18,7 @@ from proboscis import asserts
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import check_fuel_statistics
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
 from fuelweb_test import settings as hlp_data
 from fuelweb_test import logger
@@ -32,7 +32,7 @@ class EnvironmentAction(base_test_case.TestBasic):
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_flat_stop_reset_on_deploying",
                   "classic_provisioning"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     @check_fuel_statistics
     def deploy_flat_stop_on_deploying(self):
         """Stop reset cluster in HA mode with flat nova-network
@@ -97,7 +97,7 @@ class EnvironmentAction(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_flat_stop_reset_on_provisioning"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_flat_stop_reset_on_provisioning(self):
         """Stop provisioning cluster in HA mode with flat nova-network
 
@@ -158,7 +158,7 @@ class EnvironmentAction(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_reset_on_ready"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     @check_fuel_statistics
     def deploy_reset_on_ready(self):
         """Stop reset cluster in HA mode with 1 controller
@@ -224,7 +224,7 @@ class EnvironmentActionOnHA(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
           groups=["smoke", "deploy_stop_reset_on_ha"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_stop_reset_on_ha(self):
         """Stop reset cluster in ha mode
 

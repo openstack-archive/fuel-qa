@@ -21,7 +21,7 @@ from proboscis.asserts import assert_equal
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.common import Common
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
 from fuelweb_test import settings
 from fuelweb_test import logger as LOGGER
@@ -37,7 +37,7 @@ class SaharaHAOneController(TestBasic):
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_sahara_ha_one_controller_gre"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_sahara_ha_one_controller_gre(self):
         """Deploy cluster in ha mode with 1 controller Sahara and Neutron GRE
 
@@ -139,7 +139,7 @@ class SaharaHA(TestBasic):
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_sahara_ha_gre"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_sahara_ha_gre(self):
         """Deploy cluster in HA mode with Sahara and Neutron GRE
 
@@ -243,7 +243,7 @@ class MuranoHAOneController(TestBasic):
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_murano_ha_one_controller_gre"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_murano_ha_one_controller_gre(self):
         """Deploy cluster in HA mode with Murano and Neutron GRE
 
@@ -332,7 +332,7 @@ class MuranoHA(TestBasic):
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_murano_ha_with_gre"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_murano_ha_with_gre(self):
         """Deploy cluster in ha mode with Murano and Neutron GRE
 
@@ -480,7 +480,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ceilometer_ha_one_controller_with_mongo"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_ceilometer_ha_one_controller_with_mongo(self):
         """Deploy cluster in HA mode with Ceilometer
 
@@ -560,7 +560,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ceilometer_ha_one_controller_multirole"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_ceilometer_ha_one_controller_multirole(self):
         """Deploy cluster in ha multirole mode with Ceilometer
 
@@ -608,7 +608,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
 class CeilometerHAMongo(OSTFCeilometerHelper):
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ceilometer_ha_with_mongo"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_ceilometer_ha_with_mongo(self):
         """Deploy cluster in ha mode with Ceilometer
 
@@ -661,7 +661,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ceilometer_ha_multirole"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_ceilometer_ha_multirole(self):
         """Deploy cluster in ha multirole mode with Ceilometer
 
@@ -709,7 +709,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ceilometer_ha_with_external_mongo"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_ceilometer_ha_with_external_mongo(self):
         """Deploy cluster in ha mode with Ceilometer and external Mongo
 
@@ -777,7 +777,7 @@ class HeatHAOneController(TestBasic):
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_heat_ha_one_controller_neutron"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_heat_ha_one_controller_neutron(self):
         """Deploy Heat cluster in HA mode with Neutron GRE
 
@@ -861,7 +861,7 @@ class HeatHAOneController(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_heat_ha_one_controller_nova"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_heat_ha_one_controller_nova(self):
         """Deploy Heat cluster in ha mode with Nova Network
 
@@ -949,7 +949,7 @@ class HeatHA(TestBasic):
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_heat_ha"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_heat_ha(self):
         """Deploy Heat cluster in HA mode
 

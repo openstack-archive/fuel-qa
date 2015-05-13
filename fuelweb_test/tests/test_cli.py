@@ -17,7 +17,7 @@ from proboscis.asserts import assert_equal
 
 from devops.error import TimeoutError
 from devops.helpers.helpers import wait
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -29,7 +29,7 @@ class CommandLine(TestBasic):
 
     @test(depends_on=[SetupEnvironment.setup_with_custom_manifests],
           groups=["hiera_deploy"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def hiera_deploy(self):
         """Deploy cluster with controller node only
 

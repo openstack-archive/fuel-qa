@@ -20,7 +20,7 @@ from proboscis import test
 from proboscis import SkipTest
 
 from fuelweb_test.helpers import checkers
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -34,7 +34,7 @@ class TestHaVLAN(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha_vlan", "ha_nova_vlan"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_ha_vlan(self):
         """Deploy cluster in HA mode with VLAN Manager
 
@@ -125,7 +125,7 @@ class TestHaFlat(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha_flat", "ha_nova_flat"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_ha_flat(self):
         """Deploy cluster in HA mode with flat nova-network
 
@@ -207,7 +207,7 @@ class TestHaFlat(TestBasic):
 
     @test(depends_on_groups=['deploy_ha_flat'],
           groups=["ha_flat_addremove"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_flat_addremove(self):
         """Add and re-add cinder / compute + cinder to HA cluster
 
@@ -263,7 +263,7 @@ class TestHaFlatAddCompute(TestBasic):
 
     @test(depends_on_groups=['deploy_ha_flat'],
           groups=["ha_flat_add_compute"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_flat_add_compute(self):
         """Add compute node to cluster in HA mode with flat nova-network
 
@@ -304,7 +304,7 @@ class TestHaFlatScalability(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["ha_flat_scalability", "ha_nova_flat_scalability"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_flat_scalability(self):
         """Check HA mode on scalability
 
@@ -432,7 +432,7 @@ class BackupRestoreHa(TestBasic):
 
     @test(depends_on=[TestHaFlat.deploy_ha_flat],
           groups=["known_issues", "backup_restore_ha_flat"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def backup_restore_ha_flat(self):
         """Backup/restore master node with cluster in ha mode
 
