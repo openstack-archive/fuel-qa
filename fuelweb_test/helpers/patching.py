@@ -88,6 +88,10 @@ def map_test(target):
     if 'fixed-pkgs' in errata.keys():
         settings.PATCHING_PKGS = set([re.split('=|<|>', package)[0] for package
                                       in errata['fixed-pkgs'][distro.lower()]])
+    if 'rally' in errata.keys():
+        if len(errata['rally']) > 0:
+            settings.PATCHING_RUN_RALLY = True
+            settings.RALLY_TAGS = errata['rally']
     available_packages = set()
     logger.debug('{0}'.format(settings.PATCHING_MIRRORS))
     for repo in settings.PATCHING_MIRRORS:

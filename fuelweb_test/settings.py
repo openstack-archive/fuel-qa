@@ -413,6 +413,7 @@ PATCHING_APPLY_TESTS = os.environ.get("PATCHING_APPLY_TESTS",
                                       "./patching_tests")
 PATCHING_PKGS = os.environ.get("PATCHING_PKGS", None)
 PATCHING_SNAPSHOT = os.environ.get("PATCHING_SNAPSHOT", None)
+PATCHING_RUN_RALLY = os.environ.get("PATCHING_RUN_RALLY", 'false') == 'true'
 
 DOWNLOAD_LINK = os.environ.get(
     'DOWNLOAD_LINK', 'http://releases.ubuntu.com/14.04.2/'
@@ -433,3 +434,4 @@ ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT = os.environ.get(
 
 RALLY_DOCKER_REPO = os.environ.get('RALLY_DOCKER_REPO', 'rallyforge/rally')
 RALLY_CONTAINER_NAME = os.environ.get('RALLY_CONTAINER_NAME', 'rally')
+RALLY_TAGS = os.environ.get('RALLY_TAGS', 'nova').split(',')
