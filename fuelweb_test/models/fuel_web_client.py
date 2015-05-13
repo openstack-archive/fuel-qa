@@ -1931,3 +1931,26 @@ class FuelWebClient(object):
                 plugin_data = plugin_data[p]
             plugin_data[path[-1]] = value
         self.client.update_cluster_attributes(cluster_id, attr)
+
+    @logwrap
+    def prepare_ceph_to_delete(self, remote_ceph):
+        hostname = ''.join(remote_ceph.execute(
+            "hostname -f")['stdout']).replace('.' +
+                                              self.environment.d_env.domain,
+                                              "")
+        osd_tree = checkers.get_osd_tree(remote_ceph)
+        logger.debug("osd tree is {0}".format(osd_tree))
+
+        for osd in osd_tree['nodes']:
+            if hostname in osd['name']:
+                ids = osd['children']
+
+        logger.debug("ids are {}".format(ids))
+
+        for id in ids:
+            remote_ceph.execute("ceph osd out {}".format(id))
+        wait(lambda: checkers.check_ceph_health(remote_ceph),
+             interval=30, timeout=10 * 60)
+        for id in ids:
+            remote_ceph.execute("service ceph stop osd.{}".format(id))
+            remote_ceph.execute("ceph osd crush remove osd.{}".format(id))
