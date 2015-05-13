@@ -13,7 +13,9 @@
 #    under the License.
 
 from proboscis import test
+import time
 
+from devops.helpers.helpers import wait
 from fuelweb_test.helpers.decorators import log_snapshot_on_error
 from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE
@@ -22,8 +24,14 @@ from fuelweb_test.settings import VCENTER_USERNAME
 from fuelweb_test.settings import VCENTER_PASSWORD
 from fuelweb_test.settings import VCENTER_DATACENTER
 from fuelweb_test.settings import VCENTER_DATASTORE
+from fuelweb_test.settings import SERVTEST_USERNAME
+from fuelweb_test.settings import SERVTEST_PASSWORD
+from fuelweb_test.settings import SERVTEST_TENANT
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
+
+from fuelweb_test.helpers import os_actions
+from proboscis.asserts import assert_true
 
 
 @test(groups=["vcenter"])
@@ -637,3 +645,128 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
             timeout=60 * 60)
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["vcenter_multiple_cluster"])
+    @log_snapshot_on_error
+    def vcenter_multiple_cluster(self):
+        """Deploy environment in DualHypervisors mode \
+        Check network connection between VM's from different hypervisors.
+
+        Scenario:
+            1. Create cluster with vCenter support
+            2. Add 3 nodes with Controller roles
+            3. Add 2 nodes with compute role
+            4. Deploy the cluster
+            5. Run network verification
+            6. Run OSTF
+            7. Create 2 VMs on each of hypervisor
+            8. Verify that VMs on different hypervisors should communicate
+                between each other
+
+        Duration 112 min
+
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            vcenter_value={
+                "availability_zones": [
+                    {"vcenter_username": VCENTER_USERNAME,
+                     "nova_computes": [
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster1",
+                          "service_name": "vmcluster1"
+                          },
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster2",
+                          "service_name": "vmcluster2"
+                          },
+                     ],
+                     "vcenter_host": VCENTER_IP,
+                     "az_name": "vcenter",
+                     "vcenter_password": VCENTER_PASSWORD,
+                     }],
+                "network": {"esxi_vlan_interface": "vmnic1"}
+            }
+        )
+
+        logger.debug("cluster is {}".format(cluster_id))
+
+        # Assign role to node
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller'],
+             'slave-02': ['controller'],
+             'slave-03': ['controller'],
+             'slave-04': ['compute'],
+             'slave-05': ['compute']})
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
+            timeout=60 * 60)
+
+        os_ip = self.fuel_web.get_public_vip(cluster_id)
+        os_conn = os_actions.OpenStackActions(
+            os_ip, SERVTEST_USERNAME,
+            SERVTEST_PASSWORD,
+            SERVTEST_TENANT)
+
+        # Get list of available images,flavors and hipervisors
+        images_list = os_conn.nova.images.list()
+        flavors_list = os_conn.nova.flavors.list()
+        hypervisors_list = os_conn.get_hypervisors()
+
+        # Create VMs on each of hypervisor
+        for image in images_list:
+            for i in range(0, len(images_list)):
+                os_conn.nova.servers.create(
+                    flavor=flavors_list[0],
+                    name='test_{0}_{1}'.format(image.name, i), image=image)
+
+        # Wait for launch VMs
+        for hypervisor in hypervisors_list:
+            t1 = time.time()
+            while time.time() < t1 + 300:
+                if os_conn.get_hypervisor_vms_count(hypervisor) != 0:
+                    break
+
+        # Verify that current state of each VMs is Active
+        srv_list = os_conn.get_servers()
+        for srv in srv_list:
+            wait(
+                lambda: os_conn.get_instance_detail(srv).status == "ACTIVE",
+                timeout=100)
+            logger.info(
+                "Current state of Vm is {}".format(
+                    os_conn.get_instance_detail(srv).status))
+        # Get ip of VMs
+        srv_ip = []
+        srv_list = os_conn.get_servers()
+        for srv in srv_list:
+            ip = srv.networks[srv.networks.keys()[0]][0]
+            srv_ip.append(ip)
+
+        # VMs on different hypervisors should communicate between each other
+        for ip_1 in srv_ip:
+            for ip_2 in srv_ip:
+                if ip_1 != ip_2:
+                    ssh = self.fuel_web.get_ssh_for_node("slave-01")
+                    wait(lambda: not ssh.execute(
+                        'curl -s -m1 http://' + ip_1 +
+                        ':22 |grep -iq "[a-z]"')['exit_code'],
+                        interval=10, timeout=10
+                    )
+                    # Check server's connectivity
+                    res = int(os_conn.execute_through_host(
+                        ssh, ip_1, "ping -q -c3 " + ip_2 +
+                        "| grep -o '[0-9] packets received' | cut -f1 -d ' '"
+                        ))
+                    assert_true(
+                        res == 3,
+                        "Error in Instances network connectivity.")
