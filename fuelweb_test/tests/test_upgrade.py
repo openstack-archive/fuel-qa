@@ -102,9 +102,10 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id),
             user='ceph1', tenant='ceph1', passwd='ceph1')
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=7 if hlp_data.NEUTRON_ENABLE else 10,
-            networks_count=1, timeout=300)
+        self.fuel_web.assert_cluster_ready(os_conn,
+            smiles_count=7 if hlp_data.NEUTRON_ENABLE else 10,
+            networks_count=2 if hlp_data.NEUTRON_ENABLE else 1,
+            timeout=300)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
             _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
