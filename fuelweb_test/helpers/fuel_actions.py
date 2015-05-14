@@ -115,7 +115,7 @@ class AdminActions(BaseActions):
         cmd = "ps -C fuelmenu"
         wait(lambda: self.admin_remote.execute(cmd)['exit_code'], 60)
 
-        cmd = ("sed -ri 's/\bdhcp_gateway\b.*/dhcp_gateway: \"{0}\"/' {1} &&"
+        cmd = ("sed -i 's/dhcp_gateway:.*/dhcp_gateway: {0}/' {1} &&"
                "sed -i 's/\\(DNS_UPSTREAM:\\)/\\1 {0}/' {1} &&"
                "sed -i 's/\\(nameserver\\) \\(.*\\)/\\1 {0} \\2/' {2}"
                .format(router, config, resolv))
