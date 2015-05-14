@@ -15,7 +15,7 @@
 from proboscis import SkipTest
 from proboscis import test
 
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import DEPLOYMENT_MODE, NEUTRON_ENABLE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_REDHAT
@@ -29,7 +29,7 @@ class TestPullRequest(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_pr_ha"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_pr_ha(self):
         """Deploy one-controller cluster in HA mode with Neutron GRE
 

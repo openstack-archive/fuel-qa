@@ -20,7 +20,7 @@ from proboscis import test
 
 from fuelweb_test import logger
 from fuelweb_test import settings
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.tests import base_test_case
@@ -86,7 +86,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
           groups=["deploy_ha_neutron"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_ha_neutron(self):
         """Deploy cluster in HA mode, Neutron with GRE segmentation
 
@@ -133,7 +133,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
     @test(depends_on=[deploy_ha_neutron],
           groups=["neutron_l3_migration"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def neutron_l3_migration(self):
         """Check l3-agent rescheduling after l3-agent dies
 
@@ -199,7 +199,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
     @test(depends_on=[deploy_ha_neutron],
           groups=["neutron_l3_migration_after_reset"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def neutron_l3_migration_after_reset(self):
         """Check l3-agent rescheduling after reset non-primary controller
 
@@ -264,7 +264,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
     @test(depends_on=[deploy_ha_neutron],
           groups=["neutron_l3_migration_after_destroy"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def neutron_l3_migration_after_destroy(self):
         """Check l3-agent rescheduling after destroy non-primary controller
 
@@ -341,7 +341,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
     @test(depends_on=[deploy_ha_neutron],
           groups=["neutron_packets_drops_stat"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def neutron_packets_drop_stat(self):
         """Check packets drops statistic when size is equal to MTU
 

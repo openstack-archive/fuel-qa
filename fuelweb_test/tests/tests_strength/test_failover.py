@@ -14,7 +14,7 @@
 
 from proboscis import test
 
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.tests_strength.test_failover_base\
     import TestHaFailoverBase
@@ -28,7 +28,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha", "prepare_ha_neutron"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def prepare_ha_neutron(self):
         """Prepare cluster in HA/Neutron mode for failover tests
 
@@ -46,7 +46,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_destroy_controllers", "ha_destroy_controllers"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_neutron_destroy_controllers(self):
         """Destroy two controllers and check pacemaker status is correct
 
@@ -66,7 +66,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_disconnect_controllers",
                   "ha_disconnect_controllers"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_neutron_disconnect_controllers(self):
         """Disconnect controllers and check pacemaker status is correct
 
@@ -85,7 +85,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_delete_vips", "ha_delete_vips"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_neutron_delete_vips(self):
         """Delete management and public VIPs 10 times.
         Verify that they are restored.
@@ -103,7 +103,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_mysql_termination", "ha_mysql_termination"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_neutron_mysql_termination(self):
         """Terminate mysql on all controllers one by one
 
@@ -120,7 +120,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_haproxy_termination", "ha_haproxy_termination"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_neutron_haproxy_termination(self):
         """Terminate haproxy on all controllers one by one
 
@@ -138,7 +138,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_pacemaker_configuration",
                   "ha_pacemaker_configuration"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_neutron_pacemaker_configuration(self):
         """Verify resources are configured
 
@@ -154,7 +154,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
     @test(enabled=False, depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_pacemaker_restart_heat_engine",
                   "ha_pacemaker_restart_heat_engine"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_neutron_pacemaker_restart_heat_engine(self):
         """Verify heat engine service is restarted
          by pacemaker on amqp connection loss
@@ -174,7 +174,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(enabled=False, depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_check_monit", "ha_check_monit"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_neutron_check_monit(self):
         """Verify monit restarted nova
          service if it was killed
@@ -190,7 +190,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_virtual_router"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_neutron_virtual_router(self):
         """Verify connection is present and
         downloading maintained by conntrackd
@@ -209,7 +209,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["check_neutron_package_loss"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_neutron_packages_loss(self):
         """Check cluster recovery if br-mgmt loss 75% packages
 
@@ -224,7 +224,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_check_alive_rabbit"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_neutron_check_alive_rabbit(self):
         """Check alive rabbit node is not kicked from cluster
            when corosync service on node dies
@@ -247,7 +247,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_check_dead_rabbit"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_neutron_check_dead_rabbit(self):
         """Check dead rabbit node is kicked from cluster
            when corosync service on node dies
@@ -273,7 +273,7 @@ class TestHaNovaFailover(TestHaFailoverBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["prepare_ha_nova"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def prepare_ha_nova(self):
         """Prepare cluster in HA/Nova mode for failover tests
 
@@ -291,7 +291,7 @@ class TestHaNovaFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_nova'],
           groups=["ha_nova_destroy_controllers"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_nova_destroy_controllers(self):
         """Destroy two controllers and check pacemaker status is correct
 
@@ -310,7 +310,7 @@ class TestHaNovaFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_nova'],
           groups=["ha_nova_disconnect_controllers"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_nova_disconnect_controllers(self):
         """Disconnect controllers on environment with nova network
 
@@ -328,7 +328,7 @@ class TestHaNovaFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_nova'],
           groups=["ha_nova_delete_vips", "ha_delete_vips"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_nova_delete_vips(self):
         """Delete management and public VIPs 10 times.
         Verify that they are restored.
@@ -346,7 +346,7 @@ class TestHaNovaFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_nova'],
           groups=["ha_nova_mysql_termination"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_nova_mysql_termination(self):
         """Terminate mysql on all controllers one by one
 
@@ -363,7 +363,7 @@ class TestHaNovaFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_nova'],
           groups=["ha_nova_haproxy_termination"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_nova_haproxy_termination(self):
         """Terminate haproxy on all controllers one by one
 
@@ -380,7 +380,7 @@ class TestHaNovaFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_nova'],
           groups=["ha_nova_pacemaker_configuration"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_nova_pacemaker_configuration(self):
         """Verify resources are configured
 
@@ -395,7 +395,7 @@ class TestHaNovaFailover(TestHaFailoverBase):
 
     @test(enabled=False, depends_on_groups=['prepare_ha_nova'],
           groups=["ha_nova_pacemaker_restart_heat_engine"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_nova_pacemaker_restart_heat_engine(self):
         """Verify heat engine service is restarted
          by pacemaker on amqp connection loss
@@ -415,7 +415,7 @@ class TestHaNovaFailover(TestHaFailoverBase):
 
     @test(enabled=False, depends_on_groups=['prepare_ha_nova'],
           groups=["ha_nova_check_monit"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_nova_check_monit(self):
         """Verify monit restarted nova
          service if it was killed
@@ -431,7 +431,7 @@ class TestHaNovaFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_nova'],
           groups=["check_nova_package_loss"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_nova_packages_loss(self):
         """Check cluster recovery if br-mgmt loss 75% packages
 
@@ -446,7 +446,7 @@ class TestHaNovaFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_nova'],
           groups=["ha_nova_check_alive_rabbit"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_nova_check_alive_rabbit(self):
         """Check alive rabbit node is not kicked from cluster
            when corosync service on node dies
@@ -469,7 +469,7 @@ class TestHaNovaFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_nova'],
           groups=["ha_nova_check_dead_rabbit"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_nova_check_dead_rabbit(self):
         """Check dead rabbit node is kicked from cluster
            when corosync service on node dies

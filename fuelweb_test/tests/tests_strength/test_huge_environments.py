@@ -15,7 +15,7 @@
 from proboscis import SkipTest
 from proboscis import test
 
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
 from fuelweb_test.tests import base_test_case
 from fuelweb_test.helpers import os_actions
@@ -27,7 +27,7 @@ class HugeEnvironments(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_9],
           groups=["nine_nodes_mixed"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def nine_nodes_mixed(self):
         """Deploy cluster with mixed roles on 9 nodes in HA mode
 
@@ -82,7 +82,7 @@ class HugeEnvironments(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_9],
           groups=["nine_nodes_separate_roles"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def nine_nodes_separate_roles(self):
         """Deploy cluster with separate roles on 9 nodes in HA mode with GRE
 
@@ -147,7 +147,7 @@ class HugeHaNeutron(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_9],
           groups=["huge_ha_neutron_gre_ceph_ceilometer_rados"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def huge_ha_neutron_gre_ceph_ceilometer_rados(self):
         """Deploy cluster in HA mode with Neutron GRE, RadosGW
 
@@ -226,7 +226,7 @@ class HugeHaNeutron(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_9],
           groups=["huge_ha_neutron_vlan_ceph_ceilometer_rados"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def huge_ha_neutron_vlan_ceph_ceilometer_rados(self):
         """Deploy cluster in HA mode with Neutron VLAN, RadosGW
 
