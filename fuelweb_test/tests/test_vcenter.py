@@ -606,7 +606,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["vcenter_add_delete_nodes"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def vcenter_add_delete_nodes(self):
         """Deploy enviroment of vcenter+qemu nova vlan and default backend for
            glance and with addition and deletion of nodes with different roles

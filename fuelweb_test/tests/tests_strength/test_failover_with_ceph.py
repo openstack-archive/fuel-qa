@@ -14,7 +14,7 @@
 
 from proboscis import test
 
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.tests_strength.test_failover_base\
     import TestHaFailoverBase
@@ -26,7 +26,7 @@ class TestHaCephNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ceph_ha", "prepare_ha_ceph_neutron"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def prepare_ha_ceph_neutron(self):
         """Prepare cluster in HA/Neutron mode with ceph for failover tests
 
@@ -44,7 +44,7 @@ class TestHaCephNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_ceph_neutron'],
           groups=["ha_ceph_neutron_sequential_destroy_controllers"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_ceph_neutron_rabbit_master_destroy(self):
         """Suspend rabbit master, check neutron cluster,
          resume nodes, check cluster
@@ -77,7 +77,7 @@ class TestHaCephNovaFailover(TestHaFailoverBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ceph_ha", "prepare_ha_ceph_nova"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def prepare_ha_ceph_nova(self):
         """Prepare cluster in HA/Nova mode with ceph for failover tests
 
@@ -95,7 +95,7 @@ class TestHaCephNovaFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_ceph_nova'],
           groups=["ha_ceph_nova_sequential_destroy_controllers"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def ha_ceph_nova_rabbit_master_destroy(self):
         """Suspend rabbit master 2 times, check cluster,
          resume nodes, check cluster
