@@ -43,7 +43,7 @@ class TestResult():
         self._status = status
         self.duration = duration
         self.url = url
-        self.version = version
+        self._version = version
         self.description = description
         self.launchpad_bug = launchpad_bug
         self.available_statuses = {
@@ -51,6 +51,17 @@ class TestResult():
             'failed': ['failed', 'regression'],
             'skipped': ['skipped']
         }
+
+    @property
+    def version(self):
+        # Version string length is limited by 250 symbols because field in
+        # TestRail has type 'String'. This limitation can be removed by
+        # changing field type to 'Text'
+        return self._version[:250]
+
+    @version.setter
+    def version(self, value):
+        self._version = value[:250]
 
     @property
     def status(self):
