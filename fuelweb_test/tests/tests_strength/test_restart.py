@@ -60,8 +60,9 @@ class CephRestart(TestBasic):
         self.fuel_web.warm_restart_nodes(
             self.env.d_env.nodes().slaves[:4])
 
-        self.fuel_web.run_ceph_task(cluster_id, offline_nodes=[])
+        self.fuel_web.assert_ha_services_ready(cluster_id)
 
+        self.fuel_web.run_ceph_task(cluster_id, offline_nodes=[])
         self.fuel_web.check_ceph_status(cluster_id)
 
         # Wait until Cinder services UP on a controller
@@ -156,6 +157,8 @@ class CephRestart(TestBasic):
         self.fuel_web.cold_restart_nodes(
             self.env.d_env.nodes().slaves[:4])
 
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
         self.fuel_web.run_ceph_task(cluster_id, offline_nodes)
         self.fuel_web.check_ceph_status(cluster_id, offline_nodes)
 
@@ -231,6 +234,7 @@ class HAOneControllerFlatRestart(TestBasic):
         self.fuel_web.warm_restart_nodes(
             self.env.d_env.nodes().slaves[:2])
 
+        self.fuel_web.assert_ha_services_ready(cluster_id)
         self.fuel_web.wait_mysql_galera_is_up(['slave-01'])
 
         try:
