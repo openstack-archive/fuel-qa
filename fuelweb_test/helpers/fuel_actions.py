@@ -115,8 +115,8 @@ class AdminActions(BaseActions):
         cmd = "ps -C fuelmenu"
         wait(lambda: self.admin_remote.execute(cmd)['exit_code'], 60)
 
-        cmd = ("sed -i 's/dhcp_gateway:.*/dhcp_gateway: {0}/' {1} &&"
-               "sed -i 's/\\(DNS_UPSTREAM:\\)/\\1 {0}/' {1} &&"
+        cmd = ("sed -i 's/\"dhcp_gateway\":.*/\"dhcp_gateway\": \"{0}\"/' {1} "
+               "&& sed -i 's/\\(\"DNS_UPSTREAM\":\\).*/\\1 \"{0}\"/' {1} &&"
                "sed -i 's/\\(nameserver\\) \\(.*\\)/\\1 {0} \\2/' {2}"
                .format(router, config, resolv))
         result = self.admin_remote.execute(cmd)
@@ -132,8 +132,8 @@ class AdminActions(BaseActions):
             if not self.admin_remote.execute(cmd)['exit_code']:
                 # Local ntpd on the host is alive, so
                 # remove all NTP sources and add the host instead.
-                cmd = ("sed -i '/^NTP/d' {0} && echo 'NTP1: {1}' >> {0}"
-                       .format(config, router))
+                cmd = ("sed -i '/^\"NTP/d' {0} && echo '\"NTP1\": \"{1}\"' "
+                       ">> {0}".format(config, router))
                 logger.info("Switching NTPD on the Fuel admin node to use "
                             "{0} as the time source.".format(router))
                 result = self.admin_remote.execute(cmd)
