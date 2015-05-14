@@ -22,6 +22,7 @@ from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.decorators import retry
+from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.tests import base_test_case
 
@@ -129,6 +130,9 @@ class TestNeutronFailover(base_test_case.TestBasic):
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
+        remotes = [self.fuel_web.get_ssh_for_node(node) for node
+                   in ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]]
+        checkers.check_public_ping(remotes)
         self.env.make_snapshot("deploy_ha_neutron", is_make=True)
 
     @test(depends_on=[deploy_ha_neutron],
