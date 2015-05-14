@@ -1081,7 +1081,8 @@ class FuelWebClient(object):
         for interface in interfaces:
             name = interface["name"]
             interface['assigned_networks'] = \
-                [all_networks[i] for i in interfaces_dict.get(name, [])]
+                [all_networks[i] for i in interfaces_dict.get(name, []) if
+                 i in all_networks.keys()]
 
         self.client.put_node_interfaces(
             [{'id': node_id, 'interfaces': interfaces}])
