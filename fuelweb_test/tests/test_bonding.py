@@ -91,6 +91,7 @@ class BondingHAOneController(TestBasic):
             'ovs-bond0': [
                 'public',
                 'management',
+                'private',
                 'storage'
             ]
         }
@@ -368,6 +369,7 @@ class BondingHA(TestBasic):
             'ovs-bond0': [
                 'public',
                 'management',
+                'private',
                 'storage'
             ]
         }
