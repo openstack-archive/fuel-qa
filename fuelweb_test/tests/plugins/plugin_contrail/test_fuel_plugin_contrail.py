@@ -78,8 +78,11 @@ class ContrailPlugin(TestBasic):
         )
         return self.cluster_id
 
-    def _prepare_contrail_plugin(self):
+    def _prepare_contrail_plugin(self, slaves=None):
         """Copy necessary packages to the master node and install them"""
+
+        self.env.revert_snapshot("ready_with_%d_slaves" % slaves)
+
         # copy plugin to the master node
         checkers.upload_tarball(
             self.env.d_env.get_admin_remote(),
@@ -163,20 +166,18 @@ class ContrailPlugin(TestBasic):
         Duration 20 min
 
         """
-        self.env.revert_snapshot("ready_with_5_slaves")
-
-        self._prepare_contrail_plugin()
+        self._prepare_contrail_plugin(slaves=5)
 
         self.env.make_snapshot("install_contrail", is_make=True)
 
-    @test(depends_on=[install_contrail],
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_contrail"])
     @log_snapshot_after_test
     def deploy_contrail(self):
         """Deploy a cluster with Contrail Plugin
 
         Scenario:
-            1. Revert snapshot "install_contrail"
+            1. Revert snapshot "ready_with_5_slaves"
             2. Create cluster
             3. Add 3 nodes with Operating system role
                and 1 node with controller role
@@ -186,7 +187,7 @@ class ContrailPlugin(TestBasic):
         Duration 90 min
 
         """
-        self.env.revert_snapshot("install_contrail")
+        self._prepare_contrail_plugin(slaves=5)
 
         self.fuel_web.update_nodes(
             self.cluster_id,
@@ -206,7 +207,7 @@ class ContrailPlugin(TestBasic):
 
         self.env.make_snapshot("deploy_contrail", is_make=True)
 
-    @test(depends_on=[install_contrail],
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_controller_compute_contrail"])
     @log_snapshot_after_test
     def deploy_controller_compute_contrail(self):
@@ -214,7 +215,7 @@ class ContrailPlugin(TestBasic):
         3 base-os and install contrail plugin
 
         Scenario:
-            1. Revert snapshot "install_contrail"
+            1. Revert snapshot "ready_with_5_slaves"
             2. Create cluster
             3. Add 3 nodes with Operating system role, 1 node with controller
                role and 1 node with compute + cinder role
@@ -226,7 +227,7 @@ class ContrailPlugin(TestBasic):
         Duration 110 min
 
         """
-        self.env.revert_snapshot("install_contrail")
+        self._prepare_contrail_plugin(slaves=5)
 
         self.fuel_web.update_nodes(
             self.cluster_id,
@@ -291,9 +292,7 @@ class ContrailPlugin(TestBasic):
         Duration 140 min
 
         """
-        self.env.revert_snapshot("ready_with_9_slaves")
-
-        self._prepare_contrail_plugin()
+        self._prepare_contrail_plugin(slaves=9)
 
         # create cluster: 3 nodes with Operating system role,
         # 1 node with controller role and 2 nodes with compute role
@@ -370,10 +369,7 @@ class ContrailPlugin(TestBasic):
         Duration 140 min
 
         """
-
-        self.env.revert_snapshot("ready_with_9_slaves")
-
-        self._prepare_contrail_plugin()
+        self._prepare_contrail_plugin(slaves=9)
 
         # create cluster: 3 nodes with Operating system role
         # and 1 node with controller role
@@ -470,9 +466,7 @@ class ContrailPlugin(TestBasic):
         Duration 140 min
 
         """
-        self.env.revert_snapshot("ready_with_9_slaves")
-
-        self._prepare_contrail_plugin()
+        self._prepare_contrail_plugin(slaves=9)
 
         # create cluster: 3 nodes with Operating system role
         # and 1 node with controller role
