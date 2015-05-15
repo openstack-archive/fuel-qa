@@ -31,7 +31,7 @@ from testrail_client import TestRailProject
 LOG = logger
 
 
-def parse_xml_report(path_to_report, mark_all_tests_failed=False):
+def parse_xml_report(path_to_report):
     """This function parses the Tempest XML report and returns the list with
     TestResult objects. Each TestResult object corresponds to one of the tests
     and contains all the result information for the respective test.
@@ -39,18 +39,6 @@ def parse_xml_report(path_to_report, mark_all_tests_failed=False):
 
     tree = ElementTree.parse(path_to_report)
     test_results = []
-
-    if mark_all_tests_failed:
-        for elem in tree.findall('testcase'):
-            test_result = report.TestResult(name=elem.get('name'),
-                                            group=elem.get('classname'),
-                                            status='failed',
-                                            description=None,
-                                            duration=1)
-            test_results.append(test_result)
-
-        return test_results
-
     for elem in tree.findall('testcase'):
         status = 'passed'
         description = None
@@ -64,6 +52,24 @@ def parse_xml_report(path_to_report, mark_all_tests_failed=False):
                                         status='failed'
                                         if status == 'failure' else status,
                                         description=description,
+                                        duration=1)
+        test_results.append(test_result)
+
+    return test_results
+
+
+def mark_all_tests_as_failed(client, tests_suite):
+    """This function marks all Tempest tests as failed and returns the list
+    with TestResult objects. Each TestResult object corresponds to one of
+    the tests and contains the information that the test failed.
+    """
+
+    test_results = []
+    for case in client.get_cases(tests_suite['id']):
+        test_result = report.TestResult(name=case['title'],
+                                        group=case['custom_test_group'],
+                                        status='failed',
+                                        description=None,
                                         duration=1)
         test_results.append(test_result)
 
@@ -134,7 +140,7 @@ def main():
         raise optparse.OptionValueError('No run name was specified!')
     if options.iso_number is None:
         raise optparse.OptionValueError('No ISO number was specified!')
-    if options.path is None:
+    if options.path is None and not options.all_tests_failed:
         raise optparse.OptionValueError('No path to the Tempest '
                                         'XML report was specified!')
 
@@ -152,9 +158,12 @@ def main():
 
     # STEP #2
     # Parse the test results
-    LOG.info('Parsing the test results...')
-    test_results = parse_xml_report(options.path, options.all_tests_failed)
-    LOG.info('The test results have been parsed.')
+    if options.all_tests_failed:
+        test_results = mark_all_tests_as_failed(client, tests_suite)
+    else:
+        LOG.info('Parsing the test results...')
+        test_results = parse_xml_report(options.path)
+        LOG.info('The test results have been parsed.')
 
     # STEP #3
     # Create new test plan (or find existing)
