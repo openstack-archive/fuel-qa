@@ -32,15 +32,6 @@ class TestNeutronFailover(base_test_case.TestBasic):
     """TestNeutronFailover."""  # TODO documentation
 
     @classmethod
-    def get_node_with_dhcp(cls, self, os_conn, net_id):
-        node = os_conn.get_node_with_dhcp_for_network(net_id)[0]
-        node_fqdn = self.fuel_web.get_fqdn_by_hostname(node)
-        logger.debug('node name with dhcp is {0}'.format(node))
-        devops_node = self.fuel_web.find_devops_node_by_nailgun_fqdn(
-            node_fqdn, self.env.d_env.nodes().slaves[0:6])
-        return devops_node
-
-    @classmethod
     def get_node_with_l3(cls, self, node_with_l3):
         node_with_l3_fqdn = self.fuel_web.get_fqdn_by_hostname(node_with_l3)
         logger.debug("new node with l3 is {0}".format(node_with_l3))
@@ -158,7 +149,10 @@ class TestNeutronFailover(base_test_case.TestBasic):
             self.fuel_web.get_public_vip(cluster_id))
 
         net_id = os_conn.get_network('net04')['id']
-        devops_node = self.get_node_with_dhcp(self, os_conn, net_id)
+
+        # any controller could be used as devops_node
+        devops_node = self.env.d_env.nodes().slaves[0]
+
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
         remote = self.env.d_env.get_ssh_to_remote(_ip)
 
@@ -225,7 +219,10 @@ class TestNeutronFailover(base_test_case.TestBasic):
             self.fuel_web.get_public_vip(cluster_id))
 
         net_id = os_conn.get_network('net04')['id']
-        devops_node = self.get_node_with_dhcp(self, os_conn, net_id)
+
+        # any controller could be used as devops_node
+        devops_node = self.env.d_env.nodes().slaves[0]
+
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
         remote = self.env.d_env.get_ssh_to_remote(_ip)
 
@@ -290,7 +287,10 @@ class TestNeutronFailover(base_test_case.TestBasic):
             self.fuel_web.get_public_vip(cluster_id))
 
         net_id = os_conn.get_network('net04')['id']
-        devops_node = self.get_node_with_dhcp(self, os_conn, net_id)
+
+        # any controller could be used as devops_node
+        devops_node = self.env.d_env.nodes().slaves[0]
+
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
         remote = self.env.d_env.get_ssh_to_remote(_ip)
 
