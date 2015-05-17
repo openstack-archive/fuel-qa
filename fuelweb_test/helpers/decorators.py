@@ -68,16 +68,6 @@ def log_snapshot_after_test(func):
                     .format(''.join(func.__doc__)))
         try:
             result = func(*args, **kwargs)
-
-            if settings.ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT:
-                if args[0].env is None:
-                    logger.warning("Can't get diagnostic snapshot: "
-                                   "unexpected class is decorated.")
-                    return result
-                args[0].env.resume_environment()
-                create_diagnostic_snapshot(args[0].env, "pass", func.__name__)
-            return result
-
         except SkipTest:
             raise SkipTest()
         except Exception as test_exception:
@@ -107,6 +97,20 @@ def log_snapshot_after_test(func):
                         logger.error("Error making the environment snapshot:"
                                      " {0}".format(traceback.format_exc()))
             raise test_exception, None, exc_trace
+        else:
+            if settings.ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT:
+                if args[0].env is None:
+                    logger.warning("Can't get diagnostic snapshot: "
+                                   "unexpected class is decorated.")
+                    return result
+                try:
+                    args[0].env.resume_environment()
+                    create_diagnostic_snapshot(args[0].env, "pass",
+                                               func.__name__)
+                except:
+                    logger.error("Fetching of diagnostic snapshot failed: {0}".
+                                 format(traceback.format_exc()))
+            return result
     return wrapper
 
 
