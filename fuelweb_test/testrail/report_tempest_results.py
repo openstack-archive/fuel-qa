@@ -52,6 +52,7 @@ def parse_xml_report(path_to_report):
                                         status='failed'
                                         if status == 'failure' else status,
                                         description=description,
+                                        version='',
                                         duration=1)
         test_results.append(test_result)
 
