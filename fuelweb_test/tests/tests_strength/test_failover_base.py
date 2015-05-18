@@ -31,6 +31,7 @@ from fuelweb_test.helpers.checkers import check_mysql
 from fuelweb_test.helpers.checkers import check_public_ping
 from fuelweb_test.helpers import os_actions
 from fuelweb_test import logger
+from fuelweb_test.settings import COUNT_MAX
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import DOWNLOAD_LINK
 from fuelweb_test.settings import DNS
@@ -79,7 +80,7 @@ class TestHaFailoverBase(TestBasic):
         else:
             self.fuel_web.assert_cluster_ready(
                 os_conn, smiles_count=16, networks_count=1, timeout=300)
-        self.fuel_web.verify_network(cluster_id)
+        #self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.security.verify_firewall(cluster_id)
 
@@ -885,3 +886,37 @@ class TestHaFailoverBase(TestBasic):
         assert_false(rabbit_slave1_name in rabbit_status,
                      "rabbit node {0} is still in"
                      " cluster".format(rabbit_slave1_name))
+
+    def ha_corosync_stability_check(self):
+        if not self.env.d_env.has_snapshot(self.snapshot_name):
+            raise SkipTest()
+        self.env.revert_snapshot(self.snapshot_name)
+        remote = self.env.d_env.get_admin_remote()
+        remote_controller = self.fuel_web.get_ssh_for_node(
+            self.env.d_env.nodes().slaves[0].name)
+
+        count = 0
+        while count != int(COUNT_MAX):
+            _wait(
+                lambda: assert_equal(
+                    remote_controller.execute(
+                        'killall -TERM corosync')['exit_code'], 0,
+                    'Corosync was not killed on controller'), timeout=20)
+            corosync_output = remote.execute(
+                "dockerctl shell astute bash -c \"mco rpc -v "
+                "execute_shell_command execute cmd=\\\"hostname; date; "
+                "crm_mon -1 | grep -i -e 'DC.*node' -e 'line:.*node' "
+                "-e 'node.*UNCLEAN'\\\" | grep -A3 \\\"^[123]\\\"\" "
+                "2>&1 &")['stdout']
+            defects = remote.execute(
+                'echo {0} | grep -HE -q -e UNCLEAN -e WITHOUT -e \'OFFLINE:'
+                ' \[ (\S+) (\S+) \]\''.format(corosync_output))['exit_code']
+            if not defects:
+                raise Exception("Caught splitbrain at count-{0}".format(count))
+                break
+            _wait(
+                lambda: assert_equal(
+                    remote_controller.execute(
+                        'service corosync start && service pacemaker restart')
+                    ['exit_code'], 0, 'Corosync was not started'), timeout=20)
+            count += 1

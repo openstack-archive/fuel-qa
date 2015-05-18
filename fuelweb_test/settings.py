@@ -430,3 +430,5 @@ EMC_POOL_NAME = os.environ.get('EMC_POOL_NAME', '')
 
 ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT = os.environ.get(
     'ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT', 'false') == 'true'
+
+COUNT_MAX = os.environ.get('COUNT_MAX', '1000')
