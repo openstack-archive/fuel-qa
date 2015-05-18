@@ -965,6 +965,7 @@ class FuelWebClient(object):
     @logwrap
     def task_wait(self, task, timeout, interval=5):
         logger.info('Wait for task %s %s seconds', task, timeout)
+        start = time.time()
         try:
             wait(
                 lambda: self.client.get_task(
@@ -976,6 +977,8 @@ class FuelWebClient(object):
             raise TimeoutError(
                 "Waiting task \"{task}\" timeout {timeout} sec "
                 "was exceeded: ".format(task=task["name"], timeout=timeout))
+        took = time.time() - start
+        logger.info('Task %s finished. Took %d seconds', task, took)
 
         return self.client.get_task(task['id'])
 
