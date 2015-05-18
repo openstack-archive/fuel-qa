@@ -514,10 +514,6 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         self.env.revert_snapshot("deploy_neutron_gre")
         cluster_id = self.fuel_web.get_last_created_cluster()
 
-        _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
-        remote = self.env.d_env.get_ssh_to_remote(_ip)
-        expected_kernel = UpgradeFuelMaster.get_slave_kernel(remote)
-
         checkers.upload_tarball(self.env.d_env.get_admin_remote(),
                                 hlp_data.TARBALL_PATH, '/var')
         checkers.check_tarball_exists(self.env.d_env.get_admin_remote(),
@@ -559,11 +555,6 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             assert_true(len(self.fuel_web.client.list_nodes()) == 3,
                         'Node {0} is not discovered in timeout 10 *60'.format(
                             nodes[0]))
-        if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
-            _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
-            remote = self.env.d_env.get_ssh_to_remote(_ip)
-            kernel = UpgradeFuelMaster.get_slave_kernel(remote)
-            checkers.check_kernel(kernel, expected_kernel)
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
 
         self.env.make_snapshot("rollback_automatically_delete_mode")
