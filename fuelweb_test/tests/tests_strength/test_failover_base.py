@@ -14,6 +14,7 @@
 
 import re
 import time
+import yaml
 
 from devops.error import TimeoutError
 from devops.helpers.helpers import tcp_ping
@@ -31,6 +32,7 @@ from fuelweb_test.helpers.checkers import check_mysql
 from fuelweb_test.helpers.checkers import check_public_ping
 from fuelweb_test.helpers import os_actions
 from fuelweb_test import logger
+from fuelweb_test import logwrap
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import DOWNLOAD_LINK
 from fuelweb_test.settings import DNS
@@ -1047,3 +1049,86 @@ class TestHaFailoverBase(TestBasic):
 
         assert_equal(master_rabbit_after_fail.name,
                      master_rabbit_after_node_back.name)
+
+    def ha_corosync_stability_check(self):
+
+        @logwrap
+        def _get_pcm_nodes(remote, pure=False):
+            nodes = {}
+            pcs_status = remote.execute('pcs status nodes')['stdout']
+            pcm_nodes = yaml.load(''.join(pcs_status).strip())
+            for status in ('Online', 'Offline', 'Standby'):
+                list_nodes = (pcm_nodes['Pacemaker Nodes']
+                              [status] or '').split()
+                if not pure:
+                    nodes[status] = [self.fuel_web.get_fqdn_by_hostname(x)
+                                     for x in list_nodes]
+                else:
+                    nodes[status] = list_nodes
+            return nodes
+
+        def _check_all_pcs_nodes_status(ctrl_remotes, pcs_nodes_online,
+                                        status):
+            for remote in ctrl_remotes:
+                pcs_nodes = _get_pcm_nodes(remote)
+                logger.debug(
+                    "Status of pacemaker nodes on node {0}: {1}".
+                    format(node['name'], pcs_nodes))
+                if set(pcs_nodes_online) != set(pcs_nodes[status]):
+                    return False
+            return True
+
+        if not self.env.d_env.has_snapshot(self.snapshot_name):
+            raise SkipTest()
+        self.env.revert_snapshot(self.snapshot_name)
+        devops_name = self.env.d_env.nodes().slaves[0].name
+        controller_node = self.fuel_web.get_nailgun_node_by_name(devops_name)
+        with self.fuel_web.get_ssh_for_node(
+                devops_name) as remote_controller:
+            pcs_nodes = self.fuel_web.get_pcm_nodes(devops_name)
+            assert_true(
+                not pcs_nodes['Offline'], "There are offline nodes: {0}".
+                format(pcs_nodes['Offline']))
+            pcs_nodes_online = pcs_nodes['Online']
+            cluster_id = self.fuel_web.get_last_created_cluster()
+            ctrl_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+                cluster_id, ['controller'])
+            alive_corosync_nodes = [node for node in ctrl_nodes
+                                    if node['mac'] != controller_node['mac']]
+            ctrl_remotes = [self.env.d_env.get_ssh_to_remote(node['ip'])
+                            for node in ctrl_nodes]
+            live_remotes = [self.env.d_env.get_ssh_to_remote(node['ip'])
+                            for node in alive_corosync_nodes]
+            for count in xrange(500):
+                logger.debug('Checking splitbrain in the loop, '
+                             'count number: {0}'.format(count))
+                _wait(
+                    lambda: assert_equal(
+                        remote_controller.execute(
+                            'killall -TERM corosync')['exit_code'], 0,
+                        'Corosync was not killed on controller, '
+                        'see debug log, count-{0}'.format(count)), timeout=20)
+                _wait(
+                    lambda: assert_true(
+                        _check_all_pcs_nodes_status(
+                            live_remotes, [controller_node['fqdn']],
+                            'Offline'),
+                        'Caught splitbrain, see debug log, '
+                        'count-{0}'.format(count)), timeout=20)
+                _wait(
+                    lambda: assert_equal(
+                        remote_controller.execute(
+                            'service corosync start && service pacemaker '
+                            'restart')['exit_code'], 0,
+                        'Corosync was not started, see debug log,'
+                        ' count-{0}'.format(count)), timeout=20)
+                _wait(
+                    lambda: assert_true(
+                        _check_all_pcs_nodes_status(
+                            ctrl_remotes, pcs_nodes_online, 'Online'),
+                        'Corosync was not started on controller, see debug '
+                        'log, count: {0}'.format(count)), timeout=20)
+            for remote in ctrl_remotes:
+                remote.clear()
+            for remote in live_remotes:
+                remote.clear()
