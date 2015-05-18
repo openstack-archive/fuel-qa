@@ -57,7 +57,7 @@ class TestResult():
         # Version string length is limited by 250 symbols because field in
         # TestRail has type 'String'. This limitation can be removed by
         # changing field type to 'Text'
-        return self._version[:250]
+        return (self._version or '')[:250]
 
     @version.setter
     def version(self, value):
