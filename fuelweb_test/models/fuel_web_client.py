@@ -976,6 +976,7 @@ class FuelWebClient(object):
             raise TimeoutError(
                 "Waiting task \"{task}\" timeout {timeout} sec "
                 "was exceeded: ".format(task=task["name"], timeout=timeout))
+        logger.info('Task %s finished', task)
 
         return self.client.get_task(task['id'])
 
