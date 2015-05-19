@@ -27,7 +27,6 @@ from fuelweb_test.settings import EXTERNAL_NTP
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import POOLS
-from fuelweb_test.settings import PUBLIC_TEST_IP
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
@@ -68,7 +67,6 @@ def check_ceph_health(remote, health_status=['HEALTH_OK']):
 def check_ceph_disks(remote, nodes_ids):
     nodes_names = ['node-{0}'.format(node_id) for node_id in nodes_ids]
     disks_tree = get_osd_tree(remote)
-    osd_ids = get_osd_ids(remote)
     logger.debug("Disks output information: \\n{0}".format(disks_tree))
     disks_ids = []
     for node in disks_tree['nodes']:
@@ -76,12 +74,6 @@ def check_ceph_disks(remote, nodes_ids):
             disks_ids.extend(node['children'])
     for node in disks_tree['nodes']:
         if node['type'] == 'osd' and node['id'] in disks_ids:
-            assert_equal(node['status'], 'up', 'OSD node {0} is down'.
-                         format(node['id']))
-    for node in disks_tree['stray']:
-        if node['type'] == 'osd' and node['id'] in osd_ids:
-            logger.info("WARNING! Ceph OSD '{0}' has no parent host!".
-                        format(node['name']))
             assert_equal(node['status'], 'up', 'OSD node {0} is down'.
                          format(node['id']))
 
@@ -281,8 +273,6 @@ def check_upgraded_containers(remote, version_from, version_to):
 
 @logwrap
 def upload_tarball(node_ssh, tar_path, tar_target):
-    assert_true(tar_path, "Source path for uploading 'tar_path' is empty, "
-                "please check test settings!")
     check_archive_type(tar_path)
     try:
         logger.debug("Start to upload tar file")
@@ -294,7 +284,7 @@ def upload_tarball(node_ssh, tar_path, tar_target):
 
 @logwrap
 def check_archive_type(tar_path):
-    if os.path.splitext(tar_path)[1] not in [".tar", ".lrz", ".fp", ".rpm"]:
+    if os.path.splitext(tar_path)[1] not in [".tar", ".lrz", ".fp"]:
         raise Exception("Wrong archive type!")
 
 
@@ -321,8 +311,8 @@ def run_script(node_ssh, script_path, script_name, password='admin',
     c_res = node_ssh.execute('chmod 755 {0}'.format(path))
     logger.debug("Result of cmod is {0}".format(c_res))
     if rollback:
-        path = "UPGRADERS='host-system docker openstack" \
-               " raise-error' {0}/{1}" \
+        path = "UPGRADERS='host-system bootstrap docker openstack" \
+               " raise-error targetimages' {0}/{1}" \
                " --password {2}".format(script_path, script_name, password)
         chan, stdin, stderr, stdout = node_ssh.execute_async(path)
         logger.debug('Try to read status code from chain...')
@@ -396,12 +386,6 @@ def get_osd_tree(remote):
     return json.loads(''.join(remote.execute(cmd)['stdout']))
 
 
-@logwrap
-def get_osd_ids(remote):
-    cmd = 'ceph osd ls -f json'
-    return json.loads(''.join(remote.execute(cmd)['stdout']))
-
-
 def find_backup(remote):
     try:
         arch_dir = ''.join(
@@ -409,7 +393,6 @@ def find_backup(remote):
         arch_path = ''.join(
             remote.execute("ls -1u /var/backup/fuel/{0}/*.lrz".
                            format(arch_dir.strip()))["stdout"])
-        logger.debug('arch_path is {0}'.format(arch_path))
         return arch_path
     except Exception as e:
         logger.error('exception is {0}'.format(e))
@@ -421,27 +404,22 @@ def backup_check(remote):
     logger.info("Backup check archive status")
     path = find_backup(remote)
     assert_true(path, "Can not find backup. Path value {0}".format(path))
-    arch_result = ''.join(
-        remote.execute(("if [ -e {0} ]; "
-                        "then echo  Archive exists;"
-                        " fi").format(path.rstrip()))["stdout"])
+    arch_result = None
+    try:
+        arch_result = ''.join(
+            remote.execute(("if [ -e {0} ]; then echo "
+                            " Archive exists; fi").
+                           format(path.rstrip()))["stdout"])
+    except Exception as e:
+        logger.error('exception is {0}'.format(e))
+        raise e
     assert_true("Archive exists" in arch_result, "Archive does not exist")
 
 
 @logwrap
 def restore_check_sum(remote):
-    logger.debug('Check if removed file /etc/fuel/data was restored')
-    res = remote.execute("if [ -e /etc/fuel/data ]; "
-                         "then echo Restored!!;"
-                         " fi")
-    assert_true("Restored!!" in ''.join(res['stdout']).strip(),
-                'Test file /etc/fuel/data '
-                'was not restored!!! {0}'.format(res['stderr']))
     logger.info("Restore check md5sum")
     md5sum_backup = remote.execute("cat /etc/fuel/sum")
-    assert_true(''.join(md5sum_backup['stdout']).strip(),
-                'Command cat /etc/fuel/sum '
-                'failed with {0}'.format(md5sum_backup['stderr']))
     md5sum_restore = remote.execute("md5sum /etc/fuel/data | sed -n 1p "
                                     " | awk '{print $1}'")
     assert_equal(md5sum_backup, md5sum_restore,
@@ -609,7 +587,6 @@ def execute_query_on_collector(collector_remote, master_uuid, query,
         query = "{0} where master_node_uid = '{1}';".format(query, master_uuid)
     cmd = 'PGPASSWORD={0} psql -qt -h 127.0.0.1 -U {1} -d {2} -c "{3}"'.\
         format(collector_db_pass, collector_db_user, collector_db, query)
-    logger.debug('query collector is {0}'.format(cmd))
     return ''.join(collector_remote.execute(cmd)['stdout']).strip()
 
 
@@ -629,20 +606,25 @@ def check_stats_on_collector(collector_remote, postgres_actions, master_uuid):
     logger.info("Number of logs that were sent to collector: {}".format(
         sent_logs_count
     ))
-    logs = collector_remote.get_action_logs_count(master_uuid)
+    logs = execute_query_on_collector(collector_remote, master_uuid,
+                                      query="select count(*) from action_logs")
     logger.info("Number of logs that were saved on collector: {}".format(logs))
     assert_true(sent_logs_count <= int(logs),
                 ("Count of action logs in Nailgun DB ({0}) is bigger than on "
                  "Collector ({1}), but should be less or equal").format(
                     sent_logs_count, logs))
 
-    sum_stats_count = len(
-        [collector_remote.get_installation_info(master_uuid)['id']])
+    sum_stats_count = execute_query_on_collector(
+        collector_remote, master_uuid=master_uuid,
+        query="select count(*) from installation_structures")
     assert_equal(int(sum_stats_count), 1,
                  "Installation structure wasn't saved on Collector side proper"
                  "ly: found: {0}, expected: 1 record.".format(sum_stats_count))
 
-    summ_stats = collector_remote.get_installation_info_data(master_uuid)
+    summ_stats_raw = execute_query_on_collector(
+        collector_remote, master_uuid,
+        query="select structure from installation_structures")
+    summ_stats = json.loads(summ_stats_raw)
     general_stats = {
         'clusters_num': int,
         'allocated_nodes_num': int,
@@ -803,8 +785,10 @@ def check_stats_private_info(collector_remote, postgres_actions,
 
     action_logs = [l.strip() for l in postgres_actions.run_query(
         'nailgun', 'select id from action_logs;').split('\n')]
-    sent_stats = str(collector_remote.get_installation_info_data(master_uuid))
-    logger.debug('installation structure is {0}'.format(sent_stats))
+    sent_stats = execute_query_on_collector(
+        collector_remote, master_uuid,
+        query="SELECT structure from installation_structures"
+    )
     used_networks = [POOLS[net_name][0] for net_name in POOLS.keys()]
     has_no_private_data = True
 
@@ -847,8 +831,7 @@ def external_dns_check(remote_slave):
     assert_equal(ext_dns_ip, EXTERNAL_DNS,
                  "/etc/resolv.dnsmasq.conf does not contain external dns ip")
     command_hostname = ''.join(
-        remote_slave.execute("host {0} | awk {{'print $5'}}"
-                             .format(PUBLIC_TEST_IP))
+        remote_slave.execute("host 8.8.8.8 | awk {'print $5'}")
         ["stdout"]).rstrip()
     hostname = 'google-public-dns-a.google.com.'
     assert_equal(command_hostname, hostname,
@@ -856,7 +839,7 @@ def external_dns_check(remote_slave):
 
 
 @logwrap
-def external_ntp_check(remote_slave, vrouter_vip):
+def external_ntp_check(remote_slave, vip):
     logger.info("External ntp check")
     ext_ntp_ip = ''.join(
         remote_slave.execute("awk '/^server +{0}/{{print $2}}' "
@@ -864,15 +847,15 @@ def external_ntp_check(remote_slave, vrouter_vip):
                              format(EXTERNAL_NTP))["stdout"]).rstrip()
     assert_equal(ext_ntp_ip, EXTERNAL_NTP,
                  "/etc/ntp.conf does not contain external ntp ip")
+    status = "ntpdate -s {0}".format(vip)
     try:
         wait(
-            lambda: not is_ntpd_active(remote_slave, vrouter_vip), timeout=120)
+            lambda: not remote_slave.execute(status)['exit_code'], timeout=120)
     except Exception as e:
         logger.error(e)
-        status = is_ntpd_active(remote_slave, vrouter_vip)
-        assert_equal(
-            status, 1, "Failed updated ntp. "
-                       "Exit code is {0}".format(status))
+        a = remote_slave.execute(status)
+        assert_equal(a['exit_code'], 0,
+                     "Failed update ntp")
 
 
 def check_swift_ring(remote):
@@ -882,193 +865,28 @@ def check_swift_ring(remote):
                 ring))['stdout'])
         logger.debug("swift ring builder information is {0}".format(res))
         balance = re.search('(\d+.\d+) balance', res).group(1)
-        assert_true(float(balance) < 10,
+        assert_true(float(balance) == 0,
                     "swift ring builder {1} is not ok,"
                     " balance is {0}".format(balance, ring))
 
 
-def check_oswl_stat(postgres_actions, remote_collector, master_uid,
-                    operation='current',
-                    resources=['vm', 'flavor', 'volume', 'image',
-                               'tenant', 'keystone_user']):
-    logger.info("Checking that all resources were collected...")
-    expected_resource_count = {
-        'current':
-        {'vm': 0,
-         'flavor': 6,
-         'volume': 0,
-         'image': 0,
-         'tenant': 2,
-         'keystone_user': 8
-         },
-        'modified':
-        {'vm': 0,
-         'flavor': 0,
-         'volume': 0,
-         'image': 0,
-         'tenant': 0,
-         'keystone_user': 0
-         },
-        'removed':
-        {'vm': 0,
-         'flavor': 0,
-         'volume': 0,
-         'image': 0,
-         'tenant': 0,
-         'keystone_user': 0
-         }
-    }
-    for resource in resources:
-        q = "select resource_data from oswl_stats where" \
-            " resource_type = '\"'\"'{0}'\"'\"';".format(resource)
-        resource_data = json.loads(postgres_actions.run_query('nailgun', q))
+def get_file_size(remote, filename):
+    """Returns file size.
 
-        logger.debug('db return {0}'.format(resource_data))
-        assert_true(len(resource_data['added']) >
-                    expected_resource_count[operation][resource],
-                    "resource {0} wasn't added,"
-                    " added is {1}".format(resource, resource_data['added']))
-        assert_true(len(resource_data[operation]) >
-                    expected_resource_count[operation][resource],
-                    "number of resources in current {0},"
-                    " expected is {1}".format(len(resource_data[operation]),
-                                              expected_resource_count[
-                                                  operation][resource]))
-
-    # check stat on collector side
-    sent_logs_count = postgres_actions.count_sent_action_logs(
-        table='oswl_stats')
-    logger.info("Number of logs that were sent to collector: {}".format(
-        sent_logs_count
-    ))
-    logger.debug('oswls are {}'.format(remote_collector.get_oswls(master_uid)))
-    logs = len(remote_collector.get_oswls(master_uid))
-    logger.info("Number of logs that were saved"
-                " on collector: {}".format(logs))
-    assert_true(sent_logs_count <= int(logs),
-                ("Count of action logs in Nailgun DB ({0}) is bigger than on "
-                 "Collector ({1}), but should be less or equal").format(
-                    sent_logs_count, logs))
-    for resource in resources:
-        resource_data = remote_collector.get_oswls_by_resource_data(
-            master_uid, resource)
-
-        logger.debug('resource data on'
-                     ' collector is {0}'.format(resource_data))
-        assert_true(len(resource_data['added']) >
-                    expected_resource_count[operation][resource],
-                    "resource {0} wasn't added,"
-                    " added is {1}".format(resource, resource_data['added']))
-        assert_true(len(resource_data[operation]) >
-                    expected_resource_count[operation][resource],
-                    "number of resources in current {0},"
-                    " expected is {1}".format(len(resource_data[operation]),
-                                              expected_resource_count[
-                                                  operation][resource]))
-
-    logger.info("OSWL stats were properly saved to collector's database.")
-
-
-@logwrap
-def get_file_size(remote, file_name, file_path):
-    file_size = remote.execute(
-        'stat -c "%s" {0}/{1}'.format(file_path, file_name))
-    assert_equal(
-        int(file_size['exit_code']), 0, "Failed to get '{0}/{1}' file stats on"
-                                        " remote node".format(file_path,
-                                                              file_name))
-    return int(file_size['stdout'][0].rstrip())
-
-
-@logwrap
-def check_ping(remote, host, deadline=10, size=56, timeout=1, interval=1):
-    """Check network connectivity from
-     remote to host using ICMP (ping)
-    :param remote: SSHClient
-    :param host: string IP address or host/domain name
-    :param deadline: time in seconds before ping exits
-    :param size: size of data to be sent
-    :param timeout: time to wait for a response, in seconds
-    :param interval: wait interval seconds between sending each packet
-    :return: bool: True if ping command
+    :param remote: instance of devops.helpers.helpers.SSHClient
+    :param filename: full system path to the file to be checked
+    :returns: int()
+    :raises IOError: raised if file is not found
     """
-    cmd = ("ping -W {timeout} -i {interval} -s {size} -c 1 -w {deadline} "
-           "{host}".format(host=host,
-                           size=size,
-                           timeout=timeout,
-                           interval=interval,
-                           deadline=deadline))
-    return int(remote.execute(cmd)['exit_code']) == 0
+    logger.info("Checking file size %s", filename)
+    command = 'stat --printf="%s" {0}'.format(filename)
+    result = remote.execute(command)['exit_code']
 
+    if result['exit_code'] != 0:
+        error_message = "File %s is not found!", filename
+        logger.error(error_message)
+        raise IOError(error_message)
 
-@logwrap
-def check_nova_dhcp_lease(remote, instance_ip, instance_mac, node_dhcp_ip):
-    logger.debug("Checking DHCP server {0} for lease {1} with MAC address {2}"
-                 .format(node_dhcp_ip, instance_ip, instance_mac))
-    res = remote.execute('ip link add dhcptest0 type veth peer name dhcptest1;'
-                         'brctl addif br100 dhcptest0;'
-                         'ifconfig dhcptest0 up;'
-                         'ifconfig dhcptest1 hw ether {1};'
-                         'ifconfig dhcptest1 up;'
-                         'dhcpcheck request dhcptest1 {2} --range_start {0} '
-                         '--range_end 255.255.255.255 | fgrep \" {2} \";'
-                         'ifconfig dhcptest1 down;'
-                         'ifconfig dhcptest0 down;'
-                         'brctl delif br100 dhcptest0;'
-                         'ip link delete dhcptest0;'
-                         .format(instance_ip, instance_mac, node_dhcp_ip))
-    res_str = ''.join(res['stdout'])
-    logger.debug("DHCP server answer: {}".format(res_str))
-    return ' ack ' in res_str
-
-
-def check_available_mode(remote):
-    command = ('umm status | grep runlevel &>/dev/null && echo "True" '
-               '|| echo "False"')
-    if remote.execute(command)['exit_code'] == 0:
-        return ''.join(remote.execute(command)['stdout']).strip()
-    else:
-        return ''.join(remote.execute(command)['stderr']).strip()
-
-
-def check_auto_mode(remote):
-    command = ('umm status | grep umm &>/dev/null && echo "True" '
-               '|| echo "False"')
-    if remote.execute(command)['exit_code'] == 0:
-        return ''.join(remote.execute(command)['stdout']).strip()
-    else:
-        return ''.join(remote.execute(command)['stderr']).strip()
-
-
-def is_ntpd_active(remote, ntpd_ip):
-    cmd = 'ntpdate -d -p 4 -t 0.2 -u {0}'.format(ntpd_ip)
-    return (not remote.execute(cmd)['exit_code'])
-
-
-def check_repo_managment(remote):
-    """Check repo managment
-
-    run 'yum -y clean all && yum check-update' or
-        'apt-get clean all && apt-get update' exit code should be 0
-
-    :type devops_node: Node
-        :rtype True or False
-    """
-    if OPENSTACK_RELEASE == OPENSTACK_RELEASE_UBUNTU:
-        cmd = "apt-get clean all && apt-get update > /dev/null 2>&1"
-    else:
-        cmd = "yum -y clean all && yum check-update > /dev/null 2>&1"
-    remote.check_call(cmd)
-
-
-def check_public_ping(remotes):
-    """ Check if ping public vip
-    :type remotes: list
-    """
-    cmd = ('ruby /etc/puppet/modules/osnailyfacter/'
-           'modular/virtual_ips/public_vip_ping_post.rb')
-    for remote in remotes:
-        res = remote.execute(cmd)
-        assert_equal(0, res['exit_code'],
-                     'Public ping check failed:'
-                     ' {0}'.format(res))
+    file_size = int(remote.execute(command)['stdout'])
+    logger.info(file_size)
+    return file_size
