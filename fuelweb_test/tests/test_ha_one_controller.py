@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import re
 
 from devops.helpers.helpers import wait
@@ -996,3 +997,23 @@ class HAOneControllerFlatUSB(HAOneControllerFlatBase):
         """
 
         super(self.__class__, self).deploy_ha_one_controller_flat_base()
+
+    @test(depends_on=[deploy_ha_one_controller_flat_usb])
+    @log_snapshot_after_test
+    def check_fuel_provisioning_scripts(self):
+        self.env.revert_snapshot("deploy_ha_one_controller_flat_usb")
+        import pdb, sys; p = pdb.Pdb(stdout=sys.__stdout__); p.set_trace()
+        master_node_ssh_session = self.env.d_env.get_admin_remote()
+        base_path = '/var/www/nailgun/ubuntu/x86_64/images/'
+        filenames = ['initrd.gz', 'linux']
+        zero_length_files = []
+        for filename in filenames:
+            full_path = os.path.join(base_path, filename)
+            file_size = checkers.get_file_size(
+                master_node_ssh_session, full_path)
+            if not file_size:
+                zero_length_files.append(filename)
+            logger.info("File %s has size %s", full_path, file_size)
+        assert_true(zero_length_files,
+                    "Files {0} have 0 length".format(zero_length_files))
+
