@@ -363,7 +363,7 @@ FUEL_STATS_CHECK = os.environ.get('FUEL_STATS_CHECK', 'false') == 'true'
 FUEL_STATS_ENABLED = os.environ.get('FUEL_STATS_ENABLED', 'true') == 'true'
 FUEL_STATS_SSL = os.environ.get('FUEL_STATS_SSL', 'false') == 'true'
 FUEL_STATS_HOST = os.environ.get('FUEL_STATS_HOST',
-                                 '172.18.160.39')
+                                 'fuel-collect.vm.mirantis.net')
 FUEL_STATS_PORT = os.environ.get('FUEL_STATS_PORT', '80')
 
 ANALYTICS_IP = os.environ.get('ANALYTICS_IP', '172.18.160.40')
