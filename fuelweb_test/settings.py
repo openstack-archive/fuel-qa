@@ -430,3 +430,5 @@ EMC_POOL_NAME = os.environ.get('EMC_POOL_NAME', '')
 
 ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT = os.environ.get(
     'ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT', 'false') == 'true'
+
+USE_FEDORA_KERNEL = os.environ.get("USE_FEDORA_KERNEL", 'false') == 'true'

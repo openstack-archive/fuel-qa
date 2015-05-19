@@ -436,6 +436,12 @@ class FuelWebClient(object):
                 repos_attr = attributes['editable']['repo_setup']['repos']
                 repos_attr['value'] = self.replace_centos_repos(repos_attr)
 
+            if (help_data.OPENSTACK_RELEASE_CENTOS in
+                help_data.OPENSTACK_RELEASE and
+                    help_data.USE_FEDORA_KERNEL):
+                attributes['editable']['use_fedora_lt']['kernel']['value'] = \
+                    'fedora_lt_kernel'
+
             logger.debug("Try to update cluster "
                          "with next attributes {0}".format(attributes))
             self.client.update_cluster_attributes(cluster_id, attributes)
