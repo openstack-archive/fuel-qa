@@ -1072,3 +1072,26 @@ def check_public_ping(remotes):
         assert_equal(0, res['exit_code'],
                      'Public ping check failed:'
                      ' {0}'.format(res))
+
+
+def check_cobbler_node_exists(remote, node_id):
+    """Check node with following node_id
+    is present in the cobbler node list
+    :param remote: SSHClient
+    :param node_id: fuel node id
+    :return: bool: True if exit code of command (node) == 0
+    """
+    logger.debug("Check that cluster contains node with ID:{0} ".
+                 format(node_id))
+    node = remote.execute(
+        'dockerctl shell cobbler bash -c "cobbler system list" | grep '
+        '-w "node-{0}"'.format(node_id))
+    return int(node['exit_code']) == 0
+
+
+def check_cluster_presence(cluster_id, postgres_actions):
+    logger.debug("Check cluster presence")
+    query_result = postgres_actions.run_query(
+        db='nailgun',
+        query="select id from clusters where id={0}".format(cluster_id))
+    return str(cluster_id) in query_result
