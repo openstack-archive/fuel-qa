@@ -80,6 +80,7 @@ class TestHaVLAN(TestBasic):
         self.fuel_web.update_vlan_network_fixed(
             cluster_id, amount=8, network_size=32
         )
+        self.fuel_web.verify_network(cluster_id)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         os_conn = os_actions.OpenStackActions(
