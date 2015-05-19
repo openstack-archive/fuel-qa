@@ -13,18 +13,15 @@
 #    under the License.
 
 from proboscis.asserts import assert_equal
-from proboscis import SkipTest
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import DEPLOYMENT_MODE
-from fuelweb_test.settings import OPENSTACK_RELEASE
-from fuelweb_test.settings import OPENSTACK_RELEASE_REDHAT
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["bonding_ha_one_controller", "bonding"])
+@test(groups=["bonding_nova", "bonding_ha_one_controller", "bonding"])
 class BondingHAOneController(TestBasic):
     """BondingHAOneController."""  # TODO documentation
 
@@ -32,49 +29,42 @@ class BondingHAOneController(TestBasic):
           groups=["deploy_bonding_active_backup"])
     @log_snapshot_after_test
     def deploy_bonding_active_backup(self):
-        """Deploy cluster in ha mode with one controller bonding
+        """Deploy cluster with active-backup bonding and Nova Network
 
         Scenario:
             1. Create cluster
             2. Add 1 node with controller role
             3. Add 1 node with compute role
-            4. Setup bonding for all interfaces
-            4. Deploy the cluster
+            4. Setup bonding for all interfaces except admin/pxe
             5. Run network verification
-            6. Run OSTF
+            6. Deploy the cluster
+            7. Run network verification
+            8. Run OSTF
 
         Duration 30m
         Snapshot deploy_bonding_active_backup
 
         """
 
-        if OPENSTACK_RELEASE == OPENSTACK_RELEASE_REDHAT:
-            raise SkipTest()
-
         self.env.revert_snapshot("ready_with_3_slaves")
-
-        segment_type = 'gre'
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": segment_type,
-            }
         )
 
         self.fuel_web.update_nodes(
             cluster_id, {
                 'slave-01': ['controller'],
-                'slave-02': ['compute']
+                'slave-02': ['compute'],
+                'slave-03': ['cinder']
             }
         )
 
         raw_data = {
             'mac': None,
             'mode': 'active-backup',
-            'name': 'ovs-bond0',
+            'name': 'lnx-bond0',
             'slaves': [
                 {'name': 'eth4'},
                 {'name': 'eth3'},
@@ -88,15 +78,13 @@ class BondingHAOneController(TestBasic):
 
         interfaces = {
             'eth0': ['fuelweb_admin'],
-            'ovs-bond0': [
+            'lnx-bond0': [
                 'public',
                 'management',
-                'private',
+                'fixed',
                 'storage'
             ]
         }
-
-        net_params = self.fuel_web.client.get_networks(cluster_id)
 
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
@@ -104,13 +92,8 @@ class BondingHAOneController(TestBasic):
                 node['id'], interfaces_dict=interfaces,
                 raw_data=raw_data
             )
+        self.fuel_web.verify_network(cluster_id)
         self.fuel_web.deploy_cluster_wait(cluster_id)
-
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
-        assert_equal(str(cluster['net_provider']), 'neutron')
-        assert_equal(str(net_params["networking_parameters"]
-                         ['segmentation_type']), segment_type)
-
         self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(
@@ -119,51 +102,45 @@ class BondingHAOneController(TestBasic):
         self.env.make_snapshot("deploy_bonding_active_backup")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_bonding_balance_slb"])
+          groups=["deploy_bonding_balance_xor"])
     @log_snapshot_after_test
-    def deploy_bonding_balance_slb(self):
-        """Deploy cluster in ha mode with 1 controller and  bonding
+    def deploy_bonding_balance_xor(self):
+        """Deploy cluster with balance-xor bonding and Nova Network
 
         Scenario:
             1. Create cluster
             2. Add 1 node with controller role
             3. Add 1 node with compute role
-            4. Setup bonding for all interfaces
-            4. Deploy the cluster
+            4. Setup bonding for all interfaces except admin/pxe
             5. Run network verification
-            6. Run OSTF
+            6. Deploy the cluster
+            7. Run network verification
+            8. Run OSTF
+
 
         Duration 30m
-        Snapshot deploy_bonding_balance_slb
+        Snapshot deploy_bonding_balance_xor
 
         """
 
-        if OPENSTACK_RELEASE == OPENSTACK_RELEASE_REDHAT:
-            raise SkipTest()
-
         self.env.revert_snapshot("ready_with_3_slaves")
-
-        segment_type = 'vlan'
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": segment_type,
-            }
         )
         self.fuel_web.update_nodes(
             cluster_id, {
                 'slave-01': ['controller'],
-                'slave-02': ['compute']
+                'slave-02': ['compute'],
+                'slave-03': ['cinder']
             }
         )
 
         raw_data = {
             'mac': None,
-            'mode': 'balance-slb',
-            'name': 'ovs-bond0',
+            'mode': 'balance-xor',
+            'name': 'lnx-bond0',
             'slaves': [
                 {'name': 'eth4'},
                 {'name': 'eth3'},
@@ -177,15 +154,13 @@ class BondingHAOneController(TestBasic):
 
         interfaces = {
             'eth0': ['fuelweb_admin'],
-            'ovs-bond0': [
+            'lnx-bond0': [
                 'public',
                 'management',
                 'storage',
-                'private'
+                'fixed'
             ]
         }
-
-        net_params = self.fuel_web.client.get_networks(cluster_id)
 
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
@@ -193,47 +168,44 @@ class BondingHAOneController(TestBasic):
                 node['id'], interfaces_dict=interfaces,
                 raw_data=raw_data
             )
+        self.fuel_web.update_vlan_network_fixed(
+            cluster_id, amount=8, network_size=32)
+        self.fuel_web.verify_network(cluster_id)
         self.fuel_web.deploy_cluster_wait(cluster_id)
-
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
-        assert_equal(str(cluster['net_provider']), 'neutron')
-        assert_equal(str(net_params["networking_parameters"]
-                         ['segmentation_type']), segment_type)
 
         self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_bonding_balance_slb")
+        self.env.make_snapshot("deploy_bonding_balance_xor")
 
 
-@test(groups=["bonding_ha", "bonding"])
+@test(groups=["bonding_neutron", "bonding_ha", "bonding"])
 class BondingHA(TestBasic):
     """Tests for HA bonding."""
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_bonding_ha_active_backup"])
+          groups=["deploy_bonding_balance_alb"])
     @log_snapshot_after_test
-    def deploy_bonding_ha_active_backup(self):
-        """Deploy cluster in HA mode with bonding (active backup)
+    def deploy_bonding_balance_alb(self):
+        """Deploy cluster with balance-alb bonding and Neutron VLAN
 
         Scenario:
             1. Create cluster
             2. Add 3 nodes with controller role
             3. Add 2 node with compute role
-            4. Setup bonding for all interfaces
-            4. Deploy the cluster
+            4. Setup bonding for all interfaces except admin/pxe
             5. Run network verification
-            6. Run OSTF
+            6. Deploy the cluster
+            7. Run network verification
+            8. Run OSTF
+
 
         Duration 70m
-        Snapshot deploy_bonding_ha_active_backup
+        Snapshot deploy_bonding_balance_alb
 
         """
-
-        if OPENSTACK_RELEASE == OPENSTACK_RELEASE_REDHAT:
-            raise SkipTest()
 
         self.env.revert_snapshot("ready_with_5_slaves")
 
@@ -253,14 +225,14 @@ class BondingHA(TestBasic):
                 'slave-02': ['controller'],
                 'slave-03': ['controller'],
                 'slave-04': ['compute'],
-                'slave-05': ['compute']
+                'slave-05': ['cinder']
             }
         )
 
         raw_data = {
             'mac': None,
-            'mode': 'active-backup',
-            'name': 'ovs-bond0',
+            'mode': 'balance-alb',
+            'name': 'lnx-bond0',
             'slaves': [
                 {'name': 'eth4'},
                 {'name': 'eth3'},
@@ -274,7 +246,7 @@ class BondingHA(TestBasic):
 
         interfaces = {
             'eth0': ['fuelweb_admin'],
-            'ovs-bond0': [
+            'lnx-bond0': [
                 'public',
                 'management',
                 'storage',
@@ -290,6 +262,7 @@ class BondingHA(TestBasic):
                 node['id'], interfaces_dict=interfaces,
                 raw_data=raw_data
             )
+        self.fuel_web.verify_network(cluster_id)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         cluster = self.fuel_web.client.get_cluster(cluster_id)
@@ -302,30 +275,28 @@ class BondingHA(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_bonding_ha_active_backup")
+        self.env.make_snapshot("deploy_bonding_balance_alb")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_bonding_ha_balance_slb"])
+          groups=["deploy_bonding_balance_tlb"])
     @log_snapshot_after_test
-    def deploy_bonding_ha_balance_slb(self):
-        """Deploy cluster in HA mode with bonding (balance SLB)
+    def deploy_bonding_balance_tlb(self):
+        """Deploy cluster with balance-alb bonding and Neutron VLAN
 
         Scenario:
             1. Create cluster
             2. Add 3 nodes with controller role
             3. Add 2 node with compute role
             4. Setup bonding for all interfaces
-            4. Deploy the cluster
             5. Run network verification
-            6. Run OSTF
+            6. Deploy the cluster
+            7. Run network verification
+            8. Run OSTF
 
         Duration 70m
-        Snapshot deploy_bonding_ha_balance_slb
+        Snapshot deploy_bonding_balance_tlb
 
         """
-
-        if OPENSTACK_RELEASE == OPENSTACK_RELEASE_REDHAT:
-            raise SkipTest()
 
         self.env.revert_snapshot("ready_with_5_slaves")
 
@@ -345,14 +316,14 @@ class BondingHA(TestBasic):
                 'slave-02': ['controller'],
                 'slave-03': ['controller'],
                 'slave-04': ['compute'],
-                'slave-05': ['compute']
+                'slave-05': ['cinder']
             }
         )
 
         raw_data = {
             'mac': None,
-            'mode': 'balance-slb',
-            'name': 'ovs-bond0',
+            'mode': 'balance-tlb',
+            'name': 'lnx-bond0',
             'slaves': [
                 {'name': 'eth4'},
                 {'name': 'eth3'},
@@ -366,7 +337,7 @@ class BondingHA(TestBasic):
 
         interfaces = {
             'eth0': ['fuelweb_admin'],
-            'ovs-bond0': [
+            'lnx-bond0': [
                 'public',
                 'management',
                 'private',
@@ -382,6 +353,7 @@ class BondingHA(TestBasic):
                 node['id'], interfaces_dict=interfaces,
                 raw_data=raw_data
             )
+        self.fuel_web.verify_network(cluster_id)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         cluster = self.fuel_web.client.get_cluster(cluster_id)
@@ -394,4 +366,4 @@ class BondingHA(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_bonding_ha_balance_slb")
+        self.env.make_snapshot("deploy_bonding_balance_tlb")
