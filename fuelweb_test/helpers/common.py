@@ -21,6 +21,7 @@ from fuelweb_test import logwrap as LOGWRAP
 from cinderclient import client as cinderclient
 from glanceclient.v1 import Client as glanceclient
 from keystoneclient.v2_0 import Client as keystoneclient
+from keystoneclient.exceptions import ClientException
 from novaclient.v1_1 import Client as novaclient
 import neutronclient.v2_0.client as neutronclient
 from proboscis.asserts import assert_equal
@@ -37,10 +38,10 @@ class Common(object):
                                api_key=password,
                                project_id=tenant,
                                auth_url=auth_url)
-        self.keystone = keystoneclient(username=user,
-                                       password=password,
-                                       tenant_name=tenant,
-                                       auth_url=auth_url)
+        self.keystone = self._get_keystoneclient(username=user,
+                                                 password=password,
+                                                 tenant_name=tenant,
+                                                 auth_url=auth_url)
         self.cinder = cinderclient.Client(1, user, password,
                                           tenant, auth_url)
         self.neutron = neutronclient.Client(
@@ -155,3 +156,21 @@ class Common(object):
 
     def delete_flavor(self, flavor):
         return self.nova.flavors.delete(flavor)
+
+    def _get_keystoneclient(self, username, password, tenant_name, auth_url,
+                            retries=3):
+        keystone = None
+        for i in range(retries):
+            try:
+                keystone = keystoneclient(username=username,
+                                          password=password,
+                                          tenant_name=tenant_name,
+                                          auth_url=auth_url)
+                break
+            except ClientException as e:
+                err = "Try nr {0}. Could not get keystone client, error: {1}"
+                LOGGER.warning(err.format(i + 1, e))
+                time.sleep(5)
+        if not keystone:
+            raise
+        return keystone
