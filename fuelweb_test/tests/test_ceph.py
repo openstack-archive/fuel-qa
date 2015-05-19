@@ -412,9 +412,11 @@ class CephRadosGW(TestBasic):
                 'slave-06': ['compute', 'ceph-osd']
             }
         )
+        self.fuel_web.verify_network(cluster_id)
         # Deploy cluster
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.check_ceph_status(cluster_id)
+        self.fuel_web.verify_network(cluster_id)
 
         # Run ostf
         self.fuel_web.run_ostf(cluster_id=cluster_id,
