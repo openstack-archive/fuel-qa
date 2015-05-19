@@ -537,7 +537,7 @@ class TestHaFailoverBase(TestBasic):
                         "File download was interrupted, size of downloading "
                         "does not change")
 
-    def ha_controller_loss_packages(self, dev='br-mgmt', loss_percent='0.75'):
+    def ha_controller_loss_packages(self, dev='br-mgmt', loss_percent='0.05'):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
             raise SkipTest()
 

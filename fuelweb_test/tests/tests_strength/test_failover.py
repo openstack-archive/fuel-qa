@@ -207,19 +207,20 @@ class TestHaNeutronFailover(TestHaFailoverBase):
         """
         super(self.__class__, self).check_virtual_router()
 
-    @test(depends_on_groups=['prepare_ha_neutron'],
+    @test(enabled=False, depends_on_groups=['prepare_ha_neutron'],
           groups=["check_neutron_package_loss"])
     @log_snapshot_after_test
     def ha_neutron_packages_loss(self):
-        """Check cluster recovery if br-mgmt loss 75% packages
+        """Check cluster recovery if br-mgmt loss 5% packages
 
         Scenario:
             1. SSH to controller
-            2. set 75 % package loss on br-mgmt
+            2. set 5 % package loss on br-mgmt
             3. run ostf
         Duration
 
         """
+        # TODO enable test when fencing will be implements
         super(self.__class__, self).ha_controller_loss_packages()
 
     @test(depends_on_groups=['prepare_ha_neutron'],
@@ -429,19 +430,19 @@ class TestHaNovaFailover(TestHaFailoverBase):
         """
         super(self.__class__, self).ha_check_monit()
 
-    @test(depends_on_groups=['prepare_ha_nova'],
+    @test(enabled=False, depends_on_groups=['prepare_ha_nova'],
           groups=["check_nova_package_loss"])
     @log_snapshot_after_test
     def ha_nova_packages_loss(self):
-        """Check cluster recovery if br-mgmt loss 75% packages
-
+        """Check cluster recovery if br-mgmt loss 5% packages
         Scenario:
             1. SSH to controller
-            2. set 75 % package loss on br-mgmt
+            2. set 5 % package loss on br-mgmt
             3. run ostf
         Duration
 
         """
+         # TODO enable tests when fencing will be implements
         super(self.__class__, self).ha_controller_loss_packages()
 
     @test(depends_on_groups=['prepare_ha_nova'],
