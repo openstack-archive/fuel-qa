@@ -75,11 +75,11 @@ class EMCPlugin(TestBasic):
         navicli = checkers.get_package_versions_from_node(
             remote=remote,
             name='navicli',
-            os_type="Ubuntu")
+            os_type=CONF.OPENSTACK_RELEASE)
         naviseccli = checkers.get_package_versions_from_node(
             remote=remote,
             name='naviseccli',
-            os_type="Ubuntu")
+            os_type=CONF.OPENSTACK_RELEASE)
         return any([out != '' for out in navicli, naviseccli])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
