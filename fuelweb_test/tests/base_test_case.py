@@ -179,6 +179,9 @@ class SetupEnvironment(TestBasic):
         """
         self.check_run("ready_with_9_slaves")
         self.env.revert_snapshot("ready", skip_timesync=True)
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:9],
+        # Bootstrap 9 slaves in two stages to get lower load on the host
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:5],
+                                 skip_timesync=True)
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[5:9],
                                  skip_timesync=True)
         self.env.make_snapshot("ready_with_9_slaves", is_make=True)
