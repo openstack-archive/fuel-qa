@@ -58,6 +58,12 @@ class VcenterDeploy(TestBasic):
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
             vcenter_value={
+                "glance": {
+                    "vcenter_username": "",
+                    "datacenter": "",
+                    "vcenter_host": "",
+                    "vcenter_password": "",
+                    "datastore": "", },
                 "availability_zones": [
                     {"vcenter_username": VCENTER_USERNAME,
                      "nova_computes": [
@@ -109,6 +115,12 @@ class VcenterDeploy(TestBasic):
                 'ceilometer': True
             },
             vcenter_value={
+                "glance": {
+                    "vcenter_username": "",
+                    "datacenter": "",
+                    "vcenter_host": "",
+                    "vcenter_password": "",
+                    "datastore": "", },
                 "availability_zones": [
                     {"vcenter_username": VCENTER_USERNAME,
                      "nova_computes": [
@@ -161,6 +173,12 @@ class VcenterDeploy(TestBasic):
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
             vcenter_value={
+                "glance": {
+                    "vcenter_username": "",
+                    "datacenter": "",
+                    "vcenter_host": "",
+                    "vcenter_password": "",
+                    "datastore": "", },
                 "availability_zones": [
                     {"vcenter_username": VCENTER_USERNAME,
                      "nova_computes": [
@@ -216,6 +234,12 @@ class VcenterDeploy(TestBasic):
                       'volumes_ceph': True,
                       'volumes_lvm': False},
             vcenter_value={
+                "glance": {
+                    "vcenter_username": "",
+                    "datacenter": "",
+                    "vcenter_host": "",
+                    "vcenter_password": "",
+                    "datastore": "", },
                 "availability_zones": [
                     {"vcenter_username": VCENTER_USERNAME,
                      "nova_computes": [
@@ -261,7 +285,8 @@ class VcenterDeploy(TestBasic):
             3. Deploy the cluster
             4. Run network verification
             5. Run OSTF
-            """
+
+        """
         self.env.revert_snapshot("ready_with_3_slaves")
 
         # Configure cluster
@@ -496,6 +521,12 @@ class VcenterDeploy(TestBasic):
             mode=DEPLOYMENT_MODE,
             settings={'images_ceph': True, },
             vcenter_value={
+                "glance": {
+                    "vcenter_username": "",
+                    "datacenter": "",
+                    "vcenter_host": "",
+                    "vcenter_password": "",
+                    "datastore": "", },
                 "availability_zones": [
                     {"vcenter_username": VCENTER_USERNAME,
                      "nova_computes": [
@@ -659,6 +690,12 @@ class VcenterDeploy(TestBasic):
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
             vcenter_value={
+                "glance": {
+                    "vcenter_username": "",
+                    "datacenter": "",
+                    "vcenter_host": "",
+                    "vcenter_password": "",
+                    "datastore": "", },
                 "availability_zones": [
                     {"vcenter_username": VCENTER_USERNAME,
                      "nova_computes": [
@@ -898,6 +935,12 @@ class VcenterDeploy(TestBasic):
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
             vcenter_value={
+                "glance": {
+                    "vcenter_username": "",
+                    "datacenter": "",
+                    "vcenter_host": "",
+                    "vcenter_password": "",
+                    "datastore": "", },
                 "availability_zones": [
                     {"vcenter_username": VCENTER_USERNAME,
                      "nova_computes": [
