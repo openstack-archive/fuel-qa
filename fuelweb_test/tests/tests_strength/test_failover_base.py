@@ -507,7 +507,8 @@ class TestHaFailoverBase(TestBasic):
         file_path = '/root/tmp'
         remote_compute.execute(
             "screen -S download -d -m bash -c 'mkdir -p {0} &&"
-            " cd {0} && wget {1}'".format(file_path, DOWNLOAD_LINK))
+            " cd {0} && wget --limit-rate=100k {1}'".format(file_path,
+                                                            DOWNLOAD_LINK))
         try:
             wait(
                 lambda: remote_compute.execute("ls -1 {0}/{1}".format(
