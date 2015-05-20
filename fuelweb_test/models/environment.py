@@ -98,7 +98,8 @@ class EnvironmentModel(object):
             node.start()
             # TODO(aglarendil): LP#1317213 temporary sleep
             # remove after better fix is applied
-            time.sleep(2)
+            # # TODO LP#1455539 remove after bug will be fixed
+            time.sleep(60)
 
         with timestat("wait_for_nodes_to_start_and_register_in_nailgun"):
             wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
