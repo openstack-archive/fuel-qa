@@ -401,6 +401,10 @@ def get_osd_ids(remote):
     cmd = 'ceph osd ls -f json'
     return json.loads(''.join(remote.execute(cmd)['stdout']))
 
+@logwrap
+def get_rbd_images_list(remote, pool):
+    cmd = 'rbd --pool {pool} --format json ls -l'.format(pool=pool)
+    return json.loads(''.join(remote.execute(cmd)['stdout']))
 
 def find_backup(remote):
     try:
