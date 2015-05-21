@@ -200,6 +200,15 @@ class OpenStackActions(common.Common):
         logger.info("Created volume")
         return self.cinder.volumes.get(volume.id)
 
+    def create_volume_from_image(self, image_id, size=1):
+        volume = self.cinder.volumes.create(size=size, imageRef=image_id)
+        helpers.wait(
+            lambda: self.cinder.volumes.get(volume.id).status == "available",
+            timeout=100)
+        logger.info("Created volume: '{0}' from image '{1}'"
+                    .format(volume.id, image_id))
+        return self.cinder.volumes.get(volume.id)
+
     def delete_volume(self, volume):
         return self.cinder.volumes.delete(volume)
 
@@ -322,7 +331,6 @@ class OpenStackActions(common.Common):
 
     def nova_get_net(self, net_name):
         for net in self.nova.networks.list():
-            if net.human_id == net_name:
                 return net
         return None
 
@@ -333,6 +341,11 @@ class OpenStackActions(common.Common):
             if network_id == network['id']:
                 return router
         return None
+
+    def create_image(self, **kwargs):
+        image = self.glance.images.create(**kwargs)
+        logger.info("Created image: '{0}'".format(image.id))
+        return self.glance.images.get(image.id)
 
     def get_image_list(self):
         return self.glance.images.list()
