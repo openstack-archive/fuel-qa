@@ -43,7 +43,7 @@ class EMCPlugin(TestBasic):
         asserts.assert_equal(
             cinder_conf.get('DEFAULT', 'storage_vnx_authentication_type'),
             'global')
-        asserts.assert_true(
+        asserts.assert_false(
             cinder_conf.getboolean('DEFAULT',
                                    'destroy_empty_storage_group'))
         asserts.assert_true(
