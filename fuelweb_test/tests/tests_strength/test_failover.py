@@ -284,6 +284,31 @@ class TestHaNeutronFailover(TestHaFailoverBase):
         """
         super(self.__class__, self).check_dead_rabbit_node_kicked()
 
+    @test(depends_on_groups=['prepare_ha_neutron'],
+          groups=["ha_neutron_3_1_rabbit_failover"])
+    @log_snapshot_after_test
+    def ha_neutron_test_3_1_rabbit_failover(self):
+        """Check 3 in 1 rabbit failover
+
+        Scenario:
+            1. SSH to controller and get rabbit master
+            2. Destroy not rabbit master node
+            3. Check that rabbit master stay as was
+            4. Run ostf ha
+            5. Turn on destroyed slave
+            6. Check rabbit master is the same
+            7. Run ostf ha
+            8. Destroy rabbit master node
+            9. Check that new rabbit-master appears
+            10. Run  ostf ha
+            11. Power on destroyed node
+            12. Check that new rabbit-master was not elected
+            13. Run ostf ha
+        Duration 25m
+
+        """
+        super(self.__class__, self).test_3_1_rabbit_failover()
+
 
 @test(groups=["thread_5", "ha", "ha_nova_destructive"])
 class TestHaNovaFailover(TestHaFailoverBase):
@@ -522,3 +547,28 @@ class TestHaNovaFailover(TestHaFailoverBase):
 
         """
         super(self.__class__, self).check_dead_rabbit_node_kicked()
+
+    @test(depends_on_groups=['prepare_ha_nova'],
+          groups=["ha_nova_test_3_1_rabbit_failover"])
+    @log_snapshot_after_test
+    def ha_nova_test_3_1_rabbit_failover(self):
+        """Check 3 in 1 rabbit failover
+
+        Scenario:
+            1. SSH to controller and get rabbit master
+            2. Destroy not rabbit master node
+            3. Check that rabbit master stay as was
+            4. Run ostf ha
+            5. Turn on destroyed slave
+            6. Check rabbit master is the same
+            7. Run ostf ha
+            8. Destroy rabbit master node
+            9. Check that new rabbit-master appears
+            10. Run  ostf ha
+            11. Power on destroyed node
+            12. Check that new rabbit-master was not elected
+            13. Run ostf ha
+        Duration 25m
+
+        """
+        super(self.__class__, self).test_3_1_rabbit_failover()
