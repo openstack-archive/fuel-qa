@@ -203,6 +203,17 @@ class OpenStackActions(common.Common):
     def delete_volume(self, volume):
         return self.cinder.volumes.delete(volume)
 
+    def delete_volume_and_wait(self, volume, timeout=60):
+        self.delete_volume(volume)
+        try:
+            helpers.wait(
+                lambda: not volume in self.cinder.volumes.list(),
+                timeout=timeout)
+        except TimeoutError:
+            asserts.assert_false(
+                volume in self.cinder.volumes.list(),
+                "Volume wasn't deleted in {0} sec".format(timeout))
+
     def attach_volume(self, volume, server, mount='/dev/vdb'):
         self.cinder.volumes.attach(volume, server.id, mount)
         return self.cinder.volumes.get(volume.id)

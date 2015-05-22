@@ -343,7 +343,7 @@ class CephHA(TestBasic):
         # delete flavor
         os_conn.delete_flavor(flavor)
         # delete volume
-        os_conn.delete_volume(volume)
+        os_conn.delete_volume_and_wait(volume, timeout=300)
         # delete image
         os_conn.delete_image(image.id)
         # delete tenant
