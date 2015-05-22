@@ -159,6 +159,9 @@ class TestHaFailoverBase(TestBasic):
                 devops_node)['online'],
                 timeout=60 * 5)
 
+            # Wait for HA services ready
+            self.fuel_web.assert_ha_services_ready(cluster_id)
+
             logger.info("Waiting 300 sec before MySQL Galera will up, "
                         "then run OSTF")
 
@@ -167,10 +170,6 @@ class TestHaFailoverBase(TestBasic):
                 [n.name for n in
                  set(self.env.d_env.nodes().slaves[:3]) - {devops_node}],
                 timeout=300)
-
-            _wait(lambda:
-                  self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
-                  interval=30, timeout=300)
 
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
