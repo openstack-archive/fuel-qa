@@ -52,9 +52,11 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             1. Revert snapshot with ha one controller ceph env
             2. Run upgrade on master
             3. Check that upgrade was successful
-            4. Add another compute node
-            5. Re-deploy cluster
-            6. Run OSTF
+            4. Run network verification
+            5. Run OSTF
+            6. Add another compute node
+            7. Re-deploy cluster
+            8. Run OSTF
 
         """
 
@@ -92,6 +94,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             self.env.d_env.nodes().slaves[:3])
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nailgun_upgrade_migration()
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[3:4])
         self.fuel_web.update_nodes(
@@ -128,9 +132,11 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             1. Revert ceph_ha_one_controller_compact snapshot
             2. Run upgrade on master
             3. Check that upgrade was successful
-            4. Delete one compute+ceph node
-            5. Re-deploy cluster
-            6. Run OSTF
+            4. Run network verification
+            5. Run OSTF
+            6. Delete one compute+ceph node
+            7. Re-deploy cluster
+            8. Run OSTF
 
         """
 
@@ -163,6 +169,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             self.env.d_env.nodes().slaves[:3])
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nailgun_upgrade_migration()
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
         remote_ceph = self.fuel_web.get_ssh_for_node('slave-03')
         self.fuel_web.prepare_ceph_to_delete(remote_ceph)
         nailgun_nodes = self.fuel_web.update_nodes(
@@ -191,10 +199,11 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             1. Revert snapshot with neutron gre ha env
             2. Run upgrade on master
             3. Check that upgrade was successful
-            4. Check cluster is operable
-            5. Create new ha cluster with 1 controller Vlan cluster
-            6. Deploy cluster
-            7. Run OSTF
+            4. Run network verification
+            5. Run OSTF
+            6. Create new ha cluster with 1 controller Vlan cluster
+            7. Deploy cluster
+            8. Run OSTF
 
         """
         if not self.env.d_env.has_snapshot('deploy_neutron_gre_ha'):
@@ -226,8 +235,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:5])
         self.fuel_web.assert_nailgun_upgrade_migration()
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         available_releases_after = self.fuel_web.get_releases_list_for_os(
             release_name=hlp_data.OPENSTACK_RELEASE)
@@ -284,8 +293,10 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             1. Revert snapshot with ha 1 controller ceph env
             2. Run upgrade on master
             3. Check that upgrade was successful
-            4. Re-deploy cluster
+            4. Run network verification
             5. Run OSTF
+            6. Re-deploy cluster
+            7. Run OSTF
 
         """
 
@@ -324,6 +335,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             release_name=hlp_data.OPENSTACK_RELEASE)
         added_release = [id for id in available_releases_after
                          if id not in available_releases_before]
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[3:9])
         segment_type = 'vlan'
@@ -377,8 +390,10 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             3. Run upgrade on master
             4. Check that rollback starts automatically
             5. Check that cluster was not upgraded
-            6. Add 1 cinder node and re-deploy cluster
+            6. Run network verification
             7. Run OSTF
+            8. Add 1 cinder node and re-deploy cluster
+            9. Run OSTF
 
         """
         if not self.env.d_env.has_snapshot('deploy_neutron_gre_ha'):
@@ -412,6 +427,8 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             self.env.d_env.nodes().slaves[:5])
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_FROM)
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[5:6])
@@ -434,9 +451,11 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             2. Add raise exception to docker_engine.py file
             3. Run upgrade on master
             4. Check that rollback starts automatically
-            5. Check that cluster was not upgraded and run OSTf
-            6. Add 1 ceph node and re-deploy cluster
+            5. Check that cluster was not upgraded
+            6. Run network verification
             7. Run OSTF
+            8. Add 1 ceph node and re-deploy cluster
+            9. Run OSTF
 
         """
         if not self.env.d_env.has_snapshot('ceph_multinode_compact'):
@@ -477,6 +496,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             self.env.d_env.nodes().slaves[:3])
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_FROM)
+        self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[3:4])
@@ -505,9 +525,11 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             2. Add raise exception to docker_engine.py file
             3. Run upgrade on master
             4. Check that rollback starts automatically
-            5. Check that cluster was not upgraded and run OSTf
-            6. Delete 1 node and re-deploy cluster
+            5. Check that cluster was not upgraded
+            6. Run network verification
             7. Run OSTF
+            8. Delete 1 node and re-deploy cluster
+            9. Run OSTF
 
         """
         if not self.env.d_env.has_snapshot('deploy_neutron_gre'):
@@ -544,6 +566,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             self.env.d_env.nodes().slaves[:3])
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_FROM)
+        self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
         nailgun_nodes = self.fuel_web.update_nodes(
             cluster_id, {'slave-03': ['compute', 'cinder']}, False, True)
