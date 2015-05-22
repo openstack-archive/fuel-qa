@@ -221,10 +221,11 @@ class TestNeutronFailover(base_test_case.TestBasic):
         net_id = os_conn.get_network('net04')['id']
 
         # any controller could be used as devops_node
-        devops_node = self.env.d_env.nodes().slaves[0]
-
-        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
-        remote = self.env.d_env.get_ssh_to_remote(_ip)
+#        devops_node = self.env.d_env.nodes().slaves[0]
+#
+#        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
+#        remote = self.env.d_env.get_ssh_to_remote(_ip)
+        remote = self.fuel_web.get_ssh_for_node("slave-01")
 
         dhcp_namespace = ''.join(remote.execute('ip netns | grep {0}'.format(
             net_id))['stdout']).rstrip()
@@ -245,6 +246,10 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
             new_devops)['online'], timeout=60 * 5)
+
+        # Wait for HA services ready
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
         self.fuel_web.wait_mysql_galera_is_up(['slave-01', 'slave-02',
                                                'slave-03'])
 
@@ -256,6 +261,9 @@ class TestNeutronFailover(base_test_case.TestBasic):
                 "l3 agent wasn't rescheduled, it is still {0}".format(
                     os_conn.get_l3_agent_hosts(router_id)[0]))
         wait(lambda: os_conn.get_l3_agent_ids(router_id), timeout=60)
+
+        # Re-initialize SSHClient after slave-01 was rebooted
+        remote.reconnect()
 
         self.check_instance_connectivity(remote, dhcp_namespace, instance_ip)
 
@@ -289,10 +297,11 @@ class TestNeutronFailover(base_test_case.TestBasic):
         net_id = os_conn.get_network('net04')['id']
 
         # any controller could be used as devops_node
-        devops_node = self.env.d_env.nodes().slaves[0]
-
-        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
-        remote = self.env.d_env.get_ssh_to_remote(_ip)
+#        devops_node = self.env.d_env.nodes().slaves[0]
+#
+#        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
+#        remote = self.env.d_env.get_ssh_to_remote(_ip)
+        remote = self.fuel_web.get_ssh_for_node("slave-01")
 
         dhcp_namespace = ''.join(remote.execute('ip netns | grep {0}'.format(
             net_id))['stdout']).rstrip()
@@ -312,9 +321,13 @@ class TestNeutronFailover(base_test_case.TestBasic):
         new_devops.destroy()
         wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
             new_devops)['online'], timeout=60 * 10)
-        self.fuel_web.wait_mysql_galera_is_up(
-            [n.name for n in
-             set(self.env.d_env.nodes().slaves[:3]) - {new_devops}])
+
+        # Wait for HA services ready
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
+        online_controllers_names = [n.name for n in set(
+            self.env.d_env.nodes().slaves[:3]) - {new_devops}]
+        self.fuel_web.wait_mysql_galera_is_up(online_controllers_names)
 
         try:
             wait(lambda: not node_with_l3 == os_conn.get_l3_agent_hosts(
@@ -325,6 +338,8 @@ class TestNeutronFailover(base_test_case.TestBasic):
                     os_conn.get_l3_agent_hosts(router_id)[0]))
         wait(lambda: os_conn.get_l3_agent_ids(router_id), timeout=60)
 
+        # Re-initialize SSHClient for an online controller
+        remote = self.fuel_web.get_ssh_for_node(online_controllers_names[0])
         self.check_instance_connectivity(remote, dhcp_namespace, instance_ip)
 
         @retry(count=3, delay=120)
