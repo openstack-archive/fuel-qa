@@ -699,12 +699,8 @@ class VcenterDeploy(TestBasic):
             21. Add 1 node with compute role, 1 node with cinder role and
                 redeploy cluster.
             22. Run OSTF.
-            23. Add 3 node with controller role and redeploy cluster.
-            24. Run OSTF.
-            25. Remove 1 node with controller role and redeploy cluster.
-            26. Run OSTF.
 
-        Duration 10 hours
+        Duration 5 hours
 
         """
 
@@ -901,37 +897,6 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['smoke', 'sanity'])
 
-        # Add 3 nodes with controller role and redeploy cluster
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {
-                'slave-06': ['controller'],
-                'slave-07': ['controller'],
-                'slave-08': ['controller'],
-            },
-        )
-
-        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
-        for node_index in range(-1, -4, -1):
-            self.fuel_web.update_node_networks(
-                slave_nodes[node_index]['id'], interfaces
-            )
-
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
-
-        # Remove 1 node with controller role and redeploy cluster
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {'slave-06': ['controller'], }, False, True)
-
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
-
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_multiple_cluster"])
     @log_snapshot_after_test
@@ -1061,3 +1026,98 @@ class VcenterDeploy(TestBasic):
                     assert_true(
                         res == 3,
                         "Error in Instances network connectivity.")
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
+          groups=["vcenter_delete_controler"])
+    @log_snapshot_after_test
+    def vcenter_delete_controler(self):
+        """Deploy enviroment of vcenter+qemu nova vlan, default backend for
+           glance and deletion one node with controller role
+
+        Scenario:
+            1. Create cluster with vCenter support
+            2. Add 4 nodes with Controller roles
+            3. Add 2 nodes with compute role
+            4. Set Nova-Network VlanManager as a network backend.
+            5. Deploy the cluster
+            6. Run OSTF.
+            7. Remove 1 node with controller role and redeploy cluster.
+            8. Run OSTF.
+
+        Duration 3 hours
+
+        """
+        self.env.revert_snapshot("ready_with_9_slaves")
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            vcenter_value={
+                "glance": {
+                    "vcenter_username": "",
+                    "datacenter": "",
+                    "vcenter_host": "",
+                    "vcenter_password": "",
+                    "datastore": "", },
+                "availability_zones": [
+                    {"vcenter_username": VCENTER_USERNAME,
+                     "nova_computes": [
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster1",
+                          "service_name": "vmcluster1"}, ],
+                     "vcenter_host": VCENTER_IP,
+                     "az_name": "vcenter",
+                     "vcenter_password": VCENTER_PASSWORD,
+                     }],
+                "network": {"esxi_vlan_interface": "vmnic1"}}, )
+
+        logger.debug("cluster is {}".format(cluster_id))
+
+        # Configure network interfaces.
+        # Public and Fixed networks are on the same interface
+        # because Nova will use the same vSwitch for PortGroups creating
+        # as a ESXi management interface is located in.
+        interfaces = {
+            'eth0': ["fuelweb_admin"],
+            'eth1': ["public", "fixed"],
+            'eth2': ["management", ],
+            'eth3': [],
+            'eth4': ["storage"],
+        }
+
+        # Assign role to node
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller'],
+             'slave-02': ['controller'],
+             'slave-03': ['controller'],
+             'slave-04': ['controller'],
+             'slave-05': ['compute'],
+             'slave-06': ['compute'],
+             'slave-07': ['cinder'],
+             'slave-08': ['cinder-vmware'], })
+
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        for node in slave_nodes:
+            self.fuel_web.update_node_networks(node['id'], interfaces)
+
+        # Configure Nova-Network VLanManager.
+        self.fuel_web.update_vlan_network_fixed(
+            cluster_id, amount=8, network_size=32)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
+            timeout=60 * 60)
+
+        # Remove 1 node with controller role and redeploy cluster
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-04': ['controller'], }, False, True)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
