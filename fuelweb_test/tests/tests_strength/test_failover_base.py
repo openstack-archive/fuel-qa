@@ -143,7 +143,7 @@ class TestHaFailoverBase(TestBasic):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
             raise SkipTest()
 
-        for devops_node in self.env.d_env.nodes().slaves[:2]:
+        for devops_node in self.env.d_env.nodes().slaves[:3]:
             self.env.revert_snapshot(self.snapshot_name)
             devops_node.suspend(False)
             self.fuel_web.assert_pacemaker(
@@ -158,6 +158,9 @@ class TestHaFailoverBase(TestBasic):
             wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
                 devops_node)['online'],
                 timeout=60 * 5)
+
+            # Wait for HA services ready
+            self.fuel_web.assert_ha_services_ready(cluster_id)
 
             logger.info("Waiting 300 sec before MySQL Galera will up, "
                         "then run OSTF")
@@ -181,7 +184,7 @@ class TestHaFailoverBase(TestBasic):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
             raise SkipTest()
 
-        for devops_node in self.env.d_env.nodes().slaves[:2]:
+        for devops_node in self.env.d_env.nodes().slaves[:3]:
             self.env.revert_snapshot(self.snapshot_name)
 
             remote = self.fuel_web.get_ssh_for_node(devops_node.name)
