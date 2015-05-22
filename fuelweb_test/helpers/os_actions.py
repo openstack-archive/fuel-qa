@@ -324,6 +324,7 @@ class OpenStackActions(common.Common):
                 return net
         return None
 
+
     def get_subnet(self, subnet_name):
         subnet_list = self.neutron.list_subnets()
         for subnet in subnet_list['subnets']:
