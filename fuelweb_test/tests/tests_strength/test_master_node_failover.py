@@ -114,10 +114,10 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         """
 
         self.env.revert_snapshot("ready_with_5_slaves")
-
+        public_gw = self.env.d_env.router(router_name="public")
         net_provider_data = {
             'ntp_list': settings.EXTERNAL_NTP,
-            'dns_list': settings.EXTERNAL_DNS
+            'dns_list': '{0},{1}'.format(settings.EXTERNAL_DNS, public_gw)
         }
         if settings.NEUTRON_ENABLE:
             net_provider_data.update({
