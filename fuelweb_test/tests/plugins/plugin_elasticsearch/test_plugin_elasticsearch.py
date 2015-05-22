@@ -19,7 +19,7 @@ from proboscis.asserts import assert_true
 from proboscis import test
 
 from fuelweb_test import logger
-from fuelweb_test.helpers.decorators import log_snapshot_on_error
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import checkers
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import ELASTICSEARCH_KIBANA_PLUGIN_PATH
@@ -35,7 +35,7 @@ class TestElasticsearchPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_elasticsearch_kibana"])
-    @log_snapshot_on_error
+    @log_snapshot_after_test
     def deploy_elasticsearch_kibana_plugin(self):
         """Deploy a cluster with the Elasticsearch-Kibana plugin
 
