@@ -247,6 +247,9 @@ class EnvironmentModel(object):
     def check_slaves_are_ready(self):
         devops_nodes = [node for node in self.d_env.nodes().slaves
                         if node.driver.node_active(node)]
+        # Bug: 1455753
+        time.sleep(30)
+
         for node in devops_nodes:
             try:
                 wait(lambda:
