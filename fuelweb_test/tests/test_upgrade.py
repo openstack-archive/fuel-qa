@@ -163,6 +163,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             self.env.d_env.nodes().slaves[:3])
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nailgun_upgrade_migration()
+        remote_ceph = self.fuel_web.get_ssh_for_node('slave-03')
+        self.fuel_web.prepare_ceph_to_delete(remote_ceph)
         nailgun_nodes = self.fuel_web.update_nodes(
             cluster_id, {'slave-03': ['compute', 'ceph-osd']}, False, True)
         task = self.fuel_web.deploy_cluster(cluster_id)
