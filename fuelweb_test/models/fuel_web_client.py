@@ -2092,6 +2092,26 @@ class FuelWebClient(object):
         remote_ceph.execute("ceph osd crush remove {}".format(hostname))
 
     @logwrap
+    def get_rabbit_slaves_node(self, node, fqdn_needed=False):
+        with self.get_ssh_for_node(node) as remote:
+            cmd = 'crm resource status master_p_rabbitmq-server'
+            list_output = ''.join(remote.execute(cmd)['stdout']).split('\n')
+        filtered_list = [el for el in list_output
+                         if not el.endswith('Master')]
+        slaves_nodes = []
+        for el in filtered_list:
+            slaves_nodes.append(
+                re.search('resource master_p_rabbitmq-server is running on:'
+                          ' (.*)', el).group(1).strip())
+        if fqdn_needed:
+            return slaves_nodes
+        else:
+            devops_nodes = [self.find_devops_node_by_nailgun_fqdn(
+                slave_node, self.environment.d_env.nodes().slaves)
+                for slave_node in slaves_nodes]
+            return devops_nodes
+
+    @logwrap
     def run_deployment_tasks(self, cluster_id, nodes, tasks):
         self.client.put_deployment_tasks_for_cluster(
             cluster_id=cluster_id, data=tasks,
