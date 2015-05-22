@@ -2008,3 +2008,18 @@ class FuelWebClient(object):
             remote_ceph.execute("ceph osd rm osd.{}".format(id))
         # remove ceph node from crush map
         remote_ceph.execute("ceph osd crush remove {}".format(hostname))
+
+    @logwrap
+    def get_rabbit_slaves_node(self, node, fqdn_needed=False):
+        remote = self.get_ssh_for_node(node)
+        cmd = 'crm_mon -1| grep "Slaves"'
+        output = ''.join(remote.execute(cmd)['stdout'])
+        slaves_nodes = re.search('Slaves: \[(.*) \]', output).group(1).strip()
+
+        if fqdn_needed:
+            return slaves_nodes.split(' ')
+        else:
+            devops_nodes = [self.find_devops_node_by_nailgun_fqdn(
+                slave_node, self.environment.d_env.nodes().slaves)
+                for slave_node in slaves_nodes.split(' ')]
+            return devops_nodes
