@@ -909,3 +909,163 @@ class TestHaFailoverBase(TestBasic):
         assert_false(rabbit_slave1_name in rabbit_status,
                      "rabbit node {0} is still in"
                      " cluster".format(rabbit_slave1_name))
+
+    def test_3_1_rabbit_failover(self):
+        if not self.env.d_env.has_snapshot(self.snapshot_name):
+            raise SkipTest()
+        logger.info('Revert environment started...')
+        self.env.revert_snapshot(self.snapshot_name)
+
+        cluster_id = self.fuel_web.client.get_cluster_id(
+            self.__class__.__name__)
+
+        logger.info('Waiting for galera is up')
+
+        # Wait until MySQL Galera is UP on some controller
+        self.fuel_web.wait_mysql_galera_is_up(['slave-02'])
+
+        # Check keystone is fine after revert
+        try:
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha', 'sanity'])
+        except AssertionError:
+            time.sleep(600)
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha', 'sanity'])
+        logger.info('Try to find slave where rabbit master is running')
+        # get master rabbit controller
+        master_rabbit = self.fuel_web.get_rabbit_master_node(
+            self.env.d_env.nodes().slaves[0].name)
+        logger.info('Try to find slave where rabbit slaves are running')
+        # get rabbit slaves
+        rabbit_slaves = self.fuel_web.get_rabbit_slaves_node(
+            self.env.d_env.nodes().slaves[0].name)
+        assert_true(rabbit_slaves,
+                    'Can not find rabbit slaves. '
+                    'current result is {0}'.format(rabbit_slaves))
+        logger.info('Suspend node {0}'.format(rabbit_slaves[0].name))
+        # suspend devops node with rabbit slave
+        rabbit_slaves[0].suspend(False)
+
+        # Wait until Nailgun marked suspended controller as offline
+        try:
+            wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
+                rabbit_slaves[0])['online'], timeout=60 * 5)
+        except TimeoutError:
+            raise TimeoutError('Node {0} does'
+                               ' not become offline '
+                               'in nailgun'.format(rabbit_slaves[0].name))
+
+        # check ha
+        try:
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha'])
+        except AssertionError:
+            time.sleep(600)
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha', 'sanity', 'smoke'], should_fail=1)
+
+        active_slaves = [slave for slave
+                         in self.env.d_env.nodes().slaves[0:4]
+                         if slave.name != rabbit_slaves[0].name]
+
+        master_rabbit_after_slave_fail = self.fuel_web.get_rabbit_master_node(
+            active_slaves[0].name)
+        assert_equal(master_rabbit.name, master_rabbit_after_slave_fail.name)
+
+        # turn on rabbit slave
+
+        rabbit_slaves[0].resume(False)
+
+        # Wait until Nailgun marked suspended controller as online
+        try:
+            wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+                rabbit_slaves[0])['online'], timeout=60 * 5)
+        except TimeoutError:
+            raise TimeoutError('Node {0} does'
+                               ' not become online '
+                               'in nailgun'.format(rabbit_slaves[0].name))
+
+        # check ha
+        try:
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha'])
+        except AssertionError:
+            time.sleep(600)
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha', 'sanity', 'smoke'])
+
+        # check that master rabbit is the same
+
+        master_rabbit_after_slave_back = self.fuel_web.get_rabbit_master_node(
+            active_slaves[0].name)
+
+        assert_equal(master_rabbit.name, master_rabbit_after_slave_back.name)
+
+        # turn off rabbit master
+        master_rabbit.suspend(False)
+
+         # Wait until Nailgun marked suspended controller as offline
+        try:
+            wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
+                master_rabbit)['online'], timeout=60 * 5)
+        except TimeoutError:
+            raise TimeoutError('Node {0} does'
+                               ' not become offline'
+                               'in nailgun'.format(master_rabbit.name))
+
+        # check ha
+        try:
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha'])
+        except AssertionError:
+            time.sleep(600)
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha', 'sanity', 'smoke'], should_fail=1)
+
+        active_slaves = [slave for slave
+                         in self.env.d_env.nodes().slaves[0:4]
+                         if slave.name != master_rabbit.name]
+        master_rabbit_after_fail = self.fuel_web.get_rabbit_master_node(
+            active_slaves[0].name)
+        assert_not_equal(master_rabbit.name, master_rabbit_after_fail.name)
+
+        # turn on rabbit master
+
+        master_rabbit.resume(False)
+
+        # Wait until Nailgun marked suspended controller as online
+        try:
+            wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+                master_rabbit)['online'], timeout=60 * 5)
+        except TimeoutError:
+            raise TimeoutError('Node {0} does'
+                               ' not become online '
+                               'in nailgun'.format(master_rabbit.name))
+
+        # check ha
+        try:
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha'])
+        except AssertionError:
+            time.sleep(600)
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha', 'sanity', 'smoke'])
+
+        # check that master rabbit is the same
+
+        master_rabbit_after_node_back = self.fuel_web.get_rabbit_master_node(
+            active_slaves[0].name)
+
+        assert_equal(master_rabbit_after_fail.name,
+                     master_rabbit_after_node_back.name)
