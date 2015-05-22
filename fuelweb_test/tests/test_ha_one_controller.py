@@ -12,11 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import re
 
 from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
+from proboscis import SkipTest
 from proboscis import test
 
 from fuelweb_test.helpers import checkers
@@ -24,8 +27,11 @@ from devops.helpers.helpers import tcp_ping
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.eb_tables import Ebtables
 from fuelweb_test.helpers import os_actions
+from fuelweb_test.settings import CLASSIC_PROVISIONING
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NODE_VOLUME_SIZE
+from fuelweb_test.settings import OPENSTACK_RELEASE
+from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
@@ -996,3 +1002,70 @@ class HAOneControllerFlatUSB(HAOneControllerFlatBase):
         """
 
         super(self.__class__, self).deploy_ha_one_controller_flat_base()
+
+
+@test(groups=["thread_usb", "classic_provisioning"])
+class ProvisioningScripts(TestBasic):
+
+    base_path = '/var/www/nailgun/ubuntu/x86_64/images/'
+    filenames = ['initrd.gz', 'linux']
+
+    def get_zero_length_files(self):
+        remote = self.env.d_env.get_admin_remote()
+
+        zero_length_files = []
+        for f_name in self.filenames:
+            file_size = checkers.get_file_size(remote, f_name, self.base_path)
+            if not file_size:
+                zero_length_files.append(f_name)
+            full_path = os.path.join(self.base_path, f_name)
+            logger.info("File %s has size %s", full_path, file_size)
+
+        return zero_length_files
+
+    @test(depends_on=[SetupEnvironment.prepare_release],
+          groups=["check_fuel_provisioning_scripts"])
+    @log_snapshot_after_test
+    def check_fuel_provisioning_scripts(self):
+        """Deploy cluster with controller node only
+
+        Scenario:
+            1. Deploy master node
+            2. Check sizes of the files
+            1. Create cluster
+            2. Add 1 node with controller role
+            3. Deploy the cluster
+            4. Check sizes of the files again
+
+        Duration 45m
+        """
+        if OPENSTACK_RELEASE_UBUNTU != OPENSTACK_RELEASE or \
+                not CLASSIC_PROVISIONING:
+            raise SkipTest()
+
+        self.env.revert_snapshot("ready")
+
+        zero_length_files = self.get_zero_length_files()
+        non_zero_length_files = list(
+            set(zero_length_files) - set(self.filenames))
+
+        error_msg = "Non zero-length files: {0}".\
+            format(', '.join(non_zero_length_files))
+        assert_false(non_zero_length_files, error_msg)
+
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[:1])
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE)
+        logger.info('cluster is %s' % str(cluster_id))
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller']}
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        zero_length_files = self.get_zero_length_files()
+        assert_false(
+            zero_length_files,
+            "Files {0} have 0 length".format(', '.join(zero_length_files)))
