@@ -32,7 +32,7 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["thread_1", "ceph"])
+@test(groups=["ceph_ha_one_controller", "ceph"])
 class CephCompact(TestBasic):
     """CephCompact."""  # TODO documentation
 
@@ -432,7 +432,7 @@ class CephRadosGW(TestBasic):
         self.env.make_snapshot("ceph_rados_gw")
 
 
-@test(groups=["thread_1", "ceph_migration"])
+@test(groups=["ceph_ha_one_controller", "ceph_migration"])
 class VmBackedWithCephMigrationBasic(TestBasic):
     """VmBackedWithCephMigrationBasic."""  # TODO documentation
 
@@ -649,7 +649,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
             "vm_backed_with_ceph_live_migration")
 
 
-@test(groups=["thread_1", "ceph_partitions"])
+@test(groups=["ceph_ha_one_controller", "ceph_partitions"])
 class CheckCephPartitionsAfterReboot(TestBasic):
     """CheckCephPartitionsAfterReboot."""  # TODO documentation
 
