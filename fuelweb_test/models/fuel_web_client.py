@@ -821,19 +821,21 @@ class FuelWebClient(object):
         d_macs = {i.mac_address.upper() for i in devops_node.interfaces}
         logger.debug('Verify that nailgun api is running')
         attempts = ATTEMPTS
+        nodes = []
         while attempts > 0:
             logger.debug(
                 'current timeouts is {0} count of '
                 'attempts is {1}'.format(TIMEOUT, attempts))
             try:
-                self.client.list_nodes()
+                nodes = self.client.list_nodes()
+                logger.debug('Got nodes %s', nodes)
                 attempts = 0
             except Exception:
                 logger.debug(traceback.format_exc())
                 attempts -= 1
                 time.sleep(TIMEOUT)
         logger.debug('Look for nailgun node by macs %s', d_macs)
-        for nailgun_node in self.client.list_nodes():
+        for nailgun_node in nodes:
             macs = {i['mac'] for i in nailgun_node['meta']['interfaces']}
             logger.debug('Look for macs returned by nailgun {0}'.format(macs))
             # Because our HAproxy may create some interfaces
