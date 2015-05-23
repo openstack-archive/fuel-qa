@@ -945,7 +945,7 @@ class FuelWebClient(object):
 
     @logwrap
     def run_network_verify(self, cluster_id):
-        logger.info('Run network verification at cluster %s', cluster_id)
+        logger.info('Run network verification on the cluster %s', cluster_id)
         return self.client.verify_networks(cluster_id)
 
     @logwrap
@@ -1181,18 +1181,49 @@ class FuelWebClient(object):
         )
 
     @logwrap
-    def verify_network(self, cluster_id, timeout=60 * 5, success=True):
+    def verify_network(self, cluster_id, timeout=60 * 5, success=True,
+                       repeats=2):
+        def _report_verify_network_result(task):
+            # Report verify_network results using style like on UI
+            if task['status'] == 'error' and 'result' in task:
+                msg = "Network verification failed:\n"
+                if task['result']:
+                    msg += ("{0:30} | {1:20} | {2:15} | {3}\n"
+                            .format("Node Name", "Node MAC address",
+                                    "Node Interface",
+                                    "Expected VLAN (not received)"))
+                    for res in task['result']:
+                        msg += ("{0:30} | {1:20} | {2:15} | {3}\n".format(
+                            res['name'], res['mac'], res['interface'],
+                            [x or 'untagged' for x in res['absent_vlans']]))
+                logger.error(''.join([msg, task['message']]))
+
         # TODO(apanchenko): remove this hack when network verification begins
         # TODO(apanchenko): to work for environments with multiple net groups
         if MULTIPLE_NETWORKS:
             logger.warning('Network verification is temporary disabled when '
                            '"multiple cluster networks" feature is used')
             return
-        task = self.run_network_verify(cluster_id)
-        if success:
-            self.assert_task_success(task, timeout, interval=10)
-        else:
-            self.assert_task_failed(task, timeout, interval=10)
+        for i in range(repeats):
+            try:
+                task = self.run_network_verify(cluster_id)
+                with quiet_logger():
+                    if success:
+                        self.assert_task_success(task, timeout, interval=10)
+                    else:
+                        self.assert_task_failed(task, timeout, interval=10)
+                break
+            except AssertionError:
+                # Report the result of network verify.
+                task = self.client.get_task(task['id'])
+                _report_verify_network_result(task)
+                # Raise if it was the last repeat.
+                if i == (repeats - 1):
+                    raise
+                else:
+                    time.sleep(20)
+        logger.info("Network verification for cluster {0} finished"
+                    .format(cluster_id))
 
     @logwrap
     def update_nodes_interfaces(self, cluster_id, nailgun_nodes=[]):
