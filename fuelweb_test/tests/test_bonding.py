@@ -102,15 +102,16 @@ class BondingHAOneController(TestBasic):
         self.env.make_snapshot("deploy_bonding_active_backup")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_bonding_balance_xor"])
+          groups=["deploy_bonding_mixed"])
     @log_snapshot_after_test
-    def deploy_bonding_balance_xor(self):
-        """Deploy cluster with balance-xor bonding and Nova Network
+    def deploy_bonding_mixed(self):
+        """Deploy cluster with bonding (active-backup, balance-alb,
+        balance-tlb modes) and Nova Network + Vlan
 
         Scenario:
             1. Create cluster
             2. Add 1 node with controller role
-            3. Add 1 node with compute role
+            3. Add 1 node with compute role and 1 node with cinder role
             4. Setup bonding for all interfaces except admin/pxe
             5. Run network verification
             6. Deploy the cluster
@@ -119,7 +120,7 @@ class BondingHAOneController(TestBasic):
 
 
         Duration 30m
-        Snapshot deploy_bonding_balance_xor
+        Snapshot deploy_bonding_mixed
 
         """
 
@@ -137,9 +138,9 @@ class BondingHAOneController(TestBasic):
             }
         )
 
-        raw_data = {
+        bond_config = {
             'mac': None,
-            'mode': 'balance-xor',
+            'mode': 'balance-tlb',
             'name': 'lnx-bond0',
             'slaves': [
                 {'name': 'eth4'},
@@ -150,6 +151,12 @@ class BondingHAOneController(TestBasic):
             'state': None,
             'type': 'bond',
             'assigned_networks': []
+        }
+
+        bond_modes = {
+            'slave-01': 'active-backup',
+            'slave-02': 'balance-alb',
+            'slave-03': 'balance-tlb',
         }
 
         interfaces = {
@@ -164,9 +171,11 @@ class BondingHAOneController(TestBasic):
 
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
+            slave = self.fuel_web.get_devops_node_by_nailgun_node(node).name
+            bond_config['mode'] = bond_modes[slave]
             self.fuel_web.update_node_networks(
                 node['id'], interfaces_dict=interfaces,
-                raw_data=raw_data
+                raw_data=bond_config
             )
         self.fuel_web.update_vlan_network_fixed(
             cluster_id, amount=8, network_size=32)
@@ -178,7 +187,7 @@ class BondingHAOneController(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_bonding_balance_xor")
+        self.env.make_snapshot("deploy_bonding_mixed")
 
 
 @test(groups=["bonding_neutron", "bonding_ha", "bonding"])
