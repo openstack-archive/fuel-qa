@@ -125,14 +125,17 @@ class FuelWebClient(object):
             timeout=timeout)
 
     @logwrap
-    def assert_ha_services_ready(self, cluster_id, timeout=20 * 60):
+    def assert_ha_services_ready(self, cluster_id, timeout=20 * 60,
+                                 should_fail=0):
         """Wait until HA services are UP.
         Should be used before run any other check for services."""
         if self.get_cluster_mode(cluster_id) == DEPLOYMENT_MODE_HA:
             logger.info('Waiting {0} sec. for passed OSTF HA tests.'
                         .format(timeout))
             with quiet_logger():
-                _wait(lambda: self.run_ostf(cluster_id, test_sets=['ha']),
+                _wait(lambda: self.run_ostf(cluster_id,
+                                            test_sets=['ha'],
+                                            should_fail=should_fail),
                       interval=20, timeout=timeout)
             logger.info('OSTF HA tests passed successfully.')
         else:
@@ -140,13 +143,16 @@ class FuelWebClient(object):
                          'skipped.'.format(cluster_id))
 
     @logwrap
-    def assert_os_services_ready(self, cluster_id, timeout=5 * 60):
+    def assert_os_services_ready(self, cluster_id, timeout=5 * 60,
+                                 should_fail=0):
         """Wait until OpenStack services are UP.
         Should be used before run any other check for services."""
         logger.info('Waiting {0} sec. for passed OSTF Sanity checks.'
                     .format(timeout))
         with quiet_logger():
-            _wait(lambda: self.run_ostf(cluster_id, test_sets=['sanity']),
+            _wait(lambda: self.run_ostf(cluster_id,
+                                        test_sets=['sanity'],
+                                        should_fail=should_fail),
                   interval=10, timeout=timeout)
         logger.info('OSTF Sanity checks passed successfully.')
 

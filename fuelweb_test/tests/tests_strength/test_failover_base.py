@@ -79,13 +79,9 @@ class TestHaFailoverBase(TestBasic):
         else:
             self.fuel_web.assert_cluster_ready(
                 os_conn, smiles_count=16, networks_count=1, timeout=300)
+
         self.fuel_web.verify_network(cluster_id)
-
         self.fuel_web.security.verify_firewall(cluster_id)
-
-        # Bug #1289297. Pause 5 min to make sure that all remain activity
-        # on the admin node has over before creating a snapshot.
-        time.sleep(5 * 60)
 
         self.env.make_snapshot(self.snapshot_name, is_make=True)
 
@@ -159,6 +155,13 @@ class TestHaFailoverBase(TestBasic):
                 devops_node)['online'],
                 timeout=60 * 5)
 
+            # Wait the pacemaker react to changes in online nodes
+            time.sleep(60)
+            # Wait for HA services ready
+            self.fuel_web.assert_ha_services_ready(cluster_id)
+            # Wait until OpenStack services are UP
+            self.fuel_web.assert_os_services_ready(cluster_id, should_fail=1)
+
             logger.info("Waiting 300 sec before MySQL Galera will up, "
                         "then run OSTF")
 
@@ -167,10 +170,6 @@ class TestHaFailoverBase(TestBasic):
                 [n.name for n in
                  set(self.env.d_env.nodes().slaves[:3]) - {devops_node}],
                 timeout=300)
-
-            _wait(lambda:
-                  self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
-                  interval=30, timeout=300)
 
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
