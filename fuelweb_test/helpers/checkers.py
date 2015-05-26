@@ -39,54 +39,6 @@ from time import sleep
 
 
 @logwrap
-def check_ceph_ready(remote, exit_code=0):
-    if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
-        cmd = 'service ceph-all status'
-    else:
-        cmd = 'service ceph status'
-    if remote.execute(cmd)['exit_code'] == exit_code:
-        return True
-    return False
-
-
-@logwrap
-def get_ceph_health(remote):
-    return ''.join(remote.execute('ceph health')['stdout']).rstrip()
-
-
-@logwrap
-def check_ceph_health(remote, health_status=['HEALTH_OK']):
-    ceph_health = get_ceph_health(remote)
-    if all(x in ceph_health.split() for x in health_status):
-        return True
-    logger.debug('Ceph health {0} doesn\'t equal to {1}'.format(
-        ceph_health, ''.join(health_status)))
-    return False
-
-
-@logwrap
-def check_ceph_disks(remote, nodes_ids):
-    nodes_names = ['node-{0}'.format(node_id) for node_id in nodes_ids]
-    disks_tree = get_osd_tree(remote)
-    osd_ids = get_osd_ids(remote)
-    logger.debug("Disks output information: \\n{0}".format(disks_tree))
-    disks_ids = []
-    for node in disks_tree['nodes']:
-        if node['type'] == 'host' and node['name'] in nodes_names:
-            disks_ids.extend(node['children'])
-    for node in disks_tree['nodes']:
-        if node['type'] == 'osd' and node['id'] in disks_ids:
-            assert_equal(node['status'], 'up', 'OSD node {0} is down'.
-                         format(node['id']))
-    for node in disks_tree['stray']:
-        if node['type'] == 'osd' and node['id'] in osd_ids:
-            logger.info("WARNING! Ceph OSD '{0}' has no parent host!".
-                        format(node['name']))
-            assert_equal(node['status'], 'up', 'OSD node {0} is down'.
-                         format(node['id']))
-
-
-@logwrap
 def check_cinder_status(remote):
     """Parse output and return False
        if any enabled service is down.
@@ -388,18 +340,6 @@ def restart_nailgun(remote):
     cmd = 'dockerctl shell nailgun supervisorctl restart nailgun'
     result = remote.execute(cmd)
     assert_equal(0, result['exit_code'], result['stderr'])
-
-
-@logwrap
-def get_osd_tree(remote):
-    cmd = 'ceph osd tree -f json'
-    return json.loads(''.join(remote.execute(cmd)['stdout']))
-
-
-@logwrap
-def get_osd_ids(remote):
-    cmd = 'ceph osd ls -f json'
-    return json.loads(''.join(remote.execute(cmd)['stdout']))
 
 
 def find_backup(remote):
