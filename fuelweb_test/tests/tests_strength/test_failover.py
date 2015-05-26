@@ -189,6 +189,23 @@ class TestHaNeutronFailover(TestHaFailoverBase):
         super(self.__class__, self).ha_check_monit()
 
     @test(depends_on_groups=['prepare_ha_neutron'],
+          groups=["ha_neutron_firewall"])
+    @log_snapshot_after_test
+    def ha_neutron_firewall(self):
+        """Check firewall vulnerability on Neutron network
+
+        Scenario:
+            1. Start 'socat' on a cluster node to listen for a free random port
+            2. Put to this port a string using 'nc' from admin node
+            3. Check if the string appeared in the cluster node
+            4. Repeat for each cluster node
+
+        Duration 25m
+
+        """
+        super(self.__class__, self).check_firewall_vulnerability()
+
+    @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_virtual_router"])
     @log_snapshot_after_test
     def ha_neutron_virtual_router(self):
@@ -429,6 +446,23 @@ class TestHaNovaFailover(TestHaFailoverBase):
         Duration 25m
         """
         super(self.__class__, self).ha_check_monit()
+
+    @test(depends_on_groups=['prepare_ha_nova'],
+          groups=["ha_nova_firewall"])
+    @log_snapshot_after_test
+    def ha_nova_firewall(self):
+        """Check firewall vulnerability on nova network
+
+        Scenario:
+            1. Start 'socat' on a cluster node to listen for a free random port
+            2. Put to this port a string using 'nc' from admin node
+            3. Check if the string appeared in the cluster node
+            4. Repeat for each cluster node
+
+        Duration 25m
+
+        """
+        super(self.__class__, self).check_firewall_vulnerability()
 
     @test(enabled=False, depends_on_groups=['prepare_ha_nova'],
           groups=["check_nova_package_loss"])

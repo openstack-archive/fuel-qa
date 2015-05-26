@@ -81,7 +81,6 @@ class TestHaFailoverBase(TestBasic):
                 os_conn, smiles_count=16, networks_count=1, timeout=300)
 
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.security.verify_firewall(cluster_id)
 
         self.env.make_snapshot(self.snapshot_name, is_make=True)
 
@@ -485,6 +484,14 @@ class TestHaFailoverBase(TestBasic):
                 "grep \"nova-compute.*trying to restart\" "
                 "/var/log/monit.log")['stdout']) > 0,
                 'Nova service was not restarted')
+
+    def check_firewall_vulnerability(self):
+        if not self.env.d_env.has_snapshot(self.snapshot_name):
+            raise SkipTest()
+        self.env.revert_snapshot(self.snapshot_name)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.fuel_web.security.verify_firewall(cluster_id)
 
     def check_virtual_router(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
