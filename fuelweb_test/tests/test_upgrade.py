@@ -179,12 +179,10 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.fuel_web.assert_task_success(task)
         nodes = filter(lambda x: x["pending_deletion"] is True, nailgun_nodes)
         try:
-            wait(
-                lambda: self.fuel_web.is_node_discovered(nodes[0]),
-                timeout=10 * 60
-            )
+            wait(lambda: len(self.fuel_web.client.list_nodes()) == 3,
+                 timeout=5 * 60)
         except TimeoutError:
-            assert_true(self.fuel_web.is_node_discovered(nodes[0]),
+            assert_true(len(self.fuel_web.client.list_nodes()) == 3,
                         'Node {0} is not discovered in timeout 10 *60'.format(
                             nodes[0]))
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
