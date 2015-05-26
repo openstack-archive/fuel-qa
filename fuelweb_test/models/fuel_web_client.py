@@ -15,8 +15,8 @@
 import re
 import time
 import traceback
-import yaml
 
+import yaml
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
@@ -26,7 +26,9 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
 
+from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers.ceph import CephManager
 from fuelweb_test import logwrap
 from fuelweb_test import logger
 from fuelweb_test import quiet_logger
@@ -55,7 +57,6 @@ from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import OSTF_TEST_NAME
 from fuelweb_test.settings import OSTF_TEST_RETRIES_COUNT
 from fuelweb_test.settings import TIMEOUT
-
 import fuelweb_test.settings as help_data
 
 
@@ -1627,13 +1628,52 @@ class FuelWebClient(object):
 
         self.assert_task_success(task=res)
 
-    @logwrap
-    def check_ceph_status(self, cluster_id, offline_nodes=[],
-                          recovery_timeout=360):
+    def get_ceph_nodes(self, cluster_id, offline_nodes=None):
+        """Get node names list of Ceph nodes by ``cluster_id``
+
+        :param cluster_id: id of cluster gotten from Nailgun
+        :type cluster_id: int
+        :param offline_nodes: id's gotten from devops.models.Node model
+        :type offline_nodes: list of int
+        :return: name list of Ceph nodes
+        """
+        offline_nodes = offline_nodes or []
         cluster_nodes = self.client.list_cluster_nodes(cluster_id)
         ceph_nodes = [n for n in cluster_nodes if 'ceph-osd' in
                       n['roles'] and n['id'] not in offline_nodes]
-        clock_skew_status = ['clock', 'skew', 'detected']
+        return ceph_nodes
+
+    @retry(count=3)
+    def check_ceph_time_skew(self, cluster_id, offline_nodes):
+        ceph_nodes = self.get_ceph_nodes(cluster_id, offline_nodes)
+
+        # Let's find nodes where are a time skew. It can be checked on
+        # an arbitrary one.
+        logger.info("Lookup nodes with a time skew")
+        remote = self.environment.d_env.get_ssh_to_remote(ceph_nodes[0]['ip'])
+        skewed = CephManager.get_node_names_w_time_skew(remote)
+        if skewed:
+            logger.info("Time on nodes %s are to be re-syncronized",
+                        ', '.join(skewed))
+            nodes_to_sync = [
+                n for n in ceph_nodes if n['fqdn'].split('.')[0] in skewed]
+            self.environment.sync_time(nodes_to_sync)
+
+        try:
+            wait(lambda: not CephManager.get_node_names_w_time_skew(remote),
+                 timeout=120)
+        except TimeoutError:
+            monitor_name = CephManager.get_monitor_node_names(remote)
+            d_node = self.get_devops_node_by_nailgun_fqdn(monitor_name)
+            remote_to_monitor = self.get_ssh_for_node(d_node.name)
+            CephManager.restart_monitor(remote_to_monitor)
+            wait(lambda: not CephManager.get_node_names_w_time_skew(
+                remote_to_monitor), timeout=120)
+
+    @logwrap
+    def check_ceph_status(self, cluster_id, offline_nodes=None,
+                          recovery_timeout=360):
+        ceph_nodes = self.get_ceph_nodes(cluster_id, offline_nodes)
         osd_recovery_status = ['degraded', 'recovery', 'osds', 'are', 'down']
 
         logger.info('Waiting until Ceph service become up...')
@@ -1648,6 +1688,8 @@ class FuelWebClient(object):
                 raise TimeoutError('Ceph service is down on {0}'.format(
                     node['name']))
 
+        self.check_ceph_time_skew(cluster_id, offline_nodes)
+
         logger.info('Ceph service is ready')
         logger.info('Checking Ceph Health...')
         for node in ceph_nodes:
@@ -1656,17 +1698,7 @@ class FuelWebClient(object):
             if 'HEALTH_OK' in health_status:
                 continue
             elif 'HEALTH_WARN' in health_status:
-                if checkers.check_ceph_health(remote, clock_skew_status):
-                    logger.warning('Clock skew detected in Ceph.')
-                    self.environment.sync_time(ceph_nodes)
-                    try:
-                        wait(lambda: checkers.check_ceph_health(remote),
-                             interval=30, timeout=recovery_timeout)
-                    except TimeoutError:
-                        msg = 'Ceph HEALTH is bad on {0}'.format(node['name'])
-                        logger.error(msg)
-                        raise TimeoutError(msg)
-                elif checkers.check_ceph_health(remote, osd_recovery_status)\
+                if checkers.check_ceph_health(remote, osd_recovery_status)\
                         and len(offline_nodes) > 0:
                     logger.info('Ceph is being recovered after osd node(s)'
                                 ' shutdown.')
