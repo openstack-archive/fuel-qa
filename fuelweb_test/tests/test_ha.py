@@ -255,7 +255,8 @@ class TestHaFlat(TestBasic):
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
-            test_sets=['ha', 'smoke', 'sanity'])
+            test_sets=['ha', 'smoke', 'sanity'],
+            should_fail=1)
 
 
 @test(groups=["thread_4", "ha", "classic_provisioning"])
