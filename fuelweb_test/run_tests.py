@@ -70,4 +70,5 @@ if __name__ == '__main__':
         map_test('master')
     elif any(re.search(r'--group=patching.*', arg) for arg in sys.argv):
         map_test('environment')
+
     run_tests()

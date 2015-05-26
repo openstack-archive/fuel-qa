@@ -26,6 +26,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
 
+from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
 from fuelweb_test import logwrap
 from fuelweb_test import logger
@@ -56,26 +57,18 @@ from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import OSTF_TEST_NAME
 from fuelweb_test.settings import OSTF_TEST_RETRIES_COUNT
 from fuelweb_test.settings import TIMEOUT
-
 import fuelweb_test.settings as help_data
 
 
 class FuelWebClient(object):
     """FuelWebClient."""  # TODO documentation
 
-    def __init__(self, admin_node_ip, environment):
+    def __init__(self, admin_node_ip, env):
         self.admin_node_ip = admin_node_ip
         self.client = NailgunClient(admin_node_ip)
-        self._environment = environment
-        self.security = SecurityChecks(self.client, self._environment)
+        self.env = env
+        self.security = SecurityChecks(self.client, self.env)
         super(FuelWebClient, self).__init__()
-
-    @property
-    def environment(self):
-        """Environment Model
-        :rtype: EnvironmentModel
-        """
-        return self._environment
 
     @staticmethod
     @logwrap
@@ -426,11 +419,11 @@ class FuelWebClient(object):
                 attributes['editable']['provision']['method']['value'] = \
                     'cobbler'
 
-            public_gw = self.environment.d_env.router(router_name="public")
+            public_gw = self.env.d_env.router(router_name="public")
 
             if help_data.FUEL_USE_LOCAL_NTPD and ('ntp_list' not in settings)\
                     and checkers.is_ntpd_active(
-                        self.environment.d_env.get_admin_remote(), public_gw):
+                        self.env.d_env.get_admin_remote(), public_gw):
                 attributes['editable']['external_ntp']['ntp_list']['value'] =\
                     public_gw
                 logger.info("Configuring cluster #{0} to use NTP server {1}"
@@ -500,7 +493,7 @@ class FuelWebClient(object):
             raise Exception("Could not get cluster '%s'" % name)
         # TODO: rw105719
         # self.client.add_syslog_server(
-        #    cluster_id, self.environment.get_host_node_ip(), port)
+        #    cluster_id, self.env.get_host_node_ip(), port)
 
         return cluster_id
 
@@ -808,7 +801,7 @@ class FuelWebClient(object):
     def get_nailgun_node_roles(self, nodes_dict):
         nailgun_node_roles = []
         for node_name in nodes_dict:
-            slave = self.environment.d_env.get_node(name=node_name)
+            slave = self.env.d_env.get_node(name=node_name)
             node = self.get_nailgun_node_by_devops_node(slave)
             nailgun_node_roles.append((node, nodes_dict[node_name]))
         return nailgun_node_roles
@@ -817,7 +810,7 @@ class FuelWebClient(object):
     def get_nailgun_node_by_name(self, node_name):
         logger.info('Get nailgun node by %s devops node', node_name)
         return self.get_nailgun_node_by_devops_node(
-            self.environment.d_env.get_node(name=node_name))
+            self.env.d_env.get_node(name=node_name))
 
     @logwrap
     def get_nailgun_node_by_devops_node(self, devops_node):
@@ -885,7 +878,7 @@ class FuelWebClient(object):
         :type mac_address: String
             :rtype: Node or None
         """
-        for node in self.environment.d_env.nodes():
+        for node in self.env.d_env.nodes():
             for iface in node.interfaces:
                 if iface.mac_address.lower() == mac_address.lower():
                     return node
@@ -937,8 +930,8 @@ class FuelWebClient(object):
     @logwrap
     def get_ssh_for_node(self, node_name):
         ip = self.get_nailgun_node_by_devops_node(
-            self.environment.d_env.get_node(name=node_name))['ip']
-        return self.environment.d_env.get_ssh_to_remote(ip)
+            self.env.d_env.get_node(name=node_name))['ip']
+        return self.env.d_env.get_ssh_to_remote(ip)
 
     @logwrap
     def get_ssh_for_role(self, nodes_dict, role):
@@ -1056,7 +1049,7 @@ class FuelWebClient(object):
                 node_roles = nodes_dict[node_name]
                 node_group = 'default'
 
-            devops_node = self.environment.d_env.get_node(name=node_name)
+            devops_node = self.env.d_env.get_node(name=node_name)
 
             wait(lambda:
                  self.get_nailgun_node_by_devops_node(devops_node)['online'],
@@ -1304,7 +1297,7 @@ class FuelWebClient(object):
 
     def common_net_settings(self, network_configuration):
         nc = network_configuration["networking_parameters"]
-        public = self.environment.d_env.get_network(name="public").ip
+        public = self.env.d_env.get_network(name="public").ip
 
         if not BONDING:
             float_range = public
@@ -1324,7 +1317,7 @@ class FuelWebClient(object):
                 elif net_name in nets_wo_floating:
                     self.net_settings(net_config, net_name)
             else:
-                ip_obj = self.environment.d_env.get_network(name="public").ip
+                ip_obj = self.env.d_env.get_network(name="public").ip
                 pub_subnets = list(ip_obj.subnet(new_prefix=27))
                 if "floating" == net_name:
                     self.net_settings(net_config, pub_subnets[0],
@@ -1349,7 +1342,7 @@ class FuelWebClient(object):
                 elif net_name in 'fuelweb_admin':
                     self.net_settings(net_config, admin_net)
             else:
-                ip_obj = self.environment.d_env.get_network(name=public_net).ip
+                ip_obj = self.env.d_env.get_network(name=public_net).ip
                 pub_subnets = list(ip_obj.subnet(new_prefix=27))
 
                 if "floating" == net_name:
@@ -1365,7 +1358,7 @@ class FuelWebClient(object):
         if jbond:
             ip_network = net_name
         else:
-            ip_network = self.environment.d_env.get_network(
+            ip_network = self.env.d_env.get_network(
                 name=net_name).ip_network
             if 'admin' in net_name:
                 net_config['ip_ranges'] = self.get_range(ip_network, 2)
@@ -1377,10 +1370,10 @@ class FuelWebClient(object):
 
         if jbond:
             if net_config['name'] == 'public':
-                net_config['gateway'] = self.environment.d_env.router('public')
+                net_config['gateway'] = self.env.d_env.router('public')
         else:
             net_config['vlan_start'] = None
-            net_config['gateway'] = self.environment.d_env.router(net_name)
+            net_config['gateway'] = self.env.d_env.router(net_name)
 
     def get_range(self, ip_network, ip_range=0):
         net = list(IPNetwork(ip_network))
@@ -1396,7 +1389,7 @@ class FuelWebClient(object):
 
     def get_floating_ranges(self, network_set=''):
         net_name = 'public{0}'.format(network_set)
-        net = list(self.environment.d_env.get_network(name=net_name).ip)
+        net = list(self.env.d_env.get_network(name=net_name).ip)
         ip_ranges, expected_ips = [], []
 
         for i in [0, -20, -40]:
@@ -1478,7 +1471,7 @@ class FuelWebClient(object):
                     self.get_nailgun_node_by_devops_node(node)['online'],
                     'Node {0} has not become online'
                     ' after cold start'.format(node.name))
-        self.environment.sync_time()
+        self.env.sync_time()
 
     @logwrap
     def ip_address_show(self, node_name, interface, namespace=None):
@@ -1579,7 +1572,7 @@ class FuelWebClient(object):
 
         for node_name in node_names:
             _ip = self.get_nailgun_node_by_name(node_name)['ip']
-            remote = self.environment.d_env.get_ssh_to_remote(_ip)
+            remote = self.env.d_env.get_ssh_to_remote(_ip)
             try:
                 wait(lambda: _get_galera_status(remote) == 'ON',
                      timeout=timeout)
@@ -1598,7 +1591,7 @@ class FuelWebClient(object):
         logger.info("Waiting for all Cinder services up.")
         for node_name in node_names:
             _ip = self.get_nailgun_node_by_name(node_name)['ip']
-            remote = self.environment.d_env.get_ssh_to_remote(_ip)
+            remote = self.env.d_env.get_ssh_to_remote(_ip)
             try:
                 wait(lambda: checkers.check_cinder_status(remote),
                      timeout=300)
@@ -1659,65 +1652,97 @@ class FuelWebClient(object):
 
         self.assert_task_success(task=res)
 
+    @retry(count=3)
+    def check_ceph_time_skew(self, cluster_id, offline_nodes):
+        ceph_nodes = self.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['ceph-osd'])
+        online_ceph_nodes = [
+            n for n in ceph_nodes if n['id'] not in offline_nodes]
+
+        # Let's find nodes where are a time skew. It can be checked on
+        # an arbitrary one.
+        logger.debug("Looking up nodes with a time skew and try to fix them")
+        with self.env.d_env.get_ssh_to_remote(
+                online_ceph_nodes[0]['ip']) as remote:
+            skewed = ceph.get_node_fqdns_w_time_skew(remote)
+            if skewed:
+                logger.warning("Time on nodes {0} are to be "
+                               "re-syncronized".format(', '.join(skewed)))
+                nodes_to_sync = [
+                    n for n in online_ceph_nodes if n['fqdn'].split('.')[0] in skewed]
+                self.env.sync_time(nodes_to_sync)
+
+            try:
+                wait(lambda: not ceph.get_node_fqdns_w_time_skew(remote),
+                     timeout=120)
+            except TimeoutError:
+                skewed = ceph.get_node_fqdns_w_time_skew(remote)
+                logger.error("Time on Ceph nodes {0} is still skewed. "
+                             "Restarting Ceph monitor on these "
+                             "nodes".format(', '.join(skewed)))
+
+                for node in skewed:
+                    fqdn = self.get_fqdn_by_hostname(node)
+                    d_node = self.get_devops_node_by_nailgun_fqdn(fqdn)
+                    logger.debug("Establish SSH connection to first Ceph "
+                                 "monitor node %s", fqdn)
+
+                    with self.get_ssh_for_node(d_node.name) as remote_to_monitor:
+                        logger.debug("Restart Ceph monitor service "
+                                     "on node %s", fqdn)
+                        ceph.restart_monitor(remote_to_monitor)
+
+                    wait(lambda: not ceph.get_node_fqdns_w_time_skew(
+                        remote), timeout=120)
+
     @logwrap
-    def check_ceph_status(self, cluster_id, offline_nodes=[],
+    def check_ceph_status(self, cluster_id, offline_nodes=(),
                           recovery_timeout=360):
-        cluster_nodes = self.client.list_cluster_nodes(cluster_id)
-        ceph_nodes = [n for n in cluster_nodes if 'ceph-osd' in
-                      n['roles'] and n['id'] not in offline_nodes]
-        clock_skew_status = ['clock', 'skew', 'detected']
+        ceph_nodes = self.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['ceph-osd'])
+        online_ceph_nodes = [
+            n for n in ceph_nodes if n['id'] not in offline_nodes]
+
         osd_recovery_status = ['degraded', 'recovery', 'osds', 'are', 'down']
 
         logger.info('Waiting until Ceph service become up...')
-        for node in ceph_nodes:
-            remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
+        for node in online_ceph_nodes:
+            remote = self.env.d_env.get_ssh_to_remote(node['ip'])
             try:
-                wait(lambda: checkers.check_ceph_ready(remote) is True,
+                wait(lambda: ceph.check_service_ready(remote) is True,
                      interval=20, timeout=600)
             except TimeoutError:
-                logger.error('Ceph service is down on {0}'.format(
-                    node['name']))
-                raise TimeoutError('Ceph service is down on {0}'.format(
-                    node['name']))
+                error_msg = 'Ceph service is not properly started' \
+                            ' on {0}'.format(node['name'])
+                logger.error(error_msg)
+                raise TimeoutError(error_msg)
 
-        logger.info('Ceph service is ready')
-        logger.info('Checking Ceph Health...')
-        for node in ceph_nodes:
-            remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
-            health_status = checkers.get_ceph_health(remote)
-            if 'HEALTH_OK' in health_status:
-                continue
-            elif 'HEALTH_WARN' in health_status:
-                if checkers.check_ceph_health(remote, clock_skew_status):
-                    logger.warning('Clock skew detected in Ceph.')
-                    self.environment.sync_time(ceph_nodes)
-                    try:
-                        wait(lambda: checkers.check_ceph_health(remote),
-                             interval=30, timeout=recovery_timeout)
-                    except TimeoutError:
-                        msg = 'Ceph HEALTH is bad on {0}'.format(node['name'])
-                        logger.error(msg)
-                        raise TimeoutError(msg)
-                elif checkers.check_ceph_health(remote, osd_recovery_status)\
-                        and len(offline_nodes) > 0:
-                    logger.info('Ceph is being recovered after osd node(s)'
-                                ' shutdown.')
-                    try:
-                        wait(lambda: checkers.check_ceph_health(remote),
-                             interval=30, timeout=recovery_timeout)
-                    except TimeoutError:
-                        msg = 'Ceph HEALTH is bad on {0}'.format(node['name'])
-                        logger.error(msg)
-                        raise TimeoutError(msg)
-            else:
-                assert_true(checkers.check_ceph_health(remote),
-                            'Ceph health doesn\'t equal to "OK", please '
-                            'inspect debug logs for details')
+        logger.info('Ceph service is ready. Checking Ceph Health...')
+        self.check_ceph_time_skew(cluster_id, offline_nodes)
+
+        node = online_ceph_nodes[0]
+        remote = self.env.d_env.get_ssh_to_remote(node['ip'])
+        health_status = ceph.get_ceph_health(remote)
+        if 'HEALTH_WARN' in health_status:
+            if ceph.check_ceph_health(remote, osd_recovery_status)\
+                    and len(offline_nodes) > 0:
+                logger.info('Ceph is being recovered after osd node(s)'
+                            ' shutdown.')
+                try:
+                    wait(lambda: ceph.check_ceph_health(remote),
+                         interval=30, timeout=recovery_timeout)
+                except TimeoutError:
+                    msg = 'Ceph HEALTH is bad on {0}'.format(node['name'])
+                    logger.error(msg)
+                    raise TimeoutError(msg)
+        else:
+            assert_true(ceph.check_ceph_health(remote),
+                        'Ceph health doesn\'t equal to "OK", please '
+                        'inspect debug logs for details')
 
         logger.info('Checking Ceph OSD Tree...')
-        for node in ceph_nodes:
-            remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
-            checkers.check_ceph_disks(remote, [n['id'] for n in ceph_nodes])
+        ceph.check_disks(remote, [n['id'] for n in online_ceph_nodes])
+        remote.clear()
         logger.info('Ceph cluster status is OK')
 
     @logwrap
@@ -1946,13 +1971,13 @@ class FuelWebClient(object):
         logger.debug("node name is {0}".format(node_name))
         fqdn = self.get_fqdn_by_hostname(node_name)
         devops_node = self.find_devops_node_by_nailgun_fqdn(
-            fqdn, self.environment.d_env.nodes().slaves)
+            fqdn, self.env.d_env.nodes().slaves)
         return devops_node
 
     @logwrap
     def get_fqdn_by_hostname(self, hostname):
-        if self.environment.d_env.domain not in hostname:
-            hostname += "." + self.environment.d_env.domain
+        if self.env.d_env.domain not in hostname:
+            hostname += "." + self.env.d_env.domain
             return hostname
         else:
             return hostname
@@ -1986,7 +2011,7 @@ class FuelWebClient(object):
         logger.debug("node name is {0}".format(node_name))
         fqdn = self.get_fqdn_by_hostname(node_name)
         devops_node = self.find_devops_node_by_nailgun_fqdn(
-            fqdn, self.environment.d_env.nodes().slaves)
+            fqdn, self.env.d_env.nodes().slaves)
         return devops_node
 
     @logwrap
@@ -2001,7 +2026,7 @@ class FuelWebClient(object):
             return master_node
         else:
             devops_node = self.find_devops_node_by_nailgun_fqdn(
-                master_node, self.environment.d_env.nodes().slaves)
+                master_node, self.env.d_env.nodes().slaves)
             return devops_node
 
     def check_plugin_exists(self, cluster_id, plugin_name, section='editable'):
@@ -2033,7 +2058,7 @@ class FuelWebClient(object):
         assert_true(ids, "osd ids for {} weren't found".format(hostname))
         for id in ids:
             remote_ceph.execute("ceph osd out {}".format(id))
-        wait(lambda: checkers.check_ceph_health(remote_ceph),
+        wait(lambda: ceph.check_ceph_health(remote_ceph),
              interval=30, timeout=10 * 60)
         for id in ids:
             if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:

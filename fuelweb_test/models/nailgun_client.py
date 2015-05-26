@@ -228,7 +228,7 @@ class NailgunClient(object):
     @json_parse
     def ostf_run_tests(self, cluster_id, test_sets_list):
         logger.info('Run OSTF tests at cluster #%s: %s',
-                    cluster_id, test_sets_list)
+                    cluster_id, ', '.join(test_sets_list))
         data = []
         for test_set in test_sets_list:
             data.append(
