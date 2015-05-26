@@ -26,6 +26,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
 
+from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
 from fuelweb_test import logwrap
 from fuelweb_test import logger
@@ -1672,7 +1673,7 @@ class FuelWebClient(object):
         for node in ceph_nodes:
             remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
             try:
-                wait(lambda: checkers.check_ceph_ready(remote) is True,
+                wait(lambda: ceph.check_ceph_ready(remote) is True,
                      interval=20, timeout=600)
             except TimeoutError:
                 logger.error('Ceph service is down on {0}'.format(
@@ -1684,11 +1685,11 @@ class FuelWebClient(object):
         logger.info('Checking Ceph Health...')
         for node in ceph_nodes:
             remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
-            health_status = checkers.get_ceph_health(remote)
+            health_status = ceph.get_ceph_health(remote)
             if 'HEALTH_OK' in health_status:
                 continue
             elif 'HEALTH_WARN' in health_status:
-                if checkers.check_ceph_health(remote, clock_skew_status):
+                if ceph.check_ceph_health(remote, clock_skew_status):
                     logger.warning('Clock skew detected in Ceph.')
                     self.environment.sync_time(ceph_nodes)
                     try:
@@ -1698,26 +1699,26 @@ class FuelWebClient(object):
                         msg = 'Ceph HEALTH is bad on {0}'.format(node['name'])
                         logger.error(msg)
                         raise TimeoutError(msg)
-                elif checkers.check_ceph_health(remote, osd_recovery_status)\
+                elif ceph.check_ceph_health(remote, osd_recovery_status)\
                         and len(offline_nodes) > 0:
                     logger.info('Ceph is being recovered after osd node(s)'
                                 ' shutdown.')
                     try:
-                        wait(lambda: checkers.check_ceph_health(remote),
+                        wait(lambda: ceph.check_ceph_health(remote),
                              interval=30, timeout=recovery_timeout)
                     except TimeoutError:
                         msg = 'Ceph HEALTH is bad on {0}'.format(node['name'])
                         logger.error(msg)
                         raise TimeoutError(msg)
             else:
-                assert_true(checkers.check_ceph_health(remote),
+                assert_true(ceph.check_ceph_health(remote),
                             'Ceph health doesn\'t equal to "OK", please '
                             'inspect debug logs for details')
 
         logger.info('Checking Ceph OSD Tree...')
         for node in ceph_nodes:
             remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
-            checkers.check_ceph_disks(remote, [n['id'] for n in ceph_nodes])
+            ceph.check_ceph_disks(remote, [n['id'] for n in ceph_nodes])
         logger.info('Ceph cluster status is OK')
 
     @logwrap

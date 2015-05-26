@@ -27,7 +27,7 @@ class PuppetEnvironment(EnvironmentModel):
         """Constructor for create environment."""
         self.os_image = os_image or settings.OS_IMAGE
         super(PuppetEnvironment, self).__init__(self.os_image)
-        self.environment = super(PuppetEnvironment, self).d_env
+        self.env = super(PuppetEnvironment, self).d_env
         self.start_env()
 
     @property
