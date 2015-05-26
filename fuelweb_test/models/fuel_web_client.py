@@ -1648,6 +1648,19 @@ class FuelWebClient(object):
                 raise TimeoutError('Ceph service is down on {0}'.format(
                     node['name']))
 
+        # Let's find nodes where are a time skew. It can be checked on
+        # an arbitrary one.
+        logger.info("Lookup nodes with a time skew...")
+        remote = self.environment.d_env.get_ssh_to_remote(ceph_nodes[0]['ip'])
+        skewed_nodes = checkers.get_ceph_nodes_w_time_skew(remote)
+        if skewed_nodes:
+            logger.info("Time on nodes %s have to be re-syncronized",
+                        ', '.join(skewed_nodes))
+            for node in ceph_nodes:
+                if node['fqdn'].split('.')[0] in skewed_nodes:
+                    logger.info('Syncing time on node %s', node)
+                    self.environment.sync_time(node)
+
         logger.info('Ceph service is ready')
         logger.info('Checking Ceph Health...')
         for node in ceph_nodes:
