@@ -130,12 +130,12 @@ def upload_manifests(func):
             if settings.UPLOAD_MANIFESTS:
                 logger.info("Uploading new manifests from %s" %
                             settings.UPLOAD_MANIFESTS_PATH)
-                environment = get_current_env(args)
-                if not environment:
+                env = get_current_env(args)
+                if not env:
                     logger.warning("Can't upload manifests: method of "
                                    "unexpected class is decorated.")
                     return result
-                remote = environment.d_env.get_admin_remote()
+                remote = env.d_env.get_admin_remote()
                 remote.execute('rm -rf /etc/puppet/modules/*')
                 remote.upload(settings.UPLOAD_MANIFESTS_PATH,
                               '/etc/puppet/modules/')
@@ -160,16 +160,16 @@ def update_packages(func):
         if not settings.UPDATE_FUEL:
                 return result
         try:
-            environment = get_current_env(args)
-            if not environment:
+            env = get_current_env(args)
+            if not env:
                 logger.warning("Can't update packages: method of "
                                "unexpected class is decorated.")
                 return result
 
-            remote = environment.d_env.get_admin_remote()
+            remote = env.d_env.get_admin_remote()
 
             centos_files_count, ubuntu_files_count = \
-                environment.admin_actions.upload_packages(
+                env.admin_actions.upload_packages(
                     local_packages_dir=settings.UPDATE_FUEL_PATH,
                     centos_repo_path=settings.LOCAL_MIRROR_CENTOS,
                     ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
@@ -182,7 +182,7 @@ def update_packages(func):
             cmd = ("echo -e '[temporary]\nname=temporary\nbaseurl=file://{0}/"
                    "\ngpgcheck=0\npriority=1' > {1}").format(
                 settings.LOCAL_MIRROR_CENTOS, conf_file)
-            environment.execute_remote_cmd(remote, cmd, exit_code=0)
+            env.execute_remote_cmd(remote, cmd, exit_code=0)
             update_command = 'yum clean expire-cache; yum update -y -d3'
             result = remote.execute(update_command)
             logger.debug('Result of "yum update" command on master node: '
@@ -190,9 +190,9 @@ def update_packages(func):
             assert_equal(int(result['exit_code']), 0,
                          'Packages update failed, '
                          'inspect logs for details')
-            environment.execute_remote_cmd(remote,
-                                           cmd='rm -f {0}'.format(conf_file),
-                                           exit_code=0)
+            env.execute_remote_cmd(remote,
+                                   cmd='rm -f {0}'.format(conf_file),
+                                   exit_code=0)
         except Exception:
             logger.error("Could not update packages")
             raise
@@ -207,29 +207,29 @@ def update_fuel(func):
         if settings.UPDATE_FUEL:
             logger.info("Update fuel's packages from directory {0}."
                         .format(settings.UPDATE_FUEL_PATH))
-            environment = get_current_env(args)
-            if not environment:
+            env = get_current_env(args)
+            if not env:
                 logger.warning("Decorator was triggered "
                                "from unexpected class.")
                 return result
 
             centos_files_count, ubuntu_files_count = \
-                environment.admin_actions.upload_packages(
+                env.admin_actions.upload_packages(
                     local_packages_dir=settings.UPDATE_FUEL_PATH,
                     centos_repo_path=settings.LOCAL_MIRROR_CENTOS,
                     ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
 
-            remote = environment.d_env.get_admin_remote()
-            cluster_id = environment.fuel_web.get_last_created_cluster()
+            remote = env.d_env.get_admin_remote()
+            cluster_id = env.fuel_web.get_last_created_cluster()
 
             if centos_files_count > 0:
-                environment.docker_actions.execute_in_containers(
+                env.docker_actions.execute_in_containers(
                     cmd='yum -y install yum-plugin-priorities')
 
                 # Update docker containers and restart them
-                environment.docker_actions.execute_in_containers(
+                env.docker_actions.execute_in_containers(
                     cmd='yum clean expire-cache; yum update -y')
-                environment.docker_actions.restart_containers()
+                env.docker_actions.restart_containers()
 
                 # Update packages on master node
                 remote.execute(
@@ -239,7 +239,7 @@ def update_fuel(func):
                 # Add auxiliary repository to the cluster attributes
                 if settings.OPENSTACK_RELEASE_UBUNTU not in \
                         settings.OPENSTACK_RELEASE:
-                    environment.fuel_web.add_local_centos_mirror(
+                    env.fuel_web.add_local_centos_mirror(
                         cluster_id, name="Auxiliary",
                         path=settings.LOCAL_MIRROR_CENTOS,
                         priority=settings.AUX_RPM_REPO_PRIORITY)
@@ -248,7 +248,7 @@ def update_fuel(func):
                 # Add auxiliary repository to the cluster attributes
                 if settings.OPENSTACK_RELEASE_UBUNTU in \
                         settings.OPENSTACK_RELEASE:
-                    environment.fuel_web.add_local_ubuntu_mirror(
+                    env.fuel_web.add_local_ubuntu_mirror(
                         cluster_id, name="Auxiliary",
                         path=settings.LOCAL_MIRROR_UBUNTU,
                         priority=settings.AUX_DEB_REPO_PRIORITY)
@@ -287,7 +287,7 @@ def update_ostf(func):
                     raise ValueError('REFSPEC should be set for CI tests.')
                 logger.info("Uploading new patchset from {0}"
                             .format(settings.GERRIT_REFSPEC))
-                remote = args[0].environment.d_env.get_admin_remote()
+                remote = args[0].env.d_env.get_admin_remote()
                 remote.upload(settings.PATCH_PATH.rstrip('/'),
                               '/var/www/nailgun/fuel-ostf')
                 remote.execute('dockerctl shell ostf '
@@ -341,7 +341,7 @@ def retry(count=3, delay=30):
 def custom_repo(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        custom_pkgs = CustomRepo(args[0].environment.d_env.get_admin_remote())
+        custom_pkgs = CustomRepo(args[0].env.d_env.get_admin_remote())
         try:
             if settings.CUSTOM_PKGS_MIRROR:
                 custom_pkgs.prepare_repository()
@@ -413,9 +413,9 @@ def download_astute_yaml(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
         if settings.STORE_ASTUTE_YAML:
-            environment = get_current_env(args)
-            if environment:
-                store_astute_yaml(environment)
+            env = get_current_env(args)
+            if env:
+                store_astute_yaml(env)
             else:
                 logger.warning("Can't download astute.yaml: "
                                "Unexpected class is decorated.")
@@ -427,9 +427,9 @@ def download_packages_json(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
-        environment = get_current_env(args)
-        if environment:
-            store_packages_json(environment)
+        env = get_current_env(args)
+        if env:
+            store_packages_json(env)
         else:
             logger.warning("Can't collect packages: "
                            "Unexpected class is decorated.")
