@@ -604,7 +604,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
         self.env.make_snapshot("deploy_ceilometer_ha_one_controller_mulirole")
 
 
-@test(groups=["services", "services.ceilometer", "services_ha"])
+@test(groups=["services", "services.ceilometer", "services_ha.ceilometer"])
 class CeilometerHAMongo(OSTFCeilometerHelper):
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ceilometer_ha_with_mongo"])
