@@ -26,6 +26,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
 
+from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
 from fuelweb_test import logwrap
 from fuelweb_test import logger
@@ -1661,65 +1662,101 @@ class FuelWebClient(object):
 
         self.assert_task_success(task=res)
 
+    @retry(count=3)
+    def check_ceph_time_skew(self, cluster_id, offline_nodes):
+        ceph_nodes = self.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['ceph-osd'])
+        online_ceph_nodes = [
+            n for n in ceph_nodes if n['id'] not in offline_nodes]
+
+        # Let's find nodes where are a time skew. It can be checked on
+        # an arbitrary one.
+        logger.debug("Looking up nodes with a time skew and try to fix them")
+        with self.environment.d_env.get_ssh_to_remote(
+                online_ceph_nodes[0]['ip']) as remote:
+            skewed = ceph.get_node_fqdns_w_time_skew(remote)
+            if skewed:
+                logger.warning("Time on nodes {0} are to be "
+                               "re-syncronized".format(skewed))
+                nodes_to_sync = [
+                    n for n in online_ceph_nodes
+                    if n['fqdn'].split('.')[0] in skewed]
+                self.environment.sync_time(nodes_to_sync)
+
+            try:
+                wait(lambda: not ceph.get_node_fqdns_w_time_skew(remote),
+                     timeout=120)
+            except TimeoutError:
+                skewed = ceph.get_node_fqdns_w_time_skew(remote)
+                logger.error("Time on Ceph nodes {0} is still skewed. "
+                             "Restarting Ceph monitor on these "
+                             "nodes".format(', '.join(skewed)))
+
+                for node in skewed:
+                    fqdn = self.get_fqdn_by_hostname(node)
+                    d_node = self.get_devops_node_by_nailgun_fqdn(fqdn)
+                    logger.debug("Establish SSH connection to first Ceph "
+                                 "monitor node %s", fqdn)
+
+                    with self.get_ssh_for_node(d_node.name) as remote_to_mon:
+                        logger.debug("Restart Ceph monitor service "
+                                     "on node %s", fqdn)
+                        ceph.restart_monitor(remote_to_mon)
+
+                wait(lambda: not ceph.get_node_fqdns_w_time_skew(
+                    remote), timeout=120)
+
     @logwrap
-    def check_ceph_status(self, cluster_id, offline_nodes=[],
+    def check_ceph_status(self, cluster_id, offline_nodes=(),
                           recovery_timeout=360):
-        cluster_nodes = self.client.list_cluster_nodes(cluster_id)
-        ceph_nodes = [n for n in cluster_nodes if 'ceph-osd' in
-                      n['roles'] and n['id'] not in offline_nodes]
-        clock_skew_status = ['clock', 'skew', 'detected']
+        ceph_nodes = self.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['ceph-osd'])
+        online_ceph_nodes = [
+            n for n in ceph_nodes if n['id'] not in offline_nodes]
+
         osd_recovery_status = ['degraded', 'recovery', 'osds', 'are', 'down']
 
         logger.info('Waiting until Ceph service become up...')
-        for node in ceph_nodes:
+        for node in online_ceph_nodes:
             remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
             try:
-                wait(lambda: checkers.check_ceph_ready(remote) is True,
+                wait(lambda: ceph.check_service_ready(remote) is True,
                      interval=20, timeout=600)
             except TimeoutError:
-                logger.error('Ceph service is down on {0}'.format(
-                    node['name']))
-                raise TimeoutError('Ceph service is down on {0}'.format(
-                    node['name']))
+                error_msg = 'Ceph service is not properly started' \
+                            ' on {0}'.format(node['name'])
+                logger.error(error_msg)
+                raise TimeoutError(error_msg)
 
-        logger.info('Ceph service is ready')
-        logger.info('Checking Ceph Health...')
-        for node in ceph_nodes:
-            remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
-            health_status = checkers.get_ceph_health(remote)
-            if 'HEALTH_OK' in health_status:
-                continue
-            elif 'HEALTH_WARN' in health_status:
-                if checkers.check_ceph_health(remote, clock_skew_status):
-                    logger.warning('Clock skew detected in Ceph.')
-                    self.environment.sync_time(ceph_nodes)
-                    try:
-                        wait(lambda: checkers.check_ceph_health(remote),
-                             interval=30, timeout=recovery_timeout)
-                    except TimeoutError:
-                        msg = 'Ceph HEALTH is bad on {0}'.format(node['name'])
-                        logger.error(msg)
-                        raise TimeoutError(msg)
-                elif checkers.check_ceph_health(remote, osd_recovery_status)\
-                        and len(offline_nodes) > 0:
-                    logger.info('Ceph is being recovered after osd node(s)'
-                                ' shutdown.')
-                    try:
-                        wait(lambda: checkers.check_ceph_health(remote),
-                             interval=30, timeout=recovery_timeout)
-                    except TimeoutError:
-                        msg = 'Ceph HEALTH is bad on {0}'.format(node['name'])
-                        logger.error(msg)
-                        raise TimeoutError(msg)
-            else:
-                assert_true(checkers.check_ceph_health(remote),
-                            'Ceph health doesn\'t equal to "OK", please '
-                            'inspect debug logs for details')
+        logger.info('Ceph service is ready. Checking Ceph Health...')
+        self.check_ceph_time_skew(cluster_id, offline_nodes)
+
+        node = online_ceph_nodes[0]
+        remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
+        health_status = ceph.get_ceph_health(remote)
+        if 'HEALTH_WARN' in health_status:
+            if ceph.check_ceph_health(remote, osd_recovery_status)\
+                    and len(offline_nodes) > 0:
+                logger.info('Ceph is being recovered after osd node(s)'
+                            ' shutdown.')
+                try:
+                    wait(lambda: ceph.check_ceph_health(remote),
+                         interval=30, timeout=recovery_timeout)
+                except TimeoutError:
+                    result = ceph.get_ceph_health(remote)
+                    msg = 'Ceph HEALTH is not OK on {0}. Details: {1}'.format(
+                        node['name'], result)
+                    logger.error(msg)
+                    raise TimeoutError(msg)
+        else:
+            result = ceph.get_ceph_health(remote)
+            msg = 'Ceph HEALTH is not OK on {0}. Details: {1}'.format(
+                node['name'], result)
+            assert_true(ceph.check_ceph_health(remote), msg)
 
         logger.info('Checking Ceph OSD Tree...')
-        for node in ceph_nodes:
-            remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
-            checkers.check_ceph_disks(remote, [n['id'] for n in ceph_nodes])
+        ceph.check_disks(remote, [n['id'] for n in online_ceph_nodes])
+        remote.clear()
         logger.info('Ceph cluster status is OK')
 
     @logwrap
@@ -2024,7 +2061,7 @@ class FuelWebClient(object):
     def prepare_ceph_to_delete(self, remote_ceph):
         hostname = ''.join(remote_ceph.execute(
             "hostname -s")['stdout']).strip()
-        osd_tree = checkers.get_osd_tree(remote_ceph)
+        osd_tree = ceph.get_osd_tree(remote_ceph)
         logger.debug("osd tree is {0}".format(osd_tree))
         ids = []
         for osd in osd_tree['nodes']:
@@ -2035,7 +2072,7 @@ class FuelWebClient(object):
         assert_true(ids, "osd ids for {} weren't found".format(hostname))
         for id in ids:
             remote_ceph.execute("ceph osd out {}".format(id))
-        wait(lambda: checkers.check_ceph_health(remote_ceph),
+        wait(lambda: ceph.check_ceph_health(remote_ceph),
              interval=30, timeout=10 * 60)
         for id in ids:
             if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
