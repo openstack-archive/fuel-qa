@@ -78,7 +78,7 @@ class GroupNtpSync(object):
         # 4. Report time on nodes
         for ntp in self.ntps:
             logger.info("Time on '{0}' = {1}".format(ntp.node_name,
-                                                     ntp.date()))
+                                                     ntp.date()[0].rstrip()))
 
 
 class Ntp(object):
