@@ -311,3 +311,60 @@ def cond_upload(remote, source, target, condition=''):
                 logger.debug("Pattern '{0}' doesn't match the file '{1}', "
                              "uploading skipped".format(condition, local_path))
     return files_count
+
+
+def run_on_remote(remote, cmd, jsonify=False, clear=False):
+    # TODO(ivankliuk): move it to devops.helpers.SSHClient
+    """Execute ``cmd`` on ``remote`` and return result.
+
+    :param remote: devops.helpers.helpers.SSHClient
+    :param cmd: command to execute on remote host
+    :param jsonify: return result of execution as JSON-like object
+    :param clear: clear SSH session
+    :return: None
+    :raise: Exception
+    """
+    result = remote.execute(cmd)
+    if result['exit_code'] != 0:
+        error_details = {
+            'command': cmd,
+            'host': remote.host,
+            'stdout': result['stdout'],
+            'stderr': result['stderr'],
+            'exit_code': result['exit_code']}
+        error_msg = ("Unexpected error occurred during execution. "
+                     "Details: {0}".format(**error_details))
+        logger.error(error_msg)
+        raise Exception(error_msg)
+
+    stdout = result['stdout']
+
+    if jsonify:
+        try:
+            obj = json.loads(''.join(stdout))
+        except Exception:
+            error_msg = (
+                "Unable to deserialize output of command"
+                " '{0}' on host {1}".format(cmd, remote.host))
+            logger.error(error_msg)
+            raise Exception(error_msg)
+        return obj
+
+    if clear:
+        remote.clear()
+
+    return stdout
+
+
+def check_distribution():
+    """Checks whether distribution is supported.
+
+    :return: None
+    :raise: DistributionNotSupported
+    """
+    if settings.OPENSTACK_RELEASE not in (settings.OPENSTACK_RELEASE_CENTOS,
+                                          settings.OPENSTACK_RELEASE_UBUNTU):
+        error_msg = ("{0} distribution is not supported!".format(
+            settings.OPENSTACK_RELEASE))
+        logger.error(error_msg)
+        raise Exception(error_msg)
