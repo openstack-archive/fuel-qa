@@ -1648,6 +1648,23 @@ class FuelWebClient(object):
                 raise TimeoutError('Ceph service is down on {0}'.format(
                     node['name']))
 
+        # Let's find nodes where are a time skew. It can be checked on
+        # an arbitrary one.
+        logger.info("Lookup nodes with a time skew...")
+        remote = self.environment.d_env.get_ssh_to_remote(ceph_nodes[0]['ip'])
+        skewed = checkers.get_ceph_nodes_w_time_skew(remote)
+        if skewed:
+            logger.info("Time on nodes %s are to be re-syncronized",
+                        ', '.join(skewed))
+            nodes_to_sync = [
+                n for n in ceph_nodes if n['fqdn'].split('.')[0] in skewed]
+            self.environment.sync_time(nodes_to_sync)
+            time.sleep(recovery_timeout)
+            if checkers.get_ceph_nodes_w_time_skew(remote):
+                msg = "There's a problem with time sync in Ceph cluster!"
+                logger.error(msg)
+                raise TimeoutError(msg)
+
         logger.info('Ceph service is ready')
         logger.info('Checking Ceph Health...')
         for node in ceph_nodes:
@@ -1656,17 +1673,7 @@ class FuelWebClient(object):
             if 'HEALTH_OK' in health_status:
                 continue
             elif 'HEALTH_WARN' in health_status:
-                if checkers.check_ceph_health(remote, clock_skew_status):
-                    logger.warning('Clock skew detected in Ceph.')
-                    self.environment.sync_time(ceph_nodes)
-                    try:
-                        wait(lambda: checkers.check_ceph_health(remote),
-                             interval=30, timeout=recovery_timeout)
-                    except TimeoutError:
-                        msg = 'Ceph HEALTH is bad on {0}'.format(node['name'])
-                        logger.error(msg)
-                        raise TimeoutError(msg)
-                elif checkers.check_ceph_health(remote, osd_recovery_status)\
+                if checkers.check_ceph_health(remote, osd_recovery_status)\
                         and len(offline_nodes) > 0:
                     logger.info('Ceph is being recovered after osd node(s)'
                                 ' shutdown.')

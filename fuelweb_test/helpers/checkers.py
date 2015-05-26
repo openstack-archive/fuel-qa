@@ -55,6 +55,20 @@ def get_ceph_health(remote):
 
 
 @logwrap
+def get_ceph_nodes_w_time_skew(remote):
+    """Returns names of nodes with a time skew.
+
+    :param remote: devops.helpers.helpers.SSHClient
+    :return: list() of host names
+    """
+    cmd = 'ceph health -f json'
+    health = json.loads(''.join(remote.execute(cmd)['stdout']))
+    monitors = health['timechecks']['mons']
+    node_names_with_time_skew = [i['name'] for i in monitors if i['skew']]
+    return node_names_with_time_skew
+
+
+@logwrap
 def check_ceph_health(remote, health_status=['HEALTH_OK']):
     ceph_health = get_ceph_health(remote)
     if all(x in ceph_health.split() for x in health_status):
