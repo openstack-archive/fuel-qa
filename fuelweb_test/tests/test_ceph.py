@@ -713,7 +713,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
 
             logger.info("Warm-restart nodes")
             self.fuel_web.warm_restart_nodes(
-                [self.fuel_web.environment.d_env.get_node(name=node)])
+                [self.fuel_web.env.d_env.get_node(name=node)])
 
             logger.info("Get partitions for {node} once again".format(
                 node=node
@@ -734,7 +734,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
 
             logger.info("Cold-restart nodes")
             self.fuel_web.cold_restart_nodes(
-                [self.fuel_web.environment.d_env.get_node(name=node)])
+                [self.fuel_web.env.d_env.get_node(name=node)])
 
             _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
             after_reboot_partitions = [checkers.get_ceph_partitions(
