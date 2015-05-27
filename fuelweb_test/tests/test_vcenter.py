@@ -12,11 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from proboscis import test
 import time
 
-from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from proboscis import test
+from proboscis.asserts import assert_true
 from devops.helpers.helpers import wait
+from devops.error import TimeoutError
+
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import VCENTER_IP
@@ -29,9 +32,7 @@ from fuelweb_test.settings import SERVTEST_PASSWORD
 from fuelweb_test.settings import SERVTEST_TENANT
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
-
 from fuelweb_test.helpers import os_actions
-from proboscis.asserts import assert_true
 
 
 @test(groups=["vcenter"])
@@ -50,6 +51,23 @@ class VcenterDeploy(TestBasic):
             self.fuel_web.run_ostf(cluster_id,
                                    test_sets=['smoke'],
                                    timeout=60 * 60)
+
+    def create_vm(self, os_conn=None, vm_count=None):
+        # Get list of available images,flavors and hipervisors
+        images_list = os_conn.nova.images.list()
+        flavors_list = os_conn.nova.flavors.list()
+        hypervisors_list = os_conn.get_hypervisors()
+        # Create VMs on each of hypervisor
+        for image in images_list:
+            for i in range(0, vm_count):
+                os_conn.nova.servers.create(
+                    flavor=flavors_list[0],
+                    name='test_{0}_{1}'.format(image.name, i), image=image)
+
+        # Wait for launch VMs
+        for hypervisor in hypervisors_list:
+            wait(lambda: os_conn.get_hypervisor_vms_count(hypervisor) != 0,
+                 timeout=300)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["smoke", "vcenter_smoke"])
@@ -974,24 +992,13 @@ class VcenterDeploy(TestBasic):
             SERVTEST_PASSWORD,
             SERVTEST_TENANT)
 
-        # Get list of available images,flavors and hipervisors
-        images_list = os_conn.nova.images.list()
-        flavors_list = os_conn.nova.flavors.list()
-        hypervisors_list = os_conn.get_hypervisors()
-
-        # Create VMs on each of hypervisor
-        for image in images_list:
-            for i in range(0, len(images_list)):
-                os_conn.nova.servers.create(
-                    flavor=flavors_list[0],
-                    name='test_{0}_{1}'.format(image.name, i), image=image)
-
-        # Wait for launch VMs
-        for hypervisor in hypervisors_list:
-            t1 = time.time()
-            while time.time() < t1 + 300:
-                if os_conn.get_hypervisor_vms_count(hypervisor) != 0:
-                    break
+        try:
+            self.create_vm(os_conn=os_conn, vm_count=6)
+        except TimeoutError:
+            logger.info("Tests failed to create VMs on each hypervisors,"
+                        " try add 4 VMs"
+                        " and if it fails again - test will fails ")
+            self.create_vm(os_conn=os_conn, vm_count=4)
 
         # Verify that current state of each VMs is Active
         srv_list = os_conn.get_servers()
@@ -1017,7 +1024,7 @@ class VcenterDeploy(TestBasic):
                     wait(lambda: not ssh.execute(
                         'curl -s -m1 http://' + ip_1 +
                         ':22 |grep -iq "[a-z]"')['exit_code'],
-                        interval=10, timeout=10
+                        interval=10, timeout=100
                     )
                     # Check server's connectivity
                     res = int(os_conn.execute_through_host(
@@ -1038,11 +1045,13 @@ class VcenterDeploy(TestBasic):
             1. Create cluster with vCenter support
             2. Add 4 nodes with Controller roles
             3. Add 2 nodes with compute role
-            4. Set Nova-Network VlanManager as a network backend.
-            5. Deploy the cluster
-            6. Run OSTF.
-            7. Remove 1 node with controller role and redeploy cluster.
+            4. Add 1 node with cinder role
+            5. Add 1 node with cinder-vmvare role
+            6. Set Nova-Network VlanManager as a network backend.
+            7. Deploy the cluster
             8. Run OSTF.
+            9. Remove 1 node with controller role and redeploy cluster.
+            10. Run OSTF.
 
         Duration 3 hours
 
