@@ -523,7 +523,7 @@ class TestHaFailoverBase(TestBasic):
             raise TimeoutError(
                 "File download was not started")
         file_size1 = get_file_size(remote_compute, file_name, file_path)
-        time.sleep(5)
+        time.sleep(60)
         file_size2 = get_file_size(remote_compute, file_name, file_path)
         assert_true(file_size2 > file_size1,
                     "File download was interrupted, size of downloading "
