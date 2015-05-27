@@ -385,12 +385,12 @@ class HAOneControllerVlan(TestBasic):
 
         self.fuel_web.update_nodes(
             cluster_id, {'slave-03': ['base-os']}, True, False)
+
+        self.fuel_web.verify_network(cluster_id)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         assert_equal(
             3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
-
-        self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
