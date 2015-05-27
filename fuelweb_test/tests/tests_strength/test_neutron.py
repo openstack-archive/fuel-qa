@@ -18,6 +18,7 @@ from proboscis.asserts import assert_equal
 from proboscis import SkipTest
 from proboscis import test
 
+from fuelweb_test import logwrap
 from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -32,6 +33,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
     """TestNeutronFailover."""  # TODO documentation
 
     @classmethod
+    @logwrap
     def get_node_with_l3(cls, self, node_with_l3):
         node_with_l3_fqdn = self.fuel_web.get_fqdn_by_hostname(node_with_l3)
         logger.debug("new node with l3 is {0}".format(node_with_l3))
@@ -41,6 +43,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
         return devops_node
 
     @classmethod
+    @logwrap
     def create_instance_with_keypair(cls, os_conn, remote):
         remote.execute(
             '. openrc;'
@@ -51,6 +54,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
         return instance
 
     @classmethod
+    @logwrap
     def reshedule_router_manually(cls, os_conn, router_id):
         l3_agent_id = os_conn.get_l3_agent_ids(router_id)[0]
         logger.debug("l3 agent id is {0}".format(l3_agent_id))
@@ -64,6 +68,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
         wait(lambda: os_conn.get_l3_agent_ids(router_id), timeout=60 * 5)
 
     @classmethod
+    @logwrap
     def check_instance_connectivity(cls, remote, dhcp_namespace, instance_ip):
         cmd = ". openrc; ip netns exec {0} ssh -i /root/.ssh/webserver_rsa" \
               " -o 'StrictHostKeyChecking no'" \
@@ -134,13 +139,14 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         Scenario:
             1. Revert snapshot with neutron cluster
-            2. Manually reschedule router from primary controller
+            2. Create an instance with a key pair
+            3. Manually reschedule router from primary controller
                to another one
-            3. Stop l3-agent on new node with pcs
-            4. Check l3-agent was rescheduled
-            5. Check network connectivity from instance via
+            4. Stop l3-agent on new node with pcs
+            5. Check l3-agent was rescheduled
+            6. Check network connectivity from instance via
                dhcp namespace
-            6. Run OSTF
+            7. Run OSTF
         Duration 30m
         """
         self.env.revert_snapshot("deploy_ha_neutron")
@@ -203,13 +209,14 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         Scenario:
             1. Revert snapshot with neutron cluster
-            2. Manually reschedule router from primary controller
+            2. Create an instance with a key pair
+            3. Manually reschedule router from primary controller
                to another one
-            3. Reset controller with l3-agent
-            4. Check l3-agent was rescheduled
-            5. Check network connectivity from instance via
+            4. Reset controller with l3-agent
+            5. Check l3-agent was rescheduled
+            6. Check network connectivity from instance via
                dhcp namespace
-            6. Run OSTF
+            7. Run OSTF
 
         Duration 30m
         """
@@ -220,11 +227,8 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         net_id = os_conn.get_network('net04')['id']
 
-        # any controller could be used as devops_node
-        devops_node = self.env.d_env.nodes().slaves[0]
-
-        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
-        remote = self.env.d_env.get_ssh_to_remote(_ip)
+        # any controller could be used
+        remote = self.fuel_web.get_ssh_for_node("slave-01")
 
         dhcp_namespace = ''.join(remote.execute('ip netns | grep {0}'.format(
             net_id))['stdout']).rstrip()
@@ -245,6 +249,10 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
             new_devops)['online'], timeout=60 * 5)
+
+        # Wait for HA services ready
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
         self.fuel_web.wait_mysql_galera_is_up(['slave-01', 'slave-02',
                                                'slave-03'])
 
@@ -256,6 +264,9 @@ class TestNeutronFailover(base_test_case.TestBasic):
                 "l3 agent wasn't rescheduled, it is still {0}".format(
                     os_conn.get_l3_agent_hosts(router_id)[0]))
         wait(lambda: os_conn.get_l3_agent_ids(router_id), timeout=60)
+
+        # Re-initialize SSHClient after slave-01 was rebooted
+        remote.reconnect()
 
         self.check_instance_connectivity(remote, dhcp_namespace, instance_ip)
 
@@ -271,13 +282,14 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         Scenario:
             1. Revert snapshot with neutron cluster
-            2. Manually reschedule router from primary controller
+            2. Create an instance with a key pair
+            3. Manually reschedule router from primary controller
                to another one
-            3. Destroy controller with l3-agent
-            4. Check l3-agent was rescheduled
-            5. Check network connectivity from instance via
+            4. Destroy controller with l3-agent
+            5. Check l3-agent was rescheduled
+            6. Check network connectivity from instance via
                dhcp namespace
-            6. Run OSTF
+            7. Run OSTF
 
         Duration 30m
         """
@@ -288,11 +300,11 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         net_id = os_conn.get_network('net04')['id']
 
-        # any controller could be used as devops_node
-        devops_node = self.env.d_env.nodes().slaves[0]
-
-        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
-        remote = self.env.d_env.get_ssh_to_remote(_ip)
+        # Get remote to the current l3 router
+        router_id = os_conn.get_routers_ids()[0]
+        node_with_l3 = os_conn.get_l3_agent_hosts(router_id)[0]
+        d_node = self.fuel_web.get_devops_node_by_nailgun_fqdn(node_with_l3)
+        remote = self.fuel_web.get_ssh_for_node(d_node.name)
 
         dhcp_namespace = ''.join(remote.execute('ip netns | grep {0}'.format(
             net_id))['stdout']).rstrip()
@@ -303,21 +315,24 @@ class TestNeutronFailover(base_test_case.TestBasic):
                 os_conn, remote).addresses['net04'][0]['addr']
         logger.debug('instance internal ip is {0}'.format(instance_ip))
 
-        router_id = os_conn.get_routers_ids()[0]
         self.reshedule_router_manually(os_conn, router_id)
         self.check_instance_connectivity(remote, dhcp_namespace, instance_ip)
 
-        node_with_l3 = os_conn.get_l3_agent_hosts(router_id)[0]
-        new_devops = self.get_node_with_l3(self, node_with_l3)
+        new_node_with_l3 = os_conn.get_l3_agent_hosts(router_id)[0]
+        new_devops = self.get_node_with_l3(self, new_node_with_l3)
         new_devops.destroy()
         wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
             new_devops)['online'], timeout=60 * 10)
-        self.fuel_web.wait_mysql_galera_is_up(
-            [n.name for n in
-             set(self.env.d_env.nodes().slaves[:3]) - {new_devops}])
+
+        # Wait for HA services ready
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
+        online_controllers_names = [n.name for n in set(
+            self.env.d_env.nodes().slaves[:3]) - {new_devops}]
+        self.fuel_web.wait_mysql_galera_is_up(online_controllers_names)
 
         try:
-            wait(lambda: not node_with_l3 == os_conn.get_l3_agent_hosts(
+            wait(lambda: not new_node_with_l3 == os_conn.get_l3_agent_hosts(
                 router_id)[0], timeout=60 * 3)
         except TimeoutError:
             raise TimeoutError(
