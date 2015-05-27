@@ -165,12 +165,12 @@ class CephCompactWithCinder(TestBasic):
                                is_make=True)
 
 
-@test(groups=["thread_3", "ceph", "classic_provisioning"])
+@test(groups=["thread_3", "ceph"])
 class CephHA(TestBasic):
     """CephHA."""  # TODO documentation1
 
     @test(depends_on=[SetupEnvironment.prepare_release],
-          groups=["ceph_ha"])
+          groups=["ceph_ha", "classic_provisioning"])
     @log_snapshot_after_test
     def ceph_ha(self):
         """Deploy ceph with cinder in HA mode
