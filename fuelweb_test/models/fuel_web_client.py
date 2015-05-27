@@ -2036,7 +2036,10 @@ class FuelWebClient(object):
         wait(lambda: checkers.check_ceph_health(remote_ceph),
              interval=30, timeout=10 * 60)
         for id in ids:
-            remote_ceph.execute("service ceph stop osd.{}".format(id))
+            if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
+                remote_ceph.execute("stop ceph-osd id={}".format(id))
+            else:
+                remote_ceph.execute("service ceph stop osd.{}".format(id))
             remote_ceph.execute("ceph osd crush remove osd.{}".format(id))
             remote_ceph.execute("ceph auth del osd.{}".format(id))
             remote_ceph.execute("ceph osd rm osd.{}".format(id))
