@@ -18,6 +18,7 @@ from random import randrange
 
 from fuelweb_test import logwrap
 from fuelweb_test import logger
+from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 
@@ -83,6 +84,7 @@ class SecurityChecks(object):
         return test_port
 
     @logwrap
+    @retry
     def verify_firewall(self, cluster_id):
         admin_remote = self.environment.d_env.get_admin_remote()
         # Install NetCat
