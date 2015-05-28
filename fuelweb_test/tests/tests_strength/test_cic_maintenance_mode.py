@@ -414,21 +414,13 @@ class CICMaintenanceMode(TestBasic):
                          'Failed to execute "{0}" on remote host: {1}'.
                          format(command2, result))
 
-            logger.info('Wait a %s node offline status after unexpected '
-                        'reboot', nailgun_node.name)
-            try:
-                wait(
-                    lambda: not
-                    self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
-                    ['online'], timeout=60 * 10)
-            except TimeoutError:
-                assert_false(
-                    self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
-                    ['online'],
-                    'Node {0} has not become offline after unexpected'
-                    'reboot'.format(nailgun_node.name))
+            # Node don't have enough time for set offline status
+            # after reboot --force
+            # Just waiting
+            time.sleep(30)
 
-            logger.info('Wait a %s node online status', nailgun_node.name)
+            logger.info('Wait a %s node online status after unexpected '
+                        'reboot', nailgun_node.name)
             self.fuel_web.wait_nodes_get_online_state([nailgun_node])
 
             logger.info('Check that %s node not in maintenance mode after'
