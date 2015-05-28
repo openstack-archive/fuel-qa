@@ -14,6 +14,7 @@
 import time
 
 from devops.error import TimeoutError
+from devops.helpers.helpers import _tcp_ping
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
@@ -414,21 +415,16 @@ class CICMaintenanceMode(TestBasic):
                          'Failed to execute "{0}" on remote host: {1}'.
                          format(command2, result))
 
-            logger.info('Wait a %s node offline status after unexpected '
-                        'reboot', nailgun_node.name)
-            try:
-                wait(
-                    lambda: not
-                    self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
-                    ['online'], timeout=60 * 10)
-            except TimeoutError:
-                assert_false(
-                    self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
-                    ['online'],
-                    'Node {0} has not become offline after unexpected'
-                    'reboot'.format(nailgun_node.name))
+            # Node don't have enough time for set offline status
+            # after reboot --force
+            # Just waiting
 
-            logger.info('Wait a %s node online status', nailgun_node.name)
+            _ip = self.fuel_web.get_nailgun_node_by_name(
+                nailgun_node.name)['ip']
+            _wait(lambda: _tcp_ping(_ip, 22), timeout=120)
+
+            logger.info('Wait a %s node online status after unexpected '
+                        'reboot', nailgun_node.name)
             self.fuel_web.wait_nodes_get_online_state([nailgun_node])
 
             logger.info('Check that %s node not in maintenance mode after'
