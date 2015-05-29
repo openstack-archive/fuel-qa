@@ -193,6 +193,9 @@ class EnvironmentModel(object):
                 self._virtual_environment.define()
         return self._virtual_environment
 
+    def _purge_ssh_connections(self):
+        self.d_env._purge_ssh_connections()
+
     def resume_environment(self):
         self.d_env.resume()
         admin = self.d_env.nodes().admin

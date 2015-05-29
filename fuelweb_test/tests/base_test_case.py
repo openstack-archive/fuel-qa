@@ -45,6 +45,9 @@ class TestBasic(object):
             if self.env.d_env.has_snapshot(snapshot_name):
                 raise SkipTest()
 
+    def tearDownClass(self):
+        self.env._purge_ssh_connections()
+
 
 @test
 class SetupEnvironment(TestBasic):
