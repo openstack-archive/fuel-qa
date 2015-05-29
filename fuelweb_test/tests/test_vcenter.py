@@ -1115,7 +1115,9 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.update_vlan_network_fixed(
             cluster_id, amount=8, network_size=32)
 
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id,
+                                          timeout=4*60*60,
+                                          check_services=False)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
