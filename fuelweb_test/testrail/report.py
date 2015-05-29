@@ -245,9 +245,11 @@ def get_existing_bug_link(previous_results):
         try:
             bug = LaunchpadBug(bug_id).get_duplicate_of()
         except KeyError:
-            logger.error("Bug with id '{bug_id}' is private or "
-                         "doesn't exist.".format(bug_id=bug_id))
-            return
+            logger.warning("Bug with id '{bug_id}' is private or "
+                "doesn't exist.".format(bug_id=bug_id))
+        except Exception:
+            logger.exception("Strange situation with '{bug_id}' \
+                issue".format(bug_id=bug_id))
 
         for target in bug.targets:
             if target['project'] == LaunchpadSettings.project and\
