@@ -21,7 +21,7 @@ from fuelweb_test.tests import base_test_case
 from fuelweb_test.helpers import os_actions
 
 
-@test(groups=["huge_environments"])
+@test(groups=["huge_environments", "huge_ha_nova"])
 class HugeEnvironments(base_test_case.TestBasic):
     """HugeEnvironments."""  # TODO documentation
 
@@ -84,7 +84,7 @@ class HugeEnvironments(base_test_case.TestBasic):
           groups=["nine_nodes_separate_roles"])
     @log_snapshot_after_test
     def nine_nodes_separate_roles(self):
-        """Deploy cluster with separate roles on 9 nodes in HA mode with GRE
+        """Deploy cluster with separate roles on 9 nodes in HA mode
 
         Scenario:
             1. Create cluster
@@ -112,9 +112,7 @@ class HugeEnvironments(base_test_case.TestBasic):
                 'images_ceph': False,
                 'volumes_lvm': False,
                 'sahara': True,
-                'ceilometer': True,
-                'net_provider': 'neutron',
-                'net_segment_type': 'gre'
+                'ceilometer': True
             }
         )
         self.fuel_web.update_nodes(
@@ -228,13 +226,15 @@ class HugeHaNeutron(base_test_case.TestBasic):
           groups=["huge_ha_neutron_vlan_ceph_ceilometer_rados"])
     @log_snapshot_after_test
     def huge_ha_neutron_vlan_ceph_ceilometer_rados(self):
-        """Deploy cluster in HA mode with Neutron VLAN, RadosGW
+        """Deploy cluster with separate roles in HA mode
+        with Neutron VLAN, RadosGW
 
         Scenario:
             1. Create cluster
-            2. Add 3 nodes with controller and ceph role
-            3. Add 3 nodes with compute and ceph roles
-            4. Add 3 nodes with mongo roles
+            2. Add 3 nodes with controller
+            3. Add 3 nodes with compute
+            4. Add 1 node with mongo roles
+            5. Add 2 nodes as ceph
             5. Deploy the cluster
             6. Verify smiles count
             7. Run OSTF
@@ -264,15 +264,15 @@ class HugeHaNeutron(base_test_case.TestBasic):
         self.fuel_web.update_nodes(
             cluster_id,
             {
-                'slave-01': ['controller', 'ceph-osd'],
-                'slave-02': ['controller', 'ceph-osd'],
-                'slave-03': ['controller', 'ceph-osd'],
-                'slave-04': ['compute', 'ceph-osd'],
-                'slave-05': ['compute', 'ceph-osd'],
-                'slave-06': ['compute', 'ceph-osd'],
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute'],
+                'slave-05': ['compute'],
+                'slave-06': ['compute'],
                 'slave-07': ['mongo'],
-                'slave-08': ['mongo'],
-                'slave-09': ['mongo']
+                'slave-08': ['ceph-osd'],
+                'slave-09': ['ceph-osd'],
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
