@@ -251,7 +251,7 @@ class TestHaFlat(TestBasic):
             cluster_id,
             {'slave-07': ['controller', 'cinder']})
 
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
