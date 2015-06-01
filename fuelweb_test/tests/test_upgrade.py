@@ -85,7 +85,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                             '/var', 'upgrade.sh',
                             password=hlp_data.KEYSTONE_CREDS['password'])
         checkers.wait_upgrade_is_done(self.env.d_env.get_admin_remote(), 3000,
-                                      phrase='*** UPGRADE DONE SUCCESSFULLY')
+                                      phrase='*** UPGRADING MASTER NODE'
+                                             ' DONE SUCCESSFULLY')
         checkers.check_upgraded_containers(self.env.d_env.get_admin_remote(),
                                            hlp_data.UPGRADE_FUEL_FROM,
                                            hlp_data.UPGRADE_FUEL_TO)
@@ -160,7 +161,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                             '/var', 'upgrade.sh',
                             password=hlp_data.KEYSTONE_CREDS['password'])
         checkers.wait_upgrade_is_done(self.env.d_env.get_admin_remote(), 3000,
-                                      phrase='*** UPGRADE DONE SUCCESSFULLY')
+                                      phrase='*** UPGRADING MASTER NODE'
+                                             ' DONE SUCCESSFULLY')
         checkers.check_upgraded_containers(self.env.d_env.get_admin_remote(),
                                            hlp_data.UPGRADE_FUEL_FROM,
                                            hlp_data.UPGRADE_FUEL_TO)
@@ -224,7 +226,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                             '/var', 'upgrade.sh',
                             password=hlp_data.KEYSTONE_CREDS['password'])
         checkers.wait_upgrade_is_done(self.env.d_env.get_admin_remote(), 3000,
-                                      phrase='*** UPGRADE DONE SUCCESSFULLY')
+                                      phrase='*** UPGRADING MASTER NODE'
+                                             ' DONE SUCCESSFULLY')
         checkers.check_upgraded_containers(self.env.d_env.get_admin_remote(),
                                            hlp_data.UPGRADE_FUEL_FROM,
                                            hlp_data.UPGRADE_FUEL_TO)
@@ -320,7 +323,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                             '/var', 'upgrade.sh',
                             password=hlp_data.KEYSTONE_CREDS['password'])
         checkers.wait_upgrade_is_done(self.env.d_env.get_admin_remote(), 3000,
-                                      phrase='*** UPGRADE DONE SUCCESSFULLY')
+                                      phrase='*** UPGRADING MASTER NODE'
+                                             ' DONE SUCCESSFULLY')
         checkers.check_upgraded_containers(self.env.d_env.get_admin_remote(),
                                            hlp_data.UPGRADE_FUEL_FROM,
                                            hlp_data.UPGRADE_FUEL_TO)
