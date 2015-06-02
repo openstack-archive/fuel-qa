@@ -168,6 +168,30 @@ class OpenStackActions(common.Common):
         server = self.nova.servers.get(srv.id)
         return getattr(server, "OS-EXT-SRV-ATTR:instance_name")
 
+    def evacuate_server(self, server, host, timeout):
+        curr_host = self.get_srv_host_name(server)
+        logger.debug("Current compute host is {0}".format(curr_host))
+        logger.debug("Start evacuation of instance")
+        server.evacuate(host._info['host_name'])
+        try:
+            helpers.wait(
+                lambda: self.get_instance_detail(server).status == "ACTIVE",
+                timeout=timeout)
+        except TimeoutError:
+            logger.debug("Instance do not became active after evacuation")
+            asserts.assert_true(
+                self.get_instance_detail(server).status == "ACTIVE",
+                "Instance do not become Active after evacuation, "
+                "current status is {0}".format(
+                    self.get_instance_detail(server).status))
+
+        asserts.assert_true(
+            self.get_srv_host_name(
+                self.get_instance_detail(server)) != curr_host,
+            "Server did not evacuated")
+        server = self.get_instance_detail(server.id)
+        return server
+
     def migrate_server(self, server, host, timeout):
         curr_host = self.get_srv_host_name(server)
         logger.debug("Current compute host is {0}".format(curr_host))
