@@ -751,9 +751,6 @@ deployment:
     - name: ami-creator
       packages:
       - ami-creator
-    - name: at
-      packages:
-      - at
     - name: audit
       packages:
       - audit-libs-python
@@ -769,9 +766,6 @@ deployment:
     - name: b43-fwcutter-012
       packages:
       - b43-fwcutter
-    - name: bc
-      packages:
-      - bc
     - name: biosdevname
       packages:
       - biosdevname
@@ -827,9 +821,25 @@ deployment:
       - librbd1
       - python-ceph
       - rbd-fuse
-    - name: ceph-deploy
-      packages:
+      - at
+      - bc
       - ceph-deploy
+      - db4-devel
+      - ed
+      - gdbm-devel
+      - gperftools-libs
+      - leveldb
+      - libunwind
+      - mailx
+      - patch
+      - pax
+      - python-distribute
+      - python-flask
+      - python-itsdangerous
+      - python-werkzeug
+      - redhat-lsb-core
+      - snappy
+      - time
     - name: chkconfig
       packages:
       - ntsysv
@@ -886,7 +896,6 @@ deployment:
     - name: db4
       packages:
       - db4-cxx
-      - db4-devel
     - name: dejavu-fonts
       packages:
       - dejavu-fonts-common
@@ -927,9 +936,6 @@ deployment:
     - name: ebtables
       packages:
       - ebtables
-    - name: ed
-      packages:
-      - ed
     - name: eject
       packages:
       - eject
@@ -1053,9 +1059,6 @@ deployment:
     - name: gdb
       packages:
       - gdb
-    - name: gdbm
-      packages:
-      - gdbm-devel
     - name: ghostscript
       packages:
       - ghostscript
@@ -1069,9 +1072,6 @@ deployment:
       packages:
       - git
       - perl-Git
-    - name: gperftools
-      packages:
-      - gperftools-libs
     - name: gpxe
       packages:
       - gpxe-bootimgs
@@ -1106,9 +1106,6 @@ deployment:
     - name: iperf3
       packages:
       - iperf3
-    - name: ipset
-      packages:
-      - ipset
     - name: ipxe-20140303
       packages:
       - ipxe-roms-qemu
@@ -1160,9 +1157,6 @@ deployment:
     - name: less-436
       packages:
       - less
-    - name: leveldb
-      packages:
-      - leveldb
     - name: libaio
       packages:
       - libaio
@@ -1207,9 +1201,6 @@ deployment:
     - name: libmlx4
       packages:
       - libmlx4
-    - name: libmnl
-      packages:
-      - libmnl
     - name: libnet
       packages:
       - libnet
@@ -1274,9 +1265,6 @@ deployment:
     - name: libtool
       packages:
       - libtool-ltdl
-    - name: libunwind
-      packages:
-      - libunwind
     - name: libusbx
       packages:
       - libusbx
@@ -1321,9 +1309,6 @@ deployment:
     - name: lzop
       packages:
       - lzop
-    - name: mailx
-      packages:
-      - mailx
     - name: man-pages
       packages:
       - man-pages
@@ -1484,6 +1469,7 @@ deployment:
       packages:
       - openstack-cinder
       - python-cinder
+      - libmnl
     - name: openstack-glance
       packages:
       - openstack-glance
@@ -1521,6 +1507,11 @@ deployment:
       - openstack-neutron-vmware
       - openstack-neutron-vpn-agent
       - python-neutron
+      - dkms
+      - ipset
+      - libipset3
+      - openstack-datapath-dkms
+      - python-jsonrpclib
     - name: openstack-nova
       packages:
       - openstack-nova
@@ -1564,12 +1555,6 @@ deployment:
     - name: parted
       packages:
       - parted
-    - name: patch
-      packages:
-      - patch
-    - name: pax
-      packages:
-      - pax
     - name: pcapy
       packages:
       - pcapy
@@ -1709,9 +1694,6 @@ deployment:
     - name: python-d2to1
       packages:
       - python-d2to1
-    - name: python-distribute
-      packages:
-      - python-distribute
     - name: python-django-appconf
       packages:
       - python-django-appconf
@@ -1741,9 +1723,6 @@ deployment:
     - name: python-docutils
       packages:
       - python-docutils
-    - name: python-flask
-      packages:
-      - python-flask
     - name: python-funcparserlib
       packages:
       - python-funcparserlib
@@ -1762,18 +1741,12 @@ deployment:
     - name: python-imaging
       packages:
       - python-imaging
-    - name: python-itsdangerous
-      packages:
-      - python-itsdangerous
     - name: python-iwlib
       packages:
       - python-iwlib
     - name: python-jsonpath-rw
       packages:
       - python-jsonpath-rw
-    - name: python-jsonrpclib
-      packages:
-      - python-jsonrpclib
     - name: python-kazoo
       packages:
       - python-kazoo
@@ -1896,9 +1869,6 @@ deployment:
     - name: python-websockify
       packages:
       - python-websockify
-    - name: python-werkzeug
-      packages:
-      - python-werkzeug
     - name: python-wsme
       packages:
       - python-wsme
@@ -1948,9 +1918,6 @@ deployment:
     - name: readahead
       packages:
       - readahead
-    - name: redhat-lsb
-      packages:
-      - redhat-lsb-core
     - name: resource-agents
       packages:
       - resource-agents
@@ -2166,9 +2133,6 @@ deployment:
     - name: smartmontools
       packages:
       - smartmontools
-    - name: snappy
-      packages:
-      - snappy
     - name: socat
       packages:
       - socat
@@ -2216,9 +2180,6 @@ deployment:
     - name: tcsh
       packages:
       - tcsh
-    - name: time
-      packages:
-      - time
     - name: tinyproxy
       packages:
       - tinyproxy

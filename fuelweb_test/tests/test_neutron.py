@@ -29,7 +29,8 @@ class NeutronGre(TestBasic):
     """NeutronGre."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_neutron_gre", "ha_one_controller_neutron_gre"])
+          groups=["deploy_neutron_gre", "ha_one_controller_neutron_gre",
+                  "cinder", "swift", "glance", "deployment"])
     @log_snapshot_after_test
     def deploy_neutron_gre(self):
         """Deploy cluster in ha mode with 1 controller and Neutron GRE

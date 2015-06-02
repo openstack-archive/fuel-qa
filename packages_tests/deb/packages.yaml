@@ -862,9 +862,6 @@ deployment:
     - name: blas
       packages:
       - libblas3
-    - name: blinker
-      packages:
-      - python-blinker
     - name: bluez
       packages:
       - libbluetooth3
@@ -944,6 +941,17 @@ deployment:
       - librbd1
       - python-ceph
       - radosgw
+      - python-blinker
+      - python-flask
+      - libtcmalloc-minimal4
+      - libleveldb1
+      - libunwind8
+      - python-pyinotify
+      - libsnappy1
+      - ceph-deploy
+      - python-itsdangerous
+      - python-werkzeug
+      - xfsprogs
     - name: cheetah
       packages:
       - python-cheetah
@@ -1176,9 +1184,6 @@ deployment:
     - name: flac
       packages:
       - libflac8
-    - name: flask
-      packages:
-      - python-flask
     - name: fontconfig
       packages:
       - fontconfig-config
@@ -1297,7 +1302,6 @@ deployment:
     - name: google-perftools
       packages:
       - libgoogle-perftools4
-      - libtcmalloc-minimal4
     - name: grub2
       packages:
       - grub-mount-udeb
@@ -1360,9 +1364,6 @@ deployment:
     - name: iproute2
       packages:
       - iproute
-    - name: ipset
-      packages:
-      - libipset3
     - name: iputils
       packages:
       - iputils-arping
@@ -1434,9 +1435,6 @@ deployment:
     - name: less.js
       packages:
       - node-less
-    - name: leveldb
-      packages:
-      - libleveldb1
     - name: libaio
       packages:
       - libaio1
@@ -1607,9 +1605,6 @@ deployment:
     - name: libunistring
       packages:
       - libunistring0
-    - name: libunwind
-      packages:
-      - libunwind8
     - name: libusb
       packages:
       - libusb-0.1-udeb
@@ -1966,6 +1961,13 @@ deployment:
       - neutron-server
       - neutron-vpn-agent
       - python-neutron
+      - libipset3
+      - openvswitch-common
+      - openvswitch-switch
+      - dkms
+      - ipset
+      - openvswitch-datapath-dkms
+      - python-jsonrpclib
     - name: nfs-utils
       packages:
       - nfs-common
@@ -2028,10 +2030,6 @@ deployment:
       packages:
       - libssl0.9.8
       - libcrypto0.9.8-udeb
-    - name: openvswitch
-      packages:
-      - openvswitch-common
-      - openvswitch-switch
     - name: os-prober
       packages:
       - os-prober-udeb
@@ -2166,9 +2164,6 @@ deployment:
     - name: pygobject
       packages:
       - python-gi
-    - name: pyinotify
-      packages:
-      - python-pyinotify
     - name: pylibmc
       packages:
       - python-pylibmc
@@ -2288,9 +2283,6 @@ deployment:
     - name: slang2
       packages:
       - libslang2-udeb
-    - name: snappy
-      packages:
-      - libsnappy1
     - name: software-properties
       packages:
       - python3-software-properties
@@ -2388,7 +2380,6 @@ deployment:
       - btrfs-tools
       - build-essential
       - ceph
-      - ceph-deploy
       - cgroup-lite
       - cirros-testvm
       - cirros-testvmware
@@ -2407,7 +2398,6 @@ deployment:
       - diffstat
       - disktype
       - distro-info-data
-      - dkms
       - dput
       - dstat
       - ebtables
@@ -2436,7 +2426,6 @@ deployment:
       - iperf
       - iperf3
       - ipmitool
-      - ipset
       - iptables-persistent
       - iucode-tool
       - iw
@@ -2591,11 +2580,9 @@ deployment:
       - python-httplib2
       - python-ipaddr
       - python-iso8601
-      - python-itsdangerous
       - python-json-patch
       - python-json-pointer
       - python-jsonpath-rw
-      - python-jsonrpclib
       - python-jsonschema
       - python-keyring
       - python-keystoneclient
@@ -2657,7 +2644,6 @@ deployment:
       - python-urllib3
       - python-warlock
       - python-webob
-      - python-werkzeug
       - python-wsme
       - python-xattr
       - python-xstatic
@@ -2713,7 +2699,6 @@ deployment:
       - vgabios
       - wdiff
       - websockify
-      - xfsprogs
       - xinetd
       - zerofree
       - zfs-fuse
