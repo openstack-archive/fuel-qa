@@ -90,8 +90,7 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_ha_one_controller_flat",
-                  "ha_one_controller_nova_flat", "classic_provisioning",
-                  "smoke_nova"])
+                  "ha_one_controller_nova_flat", "smoke_nova"])
     @log_snapshot_after_test
     def deploy_ha_one_controller_flat(self):
         """Deploy cluster in HA mode (one controller) with flat nova-network
