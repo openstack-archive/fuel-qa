@@ -475,10 +475,10 @@ class OSTFCeilometerHelper(TestBasic):
 class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_ceilometer_ha_one_controller_with_mongo"])
+          groups=["deploy_ceilometer_ha_one_controller_with_mongo_gre"])
     @log_snapshot_after_test
-    def deploy_ceilometer_ha_one_controller_with_mongo(self):
-        """Deploy cluster in HA mode with Ceilometer
+    def deploy_ceilometer_ha_one_controller_with_mongo_gre(self):
+        """Deploy cluster in HA mode with Ceilometer and Neutron GRE
 
         Scenario:
             1. Create cluster. Set install Ceilometer option
@@ -491,7 +491,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
             8. Run OSTF
 
         Duration 45m
-        Snapshot: deploy_ceilometer_ha_one_controller_with_mongo
+        Snapshot: deploy_ceilometer_ha_one_controller_with_mongo_gre
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
@@ -500,6 +500,8 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
             mode=settings.DEPLOYMENT_MODE,
             settings={
                 'ceilometer': True,
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre',
                 'tenant': 'ceilometerSimple',
                 'user': 'ceilometerSimple',
                 'password': 'ceilometerSimple'
@@ -552,13 +554,13 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
 
         self.run_tests(cluster_id)
         self.env.make_snapshot(
-            "deploy_ceilometer_ha_one_controller_with_mongo")
+            "deploy_ceilometer_ha_one_controller_with_mongo_gre")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_ceilometer_ha_one_controller_multirole"])
+          groups=["deploy_ceilometer_ha_one_controller_multirole_vlan"])
     @log_snapshot_after_test
-    def deploy_ceilometer_ha_one_controller_multirole(self):
-        """Deploy cluster in ha multirole mode with Ceilometer
+    def deploy_ceilometer_ha_one_controller_multirole_vlan(self):
+        """Deploy cluster in ha multirole mode with Ceilometer and Neutron VLAN
 
         Scenario:
             1. Create cluster. Set install Ceilometer option
@@ -570,7 +572,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
             7. Run OSTF
 
         Duration 35m
-        Snapshot: deploy_ceilometer_ha_one_controller_multirole
+        Snapshot: deploy_ceilometer_ha_one_controller_multirole_vlan
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
@@ -578,7 +580,9 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE,
             settings={
-                'ceilometer': True
+                'ceilometer': True,
+                'net_provider': 'neutron',
+                'net_segment_type': 'vlan',
             }
         )
         self.fuel_web.update_nodes(
@@ -597,16 +601,17 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
             service_name='ceilometer-api')
 
         self.run_tests(cluster_id)
-        self.env.make_snapshot("deploy_ceilometer_ha_one_controller_mulirole")
+        self.env.make_snapshot(
+            "deploy_ceilometer_ha_one_controller_multirole_vlan")
 
 
 @test(groups=["services", "services.ceilometer", "services_ha.ceilometer"])
 class CeilometerHAMongo(OSTFCeilometerHelper):
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_ceilometer_ha_with_mongo"])
+          groups=["deploy_ceilometer_ha_with_mongo_gre"])
     @log_snapshot_after_test
-    def deploy_ceilometer_ha_with_mongo(self):
-        """Deploy cluster in ha mode with Ceilometer
+    def deploy_ceilometer_ha_with_mongo_gre(self):
+        """Deploy cluster in ha mode with Ceilometer and Neutron GRE
 
         Scenario:
             1. Create cluster. Set install Ceilometer option
@@ -618,7 +623,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             7. Run OSTF
 
         Duration 65m
-        Snapshot: deploy_ceilometer_ha_with_mongo
+        Snapshot: deploy_ceilometer_ha_with_mongo_gre
 
         """
 
@@ -629,6 +634,8 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             mode=settings.DEPLOYMENT_MODE,
             settings={
                 'ceilometer': True,
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre',
                 'tenant': 'ceilometerHA',
                 'user': 'ceilometerHA',
                 'password': 'ceilometerHA'
@@ -653,13 +660,14 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
 
         self.run_tests(cluster_id,
                        skip_tests=['test_check_volume_notifications'])
-        self.env.make_snapshot("deploy_ceilometer_ha_with_mongo")
+        self.env.make_snapshot("deploy_ceilometer_ha_with_mongo_gre")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_ceilometer_ha_multirole"])
+          groups=["deploy_ceilometer_ha_multirole_vlan"])
     @log_snapshot_after_test
-    def deploy_ceilometer_ha_multirole(self):
+    def deploy_ceilometer_ha_multirole_vlan(self):
         """Deploy cluster in ha multirole mode with Ceilometer
+           and Neutron VLAN
 
         Scenario:
             1. Create cluster. Set install Ceilometer option
@@ -671,7 +679,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             7. Run OSTF
 
         Duration 80m
-        Snapshot: deploy_ceilometer_ha_multirole
+        Snapshot: deploy_ceilometer_ha_multirole_vlan
 
         """
         self.env.revert_snapshot("ready_with_5_slaves")
@@ -680,7 +688,9 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE,
             settings={
-                'ceilometer': True
+                'ceilometer': True,
+                'net_provider': 'neutron',
+                'net_segment_type': 'vlan',
             }
         )
         self.fuel_web.update_nodes(
@@ -701,13 +711,14 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             service_name='ceilometer-api')
 
         self.run_tests(cluster_id)
-        self.env.make_snapshot("deploy_ceilometer_ha_mulirole")
+        self.env.make_snapshot("deploy_ceilometer_ha_multirole_vlan")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_ceilometer_ha_with_external_mongo"])
+          groups=["deploy_ceilometer_ha_with_external_mongo_gre"])
     @log_snapshot_after_test
-    def deploy_ceilometer_ha_with_external_mongo(self):
-        """Deploy cluster in ha mode with Ceilometer and external Mongo
+    def deploy_ceilometer_ha_with_external_mongo_gre(self):
+        """Deploy cluster in ha mode with Ceilometer, external Mongo and
+           Neutron GRE
 
         Scenario:
             1. Create cluster. Set install Ceilometer, external Mongo option
@@ -719,7 +730,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             7. Run OSTF
 
         Duration 65m
-        Snapshot: deploy_ceilometer_ha_with_external_mongo
+        Snapshot: deploy_ceilometer_ha_with_external_mongo_gre
 
         """
 
@@ -733,6 +744,8 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
                 'tenant': 'ceilometerHA',
                 'user': 'ceilometerHA',
                 'password': 'ceilometerHA',
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre',
                 'volumes_ceph': True,
                 'images_ceph': True,
                 'volumes_lvm': False,
@@ -763,7 +776,8 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             service_name='ceilometer-api')
 
         self.run_tests(cluster_id)
-        self.env.make_snapshot("deploy_ceilometer_ha_with_external_mongo")
+        self.env.make_snapshot(
+            "deploy_ceilometer_ha_with_external_mongo_gre")
 
 
 @test(groups=["services", "services.heat", "services_ha_one_controller"])
