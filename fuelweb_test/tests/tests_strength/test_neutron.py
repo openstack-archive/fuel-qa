@@ -391,6 +391,15 @@ class TestNeutronFailover(base_test_case.TestBasic):
         logger.debug('mtu is equal to {0}'.format(mtu))
         cmd = "ping -q -s {0} -c 7 -w 10 {1}".format(int(mtu) - 28,
                                                      floating_ip.ip)
+        check_ping = "ping {}".format(floating_ip.ip)
+        try:
+            wait(lambda: remote.execute(check_ping)['exit_code'] == 0,
+                 timeout=120)
+        except TimeoutError:
+            res = remote.execute(check_ping)
+            assert_equal(0, res['exit_code'],
+                         'instance is not pingable,'
+                         ' result is {0}'.format(res))
         res = remote.execute(cmd)
         assert_equal(0, res['exit_code'],
                      'most packages were dropped, result is {0}'.format(res))
