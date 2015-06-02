@@ -1,0 +1,3 @@
+system_tests:
+  tags:
+    - ceph
