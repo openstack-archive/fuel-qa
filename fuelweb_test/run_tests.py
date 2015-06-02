@@ -12,8 +12,32 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import re
 import sys
+
+from nose.plugins import Plugin
+from paramiko.transport import _join_lingering_threads
+
+
+class CloseSSHConnectionsPlugin(Plugin):
+    """Closes all paramiko's ssh connections after each test case
+
+    Plugin fixes proboscis disability to run cleanup of any kind.
+    'afterTest' calls _join_lingering_threads function from paramiko,
+    which stops all threads (set the state to inactive and joins for 10s)
+    """
+    name = 'closesshconnections'
+
+    def options(self, parser, env=os.environ):
+        super(CloseSSHConnectionsPlugin, self).options(parser, env=env)
+
+    def configure(self, options, conf):
+        super(CloseSSHConnectionsPlugin, self).configure(options, conf)
+        self.enabled = True
+
+    def afterTest(self, *args, **kwargs):
+        _join_lingering_threads()
 
 
 def import_tests():
@@ -59,7 +83,9 @@ def run_tests():
     import_tests()
 
     # Run Proboscis and exit.
-    TestProgram().run_and_exit()
+    TestProgram(
+        addplugins=[CloseSSHConnectionsPlugin()]
+    ).run_and_exit()
 
 
 if __name__ == '__main__':
