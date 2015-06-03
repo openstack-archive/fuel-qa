@@ -1119,6 +1119,9 @@ class FuelWebClient(object):
     @logwrap
     def update_node_networks(self, node_id, interfaces_dict, raw_data=None):
         # fuelweb_admin is always on eth0
+        # TODO(akostrikov): fix it to be able to use non-eth0 as admin.
+        # This part of the code disables all settings for unsorted networks.
+        # update_nodes->update_node_interfaces->update_node_networks.
         interfaces_dict['eth0'] = interfaces_dict.get('eth0', [])
         if 'fuelweb_admin' not in interfaces_dict['eth0']:
             interfaces_dict['eth0'].append('fuelweb_admin')

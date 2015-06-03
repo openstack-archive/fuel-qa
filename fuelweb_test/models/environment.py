@@ -171,6 +171,7 @@ class EnvironmentModel(object):
                 " hostname=%(hostname)s\n"
                 " dhcp_interface=%(nat_interface)s\n"
                 " showmenu=%(showmenu)s\n"
+                " admin_interface=eth0\n"  # TODO(akostrikov): Unhardcode.
                 " build_images=%(build_images)s\n"
                 " <Enter>\n"
             ) % params
