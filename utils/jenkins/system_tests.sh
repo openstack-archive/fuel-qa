@@ -57,6 +57,8 @@ if you do need to override them.
 -b (num)    - Allows you to override Jenkins' build number if you need to.
 -l (dir)    - Path to logs directory. Can be set by LOGS_DIR evironment variable.
               Uses WORKSPACE/logs if not set.
+-L          - Disable fuel_logs tool to extract the useful lines from Astute and Puppet logs
+              within the Fuel log snapshot or on the live Fuel Master node.
 -d          - Dry run mode. Only show what would be done and do nothing.
               Useful for debugging.
 -k          - Keep previously created test environment before tests run
@@ -134,7 +136,7 @@ GlobalVariables() {
 }
 
 GetoptsVariables() {
-  while getopts ":w:j:i:t:o:a:A:m:U:r:b:V:l:dkKe:v:h" opt; do
+  while getopts ":w:j:i:t:o:a:A:m:U:r:b:V:l:LdkKe:v:h" opt; do
     case $opt in
       w)
         WORKSPACE="${OPTARG}"
@@ -174,6 +176,9 @@ GetoptsVariables() {
         ;;
       l)
         LOGS_DIR="${OPTARG}"
+        ;;
+      L)
+        FUELLOGS_TOOL="no"
         ;;
       k)
         KEEP_BEFORE="yes"
@@ -428,6 +433,14 @@ RunTest() {
 
     fi
     ec=$?
+
+    # Extract logs using fuel_logs utility
+    if [ "${FUELLOGS_TOOL}" != "no" ]; then
+      for logfile in $(find "${WORKSPACE}/logs/" -name "fail*.tar.xz" -type f);
+      do
+         ./utils/jenkins/fuel_logs.py "${logfile}" > "${logfile}.filtered.log"
+      done
+    fi
 
     if [ "${KEEP_AFTER}" != "yes" ]; then
       # remove environment after tests
