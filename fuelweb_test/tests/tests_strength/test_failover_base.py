@@ -363,6 +363,27 @@ class TestHaFailoverBase(TestBasic):
         cluster_id = self.fuel_web.client.get_cluster_id(
             self.__class__.__name__)
 
+        # sometimes keystone is not available right after haproxy
+        # restart thus ostf tests fail with corresponding error
+        # about unavailability of the service. In order to consider this
+        # we do preliminary execution of sanity set and in case of failure we
+        # should wait some time before final tests running.
+
+        # 3 minutes more that enough for keystone to be available
+        # after haproxy restart
+        timeout = 120
+
+        def raising_predicate():
+            # use sanity set execution as indicator of operable keystone
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['sanity'])
+
+        _wait(raising_predicate,
+              expected=AssertionError,
+              interval=30,
+              timeout=timeout)
+
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
