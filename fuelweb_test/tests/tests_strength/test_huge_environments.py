@@ -36,8 +36,9 @@ class HugeEnvironments(base_test_case.TestBasic):
             2. Add 4 nodes as controllers with ceph OSD roles
             3. Add 5 nodes as compute with ceph OSD and mongo roles
             4. Turn on Sahara and Ceilometer
-            5. Deploy the cluster
-            6. Check networks and OSTF
+            5. Verify network
+            6. Deploy the cluster
+            7. Check networks and OSTF
 
         Duration 150m
 
@@ -72,10 +73,16 @@ class HugeEnvironments(base_test_case.TestBasic):
                 'slave-09': ['compute', 'ceph-osd']
             }
         )
+        # Verify network
+        self.fuel_web.verify_network(cluster_id)
+
         # Cluster deploy
         self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          timeout=120 * 60,
+                                          timeout=150 * 60,
                                           interval=30)
+
+        # Verify network
+        self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
@@ -93,8 +100,9 @@ class HugeEnvironments(base_test_case.TestBasic):
             4. Add 1 node as cinder and 1 as mongo
             5. Add 2 nodes as ceph
             6. Turn on Sahara and Ceilometer
-            7. Deploy the cluster
-            8. Check networks and OSTF
+            7. Verify network
+            8. Deploy the cluster
+            9. Check networks and OSTF
 
         Duration 100m
 
@@ -129,10 +137,16 @@ class HugeEnvironments(base_test_case.TestBasic):
                 'slave-09': ['ceph-osd'],
             }
         )
+        # Verify network
+        self.fuel_web.verify_network(cluster_id)
+
         # Cluster deploy
         self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          timeout=120 * 60,
+                                          timeout=150 * 60,
                                           interval=30)
+
+        # Verify network
+        self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
@@ -154,9 +168,10 @@ class HugeHaNeutron(base_test_case.TestBasic):
             2. Add 3 nodes with controller and ceph role
             3. Add 3 nodes with compute and ceph roles
             4. Add 3 nodes with mongo roles
-            5. Deploy the cluster
-            6. Verify smiles count
-            7. Run OSTF
+            5. Verify network
+            6. Deploy the cluster
+            8. Verify smiles count
+            9. Check networks and OSTF
 
         Duration 100m
 
@@ -195,8 +210,15 @@ class HugeHaNeutron(base_test_case.TestBasic):
                 'slave-09': ['mongo']
             }
         )
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        # Verify network
+        self.fuel_web.verify_network(cluster_id)
 
+        # Cluster deploy
+        self.fuel_web.deploy_cluster_wait(cluster_id,
+                                          timeout=150 * 60,
+                                          interval=30)
+
+        # Verify network
         self.fuel_web.verify_network(cluster_id)
 
         os_conn = os_actions.OpenStackActions(
@@ -235,9 +257,10 @@ class HugeHaNeutron(base_test_case.TestBasic):
             3. Add 3 nodes with compute
             4. Add 1 node with mongo roles
             5. Add 2 nodes as ceph
-            5. Deploy the cluster
-            6. Verify smiles count
-            7. Run OSTF
+            6. Verify network
+            7. Deploy the cluster
+            8. Verify smiles count
+            9. Check networks and OSTF
 
         Duration 100m
 
@@ -275,8 +298,15 @@ class HugeHaNeutron(base_test_case.TestBasic):
                 'slave-09': ['ceph-osd'],
             }
         )
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        # Verify network
+        self.fuel_web.verify_network(cluster_id)
 
+        # Cluster deploy
+        self.fuel_web.deploy_cluster_wait(cluster_id,
+                                          timeout=150 * 60,
+                                          interval=30)
+
+        # Verify network
         self.fuel_web.verify_network(cluster_id)
 
         os_conn = os_actions.OpenStackActions(
