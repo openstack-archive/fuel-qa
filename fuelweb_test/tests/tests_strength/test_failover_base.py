@@ -363,6 +363,30 @@ class TestHaFailoverBase(TestBasic):
         cluster_id = self.fuel_web.client.get_cluster_id(
             self.__class__.__name__)
 
+        # sometimes keystone is not available right after haproxy
+        # restart thus ostf tests fail with corresponding error
+        # about unavailability of the service. In order to consider this
+        # we do preliminary execution of sanity set and in case of failure we
+        # should wait some time before final tests running.
+
+        # 2 minutes should be enough for keystone to be available
+        # after haproxy restart
+        time_to_sleep = 120
+
+        # expected error message
+        expected_err_str = "Keystone client is not available"
+
+        try:
+            # test
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['sanity'])
+        except AssertionError as e:
+            if expected_err_str not in e.message:
+                raise
+
+            time.sleep(time_to_sleep)
+
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
