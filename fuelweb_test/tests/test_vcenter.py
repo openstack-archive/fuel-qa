@@ -60,9 +60,15 @@ class VcenterDeploy(TestBasic):
         # Create VMs on each of hypervisor
         for image in images_list:
             for i in range(0, vm_count):
-                os_conn.nova.servers.create(
-                    flavor=flavors_list[0],
-                    name='test_{0}_{1}'.format(image.name, i), image=image)
+                if image.name == 'TestVM-VMDK':
+                    os_conn.nova.servers.create(
+                        flavor=flavors_list[0],
+                        name='test_{0}_{1}'.format(image.name, i), image=image,
+                        availability_zone='vcenter')
+                else:
+                    os_conn.nova.servers.create(
+                        flavor=flavors_list[0],
+                        name='test_{0}_{1}'.format(image.name, i), image=image)
 
         # Wait for launch VMs
         for hypervisor in hypervisors_list:
@@ -929,7 +935,7 @@ class VcenterDeploy(TestBasic):
             4. Deploy the cluster
             5. Run network verification
             6. Run OSTF
-            7. Create 2 VMs on each of hypervisor
+            7. Create 2 VMs on each hypervisor
             8. Verify that VMs on different hypervisors should communicate
                 between each other
 
@@ -995,20 +1001,26 @@ class VcenterDeploy(TestBasic):
         try:
             self.create_vm(os_conn=os_conn, vm_count=6)
         except TimeoutError:
-            logger.info("Tests failed to create VMs on each hypervisors,"
-                        " try add 4 VMs"
-                        " and if it fails again - test will fails ")
+            logger.warning("Tests failed to create VMs on each hypervisors,"
+                           " try add 4 VMs"
+                           " and if it fails again - test will fails ")
             self.create_vm(os_conn=os_conn, vm_count=4)
 
         # Verify that current state of each VMs is Active
         srv_list = os_conn.get_servers()
         for srv in srv_list:
-            wait(
-                lambda: os_conn.get_instance_detail(srv).status == "ACTIVE",
-                timeout=60 * 60)
-            logger.info(
-                "Current state of Vm is {}".format(
-                    os_conn.get_instance_detail(srv).status))
+            assert_true(os_conn.get_instance_detail(srv).status != 'ERROR',
+                        "Current state of Vm {0} is {1}".format(
+                            srv.name, os_conn.get_instance_detail(srv)))
+            try:
+                wait(
+                    lambda:
+                    os_conn.get_instance_detail(srv).status == "ACTIVE",
+                    timeout=60 * 60)
+            except TimeoutError:
+                logger.error(
+                    "Current state of Vm {0} is {1}".format(
+                        srv.name, os_conn.get_instance_detail(srv).status))
         # Get ip of VMs
         srv_ip = []
         srv_list = os_conn.get_servers()
@@ -1018,21 +1030,27 @@ class VcenterDeploy(TestBasic):
 
         # VMs on different hypervisors should communicate between each other
         for ip_1 in srv_ip:
+            ssh = self.fuel_web.get_ssh_for_node("slave-01")
+            logger.info("Connect to VM {0}".format(ip_1))
+            try:
+                wait(lambda: not ssh.execute(
+                    'curl -s -m1 http://' + ip_1 +
+                    ':22 |grep -iq "[a-z]"')['exit_code'],
+                    interval=10, timeout=100
+                )
+            except Exception as e:
+                logger.error('SSH connect to {0} failed with {1}'.format(
+                    ip_1, e))
             for ip_2 in srv_ip:
                 if ip_1 != ip_2:
-                    ssh = self.fuel_web.get_ssh_for_node("slave-01")
-                    wait(lambda: not ssh.execute(
-                        'curl -s -m1 http://' + ip_1 +
-                        ':22 |grep -iq "[a-z]"')['exit_code'],
-                        interval=10, timeout=100
-                    )
                     # Check server's connectivity
                     res = int(os_conn.execute_through_host(
                         ssh, ip_1, "ping -q -c3 " + ip_2 +
                         "| grep -o '[0-9] packets received' | cut -f1 -d ' '"))
                     assert_true(
                         res == 3,
-                        "Error in Instances network connectivity.")
+                        "VM{0} not ping from Vm {1}, received {2} icmp".format(
+                            ip_1, ip_2, res))
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["vcenter_delete_controler"])
@@ -1115,7 +1133,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.update_vlan_network_fixed(
             cluster_id, amount=8, network_size=32)
 
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
@@ -1128,5 +1146,8 @@ class VcenterDeploy(TestBasic):
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
+        # Fixme #1457515
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
+            should_fail=1,
+            failed_test_name=['Check that required services are running'])
