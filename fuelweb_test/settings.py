@@ -16,6 +16,16 @@
 import os
 import time
 
+_boolean_states = {'1': True, 'yes': True, 'true': True, 'on': True,
+                   '0': False, 'no': False, 'false': False, 'off': False}
+
+
+def get_var_as_bool(name, default):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return _boolean_states.get(value.lower(), default)
+
 # Default timezone for clear logging
 TIME_ZONE = 'UTC'
 
@@ -61,7 +71,7 @@ HARDWARE["slave_node_memory"] = int(
 NODE_VOLUME_SIZE = int(os.environ.get('NODE_VOLUME_SIZE', 50))
 NODES_COUNT = os.environ.get('NODES_COUNT', 10)
 
-MULTIPLE_NETWORKS = os.environ.get('MULTIPLE_NETWORKS', False) == 'true'
+MULTIPLE_NETWORKS = get_var_as_bool('MULTIPLE_NETWORKS', False)
 
 if MULTIPLE_NETWORKS:
     NODEGROUPS = (
@@ -204,7 +214,7 @@ if MULTIPLE_NETWORKS:
         'admin2,public2,management2,private2,storage2')
     INTERFACE_ORDER.extend(CUSTOM_INTERFACE_ORDER.split(','))
 
-BONDING = os.environ.get("BONDING", 'false') == 'true'
+BONDING = get_var_as_bool("BONDING", False)
 
 BONDING_INTERFACES = {
     'admin': ['eth0'],
@@ -224,23 +234,23 @@ NEUTRON_SEGMENT = {
 }
 
 LOGS_DIR = os.environ.get('LOGS_DIR', os.getcwd())
-USE_ALL_DISKS = os.environ.get('USE_ALL_DISKS', 'true') == 'true'
+USE_ALL_DISKS = get_var_as_bool('USE_ALL_DISKS', True)
 
-UPLOAD_MANIFESTS = os.environ.get('UPLOAD_MANIFESTS', 'false') == 'true'
-SYNC_DEPL_TASKS = os.environ.get('SYNC_DEPL_TASKS', 'false') == 'true'
+UPLOAD_MANIFESTS = get_var_as_bool('UPLOAD_MANIFESTS', False)
+SYNC_DEPL_TASKS = get_var_as_bool('SYNC_DEPL_TASKS', False)
 UPLOAD_MANIFESTS_PATH = os.environ.get(
     'UPLOAD_MANIFESTS_PATH', '~/git/fuel/deployment/puppet/')
 SITEPP_FOR_UPLOAD = os.environ.get(
     'SITEPP_PATH', '/etc/puppet/modules/osnailyfacter/examples/site.pp')
 
-UPLOAD_PATCHSET = os.environ.get('UPLOAD_PATCHSET', 'false') == 'true'
+UPLOAD_PATCHSET = get_var_as_bool('UPLOAD_PATCHSET', False)
 GERRIT_REFSPEC = os.environ.get('GERRIT_REFSPEC')
 PATCH_PATH = os.environ.get(
     'PATCH_PATH', '/tmp/fuel-ostf')
 
-KVM_USE = os.environ.get('KVM_USE', 'false') == 'true'
-VCENTER_USE = os.environ.get('VCENTER_USE', 'false') == 'true'
-DEBUG_MODE = os.environ.get('DEBUG_MODE', 'true') == 'true'
+KVM_USE = get_var_as_bool('KVM_USE', False)
+VCENTER_USE = get_var_as_bool('VCENTER_USE', False)
+DEBUG_MODE = get_var_as_bool('DEBUG_MODE', True)
 
 # vCenter tests
 VCENTER_IP = os.environ.get('VCENTER_IP')
@@ -301,9 +311,9 @@ TIMEOUT = int(os.environ.get('TIMEOUT', 60))
 ATTEMPTS = int(os.environ.get('ATTEMPTS', 5))
 
 # Create snapshots as last step in test-case
-MAKE_SNAPSHOT = os.environ.get('MAKE_SNAPSHOT', 'false') == 'true'
+MAKE_SNAPSHOT = get_var_as_bool('MAKE_SNAPSHOT', False)
 
-NEUTRON_ENABLE = os.environ.get('NEUTRON_ENABLE', 'false') == 'true'
+NEUTRON_ENABLE = get_var_as_bool('NEUTRON_ENABLE', False)
 NEUTRON_SEGMENT_TYPE = os.environ.get('NEUTRON_SEGMENT_TYPE',
                                       NEUTRON_SEGMENT["vlan"])
 
@@ -337,8 +347,7 @@ UBUNTU_RELEASE = os.environ.get('UBUNTU_RELEASE', 'precise')
 
 UPDATE_TIMEOUT = os.environ.get('UPDATE_TIMEOUT', 3600)
 
-CLASSIC_PROVISIONING = os.environ.get('CLASSIC_PROVISIONING',
-                                      'false') == 'true'
+CLASSIC_PROVISIONING = get_var_as_bool('CLASSIC_PROVISIONING', False)
 
 KEYSTONE_CREDS = {'username': os.environ.get('KEYSTONE_USERNAME', 'admin'),
                   'password': os.environ.get('KEYSTONE_PASSWORD', 'admin'),
@@ -363,9 +372,9 @@ ELASTICSEARCH_KIBANA_PLUGIN_PATH = os.environ.get(
     'ELASTICSEARCH_KIBANA_PLUGIN_PATH')
 INFLUXDB_GRAFANA_PLUGIN_PATH = os.environ.get('INFLUXDB_GRAFANA_PLUGIN_PATH')
 
-FUEL_STATS_CHECK = os.environ.get('FUEL_STATS_CHECK', 'false') == 'true'
-FUEL_STATS_ENABLED = os.environ.get('FUEL_STATS_ENABLED', 'true') == 'true'
-FUEL_STATS_SSL = os.environ.get('FUEL_STATS_SSL', 'false') == 'true'
+FUEL_STATS_CHECK = get_var_as_bool('FUEL_STATS_CHECK', False)
+FUEL_STATS_ENABLED = get_var_as_bool('FUEL_STATS_ENABLED', True)
+FUEL_STATS_SSL = get_var_as_bool('FUEL_STATS_SSL', False)
 FUEL_STATS_HOST = os.environ.get('FUEL_STATS_HOST',
                                  'fuel-collect-systest.infra.mirantis.net')
 FUEL_STATS_PORT = os.environ.get('FUEL_STATS_PORT', '80')
@@ -373,15 +382,15 @@ FUEL_STATS_PORT = os.environ.get('FUEL_STATS_PORT', '80')
 ANALYTICS_IP = os.environ.get('ANALYTICS_IP',
                               'fuel-stats-systest.infra.mirantis.net')
 
-CUSTOM_ENV = os.environ.get('CUSTOM_ENV', 'false') == 'true'
-BUILD_IMAGES = os.environ.get('BUILD_IMAGES', 'false') == 'true'
+CUSTOM_ENV = get_var_as_bool('CUSTOM_ENV', False)
+BUILD_IMAGES = get_var_as_bool('BUILD_IMAGES', False)
 
-STORE_ASTUTE_YAML = os.environ.get('STORE_ASTUTE_YAML', 'false') == 'true'
+STORE_ASTUTE_YAML = get_var_as_bool('STORE_ASTUTE_YAML', False)
 
 EXTERNAL_DNS = os.environ.get('EXTERNAL_DNS', '208.67.220.220')
 EXTERNAL_NTP = os.environ.get('EXTERNAL_NTP', 'ua.pool.ntp.org')
-FUEL_USE_LOCAL_NTPD = os.environ.get('FUEL_USE_LOCAL_NTPD', 'true') == 'true'
-FUEL_USE_LOCAL_DNS = os.environ.get('FUEL_USE_LOCAL_DNS', 'true') == 'true'
+FUEL_USE_LOCAL_NTPD = get_var_as_bool('FUEL_USE_LOCAL_NTPD', True)
+FUEL_USE_LOCAL_DNS = get_var_as_bool('FUEL_USE_LOCAL_DNS', True)
 DNS_SUFFIX = os.environ.get('DNS_SUFFIX', '.test.domain.local')
 
 TIMESTAT_PATH_YAML = os.environ.get(
@@ -407,8 +416,7 @@ EXTRA_RPM_REPOS_PRIORITY = os.environ.get('EXTRA_RPM_REPOS_PRIORITY', 20)
 AUX_DEB_REPO_PRIORITY = os.environ.get('AUX_DEB_REPO_PRIORITY', 1150)
 AUX_RPM_REPO_PRIORITY = os.environ.get('AUX_RPM_REPO_PRIORITY', 15)
 
-REPLACE_DEFAULT_REPOS = os.environ.get('REPLACE_DEFAULT_REPOS',
-                                       'true') == 'true'
+REPLACE_DEFAULT_REPOS = get_var_as_bool('REPLACE_DEFAULT_REPOS', True)
 
 PATCHING_WEB_DIR = os.environ.get("PATCHING_WEB_DIR", "/var/www/nailgun/")
 PATCHING_MIRRORS = os.environ.get("PATCHING_MIRRORS",
@@ -421,14 +429,13 @@ PATCHING_APPLY_TESTS = os.environ.get("PATCHING_APPLY_TESTS",
 PATCHING_PKGS = os.environ.get("PATCHING_PKGS", None)
 PATCHING_SNAPSHOT = os.environ.get("PATCHING_SNAPSHOT", None)
 PATCHING_CUSTOM_TEST = os.environ.get("PATCHING_CUSTOM_TEST", None)
-PATCHING_DISABLE_UPDATES = os.environ.get(
-    'PATCHING_DISABLE_UPDATES', 'false') == 'true'
+PATCHING_DISABLE_UPDATES = get_var_as_bool('PATCHING_DISABLE_UPDATES', False)
 
 DOWNLOAD_LINK = os.environ.get(
     'DOWNLOAD_LINK', 'http://releases.ubuntu.com/14.04.2/'
                      'ubuntu-14.04.2-desktop-amd64.iso')
 
-UPDATE_FUEL = os.environ.get('UPDATE_FUEL', 'false') == 'true'
+UPDATE_FUEL = get_var_as_bool('UPDATE_FUEL', False)
 UPDATE_FUEL_PATH = os.environ.get('UPDATE_FUEL_PATH', '~/fuel/pkgs/')
 UPDATE_FUEL_MIRROR = os.environ.get("UPDATE_FUEL_MIRROR", '').split()
 
@@ -439,5 +446,5 @@ EMC_USERNAME = os.environ.get('EMC_USERNAME')
 EMC_PASSWORD = os.environ.get('EMC_PASSWORD')
 EMC_POOL_NAME = os.environ.get('EMC_POOL_NAME', '')
 
-ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT = os.environ.get(
-    'ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT', 'false') == 'true'
+ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT = get_var_as_bool(
+    'ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT', False)
