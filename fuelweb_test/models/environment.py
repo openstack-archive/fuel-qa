@@ -171,6 +171,7 @@ class EnvironmentModel(object):
                 " hostname=%(hostname)s\n"
                 " dhcp_interface=%(nat_interface)s\n"
                 " showmenu=%(showmenu)s\n"
+                " device=eth4\n"  # TODO Get admin interface on admin node.
                 " build_images=%(build_images)s\n"
                 " <Enter>\n"
             ) % params
