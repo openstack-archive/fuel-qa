@@ -382,6 +382,7 @@ EXTERNAL_DNS = os.environ.get('EXTERNAL_DNS', '208.67.220.220')
 EXTERNAL_NTP = os.environ.get('EXTERNAL_NTP', 'ua.pool.ntp.org')
 FUEL_USE_LOCAL_NTPD = os.environ.get('FUEL_USE_LOCAL_NTPD', 'true') == 'true'
 FUEL_USE_LOCAL_DNS = os.environ.get('FUEL_USE_LOCAL_DNS', 'true') == 'true'
+DNS_SUFFIX = os.environ.get('DNS_SUFFIX', '.test.domain.local')
 
 TIMESTAT_PATH_YAML = os.environ.get(
     'TIMESTAT_PATH_YAML', os.path.join(
