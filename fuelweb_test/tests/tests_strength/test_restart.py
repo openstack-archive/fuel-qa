@@ -133,6 +133,7 @@ class CephRestart(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         # Destroy osd-node
+        logger.info("Destory slave-06")
         self.env.d_env.nodes().slaves[5].destroy()
 
         wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
@@ -144,6 +145,7 @@ class CephRestart(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         # Destroy compute node
+        logger.info("Destory slave-05")
         self.env.d_env.nodes().slaves[4].destroy()
 
         wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
@@ -162,8 +164,11 @@ class CephRestart(TestBasic):
 
         # Wait for HA services ready
         self.fuel_web.assert_ha_services_ready(cluster_id)
-        # Wait until OpenStack services are UP
-        self.fuel_web.assert_os_services_ready(cluster_id)
+
+        # Wait until OpenStack services are UP, should fail 2 services
+        # because slave-05 (compute+ceph-osd) destroyed. We ignore
+        # expect fail a test - 'Check openstack services are running'
+        self.fuel_web.assert_os_services_ready(cluster_id, should_fail=1)
 
         self.fuel_web.run_ceph_task(cluster_id, offline_nodes)
         self.fuel_web.check_ceph_status(cluster_id, offline_nodes)
