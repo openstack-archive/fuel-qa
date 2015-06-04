@@ -26,9 +26,9 @@ class BondingHAOneController(TestBasic):
     """BondingHAOneController."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_bonding_active_backup"])
+          groups=["deploy_bonding_nova_flat"])
     @log_snapshot_after_test
-    def deploy_bonding_active_backup(self):
+    def deploy_bonding_nova_flat(self):
         """Deploy cluster with active-backup bonding and Nova Network
 
         Scenario:
@@ -42,7 +42,7 @@ class BondingHAOneController(TestBasic):
             8. Run OSTF
 
         Duration 30m
-        Snapshot deploy_bonding_active_backup
+        Snapshot deploy_bonding_nova_flat
 
         """
 
@@ -99,14 +99,13 @@ class BondingHAOneController(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_bonding_active_backup")
+        self.env.make_snapshot("deploy_bonding_nova_flat")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_bonding_mixed"])
+          groups=["deploy_bonding_nova_vlan"])
     @log_snapshot_after_test
-    def deploy_bonding_mixed(self):
-        """Deploy cluster with bonding (active-backup, balance-alb,
-        balance-tlb modes) and Nova Network + Vlan
+    def deploy_bonding_nova_vlan(self):
+        """Deploy cluster with active-backup bonding and Nova Network + Vlan
 
         Scenario:
             1. Create cluster
@@ -120,7 +119,7 @@ class BondingHAOneController(TestBasic):
 
 
         Duration 30m
-        Snapshot deploy_bonding_mixed
+        Snapshot deploy_bonding_nova_vlan
 
         """
 
@@ -140,7 +139,7 @@ class BondingHAOneController(TestBasic):
 
         bond_config = {
             'mac': None,
-            'mode': 'balance-tlb',
+            'mode': 'active-backup',
             'name': 'lnx-bond0',
             'slaves': [
                 {'name': 'eth4'},
@@ -151,12 +150,6 @@ class BondingHAOneController(TestBasic):
             'state': None,
             'type': 'bond',
             'assigned_networks': []
-        }
-
-        bond_modes = {
-            'slave-01': 'active-backup',
-            'slave-02': 'balance-alb',
-            'slave-03': 'balance-tlb',
         }
 
         interfaces = {
@@ -171,8 +164,6 @@ class BondingHAOneController(TestBasic):
 
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
-            slave = self.fuel_web.get_devops_node_by_nailgun_node(node).name
-            bond_config['mode'] = bond_modes[slave]
             self.fuel_web.update_node_networks(
                 node['id'], interfaces_dict=interfaces,
                 raw_data=bond_config
@@ -187,7 +178,7 @@ class BondingHAOneController(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_bonding_mixed")
+        self.env.make_snapshot("deploy_bonding_nova_vlan")
 
 
 @test(groups=["bonding_neutron", "bonding_ha", "bonding"])
@@ -195,10 +186,10 @@ class BondingHA(TestBasic):
     """Tests for HA bonding."""
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_bonding_balance_alb"])
+          groups=["deploy_bonding_neutron_vlan"])
     @log_snapshot_after_test
-    def deploy_bonding_balance_alb(self):
-        """Deploy cluster with balance-alb bonding and Neutron VLAN
+    def deploy_bonding_neutron_vlan(self):
+        """Deploy cluster with active-backup bonding and Neutron VLAN
 
         Scenario:
             1. Create cluster
@@ -212,7 +203,7 @@ class BondingHA(TestBasic):
 
 
         Duration 70m
-        Snapshot deploy_bonding_balance_alb
+        Snapshot deploy_bonding_neutron_vlan
 
         """
 
@@ -240,7 +231,7 @@ class BondingHA(TestBasic):
 
         raw_data = {
             'mac': None,
-            'mode': 'balance-alb',
+            'mode': 'active-backup',
             'name': 'lnx-bond0',
             'slaves': [
                 {'name': 'eth4'},
@@ -284,13 +275,13 @@ class BondingHA(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_bonding_balance_alb")
+        self.env.make_snapshot("deploy_bonding_neutron_vlan")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_bonding_balance_tlb"])
+          groups=["deploy_bonding_neutron_gre"])
     @log_snapshot_after_test
-    def deploy_bonding_balance_tlb(self):
-        """Deploy cluster with balance-tlb bonding and Neutron VLAN
+    def deploy_bonding_neutron_gre(self):
+        """Deploy cluster with active-backup bonding and Neutron GRE
 
         Scenario:
             1. Create cluster
@@ -303,7 +294,7 @@ class BondingHA(TestBasic):
             8. Run OSTF
 
         Duration 70m
-        Snapshot deploy_bonding_balance_tlb
+        Snapshot deploy_bonding_neutron_gre
 
         """
 
@@ -331,7 +322,7 @@ class BondingHA(TestBasic):
 
         raw_data = {
             'mac': None,
-            'mode': 'balance-tlb',
+            'mode': 'active-backup',
             'name': 'lnx-bond0',
             'slaves': [
                 {'name': 'eth4'},
@@ -375,4 +366,4 @@ class BondingHA(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_bonding_balance_tlb")
+        self.env.make_snapshot("deploy_bonding_neutron_gre")
