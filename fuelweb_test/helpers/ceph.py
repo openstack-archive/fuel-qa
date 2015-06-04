@@ -154,12 +154,22 @@ def check_ceph_health(remote, health_status=('HEALTH_OK',)):
 
 
 def get_osd_tree(remote):
-    # TODO(ivankliuk) `run_on_remote` function has to be used here.
+    """Returns OSDs according to their position in the CRUSH map
+
+    :param remote: devops.helpers.helpers.SSHClient
+    :return: JSON-like object
+    """
+    logger.debug("Fetching Ceph OSD tree")
     cmd = 'ceph osd tree -f json'
-    return json.loads(''.join(remote.execute(cmd)['stdout']))
+    return run_on_remote(remote, cmd, jsonify=True)
 
 
 def get_osd_ids(remote):
-    # TODO(ivankliuk) `run_on_remote` function has to be used here.
+    """Returns all OSD ids
+
+    :param remote: devops.helpers.helpers.SSHClient
+    :return: JSON-like object
+    """
+    logger.debug("Fetching Ceph OSD ids")
     cmd = 'ceph osd ls -f json'
-    return json.loads(''.join(remote.execute(cmd)['stdout']))
+    return run_on_remote(remote, cmd, jsonify=True)
