@@ -66,7 +66,7 @@ class ContrailPlugin(TestBasic):
         time.sleep(50)
         os.path.isfile(self._add_ub_packag or self._add_cen_packeg)
 
-    def _assign_net_provider(self):
+    def _assign_net_provider(self, val=False):
         """Assign neutron with  vlan segmentation"""
         segment_type = 'vlan'
         self.cluster_id = self.fuel_web.create_cluster(
@@ -75,11 +75,12 @@ class ContrailPlugin(TestBasic):
             settings={
                 "net_provider": 'neutron',
                 "net_segment_type": segment_type,
+                'assign_to_all_nodes': val
             }
         )
         return self.cluster_id
 
-    def _prepare_contrail_plugin(self, slaves=None):
+    def _prepare_contrail_plugin(self, slaves=None, pub_net=False):
         """Copy necessary packages to the master node and install them"""
 
         self.env.revert_snapshot("ready_with_%d_slaves" % slaves)
@@ -101,7 +102,7 @@ class ContrailPlugin(TestBasic):
         self._install_packages(self.env.d_env.get_admin_remote())
 
         # prepare fuel
-        self._assign_net_provider()
+        self._assign_net_provider(pub_net)
 
     def _update_public_fields(self):
         """Fill public fields in contrail settings"""
@@ -540,3 +541,74 @@ class ContrailPlugin(TestBasic):
         )
 
         logger.info(self._ostf_msg)
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
+          groups=["deploy_ha_with_pub_net_all_nodes"])
+    @log_snapshot_after_test
+    def deploy_ha_with_pub_net_all_nodes(self):
+        """Deploy HA Environment with Contrail Plugin
+        and assign public network to all nodes
+
+        Scenario:
+            1. Revert snapshot "ready_with_9_slaves"
+            2. Create cluster and select "Assign public network to all nodes"
+               check box
+            3. Add 3 nodes with Operating system role,
+               1 node with controller role and 1 node with compute role
+            4. Enable Contrail plugin
+            5. Deploy cluster with plugin
+            6. Add 1 node with controller node and
+               1 node with compute role
+            7. Deploy cluster
+            8. Run OSTF tests
+
+        Duration 140 min
+
+        """
+        self._prepare_contrail_plugin(slaves=9, pub_net=True)
+
+        # create cluster: 3 nodes with Operating system role,
+        # 1 node with controller and 1 nod with compute roles
+        self.fuel_web.update_nodes(
+            self.cluster_id,
+            {
+                'slave-01': ['base-os'],
+                'slave-02': ['base-os'],
+                'slave-03': ['base-os'],
+                'slave-04': ['controller'],
+                'slave-05': ['compute'],
+            },
+            contrail=True
+        )
+
+        # fill public field in contrail settings
+        self._update_public_fields()
+
+        self.fuel_web.deploy_cluster_wait(self.cluster_id)
+
+        # create net and subnet
+        self._create_net_subnet(self.cluster_id)
+
+        #  add 1 node with controller and 1 node with
+        # compute role and redeploy cluster
+        self.fuel_web.update_nodes(
+            self.cluster_id, {
+                'slave-06': ['compute'],
+                'slave-07': ['compute', 'cinder']})
+
+        self.fuel_web.deploy_cluster_wait(self.cluster_id)
+
+        # TODO
+        # Tests using north-south connectivity are expected to fail because
+        # they require additional gateway nodes, and specific contrail
+        # settings. This mark is a workaround until it's verified
+        # and tested manually.
+        # When it will be done 'should_fail=2' and
+        # 'failed_test_name' parameter should be removed.
+
+        self.fuel_web.run_ostf(
+            cluster_id=self.cluster_id,
+            should_fail=2,
+            failed_test_name=[('Check network connectivity '
+                               'from instance via floating IP'),
+                              ('Launch instance with file injection')])
