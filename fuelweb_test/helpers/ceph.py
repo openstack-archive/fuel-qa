@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-
 from proboscis.asserts import assert_equal
 
 from fuelweb_test import logger
@@ -72,12 +70,6 @@ def get_health(remote):
     return run_on_remote(remote, cmd, jsonify=True)
 
 
-def get_status(remote):
-    logger.debug("Checking Ceph cluster status on {0}".format(remote.host))
-    cmd = 'ceph status -f json'
-    return run_on_remote(remote, cmd, jsonify=True)
-
-
 def get_monitor_node_fqdns(remote):
     """Returns node FQDNs with Ceph monitor service is running.
 
@@ -92,19 +84,33 @@ def get_monitor_node_fqdns(remote):
     return fqdns
 
 
-def get_node_fqdns_w_time_skew(remote):
-    """Returns node FQDNs with a time skew.
+def is_clock_skew(remote):
+    """Checks whether clock skews across the monitor nodes.
+
+    :param remote: devops.helpers.helpers.SSHClient
+    :return: bool
+    """
+    if is_health_warn(remote):
+        if 'clock skew' in ' '.join(health_detail(remote)):
+            return True
+
+    return False
+
+
+def get_node_fqdns_w_clock_skew(remote):
+    """Returns node FQDNs with a clock skew.
 
     :param remote: devops.helpers.helpers.SSHClient
     :return: list of FQDNs
     """
-    health = get_health(remote)
-    monitors = health['timechecks']['mons']
     fqdns = []
-    for i in monitors:
+    if not is_clock_skew(remote):
+        return fqdns
+
+    for i in get_health(remote)['timechecks']['mons']:
         if abs(float(i['skew'])) >= 0.05:
             fqdns.append(i['name'] + DNS_SUFFIX)
-    logger.debug("Time skew is found on {0}".format(', '.join(fqdns)))
+    logger.debug("Clock skew is found on {0}".format(', '.join(fqdns)))
     return fqdns
 
 
@@ -139,27 +145,78 @@ def check_service_ready(remote, exit_code=0):
     return False
 
 
-# TODO(ivankliuk) Remove `get_ceph_health` function.
-def get_ceph_health(remote):
-    return ''.join(remote.execute('ceph health')['stdout']).rstrip()
+def health_overall_status(remote):
+    """Returns Ceph health overall status.
+
+    :param remote: devops.helpers.helpers.SSHClient
+    :return: str
+
+    """
+    health = get_health(remote)
+    return health['overall_status']
 
 
-def check_ceph_health(remote, health_status=('HEALTH_OK',)):
-    ceph_health = get_ceph_health(remote)
-    if all(x in ceph_health.split() for x in health_status):
+def health_detail(remote):
+    """Returns 'detail' section of Ceph health.
+
+    :param remote: devops.helpers.helpers.SSHClient
+    :return: JSON-like object
+
+    """
+    health = get_health(remote)
+    return health['detail']
+
+
+def is_health_ok(remote):
+    """Checks whether Ceph health overall status is OK.
+
+    :param remote: devops.helpers.helpers.SSHClient
+    :return: bool
+    """
+    return health_overall_status(remote) == 'HEALTH_OK'
+
+
+def is_health_warn(remote):
+    """Checks whether Ceph health overall status is WARN.
+
+    :param remote: devops.helpers.helpers.SSHClient
+    :return: bool
+    """
+    return health_overall_status(remote) == 'HEALTH_WARN'
+
+
+def is_pgs_recovering(remote):
+    """Checks whether Ceph PGs are being recovered.
+
+    :param remote: devops.helpers.helpers.SSHClient
+    :return: bool
+    """
+    keywords = ['degraded', 'recovery', 'osds', 'are', 'down']
+    detail = ' '.join(health_detail(remote))
+    if all(k in detail.split() for k in keywords):
         return True
-    logger.debug('Ceph health {0} doesn\'t equal to {1}'.format(
-        ceph_health, ''.join(health_status)))
+    logger.debug('Ceph PGs are not being recovered. '
+                 'Details: {0}'.format(detail))
     return False
 
 
 def get_osd_tree(remote):
-    # TODO(ivankliuk) `run_on_remote` function has to be used here.
+    """Returns OSDs according to their position in the CRUSH map.
+
+    :param remote: devops.helpers.helpers.SSHClient
+    :return: JSON-like object
+    """
+    logger.debug("Fetching Ceph OSD tree")
     cmd = 'ceph osd tree -f json'
-    return json.loads(''.join(remote.execute(cmd)['stdout']))
+    return run_on_remote(remote, cmd, jsonify=True)
 
 
 def get_osd_ids(remote):
-    # TODO(ivankliuk) `run_on_remote` function has to be used here.
+    """Returns all OSD ids.
+
+    :param remote: devops.helpers.helpers.SSHClient
+    :return: JSON-like object
+    """
+    logger.debug("Fetching Ceph OSD ids")
     cmd = 'ceph osd ls -f json'
-    return json.loads(''.join(remote.execute(cmd)['stdout']))
+    return run_on_remote(remote, cmd, jsonify=True)
