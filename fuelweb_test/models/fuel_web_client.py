@@ -1674,7 +1674,7 @@ class FuelWebClient(object):
         logger.debug("Looking up nodes with a time skew and try to fix them")
         with self.environment.d_env.get_ssh_to_remote(
                 online_ceph_nodes[0]['ip']) as remote:
-            skewed = ceph.get_node_fqdns_w_time_skew(remote)
+            skewed = ceph.get_node_fqdns_w_clock_skew(remote)
             if skewed:
                 logger.warning("Time on nodes {0} are to be "
                                "re-syncronized".format(skewed))
@@ -1684,10 +1684,10 @@ class FuelWebClient(object):
                 self.environment.sync_time(nodes_to_sync)
 
             try:
-                wait(lambda: not ceph.get_node_fqdns_w_time_skew(remote),
+                wait(lambda: not ceph.get_node_fqdns_w_clock_skew(remote),
                      timeout=120)
             except TimeoutError:
-                skewed = ceph.get_node_fqdns_w_time_skew(remote)
+                skewed = ceph.get_node_fqdns_w_clock_skew(remote)
                 logger.error("Time on Ceph nodes {0} is still skewed. "
                              "Restarting Ceph monitor on these "
                              "nodes".format(', '.join(skewed)))
@@ -1703,7 +1703,7 @@ class FuelWebClient(object):
                                      "on node %s", fqdn)
                         ceph.restart_monitor(remote_to_mon)
 
-                wait(lambda: not ceph.get_node_fqdns_w_time_skew(
+                wait(lambda: not ceph.get_node_fqdns_w_clock_skew(
                     remote), timeout=120)
 
     @logwrap
@@ -1733,14 +1733,13 @@ class FuelWebClient(object):
 
         node = online_ceph_nodes[0]
         remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
-        health_status = ceph.get_ceph_health(remote)
-        if 'HEALTH_WARN' in health_status:
+        if ceph.is_health_warn(remote):
             if ceph.check_ceph_health(remote, osd_recovery_status)\
                     and len(offline_nodes) > 0:
                 logger.info('Ceph is being recovered after osd node(s)'
                             ' shutdown.')
                 try:
-                    wait(lambda: ceph.check_ceph_health(remote),
+                    wait(lambda: ceph.is_health_ok(remote),
                          interval=30, timeout=recovery_timeout)
                 except TimeoutError:
                     result = ceph.get_ceph_health(remote)
@@ -1752,7 +1751,7 @@ class FuelWebClient(object):
             result = ceph.get_ceph_health(remote)
             msg = 'Ceph HEALTH is not OK on {0}. Details: {1}'.format(
                 node['name'], result)
-            assert_true(ceph.check_ceph_health(remote), msg)
+            assert_true(ceph.is_health_ok(remote), msg)
 
         logger.info('Checking Ceph OSD Tree...')
         ceph.check_disks(remote, [n['id'] for n in online_ceph_nodes])
@@ -2072,7 +2071,7 @@ class FuelWebClient(object):
         assert_true(ids, "osd ids for {} weren't found".format(hostname))
         for id in ids:
             remote_ceph.execute("ceph osd out {}".format(id))
-        wait(lambda: ceph.check_ceph_health(remote_ceph),
+        wait(lambda: ceph.is_health_ok(remote_ceph),
              interval=30, timeout=10 * 60)
         for id in ids:
             if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
