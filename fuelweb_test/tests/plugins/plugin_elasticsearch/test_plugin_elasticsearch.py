@@ -78,7 +78,7 @@ class TestElasticsearchPlugin(TestBasic):
 
         plugin_name = 'elasticsearch_kibana'
         options = {'metadata/enabled': True,
-                   'node_name': 'slave-03_base-os'}
+                   'node_name/value': 'slave-03_base-os'}
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
 
         assert_true(
