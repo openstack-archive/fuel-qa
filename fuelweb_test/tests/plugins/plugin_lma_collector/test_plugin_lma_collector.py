@@ -97,29 +97,28 @@ class TestLmaCollectorPlugin(TestBasic):
                 'name': 'lma_collector',
                 'options': {
                     'metadata/enabled': True,
-                    'environment_label': 'deploy_lma_collector_ha',
-                    'elasticsearch_mode': 'local',
-                    'elasticsearch_node_name': analytics_node_name,
-                    'enable_notifications': True,
-                    'influxdb_mode': 'local',
-                    'influxdb_node_name': analytics_node_name,
-                    'influxdb_password': 'lmapass',
+                    'environment_label/value': 'deploy_lma_collector_ha',
+                    'elasticsearch_mode/value': 'local',
+                    'elasticsearch_node_name/value': analytics_node_name,
+                    'influxdb_mode/value': 'local',
+                    'influxdb_node_name/value': analytics_node_name,
+                    'influxdb_password/value': 'lmapass',
                 }
             },
             {
                 'name': 'elasticsearch_kibana',
                 'options': {
                     'metadata/enabled': True,
-                    'node_name': analytics_node_name,
+                    'node_name/value': analytics_node_name,
                 }
             },
             {
                 'name': 'influxdb_grafana',
                 'options': {
                     'metadata/enabled': True,
-                    'node_name': analytics_node_name,
-                    'influxdb_rootpass': 'lmapass',
-                    'influxdb_userpass': 'lmapass',
+                    'node_name/value': analytics_node_name,
+                    'influxdb_rootpass/value': 'lmapass',
+                    'influxdb_userpass/value': 'lmapass',
                 }
             },
         ]
