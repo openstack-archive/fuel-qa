@@ -69,6 +69,17 @@ class VcenterDeploy(TestBasic):
             wait(lambda: os_conn.get_hypervisor_vms_count(hypervisor) != 0,
                  timeout=300)
 
+    def replace_text(self, remote=None, path=None, old_line=None,
+                     new_line=None):
+        old_file = remote.open(path, 'r').read()
+        new_file = remote.open(path, 'w')
+        if old_line in old_file:
+            old_file = old_file.replace(old_line, new_line)
+            new_file.write(old_file)
+        else:
+            logger.info("Text {0} is not present in file{1}".format(
+                old_line, path))
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["smoke", "vcenter_smoke"])
     @log_snapshot_after_test
@@ -937,6 +948,11 @@ class VcenterDeploy(TestBasic):
 
         """
         self.env.revert_snapshot("ready_with_5_slaves")
+
+        self.replace_text(remote=self.env.d_env.get_admin_remote(),
+                          path='/etc/puppet/modules/nova/manifests/quota.pp',
+                          old_line='$reservation_expire = 86400',
+                          new_line='$reservation_expire = 600')
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
