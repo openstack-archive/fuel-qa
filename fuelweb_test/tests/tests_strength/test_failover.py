@@ -27,7 +27,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
     snapshot_name = "prepare_ha_neutron"
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_ha", "prepare_ha_neutron"])
+          groups=["deploy_ha", "prepare_ha_neutron", "neutron", "deployment"])
     @log_snapshot_after_test
     def prepare_ha_neutron(self):
         """Prepare cluster in HA/Neutron mode for failover tests
@@ -290,7 +290,7 @@ class TestHaNovaFailover(TestHaFailoverBase):
     snapshot_name = "prepare_ha_nova"
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["prepare_ha_nova"])
+          groups=["prepare_ha_nova", "nova", "deployment"])
     @log_snapshot_after_test
     def prepare_ha_nova(self):
         """Prepare cluster in HA/Nova mode for failover tests
