@@ -47,7 +47,7 @@ class VcenterDeploy(TestBasic):
             logger.debug("Tests failed from first probe,"
                          " we sleep 60 seconds try one more time"
                          " and if it fails again - test will fails ")
-            time.sleep(60)
+            time.sleep(600)
             self.fuel_web.run_ostf(cluster_id,
                                    test_sets=['smoke'],
                                    timeout=60 * 60)
@@ -75,6 +75,17 @@ class VcenterDeploy(TestBasic):
             wait(lambda: os_conn.get_hypervisor_vms_count(hypervisor) != 0,
                  timeout=300)
 
+    def add_dhcp_lease(self, remote=None):
+        path = '/etc/puppet/modules/nova/manifests/network.pp'
+        d = '  nova_config { \'DEFAULT/dhcp_lease_time\': ''value=> \'600\'}\n'
+        old_file = remote.open(path, 'r')
+        contents = old_file.readlines()
+        contents.insert((contents.index('  if $floating_range {\n') - 1), d)
+        new_file = remote.open(path, 'w')
+        contents = "".join(contents)
+        new_file.write(contents)
+        new_file.close()
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["smoke", "vcenter_smoke"])
     @log_snapshot_after_test
@@ -89,6 +100,11 @@ class VcenterDeploy(TestBasic):
 
         """
         self.env.revert_snapshot("ready_with_1_slaves")
+
+        self.replace_text(remote=self.env.d_env.get_admin_remote(),
+                          path='/etc/puppet/modules/nova/manifests/quota.pp',
+                          old_line='$reservation_expire = 86400',
+                          new_line='$reservation_expire = 600')
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -127,7 +143,10 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
+            cluster_id=cluster_id, test_sets=['sanity', 'ha'])
+
+        # ##### FIXME if 1457404 is fixed ######
+        self.run_smoke(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "vcenter_ceilometer"])
@@ -143,6 +162,8 @@ class VcenterDeploy(TestBasic):
 
         """
         self.env.revert_snapshot("ready_with_3_slaves")
+
+        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -185,8 +206,11 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha',
-                                              'platform_tests'])
+            cluster_id=cluster_id,
+            test_sets=['sanity', 'ha', 'platform_tests'])
+
+        # ##### FIXME if 1457404 is fixed ######
+        self.run_smoke(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["smoke", "vcenter_cindervmdk"])
@@ -204,6 +228,8 @@ class VcenterDeploy(TestBasic):
 
         """
         self.env.revert_snapshot("ready_with_5_slaves")
+
+        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -242,7 +268,10 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
+            cluster_id=cluster_id, test_sets=['sanity', 'ha'])
+
+        # ##### FIXME if 1457404 is fixed ######
+        self.run_smoke(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_dualhv_ceph"])
@@ -262,6 +291,8 @@ class VcenterDeploy(TestBasic):
 
         """
         self.env.revert_snapshot("ready_with_5_slaves")
+
+        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -327,6 +358,8 @@ class VcenterDeploy(TestBasic):
 
         """
         self.env.revert_snapshot("ready_with_3_slaves")
+
+        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -395,6 +428,8 @@ class VcenterDeploy(TestBasic):
 
         self.env.revert_snapshot("ready_with_5_slaves")
 
+        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
+
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -453,7 +488,10 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
+            cluster_id=cluster_id, test_sets=['sanity', 'ha'])
+
+        # ##### FIXME if 1457404 is fixed ######
+        self.run_smoke(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_vlan_cinder"])
@@ -473,6 +511,8 @@ class VcenterDeploy(TestBasic):
         """
 
         self.env.revert_snapshot("ready_with_5_slaves")
+
+        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -559,6 +599,8 @@ class VcenterDeploy(TestBasic):
 
         self.env.revert_snapshot("ready_with_5_slaves")
 
+        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
+
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -643,6 +685,8 @@ class VcenterDeploy(TestBasic):
 
         """
         self.env.revert_snapshot("ready_with_5_slaves")
+
+        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -729,6 +773,8 @@ class VcenterDeploy(TestBasic):
         """
 
         self.env.revert_snapshot("ready_with_9_slaves")
+
+        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -919,7 +965,10 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['smoke', 'sanity'])
+            cluster_id=cluster_id, test_sets=['sanity', 'ha'])
+
+        # ##### FIXME if 1457404 is fixed ######
+        self.run_smoke(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_multiple_cluster"])
@@ -943,6 +992,8 @@ class VcenterDeploy(TestBasic):
 
         """
         self.env.revert_snapshot("ready_with_5_slaves")
+
+        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -989,8 +1040,10 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
-            timeout=60 * 60)
+            cluster_id=cluster_id, test_sets=['sanity', 'ha'])
+
+        # ##### FIXME if 1457404 is fixed ######
+        self.run_smoke(cluster_id=cluster_id)
 
         os_ip = self.fuel_web.get_public_vip(cluster_id)
         os_conn = os_actions.OpenStackActions(
@@ -1075,6 +1128,8 @@ class VcenterDeploy(TestBasic):
 
         """
         self.env.revert_snapshot("ready_with_9_slaves")
+
+        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
