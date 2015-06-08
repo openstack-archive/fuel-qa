@@ -103,7 +103,7 @@ def add_case(testrail_project, test_suite, test_case):
 
 
 def upload_tests_descriptions(testrail_project, tests):
-    test_suite = "Tempest {0}".format(TestRailSettings.milestone)
+    test_suite = TestRailSettings.tests_suite
     suite = testrail_project.get_suite_by_name(test_suite)
 
     # remove old sections and test cases
