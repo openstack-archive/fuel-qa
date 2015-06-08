@@ -1144,7 +1144,7 @@ class VcenterDeploy(TestBasic):
             cluster_id,
             {'slave-04': ['controller'], }, False, True)
 
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
 
         # Fixme #1457515
         self.fuel_web.run_ostf(
