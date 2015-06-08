@@ -389,7 +389,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
                   r" 's/.*dev\s+(\S+)\s.*/\1/p')/mtu".format(floating_ip.ip)
         mtu = ''.join(remote.execute(mtu_cmd)['stdout'])
         logger.debug('mtu is equal to {0}'.format(mtu))
-        check_ping = "ping {}".format(floating_ip.ip)
+        check_ping = "ping -q -c 3 -w 10 {}".format(floating_ip.ip)
         try:
             wait(lambda: remote.execute(check_ping)['exit_code'] == 0,
                  timeout=120)
