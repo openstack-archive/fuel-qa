@@ -1011,7 +1011,7 @@ class VcenterDeploy(TestBasic):
         for srv in srv_list:
             assert_true(os_conn.get_instance_detail(srv).status != 'ERROR',
                         "Current state of Vm {0} is {1}".format(
-                            srv.name, os_conn.get_instance_detail(srv)))
+                            srv.name, os_conn.get_instance_detail(srv).status))
             try:
                 wait(
                     lambda:
@@ -1032,15 +1032,6 @@ class VcenterDeploy(TestBasic):
         for ip_1 in srv_ip:
             ssh = self.fuel_web.get_ssh_for_node("slave-01")
             logger.info("Connect to VM {0}".format(ip_1))
-            try:
-                wait(lambda: not ssh.execute(
-                    'curl -s -m1 http://' + ip_1 +
-                    ':22 |grep -iq "[a-z]"')['exit_code'],
-                    interval=10, timeout=100
-                )
-            except Exception as e:
-                logger.error('SSH connect to {0} failed with {1}'.format(
-                    ip_1, e))
             for ip_2 in srv_ip:
                 if ip_1 != ip_2:
                     # Check server's connectivity
