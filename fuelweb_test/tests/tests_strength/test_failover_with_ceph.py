@@ -91,7 +91,7 @@ class TestHaCephNovaFailover(TestHaFailoverBase):
         Duration 70m
         Snapshot prepare_ha_ceph_nova
         """
-        super(self.__class__, self).deploy_ha_ceph()
+        super(self.__class__, self).deploy_ha_ceph(network='nova_network')
 
     @test(depends_on_groups=['prepare_ha_ceph_nova'],
           groups=["ha_ceph_nova_sequential_destroy_controllers"])
