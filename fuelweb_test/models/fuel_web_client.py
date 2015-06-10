@@ -733,7 +733,7 @@ class FuelWebClient(object):
         if not is_feature:
             logger.info('Deploy cluster %s', cluster_id)
             task = self.deploy_cluster(cluster_id)
-            self.assert_task_success(task, timeout=timeout, interval=interval)
+            self.assert_task_success(task, interval=interval)
         else:
             logger.info('Provision nodes of a cluster %s', cluster_id)
             task = self.client.provision_nodes(cluster_id)
