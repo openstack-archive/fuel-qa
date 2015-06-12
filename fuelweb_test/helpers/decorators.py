@@ -256,6 +256,9 @@ def update_fuel(func):
                     logger.error("{0} .DEB files uploaded but won't be used"
                                  " because of deploying wrong release!"
                                  .format(ubuntu_files_count))
+            if settings.SYNC_DEPL_TASKS:
+                    remote.execute("fuel release --sync-deployment-tasks"
+                                   " --dir /etc/puppet/")
         return result
     return wrapper
 
