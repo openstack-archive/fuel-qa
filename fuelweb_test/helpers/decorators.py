@@ -242,7 +242,7 @@ def update_fuel(func):
                     environment.fuel_web.add_local_centos_mirror(
                         cluster_id, name="Auxiliary",
                         path=settings.LOCAL_MIRROR_CENTOS,
-                        priority=settings.AUX_RPM_REPO_PRIORITY)
+           h    he             priority=settings.AUX_RPM_REPO_PRIORITY)
 
             if ubuntu_files_count > 0:
                 # Add auxiliary repository to the cluster attributes
@@ -256,6 +256,10 @@ def update_fuel(func):
                     logger.error("{0} .DEB files uploaded but won't be used"
                                  " because of deploying wrong release!"
                                  .format(ubuntu_files_count))
+
+            if settings.SYNC_DEPL_TASKS:
+                remote.execute("fuel release --sync-deployment-tasks"
+                               " --dir /etc/puppet/")
         return result
     return wrapper
 
