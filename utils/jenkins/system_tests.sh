@@ -62,6 +62,7 @@ if you do need to override them.
 -k          - Keep previously created test environment before tests run
 -K          - Keep test environment after tests are finished
 -h          - Show this help page
+-P          - Specify test group for patching
 
 Most variables uses guesing from Jenkins' job name but can be overriden
 by exported variable before script is run or by one of command line options.
@@ -134,7 +135,7 @@ GlobalVariables() {
 }
 
 GetoptsVariables() {
-  while getopts ":w:j:i:t:o:a:A:m:U:r:b:V:l:dkKe:v:h" opt; do
+  while getopts ":w:j:i:t:o:a:A:m:U:r:b:V:l:dkKe:v:h:P:" opt; do
     case $opt in
       w)
         WORKSPACE="${OPTARG}"
@@ -183,6 +184,9 @@ GetoptsVariables() {
         ;;
       e)
         ENV_NAME="${OPTARG}"
+        ;;
+      P)
+        PATCHING="${OPTARG}"
         ;;
       d)
         DRY_RUN="yes"
@@ -415,6 +419,9 @@ RunTest() {
     fi
     if [ -n "${TEST_OPTIONS}" ]; then
         OPTS="${OPTS} ${TEST_OPTIONS}"
+    fi
+    if [ -n "${PATCHING}" ]; then
+        OPTS="${OPTS} ${PATCHING}"
     fi
 
     # run python test set to create environments, deploy and test product
