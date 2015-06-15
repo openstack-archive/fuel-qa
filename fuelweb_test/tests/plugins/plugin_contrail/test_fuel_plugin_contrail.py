@@ -104,17 +104,16 @@ class ContrailPlugin(TestBasic):
         # prepare fuel
         self._assign_net_provider(pub_net)
 
-    def _update_public_fields(self):
-        """Fill public fields in contrail settings"""
+    def _activate_plugin(self):
+        """Enable plugin in contrail settings"""
         plugin_name = 'contrail'
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         assert_true(
             self.fuel_web.check_plugin_exists(self.cluster_id, plugin_name),
             msg)
         logger.debug('we have contrail element')
-        options = {'metadata/enabled': True,
-                   'contrail_public_if/value': 'eth1', }
-        self.fuel_web.update_plugin_data(self.cluster_id, plugin_name, options)
+        option = {'metadata/enabled': True, }
+        self.fuel_web.update_plugin_data(self.cluster_id, plugin_name, option)
 
     def _create_net_subnet(self, cluster):
         """Create net and subnet"""
@@ -203,7 +202,7 @@ class ContrailPlugin(TestBasic):
         )
 
         # fill public field in contrail settings
-        self._update_public_fields()
+        self._activate_plugin()
 
         self.fuel_web.deploy_cluster_wait(self.cluster_id)
 
@@ -244,7 +243,7 @@ class ContrailPlugin(TestBasic):
         )
 
         # fill public field in contrail settings
-        self._update_public_fields()
+        self._activate_plugin()
 
         # deploy cluster
         self.fuel_web.deploy_cluster_wait(self.cluster_id)
@@ -314,7 +313,7 @@ class ContrailPlugin(TestBasic):
         )
 
         # fill public field in contrail settings
-        self._update_public_fields()
+        self._activate_plugin()
 
         # deploy cluster
         self.fuel_web.deploy_cluster_wait(self.cluster_id,
@@ -397,7 +396,7 @@ class ContrailPlugin(TestBasic):
         )
 
         # fill public field in contrail settings
-        self._update_public_fields()
+        self._activate_plugin()
 
         self.fuel_web.deploy_cluster_wait(self.cluster_id)
 
@@ -500,7 +499,7 @@ class ContrailPlugin(TestBasic):
         )
 
         # fill public field in contrail settings
-        self._update_public_fields()
+        self._activate_plugin()
 
         self.fuel_web.deploy_cluster_wait(self.cluster_id,
                                           check_services=False)
@@ -582,7 +581,7 @@ class ContrailPlugin(TestBasic):
         )
 
         # fill public field in contrail settings
-        self._update_public_fields()
+        self._activate_plugin()
 
         self.fuel_web.deploy_cluster_wait(self.cluster_id)
 
