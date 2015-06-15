@@ -120,12 +120,12 @@ class SaharaHAOneController(TestBasic):
             settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_NAME,
             settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_META)
 
-        path_to_tests = 'fuel_health.tests.platform_tests.test_sahara.'
+        path_to_tests = 'fuel_health.tests.tests_platform.test_sahara.'
         test_names = ['VanillaTwoClusterTest.test_vanilla_two_cluster']
         for test_name in test_names:
             LOGGER.debug('Run platform test {0} for Sahara'.format(test_name))
             self.fuel_web.run_single_ostf_test(
-                cluster_id=cluster_id, test_sets=['platform_tests'],
+                cluster_id=cluster_id, test_sets=['tests_platform'],
                 test_name=path_to_tests + test_name, timeout=60 * 200)
 
         self.env.make_snapshot("deploy_sahara_ha_one_controller_gre")
@@ -225,12 +225,12 @@ class SaharaHA(TestBasic):
             settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_NAME,
             settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_META)
 
-        path_to_tests = 'fuel_health.tests.platform_tests.test_sahara.'
+        path_to_tests = 'fuel_health.tests.tests_platform.test_sahara.'
         test_names = ['VanillaTwoClusterTest.test_vanilla_two_cluster']
         for test_name in test_names:
             LOGGER.debug('Run platform test {0} for Sahara'.format(test_name))
             self.fuel_web.run_single_ostf_test(
-                cluster_id=cluster_id, test_sets=['platform_tests'],
+                cluster_id=cluster_id, test_sets=['tests_platform'],
                 test_name=path_to_tests + test_name, timeout=60 * 200)
 
         self.env.make_snapshot("deploy_sahara_ha_gre")
@@ -307,7 +307,7 @@ class MuranoHAOneController(TestBasic):
 
         LOGGER.debug('Run OSTF platform tests')
 
-        test_class_main = ('fuel_health.tests.platform_tests'
+        test_class_main = ('fuel_health.tests.tests_platform'
                            '.test_murano_linux.MuranoDeployLinuxServicesTests')
         tests_names = ['test_deploy_dummy_app', ]
 
@@ -319,7 +319,7 @@ class MuranoHAOneController(TestBasic):
 
         for test_name in test_classes:
             self.fuel_web.run_single_ostf_test(
-                cluster_id=cluster_id, test_sets=['platform_tests'],
+                cluster_id=cluster_id, test_sets=['tests_platform'],
                 test_name=test_name, timeout=60 * 20)
 
         self.env.make_snapshot("deploy_murano_ha_one_controller_gre")
@@ -396,7 +396,7 @@ class MuranoHA(TestBasic):
 
         LOGGER.debug('Run OSTF platform tests')
 
-        test_class_main = ('fuel_health.tests.platform_tests'
+        test_class_main = ('fuel_health.tests.tests_platform'
                            '.test_murano_linux.MuranoDeployLinuxServicesTests')
         tests_names = ['test_deploy_dummy_app', ]
 
@@ -408,7 +408,7 @@ class MuranoHA(TestBasic):
 
         for test_name in test_classes:
             self.fuel_web.run_single_ostf_test(
-                cluster_id=cluster_id, test_sets=['platform_tests'],
+                cluster_id=cluster_id, test_sets=['tests_platform'],
                 test_name=test_name, timeout=60 * 20)
 
         self.env.make_snapshot("deploy_murano_ha_with_gre")
@@ -428,7 +428,7 @@ class OSTFCeilometerHelper(TestBasic):
 
         LOGGER.debug('Run platform OSTF Ceilometer tests')
 
-        test_class_main = ('fuel_health.tests.platform_tests.'
+        test_class_main = ('fuel_health.tests.tests_platform.'
                            'test_ceilometer.'
                            'CeilometerApiPlatformTests')
         tests_names = ['test_check_alarm_state',
@@ -453,7 +453,7 @@ class OSTFCeilometerHelper(TestBasic):
                 if skip_tests and test_id.split('.')[-1] in skip_tests:
 
                     all_status = self.fuel_web.run_single_ostf_test(
-                        cluster_id=cluster_id, test_sets=['platform_tests'],
+                        cluster_id=cluster_id, test_sets=['tests_platform'],
                         test_name=test_id, retries=True, timeout=60 * 20)
 
                     test_name = next(
@@ -471,7 +471,7 @@ class OSTFCeilometerHelper(TestBasic):
                         'but his status {}'.format(test_name, status))
                 else:
                     self.fuel_web.run_single_ostf_test(
-                        cluster_id=cluster_id, test_sets=['platform_tests'],
+                        cluster_id=cluster_id, test_sets=['tests_platform'],
                         test_name=test_id, timeout=60 * 20)
 
 
@@ -837,7 +837,7 @@ class HeatHAOneController(TestBasic):
 
         LOGGER.debug('Run Heat OSTF platform tests')
 
-        test_class_main = ('fuel_health.tests.platform_tests.'
+        test_class_main = ('fuel_health.tests.tests_platform.'
                            'test_heat.'
                            'HeatSmokeTests')
         tests_names = ['test_actions',
@@ -854,7 +854,7 @@ class HeatHAOneController(TestBasic):
 
         for test_name in test_classes:
             self.fuel_web.run_single_ostf_test(
-                cluster_id=cluster_id, test_sets=['platform_tests'],
+                cluster_id=cluster_id, test_sets=['tests_platform'],
                 test_name=test_name, timeout=60 * 60)
 
         self.env.make_snapshot("deploy_heat_ha_one_controller_neutron")
@@ -919,7 +919,7 @@ class HeatHAOneController(TestBasic):
 
         LOGGER.debug('Run Heat OSTF platform tests')
 
-        test_class_main = ('fuel_health.tests.platform_tests.'
+        test_class_main = ('fuel_health.tests.tests_platform.'
                            'test_heat.'
                            'HeatSmokeTests')
         tests_names = ['test_actions',
@@ -936,7 +936,7 @@ class HeatHAOneController(TestBasic):
 
         for test_name in test_classes:
             self.fuel_web.run_single_ostf_test(
-                cluster_id=cluster_id, test_sets=['platform_tests'],
+                cluster_id=cluster_id, test_sets=['tests_platform'],
                 test_name=test_name, timeout=60 * 60)
 
         self.env.make_snapshot("deploy_heat_ha_one_controller_nova")
@@ -1013,7 +1013,7 @@ class HeatHA(TestBasic):
 
         LOGGER.debug('Run Heat OSTF platform tests')
 
-        test_class_main = ('fuel_health.tests.platform_tests.'
+        test_class_main = ('fuel_health.tests.tests_platform.'
                            'test_heat.'
                            'HeatSmokeTests')
         tests_names = ['test_actions',
@@ -1030,7 +1030,7 @@ class HeatHA(TestBasic):
 
         for test_name in test_classes:
             self.fuel_web.run_single_ostf_test(
-                cluster_id=cluster_id, test_sets=['platform_tests'],
+                cluster_id=cluster_id, test_sets=['tests_platform'],
                 test_name=test_name, timeout=60 * 60)
 
         self.env.make_snapshot("deploy_heat_ha")
