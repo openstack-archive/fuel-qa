@@ -413,6 +413,7 @@ REPLACE_DEFAULT_REPOS = os.environ.get('REPLACE_DEFAULT_REPOS',
 PATCHING_WEB_DIR = os.environ.get("PATCHING_WEB_DIR", "/var/www/nailgun/")
 PATCHING_MIRRORS = os.environ.get("PATCHING_MIRRORS",
                                   CUSTOM_PKGS_MIRROR).split()
+PATCHING_MASTER_MIRRORS = os.environ.get("PATCHING_MASTER_MIRRORS", '').split()
 PATCHING_BUG_ID = os.environ.get("PATCHING_BUG_ID", None)
 PATCHING_PKGS_TESTS = os.environ.get("PATCHING_PKGS_TESTS", "./packages_tests")
 PATCHING_APPLY_TESTS = os.environ.get("PATCHING_APPLY_TESTS",
