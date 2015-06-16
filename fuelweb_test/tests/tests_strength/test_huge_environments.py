@@ -232,7 +232,7 @@ class HugeHaNeutron(base_test_case.TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['ha', 'smoke', 'sanity'])
 
-        test_class_main = ('fuel_health.tests.platform_tests.'
+        test_class_main = ('fuel_health.tests.tests_platform.'
                            'test_ceilometer.'
                            'CeilometerApiPlatformTests')
         tests_names = ['test_check_alarm_state',
@@ -241,7 +241,7 @@ class HugeHaNeutron(base_test_case.TestBasic):
                         for test_name in tests_names]
         for test_name in test_classes:
             self.fuel_web.run_single_ostf_test(
-                cluster_id=cluster_id, test_sets=['platform_tests'],
+                cluster_id=cluster_id, test_sets=['tests_platform'],
                 test_name=test_name, timeout=60 * 20)
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_9],
@@ -320,7 +320,7 @@ class HugeHaNeutron(base_test_case.TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['ha', 'smoke', 'sanity'])
 
-        test_class_main = ('fuel_health.tests.platform_tests.'
+        test_class_main = ('fuel_health.tests.tests_platform.'
                            'test_ceilometer.'
                            'CeilometerApiPlatformTests')
         tests_names = ['test_check_alarm_state',
@@ -329,5 +329,5 @@ class HugeHaNeutron(base_test_case.TestBasic):
                         for test_name in tests_names]
         for test_name in test_classes:
             self.fuel_web.run_single_ostf_test(
-                cluster_id=cluster_id, test_sets=['platform_tests'],
+                cluster_id=cluster_id, test_sets=['tests_platform'],
                 test_name=test_name, timeout=60 * 20)

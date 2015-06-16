@@ -186,7 +186,7 @@ class VcenterDeploy(TestBasic):
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha',
-                                              'platform_tests'])
+                                              'tests_platform'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["smoke", "vcenter_cindervmdk"])
