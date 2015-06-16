@@ -85,43 +85,56 @@ def map_test(target):
         distro = settings.OPENSTACK_RELEASE_CENTOS
     else:
         distro = settings.OPENSTACK_RELEASE
-    if 'fixed-pkgs' in errata.keys():
-        settings.PATCHING_PKGS = set([re.split('=|<|>', package)[0] for package
-                                      in errata['fixed-pkgs'][distro.lower()]])
-    available_packages = set()
-    logger.debug('{0}'.format(settings.PATCHING_MIRRORS))
-    for repo in settings.PATCHING_MIRRORS:
-        logger.debug('Checking packages from "{0}" repository'.format(repo))
-        available_packages.update(get_repository_packages(repo, distro))
-    if not settings.PATCHING_PKGS:
-        settings.PATCHING_PKGS = available_packages
+    if settings.PATCHING_CUSTOM_TEST:
+        deployment_test = settings.PATCHING_CUSTOM_TEST
+        settings.PATCHING_SNAPSHOT = \
+            'patching_after_{0}'.format(deployment_test)
+        register(groups=['prepare_patching_environment'],
+                 depends_on_groups=[deployment_test])
+        register(groups=['prepare_master_environment'],
+                 depends_on_groups=[deployment_test])
     else:
-        assert_true(settings.PATCHING_PKGS <= available_packages,
-                    "Patching repositories don't contain all packages needed "
-                    "for tests. Need: {0}, but available: {1}.".format(
-                        settings.PATCHING_PKGS, available_packages))
-    assert_not_equal(len(settings.PATCHING_PKGS), 0,
-                     "No packages found in repository(s) for patching:"
-                     " '{0}'".format(settings.PATCHING_MIRRORS))
-    tests_groups = get_packages_tests(settings.PATCHING_PKGS, distro)
-    program = TestProgram(argv=['none'])
-    deployment_test = None
-    for my_test in program.plan.tests:
-        if all(patching_group in my_test.entry.info.groups for
-               patching_group in tests_groups):
-            deployment_test = my_test
-            break
-    if deployment_test:
-        settings.PATCHING_SNAPSHOT = 'patching_after_{0}'.format(
-            deployment_test.entry.method.im_func.func_name)
-        if target == 'master':
-            register(groups=['prepare_master_environment'],
-                     depends_on=[deployment_test.entry.home])
+        if 'fixed-pkgs' in errata.keys():
+            settings.PATCHING_PKGS = set(
+                [re.split('=|<|>', package)[0] for package
+                 in errata['fixed-pkgs'][distro.lower()]])
+        available_packages = set()
+        logger.debug('{0}'.format(settings.PATCHING_MIRRORS))
+        for repo in settings.PATCHING_MIRRORS:
+            logger.debug(
+                'Checking packages from "{0}" repository'.format(repo))
+            available_packages.update(get_repository_packages(repo, distro))
+        if not settings.PATCHING_PKGS:
+            settings.PATCHING_PKGS = available_packages
         else:
-            register(groups=['prepare_patching_environment'],
-                     depends_on=[deployment_test.entry.home])
-    else:
-        raise Exception("Test with groups {0} not found.".format(tests_groups))
+            assert_true(settings.PATCHING_PKGS <= available_packages,
+                        "Patching repositories don't contain"
+                        " all packages needed "
+                        "for tests. Need: {0}, but available: {1}.".format(
+                            settings.PATCHING_PKGS, available_packages))
+        assert_not_equal(len(settings.PATCHING_PKGS), 0,
+                         "No packages found in repository(s) for patching:"
+                         " '{0}'".format(settings.PATCHING_MIRRORS))
+        tests_groups = get_packages_tests(settings.PATCHING_PKGS, distro)
+        program = TestProgram(argv=['none'])
+        deployment_test = None
+        for my_test in program.plan.tests:
+            if all(patching_group in my_test.entry.info.groups for
+                   patching_group in tests_groups):
+                deployment_test = my_test
+                break
+        if deployment_test:
+            settings.PATCHING_SNAPSHOT = 'patching_after_{0}'.format(
+                deployment_test.entry.method.im_func.func_name)
+            if target == 'master':
+                register(groups=['prepare_master_environment'],
+                         depends_on=[deployment_test.entry.home])
+            else:
+                register(groups=['prepare_patching_environment'],
+                         depends_on=[deployment_test.entry.home])
+        else:
+            raise Exception(
+                "Test with groups {0} not found.".format(tests_groups))
 
 
 def get_repository_packages(remote_repo_url, repo_type):
