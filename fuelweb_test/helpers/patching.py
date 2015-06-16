@@ -236,10 +236,10 @@ def mirror_remote_repository(admin_remote, remote_repo_url, local_repo_path):
                                              result))
 
 
-def add_remote_repositories(environment):
+def add_remote_repositories(environment, mirrors, prefix_name='custom_repo'):
     repositories = set()
-    for mir in settings.PATCHING_MIRRORS:
-        name = 'custom_repo_{0}'.format(settings.PATCHING_MIRRORS.index(mir))
+    for mir in mirrors:
+        name = '{0}_{1}'.format(prefix_name, settings.mirrors.index(mir))
         local_repo_path = '/'.join([settings.PATCHING_WEB_DIR, name])
         remote_repo_url = mir
         mirror_remote_repository(
