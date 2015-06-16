@@ -77,7 +77,7 @@ def map_test(target):
     errata = get_errata(path=settings.PATCHING_APPLY_TESTS,
                         bug_id=settings.PATCHING_BUG_ID)
     verify_errata(errata)
-    if not target == errata['target']:
+    if not any(target == e_target['type'] for e_target in errata['targets']):
         skip_patching_test(target, errata['target'])
     if target == 'master':
         # On master node we have only CentOS containers, so always check
@@ -115,7 +115,8 @@ def map_test(target):
         assert_not_equal(len(settings.PATCHING_PKGS), 0,
                          "No packages found in repository(s) for patching:"
                          " '{0}'".format(settings.PATCHING_MIRRORS))
-        tests_groups = get_packages_tests(settings.PATCHING_PKGS, distro)
+        tests_groups = get_packages_tests(settings.PATCHING_PKGS, distro,
+                                          target)
         program = TestProgram(argv=['none'])
         deployment_test = None
         for my_test in program.plan.tests:
@@ -164,7 +165,7 @@ def _get_target_and_project(_pkg, _all_pkgs):
                 return _installation_target, _project['name']
 
 
-def get_package_test_info_remote(package, pkg_type, tests_url):
+def get_package_test_info_remote(package, pkg_type, tests_url, patch_target):
     packages_url = "{0}/{1}/packages.yaml".format(tests_url, pkg_type)
     tests = set()
     tests_file = 'test.yaml'
@@ -173,7 +174,12 @@ def get_package_test_info_remote(package, pkg_type, tests_url):
                        "Package '{0}' doesn't belong to any installation "
                        "target / project".format(package))
     target, project = _get_target_and_project(package, all_packages)
-
+    if patch_target == 'master':
+        if target not in ['master', 'bootstrap']:
+            return set([None])
+    if patch_target == 'environment':
+        if target not in ['deployment', 'provisioning']:
+            return set([None])
     target_tests_url = "/".join((tests_url, pkg_type, target, tests_file))
     project_tests_url = "/".join((tests_url, pkg_type, target, project,
                                   tests_file))
@@ -189,7 +195,7 @@ def get_package_test_info_remote(package, pkg_type, tests_url):
     return tests
 
 
-def get_package_test_info_local(package, pkg_type, tests_path):
+def get_package_test_info_local(package, pkg_type, tests_path, patch_target):
     packages_path = "{0}/{1}/packages.yaml".format(tests_path, pkg_type)
     tests = set()
     tests_file = 'test.yaml'
@@ -198,7 +204,12 @@ def get_package_test_info_local(package, pkg_type, tests_path):
                        "Package '{0}' doesn't belong to any installation "
                        "target / project".format(package))
     target, project = _get_target_and_project(package, all_packages)
-
+    if patch_target == 'master':
+        if target not in ['master', 'bootstrap']:
+            return set([None])
+    if patch_target == 'environment':
+        if target not in ['deployment', 'provisioning']:
+            return set([None])
     target_tests_path = "/".join((tests_path, pkg_type, target, tests_file))
     project_tests_path = "/".join((tests_path, pkg_type, target, project,
                                    tests_file))
@@ -214,7 +225,7 @@ def get_package_test_info_local(package, pkg_type, tests_path):
     return tests
 
 
-def get_packages_tests(packages, distro):
+def get_packages_tests(packages, distro, target):
     if 'http' in urlparse(settings.PATCHING_PKGS_TESTS):
         get_method = get_package_test_info_remote
     elif os.path.isdir(settings.PATCHING_PKGS_TESTS):
@@ -228,9 +239,12 @@ def get_packages_tests(packages, distro):
         pkg_type = 'rpm'
     packages_tests = set()
     for package in packages:
-        tests = get_method(package, pkg_type, settings.PATCHING_PKGS_TESTS)
+        tests = get_method(package, pkg_type, settings.PATCHING_PKGS_TESTS,
+                           target)
         assert_true(len(tests) > 0,
                     "Tests for package {0} not found".format(package))
+        if None in tests:
+            continue
         packages_tests.update(tests)
     return packages_tests
 
@@ -477,17 +491,23 @@ def get_script_content(path, bug_id, script):
 
 def verify_errata(errata):
     actions_types = ('patch-scenario', 'verify-scenario')
-    for action_type in actions_types:
-        scenario = sorted(errata[action_type]['actions'],
-                          key=lambda k: k['id'])
-        for step in scenario:
-            verify_fix_apply_step(step)
+    for target in errata['targets']:
+        for action_type in actions_types:
+            scenario = sorted(errata[target][action_type]['actions'],
+                              key=lambda k: k['id'])
+            for step in scenario:
+                verify_fix_apply_step(step)
 
 
-def run_actions(environment, slaves, action_type='patch-scenario'):
+def run_actions(environment, target, slaves, action_type='patch-scenario'):
     errata = get_errata(path=settings.PATCHING_APPLY_TESTS,
                         bug_id=settings.PATCHING_BUG_ID)
-    scenario = sorted(errata[action_type]['actions'],
+    target_scenarios = [e_target for e_target in errata['targets']
+                        if target == e_target['type']]
+    assert_true(len(target_scenarios) > 0,
+                "Can't found patch scenario for '{0}' target in erratum "
+                "for bug #{1}!".format(target, settings.PATCHING_BUG_ID))
+    scenario = sorted(target_scenarios[0][action_type]['actions'],
                       key=lambda k: k['id'])
 
     for step in scenario:
@@ -512,12 +532,12 @@ def run_actions(environment, slaves, action_type='patch-scenario'):
             environment.fuel_web.warm_restart_nodes(devops_nodes)
 
 
-def apply_patches(environment, slaves=None):
-    run_actions(environment, slaves, action_type='patch-scenario')
+def apply_patches(environment, target, slaves=None, ):
+    run_actions(environment, target, slaves, action_type='patch-scenario')
 
 
-def verify_fix(environment, slaves=None):
-    run_actions(environment, slaves, action_type='verify-scenario')
+def verify_fix(environment, target, slaves=None):
+    run_actions(environment, target, slaves, action_type='verify-scenario')
 
 
 def skip_patching_test(target, errata_target):
