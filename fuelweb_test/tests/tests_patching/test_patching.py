@@ -88,15 +88,17 @@ class PatchingTests(TestBasic):
             patching.connect_slaves_to_repo(self.env, slaves, repo)
         if settings.PATCHING_MASTER_MIRRORS:
             for repo in patching_master_repos:
+                remote = self.env.d_env.get_admin_remote()
+                install_pkg(remote, 'yum-utils')
                 patching.connect_admin_to_repo(self.env, repo)
 
         # Step #5
         logger.info('Applying fix...')
-        patching.apply_patches(self.env, slaves)
+        patching.apply_patches(self.env, target='environment', slaves=slaves)
 
         # Step #6
         logger.info('Verifying fix...')
-        patching.verify_fix(self.env, slaves)
+        patching.verify_fix(self.env, target='environment', slaves=slaves)
 
         # Step #7
         # If OSTF fails (sometimes services aren't ready after
@@ -151,18 +153,19 @@ class PatchingMasterTests(TestBasic):
         # Step #1
         remote = self.env.d_env.get_admin_remote()
         install_pkg(remote, 'yum-utils')
-        patching_repos = patching.add_remote_repositories(self.env)
+        patching_repos = patching.add_remote_repositories(
+            self.env, settings.PATCHING_MASTER_MIRRORS)
 
         for repo in patching_repos:
             patching.connect_admin_to_repo(self.env, repo)
 
         # Step #2
         logger.info('Applying fix...')
-        patching.apply_patches(self.env)
+        patching.apply_patches(self.env, target='master')
 
         # Step #3
         logger.info('Verifying fix...')
-        patching.verify_fix(self.env)
+        patching.verify_fix(self.env, target='master')
 
         # Step #4
         active_nodes = []
