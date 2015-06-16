@@ -54,11 +54,10 @@ class PatchingTests(TestBasic):
         2. Run Rally benchmark tests and store results
         3. Download patched packages on master node and make local repositories
         4. Add new local repositories on slave nodes
-        5. Run packages update on slaves
-        6. Perform actions required to apply patches
-        7. Verify that fix works
-        8. Run OSTF
-        9. Run Rally benchmark tests and compare results
+        5. Perform actions required to apply patches
+        6. Verify that fix works
+        7. Run OSTF
+        8. Run Rally benchmark tests and compare results
 
         Duration 15m
         Snapshot first_patching_demo
@@ -92,17 +91,14 @@ class PatchingTests(TestBasic):
                 patching.connect_admin_to_repo(self.env, repo)
 
         # Step #5
-        patching.update_packages_on_slaves(self.env, slaves, self.pkgs)
-
-        # Step #6
         logger.info('Applying fix...')
         patching.apply_patches(self.env, slaves)
 
-        # Step #7
+        # Step #6
         logger.info('Verifying fix...')
         patching.verify_fix(self.env, slaves)
 
-        # Step #8
+        # Step #7
         # If OSTF fails (sometimes services aren't ready after
         # slaves nodes reboot) sleep 5 minutes and try again
         try:
@@ -111,7 +107,7 @@ class PatchingTests(TestBasic):
             time.sleep(300)
             self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        # Step #9
+        # Step #8
         # Run Rally benchmarks, compare new results with previous,
         # coming soon...
 
