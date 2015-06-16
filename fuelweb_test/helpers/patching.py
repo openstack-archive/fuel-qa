@@ -286,7 +286,6 @@ def connect_slaves_to_repo(environment, nodes, repo_name):
             "echo -e 'gpgcheck=0\npriority=20' >>/etc/yum.repos.d/{ip}_{port}_"
             "{repo}_.repo".format(ip=repo_ip, repo=repo_name, port=repo_port),
             "yum -y clean all",
-            "yum check-update; [[ $? -eq 100 ]]"
         ]
 
     for slave in nodes:
