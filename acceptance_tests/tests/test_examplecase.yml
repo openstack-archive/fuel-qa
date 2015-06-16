@@ -1,0 +1,140 @@
+---
+case:
+ case-name: case1
+ required-nodes-count: 8
+ text-decription: Some piece of text about test case if it needs
+ action-runner: example_actions.py
+
+network-config: &network-config
+ network-type: neutron-vlan
+ public:
+  net: 10.109.1.0/24
+  vlan: null 
+  gw: 10.109.1.1
+  public-range:
+   start: 10.109.1.2
+   funish: 10.109.1.13
+  float-range:
+   start: 10.109.1.14
+   finish: 10.109.1.24
+ managemet:
+  net: 10.109.2.0/24
+  vlan: 101
+ storage:
+  net: 10.109.4.0/24
+  vlan: 102
+ private:
+  net: 10.109.3.0/24
+  vlan-range:
+   start: 1000
+   finish: 1030
+
+storages: &storages
+ volume-sinder: true
+ volume-ceph: false
+ image-ceph: false
+ ephemeral-ceph: false
+ rados-ceph: false
+
+repos: &repos
+ mos: "http://"
+ mos-update: "http://"
+
+nodes-ifaces: &iface
+    - eth0:
+      - admin
+      - public
+    - eth1:
+      - managment
+    - eth2:
+      - storage
+
+nodes: &nodes
+ - roles:
+    - controller
+    - mongo
+   iface: *iface
+   count: 3
+   drives:
+    - base-system: 40%
+    - mongodb: 100%
+    - mongodb: 100%
+ - roles:
+    - compute
+   iface: *iface
+   count: 2
+   drives:
+    - base-system: 40%
+      virtual-storage: 60%
+    - virtual-storage: 100%
+    - virtual-storage: 100%
+ - roles:
+    - cinder
+   iface: *iface
+   count: 1
+   drives:
+    - base-system: 40%
+      cinder: 60%
+    - cinder: 100%
+    - cinder: 100%      
+
+
+second-nodes: &second-nodes
+ - roles:
+    - compute
+   iface: *iface
+   count: 2
+   drives:
+    - base-system: 40%
+      virtual-storage: 60%
+    - virtual-storage: 100%
+    - virtual-storage: 100%
+
+
+environment-config: &environment-config
+ name: env1
+ release: ubuntu
+ modules:
+  - murano
+  - ceiloment
+  - sahara
+ storage-confing: *storages
+ debug-log:
+  - openstack
+  - puppet
+
+
+actions:
+ - action: create-environment
+   environment: *environment-config 
+   network-config: *network-config
+ - action: add-nodes
+   nodes: *nodes
+   environment: *environment-config
+ - action: network-check
+   environment: *environment-config
+ - action: deploy-environment 
+   environment: *environment-config
+ - action: stop-provisioning
+   environment: *environment-config
+   progress: 30%
+ - action: deploy-environment 
+   environment: *environment-config
+ - action: stop-deployment
+   environment: *environment-config
+   progress: 30%
+ - action: deploy-environment
+   environment: *environment-config
+ - action: network-check
+   environment: *environment-config
+ - action: health-check
+   environment: *environment-config
+ - action: add-nodes
+   nodes: *second-nodes
+   environment: *environment-config
+ - action: network-check
+   environment: *environment-config
+ - action: health-check
+   environment: *environment-config    
+ - action: delete-environment
+   environment: *environment-config 
