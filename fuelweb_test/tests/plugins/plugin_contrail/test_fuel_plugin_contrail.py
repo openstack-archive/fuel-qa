@@ -222,7 +222,7 @@ class ContrailPlugin(TestBasic):
         # configure disks on base-os nodes
         self.change_disk_size()
 
-        # fill public field in contrail settings
+        # enable plugin in contrail settings
         self._activate_plugin()
 
         self.fuel_web.deploy_cluster_wait(self.cluster_id)
@@ -266,7 +266,7 @@ class ContrailPlugin(TestBasic):
         # configure disks on base-os nodes
         self.change_disk_size()
 
-        # fill public field in contrail settings
+        # enable plugin in contrail settings
         self._activate_plugin()
 
         # deploy cluster
@@ -339,7 +339,7 @@ class ContrailPlugin(TestBasic):
         # configure disks on base-os nodes
         self.change_disk_size()
 
-        # fill public field in contrail settings
+        # enable plugin in contrail settings
         self._activate_plugin()
 
         # deploy cluster
@@ -425,7 +425,7 @@ class ContrailPlugin(TestBasic):
         # configure disks on base-os nodes
         self.change_disk_size()
 
-        # fill public field in contrail settings
+        # enable plugin in contrail settings
         self._activate_plugin()
 
         self.fuel_web.deploy_cluster_wait(self.cluster_id)
@@ -531,7 +531,7 @@ class ContrailPlugin(TestBasic):
         # configure disks on base-os nodes
         self.change_disk_size()
 
-        # fill public field in contrail settings
+        # enable plugin in contrail settings
         self._activate_plugin()
 
         self.fuel_web.deploy_cluster_wait(self.cluster_id,
@@ -600,7 +600,7 @@ class ContrailPlugin(TestBasic):
         self._prepare_contrail_plugin(slaves=9, pub_net=True)
 
         # create cluster: 3 nodes with Operating system role,
-        # 1 node with controller and 1 nod with compute roles
+        # 1 node with controller and 1 node with compute roles
         self.fuel_web.update_nodes(
             self.cluster_id,
             {
@@ -616,7 +616,7 @@ class ContrailPlugin(TestBasic):
         # configure disks on base-os nodes
         self.change_disk_size()
 
-        # fill public field in contrail settings
+        # enable plugin in contrail settings
         self._activate_plugin()
 
         self.fuel_web.deploy_cluster_wait(self.cluster_id)
@@ -647,3 +647,95 @@ class ContrailPlugin(TestBasic):
             failed_test_name=[('Check network connectivity '
                                'from instance via floating IP'),
                               ('Launch instance with file injection')])
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["check_bonding_with_contrail"])
+    @log_snapshot_after_test
+    def check_bonding_with_contrail(self):
+        """Verify bonding with Contrail Plugin
+
+        Scenario:
+            1. Revert snapshot "ready_with_5_slaves"
+            2. Create cluster
+            3. Add 3 nodes with Operating system role,
+               1 node with controller role and 1 node with compute role
+            4. Enable Contrail plugin
+            5. Setup bonding for management and storage interfaces
+            6. Deploy cluster with plugin
+            7. Run OSTF tests
+
+        Duration 140 min
+
+        """
+        self._prepare_contrail_plugin(slaves=5)
+
+        # create cluster: 3 nodes with Operating system role,
+        # 1 node with controller and 1 node with compute roles
+        self.fuel_web.update_nodes(
+            self.cluster_id,
+            {
+                'slave-01': ['base-os'],
+                'slave-02': ['base-os'],
+                'slave-03': ['base-os'],
+                'slave-04': ['controller'],
+                'slave-05': ['compute'],
+            },
+            contrail=True
+        )
+        raw_data = {
+            'mac': None,
+            'mode': 'active-backup',
+            'name': 'lnx-bond0',
+            'slaves': [
+                {'name': 'eth4'},
+                {'name': 'eth2'},
+            ],
+            'state': None,
+            'type': 'bond',
+            'assigned_networks': []
+        }
+
+        interfaces = {
+            'eth0': ['fuelweb_admin'],
+            'eth1': ['public'],
+            'eth3': ['private'],
+            'lnx-bond0': [
+                'management',
+                'storage',
+            ]
+        }
+
+        cluster_nodes = \
+            self.fuel_web.client.list_cluster_nodes(self.cluster_id)
+        for node in cluster_nodes:
+            self.fuel_web.update_node_networks(
+                node['id'], interfaces_dict=interfaces,
+                raw_data=raw_data
+            )
+
+        # enable plugin in contrail settings
+        self._activate_plugin()
+
+        self.fuel_web.deploy_cluster_wait(self.cluster_id,
+                                          check_services=False)
+
+        # create net and subnet
+        self._create_net_subnet(self.cluster_id)
+
+        # TODO
+        # Tests using north-south connectivity are expected to fail because
+        # they require additional gateway nodes, and specific contrail
+        # settings. This mark is a workaround until it's verified
+        # and tested manually.
+        # Also workaround according to bug 1457515
+        # When it will be done 'should_fail=3' and
+        # 'failed_test_name' parameter should be removed.
+
+        self.fuel_web.run_ostf(
+            cluster_id=self.cluster_id,
+            should_fail=3,
+            failed_test_name=[('Check network connectivity '
+                               'from instance via floating IP'),
+                              ('Launch instance with file injection'),
+                              ('Check that required services are running')]
+        )
