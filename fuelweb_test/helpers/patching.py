@@ -38,7 +38,7 @@ patching_validation_schema = {
         'required': True,
         'values': ['service_stop', 'service_start', 'service_restart',
                    'server_down', 'server_up', 'server_reboot',
-                   'run_command', 'upload_script'],
+                   'run_command', 'upload_script', 'run_tasks'],
         'data_type': str
     },
     'target': {
@@ -67,7 +67,11 @@ patching_validation_schema = {
     'id': {
         'required': True,
         'data_type': int
-    }
+    },
+    'tasks': {
+        'required': False,
+        'data_type': list
+    },
 }
 
 
@@ -363,6 +367,12 @@ def get_devops_slaves_by_role(env, slaves, role=None):
             env.d_env.nodes().slaves) for slave in slaves]
 
 
+def get_slaves_ids_by_role(slaves, role=None):
+    if role:
+        return [slave['id'] for slave in slaves if role in slave['roles']]
+    return [slave['id'] for slave in slaves]
+
+
 def verify_fix_apply_step(apply_step):
     validation_schema = patching_validation_schema
     for key in validation_schema.keys():
@@ -406,20 +416,36 @@ def validate_fix_apply_step(apply_step, environment, slaves):
     remotes_ips = set()
     devops_action = ''
     devops_nodes = set()
+    nodes_ids = set()
 
-    for target in apply_step['target']:
-        if target == 'master':
-            remotes_ips.add(environment.get_admin_node_ip())
-            devops_nodes.add(
-                environment.d_env.nodes().admin)
-        elif target == 'slaves':
-            remotes_ips.update(get_slaves_ips_by_role(slaves, role=None))
-            devops_nodes.update(get_devops_slaves_by_role(environment, slaves))
-        else:
-            role = target.split('_role')[0]
-            remotes_ips.update(get_slaves_ips_by_role(slaves, role))
-            devops_nodes.update(get_devops_slaves_by_role(environment, slaves,
-                                                          role=role))
+    if apply_step['type'] == 'run_tasks':
+        remotes_ips.add(environment.get_admin_node_ip())
+        assert_true('master' not in apply_step['target'],
+                    "Action type 'run_tasks' accepts only slaves (roles) "
+                    "as target value, but 'master' is specified!")
+
+        for target in apply_step['target']:
+            if target == 'slaves':
+                nodes_ids.update(get_slaves_ids_by_role(slaves, role=None))
+            else:
+                role = target.split('_role')[0]
+                nodes_ids.update(get_slaves_ids_by_role(slaves, role=role))
+    else:
+        for target in apply_step['target']:
+            if target == 'master':
+                remotes_ips.add(environment.get_admin_node_ip())
+                devops_nodes.add(
+                    environment.d_env.nodes().admin)
+            elif target == 'slaves':
+                remotes_ips.update(get_slaves_ips_by_role(slaves, role=None))
+                devops_nodes.update(get_devops_slaves_by_role(environment,
+                                                              slaves))
+            else:
+                role = target.split('_role')[0]
+                remotes_ips.update(get_slaves_ips_by_role(slaves, role))
+                devops_nodes.update(get_devops_slaves_by_role(environment,
+                                                              slaves,
+                                                              role=role))
     if apply_step['type'] in ('service_stop', 'service_start',
                               'service_restart'):
         assert_true(len(apply_step['service'] or '') > 0,
@@ -431,6 +457,10 @@ def validate_fix_apply_step(apply_step, environment, slaves):
                    "'%f\n' -quit | xargs -i service {{}} {action}").format(
             service=apply_step['service'], action=action)
     elif apply_step['type'] in ('server_down', 'server_up', 'server_reboot'):
+        assert_true('master' not in apply_step['target'],
+                    'Action type "{0}" doesn\'t accept "master" node as '
+                    'target! Use action "run_command" instead.'.format(
+                        apply_step['type']))
         devops_action = apply_step['type'].split('server_')[1]
     elif apply_step['type'] == 'upload_script':
         assert_true(len(apply_step['script'] or '') > 0,
@@ -442,6 +472,13 @@ def validate_fix_apply_step(apply_step, environment, slaves):
                     "upload path isn't specified".format(apply_step['id'],
                                                          apply_step['type']))
         command = ('UPLOAD', apply_step['script'], apply_step['upload_path'])
+    elif apply_step['type'] == 'run_tasks':
+        assert_true(len(apply_step['tasks'] or '') > 0,
+                    "Step #{0} in apply patch scenario perform '{1}', but "
+                    "tasks aren't specified".format(apply_step['id'],
+                                                    apply_step['type']))
+        command = 'fuel node --node {0} --tasks {1}'.format(
+            ','.join(map(str, nodes_ids)), ' '.join(apply_step['tasks']))
     else:
         assert_true(len(apply_step['command'] or '') > 0,
                     "Step #{0} in apply patch scenario perform '{1}', but "
