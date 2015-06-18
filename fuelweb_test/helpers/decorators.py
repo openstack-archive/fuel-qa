@@ -16,10 +16,12 @@ import functools
 import inspect
 import json
 import os
+from subprocess import call
 import sys
 import time
 import traceback
 import urllib2
+from urlparse import urlparse
 
 from devops.helpers import helpers
 from fuelweb_test.helpers.checkers import check_action_logs
@@ -27,6 +29,7 @@ from fuelweb_test.helpers.checkers import check_repo_managment
 from fuelweb_test.helpers.checkers import check_stats_on_collector
 from fuelweb_test.helpers.checkers import check_stats_private_info
 from fuelweb_test.helpers.checkers import count_stats_on_collector
+from fuelweb_test.helpers.patching import mirror_remote_repository
 from proboscis import SkipTest
 from proboscis.asserts import assert_equal
 
@@ -167,6 +170,24 @@ def update_packages(func):
                 return result
 
             remote = environment.d_env.get_admin_remote()
+
+            if settings.UPDATE_FUEL_MIRROR:
+                for url in settings.UPDATE_FUEL_MIRROR:
+                    repo_url = urlparse(url)
+                    cut_dirs = len(repo_url.path.strip('/').split('/'))
+                    download_cmd = ('wget --recursive --no-parent'
+                                    ' --no-verbose --reject "index'
+                                    '.html*,*.gif" --exclude-directories'
+                                    ' "{pwd}/repocache" '
+                                    '--directory-prefix {path} -nH'
+                                    ' --cut-dirs={cutd} {url}').\
+                        format(pwd=repo_url.path.rstrip('/'),
+                               path=settings.UPDATE_FUEL_PATH,
+                               cutd=cut_dirs, url=repo_url.geturl())
+                    return_code = call(download_cmd, shell=True)
+                    assert_equal(return_code, 0, 'Mirroring of remote'
+                                                 ' packages '
+                                                 'repository failed')
 
             centos_files_count, ubuntu_files_count = \
                 environment.admin_actions.upload_packages(
