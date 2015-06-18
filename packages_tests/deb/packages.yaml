@@ -2026,9 +2026,1085 @@ deployment:
       - python-zope.interface
 master:
   projects:
+    - name: apr
+      packages:
+      - apr
+    - name: apr-util
+      packages:
+      - apr-util
+      - apr-util-ldap
+    - name: atk
+      packages:
+      - atk
+    - name: atlas
+      packages:
+      - atlas
+    - name: atop
+      packages:
+      - atop
+    - name: avahi
+      packages:
+      - avahi-libs
+    - name: babel
+      packages:
+      - python-babel
+    - name: bridge-utils
+      packages:
+      - bridge-utils
+    - name: cairo
+      packages:
+      - cairo
+    - name: cdrkit
+      packages:
+      - genisoimage
+    - name: cobbler
+      packages:
+      - cobbler
+      - cobbler-web
+    - name: createrepo
+      packages:
+      - createrepo
+    - name: cryptsetup-luks
+      packages:
+      - cryptsetup-luks
+      - cryptsetup-luks-libs
+    - name: cups
+      packages:
+      - cups-libs
+    - name: cvs
+      packages:
+      - cvs
+    - name: cyrus-sasl
+      packages:
+      - cyrus-sasl-md5
+    - name: dbus
+      packages:
+      - dbus
+    - name: dbus-python
+      packages:
+      - dbus-python
+    - name: debootstrap
+      packages:
+      - debootstrap
+    - name: deltarpm
+      packages:
+      - python-deltarpm
+      - deltarpm
+    - name: dhcp
+      packages:
+      - dhcp
+    - name: dnsmasq
+      packages:
+      - dnsmasq
+    - name: docker-io
+      packages:
+      - docker-io
+    - name: e2fsprogs
+      packages:
+      - libcom_err
+      - libcom_err-devel
+    - name: eggdbus
+      packages:
+      - eggdbus
+    - name: fence-agents
+      packages:
+      - fence-agents
+    - name: fontconfig
+      packages:
+      - fontconfig
+    - name: freetype
+      packages:
+      - freetype
+    - name: fuel-ostf
+      packages:
+      - fuel-ostf
+    - name: fuelmenu
+      packages:
+      - fuelmenu
+    - name: gcc
+      packages:
+      - libstdc++
+      - libgfortran
+    - name: gd
+      packages:
+      - gd
+    - name: gettext
+      packages:
+      - gettext
+    - name: gnutls
+      packages:
+      - gnutls-utils
+      - gnutls
+    - name: gtk2
+      packages:
+      - gtk2
+    - name: hal
+      packages:
+      - hal-libs
+      - hal
+    - name: hdparm
+      packages:
+      - hdparm
+    - name: hicolor-icon-theme
+      packages:
+      - hicolor-icon-theme
+    - name: httpd
+      packages:
+      - httpd-tools
+      - httpd
+      - mod_ssl
+    - name: ipmitool
+      packages:
+      - ipmitool
+    - name: jasper
+      packages:
+      - jasper-libs
+    - name: keyutils
+      packages:
+      - keyutils-libs-devel
+    - name: krb5
+      packages:
+      - krb5-devel
+    - name: libcgroup
+      packages:
+      - libcgroup
+    - name: libevent
+      packages:
+      - libevent-devel
+      - libevent-headers
+      - libevent
+      - libevent-doc
+    - name: libjpeg-turbo
+      packages:
+      - libjpeg-turbo
+    - name: libnl
+      packages:
+      - libnl
+    - name: libpng
+      packages:
+      - libpng
+    - name: libselinux
+      packages:
+      - libselinux-devel
+    - name: libsepol
+      packages:
+      - libsepol-devel
+    - name: libthai
+      packages:
+      - libthai
+    - name: libtiff
+      packages:
+      - libtiff
+    - name: libvirt
+      packages:
+      - libvirt-client
+    - name: libxcb
+      packages:
+      - libxcb
+    - name: libxml2
+      packages:
+      - libxml2-python
+    - name: libxslt
+      packages:
+      - libxslt
+    - name: lrzip
+      packages:
+      - lrzip
+    - name: lsof
+      packages:
+      - lsof
+    - name: lxc
+      packages:
+      - lxc-libs
+      - lxc
+    - name: lzo
+      packages:
+      - lzo
+    - name: m2crypto
+      packages:
+      - m2crypto
+    - name: mailcap
+      packages:
+      - mailcap
+    - name: man
+      packages:
+      - man
+    - name: mesa
+      packages:
+      - mesa-libGL
+      - mesa-libGLU
+      - mesa-dri-filesystem
+      - mesa-dri-drivers
+    - name: mesa-dri1-drivers
+      packages:
+      - mesa-dri1-drivers
+    - name: mesa-private-llvm
+      packages:
+      - mesa-private-llvm
+    - name: monit
+      packages:
+      - monit
+    - name: mtools
+      packages:
+      - mtools
     - name: nailgun
       packages:
       - nailgun
+    - name: nailgun-redhat-license
+      packages:
+      - nailgun-redhat-license
+    - name: net-snmp
+      packages:
+      - net-snmp-utils
+      - net-snmp-libs
+    - name: nginx
+      packages:
+      - nginx
+    - name: numactl
+      packages:
+      - numactl
+    - name: numpy
+      packages:
+      - numpy
+      - numpy-f2py
+    - name: openssl
+      packages:
+      - openssl-devel
+    - name: openstack-keystone
+      packages:
+      - openstack-keystone
+      - python-keystone
+    - name: pango
+      packages:
+      - pango
+    - name: perl
+      packages:
+      - perl-Net-Telnet
+      - perl-Module-Pluggable
+      - perl-Pod-Escapes
+      - perl-Pod-Simple
+    - name: pexpect
+      packages:
+      - pexpect
+    - name: pixman
+      packages:
+      - pixman
+    - name: pm-utils
+      packages:
+      - pm-utils
+    - name: polkit
+      packages:
+      - polkit
+    - name: portreserve
+      packages:
+      - portreserve
+    - name: postgresql
+      packages:
+      - postgresql-libs
+      - postgresql-server
+      - postgresql
+    - name: pygobject2
+      packages:
+      - pygobject2
+    - name: python
+      packages:
+      - python-PrettyTable
+      - python-posix_ipc
+      - python-devel
+      - python-MarkupSafe
+    - name: python-alembic
+      packages:
+      - python-alembic
+    - name: python-amqp
+      packages:
+      - python-amqp
+    - name: python-amqplib
+      packages:
+      - python-amqplib
+    - name: python-anyjson
+      packages:
+      - python-anyjson
+    - name: python-backports
+      packages:
+      - python-backports
+      - python-backports-ssl_match_hostname
+    - name: python-beaker
+      packages:
+      - python-beaker
+    - name: python-beautifulsoup4
+      packages:
+      - python-beautifulsoup4
+    - name: python-ceilometerclient
+      packages:
+      - python-ceilometerclient
+    - name: python-chardet
+      packages:
+      - python-chardet
+    - name: python-cheetah
+      packages:
+      - python-cheetah
+    - name: python-cherrypy
+      packages:
+      - python-cherrypy
+    - name: python-cinderclient
+      packages:
+      - python-cinderclient
+    - name: python-crypto
+      packages:
+      - python-crypto
+    - name: python-daemon
+      packages:
+      - python-daemon
+    - name: python-dateutil
+      packages:
+      - python-dateutil
+    - name: python-decorator
+      packages:
+      - python-decorator
+    - name: python-django
+      packages:
+      - python-django
+    - name: python-dmidecode
+      packages:
+      - python-dmidecode
+    - name: python-dogpile-cache
+      packages:
+      - python-dogpile-cache
+    - name: python-dogpile-core
+      packages:
+      - python-dogpile-core
+    - name: python-ecdsa
+      packages:
+      - python-ecdsa
+    - name: python-ethtool
+      packages:
+      - python-ethtool
+    - name: python-eventlet
+      packages:
+      - python-eventlet
+    - name: python-fabric
+      packages:
+      - python-fabric
+    - name: python-fuelclient
+      packages:
+      - python-fuelclient
+    - name: python-futures
+      packages:
+      - python-futures
+    - name: python-fysom
+      packages:
+      - python-fysom
+    - name: python-gevent
+      packages:
+      - python-gevent
+    - name: python-glanceclient
+      packages:
+      - python-glanceclient
+    - name: python-greenlet
+      packages:
+      - python-greenlet
+    - name: python-heatclient
+      packages:
+      - python-heatclient
+    - name: python-html5lib
+      packages:
+      - python-html5lib
+    - name: python-httplib2
+      packages:
+      - python-httplib2
+    - name: python-importlib
+      packages:
+      - python-importlib
+    - name: python-ipaddr
+      packages:
+      - python-ipaddr
+    - name: python-iso8601
+      packages:
+      - python-iso8601
+    - name: python-jinja2
+      packages:
+      - python-jinja2
+    - name: python-jsonpatch
+      packages:
+      - python-jsonpatch
+    - name: python-jsonpointer
+      packages:
+      - python-jsonpointer
+    - name: python-jsonschema
+      packages:
+      - python-jsonschema
+    - name: python-keyring
+      packages:
+      - python-keyring
+    - name: python-keystoneclient
+      packages:
+      - python-keystoneclient
+    - name: python-keystonemiddleware
+      packages:
+      - python-keystonemiddleware
+    - name: python-kombu
+      packages:
+      - python-kombu
+    - name: python-ldap
+      packages:
+      - python-ldap
+    - name: python-lockfile
+      packages:
+      - python-lockfile
+    - name: python-logutils
+      packages:
+      - python-logutils
+    - name: python-lxml
+      packages:
+      - python-lxml
+    - name: python-mako
+      packages:
+      - python-mako
+    - name: python-markdown
+      packages:
+      - python-markdown
+    - name: python-meld3
+      packages:
+      - python-meld3
+    - name: python-memcached
+      packages:
+      - python-memcached
+    - name: python-migrate
+      packages:
+      - python-migrate
+    - name: python-muranoclient
+      packages:
+      - python-muranoclient
+    - name: python-netaddr
+      packages:
+      - python-netaddr
+    - name: python-netifaces
+      packages:
+      - python-netifaces
+    - name: python-networkx
+      packages:
+      - python-networkx-core
+    - name: python-neutronclient
+      packages:
+      - python-neutronclient
+    - name: python-nose
+      packages:
+      - python-nose
+    - name: python-novaclient
+      packages:
+      - python-novaclient
+    - name: python-oauthlib
+      packages:
+      - python-oauthlib
+    - name: python-ordereddict
+      packages:
+      - python-ordereddict
+    - name: python-oslo-config
+      packages:
+      - python-oslo-config
+    - name: python-oslo-db
+      packages:
+      - python-oslo-db
+    - name: python-oslo-i18n
+      packages:
+      - python-oslo-i18n
+    - name: python-oslo-messaging
+      packages:
+      - python-oslo-messaging
+    - name: python-oslo-serialization
+      packages:
+      - python-oslo-serialization
+    - name: python-oslo-utils
+      packages:
+      - python-oslo-utils
+    - name: python-paramiko
+      packages:
+      - python-paramiko
+    - name: python-passlib
+      packages:
+      - python-passlib
+    - name: python-paste
+      packages:
+      - python-paste
+    - name: python-paste-deploy
+      packages:
+      - python-paste-deploy
+    - name: python-pbr
+      packages:
+      - python-pbr
+    - name: python-pecan
+      packages:
+      - python-pecan
+    - name: python-pip
+      packages:
+      - python-pip
+    - name: python-ply
+      packages:
+      - python-ply
+    - name: python-psycopg2
+      packages:
+      - python-psycopg2
+    - name: python-pycadf
+      packages:
+      - python-pycadf
+    - name: python-pygments
+      packages:
+      - python-pygments
+    - name: python-repoze-lru
+      packages:
+      - python-repoze-lru
+    - name: python-requests
+      packages:
+      - python-requests
+    - name: python-rhsm
+      packages:
+      - python-rhsm
+    - name: python-routes
+      packages:
+      - python-routes
+    - name: python-saharaclient
+      packages:
+      - python-saharaclient
+    - name: python-simplegeneric
+      packages:
+      - python-simplegeneric
+    - name: python-simplejson
+      packages:
+      - python-simplejson
+    - name: python-singledispatch
+      packages:
+      - python-singledispatch
+    - name: python-sqlalchemy
+      packages:
+      - python-sqlalchemy
+    - name: python-suds
+      packages:
+      - python-suds
+    - name: python-swiftclient
+      packages:
+      - python-swiftclient
+    - name: python-tempita
+      packages:
+      - python-tempita
+    - name: python-testresources
+      packages:
+      - python-testresources
+    - name: python-unittest2
+      packages:
+      - python-unittest2
+    - name: python-urllib3
+      packages:
+      - python-urllib3
+    - name: python-urwid
+      packages:
+      - python-urwid
+    - name: python-waitress
+      packages:
+      - python-waitress
+    - name: python-warlock
+      packages:
+      - python-warlock
+    - name: python-webob
+      packages:
+      - python-webob
+    - name: python-webpy
+      packages:
+      - python-webpy
+    - name: python-webtest
+      packages:
+      - python-webtest
+    - name: python-wsgilog
+      packages:
+      - python-wsgilog
+    - name: python-wsgiref
+      packages:
+      - python-wsgiref
+    - name: python-yaql
+      packages:
+      - python-yaql
+    - name: rabbitmq-server
+      packages:
+      - rabbitmq-server
+    - name: ruby21-augeas
+      packages:
+      - ruby21-augeas
+    - name: ruby21-facter
+      packages:
+      - ruby21-facter
+    - name: ruby21-hiera
+      packages:
+      - ruby21-hiera
+    - name: ruby21-mcollective
+      packages:
+      - ruby21-mcollective-common
+      - ruby21-mcollective
+    - name: ruby21-nailgun-mcagents
+      packages:
+      - ruby21-nailgun-mcagents
+    - name: ruby21-puppet
+      packages:
+      - ruby21-puppet
+    - name: ruby21-rubygem
+      packages:
+      - ruby21-rubygem-Platform
+      - ruby21-rubygem-json_pure
+    - name: ruby21-rubygem-activesupport
+      packages:
+      - ruby21-rubygem-activesupport
+    - name: ruby21-rubygem-amq-client
+      packages:
+      - ruby21-rubygem-amq-client
+    - name: ruby21-rubygem-amq-protocol
+      packages:
+      - ruby21-rubygem-amq-protocol
+    - name: ruby21-rubygem-amqp
+      packages:
+      - ruby21-rubygem-amqp
+    - name: ruby21-rubygem-astute
+      packages:
+      - ruby21-rubygem-astute
+    - name: ruby21-rubygem-eventmachine
+      packages:
+      - ruby21-rubygem-eventmachine
+    - name: ruby21-rubygem-i18n
+      packages:
+      - ruby21-rubygem-i18n
+    - name: ruby21-rubygem-json
+      packages:
+      - ruby21-rubygem-json
+    - name: ruby21-rubygem-mcollective-client
+      packages:
+      - ruby21-rubygem-mcollective-client
+    - name: ruby21-rubygem-mime-types
+      packages:
+      - ruby21-rubygem-mime-types
+    - name: ruby21-rubygem-net-ssh
+      packages:
+      - ruby21-rubygem-net-ssh
+    - name: ruby21-rubygem-net-ssh-gateway
+      packages:
+      - ruby21-rubygem-net-ssh-gateway
+    - name: ruby21-rubygem-net-ssh-multi
+      packages:
+      - ruby21-rubygem-net-ssh-multi
+    - name: ruby21-rubygem-netaddr
+      packages:
+      - ruby21-rubygem-netaddr
+    - name: ruby21-rubygem-open4
+      packages:
+      - ruby21-rubygem-open4
+    - name: ruby21-rubygem-openstack
+      packages:
+      - ruby21-rubygem-openstack
+    - name: ruby21-rubygem-popen4
+      packages:
+      - ruby21-rubygem-popen4
+    - name: ruby21-rubygem-raemon
+      packages:
+      - ruby21-rubygem-raemon
+    - name: ruby21-rubygem-rest-client
+      packages:
+      - ruby21-rubygem-rest-client
+    - name: ruby21-rubygem-rgen
+      packages:
+      - ruby21-rubygem-rgen
+    - name: ruby21-rubygem-shadow
+      packages:
+      - ruby21-rubygem-shadow
+    - name: ruby21-rubygem-stomp
+      packages:
+      - ruby21-rubygem-stomp
+    - name: ruby21-rubygem-symboltable
+      packages:
+      - ruby21-rubygem-symboltable
+    - name: ruby21-rubygem-systemu
+      packages:
+      - ruby21-rubygem-systemu
+    - name: rubygem-net-ssh
+      packages:
+      - rubygem-net-ssh
+    - name: rubygem-net-ssh-gateway
+      packages:
+      - rubygem-net-ssh-gateway
+    - name: scipy
+      packages:
+      - scipy
+    - name: screen
+      packages:
+      - screen
+    - name: send2syslog
+      packages:
+      - send2syslog
+    - name: shotgun
+      packages:
+      - shotgun
+    - name: strace
+      packages:
+      - strace
+    - name: subscription-manager
+      packages:
+      - subscription-manager
+    - name: suitesparse
+      packages:
+      - suitesparse
+    - name: supervisor
+      packages:
+      - supervisor
+    - name: syslinux
+      packages:
+      - syslinux
+    - name: sysstat
+      packages:
+      - sysstat
+    - name: tcl
+      packages:
+      - tcl
+    - name: tftp
+      packages:
+      - tftp-server
+    - name: tk
+      packages:
+      - tk
+    - name: undefined
+      packages:
+      - tcp_wrappers
+      - libXau
+      - libX11
+      - ConsoleKit-libs
+      - sg3_utils
+      - lm_sensors-libs
+      - PyYAML
+      - GeoIP
+      - libX11-common
+      - libXpm
+      - sg3_utils-libs
+      - MAKEDEV
+      - ConsoleKit
+      - pyOpenSSL
+      - libICE
+      - wxBase
+      - wxGTK-gl
+      - libSM
+      - mod_wsgi
+      - libXfixes
+      - libXcomposite
+      - tcp_wrappers-libs
+      - SDL
+      - libXcursor
+      - libXrender
+      - libXxf86vm
+      - libXrandr
+      - wxGTK
+      - MySQL-python
+      - libXext
+      - libXinerama
+      - libXdamage
+      - libXft
+      - MySQL-shared
+      - libXi
+      - PyPAM
+      - bfa-firmware
+      - setup
+      - aic94xx-firmware-30
+      - tzdata-2014e
+      - dhclient
+      - basesystem
+      - glibc-common
+      - grub
+      - glibc
+      - bash
+      - wget
+      - libcap
+      - sudo
+      - info
+      - e2fsprogs
+      - chkconfig
+      - efibootmgr
+      - audit-libs
+      - acl
+      - libxml2
+      - telnet
+      - bzip2-libs
+      - readline
+      - ql2400-firmware
+      - libselinux
+      - ivtv-firmware-20080701
+      - sed
+      - iwl6000-firmware
+      - xz-libs
+      - atmel-firmware
+      - libidn
+      - iwl4965-firmware
+      - file-libs
+      - iwl6000g2a-firmware
+      - libudev-147
+      - iwl100-firmware
+      - findutils
+      - ipw2100-firmware
+      - lua
+      - rootfiles
+      - pcre
+      - fuel-target-centos-images
+      - cyrus-sasl-lib
+      - libpcap
+      - expat
+      - perl
+      - libgpg-error
+      - cpio
+      - sysvinit-tools
+      - libyaml
+      - pth
+      - p11-kit
+      - ca-certificates
+      - glib2
+      - dbus-glib
+      - device-mapper-persistent-data
+      - libnih
+      - libutempter
+      - vim-minimal
+      - net-tools
+      - libselinux-ruby
+      - tar
+      - libicu
+      - libss
+      - db4-utils
+      - pinentry
+      - binutils
+      - m4
+      - dash
+      - groff
+      - coreutils-libs
+      - cracklib
+      - coreutils
+      - module-init-tools
+      - redhat-logos
+      - pciutils
+      - logrotate
+      - nss-sysinit
+      - openldap
+      - libcap-ng
+      - ethtool
+      - gpm-libs
+      - krb5-libs
+      - ruby
+      - libssh2
+      - curl
+      - rpm
+      - gpgme
+      - bind-libs
+      - mysql-libs
+      - fipscheck
+      - libsemanage
+      - python
+      - python-iniparse
+      - rpm-python
+      - python-six
+      - pyparsing
+      - python-tablib
+      - yum-metadata-parser
+      - python-pypcap
+      - python-urlgrabber
+      - yum
+      - python-daemonize
+      - python-cliff
+      - nailgun-net-check
+      - newt
+      - plymouth-core-libs
+      - centos-release-6
+      - iptables
+      - iputils-20071127
+      - initscripts
+      - device-mapper-libs
+      - device-mapper-event-libs
+      - virt-what
+      - device-mapper-event
+      - libdrm
+      - ntpdate
+      - kbd
+      - dracut-kernel-004
+      - cyrus-sasl
+      - crontabs
+      - cronie
+      - selinux-policy
+      - kernel
+      - system-config-firewall-base
+      - fuel-docker-images
+      - lvm2
+      - openssh-server
+      - libgcc
+      - b43-openfwwf
+      - filesystem
+      - dhcp-common
+      - authconfig
+      - ncurses-base
+      - vim-enhanced
+      - nss-softokn-freebl
+      - ncurses-libs
+      - nmap-ncat
+      - libattr
+      - passwd
+      - zlib
+      - audit
+      - popt
+      - gdisk
+      - libacl
+      - mlocate
+      - db4
+      - rsync
+      - nspr
+      - attr
+      - daemonize
+      - nss-util
+      - iwl1000-firmware
+      - libsepol
+      - iwl5000-firmware
+      - shadow-utils
+      - libertas-usb8388-firmware-20150115
+      - dbus-libs
+      - ql2500-firmware
+      - sqlite
+      - zd1211-firmware
+      - gawk
+      - iwl3945-firmware
+      - libuuid
+      - iwl6050-firmware
+      - libblkid
+      - iwl5150-firmware
+      - libselinux-utils
+      - ipw2200-firmware
+      - bzip2
+      - fuel-bootstrap-image
+      - grep
+      - which
+      - elfutils-libelf
+      - gdbm
+      - perl-libs
+      - perl-version
+      - pytz-2010h
+      - nss-softokn
+      - checkpolicy
+      - libedit
+      - pciutils-libs
+      - dmidecode
+      - pkgconfig
+      - libtasn1
+      - p11-kit-trust
+      - gamin
+      - shared-mime-info
+      - grubby
+      - libgcrypt
+      - file
+      - upstart
+      - procps
+      - psmisc
+      - augeas-libs
+      - gmp
+      - libusb
+      - e2fsprogs-libs
+      - libgomp
+      - diffutils
+      - make
+      - hal-info-20090716
+      - vim-common
+      - ncurses
+      - less-436
+      - gzip
+      - cracklib-dicts
+      - pam
+      - hwdata
+      - plymouth-scripts
+      - libpciaccess
+      - nss
+      - nss-tools
+      - libuser
+      - mingetty
+      - keyutils-libs
+      - openssl
+      - libcurl
+      - rpm-libs
+      - gnupg2
+      - ruby21-rubygem
+      - tcpdump
+      - bind-utils
+      - fipscheck-lib
+      - ustr
+      - vconfig
+      - libffi
+      - python-libs
+      - python-setuptools
+      - python-argparse
+      - python-stevedore
+      - python-cmd2
+      - pygpgme
+      - python-pycurl
+      - yum-plugin-fastestmirror
+      - scapy
+      - python-cliff-tablib
+      - slang
+      - newt-python
+      - kbd-misc
+      - policycoreutils
+      - iproute
+      - util-linux-ng
+      - udev-147
+      - device-mapper
+      - openssh
+      - lvm2-libs
+      - plymouth
+      - ntp
+      - dracut-004
+      - rsyslog
+      - postfix
+      - cronie-anacron
+      - iptables-ipv6
+      - linux-firmware-20150115
+      - selinux-policy-targeted
+      - openssh-clients
+      - erlang-stdlib-R14B
+      - erlang-ssl-R14B
+      - erlang-crypto-R14B
+      - yum-utils
+      - erlang-otp_mibs-R14B
+      - erlang-tools-R14B
+      - erlang-public_key-R14B
+      - erlang-kernel-R14B
+      - erlang-hipe-R14B
+      - erlang-snmp-R14B
+      - erlang-et-R14B
+      - erlang-sasl-R14B
+      - erlang-webtool-R14B
+      - erlang-os_mon-R14B
+      - erlang-inets-R14B
+      - erlang-xmerl-R14B
+      - erlang-syntax_tools-R14B
+      - erlang-compiler-R14B
+      - erlang-mnesia-R14B
+      - erlang-observer-R14B
+      - erlang-erts-R14B
+      - erlang-runtime_tools-R14B
+      - erlang-gs-R14B
+      - erlang-wx-R14B
+      - pydot-ng
+      - fuel-image
+      - fuel-provisioning-scripts
+    - name: uwsgi
+      packages:
+      - uwsgi-plugin-python
+      - uwsgi
+      - uwsgi-plugin-common
+    - name: xinetd
+      packages:
+      - xinetd
+    - name: xz
+      packages:
+      - xz
+      - xz-lzma-compat
+    - name: yajl
+      packages:
+      - yajl
+    - name: zlib
+      packages:
+      - zlib-devel
 bootstrap:
   projects:
     - name: undefined
