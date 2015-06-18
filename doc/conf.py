@@ -45,9 +45,11 @@ exclude_patterns = ['_build']
 
 pygments_style = 'sphinx'
 
-html_theme = 'classic'
-html_static_path = ['_static']
+html_theme = 'sphinxdoc'
+html_theme_path = ["_templates"]
+html_sidebars = {
+   '**': ['localtoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html'],
+}
 htmlhelp_basename = 'fuel-qadoc'
-html_favicon = '_static/favicon.ico'
 
 intersphinx_mapping = {'http://docs.python.org/': None}
