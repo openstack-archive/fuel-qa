@@ -27,6 +27,7 @@ from fuelweb_test.helpers.checkers import check_repo_managment
 from fuelweb_test.helpers.checkers import check_stats_on_collector
 from fuelweb_test.helpers.checkers import check_stats_private_info
 from fuelweb_test.helpers.checkers import count_stats_on_collector
+from fuelweb_test.helpers.patching import mirror_remote_repository
 from proboscis import SkipTest
 from proboscis.asserts import assert_equal
 
@@ -168,14 +169,19 @@ def update_packages(func):
 
             remote = environment.d_env.get_admin_remote()
 
-            centos_files_count, ubuntu_files_count = \
-                environment.admin_actions.upload_packages(
-                    local_packages_dir=settings.UPDATE_FUEL_PATH,
-                    centos_repo_path=settings.LOCAL_MIRROR_CENTOS,
-                    ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
+            if settings.UPDATE_FUEL_MIRROR:
+                mirror_remote_repository(remote,
+                                         settings.UPDATE_FUEL_MIRROR,
+                                         settings.LOCAL_MIRROR_CENTOS)
+            else:
+                centos_files_count, ubuntu_files_count = \
+                    environment.admin_actions.upload_packages(
+                        local_packages_dir=settings.UPDATE_FUEL_PATH,
+                        centos_repo_path=settings.LOCAL_MIRROR_CENTOS,
+                        ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
 
-            if centos_files_count == 0:
-                return result
+                if centos_files_count == 0:
+                    return result
 
             # Add temporary repo with new packages to YUM configuration
             conf_file = '/etc/yum.repos.d/temporary.repo'
