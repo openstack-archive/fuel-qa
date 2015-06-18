@@ -17,6 +17,7 @@ help:
 
 
 doc-html:
+	$ which sphinx-build
 	$(SPHINXBUILD) -b html $(SPHINXOPTS) $(DOC_BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(DOC_BUILDDIR)/html."
