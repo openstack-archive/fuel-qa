@@ -1019,9 +1019,9 @@ class FuelWebClient(object):
                 "Waiting task \"{task}\" timeout {timeout} sec "
                 "was exceeded: ".format(task=task["name"], timeout=timeout))
         took = time.time() - start
+        task = self.client.get_task(task['id'])
         logger.info('Task %s finished. Took %d seconds', task, took)
-
-        return self.client.get_task(task['id'])
+        return task
 
     @logwrap
     def task_wait_progress(self, task, timeout, interval=5, progress=None):
