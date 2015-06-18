@@ -1588,6 +1588,9 @@ master:
     - name: freetype
       packages:
       - freetype
+    - name: fuel-library
+      packages:
+      - fuel-library6.1
     - name: fuel-ostf
       packages:
       - fuel-ostf
