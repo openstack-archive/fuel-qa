@@ -16,10 +16,12 @@ import os
 import os.path
 import time
 
+from devops.helpers.helpers import wait
 from proboscis import test
 from proboscis.asserts import assert_true
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers.os_actions import OpenStackActions
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.common import Common
 from fuelweb_test import logger
@@ -611,3 +613,100 @@ class ContrailPlugin(TestBasic):
             failed_test_name=[('Check network connectivity '
                                'from instance via floating IP'),
                               ('Launch instance with file injection')])
+
+    @test(depends_on=[deploy_controller_compute_contrail],
+          groups=["contrail_vm_connection"])
+    @log_snapshot_after_test
+    def contrail_vm_connection(self):
+        """Verify that Controller node can be
+           deleted and added after deploying
+
+        Scenario:
+            1. Revert snapshot "deploy_controller_compute_contrail"
+            2. Run OSTF tests
+
+        Duration 140 min
+
+        """
+        self.env.revert_snapshot("deploy_controller_compute_contrail")
+
+        os_ip = self.fuel_web.get_public_vip(self.cluster_id)
+        os_conn = OpenStackActions(
+            controller_ip=os_ip, user='admin',
+            passwd='admin', tenant='admin'
+        )
+
+        images_list = os_conn.nova.images.list()
+        flavors_list = os_conn.nova.flavors.list()
+        hypervisors_list = os_conn.get_hypervisors()
+
+        for image in images_list:
+            for i in range(4):
+                os_conn.nova.servers.create(flavor=flavors_list[0],
+                                            name='test_{0}_{1}'
+                                            .format(images_list[0].name, i),
+                                            image=image)
+        # Wait for launch VMs
+        for hypervisor in hypervisors_list:
+            t1 = time.time()
+            while time.time() < t1 + 300:
+                if os_conn.get_hypervisor_vms_count(hypervisor) != 0:
+                    break
+                else:
+                    raise \
+                        Exception("Hypervisor {0} does not have VM".format
+                                  (hypervisor.name))
+
+        # Verify that current state of each VMs is Active and get ip of VMs
+#        srv_ip = []
+#        srv_list = os_conn.get_servers()
+#        for srv in srv_list:
+#            wait(lambda: os_conn.get_instance_detail
+# (srv).status == "ACTIVE", timeout=60 * 60)
+#            logger.info("Current state of Vm is {}".
+# format(os_conn.get_instance_detail(srv).status))
+#            ip = srv.networks[srv.networks.keys()[0]][0]
+#            srv_ip.append(ip)
+
+        # Verify that current state of each VMs is Active
+        srv_list = os_conn.get_servers()
+        for srv in srv_list:
+            wait(
+                lambda: os_conn.get_instance_detail(srv).status == "ACTIVE",
+                timeout=60 * 60)
+            logger.info(
+                "Current state of Vm is {}".format(
+                    os_conn.get_instance_detail(srv).status))
+        # Get ip of VMs
+        srv_ip = []
+        srv_list = os_conn.get_servers()
+        for srv in srv_list:
+            ip = srv.networks[srv.networks.keys()[0]][0]
+            srv_ip.append(ip)
+
+# VMs on different hypervisors should communicate between each other
+#        for ip_1 in srv_ip:
+#            remote_instance = self.env.d_env.get_ssh_to_remote(ip_1)
+#            for ip_2 in srv_ip:
+#                if ip_1 != ip_2:
+#                    assert_true(
+#                        check_ping(remote_instance, ip_2, deadline=120,
+#                            interval=10),
+#                            "No Internet access from {0}".format(ip))
+        for ip_1 in srv_ip:
+            ssh = self.fuel_web.get_ssh_for_node("slave-01")
+            wait(lambda: not ssh.execute('curl -s -m1 http://'
+                                         + ip_1 + ':22 |grep -iq'
+                                                  ' "[a-z]"')['exit_code'],
+                 interval=10, timeout=100)
+            for ip_2 in srv_ip:
+                if ip_1 != ip_2:
+                    # Check server's connectivity
+                    res = int(os_conn.execute_through_host(ssh, ip_1,
+                                                           "ping -q -c3 "
+                                                           + ip_2 +
+                                                           "| grep -o '[0-9] "
+                                                           "packets received' "
+                                                           "| cut -f1 -d ' '"))
+                    assert_true(res == 3,
+                                "Error in Instances network connectivity.")
