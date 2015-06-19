@@ -171,6 +171,12 @@ class ContrailPlugin(TestBasic):
             if node.get('pending_roles') == ['base-os']:
                 self.fuel_web.update_node_disk(node.get('id'), disk_part)
 
+    def long_deploy(self):
+        """for tests which run more than 7800"""
+        time_run = 240*60
+        task = self.fuel_web.deploy_cluster(self.cluster_id)
+        self.assert_task_success(task, timeout=time_run)
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["install_contrail"])
     @log_snapshot_after_test
@@ -536,8 +542,7 @@ class ContrailPlugin(TestBasic):
         # fill public field in contrail settings
         self._activate_plugin()
 
-        self.fuel_web.deploy_cluster_wait(self.cluster_id,
-                                          check_services=False)
+        self.long_deploy()
 
         # create net and subnet
         self._create_net_subnet(self.cluster_id)
@@ -546,15 +551,13 @@ class ContrailPlugin(TestBasic):
         self.fuel_web.update_nodes(
             self.cluster_id, {'slave-04': ['controller']}, False, True)
 
-        self.fuel_web.deploy_cluster_wait(self.cluster_id,
-                                          check_services=False)
+        self.long_deploy()
 
         # add 1 node with controller role and redeploy cluster
         self.fuel_web.update_nodes(
             self.cluster_id, {'slave-07': ['controller']})
 
-        self.fuel_web.deploy_cluster_wait(self.cluster_id,
-                                          check_services=False)
+        self.long_deploy()
 
         # TODO
         # Tests using north-south connectivity are expected to fail because
