@@ -151,6 +151,24 @@ class ContrailPlugin(TestBasic):
             }
         })
 
+    def change_disk_size(self):
+        """
+        Configure disks on base-os nodes
+        """
+        nailgun_nodes = \
+            self.fuel_web.client.list_cluster_nodes(self.cluster_id)
+        base_os_disk = 40960
+        base_os_disk_gb = ("{0}G".format(round(base_os_disk / 1024, 1)))
+        logger.info('disk size is {0}'.format(base_os_disk_gb))
+        disk_part = {
+            "vda": {
+                "os": base_os_disk, }
+        }
+
+        for node in nailgun_nodes:
+            if node.get('pending_roles') == ['base-os']:
+                self.fuel_web.update_node_disk(node.get('id'), disk_part)
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["install_contrail"])
     @log_snapshot_after_test
@@ -201,6 +219,9 @@ class ContrailPlugin(TestBasic):
             contrail=True
         )
 
+        # configure disks on base-os nodes
+        self.change_disk_size()
+
         # fill public field in contrail settings
         self._activate_plugin()
 
@@ -241,6 +262,9 @@ class ContrailPlugin(TestBasic):
             },
             contrail=True
         )
+
+        # configure disks on base-os nodes
+        self.change_disk_size()
 
         # fill public field in contrail settings
         self._activate_plugin()
@@ -311,6 +335,9 @@ class ContrailPlugin(TestBasic):
             },
             contrail=True
         )
+
+        # configure disks on base-os nodes
+        self.change_disk_size()
 
         # fill public field in contrail settings
         self._activate_plugin()
@@ -394,6 +421,9 @@ class ContrailPlugin(TestBasic):
             },
             contrail=True
         )
+
+        # configure disks on base-os nodes
+        self.change_disk_size()
 
         # fill public field in contrail settings
         self._activate_plugin()
@@ -498,6 +528,9 @@ class ContrailPlugin(TestBasic):
             contrail=True
         )
 
+        # configure disks on base-os nodes
+        self.change_disk_size()
+
         # fill public field in contrail settings
         self._activate_plugin()
 
@@ -579,6 +612,9 @@ class ContrailPlugin(TestBasic):
             },
             contrail=True
         )
+
+        # configure disks on base-os nodes
+        self.change_disk_size()
 
         # fill public field in contrail settings
         self._activate_plugin()
