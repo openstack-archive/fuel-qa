@@ -139,6 +139,12 @@ def main():
     tests_groups = get_tests_groups_from_jenkins(
         options.job_name, options.build_number) if options.job_name else []
 
+    # If Jenkins job build is specified, but it doesn't have downstream builds
+    # with tests groups in jobs names, then skip tests cases uploading because
+    # ALL existing tests cases will be uploaded
+    if options.job_name and not tests_groups:
+        return
+
     tests_descriptions = get_tests_descriptions(
         milestone_id=testrail_milestone['id'],
         tests_include=TestRailSettings.tests_include,
