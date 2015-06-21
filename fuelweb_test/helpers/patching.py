@@ -72,6 +72,10 @@ patching_validation_schema = {
         'required': False,
         'data_type': list
     },
+    'tasks_timeout': {
+        'required': False,
+        'data_type': int
+    },
 }
 
 
@@ -426,6 +430,7 @@ def verify_fix_apply_step(apply_step):
 
 def validate_fix_apply_step(apply_step, environment, slaves):
     verify_fix_apply_step(apply_step)
+    slaves = [] if not slaves else slaves
     command = ''
     remotes_ips = set()
     devops_action = ''
@@ -491,8 +496,14 @@ def validate_fix_apply_step(apply_step, environment, slaves):
                     "Step #{0} in apply patch scenario perform '{1}', but "
                     "tasks aren't specified".format(apply_step['id'],
                                                     apply_step['type']))
-        command = 'fuel node --node {0} --tasks {1}'.format(
-            ','.join(map(str, nodes_ids)), ' '.join(apply_step['tasks']))
+        tasks_timeout = apply_step['tasks_timeout'] if 'tasks_timeout' in \
+            apply_step.keys() else 60 * 30
+        command = [
+            'RUN_TASKS',
+            nodes_ids,
+            apply_step['tasks'],
+            tasks_timeout
+        ]
     else:
         assert_true(len(apply_step['command'] or '') > 0,
                     "Step #{0} in apply patch scenario perform '{1}', but "
@@ -559,6 +570,23 @@ def run_actions(environment, target, slaves, action_type='patch-scenario'):
                 script=file_name)
             command = "echo '{0}' > {1}/{2}".format(file_content, upload_path,
                                                     file_name)
+        elif 'RUN_TASKS' in command:
+            nodes_ids = command[1],
+            tasks = command[2]
+            timeout = command[3]
+            nodes = [node for node in environment.fuel_web.client.list_nodes()
+                     if node['id'] in nodes_ids]
+            assert_true(len(nodes_ids) == len(nodes),
+                        'Get nodes with ids: {0} for deployment task, but'
+                        'found {1}!'.format(nodes_ids,
+                                            [n['id'] for n in nodes]))
+            assert_true(len(set([node['cluster'] for node in nodes])) == 1,
+                        'Slaves for patching actions belong to different '
+                        'environments, can\'t run deployment tasks!')
+            cluster_id = nodes[0]['cluster']
+            environment.fuel_web.wait_deployment_tasks(cluster_id, nodes_ids,
+                                                       tasks, timeout)
+            continue
         for remote in remotes:
             environment.execute_remote_cmd(remote, command)
         if devops_action == 'down':

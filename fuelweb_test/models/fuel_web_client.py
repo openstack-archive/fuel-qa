@@ -24,6 +24,7 @@ from devops.helpers.helpers import wait
 from ipaddr import IPNetwork
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
+from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_true
 
 from fuelweb_test.helpers import ceph
@@ -2079,3 +2080,23 @@ class FuelWebClient(object):
             remote_ceph.execute("ceph osd rm osd.{}".format(id))
         # remove ceph node from crush map
         remote_ceph.execute("ceph osd crush remove {}".format(hostname))
+
+    @logwrap
+    def run_deployment_tasks(self, cluster_id, nodes, tasks):
+        self.client.put_deployment_tasks_for_cluster(cluster_id=cluster_id,
+                                                     data=tasks,
+                                                     node_id=','.join(nodes))
+        tasks = self.client.get_tasks()
+        deploy_tasks = [t for t in tasks if t['status'] == 'running'
+                        and t['name'] == 'deployment'
+                        and t['cluster'] == cluster_id]
+        for task in deploy_tasks:
+            if min([t['progress'] for t in deploy_tasks]) == task['progress']:
+                return task
+
+    @logwrap
+    def wait_deployment_tasks(self, cluster_id, nodes, tasks, timeout=60 * 10):
+        task = self.run_deployment_tasks(cluster_id, nodes, tasks)
+        assert_is_not_none(task,
+                           'Got empty result after running deployment tasks!')
+        self.assert_task_success(task, timeout)
