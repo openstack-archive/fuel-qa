@@ -57,6 +57,7 @@ def import_tests():
     from tests.tests_separate_services import test_separate_keystone  # noqa
     from tests.tests_separate_services import test_separate_multiroles  # noqa
     from tests.tests_separate_services import test_separate_rabbitmq  # noqa
+    from tests import test_reduced_footprint  # noqa
     from tests.tests_strength import test_failover  # noqa
     from tests.tests_strength import test_failover_with_ceph  # noqa
     from tests.tests_strength import test_master_node_failover  # noqa
