@@ -495,3 +495,15 @@ class NailgunClient(object):
     @json_parse
     def add_network_group(self, network_data):
         return self.client.post('/api/networks/', data=network_data)
+
+    @logwrap
+    @json_parse
+    def create_vms_nodes(self, node_id, data):
+        url = "/api/nodes/{0}/vms_conf/".format(node_id)
+        return self.client.put(url, {'vms_conf': data})
+
+    @logwrap
+    @json_parse
+    def run_spawn_vms(self, cluster_id):
+        url = '/api/clusters/{0}/spawn_vms/'.format(cluster_id)
+        return self.client.put(url)
