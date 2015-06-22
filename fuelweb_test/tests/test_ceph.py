@@ -40,7 +40,7 @@ class CephCompact(TestBasic):
           groups=["ceph_ha_one_controller_compact",
                   "ha_one_controller_nova_ceph",
                   "ceph_ha_one_controller_compact_neutron", "ceph",
-                  "deployment"])
+                  "nova", "deployment"])
     @log_snapshot_after_test
     def ceph_ha_one_controller_compact(self):
         """Deploy ceph in HA mode with 1 controller
@@ -365,7 +365,7 @@ class CephRadosGW(TestBasic):
     """CephRadosGW."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_release],
-          groups=["ceph_rados_gw", "bvt_2"])
+          groups=["ceph_rados_gw", "bvt_2", "ceph", "neutron", "deployment"])
     @log_snapshot_after_test
     def ceph_rados_gw(self):
         """Deploy ceph HA with RadosGW for objects

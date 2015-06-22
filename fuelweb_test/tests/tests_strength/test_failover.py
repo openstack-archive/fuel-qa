@@ -290,7 +290,8 @@ class TestHaNovaFailover(TestHaFailoverBase):
     snapshot_name = "prepare_ha_nova"
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["prepare_ha_nova", "nova", "deployment"])
+          groups=["prepare_ha_nova", "nova", "cinder", "swift", "glance",
+                  "deployment"])
     @log_snapshot_after_test
     def prepare_ha_nova(self):
         """Prepare cluster in HA/Nova mode for failover tests
