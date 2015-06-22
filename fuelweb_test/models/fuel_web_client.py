@@ -2269,3 +2269,9 @@ class FuelWebClient(object):
         return {'username': username,
                 'password': password,
                 'tenant': tenant}
+
+    @logwrap
+    def spawn_vms_wait(self, cluster_id, timeout=60 * 60, interval=30):
+            logger.info('Spawn vms of a cluster %s', cluster_id)
+            task = self.client.run_spawn_vms(cluster_id)
+            self.assert_task_success(task, timeout=timeout, interval=interval)
