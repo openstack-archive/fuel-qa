@@ -2269,3 +2269,73 @@ class FuelWebClient(object):
         return {'username': username,
                 'password': password,
                 'tenant': tenant}
+
+    @logwrap
+    def spawn_vms_wait(self, cluster_id, timeout=60 * 60, interval=30):
+            logger.info('Spawn vms of a cluster %s', cluster_id)
+            task = self.client.run_spawn_vms(cluster_id)
+            self.assert_task_success(task, timeout=timeout, interval=interval)
+
+    @logwrap
+    def update_nodes_ff(self, cluster_id, nodes_dict,
+                        pending_addition=True, pending_deletion=False,
+                        update_nodegroups=False, custom_names=None,
+                        update_interfaces=True):
+
+        # update nodes in cluster
+        nodes_data = []
+        nodes_groups = {}
+        updated_nodes = []
+        for node in nodes_dict:
+            if MULTIPLE_NETWORKS:
+                node_roles = nodes_dict[node['name']][0]
+                node_group = nodes_dict[node['name']][1]
+            else:
+                node_roles = nodes_dict[node['name']]
+                node_group = 'default'
+
+            wait(lambda:
+                 node['name']['online'],
+                 timeout=60 * 2)
+            assert_true(node['name']['online'],
+                        'Node {} is online'.format(node['name']['mac']))
+
+            if custom_names:
+                name = custom_names.get(node['name'],
+                                        '{}_{}'.format(
+                                            node['name'],
+                                            "_".join(node_roles)))
+            else:
+                name = '{}_{}'.format(node['name'], "_".join(node_roles))
+
+            node_data = {
+                'cluster_id': cluster_id,
+                'id': node['id'],
+                'pending_addition': pending_addition,
+                'pending_deletion': pending_deletion,
+                'pending_roles': node_roles,
+                'name': name
+            }
+            nodes_data.append(node_data)
+            if node_group not in nodes_groups.keys():
+                nodes_groups[node_group] = []
+            nodes_groups[node_group].append(node)
+            updated_nodes.append(node)
+
+        # assume nodes are going to be updated for one cluster only
+        cluster_id = nodes_data[-1]['cluster_id']
+        node_ids = [str(node_info['id']) for node_info in nodes_data]
+        self.client.update_nodes(nodes_data)
+
+        nailgun_nodes = self.client.list_cluster_nodes(cluster_id)
+        cluster_node_ids = map(lambda _node: str(_node['id']), nailgun_nodes)
+        assert_true(
+            all([node_id in cluster_node_ids for node_id in node_ids]))
+
+        if update_interfaces and not pending_deletion:
+            self.update_nodes_interfaces(cluster_id, updated_nodes)
+        if update_nodegroups:
+            self.update_nodegroups(cluster_id=cluster_id,
+                                   node_groups=nodes_groups)
+
+        return nailgun_nodes
