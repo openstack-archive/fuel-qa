@@ -14,6 +14,7 @@
 
 import re
 import time
+from netaddr import IPNetwork
 from devops.error import TimeoutError
 
 from devops.helpers.helpers import _tcp_ping
@@ -431,6 +432,85 @@ class EnvironmentModel(object):
                       " -regex '.*/mos[0-9,\.]+\-(updates|security).repo' | " \
                       "xargs -n1 -i sed '$aenabled=0' -i {}"
                 self.execute_remote_cmd(remote, cmd)
+
+    def change_default_network_settings(self):
+        api_version = self.fuel_web.client.get_api_version()
+        if int(api_version["release"][0]) < 6:
+            return
+
+        def fetch_networks(networks):
+            result = {}
+            for net in networks:
+                if (net['name'] == 'private' and
+                        net.get('seg_type', '') == 'tun'):
+                    result['private_tun'] = net
+                elif net['name'] == 'public':
+                    result['public'] = net
+                elif net['name'] == 'management':
+                    result['management'] = net
+                elif net['name'] == 'storage':
+                    result['storage'] = net
+            return result
+
+        public_net = IPNetwork(
+            self.d_env.get_network(name="public").ip_network)
+        manage_net = IPNetwork(
+            self.d_env.get_network(name="management").ip_network)
+        storage_net = IPNetwork(
+            self.d_env.get_network(name="storage").ip_network)
+        private_net = IPNetwork(
+            self.d_env.get_network(name="private").ip_network)
+
+        logger.info("Applying default network settings")
+        for _release in self.fuel_web.client.get_releases():
+            logger.info(
+                'Applying changes for release: {}'.format(
+                    _release['name']))
+            net_settings = \
+                self.fuel_web.client.get_release_default_net_settings(
+                    _release['id'])
+            for net_provider in net_settings:
+                if net_provider == 'bonding':
+                    continue
+
+                # TODO(vkhlyunev): verify this block
+                if net_provider == 'baremetal':
+                    net = list(IPNetwork(
+                        self.d_env.get_network(name='ironic').ip_network))
+                    half = len(net) / 2
+                    net_settings[net_provider]["baremetal_ranges"] =\
+                        [[str(net[half]), str(net[-3])]]
+                    continue
+
+                networks = fetch_networks(
+                    net_settings[net_provider]['networks'])
+
+                if net_provider == 'neutron':
+                    pr = networks['private_tun']
+                    pr['cidr'] = str(private_net)
+                    net_settings[net_provider]['config'][
+                        'internal_cidr'] = '{}/{}'.format(
+                        private_net.network, private_net.prefixlen + 1)
+                    net_settings[net_provider]['config'][
+                        'internal_gateway'] = str(private_net.network + 1)
+
+                pub = networks['public']
+                pub['cidr'] = str(public_net)
+                pub['gateway'] = str(public_net.network + 1)
+                pub_range = list(IPNetwork(public_net))
+                pub['ip_range'] = [str(pub_range[2]),
+                                   str(pub_range[len(pub_range)/2])]
+
+                net_settings[net_provider][
+                    'config']['floating_ranges'] = \
+                    [[str(pub_range[len(pub_range)/2 + 1]),
+                     str(pub_range[len(pub_range)-2])]]
+
+                networks['management']['cidr'] = str(manage_net)
+                networks['storage']['cidr'] = str(storage_net)
+
+            self.fuel_web.client.put_release_default_net_settings(
+                _release['id'], net_settings)
 
     @update_rpm_packages
     @upload_manifests
