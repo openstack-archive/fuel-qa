@@ -512,7 +512,8 @@ class FuelWebClient(object):
                 self.update_network_configuration(cluster_id,
                                                   nodegroups=NODEGROUPS)
             else:
-                self.update_network_configuration(cluster_id)
+                pass  # temporary stub for disabling update
+                # self.update_network_configuration(cluster_id)
 
             cn = self.get_public_vip(cluster_id)
             change_cluster_ssl_config(attributes, cn)

@@ -14,6 +14,7 @@
 
 import re
 import time
+from netaddr import IPNetwork
 from devops.error import TimeoutError
 
 from devops.helpers.helpers import _tcp_ping
@@ -431,6 +432,81 @@ class EnvironmentModel(object):
                       " -regex '.*/mos[0-9,\.]+\-(updates|security).repo' | " \
                       "xargs -n1 -i sed '$aenabled=0' -i {}"
                 self.execute_remote_cmd(remote, cmd)
+
+    def change_default_network_settings(self):
+        api_version = self.fuel_web.client.get_api_version()
+        if int(api_version["release"][0]) < 6:
+            return
+
+        def get_net(name):
+            return IPNetwork(self.d_env.get_network(name=name).ip_network)
+
+        def fetch_networks(networks):
+            result = {}
+            for net in networks:
+                if (net['name'] == 'private' and
+                        net.get('seg_type') and net['seg_type']) == 'tun':
+                    result['private_tun'] = net
+                elif net['name'] == 'public':
+                    result['public'] = net
+                elif net['name'] == 'management':
+                    result['management'] = net
+                elif net['name'] == 'storage':
+                    result['storage'] = net
+            return result
+
+        public_net = get_net("public")
+        manage_net = get_net("management")
+        storage_net = get_net("storage")
+        private_net = get_net("private")
+
+        logger.info("Applying default network settings")
+        for _release in self.fuel_web.client.get_releases():
+            logger.info(
+                'Applying changes for release: {}'.format(
+                    _release['name']))
+            net_settings = \
+                self.fuel_web.client.get_release_default_net_settings(
+                    _release['id'])
+            for net_provider in net_settings:
+                if net_provider == 'bonding':
+                    continue
+
+                networks = fetch_networks(
+                    net_settings[net_provider]['networks'])
+
+                if net_provider == 'neutron':
+                    pr = networks['private_tun']
+                    pr['cidr'] = '{}'.format(private_net.cidr)
+
+                    prefix = private_net.prefixlen
+                    net_settings[net_provider][
+                        'config']['internal_cidr'] = \
+                        '{}/{}'.format(private_net[0], str(prefix + 1))
+                    net_settings[net_provider][
+                        'config']['internal_gateway'] = \
+                        '{}'.format(private_net[1])
+
+                pub = networks['public']
+                pub['cidr'] = '{}'.format(public_net.cidr)
+                pub['gateway'] = '{}'.format(public_net[1])
+                pub['ip_range'] = ['{}'.format(public_net[2]),
+                                   '{}'.format(public_net[
+                                                   (public_net.size - 2) / 2])]
+
+                management = networks['management']
+                management['cidr'] = '{}'.format(manage_net.cidr)
+
+                storage = networks['storage']
+                storage['cidr'] = '{}'.format(storage_net.cidr)
+
+                net_settings[net_provider][
+                    'config']['floating_ranges'] = \
+                    [['{}'.format(public_net[public_net.size / 2]),
+                      '{}'.format(public_net[public_net.size - 2])]]
+
+            self.fuel_web.client.put_release_default_net_settings(
+                _release['id'], net_settings)
 
     @update_rpm_packages
     @upload_manifests
