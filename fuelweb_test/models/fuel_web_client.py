@@ -2025,9 +2025,9 @@ class FuelWebClient(object):
 
     @logwrap
     def get_rabbit_master_node(self, node, fqdn_needed=False):
-        remote = self.get_ssh_for_node(node)
-        cmd = 'crm resource status master_p_rabbitmq-server'
-        output = ''.join(remote.execute(cmd)['stdout'])
+        with self.get_ssh_for_node(node) as remote:
+            cmd = 'crm resource status master_p_rabbitmq-server'
+            output = ''.join(remote.execute(cmd)['stdout'])
         master_node = re.search(
             'resource master_p_rabbitmq-server is running on: (.*) Master',
             output).group(1)
