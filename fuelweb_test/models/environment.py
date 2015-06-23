@@ -376,6 +376,12 @@ class EnvironmentModel(object):
             (self.d_env.admin_net), 22), timeout=7 * 60)
 
     def setup_customisation(self):
+        if settings.PATCHING_DISABLE_UPDATES:
+            remote = self.d_env.get_admin_remote()
+            cmd = "find /etc/yum.repos.d/ -type f -regextype posix-egrep " \
+                  "-regex '.*/mos[0-9,\.]+\-(updates|security).repo' | " \
+                  "xargs -n1 -i sed '$aenabled=0' -i {}"
+            self.execute_remote_cmd(remote, cmd)
         self.wait_for_provisioning()
         try:
             remote = self.d_env.get_admin_remote()
