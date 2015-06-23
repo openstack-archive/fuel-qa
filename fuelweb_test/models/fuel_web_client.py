@@ -11,6 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from copy import deepcopy
 
 import json
 import re
@@ -511,7 +512,7 @@ class FuelWebClient(object):
                 self.update_nodegroups(cluster_id, node_groups)
                 self.update_network_configuration(cluster_id,
                                                   nodegroups=NODEGROUPS)
-            else:
+            if 'ironic' in settings:
                 self.update_network_configuration(cluster_id)
 
             cn = self.get_public_vip(cluster_id)
@@ -1272,27 +1273,24 @@ class FuelWebClient(object):
     @logwrap
     def update_network_configuration(self, cluster_id, nodegroups=None):
         net_config = self.client.get_networks(cluster_id)
-        if not nodegroups:
-            logger.info('Update network settings of cluster %s', cluster_id)
-            new_settings = self.update_net_settings(net_config)
-        else:
-            new_settings = net_config
+        new_settings = deepcopy(net_config)
+        if nodegroups:
             for nodegroup in nodegroups:
                 logger.info('Update network settings of cluster %s, '
                             'nodegroup %s', cluster_id, nodegroup['name'])
                 new_settings = self.update_net_settings(new_settings,
                                                         nodegroup,
                                                         cluster_id)
-
-        self.update_floating_ranges(new_settings)
         for net in net_config['networks']:
             if 'baremetal' in net['name']:
                 self.update_baremetal_ranges(new_settings)
-        self.client.update_network(
-            cluster_id=cluster_id,
-            networking_parameters=new_settings["networking_parameters"],
-            networks=new_settings["networks"]
-        )
+
+        if not net_config == new_settings:
+            self.client.update_network(
+                cluster_id=cluster_id,
+                networking_parameters=new_settings["networking_parameters"],
+                networks=new_settings["networks"]
+            )
 
     def _get_true_net_name(self, name, net_pools):
         """Find a devops network name in net_pools"""
@@ -1304,13 +1302,7 @@ class FuelWebClient(object):
                             cluster_id=None):
         seg_type = network_configuration.get('networking_parameters', {}) \
             .get('segmentation_type')
-        if not nodegroup:
-            for net in network_configuration.get('networks'):
-                self.set_network(net_config=net,
-                                 net_name=net['name'],
-                                 seg_type=seg_type)
-            return network_configuration
-        else:
+        if nodegroup:
             nodegroup_id = self.get_nodegroup(cluster_id,
                                               nodegroup['name'])['id']
             for net in network_configuration.get('networks'):
@@ -1323,20 +1315,18 @@ class FuelWebClient(object):
                                      net_name=net['name'],
                                      net_pools=nodegroup['pools'],
                                      seg_type=seg_type)
-            return network_configuration
+        return network_configuration
 
     def update_floating_ranges(self, network_configuration):
         nc = network_configuration["networking_parameters"]
 
         public = self.environment.d_env.get_network(name='public').ip
 
-        if not BONDING:
-            float_range = public
-        else:
-            float_range = list(public.subnet(new_prefix=27))[0]
         # Setting of multiple floating IP ranges disabled for 7.0, LP#1490657
         # This feature moved to 8.0: LP#1371363, LP#1490578
-        nc["floating_ranges"] = self.get_range(float_range, 1)
+        if BONDING:
+            float_range = list(public.subnet(new_prefix=27))[0]
+            nc["floating_ranges"] = self.get_range(float_range, 1)
 
     def update_baremetal_ranges(self, network_configuration):
         nc = network_configuration["networking_parameters"]
@@ -2150,7 +2140,7 @@ class FuelWebClient(object):
         else:
             devops_nodes = [self.find_devops_node_by_nailgun_fqdn(
                 slave_node, self.environment.d_env.nodes().slaves)
-                for slave_node in slaves_nodes]
+                            for slave_node in slaves_nodes]
             return devops_nodes
 
     @logwrap
