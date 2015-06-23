@@ -432,6 +432,85 @@ class EnvironmentModel(object):
                       "xargs -n1 -i sed '$aenabled=0' -i {}"
                 self.execute_remote_cmd(remote, cmd)
 
+    def change_default_network_settings(self):
+        api_version = self.fuel_web.client.get_api_version()
+        if int(api_version["release"][0]) < 6:
+            return
+
+        def fetch_networks(networks):
+            """Parse response from api/releases/1/networks and return dict with
+            networks' settings - need for avoiding hardcode"""
+            result = {}
+            for net in networks:
+                if (net['name'] == 'private' and
+                        net.get('seg_type', '') == 'tun'):
+                    result['private_tun'] = net
+                elif (net['name'] == 'private' and
+                        net.get('seg_type', '') == 'gre'):
+                    result['private_gre'] = net
+                elif net['name'] == 'public':
+                    result['public'] = net
+                elif net['name'] == 'management':
+                    result['management'] = net
+                elif net['name'] == 'storage':
+                    result['storage'] = net
+            return result
+
+        public_net = self.d_env.get_network(name="public").ip
+        if not settings.BONDING:
+            manage_net = self.d_env.get_network(name="management").ip
+            storage_net = self.d_env.get_network(name="storage").ip
+            private_net = self.d_env.get_network(name="private").ip
+        else:
+            public_net, manage_net, storage_net, private_net = list(
+                public_net.subnet(new_prefix=public_net.prefixlen + 2))
+
+        logger.info("Applying default network settings")
+        for _release in self.fuel_web.client.get_releases():
+            logger.info(
+                'Applying changes for release: {}'.format(
+                    _release['name']))
+            net_settings = \
+                self.fuel_web.client.get_release_default_net_settings(
+                    _release['id'])
+            for net_provider in net_settings:
+                if net_provider == "bonding":
+                    continue
+
+                networks = fetch_networks(
+                    net_settings[net_provider]['networks'])
+
+                networks['public']['cidr'] = str(public_net)
+                networks['public']['gateway'] = str(public_net.network + 1)
+
+                # use the first half of public network as static public range
+                static, floating = public_net.subnet()
+                networks['public']['ip_range'] = [
+                    str(static[2]), str(static[-1])]
+
+                # use the secong half of public network as floating range
+                net_settings[net_provider]['config']['floating_ranges'] = \
+                    [[str(floating[0]), str(floating[-2])]]
+
+                networks['management']['cidr'] = str(manage_net)
+                networks['storage']['cidr'] = str(storage_net)
+
+                if net_provider == 'neutron':
+                    networks['private_tun']['cidr'] = str(private_net)
+                    networks['private_gre']['cidr'] = str(private_net)
+
+                    net_settings[net_provider]['config']['internal_cidr'] = \
+                        str(private_net)
+                    net_settings[net_provider]['config']['internal_gateway'] =\
+                        str(private_net[1])
+
+                elif net_provider == 'nova_network':
+                    net_settings[net_provider]['config'][
+                        'fixed_networks_cidr'] = str(private_net)
+
+            self.fuel_web.client.put_release_default_net_settings(
+                _release['id'], net_settings)
+
     @update_rpm_packages
     @upload_manifests
     def setup_customisation(self):
