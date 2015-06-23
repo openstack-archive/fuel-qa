@@ -59,6 +59,7 @@ class SetupEnvironment(TestBasic):
         self.check_run("empty")
         with timestat("setup_environment", is_uniq=True):
             self.env.setup_environment()
+            self.env.change_default_network_settings()
 
         if REPLACE_DEFAULT_REPOS:
             self.fuel_web.replace_default_repos()
