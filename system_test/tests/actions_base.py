@@ -85,6 +85,8 @@ class PrepareBase(base_actions_factory.BaseActionsFactory):
         self.env.revert_snapshot("empty", skip_timesync=True)
 
         self.fuel_web.get_nailgun_version()
+        self.env.change_default_network_settings()
+
         if (test_settings.REPLACE_DEFAULT_REPOS and
                 test_settings.REPLACE_DEFAULT_REPOS_ONLY_ONCE):
             self.fuel_web.replace_default_repos()
