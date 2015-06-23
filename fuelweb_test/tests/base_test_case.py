@@ -155,6 +155,7 @@ class SetupEnvironment(TestBasic):
         self.env.revert_snapshot("empty", skip_timesync=True)
 
         self.fuel_web.get_nailgun_version()
+        self.fuel_web.change_default_network_settings()
         if REPLACE_DEFAULT_REPOS and REPLACE_DEFAULT_REPOS_ONLY_ONCE:
             self.fuel_web.replace_default_repos()
         self.env.make_snapshot("ready", is_make=True)
