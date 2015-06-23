@@ -432,6 +432,8 @@ class EnvironmentModel(object):
                       "xargs -n1 -i sed '$aenabled=0' -i {}"
                 self.execute_remote_cmd(remote, cmd)
 
+
+
     @update_rpm_packages
     @upload_manifests
     def setup_customisation(self):
