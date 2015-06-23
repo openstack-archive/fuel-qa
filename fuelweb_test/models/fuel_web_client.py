@@ -577,6 +577,12 @@ class FuelWebClient(object):
             repos = repos_attr['value']
         if help_data.EXTRA_DEB_REPOS:
             self.add_ubuntu_extra_mirrors(repos=repos)
+        if help_data.PATCHING_DISABLE_UPDATES:
+            for repo in repos:
+                if repo['name'] in ('ubuntu-updates', 'ubuntu-security',
+                                    'mos-updates', 'mos-security',
+                                    'mos-holdback'):
+                    repos.remove(repo)
 
         self.report_ubuntu_repos(repos)
         return repos
@@ -586,6 +592,10 @@ class FuelWebClient(object):
         repos = repos_attr['value']
         if help_data.EXTRA_RPM_REPOS:
             self.add_centos_extra_mirrors(repos=repos)
+        if help_data.PATCHING_DISABLE_UPDATES:
+            for repo in repos:
+                if repo['name'] in ('mos-updates', 'mos-security'):
+                    repos.remove(repo)
 
         self.report_centos_repos(repos)
         return repos

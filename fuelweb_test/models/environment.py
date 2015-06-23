@@ -377,6 +377,12 @@ class EnvironmentModel(object):
 
     def setup_customisation(self):
         self.wait_for_provisioning()
+        if settings.PATCHING_DISABLE_UPDATES:
+            remote = self.d_env.get_admin_remote()
+            cmd = "find /etc/yum.repos.d/ -type f -regextype posix-egrep " \
+                  "-regex '.*/mos[0-9,\.]+\-(updates|security).repo' | " \
+                  "xargs -n1 -i sed '$aenabled=0' -i {}"
+            self.execute_remote_cmd(remote, cmd)
         try:
             remote = self.d_env.get_admin_remote()
             cmd = "pkill -sigusr1 -f '^.*/fuelmenu$'"
