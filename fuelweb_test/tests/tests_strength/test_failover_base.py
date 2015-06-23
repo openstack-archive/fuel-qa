@@ -712,7 +712,10 @@ class TestHaFailoverBase(TestBasic):
                                ' not become online '
                                'in nailgun'.format(master_rabbit.name))
 
-        self.fuel_web.check_ceph_status(cluster_id)
+        self.fuel_web.check_ceph_status(
+            cluster_id,
+            offline_nodes=self.fuel_web.get_nailgun_node_by_devops_node(
+                second_master_rabbit)['id'])
 
         # check ha
         try:
@@ -754,6 +757,7 @@ class TestHaFailoverBase(TestBasic):
         wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120)
 
         # delete instance
+        os_conn = os_actions.OpenStackActions(public_vip)
         os_conn.delete_instance(instance)
 
         # run ostf
