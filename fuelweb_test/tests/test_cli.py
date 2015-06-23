@@ -155,11 +155,8 @@ class CommandLine(TestBasic):
     def update_cli_network_configuration(self, cluster_id, remote,
                                          nodegroup=None):
         net_config = self.get_networks(cluster_id, remote)
-        if not nodegroup:
-            logger.info('Update network settings of cluster %s', cluster_id)
-            new_settings = self.fuel_web.update_net_settings(net_config)
-
-        else:
+        new_settings = net_config
+        if nodegroup:
             logger.info('Update network settings of cluster %s, nodegroup %s',
                         cluster_id, nodegroup['name'])
             new_settings = self.fuel_web.update_net_settings(
