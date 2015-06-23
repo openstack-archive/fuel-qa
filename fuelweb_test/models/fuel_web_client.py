@@ -501,18 +501,15 @@ class FuelWebClient(object):
                 hpv_data = attributes['editable']['common']['use_vcenter']
                 hpv_data['value'] = True
 
-            # Updating attributes is needed before calling
-            # update_network_configuration() because addtional networks
+            # Updating attributes is needed before updating
+            # networking configuration because additional networks
             # may be created by new components like ironic
             self.client.update_cluster_attributes(cluster_id, attributes)
 
             if MULTIPLE_NETWORKS:
                 node_groups = {n['name']: [] for n in NODEGROUPS}
                 self.update_nodegroups(cluster_id, node_groups)
-                self.update_network_configuration(cluster_id,
-                                                  nodegroups=NODEGROUPS)
-            else:
-                self.update_network_configuration(cluster_id)
+                self.update_nodegroups_network_configuration(cluster_id)
 
             cn = self.get_public_vip(cluster_id)
             change_cluster_ssl_config(attributes, cn)
@@ -1269,25 +1266,113 @@ class FuelWebClient(object):
         for node in nailgun_nodes:
             self.update_node_networks(node['id'], assigned_networks)
 
-    @logwrap
-    def update_network_configuration(self, cluster_id, nodegroups=None):
-        net_config = self.client.get_networks(cluster_id)
-        if not nodegroups:
-            logger.info('Update network settings of cluster %s', cluster_id)
-            new_settings = self.update_net_settings(net_config)
-        else:
-            new_settings = net_config
-            for nodegroup in nodegroups:
-                logger.info('Update network settings of cluster %s, '
-                            'nodegroup %s', cluster_id, nodegroup['name'])
-                new_settings = self.update_net_settings(new_settings,
-                                                        nodegroup,
-                                                        cluster_id)
+    def change_default_network_settings(self):
+        api_version = self.client.get_api_version()
+        if int(api_version["release"][0]) < 6:
+            return
 
-        self.update_floating_ranges(new_settings)
-        for net in net_config['networks']:
-            if 'baremetal' in net['name']:
-                self.update_baremetal_ranges(new_settings)
+        def fetch_networks(networks):
+            """Parse response from api/releases/1/networks and return dict with
+            networks' settings - need for avoiding hardcode"""
+            result = {}
+            for net in networks:
+                if (net['name'] == 'private' and
+                        net.get('seg_type', '') == 'tun'):
+                    result['private_tun'] = net
+                elif (net['name'] == 'private' and
+                        net.get('seg_type', '') == 'gre'):
+                    result['private_gre'] = net
+                elif net['name'] == 'public':
+                    result['public'] = net
+                elif net['name'] == 'management':
+                    result['management'] = net
+                elif net['name'] == 'storage':
+                    result['storage'] = net
+                elif net['name'] == 'baremetal':
+                    result['baremetal'] = net
+            return result
+
+        public_net = self.environment.d_env.get_network(name="public").ip
+        if not BONDING:
+            manage_net = self.environment.d_env.get_network(
+                name="management").ip
+            storage_net = self.environment.d_env.get_network(
+                name="storage").ip
+            private_net = self.environment.d_env.get_network(
+                name="private").ip
+
+        logger.info("Applying default network settings")
+        for _release in self.client.get_releases():
+            logger.info(
+                'Applying changes for release: {}'.format(
+                    _release['name']))
+            net_settings = \
+                self.client.get_release_default_net_settings(
+                    _release['id'])
+            for net_provider in net_settings:
+                if net_provider == "bonding":
+                    continue
+
+                networks = fetch_networks(
+                    net_settings[net_provider]['networks'])
+
+                networks['public']['cidr'] = str(public_net)
+                networks['public']['gateway'] = str(public_net.network + 1)
+
+                # use the first half of public network as static public range
+                static, floating = public_net.subnet()
+                networks['public']['ip_range'] = [
+                    str(static[2]), str(static[-1])]
+
+                # use the secong half of public network as floating range
+                net_settings[net_provider]['config']['floating_ranges'] = \
+                    [[str(floating[0]), str(floating[-2])]]
+
+                if 'baremetal' in networks:
+                    ironic_net = self.environment.d_env.get_network(
+                        name='ironic').ip
+                    subnet1, subnet2 = ironic_net.subnet()
+                    networks['baremetal']['cidr'] = str(ironic_net)
+                    networks['baremetal']['gateway'] = str(ironic_net[-2])
+                    networks['baremetal']['ip_range'] = [
+                        str(subnet1[2]), str(subnet1[-1])]
+                    net_settings[net_provider]['config']['baremetal_ranges'] =\
+                        [[str(subnet2[0]), str(subnet2[-2])]]
+
+                if BONDING:
+                    # leave defaults for mgmt, storage and private if
+                    # BONDING is enabled
+                    continue
+
+                networks['management']['cidr'] = str(manage_net)
+                networks['storage']['cidr'] = str(storage_net)
+
+                if net_provider == 'neutron':
+                    networks['private_tun']['cidr'] = str(private_net)
+                    networks['private_gre']['cidr'] = str(private_net)
+
+                    net_settings[net_provider]['config']['internal_cidr'] = \
+                        str(private_net)
+                    net_settings[net_provider]['config']['internal_gateway'] =\
+                        str(private_net[1])
+
+                elif net_provider == 'nova_network':
+                    net_settings[net_provider]['config'][
+                        'fixed_networks_cidr'] = str(private_net)
+
+            self.client.put_release_default_net_settings(
+                _release['id'], net_settings)
+
+    @logwrap
+    def update_nodegroups_network_configuration(self, cluster_id):
+        net_config = self.client.get_networks(cluster_id)
+        new_settings = net_config
+        for nodegroup in NODEGROUPS:
+            logger.info('Update network settings of cluster %s, '
+                        'nodegroup %s', cluster_id, nodegroup['name'])
+            new_settings = self.update_nodegroup_net_settings(new_settings,
+                                                              nodegroup,
+                                                              cluster_id)
         self.client.update_network(
             cluster_id=cluster_id,
             networking_parameters=new_settings["networking_parameters"],
@@ -1300,51 +1385,22 @@ class FuelWebClient(object):
             if name in net:
                 return net
 
-    def update_net_settings(self, network_configuration, nodegroup=None,
-                            cluster_id=None):
+    def update_nodegroup_net_settings(self, network_configuration, nodegroup,
+                                      cluster_id=None):
         seg_type = network_configuration.get('networking_parameters', {}) \
             .get('segmentation_type')
-        if not nodegroup:
-            for net in network_configuration.get('networks'):
+        nodegroup_id = self.get_nodegroup(cluster_id, nodegroup['name'])['id']
+        for net in network_configuration.get('networks'):
+            if net['group_id'] == nodegroup_id:
+                # Do not overwrite default PXE admin network configuration
+                if nodegroup['name'] == 'default' and \
+                   net['name'] == 'fuelweb_admin':
+                    continue
                 self.set_network(net_config=net,
                                  net_name=net['name'],
+                                 net_pools=nodegroup['pools'],
                                  seg_type=seg_type)
-            return network_configuration
-        else:
-            nodegroup_id = self.get_nodegroup(cluster_id,
-                                              nodegroup['name'])['id']
-            for net in network_configuration.get('networks'):
-                if net['group_id'] == nodegroup_id:
-                    # Do not overwrite default PXE admin network configuration
-                    if nodegroup['name'] == 'default' and \
-                       net['name'] == 'fuelweb_admin':
-                        continue
-                    self.set_network(net_config=net,
-                                     net_name=net['name'],
-                                     net_pools=nodegroup['pools'],
-                                     seg_type=seg_type)
-            return network_configuration
-
-    def update_floating_ranges(self, network_configuration):
-        nc = network_configuration["networking_parameters"]
-
-        public = self.environment.d_env.get_network(name='public').ip
-
-        if not BONDING:
-            float_range = public
-        else:
-            float_range = list(public.subnet(new_prefix=27))[0]
-        # Setting of multiple floating IP ranges disabled for 7.0, LP#1490657
-        # This feature moved to 8.0: LP#1371363, LP#1490578
-        nc["floating_ranges"] = self.get_range(float_range, 1)
-
-    def update_baremetal_ranges(self, network_configuration):
-        nc = network_configuration["networking_parameters"]
-
-        baremetal_net = self.environment.d_env.get_network(
-            name='ironic').ip_network
-
-        nc["baremetal_ranges"] = self.get_range(baremetal_net, 3)
+        return network_configuration
 
     def set_network(self, net_config, net_name, net_pools=None, seg_type=None):
         nets_wo_floating = ['public', 'management', 'storage', 'baremetal']
