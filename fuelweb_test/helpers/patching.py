@@ -87,12 +87,55 @@ def map_test(target):
     verify_errata(errata)
     if not any(target == e_target['type'] for e_target in errata['targets']):
         skip_patching_test(target, errata['target'])
-    if target == 'master':
-        # On master node we have only CentOS containers, so always check
-        # only CentOS packages available for update
-        distro = settings.OPENSTACK_RELEASE_CENTOS
+    env_distro = settings.OPENSTACK_RELEASE
+    master_distro = settings.OPENSTACK_RELEASE_CENTOS
+    if 'fixed-pkgs' in errata.keys():
+        if target == 'master':
+            settings.PATCHING_PKGS = set(
+                [re.split('=|<|>', package)[0] for package
+                 in errata['fixed-pkgs'][master_distro.lower()]])
+        else:
+            settings.PATCHING_PKGS = set(
+                [re.split('=|<|>', package)[0] for package
+                 in errata['fixed-pkgs'][env_distro.lower()]])
+    available_env_packages = set()
+    available_master_packages = set()
+    for repo in settings.PATCHING_MIRRORS:
+        logger.debug(
+            'Checking packages from "{0}" repository'.format(repo))
+        available_env_packages.update(get_repository_packages(repo,
+                                                              env_distro))
+    for repo in settings.PATCHING_MASTER_MIRRORS:
+        logger.debug(
+            'Checking packages from "{0}" repository'.format(repo))
+        available_master_packages.update(get_repository_packages(
+            repo, master_distro))
+    available_packages = available_env_packages | available_master_packages
+    if not settings.PATCHING_PKGS:
+        if target == 'master':
+            settings.PATCHING_PKGS = available_env_packages
+        else:
+            settings.PATCHING_PKGS = available_master_packages
     else:
-        distro = settings.OPENSTACK_RELEASE
+        assert_true(settings.PATCHING_PKGS <= available_packages,
+                    "Patching repositories don't contain all packages need"
+                    "ed for tests. Need: {0}, available: {1}, missed: {2}."
+                    "".format(settings.PATCHING_PKGS,
+                              available_packages,
+                              settings.PATCHING_PKGS - available_packages))
+    assert_not_equal(len(settings.PATCHING_PKGS), 0,
+                     "No packages found in repository(s) for patching:"
+                     " '{0} {1}'".format(settings.PATCHING_MIRRORS,
+                                         settings.PATCHING_MASTER_MIRRORS))
+    if target == 'master':
+        tests_groups = get_packages_tests(settings.PATCHING_PKGS,
+                                          master_distro,
+                                          target)
+    else:
+        tests_groups = get_packages_tests(settings.PATCHING_PKGS,
+                                          env_distro,
+                                          target)
+
     if settings.PATCHING_CUSTOM_TEST:
         deployment_test = settings.PATCHING_CUSTOM_TEST
         settings.PATCHING_SNAPSHOT = \
@@ -102,29 +145,6 @@ def map_test(target):
         register(groups=['prepare_master_environment'],
                  depends_on_groups=[deployment_test])
     else:
-        if 'fixed-pkgs' in errata.keys():
-            settings.PATCHING_PKGS = set(
-                [re.split('=|<|>', package)[0] for package
-                 in errata['fixed-pkgs'][distro.lower()]])
-        available_packages = set()
-        logger.debug('{0}'.format(settings.PATCHING_MIRRORS))
-        for repo in settings.PATCHING_MIRRORS:
-            logger.debug(
-                'Checking packages from "{0}" repository'.format(repo))
-            available_packages.update(get_repository_packages(repo, distro))
-        if not settings.PATCHING_PKGS:
-            settings.PATCHING_PKGS = available_packages
-        else:
-            assert_true(settings.PATCHING_PKGS <= available_packages,
-                        "Patching repositories don't contain"
-                        " all packages needed "
-                        "for tests. Need: {0}, but available: {1}.".format(
-                            settings.PATCHING_PKGS, available_packages))
-        assert_not_equal(len(settings.PATCHING_PKGS), 0,
-                         "No packages found in repository(s) for patching:"
-                         " '{0}'".format(settings.PATCHING_MIRRORS))
-        tests_groups = get_packages_tests(settings.PATCHING_PKGS, distro,
-                                          target)
         program = TestProgram(argv=['none'])
         deployment_test = None
         for my_test in program.plan.tests:
