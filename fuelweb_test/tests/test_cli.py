@@ -152,19 +152,14 @@ class CommandLine(TestBasic):
         )
 
     @logwrap
-    def update_cli_network_configuration(self, cluster_id, remote,
-                                         nodegroup=None):
+    def update_cli_network_configuration(self, cluster_id, remote):
+        """Update cluster network settings with custom configuration.
+        Place here an additional config changes if needed (e.g. nodegroups'
+        networking configuration.
+        Also this method checks downloading/uploading networks via cli.
+        """
         net_config = self.get_networks(cluster_id, remote)
-        if not nodegroup:
-            logger.info('Update network settings of cluster %s', cluster_id)
-            new_settings = self.fuel_web.update_net_settings(net_config)
-
-        else:
-            logger.info('Update network settings of cluster %s, nodegroup %s',
-                        cluster_id, nodegroup['name'])
-            new_settings = self.fuel_web.update_net_settings(
-                net_config, nodegroup, cluster_id)
-        self.fuel_web.update_floating_ranges(new_settings)
+        new_settings = net_config
         self.update_network(cluster_id, remote, new_settings)
 
     def get_public_vip(self, cluster_id, remote):
