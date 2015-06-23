@@ -1,7 +1,7 @@
 Tests documentation
 -------------------
 
-[Devops documentation](http://docs.mirantis.com/fuel-dev/devops.html)
+[Devops documentation](http://docs.fuel-infra.org/fuel-dev/devops.html)
 
 Code-generated documentation
 ----------------------------
@@ -14,5 +14,5 @@ Output is stored in `doc/_build/html/index.html`.
 For 'make iso'
 --------------
 
-[Building ISO documentation](http://docs.mirantis.com/fuel-dev/develop/env.html#building-the-fuel-iso)
+[Building ISO documentation](http://docs.fuel-infra.org/fuel-dev/develop/env.html#building-the-fuel-iso)
 
