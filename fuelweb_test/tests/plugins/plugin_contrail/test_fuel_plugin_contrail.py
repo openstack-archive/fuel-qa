@@ -523,7 +523,8 @@ class ContrailPlugin(TestBasic):
                 'slave-03': ['base-os'],
                 'slave-04': ['controller'],
                 'slave-05': ['controller'],
-                'slave-06': ['compute']
+                'slave-06': ['controller'],
+                'slave-07': ['compute']
             },
             contrail=True
         )
@@ -538,12 +539,9 @@ class ContrailPlugin(TestBasic):
                                           check_services=False,
                                           timeout=240 * 60)
 
-        # create net and subnet
-        self._create_net_subnet(self.cluster_id)
-
         #  remove one node with controller role
         self.fuel_web.update_nodes(
-            self.cluster_id, {'slave-04': ['controller']}, False, True)
+            self.cluster_id, {'slave-05': ['controller']}, False, True)
 
         self.fuel_web.deploy_cluster_wait(self.cluster_id,
                                           check_services=False,
@@ -551,7 +549,7 @@ class ContrailPlugin(TestBasic):
 
         # add 1 node with controller role and redeploy cluster
         self.fuel_web.update_nodes(
-            self.cluster_id, {'slave-07': ['controller']})
+            self.cluster_id, {'slave-08': ['controller']})
 
         self.fuel_web.deploy_cluster_wait(self.cluster_id,
                                           check_services=False,
@@ -565,6 +563,9 @@ class ContrailPlugin(TestBasic):
         # Also workaround according to bug 1457515
         # When it will be done 'should_fail=3' and
         # 'failed_test_name' parameter should be removed.
+
+        # create net and subnet to pass ostf
+        self._create_net_subnet(self.cluster_id)
 
         self.fuel_web.run_ostf(
             cluster_id=self.cluster_id,
