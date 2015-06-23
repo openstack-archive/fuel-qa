@@ -46,7 +46,7 @@ class VcenterDeploy(TestBasic):
         except AssertionError:
             time_to_wait = 660
             logger.debug("Tests failed from first probe,"
-                         " waite {} seconds try one more time"
+                         " wait {} seconds try one more time"
                          " and if it fails again - "
                          "tests will fail ".format(time_to_wait))
             time.sleep(time_to_wait)
@@ -165,7 +165,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'ha'])
 
-        # ##### FIXME if 1457404 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
@@ -229,7 +229,7 @@ class VcenterDeploy(TestBasic):
             cluster_id=cluster_id,
             test_sets=['sanity', 'ha', 'tests_platform'])
 
-        # ##### FIXME if 1457404 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
@@ -290,7 +290,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'ha'])
 
-        # ##### FIXME if 1457404 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
@@ -360,7 +360,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'ha'])
 
-        # ##### Fix me if 1455468 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
@@ -424,7 +424,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'ha'])
 
-        # ##### FIXME if 1455468 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
@@ -510,7 +510,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'ha'])
 
-        # ##### FIXME if 1457404 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
@@ -596,7 +596,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'ha'])
 
-        # ##### FIXME if 1455468 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
@@ -684,7 +684,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'ha'])
 
-        # ##### FIXME if 1455468 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
@@ -753,7 +753,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'ha'])
 
-        # ##### FIXME if 1455468 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
@@ -854,7 +854,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity'])
 
-        # ##### FIXME if 1457404 is fixed ######
+        # ##### TODO if 1457404 is fixed ######
         self.run_smoke(cluster_id=cluster_id)
 
         # Add 1 node with cinder role and redeploy cluster
@@ -873,7 +873,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity'])
 
-        # ##### FIXME if 1457404 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
         # Remove 1 node with cinder role
@@ -896,7 +896,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity'])
 
-        # ##### FIXME if 1457404 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
         # Add 1 node with cinder role and redeploy cluster
@@ -915,7 +915,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity'])
 
-        # ##### FIXME if 1457404 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
         # Remove nodes with roles: cinder-vmdk and cinder
@@ -940,7 +940,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity'])
 
-        # ##### FIXME if 1457404 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
         # Add 1 node with cinder role and redeploy cluster
@@ -959,7 +959,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity'])
 
-        # ##### FIXME if 1457404 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
         # Remove node with cinder role
@@ -983,7 +983,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity'])
 
-        # ##### FIXME if 1457404 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
         # Add 1 node with compute role and 1 node with cinder role and redeploy
@@ -1008,7 +1008,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'ha'])
 
-        # ##### FIXME if 1457404 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
@@ -1085,7 +1085,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'ha'])
 
-        # ##### Fix me if 1455468 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
@@ -1165,7 +1165,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'ha'])
 
-        # ##### Fix me if 1455468 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
@@ -1241,7 +1241,7 @@ class VcenterDeploy(TestBasic):
             cluster_id=cluster_id,
             test_sets=['sanity', 'ha'])
 
-        # ##### FIXME if 1457404 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
@@ -1316,7 +1316,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'ha'])
 
-        # ##### FIXME if 1457404 is fixed ######
+        # TODO: Fix the function when bug #1457404 will be fixed.
         self.run_smoke(cluster_id=cluster_id)
 
         os_ip = self.fuel_web.get_public_vip(cluster_id)
@@ -1466,7 +1466,7 @@ class VcenterDeploy(TestBasic):
 
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
 
-        # Fixme #1457515
+        # TODO: Fix the function when bug #1457515 will be fixed.
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
             should_fail=1,
