@@ -559,9 +559,13 @@ def get_script_content(path, bug_id, script):
 
 def verify_errata(errata):
     actions_types = ('patch-scenario', 'verify-scenario')
+    distro = settings.OPENSTACK_RELEASE.lower()
     for target in errata['targets']:
         for action_type in actions_types:
-            scenario = sorted(target[action_type]['actions'],
+            assert_true(distro in target[action_type].keys(),
+                        "Steps for '{0}' not found for '{1}' distro!".format(
+                            action_type, distro))
+            scenario = sorted(target[action_type][distro],
                               key=lambda k: k['id'])
             for step in scenario:
                 verify_fix_apply_step(step)
@@ -570,12 +574,13 @@ def verify_errata(errata):
 def run_actions(environment, target, slaves, action_type='patch-scenario'):
     errata = get_errata(path=settings.PATCHING_APPLY_TESTS,
                         bug_id=settings.PATCHING_BUG_ID)
+    distro = settings.OPENSTACK_RELEASE.lower()
     target_scenarios = [e_target for e_target in errata['targets']
                         if target == e_target['type']]
     assert_true(len(target_scenarios) > 0,
                 "Can't found patch scenario for '{0}' target in erratum "
                 "for bug #{1}!".format(target, settings.PATCHING_BUG_ID))
-    scenario = sorted(target_scenarios[0][action_type]['actions'],
+    scenario = sorted(target_scenarios[0][action_type][distro],
                       key=lambda k: k['id'])
 
     for step in scenario:
