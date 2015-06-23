@@ -14,6 +14,7 @@
 
 import time
 import yaml
+from netaddr import IPNetwork
 from devops.error import TimeoutError
 
 from devops.helpers.helpers import _tcp_ping
@@ -366,6 +367,63 @@ class EnvironmentModel(object):
             logger.info('Enabled sending of statistics to {0}:{1}'.format(
                 settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
             ))
+
+    def change_default_network_settings(self):
+
+        def get_net(name):
+            return IPNetwork(self.d_env.get_network(name=name).ip_network)
+
+        public_net = get_net("public")
+        manage_net = get_net("management")
+        storage_net = get_net("storage")
+        private_net = get_net("private")
+        _PUBLIC_NET = 0
+        _MANAGE_NET = 1
+        _STORAGE_NET = 2
+        _PRIVATE_NET = 4
+        api_version = self.fuel_web.client.get_api_version()
+        if int(api_version["release"][0]) >= 6:
+            logger.info("Applying default network settings")
+            for _release in self.fuel_web.client.get_releases():
+                logger.info(
+                    'Applying changes for release: {}'.format(
+                        _release['name']))
+                net_settings = \
+                    self.fuel_web.client.get_release_default_net_settings(
+                        _release['id'])
+                for net_provider in net_settings:
+                    if net_provider != 'bonding':
+                        for net in range(3):
+                            if net == _PUBLIC_NET:
+                                p = net_settings[
+                                    net_provider]['networks'][_PUBLIC_NET]
+                                p['cidr'] = '{}'.format(public_net.cidr)
+                                p['gateway'] = '{}'.format(public_net[1])
+                                p['ip_range'] = \
+                                    ['{}'.format(public_net[2]), '{}'.format(
+                                        public_net[(public_net.size - 2) / 2])]
+                            elif net == _MANAGE_NET:
+                                m = net_settings[
+                                    net_provider]['networks'][_MANAGE_NET]
+                                m['cidr'] = '{}'.format(manage_net.cidr)
+                            elif net == _STORAGE_NET:
+                                s = net_settings[
+                                    net_provider]['networks'][_STORAGE_NET]
+                                s['cidr'] = '{}'.format(storage_net.cidr)
+                        net_settings[net_provider][
+                            'config']['floating_ranges'] = \
+                            [['{}'.format(public_net[public_net.size / 2]),
+                              '{}'.format(public_net[public_net.size - 2])]]
+                    if net_provider == 'nova_network':
+                        net_settings[net_provider][
+                            'config']['fixed_networks_cidr'] = \
+                            '{}'.format(private_net.cidr)
+                    elif net_provider == 'neutron':
+                        pr = net_settings[
+                            net_provider]['networks'][_PRIVATE_NET]
+                        pr['cidr'] = '{}'.format(private_net.cidr)
+                self.fuel_web.client.put_release_default_net_settings(
+                    _release['id'], net_settings)
 
     @update_packages
     @upload_manifests
