@@ -292,8 +292,8 @@ def connect_slaves_to_repo(environment, nodes, repo_name):
         master_ip=repo_ip, repo_name=repo_name, repo_port=repo_port)
     if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_UBUNTU:
         cmds = [
-            "echo -e '\ndeb {repourl} /' >> /etc/apt/sources.list".format(
-                repourl=repourl),
+            "echo -e '\ndeb {repourl} /' > /etc/apt/sources.list.d/{repo_name}"
+            ".list".format(repourl=repourl, repo_name=repo_name),
             "apt-key add <(curl -s '{repourl}/Release.key') || :".format(
                 repourl=repourl),
             # Set highest priority to all repositories located on master node
