@@ -17,7 +17,6 @@ import re
 import sys
 import yaml
 import zlib
-from urllib2 import HTTPError
 from urllib2 import urlopen
 from urlparse import urlparse
 from xml.dom.minidom import parseString
@@ -193,37 +192,7 @@ def _get_target_and_project(_pkg, _all_pkgs):
                 return _installation_target, _project['name']
 
 
-def get_package_test_info_remote(package, pkg_type, tests_url, patch_target):
-    packages_url = "{0}/{1}/packages.yaml".format(tests_url, pkg_type)
-    tests = set()
-    tests_file = 'test.yaml'
-    all_packages = yaml.load(urlopen(packages_url).read())
-    assert_is_not_none(_get_target_and_project(package, all_packages),
-                       "Package '{0}' doesn't belong to any installation "
-                       "target / project".format(package))
-    target, project = _get_target_and_project(package, all_packages)
-    if patch_target == 'master':
-        if target not in ['master', 'bootstrap']:
-            return set([None])
-    if patch_target == 'environment':
-        if target not in ['deployment', 'provisioning']:
-            return set([None])
-    target_tests_url = "/".join((tests_url, pkg_type, target, tests_file))
-    project_tests_url = "/".join((tests_url, pkg_type, target, project,
-                                  tests_file))
-    package_tests_url = "/".join((tests_url, pkg_type, target, project,
-                                  package, tests_file))
-    for url in (target_tests_url, project_tests_url, package_tests_url):
-        try:
-            test = yaml.load(urlopen(url).read())
-            if 'system_tests' in test.keys():
-                tests.update(test['system_tests']['tags'])
-        except HTTPError:
-            pass
-    return tests
-
-
-def get_package_test_info_local(package, pkg_type, tests_path, patch_target):
+def get_package_test_info(package, pkg_type, tests_path, patch_target):
     packages_path = "{0}/{1}/packages.yaml".format(tests_path, pkg_type)
     tests = set()
     tests_file = 'test.yaml'
@@ -254,21 +223,19 @@ def get_package_test_info_local(package, pkg_type, tests_path, patch_target):
 
 
 def get_packages_tests(packages, distro, target):
-    if 'http' in urlparse(settings.PATCHING_PKGS_TESTS):
-        get_method = get_package_test_info_remote
-    elif os.path.isdir(settings.PATCHING_PKGS_TESTS):
-        get_method = get_package_test_info_local
-    else:
-        raise Exception("Path for packages tests doesn't look like URL or loca"
-                        "l folder: '{0}'".format(settings.PATCHING_PKGS_TESTS))
+    assert_true(os.path.isdir(settings.PATCHING_PKGS_TESTS),
+                "Path for packages tests doesn't exist: '{0}'".format(
+                    settings.PATCHING_PKGS_TESTS))
     if distro == settings.OPENSTACK_RELEASE_UBUNTU:
         pkg_type = 'deb'
     else:
         pkg_type = 'rpm'
     packages_tests = set()
     for package in packages:
-        tests = get_method(package, pkg_type, settings.PATCHING_PKGS_TESTS,
-                           target)
+        tests = get_package_test_info(package,
+                                      pkg_type,
+                                      settings.PATCHING_PKGS_TESTS,
+                                      target)
         assert_true(len(tests) > 0,
                     "Tests for package {0} not found".format(package))
         if None in tests:
@@ -538,23 +505,11 @@ def validate_fix_apply_step(apply_step, environment, slaves):
 
 def get_errata(path, bug_id):
     scenario_path = '{0}/bugs/{1}/erratum.yaml'.format(path, bug_id)
-    if 'http' in urlparse(settings.PATCHING_APPLY_TESTS):
-        return yaml.load(urlopen(scenario_path).read())
-    elif os.path.isdir(settings.PATCHING_APPLY_TESTS):
-        with open(scenario_path) as f:
-            return yaml.load(f.read())
-    else:
-        raise Exception("Path to patching tests doesn't look like URL or local"
-                        " folder: '{0}'".format(settings.PATCHING_APPLY_TESTS))
-
-
-def get_script_content(path, bug_id, script):
-    scripts_path = '{0}/bugs/{1}/tests/{2}'.format(path, bug_id, script)
-    if 'http' in urlparse(settings.PATCHING_APPLY_TESTS):
-        return urlopen(scripts_path).read()
-    elif os.path.isdir(settings.PATCHING_APPLY_TESTS):
-        with open(scripts_path) as f:
-            return f.read()
+    assert_true(os.path.exists(scenario_path),
+                "Erratum for bug #{0} is not found in '{0}' "
+                "directory".format(bug_id, settings.PATCHING_APPLY_TESTS))
+    with open(scenario_path) as f:
+        return yaml.load(f.read())
 
 
 def verify_errata(errata):
@@ -589,12 +544,11 @@ def run_actions(environment, target, slaves, action_type='patch-scenario'):
         if 'UPLOAD' in command:
             file_name = command[1]
             upload_path = command[2]
-            file_content = get_script_content(
-                path=settings.PATCHING_APPLY_TESTS,
-                bug_id=settings.PATCHING_BUG_ID,
-                script=file_name)
-            command = "echo '{0}' > {1}/{2}".format(file_content, upload_path,
-                                                    file_name)
+            source_path = '{0}/tests/{1}'.format(settings.PATCHING_APPLY_TESTS,
+                                                 file_name)
+            for remote in remotes:
+                remote.upload(source_path, upload_path)
+            continue
         elif 'RUN_TASKS' in command:
             nodes_ids = command[1]
             tasks = command[2]
