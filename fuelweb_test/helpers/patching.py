@@ -89,15 +89,15 @@ def map_test(target):
         skip_patching_test(target, errata['target'])
     env_distro = settings.OPENSTACK_RELEASE
     master_distro = settings.OPENSTACK_RELEASE_CENTOS
-    if 'fixed-pkgs' in errata.keys():
+    if 'affected-pkgs' in errata.keys():
         if target == 'master':
             settings.PATCHING_PKGS = set(
                 [re.split('=|<|>', package)[0] for package
-                 in errata['fixed-pkgs'][master_distro.lower()]])
+                 in errata['affected-pkgs'][master_distro.lower()]])
         else:
             settings.PATCHING_PKGS = set(
                 [re.split('=|<|>', package)[0] for package
-                 in errata['fixed-pkgs'][env_distro.lower()]])
+                 in errata['affected-pkgs'][env_distro.lower()]])
     available_env_packages = set()
     available_master_packages = set()
     for repo in settings.PATCHING_MIRRORS:
