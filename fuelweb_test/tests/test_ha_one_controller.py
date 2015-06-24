@@ -96,7 +96,7 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
         """Deploy cluster in HA mode (one controller) with flat nova-network
 
         Scenario:
-            1. Create cluster in HA mode with 1 controller
+            1. Create cluster in HA mode
             2. Add 1 node with controller role
             3. Add 1 node with compute role
             4. Deploy the cluster
@@ -187,7 +187,7 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
         """Verify network verification with blocked VLANs
 
         Scenario:
-            1. Create cluster in Ha mode with 1 controller
+            1. Create cluster in Ha mode
             2. Add 1 node with controller role
             3. Add 1 node with compute role
             4. Deploy the cluster
@@ -235,7 +235,7 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
         """Add compute node to cluster in ha mode
 
         Scenario:
-            1. Create cluster in HA mode with 1 controller
+            1. Create cluster in HA mode
             2. Add 1 node with controller role
             3. Add 1 node with compute role
             4. Deploy the cluster
@@ -307,7 +307,7 @@ class HAOneControllerVlan(TestBasic):
         """Deploy cluster in ha mode with nova-network VLAN Manager
 
         Scenario:
-            1. Create cluster in Ha mode with 1 controller
+            1. Create cluster in Ha mode
             2. Add 1 node with controller role
             3. Add 1 node with compute role
             4. Set up cluster to use Network VLAN manager with 8 networks
@@ -415,7 +415,7 @@ class MultiroleControllerCinder(TestBasic):
         """Deploy cluster in HA mode with multi-role controller and cinder
 
         Scenario:
-            1. Create cluster in HA mode with 1 controller
+            1. Create cluster in HA mode
             2. Add 1 node with controller and cinder roles
             3. Add 1 node with compute role
             4. Deploy the cluster
@@ -466,7 +466,7 @@ class MultiroleComputeCinder(TestBasic):
         """Deploy cluster in HA mode with multi-role compute and cinder
 
         Scenario:
-            1. Create cluster in Ha mode with 1 controller
+            1. Create cluster in Ha mode
             2. Add 1 node with controller role
             3. Add 2 node with compute and cinder roles
             4. Deploy the cluster
@@ -511,7 +511,7 @@ class FloatingIPs(TestBasic):
         """Deploy cluster with non-default 3 floating IPs ranges
 
         Scenario:
-            1. Create cluster in Ha mode with 1 controller
+            1. Create cluster in Ha mode
             2. Add 1 node with controller role
             3. Add 1 node with compute and cinder roles
             4. Update floating IP ranges. Use 3 ranges
@@ -574,7 +574,7 @@ class HAOneControllerCinder(TestBasic):
         """Deploy cluster in HA mode with cinder
 
         Scenario:
-            1. Create cluster in Ha mode with 1 controller
+            1. Create cluster in Ha mode
             2. Add 1 node with controller role
             3. Add 1 node with compute role
             4. Add 1 node with cinder role
@@ -629,7 +629,7 @@ class NodeMultipleInterfaces(TestBasic):
         """Deploy cluster with networks allocated on different interfaces
 
         Scenario:
-            1. Create cluster in Ha mode with 1 controller
+            1. Create cluster in Ha mode
             2. Add 1 node with controller role
             3. Add 1 node with compute role
             4. Add 1 node with cinder role
@@ -862,7 +862,7 @@ class UntaggedNetworksNegative(TestBasic):
         """Verify network verification fails with untagged network on eth0
 
         Scenario:
-            1. Create cluster in ha mode with 1 controller
+            1. Create cluster in ha mode
             2. Add 1 node with controller role
             3. Add 1 node with compute role
             4. Split networks on existing physical interfaces
@@ -986,7 +986,7 @@ class HAOneControllerFlatUSB(HAOneControllerFlatBase):
         """Deploy cluster in HA mode (1 controller) with flat nova-network USB
 
         Scenario:
-            1. Create cluster in HA mode with 1 controller
+            1. Create cluster in HA mode
             2. Add 1 node with controller role
             3. Add 1 node with compute role
             4. Deploy the cluster
