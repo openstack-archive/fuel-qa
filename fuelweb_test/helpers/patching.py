@@ -113,9 +113,9 @@ def map_test(target):
     available_packages = available_env_packages | available_master_packages
     if not settings.PATCHING_PKGS:
         if target == 'master':
-            settings.PATCHING_PKGS = available_env_packages
-        else:
             settings.PATCHING_PKGS = available_master_packages
+        else:
+            settings.PATCHING_PKGS = available_env_packages
     else:
         assert_true(settings.PATCHING_PKGS <= available_packages,
                     "Patching repositories don't contain all packages need"
