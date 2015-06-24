@@ -376,6 +376,106 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             cluster_id=cluster_id)
         self.env.make_snapshot("deploy_ha_after_upgrade")
 
+    @test(groups=["upgrade_fuel_after_rollback"])
+    @log_snapshot_after_test
+    def upgrade_fuel_after_rollback(self):
+        """Upgrade Fuel after rollback and deploy new cluster
+
+        Scenario:
+            1. Revert deploy_neutron_gre snapshot
+            2. Upgrade with rollback
+            3. Run OSTF
+            4. Run network verification
+            5. Upgrade fuel master
+            6. Check upgrading was successful
+            7. Deploy 6.1 cluster with 3 nodes and neutron vlan
+            8. Run OSTF for new cluster
+            9. Run network verification
+        """
+        if not self.env.d_env.has_snapshot('deploy_neutron_gre'):
+            raise SkipTest()
+
+        self.env.revert_snapshot("deploy_neutron_gre")
+
+        available_releases_before = self.fuel_web.get_releases_list_for_os(
+            release_name=hlp_data.OPENSTACK_RELEASE)
+
+        remote = self.env.d_env.get_admin_remote
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        checkers.upload_tarball(remote(), hlp_data.TARBALL_PATH, '/var')
+        checkers.check_tarball_exists(remote(), os.path.basename(hlp_data.
+                                      TARBALL_PATH),
+                                      '/var')
+        checkers.untar(remote(), os.path.basename(hlp_data.TARBALL_PATH),
+                       '/var')
+
+        # Upgrade with rollback
+        keystone_pass = hlp_data.KEYSTONE_CREDS['password']
+        checkers.run_script(remote(), '/var', 'upgrade.sh',
+                            password=keystone_pass, rollback=True,
+                            exit_code=255)
+        checkers.wait_rollback_is_done(remote(), 3000)
+        checkers.check_upgraded_containers(remote(), hlp_data.UPGRADE_FUEL_TO,
+                                           hlp_data.UPGRADE_FUEL_FROM)
+        logger.debug("all containers are ok")
+        _wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+            self.env.d_env.nodes().slaves[0]), timeout=8 * 60)
+        logger.debug("all services are up now")
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:3])
+        self.fuel_web.assert_nodes_in_ready_state(cluster_id)
+        self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_FROM)
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id)
+
+        # Upgrade fuel master
+        checkers.run_script(remote(), '/var', 'upgrade.sh',
+                            password=keystone_pass)
+        checkers.wait_upgrade_is_done(remote(), 3000,
+                                      phrase='*** UPGRADING MASTER NODE'
+                                             ' DONE SUCCESSFULLY')
+        checkers.check_upgraded_containers(remote(),
+                                           hlp_data.UPGRADE_FUEL_FROM,
+                                           hlp_data.UPGRADE_FUEL_TO)
+        self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
+        self.fuel_web.assert_nodes_in_ready_state(cluster_id)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:3])
+        self.fuel_web.assert_nailgun_upgrade_migration()
+
+        # Deploy new cluster
+        available_releases_after = self.fuel_web.get_releases_list_for_os(
+            release_name=hlp_data.OPENSTACK_RELEASE)
+        added_release = [id for id in available_releases_after
+                         if id not in available_releases_before]
+
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[3:6])
+
+        new_cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            release_id=added_release[0],
+            mode=hlp_data.DEPLOYMENT_MODE,
+            settings={
+                'net_provider': 'neutron',
+                'net_segment_type': 'vlan'
+            }
+        )
+        self.fuel_web.update_nodes(
+            new_cluster_id, {
+                'slave-04': ['controller'],
+                'slave-05': ['compute'],
+                'slave-06': ['cinder']
+            }
+        )
+        self.fuel_web.run_network_verify(new_cluster_id)
+        self.fuel_web.deploy_cluster_wait(new_cluster_id)
+        self.fuel_web.run_ostf(new_cluster_id)
+        self.fuel_web.run_network_verify(new_cluster_id)
+
+        self.env.make_snapshot("upgrade_fuel_after_rollback")
+
 
 @test(groups=["rollback"])
 class RollbackFuelMaster(base_test_data.TestBasic):
