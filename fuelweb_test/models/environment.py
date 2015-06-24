@@ -366,6 +366,12 @@ class EnvironmentModel(object):
             logger.info('Enabled sending of statistics to {0}:{1}'.format(
                 settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
             ))
+        if settings.PATCHING_DISABLE_UPDATES:
+            remote = self.d_env.get_admin_remote()
+            cmd = "find /etc/yum.repos.d/ -type f -regextype posix-egrep" \
+                  " -regex '.*/mos[0-9,\.]+\-(updates|security).repo' | " \
+                  "xargs -n1 -i sed '$aenabled=0' -i {}"
+            self.execute_remote_cmd(remote, cmd)
 
     @update_packages
     @upload_manifests
