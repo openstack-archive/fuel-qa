@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import proboscis
 import time
 
 from proboscis.asserts import assert_true, assert_false, assert_equal
@@ -477,9 +476,6 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         Snapshot vm_backed_with_ceph_live_migration
 
         """
-        if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_REDHAT:
-            raise proboscis.SkipTest()
-
         self.env.revert_snapshot("ready_with_3_slaves")
 
         cluster_id = self.fuel_web.create_cluster(
@@ -697,9 +693,6 @@ class CheckCephPartitionsAfterReboot(TestBasic):
         Snapshot check_ceph_partitions_after_reboot
 
         """
-        if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_REDHAT:
-            raise proboscis.SkipTest()
-
         self.env.revert_snapshot("ready_with_3_slaves")
 
         cluster_id = self.fuel_web.create_cluster(

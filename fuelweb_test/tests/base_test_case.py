@@ -18,8 +18,6 @@ from proboscis import test
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import timestat
 from fuelweb_test.models.environment import EnvironmentModel
-from fuelweb_test.settings import OPENSTACK_RELEASE
-from fuelweb_test.settings import OPENSTACK_RELEASE_REDHAT
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 
 
@@ -97,12 +95,6 @@ class SetupEnvironment(TestBasic):
         self.check_run("ready")
         self.env.revert_snapshot("empty", skip_timesync=True)
 
-        if OPENSTACK_RELEASE == OPENSTACK_RELEASE_REDHAT:
-            self.fuel_web.update_redhat_credentials()
-            self.fuel_web.assert_release_state(
-                OPENSTACK_RELEASE_REDHAT,
-                state='available'
-            )
         self.fuel_web.get_nailgun_version()
 
         self.env.make_snapshot("ready", is_make=True)

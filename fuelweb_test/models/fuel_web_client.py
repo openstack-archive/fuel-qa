@@ -1167,31 +1167,6 @@ class FuelWebClient(object):
         return size
 
     @logwrap
-    def update_redhat_credentials(
-            self, license_type=help_data.REDHAT_LICENSE_TYPE,
-            username=help_data.REDHAT_USERNAME,
-            password=help_data.REDHAT_PASSWORD,
-            satellite_host=help_data.REDHAT_SATELLITE_HOST,
-            activation_key=help_data.REDHAT_ACTIVATION_KEY):
-
-        # release name is in environment variable OPENSTACK_RELEASE
-        release_id = self.client.get_release_id('RHOS')
-        self.client.update_redhat_setup({
-            "release_id": release_id,
-            "username": username,
-            "license_type": license_type,
-            "satellite": satellite_host,
-            "password": password,
-            "activation_key": activation_key})
-        tasks = self.client.get_tasks()
-        # wait for 'redhat_setup' task only. Front-end works same way
-        for task in tasks:
-            if task['name'] == 'redhat_setup' \
-                    and task['result']['release_info']['release_id'] \
-                            == release_id:
-                return self.task_wait(task, 60 * 120)
-
-    @logwrap
     def update_vlan_network_fixed(
             self, cluster_id, amount=1, network_size=256):
         self.client.update_network(

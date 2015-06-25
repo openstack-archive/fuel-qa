@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from proboscis import SkipTest
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -43,9 +42,6 @@ class HugeEnvironments(base_test_case.TestBasic):
         Duration 150m
 
         """
-        if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_REDHAT:
-            raise SkipTest()
-
         self.env.revert_snapshot("ready_with_9_slaves")
 
         cluster_id = self.fuel_web.create_cluster(
@@ -107,9 +103,6 @@ class HugeEnvironments(base_test_case.TestBasic):
         Duration 100m
 
         """
-        if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_REDHAT:
-            raise SkipTest()
-
         self.env.revert_snapshot("ready_with_9_slaves")
 
         cluster_id = self.fuel_web.create_cluster(
