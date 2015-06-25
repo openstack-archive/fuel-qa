@@ -12,13 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from proboscis import SkipTest
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import DEPLOYMENT_MODE, NEUTRON_ENABLE
-from fuelweb_test.settings import OPENSTACK_RELEASE
-from fuelweb_test.settings import OPENSTACK_RELEASE_REDHAT
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -43,9 +40,6 @@ class TestPullRequest(TestBasic):
         Snapshot: deploy_pr_ha
 
         """
-        if OPENSTACK_RELEASE == OPENSTACK_RELEASE_REDHAT:
-            raise SkipTest()
-
         self.env.revert_snapshot("ready_with_3_slaves")
 
         settings = None
