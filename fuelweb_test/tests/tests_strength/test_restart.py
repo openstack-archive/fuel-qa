@@ -16,13 +16,11 @@ import time
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import logger
 from fuelweb_test import ostf_test_mapping as map_ostf
-from fuelweb_test import settings
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 from devops.helpers.helpers import wait
-from proboscis import SkipTest
 from proboscis import test
 
 
@@ -48,9 +46,6 @@ class CephRestart(TestBasic):
         Duration 90m
         Snapshot None
         """
-        if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_REDHAT:
-            raise SkipTest()
-
         self.env.revert_snapshot("ceph_ha_one_controller_with_cinder")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
@@ -113,9 +108,6 @@ class CephRestart(TestBasic):
         Snapshot ceph_ha_restart
 
         """
-        if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_REDHAT:
-            raise SkipTest()
-
         self.env.revert_snapshot("ceph_ha")
 
         # Wait until MySQL Galera is UP on some controller

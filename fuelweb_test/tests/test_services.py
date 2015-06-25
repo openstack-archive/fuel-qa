@@ -15,7 +15,6 @@
 from __future__ import division
 
 from proboscis import asserts
-from proboscis import SkipTest
 from proboscis import test
 from proboscis.asserts import assert_equal
 
@@ -53,9 +52,6 @@ class SaharaHAOneController(TestBasic):
         Duration 65m
         Snapshot: deploy_sahara_ha_one_controller_gre
         """
-        if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_REDHAT:
-            raise SkipTest()
-
         LOGGER.debug('Check MD5 sum of Vanilla2 image')
         check_image = checkers.check_image(
             settings.SERVTEST_SAHARA_VANILLA_2_IMAGE,
@@ -159,9 +155,6 @@ class SaharaHA(TestBasic):
         Snapshot: deploy_sahara_ha_gre
 
         """
-        if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_REDHAT:
-            raise SkipTest()
-
         LOGGER.debug('Check MD5 sum of Vanilla2 image')
         check_image = checkers.check_image(
             settings.SERVTEST_SAHARA_VANILLA_2_IMAGE,
@@ -265,9 +258,6 @@ class MuranoHAOneController(TestBasic):
         Duration 40m
         Snapshot: deploy_murano_ha_one_controller_gre
         """
-        if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_REDHAT:
-            raise SkipTest()
-
         self.env.revert_snapshot("ready_with_3_slaves")
 
         data = {
