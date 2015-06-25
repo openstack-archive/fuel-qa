@@ -3,11 +3,6 @@
 Models
 ======
 
-Fuel Web Client
----------------
-.. automodule:: fuelweb_test.models.fuel_web_client
-   :members:
-
 Environment
 -----------
 .. automodule:: fuelweb_test.models.environment
