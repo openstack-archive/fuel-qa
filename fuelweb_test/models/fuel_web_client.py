@@ -185,8 +185,8 @@ class FuelWebClient(object):
                     'must have passed: %s' % fail_details)
 
     @logwrap
-    def assert_ostf_run(self, cluster_id, should_fail=0,
-                        failed_test_name=None, timeout=15 * 60):
+    def assert_ostf_run(self, cluster_id, should_fail=0, failed_test_name=None,
+                        timeout=15 * 60, test_sets=None):
         logger.info('Assert OSTF run at cluster #%s. '
                     'Should fail %s tests named %s',
                     cluster_id, should_fail, failed_test_name)
@@ -196,7 +196,8 @@ class FuelWebClient(object):
         actual_failed_names = []
         test_result = {}
         for set_result in set_result_list:
-
+            if set_result['testset'] not in test_sets:
+                continue
             failed += len(
                 filter(
                     lambda test: test['status'] == 'failure' or
@@ -989,15 +990,16 @@ class FuelWebClient(object):
             self.assert_ostf_run(
                 cluster_id,
                 should_fail=should_fail, timeout=timeout,
-                failed_test_name=failed_test_name)
+                failed_test_name=failed_test_name, test_sets=test_sets)
 
     @logwrap
-    def return_ostf_results(self, cluster_id, timeout):
+    def return_ostf_results(self, cluster_id, timeout, test_sets):
         set_result_list = self._ostf_test_wait(cluster_id, timeout)
         tests_res = []
         for set_result in set_result_list:
             [tests_res.append({test['name']:test['status']})
-             for test in set_result['tests'] if test['status'] != 'disabled']
+             for test in set_result['tests']
+             if test['testset'] in test_sets and test['status'] != 'disabled']
 
         logger.info('OSTF test statuses are : {0}'.format(tests_res))
         return tests_res
@@ -1008,7 +1010,8 @@ class FuelWebClient(object):
                              retries=None, timeout=15 * 60):
         self.client.ostf_run_singe_test(cluster_id, test_sets, test_name)
         if retries:
-            return self.return_ostf_results(cluster_id, timeout=timeout)
+            return self.return_ostf_results(cluster_id, timeout=timeout,
+                                            test_sets=test_sets)
         else:
             self.assert_ostf_run_certain(cluster_id,
                                          tests_must_be_passed=[test_name],
