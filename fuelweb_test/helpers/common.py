@@ -72,18 +72,6 @@ class Common(object):
                                               from_port=-1,
                                               to_port=-1)
 
-    def image_import(self, local_path, image, image_name, properties=None):
-        LOGGER.debug('Import image {0}/{1} to glance'.
-                     format(local_path, image))
-        with open('{0}/{1}'.format(local_path, image)) as fimage:
-            LOGGER.debug('Try to open image')
-            image = self.glance.images.create(
-                name=image_name, is_public=True,
-                disk_format='qcow2',
-                container_format='bare', data=fimage,
-                properties=properties)
-        return image
-
     def update_image(self, image, **kwargs):
         self.glance.images.update(image.id, **kwargs)
         return self.glance.images.get(image.id)

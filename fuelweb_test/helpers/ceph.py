@@ -221,3 +221,14 @@ def get_osd_ids(remote):
     logger.debug("Fetching Ceph OSD ids")
     cmd = 'ceph osd ls -f json'
     return run_on_remote(remote, cmd, jsonify=True)
+
+
+def get_rbd_images_list(remote, pool):
+    """Returns all OSD ids.
+
+    :param remote: devops.helpers.helpers.SSHClient
+    :param pool: string, can be: 'images', 'volumes', etc.
+    :return: JSON-like object
+    """
+    cmd = 'rbd --pool {pool} --format json ls -l'.format(pool=pool)
+    return json.loads(''.join(remote.execute(cmd)['stdout']))
