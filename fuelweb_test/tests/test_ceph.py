@@ -13,6 +13,7 @@
 #    under the License.
 
 import proboscis
+from six import BytesIO
 import time
 
 from proboscis.asserts import assert_true, assert_false, assert_equal
@@ -22,6 +23,7 @@ from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
 
 from fuelweb_test.helpers import os_actions
+from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import ostf_test_mapping as map_ostf
@@ -55,6 +57,7 @@ class CephCompact(TestBasic):
         Duration 35m
         Snapshot ceph_ha_one_controller_compact
         """
+        self.check_run('ceph_ha_one_controller_compact')
         self.env.revert_snapshot("ready_with_3_slaves")
         data = {
             'volumes_ceph': True,
@@ -87,7 +90,52 @@ class CephCompact(TestBasic):
         # Run ostf
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("ceph_ha_one_controller_compact")
+        self.env.make_snapshot("ceph_ha_one_controller_compact", is_make=True)
+
+    @test(depends_on=[ceph_ha_one_controller_compact],
+          groups=["check_ceph_cinder_cow"])
+    @log_snapshot_after_test
+    def check_ceph_cinder_cow(self):
+        """Check copy-on-write when Cinder creates a volume from Glance image
+
+        Scenario:
+            1. Revert a snapshot where ceph enabled for volumes and images:
+                 "ceph_ha_one_controller_compact"
+            2. Create a Glance image in RAW disk format
+            3. Create a Cinder volume using Glance image in RAW disk format
+            4. Check on a ceph-osd node if the volume has a parent image.
+
+        Duration 5m
+        """
+        self.env.revert_snapshot("ceph_ha_one_controller_compact")
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id), 'ceph1', 'ceph1',
+            'ceph1')
+
+        image_data = BytesIO(bytearray(self.__class__.__name__))
+        image = os_conn.create_image(disk_format='raw',
+                                     container_format='bare',
+                                     data=image_data)
+        volume = os_conn.create_volume(size=1, image_id=image.id)
+
+        remote = self.fuel_web.get_ssh_for_node('slave-01')
+        rbd_list = ceph.get_rbd_images_list(remote, 'volumes')
+
+        for item in rbd_list:
+            if volume.id in item['image']:
+                assert_true('parent' in item,
+                            "Volume {0} created from image {1} doesn't have"
+                            " parents. Copy-on-write feature doesn't work."
+                            .format(volume.id, image.id))
+                assert_true(image.id in item['parent']['image'],
+                            "Volume {0} created from image {1}, but have a "
+                            "different image in parent: {2}"
+                            .format(volume.id, image.id,
+                                    item['parent']['image']))
+                break
+        else:
+            raise Exception("Volume {0} not found!".format(volume.id))
 
 
 @test(groups=["thread_3", "ceph"])
