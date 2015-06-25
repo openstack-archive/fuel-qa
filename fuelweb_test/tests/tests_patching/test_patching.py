@@ -54,10 +54,12 @@ class PatchingTests(TestBasic):
         2. Run Rally benchmark tests and store results
         3. Download patched packages on master node and make local repositories
         4. Add new local repositories on slave nodes
-        5. Perform actions required to apply patches
-        6. Verify that fix works
-        7. Run OSTF
-        8. Run Rally benchmark tests and compare results
+        5. Check that deployed environment is affected by the bug and
+        verification scenario fails without applied patches
+        6. Perform actions required to apply patches
+        7. Verify that fix works
+        8. Run OSTF
+        9. Run Rally benchmark tests and compare results
 
         Duration 15m
         Snapshot first_patching_demo
@@ -93,14 +95,28 @@ class PatchingTests(TestBasic):
                 patching.connect_admin_to_repo(self.env, repo)
 
         # Step #5
+        logger.info('Checking that environment is affected '
+                    'by bug #{0}...'.format(settings.PATCHING_BUG_ID))
+        is_environment_affected = False
+        try:
+            patching.verify_fix(self.env, target='environment', slaves=slaves)
+        except AssertionError:
+            is_environment_affected = True
+        assert_true(is_environment_affected,
+                    'Deployed environment for testing patches is not affected'
+                    'by bug #{0} or provided verification scenario is not '
+                    'correct! Fix verification passed without applying '
+                    'patches!'.format(settings.PATCHING_BUG_ID))
+
+        # Step #6
         logger.info('Applying fix...')
         patching.apply_patches(self.env, target='environment', slaves=slaves)
 
-        # Step #6
+        # Step #7
         logger.info('Verifying fix...')
         patching.verify_fix(self.env, target='environment', slaves=slaves)
 
-        # Step #7
+        # Step #8
         # If OSTF fails (sometimes services aren't ready after
         # slaves nodes reboot) sleep 5 minutes and try again
         try:
@@ -109,7 +125,7 @@ class PatchingTests(TestBasic):
             time.sleep(300)
             self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        # Step #8
+        # Step #9
         # Run Rally benchmarks, compare new results with previous,
         # coming soon...
 
@@ -136,12 +152,14 @@ class PatchingMasterTests(TestBasic):
 
         Scenario:
         1. Download patched packages on master node and make local repositories
-        2. Perform actions required to apply patches
-        3. Verify that fix works
-        4. Run OSTF
-        5. Run network verification
-        6. Reset and delete cluster
-        7. Bootstrap 3 slaves
+        2. Check that deployed environment is affected by the bug and
+        verification scenario fails without applied patches
+        3. Perform actions required to apply patches
+        4. Verify that fix works
+        5. Run OSTF
+        6. Run network verification
+        7. Reset and delete cluster
+        8. Bootstrap 3 slaves
 
         Duration 30m
         """
@@ -160,14 +178,28 @@ class PatchingMasterTests(TestBasic):
             patching.connect_admin_to_repo(self.env, repo)
 
         # Step #2
+        logger.info('Checking that environment is affected '
+                    'by bug #{0}...'.format(settings.PATCHING_BUG_ID))
+        is_environment_affected = False
+        try:
+            patching.verify_fix(self.env, target='environment')
+        except AssertionError:
+            is_environment_affected = True
+        assert_true(is_environment_affected,
+                    'Deployed environment for testing patches is not affected '
+                    'by bug #{0} or provided verification scenario is  '
+                    'incorrect! Fix verification passed without applying '
+                    'patches!'.format(settings.PATCHING_BUG_ID))
+
+        # Step #3
         logger.info('Applying fix...')
         patching.apply_patches(self.env, target='master')
 
-        # Step #3
+        # Step #4
         logger.info('Verifying fix...')
         patching.verify_fix(self.env, target='master')
 
-        # Step #4
+        # Step #5
         active_nodes = []
         for node in self.env.d_env.nodes().slaves:
             if node.driver.node_active(node):
