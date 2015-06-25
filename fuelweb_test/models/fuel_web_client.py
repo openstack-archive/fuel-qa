@@ -580,9 +580,7 @@ class FuelWebClient(object):
             self.add_ubuntu_extra_mirrors(repos=repos)
         if help_data.PATCHING_DISABLE_UPDATES:
             for repo in repos:
-                if repo['name'] in ('ubuntu-updates', 'ubuntu-security',
-                                    'mos-updates', 'mos-security',
-                                    'mos-holdback'):
+                if repo['name'] in ('mos-updates', 'mos-security'):
                     repos.remove(repo)
 
         self.report_ubuntu_repos(repos)
