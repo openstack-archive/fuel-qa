@@ -342,10 +342,10 @@ class FuelPluginBuilder(object):
         :param new_version: new version to be used for plugin
         :return: nothing
         """
-        self.admin_node.execute_in_container(
-            'sed -i "s/^\(version:\) \(.*\)/\\1 {0}/g" '
-            '/root/{1}/metadata.yaml'
-            .format(new_version, plugin_name), 'nailgun')
+        self.change_yaml_file_in_container(
+            '/root/{}/metadata.yaml'.format(plugin_name),
+            ['version'],
+            new_version)
 
     def fpb_change_package_version(self, plugin_name, new_version):
         """
@@ -354,10 +354,10 @@ class FuelPluginBuilder(object):
         :param new_version: version to be changed at
         :return: nothing
         """
-        self.admin_node.execute_in_container(
-            'sed -i "s/^\(package_version: \'\)\(.*\)\(\'\)/\\1{0}\\3/g" '
-            '/root/{1}/metadata.yaml'
-            .format(new_version, plugin_name), 'nailgun')
+        self.change_yaml_file_in_container(
+            '/root/{}/metadata.yaml'.format(plugin_name),
+            ['package_version'],
+            new_version)
 
     def change_content_in_yaml(self, old_file, new_file, element, value):
         """
@@ -382,6 +382,29 @@ class FuelPluginBuilder(object):
 
         with open(new_file, 'w') as f_new:
             yaml.dump(origin_yaml, f_new)
+
+    def change_yaml_file_in_container(
+            self, path_to_file, element, value, container='nailgun'):
+        """
+        Changes values in the yaml file stored at container
+        There is no need to copy file manually
+        :param path_to_file: absolutely path to the file
+        :param element: list with path to the element be changed
+        :param value: new value for element
+        :param container: Container with file. By default it is nailgun
+        :return: Nothing
+        """
+
+        old_file = '/tmp/temp_file.old.yaml'
+        new_file = '/tmp/temp_file.new.yaml'
+
+        self.admin_node.copy_between_node_and_container(
+            '{0}:{1}'.format(container, path_to_file), old_file)
+        self.admin_remote.download(old_file, old_file)
+        self.change_content_in_yaml(old_file, new_file, element, value)
+        self.admin_remote.upload(new_file, new_file)
+        self.admin_node.copy_between_node_and_container(
+            new_file, '{0}:{1}'.format(container, path_to_file))
 
 
 class CobblerActions(BaseActions):
