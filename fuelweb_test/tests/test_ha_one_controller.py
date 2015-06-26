@@ -922,7 +922,7 @@ class BackupRestoreHAOneController(TestBasic):
           groups=["ha_one_controller_backup_restore"])
     @log_snapshot_after_test
     def ha_one_controller_backup_restore(self):
-        """Backup/restore master node with cluster in ha mode
+        """Backup/restore master node with one controller in cluster
 
         Scenario:
             1. Revert snapshot "deploy_ha_one_controller_flat"
