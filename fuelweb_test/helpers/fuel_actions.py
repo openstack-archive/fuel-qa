@@ -94,6 +94,55 @@ class BaseActions(object):
     def wait_for_ready_container(self, timeout=300):
         wait(lambda: self.is_container_ready, timeout=timeout)
 
+    def change_content_in_yaml(self, old_file, new_file, element, value):
+        """
+        Changes content in old_file at element is given to the new value
+        and creates new file with changed content
+        :param old_file: a path to the file content from to be changed
+        :param new_file: a path to the new file to ve created with new content
+        :param element: tuple with path to element to be changed
+            for example: ['root_elem', 'first_elem', 'target_elem']
+            if there are a few elements with equal names use integer
+            to identify which element should be used
+        :return: nothing
+        """
+
+        with open(old_file, 'r') as f_old:
+            yaml_dict = yaml.load(f_old)
+
+        origin_yaml = yaml_dict
+        for k in element[:-1]:
+            yaml_dict = yaml_dict[k]
+        yaml_dict[element[-1]] = value
+
+        with open(new_file, 'w') as f_new:
+            yaml.dump(origin_yaml, f_new)
+
+    def change_yaml_file_in_container(
+            self, path_to_file, element, value, container=None):
+        """
+        Changes values in the yaml file stored at container
+        There is no need to copy file manually
+        :param path_to_file: absolutely path to the file
+        :param element: list with path to the element be changed
+        :param value: new value for element
+        :param container: Container with file. By default it is nailgun
+        :return: Nothing
+        """
+        if not container:
+            container = self.container
+
+        old_file = '/tmp/temp_file.old.yaml'
+        new_file = '/tmp/temp_file.new.yaml'
+
+        self.copy_between_node_and_container(
+            '{0}:{1}'.format(container, path_to_file), old_file)
+        self.admin_remote.download(old_file, old_file)
+        self.change_content_in_yaml(old_file, new_file, element, value)
+        self.admin_remote.upload(new_file, new_file)
+        self.copy_between_node_and_container(
+            new_file, '{0}:{1}'.format(container, path_to_file))
+
 
 class AdminActions(BaseActions):
     """ All actions relating to the admin node.
@@ -258,15 +307,15 @@ class PostgresActions(BaseActions):
         return int(self.run_query('nailgun', q))
 
 
-class FuelPluginBuilder(object):
+class FuelPluginBuilder(BaseActions):
     """
     Basic class for fuel plugin builder support in tests.
 
     Initializes BaseActions.
     """
     def __init__(self, admin_remote):
-        self.admin_remote = admin_remote
-        self.admin_node = BaseActions(self.admin_remote)
+        super(FuelPluginBuilder, self).__init__(admin_remote)
+        self.container = 'nailgun'
 
     def fpb_install(self):
         """
@@ -283,7 +332,7 @@ class FuelPluginBuilder(object):
                     cd dist;
                     pip install *.tar.gz'""".format(FUEL_PLUGIN_BUILDER_REPO)
 
-        self.admin_node.execute_in_container(fpb_cmd, 'nailgun', 0)
+        self.execute_in_container(fpb_cmd, self.container, 0)
 
     def fpb_create_plugin(self, name):
         """
@@ -291,8 +340,8 @@ class FuelPluginBuilder(object):
         :param name: name for plugin created
         :return: nothing
         """
-        self.admin_node.execute_in_container("fpb --create {0}"
-                                             .format(name), 'nailgun', 0)
+        self.execute_in_container("fpb --create {0}".format(
+            name), self.container, 0)
 
     def fpb_build_plugin(self, path):
         """
@@ -300,8 +349,8 @@ class FuelPluginBuilder(object):
         :param path: path to plugin. For ex.: /root/example_plugin
         :return: nothing
         """
-        self.admin_node.execute_in_container("fpb --build {0}"
-                                             .format(path), 'nailgun', 0)
+        self.execute_in_container("fpb --build {0}".format(
+            path), self.container, 0)
 
     def fpb_validate_plugin(self, path):
         """
@@ -309,8 +358,8 @@ class FuelPluginBuilder(object):
         :param path: path to plugin to be verified
         :return: nothing
         """
-        self.admin_node.execute_in_container("fpb --check {0}"
-                                             .format(path), 'nailgun', 0)
+        self.execute_in_container("fpb --check {0}".format(
+            path), self.container, 0)
 
     def fpb_copy_plugin_from_container(self, plugin_name, path_to):
         """
@@ -320,8 +369,8 @@ class FuelPluginBuilder(object):
         :param path_to: path to copy to
         :return: nothing
         """
-        self.admin_node.copy_between_node_and_container(
-            'nailgun:/root/{0}/*.rpm'.format(plugin_name),
+        self.copy_between_node_and_container(
+            '{0}:/root/{1}/*.rpm'.format(self.container, plugin_name),
             '{0}/{1}.rpm'.format(path_to, plugin_name))
 
     def fpb_replace_plugin_content(self, local_file, remote_file):
@@ -331,11 +380,11 @@ class FuelPluginBuilder(object):
         :param remote_file: file to be replaced
         :return: nothing
         """
-        self.admin_node.execute_in_container(
-            "rm -rf {0}".format(remote_file), 'nailgun')
+        self.execute_in_container(
+            "rm -rf {0}".format(remote_file), self.container)
         self.admin_remote.upload(local_file, "/tmp/temp.file")
-        self.admin_node.copy_between_node_and_container(
-            '/tmp/temp.file', 'nailgun:{0}'.format(remote_file))
+        self.copy_between_node_and_container(
+            '/tmp/temp.file', '{0}:{1}'.format(self.container, remote_file))
 
     def fpb_change_plugin_version(self, plugin_name, new_version):
         """
@@ -344,10 +393,10 @@ class FuelPluginBuilder(object):
         :param new_version: new version to be used for plugin
         :return: nothing
         """
-        self.admin_node.execute_in_container(
-            'sed -i "s/^\(version:\) \(.*\)/\\1 {0}/g" '
-            '/root/{1}/metadata.yaml'
-            .format(new_version, plugin_name), 'nailgun')
+        self.change_yaml_file_in_container(
+            '/root/{}/metadata.yaml'.format(plugin_name),
+            ['version'],
+            new_version)
 
     def fpb_change_package_version(self, plugin_name, new_version):
         """
@@ -356,36 +405,10 @@ class FuelPluginBuilder(object):
         :param new_version: version to be changed at
         :return: nothing
         """
-        self.admin_node.execute_in_container(
-            'sed -i "s/^\(package_version: \'\)\(.*\)\(\'\)/\\1{0}\\3/g" '
-            '/root/{1}/metadata.yaml'
-            .format(new_version, plugin_name), 'nailgun')
-
-    def change_content_in_yaml(self, old_file, new_file, element, value):
-        """
-        Changes content in old_file at element is given to the new value
-        and creates new file with changed content
-        :param old_file: a path to the file content from to be changed
-        :param new_file: a path to the new file to ve created with new content
-        :param element: tuple with path to element to be changed
-
-            for example: ['root_elem', 'first_elem', 'target_elem']
-            if there are a few elements with equal names use integer
-            to identify which element should be used
-
-        :return: nothing
-        """
-
-        with open(old_file, 'r') as f_old:
-            yaml_dict = yaml.load(f_old)
-
-        origin_yaml = yaml_dict
-        for k in element[:-1]:
-            yaml_dict = yaml_dict[k]
-        yaml_dict[element[-1]] = value
-
-        with open(new_file, 'w') as f_new:
-            yaml.dump(origin_yaml, f_new)
+        self.change_yaml_file_in_container(
+            '/root/{}/metadata.yaml'.format(plugin_name),
+            ['package_version'],
+            new_version)
 
 
 class CobblerActions(BaseActions):

@@ -55,7 +55,6 @@ class RebootPlugin(TestBasic):
         plugin_path = '/var'
         tasks_path = os.path.dirname(os.path.abspath(__file__))
         tasks_file = 'reboot_tasks.yaml'
-        # start reverting snapshot
         self.env.revert_snapshot("ready_with_5_slaves")
         # let's get ssh client for the master node
         admin_remote = self.env.d_env.get_admin_remote()
@@ -69,6 +68,14 @@ class RebootPlugin(TestBasic):
         fpb.fpb_replace_plugin_content(
             os.path.join(tasks_path, tasks_file),
             os.path.join('/root/', plugin_name, 'tasks.yaml'))
+        # change default supported version to 7.0
+        fpb.change_yaml_file_in_container(
+            '/root/{}/metadata.yaml'.format(plugin_name),
+            ['fuel_version'], ['7.0'])
+        for elem in range(2):
+            fpb.change_yaml_file_in_container(
+                '/root/{}/metadata.yaml'.format(plugin_name),
+                ['releases', elem, 'version'], '-')
         # build plugin
         fpb.fpb_build_plugin(os.path.join('/root/', plugin_name))
         # copy plugin archive file from nailgun container
@@ -196,6 +203,14 @@ class RebootPlugin(TestBasic):
             os.path.join('/tmp/', tasks_file),
             os.path.join('/root/', plugin_name, 'tasks.yaml')
         )
+        # change default supported version to 7.0
+        fpb.change_yaml_file_in_container(
+            '/root/{}/metadata.yaml'.format(plugin_name),
+            ['fuel_version'], ['7.0'])
+        for elem in range(2):
+            fpb.change_yaml_file_in_container(
+                '/root/{}/metadata.yaml'.format(plugin_name),
+                ['releases', elem, 'version'], '-')
         # build plugin
         fpb.fpb_build_plugin(os.path.join('/root/', plugin_name))
         # copy plugin archive file from nailgun container
