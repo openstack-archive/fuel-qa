@@ -23,6 +23,7 @@ from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.helpers.fuel_actions import FuelPluginBuilder
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 
 
 @test(groups=["fuel_plugins"])
@@ -31,6 +32,7 @@ class RebootPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_cluster_with_reboot_plugin"])
+    @log_snapshot_after_test
     def deploy_cluster_with_reboot_plugin(self):
         """Add pre-deployment reboot task to nailgun via plugin.
 
@@ -150,6 +152,7 @@ class RebootPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_cluster_with_reboot_plugin_timeout"])
+    @log_snapshot_after_test
     def deploy_cluster_with_reboot_plugin_timeout(self):
         """Check deployment is failed by reboot task plugin.
 
