@@ -17,10 +17,10 @@ import inspect
 import json
 import os
 from subprocess import call
+import requests
 import sys
 import time
 import traceback
-import urllib2
 from urlparse import urlparse
 
 from devops.helpers import helpers
@@ -42,15 +42,23 @@ from fuelweb_test.helpers.utils import store_packages_json
 from fuelweb_test.helpers.utils import timestat
 
 
-def save_logs(url, filename):
-    logger.info('Saving logs to "{}" file'.format(filename))
-    try:
-        with open(filename, 'w') as f:
-            f.write(
-                urllib2.urlopen(url).read()
-            )
-    except (urllib2.HTTPError, urllib2.URLError) as e:
-        logger.error(e)
+def save_logs(url, path, auth_token=None, chunk_size=1024):
+    logger.info('Saving logs to "{}" file'.format(path))
+    headers = {}
+    if auth_token is not None:
+        headers['X-Auth-Token'] = auth_token
+
+    stream = requests.get(url, headers=headers, stream=True)
+    if stream.status_code != 200:
+        logger.error("%s %s: %s", stream.status_code, stream.reason,
+                     stream.content)
+        return
+
+    with open(path, 'wb') as fp:
+        for chunk in stream.iter_content(chunk_size=chunk_size):
+            if chunk:
+                fp.write(chunk)
+                fp.flush()
 
 
 def log_snapshot_after_test(func):
@@ -341,7 +349,8 @@ def create_diagnostic_snapshot(env, status, name=""):
         name=name,
         time=time.strftime("%Y_%m_%d__%H_%M_%S", time.gmtime())
     )
-    save_logs(url, os.path.join(settings.LOGS_DIR, log_file_name))
+    save_logs(url, os.path.join(settings.LOGS_DIR, log_file_name),
+              auth_token=env.fuel_web.client.client.token)
 
 
 def retry(count=3, delay=30):
