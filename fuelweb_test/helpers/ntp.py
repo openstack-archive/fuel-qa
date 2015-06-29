@@ -139,7 +139,7 @@ class Ntp(object):
 
         start_time = time.time()
         while start_time + timeout > time.time():
-            # peer = `ntpq -pn`
+            # peer = `ntpq -pn 127.0.0.1`
             self.peers = self.get_peers()[2:]  # skip the header
             logger.debug("Node: {0}, ntpd peers: {1}".format(
                 self.node_name, self.peers))
@@ -188,7 +188,7 @@ class NtpInitscript(Ntp):
 
     @logwrap
     def get_peers(self):
-        return self.remote.execute('ntpq -pn')['stdout']
+        return self.remote.execute('ntpq -pn 127.0.0.1')['stdout']
 
 
 class NtpPacemaker(Ntp):
@@ -211,4 +211,4 @@ class NtpPacemaker(Ntp):
     @logwrap
     def get_peers(self):
         return self.remote.execute(
-            'ip netns exec vrouter ntpq -pn')['stdout']
+            'ip netns exec vrouter ntpq -pn 127.0.0.1')['stdout']
