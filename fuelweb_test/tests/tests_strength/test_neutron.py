@@ -147,6 +147,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
             6. Check network connectivity from instance via
                dhcp namespace
             7. Run OSTF
+
         Duration 30m
         """
         self.env.revert_snapshot("deploy_ha_neutron")

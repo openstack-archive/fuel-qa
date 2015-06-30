@@ -37,7 +37,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
             2. Add 3 nodes with controller roles
             3. Add 2 nodes with compute roles
             4. Deploy the cluster
-            8. Make snapshot
+            5. Make snapshot
 
         Duration 70m
         Snapshot prepare_ha_neutron
@@ -211,7 +211,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
     def ha_neutron_virtual_router(self):
         """Verify connection is present and
         downloading maintained by conntrackd
-         after primary controller destroy
+        after primary controller destroy
 
         Scenario:
             1. SSH to compute node
@@ -234,8 +234,8 @@ class TestHaNeutronFailover(TestHaFailoverBase):
             1. SSH to controller
             2. set 5 % package loss on br-mgmt
             3. run ostf
-        Duration
 
+        Duration
         """
         # TODO enable test when fencing will be implements
         super(self.__class__, self).ha_controller_loss_packages()

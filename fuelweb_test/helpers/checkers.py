@@ -40,9 +40,8 @@ from time import sleep
 
 @logwrap
 def check_cinder_status(remote):
-    """Parse output and return False
-       if any enabled service is down.
-       'cinder service-list' stdout example:
+    """Parse output and return False if any enabled service is down.
+    'cinder service-list' stdout example:
     | cinder-scheduler | node-1.test.domain.local | nova | enabled |   up  |
     | cinder-scheduler | node-2.test.domain.local | nova | enabled |  down |
     """
@@ -922,8 +921,7 @@ def get_file_size(remote, file_name, file_path):
 
 @logwrap
 def check_ping(remote, host, deadline=10, size=56, timeout=1, interval=1):
-    """Check network connectivity from
-     remote to host using ICMP (ping)
+    """Check network connectivity from remote to host using ICMP (ping)
     :param remote: SSHClient
     :param host: string IP address or host/domain name
     :param deadline: time in seconds before ping exits

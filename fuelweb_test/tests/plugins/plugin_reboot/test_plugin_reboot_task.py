@@ -157,17 +157,17 @@ class RebootPlugin(TestBasic):
         """Check deployment is failed by reboot task plugin.
 
         Scenario:
-        1. Revert snapshot with 3 nodes
-        2. Download and install fuel-plugin-builder
-        3. Create plugin with reboot task,
-            set timeout for reboot task as 1 second
-        4. Build and copy plugin from container nailgun
-        5. Install plugin to fuel
-        6. Create cluster and enable plugin
-        7. Provision nodes
-        8. Deploy cluster
-        9. Check deployment was failed by reboot task
-        10. Check error msg at the logs
+            1. Revert snapshot with 3 nodes
+            2. Download and install fuel-plugin-builder
+            3. Create plugin with reboot task,
+               set timeout for reboot task as 1 second
+            4. Build and copy plugin from container nailgun
+            5. Install plugin to fuel
+            6. Create cluster and enable plugin
+            7. Provision nodes
+            8. Deploy cluster
+            9. Check deployment was failed by reboot task
+            10. Check error msg at the logs
 
         Duration 15m
         """

@@ -216,7 +216,7 @@ class ExamplePlugin(TestBasic):
             7. Deploy the cluster
             8. Run network verification
             9. Check plugin health
-            10 Add 2 nodes with controller role
+            10. Add 2 nodes with controller role
             11. Deploy cluster
             12. Check plugin health
             13. Run OSTF

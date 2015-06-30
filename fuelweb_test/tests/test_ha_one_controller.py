@@ -54,7 +54,7 @@ class OneNodeDeploy(TestBasic):
             2. Add 1 node with controller role
             3. Deploy the cluster
             4. Validate cluster was set up correctly, there are no dead
-            services, there are no errors in logs
+               services, there are no errors in logs
 
         Duration 20m
 
@@ -101,7 +101,7 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
             3. Add 1 node with compute role
             4. Deploy the cluster
             5. Validate cluster was set up correctly, there are no dead
-            services, there are no errors in logs
+               services, there are no errors in logs
             6. Verify networks
             7. Verify network configuration on controller
             8. Run OSTF
@@ -192,7 +192,7 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
             3. Add 1 node with compute role
             4. Deploy the cluster
             5. Validate cluster was set up correctly, there are no dead
-            services, there are no errors in logs
+               services, there are no errors in logs
             6. Block first VLAN
             7. Run Verify network and assert it fails
             8. Restore first VLAN
@@ -240,11 +240,11 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
             3. Add 1 node with compute role
             4. Deploy the cluster
             5. Validate cluster was set up correctly, there are no dead
-            services, there are no errors in logs
+               services, there are no errors in logs
             6. Add 1 node with role compute
             7. Deploy changes
             8. Validate cluster was set up correctly, there are no dead
-            services, there are no errors in logs
+               services, there are no errors in logs
             9. Verify services list on compute nodes
             10. Run OSTF
 
@@ -313,7 +313,7 @@ class HAOneControllerVlan(TestBasic):
             4. Set up cluster to use Network VLAN manager with 8 networks
             5. Deploy the cluster
             6. Validate cluster was set up correctly, there are no dead
-            services, there are no errors in logs
+               services, there are no errors in logs
             7. Run network verification
             8. Run OSTF
 
@@ -371,8 +371,7 @@ class HAOneControllerVlan(TestBasic):
             3. Deploy the cluster
             4. Run network verification
             5. Run OSTF
-            6. Ssh to the base-os node and check
-                /etc/astute.yaml link source.
+            6. Ssh to the base-os node and check /etc/astute.yaml link source.
             7. Make snapshot.
 
         Snapshot: deploy_base_os_node
@@ -580,7 +579,7 @@ class HAOneControllerCinder(TestBasic):
             4. Add 1 node with cinder role
             5. Deploy the cluster
             6. Validate cluster was set up correctly, there are no dead
-            services, there are no errors in logs
+               services, there are no errors in logs
             7. Run OSTF
 
         Duration 30m
@@ -991,7 +990,7 @@ class HAOneControllerFlatUSB(HAOneControllerFlatBase):
             3. Add 1 node with compute role
             4. Deploy the cluster
             5. Validate cluster was set up correctly, there are no dead
-            services, there are no errors in logs
+               services, there are no errors in logs
             6. Verify networks
             7. Verify network configuration on controller
             8. Run OSTF
@@ -1031,10 +1030,10 @@ class ProvisioningScripts(TestBasic):
         Scenario:
             1. Deploy master node
             2. Check sizes of the files
-            1. Create cluster
-            2. Add 1 node with controller role
-            3. Deploy the cluster
-            4. Check sizes of the files again
+            3. Create cluster
+            4. Add 1 node with controller role
+            5. Deploy the cluster
+            6. Check sizes of the files again
 
         Duration 45m
         """

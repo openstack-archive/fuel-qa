@@ -27,7 +27,7 @@ class PuppetTestGenerator:
     You should give constructor following arguments:
 
         - local_modules_path* Path to puppet modules which will be scanned for
-        test files
+          test files
         - tests_directory_path* Output directory where files will be written
         - debug level
     """

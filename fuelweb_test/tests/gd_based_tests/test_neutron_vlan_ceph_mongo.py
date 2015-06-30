@@ -553,7 +553,7 @@ class NeutronVlanCephMongo(TestBasic):
             3. Execute openstack-haproxy task on primary controller
             4. Verify that task was finished with success.
             5. Assert task execution
-            . Create snapshot
+            6. Create snapshot
 
         Snapshot: "step_8_run_openstack_haproxy_primary_controller"
         """
@@ -989,10 +989,10 @@ class NeutronVlanCephMongo(TestBasic):
           Scenario:
             1. Revert snapshot "step 13 run cluster haproxy controller"
             2. Get cluster id
-            4. Execute openstack-haproxy task on controller
-            5. Verify that task was finished with success.
-            6. Assert task execution
-            7. Create snapshot
+            3. Execute openstack-haproxy task on controller
+            4. Verify that task was finished with success.
+            5. Assert task execution
+            6. Create snapshot
 
         Snapshot: "step_14_run_openstack_haproxy_controller"
         """
@@ -1081,10 +1081,10 @@ class NeutronVlanCephMongo(TestBasic):
           Scenario:
             1. Revert snapshot "step_14_run_openstack_haproxy_controller"
             2. Get cluster id
-            4. Execute openstack-controller task on controller
-            5. Verify that task was finished with success.
-            6. Assert task execution
-            7. Create snapshot
+            3. Execute openstack-controller task on controller
+            4. Verify that task was finished with success.
+            5. Assert task execution
+            6. Create snapshot
 
         Snapshot: "step_15_run_openstack_controller"
         """
@@ -1143,10 +1143,10 @@ class NeutronVlanCephMongo(TestBasic):
           Scenario:
             1. Revert snapshot "step_15_run_openstack_controller"
             2. Get cluster id
-            4. Execute controller_remaining_tasks on controller
-            5. Verify that task was finished with success.
-            6. Assert task execution
-            7. Create snapshot
+            3. Execute controller_remaining_tasks on controller
+            4. Verify that task was finished with success.
+            5. Assert task execution
+            6. Create snapshot
 
         Snapshot: "step_16_run_controller_remaining_tasks"
         """
@@ -1233,10 +1233,10 @@ class NeutronVlanCephMongo(TestBasic):
           Scenario:
             1. Revert snapshot "step_16_run_controller_remaining_tasks"
             2. Get cluster id
-            4. Execute top-role-compute task on computes
-            5. Verify that task was finished with success.
-            6. Assert task execution
-            7. Create snapshot
+            3. Execute top-role-compute task on computes
+            4. Verify that task was finished with success.
+            5. Assert task execution
+            6. Create snapshot
 
         Snapshot: "step_17_run_top_role_compute"
         """
@@ -1312,10 +1312,10 @@ class NeutronVlanCephMongo(TestBasic):
           Scenario:
             1. Revert snapshot "step_17_run_top_role_compute"
             2. Get cluster id
-            4. Execute top-role-ceph-osd task on cinder nodes
-            5. Verify that task was finished with success.
-            6. Assert task execution
-            7. Create snapshot
+            3. Execute top-role-ceph-osd task on cinder nodes
+            4. Verify that task was finished with success.
+            5. Assert task execution
+            6. Create snapshot
 
         Snapshot: "step_18_run_top_role_ceph_osd"
         """

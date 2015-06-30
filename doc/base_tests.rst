@@ -97,7 +97,7 @@ Test Neutron
 
 Test Neutron Vlan Ceph Mongo
 ----------------------------
-.. automodule:: fuelweb_test.tests.gd_based_tests.test_neutron
+.. automodule:: fuelweb_test.tests.gd_based_tests.test_neutron_vlan_ceph_mongo
    :members:
 
 
@@ -137,15 +137,6 @@ Reboot tests
 Zabbix tests
 ------------
 .. automodule:: fuelweb_test.tests.plugins.plugin_zabbix.test_plugin_zabbix
-   :members:
-
-
-Openstack patching tests
-========================
-
-Openstack patching tests
-------------------------
-.. automodule:: fuelweb_test.tests.tests_os_patching.test_os_patching
    :members:
 
 

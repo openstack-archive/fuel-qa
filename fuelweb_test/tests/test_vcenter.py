@@ -303,10 +303,9 @@ class VcenterDeploy(TestBasic):
             2. Configure CephOSD as backend for Glance and Cinder
             3. Add 3 nodes with Controller+CephOSD roles
             4. Add 2 nodes with compute role
-            6. Deploy the cluster
-            7. Run network verification
-            8. Run OSTF
-
+            5. Deploy the cluster
+            6. Run network verification
+            7. Run OSTF
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 

@@ -464,19 +464,21 @@ def duration(func):
     """Measuring execution time of the decorated method in context of a test.
 
     settings.TIMESTAT_PATH_YAML contains file name for collected data.
-    Data are stored in the following format:
+    Data are stored to YAML file in the following format:
 
     <name_of_system_test_method>:
       <name_of_decorated_method>_XX: <seconds>
 
     , where:
-    <name_of_system_test_method> - The name of the system test method started
-                                   by proboscis,
-    <name_of_decorated_method> - Name of the method to which this decorator
-                                 is implemented. _XX is a number of the method
-                                 call while test is running, from _00 to _99.
-    <seconds> - Time in seconds with floating point, consumed by the decorated
-                method.
+
+      - name_of_system_test_method: Name of the system test method started
+                                    by proboscis;
+      - name_of_decorated_method: Name of the method to which this decorator
+                                  is implemented. _XX is a number of the method
+                                  call while test is running, from _00 to _99
+      - seconds: Time in seconds with floating point, consumed by the
+                 decorated method
+
     Thus, different tests can call the same decorated method multiple times
     and get the separate measurement for each call.
     """

@@ -40,7 +40,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
             3. Add 1 node with compute role
             4. Deploy the cluster
             5. Validate cluster was set up correctly, there are no dead
-            services, there are no errors in logs
+               services, there are no errors in logs
             6. Verify networks
             7. Verify network configuration on controller
             8. Run OSTF
@@ -48,7 +48,6 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
             10. Run openstack verification
 
         Duration 1000m
-
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 

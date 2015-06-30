@@ -35,19 +35,18 @@ class CephRestart(TestBasic):
     @log_snapshot_after_test
     def ceph_ha_one_controller_with_cinder_restart(self):
         """Restart cluster with ceph and cinder in ha mode
-
         Scenario:
+
             1. Create cluster in ha mode with 1 controller
             2. Add 1 node with controller and ceph OSD roles
             3. Add 1 node with compute role
             4. Add 2 nodes with cinder and ceph OSD roles
             5. Deploy the cluster
-            7. Warm restart
-            8. Check ceph status
+            6. Warm restart
+            7. Check ceph status
 
         Duration 90m
         Snapshot None
-
         """
         if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_REDHAT:
             raise SkipTest()
