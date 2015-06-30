@@ -423,6 +423,7 @@ PATCHING_SNAPSHOT = os.environ.get("PATCHING_SNAPSHOT", None)
 PATCHING_CUSTOM_TEST = os.environ.get("PATCHING_CUSTOM_TEST", None)
 PATCHING_DISABLE_UPDATES = os.environ.get(
     'PATCHING_DISABLE_UPDATES', 'false') == 'true'
+PATCHING_RUN_RALLY = os.environ.get("PATCHING_RUN_RALLY", 'false') == 'true'
 
 DOWNLOAD_LINK = os.environ.get(
     'DOWNLOAD_LINK', 'http://releases.ubuntu.com/14.04.2/'
