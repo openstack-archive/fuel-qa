@@ -135,6 +135,11 @@ def map_test(target):
                                           env_distro,
                                           target)
 
+    if 'rally' in errata.keys():
+        if len(errata['rally']) > 0:
+            settings.PATCHING_RUN_RALLY = True
+            settings.RALLY_TAGS = errata['rally']
+
     if settings.PATCHING_CUSTOM_TEST:
         deployment_test = settings.PATCHING_CUSTOM_TEST
         settings.PATCHING_SNAPSHOT = \
