@@ -737,7 +737,7 @@ class FuelWebClient(object):
     @check_repos_management
     @custom_repo
     def deploy_cluster_wait(self, cluster_id, is_feature=False,
-                            timeout=70 * 60, interval=30,
+                            timeout=130 * 60, interval=30,
                             check_services=True):
         if not is_feature:
             logger.info('Deploy cluster %s', cluster_id)
