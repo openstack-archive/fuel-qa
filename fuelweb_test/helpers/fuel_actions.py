@@ -63,12 +63,14 @@ class BaseActions(object):
         :param copy_from: path to copy file from
         :param copy_to: path to copy file to
         For ex.:
-            to copy from container to master node use:
-                copy_from = container:path_from
-                copy_to = path_to
-            to copy from master node to container use:
-                copy_from = path_from
-                copy_to = container:path_to
+
+            - to copy from container to master node use:
+                 copy_from = container:path_from
+                 copy_to = path_to
+            - to copy from master node to container use:
+                 copy_from = path_from
+                 copy_to = container:path_to
+
         :return:
             Standard output from console
         """
@@ -366,9 +368,11 @@ class FuelPluginBuilder(object):
         :param old_file: a path to the file content from to be changed
         :param new_file: a path to the new file to ve created with new content
         :param element: tuple with path to element to be changed
+
             for example: ['root_elem', 'first_elem', 'target_elem']
             if there are a few elements with equal names use integer
             to identify which element should be used
+
         :return: nothing
         """
 

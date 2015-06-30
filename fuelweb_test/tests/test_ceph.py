@@ -684,14 +684,14 @@ class CheckCephPartitionsAfterReboot(TestBasic):
             3. Add 1 node with compute and Ceph OSD roles
             4. Add 1 node with Ceph OSD role
             5. Deploy the cluster
-            7. Check Ceph status
-            8. Read current partitions
-            9. Warm-reboot Ceph nodes
-            10. Read partitions again
-            11. Check Ceph health
-            12. Cold-reboot Ceph nodes
-            13. Read partitions again
-            14. Check Ceph health
+            6. Check Ceph status
+            7. Read current partitions
+            8. Warm-reboot Ceph nodes
+            9. Read partitions again
+            10. Check Ceph health
+            11. Cold-reboot Ceph nodes
+            12. Read partitions again
+            13. Check Ceph health
 
         Duration 40m
         Snapshot check_ceph_partitions_after_reboot

@@ -39,9 +39,9 @@ class TestMultipleClusterNets(TestBasic):
             1. Revert snapshot with 5 slaves
             2. Check that slaves got IPs via DHCP from both admin/pxe networks
             3. Make environment snapshot
+
         Duration 6m
         Snapshot multiple_cluster_net_setup
-
         """
 
         if not MULTIPLE_NETWORKS:

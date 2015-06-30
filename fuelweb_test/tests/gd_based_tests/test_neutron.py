@@ -277,15 +277,15 @@ class NeutronGre(TestBasic):
     def step_5_run_cluster_haproxy_controller(self):
         """Execute cluster-haproxy task on controller, create snapshot
           Depends:
-          "run_virtual_ips_controller"
+          "run_tasks_end_with_vips"
 
           Scenario:
             1. Revert snapshot "run_virtual_ips_controller"
             2. Get cluster id
-            4. Execute cluster-haproxy task on controller
-            5. Verify that task was finished with success.
-            6. Assert task execution
-            7. Create snapshot
+            3. Execute cluster-haproxy task on controller
+            4. Verify that task was finished with success.
+            5. Assert task execution
+            6. Create snapshot
 
         Snapshot: "step_5_run_cluster_haproxy_controller"
         """
@@ -344,10 +344,10 @@ class NeutronGre(TestBasic):
           Scenario:
             1. Revert snapshot "step 5 run cluster haproxy controller"
             2. Get cluster id
-            4. Execute openstack-haproxy task on controller
-            5. Verify that task was finished with success.
-            6. Assert task execution
-            7. Create snapshot
+            3. Execute openstack-haproxy task on controller
+            4. Verify that task was finished with success.
+            5. Assert task execution
+            6. Create snapshot
 
         Snapshot: "step_6_run_openstack_haproxy_controller"
         """
@@ -426,10 +426,10 @@ class NeutronGre(TestBasic):
           Scenario:
             1. Revert snapshot "step_6_run_openstack_haproxy_controller"
             2. Get cluster id
-            4. Execute openstack-controller task on controller
-            5. Verify that task was finished with success.
-            6. Assert task execution
-            7. Create snapshot
+            3. Execute openstack-controller task on controller
+            4. Verify that task was finished with success.
+            5. Assert task execution
+            6. Create snapshot
 
         Snapshot: "step_7_run_openstack_controller"
         """
@@ -483,10 +483,10 @@ class NeutronGre(TestBasic):
           Scenario:
             1. Revert snapshot "step_7_run_openstack_controller"
             2. Get cluster id
-            4. Executecontroller_remaining_tasks on controller
-            5. Verify that task was finished with success.
-            6. Assert task execution
-            7. Create snapshot
+            3. Executecontroller_remaining_tasks on controller
+            4. Verify that task was finished with success.
+            5. Assert task execution
+            6. Create snapshot
 
         Snapshot: "step_8_run_controller_remaining_tasks"
         """
@@ -573,10 +573,10 @@ class NeutronGre(TestBasic):
           Scenario:
             1. Revert snapshot "step_8_run_controller_remaining_task"
             2. Get cluster id
-            4. Execute top-role-compute task on computes
-            5. Verify that task was finished with success.
-            6. Assert task execution
-            7. Create snapshot
+            3. Execute top-role-compute task on computes
+            4. Verify that task was finished with success.
+            5. Assert task execution
+            6. Create snapshot
 
         Snapshot: "step_9_run_top_role_compute"
         """
@@ -651,10 +651,10 @@ class NeutronGre(TestBasic):
           Scenario:
             1. Revert snapshot "step_9_run_top_role_compute"
             2. Get cluster id
-            4. Execute top-role-cinder task on cinder nodes
-            5. Verify that task was finished with success.
-            6. Assert task execution
-            7. Create snapshot
+            3. Execute top-role-cinder task on cinder nodes
+            4. Verify that task was finished with success.
+            5. Assert task execution
+            6. Create snapshot
 
         Snapshot: "step_10_run_top_role_cinder"
         """

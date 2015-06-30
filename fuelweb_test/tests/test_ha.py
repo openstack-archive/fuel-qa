@@ -45,7 +45,7 @@ class TestHaVLAN(TestBasic):
             4. Set up cluster to use Network VLAN manager with 8 networks
             5. Deploy the cluster
             6. Validate cluster was set up correctly, there are no dead
-            services, there are no errors in logs
+               services, there are no errors in logs
             7. Run network verification
             8. Run OSTF
             9. Create snapshot
@@ -153,7 +153,7 @@ class TestHaFlat(TestBasic):
             3. Add 2 nodes with compute roles
             4. Deploy the cluster
             5. Validate cluster was set up correctly, there are no dead
-            services, there are no errors in logs
+               services, there are no errors in logs
             6. Run verify networks
             7. Run OSTF
             8. Make snapshot
@@ -459,7 +459,7 @@ class BackupRestoreHa(TestBasic):
             1. Revert snapshot "deploy_ha_flat"
             2. Backup master
             3. Check backup
-            4  Run OSTF
+            4. Run OSTF
             5. Add 1 node with compute role
             6. Restore master
             7. Check restore

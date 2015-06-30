@@ -870,9 +870,9 @@ class HeatHAOneController(TestBasic):
             2. Add 1 node with controller role and mongo
             3. Add 1 nodes with compute role
             4. Set Ceilometer install option
-            4. Deploy the cluster
-            5. Verify Heat, Ceilometer services
-            6. Run OSTF platform tests
+            5. Deploy the cluster
+            6. Verify Heat, Ceilometer services
+            7. Run OSTF platform tests
 
         Duration 40m
         Snapshot: deploy_heat_ha_one_controller_nova
@@ -958,13 +958,12 @@ class HeatHA(TestBasic):
             2. Add 3 node with controller role and mongo
             3. Add 1 nodes with compute role
             4. Set Ceilometer install option
-            4. Deploy the cluster
-            5. Verify Heat and Ceilometer services
-            6. Run OSTF platform tests
+            5. Deploy the cluster
+            6. Verify Heat and Ceilometer services
+            7. Run OSTF platform tests
 
         Duration 70m
         Snapshot: deploy_heat_ha
-
         """
 
         self.env.revert_snapshot("ready_with_5_slaves")

@@ -43,7 +43,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         logger.debug("slave kernel is {0}".format(kernel))
         return kernel
 
-    @test(groups=["upgrade_ha_one_controller"])
+    @test(groups=["upgrade_ha_one_controller",
+                  "upgrade_ceph_ha_one_controller"])
     @log_snapshot_after_test
     def upgrade_ha_one_controller_env(self):
         """Upgrade ha one controller deployed cluster with ceph
@@ -59,12 +60,9 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             8. Run OSTF
 
         """
-
-        # For upgrade jobs *from* 6.1, change snapshot name to
-        # "ceph_ha_one_controller_compact"
-        if not self.env.d_env.has_snapshot('ceph_multinode_compact'):
+        if not self.env.d_env.has_snapshot('ceph_ha_one_controller_compact'):
             raise SkipTest()
-        self.env.revert_snapshot("ceph_multinode_compact")
+        self.env.revert_snapshot('ceph_ha_one_controller_compact')
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -123,7 +121,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 
         self.env.make_snapshot("upgrade_ha_one_controller")
 
-    @test(groups=["upgrade_ha_one_controller_delete_node"])
+    @test(groups=["upgrade_ha_one_controller_delete_node",
+                  "upgrade_ceph_ha_one_controller"])
     @log_snapshot_after_test
     def upgrade_ha_one_controller_delete_node(self):
         """Upgrade ha 1 controller deployed cluster with ceph and
@@ -140,12 +139,9 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             8. Run OSTF
 
         """
-
-        # For upgrade jobs *from* 6.1, change snapshot name to
-        # "ceph_ha_one_controller_compact"
-        if not self.env.d_env.has_snapshot('ceph_multinode_compact'):
+        if not self.env.d_env.has_snapshot('ceph_ha_one_controller_compact'):
             raise SkipTest()
-        self.env.revert_snapshot("ceph_multinode_compact")
+        self.env.revert_snapshot('ceph_ha_one_controller_compact')
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         checkers.upload_tarball(self.env.d_env.get_admin_remote(),
@@ -190,7 +186,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
         self.env.make_snapshot("upgrade_ha_one_controller_delete_node")
 
-    @test(groups=["upgrade_ha"])
+    @test(groups=["upgrade_ha", "upgrade_neutron_gre_ha"])
     @log_snapshot_after_test
     def upgrade_ha_env(self):
         """Upgrade ha deployed cluster
@@ -285,7 +281,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             cluster_id=cluster_id)
         self.env.make_snapshot("upgrade_ha")
 
-    @test(groups=["deploy_ha_after_upgrade"])
+    @test(groups=["deploy_ha_after_upgrade",
+                  "upgrade_ceph_ha_one_controller"])
     @log_snapshot_after_test
     def deploy_ha_after_upgrade(self):
         """Upgrade and deploy new ha cluster
@@ -300,12 +297,9 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             7. Run OSTF
 
         """
-
-        # For upgrade jobs *from* 6.1, change snapshot name to
-        # "ceph_ha_one_controller_compact"
-        if not self.env.d_env.has_snapshot('ceph_multinode_compact'):
+        if not self.env.d_env.has_snapshot('ceph_ha_one_controller_compact'):
             raise SkipTest()
-        self.env.revert_snapshot("ceph_multinode_compact")
+        self.env.revert_snapshot('ceph_ha_one_controller_compact')
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         available_releases_before = self.fuel_web.get_releases_list_for_os(
@@ -376,7 +370,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             cluster_id=cluster_id)
         self.env.make_snapshot("deploy_ha_after_upgrade")
 
-    @test(groups=["upgrade_fuel_after_rollback"])
+    @test(groups=["upgrade_fuel_after_rollback",
+                  "rollback_neutron_gre"])
     @log_snapshot_after_test
     def upgrade_fuel_after_rollback(self):
         """Upgrade Fuel after rollback and deploy new cluster
@@ -481,7 +476,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 class RollbackFuelMaster(base_test_data.TestBasic):
     """RollbackFuelMaster."""  # TODO documentation
 
-    @test(groups=["rollback_automatic_ha"])
+    @test(groups=["rollback_automatic_ha", "rollback_neutron_gre_ha"])
     @log_snapshot_after_test
     def rollback_automatically_ha_env(self):
         """Rollback manually ha deployed cluster
@@ -543,7 +538,8 @@ class RollbackFuelMaster(base_test_data.TestBasic):
 
         self.env.make_snapshot("rollback_automatic_ha")
 
-    @test(groups=["rollback_automatic_ha_one_controller"])
+    @test(groups=["rollback_automatic_ha_one_controller",
+                  "rollback_ceph_ha_one_controller"])
     @log_snapshot_after_test
     def rollback_automatically_ha_one_controller_env(self):
         """Rollback automatically ha one controller deployed cluster
@@ -560,10 +556,10 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             9. Run OSTF
 
         """
-        if not self.env.d_env.has_snapshot('ceph_multinode_compact'):
+        if not self.env.d_env.has_snapshot('ceph_ha_one_controller_compact'):
             raise SkipTest()
 
-        self.env.revert_snapshot("ceph_multinode_compact")
+        self.env.revert_snapshot('ceph_ha_one_controller_compact')
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
@@ -616,7 +612,8 @@ class RollbackFuelMaster(base_test_data.TestBasic):
 
         self.env.make_snapshot("rollback_automatic_ha_one_controller")
 
-    @test(groups=["rollback_automatically_delete_node"])
+    @test(groups=["rollback_automatically_delete_node",
+                  "rollback_neutron_gre"])
     @log_snapshot_after_test
     def rollback_automatically_delete_node(self):
         """Rollback automatically ha one controller deployed cluster

@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-""" Launchers for Tempest scenarios
+"""Launchers for Tempest scenarios
 
 To launch these Fuel-tests, you should specify several properties in global
 environment.
@@ -27,16 +27,18 @@ Another important variable is name of snapshot (variable: SNAPSHOT) which
 Tempest will verify.
 
 Optional properties:
-    TEMPEST_PATH - path to Tempest (default: './tempest')
-    TEMPEST_XML_LOG_FILE - path to file which will store results of
-        verification in JUnit XML format
-        (default: './logs/$EXEC_NUMBER_tempest.xml')
+
+    - TEMPEST_PATH: path to Tempest (default: './tempest')
+    - TEMPEST_XML_LOG_FILE: path to file which will store results of
+      verification in JUnit XML format
+      (default: './logs/$EXEC_NUMBER_tempest.xml')
 
 Cheat:
-    TEMPEST_GOD_MODE - if you specify this variable, fuel-tests will be
-        marked as failed (will raise exception) only when xml log file is
-        missed(don't matter Tempest scenarios are finished successfully or
-        some of them are crashed).
+
+    - TEMPEST_GOD_MODE: if you specify this variable, fuel-tests will be
+      marked as failed (will raise exception) only when xml log file is
+      missed(don't matter Tempest scenarios are finished successfully or
+      some of them are crashed).
 
 """
 
@@ -164,15 +166,19 @@ class TestByTempest(base_test_case.TestBasic):
 
         Scenario:
             1. Revert cluster(snapshot) which Tempest will test.
-            2. Prepare Tempest
-            2.1 Discover nailgun node ip and cluster id (if Tempest
-                configuration file is not presented)
-            2.2 Modify environment
+            2. Prepare Tempest:
+
+                - Discover nailgun node ip and cluster id (if Tempest
+                   configuration file is not presented)
+                - Modify environment
+
             3. Validate cluster with set of Tempest-tests
 
         Specific test variable:
+
             TEMPEST_TEST_SET - name of Tempest tests set, which will be
-                launched. Allowed names:
+            launched. Allowed names:
+
                  - full (used by default)
                  - smoke
                  - baremetal
@@ -206,10 +212,12 @@ class TestByTempest(base_test_case.TestBasic):
 
         Scenario:
             1. Revert cluster(snapshot) which Tempest will test.
-            2. Prepare Tempest
-            2.1 Discover nailgun node ip and cluster id (if Tempest
-                configuration file is not presented)
-            2.2 Modify environment
+            2. Prepare Tempest:
+
+                - Discover nailgun node ip and cluster id (if Tempest
+                  configuration file is not presented)
+                - Modify environment
+
             3. Validate cluster with list of Tempest-tests
 
         Specific test variable:
