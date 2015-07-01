@@ -1,0 +1,48 @@
+---
+network-config: &network-config
+ provider: neutron
+ segment-type: vlan
+ pubip-to-all: false
+
+storages-config: &storages-config
+ volume-lvm: false
+ volume-ceph: true
+ image-ceph: true
+ rados-ceph: true
+ ephemeral-ceph: false
+ replica-ceph: 2
+
+nodes-ifaces: &iface-config
+    - eth0:
+      - admin
+      - public
+      - managment
+      - storage
+      - private
+
+nodes: &nodes
+ - roles:
+    - controller
+   # iface: *iface-config
+   count: 3
+ - roles:
+    - compute
+    - ceph-osd
+   # iface: *iface-config
+   count: 3
+
+template:
+ name: 3 Controller, 3 Compute & Ceph on Neutron/VLAN
+ group-name: 3ctrl_3comp_ceph_neutronVLAN
+ slaves: 6
+ cluster-template: &environment-config
+  name: rados
+  release: ubuntu
+  settings:
+   components:
+    sahara: false
+    murano: false
+    ceilometer: false
+   storages: *storages-config
+  network: *network-config
+  nodes: *nodes
