@@ -50,13 +50,31 @@ from fuelweb_test import logger
 class EnvironmentModel(object):
     """EnvironmentModel."""  # TODO documentation
 
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            logger.error("Create NEW EnvironmentModel")
+            cls._instance = super(EnvironmentModel, cls).__new__(
+                cls, *args, **kwargs)
+        return cls._instance
+
     def __init__(self):
-        self._virtual_environment = None
-        self.fuel_web = FuelWebClient(self.get_admin_node_ip(), self)
+        if not hasattr(self, "_virtual_environment"):
+            self._virtual_environment = None
+        if not hasattr(self, "_fuel_web"):
+            self._fuel_web = None
+
+    @property
+    def fuel_web(self):
+        if self._fuel_web is None:
+            logger.error("Create FuelWebClient in EnvironmentModel")
+            self._fuel_web = FuelWebClient(self.get_admin_node_ip(), self)
+        return self._fuel_web
 
     def __repr__(self):
         klass, obj_id = type(self), hex(id(self))
-        if hasattr(self, 'fuel_web'):
+        if getattr(self, '_fuel_web'):
             ip = self.fuel_web.admin_node_ip
         else:
             ip = None
