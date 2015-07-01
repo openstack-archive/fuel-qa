@@ -1,0 +1,12 @@
+---
+- roles:
+    - controller
+    - mongo
+  ifaces: !include ../_default_ifaces.yaml
+  count: 3
+- roles:
+    - compute
+    - ceph-osd
+  ifaces: !include ../_default_ifaces.yaml
+  count: 3
+
