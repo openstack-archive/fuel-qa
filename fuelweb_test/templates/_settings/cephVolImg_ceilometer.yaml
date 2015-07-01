@@ -1,0 +1,3 @@
+---
+!include storages/cephImgVol.yaml
+!include components/ceilometer.yaml

@@ -18,8 +18,10 @@ import time
 import traceback
 import yaml
 import os.path
+import os
 import posixpath
 import re
+import types
 
 from proboscis import asserts
 
@@ -205,7 +207,7 @@ def update_yaml(yaml_tree=[], yaml_value='', is_uniq=True,
     else:
         # Create an uniq suffix in range '_00' to '_99'
         for n in range(100):
-            last = yaml_tree[-1] + '_' + str(n).zfill(2)
+            last = str(yaml_tree[-1]) + '_' + str(n).zfill(2)
             if last not in item:
                 break
 
@@ -229,8 +231,9 @@ class timestat(object):
 
     def __enter__(self):
         self.begin_time = time.time()
+        return self
 
-    def __exit__(self, exp_type, exp_value, traceback):
+    def __exit__(self, exp_type, exp_value, trcback):
         self.end_time = time.time()
         self.total_time = self.end_time - self.begin_time
 
@@ -253,6 +256,11 @@ class timestat(object):
         except Exception:
             logger.error("Error storing time statistic for {0}"
                          " {1}".format(yaml_path, traceback.format_exc()))
+            raise
+
+    @property
+    def spended_time(self):
+        return time.time() - self.begin_time
 
 
 def install_pkg(remote, pkg_name):
@@ -499,3 +507,39 @@ def get_ip_listen_stats(remote, proto='tcp'):
     else:
         cmd = "awk '$4 == \"0A\" {{print $2}}' /proc/net/{0}".format(proto)
     return [l.strip() for l in run_on_remote(remote, cmd)]
+
+
+def copy_func(f, name=None):
+    '''return a function with same code, globals, defaults, closure, and
+    name (or provide a new name)
+    '''
+    fn = types.FunctionType(f.__code__, f.__globals__, name or f.__name__,
+                            f.__defaults__, f.__closure__)
+    # in case f was given attrs (note this dict is a shallow copy):
+    fn.__dict__.update(f.__dict__)
+    return fn
+
+
+def load_yaml_files(path):
+    def yaml_include(loader, node):
+        file_name = os.path.join(os.path.dirname(loader.name), node.value)
+        with file(file_name) as inputfile:
+            return yaml.load(inputfile)
+    yaml.add_constructor("!include", yaml_include)
+    yamls = os.listdir(path)
+    yamls = ["{}/{}".format(path, y) for y in yamls if y.endswith('.yaml')]
+    return [yaml.load(open(y)) for y in yamls]
+
+
+def get_configs():
+    """Return list of dict environment configurations"""
+    import fuelweb_test
+    path = os.path.join(os.path.dirname(fuelweb_test.__file__), 'templates')
+    return load_yaml_files(path)
+
+
+def case_factory(baseclass):
+    """Return list of instance """
+    configs = get_configs()
+    return [baseclass.caseclass_factory(
+        c['template']['group-name'])(c) for c in configs]
