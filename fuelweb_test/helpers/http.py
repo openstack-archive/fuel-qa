@@ -95,7 +95,14 @@ class HTTPClient(object):
                 logger.warning('Authorization failure: {0}'.format(e.read()))
                 self.authenticate()
                 return self._get_response(req)
+            elif e.code == 504:
+                logger.error("Got HTTP Error 504: "
+                             "Gateway Time-out: {}".format(e.read()))
+                return self._get_response(req)
             else:
+                logger.error('{} code {} [{}]'.format(e.reason,
+                                                      e.code,
+                                                      e.read()))
                 raise
 
     def _get_response(self, req):

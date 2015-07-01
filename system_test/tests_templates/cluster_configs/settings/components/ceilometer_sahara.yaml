@@ -1,0 +1,4 @@
+---
+sahara: true
+murano: false
+ceilometer: true

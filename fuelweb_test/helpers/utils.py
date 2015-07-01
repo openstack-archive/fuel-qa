@@ -18,6 +18,7 @@ import time
 import traceback
 import yaml
 import os.path
+import os
 import posixpath
 import re
 
@@ -208,7 +209,7 @@ def update_yaml(yaml_tree=[], yaml_value='', is_uniq=True,
     else:
         # Create an uniq suffix in range '_00' to '_99'
         for n in range(100):
-            last = yaml_tree[-1] + '_' + str(n).zfill(2)
+            last = str(yaml_tree[-1]) + '_' + str(n).zfill(2)
             if last not in item:
                 break
 
@@ -232,6 +233,7 @@ class timestat(object):
 
     def __enter__(self):
         self.begin_time = time.time()
+        return self
 
     def __exit__(self, exp_type, exp_value, trcback):
         self.end_time = time.time()
@@ -256,6 +258,11 @@ class timestat(object):
         except Exception:
             logger.error("Error storing time statistic for {0}"
                          " {1}".format(yaml_path, traceback.format_exc()))
+            raise
+
+    @property
+    def spended_time(self):
+        return time.time() - self.begin_time
 
 
 def install_pkg(remote, pkg_name):
