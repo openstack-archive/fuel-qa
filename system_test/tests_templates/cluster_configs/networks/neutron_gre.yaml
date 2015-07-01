@@ -1,0 +1,4 @@
+---
+provider: neutron
+segment-type: gre
+pubip-to-all: false

@@ -33,8 +33,16 @@ class TestBasic(object):
     """
     def __init__(self):
         self.env = EnvironmentModel()
-        self.fuel_web = self.env.fuel_web
-        self.test_program = TestProgram()
+
+    @property
+    def test_program(self):
+        if not hasattr(self, '_test_program'):
+            self._test_program = TestProgram()
+        return self._test_program
+
+    @property
+    def fuel_web(self):
+        return self.env.fuel_web
 
     def check_run(self, snapshot_name):
         """Checks if run of current test is required.
