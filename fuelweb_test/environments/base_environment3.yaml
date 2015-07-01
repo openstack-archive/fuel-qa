@@ -1,0 +1,57 @@
+---
+cluster:
+ name: 1 Controller, 1 Compute, 1 Cinder with Ceilometer on Neutron/VLAN
+ group-name: 1ctrl_1comp_1cinder_ceilo_neutronVLAN
+ slaves: 4
+
+network-config: &network-config
+ provider: neutron
+ segment-type: vlan
+ pubip-to-all: false
+
+storages-config: &storages-config
+ volume-lvm: true
+ volume-ceph: false
+ image-ceph: false
+ ephemeral-ceph: false
+ rados-ceph: false
+ replica-ceph: 2
+
+nodes-ifaces: &iface-config
+    - eth0:
+      - admin
+      - public
+      - managment
+      - storage
+      - private
+
+nodes: &nodes
+ - roles:
+    - controller
+   # iface: *iface-config
+   count: 1
+ - roles:
+    - compute
+   # iface: *iface-config
+   count: 1
+ - roles:
+    - cinder
+   # iface: *iface-config
+   count: 1
+ - roles:
+    - mongo
+   # iface: *iface-config
+   count: 1
+
+
+environment-config: &environment-config
+ name: env3
+ release: ubuntu
+ components:
+  sahara: false
+  murano: false
+  ceilometer: true
+ network: *network-config
+ storages: *storages-config
+ nodes: *nodes
+
