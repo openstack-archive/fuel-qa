@@ -1,0 +1,5 @@
+---
+storage:
+ !include storages/cephImgVolRados.yaml
+components:
+ !include components/ceilometer.yaml

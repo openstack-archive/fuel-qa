@@ -1,0 +1,4 @@
+---
+provider: neutron
+segment-type: vlan
+pubip-to-all: false
