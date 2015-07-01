@@ -1,0 +1,7 @@
+---
+- eth0:
+  - admin
+  - public
+  - managment
+  - storage
+  - private

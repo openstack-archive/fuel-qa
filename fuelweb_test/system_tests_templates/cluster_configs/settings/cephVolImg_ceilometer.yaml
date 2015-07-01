@@ -1,0 +1,5 @@
+---
+storages:
+ !include storages/cephImgVol.yaml
+components:
+ !include components/ceilometer.yaml
