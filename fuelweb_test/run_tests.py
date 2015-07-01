@@ -98,6 +98,9 @@ def import_tests():
     from tests import test_node_reinstallation  # noqa
     from tests import test_ubuntu_bootstrap  # noqa
     from tests import test_net_templates  # noqa
+    from system_test.tests import test_create_deploy_ostf  # noqa
+    from system_test.tests import test_deploy_check_rados  # noqa
+    from system_test.tests.strength import destroy_controllers  # noqa
 
 
 def run_tests():
