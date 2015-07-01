@@ -24,6 +24,8 @@ from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers import patching
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers.rally import RallyBenchmarkTest
+from fuelweb_test.helpers.rally import RallyResult
 from fuelweb_test.helpers.utils import install_pkg
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -99,7 +101,18 @@ class PatchingTests(TestBasic):
         assert_is_not_none(cluster_id, 'Environment for patching not found.')
 
         # Step #2
-        # Run Rally benchmarks, coming soon...
+        if settings.PATCHING_RUN_RALLY:
+            rally_benchmarks = {}
+            benchmark_results1 = {}
+            for tag in set(settings.RALLY_TAGS):
+                rally_benchmarks[tag] = RallyBenchmarkTest(
+                    container_repo=settings.RALLY_DOCKER_REPO,
+                    environment=self.env,
+                    cluster_id=cluster_id,
+                    test_type=tag
+                )
+                benchmark_results1[tag] = rally_benchmarks[tag].run()
+                logger.debug(benchmark_results1[tag].show())
 
         # Step #3
         patching_repos = patching.add_remote_repositories(
@@ -137,8 +150,23 @@ class PatchingTests(TestBasic):
             self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         # Step #8
-        # Run Rally benchmarks, compare new results with previous,
-        # coming soon...
+        if settings.PATCHING_RUN_RALLY:
+            benchmark_results2 = {}
+            for tag in set(settings.RALLY_TAGS):
+                benchmark_results2[tag] = rally_benchmarks[tag].run()
+                logger.debug(benchmark_results2[tag].show())
+
+            rally_benchmarks_passed = True
+
+            for tag in set(settings.RALLY_TAGS):
+                if not RallyResult.compare(benchmark_results1[tag],
+                                           benchmark_results2[tag],
+                                           deviation=0.2):
+                    rally_benchmarks_passed = False
+
+            assert_true(rally_benchmarks_passed,
+                        "Rally benchmarks show performance degradation "
+                        "after packages patching.")
 
 
 @test(groups=["patching_master_tests"])
