@@ -97,6 +97,11 @@ def import_tests():
     from tests import test_node_reinstallation  # noqa
     from tests import test_ubuntu_bootstrap  # noqa
     from tests import test_net_templates  # noqa
+    from acceptance_tests import test_create_deploy_delete # noqa
+    from acceptance_tests import test_create_deploy_reset # noqa
+    from acceptance_tests import test_create_deploy_stop # noqa
+    from acceptance_tests import test_create_deploy_ostf # noqa
+    from acceptance_tests import test_snapshot_on_failed # noqa
 
 
 def run_tests():
