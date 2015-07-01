@@ -96,6 +96,10 @@ class HTTPClient(object):
                 self.authenticate()
                 return self._get_response(req)
             else:
+                logger.error('{} code {} ({}) [{}]'.format(e.reason,
+                                                           e.code,
+                                                           e.message,
+                                                           e.read()))
                 raise
 
     def _get_response(self, req):
