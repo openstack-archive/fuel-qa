@@ -1,0 +1,8 @@
+---
+storages-config: &storages-config
+ volume-lvm: false
+ volume-ceph: true
+ image-ceph: true
+ rados-ceph: false
+ ephemeral-ceph: false
+ replica-ceph: 2
