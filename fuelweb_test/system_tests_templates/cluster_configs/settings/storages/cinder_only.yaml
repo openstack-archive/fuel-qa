@@ -1,0 +1,7 @@
+---
+volume-lvm: true
+volume-ceph: false
+image-ceph: false
+rados-ceph: false
+ephemeral-ceph: false
+replica-ceph: 2

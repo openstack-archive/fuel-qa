@@ -1,0 +1,14 @@
+---
+- roles:
+   - controller
+  iface: !include ../_default_ifaces.yaml
+  count: 3
+- roles:
+   - compute
+  iface: !include ../_default_ifaces.yaml
+  count: 2
+- roles:
+   - cinder
+  iface: !include ../_default_ifaces.yaml
+  count: 1
+
