@@ -141,7 +141,7 @@ def map_test(target):
             'patching_after_{0}'.format(deployment_test)
         register(groups=['prepare_patching_environment'],
                  depends_on_groups=[deployment_test])
-        register(groups=['prepare_master_environment'],
+        register(groups=['prepare_patching_master_environment'],
                  depends_on_groups=[deployment_test])
     else:
         program = TestProgram(argv=['none'])
@@ -155,7 +155,7 @@ def map_test(target):
             settings.PATCHING_SNAPSHOT = 'patching_after_{0}'.format(
                 deployment_test.entry.method.im_func.func_name)
             if target == 'master':
-                register(groups=['prepare_master_environment'],
+                register(groups=['prepare_patching_master_environment'],
                          depends_on=[deployment_test.entry.home])
             else:
                 register(groups=['prepare_patching_environment'],

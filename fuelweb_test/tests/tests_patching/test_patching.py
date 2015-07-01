@@ -39,9 +39,37 @@ class PatchingTests(TestBasic):
 
     @test(groups=['prepare_patching_environment'])
     def prepare_patching_environment(self):
+        """Prepare environment for patching (OpenStack)
+
+        Scenario:
+        1. Take existing environment created by previous deployment test
+        and snapshot it
+        2. Revert snapshot and check that environment is alive
+        3. Check that deployed environment is affected by the bug and
+        verification scenario fails without applied patches
+
+        Duration: 10m
+        """
+
         logger.debug('Creating snapshot of environment deployed for patching.')
         self.env.make_snapshot(snapshot_name=self.snapshot_name,
                                is_make=True)
+        self.env.revert_snapshot(self.snapshot_name)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        assert_is_not_none(cluster_id, 'Environment for patching not found.')
+        slaves = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        logger.info('Checking that environment is affected '
+                    'by bug #{0}...'.format(settings.PATCHING_BUG_ID))
+        is_environment_affected = False
+        try:
+            patching.verify_fix(self.env, target='environment', slaves=slaves)
+        except AssertionError:
+            is_environment_affected = True
+        assert_true(is_environment_affected,
+                    'Deployed environment for testing patches is not affected'
+                    'by bug #{0} or provided verification scenario is not '
+                    'correct! Fix verification passed without applying '
+                    'patches!'.format(settings.PATCHING_BUG_ID))
 
     @test(groups=["patching_environment"],
           depends_on_groups=['prepare_patching_environment'])
@@ -60,7 +88,6 @@ class PatchingTests(TestBasic):
         8. Run Rally benchmark tests and compare results
 
         Duration 15m
-        Snapshot first_patching_demo
         """
 
         # Step #1
@@ -122,14 +149,42 @@ class PatchingMasterTests(TestBasic):
         self.pkgs = settings.PATCHING_PKGS
         super(PatchingMasterTests, self).__init__()
 
-    @test(groups=['prepare_master_environment'])
-    def prepare_patching_environment(self):
+    @test(groups=['prepare_patching_master_environment'])
+    def prepare_patching_master_environment(self):
+        """Prepare environment for patching (master node)
+
+        Scenario:
+        1. Take existing environment created by previous deployment test
+        and snapshot it
+        2. Revert snapshot and check that environment is alive
+        3. Check that deployed environment is affected by the bug and
+        verification scenario fails without applied patches
+
+        Duration: 10m
+        """
+
         logger.debug('Creating snapshot of environment deployed for patching.')
         self.env.make_snapshot(snapshot_name=self.snapshot_name,
                                is_make=True)
+        self.env.revert_snapshot(self.snapshot_name)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        assert_is_not_none(cluster_id, 'Environment for patching not found.')
+        slaves = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        logger.info('Checking that environment is affected '
+                    'by bug #{0}...'.format(settings.PATCHING_BUG_ID))
+        is_environment_affected = False
+        try:
+            patching.verify_fix(self.env, target='environment', slaves=slaves)
+        except AssertionError:
+            is_environment_affected = True
+        assert_true(is_environment_affected,
+                    'Deployed environment for testing patches is not affected'
+                    'by bug #{0} or provided verification scenario is not '
+                    'correct! Fix verification passed without applying '
+                    'patches!'.format(settings.PATCHING_BUG_ID))
 
     @test(groups=["patching_test"],
-          depends_on_groups=['prepare_master_environment'])
+          depends_on_groups=['prepare_patching_master_environment'])
     @log_snapshot_after_test
     def patching_test(self):
         """Apply patches on deployed master
