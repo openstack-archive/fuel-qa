@@ -20,6 +20,7 @@ import yaml
 import os.path
 import posixpath
 import re
+import types
 
 from proboscis import asserts
 
@@ -368,3 +369,20 @@ def check_distribution():
             settings.OPENSTACK_RELEASE))
         logger.error(error_msg)
         raise Exception(error_msg)
+
+
+def copy_func(f, name=None):
+    '''return a function with same code, globals, defaults, closure, and
+    name (or provide a new name)
+    '''
+    fn = types.FunctionType(f.__code__, f.__globals__, name or f.__name__,
+                            f.__defaults__, f.__closure__)
+    # in case f was given attrs (note this dict is a shallow copy):
+    fn.__dict__.update(f.__dict__)
+    return fn
+
+
+def load_yaml_files(path):
+    yamls = os.listdir(path)
+    yamls = ["{}/{}".format(path, y) for y in yamls]
+    return [yaml.load(open(y)) for y in yamls]

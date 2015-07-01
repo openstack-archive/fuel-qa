@@ -77,6 +77,9 @@ def import_tests():
     from tests.gd_based_tests import test_neutron_vlan_ceph_mongo  # noqa
     from tests.tests_patching import test_patching  # noqa
     from tests import test_cli  # noqa
+    from acceptance_tests import test_create_deploy_delete # noqa
+    from acceptance_tests import test_create_deploy_reset # noqa
+    from acceptance_tests import test_create_deploy_stop # noqa
 
 
 def run_tests():

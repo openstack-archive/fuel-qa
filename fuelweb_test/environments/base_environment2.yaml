@@ -1,0 +1,55 @@
+---
+case:
+ case-name: case2
+ group-name: case2
+
+network-config: &network-config
+ network-type: neutron-vlan
+
+storages: &storages
+ volume-sinder: true
+ volume-ceph: false
+ image-ceph: false
+ ephemeral-ceph: false
+ rados-ceph: false
+
+repos: &repos
+ mos: "http://"
+ mos-update: "http://"
+
+nodes-ifaces: &iface
+    - eth0:
+      - admin
+      - public
+    - eth1:
+      - managment
+    - eth2:
+      - storage
+
+nodes: &nodes
+ - roles:
+    - controller
+    - mongo
+   iface: *iface
+   count: 1
+ - roles:
+    - compute
+   iface: *iface
+   count: 1
+ - roles:
+    - cinder
+   iface: *iface
+   count: 1
+
+environment-config: &environment-config
+ name: env2
+ release: ubuntu
+ modules:
+  - murano
+  - ceiloment
+  - sahara
+ storage-confing: *storages
+ debug-log:
+  - openstack
+  - puppet
+ nodes: *nodes
