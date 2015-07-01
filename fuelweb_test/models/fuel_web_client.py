@@ -433,7 +433,10 @@ class FuelWebClient(object):
 
             self.client.create_cluster(data=data)
             cluster_id = self.client.get_cluster_id(name)
-            logger.info('The cluster id is %s', cluster_id)
+            logger.info('The cluster id is %s on %s/%s',
+                        cluster_id,
+                        data['net_provider'],
+                        data['net_segment_type'])
 
             logger.info('Set cluster settings to %s',
                         json.dumps(settings, indent=1))
