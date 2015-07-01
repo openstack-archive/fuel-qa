@@ -48,7 +48,7 @@ class CephCompact(TestBasic):
         Scenario:
             1. Create cluster
             2. Add 1 node with controller and ceph OSD roles
-            3. Add 2 node with compute and ceph OSD roles
+            3. Add 2 nodes with compute and ceph OSD roles
             4. Deploy the cluster
             5. Check ceph status
 
@@ -372,8 +372,8 @@ class CephRadosGW(TestBasic):
 
         Scenario:
             1. Create cluster with Neurton/VLAN
-            2. Add 3 node with controller role
-            3. Add 3 node with compute and ceph-osd role
+            2. Add 3 nodes with controller role
+            3. Add 3 nodes with compute and ceph-osd role
             4. Deploy the cluster
             5. Check ceph status
             6. Run OSTF tests
@@ -464,7 +464,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         Scenario:
             1. Create cluster
             2. Add 1 node with controller and ceph OSD roles
-            3. Add 2 node with compute and ceph OSD roles
+            3. Add 2 nodes with compute and ceph OSD roles
             4. Deploy the cluster
             5. Check ceph status
             6. Run OSTF
