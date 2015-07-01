@@ -1,0 +1,14 @@
+---
+template:
+ name: 3 Controller and mongo, 3 Compute & Ceph on Neutron/TUN with Ceilometer
+ group-name: 3ctrl_mongo_3comp_ceph_neutronTUN_ceilo
+ slaves: 6
+ cluster-template:
+  name: CephImgVolRados
+  release: ubuntu
+  network:
+   !include ../cluster_configs/networks/neutron_tun.yaml
+  settings:
+   !include ../cluster_configs/settings/cephVolImgRados_ceilometer.yaml
+  nodes:
+   !include ../cluster_configs/nodes/mixed/3ctrl_mongo_3comp_ceph.yaml
