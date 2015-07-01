@@ -1,0 +1,15 @@
+---
+template:
+  name: 3 Controller, 3 Compute & Ceph on Neutron/VLAN with Ceilometer
+  group-name: 3ctrl_3comp_ceph_neutronVLAN_ceilo
+  slaves: 6
+
+  cluster-template:
+    name: CephImgVolRados
+    release: ubuntu
+    network:
+      !include _networks/neutron_tun.yaml
+    settings:
+      !include _settings/cephVolImgRados.yaml
+    nodes:
+      !include _nodes/mixed/3ctrl_3comp_ceph.yaml

@@ -1,0 +1,3 @@
+---
+!include storages/cinder_only.yaml
+!include components/ceilometer.yaml

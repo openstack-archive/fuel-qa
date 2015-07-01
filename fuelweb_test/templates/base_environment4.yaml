@@ -1,0 +1,58 @@
+---
+network-config: &network-config
+ provider: neutron
+ segment-type: vlan
+ pubip-to-all: false
+
+storages-config: &storages-config
+ volume-lvm: frue
+ volume-ceph: false
+ image-ceph: true
+ ephemeral-ceph: false
+ rados-ceph: false
+ replica-ceph: 2
+
+nodes-ifaces: &iface-config
+    - eth0:
+      - admin
+      - public
+      - managment
+      - storage
+      - private
+
+nodes: &nodes
+ - roles:
+    - controller
+   # iface: *iface-config
+   count: 1
+ - roles:
+    - compute
+   # iface: *iface-config
+   count: 1
+ - roles:
+    - cinder
+   # iface: *iface-config
+   count: 1
+ - roles:
+    - ceph-osd
+   # iface: *iface-config
+   count: 2
+
+
+template:
+ name: 1 Controller, 1 Compute, 1 Cinder, 2 Ceph, Ceph for images on Neutron/VLAN
+ group-name: 1ctrl_1comp_1cinder_2ceph_cephImg_neutronVLAN
+ slaves: 5
+
+ cluster-template: &environment-config
+  name: env4
+  release: ubuntu
+  settings:
+   components:
+    sahara: false
+    murano: false
+    ceilometer: false
+   storages: *storages-config
+  network: *network-config
+  nodes: *nodes
+ 
