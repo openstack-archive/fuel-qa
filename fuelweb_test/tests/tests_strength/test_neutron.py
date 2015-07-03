@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import re
+
 from devops.helpers.helpers import wait
 from devops.error import TimeoutError
 from proboscis.asserts import assert_equal
@@ -382,25 +384,47 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         instance = os_conn.create_server_for_migration(neutron=True)
         floating_ip = os_conn.assign_floating_ip(instance)
-        logger.debug("instance floating ip is {0}".format(floating_ip.ip))
+        logger.debug("Instance floating ip is {ip}".format(ip=floating_ip.ip))
         _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
         remote = self.env.d_env.get_ssh_to_remote(_ip)
-        mtu_cmd = r"cat /sys/class/net/$(ip r g {0} |" \
-                  r" sed -rn" \
-                  r" 's/.*dev\s+(\S+)\s.*/\1/p')/mtu".format(floating_ip.ip)
-        mtu = ''.join(remote.execute(mtu_cmd)['stdout'])
-        logger.debug('mtu is equal to {0}'.format(mtu))
-        check_ping = "ping -q -c 3 -w 10 {}".format(floating_ip.ip)
+        check_ping = "ping -c 3 -w 10 {ip}".format(ip=floating_ip.ip)
         try:
             wait(lambda: remote.execute(check_ping)['exit_code'] == 0,
                  timeout=120)
         except TimeoutError:
             res = remote.execute(check_ping)
             assert_equal(0, res['exit_code'],
-                         'instance is not pingable,'
-                         ' result is {0}'.format(res))
-        cmd = "ping -q -s {0} -c 7 -w 10 {1}".format(int(mtu) - 28,
-                                                     floating_ip.ip)
+                         'Instance is not reachable by ICMP,'
+                         ' result is {res}'.format(res=res))
+
+        ping_header_size = 28    # Size of the header in ICMP package in bytes
+        mtu_cmd = r"cat /sys/class/net/$(ip r g {ip} |" \
+                  r" sed -rn" \
+                  r" 's/.*dev\s+(\S+)\s.*/\1/p')/mtu".format(ip=floating_ip.ip)
+        ctrl_mtu = ''.join(remote.execute(mtu_cmd)['stdout'])
+        logger.info("MTU on controller is equal to {mtu}".format(mtu=ctrl_mtu))
+        max_packetsize = int(ctrl_mtu) - ping_header_size
+
+        cmd = ("ping -M do -s {data} -c 7 -w 10 {ip}"
+               .format(data=max_packetsize, ip=floating_ip.ip))
+        logger.info("Executing command: {0}".format(cmd))
         res = remote.execute(cmd)
+        if res['exit_code'] == 1:
+            # No packets were received at all
+            for l in (res['stdout'] + res['stderr']):
+                # Check if actual MTU is in stdout or in stderr
+                if 'Frag needed and DF set' in l or 'Message too long' in l:
+                    logger.error("Incorrect MTU: '{line}'".format(line=l))
+                    m = re.match(".*mtu\s*=\s*(\d+)", l)
+                    if m:
+                        allowed_mtu = m.group(1)
+                        max_packetsize = int(allowed_mtu) - ping_header_size
+                        cmd = ("ping -M do -s {data} -c 7 -w 10 {ip}"
+                               .format(data=max_packetsize, ip=floating_ip.ip))
+                        logger.info("Executing command using new MTU: {0}"
+                                    .format(cmd))
+                        res = remote.execute(cmd)
+                        break
+
         assert_equal(0, res['exit_code'],
-                     'most packages were dropped, result is {0}'.format(res))
+                     'Most packages were dropped, result is {0}'.format(res))
