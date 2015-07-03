@@ -368,3 +368,13 @@ def check_distribution():
             settings.OPENSTACK_RELEASE))
         logger.error(error_msg)
         raise Exception(error_msg)
+
+
+@logwrap
+def get_network_template(template_name):
+    templates_path = ('{0}/fuelweb_test/network_templates/'.format(
+        os.environ.get("WORKSPACE", "./")))
+    template = os.path.join(templates_path, '{}.yaml'.format(template_name))
+    if os.path.exists(template):
+        with open(template) as template_file:
+            return yaml.load(template_file)
