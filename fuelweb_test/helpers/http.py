@@ -67,6 +67,14 @@ class HTTPClient(object):
         req = urllib2.Request(self.url + endpoint)
         return self._open(req)
 
+    def raw_post(self, endpoint, data=None, content_type="text/html"):
+        if not data:
+            data = {}
+        logger.info('self url is %s' % self.url)
+        req = urllib2.Request(self.url + endpoint, data=data)
+        #req.add_header('Content-Type', content_type)
+        return self._open(req)
+
     def post(self, endpoint, data=None, content_type="application/json"):
         if not data:
             data = {}
