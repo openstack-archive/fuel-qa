@@ -14,25 +14,25 @@
 
 import re
 
-from devops.helpers.helpers import wait
 from devops.error import TimeoutError
+from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
 from proboscis import SkipTest
 from proboscis import test
 
-from fuelweb_test import logwrap
-from fuelweb_test import logger
-from fuelweb_test import settings
+from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.decorators import retry
-from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers import os_actions
+from fuelweb_test import logger
+from fuelweb_test import logwrap
+from fuelweb_test import settings
 from fuelweb_test.tests import base_test_case
 
 
 @test(groups=["ha_neutron_destructive", "ha"])
 class TestNeutronFailover(base_test_case.TestBasic):
-    """TestNeutronFailover."""  # TODO documentation
+    """TestNeutronFailover."""  # TODO(akostrikov) documentation
 
     @classmethod
     @logwrap
@@ -83,25 +83,9 @@ class TestNeutronFailover(base_test_case.TestBasic):
                      'instance has no connectivity, exit code {0}'.format(
                          res['exit_code']))
 
-    @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
-          groups=["deploy_ha_neutron"])
-    @log_snapshot_after_test
-    def deploy_ha_neutron(self):
-        """Deploy cluster in HA mode, Neutron with GRE segmentation
-
-        Scenario:
-            1. Create cluster. HA, Neutron with GRE segmentation
-            2. Add 3 nodes with controller roles
-            3. Add 2 nodes with compute roles
-            4. Add 1 node with cinder role
-            5. Deploy the cluster
-
-        Duration 90m
-        Snapshot deploy_ha_neutron
-
-        """
+    def deploy_ha_neutron(self, segment_type):
         try:
-            self.check_run('deploy_ha_neutron')
+            self.check_run('deploy_ha_neutron_{}'.format(segment_type))
         except SkipTest:
             return
         self.env.revert_snapshot("ready")
@@ -113,7 +97,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
             mode=settings.DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": settings.NEUTRON_SEGMENT['tun']
+                "net_segment_type": segment_type
             }
         )
         self.fuel_web.update_nodes(
@@ -131,12 +115,11 @@ class TestNeutronFailover(base_test_case.TestBasic):
         remotes = [self.fuel_web.get_ssh_for_node(node) for node
                    in ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]]
         checkers.check_public_ping(remotes)
-        self.env.make_snapshot("deploy_ha_neutron", is_make=True)
+        self.env.make_snapshot('deploy_ha_neutron_{}'.format(segment_type),
+                               is_make=True)
 
-    @test(depends_on=[deploy_ha_neutron],
-          groups=["neutron_l3_migration"])
     @log_snapshot_after_test
-    def neutron_l3_migration(self):
+    def neutron_l3_migration(self, segment_type):
         """Check l3-agent rescheduling after l3-agent dies
 
         Scenario:
@@ -152,7 +135,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         Duration 30m
         """
-        self.env.revert_snapshot("deploy_ha_neutron")
+        self.env.revert_snapshot("deploy_ha_neutron_{}".format(segment_type))
         cluster_id = self.fuel_web.get_last_created_cluster()
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
@@ -204,10 +187,8 @@ class TestNeutronFailover(base_test_case.TestBasic):
         new_remote.execute("pcs resource clear p_neutron-l3-agent {0}".
                            format(node_with_l3))
 
-    @test(depends_on=[deploy_ha_neutron],
-          groups=["neutron_l3_migration_after_reset"])
     @log_snapshot_after_test
-    def neutron_l3_migration_after_reset(self):
+    def neutron_l3_migration_after_reset(self, segment_type):
         """Check l3-agent rescheduling after reset non-primary controller
 
         Scenario:
@@ -223,7 +204,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         Duration 30m
         """
-        self.env.revert_snapshot("deploy_ha_neutron")
+        self.env.revert_snapshot("deploy_ha_neutron_{}".format(segment_type))
         cluster_id = self.fuel_web.get_last_created_cluster()
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
@@ -277,10 +258,8 @@ class TestNeutronFailover(base_test_case.TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-    @test(depends_on=[deploy_ha_neutron],
-          groups=["neutron_l3_migration_after_destroy"])
     @log_snapshot_after_test
-    def neutron_l3_migration_after_destroy(self):
+    def neutron_l3_migration_after_destroy(self, segment_type):
         """Check l3-agent rescheduling after destroy non-primary controller
 
         Scenario:
@@ -296,7 +275,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         Duration 30m
         """
-        self.env.revert_snapshot("deploy_ha_neutron")
+        self.env.revert_snapshot("deploy_ha_neutron_{}".format(segment_type))
         cluster_id = self.fuel_web.get_last_created_cluster()
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
@@ -361,10 +340,8 @@ class TestNeutronFailover(base_test_case.TestBasic):
             should_fail=1,
             failed_test_name=['Check that required services are running'])
 
-    @test(depends_on=[deploy_ha_neutron],
-          groups=["neutron_packets_drops_stat"])
     @log_snapshot_after_test
-    def neutron_packets_drop_stat(self):
+    def neutron_packets_drop_stat(self, segment_type):
         """Check packets drops statistic when size is equal to MTU
 
         Scenario:
@@ -377,7 +354,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
         Duration 30m
 
         """
-        self.env.revert_snapshot("deploy_ha_neutron")
+        self.env.revert_snapshot("deploy_ha_neutron_{}".format(segment_type))
         cluster_id = self.fuel_web.get_last_created_cluster()
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
@@ -428,3 +405,157 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         assert_equal(0, res['exit_code'],
                      'Most packages were dropped, result is {0}'.format(res))
+
+    @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
+          groups=["deploy_ha_neutron_gre"])
+    @log_snapshot_after_test
+    def deploy_ha_neutron_gre(self):
+        """Deploy cluster in HA mode, Neutron with GRE segmentation
+
+        Scenario:
+            1. Create cluster. HA, Neutron with GRE segmentation
+            2. Add 3 nodes with controller roles
+            3. Add 2 nodes with compute roles
+            4. Add 1 node with cinder role
+            5. Deploy the cluster
+
+        Duration 90m
+        Snapshot deploy_ha_neutron
+
+        """
+        self.deploy_ha_neutron('gre')
+
+    @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
+          groups=["deploy_ha_neutron_vlan"])
+    @log_snapshot_after_test
+    def deploy_ha_neutron_vlan(self):
+        """Deploy cluster in HA mode, Neutron with VLAN segmentation
+
+        Scenario:
+            1. Create cluster. HA, Neutron with VLAN segmentation
+            2. Add 3 nodes with controller roles
+            3. Add 2 nodes with compute roles
+            4. Add 1 node with cinder role
+            5. Deploy the cluster
+
+        Duration 90m
+        Snapshot deploy_ha_neutron
+
+        """
+        self.deploy_ha_neutron('vlan')
+
+    @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
+          groups=["deploy_ha_neutron_gre"])
+    @log_snapshot_after_test
+    def deploy_ha_neutron_gre(self):
+        """Deploy cluster in HA mode, Neutron with GRE segmentation
+
+        Scenario:
+            1. Create cluster. HA, Neutron with GRE segmentation
+            2. Add 3 nodes with controller roles
+            3. Add 2 nodes with compute roles
+            4. Add 1 node with cinder role
+            5. Deploy the cluster
+
+        Duration 90m
+        Snapshot deploy_ha_neutron
+
+        """
+        self.deploy_ha_neutron('gre')
+
+    @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
+          groups=["deploy_ha_neutron_vlan"])
+    @log_snapshot_after_test
+    def deploy_ha_neutron_vlan(self):
+        """Deploy cluster in HA mode, Neutron with VLAN segmentation
+
+        Scenario:
+            1. Create cluster. HA, Neutron with VLAN segmentation
+            2. Add 3 nodes with controller roles
+            3. Add 2 nodes with compute roles
+            4. Add 1 node with cinder role
+            5. Deploy the cluster
+
+        Duration 90m
+        Snapshot deploy_ha_neutron
+
+        """
+        self.deploy_ha_neutron('vlan')
+
+    @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
+          groups=["deploy_ha_neutron_vxlan"])
+    def deploy_ha_neutron_vxlan(self):
+        """Deploy cluster in HA mode, Neutron with VxLAN segmentation
+
+        Scenario:
+            1. Create cluster. HA, Neutron with VxLAN segmentation
+            2. Add 3 nodes with controller roles
+            3. Add 2 nodes with compute roles
+            4. Add 1 node with cinder role
+            5. Deploy the cluster
+
+        Duration 90m
+        Snapshot deploy_ha_neutron
+
+        """
+        self.deploy_ha_neutron('tun')
+
+    @test(depends_on=[deploy_ha_neutron_vlan],
+          groups=["neutron_l3_migration"])
+    def neutron_l3_migration_vlan_env(self):
+        self.neutron_l3_migration("vlan")
+
+    @test(depends_on=[deploy_ha_neutron_gre],
+          groups=["neutron_l3_migration"])
+    def neutron_l3_migration_gre_env(self):
+        self.neutron_l3_migration("gre")
+
+    @test(depends_on=[deploy_ha_neutron_vxlan],
+          groups=["neutron_l3_migration"])
+    def neutron_l3_migration_vxlan_env(self):
+        self.neutron_l3_migration("tun")
+
+    @test(depends_on=[deploy_ha_neutron_vlan],
+          groups=["neutron_l3_migration_after_reset"])
+    def neutron_l3_migration_after_reset_vlan_env(self):
+        self.neutron_l3_migration_after_reset("vlan")
+
+    @test(depends_on=[deploy_ha_neutron_gre],
+          groups=["neutron_l3_migration_after_reset"])
+    def neutron_l3_migration_after_reset_gre_env(self):
+        self.neutron_l3_migration_after_reset("gre")
+
+    @test(depends_on=[deploy_ha_neutron_vxlan],
+          groups=["neutron_l3_migration_after_reset"])
+    def neutron_l3_migration_after_reset_vxlan_env(self):
+        self.neutron_l3_migration_after_reset("tun")
+
+    @test(depends_on=[deploy_ha_neutron_vlan],
+          groups=["neutron_l3_migration_after_destroy"])
+    def neutron_l3_migration_after_destroy_vlan_env(self):
+        self.neutron_l3_migration_after_destroy("vlan")
+
+    @test(depends_on=[deploy_ha_neutron_gre],
+          groups=["neutron_l3_migration_after_destroy"])
+    def neutron_l3_migration_after_destroy_gre_env(self):
+        self.neutron_l3_migration_after_destroy("gre")
+
+    @test(depends_on=[deploy_ha_neutron_vxlan],
+          groups=["neutron_l3_migration_after_destroy"])
+    def neutron_l3_migration_after_destroy_vxlan_env(self):
+        self.neutron_l3_migration_after_destroy("tun")
+
+    @test(depends_on=[deploy_ha_neutron_vlan],
+          groups=["neutron_packets_drops_stat"])
+    def neutron_packets_drop_stat_vlan_env(self):
+        self.neutron_packets_drop_stat("vlan")
+
+    @test(depends_on=[deploy_ha_neutron_gre],
+          groups=["neutron_packets_drops_stat"])
+    def neutron_packets_drop_stat_gre_env(self):
+        self.neutron_packets_drop_stat("gre")
+
+    @test(depends_on=[deploy_ha_neutron_vxlan],
+          groups=["neutron_packets_drops_stat"])
+    def neutron_packets_drop_stat_vxlan_env(self):
+        self.neutron_packets_drop_stat("tun")
