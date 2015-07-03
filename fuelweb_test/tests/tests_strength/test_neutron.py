@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import re
+
 from devops.helpers.helpers import wait
 from devops.error import TimeoutError
 from proboscis.asserts import assert_equal
@@ -389,7 +391,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
                   r" sed -rn" \
                   r" 's/.*dev\s+(\S+)\s.*/\1/p')/mtu".format(floating_ip.ip)
         mtu = ''.join(remote.execute(mtu_cmd)['stdout'])
-        logger.debug('mtu is equal to {0}'.format(mtu))
+        logger.info("MTU on controller is equal to {0}".format(mtu))
         check_ping = "ping -q -c 3 -w 10 {}".format(floating_ip.ip)
         try:
             wait(lambda: remote.execute(check_ping)['exit_code'] == 0,
@@ -399,8 +401,25 @@ class TestNeutronFailover(base_test_case.TestBasic):
             assert_equal(0, res['exit_code'],
                          'instance is not pingable,'
                          ' result is {0}'.format(res))
-        cmd = "ping -q -s {0} -c 7 -w 10 {1}".format(int(mtu) - 28,
-                                                     floating_ip.ip)
+
+        cmd = "ping -M do -q -s {0} -c 7 -w 10 {1}".format(int(mtu) - 28,
+                                                           floating_ip.ip)
+        logger.info("Executing command: {0}".format(cmd))
         res = remote.execute(cmd)
+        if res['exit_code'] == 1:
+            # No packets were received at all
+            for l in res['stdout']:
+                if 'Message too long' in l:
+                    logger.error("Incorrect MTU: '{0}'".format(l))
+                    m = re.match(".*mtu=(\d+)", l)
+                    if m:
+                        mtu = m.group(1)
+                        cmd = ("ping -M do -q -s {0} -c 7 -w 10 {1}"
+                               .format(int(mtu) - 28, floating_ip.ip))
+                        logger.info("Executing command using new MTU: {0}"
+                                    .format(cmd))
+                        res = remote.execute(cmd)
+                        break
+
         assert_equal(0, res['exit_code'],
-                     'most packages were dropped, result is {0}'.format(res))
+                     'Most packages were dropped, result is {0}'.format(res))
