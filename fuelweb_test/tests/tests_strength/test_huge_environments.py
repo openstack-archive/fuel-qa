@@ -185,7 +185,7 @@ class HugeHaNeutron(base_test_case.TestBasic):
             'objects_ceph': True,
             'ceilometer': True,
             'net_provider': 'neutron',
-            'net_segment_type': 'gre',
+            'net_segment_type': settings.NEUTRON_SEGMENT['gre'],
             'tenant': 'haGreCephHugeScale',
             'user': 'haGreCephHugeScale',
             'password': 'haGreCephHugeScale'
@@ -274,7 +274,7 @@ class HugeHaNeutron(base_test_case.TestBasic):
             'volumes_lvm': False,
             'objects_ceph': True,
             'net_provider': 'neutron',
-            'net_segment_type': 'vlan',
+            'net_segment_type': settings.NEUTRON_SEGMENT['vlan'],
             'tenant': 'haVlanCephHugeScale',
             'user': 'haVlanCephHugeScale',
             'password': 'haVlanCephHugeScale'

@@ -17,6 +17,7 @@ from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -209,7 +210,7 @@ class BondingHA(TestBasic):
 
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        segment_type = 'vlan'
+        segment_type = NEUTRON_SEGMENT['vlan']
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -300,7 +301,7 @@ class BondingHA(TestBasic):
 
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        segment_type = 'gre'
+        segment_type = NEUTRON_SEGMENT['gre']
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,

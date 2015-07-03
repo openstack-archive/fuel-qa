@@ -21,6 +21,7 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import checkers
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import EXAMPLE_PLUGIN_PATH
+from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -63,7 +64,7 @@ class ExamplePlugin(TestBasic):
             self.env.d_env.get_admin_remote(),
             plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
 
-        segment_type = 'vlan'
+        segment_type = NEUTRON_SEGMENT['vlan']
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -243,7 +244,7 @@ class ExamplePlugin(TestBasic):
             mode=DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": 'gre',
+                "net_segment_type": NEUTRON_SEGMENT['gre'],
             }
         )
 

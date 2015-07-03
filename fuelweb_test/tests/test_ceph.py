@@ -66,7 +66,7 @@ class CephCompact(TestBasic):
         }
         if NEUTRON_ENABLE:
             data["net_provider"] = 'neutron'
-            data["net_segment_type"] = 'vlan'
+            data["net_segment_type"] = settings.NEUTRON_SEGMENT['vlan']
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -199,7 +199,7 @@ class CephHA(TestBasic):
         if settings.NEUTRON_ENABLE:
             csettings = {
                 "net_provider": 'neutron',
-                "net_segment_type": "vlan"
+                "net_segment_type": settings.NEUTRON_SEGMENT_TYPE['vlan']
             }
         csettings.update(
             {
@@ -396,7 +396,7 @@ class CephRadosGW(TestBasic):
                 'images_ceph': True,
                 'objects_ceph': True,
                 'net_provider': 'neutron',
-                'net_segment_type': 'vlan',
+                'net_segment_type': settings.NEUTRON_SEGMENT['vlan'],
                 'tenant': 'rados',
                 'user': 'rados',
                 'password': 'rados'

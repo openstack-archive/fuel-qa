@@ -111,7 +111,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
             mode=settings.DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": 'gre'
+                "net_segment_type": settings.NEUTRON_SEGMENT['gre']
             }
         )
         self.fuel_web.update_nodes(

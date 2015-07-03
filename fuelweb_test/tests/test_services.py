@@ -70,7 +70,7 @@ class SaharaHAOneController(TestBasic):
         data = {
             'sahara': True,
             'net_provider': 'neutron',
-            'net_segment_type': 'gre',
+            'net_segment_type': settings.NEUTRON_SEGMENT['gre'],
             'tenant': 'saharaSimple',
             'user': 'saharaSimple',
             'password': 'saharaSimple'
@@ -173,7 +173,7 @@ class SaharaHA(TestBasic):
         data = {
             'sahara': True,
             'net_provider': 'neutron',
-            'net_segment_type': 'gre',
+            'net_segment_type': settings.NEUTRON_SEGMENT['gre'],
             'tenant': 'saharaHA',
             'user': 'saharaHA',
             'password': 'saharaHA'
@@ -267,7 +267,7 @@ class MuranoHAOneController(TestBasic):
         data = {
             'murano': True,
             'net_provider': 'neutron',
-            'net_segment_type': 'gre',
+            'net_segment_type': settings.NEUTRON_SEGMENT['gre'],
             'tenant': 'muranoSimple',
             'user': 'muranoSimple',
             'password': 'muranoSimple'
@@ -354,7 +354,7 @@ class MuranoHA(TestBasic):
         data = {
             'murano': True,
             'net_provider': 'neutron',
-            'net_segment_type': 'gre',
+            'net_segment_type': settings.NEUTRON_SEGMENT['gre'],
             'tenant': 'muranoHA',
             'user': 'muranoHA',
             'password': 'muranoHA'
@@ -799,7 +799,7 @@ class HeatHAOneController(TestBasic):
         data = {
             'ceilometer': True,
             'net_provider': 'neutron',
-            'net_segment_type': 'gre',
+            'net_segment_type': settings.NEUTRON_SEGMENT['gre'],
             'tenant': 'heatSimple',
             'user': 'heatSimple',
             'password': 'heatSimple'
@@ -971,7 +971,7 @@ class HeatHA(TestBasic):
         data = {
             'ceilometer': True,
             'net_provider': 'neutron',
-            'net_segment_type': 'gre',
+            'net_segment_type': settings.NEUTRON_SEGMENT['gre'],
             'tenant': 'heatHA',
             'user': 'heatHA',
             'password': 'heatHA'

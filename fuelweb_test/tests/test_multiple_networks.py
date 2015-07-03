@@ -20,6 +20,7 @@ from fuelweb_test.helpers.decorators import check_fuel_statistics
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
 from fuelweb_test.settings import MULTIPLE_NETWORKS
+from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import NODEGROUPS
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -95,7 +96,7 @@ class TestMultipleClusterNets(TestBasic):
             mode=DEPLOYMENT_MODE_HA,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": 'gre',
+                "net_segment_type": NEUTRON_SEGMENT['gre'],
                 'tenant': 'haGre',
                 'user': 'haGre',
                 'password': 'haGre'
@@ -153,7 +154,7 @@ class TestMultipleClusterNets(TestBasic):
                 'images_ceph': True,
                 'volumes_lvm': False,
                 "net_provider": 'neutron',
-                "net_segment_type": 'gre',
+                "net_segment_type": NEUTRON_SEGMENT['gre'],
                 'tenant': 'haGreCeph',
                 'user': 'haGreCeph',
                 'password': 'haGreCeph'

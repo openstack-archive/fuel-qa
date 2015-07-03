@@ -27,6 +27,7 @@ from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import CONTRAIL_PLUGIN_PATH
 from fuelweb_test.settings import CONTRAIL_PLUGIN_PACK_UB_PATH
 from fuelweb_test.settings import CONTRAIL_PLUGIN_PACK_CEN_PATH
+from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -68,7 +69,7 @@ class ContrailPlugin(TestBasic):
 
     def _assign_net_provider(self, pub_all_nodes=False):
         """Assign neutron with  vlan segmentation"""
-        segment_type = 'vlan'
+        segment_type = NEUTRON_SEGMENT['vlan']
         self.cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,

@@ -19,6 +19,7 @@ from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
@@ -49,7 +50,7 @@ class NeutronGre(TestBasic):
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        segment_type = 'gre'
+        segment_type = NEUTRON_SEGMENT['gre']
         data = {
             "net_provider": 'neutron',
             "net_segment_type": segment_type,
@@ -115,7 +116,7 @@ class NeutronVlan(TestBasic):
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        segment_type = 'vlan'
+        segment_type = NEUTRON_SEGMENT['vlan']
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -173,7 +174,7 @@ class NeutronGreHa(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        segment_type = 'gre'
+        segment_type = NEUTRON_SEGMENT['gre']
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -251,7 +252,7 @@ class NeutronGreHaPublicNetwork(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        segment_type = 'gre'
+        segment_type = NEUTRON_SEGMENT['gre']
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -314,7 +315,7 @@ class NeutronVlanHa(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        segment_type = 'vlan'
+        segment_type = NEUTRON_SEGMENT['vlan']
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -395,7 +396,7 @@ class NeutronVlanHaPublicNetwork(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        segment_type = 'vlan'
+        segment_type = NEUTRON_SEGMENT['vlan']
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,

@@ -335,7 +335,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[3:9])
-        segment_type = 'vlan'
+        segment_type = hlp_data.NEUTRON_SEGMENT['vlan']
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=hlp_data.DEPLOYMENT_MODE,
@@ -454,7 +454,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             mode=hlp_data.DEPLOYMENT_MODE,
             settings={
                 'net_provider': 'neutron',
-                'net_segment_type': 'vlan'
+                'net_segment_type': hlp_data.NEUTRON_SEGMENT['vlan']
             }
         )
         self.fuel_web.update_nodes(
