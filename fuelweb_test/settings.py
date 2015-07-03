@@ -227,7 +227,7 @@ NETWORK_MANAGERS = {
 NEUTRON = 'neutron'
 
 NEUTRON_SEGMENT = {
-    'gre': 'gre',
+    'gre': 'tool',
     'vlan': 'vlan'
 }
 
