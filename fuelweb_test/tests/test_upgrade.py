@@ -186,13 +186,13 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                                should_fail=1)
         self.env.make_snapshot("upgrade_ha_one_controller_delete_node")
 
-    @test(groups=["upgrade_ha", "upgrade_neutron_gre_ha"])
+    @test(groups=["upgrade_ha", "upgrade_neutron_tun_ha"])
     @log_snapshot_after_test
     def upgrade_ha(self):
         """Upgrade ha deployed cluster
 
         Scenario:
-            1. Revert snapshot with neutron gre ha env
+            1. Revert snapshot with Neutron VXLAN HA env
             2. Run upgrade on master
             3. Check that upgrade was successful
             4. Run network verification
@@ -202,10 +202,10 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             8. Run OSTF
 
         """
-        if not self.env.d_env.has_snapshot('deploy_neutron_gre_ha'):
+        if not self.env.d_env.has_snapshot('deploy_neutron_tun_ha'):
             raise SkipTest()
 
-        self.env.revert_snapshot("deploy_neutron_gre_ha")
+        self.env.revert_snapshot("deploy_neutron_tun_ha")
         cluster_id = self.fuel_web.get_last_created_cluster()
         available_releases_before = self.fuel_web.get_releases_list_for_os(
             release_name=hlp_data.OPENSTACK_RELEASE)
@@ -446,7 +446,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                                test_sets=['ha', 'smoke', 'sanity'])
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[3:9])
-        segment_type = 'vlan'
+        segment_type = hlp_data.NEUTRON_SEGMENT['vlan']
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=hlp_data.DEPLOYMENT_MODE,
@@ -483,13 +483,13 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.env.make_snapshot("deploy_ha_after_upgrade")
 
     @test(groups=["upgrade_fuel_after_rollback",
-                  "rollback_neutron_gre"])
+                  "rollback_neutron_tun"])
     @log_snapshot_after_test
     def upgrade_fuel_after_rollback(self):
         """Upgrade Fuel after rollback and deploy new cluster
 
         Scenario:
-            1. Revert deploy_neutron_gre snapshot
+            1. Revert deploy_neutron_tun snapshot
             2. Upgrade with rollback
             3. Run OSTF
             4. Run network verification
@@ -499,10 +499,10 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             8. Run OSTF for new cluster
             9. Run network verification
         """
-        if not self.env.d_env.has_snapshot('deploy_neutron_gre'):
+        if not self.env.d_env.has_snapshot('deploy_neutron_tun'):
             raise SkipTest()
 
-        self.env.revert_snapshot("deploy_neutron_gre")
+        self.env.revert_snapshot("deploy_neutron_tun")
 
         available_releases_before = self.fuel_web.get_releases_list_for_os(
             release_name=hlp_data.OPENSTACK_RELEASE)
@@ -567,7 +567,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             mode=hlp_data.DEPLOYMENT_MODE,
             settings={
                 'net_provider': 'neutron',
-                'net_segment_type': 'vlan'
+                'net_segment_type': hlp_data.NEUTRON_SEGMENT['vlan']
             }
         )
         self.fuel_web.update_nodes(
@@ -590,13 +590,13 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 class RollbackFuelMaster(base_test_data.TestBasic):
     """RollbackFuelMaster."""  # TODO documentation
 
-    @test(groups=["rollback_automatically_ha", "rollback_neutron_gre_ha"])
+    @test(groups=["rollback_automatically_ha", "rollback_neutron_tun_ha"])
     @log_snapshot_after_test
     def rollback_automatically_ha(self):
         """Rollback manually ha deployed cluster
 
         Scenario:
-            1. Revert snapshot with neutron gre ha env
+            1. Revert snapshot with Neutron VXLAN HA env
             2. Add raise exception to openstack.py file
             3. Run upgrade on master
             4. Check that rollback starts automatically
@@ -607,10 +607,10 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             9. Run OSTF
 
         """
-        if not self.env.d_env.has_snapshot('deploy_neutron_gre_ha'):
+        if not self.env.d_env.has_snapshot('deploy_neutron_tun_ha'):
             raise SkipTest()
 
-        self.env.revert_snapshot("deploy_neutron_gre_ha")
+        self.env.revert_snapshot("deploy_neutron_tun_ha")
         cluster_id = self.fuel_web.get_last_created_cluster()
         checkers.upload_tarball(self.env.d_env.get_admin_remote(),
                                 hlp_data.TARBALL_PATH, '/var')
@@ -661,7 +661,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         """Rollback automatically ha one controller deployed cluster
 
         Scenario:
-            1. Revert snapshot with deploy neutron gre env
+            1. Revert snapshot with deploy Neutron VXLAN env
             2. Add raise exception to docker_engine.py file
             3. Run upgrade on master
             4. Check that rollback starts automatically
@@ -731,14 +731,14 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         self.env.make_snapshot("rollback_automatically_ha_one_controller")
 
     @test(groups=["rollback_automatically_delete_node",
-                  "rollback_neutron_gre"])
+                  "rollback_neutron_tun"])
     @log_snapshot_after_test
     def rollback_automatically_delete_node(self):
         """Rollback automatically ha one controller deployed cluster
            and delete node from cluster
 
         Scenario:
-            1. Revert snapshot with deploy neutron gre env
+            1. Revert snapshot with deploy Neutron VXLAN env
             2. Add raise exception to docker_engine.py file
             3. Run upgrade on master
             4. Check that rollback starts automatically
@@ -749,10 +749,10 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             9. Run OSTF
 
         """
-        if not self.env.d_env.has_snapshot('deploy_neutron_gre'):
+        if not self.env.d_env.has_snapshot('deploy_neutron_tun'):
             raise SkipTest()
 
-        self.env.revert_snapshot("deploy_neutron_gre")
+        self.env.revert_snapshot("deploy_neutron_tun")
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         checkers.upload_tarball(self.env.d_env.get_admin_remote(),
