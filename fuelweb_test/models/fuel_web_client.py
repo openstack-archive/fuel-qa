@@ -161,6 +161,9 @@ class FuelWebClient(object):
     @logwrap
     def assert_ostf_run_certain(self, cluster_id, tests_must_be_passed,
                                 timeout=10 * 60):
+        """Wait for OSTF tests to finish, check that the tests specified
+           in [tests_must_be_passed] are passed"""
+
         logger.info('Assert OSTF tests are passed at cluster #%s: %s',
                     cluster_id, tests_must_be_passed)
         set_result_list = self._ostf_test_wait(cluster_id, timeout)
@@ -185,8 +188,12 @@ class FuelWebClient(object):
                     'must have passed: %s' % fail_details)
 
     @logwrap
-    def assert_ostf_run(self, cluster_id, should_fail=0,
-                        failed_test_name=None, timeout=15 * 60):
+    def assert_ostf_run(self, cluster_id, should_fail=0, failed_test_name=None,
+                        timeout=15 * 60, test_sets=None):
+        """Wait for OSTF tests to finish, check that there is no failed tests.
+           If [failed_test_name] tests are expected, ensure that these tests
+           are not passed"""
+
         logger.info('Assert OSTF run at cluster #%s. '
                     'Should fail %s tests named %s',
                     cluster_id, should_fail, failed_test_name)
@@ -196,7 +203,8 @@ class FuelWebClient(object):
         actual_failed_names = []
         test_result = {}
         for set_result in set_result_list:
-
+            if set_result['testset'] not in test_sets:
+                continue
             failed += len(
                 filter(
                     lambda test: test['status'] == 'failure' or
@@ -973,6 +981,9 @@ class FuelWebClient(object):
     def run_ostf(self, cluster_id, test_sets=None,
                  should_fail=0, tests_must_be_passed=None,
                  timeout=None, failed_test_name=None):
+        """Run specified OSTF test set(s), check that all of them
+           or just [tests_must_be_passed] are passed"""
+
         test_sets = test_sets or ['smoke', 'sanity']
         timeout = timeout or 30 * 60
         self.client.ostf_run_tests(cluster_id, test_sets)
@@ -987,15 +998,19 @@ class FuelWebClient(object):
             self.assert_ostf_run(
                 cluster_id,
                 should_fail=should_fail, timeout=timeout,
-                failed_test_name=failed_test_name)
+                failed_test_name=failed_test_name, test_sets=test_sets)
 
     @logwrap
-    def return_ostf_results(self, cluster_id, timeout):
+    def return_ostf_results(self, cluster_id, timeout, test_sets):
+        """Filter and return OSTF results for further analysis"""
+
         set_result_list = self._ostf_test_wait(cluster_id, timeout)
         tests_res = []
         for set_result in set_result_list:
-            [tests_res.append({test['name']:test['status']})
-             for test in set_result['tests'] if test['status'] != 'disabled']
+            for test in set_result['tests']:
+                if (test['testset'] in test_sets and
+                        test['status'] != 'disabled'):
+                    tests_res.append({test['name']: test['status']})
 
         logger.info('OSTF test statuses are : {0}'.format(tests_res))
         return tests_res
@@ -1004,9 +1019,12 @@ class FuelWebClient(object):
     def run_single_ostf_test(self, cluster_id,
                              test_sets=None, test_name=None,
                              retries=None, timeout=15 * 60):
+        """Run a single OSTF test"""
+
         self.client.ostf_run_singe_test(cluster_id, test_sets, test_name)
         if retries:
-            return self.return_ostf_results(cluster_id, timeout=timeout)
+            return self.return_ostf_results(cluster_id, timeout=timeout,
+                                            test_sets=test_sets)
         else:
             self.assert_ostf_run_certain(cluster_id,
                                          tests_must_be_passed=[test_name],
