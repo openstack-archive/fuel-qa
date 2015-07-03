@@ -81,10 +81,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
                      'instance has no connectivity, exit code {0}'.format(
                          res['exit_code']))
 
-    @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
-          groups=["deploy_ha_neutron"])
-    @log_snapshot_after_test
-    def deploy_ha_neutron(self):
+    def deploy_ha_neutron(self, segment_type):
         """Deploy cluster in HA mode, Neutron with GRE segmentation
 
         Scenario:
@@ -111,7 +108,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
             mode=settings.DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": 'gre'
+                "net_segment_type": segment_type
             }
         )
         self.fuel_web.update_nodes(
@@ -130,6 +127,18 @@ class TestNeutronFailover(base_test_case.TestBasic):
                    in ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]]
         checkers.check_public_ping(remotes)
         self.env.make_snapshot("deploy_ha_neutron", is_make=True)
+
+    @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
+          groups=["deploy_ha_neutron_gre"])
+    @log_snapshot_after_test
+    def deploy_ha_neutron_gre(self):
+        self.deploy_ha_neutron('gre')
+
+    @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
+          groups=["deploy_ha_neutron_vlan"])
+    @log_snapshot_after_test
+    def deploy_ha_neutron_vlan(self):
+        self.deploy_ha_neutron('vlan')
 
     @test(depends_on=[deploy_ha_neutron],
           groups=["neutron_l3_migration"])
@@ -202,7 +211,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
         new_remote.execute("pcs resource clear p_neutron-l3-agent {0}".
                            format(node_with_l3))
 
-    @test(depends_on=[deploy_ha_neutron],
+    @test(depends_on=[deploy_ha_neutron_vlan],
           groups=["neutron_l3_migration_after_reset"])
     @log_snapshot_after_test
     def neutron_l3_migration_after_reset(self):
@@ -275,7 +284,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-    @test(depends_on=[deploy_ha_neutron],
+    @test(depends_on=[deploy_ha_neutron_vlan],
           groups=["neutron_l3_migration_after_destroy"])
     @log_snapshot_after_test
     def neutron_l3_migration_after_destroy(self):
@@ -359,7 +368,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
             should_fail=1,
             failed_test_name=['Check that required services are running'])
 
-    @test(depends_on=[deploy_ha_neutron],
+    @test(depends_on=[deploy_ha_neutron_vlan],
           groups=["neutron_packets_drops_stat"])
     @log_snapshot_after_test
     def neutron_packets_drop_stat(self):
