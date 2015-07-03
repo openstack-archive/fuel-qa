@@ -449,3 +449,24 @@ class NailgunClient(object):
     def put_deployment_tasks_for_release(self, release_id, data):
         return self.client.put(
             '/api/releases/{}/deployment_tasks'.format(release_id), data)
+
+    @logwrap
+    @json_parse
+    def get_network_template(self, cluster_id):
+        return self.client.get(
+            '/api/clusters/{}/network_configuration/template'.format(
+                cluster_id))
+
+    @logwrap
+    @json_parse
+    def upload_network_template(self, cluster_id, network_template):
+        return self.client.put(
+            '/api/clusters/{}/network_configuration/template'.format(
+                cluster_id), network_template)
+
+    @logwrap
+    @json_parse
+    def delete_network_template(self, cluster_id):
+        return self.client.delete(
+            '/api/clusters/{}/network_configuration/template'.format(
+                cluster_id))
