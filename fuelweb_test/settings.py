@@ -433,6 +433,8 @@ UPDATE_FUEL = os.environ.get('UPDATE_FUEL', 'false') == 'true'
 UPDATE_FUEL_PATH = os.environ.get('UPDATE_FUEL_PATH', '~/fuel/pkgs/')
 UPDATE_FUEL_MIRROR = os.environ.get("UPDATE_FUEL_MIRROR", '').split()
 
+UPDATE_MASTER = get_var_as_bool('UPDATE_MASTER', False)
+
 EMC_PLUGIN_PATH = os.environ.get('EMC_PLUGIN_PATH')
 EMC_SP_A_IP = os.environ.get('EMC_SP_A_IP')
 EMC_SP_B_IP = os.environ.get('EMC_SP_B_IP')
