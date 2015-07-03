@@ -91,6 +91,7 @@ def import_tests():
     from tests import test_jumbo_frames  # noqa
     from tests import test_node_reinstallation  # noqa
     from tests import test_ubuntu_bootstrap  # noqa
+    from tests import test_net_templates  # noqa
 
 
 def run_tests():
