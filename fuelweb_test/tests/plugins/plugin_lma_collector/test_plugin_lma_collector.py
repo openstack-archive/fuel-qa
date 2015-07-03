@@ -99,9 +99,7 @@ class TestLmaCollectorPlugin(TestBasic):
                     'metadata/enabled': True,
                     'environment_label/value': 'deploy_lma_collector_ha',
                     'elasticsearch_mode/value': 'local',
-                    'elasticsearch_node_name/value': analytics_node_name,
                     'influxdb_mode/value': 'local',
-                    'influxdb_node_name/value': analytics_node_name,
                     'influxdb_password/value': 'lmapass',
                 }
             },
