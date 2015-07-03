@@ -12,8 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import re
 import time
 import yaml
+import urllib2
 from devops.error import TimeoutError
 
 from devops.helpers.helpers import _tcp_ping
@@ -372,6 +374,13 @@ class EnvironmentModel(object):
                   " -regex '.*/mos[0-9,\.]+\-(updates|security).repo' | " \
                   "xargs -n1 -i sed '$aenabled=0' -i {}"
             self.execute_remote_cmd(remote, cmd)
+        if settings.UPDATE_MASTER:
+            for url in settings.UPDATE_FUEL_MIRROR:
+                data = urllib2.urlopen(url)
+                for line in data:
+                    self.d_env.get_admin_remote().execute(
+                        "echo '{}' >> /etc/yum.repos.d/update.repo".format(line))
+            self.admin_install_updates()
 
     @update_packages
     @upload_manifests
@@ -497,6 +506,44 @@ class EnvironmentModel(object):
                         .format(service_name,
                                 remote_status['exit_code'],
                                 remote_status['stdout']))
+
+    # Execute yum updates
+    # If updates installed,
+    # then `dockerctl destroy all; bootstrap_admin_node.sh;`
+    def admin_install_updates(self):
+        logger.info('Searching for updates..')
+        admin_remote = self.d_env.get_admin_remote()
+        update_command = 'yum clean expire-cache; yum update -y'
+        update_result = admin_remote.execute(update_command)
+        logger.info('Result of "{1}" command on master node: '
+                    '{0}'.format(update_result, update_command))
+        assert_equal(int(update_result['exit_code']), 0,
+                     'Packages update failed, '
+                     'inspect logs for details')
+
+        # Check if any packets were updated and update was successful
+        for str_line in update_result['stdout']:
+            match_updated_count = re.search("Upgrade(?:\s*)(\d+).*Package",
+                                            str_line)
+            if match_updated_count:
+                updates_count = match_updated_count.group(1)
+            match_complete_message = re.search("(Complete!)", str_line)
+            match_no_updates = re.search("No Packages marked for Update",
+                                         str_line)
+
+        if (not match_updated_count or match_no_updates)\
+                and not match_complete_message:
+            logger.warning('No updates were found or update was incomplete.')
+            return
+        logger.info('{0} packet(s) were updated'.format(updates_count))
+
+        cmd = 'dockerctl destroy all; bootstrap_admin_node.sh;'
+        result = admin_remote.execute(cmd)
+        logger.info('Result of "{1}" command on master node: '
+                    '{0}'.format(result, cmd))
+        assert_equal(int(result['exit_code']), 0,
+                     'bootstrap failed, '
+                     'inspect logs for details')
 
     # Modifies a resolv.conf on the Fuel master node and returns
     # its original content.
