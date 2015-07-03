@@ -292,6 +292,11 @@ Neutron tests
 .. automodule:: fuelweb_test.tests.tests_strength.test_neutron
    :members:
 
+Base Neutron tests
+------------------
+.. automodule:: fuelweb_test.tests.tests_strength.test_neutron_base
+   :members:
+
 OSTF repeatable tests
 ---------------------
 .. automodule:: fuelweb_test.tests.tests_strength.test_ostf_repeatable_tests
