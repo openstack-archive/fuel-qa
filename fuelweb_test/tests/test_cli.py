@@ -22,14 +22,38 @@ from devops.helpers.helpers import wait
 from fuelweb_test.helpers.checkers import check_cluster_presence
 from fuelweb_test.helpers.checkers import check_cobbler_node_exists
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test.settings import NEUTRON_ENABLE
+from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
+from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
+from fuelweb_test import logger
+
+
+class CommandLineClient(object):
+
+    def get_task(self, remote, task_id):
+        tasks = run_on_remote(remote, 'fuel task --task-id {0} --json'
+                              .format(task_id), jsonify=True)
+        return tasks[0]
 
 
 @test(groups=["command_line"])
 class CommandLine(TestBasic):
     """CommandLine."""  # TODO documentation
+
+    def assert_cli_task_success(
+            self, task, timeout=70 * 60, interval=20, progress=None):
+        # Replase NailgunClient with CommandLineClient
+        nailgun_client = self.fuel_web.client
+        self.fuel_web.client = CommandLineClient()
+        # Use assert_task_success() with CommandLineClient
+        self.fuel_web.assert_task_success(
+            task, timeout=timeout, interval=interval, progress=progress)
+        # Set NailgunClient back
+        self.fuel_web.client = nailgun_client
 
     @test(depends_on=[SetupEnvironment.setup_with_custom_manifests],
           groups=["hiera_deploy"])
@@ -45,9 +69,7 @@ class CommandLine(TestBasic):
             5. Deploy hiera manifest
 
         Duration 20m
-
         """
-
         self.env.revert_snapshot("empty_custom_manifests")
 
         self.env.bootstrap_nodes(
@@ -80,6 +102,80 @@ class CommandLine(TestBasic):
                               (node_id))['stdout'][0].rstrip()
         assert_equal(role, 'primary-controller', "node with deployed hiera "
                                                  "was not found")
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["cli_selected_nodes_deploy"])
+    @log_snapshot_after_test
+    def cli_selected_nodes_deploy(self):
+        """
+        Scenario:
+
+        Duration 30m
+
+        """
+        self.env.revert_snapshot("ready_with_3_slaves")
+        node_ids = [self.fuel_web.get_nailgun_node_by_devops_node(
+            self.env.d_env.nodes().slaves[slave_id])['id']
+            for slave_id in range(3)]
+        release_id = self.fuel_web.get_releases_list_for_os(
+            release_name=OPENSTACK_RELEASE)[0]
+
+        # Choose network type
+        if NEUTRON_ENABLE:
+            net = 'neutron --nst={nst}'.format(nst=NEUTRON_SEGMENT_TYPE)
+        else:
+            net = 'nova'
+
+        with self.env.d_env.get_admin_remote() as remote:
+
+            # Create an environment
+            cmd = ('fuel env create --name={0} --release={1} --mode=ha '
+                   '--net={2} --json'.format(self.__class__.__name__,
+                                             release_id, net))
+            env_result = run_on_remote(remote, cmd, jsonify=True)
+
+            cluster_id = env_result['id']
+
+            # Add and provision a controller node
+            logger.info("Add to the cluster and start provisioning "
+                        "a controller node [{0}]".format(node_ids[0]))
+            cmd = ('fuel --env-id={0} node set --node {1} --role=controller'
+                   .format(cluster_id, node_ids[0]))
+            remote.execute(cmd)
+            cmd = ('fuel --env-id={0} node --provision --node={1} --json'
+                   .format(cluster_id, node_ids[0]))
+            task = run_on_remote(remote, cmd, jsonify=True)
+            self.assert_cli_task_success(task['id'], timeout=15)
+
+            # Add and provision 2 compute+cinder
+            logger.info("Add to the cluster and start provisioning two "
+                        "compute+cinder nodes [{0}]".format(node_ids[0]))
+            cmd = ('fuel --env-id={0} node set --node {1} '
+                   '--role=compute,cinder'.format(cluster_id,
+                                                  ','.join(node_ids[1:2])))
+            remote.execute(cmd)
+            cmd = ('fuel --env-id={0} node --provision --node={1} --json'
+                   .format(cluster_id, ','.join(node_ids[1:2])))
+            task = run_on_remote(remote, cmd, jsonify=True)
+            self.assert_cli_task_success(task['id'], timeout=15)
+
+            # Deploy the controller node
+            cmd = ('fuel --env-id={0} node --deploy --node {1}'
+                   .format(cluster_id, node_ids[0]))
+            task = run_on_remote(remote, cmd, jsonify=True)
+            self.assert_cli_task_success(task['id'], timeout=30)
+
+            # Deploy the compute nodes
+            cmd = ('fuel --env-id={0} node --deploy --node {1}'
+                   .format(cluster_id, ','.join(node_ids[1:2])))
+            task = run_on_remote(remote, cmd, jsonify=True)
+            self.assert_cli_task_success(task['id'], timeout=30)
+
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha', 'smoke', 'sanity'])
+
+            self.env.make_snapshot("cli_selected_nodes_deploy", is_make=True)
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["node_deletion_check"])
