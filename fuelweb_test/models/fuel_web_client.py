@@ -1125,7 +1125,8 @@ class FuelWebClient(object):
     @logwrap
     def update_nodes(self, cluster_id, nodes_dict,
                      pending_addition=True, pending_deletion=False,
-                     update_nodegroups=False, custom_names=None):
+                     update_nodegroups=False, custom_names=None,
+                     update_interfaces=True):
 
         # update nodes in cluster
         nodes_data = []
@@ -1180,7 +1181,7 @@ class FuelWebClient(object):
         assert_true(
             all([node_id in cluster_node_ids for node_id in node_ids]))
 
-        if not pending_deletion:
+        if update_interfaces and not pending_deletion:
             self.update_nodes_interfaces(cluster_id, updated_nodes)
         if update_nodegroups:
             self.update_nodegroups(nodes_groups)

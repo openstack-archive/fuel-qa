@@ -450,3 +450,39 @@ class NailgunClient(object):
         """ Set a new hostname for the node"""
         data = dict(hostname=new_hostname)
         return self.client.put('/api/nodes/{0}/'.format(node_id), data)
+
+    @logwrap
+    @json_parse
+    def get_network_template(self, cluster_id):
+        return self.client.get(
+            '/api/clusters/{}/network_configuration/template'.format(
+                cluster_id))
+
+    @logwrap
+    @json_parse
+    def upload_network_template(self, cluster_id, network_template):
+        return self.client.put(
+            '/api/clusters/{}/network_configuration/template'.format(
+                cluster_id), network_template)
+
+    @logwrap
+    @json_parse
+    def delete_network_template(self, cluster_id):
+        return self.client.delete(
+            '/api/clusters/{}/network_configuration/template'.format(
+                cluster_id))
+
+    @logwrap
+    @json_parse
+    def get_network_groups(self):
+        return self.client.get('/api/networks/')
+
+    @logwrap
+    @json_parse
+    def get_network_group(self, network_id):
+        return self.client.get('/api/networks/{0}/'.format(network_id))
+
+    @logwrap
+    @json_parse
+    def add_network_group(self, network_data):
+        return self.client.post('/api/networks/', data=network_data)
