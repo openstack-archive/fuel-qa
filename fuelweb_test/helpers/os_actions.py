@@ -123,7 +123,30 @@ class OpenStackActions(common.Common):
             logger.info("Server was successfully deleted")
             return True
 
-    def assign_floating_ip(self, srv):
+    def assign_floating_ip(self, srv, use_neutron=False):
+        if use_neutron:
+            #   Find external net id for tenant
+            nets = self.neutron.list_networks()['networks']
+            err_msg = "Active external network not found in nets:{}"
+            ext_net_ids = [net['id'] for net in nets if net['router:external']
+                           and net['status'] == "ACTIVE"]
+            asserts.assert_true(ext_net_ids, err_msg.format(nets))
+            net_id = ext_net_ids[0]
+            #   Find instance port
+            ports = self.neutron.list_ports(device_id=srv.id)['ports']
+            err_msg = "Not found active ports for instance:{}"
+            asserts.assert_true(ports, err_msg.format(srv.id))
+            port = ports[0]
+            #   Create floating IP
+            body = {'floatingip': {'floating_network_id': net_id,
+                                   'port_id': port['id']}}
+            flip = self.neutron.create_floatingip(body)
+            #   Wait active state for port
+            port_id = flip['floatingip']['port_id']
+            state = lambda: self.neutron.show_port(port_id)['port']['status']
+            helpers.wait(state == "ACTIVE")
+            return flip['floatingip']
+
         fl_ips_pool = self.nova.floating_ip_pools.list()
         if fl_ips_pool:
             floating_ip = self.nova.floating_ips.create(
