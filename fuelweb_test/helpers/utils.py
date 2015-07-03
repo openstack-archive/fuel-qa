@@ -313,6 +313,7 @@ def cond_upload(remote, source, target, condition=''):
     return files_count
 
 
+@logwrap
 def run_on_remote(remote, cmd, jsonify=False, clear=False):
     # TODO(ivankliuk): move it to devops.helpers.SSHClient
     """Execute ``cmd`` on ``remote`` and return result.
