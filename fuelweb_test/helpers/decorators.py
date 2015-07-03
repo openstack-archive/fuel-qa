@@ -167,7 +167,7 @@ def update_packages(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
-        if not settings.UPDATE_FUEL:
+        if not settings.UPLOAD_MANIFESTS:
                 return result
         try:
             environment = get_current_env(args)
