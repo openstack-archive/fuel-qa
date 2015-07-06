@@ -877,10 +877,6 @@ deployment:
       - nova-api
       - nova-cert
       - nova-common
-      - nova-compute
-      - nova-compute-kvm
-      - nova-compute-libvirt
-      - nova-compute-qemu
       - nova-conductor
       - nova-consoleauth
       - nova-network
@@ -888,6 +884,12 @@ deployment:
       - nova-objectstore
       - nova-scheduler
       - python-nova
+    - name: nova-compute
+      packages:
+      - nova-compute
+      - nova-compute-kvm
+      - nova-compute-libvirt
+      - nova-compute-qemu
     - name: swift
       packages:
       - python-swift

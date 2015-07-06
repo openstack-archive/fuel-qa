@@ -803,7 +803,6 @@ deployment:
       - openstack-nova-cells
       - openstack-nova-cert
       - openstack-nova-common
-      - openstack-nova-compute
       - openstack-nova-conductor
       - openstack-nova-console
       - openstack-nova-network
@@ -811,6 +810,9 @@ deployment:
       - openstack-nova-objectstore
       - openstack-nova-scheduler
       - python-nova
+    - name: nova-compute
+      packages:
+      - openstack-nova-compute
     - name: perl
       packages:
       - perl-CGI
