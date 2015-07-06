@@ -20,7 +20,6 @@ from proboscis import test
 from proboscis.asserts import assert_equal
 
 from fuelweb_test.helpers import checkers
-from fuelweb_test.helpers.common import Common
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
 from fuelweb_test import settings
@@ -111,14 +110,17 @@ class SaharaHAOneController(TestBasic):
         )
 
         LOGGER.debug('Import Vanilla2 image for Sahara')
-        common_func = Common(
-            self.fuel_web.get_public_vip(cluster_id),
-            data['user'], data['password'], data['tenant'])
-        common_func.image_import(
-            settings.SERVTEST_LOCAL_PATH,
-            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE,
-            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_NAME,
-            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_META)
+
+        with open('{0}/{1}'.format(
+                settings.SERVTEST_LOCAL_PATH,
+                settings.SERVTEST_SAHARA_VANILLA_2_IMAGE)) as data:
+            os_conn.create_image(
+                name=settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_NAME,
+                properties=settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_META,
+                data=data,
+                is_public=True,
+                disk_format='qcow2',
+                container_format='bare')
 
         path_to_tests = 'fuel_health.tests.tests_platform.test_sahara.'
         test_names = ['VanillaTwoClusterTest.test_vanilla_two_cluster']
@@ -217,13 +219,17 @@ class SaharaHA(TestBasic):
         )
 
         LOGGER.debug('Import Vanilla2 image for Sahara')
-        common_func = Common(cluster_vip,
-                             data['user'], data['password'], data['tenant'])
-        common_func.image_import(
-            settings.SERVTEST_LOCAL_PATH,
-            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE,
-            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_NAME,
-            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_META)
+
+        with open('{0}/{1}'.format(
+                settings.SERVTEST_LOCAL_PATH,
+                settings.SERVTEST_SAHARA_VANILLA_2_IMAGE)) as data:
+            os_conn.create_image(
+                name=settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_NAME,
+                properties=settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_META,
+                data=data,
+                is_public=True,
+                disk_format='qcow2',
+                container_format='bare')
 
         path_to_tests = 'fuel_health.tests.tests_platform.test_sahara.'
         test_names = ['VanillaTwoClusterTest.test_vanilla_two_cluster']
