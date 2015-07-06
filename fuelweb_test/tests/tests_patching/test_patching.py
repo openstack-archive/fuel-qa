@@ -313,6 +313,10 @@ class PatchingMasterTests(TestBasic):
 
             Duration 50m
         """
+        #clean generated images for cluster
+        if settings.REGENERATE_ENV_IMAGE:
+            self.env.admin_actions.clean_generated_image(
+                settings.OPENSTACK_RELEASE)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE,
