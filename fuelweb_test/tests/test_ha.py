@@ -321,7 +321,7 @@ class TestHaFlatAddCompute(TestBasic):
 class TestHaFlatScalability(TestBasic):
     """TestHaFlatScalability."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["ha_flat_scalability", "ha_nova_flat_scalability"])
     @log_snapshot_after_test
     def ha_flat_scalability(self):
@@ -334,16 +334,19 @@ class TestHaFlatScalability(TestBasic):
             4. Add 2 controller nodes
             5. Deploy changes
             6. Run network verification
-            7. Add 2 controller nodes
+            7. Add 2 controller 1 compute nodes
             8. Deploy changes
             9. Run network verification
             10. Run OSTF
+            11. Delete the primary and the last added controller.
+            12. Deploy changes
+            13. Run OSTF ha, sanity, smoke
 
         Duration 110m
         Snapshot ha_flat_scalability
 
         """
-        self.env.revert_snapshot("ready_with_5_slaves")
+        self.env.revert_snapshot("ready_with_9_slaves")
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -404,10 +407,12 @@ class TestHaFlatScalability(TestBasic):
 
         self.fuel_web.update_nodes(
             cluster_id, {'slave-04': ['controller'],
-                         'slave-05': ['controller']},
+                         'slave-05': ['controller'],
+                         'slave-06': ['compute']},
             True, False
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
+
         for devops_node in self.env.d_env.nodes().slaves[:5]:
             self.fuel_web.assert_pacemaker(
                 devops_node.name,
@@ -442,6 +447,52 @@ class TestHaFlatScalability(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'sanity'])
 
+        self.fuel_web.update_nodes(
+            cluster_id, {devops_node.name: ['controller'],
+                         'slave-05': ['controller']},
+            False, True
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+
+        nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])
+        devops_nodes = [self.fuel_web.get_devops_node_by_nailgun_node(node)
+                        for node in nodes]
+        for devops_node in devops_nodes:
+            self.fuel_web.assert_pacemaker(
+                devops_node.name,
+                devops_nodes, [])
+            ret = self.fuel_web.get_pacemaker_status(devops_node.name)
+            assert_true(
+                re.search('vip__management\s+\(ocf::fuel:ns_IPaddr2\):'
+                          '\s+Started node', ret), 'vip management started')
+            assert_true(
+                re.search('vip__public\s+\(ocf::fuel:ns_IPaddr2\):'
+                          '\s+Started node', ret), 'vip public started')
+
+        self.fuel_web.security.verify_firewall(cluster_id)
+        devops_node = self.fuel_web.get_nailgun_primary_node(
+            devops_nodes[0])
+        logger.debug("devops node name is {0}".format(devops_node.name))\
+
+        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
+        remote = self.env.d_env.get_ssh_to_remote(_ip)
+        for i in range(5):
+            try:
+                checkers.check_swift_ring(remote)
+                break
+            except AssertionError:
+                result = remote.execute(
+                    "/usr/local/bin/swift-rings-rebalance.sh")
+                logger.debug("command execution result is {0}".format(result))
+        else:
+            checkers.check_swift_ring(remote)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            #TODO add smoke after fixing bug #1471600
+            test_sets=['sanity', 'ha'], should_fail=1)
+        self.env.sync_time()
         self.env.make_snapshot("ha_flat_scalability")
 
 
