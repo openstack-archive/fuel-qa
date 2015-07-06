@@ -12,7 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import time
+import urllib2
 
 from proboscis import test
 from proboscis.asserts import assert_is_not_none
@@ -167,6 +169,17 @@ class PatchingTests(TestBasic):
             assert_true(rally_benchmarks_passed,
                         "Rally benchmarks show performance degradation "
                         "after packages patching.")
+        if settings.LATE_ARTIFACTS_JOB_URL:
+            data = urllib2.urlopen(settings.LATE_ARTIFACTS_JOB_URL + "/artifact/artifacts/artifacts.txt")
+            for package in data:
+                os.system("wget --directory-prefix {0} {1}".format(settings.UPDATE_FUEL_PATH, package))
+            self.env.admin_actions.upload_packages(
+                local_packages_dir=settings.UPDATE_FUEL_PATH,
+                centos_repo_path='/var/www/nailgun/centos/auxiliary',
+                ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
+            self.env.admin_install_updates()
+            self.env.admin_actions.clean_generated_image(
+                settings.OPENSTACK_RELEASE)
 
 
 @test(groups=["patching_master_tests"])
@@ -249,7 +262,17 @@ class PatchingMasterTests(TestBasic):
         # Step #3
         logger.info('Verifying fix...')
         patching.verify_fix(self.env, target='master')
-
+        if settings.LATE_ARTIFACTS_JOB_URL:
+            data = urllib2.urlopen(settings.LATE_ARTIFACTS_JOB_URL + "/artifact/artifacts/artifacts.txt")
+            for package in data:
+                os.system("wget --directory-prefix {0} {1}".format(settings.UPDATE_FUEL_PATH, package))
+            self.env.admin_actions.upload_packages(
+                local_packages_dir=settings.UPDATE_FUEL_PATH,
+                centos_repo_path='/var/www/nailgun/centos/auxiliary',
+                ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
+            self.env.admin_install_updates()
+            self.env.admin_actions.clean_generated_image(
+                settings.OPENSTACK_RELEASE)
         # Step #4
         active_nodes = []
         for node in self.env.d_env.nodes().slaves:
