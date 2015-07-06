@@ -115,11 +115,11 @@ def map_test(target):
             settings.PATCHING_PKGS = available_master_packages
         else:
             settings.PATCHING_PKGS = available_env_packages
-    else:
+    else:        
         assert_true(settings.PATCHING_PKGS <= available_packages,
                     "Patching repositories don't contain all packages need"
-                    "ed for tests. Need: {0}, available: {1}, missed: {2}."
-                    "".format(settings.PATCHING_PKGS,
+                   "ed for tests. Need: {0}, available: {1}, missed: {2}."
+                   "".format(settings.PATCHING_PKGS,
                               available_packages,
                               settings.PATCHING_PKGS - available_packages))
     assert_not_equal(len(settings.PATCHING_PKGS), 0,
