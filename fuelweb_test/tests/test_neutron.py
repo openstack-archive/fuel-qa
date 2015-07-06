@@ -96,7 +96,8 @@ class NeutronVlan(TestBasic):
     """NeutronVlan."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_neutron_vlan", "ha_one_controller_neutron_vlan"])
+          groups=["deploy_neutron_vlan", "ha_one_controller_neutron_vlan",
+                  "nova-compute", "deployment"])
     @log_snapshot_after_test
     def deploy_neutron_vlan(self):
         """Deploy cluster in ha mode with 1 controller and Neutron VLAN
