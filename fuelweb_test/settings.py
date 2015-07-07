@@ -328,17 +328,6 @@ SNAPSHOT = os.environ.get('SNAPSHOT', '')
 # For 5.1.1 we have 2 releases in tarball and should specify what we need
 RELEASE_VERSION = os.environ.get('RELEASE_VERSION', "2014.2.2-6.1")
 
-# URL to custom mirror with new OSCI packages wich should be tested,
-# for example:
-# CentOS: http://osci-obs.vm.mirantis.net:82/centos-fuel-master-20921/centos/
-# Ubuntu: http://osci-obs.vm.mirantis.net:82/ubuntu-fuel-master-20921/ubuntu/
-CUSTOM_PKGS_MIRROR = os.environ.get('CUSTOM_PKGS_MIRROR', '')
-
-# Location of local mirrors on master node.
-LOCAL_MIRROR_UBUNTU = os.environ.get('LOCAL_MIRROR_UBUNTU',
-                                     '/var/www/nailgun/ubuntu/x86_64')
-LOCAL_MIRROR_CENTOS = os.environ.get('LOCAL_MIRROR_CENTOS',
-                                     '/var/www/nailgun/centos/x86_64')
 
 # Release name of local Ubuntu mirror on Fuel master node.
 UBUNTU_RELEASE = os.environ.get('UBUNTU_RELEASE', 'precise')
@@ -347,13 +336,6 @@ UPDATE_TIMEOUT = os.environ.get('UPDATE_TIMEOUT', 3600)
 
 CLASSIC_PROVISIONING = get_var_as_bool('CLASSIC_PROVISIONING', False)
 
-KEYSTONE_CREDS = {'username': os.environ.get('KEYSTONE_USERNAME', 'admin'),
-                  'password': os.environ.get('KEYSTONE_PASSWORD', 'admin'),
-                  'tenant_name': os.environ.get('KEYSTONE_TENANT', 'admin')}
-
-SSH_CREDENTIALS = {
-    'login': os.environ.get('ENV_FUEL_LOGIN', 'root'),
-    'password': os.environ.get('ENV_FUEL_PASSWORD', 'r00tme')}
 
 # Plugin path for plugins tests
 
@@ -387,8 +369,6 @@ STORE_ASTUTE_YAML = get_var_as_bool('STORE_ASTUTE_YAML', False)
 
 EXTERNAL_DNS = os.environ.get('EXTERNAL_DNS', '208.67.220.220')
 EXTERNAL_NTP = os.environ.get('EXTERNAL_NTP', 'ua.pool.ntp.org')
-FUEL_USE_LOCAL_NTPD = get_var_as_bool('FUEL_USE_LOCAL_NTPD', True)
-FUEL_USE_LOCAL_DNS = get_var_as_bool('FUEL_USE_LOCAL_DNS', True)
 DNS_SUFFIX = os.environ.get('DNS_SUFFIX', '.test.domain.local')
 
 TIMESTAT_PATH_YAML = os.environ.get(
@@ -396,6 +376,22 @@ TIMESTAT_PATH_YAML = os.environ.get(
         LOGS_DIR, 'timestat_{}.yaml'.format(time.strftime("%Y%m%d"))))
 
 FUEL_PLUGIN_BUILDER_REPO = 'https://github.com/stackforge/fuel-plugins.git'
+
+###############################################################################
+# Change various Fuel master node default settings                           #
+###############################################################################
+
+# URL to custom mirror with new OSCI packages wich should be tested,
+# for example:
+# CentOS: http://osci-obs.vm.mirantis.net:82/centos-fuel-master-20921/centos/
+# Ubuntu: http://osci-obs.vm.mirantis.net:82/ubuntu-fuel-master-20921/ubuntu/
+CUSTOM_PKGS_MIRROR = os.environ.get('CUSTOM_PKGS_MIRROR', '')
+
+# Location of local mirrors on master node.
+LOCAL_MIRROR_UBUNTU = os.environ.get('LOCAL_MIRROR_UBUNTU',
+                                     '/var/www/nailgun/ubuntu/x86_64')
+LOCAL_MIRROR_CENTOS = os.environ.get('LOCAL_MIRROR_CENTOS',
+                                     '/var/www/nailgun/centos/x86_64')
 
 # MIRROR_UBUNTU and EXTRA_DEB_REPOS - lists of repositories, separated by '|',
 # for example:
@@ -405,16 +401,41 @@ FUEL_PLUGIN_BUILDER_REPO = 'https://github.com/stackforge/fuel-plugins.git'
 # and use sections 'main universe multiverse'.
 # Repos from EXTRA_DEB_REPOS will be appended to the list of repositories.
 MIRROR_UBUNTU = os.environ.get('MIRROR_UBUNTU', '')
-EXTRA_DEB_REPOS = os.environ.get('EXTRA_DEB_REPOS', '')
 MIRROR_UBUNTU_PRIORITY = os.environ.get('MIRROR_UBUNTU_PRIORITY', 1001)
+EXTRA_DEB_REPOS = os.environ.get('EXTRA_DEB_REPOS', '')
 EXTRA_DEB_REPOS_PRIORITY = os.environ.get('EXTRA_DEB_REPOS_PRIORITY', 1050)
+
+# The same for Centos repository:
+MIRROR_CENTOS = os.environ.get('MIRROR_CENTOS', '')
+MIRROR_CENTOS_PRIORITY = os.environ.get('MIRROR_CENTOS_PRIORITY', 50)
 EXTRA_RPM_REPOS = os.environ.get('EXTRA_RPM_REPOS', '')
 EXTRA_RPM_REPOS_PRIORITY = os.environ.get('EXTRA_RPM_REPOS_PRIORITY', 20)
+
 # Auxiliary repository priority will be set for a cluster if UPDATE_FUEL=true
 AUX_DEB_REPO_PRIORITY = os.environ.get('AUX_DEB_REPO_PRIORITY', 1150)
 AUX_RPM_REPO_PRIORITY = os.environ.get('AUX_RPM_REPO_PRIORITY', 15)
 
+# True: replace the default list of repositories in Nailgun
+# False: replace list of reposiroties for a cluster when it is created by tests
 REPLACE_DEFAULT_REPOS = get_var_as_bool('REPLACE_DEFAULT_REPOS', True)
+
+# Set gateway of 'admin' network as NTPD server for Fuel master node
+# , set gateway of 'public' network as NTPD server for new OS clusters
+FUEL_USE_LOCAL_NTPD = get_var_as_bool('FUEL_USE_LOCAL_NTPD', True)
+# Set gateway of 'public' network as DNS server for new OS clusters
+FUEL_USE_LOCAL_DNS = get_var_as_bool('FUEL_USE_LOCAL_DNS', True)
+
+# Default 'KEYSTONE_PASSWORD' can be changed for keystone on Fuel master node
+KEYSTONE_CREDS = {'username': os.environ.get('KEYSTONE_USERNAME', 'admin'),
+                  'password': os.environ.get('KEYSTONE_PASSWORD', 'admin'),
+                  'tenant_name': os.environ.get('KEYSTONE_TENANT', 'admin')}
+
+# Default SSH password 'ENV_FUEL_PASSWORD' can be changed on Fuel master node
+SSH_CREDENTIALS = {
+    'login': os.environ.get('ENV_FUEL_LOGIN', 'root'),
+    'password': os.environ.get('ENV_FUEL_PASSWORD', 'r00tme')}
+
+###############################################################################
 
 PATCHING_WEB_DIR = os.environ.get("PATCHING_WEB_DIR", "/var/www/nailgun/")
 PATCHING_MIRRORS = os.environ.get("PATCHING_MIRRORS",
