@@ -16,6 +16,7 @@ import re
 import time
 import traceback
 import yaml
+import urlparse
 
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
@@ -42,7 +43,6 @@ from fuelweb_test.helpers.decorators import update_ostf
 from fuelweb_test.helpers.decorators import update_fuel
 from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers.security import SecurityChecks
-from fuelweb_test.models.nailgun_client import NailgunClient
 from fuelweb_test import ostf_test_mapping as map_ostf
 from fuelweb_test.settings import ATTEMPTS
 from fuelweb_test.settings import BONDING
@@ -62,14 +62,35 @@ from fuelweb_test.settings import TIMEOUT
 import fuelweb_test.settings as help_data
 
 
+from fuelclient import fuelclient_settings
+from fuelclient.client import APIClient
+from fuelclient.objects.environment import Environment as FuelEnvironment
+from fuelclient.objects.node import Node as FuelNode
+from fuelclient.objects.nodegroup import NodeGroup as FuelNodeGroup
+from fuelclient.objects.notifications import Notifications as FuelNotifications
+from fuelclient.objects.release import Release as FuelRelease
+from fuelclient.objects.task import SnapshotTask as FuelSnapshotTask
+from fuelclient.objects.task import Task as FuelTask
+
+
 class FuelWebClient(object):
     """FuelWebClient."""  # TODO documentation
 
     def __init__(self, admin_node_ip, environment):
         self.admin_node_ip = admin_node_ip
-        self.client = NailgunClient(admin_node_ip)
         self._environment = environment
         self.security = SecurityChecks(self.client, self._environment)
+        client_settings = fuelclient_settings.get_settings()
+        client_settings.config['SERVER_ADDRESS'] = admin_node_ip
+
+        # Hack client config, because its init when it imports
+        APIClient.root = "http://{server}:{port}".format(
+            server=admin_node_ip,
+            port=8000)
+        APIClient.keystone_base = urlparse.urljoin(APIClient.root,
+                                                   "/keystone/v2.0")
+        APIClient.api_root = urlparse.urljoin(APIClient.root, "/api/v1/")
+        APIClient.ostf_root = urlparse.urljoin(APIClient.root, "/ostf/")
         super(FuelWebClient, self).__init__()
 
     @property
@@ -78,6 +99,17 @@ class FuelWebClient(object):
         :rtype: EnvironmentModel
         """
         return self._environment
+
+    @property
+    def client(self):
+        """Property for save backward compatibility for NailgunClient.
+
+        All methods move from NailgunClient to FuelWebClient and use native
+            fuelclient
+
+        Will be removed after refactoring is finished
+        """
+        return self
 
     @staticmethod
     @logwrap
@@ -100,12 +132,6 @@ class FuelWebClient(object):
     @logwrap
     def _tasks_wait(self, tasks, timeout):
         return [self.task_wait(task, timeout) for task in tasks]
-
-    @logwrap
-    def add_syslog_server(self, cluster_id, host, port):
-        logger.info('Add syslog server %s:%s to cluster #%s',
-                    host, port, cluster_id)
-        self.client.add_syslog_server(cluster_id, host, port)
 
     @logwrap
     def assert_cluster_floating_list(self, node_name, expected_ips):
@@ -252,7 +278,7 @@ class FuelWebClient(object):
         logger.info('Assert role %s is available in release %s',
                     role_name, release_name)
         id = self.assert_release_state(release_name)
-        release_data = self.client.get_releases_details(release_id=id)
+        release_data = self.client.get_releases(release_id=id)
         assert_equal(
             True, role_name in release_data['roles'],
             message='There is no {0} role in release id {1}'.format(
@@ -403,7 +429,7 @@ class FuelWebClient(object):
                     }
                 )
 
-            self.client.create_cluster(data=data)
+            self.client.create_fuel_cluster(data=data)
             cluster_id = self.client.get_cluster_id(name)
             logger.info('The cluster id is %s', cluster_id)
 
@@ -1118,7 +1144,7 @@ class FuelWebClient(object):
         # assume nodes are going to be updated for one cluster only
         cluster_id = nodes_data[-1]['cluster_id']
         node_ids = [str(node_info['id']) for node_info in nodes_data]
-        self.client.update_nodes(nodes_data)
+        self.client.update_fuel_nodes(nodes_data)
 
         nailgun_nodes = self.client.list_cluster_nodes(cluster_id)
         cluster_node_ids = map(lambda _node: str(_node['id']), nailgun_nodes)
@@ -1155,8 +1181,7 @@ class FuelWebClient(object):
                 [all_networks[i] for i in interfaces_dict.get(name, []) if
                  i in all_networks.keys()]
 
-        self.client.put_node_interfaces(
-            [{'id': node_id, 'interfaces': interfaces}])
+        self.client.put_node_interfaces(node_id, interfaces)
 
     @logwrap
     def update_node_disk(self, node_id, disks_dict):
@@ -1797,19 +1822,6 @@ class FuelWebClient(object):
         return release_ids
 
     @logwrap
-    def update_cluster(self, cluster_id, data):
-        logger.debug(
-            "Try to update cluster with data {0}".format(data))
-        self.client.update_cluster(cluster_id, data)
-
-    @logwrap
-    def run_update(self, cluster_id, timeout, interval):
-        logger.info("Run update..")
-        task = self.client.run_update(cluster_id)
-        logger.debug("Invocation of update runs with result {0}".format(task))
-        self.assert_task_success(task, timeout=timeout, interval=interval)
-
-    @logwrap
     def get_cluster_release_id(self, cluster_id):
         data = self.client.get_cluster(cluster_id)
         return data['release_id']
@@ -2187,3 +2199,320 @@ class FuelWebClient(object):
         return {'username': username,
                 'password': password,
                 'tenant': tenant}
+
+    # Nailgun funtions
+
+    @logwrap
+    def get_root(self):
+        # TODO: Check invoke and may be remove
+        raise DeprecationWarning
+
+    @logwrap
+    def list_nodes(self):
+        return FuelNode.get_all_data()
+
+    @logwrap
+    def list_cluster_nodes(self, cluster_id):
+        return [n.data for n in FuelEnvironment(cluster_id).get_all_nodes()]
+
+    @logwrap
+    def get_networks(self, cluster_id):
+        return FuelEnvironment(cluster_id).get_network_data()
+
+    @logwrap
+    def verify_networks(self, cluster_id):
+        return FuelEnvironment(cluster_id).verify_network()
+
+    @logwrap
+    def get_cluster_attributes(self, cluster_id):
+        return FuelEnvironment(cluster_id).get_settings_data()
+
+    @logwrap
+    def get_cluster_vmware_attributes(self, cluster_id):
+        return FuelEnvironment(cluster_id).get_vmware_settings_data()
+
+    @logwrap
+    def update_cluster_attributes(self, cluster_id, attrs):
+        return FuelEnvironment(cluster_id).set_settings_data(attrs)
+
+    @logwrap
+    def update_cluster_vmware_attributes(self, cluster_id, attrs):
+        return FuelEnvironment(
+            cluster_id).set_vmware_settings_data(attrs)
+
+    @logwrap
+    def get_cluster(self, cluster_id):
+        return FuelEnvironment(cluster_id).data
+
+    @logwrap
+    def update_cluster(self, cluster_id, data):
+        logger.debug(
+            "Try to update cluster with data {0}".format(data))
+        return FuelEnvironment(cluster_id).set(data)
+
+    @logwrap
+    def delete_cluster(self, cluster_id):
+        return FuelEnvironment(cluster_id).delete()
+
+    @logwrap
+    def update_node(self, node_id, data):
+        # don't use at all may delete
+        raise DeprecationWarning
+        return FuelNode(node_id).set(data)
+
+    @logwrap
+    def update_fuel_nodes(self, data):
+        return APIClient.put_request(
+            FuelNode.class_api_path,
+            data)
+
+    @logwrap
+    def deploy_cluster_changes(self, cluster_id):
+        return FuelEnvironment(cluster_id).deploy_changes().data
+
+    @logwrap
+    def get_task(self, task_id):
+        return FuelTask(task_id).data
+
+    @logwrap
+    def get_tasks(self):
+        return FuelTask.get_all_data()
+
+    @logwrap
+    def get_releases(self):
+        return FuelRelease.get_all_data()
+
+    @logwrap
+    def get_release(self, release_id):
+        return FuelRelease(release_id).data
+
+    @logwrap
+    def put_release(self, release_id, data):
+        return APIClient.put_request(
+            FuelRelease.instance_api_path.format(release_id),
+            data)
+
+    @logwrap
+    def get_releases_details(self, release_id):
+        raise DeprecationWarning
+
+    @logwrap
+    def get_release_id(self, release_name=OPENSTACK_RELEASE):
+        return filter(lambda c: release_name in c.data['name'].lower(),
+                      FuelRelease.get_all())[0].id
+
+    @logwrap
+    def get_node_disks(self, node_id):
+        return FuelNode(node_id).get_attribute('disks')
+
+    @logwrap
+    def put_node_disks(self, node_id, data):
+        return FuelNode(node_id).upload_node_attribute('disks', data)
+
+    @logwrap
+    def get_node_interfaces(self, node_id):
+        return FuelNode(node_id).get_attribute('interfaces')
+
+    @logwrap
+    def put_node_interfaces(self, node_id, data):
+        # return APIClient.put_request(
+        #     "{}/{}".format(FuelNode.class_api_path, 'interfaces'),
+        #     data)
+        return FuelNode(node_id).upload_node_attribute('interfaces', data)
+
+    @logwrap
+    def list_clusters(self):
+        return FuelEnvironment.get_all_data()
+
+    @logwrap
+    def create_fuel_cluster(self, data):
+        return FuelEnvironment.create(
+            name=data['name'],
+            release_id=int(data['release']),
+            net=data.get('net_provider', 'nova'),
+            net_segment_type=data.get('net_segment_type'),
+            mode=data['mode']
+            ).data
+
+    @logwrap
+    def get_ostf_test_sets(self, cluster_id):
+        return FuelEnvironment(cluster_id).get_testsets()
+
+    @logwrap
+    def get_ostf_tests(self, cluster_id):
+        return APIClient.get_request(
+            "tests/{}".format(cluster_id),
+            ostf=True)
+
+    @logwrap
+    def get_ostf_test_run(self, cluster_id):
+        return APIClient.get_request(
+            "testruns/last/{}".format(cluster_id),
+            ostf=True)
+
+    @logwrap
+    def ostf_run_tests(self, cluster_id, test_sets_list):
+        logger.info('Run OSTF tests at cluster #%s: %s',
+                    cluster_id, test_sets_list)
+        self.get_ostf_tests(cluster_id)
+        return FuelEnvironment(cluster_id).run_test_sets(test_sets_list)
+
+    @logwrap
+    def ostf_run_singe_test(self, cluster_id, test_sets_list, test_name):
+        # get tests otherwise 500 error will be thrown
+        self.get_ostf_tests(cluster_id)
+        logger.info('Get tests finish with success')
+        data = []
+        for test_set in test_sets_list:
+            data.append(
+                {
+                    'metadata': {'cluster_id': str(cluster_id), 'config': {}},
+                    'tests': [test_name],
+                    'testset': test_set
+                }
+            )
+        return APIClient.post_request('testruns', data=data, ostf=True)
+
+    @logwrap
+    def update_network(self, cluster_id, networking_parameters=None,
+                       networks=None):
+        data = self.get_networks(cluster_id)
+        if networking_parameters is not None:
+            for k in networking_parameters:
+                data["networking_parameters"][k] = networking_parameters[k]
+        if networks is not None:
+            data["networks"] = networks
+        return FuelEnvironment(cluster_id).set_network_data(data)
+
+    @logwrap
+    def get_cluster_id(self, name):
+        ret = [c.id for c
+               in FuelEnvironment.get_all()
+               if c.data['name'] == name]
+        return int(ret[0]) if ret else None
+
+    @logwrap
+    def add_syslog_server(self, cluster_id, host, port):
+        logger.info('Add syslog server %s:%s to cluster #%s',
+                    host, port, cluster_id)
+        attributes = FuelEnvironment(cluster_id).get_attributes()
+        attributes["editable"]["syslog"]["syslog_server"]["value"] = host
+        attributes["editable"]["syslog"]["syslog_port"]["value"] = port
+        return FuelEnvironment(cluster_id).update_attributes(attributes)
+
+    @logwrap
+    def get_cluster_vlans(self, cluster_id):
+        cluster_vlans = []
+        nc = self.get_networks(cluster_id)['networking_parameters']
+        vlan_start = nc["fixed_networks_vlan_start"]
+        network_amound = int(nc["fixed_networks_amount"] - 1)
+        cluster_vlans.extend([vlan_start, vlan_start + network_amound])
+        return cluster_vlans
+
+    @logwrap
+    def get_notifications(self):
+        return FuelNotifications.get_all_data()
+
+    @logwrap
+    def generate_logs(self):
+        return FuelSnapshotTask.start_snapshot_task(
+            FuelSnapshotTask.get_default_config()).data
+
+    @logwrap
+    def provision_nodes(self, cluster_id):
+        e = FuelEnvironment(cluster_id)
+        return e.install_selected_nodes('provision', e.get_all_nodes())
+
+    @logwrap
+    def deploy_nodes(self, cluster_id):
+        e = FuelEnvironment(cluster_id)
+        return e.install_selected_nodes('deploy', e.get_all_nodes())
+
+    @logwrap
+    def stop_deployment(self, cluster_id):
+        return FuelEnvironment(cluster_id).stop().data
+
+    @logwrap
+    def reset_environment(self, cluster_id):
+        return FuelEnvironment(cluster_id).reset().data
+
+    @logwrap
+    def do_cluster_action(self, cluster_id, action="provision"):
+        raise DeprecationWarning
+
+    @logwrap
+    def do_stop_reset_actions(self, cluster_id, action="stop_deployment"):
+        raise DeprecationWarning
+
+    @logwrap
+    def get_api_version(self):
+        return APIClient.get_fuel_version()
+
+    @logwrap
+    def run_update(self, cluster_id, timeout, interval):
+        logger.info("Run update..")
+        task = FuelEnvironment(cluster_id).update_env()
+        logger.debug("Invocation of update runs with result {0}".format(task))
+        self.assert_task_success(task, timeout=timeout, interval=interval)
+
+    @logwrap
+    def create_nodegroup(self, cluster_id, group_name):
+        return FuelNodeGroup.create(group_name, cluster_id).data
+
+    @logwrap
+    def get_nodegroups(self):
+        return FuelNodeGroup.get_all_data()
+
+    @logwrap
+    def assign_nodegroup(self, group_id, nodes):
+        # check ivokes and type of nodes in it
+        return FuelNodeGroup(group_id).assign(nodes)
+
+    @logwrap
+    def update_settings(self, data=None):
+        # Use APIClient because object for settings is absent
+        return APIClient.put_request(api='settings', data=data)
+
+    @logwrap
+    def get_settings(self):
+        # Use APIClient because object for settings is absent
+        return APIClient.get_request(api='settings')
+
+    @logwrap
+    def send_fuel_stats(self, enabled=False, user_email="test@localhost"):
+        settings = self.get_settings()
+        params = ('send_anonymous_statistic', 'send_user_info',
+                  'user_choice_saved')
+        for p in params:
+            settings['settings']['statistics'][p]['value'] = enabled
+        if user_email:
+            settings['settings']['statistics']['email']['value'] = user_email
+        self.update_settings(data=settings)
+
+    @logwrap
+    def get_cluster_deployment_tasks(self, cluster_id):
+        return FuelEnvironment(cluster_id).get_deployment_tasks()
+
+    @logwrap
+    def get_release_deployment_tasks(self, release_id):
+        return FuelRelease(release_id).get_deployment_tasks()
+
+    @logwrap
+    def get_end_deployment_tasks(self, cluster_id, end, start=None):
+        return FuelEnvironment(cluster_id).get_deployment_tasks(start=start,
+                                                                end=end)
+
+    @logwrap
+    def get_orchestrator_deployment_info(self, cluster_id):
+        return FuelEnvironment(cluster_id).get_facts(fact_type='deployment')
+
+    @logwrap
+    def put_deployment_tasks_for_cluster(self, cluster_id, data, node_id):
+        return FuelEnvironment(cluster_id).execute_tasks(nodes=node_id,
+                                                         tasks=data)
+
+    @logwrap
+    def put_deployment_tasks_for_release(self, release_id, data):
+        return APIClient.put_request(
+            FuelRelease.instance_api_path.format(release_id),
+            data)
