@@ -58,17 +58,17 @@ class NeutronVlanCephMongo(TestBasic):
 
     def sync_manifest_to_the_slaves(self, cluster_id, node_ids):
         if UPLOAD_MANIFESTS:
-            task_sync = self.fuel_web.client.put_deployment_tasks_for_cluster(
+            task_sync = self.fuel_web.put_deployment_tasks_for_cluster(
                 cluster_id, data=['rsync_core_puppet'],
                 node_id=str(node_ids).strip('[]'))
             self.fuel_web.assert_task_success(task=task_sync)
-            task_hiera = self.fuel_web.client.put_deployment_tasks_for_cluster(
+            task_hiera = self.fuel_web.put_deployment_tasks_for_cluster(
                 cluster_id, data=['hiera'],
                 node_id=str(node_ids).strip('[]'))
             self.fuel_web.assert_task_success(task=task_hiera)
 
     def sync_time_on_slaves(self, cluster_id, node_ids):
-        task_sync = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        task_sync = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['sync_time'],
             node_id=str(node_ids).strip('[]'))
         self.fuel_web.assert_task_success(task=task_sync)
@@ -157,7 +157,7 @@ class NeutronVlanCephMongo(TestBasic):
 
         # get task list:
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='hosts')
 
         logger.debug('task list is {0}'.format(tasks))
@@ -170,25 +170,25 @@ class NeutronVlanCephMongo(TestBasic):
                                 ' in task list {1}'.format(t, data))
 
         nodes_ids = [n['id'] for n in
-                     self.fuel_web.client.list_cluster_nodes(cluster_id)]
+                     self.fuel_web.list_cluster_nodes(cluster_id)]
 
-        task = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        task = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=data, node_id=str(nodes_ids).strip('[]'))
 
         logger.debug('task info is {0}'.format(task))
         self.fuel_web.assert_task_success(task)
 
-        task_tools = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        task_tools = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['tools'], node_id=str(nodes_ids).strip('[]'))
 
         self.fuel_web.assert_task_success(task_tools)
 
-        task_firewall = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        task_firewall = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['firewall'], node_id=str(nodes_ids).strip('[]'))
 
         self.fuel_web.assert_task_success(task_firewall)
 
-        all_tasks = self.fuel_web.client.get_cluster_deployment_tasks(
+        all_tasks = self.fuel_web.get_cluster_deployment_tasks(
             cluster_id)
 
         nodes = ['slave-0{0}'.format(slave) for slave in xrange(1, 6)]
@@ -272,14 +272,14 @@ class NeutronVlanCephMongo(TestBasic):
 
         # get task list:
 
-        tasks = self.fuel_web.client.get_cluster_deployment_tasks(
+        tasks = self.fuel_web.get_cluster_deployment_tasks(
             cluster_id)
 
         logger.debug('task list is {0}'.format(tasks))
 
         mongo_ids = [
             n['id'] for n in
-            self.fuel_web.client.list_cluster_nodes(cluster_id)
+            self.fuel_web.list_cluster_nodes(cluster_id)
             if 'mongo' in n['roles']]
 
         logger.debug('mongo nodes are {0}'.format(mongo_ids))
@@ -288,7 +288,7 @@ class NeutronVlanCephMongo(TestBasic):
             cluster_id=cluster_id,
             node_ids=mongo_ids)
 
-        task = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        task = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['top-role-mongo'],
             node_id=str(mongo_ids).strip('[]'))
 
@@ -333,7 +333,7 @@ class NeutronVlanCephMongo(TestBasic):
 
         # get task list:
 
-        tasks = self.fuel_web.client.get_cluster_deployment_tasks(
+        tasks = self.fuel_web.get_cluster_deployment_tasks(
             cluster_id)
 
         logger.debug('task list is {0}'.format(tasks))
@@ -348,7 +348,7 @@ class NeutronVlanCephMongo(TestBasic):
             cluster_id=cluster_id,
             node_ids=pr_mongo_id)
 
-        task = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        task = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['top-role-primary-mongo'],
             node_id=pr_mongo_id)
 
@@ -397,7 +397,7 @@ class NeutronVlanCephMongo(TestBasic):
             cluster_id=cluster_id,
             node_ids=pr_controller_id)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='cluster')
 
         pre_cluster = self.get_pre_test(tasks, 'cluster')
@@ -407,7 +407,7 @@ class NeutronVlanCephMongo(TestBasic):
                 remote=self.fuel_web.get_ssh_for_node(primary_controller.name),
                 path=pre_cluster[0]['cmd'])
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['cluster'],
             node_id='{0}'.format(pr_controller_id))
 
@@ -452,7 +452,7 @@ class NeutronVlanCephMongo(TestBasic):
             cluster_id=cluster_id,
             node_ids=pr_controller_id)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='virtual_ips')
 
         pre_virtual_ips = self.get_pre_test(tasks, 'virtual_ips')
@@ -463,7 +463,7 @@ class NeutronVlanCephMongo(TestBasic):
                     primary_controller.name),
                 path=pre_virtual_ips[0]['cmd'])
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['virtual_ips'],
             node_id='{0}'.format(pr_controller_id))
 
@@ -512,7 +512,7 @@ class NeutronVlanCephMongo(TestBasic):
             cluster_id=cluster_id,
             node_ids=pr_controller_id)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='cluster-haproxy')
 
         pre_cluster_haproxy = self.get_pre_test(tasks, 'cluster-haproxy')
@@ -524,7 +524,7 @@ class NeutronVlanCephMongo(TestBasic):
                     primary_controller.name),
                 path=pre_cluster_haproxy[0]['cmd'])
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['cluster-haproxy'],
             node_id='{0}'.format(pr_controller_id))
 
@@ -574,7 +574,7 @@ class NeutronVlanCephMongo(TestBasic):
             cluster_id=cluster_id,
             node_ids=pr_controller_id)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='openstack-haproxy')
 
         pre_openstack_haproxy = self.get_pre_test(tasks, 'openstack-haproxy')
@@ -586,7 +586,7 @@ class NeutronVlanCephMongo(TestBasic):
                     primary_controller.name),
                 path=pre_openstack_haproxy[0]['cmd'])
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['openstack-haproxy'],
             node_id='{0}'.format(pr_controller_id))
 
@@ -599,18 +599,18 @@ class NeutronVlanCephMongo(TestBasic):
                     primary_controller.name),
                 path=post_openstack_haproxy[0]['cmd'])
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['dns-server'],
             node_id='{0}'.format(pr_controller_id))
         logger.debug('res info is {0}'.format(res))
         self.fuel_web.assert_task_success(task=res)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='openstack-controller')
 
         logger.debug("task list for services {0}".format(tasks))
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['memcached', 'database', 'rabbitmq',
                               'keystone', 'glance', 'openstack-cinder',
                               'ceilometer-controller'],
@@ -668,7 +668,7 @@ class NeutronVlanCephMongo(TestBasic):
             cluster_id=cluster_id,
             node_ids=pr_controller_id)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='openstack-controller')
 
         pre_openstack_ctr = self.get_pre_test(tasks, 'openstack-controller')
@@ -679,7 +679,7 @@ class NeutronVlanCephMongo(TestBasic):
                     primary_controller.name),
                 path=pre_openstack_ctr[0]['cmd'])
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['openstack-controller'],
             node_id='{0}'.format(pr_controller_id))
         logger.debug('res info is {0}'.format(res))
@@ -729,7 +729,7 @@ class NeutronVlanCephMongo(TestBasic):
             cluster_id=cluster_id,
             node_ids=pr_controller_id)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id,
             start='openstack-controller',
             end='controller_remaining_tasks')
@@ -750,7 +750,7 @@ class NeutronVlanCephMongo(TestBasic):
                     primary_controller.name),
                 path=pre_net[0]['cmd'])
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=[task['id'] for task in tasks],
             node_id='{0}'.format(pr_controller_id))
 
@@ -758,7 +758,7 @@ class NeutronVlanCephMongo(TestBasic):
 
         self.fuel_web.assert_task_success(task=res)
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['openstack-network'],
             node_id='{0}'.format(pr_controller_id))
 
@@ -821,14 +821,14 @@ class NeutronVlanCephMongo(TestBasic):
 
         controller_ids = [
             n['id'] for n in
-            self.fuel_web.client.list_cluster_nodes(cluster_id)
+            self.fuel_web.list_cluster_nodes(cluster_id)
             if 'controller' in n['roles'] and n['id'] != pr_controller_id]
 
         self.sync_manifest_to_the_slaves(
             cluster_id=cluster_id,
             node_ids=controller_ids)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='cluster')
 
         pre_cluster = self.get_pre_test(tasks, 'cluster')
@@ -839,7 +839,7 @@ class NeutronVlanCephMongo(TestBasic):
                 path=pre_cluster[0]['cmd'])
              for node in ['slave-02', 'slave-03']]
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['cluster'],
             node_id=str(controller_ids).strip('[]'))
 
@@ -882,14 +882,14 @@ class NeutronVlanCephMongo(TestBasic):
 
         controller_ids = [
             n['id'] for n in
-            self.fuel_web.client.list_cluster_nodes(cluster_id)
+            self.fuel_web.list_cluster_nodes(cluster_id)
             if 'controller' in n['roles'] and n['id'] != pr_controller_id]
 
         self.sync_manifest_to_the_slaves(
             cluster_id=cluster_id,
             node_ids=controller_ids)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='virtual_ips')
 
         pre_virtual_ips = self.get_pre_test(tasks, 'virtual_ips')
@@ -900,7 +900,7 @@ class NeutronVlanCephMongo(TestBasic):
                 path=pre_virtual_ips[0]['cmd'])
              for node in ['slave-02', 'slave-03']]
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['virtual_ips'],
             node_id=str(controller_ids).strip('[]'))
 
@@ -944,14 +944,14 @@ class NeutronVlanCephMongo(TestBasic):
 
         controller_ids = [
             n['id'] for n in
-            self.fuel_web.client.list_cluster_nodes(cluster_id)
+            self.fuel_web.list_cluster_nodes(cluster_id)
             if 'controller' in n['roles'] and n['id'] != pr_controller_id]
 
         self.sync_manifest_to_the_slaves(
             cluster_id=cluster_id,
             node_ids=controller_ids)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='cluster-haproxy')
 
         pre_cluster_haproxy = self.get_pre_test(tasks, 'cluster-haproxy')
@@ -963,7 +963,7 @@ class NeutronVlanCephMongo(TestBasic):
                 path=pre_cluster_haproxy[0]['cmd'])
              for node in ['slave-02', 'slave-3']]
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['cluster-haproxy'],
             node_id=str(controller_ids).strip('[]'))
 
@@ -1011,14 +1011,14 @@ class NeutronVlanCephMongo(TestBasic):
 
         controller_ids = [
             n['id'] for n in
-            self.fuel_web.client.list_cluster_nodes(cluster_id)
+            self.fuel_web.list_cluster_nodes(cluster_id)
             if 'controller' in n['roles'] and n['id'] != pr_controller_id]
 
         self.sync_manifest_to_the_slaves(
             cluster_id=cluster_id,
             node_ids=controller_ids)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='openstack-haproxy')
 
         pre_openstack_haproxy = self.get_pre_test(tasks, 'openstack-haproxy')
@@ -1029,7 +1029,7 @@ class NeutronVlanCephMongo(TestBasic):
                 path=pre_openstack_haproxy[0]['cmd'])
              for node in ['slave-02', 'slave-03']]
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['openstack-haproxy'],
             node_id=str(controller_ids).strip('[]'))
 
@@ -1037,19 +1037,19 @@ class NeutronVlanCephMongo(TestBasic):
 
         self.fuel_web.assert_task_success(task=res)
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['dns-server'],
             node_id=str(controller_ids).strip('[]'))
 
         logger.debug('res info is {0}'.format(res))
         self.fuel_web.assert_task_success(task=res)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='openstack-controller')
 
         logger.debug("task list for services {0}".format(tasks))
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['memcached', 'database', 'rabbitmq',
                               'keystone', 'glance', 'openstack-cinder',
                               'ceilometer-controller'],
@@ -1101,14 +1101,14 @@ class NeutronVlanCephMongo(TestBasic):
 
         controller_ids = [
             n['id'] for n in
-            self.fuel_web.client.list_cluster_nodes(cluster_id)
+            self.fuel_web.list_cluster_nodes(cluster_id)
             if 'controller' in n['roles'] and n['id'] != pr_controller_id]
 
         self.sync_manifest_to_the_slaves(
             cluster_id=cluster_id,
             node_ids=controller_ids)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='openstack-controller')
 
         pre_openstack_ctr = self.get_pre_test(tasks, 'openstack-controller')
@@ -1119,7 +1119,7 @@ class NeutronVlanCephMongo(TestBasic):
                 path=pre_openstack_ctr[0]['cmd'])
              for node in ['slave-02', 'slave-01']]
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['openstack-controller'],
             node_id=str(controller_ids).strip('[]'))
         logger.debug('res info is {0}'.format(res))
@@ -1163,14 +1163,14 @@ class NeutronVlanCephMongo(TestBasic):
 
         controller_ids = [
             n['id'] for n in
-            self.fuel_web.client.list_cluster_nodes(cluster_id)
+            self.fuel_web.list_cluster_nodes(cluster_id)
             if 'controller' in n['roles'] and n['id'] != pr_controller_id]
 
         self.sync_manifest_to_the_slaves(
             cluster_id=cluster_id,
             node_ids=controller_ids)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, start='openstack-controller',
             end='controller_remaining_tasks')
         expected_task_list = ['heat', 'horizon', 'api-proxy', 'ceph-mon',
@@ -1188,14 +1188,14 @@ class NeutronVlanCephMongo(TestBasic):
                 path=pre_net[0]['cmd'])
              for node in ['slave-02', 'slave-03']]
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=[task['id'] for task in tasks],
             node_id=str(controller_ids).strip('[]'))
         logger.debug('res info is {0}'.format(res))
 
         self.fuel_web.assert_task_success(task=res)
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['openstack-network'],
             node_id=str(controller_ids).strip('[]'))
 
@@ -1248,14 +1248,14 @@ class NeutronVlanCephMongo(TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
         compute_ids = [
             n['id'] for n in
-            self.fuel_web.client.list_cluster_nodes(cluster_id)
+            self.fuel_web.list_cluster_nodes(cluster_id)
             if 'compute' in n['roles']]
 
         self.sync_manifest_to_the_slaves(
             cluster_id=cluster_id,
             node_ids=compute_ids)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='post_deployment_end')
 
         pre_top_compute = self.get_pre_test(tasks, 'top-role-compute')
@@ -1266,7 +1266,7 @@ class NeutronVlanCephMongo(TestBasic):
                 path=pre_top_compute[0]['cmd'])
              for node in ['slave-04', 'slave-05']]
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['top-role-compute'],
             node_id='{0},{1}'.format(compute_ids[0], compute_ids[1]))
         logger.debug('res info is {0}'.format(res))
@@ -1287,7 +1287,7 @@ class NeutronVlanCephMongo(TestBasic):
                     path=pre_test[0]['cmd'])
                  for node in ['slave-04', 'slave-05']]
 
-                res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+                res = self.fuel_web.put_deployment_tasks_for_cluster(
                     cluster_id, data=[service],
                     node_id='{0},{1}'.format(compute_ids[0], compute_ids[1]))
             logger.debug('res info is {0}'.format(res))
@@ -1327,14 +1327,14 @@ class NeutronVlanCephMongo(TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
         ceph_ids = [
             n['id'] for n in
-            self.fuel_web.client.list_cluster_nodes(cluster_id)
+            self.fuel_web.list_cluster_nodes(cluster_id)
             if 'ceph' in n['roles']]
 
         self.sync_manifest_to_the_slaves(
             cluster_id=cluster_id,
             node_ids=ceph_ids)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='top-role-ceph-osd')
 
         pre_top_ceph = self.get_pre_test(tasks, 'top-role-ceph-osd')
@@ -1345,7 +1345,7 @@ class NeutronVlanCephMongo(TestBasic):
                 path=pre_top_ceph[0]['cmd'])
              for node in ['slave-04', 'slave-05']]
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['top-role-ceph-osd'],
             node_id=str(ceph_ids).strip('[]'))
         logger.debug('res info is {0}'.format(res))
@@ -1380,23 +1380,23 @@ class NeutronVlanCephMongo(TestBasic):
         self.env.revert_snapshot("step_18_run_top_role_ceph_osd")
         cluster_id = self.fuel_web.get_last_created_cluster()
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, start='post_deployment_start',
             end='post_deployment_end')
         data = [task['id'] for task in tasks]
 
         nodes_ids = [n['id'] for n in
-                     self.fuel_web.client.list_cluster_nodes(cluster_id)]
+                     self.fuel_web.list_cluster_nodes(cluster_id)]
 
         self.sync_manifest_to_the_slaves(
             cluster_id=cluster_id,
             node_ids=nodes_ids)
 
         contr_ids = [n['id'] for n in
-                     self.fuel_web.client.list_cluster_nodes(cluster_id)
+                     self.fuel_web.list_cluster_nodes(cluster_id)
                      if 'controller' in n['roles']]
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=data,
             node_id=str(contr_ids).strip('[]'))
         logger.debug('res info is {0}'.format(res))

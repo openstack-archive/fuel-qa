@@ -243,7 +243,7 @@ class RebootPlugin(TestBasic):
 
         self.fuel_web.provisioning_cluster_wait(cluster_id)
         logger.info('Start cluster #%s deployment', cluster_id)
-        task = self.fuel_web.client.deploy_nodes(cluster_id)
+        task = self.fuel_web.deploy_nodes(cluster_id)
         self.fuel_web.assert_task_failed(task)
 
         msg = 'Time detection (1 sec) for node reboot has expired'

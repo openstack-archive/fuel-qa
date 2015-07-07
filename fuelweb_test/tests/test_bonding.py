@@ -109,7 +109,7 @@ class BondingHAOneController(TestBasic):
             }
         )
 
-        nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        nailgun_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
                 node['id'], interfaces_dict=self.NOVANET_INTERFACES,
@@ -159,7 +159,7 @@ class BondingHAOneController(TestBasic):
             }
         )
 
-        nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        nailgun_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
                 node['id'], interfaces_dict=self.NOVANET_INTERFACES,
@@ -204,7 +204,7 @@ class BondingHAOneController(TestBasic):
             }
         )
 
-        nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        nailgun_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         invalid_bond_conf = deepcopy(self.NOVANET_BOND_CONFIG)
         invalid_bond_conf[1]['mode'] = '802.3ad'
         assert_raises(
@@ -267,9 +267,9 @@ class BondingHA(TestBasic):
             }
         )
 
-        net_params = self.fuel_web.client.get_networks(cluster_id)
+        net_params = self.fuel_web.get_networks(cluster_id)
 
-        nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        nailgun_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
                 node['id'], interfaces_dict=self.NEUTRON_INTERFACES,
@@ -278,7 +278,7 @@ class BondingHA(TestBasic):
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
 
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
+        cluster = self.fuel_web.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
         assert_equal(str(net_params["networking_parameters"]
                          ['segmentation_type']), segment_type)
@@ -331,9 +331,9 @@ class BondingHA(TestBasic):
             }
         )
 
-        net_params = self.fuel_web.client.get_networks(cluster_id)
+        net_params = self.fuel_web.get_networks(cluster_id)
 
-        nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        nailgun_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
                 node['id'], interfaces_dict=self.NEUTRON_INTERFACES,
@@ -342,7 +342,7 @@ class BondingHA(TestBasic):
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
 
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
+        cluster = self.fuel_web.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
         assert_equal(str(net_params["networking_parameters"]
                          ['segmentation_type']), segment_type)
