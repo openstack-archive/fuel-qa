@@ -161,6 +161,8 @@ class EnvironmentModel(object):
         else:  # cdrom case is default
             keys = (
                 "<Wait>\n"
+                "<Wait>\n"
+                "<Wait>\n"
                 "<Esc>\n"
                 "<Wait>\n"
                 "vmlinuz initrd=initrd.img ks=%(ks)s\n"
