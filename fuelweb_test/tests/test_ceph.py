@@ -194,7 +194,7 @@ class CephCompactWithCinder(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.check_ceph_status(cluster_id)
 
-        disks = self.fuel_web.client.get_node_disks(
+        disks = self.fuel_web.get_node_disks(
             self.fuel_web.get_nailgun_node_by_name('slave-01')['id'])
 
         logger.info("Current disk partitions are: \n{d}".format(d=disks))

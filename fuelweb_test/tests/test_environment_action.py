@@ -88,7 +88,7 @@ class EnvironmentAction(base_test_case.TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         asserts.assert_equal(
-            3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
+            3, len(self.fuel_web.list_cluster_nodes(cluster_id)))
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
@@ -153,7 +153,7 @@ class EnvironmentAction(base_test_case.TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         asserts.assert_equal(
-            3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
+            3, len(self.fuel_web.list_cluster_nodes(cluster_id)))
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)

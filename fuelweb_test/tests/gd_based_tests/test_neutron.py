@@ -58,17 +58,17 @@ class NeutronTun(TestBasic):
 
     def sync_manifest_to_the_slaves(self, cluster_id, node_ids):
         if UPLOAD_MANIFESTS:
-            task_sync = self.fuel_web.client.put_deployment_tasks_for_cluster(
+            task_sync = self.fuel_web.put_deployment_tasks_for_cluster(
                 cluster_id, data=['rsync_core_puppet'],
                 node_id=str(node_ids).strip('[]'))
             self.fuel_web.assert_task_success(task=task_sync)
-            task_hiera = self.fuel_web.client.put_deployment_tasks_for_cluster(
+            task_hiera = self.fuel_web.put_deployment_tasks_for_cluster(
                 cluster_id, data=['hiera'],
                 node_id=str(node_ids).strip('[]'))
             self.fuel_web.assert_task_success(task=task_hiera)
 
     def sync_time_on_slaves(self, cluster_id, node_ids):
-        task_sync = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        task_sync = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['sync_time'],
             node_id=str(node_ids).strip('[]'))
         self.fuel_web.assert_task_success(task=task_sync)
@@ -148,10 +148,10 @@ class NeutronTun(TestBasic):
         cluster_id = self.get_cluster_id()
 
         # get task list:
-        task_controller = self.fuel_web.client.get_end_deployment_tasks(
+        task_controller = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='virtual_ips')
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='hosts')
 
         logger.debug('task list is {0}'.format(tasks))
@@ -159,43 +159,43 @@ class NeutronTun(TestBasic):
         data = [task['id'] for task in tasks]
 
         controller_id = [n['id'] for n in
-                         self.fuel_web.client.list_cluster_nodes(cluster_id)
+                         self.fuel_web.list_cluster_nodes(cluster_id)
                          if 'controller' in n['pending_roles']]
 
         computes_ids = [n['id'] for n in
-                        self.fuel_web.client.list_cluster_nodes(cluster_id)
+                        self.fuel_web.list_cluster_nodes(cluster_id)
                         if 'controller' not in n['pending_roles']]
 
         assert_true('cluster-vrouter' in [task['id']
                                           for task in task_controller])
 
-        c_task = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        c_task = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=[task['id'] for task in task_controller],
             node_id=str(controller_id).strip('[]'))
 
         self.fuel_web.assert_task_success(c_task)
 
-        task = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        task = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=data, node_id=str(computes_ids).strip('[]'))
 
         logger.debug('task info is {0}'.format(task))
         self.fuel_web.assert_task_success(task)
 
         nodes_ids = [n['id'] for n in
-                     self.fuel_web.client.list_cluster_nodes(cluster_id)]
+                     self.fuel_web.list_cluster_nodes(cluster_id)]
 
-        task_tools = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        task_tools = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['tools'], node_id=str(nodes_ids).strip('[]'))
 
         self.fuel_web.assert_task_success(task_tools)
 
-        task_firewall = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        task_firewall = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['firewall'],
             node_id=str(nodes_ids).strip('[]'))
 
         self.fuel_web.assert_task_success(task_firewall)
 
-        all_tasks = self.fuel_web.client.get_cluster_deployment_tasks(
+        all_tasks = self.fuel_web.get_cluster_deployment_tasks(
             cluster_id)
 
         nodes = ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]
@@ -296,14 +296,14 @@ class NeutronTun(TestBasic):
         cluster_id = self.get_cluster_id()
         controller_id = [
             n['id'] for n in
-            self.fuel_web.client.list_cluster_nodes(cluster_id)
+            self.fuel_web.list_cluster_nodes(cluster_id)
             if 'controller' in n['roles']]
 
         self.sync_manifest_to_the_slaves(
             cluster_id=cluster_id,
             node_ids=controller_id)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='cluster-haproxy')
 
         pre_cluster_haproxy = self.get_pre_test(tasks, 'cluster-haproxy')
@@ -314,13 +314,13 @@ class NeutronTun(TestBasic):
                 path=pre_cluster_haproxy[0]['cmd'])
              for node in ['slave-01']]
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['conntrackd'],
             node_id='{0}'.format(controller_id[0]))
         logger.debug('res info is {0}'.format(res))
         self.fuel_web.assert_task_success(task=res)
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['cluster-haproxy'],
             node_id='{0}'.format(controller_id[0]))
         logger.debug('res info is {0}'.format(res))
@@ -358,14 +358,14 @@ class NeutronTun(TestBasic):
         cluster_id = self.get_cluster_id()
         controller_id = [
             n['id'] for n in
-            self.fuel_web.client.list_cluster_nodes(cluster_id)
+            self.fuel_web.list_cluster_nodes(cluster_id)
             if 'controller' in n['roles']]
 
         self.sync_manifest_to_the_slaves(
             cluster_id=cluster_id,
             node_ids=controller_id)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='openstack-haproxy')
 
         pre_openstack_haproxy = self.get_pre_test(tasks, 'openstack-haproxy')
@@ -376,24 +376,24 @@ class NeutronTun(TestBasic):
                 path=pre_openstack_haproxy[0]['cmd'])
              for node in ['slave-01']]
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['openstack-haproxy'],
             node_id='{0}'.format(controller_id[0]))
         logger.debug('res info is {0}'.format(res))
         self.fuel_web.assert_task_success(task=res)
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['dns-server'],
             node_id='{0}'.format(controller_id[0]))
         logger.debug('res info is {0}'.format(res))
         self.fuel_web.assert_task_success(task=res)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='openstack-controller')
 
         logger.debug("task list for services {0}".format(tasks))
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['apache', 'memcached', 'database', 'rabbitmq',
                               'keystone', 'glance', 'openstack-cinder'],
             node_id='{0}'.format(controller_id[0]))
@@ -441,14 +441,14 @@ class NeutronTun(TestBasic):
         cluster_id = self.get_cluster_id()
         controller_id = [
             n['id'] for n in
-            self.fuel_web.client.list_cluster_nodes(cluster_id)
+            self.fuel_web.list_cluster_nodes(cluster_id)
             if 'controller' in n['roles']]
 
         self.sync_manifest_to_the_slaves(
             cluster_id=cluster_id,
             node_ids=controller_id)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='openstack-controller')
 
         pre_openstack_ctr = self.get_pre_test(tasks, 'openstack-controller')
@@ -459,7 +459,7 @@ class NeutronTun(TestBasic):
                 path=pre_openstack_ctr[0]['cmd'])
              for node in ['slave-01']]
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['openstack-controller'],
             node_id='{0}'.format(controller_id[0]))
         logger.debug('res info is {0}'.format(res))
@@ -497,14 +497,14 @@ class NeutronTun(TestBasic):
         cluster_id = self.get_cluster_id()
         controller_id = [
             n['id'] for n in
-            self.fuel_web.client.list_cluster_nodes(cluster_id)
+            self.fuel_web.list_cluster_nodes(cluster_id)
             if 'controller' in n['roles']]
 
         self.sync_manifest_to_the_slaves(
             cluster_id=cluster_id,
             node_ids=controller_id)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, start='openstack-controller',
             end='controller_remaining_tasks')
         expected_task_list = ['heat', 'horizon', 'swift',
@@ -522,21 +522,21 @@ class NeutronTun(TestBasic):
                 path=pre_net[0]['cmd'])
              for node in ['slave-01']]
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=[task['id'] for task in tasks],
             node_id='{0}'.format(controller_id[0]))
         logger.debug('res info is {0}'.format(res))
 
         self.fuel_web.assert_task_success(task=res)
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['api-proxy', 'swift-rebalance-cron'],
             node_id='{0}'.format(controller_id[0]))
         logger.debug('res info is {0}'.format(res))
 
         self.fuel_web.assert_task_success(task=res)
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['openstack-network'],
             node_id='{0}'.format(controller_id[0]))
         logger.debug('res info is {0}'.format(res))
@@ -588,14 +588,14 @@ class NeutronTun(TestBasic):
         cluster_id = self.get_cluster_id()
         compute_ids = [
             n['id'] for n in
-            self.fuel_web.client.list_cluster_nodes(cluster_id)
+            self.fuel_web.list_cluster_nodes(cluster_id)
             if 'compute' in n['roles']]
 
         self.sync_manifest_to_the_slaves(
             cluster_id=cluster_id,
             node_ids=compute_ids)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='post_deployment_end')
 
         pre_top_compute = self.get_pre_test(tasks, 'top-role-compute')
@@ -606,7 +606,7 @@ class NeutronTun(TestBasic):
                 path=pre_top_compute[0]['cmd'])
              for node in ['slave-02']]
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['top-role-compute'],
             node_id=str(compute_ids).strip('[]'))
         logger.debug('res info is {0}'.format(res))
@@ -626,7 +626,7 @@ class NeutronTun(TestBasic):
                 path=pre_net[0]['cmd'])
              for node in ['slave-02', 'slave-03']]
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['openstack-network-compute'],
             node_id=str(compute_ids).strip('[]'))
         logger.debug('res info is {0}'.format(res))
@@ -665,18 +665,18 @@ class NeutronTun(TestBasic):
         self.env.revert_snapshot('step_9_run_top_role_compute')
         cluster_id = self.get_cluster_id()
         nodes_ids = [n['id'] for n in
-                     self.fuel_web.client.list_cluster_nodes(cluster_id)]
+                     self.fuel_web.list_cluster_nodes(cluster_id)]
 
         cinder_ids = [
             n['id'] for n in
-            self.fuel_web.client.list_cluster_nodes(cluster_id)
+            self.fuel_web.list_cluster_nodes(cluster_id)
             if 'cinder' in n['roles']]
 
         self.sync_manifest_to_the_slaves(
             cluster_id=cluster_id,
             node_ids=nodes_ids)
 
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, end='top-role-cinder')
 
         pre_top_cinder = self.get_pre_test(tasks, 'top-role-cinder')
@@ -687,7 +687,7 @@ class NeutronTun(TestBasic):
                 path=pre_top_cinder[0]['cmd'])
              for node in ['slave-03']]
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=['top-role-cinder'],
             node_id=str(cinder_ids).strip('[]'))
         logger.debug('res info is {0}'.format(res))
@@ -700,13 +700,13 @@ class NeutronTun(TestBasic):
              for node in ['slave-03']]
 
         # Run post_deployment
-        tasks = self.fuel_web.client.get_end_deployment_tasks(
+        tasks = self.fuel_web.get_end_deployment_tasks(
             cluster_id, start='post_deployment_start',
             end='post_deployment_end')
 
         data = [task['id'] for task in tasks]
 
-        res = self.fuel_web.client.put_deployment_tasks_for_cluster(
+        res = self.fuel_web.put_deployment_tasks_for_cluster(
             cluster_id, data=data,
             node_id=str(nodes_ids).strip('[]'))
         logger.debug('res info is {0}'.format(res))

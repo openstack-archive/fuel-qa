@@ -448,7 +448,7 @@ class OSTFCeilometerHelper(TestBasic):
                                                  test_name))
 
         all_tests = [test['id'] for test
-                     in self.fuel_web.client.get_ostf_tests(cluster_id)]
+                     in self.fuel_web.get_ostf_tests(cluster_id)]
 
         for test_id in test_classes:
             if test_id in all_tests:
@@ -460,7 +460,7 @@ class OSTFCeilometerHelper(TestBasic):
 
                     test_name = next(
                         test['name'] for test
-                        in self.fuel_web.client.get_ostf_tests(cluster_id)
+                        in self.fuel_web.get_ostf_tests(cluster_id)
                         if test['id'] == test_id)
 
                     status = next(test.values()[0]
@@ -521,7 +521,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
                 'slave-03': ['mongo']
             }
         )
-        nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        nailgun_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
 
         disk_mb = 0
         for node in nailgun_nodes:

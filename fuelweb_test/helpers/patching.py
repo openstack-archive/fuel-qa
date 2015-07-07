@@ -563,7 +563,7 @@ def run_actions(environment, target, slaves, action_type='patch-scenario'):
             nodes_ids = command[1]
             tasks = command[2]
             timeout = command[3]
-            nodes = [node for node in environment.fuel_web.client.list_nodes()
+            nodes = [node for node in environment.fuel_web.list_nodes()
                      if node['id'] in nodes_ids]
             assert_true(len(nodes_ids) == len(nodes),
                         'Get nodes with ids: {0} for deployment task, but '
