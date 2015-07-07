@@ -102,7 +102,7 @@ class VcenterDeploy(TestBasic):
             'eth4': ["storage"],
         }
 
-        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slave_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         for node in slave_nodes:
             self.fuel_web.update_node_networks(node['id'], interfaces)
 
@@ -492,7 +492,7 @@ class VcenterDeploy(TestBasic):
             'eth4': ["storage"],
         }
 
-        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slave_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         for node in slave_nodes:
             self.fuel_web.update_node_networks(node['id'], interfaces)
 
@@ -577,7 +577,7 @@ class VcenterDeploy(TestBasic):
             'eth4': ["storage"],
         }
 
-        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slave_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         for node in slave_nodes:
             self.fuel_web.update_node_networks(node['id'], interfaces)
 
@@ -664,7 +664,7 @@ class VcenterDeploy(TestBasic):
             'eth4': ["storage"],
         }
 
-        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slave_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         for node in slave_nodes:
             self.fuel_web.update_node_networks(node['id'], interfaces)
 
@@ -832,7 +832,7 @@ class VcenterDeploy(TestBasic):
             }
         )
 
-        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slave_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         for node in slave_nodes:
             self.fuel_web.update_node_networks(node['id'], interfaces)
 
@@ -855,7 +855,7 @@ class VcenterDeploy(TestBasic):
             }
         )
 
-        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slave_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         self.fuel_web.update_node_networks(slave_nodes[-1]['id'], interfaces)
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
@@ -877,7 +877,7 @@ class VcenterDeploy(TestBasic):
             }
         )
 
-        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slave_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         self.fuel_web.update_node_networks(slave_nodes[-1]['id'], interfaces)
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
@@ -895,7 +895,7 @@ class VcenterDeploy(TestBasic):
             }
         )
 
-        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slave_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         self.fuel_web.update_node_networks(slave_nodes[-1]['id'], interfaces)
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
@@ -919,7 +919,7 @@ class VcenterDeploy(TestBasic):
             }
         )
 
-        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slave_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         self.fuel_web.update_node_networks(slave_nodes[-1]['id'], interfaces)
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
@@ -937,7 +937,7 @@ class VcenterDeploy(TestBasic):
             }
         )
 
-        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slave_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         self.fuel_web.update_node_networks(slave_nodes[-1]['id'], interfaces)
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
@@ -960,7 +960,7 @@ class VcenterDeploy(TestBasic):
             }
         )
 
-        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slave_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         self.fuel_web.update_node_networks(slave_nodes[-1]['id'], interfaces)
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
@@ -980,7 +980,7 @@ class VcenterDeploy(TestBasic):
             },
         )
 
-        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slave_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
 
         for node_index in range(-1, -3, -1):
             self.fuel_web.update_node_networks(
@@ -1425,7 +1425,7 @@ class VcenterDeploy(TestBasic):
              'slave-07': ['cinder'],
              'slave-08': ['cinder-vmware'], })
 
-        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slave_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         for node in slave_nodes:
             self.fuel_web.update_node_networks(node['id'], interfaces)
 

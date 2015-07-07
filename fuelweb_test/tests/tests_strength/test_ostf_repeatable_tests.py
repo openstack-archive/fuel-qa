@@ -108,6 +108,6 @@ class OstfRepeatableTests(base_test_case.TestBasic):
     @test(groups=["run_ostf_n_times_against_custom_environment"])
     @log_snapshot_after_test
     def run_ostf_n_times_against_custom_deployment(self):
-        cluster_id = self.fuel_web.client.get_cluster_id(
+        cluster_id = self.fuel_web.get_cluster_id(
             hlp_date.DEPLOYMENT_NAME)
         self.fuel_web.run_ostf_repeatably(cluster_id)

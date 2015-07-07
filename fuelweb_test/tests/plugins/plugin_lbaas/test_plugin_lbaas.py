@@ -152,7 +152,7 @@ class LbaasPlugin(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
+        cluster = self.fuel_web.get_cluster(cluster_id)
         asserts.assert_equal(str(cluster['net_provider']), 'neutron')
 
         self.fuel_web.verify_network(cluster_id)
@@ -236,7 +236,7 @@ class LbaasPlugin(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
+        cluster = self.fuel_web.get_cluster(cluster_id)
         asserts.assert_equal(str(cluster['net_provider']), 'neutron')
 
         self.fuel_web.verify_network(cluster_id)

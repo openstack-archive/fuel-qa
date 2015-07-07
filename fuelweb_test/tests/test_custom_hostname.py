@@ -72,7 +72,7 @@ class CustomHostname(TestBasic):
         hostname_pattern = "node-\d{1,2}"
         admin_remote = self.env.d_env.get_admin_remote()
 
-        for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
+        for node in self.fuel_web.list_cluster_nodes(cluster_id):
             devops_node = self.fuel_web.get_devops_node_by_nailgun_node(node)
 
             # Get hostname of a node and compare it against
@@ -130,13 +130,13 @@ class CustomHostname(TestBasic):
 
             # Set custom hostnames for cluster nodes
             custom_hostnames = []
-            for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
+            for node in self.fuel_web.list_cluster_nodes(cluster_id):
                 custom_hostname = "{0}-{1}".format(
                     node['pending_roles'][0], randrange(0, 0xffff))
                 custom_hostnames.append(custom_hostname)
                 if method == 'API':
-                    self.fuel_web.client.set_hostname(node['id'],
-                                                      custom_hostname)
+                    self.fuel_web.set_hostname(node['id'],
+                                               custom_hostname)
                 elif method == 'CLI':
                     admin_remote.execute(
                         'fuel node --node-id {0} --hostname '
@@ -154,7 +154,7 @@ class CustomHostname(TestBasic):
 
             # Verify that new hostnames are applied on the nodes
             for node, custom_hostname in zip(
-                    self.fuel_web.client.list_cluster_nodes(cluster_id),
+                    self.fuel_web.list_cluster_nodes(cluster_id),
                     custom_hostnames):
                 devops_node = self.fuel_web.get_devops_node_by_nailgun_node(
                     node)
@@ -186,7 +186,7 @@ class CustomHostname(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        node = self.fuel_web.client.list_nodes()[0]
+        node = self.fuel_web.list_nodes()[0]
 
         for invalid_hostname in (
             # Boundary values of classes of invalid ASCII symbols
@@ -205,7 +205,7 @@ class CustomHostname(TestBasic):
         ):
             assert_raises(
                 HTTPError,
-                self.fuel_web.client.set_hostname,
+                self.fuel_web.set_hostname,
                 node['id'],
                 invalid_hostname)
 
@@ -228,13 +228,13 @@ class CustomHostname(TestBasic):
 
         # Set a custom hostname for a node for the 1st time
         custom_hostname = 'custom-hostname'
-        node = self.fuel_web.client.list_nodes()[0]
-        self.fuel_web.client.set_hostname(node['id'], custom_hostname)
+        node = self.fuel_web.list_nodes()[0]
+        self.fuel_web.set_hostname(node['id'], custom_hostname)
 
         # Try to change the hostname of the provisioned node
         assert_raises(
             HTTPError,
-            self.fuel_web.client.set_hostname,
+            self.fuel_web.set_hostname,
             node,
             custom_hostname)
 
@@ -266,15 +266,15 @@ class CustomHostname(TestBasic):
 
         # Set a custom hostname for a node for the 1st time
         # and provision the node
-        node = self.fuel_web.client.list_cluster_nodes(cluster_id)[0]
-        self.fuel_web.client.set_hostname(node['id'], 'custom-hostname')
+        node = self.fuel_web.list_cluster_nodes(cluster_id)[0]
+        self.fuel_web.set_hostname(node['id'], 'custom-hostname')
         self.fuel_web.provisioning_cluster_wait(cluster_id)
 
         # Try to change the hostname of the provisioned node
         # TODO(dkruglov): LP#1476722
         assert_raises(
             HTTPError,
-            self.fuel_web.client.set_hostname,
+            self.fuel_web.set_hostname,
             node['id'],
             'new-custom-hostname')
 

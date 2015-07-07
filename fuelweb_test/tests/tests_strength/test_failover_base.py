@@ -149,7 +149,7 @@ class TestHaFailoverBase(TestBasic):
                 set(self.env.d_env.nodes().slaves[:3]) - {devops_node},
                 [devops_node])
 
-            cluster_id = self.fuel_web.client.get_cluster_id(
+            cluster_id = self.fuel_web.get_cluster_id(
                 self.__class__.__name__)
 
             # Wait until Nailgun marked suspended controller as offline
@@ -191,7 +191,7 @@ class TestHaFailoverBase(TestBasic):
                    'iptables -I OUTPUT -o br-mgmt -j DROP')
             remote.check_call(cmd)
 
-        cluster_id = self.fuel_web.client.get_cluster_id(
+        cluster_id = self.fuel_web.get_cluster_id(
             self.__class__.__name__)
 
         # Wait until MySQL Galera is UP on some controller
@@ -214,7 +214,7 @@ class TestHaFailoverBase(TestBasic):
                      .format(self.snapshot_name))
         self.env.revert_snapshot(self.snapshot_name)
         cluster_id = \
-            self.fuel_web.client.get_cluster_id(self.__class__.__name__)
+            self.fuel_web.get_cluster_id(self.__class__.__name__)
         logger.debug('Cluster id is {0}'.format(cluster_id))
         resources = {
             "vip__management": {"iface": "hapr-m", "netns": "haproxy"},
@@ -329,7 +329,7 @@ class TestHaFailoverBase(TestBasic):
 
             check_mysql(remote, devops_node.name)
 
-        cluster_id = self.fuel_web.client.get_cluster_id(
+        cluster_id = self.fuel_web.get_cluster_id(
             self.__class__.__name__)
 
         self.fuel_web.wait_mysql_galera_is_up(['slave-01', 'slave-02',
@@ -360,7 +360,7 @@ class TestHaFailoverBase(TestBasic):
             wait(haproxy_started, timeout=20)
             assert_true(haproxy_started(), 'haproxy restarted')
 
-        cluster_id = self.fuel_web.client.get_cluster_id(
+        cluster_id = self.fuel_web.get_cluster_id(
             self.__class__.__name__)
 
         # sometimes keystone is not available right after haproxy
@@ -512,7 +512,7 @@ class TestHaFailoverBase(TestBasic):
 
         self.env.revert_snapshot(self.snapshot_name)
         cluster_id = self.fuel_web.get_last_created_cluster()
-        for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
+        for node in self.fuel_web.list_cluster_nodes(cluster_id):
             remote = self.env.d_env.get_ssh_to_remote(node['ip'])
             assert_true(
                 check_ping(remote, DNS, deadline=120, interval=10),
@@ -587,7 +587,7 @@ class TestHaFailoverBase(TestBasic):
                 self.env.d_env.nodes().slaves[:1].name))
             raise
 
-        cluster_id = self.fuel_web.client.get_cluster_id(
+        cluster_id = self.fuel_web.get_cluster_id(
             self.__class__.__name__)
 
         # Wait until MySQL Galera is UP on some controller
@@ -609,10 +609,10 @@ class TestHaFailoverBase(TestBasic):
 
         self.env.revert_snapshot(self.snapshot_name)
 
-        cluster_id = self.fuel_web.client.get_cluster_id(
+        cluster_id = self.fuel_web.get_cluster_id(
             self.__class__.__name__)
 
-        net_provider = self.fuel_web.client.get_cluster(
+        net_provider = self.fuel_web.get_cluster(
             cluster_id)['net_provider']
 
         # Wait until MySQL Galera is UP on some controller
@@ -918,7 +918,7 @@ class TestHaFailoverBase(TestBasic):
         logger.info('Revert environment started...')
         self.env.revert_snapshot(self.snapshot_name)
 
-        cluster_id = self.fuel_web.client.get_cluster_id(
+        cluster_id = self.fuel_web.get_cluster_id(
             self.__class__.__name__)
 
         logger.info('Waiting for galera is up')
