@@ -142,6 +142,8 @@ class EnvironmentModel(object):
         if(iso_connect_as == 'usb'):
             keys = (
                 "<Wait>\n"  # USB boot uses boot_menu=yes for master node
+                "<Wait>\n"
+                "<Wait>\n"
                 "<F12>\n"
                 "2\n"
                 "<Esc><Enter>\n"
@@ -160,6 +162,8 @@ class EnvironmentModel(object):
             ) % params
         else:  # cdrom case is default
             keys = (
+                "<Wait>\n"
+                "<Wait>\n"
                 "<Wait>\n"
                 "<Esc>\n"
                 "<Wait>\n"
