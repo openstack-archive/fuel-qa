@@ -26,8 +26,8 @@ from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 class SecurityChecks(object):
     """SecurityChecks."""  # TODO documentation
 
-    def __init__(self, nailgun_client, environment):
-        self.client = nailgun_client
+    def __init__(self, fuelweb_client, environment):
+        self.client = fuelweb_client
         self.environment = environment
         super(SecurityChecks, self).__init__()
 
@@ -91,7 +91,7 @@ class SecurityChecks(object):
         if not self.environment.admin_install_pkg('nc') == 0:
             raise Exception('Can not install package "nc".')
 
-        cluster_nodes = self.client.list_cluster_nodes(cluster_id)
+        cluster_nodes = self.list_cluster_nodes(cluster_id)
         tmp_file_path = '/var/tmp/iptables_check_file'
         check_string = 'FirewallHole'
 

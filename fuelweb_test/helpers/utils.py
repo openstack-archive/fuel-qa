@@ -134,7 +134,7 @@ def store_packages_json(env):
     func_name = "".join(get_test_method_name())
     packages = {func_name: {}}
     cluster_id = env.fuel_web.get_last_created_cluster()
-    for nailgun_node in env.fuel_web.client.list_cluster_nodes(cluster_id):
+    for nailgun_node in env.fuel_web.list_cluster_nodes(cluster_id):
         remote = env.d_env.get_ssh_to_remote(nailgun_node['ip'])
         role = '_'.join(nailgun_node['roles'])
         logger.debug('role is {0}'.format(role))

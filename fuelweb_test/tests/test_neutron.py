@@ -70,7 +70,7 @@ class NeutronVlan(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
+        cluster = self.fuel_web.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
         # assert_equal(str(cluster['net_segment_type']), segment_type)
 
@@ -129,7 +129,7 @@ class NeutronGreHa(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
+        cluster = self.fuel_web.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
 
         self.fuel_web.verify_network(cluster_id)
@@ -161,7 +161,7 @@ class NeutronVlanHa(TestBasic):
     """NeutronVlanHa."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_neutron_vlan_ha", "neutron_vlan_ha"])
+          groups=["deploy_neutron_vlan_ha", "ha_neutron_vlan"])
     @log_snapshot_after_test
     def deploy_neutron_vlan_ha(self):
         """Deploy cluster in HA mode with Neutron VLAN
@@ -202,7 +202,7 @@ class NeutronVlanHa(TestBasic):
                                               '192.168.196.1')
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
+        cluster = self.fuel_web.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))

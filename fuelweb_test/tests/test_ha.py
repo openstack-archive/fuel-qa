@@ -12,7 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import re
+
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
 from proboscis import test
 from proboscis import SkipTest
 
@@ -23,6 +26,7 @@ from fuelweb_test.settings import DEPLOYMENT_MODE_HA
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
+from fuelweb_test import quiet_logger
 
 
 @test(groups=["thread_3", "ha", "bvt_1"])

@@ -175,10 +175,10 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.fuel_web.assert_task_success(task)
         nodes = filter(lambda x: x["pending_deletion"] is True, nailgun_nodes)
         try:
-            wait(lambda: len(self.fuel_web.client.list_nodes()) == 3,
+            wait(lambda: len(self.fuel_web.list_nodes()) == 3,
                  timeout=5 * 60)
         except TimeoutError:
-            assert_true(len(self.fuel_web.client.list_nodes()) == 3,
+            assert_true(len(self.fuel_web.list_nodes()) == 3,
                         'Node {0} is not discovered in timeout 10 *60'.format(
                             nodes[0]))
         self.fuel_web.run_ostf(cluster_id=cluster_id,
@@ -471,7 +471,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
+        cluster = self.fuel_web.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
             _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
@@ -798,10 +798,10 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         self.fuel_web.assert_task_success(task)
         nodes = filter(lambda x: x["pending_deletion"] is True, nailgun_nodes)
         try:
-            wait(lambda: len(self.fuel_web.client.list_nodes()) == 3,
+            wait(lambda: len(self.fuel_web.list_nodes()) == 3,
                  timeout=5 * 60)
         except TimeoutError:
-            assert_true(len(self.fuel_web.client.list_nodes()) == 3,
+            assert_true(len(self.fuel_web.list_nodes()) == 3,
                         'Node {0} is not discovered in timeout 10 *60'.format(
                             nodes[0]))
         self.fuel_web.run_ostf(cluster_id=cluster_id,

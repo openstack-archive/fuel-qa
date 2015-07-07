@@ -58,7 +58,7 @@ class TestMultipleClusterNets(TestBasic):
         networks = ['.'.join(get_network(n).split('.')[0:-1])
                     for n in [admin_net, admin_net2]]
         nodes_addresses = ['.'.join(node['ip'].split('.')[0:-1]) for node in
-                           self.fuel_web.client.list_nodes()]
+                           self.fuel_web.list_nodes()]
 
         assert_equal(set(networks), set(nodes_addresses),
                      "Only one admin network is used for discovering slaves:"
