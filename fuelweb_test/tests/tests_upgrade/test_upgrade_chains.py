@@ -213,7 +213,7 @@ class UpgradeFuelChains(base_test_data.TestBasic):
             self.env.d_env.nodes().slaves[6:8])
 
         cluster_ids = [cluster['id']
-                       for cluster in self.fuel_web.client.list_clusters()]
+                       for cluster in self.fuel_web.list_clusters()]
         for cluster_id in cluster_ids:
             self.fuel_web.verify_network(cluster_id)
             self.fuel_web.run_ostf(cluster_id=cluster_id)

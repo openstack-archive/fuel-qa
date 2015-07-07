@@ -156,7 +156,7 @@ class ContrailPlugin(TestBasic):
         Configure disks on base-os nodes
         """
         nailgun_nodes = \
-            self.fuel_web.client.list_cluster_nodes(self.cluster_id)
+            self.fuel_web.list_cluster_nodes(self.cluster_id)
         base_os_disk = 40960
         base_os_disk_gb = ("{0}G".format(round(base_os_disk / 1024, 1)))
         logger.info('disk size is {0}'.format(base_os_disk_gb))
@@ -710,7 +710,7 @@ class ContrailPlugin(TestBasic):
         }
 
         cluster_nodes = \
-            self.fuel_web.client.list_cluster_nodes(self.cluster_id)
+            self.fuel_web.list_cluster_nodes(self.cluster_id)
         for node in cluster_nodes:
             self.fuel_web.update_node_networks(
                 node['id'], interfaces_dict=interfaces,

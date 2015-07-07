@@ -77,7 +77,7 @@ class NeutronTun(TestBasic):
             self.fuel_web.get_public_vip(cluster_id),
             data['user'], data['password'], data['tenant'])
 
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
+        cluster = self.fuel_web.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
         # assert_equal(str(cluster['net_segment_type']), segment_type)
         self.fuel_web.check_fixed_network_cidr(
@@ -137,7 +137,7 @@ class NeutronVlan(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
+        cluster = self.fuel_web.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
         # assert_equal(str(cluster['net_segment_type']), segment_type)
 
@@ -196,7 +196,7 @@ class NeutronTunHa(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
+        cluster = self.fuel_web.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
 
         self.fuel_web.verify_network(cluster_id)
@@ -270,7 +270,7 @@ class NeutronGreHa(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
+        cluster = self.fuel_web.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
 
         self.fuel_web.verify_network(cluster_id)
@@ -348,7 +348,7 @@ class NeutronTunHaPublicNetwork(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
+        cluster = self.fuel_web.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
 
         self.fuel_web.verify_network(cluster_id)
@@ -408,7 +408,7 @@ class NeutronVlanHa(TestBasic):
                                               '192.168.196.1')
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
+        cluster = self.fuel_web.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
@@ -489,7 +489,7 @@ class NeutronVlanHaPublicNetwork(TestBasic):
                                               '192.168.196.1')
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
+        cluster = self.fuel_web.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
         # assert_equal(str(cluster['net_segment_type']), segment_type)
         os_conn = os_actions.OpenStackActions(

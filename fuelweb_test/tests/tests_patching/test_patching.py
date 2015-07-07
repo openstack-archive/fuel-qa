@@ -61,7 +61,7 @@ class PatchingTests(TestBasic):
         self.env.revert_snapshot(self.snapshot_name)
         cluster_id = self.fuel_web.get_last_created_cluster()
         assert_is_not_none(cluster_id, 'Environment for patching not found.')
-        slaves = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slaves = self.fuel_web.list_cluster_nodes(cluster_id)
         logger.info('Checking that environment is affected '
                     'by bug #{0}...'.format(settings.PATCHING_BUG_ID))
         is_environment_affected = False
@@ -126,7 +126,7 @@ class PatchingTests(TestBasic):
                 prefix_name='custom_master_repo')
 
         # Step #4
-        slaves = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slaves = self.fuel_web.list_cluster_nodes(cluster_id)
         for repo in patching_repos:
             patching.connect_slaves_to_repo(self.env, slaves, repo)
         if settings.PATCHING_MASTER_MIRRORS:
@@ -187,10 +187,10 @@ class PatchingTests(TestBasic):
                         "Rally benchmarks show performance degradation "
                         "after packages patching.")
 
-        number_of_nodes = len(self.fuel_web.client.list_cluster_nodes(
+        number_of_nodes = len(self.fuel_web.list_cluster_nodes(
             cluster_id))
 
-        cluster_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        cluster_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         roles_list = [node['roles'] for node in cluster_nodes]
         unique_roles = []
 
@@ -214,7 +214,7 @@ class PatchingTests(TestBasic):
             self.fuel_web.deploy_cluster_wait(cluster_id,
                                               check_services=False)
             self.fuel_web.verify_network(cluster_id)
-            #sanity set isn't running due to LP1457515
+            # sanity set isn't running due to LP1457515
             self.fuel_web.run_ostf(cluster_id=cluster_id,
                                    test_sets=['smoke', 'ha'])
 
@@ -231,7 +231,7 @@ class PatchingTests(TestBasic):
             wait(
                 lambda: self.fuel_web.is_node_discovered(nodes[0]),
                 timeout=6 * 60)
-            #sanity set isn't running due to LP1457515
+            # sanity set isn't running due to LP1457515
             self.fuel_web.run_ostf(cluster_id=cluster_id,
                                    test_sets=['smoke', 'ha'])
 
@@ -264,7 +264,7 @@ class PatchingMasterTests(TestBasic):
         self.env.revert_snapshot(self.snapshot_name)
         cluster_id = self.fuel_web.get_last_created_cluster()
         assert_is_not_none(cluster_id, 'Environment for patching not found.')
-        slaves = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slaves = self.fuel_web.list_cluster_nodes(cluster_id)
         logger.info('Checking that environment is affected '
                     'by bug #{0}...'.format(settings.PATCHING_BUG_ID))
         is_environment_affected = False
@@ -342,13 +342,13 @@ class PatchingMasterTests(TestBasic):
         logger.debug('active nodes are {}'.format(active_nodes))
         cluster_id = self.fuel_web.get_last_created_cluster()
         if self.fuel_web.get_last_created_cluster():
-            number_of_nodes = len(self.fuel_web.client.list_cluster_nodes(
+            number_of_nodes = len(self.fuel_web.list_cluster_nodes(
                 cluster_id))
             self.fuel_web.run_ostf(cluster_id=cluster_id)
             if number_of_nodes > 1:
                 self.fuel_web.verify_network(cluster_id)
 
-            cluster_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+            cluster_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
             roles_list = [node['roles'] for node in cluster_nodes]
             unique_roles = []
 
@@ -372,7 +372,7 @@ class PatchingMasterTests(TestBasic):
                 self.fuel_web.deploy_cluster_wait(cluster_id,
                                                   check_services=False)
                 self.fuel_web.verify_network(cluster_id)
-                #sanity set isn't running due to LP1457515
+                # sanity set isn't running due to LP1457515
                 self.fuel_web.run_ostf(cluster_id=cluster_id,
                                        test_sets=['smoke', 'ha'])
 
@@ -388,7 +388,7 @@ class PatchingMasterTests(TestBasic):
                 wait(
                     lambda: self.fuel_web.is_node_discovered(nodes[0]),
                     timeout=6 * 60)
-                #sanity set isn't running due to LP1457515
+                # sanity set isn't running due to LP1457515
                 self.fuel_web.run_ostf(cluster_id=cluster_id,
                                        test_sets=['smoke', 'ha'])
 
@@ -401,14 +401,14 @@ class PatchingMasterTests(TestBasic):
             self.fuel_web.stop_reset_env_wait(cluster_id)
             self.fuel_web.wait_nodes_get_online_state(
                 active_nodes, timeout=10 * 60)
-            self.fuel_web.client.delete_cluster(cluster_id)
+            self.fuel_web.delete_cluster(cluster_id)
             try:
                 wait((lambda: len(
-                    self.fuel_web.client.list_nodes()) == number_of_nodes),
+                    self.fuel_web.list_nodes()) == number_of_nodes),
                     timeout=5 * 60)
             except TimeoutError:
                 assert_true(len(
-                    self.fuel_web.client.list_nodes()) == number_of_nodes,
+                    self.fuel_web.list_nodes()) == number_of_nodes,
                     'Nodes are not discovered in timeout 5 *60')
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:3])
 

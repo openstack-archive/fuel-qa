@@ -240,7 +240,7 @@ class TestJumboFrames(base_test_case.TestBasic):
             }
         )
 
-        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slave_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         for node in slave_nodes:
             self.fuel_web.update_node_networks(
                 node['id'], interfaces,
@@ -321,7 +321,7 @@ class TestJumboFrames(base_test_case.TestBasic):
             }
         )
 
-        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slave_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         for node in slave_nodes:
             self.fuel_web.update_node_networks(
                 node['id'], interfaces,

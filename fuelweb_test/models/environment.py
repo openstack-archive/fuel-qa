@@ -119,7 +119,7 @@ class EnvironmentModel(object):
     @logwrap
     def get_ebtables(self, cluster_id, devops_nodes):
         return Ebtables(self.get_target_devs(devops_nodes),
-                        self.fuel_web.client.get_cluster_vlans(cluster_id))
+                        self.fuel_web.get_cluster_vlans(cluster_id))
 
     def get_keys(self, node, custom=None, build_images=None,
                  iso_connect_as='cdrom'):
@@ -223,7 +223,7 @@ class EnvironmentModel(object):
                     settings.FUEL_STATS_SSL)
                 # Restart statsenderd in order to apply new collector address
                 self.nailgun_actions.force_fuel_stats_sending()
-                self.fuel_web.client.send_fuel_stats(enabled=True)
+                self.fuel_web.send_fuel_stats(enabled=True)
                 logger.info('Enabled sending of statistics to {0}:{1}'.format(
                     settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
                 ))
@@ -282,7 +282,7 @@ class EnvironmentModel(object):
             self.sync_time(nailgun_nodes)
 
         try:
-            _wait(self.fuel_web.client.get_releases,
+            _wait(self.fuel_web.get_releases,
                   expected=EnvironmentError, timeout=300)
         except exceptions.Unauthorized:
             self.set_admin_keystone_password()
@@ -315,7 +315,7 @@ class EnvironmentModel(object):
     def set_admin_keystone_password(self):
         remote = self.d_env.get_admin_remote()
         try:
-            self.fuel_web.client.get_releases()
+            self.fuel_web.get_releases()
         except exceptions.Unauthorized:
             self.execute_remote_cmd(
                 remote, 'fuel user --newpass {0} --change-password'
@@ -375,7 +375,7 @@ class EnvironmentModel(object):
         # Restart statsenderd in order to apply new settings(Collector address)
         self.nailgun_actions.force_fuel_stats_sending()
         if settings.FUEL_STATS_ENABLED:
-            self.fuel_web.client.send_fuel_stats(enabled=True)
+            self.fuel_web.send_fuel_stats(enabled=True)
             logger.info('Enabled sending of statistics to {0}:{1}'.format(
                 settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
             ))
