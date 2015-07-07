@@ -60,7 +60,6 @@ class OneNodeDeploy(TestBasic):
 
         """
         self.env.revert_snapshot("ready")
-        self.fuel_web.client.get_root()
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[:1])
 
@@ -284,7 +283,7 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         assert_equal(
-            3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
+            3, len(self.fuel_web.list_cluster_nodes(cluster_id)))
 
         self.fuel_web.assert_cluster_ready(
             os_conn, smiles_count=8, networks_count=1, timeout=300)
@@ -386,7 +385,7 @@ class HAOneControllerVlan(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         assert_equal(
-            3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
+            3, len(self.fuel_web.list_cluster_nodes(cluster_id)))
 
         self.fuel_web.verify_network(cluster_id)
 
@@ -547,9 +546,9 @@ class MultiroleMultipleServices(TestBasic):
                         .format(result['exit_code']))
 
         # Check if there all repos were replaced with local mirrors
-        ubuntu_id = self.fuel_web.client.get_release_id(
+        ubuntu_id = self.fuel_web.get_release_id(
             release_name=OPENSTACK_RELEASE_UBUNTU)
-        ubuntu_release = self.fuel_web.client.get_release(ubuntu_id)
+        ubuntu_release = self.fuel_web.get_release(ubuntu_id)
         ubuntu_meta = ubuntu_release["attributes_metadata"]
         repos_ubuntu = ubuntu_meta["editable"]["repo_setup"]["repos"]['value']
         remote_repos = []
@@ -639,7 +638,7 @@ class FloatingIPs(TestBasic):
         networking_parameters = {
             "floating_ranges": self.fuel_web.get_floating_ranges()[0]}
 
-        self.fuel_web.client.update_network(
+        self.fuel_web.update_network(
             cluster_id,
             networking_parameters=networking_parameters
         )
@@ -757,7 +756,7 @@ class NodeMultipleInterfaces(TestBasic):
                 'slave-03': ['cinder']
             }
         )
-        nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        nailgun_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(node['id'], interfaces_dict)
 
@@ -792,13 +791,13 @@ class NodeDiskSizes(TestBasic):
 
         # assert /api/nodes
         disk_size = NODE_VOLUME_SIZE * 1024 ** 3
-        nailgun_nodes = self.fuel_web.client.list_nodes()
+        nailgun_nodes = self.fuel_web.list_nodes()
         for node in nailgun_nodes:
             for disk in node['meta']['disks']:
                 assert_equal(disk['size'], disk_size, 'Disk size')
 
         hdd_size = "{} TB HDD".format(float(disk_size * 3 / (10 ** 9)) / 1000)
-        notifications = self.fuel_web.client.get_notifications()
+        notifications = self.fuel_web.get_notifications()
         for node in nailgun_nodes:
             # assert /api/notifications
             for notification in notifications:
@@ -809,7 +808,7 @@ class NodeDiskSizes(TestBasic):
                     assert_true(hdd_size in notification['message'])
 
             # assert disks
-            disks = self.fuel_web.client.get_node_disks(node['id'])
+            disks = self.fuel_web.get_node_disks(node['id'])
             for disk in disks:
                 assert_equal(disk['size'],
                              NODE_VOLUME_SIZE * 1024 - 500, 'Disk size')
@@ -928,8 +927,8 @@ class DeleteEnvironment(TestBasic):
         self.env.revert_snapshot("deploy_ha_one_controller_flat")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
-        self.fuel_web.client.delete_cluster(cluster_id)
-        nailgun_nodes = self.fuel_web.client.list_nodes()
+        self.fuel_web.delete_cluster(cluster_id)
+        nailgun_nodes = self.fuel_web.list_nodes()
         nodes = filter(lambda x: x["pending_deletion"] is True, nailgun_nodes)
         assert_true(
             len(nodes) == 2, "Verify 2 node has pending deletion status"
@@ -989,8 +988,8 @@ class UntaggedNetworksNegative(TestBasic):
             }
         )
 
-        nets = self.fuel_web.client.get_networks(cluster_id)['networks']
-        nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        nets = self.fuel_web.get_networks(cluster_id)['networks']
+        nailgun_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(node['id'], interfaces)
 
@@ -998,7 +997,7 @@ class UntaggedNetworksNegative(TestBasic):
         [net.update(vlan_turn_off) for net in nets]
 
         # stop using VLANs:
-        self.fuel_web.client.update_network(cluster_id, networks=nets)
+        self.fuel_web.update_network(cluster_id, networks=nets)
 
         # run network check:
         self.fuel_web.verify_network(cluster_id, success=False)
@@ -1049,7 +1048,7 @@ class BackupRestoreHAOneController(TestBasic):
             cluster_id, {'slave-03': ['compute']}, True, False)
 
         assert_equal(
-            3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
+            3, len(self.fuel_web.list_cluster_nodes(cluster_id)))
 
         self.fuel_web.restore_master(self.env.d_env.get_admin_remote())
         checkers.restore_check_sum(self.env.d_env.get_admin_remote())
@@ -1058,7 +1057,7 @@ class BackupRestoreHAOneController(TestBasic):
         checkers.iptables_check(self.env.d_env.get_admin_remote())
 
         assert_equal(
-            2, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
+            2, len(self.fuel_web.list_cluster_nodes(cluster_id)))
 
         self.fuel_web.update_nodes(
             cluster_id, {'slave-03': ['compute']}, True, False)

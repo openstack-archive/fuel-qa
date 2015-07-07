@@ -340,7 +340,7 @@ def update_ostf(func):
 
 
 def create_diagnostic_snapshot(env, status, name=""):
-    task = env.fuel_web.task_wait(env.fuel_web.client.generate_logs(), 60 * 10)
+    task = env.fuel_web.task_wait(env.fuel_web.generate_logs(), 60 * 10)
     url = "http://{}:8000{}".format(
         env.get_admin_node_ip(), task['message']
     )
@@ -349,7 +349,7 @@ def create_diagnostic_snapshot(env, status, name=""):
         name=name,
         basename=os.path.basename(task['message']))
     save_logs(url, os.path.join(settings.LOGS_DIR, log_file_name),
-              auth_token=env.fuel_web.client.client.token)
+              auth_token=env.fuel_web.token)
 
 
 def retry(count=3, delay=30):
@@ -504,7 +504,7 @@ def check_repos_management(func):
         # FIXME: Enable me for all release after fix #1403088 and #1448114
         if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_UBUNTU:
             env = get_current_env(args)
-            nailgun_nodes = env.fuel_web.client.list_cluster_nodes(
+            nailgun_nodes = env.fuel_web.list_cluster_nodes(
                 env.fuel_web.get_last_created_cluster())
             for n in nailgun_nodes:
                 check_repo_managment(

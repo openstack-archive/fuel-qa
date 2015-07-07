@@ -232,7 +232,7 @@ class TestHaFlat(TestBasic):
           groups=["ha_flat_addremove"])
     @log_snapshot_after_test
     def ha_flat_addremove(self):
-        #Must be refactored to use neutron network manager
+        # Must be refactored to use neutron network manager
         """Add and re-add cinder / compute + cinder to HA cluster
 
         Scenario:
@@ -290,7 +290,7 @@ class TestHaFlatAddCompute(TestBasic):
           groups=["ha_flat_add_compute"])
     @log_snapshot_after_test
     def ha_flat_add_compute(self):
-        #Must be refactored to use neutron network manager
+        # Must be refactored to use neutron network manager
         """Add compute node to cluster in HA mode with flat nova-network
 
         Scenario:
@@ -517,7 +517,7 @@ class BackupRestoreHa(TestBasic):
           groups=["known_issues", "backup_restore_ha_flat"])
     @log_snapshot_after_test
     def backup_restore_ha_flat(self):
-        #Must be refactored to use neutron network manager
+        # Must be refactored to use neutron network manager
         """Backup/restore master node with cluster in ha mode
 
         Scenario:
@@ -550,7 +550,7 @@ class BackupRestoreHa(TestBasic):
         )
 
         assert_equal(
-            6, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
+            6, len(self.fuel_web.list_cluster_nodes(cluster_id)))
 
         self.fuel_web.restore_master(self.env.d_env.get_admin_remote())
         checkers.restore_check_sum(self.env.d_env.get_admin_remote())
@@ -559,7 +559,7 @@ class BackupRestoreHa(TestBasic):
         checkers.iptables_check(self.env.d_env.get_admin_remote())
 
         assert_equal(
-            5, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
+            5, len(self.fuel_web.list_cluster_nodes(cluster_id)))
 
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[5:6])

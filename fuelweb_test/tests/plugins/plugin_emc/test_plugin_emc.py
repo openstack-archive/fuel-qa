@@ -130,7 +130,7 @@ class EMCPlugin(TestBasic):
             settings=settings
         )
 
-        attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
+        attr = self.fuel_web.get_cluster_attributes(cluster_id)
 
         # check plugin installed and attributes have emc options
 
@@ -155,7 +155,7 @@ class EMCPlugin(TestBasic):
         emc_options["emc_password"]["value"] = CONF.EMC_PASSWORD
         emc_options["emc_pool_name"]["value"] = CONF.EMC_POOL_NAME
 
-        self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
+        self.fuel_web.update_cluster_attributes(cluster_id, attr)
 
         self.fuel_web.update_nodes(
             cluster_id,

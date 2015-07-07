@@ -25,7 +25,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 class TestOffloading(TestBasic):
 
     def update_offloads(self, node_id, update_values, interface_to_update):
-        interfaces = self.fuel_web.client.get_node_interfaces(node_id)
+        interfaces = self.fuel_web.get_node_interfaces(node_id)
         modes = None
         updated_offloads = None
         for i in interfaces:
@@ -44,7 +44,7 @@ class TestOffloading(TestBasic):
         for interface in interfaces:
             interface.update(modes[0])
 
-        self.fuel_web.client.put_node_interfaces(
+        self.fuel_web.put_node_interfaces(
             [{'id': node_id, 'interfaces': interfaces}])
 
     def check_offload(self, node, eth, offload_type):
@@ -119,7 +119,7 @@ class TestOffloading(TestBasic):
             }
         )
 
-        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slave_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         for node in slave_nodes:
             self.fuel_web.update_node_networks(node['id'], interfaces)
             for eth in offloading_modes:
@@ -216,7 +216,7 @@ class TestOffloading(TestBasic):
             }
         )
 
-        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        slave_nodes = self.fuel_web.list_cluster_nodes(cluster_id)
         for node in slave_nodes:
             self.fuel_web.update_node_networks(node['id'], interfaces)
             for eth in offloading_modes:
