@@ -595,8 +595,19 @@ class FuelWebClient(object):
         return repos
 
     def replace_centos_repos(self, repos_attr):
-        # Walk thru repos_attr and add extra Centos mirrors
-        repos = repos_attr['value']
+        # Walk thru repos_attr and replace/add extra Centos mirrors
+        repos = []
+        if help_data.MIRROR_CENTOS:
+            self.add_centos_mirrors(repos=repos)
+            # Keep other (not upstream) repos, skip previously added ones
+            for repo_value in repos_attr['value']:
+                # self.admin_node_ip while repo is located on master node
+                if (self.admin_node_ip not in repo_value['uri'] and
+                        self.check_new_centos_repo(repos, repo_value)):
+                    repos.append(repo_value)
+        else:
+            # Use defaults from Nailgun if MIRROR_CENTOS is not set
+            repos = repos_attr['value']
         if help_data.EXTRA_RPM_REPOS:
             self.add_centos_extra_mirrors(repos=repos)
         if help_data.PATCHING_DISABLE_UPDATES:
@@ -628,6 +639,15 @@ class FuelWebClient(object):
             repo_value = self.parse_ubuntu_repo(
                 repo_str, 'ubuntu-{0}'.format(x), priority)
             if repo_value and self.check_new_ubuntu_repo(repos, repo_value):
+                repos.append(repo_value)
+        return repos
+
+    def add_centos_mirrors(self, repos=[], mirrors=help_data.MIRROR_CENTOS,
+                           priority=help_data.MIRROR_CENTOS_PRIORITY):
+        # Add external Ubuntu repositories
+        for x, repo_str in enumerate(mirrors.split('|')):
+            repo_value = self.parse_centos_repo(repo_str, priority)
+            if repo_value and self.check_new_centos_repo(repos, repo_value):
                 repos.append(repo_value)
         return repos
 
