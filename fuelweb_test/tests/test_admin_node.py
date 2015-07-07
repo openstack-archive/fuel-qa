@@ -16,6 +16,8 @@
 from devops.helpers.helpers import http
 from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
+from proboscis.asserts import assert_is_not
 from proboscis import SkipTest
 from proboscis import test
 import xmlrpclib
@@ -120,3 +122,149 @@ class TestAdminNodeBackupRestore(TestBasic):
             self.env.d_env.get_admin_remote())
         checkers.restore_check_sum(self.env.d_env.get_admin_remote())
         checkers.iptables_check(self.env.d_env.get_admin_remote())
+
+
+@test(groups=["logrotate"])
+class TestLogrotateBase(TestBasic):
+
+    def generate_file(self, remote, name, path, size):
+        cmd = 'cd {0} && fallocate -l {1}G {2}'.format(path, size, name)
+        result = remote.execute(cmd)
+        assert_equal(0, result['exit_code'],
+                     'Command {0} execution failed. '
+                     'Execution result is: {1}'.format(cmd, result))
+
+    def execute_logrotate_cmd(self, remote, cmd=None, exit_code=None):
+        if not cmd:
+            cmd = 'logrotate -v -f /etc/logrotate.conf'
+        result = remote.execute(cmd)
+        if not exit_code:
+            assert_equal(0, result['exit_code'],
+                         'Command {0} execution failed. '
+                         'Execution result is: {1}'.format(cmd, result))
+        else:
+            return  result
+
+    def check_free_space(self, remote):
+        result = remote.execute(
+            'python -c "import os; '
+            'stats=os.statvfs(\'/var/log\'); '
+            'print stats.f_bavail * stats.f_frsize"')
+        assert_equal(0, result['exit_code'],
+                     'Failed to check free '
+                     'space with {0}'. format(result))
+        return self.bytestogb(int(result['stdout'][0]))
+
+    def bytestogb(self, data):
+        symbols = ('K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
+        prefix = {}
+        for i, s in enumerate(symbols):
+            prefix[s] = 1 << (i + 1) * 10
+        for s in reversed(symbols):
+            if data >= prefix[s]:
+                value = float(data) / prefix[s]
+                return format(value, '.1f'), s
+        return data, 'B'
+
+    @test(depends_on=[SetupEnvironment.setup_master],
+          groups=["test_logrotate", "logroate"])
+    @log_snapshot_after_test
+    def test_log_rotation(self):
+        """Logrotate with logrotate.conf on master node
+
+        Scenario:
+            1. Revert snapshot "empty"
+            2. Check free disk space under /var/log
+            3. Generate 2GB size file
+            4. Run logrotate 2 times
+            5. Check free disk space
+
+        Duration 30m
+
+        """
+        self.env.revert_snapshot("empty")
+        with self.env.d_env.get_admin_remote() as remote:
+
+            # get data before logrotate
+            free, suff = self.check_free_space(remote)
+
+            self.generate_file(
+                remote, size=2,
+                path='/var/log/',
+                name='messages')
+
+            free2, suff2 = self.check_free_space(remote)
+            assert_true(
+                free2 < free,
+                'File was not created. Free space '
+                'before creation {0}{1}, '
+                'free space after '
+                'creation {2}{3}'.format(free, suff, free2, suff2))
+
+            self.execute_logrotate_cmd(remote)
+
+            free3, suff3 = self.check_free_space(remote)
+            res = self.execute_logrotate_cmd(remote, exit_code=1)
+
+            # Expect 1 exit code here, according
+            # to some rotated logs are skipped to rotate
+            # second run. That's caused 1
+            assert_equal(1, res['exit_code'])
+            assert_equal(True, 'error' in res['stderr'])
+
+            free4, suff4 = self.check_free_space(remote)
+
+            assert_true(
+                free4 > free3,
+                'Logs were not rotated. '
+                'Rotate was executed 2 times. '
+                'Free space after first rotation: {0}{1}, '
+                'after second {2}{3} free space before rotation {4}'
+                '{5}'.format(free3, suff3, free4, suff4, free, suff))
+        self.env.make_snapshot("test_logrotate")
+
+    @test(depends_on=[SetupEnvironment.setup_master],
+          groups=["test_fuel_nondaily_logrotate", "logroate"])
+    @log_snapshot_after_test
+    def test_fuel_nondaily_rotation(self):
+        """Logrotate with fuel.nondaily  on master node
+
+        Scenario:
+            1. Revert snapshot "empty"
+            2. Check free disk space under /var/log
+            3. Generate 2GB /var/log/ostf-test.log size file
+            4. Run /usr/bin/fuel-logrotate
+            5. Check free disk space
+
+        Duration 30m
+
+        """
+        self.env.revert_snapshot("empty")
+        with self.env.d_env.get_admin_remote() as remote:
+
+            # get data before logrotate
+            free, suff = self.check_free_space(remote)
+
+            self.generate_file(
+                remote, size=2,
+                path='/var/log/',
+                name='ostf-test.log')
+
+            free2, suff2 = self.check_free_space(remote)
+            assert_true(
+                free2 < free,
+                'File was not created. Free space '
+                'before creation {0}{1}, '
+                'free space after '
+                'creation {2}{3}'.format(free, suff, free2, suff2))
+
+            self.execute_logrotate_cmd(remote, cmd='/usr/bin/fuel-logrotate')
+
+            free3, suff3 = self.check_free_space(remote)
+
+            assert_true(
+                free3 > free2,
+                'Logs were not rotated. '
+                'Free space before rotation: {0}{1}, '
+                'after rotation {2}{3}'.format(free2, suff2, free3, suff3))
+        self.env.make_snapshot("test_fuel_nondaily_logrotate")
