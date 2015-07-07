@@ -16,3 +16,4 @@ AllPairs==2.0.1
 launchpadlib
 beautifulsoup4>=4.2.0
 requests>=2.2.0
+python-fuelclient=6.1.2
