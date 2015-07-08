@@ -132,9 +132,14 @@ def get_job_parameter(jenkins_build_data, parameter):
 def get_version_from_parameters(jenkins_build_data):
     iso_link = get_job_parameter(jenkins_build_data, 'magnet_link')
     if iso_link:
-        match = re.search(r'.*\bfuel-(\d+(\.\d+)+)-(\d+)-.*', iso_link)
+        match = \
+            re.search(r'.*\bfuel-(\d+(\.\d+)+)-(\d+)-.*', iso_link)
+        match_custom = \
+            re.search(r'.*\bfuel-(\w+-)?(\d+(\.\d+)+)-(\d+)-.*', iso_link)
         if match:
             return match.group(1), int(match.group(3))
+        elif match_custom:
+            return match.group(2), int(match_custom.group(4))
     upstream_job = get_job_parameter(jenkins_build_data, 'UPSTREAM_JOB_URL')
     if upstream_job:
         causes = [a['causes'] for a in jenkins_build_data['actions']
