@@ -15,7 +15,6 @@
 import re
 import time
 import yaml
-import urllib2
 from devops.error import TimeoutError
 
 from devops.helpers.helpers import _tcp_ping
@@ -377,12 +376,14 @@ class EnvironmentModel(object):
                   "xargs -n1 -i sed '$aenabled=0' -i {}"
             self.execute_remote_cmd(remote, cmd)
         if settings.UPDATE_MASTER:
-            for url in settings.UPDATE_FUEL_MIRROR:
-                data = urllib2.urlopen(url)
-                for line in data:
-                    self.d_env.get_admin_remote().execute(
-                        "echo '{}' >>"
-                        " /etc/yum.repos.d/update.repo".format(line))
+            for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
+                conf_file = '/etc/yum.repos.d/temporary-{}.repo'.format(i)
+                cmd = ("echo -e"
+                       " '[temporary-{0}]\nname=temporary-{0}\nbaseurl={1}/"
+                       "\ngpgcheck=0\npriority=1' > {2}").format(i, url,
+                                                                 conf_file)
+                with self.d_env.get_admin_remote() as remote:
+                    remote.execute(cmd)
             self.admin_install_updates()
 
     @update_packages
