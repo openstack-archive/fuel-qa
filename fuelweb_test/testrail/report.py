@@ -132,14 +132,14 @@ def get_job_parameter(jenkins_build_data, parameter):
 def get_version_from_parameters(jenkins_build_data):
     iso_link = get_job_parameter(jenkins_build_data, 'magnet_link')
     if iso_link:
-        match = \
-            re.search(r'.*\bfuel-(\d+(\.\d+)+)-(\d+)-.*', iso_link)
-        match_custom = \
-            re.search(r'.*\bfuel-(\w+-)?(\d+(\.\d+)+)-(\d+)-.*', iso_link)
+        match = re.search(r'.*\bfuel-(?P<prefix>\w*)-?(?P<version>\d+'
+                          '(?P<version2>\.\d+)+)-(?P<buildnum>\d+)-.*',
+                          iso_link)
         if match:
-            return match.group(1), int(match.group(3))
-        elif match_custom:
-            return match.group(2), int(match_custom.group(4))
+            return (match.group('version'),
+                    int(match.group('buildnum')),
+                    match.group('prefix'))
+
     upstream_job = get_job_parameter(jenkins_build_data, 'UPSTREAM_JOB_URL')
     if upstream_job:
         causes = [a['causes'] for a in jenkins_build_data['actions']
@@ -155,7 +155,8 @@ def get_version_from_artifacts(jenkins_build_data):
     version = yaml.load(get_build_artifact(
         url=jenkins_build_data['url'], artifact=JENKINS['version_artifact']))
     return version['VERSION']['release'], \
-        int(version['VERSION']['build_number'])
+        int(version['VERSION']['build_number']), \
+        ''
 
 
 @retry(count=3)
@@ -344,12 +345,13 @@ def main():
 
     # STEP #3
     # Create new TestPlan in TestRail (or get existing) and add TestRuns
-    milestone, iso_number = get_version(runner_build.build_data)
+    milestone, iso_number, prefix = get_version(runner_build.build_data)
     milestone = project.get_milestone_by_name(name=milestone)
 
-    test_plan_name = '{milestone} iso #{iso_number}'.format(
+    test_plan_name = '{milestone} {prefix} iso #{iso_number}'.format(
         milestone=milestone['name'],
-        iso_number=iso_number)
+        iso_number=iso_number,
+        prefix=prefix)
 
     test_plan = project.get_plan_by_name(test_plan_name)
     if not test_plan:
