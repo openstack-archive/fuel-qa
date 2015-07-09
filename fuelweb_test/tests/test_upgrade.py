@@ -281,6 +281,120 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             cluster_id=cluster_id)
         self.env.make_snapshot("upgrade_ha")
 
+    @test(groups=["upgrade_ha_restart_containers"])
+    @log_snapshot_after_test
+    def upgrade_ha_restart_containers_env(self):
+        """Upgrade ha deployed cluster and restart containers
+
+        Scenario:
+            1. Revert snapshot with neutron gre ha env
+            2. Run upgrade on master
+            3. Check that upgrade was successful
+            4. Run patching and restart containers
+            5. Run network verification
+            6. Run OSTF
+            7. Create new ha cluster with 1 controller Neutron Vlan cluster
+            8. Deploy cluster
+            9. Run OSTF
+
+        """
+        if not self.env.d_env.has_snapshot('deploy_neutron_gre_ha'):
+            raise SkipTest()
+
+        self.env.revert_snapshot("deploy_neutron_gre_ha")
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        available_releases_before = self.fuel_web.get_releases_list_for_os(
+            release_name=hlp_data.OPENSTACK_RELEASE)
+        checkers.upload_tarball(self.env.d_env.get_admin_remote(),
+                                hlp_data.TARBALL_PATH, '/var')
+        checkers.check_tarball_exists(self.env.d_env.get_admin_remote(),
+                                      os.path.basename(hlp_data.
+                                                       TARBALL_PATH),
+                                      '/var')
+        checkers.untar(self.env.d_env.get_admin_remote(),
+                       os.path.basename(hlp_data.
+                                        TARBALL_PATH), '/var')
+
+        # Upgrade
+        checkers.run_script(self.env.d_env.get_admin_remote(),
+                            '/var', 'upgrade.sh',
+                            password=hlp_data.KEYSTONE_CREDS['password'])
+        checkers.wait_upgrade_is_done(self.env.d_env.get_admin_remote(), 3000,
+                                      phrase='*** UPGRADING MASTER NODE'
+                                             ' DONE SUCCESSFULLY')
+        checkers.check_upgraded_containers(self.env.d_env.get_admin_remote(),
+                                           hlp_data.UPGRADE_FUEL_FROM,
+                                           hlp_data.UPGRADE_FUEL_TO)
+        self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
+        self.fuel_web.assert_nodes_in_ready_state(cluster_id)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:5])
+        self.fuel_web.assert_nailgun_upgrade_migration()
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        remote = self.env.d_env.get_admin_remote()
+
+        # Patching
+        update_command = 'yum update -y'
+        update_result = remote.execute(update_command)
+        logger.debug('Result of "{1}" command on master node: '
+                     '{0}'.format(update_result, update_command))
+        assert_equal(int(update_result['exit_code']), 0,
+                     'Packages update failed, '
+                     'inspect logs for details')
+
+        # Restart containers
+        destroy_command = 'dockerctl destroy all'
+        destroy_result = remote.execute(destroy_command)
+        logger.debug('Result of "{1}" command on master node: '
+                     '{0}'.format(destroy_result, destroy_command))
+        assert_equal(int(destroy_result['exit_code']), 0,
+                     'Destroy containers failed, '
+                     'inspect logs for details')
+
+        start_command = 'dockerctl start all'
+        start_result = remote.execute(start_command)
+        logger.debug('Result of "{1}" command on master node: '
+                     '{0}'.format(start_result, start_command))
+        assert_equal(int(start_result['exit_code']), 0,
+                     'Start containers failed, '
+                     'inspect logs for details')
+        self.env.docker_actions.wait_for_ready_containers()
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        # Deploy new cluster
+        available_releases_after = self.fuel_web.get_releases_list_for_os(
+            release_name=hlp_data.OPENSTACK_RELEASE)
+        added_release = [id for id in available_releases_after
+                         if id not in available_releases_before]
+
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[5:7])
+
+        new_cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            release_id=added_release[0],
+            mode=hlp_data.DEPLOYMENT_MODE,
+            settings={
+                'net_provider': 'neutron',
+                'net_segment_type': 'vlan'
+            }
+        )
+        self.fuel_web.update_nodes(
+            new_cluster_id,
+            {
+                'slave-06': ['controller'],
+                'slave-07': ['compute']
+            }
+        )
+        self.fuel_web.run_network_verify(new_cluster_id)
+        self.fuel_web.deploy_cluster_wait(new_cluster_id)
+        self.fuel_web.run_ostf(new_cluster_id)
+        self.fuel_web.run_network_verify(new_cluster_id)
+
+        self.env.make_snapshot("upgrade_ha_restart_containers")
+
     @test(groups=["deploy_ha_after_upgrade",
                   "upgrade_ceph_ha_one_controller"])
     @log_snapshot_after_test
