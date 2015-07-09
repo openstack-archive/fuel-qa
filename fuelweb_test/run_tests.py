@@ -60,6 +60,7 @@ def import_tests():
     from tests.tests_strength import test_cic_maintenance_mode  # noqa
     from tests import test_bonding  # noqa
     from tests.tests_strength import test_neutron  # noqa
+    from tests.tests_strength import test_haos  # noqa
     from tests import test_zabbix  # noqa
     from tests import test_upgrade  # noqa
     from tests.plugins.plugin_emc import test_plugin_emc  # noqa
