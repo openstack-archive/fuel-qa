@@ -208,7 +208,7 @@ class OpenStackActions(common.Common):
         self.delete_volume(volume)
         try:
             helpers.wait(
-                lambda: not volume in self.cinder.volumes.list(),
+                lambda: volume not in self.cinder.volumes.list(),
                 timeout=timeout)
         except TimeoutError:
             asserts.assert_false(

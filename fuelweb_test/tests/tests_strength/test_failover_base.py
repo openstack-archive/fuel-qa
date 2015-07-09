@@ -34,6 +34,7 @@ from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import DOWNLOAD_LINK
 from fuelweb_test.settings import DNS
+from fuelweb_test.settings import DNS_SUFFIX
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
@@ -781,7 +782,7 @@ class TestHaFailoverBase(TestBasic):
         pcm_nodes = self.fuel_web.get_pcm_nodes(
             self.env.d_env.nodes().slaves[0].name, pure=True)['Online']
         logger.debug("pcm nodes are {}".format(pcm_nodes))
-        rabbit_nodes = [node.replace('.' + self.env.d_env.domain, "")
+        rabbit_nodes = [node.replace(DNS_SUFFIX, "")
                         for node in pcm_nodes]
         logger.debug("rabbit nodes are {}".format(rabbit_nodes))
 
@@ -849,7 +850,7 @@ class TestHaFailoverBase(TestBasic):
             self.env.d_env.nodes().slaves[0].name, pure=True)['Online']
         logger.debug("pcm nodes are {}".format(pcm_nodes))
 
-        rabbit_nodes = [node.replace('.' + self.env.d_env.domain, "")
+        rabbit_nodes = [node.replace(DNS_SUFFIX, "")
                         for node in pcm_nodes]
         logger.debug("rabbit nodes are {}".format(rabbit_nodes))
 
