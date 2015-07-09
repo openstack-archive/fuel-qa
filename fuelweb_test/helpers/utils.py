@@ -114,13 +114,14 @@ def store_astute_yaml(env):
 
 
 @logwrap
-def get_node_packages(remote, func_name, node_role, packages_dict):
-    if settings.OPENSTACK_RELEASE_UBUNTU in\
-            settings.OPENSTACK_RELEASE:
-        cmd = "dpkg-query -W -f='${Package} '"
+def get_node_packages(remote, func_name, node_role,
+                      packages_dict, release=settings.OPENSTACK_RELEASE):
+    if settings.OPENSTACK_RELEASE_UBUNTU in release:
+        cmd = "dpkg-query -W -f='${Package} ${Version}'\r"
     else:
-        cmd = 'rpm -qa --qf "%{name} "'
-    node_packages = ''.join(remote.execute(cmd)['stdout']).split()
+        cmd = 'rpm -qa --qf "%{name} %{version}"\r'
+    node_packages = remote.execute(cmd)['stdout'][0].split('\r')[:-1]
+
     logger.debug("node packages are {0}".format(node_packages))
     packages_dict[func_name][node_role] = node_packages\
         if node_role not in packages_dict[func_name].keys()\
