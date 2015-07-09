@@ -355,6 +355,16 @@ class EnvironmentModel(object):
         time.sleep(10)
         self.set_admin_keystone_password()
         self.sync_time()
+        if settings.UPDATE_MASTER:
+            for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
+                conf_file = '/etc/yum.repos.d/temporary-{}.repo'.format(i)
+                cmd = ("echo -e"
+                       " '[temporary-{0}]\nname=temporary-{0}\nbaseurl={1}/"
+                       "\ngpgcheck=0\npriority=1' > {2}").format(i, url,
+                                                                 conf_file)
+                with self.d_env.get_admin_remote() as remote:
+                    remote.execute(cmd)
+            self.admin_install_updates()
         if settings.MULTIPLE_NETWORKS:
             self.describe_second_admin_interface()
             multiple_networks_hacks.configure_second_admin_cobbler(self)
@@ -375,16 +385,6 @@ class EnvironmentModel(object):
                   " -regex '.*/mos[0-9,\.]+\-(updates|security).repo' | " \
                   "xargs -n1 -i sed '$aenabled=0' -i {}"
             self.execute_remote_cmd(remote, cmd)
-        if settings.UPDATE_MASTER:
-            for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
-                conf_file = '/etc/yum.repos.d/temporary-{}.repo'.format(i)
-                cmd = ("echo -e"
-                       " '[temporary-{0}]\nname=temporary-{0}\nbaseurl={1}/"
-                       "\ngpgcheck=0\npriority=1' > {2}").format(i, url,
-                                                                 conf_file)
-                with self.d_env.get_admin_remote() as remote:
-                    remote.execute(cmd)
-            self.admin_install_updates()
 
     @update_packages
     @upload_manifests
