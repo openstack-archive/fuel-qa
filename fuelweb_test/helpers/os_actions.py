@@ -446,8 +446,8 @@ class OpenStackActions(common.Common):
     def get_vip(self, vip):
         return self.neutron.show_vip(vip)
 
-    def get_nova_instance_ip(self, srv):
-        return srv.networks['novanetwork'][0]
+    def get_nova_instance_ip(self, srv, net_name='novanetwork'):
+        return srv.networks[net_name][0]
 
     def get_instance_mac(self, remote, srv):
         res = ''.join(remote.execute('virsh dumpxml {0} | grep "mac address="'
