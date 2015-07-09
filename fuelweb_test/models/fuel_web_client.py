@@ -1134,15 +1134,25 @@ class FuelWebClient(object):
 
     @logwrap
     def update_node_networks(self, node_id, interfaces_dict, raw_data=None):
-        # fuelweb_admin is always on eth0
-        interfaces_dict['eth0'] = interfaces_dict.get('eth0', [])
-        if 'fuelweb_admin' not in interfaces_dict['eth0']:
-            interfaces_dict['eth0'].append('fuelweb_admin')
-
         interfaces = self.client.get_node_interfaces(node_id)
 
-        if raw_data:
+        if isinstance(raw_data, dict):
             interfaces.append(raw_data)
+        elif isinstance(raw_data, list):
+            interfaces.extend(raw_data)
+
+        def get_bond_ifaces():
+            # Filter out all interfaces to be bonded
+            ifaces = []
+            for bond in [i for i in interfaces if i['type'] == 'bond']:
+                ifaces.extend(s['name'] for s in bond['slaves'])
+            return ifaces
+
+        # fuelweb_admin is always on eth0 unless the interface is not bonded
+        if 'eth0' not in get_bond_ifaces():
+            interfaces_dict['eth0'] = interfaces_dict.get('eth0', [])
+            if 'fuelweb_admin' not in interfaces_dict['eth0']:
+                interfaces_dict['eth0'].append('fuelweb_admin')
 
         all_networks = dict()
         for interface in interfaces:
