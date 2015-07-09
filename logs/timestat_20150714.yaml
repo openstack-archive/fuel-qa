@@ -1,0 +1,5 @@
+prepare_slaves_5:
+  wait_for_nodes_to_start_and_register_in_nailgun_00: '551.92'
+  wait_for_nodes_to_start_and_register_in_nailgun_01: '551.74'
+setup_master:
+  setup_environment: '952.16'
