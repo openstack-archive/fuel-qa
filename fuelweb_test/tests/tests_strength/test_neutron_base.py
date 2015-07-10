@@ -500,3 +500,93 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         err_msg = "Most packages were dropped, result code:{0}\nmessage:{1}"
         assert_equal(0, res['exit_code'],
                      err_msg.format(res, message))
+
+    def neutron_l3_migration_after_drop_rabbit(self):
+        self.env.revert_snapshot("deploy_ha_neutron_{}".format(
+            self.segment_type))
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        logger.debug("Get cluster id = %s" % cluster_id)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+
+        network, router = os_conn.create_internal_network(different_net04=True)
+        logger.debug("Create new net with id %s" % network['id'])
+
+        instance_1 = os_conn.create_server_for_migration(neutron=True)
+        logger.debug("Create first instance in net04")
+        float_ip_1 = os_conn.assign_floating_ip(instance_1)
+        logger.debug("Floating ip for instance 1: {}".format(float_ip_1.ip))
+
+        instance_2 = os_conn.create_server_for_migration(neutron=True,
+                                                         net_id=network['id'])
+        logger.debug("Create second instance instance in %s" % network['name'])
+        float_ip_2 = os_conn.assign_floating_ip(instance_2)
+        logger.debug("Floating ip for instance 2: {}".format(float_ip_2.ip))
+        wait(lambda: os_conn.execute_through_host(
+             self.fuel_web.get_ssh_for_node("slave-01"),
+             float_ip_2.ip, "touch test_file"), timeout=60 * 4,
+             timeout_msg="VM doesn't become available for ssh commands")
+        logger.debug("Start ping instance2 from instance1 by floatings")
+        res = os_conn.execute_through_host(
+            self.fuel_web.get_ssh_for_node("slave-01"),
+            float_ip_1.ip, "ping -q -c3 -w10 {0} | grep 'received' |"
+            " grep -v '0 packets received'".format(float_ip_2.ip))
+
+        assert_equal(res['stdout'].split(',')[0], '3 packets transmitted',
+                     "Instance 1 with IP:{ip1} cannot ping instance 2 "
+                     "with IP:{ip2}".format(ip1=float_ip_1.ip,
+                                            ip2=float_ip_2.ip))
+        logger.debug("End ping instance2 from instance1")
+
+        logger.debug("Start ping instance1 from instance2 by floatings")
+        res = os_conn.execute_through_host(
+            self.fuel_web.get_ssh_for_node("slave-01"),
+            float_ip_2.ip, "ping -q -c3 -w10 {0} | grep 'received' |"
+            " grep -v '0 packets received'".format(float_ip_1.ip))
+
+        assert_equal(res['stdout'].split(',')[0], '3 packets transmitted',
+                     "Instance 2 with IP:{ip1} cannot ping instance 1 "
+                     "with IP:{ip2}".format(ip1=float_ip_2.ip,
+                                            ip2=float_ip_1.ip))
+        logger.debug("End ping instance1 from instance2")
+        router_id = router['id']
+
+        node_with_l3 = os_conn.get_l3_agent_hosts(router_id)[0]
+        devops_node_with_l3 = self.get_node_with_l3(self, node_with_l3)
+        new_remote = self.get_remote(self, devops_node_with_l3)
+
+        logger.debug("Start killing rabbit port")
+        new_remote.execute("iptables -I OUTPUT 1 -p tcp --dport 5673 -j DROP")
+
+        logger.debug("Wait rescheduling router from died agent")
+        err_msg = ("l3 agent wasn't rescheduled after drop port, "
+                   "it is still {0}")
+        wait(lambda: not node_with_l3 == os_conn.get_l3_agent_hosts(
+             router_id)[0], timeout=60 * 3,
+             timeout_msg=err_msg.format(
+                 os_conn.get_l3_agent_hosts(router_id)[0]))
+        wait(lambda: os_conn.get_l3_agent_ids(router_id), timeout=60)
+
+        logger.debug("Start ping instance2 from instance1 by floatings")
+        res = os_conn.execute_through_host(
+            self.fuel_web.get_ssh_for_node("slave-01"),
+            float_ip_1.ip, "ping -q -c3 -w10 {0} | grep 'received' |"
+            " grep -v '0 packets received'".format(float_ip_2.ip))
+
+        assert_equal(res['stdout'].split(',')[0], '3 packets transmitted',
+                     "Instance 1 with IP:{ip1} cannot ping instance 2 "
+                     "with IP:{ip2}".format(ip1=float_ip_1.ip,
+                                            ip2=float_ip_2.ip))
+        logger.debug("End ping instance2 from instance1")
+
+        logger.debug("Start ping instance1 from instance2 by floatings")
+        res = os_conn.execute_through_host(
+            self.fuel_web.get_ssh_for_node("slave-01"),
+            float_ip_2.ip, "ping -q -c3 -w10 {0} | grep 'received' |"
+            " grep -v '0 packets received'".format(float_ip_1.ip))
+
+        assert_equal(res['stdout'].split(',')[0], '3 packets transmitted',
+                     "Instance 2 with IP:{ip1} cannot ping instance 1 "
+                     "with IP:{ip2}".format(ip1=float_ip_2.ip,
+                                            ip2=float_ip_1.ip))
+        logger.debug("End ping instance1 from instance2")

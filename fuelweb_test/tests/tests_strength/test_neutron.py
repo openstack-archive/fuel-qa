@@ -132,13 +132,6 @@ class TestNeutronFailoverVlan(TestNeutronFailoverBase):
         """
         super(self.__class__, self).neutron_packets_drop_stat()
 
-
-@test(groups=["ha_neutron_destructive_gre", "ha"])
-class TestNeutronFailoverGRE(TestNeutronFailoverBase):
-    """TestNeutronFailoverGre"""  # TODO(kkuznetsova) documentation
-
-    segment_type = "gre"
-
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
           groups=["deploy_ha_neutron_gre"])
     @log_snapshot_after_test
@@ -339,6 +332,26 @@ class TestNeutronFailoverVxlan(TestNeutronFailoverBase):
 
         """
         super(self.__class__, self).neutron_l3_migration_after_destroy()
+
+    @test(depends_on=[deploy_ha_neutron_vxlan],
+          groups=["neutron_l3_migration_after_drop_rabbit",
+                  "neutron_l3_migration_after_drop_rabbit_vxlan"])
+    @log_snapshot_after_test
+    def neutron_packets_drop_stat_vxlan(self):
+        """
+        Check l3 agent migration after some rabbit problems.
+
+        Scenario:
+        1. Revert snapshot with neutron cluster
+        4. Launch instances in different private networks
+        5. Check ping on instances from each other by flips
+        6. Drop rabbit port on host with l3 agent for router 1
+        7. Check reschedule router 1
+        8. Repeat step 5
+
+        Duration 30m
+        """
+        super(self.__class__, self).neutron_l3_migration_after_drop_rabbit()
 
     @test(depends_on=[deploy_ha_neutron_vxlan],
           groups=["neutron_packets_drops_stat",

@@ -64,9 +64,86 @@ class OpenStackActions(common.Common):
         if servers:
             return servers
 
+    def create_internal_network(self, cidr="13.22.31.0/24",
+                                different_net04=False):
+        """
+        :param cidr: CIDR for new subnet for new internal network
+        :param different_net04: Reschedule router to different of
+        net04 host if it's possible
+        :return: Created network
+        """
+
+        #   Find external network
+        ext_network_id = self.neutron.list_networks(
+            **{'router:external': True})['networks'][0]['id']
+
+        #   Create router with upped external network
+        gw_info = {
+            "network_id": ext_network_id,
+            "enable_snat": True
+        }
+
+        router_info = {
+            "router": {
+                "name": "test-router" + str(random.randint(1, 0x7fffffff)),
+                "external_gateway_info": gw_info,
+                "tenant_id": self.keystone.tenant_id
+            }
+        }
+
+        router = self.neutron.create_router(router_info)['router']
+
+        #   Create internal_network
+        net_info = {
+            "network": {
+                "name": "test-net" + str(random.randint(1, 0x7fffffff)),
+                "tenant_id": self.keystone.tenant_id
+            }
+        }
+
+        net = self.neutron.create_network(net_info)['network']
+
+        #   Create subnet for private network
+        subnet_info = {
+            "subnet": {
+                "network_id": net['id'],
+                "ip_version": 4,
+                "cidr": cidr,
+                "tenant_id": self.keystone.tenant_id
+            }
+        }
+
+        subnet = self.neutron.create_subnet(subnet_info)['subnet']
+
+        #   Unlink subnet to router
+        self.neutron.add_interface_router(router['id'],
+                                          {'subnet_id': subnet['id']})
+
+        # Reschedule router to different of net04 host if it's possible
+        if different_net04:
+            n4_router = self.neutron.list_routers(name='router04')['routers']
+            if n4_router:
+                n4_l3agents = self.neutron.list_l3_agent_hosting_routers(
+                    n4_router[0]['id'])['agents']
+                if n4_l3agents:
+                    n4_l3host = n4_l3agents[0]['host']
+            l3_host = self.neutron.list_l3_agent_hosting_routers(
+                router['id'])['agents'][0]['host']
+            if n4_router and (n4_l3host == l3_host):
+                for agent in self.neutron.list_agents(
+                        binary='neutron-l3-agent')['agents']:
+                    if agent['host'] != l3_host:
+                        self.neutron.remove_router_from_l3_agent(
+                            n4_l3agents[0]['id'], router['id'])
+                        self.neutron.add_router_to_l3_agent(
+                            agent['id'], {'router_id': router['id']})
+
+        #   return created network
+        return net, router
+
     def create_server_for_migration(self, neutron=True, scenario='',
                                     timeout=100, file=None, key_name=None,
-                                    **kwargs):
+                                    net_id=None, **kwargs):
         name = "test-serv" + str(random.randint(1, 0x7fffffff))
         security_group = {}
         try:
@@ -83,11 +160,20 @@ class OpenStackActions(common.Common):
             self.keystone.tenant_id].name]
 
         if neutron:
-            network = [net.id for net in self.nova.networks.list()
-                       if net.label == 'net04']
+            if net_id:
+                network_id = net_id
+            else:
+                err_msg = ("Not found private networks from all networks"
+                           " in tenant: {}")
+                nets = self.neutron.list_networks()['networks']
+                int_net_ids = [net['id'] for net in nets
+                               if not net['router:external']
+                               and net['status'] == "ACTIVE"]
+                asserts.assert_true(int_net_ids, err_msg.format(nets))
+                network_id = int_net_ids[0]
 
-            kwargs.update({'nics': [{'net-id': network[0]}],
-                           'security_groups': security_group})
+            kwargs.update({'nics': [{'net-id': network_id}],
+                          'security_groups': security_group})
         else:
             kwargs.update({'security_groups': security_group})
 
