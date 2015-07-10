@@ -1133,7 +1133,9 @@ class FuelWebClient(object):
         return nailgun_nodes
 
     @logwrap
-    def update_node_networks(self, node_id, interfaces_dict, raw_data=None):
+    def update_node_networks(self, node_id, interfaces_dict,
+                             raw_data=None,
+                             override_ifaces_params=None):
         # fuelweb_admin is always on eth0
         interfaces_dict['eth0'] = interfaces_dict.get('eth0', [])
         if 'fuelweb_admin' not in interfaces_dict['eth0']:
@@ -1141,8 +1143,17 @@ class FuelWebClient(object):
 
         interfaces = self.client.get_node_interfaces(node_id)
 
-        if raw_data:
-            interfaces.append(raw_data)
+        if raw_data is not None:
+            interfaces.extend(raw_data)
+
+        if override_ifaces_params is not None:
+            get_iface_by_name = \
+                lambda ifaces, name: \
+                    filter(lambda iface: iface['name'] == name, ifaces)[0]
+
+            for interface in override_ifaces_params:
+                get_iface_by_name(interfaces, interface['name']).\
+                    update(interface)
 
         all_networks = dict()
         for interface in interfaces:

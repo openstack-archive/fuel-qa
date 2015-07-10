@@ -61,7 +61,7 @@ class BondingHAOneController(TestBasic):
             }
         )
 
-        raw_data = {
+        raw_data = [{
             'mac': None,
             'mode': 'active-backup',
             'name': 'lnx-bond0',
@@ -74,7 +74,7 @@ class BondingHAOneController(TestBasic):
             'state': None,
             'type': 'bond',
             'assigned_networks': []
-        }
+        }, ]
 
         interfaces = {
             'eth0': ['fuelweb_admin'],
@@ -137,7 +137,7 @@ class BondingHAOneController(TestBasic):
             }
         )
 
-        bond_config = {
+        bond_config = [{
             'mac': None,
             'mode': 'active-backup',
             'name': 'lnx-bond0',
@@ -150,7 +150,7 @@ class BondingHAOneController(TestBasic):
             'state': None,
             'type': 'bond',
             'assigned_networks': []
-        }
+        }, ]
 
         interfaces = {
             'eth0': ['fuelweb_admin'],
@@ -229,7 +229,7 @@ class BondingHA(TestBasic):
             }
         )
 
-        raw_data = {
+        raw_data = [{
             'mac': None,
             'mode': 'active-backup',
             'name': 'lnx-bond0',
@@ -242,7 +242,7 @@ class BondingHA(TestBasic):
             'state': None,
             'type': 'bond',
             'assigned_networks': []
-        }
+        }, ]
 
         interfaces = {
             'eth0': ['fuelweb_admin'],
@@ -320,7 +320,7 @@ class BondingHA(TestBasic):
             }
         )
 
-        raw_data = {
+        raw_data = [{
             'mac': None,
             'mode': 'active-backup',
             'name': 'lnx-bond0',
@@ -333,7 +333,7 @@ class BondingHA(TestBasic):
             'state': None,
             'type': 'bond',
             'assigned_networks': []
-        }
+        }, ]
 
         interfaces = {
             'eth0': ['fuelweb_admin'],
