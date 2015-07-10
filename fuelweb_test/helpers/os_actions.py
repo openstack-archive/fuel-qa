@@ -65,8 +65,62 @@ class OpenStackActions(common.Common):
         if servers:
             return servers
 
+    def create_internal_network(self):
+
+        #   Find external network
+        ext_network_id = self.neutron.list_networks(
+            **{'router:external': True})['networks'][0]['id']
+
+        #   Create router with upped external network
+        gw_info = {
+            "network_id": ext_network_id,
+            "enable_snat": True
+        }
+
+        router_info = {
+            "router": {
+                "name": "test-router" + str(random.randint(1, 0x7fffffff)),
+                "external_gateway_info": gw_info,
+                "tenant_id": self.keystone.tenant_id
+            }
+        }
+
+        router = self.neutron.create_router(router_info)['router']
+
+        #   Create internal_network
+
+        net_info = {
+            "network": {
+                "name": "test-net" + str(random.randint(1, 0x7fffffff)),
+                "tenant_id": self.keystone.tenant_id
+            }
+        }
+
+        net = self.neutron.create_network(net_info)['network']
+
+        #   Create subnet for private network
+
+        subnet_info = {
+            "subnet": {
+                "network_id": net['id'],
+                "ip_version": 4,
+                "cidr": "13.22.31.0/24",
+                "tenant_id": self.keystone.tenant_id
+            }
+        }
+
+        subnet = self.neutron.create_subnet(subnet_info)['subnet']
+
+        #   Unlink subnet to router
+
+        self.neutron.add_interface_router(router['id'],
+                                          {'subnet_id': subnet['id']})
+
+        return net
+
     def create_server_for_migration(self, neutron=False, scenario='',
-                                    timeout=100, file=None, key_name=None):
+                                    timeout=100, file=None, key_name=None,
+                                    net_id=None):
         name = "test-serv" + str(random.randint(1, 0x7fffffff))
         security_group = {}
         try:
@@ -83,10 +137,13 @@ class OpenStackActions(common.Common):
             self.keystone.tenant_id].name]
 
         if neutron:
-            network = [net.id for net in self.nova.networks.list()
-                       if net.label == 'net04']
+            if net_id:
+                network_id = net_id
+            else:
+                network_id = self.neutron.list_networks(
+                    name='net04')['networks'][0]['id']
 
-            kwargs = {'nics': [{'net-id': network[0]}],
+            kwargs = {'nics': [{'net-id': network_id}],
                       'security_groups': security_group}
         else:
             kwargs = {'security_groups': security_group}
