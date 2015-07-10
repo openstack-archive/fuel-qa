@@ -344,11 +344,10 @@ def create_diagnostic_snapshot(env, status, name=""):
     url = "http://{}:8000{}".format(
         env.get_admin_node_ip(), task['message']
     )
-    log_file_name = '{status}_{name}-{time}.tar.xz'.format(
+    log_file_name = '{status}_{name}-{basename}'.format(
         status=status,
         name=name,
-        time=time.strftime("%Y_%m_%d__%H_%M_%S", time.gmtime())
-    )
+        basename=os.path.basename(task['message']))
     save_logs(url, os.path.join(settings.LOGS_DIR, log_file_name),
               auth_token=env.fuel_web.client.client.token)
 
