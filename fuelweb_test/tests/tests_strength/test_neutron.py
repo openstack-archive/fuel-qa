@@ -415,6 +415,36 @@ class TestNeutronFailover(base_test_case.TestBasic):
         assert_equal(0, res['exit_code'],
                      'Most packages were dropped, result is {0}'.format(res))
 
+    def neutron_l3_migration_after_drop_rabbit(self, segment_type):
+        """
+        Check l3 agent migration after some rabbit problems.
+
+        Scenario:
+        1. Revert snapshot with neutron cluster
+        4. Launch instances in different private networks
+        5. Check ping on instances from each other by flips
+        6. Drop rabbit port on host with l3 agent for router 1
+        7. Check reschedule router 1
+        8. Repeat step 5
+
+        Duration 30m
+        """
+        self.env.revert_snapshot("deploy_ha_neutron_{}".format(segment_type))
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+
+        network = os_conn.create_internal_network()
+
+        instance_1 = os_conn.create_server_for_migration(neutron=True)
+        float_ip_1 = os_conn.assign_floating_ip(instance_1)
+
+        instance_2 = os_conn.create_server_for_migration(neutron=True,
+                                                         net_id=network['id'])
+        float_ip_2 = os_conn.assign_floating_ip(instance_2)
+
+
+
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
           groups=["deploy_ha_neutron_gre"])
     @log_snapshot_after_test
