@@ -44,7 +44,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         return kernel
 
     @test(groups=["upgrade_ha_one_controller",
-                  "upgrade_ceph_ha_one_controller"])
+                  "upgrade_ceph_ha_one_controller",
+                  "upgrade_ceph_ha_one_controller_neutron"])
     @log_snapshot_after_test
     def upgrade_ha_one_controller_env(self):
         """Upgrade ha one controller deployed cluster with ceph
