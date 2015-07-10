@@ -424,6 +424,58 @@ class TestNeutronFailover(base_test_case.TestBasic):
         assert_equal(0, res['exit_code'],
                      'Most packages were dropped, result is {0}'.format(res))
 
+    @log_snapshot_after_test
+    def neutron_l3_migration_after_drop_rabbit(self, segment_type):
+        """
+        Check l3 agent migration after some rabbit problems.
+
+        Scenario:
+        1. Revert snapshot with neutron cluster
+        4. Launch instances in different private networks
+        5. Check ping on instances from each other by flips
+        6. Drop rabbit port on host with l3 agent for router 1
+        7. Check reschedule router 1
+        8. Repeat step 5
+
+        Duration 30m
+        """
+        self.env.revert_snapshot("deploy_ha_neutron_{}".format(segment_type))
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+
+        network = os_conn.create_internal_network(different_net04=True)
+
+        instance_1 = os_conn.create_server_for_migration(neutron=True)
+        float_ip_1 = os_conn.assign_floating_ip(instance_1)
+        logger.debug("Floating ip for instance 1: {}".format(float_ip_1.ip))
+
+        instance_2 = os_conn.create_server_for_migration(neutron=True,
+                                                         net_id=network['id'])
+        float_ip_2 = os_conn.assign_floating_ip(instance_2)
+
+        logger.debug("Floating ip for instance 1: {}".format(float_ip_2.ip))
+
+        res = os_conn.execute_through_host(
+            self.fuel_web.get_ssh_for_node("slave-01"),
+            float_ip_1.ip, "ping -q -c3 -w10 {0} | grep 'received' |"
+            " grep -v '0 packets received'".format(float_ip_2))
+
+        assert_equal(res.split(',')[0], '3 packets transmitted',
+                     "Instance 1 with IP:{ip1} cannot ping instance 2 "
+                     "with IP:{ip2}".format(ip1=float_ip_1.ip,
+                                            ip2=float_ip_2.ip))
+
+        res = os_conn.execute_through_host(
+            self.fuel_web.get_ssh_for_node("slave-01"),
+            float_ip_2.ip, "ping -q -c3 -w10 {0} | grep 'received' |"
+            " grep -v '0 packets received'".format(float_ip_1))
+
+        assert_equal(res.split(',')[0], '3 packets transmitted',
+                     "Instance 2 with IP:{ip1} cannot ping instance 1 "
+                     "with IP:{ip2}".format(ip1=float_ip_2.ip,
+                                            ip2=float_ip_1.ip))
+
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
           groups=["deploy_ha_neutron_gre"])
     @log_snapshot_after_test
@@ -539,3 +591,19 @@ class TestNeutronFailover(base_test_case.TestBasic):
           groups=["neutron_packets_drops_stat"])
     def neutron_packets_drop_stat_vxlan_env(self):
         self.neutron_packets_drop_stat("tun")
+
+    @test(depends_on=[deploy_ha_neutron_vlan],
+          groups=["neutron_l3_migration_after_drop_rabbit"])
+    def neutron_l3_migration_after_drop_rabbit_vlan_env(self):
+        self.neutron_l3_migration_after_drop_rabbit("vlan")
+
+    @test(depends_on=[deploy_ha_neutron_gre],
+          groups=["neutron_l3_migration_after_drop_rabbit"])
+    def neutron_l3_migration_after_drop_rabbit_gre_env(self):
+        self.neutron_l3_migration_after_drop_rabbit("gre")
+
+    @test(depends_on=[deploy_ha_neutron_vxlan],
+          groups=["neutron_l3_migration_after_drop_rabbit"])
+    def neutron_l3_migration_after_drop_rabbit_gre_env(self):
+        self.neutron_l3_migration_after_drop_rabbit("vxlan")
+
