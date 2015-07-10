@@ -19,6 +19,8 @@ from proboscis.asserts import assert_equal
 from proboscis import SkipTest
 from proboscis import test
 import xmlrpclib
+import requests
+import os
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -120,3 +122,104 @@ class TestAdminNodeBackupRestore(TestBasic):
             self.env.d_env.get_admin_remote())
         checkers.restore_check_sum(self.env.d_env.get_admin_remote())
         checkers.iptables_check(self.env.d_env.get_admin_remote())
+
+
+@test(groups=["diagnostic_snapshot_downloading"])
+class TestDiagnosticSnapshotDownloading(TestBasic):
+    """Test downloading of diagnostic snapshot with authentication"""
+    def gen_log_snapshot_url(self):
+        task = self.env.fuel_web.task_wait(
+            self.env.fuel_web.client.generate_logs(),
+            60 * 2
+        )
+        url = "http://{host}:8000{snapshot_path}".format(
+            host=self.env.get_admin_node_ip(),
+            snapshot_path=task['message']
+        )
+        return url
+
+    @test(depends_on=[SetupEnvironment.setup_master],
+          groups=["download_snapshot_with_auth"])
+    @log_snapshot_after_test
+    def download_snapshot_with_auth(self):
+        """Download diagnostic snapshot with correct auth token
+
+        Scenario:
+            1. Revert snapshot "empty"
+            2. Generate diagnostic snapshot
+            3. Download generated snapshot via GET request with correct token
+
+        Duration 1m
+
+        """
+        self.env.revert_snapshot("empty")
+
+        url = self.gen_log_snapshot_url()
+        token = self.env.fuel_web.client.client.token
+        headers = {'X-Auth-Token': token}
+        path_to_log = "/tmp/test_snapshot_downloading.tar.xz"
+
+        stream = requests.get(url, headers=headers, stream=True)
+        assert_equal(
+            stream.status_code, 200,
+            "The return code of snapshot downloading request is {}, "
+            "not 200".format(stream.status_code)
+        )
+        with open(path_to_log, "wb") as f:
+            for chunk in stream.iter_content(chunk_size=1024):
+                f.write(chunk)
+                f.flush()
+        assert os.path.getsize(path_to_log) > 0, "The snapshot file is empty."
+        os.remove(path_to_log)
+
+    @test(depends_on=[SetupEnvironment.setup_master],
+          groups=["download_snapshot_without_auth"])
+    @log_snapshot_after_test
+    def download_snapshot_without_auth(self):
+        """Download diagnostic snapshot without auth token
+
+        Scenario:
+            1. Revert snapshot "empty"
+            2. Generate diagnostic snapshot
+            3. Try to download generated snapshot via GET request without token
+
+        Duration 1m
+
+        """
+        self.env.revert_snapshot("empty")
+
+        url = self.gen_log_snapshot_url()
+        request = requests.get(url)
+        assert_equal(
+            request.status_code, 401,
+            "The return code of snapshot downloading request is {}, "
+            "not 401".format(request.status_code)
+        )
+
+    @test(depends_on=[SetupEnvironment.setup_master],
+          groups=["download_not_existing_snapshot"])
+    @log_snapshot_after_test
+    def download_not_existing_snapshot(self):
+        """Download diagnostic snapshot without auth token
+
+        Scenario:
+            1. Revert snapshot "empty"
+            2. Generate diagnostic snapshot
+            3. Change the file name and try to download via GET request
+            with correct token
+
+        Duration 1m
+
+        """
+        self.env.revert_snapshot("empty")
+        token = self.env.fuel_web.client.client.token
+        headers = {'X-Auth-Token': token}
+
+        url = self.gen_log_snapshot_url()
+        url += "invalid_url.tar.xz"
+        request = requests.get(url, headers=headers)
+        assert_equal(
+            request.status_code, 404,
+            "The return code of snapshot downloading request is {}, "
+            "not 404".format(request.status_code)
+        )
