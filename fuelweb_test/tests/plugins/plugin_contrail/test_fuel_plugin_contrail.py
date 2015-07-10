@@ -686,7 +686,7 @@ class ContrailPlugin(TestBasic):
             },
             contrail=True
         )
-        raw_data = {
+        raw_data = [{
             'mac': None,
             'mode': 'active-backup',
             'name': 'lnx-bond0',
@@ -697,7 +697,7 @@ class ContrailPlugin(TestBasic):
             'state': None,
             'type': 'bond',
             'assigned_networks': []
-        }
+        }, ]
 
         interfaces = {
             'eth0': ['fuelweb_admin'],
