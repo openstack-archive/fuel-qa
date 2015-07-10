@@ -12,7 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from settings import logger
 from testrail import APIClient
+from testrail import APIError
 
 
 class TestRailProject():
@@ -338,8 +340,12 @@ class TestRailProject():
     def get_all_results_for_case(self, run_ids, case_id):
         all_results = []
         for run_id in run_ids:
-            results = self.get_results_for_case(run_id=run_id,
-                                                case_id=case_id)
+            try:
+                results = self.get_results_for_case(run_id=run_id,
+                                                    case_id=case_id)
+            except APIError as e:
+                logger.error(e)
+                continue
             all_results.extend(results)
         return all_results
 
