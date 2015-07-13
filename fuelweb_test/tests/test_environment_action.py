@@ -283,3 +283,172 @@ class EnvironmentActionOnHA(base_test_case.TestBasic):
             test_sets=['ha', 'smoke', 'sanity'])
 
         self.env.make_snapshot("deploy_stop_reset_on_ha")
+
+
+@test(groups=["cluster_actions", "controller_replacement"])
+class ControllerReplacement(base_test_case.TestBasic):
+    """
+    Test class ControllerReplacement includes following cases:
+      - replace controller on ha cluster with neutron gre provider;
+      - replace controller on ha cluster with neutron vlan provider;
+      - replace controller on ha cluster with nova network provider;
+    """
+
+    @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
+          groups=["deploy_ha_neutron_gre_ctrl_replacement"])
+    @log_snapshot_after_test
+    def deploy_ha_neutron_gre_ctrl_replacement(self):
+        """Replace 1 controller and re-deploy on ha env with neutron gre
+
+        Scenario:
+            1. Create cluster with neutron gre
+            2. Add 3 node with controller role
+            3. Add 1 node with compute
+            3. Deploy cluster
+            4. Remove one controller add new controller
+            5. Deploy changes
+            6. Run OSTF
+
+        Duration 90m
+        Snapshot: deploy_ha_neutron_gre_ctrl_replacement
+
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        data = {"net_provider": "neutron", "net_segment_type": 'gre'}
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=hlp_data.DEPLOYMENT_MODE_HA,
+            settings=data
+
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute']
+            }
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.update_nodes(
+            cluster_id, {'slave-05': ['controller']}, True, False)
+        self.fuel_web.update_nodes(
+            cluster_id, {'slave-01': ['controller']}, False, True)
+
+        # Disable check services here, according to nova-manage shows
+        #  XXX for node that we remove
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.run_ostf(cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'],
+                               should_fail=1)
+
+        self.env.make_snapshot("deploy_ha_neutron_gre_ctrl_replacement")
+
+    @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
+          groups=["deploy_ha_neutron_vlan_ctrl_replacement"])
+    @log_snapshot_after_test
+    def deploy_ha_neutron_vlan_ctrl_replacement(self):
+        """Replace 1 controller and re-deploy on ha env with neutron vlan
+
+        Scenario:
+            1. Create cluster with neutron vlan
+            2. Add 3 node with controller role
+            3. Add 1 node with compute
+            3. Deploy cluster
+            4. Remove one controller add new controller
+            5. Deploy changes
+            6. Run OSTF
+
+        Duration 90m
+        Snapshot: deploy_ha_neutron_vlan_ctrl_replacement
+
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        data = {"net_provider": "neutron", "net_segment_type": 'vlan'}
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=hlp_data.DEPLOYMENT_MODE_HA,
+            settings=data
+
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute']
+            }
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.update_nodes(
+            cluster_id, {'slave-05': ['controller']}, True, False)
+        self.fuel_web.update_nodes(
+            cluster_id, {'slave-01': ['controller']}, False, True)
+
+        # Disable check services here, according to nova-manage shows
+        #  XXX for node that we remove
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.run_ostf(cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'],
+                               should_fail=1)
+
+        self.env.make_snapshot("deploy_ha_neutron_gre_ctrl_replacement")
+
+    @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
+          groups=["deploy_ha_nova_ctrl_replacement"])
+    @log_snapshot_after_test
+    def deploy_ha_nova_ctrl_replacement(self):
+        """Replace 1 controller and re-deploy on ha env with nova
+
+        Scenario:
+            1. Create cluster with nova
+            2. Add 3 node with controller role
+            3. Add 1 node with compute
+            3. Deploy cluster
+            4. Remove one controller add new controller
+            5. Deploy changes
+            6. Run OSTF
+
+        Duration 90m
+        Snapshot: deploy_ha_nova_ctrl_replacement
+
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=hlp_data.DEPLOYMENT_MODE_HA,
+
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute']
+            }
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.update_nodes(
+            cluster_id, {'slave-05': ['controller']}, True, False)
+        self.fuel_web.update_nodes(
+            cluster_id, {'slave-01': ['controller']}, False, True)
+
+        # Disable check services here, according to nova-manage shows
+        #  XXX for node that we remove
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.run_ostf(cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'],
+                               should_fail=1)
+
+        self.env.make_snapshot("deploy_ha_nova_ctrl_replacement")
