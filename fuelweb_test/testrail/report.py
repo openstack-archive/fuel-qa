@@ -206,19 +206,25 @@ def publish_results(project, milestone_id, test_plan,
             continue
         existing_results_versions = [r['version'] for r in
                                      project.get_results_for_test(test['id'])]
+        case_id = project.get_case_by_group(suite_id=suite_id,
+                                            group=result.group,
+                                            cases=cases)['id']
         if result.version in existing_results_versions:
+            if result.status != 'passed':
+                previous_results = project.get_all_results_for_case(
+                    run_ids=[test_run_ids[0]],
+                    case_id=case_id)
+                result.launchpad_bug = get_existing_bug_link(previous_results)
             continue
         if result.status != 'passed':
             run_ids = [run['id'] for run in previous_tests_runs[0:
                        int(TestRailSettings.previous_results_depth)]]
-            case_id = project.get_case_by_group(suite_id=suite_id,
-                                                group=result.group,
-                                                cases=cases)['id']
             previous_results = project.get_all_results_for_case(
                 run_ids=run_ids,
                 case_id=case_id)
             result.launchpad_bug = get_existing_bug_link(previous_results)
         results_to_publish.append(result)
+
     try:
         if len(results_to_publish) > 0:
             project.add_results_for_cases(run_id=test_run_ids[0],
@@ -405,7 +411,7 @@ def main():
     logger.info('Uploading tests results to TestRail...')
     for os in operation_systems:
         logger.info('Checking tests results for "{0}"...'.format(os['name']))
-        tests_results[os['distro']] = publish_results(
+        results_to_publish = publish_results(
             project=project,
             milestone_id=milestone['id'],
             test_plan=test_plan,
@@ -414,10 +420,41 @@ def main():
             results=tests_results[os['distro']]
         )
         logger.debug('Added new results for tests ({os}): {tests}'.format(
-            os=os['name'], tests=[r.group for r in tests_results[os['distro']]]
+            os=os['name'], tests=[r.group for r in results_to_publish]
         ))
 
     logger.info('Report URL: {0}'.format(test_plan['url']))
+
+    # STEP #5
+    # Provide the bugs linked in TestRail for current run as a short statistics
+    bugs = {}
+    for os in operation_systems:
+        for result in tests_results[os['distro']]:
+            bug = result.launchpad_bug
+            if not bug:
+                continue    # Bug is not linked to the test case result.
+            distro = os['distro']
+            if bug not in bugs:
+                bugs[bug] = {}
+                bugs[bug]['distro'] = {}
+                bugs[bug]['count'] = 0
+            if distro not in bugs[bug]['distro']:
+                bugs[bug]['distro'][distro] = {}
+            bugs[bug]['count'] += 1
+            bugs[bug]['distro'][distro][result.url] = {}
+            bugs[bug]['distro'][distro][result.url]['status'] = result.status
+            bugs[bug]['distro'][distro][result.url]['group'] = result.group
+
+    bugs_sorted = sorted(bugs.keys(), key=lambda x: bugs[x]['count'],
+                         reverse=True)
+    for bug in bugs_sorted:
+        logger.info("Bug: {0} Count: {1}".format(bug, bugs[bug]['count']))
+        for distro in bugs[bug]['distro'].keys():
+            urls = {}
+            for res in bugs[bug]['distro'][distro]:
+                res_url = bugs[bug]['distro'][distro][res]
+                urls[res_url['group']] = res_url
+            logger.info("    {0}: {1}".format(distro, urls))
 
 
 if __name__ == "__main__":
