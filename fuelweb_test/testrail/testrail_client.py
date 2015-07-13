@@ -344,7 +344,8 @@ class TestRailProject():
                 results = self.get_results_for_case(run_id=run_id,
                                                     case_id=case_id)
             except APIError as e:
-                logger.error(e)
+                logger.error("[{0}], run_id={1}, case_id={2}"
+                             .format(e,run_id,case_id))
                 continue
             all_results.extend(results)
         return all_results
