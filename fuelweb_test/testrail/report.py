@@ -15,12 +15,12 @@
 #    under the License.
 
 import functools
+from os import path as os_path
 import re
 import yaml
 
 from logging import DEBUG
 from optparse import OptionParser
-
 from builds import Build
 from builds import get_build_artifact
 from builds import get_downstream_builds_from_html
@@ -28,6 +28,7 @@ from builds import get_jobs_for_view
 from launchpad_client import LaunchpadBug
 from settings import JENKINS
 from settings import LaunchpadSettings
+from settings import LOGS_DIR
 from settings import logger
 from settings import TestRailSettings
 from testrail_client import TestRailProject
@@ -46,6 +47,9 @@ class TestResult():
         self._version = version
         self.description = description
         self.launchpad_bug = launchpad_bug
+        self.launchpad_bug_status = None
+        self.launchpad_bug_importance = None
+        self.launchpad_bug_title = None
         self.available_statuses = {
             'passed': ['passed', 'fixed'],
             'failed': ['failed', 'regression'],
@@ -206,19 +210,35 @@ def publish_results(project, milestone_id, test_plan,
             continue
         existing_results_versions = [r['version'] for r in
                                      project.get_results_for_test(test['id'])]
-        if result.version in existing_results_versions:
+        case_id = project.get_case_by_group(suite_id=suite_id,
+                                            group=result.group,
+                                            cases=cases)['id']
+        if result.version in existing_results_versions or not result.status:
+            if result.status != 'passed':
+                previous_results = project.get_all_results_for_case(
+                    run_ids=[test_run_ids[0]],
+                    case_id=case_id)
+                lp_bug = get_existing_bug_link(previous_results)
+                if lp_bug:
+                    result.launchpad_bug = lp_bug['bug_link']
+                    result.launchpad_bug_status = lp_bug['status']
+                    result.launchpad_bug_importance = lp_bug['importance']
+                    result.launchpad_bug_title = lp_bug['title']
             continue
         if result.status != 'passed':
             run_ids = [run['id'] for run in previous_tests_runs[0:
                        int(TestRailSettings.previous_results_depth)]]
-            case_id = project.get_case_by_group(suite_id=suite_id,
-                                                group=result.group,
-                                                cases=cases)['id']
             previous_results = project.get_all_results_for_case(
                 run_ids=run_ids,
                 case_id=case_id)
-            result.launchpad_bug = get_existing_bug_link(previous_results)
+            lp_bug = get_existing_bug_link(previous_results)
+            if lp_bug:
+                result.launchpad_bug = lp_bug['bug_link']
+                result.launchpad_bug_status = lp_bug['status']
+                result.launchpad_bug_importance = lp_bug['importance']
+                result.launchpad_bug_title = lp_bug['title']
         results_to_publish.append(result)
+
     try:
         if len(results_to_publish) > 0:
             project.add_results_for_cases(run_id=test_run_ids[0],
@@ -261,7 +281,8 @@ def get_existing_bug_link(previous_results):
             if target['project'] == LaunchpadSettings.project and\
                target['milestone'] == LaunchpadSettings.milestone and\
                target['status'] not in LaunchpadSettings.closed_statuses:
-                return result["custom_launchpad_bug"]
+                target['bug_link'] = result["custom_launchpad_bug"]
+                return target
 
 
 def main():
@@ -326,6 +347,8 @@ def main():
                      " or Jenkins view with system tests jobs (-w). Exiting..")
         return
 
+    is_running_builds = False
+
     for systest_build in tests_jobs:
         if options.job_name:
             if 'result' not in systest_build.keys():
@@ -338,6 +361,7 @@ def main():
                 logger.debug("Skipping '{0}' job (build #{1}) because it's sti"
                              "ll running...".format(systest_build['name'],
                                                     systest_build['number'],))
+                is_running_builds = True
                 continue
         for os in tests_results.keys():
             if os in systest_build['name'].lower():
@@ -405,7 +429,7 @@ def main():
     logger.info('Uploading tests results to TestRail...')
     for os in operation_systems:
         logger.info('Checking tests results for "{0}"...'.format(os['name']))
-        tests_results[os['distro']] = publish_results(
+        results_to_publish = publish_results(
             project=project,
             milestone_id=milestone['id'],
             test_plan=test_plan,
@@ -414,11 +438,73 @@ def main():
             results=tests_results[os['distro']]
         )
         logger.debug('Added new results for tests ({os}): {tests}'.format(
-            os=os['name'], tests=[r.group for r in tests_results[os['distro']]]
+            os=os['name'], tests=[r.group for r in results_to_publish]
         ))
 
     logger.info('Report URL: {0}'.format(test_plan['url']))
 
+    # STEP #5
+    # Provide the bugs linked in TestRail for current run as a short statistics
+    if is_running_builds:
+        logger.info("Some jobs are still running, "
+                    "skipping bug statistics report")
+        return
+
+    logger.info("Generation bug statistics report...")
+
+    bugs = {}
+    for os in operation_systems:
+        for result in tests_results[os['distro']]:
+            bug = result.launchpad_bug
+            if not bug:
+                continue    # Bug is not linked to the test case result.
+            distro = os['distro']
+            if bug not in bugs:
+                bugs[bug] = {}
+                bugs[bug]['distro'] = {}
+                bugs[bug]['count'] = 0
+                bugs[bug]['status'] = result.launchpad_bug_status
+                bugs[bug]['importance'] = result.launchpad_bug_importance
+                bugs[bug]['title'] = result.launchpad_bug_title
+            if distro not in bugs[bug]['distro']:
+                bugs[bug]['distro'][distro] = {}
+            bugs[bug]['count'] += 1
+            bugs[bug]['distro'][distro][result.url] = {}
+            bugs[bug]['distro'][distro][result.url]['status'] = result.status
+            bugs[bug]['distro'][distro][result.url]['group'] = result.group
+
+    bugs_sorted = sorted(bugs.keys(), key=lambda x: bugs[x]['count'],
+                         reverse=True)
+
+    if bugs_sorted:
+        bugs_link_file = os_path.join(LOGS_DIR, 'bugs_link_stat.html')
+        with open(bugs_link_file, 'w') as fout:
+            for bug in bugs_sorted:
+                jresults = ""
+                for distro in bugs[bug]['distro'].keys():
+                    jresults += " {0}: ".format(distro)
+                    num = 1
+                    bugs_distro = bugs[bug]['distro'][distro]
+                    for res in bugs_distro:
+                        jresults += (
+                            '<a href={res} title="{hint}">{num}</a> '
+                            .format(res=res,
+                                    hint=bugs_distro[res]['group'],
+                                    num=num))
+                        num += 1
+                line = ('[{affected} test case(s)] [{importance}] [{status}] '
+                        '<a href="{link}">{title}</a> [{jresults}]<br>\n'
+                        .format(affected=bugs[bug]['count'],
+                                importance=bugs[bug]['importance'],
+                                status=bugs[bug]['status'],
+                                link=bug,
+                                title=bugs[bug]['title'],
+                                jresults=jresults))
+                fout.write(line)
+
+        logger.info("Bug statistics saved to: {0}".format(bugs_link_file))
+    else:
+        logger.info("No linked to test cases bugs found")
 
 if __name__ == "__main__":
     main()

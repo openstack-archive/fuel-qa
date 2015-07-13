@@ -22,6 +22,7 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 logger.setLevel(logging.INFO)
 
+LOGS_DIR = os.environ.get('LOGS_DIR', os.getcwd())
 
 JENKINS = {
     'url': os.environ.get('JENKINS_URL', 'http://localhost/'),
@@ -34,7 +35,7 @@ class LaunchpadSettings(object):
     """LaunchpadSettings."""  # TODO documentation
 
     project = os.environ.get('LAUNCHPAD_PROJECT', 'fuel')
-    milestone = os.environ.get('LAUNCHPAD_MILESTONE', '6.1')
+    milestone = os.environ.get('LAUNCHPAD_MILESTONE', '7.0')
     closed_statuses = [
         os.environ.get('LAUNCHPAD_RELEASED_STATUS', 'Fix Released'),
         os.environ.get('LAUNCHPAD_INVALID_STATUS', 'Invalid')
@@ -48,8 +49,8 @@ class TestRailSettings(object):
     user = os.environ.get('TESTRAIL_USER', 'user@example.com')
     password = os.environ.get('TESTRAIL_PASSWORD', 'password')
     project = os.environ.get('TESTRAIL_PROJECT', 'Mirantis OpenStack')
-    milestone = os.environ.get('TESTRAIL_MILESTONE', '6.1')
-    tests_suite = os.environ.get('TESTRAIL_TEST_SUITE', 'Swarm 6.1')
+    milestone = os.environ.get('TESTRAIL_MILESTONE', '7.0')
+    tests_suite = os.environ.get('TESTRAIL_TEST_SUITE', 'Swarm 7.0')
     tests_section = os.environ.get('TESTRAIL_TEST_SECTION', 'All')
     tests_include = os.environ.get('TESTRAIL_TEST_INCLUDE', None)
     tests_exclude = os.environ.get('TESTRAIL_TEST_EXCLUDE', None)
