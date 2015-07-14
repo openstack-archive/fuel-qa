@@ -187,6 +187,54 @@ class PatchingTests(TestBasic):
                         "Rally benchmarks show performance degradation "
                         "after packages patching.")
 
+        number_of_nodes = len(self.fuel_web.client.list_cluster_nodes(
+            cluster_id))
+
+        cluster_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        roles_list = [node['roles'] for node in cluster_nodes]
+        unique_roles = []
+
+        for role in roles_list:
+            if not [unique_role for unique_role in unique_roles
+                    if set(role) == set(unique_role)]:
+                unique_roles.append(role)
+
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[
+                                 number_of_nodes:number_of_nodes + 1])
+
+        for roles in unique_roles:
+            if "mongo" in roles:
+                continue
+
+            node = {'slave-0{}'.format(number_of_nodes + 1):
+                    [role for role in roles]}
+            logger.debug("Adding new node to the cluster: {0}".format(node))
+            self.fuel_web.update_nodes(
+                cluster_id, node)
+            self.fuel_web.deploy_cluster_wait(cluster_id,
+                                              check_services=False)
+            self.fuel_web.verify_network(cluster_id)
+            #sanity set isn't running due to LP1457515
+            self.fuel_web.run_ostf(cluster_id=cluster_id,
+                                   test_sets=['smoke', 'ha'])
+
+            if "ceph-osd" in roles:
+                remote_ceph = self.fuel_web.get_ssh_for_node(
+                    'slave-0{}'.format(number_of_nodes + 1))
+                self.fuel_web.prepare_ceph_to_delete(remote_ceph)
+
+            nailgun_node = self.fuel_web.update_nodes(
+                cluster_id, node, False, True)
+            nodes = filter(
+                lambda x: x["pending_deletion"] is True, nailgun_node)
+            self.fuel_web.deploy_cluster(cluster_id)
+            wait(
+                lambda: self.fuel_web.is_node_discovered(nodes[0]),
+                timeout=6 * 60)
+            #sanity set isn't running due to LP1457515
+            self.fuel_web.run_ostf(cluster_id=cluster_id,
+                                   test_sets=['smoke', 'ha'])
+
 
 @test(groups=["patching_master_tests"])
 class PatchingMasterTests(TestBasic):
@@ -299,24 +347,56 @@ class PatchingMasterTests(TestBasic):
             self.fuel_web.run_ostf(cluster_id=cluster_id)
             if number_of_nodes > 1:
                 self.fuel_web.verify_network(cluster_id)
-            self.env.bootstrap_nodes(
-                self.env.d_env.nodes().
-                slaves[number_of_nodes:number_of_nodes + 1])
-            self.fuel_web.update_nodes(
-                cluster_id,
-                {'slave-0{}'.format(number_of_nodes + 1): ['compute']},
-                True, False)
-            self.fuel_web.deploy_cluster_wait(cluster_id)
-            nailgun_nodes = self.fuel_web.update_nodes(
-                cluster_id,
-                {'slave-0{}'.format(number_of_nodes + 1): ['compute']},
-                False, True)
-            nodes = filter(
-                lambda x: x["pending_deletion"] is True, nailgun_nodes)
-            self.fuel_web.deploy_cluster(cluster_id)
-            wait(
-                lambda: self.fuel_web.is_node_discovered(nodes[0]),
-                timeout=6 * 60)
+
+            cluster_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+            roles_list = [node['roles'] for node in cluster_nodes]
+            unique_roles = []
+
+            for role in roles_list:
+                if not [unique_role for unique_role in unique_roles
+                        if set(role) == set(unique_role)]:
+                    unique_roles.append(role)
+
+            self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[
+                                     number_of_nodes:number_of_nodes + 1])
+
+            for roles in unique_roles:
+                if "mongo" in roles:
+                    continue
+                node = {'slave-0{}'.format(number_of_nodes + 1):
+                        [role for role in roles]}
+                logger.debug("Adding new node to"
+                             " the cluster: {0}".format(node))
+                self.fuel_web.update_nodes(
+                    cluster_id, node)
+                self.fuel_web.deploy_cluster_wait(cluster_id,
+                                                  check_services=False)
+                self.fuel_web.verify_network(cluster_id)
+                #sanity set isn't running due to LP1457515
+                self.fuel_web.run_ostf(cluster_id=cluster_id,
+                                       test_sets=['smoke', 'ha'])
+
+                if "ceph-osd" in roles:
+                    remote_ceph = self.fuel_web.get_ssh_for_node(
+                        'slave-0{}'.format(number_of_nodes + 1))
+                    self.fuel_web.prepare_ceph_to_delete(remote_ceph)
+                nailgun_node = self.fuel_web.update_nodes(
+                    cluster_id, node, False, True)
+                nodes = filter(
+                    lambda x: x["pending_deletion"] is True, nailgun_node)
+                self.fuel_web.deploy_cluster(cluster_id)
+                wait(
+                    lambda: self.fuel_web.is_node_discovered(nodes[0]),
+                    timeout=6 * 60)
+                #sanity set isn't running due to LP1457515
+                self.fuel_web.run_ostf(cluster_id=cluster_id,
+                                       test_sets=['smoke', 'ha'])
+
+            active_nodes = []
+            for node in self.env.d_env.nodes().slaves:
+                if node.driver.node_active(node):
+                    active_nodes.append(node)
+            logger.debug('active nodes are {}'.format(active_nodes))
 
             self.fuel_web.stop_reset_env_wait(cluster_id)
             self.fuel_web.wait_nodes_get_online_state(
