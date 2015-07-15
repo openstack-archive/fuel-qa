@@ -55,6 +55,7 @@ def import_tests():
     from tests.tests_strength import test_master_node_failover  # noqa
     from tests.tests_strength import test_ostf_repeatable_tests  # noqa
     from tests.tests_strength import test_restart  # noqa
+    from tests.tests_strength import test_sanity  # noqa
     from tests.tests_strength import test_huge_environments  # noqa
     from tests.tests_strength import test_image_based  # noqa
     from tests.tests_strength import test_cic_maintenance_mode  # noqa
