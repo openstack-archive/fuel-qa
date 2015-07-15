@@ -273,6 +273,33 @@ def install_pkg(remote, pkg_name):
     return remote_status['exit_code']
 
 
+def uninstall_pkg(remote, pkg_name, release=settings.OPENSTACK_RELEASE):
+    """Install a package <pkg_name> on node
+    :param remote: SSHClient to remote node
+    :param pkg_name: name of a package to remove
+    :return: exit code of uninstallation
+    """
+    if settings.OPENSTACK_RELEASE_UBUNTU in release:
+        remote_status = remote.execute("dpkg -l '{0}'".format(pkg_name))
+    else:
+        remote_status = remote.execute("rpm -q '{0}'".format(pkg_name))
+    if remote_status['exit_code'] != 0:
+        logger.debug("Package '{0}' already removed or absent."
+                     .format(pkg_name))
+    else:
+        logger.debug("Uninstalling package '{0}' ...".format(pkg_name))
+        if settings.OPENSTACK_RELEASE_UBUNTU in release:
+            remote_status = remote.execute("apt-get -y remove {0}"
+                                           .format(pkg_name))
+        else:
+            remote_status = remote.execute("yum -y erase {0}"
+                                           .format(pkg_name))
+        logger.debug("Removing of the package '{0}' has been"
+                    " completed with exit code {1}"
+                    .format(pkg_name, remote_status['exit_code']))
+    return remote_status['exit_code']
+
+
 def cond_upload(remote, source, target, condition=''):
     # Upload files only if condition in regexp matches filenames
     if remote.isdir(target):
