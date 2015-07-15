@@ -459,7 +459,7 @@ class MultiroleComputeCinder(TestBasic):
     """MultiroleComputeCinder."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_multirole_compute_cinder"])
+          groups=["deploy_multirole_compute_cinder", "bvt_3"])
     @log_snapshot_after_test
     def deploy_multirole_compute_cinder(self):
         """Deploy cluster in HA mode with multi-role compute and cinder
