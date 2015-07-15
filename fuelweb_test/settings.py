@@ -321,12 +321,12 @@ FUEL_SETTINGS_YAML = os.environ.get('FUEL_SETTINGS_YAML',
 
 TARBALL_PATH = os.environ.get('TARBALL_PATH')
 
-UPGRADE_FUEL_FROM = os.environ.get('UPGRADE_FUEL_FROM', '6.0')
-UPGRADE_FUEL_TO = os.environ.get('UPGRADE_FUEL_TO', '6.1')
+UPGRADE_FUEL_FROM = os.environ.get('UPGRADE_FUEL_FROM', '6.1')
+UPGRADE_FUEL_TO = os.environ.get('UPGRADE_FUEL_TO', '7.0')
 
 SNAPSHOT = os.environ.get('SNAPSHOT', '')
 # For 5.1.1 we have 2 releases in tarball and should specify what we need
-RELEASE_VERSION = os.environ.get('RELEASE_VERSION', "2014.2.2-6.1")
+RELEASE_VERSION = os.environ.get('RELEASE_VERSION', "2015.1.0-7.0")
 
 # URL to custom mirror with new OSCI packages wich should be tested,
 # for example:
