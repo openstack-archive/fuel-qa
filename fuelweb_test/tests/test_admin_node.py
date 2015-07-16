@@ -33,7 +33,7 @@ from fuelweb_test import logger
 class TestAdminNode(TestBasic):
     """TestAdminNode."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.setup_master],
+    @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["test_cobbler_alive"])
     @log_snapshot_after_test
     def test_cobbler_alive(self):
@@ -50,7 +50,7 @@ class TestAdminNode(TestBasic):
         """
         if OPENSTACK_RELEASE_CENTOS not in OPENSTACK_RELEASE:
             raise SkipTest()
-        self.env.revert_snapshot("empty")
+        self.env.revert_snapshot("ready")
         wait(
             lambda: http(host=self.env.get_admin_node_ip(), url='/cobbler_api',
                          waited_code=501),
@@ -66,7 +66,7 @@ class TestAdminNode(TestBasic):
         # raises an error if something isn't right
         server.login(username, password)
 
-    @test(depends_on=[SetupEnvironment.setup_master],
+    @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["test_astuted_alive"])
     @log_snapshot_after_test
     def test_astuted_alive(self):
@@ -81,7 +81,7 @@ class TestAdminNode(TestBasic):
         """
         if OPENSTACK_RELEASE_CENTOS not in OPENSTACK_RELEASE:
             raise SkipTest()
-        self.env.revert_snapshot("empty")
+        self.env.revert_snapshot("ready")
         ps_output = self.env.d_env.get_admin_remote().execute(
             'ps ax')['stdout']
         astute_master = filter(lambda x: 'astute master' in x, ps_output)
@@ -96,7 +96,7 @@ class TestAdminNode(TestBasic):
 
 @test(groups=["known_issues"])
 class TestAdminNodeBackupRestore(TestBasic):
-    @test(depends_on=[SetupEnvironment.setup_master],
+    @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["backup_restore_master_base"])
     @log_snapshot_after_test
     def backup_restore_master_base(self):
@@ -112,7 +112,7 @@ class TestAdminNodeBackupRestore(TestBasic):
         Duration 30m
 
         """
-        self.env.revert_snapshot("empty")
+        self.env.revert_snapshot("ready")
         self.fuel_web.backup_master(self.env.d_env.get_admin_remote())
         checkers.backup_check(self.env.d_env.get_admin_remote())
         self.fuel_web.restore_master(self.env.d_env.get_admin_remote())
