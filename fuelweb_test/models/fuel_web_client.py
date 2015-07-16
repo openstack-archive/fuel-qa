@@ -1118,7 +1118,8 @@ class FuelWebClient(object):
     @logwrap
     def update_nodes(self, cluster_id, nodes_dict,
                      pending_addition=True, pending_deletion=False,
-                     update_nodegroups=False, contrail=False):
+                     update_nodegroups=False, contrail=False,
+                     custom_names=None):
 
         # update nodes in cluster
         nodes_data = []
