@@ -289,6 +289,7 @@ class CephHA(TestBasic):
         Scenario:
             1. Revert snapshot with ceph cluster in HA mode
             2. Check ceph status
+            3. Check ceph version, should less 0.88
 
         Duration 10m
         Snapshot check_ceph_ha
@@ -299,6 +300,26 @@ class CephHA(TestBasic):
 
         self.fuel_web.check_ceph_status(cluster_id)
 
+        versions = []
+        for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
+            remote = self.fuel_web.get_ssh_for_nailgun_node(node)
+            role = '_'.join(node['roles'])
+            logger.debug('{} has role {0}'.format(node['fqdn'], role))
+            version = ceph.get_version(remote)
+            logger.debug('On {} ceph version is {}'.format(node['fqdn'],
+                                                           version))
+            versions.append({'name': node['fqdn'], 'ceph_version': version})
+
+        def check_ver(v):
+            # Check version. True if less then 0.88
+            # FIXME: should bigger then 0.93 after upgrade to hammer
+            v1, v2, v3 = v['ceph_version'].split('.')
+            return int(v1) == 0 and int(v2) < 88
+
+        bad_nodes = filter(not check_ver, versions)
+        assert_true(len(bad_nodes) == 0,
+                    message="Nodes should have Ceph version less "
+                            "then 0.88.0. {}".format(bad_nodes))
         # Run ostf
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
