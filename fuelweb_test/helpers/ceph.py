@@ -232,3 +232,13 @@ def get_rbd_images_list(remote, pool):
     """
     cmd = 'rbd --pool {pool} --format json ls -l'.format(pool=pool)
     return run_on_remote(remote, cmd, jsonify=True)
+
+
+def get_version(remote):
+    """Returns Ceph version
+
+    :param remote: devops.helpers.helpers.SSHClient
+    :return: str
+    """
+    cmd = 'ceph --version'
+    return run_on_remote(remote, cmd).split(' ')[2]

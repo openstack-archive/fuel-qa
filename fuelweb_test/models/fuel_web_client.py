@@ -967,6 +967,10 @@ class FuelWebClient(object):
         return self.get_ssh_for_node(node_name)
 
     @logwrap
+    def get_ssh_for_nailgun_node(self, nailgun_node):
+        return self.environment.d_env.get_ssh_to_remote(nailgun_node['ip'])        
+
+    @logwrap
     def is_node_discovered(self, nailgun_node):
         return any(
             map(lambda node: node['mac'] == nailgun_node['mac']
