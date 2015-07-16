@@ -60,9 +60,6 @@ class SetupEnvironment(TestBasic):
         with timestat("setup_environment", is_uniq=True):
             self.env.setup_environment()
 
-        if REPLACE_DEFAULT_REPOS:
-            self.fuel_web.replace_default_repos()
-
         self.env.make_snapshot("empty", is_make=True)
 
     @test(groups=["setup_master_custom_manifests"])
@@ -80,6 +77,8 @@ class SetupEnvironment(TestBasic):
         """
         self.check_run("empty_custom_manifests")
         self.env.setup_environment(custom=True, build_images=True)
+        if REPLACE_DEFAULT_REPOS:
+            self.fuel_web.replace_default_repos()
         self.env.make_snapshot("empty_custom_manifests", is_make=True)
 
     @test(depends_on=[setup_master])
@@ -104,6 +103,9 @@ class SetupEnvironment(TestBasic):
                 state='available'
             )
         self.fuel_web.get_nailgun_version()
+
+        if REPLACE_DEFAULT_REPOS:
+            self.fuel_web.replace_default_repos()
 
         self.env.make_snapshot("ready", is_make=True)
 
