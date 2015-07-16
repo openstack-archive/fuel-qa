@@ -285,7 +285,7 @@ class EnvironmentActionOnHA(base_test_case.TestBasic):
         self.env.make_snapshot("deploy_stop_reset_on_ha")
 
 
-@test(groups=["cluster_actions", "controller_replacement"])
+@test(groups=["controller_replacement"])
 class ControllerReplacement(base_test_case.TestBasic):
     """
     Test class ControllerReplacement includes following cases:
