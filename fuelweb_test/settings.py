@@ -390,6 +390,7 @@ EXTERNAL_NTP = os.environ.get('EXTERNAL_NTP', 'ua.pool.ntp.org')
 FUEL_USE_LOCAL_NTPD = get_var_as_bool('FUEL_USE_LOCAL_NTPD', True)
 FUEL_USE_LOCAL_DNS = get_var_as_bool('FUEL_USE_LOCAL_DNS', True)
 DNS_SUFFIX = os.environ.get('DNS_SUFFIX', '.test.domain.local')
+FUEL_MASTER_HOSTNAME = os.environ.get('FUEL_MASTER_HOSTNAME', 'nailgun')
 
 TIMESTAT_PATH_YAML = os.environ.get(
     'TIMESTAT_PATH_YAML', os.path.join(

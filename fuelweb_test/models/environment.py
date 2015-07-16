@@ -132,8 +132,8 @@ class EnvironmentModel(object):
             'mask': self.d_env.get_network(
                 name=self.d_env.admin_net).ip.netmask,
             'gw': self.d_env.router(),
-            'hostname': '.'.join((self.d_env.hostname,
-                                  self.d_env.domain)),
+            'hostname': ''.join((settings.FUEL_MASTER_HOSTNAME,
+                                 settings.DNS_SUFFIX)),
             'nat_interface': self.d_env.nat_interface,
             'dns1': settings.DNS,
             'showmenu': 'yes' if custom else 'no',
