@@ -216,7 +216,11 @@ class ContrailPlugin(TestBasic):
                 'slave-03': ['base-os'],
                 'slave-04': ['controller'],
             },
-            contrail=True
+            custom_names={
+                'slave-01': 'contrail-1',
+                'slave-02': 'contrail-2',
+                'slave-03': 'contrail-3'
+            }
         )
 
         # configure disks on base-os nodes
@@ -258,9 +262,13 @@ class ContrailPlugin(TestBasic):
                 'slave-02': ['base-os'],
                 'slave-03': ['base-os'],
                 'slave-04': ['controller'],
-                'slave-05': ['compute', 'cinder'],
+                'slave-05': ['compute', 'cinder']
             },
-            contrail=True
+            custom_names={
+                'slave-01': 'contrail-1',
+                'slave-02': 'contrail-2',
+                'slave-03': 'contrail-3'
+            }
         )
 
         # configure disks on base-os nodes
@@ -331,9 +339,13 @@ class ContrailPlugin(TestBasic):
                 'slave-03': ['base-os'],
                 'slave-04': ['controller'],
                 'slave-05': ['compute'],
-                'slave-06': ['compute'],
+                'slave-06': ['compute']
             },
-            contrail=True
+            custom_names={
+                'slave-01': 'contrail-1',
+                'slave-02': 'contrail-2',
+                'slave-03': 'contrail-3'
+            }
         )
 
         # configure disks on base-os nodes
@@ -417,9 +429,13 @@ class ContrailPlugin(TestBasic):
                 'slave-01': ['base-os'],
                 'slave-02': ['base-os'],
                 'slave-03': ['base-os'],
-                'slave-04': ['controller'],
+                'slave-04': ['controller']
             },
-            contrail=True
+            custom_names={
+                'slave-01': 'contrail-1',
+                'slave-02': 'contrail-2',
+                'slave-03': 'contrail-3'
+            }
         )
 
         # configure disks on base-os nodes
@@ -526,7 +542,11 @@ class ContrailPlugin(TestBasic):
                 'slave-06': ['controller'],
                 'slave-07': ['compute']
             },
-            contrail=True
+            custom_names={
+                'slave-01': 'contrail-1',
+                'slave-02': 'contrail-2',
+                'slave-03': 'contrail-3'
+            }
         )
 
         # configure disks on base-os nodes
@@ -614,7 +634,11 @@ class ContrailPlugin(TestBasic):
                 'slave-04': ['controller'],
                 'slave-05': ['compute'],
             },
-            contrail=True
+            custom_names={
+                'slave-01': 'contrail-1',
+                'slave-02': 'contrail-2',
+                'slave-03': 'contrail-3'
+            }
         )
 
         # configure disks on base-os nodes
@@ -682,9 +706,13 @@ class ContrailPlugin(TestBasic):
                 'slave-02': ['base-os'],
                 'slave-03': ['base-os'],
                 'slave-04': ['controller'],
-                'slave-05': ['compute'],
+                'slave-05': ['compute']
             },
-            contrail=True
+            custom_names={
+                'slave-01': 'contrail-1',
+                'slave-02': 'contrail-2',
+                'slave-03': 'contrail-3'
+            }
         )
         raw_data = [{
             'mac': None,
