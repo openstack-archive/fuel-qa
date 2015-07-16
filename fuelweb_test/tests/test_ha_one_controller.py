@@ -30,6 +30,8 @@ from fuelweb_test.helpers import os_actions
 from fuelweb_test.settings import CLASSIC_PROVISIONING
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NODE_VOLUME_SIZE
+from fuelweb_test.settings import NEUTRON_ENABLE
+from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -497,6 +499,72 @@ class MultiroleComputeCinder(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_multirole_compute_cinder")
+
+
+
+@test(groups=["thread_2"])
+class MultiroleMultipleServices(TestBasic):
+    """MultiroleMultipleServices."""  # TODO documentation
+
+    @test(depends_on=[SetupEnvironment.setup_master],
+          groups=["deploy_multiple_services_local_mirror", "bvt_2"])
+    @log_snapshot_after_test
+    def deploy_multiple_services_local_mirror(self):
+        """Deploy cluster with multiple services using local mirror
+
+        Scenario:
+            1. Revert snapshot 'empty' with default set of repositories
+            2. Bootstrap 4 slave nodes
+            3. Run 'fuel-createmirror' to replace default repositories
+               with local mirrors
+            4. Create cluster with many components to check as many
+               packages in local mirrors have correct dependences
+            5. Deploy cluster
+
+        Duration 50m
+        """
+        self.env.revert_snapshot("empty")
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:4])
+
+        logger.info("Executing 'fuel-createmirror' on Fuel admin node")
+        with self.env.d_env.get_admin_remote() as remote:
+            result = remote.execute('fuel-createmirror')
+            assert_true(result['exit_code'] == 0,
+                        "Executing 'fuel-createmirror' on admin node failed "
+                        "with the error: {0}".format(result['strerr']))
+
+        data = {}
+        if NEUTRON_ENABLE:
+            data = {
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT_TYPE
+            }
+        data.update(
+            {
+                'sahara': True,
+                'murano': True,
+                'ceilometer': True,
+                'volumes_ceph': False,
+                'images_ceph': True,
+                'osd_pool_size': "3",
+                'volumes_lvm': True,
+            }
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings=data
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller', 'mongo'],
+                'slave-02': ['compute', 'ceph-osd'],
+                'slave-03': ['cinder', 'ceph-osd'],
+                'slave-04': ['cinder', 'ceph-osd']
+            }
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
 
 @test(groups=["thread_2"])
