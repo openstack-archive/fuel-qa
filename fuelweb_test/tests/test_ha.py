@@ -386,7 +386,7 @@ class TestHaFlatScalability(TestBasic):
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
         for devops_node in self.env.d_env.nodes().slaves[:3]:
-            with quiet_logger:
+            with quiet_logger():
                 self.fuel_web.assert_pacemaker(
                     devops_node.name,
                     self.env.d_env.nodes().slaves[:3], [])
@@ -418,7 +418,7 @@ class TestHaFlatScalability(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
         for devops_node in self.env.d_env.nodes().slaves[:5]:
-            with quiet_logger:
+            with quiet_logger():
                 self.fuel_web.assert_pacemaker(
                     devops_node.name,
                     self.env.d_env.nodes().slaves[:5], [])
@@ -466,7 +466,7 @@ class TestHaFlatScalability(TestBasic):
         devops_nodes = [self.fuel_web.get_devops_node_by_nailgun_node(node)
                         for node in nodes]
         for devops_node in devops_nodes:
-            with quiet_logger:
+            with quiet_logger():
                 self.fuel_web.assert_pacemaker(
                     devops_node.name,
                     devops_nodes, [])
