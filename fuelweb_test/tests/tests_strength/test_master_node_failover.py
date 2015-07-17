@@ -14,6 +14,7 @@
 
 from proboscis.asserts import assert_equal
 from proboscis import test
+import traceback
 
 from fuelweb_test.helpers import common
 from fuelweb_test.helpers import checkers
@@ -22,15 +23,40 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
 from fuelweb_test import logger
 from fuelweb_test.tests import base_test_case
+import time
 
 
 @test(groups=["thread_non_func_1"])
 class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
     """DeployHAOneControllerMasterNodeFail."""  # TODO documentation
 
+    def resume_admin_node(self):
+        logger.info('Start admin node...')
+        self.env.d_env.nodes().admin.resume()
+        try:
+            self.env.d_env.nodes().admin.await(
+                self.env.d_env.admin_net, timeout=60, by_port=8000)
+        except Exception as e:
+            logger.warning(
+                "From first time admin isn't reverted: {0}".format(e))
+            self.env.d_env.nodes().admin.destroy()
+            logger.info('Admin node was destroyed. Wait 10 sec.')
+            time.sleep(10)
+            self.env.d_env.nodes().admin.start()
+            logger.info('Admin node started second time.')
+            self.env.d_env.nodes().admin.await(self.env.d_env.admin_net)
+            self.env.set_admin_ssh_password()
+            self.env.docker_actions.wait_for_ready_containers(
+                timeout=600)
+
+        logger.info('Waiting for containers')
+        self.env.set_admin_ssh_password()
+        self.env.docker_actions.wait_for_ready_containers()
+
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["non_functional",
                   "deploy_ha_one_controller_flat_master_node_fail"])
+    @log_snapshot_after_test
     def deploy_ha_one_controller_flat_master_node_fail(self):
         """Deploy HA cluster with nova-network and check it without master node
 
@@ -75,27 +101,37 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         logger.info('PASS OSTF')
 
         logger.info('Destroy admin node...')
-        self.env.d_env.nodes().admin.destroy()
-        logger.info('Admin node destroyed')
+        try:
+            self.env.d_env.nodes().admin.destroy()
+            logger.info('Admin node destroyed')
 
-        common_func = common.Common(
-            controller_ip,
-            settings.SERVTEST_USERNAME,
-            settings.SERVTEST_PASSWORD,
-            settings.SERVTEST_TENANT)
+            common_func = common.Common(
+                controller_ip,
+                settings.SERVTEST_USERNAME,
+                settings.SERVTEST_PASSWORD,
+                settings.SERVTEST_TENANT)
 
-        # create instance
-        server = common_func.create_instance()
+            # create instance
+            server = common_func.create_instance()
 
-        # get_instance details
-        details = common_func.get_instance_detail(server)
-        assert_equal(details.name, 'test_instance')
+            # get_instance details
+            details = common_func.get_instance_detail(server)
+            assert_equal(details.name, 'test_instance')
 
-        # Check if instacne active
-        common_func.verify_instance_status(server, 'ACTIVE')
+            # Check if instacne active
+            common_func.verify_instance_status(server, 'ACTIVE')
 
-        # delete instance
-        common_func.delete_instance(server)
+            # delete instance
+            common_func.delete_instance(server)
+        except Exception:
+            logger.error(
+                'Failed to operate with cluster after master node destroy')
+            logger.error(traceback.format_exc())
+            raise
+        finally:
+            self.resume_admin_node()
+
+        self.env.make_snapshot("deploy_flat_master_node_destroy")
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha_dns_ntp", "ha_neutron"])
