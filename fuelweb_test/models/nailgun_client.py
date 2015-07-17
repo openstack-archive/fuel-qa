@@ -444,3 +444,10 @@ class NailgunClient(object):
     def put_deployment_tasks_for_release(self, release_id, data):
         return self.client.put(
             '/api/releases/{}/deployment_tasks'.format(release_id), data)
+
+    @logwrap
+    @json_parse
+    def set_hostname(self, node_id, new_hostname):
+        """ Set a new hostname for the node"""
+        data = dict(hostname=new_hostname)
+        return self.client.put('/api/nodes/{0}/'.format(node_id), data)
