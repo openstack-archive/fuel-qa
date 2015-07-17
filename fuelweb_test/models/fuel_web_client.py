@@ -1,4 +1,4 @@
-#    Copyright 2013 Mirantis, Inc.
+#    Copyright 2015 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -527,8 +527,12 @@ class FuelWebClient(object):
         attributes = self.client.get_cluster_attributes(cluster_id)
 
         repos_attr = attributes['editable']['repo_setup']['repos']
-        self.add_ubuntu_extra_mirrors(repos=repos_attr['value'], prefix=suite,
-                                      mirrors=mirror, priority=priority)
+        repos_attr['value'] = self.add_ubuntu_extra_mirrors(
+            repos=repos_attr['value'],
+            prefix=suite,
+            mirrors=mirror,
+            priority=priority)
+
         self.report_ubuntu_repos(repos_attr['value'])
         self.client.update_cluster_attributes(cluster_id, attributes)
 
@@ -544,8 +548,11 @@ class FuelWebClient(object):
         attributes = self.client.get_cluster_attributes(cluster_id)
 
         repos_attr = attributes['editable']['repo_setup']['repos']
-        self.add_centos_extra_mirrors(repos=repos_attr['value'],
-                                      mirrors=mirror, priority=priority)
+        repos_attr['value'] = self.add_centos_extra_mirrors(
+            repos=repos_attr['value'],
+            mirrors=mirror,
+            priority=priority)
+
         self.report_centos_repos(repos_attr['value'])
         self.client.update_cluster_attributes(cluster_id, attributes)
 
@@ -591,7 +598,7 @@ class FuelWebClient(object):
             # Use defaults from Nailgun if MIRROR_UBUNTU is not set
             repos = repos_attr['value']
         if help_data.EXTRA_DEB_REPOS:
-            self.add_ubuntu_extra_mirrors(repos=repos)
+            repos = self.add_ubuntu_extra_mirrors(repos=repos)
         if help_data.PATCHING_DISABLE_UPDATES:
             for repo in repos:
                 if repo['name'] in ('mos-updates', 'mos-security'):
@@ -620,7 +627,7 @@ class FuelWebClient(object):
             # Use defaults from Nailgun if MIRROR_CENTOS is not set
             repos = repos_attr['value']
         if help_data.EXTRA_RPM_REPOS:
-            self.add_centos_extra_mirrors(repos=repos)
+            repos = self.add_centos_extra_mirrors(repos=repos)
         if help_data.PATCHING_DISABLE_UPDATES:
             for repo in repos:
                 if repo['name'] in ('mos-updates', 'mos-security'):
