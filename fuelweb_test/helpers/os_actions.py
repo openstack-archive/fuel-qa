@@ -367,6 +367,9 @@ class OpenStackActions(common.Common):
     def get_nova_service_list(self):
         return self.nova.services.list()
 
+    def delete_nova_service(self, service_id):
+        return self.nova.services.delete(service_id)
+
     def get_nova_network_list(self):
         return self.nova.networks.list()
 
