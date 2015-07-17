@@ -576,12 +576,17 @@ class FuelWebClient(object):
         # Walk thru repos_attr and replace/add extra Ubuntu mirrors
         repos = []
         if help_data.MIRROR_UBUNTU:
+            logger.info("Adding new mirrors: '{0}'"
+                        .format(help_data.MIRROR_UBUNTU))
             self.add_ubuntu_mirrors(repos=repos)
             # Keep other (not upstream) repos, skip previously added ones
             for repo_value in repos_attr['value']:
-                if ('archive.ubuntu.com' not in repo_value['uri'] and
-                        self.check_new_ubuntu_repo(repos, repo_value)):
-                    repos.append(repo_value)
+                if 'archive.ubuntu.com' not in repo_value['uri']:
+                    if self.check_new_ubuntu_repo(repos, repo_value):
+                        repos.append(repo_value)
+                else:
+                    logger.warning("Removing mirror: '{0}'"
+                                   .format(repo_value['uri']))
         else:
             # Use defaults from Nailgun if MIRROR_UBUNTU is not set
             repos = repos_attr['value']
@@ -599,13 +604,18 @@ class FuelWebClient(object):
         # Walk thru repos_attr and replace/add extra Centos mirrors
         repos = []
         if help_data.MIRROR_CENTOS:
+            logger.info("Adding new mirrors: '{0}'"
+                        .format(help_data.MIRROR_CENTOS))
             self.add_centos_mirrors(repos=repos)
             # Keep other (not upstream) repos, skip previously added ones
             for repo_value in repos_attr['value']:
                 # self.admin_node_ip while repo is located on master node
-                if (self.admin_node_ip not in repo_value['uri'] and
-                        self.check_new_centos_repo(repos, repo_value)):
-                    repos.append(repo_value)
+                if self.admin_node_ip not in repo_value['uri']:
+                    if self.check_new_centos_repo(repos, repo_value):
+                        repos.append(repo_value)
+                else:
+                    logger.warning("Removing mirror: '{0}'"
+                                   .format(repo_value['uri']))
         else:
             # Use defaults from Nailgun if MIRROR_CENTOS is not set
             repos = repos_attr['value']
