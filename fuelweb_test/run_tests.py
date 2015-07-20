@@ -12,10 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-import re
 import sys
 
+import os
+import re
 from nose.plugins import Plugin
 from paramiko.transport import _join_lingering_threads
 
@@ -58,11 +58,12 @@ def import_tests():
     from tests.tests_strength import test_huge_environments  # noqa
     from tests.tests_strength import test_image_based  # noqa
     from tests.tests_strength import test_cic_maintenance_mode  # noqa
+    from tests.tests_upgrade import test_upgrade  # noqa
+    from tests.tests_upgrade import test_upgrade_chains  # noqa
     from tests import test_bonding  # noqa
     from tests import test_offloading_types  # noqa
     from tests.tests_strength import test_neutron  # noqa
     from tests import test_zabbix  # noqa
-    from tests import test_upgrade  # noqa
     from tests.plugins.plugin_emc import test_plugin_emc  # noqa
     from tests.plugins.plugin_elasticsearch import test_plugin_elasticsearch  # noqa
     from tests.plugins.plugin_example import test_fuel_plugin_example  # noqa
