@@ -372,11 +372,9 @@ def main():
     milestone, iso_number, prefix = get_version(runner_build.build_data)
     milestone = project.get_milestone_by_name(name=milestone)
 
-    test_plan_name = '{milestone} {prefix} iso #{iso_number}'.format(
-        milestone=milestone['name'],
-        iso_number=iso_number,
-        prefix=prefix)
-
+    test_plan_name = ' '.join(
+        filter(lambda x: bool(x),
+               (milestone['name'], prefix, 'iso', '#' + str(iso_number))))
     test_plan = project.get_plan_by_name(test_plan_name)
     if not test_plan:
         test_plan = project.add_plan(test_plan_name,
