@@ -468,3 +468,6 @@ ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT = get_var_as_bool(
 RALLY_DOCKER_REPO = os.environ.get('RALLY_DOCKER_REPO', 'rallyforge/rally')
 RALLY_CONTAINER_NAME = os.environ.get('RALLY_CONTAINER_NAME', 'rally')
 RALLY_TAGS = os.environ.get('RALLY_TAGS', 'nova').split(',')
+
+REGENERATE_ENV_IMAGE = get_var_as_bool('REGENERATE_ENV_IMAGE', False)
+LATE_ARTIFACTS_JOB_URL = os.environ.get("LATE_ARTIFACTS_JOB_URL", '')

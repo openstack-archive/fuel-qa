@@ -12,7 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import time
+import urllib2
 
 from proboscis import test
 from proboscis.asserts import assert_is_not_none
@@ -84,10 +86,11 @@ class PatchingTests(TestBasic):
         2. Run Rally benchmark tests and store results
         3. Download patched packages on master node and make local repositories
         4. Add new local repositories on slave nodes
-        5. Perform actions required to apply patches
-        6. Verify that fix works
-        7. Run OSTF
-        8. Run Rally benchmark tests and compare results
+        5. Download late artifacts and clean generated images if needed
+        6. Perform actions required to apply patches
+        7. Verify that fix works
+        8. Run OSTF
+        9. Run Rally benchmark tests and compare results
 
         Duration 15m
         """
@@ -133,14 +136,30 @@ class PatchingTests(TestBasic):
                 patching.connect_admin_to_repo(self.env, repo)
 
         # Step #5
+        if settings.LATE_ARTIFACTS_JOB_URL:
+            data = urllib2.urlopen(settings.LATE_ARTIFACTS_JOB_URL +
+                                   "/artifact/artifacts/artifacts.txt")
+            for package in data:
+                os.system("wget --directory-prefix"
+                          " {0} {1}".format(settings.UPDATE_FUEL_PATH,
+                                            package))
+            self.env.admin_actions.upload_packages(
+                local_packages_dir=settings.UPDATE_FUEL_PATH,
+                centos_repo_path='/var/www/nailgun/centos/auxiliary',
+                ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
+        if settings.REGENERATE_ENV_IMAGE:
+            self.env.admin_actions.clean_generated_image(
+                settings.OPENSTACK_RELEASE)
+
+        # Step #6
         logger.info('Applying fix...')
         patching.apply_patches(self.env, target='environment', slaves=slaves)
 
-        # Step #6
+        # Step #7
         logger.info('Verifying fix...')
         patching.verify_fix(self.env, target='environment', slaves=slaves)
 
-        # Step #7
+        # Step #8
         # If OSTF fails (sometimes services aren't ready after
         # slaves nodes reboot) sleep 5 minutes and try again
         try:
@@ -149,7 +168,7 @@ class PatchingTests(TestBasic):
             time.sleep(300)
             self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        # Step #8
+        # Step #9
         if settings.PATCHING_RUN_RALLY:
             benchmark_results2 = {}
             for tag in set(settings.RALLY_TAGS):
@@ -219,12 +238,13 @@ class PatchingMasterTests(TestBasic):
 
         Scenario:
         1. Download patched packages on master node and make local repositories
-        2. Perform actions required to apply patches
-        3. Verify that fix works
-        4. Run OSTF
-        5. Run network verification
-        6. Reset and delete cluster
-        7. Bootstrap 3 slaves
+        2. Download late artifacts and clean generated images if needed
+        3. Perform actions required to apply patches
+        4. Verify that fix works
+        5. Run OSTF
+        6. Run network verification
+        7. Reset and delete cluster
+        8. Bootstrap 3 slaves
 
         Duration 30m
         """
@@ -243,14 +263,30 @@ class PatchingMasterTests(TestBasic):
             patching.connect_admin_to_repo(self.env, repo)
 
         # Step #2
+        if settings.LATE_ARTIFACTS_JOB_URL:
+            data = urllib2.urlopen(settings.LATE_ARTIFACTS_JOB_URL
+                                   + "/artifact/artifacts/artifacts.txt")
+            for package in data:
+                os.system("wget --directory-prefix"
+                          " {0} {1}".format(settings.UPDATE_FUEL_PATH,
+                                            package))
+            self.env.admin_actions.upload_packages(
+                local_packages_dir=settings.UPDATE_FUEL_PATH,
+                centos_repo_path='/var/www/nailgun/centos/auxiliary',
+                ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
+        if settings.REGENERATE_ENV_IMAGE:
+            self.env.admin_actions.clean_generated_image(
+                settings.OPENSTACK_RELEASE)
+
+        # Step #3
         logger.info('Applying fix...')
         patching.apply_patches(self.env, target='master')
 
-        # Step #3
+        # Step #4
         logger.info('Verifying fix...')
         patching.verify_fix(self.env, target='master')
 
-        # Step #4
+        # Step #5
         active_nodes = []
         for node in self.env.d_env.nodes().slaves:
             if node.driver.node_active(node):

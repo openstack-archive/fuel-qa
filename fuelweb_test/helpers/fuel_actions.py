@@ -164,6 +164,18 @@ class AdminActions(BaseActions):
             regenerate_ubuntu_repo(self.admin_remote, ubuntu_repo_path)
         return centos_files_count, ubuntu_files_count
 
+    @logwrap
+    def clean_generated_image(self, distro):
+        images = ''.join(
+            self.admin_remote.execute(
+                "find /var/www/nailgun/targetimages/ -name"
+                " 'env*{}*' -printf '%P\n'".format(distro.lower())))
+
+        logger.debug("images are {}".format(images))
+        self.admin_remote.execute(
+            "find /var/www/nailgun/targetimages/ -name 'env*{}*'"
+            " -delete".format(distro.lower()))
+
 
 class NailgunActions(BaseActions):
     """NailgunActions."""  # TODO documentation
