@@ -5,7 +5,7 @@ paramiko
 proboscis==1.2.6.0
 ipaddr
 junitxml>=0.7.0
-python-glanceclient >=0.14.1,<=0.15.0
+python-glanceclient >=0.17.1,<=0.17.2
 python-keystoneclient>=0.3.2
 python-novaclient>=2.15.0
 python-cinderclient>=1.0.5
