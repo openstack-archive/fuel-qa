@@ -724,7 +724,7 @@ class TestHaFailoverBase(TestBasic):
                 cluster_id=cluster_id,
                 test_sets=['ha'])
         except AssertionError:
-            time.sleep(300)
+            time.sleep(600)
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
                 test_sets=['ha'], should_fail=2)
@@ -749,7 +749,7 @@ class TestHaFailoverBase(TestBasic):
                 cluster_id=cluster_id,
                 test_sets=['ha'])
         except AssertionError:
-            time.sleep(300)
+            time.sleep(600)
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
                 test_sets=['ha'])
@@ -767,7 +767,7 @@ class TestHaFailoverBase(TestBasic):
                 cluster_id=cluster_id,
                 test_sets=['ha', 'smoke', 'sanity'])
         except AssertionError:
-            time.sleep(300)
+            time.sleep(600)
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
                 test_sets=['ha', 'smoke', 'sanity'])
