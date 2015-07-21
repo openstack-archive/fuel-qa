@@ -180,23 +180,20 @@ class TestHaFailoverBase(TestBasic):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
             raise SkipTest()
 
-        for devops_node in self.env.d_env.nodes().slaves[:2]:
-            self.env.revert_snapshot(self.snapshot_name)
+        self.env.revert_snapshot(self.snapshot_name)
 
-            remote = self.fuel_web.get_ssh_for_node(devops_node.name)
+        with self.fuel_web.get_ssh_for_node(
+                self.env.d_env.nodes().slaves[0].name) as remote:
+
             cmd = ('iptables -I INPUT -i br-mgmt -j DROP && '
                    'iptables -I OUTPUT -o br-mgmt -j DROP')
             remote.check_call(cmd)
-            self.fuel_web.assert_pacemaker(
-                self.env.d_env.nodes().slaves[2].name,
-                set(self.env.d_env.nodes().slaves[:3]) - {devops_node},
-                [devops_node])
 
         cluster_id = self.fuel_web.client.get_cluster_id(
             self.__class__.__name__)
 
         # Wait until MySQL Galera is UP on some controller
-        self.fuel_web.wait_mysql_galera_is_up(['slave-01'])
+        self.fuel_web.wait_mysql_galera_is_up(['slave-02'])
         try:
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
