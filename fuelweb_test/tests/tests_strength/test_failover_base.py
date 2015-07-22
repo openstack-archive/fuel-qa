@@ -709,11 +709,10 @@ class TestHaFailoverBase(TestBasic):
             raise TimeoutError('Node {0} does'
                                ' not become online '
                                'in nailgun'.format(master_rabbit.name))
-
         self.fuel_web.check_ceph_status(
             cluster_id,
-            offline_nodes=self.fuel_web.get_nailgun_node_by_devops_node(
-                second_master_rabbit)['id'])
+            offline_nodes=[self.fuel_web.get_nailgun_node_by_devops_node(
+                second_master_rabbit)['id']])
 
         # check ha
         try:
