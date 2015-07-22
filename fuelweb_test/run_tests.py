@@ -53,6 +53,7 @@ def import_tests():
     from tests.tests_strength import test_failover  # noqa
     from tests.tests_strength import test_failover_with_ceph  # noqa
     from tests.tests_strength import test_master_node_failover  # noqa
+    from tests.tests_strength import test_migrate_fuel  # noqa
     from tests.tests_strength import test_ostf_repeatable_tests  # noqa
     from tests.tests_strength import test_restart  # noqa
     from tests.tests_strength import test_huge_environments  # noqa
