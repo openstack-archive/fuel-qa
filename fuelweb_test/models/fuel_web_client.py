@@ -1267,9 +1267,21 @@ class FuelWebClient(object):
                                     "Node Interface",
                                     "Expected VLAN (not received)"))
                     for res in task['result']:
+                        name = None
+                        mac = None
+                        interface = None
+                        absent_vlans = None
+                        if 'name' in res:
+                            name = res['name']
+                        if 'mac' in res:
+                            mac = res['mac']
+                        if 'interface' in res:
+                            interface = res['interface']
+                        if 'absent_vlans' in res:
+                            absent_vlans = res['absent_vlans']
                         msg += ("{0:30} | {1:20} | {2:15} | {3}\n".format(
-                            res['name'], res['mac'], res['interface'],
-                            [x or 'untagged' for x in res['absent_vlans']]))
+                            name or '-', mac or '-', interface or '-',
+                            [x or 'untagged' for x in absent_vlans]))
                 logger.error(''.join([msg, task['message']]))
 
         # TODO(apanchenko): remove this hack when network verification begins
