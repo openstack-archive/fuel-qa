@@ -22,8 +22,7 @@ from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
 from proboscis import test
 
-from fuelweb_test.helpers.checkers import check_auto_mode
-from fuelweb_test.helpers.checkers import check_available_mode
+from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import logger
 from fuelweb_test import ostf_test_mapping as map_ostf
@@ -32,7 +31,7 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["cic_maintenance_mode"])
+@test(groups=["cic_maintenance_mode", "thread-8"])
 class CICMaintenanceMode(TestBasic):
     """CICMaintenanceMode."""  # TODO documentation
 
@@ -52,9 +51,10 @@ class CICMaintenanceMode(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
         data = {
-            'ceilometer': True
+            'ceilometer': True,
+            "net_provider": 'neutron',
+            "net_segment_type": 'gre'
         }
-
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE_HA,
@@ -104,7 +104,7 @@ class CICMaintenanceMode(TestBasic):
 
         for nailgun_node in self.env.d_env.nodes().slaves[0:3]:
             remote = self.fuel_web.get_ssh_for_node(nailgun_node.name)
-            assert_true('True' in check_available_mode(remote),
+            assert_true('True' in checkers.check_available_mode(remote),
                         "Maintenance mode is not available")
 
             logger.info('Maintenance mode for node %s', nailgun_node.name)
@@ -130,7 +130,7 @@ class CICMaintenanceMode(TestBasic):
                         'switching', nailgun_node.name)
 
             remote = self.fuel_web.get_ssh_for_node(nailgun_node.name)
-            assert_true('True' in check_auto_mode(remote),
+            assert_true('True' in checkers.check_auto_mode(remote),
                         "Maintenance mode is not switch")
 
             result = remote.execute('umm off')
@@ -205,7 +205,7 @@ class CICMaintenanceMode(TestBasic):
 
         for nailgun_node in self.env.d_env.nodes().slaves[0:3]:
             remote = self.fuel_web.get_ssh_for_node(nailgun_node.name)
-            assert_true('True' in check_available_mode(remote),
+            assert_true('True' in checkers.check_available_mode(remote),
                         "Maintenance mode is not available")
 
             logger.info('Change UMM.CONF on node %s', nailgun_node.name)
@@ -242,7 +242,7 @@ class CICMaintenanceMode(TestBasic):
                         ' unexpected reboot', nailgun_node.name)
 
             remote = self.fuel_web.get_ssh_for_node(nailgun_node.name)
-            assert_true('True' in check_auto_mode(remote),
+            assert_true('True' in checkers.check_auto_mode(remote),
                         "Maintenance mode is not switch")
 
             result = remote.execute('umm off')
@@ -325,7 +325,7 @@ class CICMaintenanceMode(TestBasic):
 
         for nailgun_node in self.env.d_env.nodes().slaves[0:3]:
             remote = self.fuel_web.get_ssh_for_node(nailgun_node.name)
-            assert_true('True' in check_available_mode(remote),
+            assert_true('True' in checkers.check_available_mode(remote),
                         "Maintenance mode is not available")
 
             logger.info('Maintenance mode for node %s is disable',
@@ -335,7 +335,7 @@ class CICMaintenanceMode(TestBasic):
                          'Failed to execute "{0}" on remote host: {1}'.
                          format('umm disable', result))
 
-            assert_false('True' in check_available_mode(remote),
+            assert_false('True' in checkers.check_available_mode(remote),
                          "Maintenance mode should not be available")
 
             logger.info('Try to execute maintenance mode for node %s',
@@ -388,7 +388,7 @@ class CICMaintenanceMode(TestBasic):
 
         for nailgun_node in self.env.d_env.nodes().slaves[0:3]:
             remote = self.fuel_web.get_ssh_for_node(nailgun_node.name)
-            assert_true('True' in check_available_mode(remote),
+            assert_true('True' in checkers.check_available_mode(remote),
                         "Maintenance mode is not available")
 
             logger.info('Change UMM.CONF on node %s', nailgun_node.name)
@@ -405,7 +405,7 @@ class CICMaintenanceMode(TestBasic):
                          'Failed to execute "{0}" on remote host: {1}'.
                          format('umm disable', result))
 
-            assert_false('True' in check_available_mode(remote),
+            assert_false('True' in checkers.check_available_mode(remote),
                          "Maintenance mode should not be available")
 
             logger.info('Unexpected reboot on node %s', nailgun_node.name)
@@ -431,7 +431,7 @@ class CICMaintenanceMode(TestBasic):
                         ' unexpected reboot', nailgun_node.name)
 
             remote = self.fuel_web.get_ssh_for_node(nailgun_node.name)
-            assert_false('True' in check_auto_mode(remote),
+            assert_false('True' in checkers.check_auto_mode(remote),
                          "Maintenance mode should not switched")
 
             # Wait until MySQL Galera is UP on some controller
@@ -465,3 +465,76 @@ class CICMaintenanceMode(TestBasic):
                 time.sleep(600)
                 self.fuel_web.run_ostf(cluster_id,
                                        test_sets=['smoke', 'sanity'])
+
+
+@test(groups=["fuel_master_migrate", "thread_8"])
+class FuelMasterMigrate(TestBasic):
+    """FuelMasterMigrate."""  # TODO documentation
+
+    @test(depends_on=[CICMaintenanceMode.cic_maintenance_mode_env],
+          groups=["fuel_migration"])
+    @log_snapshot_after_test
+    def fuel_migration(self):
+        """Fuel master migration to VM
+
+        Scenario:
+
+            1. Revert snapshot
+            2. Migrate fuel-master to VM
+            3. Run OSTF tests
+            4. Run Network check
+            5. Check statuses for master services
+
+        Duration 110m
+        """
+        self.env.revert_snapshot("cic_maintenance_mode")
+
+        remote = self.env.d_env.get_admin_remote()
+        logger.info('Fuel migration on compute slave-02')
+
+        result = remote.execute('fuel-migrate ' + self.fuel_web.
+                                get_nailgun_node_by_name('slave-02')['ip'] +
+                                ' >/dev/null &')
+        assert_equal(result['exit_code'], 0,
+                     'Failed to execute "{0}" on remote host: {1}'.
+                     format('fuel-migrate' + self.env.d_env.nodes().slaves[0].
+                            name, result))
+
+        checkers.wait_phrase_in_log(remote, 60 * 60, interval=0.2,
+                                    phrase='Rebooting to begin '
+                                           'the data sync process',
+                                    log_path='/var/log/fuel-migrate.log')
+        logger.info('Rebooting to begin the data sync process for fuel '
+                    'migrate')
+        # Wait rebooting
+        time.sleep(60)
+
+        _wait(lambda: self.env.d_env.get_admin_remote(), timeout=60 * 15)
+
+        checkers.wait_phrase_in_log(self.env.d_env.get_admin_remote(),
+                                    60 * 90, interval=0.1,
+                                    phrase='Stop network and up with '
+                                           'new settings',
+                                    log_path='/var/log/fuel-migrate.log')
+        logger.info('Shutting down network')
+        # Clone master should be up and original
+        # master should be go in maintenance mode
+        time.sleep(120)
+
+        _wait(lambda: self.env.d_env.get_admin_remote(), timeout=60 * 10)
+
+        logger.info("Wait nailgun api")
+        _wait(lambda:
+              self.fuel_web.client.list_nodes(), timeout=60 * 20)
+
+        logger.info("Check services")
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+        self.fuel_web.assert_os_services_ready(cluster_id)
+
+        # Run ostf
+        _wait(lambda:
+              self.fuel_web.run_ostf(cluster_id,
+                                     test_sets=['ha', 'smoke', 'sanity']),
+              timeout=1500)
+        logger.debug("HA, smoke and sanity tests are pass now")
