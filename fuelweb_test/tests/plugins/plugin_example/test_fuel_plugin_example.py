@@ -115,6 +115,141 @@ class ExamplePlugin(TestBasic):
 
         self.env.make_snapshot("deploy_ha_one_controller_neutron_example")
 
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["deploy_ha_controller_neutron_example_v3"])
+    @log_snapshot_after_test
+    def deploy_ha_one_controller_neutron_example_v3(self):
+        """Deploy cluster with one controller and example plugin v3
+
+        Scenario:
+            1. Upload plugin to the master node
+            2. Install plugin
+            3. Create cluster
+            4. Add 1 node with controller role
+            5. Add 1 node with compute role
+            6. Add 1 node with custom role
+            7. Deploy the cluster
+            8. Run network verification
+            9. Check plugin health
+            10. Run OSTF
+
+        Duration 35m
+        Snapshot deploy_ha_one_controller_neutron_example
+        """
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        # copy plugin to the master node
+
+        checkers.upload_tarball(
+            self.env.d_env.get_admin_remote(),
+            EXAMPLE_PLUGIN_PATH, '/var')
+
+        # install plugin
+
+        checkers.install_plugin_check_code(
+            self.env.d_env.get_admin_remote(),
+            plugin=os.path.basename(EXAMPLE_PLUGIN_V3_PATH))
+
+        segment_type = 'vlan'
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": segment_type,
+            }
+        )
+
+        plugin_name = 'fuel_plugin_example_v3'
+        msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
+        assert_true(
+            self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
+            msg)
+        options = {'metadata/enabled': True}
+        self.fuel_web.update_plugin_data(cluster_id, plugin_name, options)
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['compute'],
+                'slave-03': ['fuel_plugin_example_v3']
+            }
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.verify_network(cluster_id)
+
+        # check if slave-01 contain
+        # plugin+100.0.all
+        # plugin+100.all
+        # fuel_plugin_example_v3_sh
+        _ip_node_01 = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
+        res_node_01 = self.env.d_env.get_ssh_to_remote(_ip_node_01)
+        checkers.check_file_exists(res_node_01,
+                                   'plugin+100.0.all',
+                                   '/tmp')
+        checkers.check_file_exists(res_node_01,
+                                   'plugin+100.all',
+                                   '/tmp')
+        checkers.check_file_exists(res_node_01,
+                                   'fuel_plugin_example_v3_sh',
+                                   '/tmp')
+
+        # check if slave-02 contain
+        # plugin+100.0.all
+        # plugin+100.al
+        _ip_node_02 = self.fuel_web.get_nailgun_node_by_name("slave-02")['ip']
+        res_node_02 = self.env.d_env.get_ssh_to_remote(_ip_node_02)
+        checkers.check_file_exists(res_node_02,
+                                   'plugin+100.0.all',
+                                   '/tmp')
+        checkers.check_file_exists(res_node_02,
+                                   'plugin+100.all',
+                                   '/tmp')
+
+        # check if slave-03 contain
+        # plugin+100.0.all
+        # plugin+100.all
+        # fuel_plugin_example_v3_sh
+        # fuel_plugin_example_v3_puppet
+        _ip_node_03 = self.fuel_web.get_nailgun_node_by_name("slave-03")['ip']
+        res_node_03 = self.env.d_env.get_ssh_to_remote(_ip_node_03)
+        checkers.check_file_exists(res_node_03,
+                                   'plugin+100.0.all',
+                                   '/tmp')
+        checkers.check_file_exists(res_node_03,
+                                   'plugin+100.all',
+                                   '/tmp')
+        checkers.check_file_exists(res_node_03,
+                                   'fuel_plugin_example_v3_sh',
+                                   '/tmp')
+        checkers.check_file_exists(res_node_03,
+                                   'fuel_plugin_example_v3_puppet',
+                                   '/tmp')
+
+        # check if service ran on slave-03
+        logger.debug("Start to check service on node {0}".format('slave-03'))
+        cmd_curl = 'curl localhost:8234'
+        cmd = 'pgrep -f fuel-simple-service'
+
+        _ip = self.fuel_web.get_nailgun_node_by_name("slave-03")['ip']
+        res_pgrep = self.env.d_env.get_ssh_to_remote(_ip).execute(cmd)
+        assert_equal(0, res_pgrep['exit_code'],
+                     'Failed with error {0}'.format(res_pgrep['stderr']))
+        assert_equal(1, len(res_pgrep['stdout']),
+                     'Failed with error {0}'.format(res_pgrep['stderr']))
+        # curl to service
+        _ip = self.fuel_web.get_nailgun_node_by_name("slave-03")['ip']
+        res_curl = self.env.d_env.get_ssh_to_remote(_ip).execute(cmd_curl)
+        assert_equal(0, res_pgrep['exit_code'],
+                     'Failed with error {0}'.format(res_curl['stderr']))
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id)
+
+        self.env.make_snapshot("deploy_ha_one_controller_neutron_example_v3")
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_nova_example_ha"])
     @log_snapshot_after_test
