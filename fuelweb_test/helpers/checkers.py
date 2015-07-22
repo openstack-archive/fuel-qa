@@ -250,10 +250,12 @@ def check_archive_type(tar_path):
 
 
 @logwrap
-def check_tarball_exists(node_ssh, name, path):
-    result = ''.join(node_ssh.execute(
-        'ls -all {0} | grep {1}'.format(path, name))['stdout'])
-    assert_true(name in result, 'Can not find tarball')
+def check_file_exists(node_ssh, name, path):
+    path_to_check = os.path.join(path, name)
+    result = node_ssh.execute('test -e "{0}"'.format(path_to_check))
+    assert_equal(result['exit_code'],
+                 0,
+                 'Can not find {0}'.format(path_to_check))
 
 
 @logwrap
@@ -1059,3 +1061,45 @@ def check_haproxy_backend(remote,
         ['|egrep -v "{}"'.format('|'.join(n)) for n in negativ_filter if n])
 
     return remote.execute("{}{}".format(cmd, ''.join(grep)))
+
+
+def check_log_lines_order(remote,
+                          log_file_path,
+                          first_line_matcher,
+                          second_line_matcher):
+    """Read log file and check if substring1 before substring2
+
+    :param remote: SSHClient
+    :param log_file_path: path to log file
+    :param first_line_matcher: substring that match event1
+    :param second_line_matcher: substring that match event2
+    """
+    check_file_exists(remote, log_file_path, "Log file not exists")
+
+    cmd1 = 'grep -n "{0}" "{1}" | cut -d : -f 1'\
+        .format(first_line_matcher, log_file_path)
+    pos1 = remote.execute(cmd1).strip()
+    assert_equal(pos1['exit_code'],
+                 0,
+                 "'{0}' event not found in '{1}'"
+                 .format(first_line_matcher, log_file_path))
+    assert_true(pos1['stdout'].isdigit(),
+                "Few lines corresponds with {0} in {1}"
+                .format(first_line_matcher, log_file_path))
+
+    cmd2 = 'grep -n "{0}" "{1}" | cut -d : -f 1'\
+        .format(second_line_matcher, log_file_path)
+    pos2 = remote.execute(cmd2).strip()
+    assert_equal(pos2['exit_code'],
+                 0,
+                 "'{0}' event not found in '{1}'"
+                 .format(second_line_matcher, log_file_path))
+    assert_true(pos2['stdout'].isdigit(),
+                "Few lines corresponds with {0} in {1}"
+                .format(second_line_matcher, log_file_path))
+
+    assert_true(pos1['stdout'] < pos2['stdout'],
+                "'{0} occurred before '{1}' in '{2}'"
+                .format(first_line_matcher,
+                        second_line_matcher,
+                        log_file_path))
