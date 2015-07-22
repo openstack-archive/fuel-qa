@@ -201,6 +201,11 @@ class NailgunClient(object):
     def list_clusters(self):
         return self.client.get("/api/clusters/")
 
+    def clone_environment(self, environment_id, data):
+        return self.client.post(
+            "/api/clusters/{}/upgrade/clone".format(environment_id),
+            data=data)
+
     @logwrap
     @json_parse
     def create_cluster(self, data):
