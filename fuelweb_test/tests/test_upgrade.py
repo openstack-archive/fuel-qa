@@ -74,10 +74,10 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 
         checkers.upload_tarball(self.env.d_env.get_admin_remote(),
                                 hlp_data.TARBALL_PATH, '/var')
-        checkers.check_tarball_exists(self.env.d_env.get_admin_remote(),
-                                      os.path.basename(hlp_data.
-                                                       TARBALL_PATH),
-                                      '/var')
+        checkers.check_file_exists(self.env.d_env.get_admin_remote(),
+                                   os.path.join('/var',
+                                                os.path.basename(
+                                                    hlp_data.TARBALL_PATH)))
         checkers.untar(self.env.d_env.get_admin_remote(),
                        os.path.basename(hlp_data.
                                         TARBALL_PATH), '/var')
@@ -149,10 +149,10 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
         checkers.upload_tarball(self.env.d_env.get_admin_remote(),
                                 hlp_data.TARBALL_PATH, '/var')
-        checkers.check_tarball_exists(self.env.d_env.get_admin_remote(),
-                                      os.path.basename(hlp_data.
-                                                       TARBALL_PATH),
-                                      '/var')
+        checkers.check_file_exists(self.env.d_env.get_admin_remote(),
+                                   os.path.join('/var',
+                                                os.path.basename(
+                                                    hlp_data.TARBALL_PATH)))
         checkers.untar(self.env.d_env.get_admin_remote(),
                        os.path.basename(hlp_data.
                                         TARBALL_PATH), '/var')
@@ -214,10 +214,10 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             release_name=hlp_data.OPENSTACK_RELEASE)
         checkers.upload_tarball(self.env.d_env.get_admin_remote(),
                                 hlp_data.TARBALL_PATH, '/var')
-        checkers.check_tarball_exists(self.env.d_env.get_admin_remote(),
-                                      os.path.basename(hlp_data.
-                                                       TARBALL_PATH),
-                                      '/var')
+        checkers.check_file_exists(self.env.d_env.get_admin_remote(),
+                                   os.path.join('/var',
+                                                os.path.basename(
+                                                    hlp_data.TARBALL_PATH)))
         checkers.untar(self.env.d_env.get_admin_remote(),
                        os.path.basename(hlp_data.
                                         TARBALL_PATH), '/var')
@@ -310,10 +310,10 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             release_name=hlp_data.OPENSTACK_RELEASE)
         checkers.upload_tarball(self.env.d_env.get_admin_remote(),
                                 hlp_data.TARBALL_PATH, '/var')
-        checkers.check_tarball_exists(self.env.d_env.get_admin_remote(),
-                                      os.path.basename(hlp_data.
-                                                       TARBALL_PATH),
-                                      '/var')
+        checkers.check_file_exists(self.env.d_env.get_admin_remote(),
+                                   os.path.join('/var',
+                                                os.path.basename(
+                                                    hlp_data.TARBALL_PATH)))
         checkers.untar(self.env.d_env.get_admin_remote(),
                        os.path.basename(hlp_data.
                                         TARBALL_PATH), '/var')
@@ -424,10 +424,10 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             release_name=hlp_data.OPENSTACK_RELEASE)
         checkers.upload_tarball(self.env.d_env.get_admin_remote(),
                                 hlp_data.TARBALL_PATH, '/var')
-        checkers.check_tarball_exists(self.env.d_env.get_admin_remote(),
-                                      os.path.basename(hlp_data.
-                                                       TARBALL_PATH),
-                                      '/var')
+        checkers.check_file_exists(self.env.d_env.get_admin_remote(),
+                                   os.path.join('/var',
+                                                os.path.basename(
+                                                    hlp_data.TARBALL_PATH)))
         checkers.untar(self.env.d_env.get_admin_remote(),
                        os.path.basename(hlp_data.TARBALL_PATH),
                        '/var')
@@ -517,9 +517,10 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         checkers.upload_tarball(remote(), hlp_data.TARBALL_PATH, '/var')
-        checkers.check_tarball_exists(remote(), os.path.basename(hlp_data.
-                                      TARBALL_PATH),
-                                      '/var')
+        checkers.check_file_exists(remote(),
+                                   os.path.join('/var',
+                                                os.path.basename(
+                                                    hlp_data.TARBALL_PATH)))
         checkers.untar(remote(), os.path.basename(hlp_data.TARBALL_PATH),
                        '/var')
 
@@ -618,10 +619,10 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
         checkers.upload_tarball(self.env.d_env.get_admin_remote(),
                                 hlp_data.TARBALL_PATH, '/var')
-        checkers.check_tarball_exists(self.env.d_env.get_admin_remote(),
-                                      os.path.basename(hlp_data.
-                                                       TARBALL_PATH),
-                                      '/var')
+        checkers.check_file_exists(self.env.d_env.get_admin_remote(),
+                                   os.path.join('/var',
+                                                os.path.basename(
+                                                    hlp_data.TARBALL_PATH)))
         checkers.untar(self.env.d_env.get_admin_remote(),
                        os.path.basename(hlp_data.
                                         TARBALL_PATH), '/var')
@@ -686,10 +687,10 @@ class RollbackFuelMaster(base_test_data.TestBasic):
 
         checkers.upload_tarball(self.env.d_env.get_admin_remote(),
                                 hlp_data.TARBALL_PATH, '/var')
-        checkers.check_tarball_exists(self.env.d_env.get_admin_remote(),
-                                      os.path.basename(hlp_data.
-                                                       TARBALL_PATH),
-                                      '/var')
+        checkers.check_file_exists(self.env.d_env.get_admin_remote(),
+                                   os.path.join('/var',
+                                                os.path.basename(
+                                                    hlp_data.TARBALL_PATH)))
         checkers.untar(self.env.d_env.get_admin_remote(),
                        os.path.basename(hlp_data.
                                         TARBALL_PATH), '/var')
@@ -757,10 +758,10 @@ class RollbackFuelMaster(base_test_data.TestBasic):
 
         checkers.upload_tarball(self.env.d_env.get_admin_remote(),
                                 hlp_data.TARBALL_PATH, '/var')
-        checkers.check_tarball_exists(self.env.d_env.get_admin_remote(),
-                                      os.path.basename(hlp_data.
-                                                       TARBALL_PATH),
-                                      '/var')
+        checkers.check_file_exists(self.env.d_env.get_admin_remote(),
+                                   os.path.join('/var',
+                                                os.path.basename(
+                                                    hlp_data.TARBALL_PATH)))
         checkers.untar(self.env.d_env.get_admin_remote(),
                        os.path.basename(hlp_data.
                                         TARBALL_PATH), '/var')
