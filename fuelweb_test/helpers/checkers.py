@@ -250,10 +250,11 @@ def check_archive_type(tar_path):
 
 
 @logwrap
-def check_tarball_exists(node_ssh, name, path):
-    result = ''.join(node_ssh.execute(
-        'ls -all {0} | grep {1}'.format(path, name))['stdout'])
-    assert_true(name in result, 'Can not find tarball')
+def check_file_exists(node_ssh, path):
+    result = node_ssh.execute('test -e "{0}"'.format(path))
+    assert_equal(result['exit_code'],
+                 0,
+                 'Can not find {0}'.format(path))
 
 
 @logwrap
@@ -1059,3 +1060,43 @@ def check_haproxy_backend(remote,
         ['|egrep -v "{}"'.format('|'.join(n)) for n in negativ_filter if n])
 
     return remote.execute("{}{}".format(cmd, ''.join(grep)))
+
+
+def check_log_lines_order(remote, log_file_path, line_matcher):
+    """Read log file and check that lines order are same as strings in list
+
+    :param remote: SSHClient
+    :param log_file_path: path to log file
+    :param line_matcher: list of strings to search
+    """
+    check_file_exists(remote, path=log_file_path)
+
+    previous_line_pos = 0
+    previous_line = None
+    for current_line in line_matcher:
+        cmd = 'tail -n +{0} {1}| grep -n "{2}" | cut -d : -f 1'\
+            .format(previous_line_pos, log_file_path, current_line)
+        res = remote.execute(cmd)
+
+        # line not found case
+        assert_equal(res['exit_code'],
+                     0,
+                     "Line {0} not found after line {1} in the file {2}"
+                     .format(current_line, previous_line, log_file_path))
+
+        # few lines found case
+        current_line_pos = res['stdout'].strip()
+        assert_true(current_line_pos.isdigit(),
+                    "Found {0} lines like {1} but should be only 1 in {2}"
+                    .format(len(current_line_pos),
+                            current_line,
+                            log_file_path))
+
+        assert_true(current_line_pos > previous_line_pos,
+                    "'{0} occurred before '{1}' in '{2}'"
+                    .format(previous_line,
+                            current_line,
+                            log_file_path))
+
+        previous_line_pos = current_line_pos
+        previous_line = current_line
