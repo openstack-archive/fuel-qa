@@ -304,6 +304,19 @@ def wait_upgrade_is_done(node_ssh, timeout, phrase):
 
 
 @logwrap
+def wait_phrase_in_log(node_ssh, timeout, interval, phrase, log_path):
+    cmd = "grep '{0}' '{1}'".format(phrase, log_path)
+    try:
+        wait(
+            lambda: not node_ssh.execute(cmd)['exit_code'], interval=interval,
+            timeout=timeout)
+    except Exception as e:
+        a = node_ssh.execute(cmd)
+        logger.error(e)
+        assert_equal(0, a['exit_code'], a['stderr'])
+
+
+@logwrap
 def wait_rollback_is_done(node_ssh, timeout):
     logger.debug('start waiting for rollback done')
     wait(
