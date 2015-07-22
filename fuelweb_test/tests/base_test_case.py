@@ -57,10 +57,6 @@ class SetupEnvironment(TestBasic):
         self.check_run("empty")
         with timestat("setup_environment", is_uniq=True):
             self.env.setup_environment()
-
-        if REPLACE_DEFAULT_REPOS:
-            self.fuel_web.replace_default_repos()
-
         self.env.make_snapshot("empty", is_make=True)
 
     @test(groups=["setup_master_custom_manifests"])
@@ -78,9 +74,11 @@ class SetupEnvironment(TestBasic):
         """
         self.check_run("empty_custom_manifests")
         self.env.setup_environment(custom=True, build_images=True)
+        if REPLACE_DEFAULT_REPOS:
+            self.fuel_web.replace_default_repos()
         self.env.make_snapshot("empty_custom_manifests", is_make=True)
 
-    @test(depends_on=[setup_master])
+    @test(depends_on=[setup_master], groups=["prepare_release"])
     @log_snapshot_after_test
     def prepare_release(self):
         """Prepare master node
@@ -96,7 +94,8 @@ class SetupEnvironment(TestBasic):
         self.env.revert_snapshot("empty", skip_timesync=True)
 
         self.fuel_web.get_nailgun_version()
-
+        if REPLACE_DEFAULT_REPOS:
+            self.fuel_web.replace_default_repos()
         self.env.make_snapshot("ready", is_make=True)
 
     @test(depends_on=[prepare_release],
