@@ -250,10 +250,12 @@ def check_archive_type(tar_path):
 
 
 @logwrap
-def check_tarball_exists(node_ssh, name, path):
-    result = ''.join(node_ssh.execute(
-        'ls -all {0} | grep {1}'.format(path, name))['stdout'])
-    assert_true(name in result, 'Can not find tarball')
+def check_file_exists(node_ssh, name, path):
+    path_to_check = os.path.join(path, name)
+    result = node_ssh.execute('test -e "{0}"'.format(path_to_check))
+    assert_equal(result['exit_code'],
+                 0,
+                 'Can not find {1}'.format(path_to_check))
 
 
 @logwrap
