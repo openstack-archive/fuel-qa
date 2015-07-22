@@ -713,7 +713,7 @@ class TestHaFailoverBase(TestBasic):
         self.fuel_web.check_ceph_status(
             cluster_id,
             offline_nodes=self.fuel_web.get_nailgun_node_by_devops_node(
-                second_master_rabbit)['id'])
+                second_master_rabbit)['id'],)
 
         # check ha
         try:
