@@ -30,6 +30,8 @@ from fuelweb_test.helpers import os_actions
 from fuelweb_test.settings import CLASSIC_PROVISIONING
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NODE_VOLUME_SIZE
+from fuelweb_test.settings import NEUTRON_ENABLE
+from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -497,6 +499,108 @@ class MultiroleComputeCinder(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_multirole_compute_cinder")
+
+
+@test(groups=["thread_2"])
+class MultiroleMultipleServices(TestBasic):
+    """MultiroleMultipleServices."""  # TODO documentation
+
+    @test(depends_on=[SetupEnvironment.setup_master],
+          groups=["deploy_multiple_services_local_mirror", "bvt_2"])
+    @log_snapshot_after_test
+    def deploy_multiple_services_local_mirror(self):
+        """Deploy cluster with multiple services using local mirror
+
+        Scenario:
+            1. Revert snapshot 'empty' with default set of repositories
+            2. Bootstrap 5 slave nodes
+            3. Run 'fuel-createmirror' to replace default repositories
+               with local mirrors
+            4. Create cluster with many components to check as many
+               packages in local mirrors have correct dependences
+            5. Deploy cluster
+
+        Duration 50m
+        """
+        self.env.revert_snapshot("empty")
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:5])
+
+        logger.info("Executing 'fuel-createmirror' on Fuel admin node")
+        with self.env.d_env.get_admin_remote() as remote:
+            # TODO(ddmitriev):Enable debug via argument for 'fuel-createmirror'
+            # when bug#1458469 fixed.
+            if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
+                cmd = ("sed -i 's/DEBUG=\"no\"/DEBUG=\"yes\"/' {}"
+                       .format('/etc/fuel-createmirror/ubuntu.cfg'))
+                remote.execute(cmd)
+            else:
+                # CentOS is not supported yet, see bug#1467403
+                pass
+
+            result = remote.execute('fuel-createmirror')
+            logger.debug("'fuel-createmirror' [stdout]:\n{}"
+                         .format(''.join(result['stdout'])))
+            logger.debug("'fuel-createmirror' [stderr]:\n{}"
+                         .format(''.join(result['stderr'])))
+            assert_true(result['exit_code'] == 0,
+                        "Executing 'fuel-createmirror' on admin node failed "
+                        "with the ['exit_code']='{0}'. Please inspect "
+                        "'sys_test.log' for more details."
+                        .format(result['exit_code']))
+
+        # Check if there all repos were replaced with local mirrors
+        ubuntu_id = self.fuel_web.client.get_release_id(
+            release_name=OPENSTACK_RELEASE_UBUNTU)
+        ubuntu_release = self.fuel_web.client.get_release(ubuntu_id)
+        ubuntu_meta = ubuntu_release["attributes_metadata"]
+        repos_ubuntu = ubuntu_meta["editable"]["repo_setup"]["repos"]['value']
+        remote_repos = []
+        for repo_value in repos_ubuntu:
+            if (self.fuel_web.admin_node_ip not in repo_value['uri'] and
+                  '{settings.MASTER_IP}' not in repo_value['uri']):
+                remote_repos.append({repo_value['name']: repo_value['uri']})
+        assert_true(not remote_repos,
+                    "Some repositories weren't replaced with local mirrors: "
+                    "{0}".format(remote_repos))
+
+        data = {}
+        if NEUTRON_ENABLE:
+            data = {
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT_TYPE
+            }
+        data.update(
+            {
+                'sahara': True,
+                'murano': True,
+                'ceilometer': True,
+                'volumes_lvm': True,
+                'volumes_ceph': False,
+                'images_ceph': True,
+                'osd_pool_size': "3"
+            }
+        )
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings=data
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller', 'ceph-osd'],
+                'slave-02': ['compute', 'ceph-osd'],
+                'slave-03': ['cinder', 'ceph-osd'],
+                'slave-04': ['mongo'],
+                'slave-05': ['mongo']
+            }
+        )
+        self.fuel_web.report_repos(cluster_id)
+
+        # (ddmitriev): No additional checks is required after deploy,
+        # just make sure that all components are installed from the
+        # local mirrors without any dependency errors or missing packages.
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
 
 @test(groups=["thread_2"])
