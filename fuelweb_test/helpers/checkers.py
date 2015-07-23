@@ -882,7 +882,7 @@ def check_oswl_stat(postgres_actions, remote_collector, master_uid,
         sent_logs_count
     ))
     logger.debug('oswls are {}'.format(remote_collector.get_oswls(master_uid)))
-    logs = len(remote_collector.get_oswls(master_uid))
+    logs = remote_collector.get_oswls(master_uid)['paging_params']['total']
     logger.info("Number of logs that were saved"
                 " on collector: {}".format(logs))
     assert_true(sent_logs_count <= int(logs),
