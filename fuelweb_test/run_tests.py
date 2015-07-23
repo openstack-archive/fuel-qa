@@ -45,6 +45,7 @@ def import_tests():
     from tests import test_ceph  # noqa
     from tests import test_environment_action  # noqa
     from tests import test_ha  # noqa
+    from tests import test_ironic
     from tests import test_neutron  # noqa
     from tests import test_pullrequest  # noqa
     from tests import test_services  # noqa
