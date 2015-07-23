@@ -18,14 +18,11 @@ from devops.helpers.helpers import http
 from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
-from proboscis import SkipTest
 from proboscis import test
 import xmlrpclib
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.settings import OPENSTACK_RELEASE
-from fuelweb_test.settings import OPENSTACK_RELEASE_CENTOS
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
@@ -50,8 +47,6 @@ class TestAdminNode(TestBasic):
         Duration 1m
 
         """
-        if OPENSTACK_RELEASE_CENTOS not in OPENSTACK_RELEASE:
-            raise SkipTest()
         self.env.revert_snapshot("empty")
         wait(
             lambda: http(host=self.env.get_admin_node_ip(), url='/cobbler_api',
@@ -81,8 +76,6 @@ class TestAdminNode(TestBasic):
         Duration 1m
 
         """
-        if OPENSTACK_RELEASE_CENTOS not in OPENSTACK_RELEASE:
-            raise SkipTest()
         self.env.revert_snapshot("empty")
         ps_output = self.env.d_env.get_admin_remote().execute(
             'ps ax')['stdout']
