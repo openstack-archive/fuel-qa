@@ -93,7 +93,10 @@ class SaharaHAOneController(TestBasic):
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         checkers.verify_service(
             self.env.d_env.get_ssh_to_remote(_ip),
-            service_name='sahara-all')
+            service_name='sahara-api')
+        checkers.verify_service(
+            self.env.d_env.get_ssh_to_remote(_ip),
+            service_name='sahara-engine')
 
         LOGGER.debug('Run all sanity and smoke tests')
         path_to_tests = 'fuel_health.tests.sanity.test_sanity_sahara.'
@@ -199,7 +202,10 @@ class SaharaHA(TestBasic):
             _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
             checkers.verify_service(
                 self.env.d_env.get_ssh_to_remote(_ip),
-                service_name='sahara-all')
+                service_name='sahara-api')
+            checkers.verify_service(
+                self.env.d_env.get_ssh_to_remote(_ip),
+                service_name='sahara-engine')
 
         LOGGER.debug('Run all sanity and smoke tests')
         path_to_tests = 'fuel_health.tests.sanity.test_sanity_sahara.'
