@@ -55,7 +55,7 @@ class CollectorClient(object):
     @logwrap
     def get_oswls_by_resource_data(self, master_node_uid, resource):
         return self.get_oswls_by_resource(master_node_uid,
-                                          resource)[0]['resource_data']
+                                          resource)['objs'][0]['resource_data']
 
     @logwrap
     def get_action_logs_ids(self, master_node_uid):
