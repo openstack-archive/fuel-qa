@@ -252,6 +252,62 @@ def publish_results(project, milestone_id, test_plan,
     return results_to_publish
 
 
+def make_bug_statistics(tests_results, operation_systems):
+    bugs = {}
+    for os in operation_systems:
+        for result in tests_results[os['distro']]:
+            bug = result.launchpad_bug
+            if not bug:
+                continue    # Bug is not linked to the test case result.
+            distro = os['distro']
+            if bug not in bugs:
+                bugs[bug] = {}
+                bugs[bug]['distro'] = {}
+                bugs[bug]['count'] = 0
+                bugs[bug]['status'] = result.launchpad_bug_status
+                bugs[bug]['importance'] = result.launchpad_bug_importance
+                bugs[bug]['title'] = result.launchpad_bug_title
+            if distro not in bugs[bug]['distro']:
+                bugs[bug]['distro'][distro] = {}
+            bugs[bug]['count'] += 1
+            bugs[bug]['distro'][distro][result.url] = {}
+            bugs[bug]['distro'][distro][result.url]['status'] = result.status
+            bugs[bug]['distro'][distro][result.url]['group'] = result.group
+
+    bugs_sorted = sorted(bugs.keys(), key=lambda x: bugs[x]['count'],
+                         reverse=True)
+
+    if bugs_sorted:
+        bugs_link_file = os_path.join(LOGS_DIR, 'bugs_link_stat.html')
+        with open(bugs_link_file, 'w') as fout:
+            for bug in bugs_sorted:
+                jresults = ""
+                for distro in bugs[bug]['distro'].keys():
+                    jresults += " {0}: ".format(distro)
+                    num = 1
+                    bugs_distro = bugs[bug]['distro'][distro]
+                    for res in bugs_distro:
+                        jresults += (
+                            '<a href={res} title="{hint}">{num}</a> '
+                            .format(res=res,
+                                    hint=bugs_distro[res]['group'],
+                                    num=num))
+                        num += 1
+                line = ('[{affected} test case(s)] [{importance}] [{status}] '
+                        '<a href="{link}">{title}</a> [{jresults}]<br>\n'
+                        .format(affected=bugs[bug]['count'],
+                                importance=bugs[bug]['importance'],
+                                status=bugs[bug]['status'],
+                                link=bug,
+                                title=bugs[bug]['title'],
+                                jresults=jresults))
+                fout.write(line)
+
+        logger.info("Bug statistics saved to: {0}".format(bugs_link_file))
+    else:
+        logger.info("No linked to test cases bugs found")
+
+
 @retry(count=3)
 def get_existing_bug_link(previous_results):
     results_with_bug = [result for result in previous_results if
@@ -273,9 +329,11 @@ def get_existing_bug_link(previous_results):
         except KeyError:
             logger.warning("Bug with id '{bug_id}' is private or \
                 doesn't exist.".format(bug_id=bug_id))
+            continue
         except Exception:
             logger.exception("Strange situation with '{bug_id}' \
                 issue".format(bug_id=bug_id))
+            continue
 
         for target in bug.targets:
             if target['project'] == LaunchpadSettings.project and\
@@ -296,12 +354,20 @@ def main():
     parser.add_option('-N', '--build-number', dest='build_number',
                       default='latest',
                       help='Jenkins swarm runner build number')
+    parser.add_option('-o', '--one-job', dest='one_job_name',
+                      default=None,
+                      help=('Process only one job name from the specified '
+                            'parent job or view'))
     parser.add_option("-w", "--view", dest="jenkins_view", default=False,
                       help="Get system tests jobs from Jenkins view")
     parser.add_option("-l", "--live", dest="live_report", action="store_true",
                       help="Get tests results from running swarm")
     parser.add_option("-m", "--manual", dest="manual_run", action="store_true",
                       help="Manually add tests cases to TestRun (tested only)")
+    parser.add_option("-s", "--statiscics", action="store_true",
+                      dest="bug_statistics", default=False,
+                      help="Make a statistics for bugs linked to TestRail for "
+                      "the test run")
     parser.add_option("-v", "--verbose",
                       action="store_true", dest="verbose", default=False,
                       help="Enable debug output")
@@ -350,6 +416,11 @@ def main():
     is_running_builds = False
 
     for systest_build in tests_jobs:
+        if (options.one_job_name and
+                options.one_job_name != systest_build['name']):
+            logger.debug("Skipping '{0}' because --one-job is specified"
+                         .format(systest_build['name']))
+            continue
         if options.job_name:
             if 'result' not in systest_build.keys():
                 logger.debug("Skipping '{0}' job because it does't run tests "
@@ -372,11 +443,9 @@ def main():
     milestone, iso_number, prefix = get_version(runner_build.build_data)
     milestone = project.get_milestone_by_name(name=milestone)
 
-    test_plan_name = '{milestone} {prefix} iso #{iso_number}'.format(
-        milestone=milestone['name'],
-        iso_number=iso_number,
-        prefix=prefix)
-
+    test_plan_name = ' '.join(
+        filter(lambda x: bool(x),
+               (milestone['name'], prefix, 'iso', '#' + str(iso_number))))
     test_plan = project.get_plan_by_name(test_plan_name)
     if not test_plan:
         test_plan = project.add_plan(test_plan_name,
@@ -445,66 +514,14 @@ def main():
 
     # STEP #5
     # Provide the bugs linked in TestRail for current run as a short statistics
-    if is_running_builds:
-        logger.info("Some jobs are still running, "
-                    "skipping bug statistics report")
-        return
+    if options.bug_statistics:
+        if is_running_builds:
+            logger.info("Some jobs are still running. "
+                        "Skipping bug statistics report, please try later.")
+        else:
+            logger.info("Generation bug statistics report...")
+            make_bug_statistics(tests_results, operation_systems)
 
-    logger.info("Generation bug statistics report...")
-
-    bugs = {}
-    for os in operation_systems:
-        for result in tests_results[os['distro']]:
-            bug = result.launchpad_bug
-            if not bug:
-                continue    # Bug is not linked to the test case result.
-            distro = os['distro']
-            if bug not in bugs:
-                bugs[bug] = {}
-                bugs[bug]['distro'] = {}
-                bugs[bug]['count'] = 0
-                bugs[bug]['status'] = result.launchpad_bug_status
-                bugs[bug]['importance'] = result.launchpad_bug_importance
-                bugs[bug]['title'] = result.launchpad_bug_title
-            if distro not in bugs[bug]['distro']:
-                bugs[bug]['distro'][distro] = {}
-            bugs[bug]['count'] += 1
-            bugs[bug]['distro'][distro][result.url] = {}
-            bugs[bug]['distro'][distro][result.url]['status'] = result.status
-            bugs[bug]['distro'][distro][result.url]['group'] = result.group
-
-    bugs_sorted = sorted(bugs.keys(), key=lambda x: bugs[x]['count'],
-                         reverse=True)
-
-    if bugs_sorted:
-        bugs_link_file = os_path.join(LOGS_DIR, 'bugs_link_stat.html')
-        with open(bugs_link_file, 'w') as fout:
-            for bug in bugs_sorted:
-                jresults = ""
-                for distro in bugs[bug]['distro'].keys():
-                    jresults += " {0}: ".format(distro)
-                    num = 1
-                    bugs_distro = bugs[bug]['distro'][distro]
-                    for res in bugs_distro:
-                        jresults += (
-                            '<a href={res} title="{hint}">{num}</a> '
-                            .format(res=res,
-                                    hint=bugs_distro[res]['group'],
-                                    num=num))
-                        num += 1
-                line = ('[{affected} test case(s)] [{importance}] [{status}] '
-                        '<a href="{link}">{title}</a> [{jresults}]<br>\n'
-                        .format(affected=bugs[bug]['count'],
-                                importance=bugs[bug]['importance'],
-                                status=bugs[bug]['status'],
-                                link=bug,
-                                title=bugs[bug]['title'],
-                                jresults=jresults))
-                fout.write(line)
-
-        logger.info("Bug statistics saved to: {0}".format(bugs_link_file))
-    else:
-        logger.info("No linked to test cases bugs found")
 
 if __name__ == "__main__":
     main()
