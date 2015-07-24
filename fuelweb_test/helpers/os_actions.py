@@ -66,7 +66,8 @@ class OpenStackActions(common.Common):
             return servers
 
     def create_server_for_migration(self, neutron=False, scenario='',
-                                    timeout=100, file=None, key_name=None):
+                                    timeout=100, file=None, key_name=None,
+                                    **kwargs):
         name = "test-serv" + str(random.randint(1, 0x7fffffff))
         security_group = {}
         try:
@@ -86,10 +87,10 @@ class OpenStackActions(common.Common):
             network = [net.id for net in self.nova.networks.list()
                        if net.label == 'net04']
 
-            kwargs = {'nics': [{'net-id': network[0]}],
-                      'security_groups': security_group}
+            kwargs.update({'nics': [{'net-id': network[0]}],
+                           'security_groups': security_group})
         else:
-            kwargs = {'security_groups': security_group}
+            kwargs.update({'security_groups': security_group})
 
         srv = self.nova.servers.create(name=name,
                                        image=image_id,
@@ -449,8 +450,8 @@ class OpenStackActions(common.Common):
     def get_vip(self, vip):
         return self.neutron.show_vip(vip)
 
-    def get_nova_instance_ip(self, srv):
-        return srv.networks['novanetwork'][0]
+    def get_nova_instance_ip(self, srv, net_name='novanetwork'):
+        return srv.networks[net_name][0]
 
     def get_instance_mac(self, remote, srv):
         res = ''.join(remote.execute('virsh dumpxml {0} | grep "mac address="'
