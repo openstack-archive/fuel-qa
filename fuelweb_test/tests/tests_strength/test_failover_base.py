@@ -984,9 +984,11 @@ class TestHaFailoverBase(TestBasic):
 
         # check ha
         self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300)
+        # check os
+        self.fuel_web.assert_os_services_ready(cluster_id)
 
         # run ostf smoke and sanity
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id, test_sets=['smoke'])
 
         # check that master rabbit is the same
 
