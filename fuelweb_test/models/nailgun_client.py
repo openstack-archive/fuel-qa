@@ -210,6 +210,14 @@ class NailgunClient(object):
 
     @logwrap
     @json_parse
+    def reassign_node(self, cluster_id, data):
+        return self.client.post(
+            "/api/clusters/{}/upgrade/assign".format(cluster_id),
+            data=data
+        )
+
+    @logwrap
+    @json_parse
     def create_cluster(self, data):
         logger.info('Before post to nailgun')
         return self.client.post(
