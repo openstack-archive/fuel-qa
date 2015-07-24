@@ -436,6 +436,11 @@ class FuelWebClient(object):
             if help_data.CLASSIC_PROVISIONING:
                 attributes['editable']['provision']['method']['value'] = \
                     'cobbler'
+            if help_data.DISABLE_SSL:
+                attributes['editable']['public_ssl']['services'][
+                    'value'] = False
+                attributes['editable']['public_ssl']['horizon'][
+                    'value'] = False
 
             public_gw = self.environment.d_env.router(router_name="public")
 

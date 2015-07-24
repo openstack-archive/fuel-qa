@@ -36,6 +36,8 @@ ADMIN_BOOT_DEVICE = os.environ.get('ADMIN_BOOT_DEVICE', 'cdrom')
 DNS = os.environ.get('DNS', '8.8.8.8')
 PUBLIC_TEST_IP = os.environ.get('PUBLIC_TEST_IP', '8.8.8.8')
 
+DISABLE_SSL = get_var_as_bool('DISABLE_SSL', True)
+
 OPENSTACK_RELEASE_CENTOS = 'centos'
 OPENSTACK_RELEASE_UBUNTU = 'ubuntu'
 OPENSTACK_RELEASE = os.environ.get(
