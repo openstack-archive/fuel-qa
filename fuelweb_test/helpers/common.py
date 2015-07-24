@@ -37,22 +37,29 @@ class Common(object):
         self.nova = novaclient(username=user,
                                api_key=password,
                                project_id=tenant,
-                               auth_url=auth_url)
+                               auth_url=auth_url,
+                               insecure=True,
+                               endpoint_type='internalURL')
         self.keystone = self._get_keystoneclient(username=user,
                                                  password=password,
                                                  tenant_name=tenant,
-                                                 auth_url=auth_url)
+                                                 auth_url=auth_url,
+                                                 )
         self.cinder = cinderclient.Client(1, user, password,
-                                          tenant, auth_url)
+                                          tenant, auth_url,
+                                          insecure=True,
+                                          endpoint_type='internalURL')
         self.neutron = neutronclient.Client(
             username=user,
             password=password,
             tenant_name=tenant,
-            auth_url=auth_url)
+            auth_url=auth_url,
+            insecure=True,
+            endpoint_type='internalURL')
         token = self.keystone.auth_token
         LOGGER.debug('Token is {0}'.format(token))
         glance_endpoint = self.keystone.service_catalog.url_for(
-            service_type='image', endpoint_type='publicURL')
+            service_type='image', endpoint_type='internalURL')
         LOGGER.debug('Glance endpoind is {0}'.format(glance_endpoint))
         self.glance = glanceclient(endpoint=glance_endpoint, token=token)
 

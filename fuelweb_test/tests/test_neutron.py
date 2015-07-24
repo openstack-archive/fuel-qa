@@ -74,7 +74,7 @@ class NeutronGre(TestBasic):
                                               '192.168.196.1')
         self.fuel_web.deploy_cluster_wait(cluster_id)
         os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id),
+            self.fuel_web.get_mgmt_vip(cluster_id),
             data['user'], data['password'], data['tenant'])
 
         cluster = self.fuel_web.client.get_cluster(cluster_id)
