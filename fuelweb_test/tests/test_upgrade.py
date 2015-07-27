@@ -25,7 +25,6 @@ from devops.helpers.helpers import wait
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.decorators import create_diagnostic_snapshot
-from fuelweb_test.helpers import os_actions
 from fuelweb_test import logger
 from fuelweb_test import settings as hlp_data
 from fuelweb_test.tests import base_test_case as base_test_data
@@ -48,7 +47,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                   "upgrade_one_controller_neutron",
                   "upgrade_one_controller_classic"])
     @log_snapshot_after_test
-    def upgrade_ha_one_controller_env(self):
+    def upgrade_ha_one_controller(self):
         """Upgrade ha one controller deployed cluster with ceph
 
         Scenario:
@@ -104,14 +103,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             True, False
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id),
-            user='ceph1', tenant='ceph1', passwd='ceph1')
-        self.fuel_web.assert_cluster_ready(
-            os_conn,
-            smiles_count=7 if hlp_data.NEUTRON_ENABLE else 10,
-            networks_count=2 if hlp_data.NEUTRON_ENABLE else 1,
-            timeout=300)
+
         self.fuel_web.run_ostf(cluster_id=cluster_id)
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
             _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
@@ -119,7 +111,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             kernel = self.get_slave_kernel(remote)
             checkers.check_kernel(kernel, expected_kernel)
         create_diagnostic_snapshot(
-            self.env, "pass", "upgrade_ha_one_controller_env")
+            self.env, "pass", "upgrade_ha_one_controller")
 
         self.env.make_snapshot("upgrade_ha_one_controller")
 
@@ -191,7 +183,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 
     @test(groups=["upgrade_ha", "upgrade_neutron_gre_ha"])
     @log_snapshot_after_test
-    def upgrade_ha_env(self):
+    def upgrade_ha(self):
         """Upgrade ha deployed cluster
 
         Scenario:
@@ -244,15 +236,13 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                          if id not in available_releases_before]
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[5:7])
-        data = {
-            'tenant': 'novaSimpleVlan',
-            'user': 'novaSimpleVlan',
-            'password': 'novaSimpleVlan'
-        }
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=hlp_data.DEPLOYMENT_MODE,
-            settings=data,
+            settings={
+                'net_provider': 'neutron',
+                'net_segment_type': 'vlan'
+            },
             release_id=added_release[0]
         )
         self.fuel_web.update_nodes(
@@ -262,16 +252,9 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                 'slave-07': ['compute']
             }
         )
-        self.fuel_web.update_vlan_network_fixed(
-            cluster_id, amount=8, network_size=32)
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id),
-            data['user'], data['password'], data['tenant'])
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=6, networks_count=8, timeout=300)
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
             _ip = self.fuel_web.get_nailgun_node_by_name('slave-06')['ip']
             remote = self.env.d_env.get_ssh_to_remote(_ip)
@@ -286,7 +269,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 
     @test(groups=["upgrade_ha_restart_containers", "upgrade_neutron_gre_ha"])
     @log_snapshot_after_test
-    def upgrade_ha_restart_containers_env(self):
+    def upgrade_ha_restart_containers(self):
         """Upgrade ha deployed cluster and restart containers
 
         Scenario:
@@ -594,9 +577,9 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 class RollbackFuelMaster(base_test_data.TestBasic):
     """RollbackFuelMaster."""  # TODO documentation
 
-    @test(groups=["rollback_automatic_ha", "rollback_neutron_gre_ha"])
+    @test(groups=["rollback_automatically_ha", "rollback_neutron_gre_ha"])
     @log_snapshot_after_test
-    def rollback_automatically_ha_env(self):
+    def rollback_automatically_ha(self):
         """Rollback manually ha deployed cluster
 
         Scenario:
@@ -654,12 +637,12 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("rollback_automatic_ha")
+        self.env.make_snapshot("rollback_automatically_ha")
 
-    @test(groups=["rollback_automatic_ha_one_controller",
+    @test(groups=["rollback_automatically_ha_one_controller",
                   "rollback_one_controller"])
     @log_snapshot_after_test
-    def rollback_automatically_ha_one_controller_env(self):
+    def rollback_automatically_ha_one_controller(self):
         """Rollback automatically ha one controller deployed cluster
 
         Scenario:
@@ -728,7 +711,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             checkers.check_kernel(kernel, expected_kernel)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("rollback_automatic_ha_one_controller")
+        self.env.make_snapshot("rollback_automatically_ha_one_controller")
 
     @test(groups=["rollback_automatically_delete_node",
                   "rollback_neutron_gre"])
@@ -799,4 +782,4 @@ class RollbackFuelMaster(base_test_data.TestBasic):
                             nodes[0]))
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
 
-        self.env.make_snapshot("rollback_automatically_delete_mode")
+        self.env.make_snapshot("rollback_automatically_delete_node")
