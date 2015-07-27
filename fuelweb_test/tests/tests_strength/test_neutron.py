@@ -77,7 +77,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
               " cirros@{1} \"ping -c 1 {2}\"".format(dhcp_namespace,
                                                      instance_ip,
                                                      settings.PUBLIC_TEST_IP)
-        wait(lambda: remote.execute(cmd)['exit_code'] == 0, timeout=2 * 60)
+        wait(lambda: remote.execute(cmd)['exit_code'] == 0, timeout=3 * 60)
         res = remote.execute(cmd)
         assert_equal(0, res['exit_code'],
                      'instance has no connectivity, exit code {0}'.format(
