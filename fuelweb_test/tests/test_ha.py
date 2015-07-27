@@ -33,10 +33,12 @@ from fuelweb_test import quiet_logger
 class TestHaVLAN(TestBasic):
     """TestHaVLAN."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha_vlan", "ha_nova_vlan"])
     @log_snapshot_after_test
     def deploy_ha_vlan(self):
+        # REMOVE THIS NOVA_NETWORK CASE WHEN NEUTRON BE DEFAULT
         """Deploy cluster in HA mode with VLAN Manager
 
         Scenario:
@@ -142,10 +144,12 @@ class TestHaVLAN(TestBasic):
 class TestHaFlat(TestBasic):
     """TestHaFlat."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha_flat", "ha_nova_flat"])
     @log_snapshot_after_test
     def deploy_ha_flat(self):
+        # REMOVE THIS NOVA_NETWORK CASE WHEN NEUTRON BE DEFAULT
         """Deploy cluster in HA mode with flat nova-network
 
         Scenario:
@@ -224,10 +228,11 @@ class TestHaFlat(TestBasic):
 
         self.env.make_snapshot("deploy_ha_flat", is_make=True)
 
-    @test(depends_on_groups=['deploy_ha_flat'],
+    @test(depends_on_groups=['deploy_neutron_gre_ha'],
           groups=["ha_flat_addremove"])
     @log_snapshot_after_test
     def ha_flat_addremove(self):
+        #Must be refactored to use neutron network manager
         """Add and re-add cinder / compute + cinder to HA cluster
 
         Scenario:
@@ -245,7 +250,7 @@ class TestHaFlat(TestBasic):
         Duration 50m
         """
 
-        self.env.revert_snapshot("deploy_ha_flat")
+        self.env.revert_snapshot("deploy_neutron_gre_ha")
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         self.env.bootstrap_nodes(
@@ -281,10 +286,11 @@ class TestHaFlat(TestBasic):
 class TestHaFlatAddCompute(TestBasic):
     """TestHaFlatAddCompute."""  # TODO documentation
 
-    @test(depends_on_groups=['deploy_ha_flat'],
+    @test(depends_on_groups=['deploy_neutron_gre_ha'],
           groups=["ha_flat_add_compute"])
     @log_snapshot_after_test
     def ha_flat_add_compute(self):
+        #Must be refactored to use neutron network manager
         """Add compute node to cluster in HA mode with flat nova-network
 
         Scenario:
@@ -299,7 +305,7 @@ class TestHaFlatAddCompute(TestBasic):
         Snapshot ha_flat_add_compute
 
         """
-        self.env.revert_snapshot("deploy_ha_flat")
+        self.env.revert_snapshot("deploy_neutron_gre_ha")
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         self.env.bootstrap_nodes(
@@ -507,10 +513,11 @@ class TestHaFlatScalability(TestBasic):
 class BackupRestoreHa(TestBasic):
     """BackupRestoreHa."""  # TODO documentation
 
-    @test(depends_on=[TestHaFlat.deploy_ha_flat],
+    @test(depends_on_groups=['deploy_neutron_gre_ha'],
           groups=["known_issues", "backup_restore_ha_flat"])
     @log_snapshot_after_test
     def backup_restore_ha_flat(self):
+        #Must be refactored to use neutron network manager
         """Backup/restore master node with cluster in ha mode
 
         Scenario:
@@ -526,7 +533,7 @@ class BackupRestoreHa(TestBasic):
         Duration 50m
 
         """
-        self.env.revert_snapshot("deploy_ha_flat")
+        self.env.revert_snapshot("deploy_neutron_gre_ha")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         os_conn = os_actions.OpenStackActions(
