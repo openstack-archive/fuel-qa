@@ -33,10 +33,12 @@ from fuelweb_test import quiet_logger
 class TestHaVLAN(TestBasic):
     """TestHaVLAN."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha_vlan", "ha_nova_vlan"])
     @log_snapshot_after_test
     def deploy_ha_vlan(self):
+        # REMOVE THIS NOVA_NETWORK CASE WHEN NEUTRON BE DEFAULT
         """Deploy cluster in HA mode with VLAN Manager
 
         Scenario:
@@ -142,10 +144,12 @@ class TestHaVLAN(TestBasic):
 class TestHaFlat(TestBasic):
     """TestHaFlat."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha_flat", "ha_nova_flat"])
     @log_snapshot_after_test
     def deploy_ha_flat(self):
+        # REMOVE THIS NOVA_NETWORK CASE WHEN NEUTRON BE DEFAULT
         """Deploy cluster in HA mode with flat nova-network
 
         Scenario:
