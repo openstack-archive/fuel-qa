@@ -174,7 +174,7 @@ class TestMultipleClusterNets(TestBasic):
             }
         )
 
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id, timeout=150 * 60)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
         self.env.make_snapshot("deploy_neutron_gre_ha_nodegroups")
