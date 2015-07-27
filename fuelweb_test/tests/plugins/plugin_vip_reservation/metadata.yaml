@@ -1,0 +1,16 @@
+name: vip_reservation_plugin
+title: vip_reservation_plugin
+version: '3.0.0'
+description: Build plugin for test vip_reservation_plugin
+fuel_version: ['7.0']
+licenses: ['Apache License Version 2.0']
+authors: ['Mirantis']
+homepage: 'https://github.com/stackforge/fuel-plugins'
+groups: []
+releases:
+- os: ubuntu
+  version: '-7.0'
+  mode: ['ha']
+  deployment_scripts_path: deployment_scripts/
+  repository_path: repositories/ubuntu
+package_version: '3.0.0'
