@@ -402,7 +402,7 @@ class ControllerReplacement(base_test_case.TestBasic):
 
         self.env.make_snapshot("deploy_ha_neutron_gre_ctrl_replacement")
 
-    @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
+    @test(enabled=False,depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha_nova_ctrl_replacement"])
     @log_snapshot_after_test
     def deploy_ha_nova_ctrl_replacement(self):

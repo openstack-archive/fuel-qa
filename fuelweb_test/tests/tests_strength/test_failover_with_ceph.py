@@ -71,7 +71,7 @@ class TestHaCephNeutronFailover(TestHaFailoverBase):
         super(self.__class__, self).ha_sequential_rabbit_master_failover()
 
 
-@test(groups=["ha_destructive_ceph_nova"])
+@test(enabled=False,groups=["ha_destructive_ceph_nova"])
 class TestHaCephNovaFailover(TestHaFailoverBase):
     snapshot_name = "prepare_ha_ceph_nova"
 

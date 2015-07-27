@@ -20,7 +20,7 @@ from fuelweb_test.tests import base_test_case
 from fuelweb_test.helpers import os_actions
 
 
-@test(groups=["huge_environments", "huge_ha_nova"])
+@test(enabled=False,groups=["huge_environments", "huge_ha_nova"])
 class HugeEnvironments(base_test_case.TestBasic):
     """HugeEnvironments."""  # TODO documentation
 

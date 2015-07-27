@@ -310,7 +310,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
         super(self.__class__, self).test_3_1_rabbit_failover()
 
 
-@test(groups=["thread_5", "ha", "ha_nova_destructive"])
+@test(enabled=False,groups=["thread_5", "ha", "ha_nova_destructive"])
 class TestHaNovaFailover(TestHaFailoverBase):
     snapshot_name = "prepare_ha_nova"
 
