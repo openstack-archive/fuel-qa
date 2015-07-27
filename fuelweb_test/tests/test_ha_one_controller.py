@@ -27,7 +27,6 @@ from devops.helpers.helpers import tcp_ping
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.eb_tables import Ebtables
 from fuelweb_test.helpers import os_actions
-from fuelweb_test.settings import CLASSIC_PROVISIONING
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NODE_VOLUME_SIZE
 from fuelweb_test.settings import OPENSTACK_RELEASE
@@ -1037,8 +1036,7 @@ class ProvisioningScripts(TestBasic):
 
         Duration 45m
         """
-        if OPENSTACK_RELEASE_UBUNTU != OPENSTACK_RELEASE or \
-                not CLASSIC_PROVISIONING:
+        if OPENSTACK_RELEASE_UBUNTU != OPENSTACK_RELEASE:
             raise SkipTest()
 
         self.env.revert_snapshot("ready")
