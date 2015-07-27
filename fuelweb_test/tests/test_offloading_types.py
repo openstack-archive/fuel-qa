@@ -58,13 +58,13 @@ class TestOffloading(TestBasic):
                                     offload_type))['stdout']).rstrip()
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["offloading_neutron", "offloading"])
+          groups=["offloading_neutron_vlan", "offloading"])
     @log_snapshot_after_test
-    def offloading_neutron(self):
-        """Deploy cluster with new offload modes and neutron GRE
+    def offloading_neutron_vlan(self):
+        """Deploy cluster with new offload modes and neutron VLAN
 
         Scenario:
-            1. Create cluster
+            1. Create cluster with neutron VLAN
             2. Add 1 node with controller role
             3. Add 1 node with compute role and 1 node with cinder role
             4. Setup offloading types
@@ -75,7 +75,104 @@ class TestOffloading(TestBasic):
             9. Verify offloading modes on nodes
 
         Duration 30m
-        Snapshot offloading_neutron
+        Snapshot offloading_neutron_vlan
+
+        """
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": 'vlan',
+            }
+        )
+
+        interfaces = {
+            'eth1': ['public'],
+            'eth2': ['private'],
+            'eth3': ['management'],
+            'eth4': ['storage'],
+        }
+
+        offloading_modes = [{
+            'name': 'eth1',
+            'offloading_modes': [{
+                'state': 'true',
+                'name': 'rx-vlan-offload',
+                'sub': []}, {
+                'state': 'true',
+                'name': 'tx-vlan-offload',
+                'sub': []}]}, {
+            'name': 'eth2',
+            'offloading_modes': [{
+                'state': 'false',
+                'name': 'large-receive-offload',
+                'sub': []}]}]
+
+        self.fuel_web.update_nodes(
+            cluster_id, {
+                'slave-01': ['controller'],
+                'slave-02': ['compute'],
+                'slave-03': ['cinder']
+            }
+        )
+
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        for node in slave_nodes:
+            self.fuel_web.update_node_networks(node['id'], interfaces)
+            for eth in offloading_modes:
+                self.update_offloads(node['id'], offloading_modes, eth['name'])
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        nodes = [self.fuel_web.get_nailgun_node_by_name(node)
+                 for node in ['slave-01', 'slave-02', 'slave-03']]
+
+        for node in nodes:
+            with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
+                logger.info("Verify Offload types")
+
+                result = self.check_offload(remote, 'eth1', 'rx-vlan-offload')
+                assert_equal(result, "on",
+                             "Offload type {0} is {1} on remote host"
+                             .format('rx-vlan-offload', result))
+
+                result = self.check_offload(remote, 'eth1', 'tx-vlan-offload')
+                assert_equal(result, "on",
+                             "Offload type {0} is {1} on remote host"
+                             .format('tx-vlan-offload', result))
+
+                result = self.check_offload(remote, 'eth2',
+                                            'large-receive-offload')
+                assert_equal(result, "off",
+                             "Offload type {0} is {1} on remote host"
+                             .format('large-receive-offload', result))
+
+        self.env.make_snapshot("offloading_neutron_vlan")
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["offloading_neutron_vxlan", "offloading"])
+    @log_snapshot_after_test
+    def offloading_neutron_vxlan(self):
+        """Deploy cluster with new offload modes and neutron VXLAN
+
+        Scenario:
+            1. Create cluster with neutron VXLAN
+            2. Add 1 node with controller role
+            3. Add 1 node with compute role and 1 node with cinder role
+            4. Setup offloading types
+            5. Run network verification
+            6. Deploy the cluster
+            7. Run network verification
+            8. Run OSTF
+            9. Verify offloading modes on nodes
+
+        Duration 30m
+        Snapshot offloading_neutron_vxlan
 
         """
         self.env.revert_snapshot("ready_with_3_slaves")
@@ -151,3 +248,5 @@ class TestOffloading(TestBasic):
                 assert_equal(result, "off",
                              "Offload type {0} is {1} on remote host"
                              .format('large-receive-offload', result))
+
+        self.env.make_snapshot("offloading_neutron_vxlan")
