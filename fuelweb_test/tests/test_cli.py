@@ -235,7 +235,7 @@ class CommandLine(TestBasic):
             cmd = ('fuel --env-id={0} node --deploy --node {1} --json'
                    .format(cluster_id, node_ids[0]))
             task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, remote, timeout=30 * 60)
+            self.assert_cli_task_success(task, remote, timeout=60 * 60)
 
             # Deploy the compute nodes
             cmd = ('fuel --env-id={0} node --deploy --node {1},{2} --json'
