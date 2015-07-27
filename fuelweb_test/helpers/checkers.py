@@ -993,9 +993,9 @@ def check_repo_managment(remote):
         :rtype True or False
     """
     if OPENSTACK_RELEASE == OPENSTACK_RELEASE_UBUNTU:
-        cmd = "apt-get clean all && apt-get update > /dev/null 2>&1"
+        cmd = "apt-get clean all && apt-get update > /dev/null"
     else:
-        cmd = "yum -y clean all && yum check-update > /dev/null 2>&1"
+        cmd = "yum -y clean all && yum check-update > /dev/null"
     remote.check_call(cmd)
 
 
