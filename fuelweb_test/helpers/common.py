@@ -16,6 +16,8 @@ import time
 
 from fuelweb_test import logger as LOGGER
 from fuelweb_test import logwrap as LOGWRAP
+from fuelweb_test.settings import DISABLE_SSL
+from fuelweb_test.settings import PATH_TO_CA_CERT
 
 
 from cinderclient import client as cinderclient
@@ -30,31 +32,71 @@ from proboscis.asserts import assert_equal
 class Common(object):
     """Common."""  # TODO documentation
 
-    def __init__(self, controller_ip, user, password, tenant):
-        self.controller_ip = controller_ip
-        auth_url = 'http://{0}:5000/v2.0/'.format(self.controller_ip)
-        LOGGER.debug('Auth URL is {0}'.format(auth_url))
-        self.nova = novaclient(username=user,
-                               api_key=password,
-                               project_id=tenant,
-                               auth_url=auth_url)
-        self.keystone = self._get_keystoneclient(username=user,
-                                                 password=password,
-                                                 tenant_name=tenant,
-                                                 auth_url=auth_url)
-        self.cinder = cinderclient.Client(1, user, password,
-                                          tenant, auth_url)
-        self.neutron = neutronclient.Client(
-            username=user,
-            password=password,
-            tenant_name=tenant,
-            auth_url=auth_url)
-        token = self.keystone.auth_token
-        LOGGER.debug('Token is {0}'.format(token))
-        glance_endpoint = self.keystone.service_catalog.url_for(
-            service_type='image', endpoint_type='publicURL')
-        LOGGER.debug('Glance endpoind is {0}'.format(glance_endpoint))
-        self.glance = glanceclient(endpoint=glance_endpoint, token=token)
+    def __init__(self, public_vip, user, password, tenant):
+        self.public_vip = public_vip
+
+        if DISABLE_SSL:
+            auth_url = 'http://{0}:5000/v2.0/'.format(self.public_vip)
+            LOGGER.debug('Auth URL is {0}'.format(auth_url))
+            self.nova = novaclient(username=user,
+                                   api_key=password,
+                                   project_id=tenant,
+                                   auth_url=auth_url)
+            self.cinder = cinderclient.Client(1, user, password,
+                                              tenant, auth_url)
+            self.neutron = neutronclient.Client(
+                username=user,
+                password=password,
+                tenant_name=tenant,
+                auth_url=auth_url)
+            self.keystone = self._get_keystoneclient(username=user,
+                                                     password=password,
+                                                     tenant_name=tenant,
+                                                     auth_url=auth_url)
+            token = self.keystone.auth_token
+            LOGGER.debug('Token is {0}'.format(token))
+            glance_endpoint = self.keystone.service_catalog.url_for(
+                service_type='image', endpoint_type='publicURL')
+            LOGGER.debug('Glance endpoind is {0}'.format(glance_endpoint))
+            self.glance = glanceclient(endpoint=glance_endpoint, token=token)
+
+        else:
+            auth_url = 'https://{0}:5000/v2.0/'.format(public_vip)
+            LOGGER.debug('Auth URL is {0}'.format(auth_url))
+            self.nova = novaclient(username=user,
+                                   api_key=password,
+                                   project_id=tenant,
+                                   auth_url=auth_url,
+                                   insecure=True,
+                                   cacert=PATH_TO_CA_CERT)
+            self.cinder = cinderclient.Client(1, user, password,
+                                              tenant, auth_url,
+                                              insecure=True,
+                                              cacert=PATH_TO_CA_CERT)
+
+            self.neutron = neutronclient.Client(
+                username=user,
+                password=password,
+                tenant_name=tenant,
+                auth_url=auth_url,
+                insecure=True,
+                ca_cert=PATH_TO_CA_CERT)
+
+            self.keystone = self._get_keystoneclient(username=user,
+                                                     password=password,
+                                                     tenant_name=tenant,
+                                                     auth_url=auth_url,
+                                                     insecure=True,
+                                                     cert=PATH_TO_CA_CERT)
+
+            token = self.keystone.auth_token
+            LOGGER.debug('Token is {0}'.format(token))
+            glance_endpoint = self.keystone.service_catalog.url_for(
+                service_type='image', endpoint_type='publicURL')
+            LOGGER.debug('Glance endpoind is {0}'.format(glance_endpoint))
+
+            self.glance = glanceclient(endpoint=glance_endpoint, token=token,
+                                       insecure=True, cacert=PATH_TO_CA_CERT)
 
     def goodbye_security(self):
         secgroup_list = self.nova.security_groups.list()
@@ -146,14 +188,22 @@ class Common(object):
         return self.nova.flavors.delete(flavor)
 
     def _get_keystoneclient(self, username, password, tenant_name, auth_url,
-                            retries=3):
+                            retries=3, insecure=None, cert=None):
         keystone = None
         for i in range(retries):
             try:
-                keystone = keystoneclient(username=username,
-                                          password=password,
-                                          tenant_name=tenant_name,
-                                          auth_url=auth_url)
+                if insecure and cert:
+                    keystone = keystoneclient(username=username,
+                                              password=password,
+                                              tenant_name=tenant_name,
+                                              auth_url=auth_url,
+                                              insecure=True,
+                                              cert=PATH_TO_CA_CERT)
+                else:
+                    keystone = keystoneclient(username=username,
+                                              password=password,
+                                              tenant_name=tenant_name,
+                                              auth_url=auth_url)
                 break
             except ClientException as e:
                 err = "Try nr {0}. Could not get keystone client, error: {1}"
