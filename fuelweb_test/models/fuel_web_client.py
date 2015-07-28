@@ -22,6 +22,8 @@ from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
+from fuelweb_test.helpers.ssl import copy_cert_from_master
+from fuelweb_test.helpers.ssl import change_cluster_ssl_config
 from ipaddr import IPNetwork
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
@@ -49,6 +51,7 @@ from fuelweb_test.settings import ATTEMPTS
 from fuelweb_test.settings import BONDING
 from fuelweb_test.settings import DNS_SUFFIX
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
+from fuelweb_test.settings import DISABLE_SSL
 from fuelweb_test.settings import KVM_USE
 from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import NEUTRON
@@ -66,6 +69,7 @@ from fuelweb_test.settings import VCENTER_USERNAME
 from fuelweb_test.settings import VCENTER_PASSWORD
 from fuelweb_test.settings import VCENTER_DATACENTER
 from fuelweb_test.settings import VCENTER_DATASTORE
+from fuelweb_test.settings import USER_OWNED_CERT
 
 import fuelweb_test.settings as help_data
 
@@ -446,12 +450,6 @@ class FuelWebClient(object):
                 if section:
                     attributes['editable'][section][option]['value'] =\
                         settings[option]
-            is_ssl_available = attributes['editable'].get('public_ssl', None)
-            if help_data.DISABLE_SSL and is_ssl_available:
-                attributes['editable']['public_ssl']['services'][
-                    'value'] = False
-                attributes['editable']['public_ssl']['horizon'][
-                    'value'] = False
 
             public_gw = self.environment.d_env.router(router_name="public")
 
@@ -483,10 +481,6 @@ class FuelWebClient(object):
                 hpv_data = attributes['editable']['common']['use_vcenter']
                 hpv_data['value'] = True
 
-            logger.debug("Try to update cluster "
-                         "with next attributes {0}".format(attributes))
-            self.client.update_cluster_attributes(cluster_id, attributes)
-
             if MULTIPLE_NETWORKS:
                 node_groups = {n['name']: [] for n in NODEGROUPS}
                 self.update_nodegroups(cluster_id, node_groups)
@@ -495,6 +489,13 @@ class FuelWebClient(object):
                                                       nodegroup=nodegroup)
             else:
                 self.update_network_configuration(cluster_id)
+
+            cn = self.get_public_vip(cluster_id)
+            change_cluster_ssl_config(attributes, cn)
+
+            logger.debug("Try to update cluster "
+                         "with next attributes {0}".format(attributes))
+            self.client.update_cluster_attributes(cluster_id, attributes)
 
         if not cluster_id:
             raise Exception("Could not get cluster '%s'" % name)
@@ -873,6 +874,9 @@ class FuelWebClient(object):
         if check_services:
             self.assert_ha_services_ready(cluster_id)
             self.assert_os_services_ready(cluster_id)
+        if not DISABLE_SSL and not USER_OWNED_CERT:
+            with self.environment.d_env.get_admin_remote() as admin_remote:
+                copy_cert_from_master(admin_remote, cluster_id)
 
     def deploy_cluster_wait_progress(self, cluster_id, progress):
         task = self.deploy_cluster(cluster_id)

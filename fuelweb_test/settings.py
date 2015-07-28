@@ -37,6 +37,9 @@ DNS = os.environ.get('DNS', '8.8.8.8')
 PUBLIC_TEST_IP = os.environ.get('PUBLIC_TEST_IP', '8.8.8.8')
 
 DISABLE_SSL = get_var_as_bool('DISABLE_SSL', True)
+USER_OWNED_CERT = get_var_as_bool('USER_OWNED_CERT', True)
+PATH_TO_CERT = os.environ.get('PATH_TO_CERT', '/tmp/ca.crt')
+PATH_TO_PEM = os.environ.get('PATH_TO_PEM', '/tmp/ca.pem')
 
 OPENSTACK_RELEASE_CENTOS = 'centos'
 OPENSTACK_RELEASE_UBUNTU = 'ubuntu'
