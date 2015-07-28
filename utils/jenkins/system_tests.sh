@@ -436,7 +436,7 @@ RunTest() {
 
     # Extract logs using fuel_logs utility
     if [ "${FUELLOGS_TOOL}" != "no" ]; then
-      for logfile in $(find "${WORKSPACE}/logs/" -name "fail*.tar.xz" -type f);
+      for logfile in $(find "${LOGS_DIR}" -name "fail*.tar.xz" -type f);
       do
          ./utils/jenkins/fuel_logs.py "${logfile}" > "${logfile}.filtered.log"
       done
