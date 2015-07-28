@@ -18,10 +18,13 @@ import time
 import traceback
 import yaml
 
+from os.path import basename
+
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
+from fuelweb_test.helpers.utils import generate_user_own_cert
 from ipaddr import IPNetwork
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
@@ -49,6 +52,7 @@ from fuelweb_test.settings import ATTEMPTS
 from fuelweb_test.settings import BONDING
 from fuelweb_test.settings import DNS_SUFFIX
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
+from fuelweb_test.settings import DISABLE_SSL
 from fuelweb_test.settings import KVM_USE
 from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import NEUTRON
@@ -58,6 +62,8 @@ from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import OSTF_TEST_NAME
 from fuelweb_test.settings import OSTF_TEST_RETRIES_COUNT
+from fuelweb_test.settings import PATH_TO_CERT
+from fuelweb_test.settings import PATH_TO_PEM
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
 from fuelweb_test.settings import TIMEOUT
@@ -66,6 +72,7 @@ from fuelweb_test.settings import VCENTER_USERNAME
 from fuelweb_test.settings import VCENTER_PASSWORD
 from fuelweb_test.settings import VCENTER_DATACENTER
 from fuelweb_test.settings import VCENTER_DATASTORE
+from fuelweb_test.settings import USER_OWNED_CERT
 
 import fuelweb_test.settings as help_data
 
@@ -446,12 +453,6 @@ class FuelWebClient(object):
                 if section:
                     attributes['editable'][section][option]['value'] =\
                         settings[option]
-            is_ssl_available = attributes['editable'].get('public_ssl', None)
-            if help_data.DISABLE_SSL and is_ssl_available:
-                attributes['editable']['public_ssl']['services'][
-                    'value'] = False
-                attributes['editable']['public_ssl']['horizon'][
-                    'value'] = False
 
             public_gw = self.environment.d_env.router(router_name="public")
 
@@ -483,10 +484,6 @@ class FuelWebClient(object):
                 hpv_data = attributes['editable']['common']['use_vcenter']
                 hpv_data['value'] = True
 
-            logger.debug("Try to update cluster "
-                         "with next attributes {0}".format(attributes))
-            self.client.update_cluster_attributes(cluster_id, attributes)
-
             if MULTIPLE_NETWORKS:
                 node_groups = {n['name']: [] for n in NODEGROUPS}
                 self.update_nodegroups(cluster_id, node_groups)
@@ -495,6 +492,31 @@ class FuelWebClient(object):
                                                       nodegroup=nodegroup)
             else:
                 self.update_network_configuration(cluster_id)
+
+            is_ssl_available = attributes['editable'].get('public_ssl', None)
+            cn = self.get_public_vip(cluster_id)
+            if help_data.DISABLE_SSL and is_ssl_available:
+                attributes['editable']['public_ssl']['services'][
+                    'value'] = False
+                attributes['editable']['public_ssl']['horizon'][
+                    'value'] = False
+            elif is_ssl_available:
+                attributes['editable']['public_ssl']['hostname'][
+                    'value'] = cn
+                if USER_OWNED_CERT:
+                    generate_user_own_cert(cn)
+                    attributes['editable']['public_ssl'][
+                        'cert_source']['value'] = 'user_uploaded'
+                    cert_data = {}
+                    with open(PATH_TO_PEM, 'r') as f:
+                        cert_data['content'] = f.read()
+                    cert_data['name'] = basename(PATH_TO_PEM)
+                    attributes['editable']['public_ssl'][
+                        'cert_data']['value'] = cert_data
+
+            logger.debug("Try to update cluster "
+                         "with next attributes {0}".format(attributes))
+            self.client.update_cluster_attributes(cluster_id, attributes)
 
         if not cluster_id:
             raise Exception("Could not get cluster '%s'" % name)
@@ -873,6 +895,8 @@ class FuelWebClient(object):
         if check_services:
             self.assert_ha_services_ready(cluster_id)
             self.assert_os_services_ready(cluster_id)
+        if not DISABLE_SSL and not USER_OWNED_CERT:
+            self._copy_cert_from_master(cluster_id)
 
     def deploy_cluster_wait_progress(self, cluster_id, progress):
         task = self.deploy_cluster(cluster_id)
@@ -891,6 +915,14 @@ class FuelWebClient(object):
         ret = remote.check_call('/usr/bin/nova-manage floating list')
         ret_str = ''.join(ret['stdout'])
         return re.findall('(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', ret_str)
+
+    def _copy_cert_from_master(self, cluster_id,
+                               path_to_store=PATH_TO_CERT):
+        path_to_cert = \
+            '/var/lib/fuel/keys/{}/haproxy/public_haproxy.crt'.format(
+                cluster_id)
+        with self.environment.d_env.get_admin_remote() as admin_remote:
+            admin_remote.download(path_to_cert, path_to_store)
 
     @logwrap
     def get_cluster_block_devices(self, node_name):

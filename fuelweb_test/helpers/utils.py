@@ -21,6 +21,8 @@ import os.path
 import posixpath
 import re
 
+from OpenSSL import crypto, SSL
+
 from proboscis import asserts
 
 from fuelweb_test import logger
@@ -379,3 +381,24 @@ def get_network_template(template_name):
     if os.path.exists(template):
         with open(template) as template_file:
             return yaml.load(template_file)
+
+
+def generate_user_own_cert(cn, path_to_cert=settings.PATH_TO_CERT,
+                           path_to_pem=settings.PATH_TO_PEM):
+    if not os.path.exists(path_to_cert):
+        k = crypto.PKey()
+        k.generate_key(crypto.TYPE_RSA, 2048)
+        cert = crypto.X509()
+        cert.get_subject().OU = 'Mirantis Fuel-QA Team'
+        cert.get_subject().CN = cn
+        cert.set_serial_number(1000)
+        cert.gmtime_adj_notBefore(0)
+        cert.gmtime_adj_notAfter(315360000)
+        cert.set_issuer(cert.get_subject())
+        cert.set_pubkey(k)
+        cert.sign(k, 'sha1')
+        with open(path_to_pem, 'wt') as f:
+            f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
+            f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k))
+        with open(path_to_cert, 'wt') as f:
+            f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
