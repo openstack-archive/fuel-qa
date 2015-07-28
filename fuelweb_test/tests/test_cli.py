@@ -26,6 +26,7 @@ from fuelweb_test.helpers.checkers import check_cluster_presence
 from fuelweb_test.helpers.checkers import check_cobbler_node_exists
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import run_on_remote
+from fuelweb_test.helpers.ssl import change_cluster_ssl_config
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NEUTRON_ENABLE
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
@@ -164,6 +165,35 @@ class CommandLine(TestBasic):
                 net_config, nodegroup, cluster_id)
         self.update_network(cluster_id, remote, new_settings)
 
+    def get_public_vip(self, cluster_id, remote):
+        networks = self.get_networks(cluster_id, remote)
+        return networks['public_vip']
+
+    def download_settings(self, cluster_id, remote):
+        cmd = ('fuel --env {0} settings --download --dir /tmp --json'.format(
+            cluster_id))
+        run_on_remote(remote, cmd)
+        return run_on_remote(remote,
+                             'cd /tmp && cat settings_{0}.json'.format(
+                                 cluster_id), jsonify=True)
+
+    def upload_settings(self, cluster_id, remote, settings):
+        data = json.dumps(settings)
+        cmd = 'cd /tmp && echo {data} > settings_{id}.json'.format(
+            data=json.dumps(data),
+            id=cluster_id)
+        run_on_remote(remote, cmd)
+        cmd = ('fuel --env {0} settings --upload --dir /tmp --json'.format(
+            cluster_id))
+        run_on_remote(remote, cmd)
+
+    @logwrap
+    def update_ssl_configuration(self, cluster_id, remote):
+        settings = self.download_settings(cluster_id, remote)
+        cn = self.get_public_vip(cluster_id, remote)
+        change_cluster_ssl_config(settings, cn)
+        self.upload_settings(cluster_id, remote, settings)
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["cli_selected_nodes_deploy"])
     @log_snapshot_after_test
@@ -207,6 +237,9 @@ class CommandLine(TestBasic):
             # Update network parameters
             self.update_cli_network_configuration(cluster_id, remote)
 
+            # Update SSL configuration
+            self.update_ssl_configuration(cluster_id, remote)
+
             # Add and provision a controller node
             logger.info("Add to the cluster and start provisioning "
                         "a controller node [{0}]".format(node_ids[0]))
@@ -216,7 +249,7 @@ class CommandLine(TestBasic):
             cmd = ('fuel --env-id={0} node --provision --node={1} --json'
                    .format(cluster_id, node_ids[0]))
             task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, remote, timeout=20 * 60)
+            self.assert_cli_task_success(task, remote, timeout=30 * 60)
 
             # Add and provision 2 compute+cinder
             logger.info("Add to the cluster and start provisioning two "
