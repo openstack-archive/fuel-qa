@@ -31,6 +31,8 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups):
     tests = []
 
     for case in TestProgram(groups=groups).cases:
+        if not case.entry.info.enabled:
+            continue
         if tests_include:
             if tests_include not in case.entry.home.func_name:
                 logger.debug("Skipping '{0}' test because it doesn't contain '"
