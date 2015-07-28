@@ -37,6 +37,9 @@ DNS = os.environ.get('DNS', '8.8.8.8')
 PUBLIC_TEST_IP = os.environ.get('PUBLIC_TEST_IP', '8.8.8.8')
 
 DISABLE_SSL = get_var_as_bool('DISABLE_SSL', True)
+USER_OWNED_CERT = get_var_as_bool('USER_OWNED_CERT', True)
+PATH_TO_CERT = os.environ.get('PATH_TO_CERT', '/tmp/ca.crt')
+PATH_TO_PEM = os.environ.get('PATH_TO_PEM', '/tmp/ca.pem')
 
 OPENSTACK_RELEASE_CENTOS = 'centos'
 OPENSTACK_RELEASE_UBUNTU = 'ubuntu'
@@ -306,7 +309,7 @@ ATTEMPTS = int(os.environ.get('ATTEMPTS', 5))
 # Create snapshots as last step in test-case
 MAKE_SNAPSHOT = get_var_as_bool('MAKE_SNAPSHOT', False)
 
-NEUTRON_ENABLE = get_var_as_bool('NEUTRON_ENABLE', False)
+NEUTRON_ENABLE = get_var_as_bool('NEUTRON_ENABLE', True)
 NEUTRON_SEGMENT_TYPE = os.environ.get('NEUTRON_SEGMENT_TYPE',
                                       NEUTRON_SEGMENT["vlan"])
 

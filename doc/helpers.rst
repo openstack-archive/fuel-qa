@@ -93,6 +93,11 @@ Security
 .. automodule:: fuelweb_test.helpers.security
    :members:
 
+Ssl
+---
+.. automodule:: fuelweb_test.helpers.ssl
+   :members:
+
 Utils
 -----
 .. automodule:: fuelweb_test.helpers.utils
