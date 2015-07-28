@@ -231,23 +231,32 @@ def check_upgraded_containers(remote, version_from, version_to):
 
 
 @logwrap
-def upload_tarball(node_ssh, tar_path, tar_target):
-    assert_true(tar_path, "Source path for uploading 'tar_path' is empty, "
+def upload_file(node_ssh, file_path, file_target):
+    assert_true(file_path, "Source path for uploading 'file_path' is empty, "
                 "please check test settings!")
-    check_archive_type(tar_path)
     try:
-        logger.debug("Start to upload tar file")
-        node_ssh.upload(tar_path, tar_target)
+        logger.debug("Start to upload file")
+        node_ssh.upload(file_path, file_target)
     except Exception:
         logger.error('Failed to upload file')
         logger.error(traceback.format_exc())
 
 
 @logwrap
-def check_archive_type(tar_path):
-    if os.path.splitext(tar_path)[1] not in [".tar", ".lrz", ".fp", ".rpm"]:
-        raise Exception("Wrong archive type!")
+def check_file_type(file_path, target_types):
+    filename = os.path.basename(file_path)
+    ext = os.path.splitext(filename)[1]
+    if ext not in target_types:
+        raise Exception("Wrong file type! {0} not in {1}".format(ext, target_types))
+    return ext
 
+@logwrap
+def check_archive_type(tar_path):
+    return check_file_type(tar_path, [".tar", ".lrz"])
+
+@logwrap
+def check_plugin_type(plugin_path):
+    return check_file_type(plugin_path, [".fp", ".rpm"])
 
 @logwrap
 def check_file_exists(node_ssh, path):
@@ -258,38 +267,41 @@ def check_file_exists(node_ssh, path):
 
 
 @logwrap
-def untar(node_ssh, name, path):
-    filename, ext = os.path.splitext(name)
-    cmd = "tar -xpvf" if ext.endswith("tar") else "lrzuntar"
-    result = ''.join(node_ssh.execute(
-        'cd {0} && {2} {1}'.format(path, name, cmd))['stdout'])
-    logger.debug('Result from tar command is {0}'.format(result))
+def untar(node_ssh, tar_path, target_path=None):
+    ext = check_archive_type(tar_path)
+    check_file_exists(tar_path)
+
+    # unpack to folder with archive if target_path not set
+    workfolder = target_path if target_path else os.path.dirname(tar_path)
+
+    # choose util
+    if ext.endswith("tar"):
+        util_cmd = "tar -xpvf"
+    elif ext.endswith("lrz"):
+        util_cmd = "lrzuntar"
+    else:
+        raise "Don't know how to unpack {0} type".format(ext)
+
+    cmd = 'cd {0} && {1} {2}'.format(workfolder, util_cmd, tar_path)
+    result = ''.join(node_ssh.execute(cmd)['stdout'])
+    logger.debug('Result from {0} command is {1}'.format(cmd, result))
 
 
 @logwrap
-def run_script(node_ssh, script_path, script_name, password='admin',
+def run_upgrade_script(node_ssh, script_path, password='admin',
                rollback=False, exit_code=0):
-    path = os.path.join(script_path, script_name)
-    c_res = node_ssh.execute('chmod 755 {0}'.format(path))
-    logger.debug("Result of cmod is {0}".format(c_res))
+    chmod_res = node_ssh.execute('chmod 755 {0}'.format(script_path))
+    logger.debug("Result of chmod is {0}".format(chmod_res))
+
     if rollback:
-        path = "UPGRADERS='host-system docker openstack" \
-               " raise-error' {0}/{1}" \
-               " --password {2}".format(script_path, script_name, password)
-        chan, stdin, stderr, stdout = node_ssh.execute_async(path)
-        logger.debug('Try to read status code from chain...')
-        assert_equal(chan.recv_exit_status(), exit_code,
-                     'Upgrade script fails with next message {0}'.format(
-                         ''.join(stderr)))
+        cmd = "UPGRADERS='host-system docker openstack raise-error' {0} --password {1}".format(script_path, password)
     else:
-        path = "{0}/{1} --no-rollback --password {2}".format(script_path,
-                                                             script_name,
-                                                             password)
-        chan, stdin, stderr, stdout = node_ssh.execute_async(path)
-        logger.debug('Try to read status code from chain...')
-        assert_equal(chan.recv_exit_status(), exit_code,
-                     'Upgrade script fails with next message {0}'.format(
-                         ''.join(stderr)))
+        cmd = "{0} --no-rollback --password {1}".format(script_path, password)
+
+    chan, stdin, stderr, stdout = node_ssh.execute_async(cmd)
+    logger.debug('Try to read status code from chain...')
+    assert_equal(chan.recv_exit_status(), exit_code,
+                 'Upgrade script fails with next message {0}'.format(''.join(stderr)))
 
 
 @logwrap
@@ -433,6 +445,7 @@ def check_mysql(remote, node_name):
 @logwrap
 def install_plugin_check_code(
         remote, plugin, exit_code=0):
+    check_plugin_type(plugin)
     cmd = "cd /var && fuel plugins --install {0} ".format(plugin)
     chan, stdin, stderr, stdout = remote.execute_async(cmd)
     logger.debug('Try to read status code from chain...')

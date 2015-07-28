@@ -58,14 +58,13 @@ class TestLmaCollectorPlugin(TestBasic):
         self.env.revert_snapshot("ready_with_5_slaves")
 
         # copy plugins to the master node
-
-        checkers.upload_tarball(
+        checkers.upload_file(
             self.env.d_env.get_admin_remote(),
             conf.LMA_COLLECTOR_PLUGIN_PATH, "/var")
-        checkers.upload_tarball(
+        checkers.upload_file(
             self.env.d_env.get_admin_remote(),
             conf.ELASTICSEARCH_KIBANA_PLUGIN_PATH, "/var")
-        checkers.upload_tarball(
+        checkers.upload_file(
             self.env.d_env.get_admin_remote(),
             conf.INFLUXDB_GRAFANA_PLUGIN_PATH, "/var")
 

@@ -58,7 +58,7 @@ class ZabbixPlugin(TestBasic):
 
         # copy plugin to the master node
 
-        checkers.upload_tarball(
+        checkers.upload_file(
             self.env.d_env.get_admin_remote(), conf.ZABBIX_PLUGIN_PATH, "/var")
 
         # install plugin

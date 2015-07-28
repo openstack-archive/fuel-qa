@@ -57,7 +57,7 @@ class TestInfluxdbPlugin(TestBasic):
 
         # copy plugin to the master node and install it
         with self.env.d_env.get_admin_remote() as remote:
-            checkers.upload_tarball(
+            checkers.upload_file(
                 remote, INFLUXDB_GRAFANA_PLUGIN_PATH, '/var')
             checkers.install_plugin_check_code(
                 remote, plugin=os.path.basename(INFLUXDB_GRAFANA_PLUGIN_PATH))

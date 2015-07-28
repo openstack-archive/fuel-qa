@@ -41,6 +41,33 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             r" 's/^([0-9, \.]+(\-[0-9]+)?)-.*/\1/p'")['stdout']).rstrip()
         logger.debug("slave kernel is {0}".format(kernel))
         return kernel
+    
+    @classmethod
+    def do_upgrade(admin_remote, upgrade_tarball_path, remote_workdir, rollback=False):
+        remote_tar_path = os.path.join(remote_workdir,
+                                       os.path.basename(upgrade_tarball_path))
+        checkers.upload_file(admin_remote,
+                             file_path=upgrade_tarball_path,
+                             file_target=remote_tar_path)
+        checkers.untar(admin_remote, tar_path=remote_tar_path)
+    
+        if rollback:
+            checkers.run_upgrade_script(admin_remote,
+                                        os.path.join(remote_workdir, 'upgrade.sh'),
+                                        password=hlp_data.KEYSTONE_CREDS['password'],
+                                        rollback=True,
+                                        exit_code=255)
+            checkers.wait_rollback_is_done(admin_remote,
+                                           timeout=3000)
+        else:
+            checkers.run_upgrade_script(admin_remote,
+                                script_path = os.path.join(remote_workdir, 'upgrade.sh'),
+                                password=hlp_data.KEYSTONE_CREDS['password'])
+            checkers.wait_upgrade_is_done(admin_remote,
+                                          timeout = 3000,
+                                          phrase='*** UPGRADING MASTER NODE'
+                                                 ' DONE SUCCESSFULLY')
+
 
     @test(groups=["upgrade_ha_one_controller",
                   "upgrade_one_controller",
@@ -67,35 +94,27 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
-        _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
-        remote = self.env.d_env.get_ssh_to_remote(_ip)
-        expected_kernel = self.get_slave_kernel(remote)
+        with self.env.d_env.get_ssh_for_node('slave-01') as slave01_remote:
+            expected_kernel = self.get_slave_kernel(slave01_remote)
 
-        checkers.upload_tarball(self.env.d_env.get_admin_remote(),
-                                hlp_data.TARBALL_PATH, '/var')
-        checkers.check_file_exists(self.env.d_env.get_admin_remote(),
-                                   os.path.join('/var',
-                                                os.path.basename(
-                                                    hlp_data.TARBALL_PATH)))
-        checkers.untar(self.env.d_env.get_admin_remote(),
-                       os.path.basename(hlp_data.
-                                        TARBALL_PATH), '/var')
-        checkers.run_script(self.env.d_env.get_admin_remote(),
-                            '/var', 'upgrade.sh',
-                            password=hlp_data.KEYSTONE_CREDS['password'])
-        checkers.wait_upgrade_is_done(self.env.d_env.get_admin_remote(), 3000,
-                                      phrase='*** UPGRADING MASTER NODE'
-                                             ' DONE SUCCESSFULLY')
-        checkers.check_upgraded_containers(self.env.d_env.get_admin_remote(),
-                                           hlp_data.UPGRADE_FUEL_FROM,
-                                           hlp_data.UPGRADE_FUEL_TO)
+        # do upgrade
+        with self.env.d_env.get_admin_remote() as admin_remote:
+            self.do_upgrade(admin_remote,
+                               upgrade_tarball_path=hlp_data.TARBALL_PATH,
+                               remote_workdir = '/var')
+            checkers.check_upgraded_containers(admin_remote,
+                                               hlp_data.UPGRADE_FUEL_FROM,
+                                               hlp_data.UPGRADE_FUEL_TO)
+
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:3])
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nailgun_upgrade_migration()
+
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
+
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[3:4])
         self.fuel_web.update_nodes(
@@ -105,11 +124,12 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
+
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
-            _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
-            remote = self.env.d_env.get_ssh_to_remote(_ip)
-            kernel = self.get_slave_kernel(remote)
-            checkers.check_kernel(kernel, expected_kernel)
+            with self.env.d_env.get_ssh_to_node('slave-04') as slave04_remote:
+                kernel = self.get_slave_kernel(slave04_remote)
+                checkers.check_kernel(kernel, expected_kernel)
+
         create_diagnostic_snapshot(
             self.env, "pass", "upgrade_ha_one_controller")
 
@@ -139,24 +159,16 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.env.revert_snapshot('ceph_ha_one_controller_compact')
 
         cluster_id = self.fuel_web.get_last_created_cluster()
-        checkers.upload_tarball(self.env.d_env.get_admin_remote(),
-                                hlp_data.TARBALL_PATH, '/var')
-        checkers.check_file_exists(self.env.d_env.get_admin_remote(),
-                                   os.path.join('/var',
-                                                os.path.basename(
-                                                    hlp_data.TARBALL_PATH)))
-        checkers.untar(self.env.d_env.get_admin_remote(),
-                       os.path.basename(hlp_data.
-                                        TARBALL_PATH), '/var')
-        checkers.run_script(self.env.d_env.get_admin_remote(),
-                            '/var', 'upgrade.sh',
-                            password=hlp_data.KEYSTONE_CREDS['password'])
-        checkers.wait_upgrade_is_done(self.env.d_env.get_admin_remote(), 3000,
-                                      phrase='*** UPGRADING MASTER NODE'
-                                             ' DONE SUCCESSFULLY')
-        checkers.check_upgraded_containers(self.env.d_env.get_admin_remote(),
-                                           hlp_data.UPGRADE_FUEL_FROM,
-                                           hlp_data.UPGRADE_FUEL_TO)
+
+        # do upgrade
+        with self.env.d_env.get_admin_remote() as admin_remote:
+            self.do_upgrade(admin_remote,
+                               upgrade_tarball_path=hlp_data.TARBALL_PATH,
+                               remote_workdir = '/var')
+            checkers.check_upgraded_containers(admin_remote,
+                                               hlp_data.UPGRADE_FUEL_FROM,
+                                               hlp_data.UPGRADE_FUEL_TO)
+
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:3])
@@ -164,8 +176,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.fuel_web.assert_nailgun_upgrade_migration()
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
-        remote_ceph = self.fuel_web.get_ssh_for_node('slave-03')
-        self.fuel_web.prepare_ceph_to_delete(remote_ceph)
+        with self.fuel_web.get_ssh_for_node('slave-03') as slave03_remote:
+            self.fuel_web.prepare_ceph_to_delete(slave03_remote)
         nailgun_nodes = self.fuel_web.update_nodes(
             cluster_id, {'slave-03': ['compute', 'ceph-osd']}, False, True)
         task = self.fuel_web.deploy_cluster(cluster_id)
@@ -178,7 +190,10 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             assert_true(len(self.fuel_web.client.list_nodes()) == 3,
                         'Node {0} is not discovered in timeout 10 *60'.format(
                             nodes[0]))
+
+        self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
+
         self.env.make_snapshot("upgrade_ha_one_controller_delete_node")
 
     @test(groups=["upgrade_ha", "upgrade_neutron_gre_ha"])
@@ -201,32 +216,26 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             raise SkipTest()
 
         self.env.revert_snapshot("deploy_neutron_gre_ha")
+
         cluster_id = self.fuel_web.get_last_created_cluster()
         available_releases_before = self.fuel_web.get_releases_list_for_os(
             release_name=hlp_data.OPENSTACK_RELEASE)
-        checkers.upload_tarball(self.env.d_env.get_admin_remote(),
-                                hlp_data.TARBALL_PATH, '/var')
-        checkers.check_file_exists(self.env.d_env.get_admin_remote(),
-                                   os.path.join('/var',
-                                                os.path.basename(
-                                                    hlp_data.TARBALL_PATH)))
-        checkers.untar(self.env.d_env.get_admin_remote(),
-                       os.path.basename(hlp_data.
-                                        TARBALL_PATH), '/var')
-        checkers.run_script(self.env.d_env.get_admin_remote(),
-                            '/var', 'upgrade.sh',
-                            password=hlp_data.KEYSTONE_CREDS['password'])
-        checkers.wait_upgrade_is_done(self.env.d_env.get_admin_remote(), 3000,
-                                      phrase='*** UPGRADING MASTER NODE'
-                                             ' DONE SUCCESSFULLY')
-        checkers.check_upgraded_containers(self.env.d_env.get_admin_remote(),
-                                           hlp_data.UPGRADE_FUEL_FROM,
-                                           hlp_data.UPGRADE_FUEL_TO)
+
+        # do upgrade
+        with self.env.d_env.get_admin_remote() as admin_remote:
+            self.do_upgrade(admin_remote,
+                               upgrade_tarball_path=hlp_data.TARBALL_PATH,
+                               remote_workdir = '/var')
+            checkers.check_upgraded_containers(admin_remote,
+                                               hlp_data.UPGRADE_FUEL_FROM,
+                                               hlp_data.UPGRADE_FUEL_TO)
+
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:5])
         self.fuel_web.assert_nailgun_upgrade_migration()
+
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
@@ -256,15 +265,14 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
-            _ip = self.fuel_web.get_nailgun_node_by_name('slave-06')['ip']
-            remote = self.env.d_env.get_ssh_to_remote(_ip)
-            kernel = self.get_slave_kernel(remote)
+            with self.env.d_env.get_ssh_to_node('slave-06') as slave06_remote:
+                kernel = self.get_slave_kernel(slave06_remote)
             logger.debug("ubuntu kernel version"
                          " on new node is {}".format(kernel))
-        self.fuel_web.verify_network(cluster_id)
 
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
         self.env.make_snapshot("upgrade_ha")
 
     @test(groups=["upgrade_ha_restart_containers", "upgrade_neutron_gre_ha"])
@@ -288,66 +296,59 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             raise SkipTest()
 
         self.env.revert_snapshot("deploy_neutron_gre_ha")
+
         cluster_id = self.fuel_web.get_last_created_cluster()
         available_releases_before = self.fuel_web.get_releases_list_for_os(
             release_name=hlp_data.OPENSTACK_RELEASE)
-        checkers.upload_tarball(self.env.d_env.get_admin_remote(),
-                                hlp_data.TARBALL_PATH, '/var')
-        checkers.check_file_exists(self.env.d_env.get_admin_remote(),
-                                   os.path.join('/var',
-                                                os.path.basename(
-                                                    hlp_data.TARBALL_PATH)))
-        checkers.untar(self.env.d_env.get_admin_remote(),
-                       os.path.basename(hlp_data.
-                                        TARBALL_PATH), '/var')
 
-        # Upgrade
-        checkers.run_script(self.env.d_env.get_admin_remote(),
-                            '/var', 'upgrade.sh',
-                            password=hlp_data.KEYSTONE_CREDS['password'])
-        checkers.wait_upgrade_is_done(self.env.d_env.get_admin_remote(), 3000,
-                                      phrase='*** UPGRADING MASTER NODE'
-                                             ' DONE SUCCESSFULLY')
-        checkers.check_upgraded_containers(self.env.d_env.get_admin_remote(),
-                                           hlp_data.UPGRADE_FUEL_FROM,
-                                           hlp_data.UPGRADE_FUEL_TO)
+
+        # do upgrade
+        with self.env.d_env.get_admin_remote() as admin_remote:
+            self.do_upgrade(admin_remote,
+                               upgrade_tarball_path=hlp_data.TARBALL_PATH,
+                               remote_workdir = '/var')
+            checkers.check_upgraded_containers(admin_remote,
+                                               hlp_data.UPGRADE_FUEL_FROM,
+                                               hlp_data.UPGRADE_FUEL_TO)
+
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:5])
         self.fuel_web.assert_nailgun_upgrade_migration()
+
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        remote = self.env.d_env.get_admin_remote()
+        with self.env.d_env.get_admin_remote() as admin_remote:
 
-        # Patching
-        update_command = 'yum update -y'
-        update_result = remote.execute(update_command)
-        logger.debug('Result of "{1}" command on master node: '
-                     '{0}'.format(update_result, update_command))
-        assert_equal(int(update_result['exit_code']), 0,
-                     'Packages update failed, '
-                     'inspect logs for details')
+            # Patching
+            update_command = 'yum update -y'
+            update_result = admin_remote.execute(update_command)
+            logger.debug('Result of "{1}" command on master node: '
+                         '{0}'.format(update_result, update_command))
+            assert_equal(int(update_result['exit_code']), 0,
+                         'Packages update failed, '
+                         'inspect logs for details')
 
-        # Restart containers
-        destroy_command = 'dockerctl destroy all'
-        destroy_result = remote.execute(destroy_command)
-        logger.debug('Result of "{1}" command on master node: '
-                     '{0}'.format(destroy_result, destroy_command))
-        assert_equal(int(destroy_result['exit_code']), 0,
-                     'Destroy containers failed, '
-                     'inspect logs for details')
+            # Restart containers
+            destroy_command = 'dockerctl destroy all'
+            destroy_result = admin_remote.execute(destroy_command)
+            logger.debug('Result of "{1}" command on master node: '
+                         '{0}'.format(destroy_result, destroy_command))
+            assert_equal(int(destroy_result['exit_code']), 0,
+                         'Destroy containers failed, '
+                         'inspect logs for details')
 
-        start_command = 'dockerctl start all'
-        start_result = remote.execute(start_command)
-        logger.debug('Result of "{1}" command on master node: '
-                     '{0}'.format(start_result, start_command))
-        assert_equal(int(start_result['exit_code']), 0,
-                     'Start containers failed, '
-                     'inspect logs for details')
-        self.env.docker_actions.wait_for_ready_containers()
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+            start_command = 'dockerctl start all'
+            start_result = admin_remote.execute(start_command)
+            logger.debug('Result of "{1}" command on master node: '
+                         '{0}'.format(start_result, start_command))
+            assert_equal(int(start_result['exit_code']), 0,
+                         'Start containers failed, '
+                         'inspect logs for details')
+            self.env.docker_actions.wait_for_ready_containers()
+            self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         # Deploy new cluster
         available_releases_after = self.fuel_web.get_releases_list_for_os(
@@ -376,8 +377,9 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         )
         self.fuel_web.run_network_verify(new_cluster_id)
         self.fuel_web.deploy_cluster_wait(new_cluster_id)
-        self.fuel_web.run_ostf(new_cluster_id)
         self.fuel_web.run_network_verify(new_cluster_id)
+        self.fuel_web.run_ostf(new_cluster_id)
+
 
         self.env.make_snapshot("upgrade_ha_restart_containers")
 
@@ -405,24 +407,16 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
         available_releases_before = self.fuel_web.get_releases_list_for_os(
             release_name=hlp_data.OPENSTACK_RELEASE)
-        checkers.upload_tarball(self.env.d_env.get_admin_remote(),
-                                hlp_data.TARBALL_PATH, '/var')
-        checkers.check_file_exists(self.env.d_env.get_admin_remote(),
-                                   os.path.join('/var',
-                                                os.path.basename(
-                                                    hlp_data.TARBALL_PATH)))
-        checkers.untar(self.env.d_env.get_admin_remote(),
-                       os.path.basename(hlp_data.TARBALL_PATH),
-                       '/var')
-        checkers.run_script(self.env.d_env.get_admin_remote(),
-                            '/var', 'upgrade.sh',
-                            password=hlp_data.KEYSTONE_CREDS['password'])
-        checkers.wait_upgrade_is_done(self.env.d_env.get_admin_remote(), 3000,
-                                      phrase='*** UPGRADING MASTER NODE'
-                                             ' DONE SUCCESSFULLY')
-        checkers.check_upgraded_containers(self.env.d_env.get_admin_remote(),
-                                           hlp_data.UPGRADE_FUEL_FROM,
-                                           hlp_data.UPGRADE_FUEL_TO)
+
+        # do upgrade
+        with self.env.d_env.get_admin_remote() as admin_remote:
+            self.do_upgrade(admin_remote,
+                               upgrade_tarball_path=hlp_data.TARBALL_PATH,
+                               remote_workdir = '/var')
+            checkers.check_upgraded_containers(admin_remote,
+                                               hlp_data.UPGRADE_FUEL_FROM,
+                                               hlp_data.UPGRADE_FUEL_TO)
+
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:3])
@@ -432,17 +426,18 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             release_name=hlp_data.OPENSTACK_RELEASE)
         added_release = [id for id in available_releases_after
                          if id not in available_releases_before]
+
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
+
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[3:9])
-        segment_type = 'vlan'
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=hlp_data.DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": segment_type
+                "net_segment_type": 'vlan'
             },
             release_id=added_release[0]
         )
@@ -462,13 +457,14 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         cluster = self.fuel_web.client.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
-            _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
-            remote = self.env.d_env.get_ssh_to_remote(_ip)
-            kernel = self.get_slave_kernel(remote)
+            with self.env.d_env.get_ssh_to_remote('slave-04') as slave04_remote:
+                kernel = self.get_slave_kernel(slave04_remote)
             logger.debug("ubuntu kernel version"
                          " on new node is {}".format(kernel))
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
+
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
         self.env.make_snapshot("deploy_ha_after_upgrade")
 
     @test(groups=["upgrade_fuel_after_rollback",
@@ -495,26 +491,18 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 
         available_releases_before = self.fuel_web.get_releases_list_for_os(
             release_name=hlp_data.OPENSTACK_RELEASE)
-
-        remote = self.env.d_env.get_admin_remote
-
         cluster_id = self.fuel_web.get_last_created_cluster()
-        checkers.upload_tarball(remote(), hlp_data.TARBALL_PATH, '/var')
-        checkers.check_file_exists(remote(),
-                                   os.path.join('/var',
-                                                os.path.basename(
-                                                    hlp_data.TARBALL_PATH)))
-        checkers.untar(remote(), os.path.basename(hlp_data.TARBALL_PATH),
-                       '/var')
 
-        # Upgrade with rollback
-        keystone_pass = hlp_data.KEYSTONE_CREDS['password']
-        checkers.run_script(remote(), '/var', 'upgrade.sh',
-                            password=keystone_pass, rollback=True,
-                            exit_code=255)
-        checkers.wait_rollback_is_done(remote(), 3000)
-        checkers.check_upgraded_containers(remote(), hlp_data.UPGRADE_FUEL_TO,
-                                           hlp_data.UPGRADE_FUEL_FROM)
+        # do upgrade with rollback
+        with self.env.d_env.get_admin_remote() as admin_remote:
+            self.do_upgrade(admin_remote,
+                               upgrade_tarball_path=hlp_data.TARBALL_PATH,
+                               remote_workdir = '/var',
+                               rollback=True)
+            checkers.check_upgraded_containers(admin_remote,
+                                               hlp_data.UPGRADE_FUEL_TO,
+                                               hlp_data.UPGRADE_FUEL_FROM)
+
         logger.debug("all containers are ok")
         _wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.nodes().slaves[0]), timeout=8 * 60)
@@ -526,20 +514,23 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id)
 
-        # Upgrade fuel master
-        checkers.run_script(remote(), '/var', 'upgrade.sh',
-                            password=keystone_pass)
-        checkers.wait_upgrade_is_done(remote(), 3000,
-                                      phrase='*** UPGRADING MASTER NODE'
-                                             ' DONE SUCCESSFULLY')
-        checkers.check_upgraded_containers(remote(),
-                                           hlp_data.UPGRADE_FUEL_FROM,
-                                           hlp_data.UPGRADE_FUEL_TO)
+        # do upgrade
+        with self.env.d_env.get_admin_remote() as admin_remote:
+            self.do_upgrade(admin_remote,
+                               upgrade_tarball_path=hlp_data.TARBALL_PATH,
+                               remote_workdir = '/var')
+            checkers.check_upgraded_containers(admin_remote,
+                                               hlp_data.UPGRADE_FUEL_FROM,
+                                               hlp_data.UPGRADE_FUEL_TO)
+
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:3])
         self.fuel_web.assert_nailgun_upgrade_migration()
+
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id)
 
         # Deploy new cluster
         available_releases_after = self.fuel_web.get_releases_list_for_os(
@@ -568,8 +559,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         )
         self.fuel_web.run_network_verify(new_cluster_id)
         self.fuel_web.deploy_cluster_wait(new_cluster_id)
-        self.fuel_web.run_ostf(new_cluster_id)
         self.fuel_web.run_network_verify(new_cluster_id)
+        self.fuel_web.run_ostf(new_cluster_id)
 
         self.env.make_snapshot("upgrade_fuel_after_rollback")
 
@@ -600,24 +591,17 @@ class RollbackFuelMaster(base_test_data.TestBasic):
 
         self.env.revert_snapshot("deploy_neutron_gre_ha")
         cluster_id = self.fuel_web.get_last_created_cluster()
-        checkers.upload_tarball(self.env.d_env.get_admin_remote(),
-                                hlp_data.TARBALL_PATH, '/var')
-        checkers.check_file_exists(self.env.d_env.get_admin_remote(),
-                                   os.path.join('/var',
-                                                os.path.basename(
-                                                    hlp_data.TARBALL_PATH)))
-        checkers.untar(self.env.d_env.get_admin_remote(),
-                       os.path.basename(hlp_data.
-                                        TARBALL_PATH), '/var')
-        checkers.run_script(self.env.d_env.get_admin_remote(),
-                            '/var',
-                            'upgrade.sh',
-                            password=hlp_data.KEYSTONE_CREDS['password'],
-                            rollback=True, exit_code=255)
-        checkers.wait_rollback_is_done(self.env.d_env.get_admin_remote(), 3000)
-        checkers.check_upgraded_containers(self.env.d_env.get_admin_remote(),
-                                           hlp_data.UPGRADE_FUEL_TO,
-                                           hlp_data.UPGRADE_FUEL_FROM)
+
+        # do upgrade with rollback
+        with self.env.d_env.get_admin_remote() as admin_remote:
+            UpgradeFuelMaster.do_upgrade(admin_remote,
+                               upgrade_tarball_path=hlp_data.TARBALL_PATH,
+                               remote_workdir = '/var',
+                               rollback=True)
+            checkers.check_upgraded_containers(admin_remote,
+                                               hlp_data.UPGRADE_FUEL_TO,
+                                               hlp_data.UPGRADE_FUEL_FROM)
+
         logger.debug("all containers are ok")
         _wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.nodes().slaves[0]), timeout=8 * 60)
@@ -626,6 +610,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             self.env.d_env.nodes().slaves[:5])
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_FROM)
+
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
@@ -636,6 +621,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             True, False
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("rollback_automatically_ha")
@@ -664,30 +650,19 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         self.env.revert_snapshot('ceph_ha_one_controller_compact')
         cluster_id = self.fuel_web.get_last_created_cluster()
 
-        _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
-        remote = self.env.d_env.get_ssh_to_remote(_ip)
-        expected_kernel = UpgradeFuelMaster.get_slave_kernel(remote)
+        with self.env.d_env.get_ssh_to_node('slave-01') as slave01_remote:
+            expected_kernel = UpgradeFuelMaster.get_slave_kernel(slave01_remote)
 
-        checkers.upload_tarball(self.env.d_env.get_admin_remote(),
-                                hlp_data.TARBALL_PATH, '/var')
-        checkers.check_file_exists(self.env.d_env.get_admin_remote(),
-                                   os.path.join('/var',
-                                                os.path.basename(
-                                                    hlp_data.TARBALL_PATH)))
-        checkers.untar(self.env.d_env.get_admin_remote(),
-                       os.path.basename(hlp_data.
-                                        TARBALL_PATH), '/var')
-        # we expect 255 exit code here because upgrade failed
-        # and exit status is 255
-        checkers.run_script(self.env.d_env.get_admin_remote(),
-                            '/var',
-                            'upgrade.sh',
-                            password=hlp_data.KEYSTONE_CREDS['password'],
-                            rollback=True, exit_code=255)
-        checkers.wait_rollback_is_done(self.env.d_env.get_admin_remote(), 3000)
-        checkers.check_upgraded_containers(self.env.d_env.get_admin_remote(),
-                                           hlp_data.UPGRADE_FUEL_TO,
-                                           hlp_data.UPGRADE_FUEL_FROM)
+        # do upgrade with rollback
+        with self.env.d_env.get_admin_remote() as admin_remote:
+            UpgradeFuelMaster.do_upgrade(admin_remote,
+                               upgrade_tarball_path=hlp_data.TARBALL_PATH,
+                               remote_workdir = '/var',
+                               rollback=True)
+            checkers.check_upgraded_containers(admin_remote,
+                                               hlp_data.UPGRADE_FUEL_TO,
+                                               hlp_data.UPGRADE_FUEL_FROM)
+
         logger.debug("all containers are ok")
         _wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.nodes().slaves[0]), timeout=8 * 60)
@@ -696,8 +671,10 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             self.env.d_env.nodes().slaves[:3])
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_FROM)
+
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
+
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[3:4])
         self.fuel_web.update_nodes(
@@ -705,11 +682,13 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             True, False
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
+
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
-            _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
-            remote = self.env.d_env.get_ssh_to_remote(_ip)
-            kernel = UpgradeFuelMaster.get_slave_kernel(remote)
+            with self.env.d_env.get_ssh_to_node('slave-04') as slave04_remote:
+                kernel = UpgradeFuelMaster.get_slave_kernel(slave04_remote)
             checkers.check_kernel(kernel, expected_kernel)
+
+        self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("rollback_automatically_ha_one_controller")
@@ -737,28 +716,19 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             raise SkipTest()
 
         self.env.revert_snapshot("deploy_neutron_gre")
+
         cluster_id = self.fuel_web.get_last_created_cluster()
 
-        checkers.upload_tarball(self.env.d_env.get_admin_remote(),
-                                hlp_data.TARBALL_PATH, '/var')
-        checkers.check_file_exists(self.env.d_env.get_admin_remote(),
-                                   os.path.join('/var',
-                                                os.path.basename(
-                                                    hlp_data.TARBALL_PATH)))
-        checkers.untar(self.env.d_env.get_admin_remote(),
-                       os.path.basename(hlp_data.
-                                        TARBALL_PATH), '/var')
-        # we expect 255 exit code here because upgrade failed
-        # and exit status is 255
-        checkers.run_script(self.env.d_env.get_admin_remote(),
-                            '/var',
-                            'upgrade.sh',
-                            password=hlp_data.KEYSTONE_CREDS['password'],
-                            rollback=True, exit_code=255)
-        checkers.wait_rollback_is_done(self.env.d_env.get_admin_remote(), 3000)
-        checkers.check_upgraded_containers(self.env.d_env.get_admin_remote(),
-                                           hlp_data.UPGRADE_FUEL_TO,
-                                           hlp_data.UPGRADE_FUEL_FROM)
+        # do upgrade with rollback
+        with self.env.d_env.get_admin_remote() as admin_remote:
+            UpgradeFuelMaster.do_upgrade(admin_remote,
+                               upgrade_tarball_path=hlp_data.TARBALL_PATH,
+                               remote_workdir = '/var',
+                               rollback=True)
+            checkers.check_upgraded_containers(admin_remote,
+                                               hlp_data.UPGRADE_FUEL_TO,
+                                               hlp_data.UPGRADE_FUEL_FROM)
+
         logger.debug("all containers are ok")
         _wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.nodes().slaves[0]), timeout=8 * 60)
@@ -767,8 +737,10 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             self.env.d_env.nodes().slaves[:3])
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_FROM)
+
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
+
         nailgun_nodes = self.fuel_web.update_nodes(
             cluster_id, {'slave-03': ['compute', 'cinder']}, False, True)
         task = self.fuel_web.deploy_cluster(cluster_id)
@@ -781,6 +753,8 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             assert_true(len(self.fuel_web.client.list_nodes()) == 3,
                         'Node {0} is not discovered in timeout 10 *60'.format(
                             nodes[0]))
+
+        self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
 
         self.env.make_snapshot("rollback_automatically_delete_node")

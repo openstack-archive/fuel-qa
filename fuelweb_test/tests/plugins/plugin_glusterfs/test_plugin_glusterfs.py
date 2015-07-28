@@ -68,8 +68,7 @@ class GlusterfsPlugin(TestBasic):
         self.env.revert_snapshot("ready_with_3_slaves")
 
         # copy plugin to the master node
-
-        checkers.upload_tarball(
+        checkers.upload_file(
             self.env.d_env.get_admin_remote(), GLUSTER_PLUGIN_PATH, '/var')
 
         # install plugin
@@ -154,8 +153,7 @@ class GlusterfsPlugin(TestBasic):
         self.env.revert_snapshot("ready_with_5_slaves")
 
         # copy plugin to the master node
-
-        checkers.upload_tarball(
+        checkers.upload_file(
             self.env.d_env.get_admin_remote(), GLUSTER_PLUGIN_PATH, '/var')
 
         # install plugin

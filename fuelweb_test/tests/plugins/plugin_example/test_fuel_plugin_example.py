@@ -53,8 +53,8 @@ class ExamplePlugin(TestBasic):
         self.env.revert_snapshot("ready_with_3_slaves")
 
         # copy plugin to the master node
-
-        checkers.upload_tarball(
+        checkers.check_archive_type(EXAMPLE_PLUGIN_PATH)
+        checkers.upload_file(
             self.env.d_env.get_admin_remote(),
             EXAMPLE_PLUGIN_PATH, '/var')
 
@@ -141,7 +141,8 @@ class ExamplePlugin(TestBasic):
 
         with self.env.d_env.get_admin_remote() as admin_remote:
             # copy plugin to the master node
-            checkers.upload_tarball(
+            checkers.check_archive_type(EXAMPLE_PLUGIN_V3_PATH)
+            checkers.upload_file(
                 admin_remote,
                 EXAMPLE_PLUGIN_V3_PATH,
                 '/var')
@@ -277,8 +278,8 @@ class ExamplePlugin(TestBasic):
         self.env.revert_snapshot("ready_with_5_slaves")
 
         # copy plugin to the master node
-
-        checkers.upload_tarball(
+        checkers.check_archive_type(EXAMPLE_PLUGIN_PATH)
+        checkers.upload_file(
             self.env.d_env.get_admin_remote(), EXAMPLE_PLUGIN_PATH, '/var')
 
         # install plugin
@@ -365,8 +366,8 @@ class ExamplePlugin(TestBasic):
         self.env.revert_snapshot("ready_with_5_slaves")
 
         # copy plugin to the master node
-
-        checkers.upload_tarball(
+        checkers.check_archive_type(EXAMPLE_PLUGIN_PATH)
+        checkers.upload_file(
             self.env.d_env.get_admin_remote(), EXAMPLE_PLUGIN_PATH, '/var')
 
         # install plugin
