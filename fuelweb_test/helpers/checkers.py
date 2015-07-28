@@ -860,7 +860,12 @@ def check_oswl_stat(postgres_actions, remote_collector, master_uid,
     for resource in resources:
         q = "select resource_data from oswl_stats where" \
             " resource_type = '\"'\"'{0}'\"'\"';".format(resource)
-        resource_data = json.loads(postgres_actions.run_query('nailgun', q))
+        q_result = postgres_actions.run_query('nailgun', q)
+        assert_true(q_result.strip() is not None,
+                    "Resource {0} is absent in 'oswl_stats' table, "
+                    "please check /var/log/docker-logs/nailgun/oswl_{0}"
+                    "_collectord.log for details.".format(resource))
+        resource_data = json.loads(q_result)
 
         logger.debug('db return {0}'.format(resource_data))
         assert_true(len(resource_data['added']) >
