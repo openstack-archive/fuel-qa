@@ -36,7 +36,10 @@ ADMIN_BOOT_DEVICE = os.environ.get('ADMIN_BOOT_DEVICE', 'cdrom')
 DNS = os.environ.get('DNS', '8.8.8.8')
 PUBLIC_TEST_IP = os.environ.get('PUBLIC_TEST_IP', '8.8.8.8')
 
-DISABLE_SSL = get_var_as_bool('DISABLE_SSL', True)
+DISABLE_SSL = get_var_as_bool('DISABLE_SSL', False)
+USER_OWNED_CERT = get_var_as_bool('USER_OWNED_CERT', True)
+PATH_TO_CERT = os.environ.get('PATH_TO_CERT', '/tmp/ca.crt')
+PATH_TO_PEM = os.environ.get('PATH_TO_PEM', '/tmp/ca.pem')
 
 OPENSTACK_RELEASE_CENTOS = 'centos'
 OPENSTACK_RELEASE_UBUNTU = 'ubuntu'
@@ -260,10 +263,11 @@ SERVTEST_USERNAME = os.environ.get('SERVTEST_USERNAME', 'admin')
 SERVTEST_PASSWORD = os.environ.get('SERVTEST_PASSWORD', SERVTEST_USERNAME)
 SERVTEST_TENANT = os.environ.get('SERVTEST_TENANT', SERVTEST_USERNAME)
 
-SERVTEST_SAHARA_VANILLA_2_IMAGE = 'sahara-kilo-vanilla-2.6-ubuntu-14.04.qcow2'
-SERVTEST_SAHARA_VANILLA_2_IMAGE_NAME = 'sahara-kilo-vanilla-2.6-ubuntu-14.04'
-SERVTEST_SAHARA_VANILLA_2_IMAGE_MD5 = 'ebfc24a111740acddce713a991bd5607'
-SERVTEST_SAHARA_VANILLA_2_IMAGE_META = {'_sahara_tag_2.6.0': 'True',
+SERVTEST_SAHARA_VANILLA_2_IMAGE = ('sahara-juno-vanilla-'
+                                   '2.4.1-ubuntu-14.04.qcow2')
+SERVTEST_SAHARA_VANILLA_2_IMAGE_NAME = 'sahara-juno-vanilla-2.4.1-ubuntu-14.04'
+SERVTEST_SAHARA_VANILLA_2_IMAGE_MD5 = 'e32bef0d3bc4b2c906f5499e14f9b377'
+SERVTEST_SAHARA_VANILLA_2_IMAGE_META = {'_sahara_tag_2.4.1': 'True',
                                         '_sahara_tag_vanilla': 'True',
                                         '_sahara_username': 'ubuntu'}
 
