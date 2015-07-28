@@ -248,8 +248,8 @@ class TestHaNeutronFailover(TestHaFailoverBase):
            when corosync service on node dies
 
         Scenario:
-            1. SSH to first controller and make master_p_rabbitmq-server
-               resource unmanaged
+            1. SSH to first controller and put corosync cluster to
+               maint mode: crm configure property maintenance-mode=true
             2. Stop corosync service on first controller
             3. Check on master node that rabbit-fence.log contains
                Ignoring alive node rabbit@node-1
@@ -271,8 +271,8 @@ class TestHaNeutronFailover(TestHaFailoverBase):
            when corosync service on node dies
 
         Scenario:
-            1. SSH to first controller and make master_p_rabbitmq-server
-               resource unmanaged
+            1. SSH to first controller and put corosync cluster to
+               maint mode: crm configure property maintenance-mode=true
             2. Stop rabbit and corosync service on first controller
             3. Check on master node that rabbit-fence.log contains
                Disconnecting rabbit@node-1
@@ -513,8 +513,8 @@ class TestHaNovaFailover(TestHaFailoverBase):
            when corosync service on node dies
 
         Scenario:
-            1. SSH to first controller and make master_p_rabbitmq-server
-               resource unmanaged
+            1. SSH to first controller and put corosync cluster to
+               maint mode: crm configure property maintenance-mode=true
             2. Stop corosync service on first controller
             3. Check on master node that rabbit-fence.log contains
                Ignoring alive node rabbit@node-1
@@ -536,8 +536,8 @@ class TestHaNovaFailover(TestHaFailoverBase):
            when corosync service on node dies
 
         Scenario:
-            1. SSH to first controller and make master_p_rabbitmq-server
-               resource unmanaged
+            1. SSH to first controller and put corosync cluster to
+               maint mode: crm configure property maintenance-mode=true
             2. Stop rabbit and corosync service on first controller
             3. Check on master node that rabbit-fence.log contains
                Disconnecting rabbit@node-1
