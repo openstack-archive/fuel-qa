@@ -794,8 +794,7 @@ class TestHaFailoverBase(TestBasic):
 
         pcm_nodes.remove(slave1_name)
 
-        slave1_remote.execute('pcs resource unmanage'
-                              ' master_p_rabbitmq-server')
+        slave1_remote.execute('crm configure property maintenance-mode=true')
         slave1_remote.execute('service corosync stop')
 
         remote = self.env.d_env.get_admin_remote()
@@ -862,7 +861,7 @@ class TestHaFailoverBase(TestBasic):
 
         pcm_nodes.remove(slave1_name)
 
-        slave1_remote.execute('pcs resource unmanage master_p_rabbitmq-server')
+        slave1_remote.execute('crm configure property maintenance-mode=true')
         slave1_remote.execute('rabbitmqctl stop_app')
         slave1_remote.execute('service corosync stop')
 
