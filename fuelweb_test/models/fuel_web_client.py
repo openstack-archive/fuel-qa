@@ -47,7 +47,6 @@ from fuelweb_test import ostf_test_mapping as map_ostf
 from fuelweb_test.settings import ATTEMPTS
 from fuelweb_test.settings import BONDING
 from fuelweb_test.settings import DNS_SUFFIX
-from fuelweb_test.settings import DEPLOYMENT_MODE_SIMPLE
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
 from fuelweb_test.settings import KVM_USE
 from fuelweb_test.settings import MULTIPLE_NETWORKS
@@ -367,7 +366,7 @@ class FuelWebClient(object):
                        name,
                        settings=None,
                        release_name=help_data.OPENSTACK_RELEASE,
-                       mode=DEPLOYMENT_MODE_SIMPLE,
+                       mode=DEPLOYMENT_MODE_HA,
                        port=514,
                        release_id=None,
                        vcenter_value=None, ):
