@@ -367,7 +367,7 @@ class FuelWebClient(object):
                        name,
                        settings=None,
                        release_name=help_data.OPENSTACK_RELEASE,
-                       mode=DEPLOYMENT_MODE_SIMPLE,
+                       mode=DEPLOYMENT_MODE_HA,
                        port=514,
                        release_id=None,
                        vcenter_value=None, ):
