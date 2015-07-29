@@ -471,20 +471,6 @@ class FuelWebClient(object):
                 hpv_data = attributes['editable']['common']['use_vcenter']
                 hpv_data['value'] = True
 
-            if (help_data.OPENSTACK_RELEASE_UBUNTU in
-                    help_data.OPENSTACK_RELEASE and
-                    'repo_setup' in attributes['editable']):
-
-                repos_attr = attributes['editable']['repo_setup']['repos']
-                repos_attr['value'] = self.replace_ubuntu_repos(repos_attr)
-
-            elif (help_data.OPENSTACK_RELEASE_CENTOS in
-                  help_data.OPENSTACK_RELEASE and
-                  'repo_setup' in attributes['editable']):
-
-                repos_attr = attributes['editable']['repo_setup']['repos']
-                repos_attr['value'] = self.replace_centos_repos(repos_attr)
-
             logger.debug("Try to update cluster "
                          "with next attributes {0}".format(attributes))
             self.client.update_cluster_attributes(cluster_id, attributes)
@@ -639,6 +625,16 @@ class FuelWebClient(object):
 
         self.report_centos_repos(repos)
         return repos
+
+    def report_repos(self, cluster_id, release=help_data.OPENSTACK_RELEASE):
+        """Show list of reposifories for specified cluster"""
+        attributes = self.client.get_cluster_attributes(cluster_id)
+        repos_attr = attributes['editable']['repo_setup']['repos']
+
+        if help_data.OPENSTACK_RELEASE_UBUNTU in release:
+            self.report_ubuntu_repos(repos_attr['value'])
+        else:
+            self.report_centos_repos(repos_attr['value'])
 
     def report_ubuntu_repos(self, repos):
         for x, rep in enumerate(repos):
