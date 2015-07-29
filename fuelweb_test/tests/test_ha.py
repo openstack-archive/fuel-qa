@@ -318,7 +318,7 @@ class TestHaFlatAddCompute(TestBasic):
         self.env.make_snapshot("ha_flat_add_compute")
 
 
-@test(groups=["thread_4", "ha"])
+@test(groups=["ha_scalability", "ha"])
 class TestHaFlatScalability(TestBasic):
     """TestHaFlatScalability."""  # TODO documentation
 
