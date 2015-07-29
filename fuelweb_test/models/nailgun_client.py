@@ -215,6 +215,13 @@ class NailgunClient(object):
         )
 
     @logwrap
+    def clone_ips(self, cluster_id):
+        return self.client.post(
+            "/api/clusters/{}/upgrade/clone_ips".format(cluster_id),
+            data=None
+        )
+
+    @logwrap
     @json_parse
     def create_cluster(self, data):
         logger.info('Before post to nailgun')
