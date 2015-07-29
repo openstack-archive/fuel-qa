@@ -84,6 +84,7 @@ def import_tests():
     from tests import test_cli  # noqa
     from tests import test_custom_hostname  # noqa
     from tests import test_jumbo_frames  # noqa
+    from tests import test_node_reinstallation  # noqa
 
 
 def run_tests():
