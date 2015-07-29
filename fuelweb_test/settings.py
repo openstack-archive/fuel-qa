@@ -328,8 +328,6 @@ UBUNTU_RELEASE = os.environ.get('UBUNTU_RELEASE', 'precise')
 
 UPDATE_TIMEOUT = os.environ.get('UPDATE_TIMEOUT', 3600)
 
-CLASSIC_PROVISIONING = get_var_as_bool('CLASSIC_PROVISIONING', False)
-
 
 # Plugin path for plugins tests
 

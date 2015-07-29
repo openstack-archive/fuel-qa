@@ -432,9 +432,6 @@ class FuelWebClient(object):
                 if section:
                     attributes['editable'][section][option]['value'] =\
                         settings[option]
-            if help_data.CLASSIC_PROVISIONING:
-                attributes['editable']['provision']['method']['value'] = \
-                    'cobbler'
             if help_data.DISABLE_SSL:
                 attributes['editable']['public_ssl']['services'][
                     'value'] = False
