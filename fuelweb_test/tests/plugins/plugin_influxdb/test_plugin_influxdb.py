@@ -32,6 +32,7 @@ import requests
 
 @test(groups=["plugins"])
 class TestInfluxdbPlugin(TestBasic):
+    """Class for testing the InfluxDB-Grafana plugin."""
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_influxdb_grafana"])

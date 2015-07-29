@@ -114,6 +114,11 @@ Contrail tests
 .. automodule:: fuelweb_test.tests.plugins.plugin_contrail.test_fuel_plugin_contrail
    :members:
 
+Elasticsearch-Kibana tests
+--------------------------
+.. automodule:: fuelweb_test.tests.plugins.plugin_elasticsearch.test_plugin_elasticsearch
+   :members:
+
 Emc tests
 ---------
 .. automodule:: fuelweb_test.tests.plugins.plugin_emc.test_plugin_emc
@@ -124,9 +129,19 @@ Glusterfs tests
 .. automodule:: fuelweb_test.tests.plugins.plugin_glusterfs.test_plugin_glusterfs
    :members:
 
+InfluxDB-Grafana tests
+----------------------
+.. automodule:: fuelweb_test.tests.plugins.plugin_influxdb.test_plugin_influxdb
+   :members:
+
 Lbaas tests
 -----------
 .. automodule:: fuelweb_test.tests.plugins.plugin_lbaas.test_plugin_lbaas
+   :members:
+
+LMA collector tests
+-------------------
+.. automodule:: fuelweb_test.tests.plugins.plugin_lma_collector.test_plugin_lma_collector
    :members:
 
 Reboot tests

@@ -32,6 +32,7 @@ import requests
 
 @test(groups=["plugins"])
 class TestElasticsearchPlugin(TestBasic):
+    """Class for testing the Elasticsearch-Kibana plugin."""
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_elasticsearch_kibana"])
