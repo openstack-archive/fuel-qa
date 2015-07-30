@@ -58,29 +58,28 @@ class TestLmaCollectorPlugin(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        # copy plugins to the master node
+        with self.env.d_env.get_admin_remote() as remote:
+            # copy plugins to the master node
+            checkers.upload_tarball(
+                remote,
+                conf.LMA_COLLECTOR_PLUGIN_PATH, "/var")
+            checkers.upload_tarball(
+                remote,
+                conf.ELASTICSEARCH_KIBANA_PLUGIN_PATH, "/var")
+            checkers.upload_tarball(
+                remote,
+                conf.INFLUXDB_GRAFANA_PLUGIN_PATH, "/var")
 
-        checkers.upload_tarball(
-            self.env.d_env.get_admin_remote(),
-            conf.LMA_COLLECTOR_PLUGIN_PATH, "/var")
-        checkers.upload_tarball(
-            self.env.d_env.get_admin_remote(),
-            conf.ELASTICSEARCH_KIBANA_PLUGIN_PATH, "/var")
-        checkers.upload_tarball(
-            self.env.d_env.get_admin_remote(),
-            conf.INFLUXDB_GRAFANA_PLUGIN_PATH, "/var")
-
-        # install plugins
-
-        checkers.install_plugin_check_code(
-            self.env.d_env.get_admin_remote(),
-            plugin=os.path.basename(conf.LMA_COLLECTOR_PLUGIN_PATH))
-        checkers.install_plugin_check_code(
-            self.env.d_env.get_admin_remote(),
-            plugin=os.path.basename(conf.ELASTICSEARCH_KIBANA_PLUGIN_PATH))
-        checkers.install_plugin_check_code(
-            self.env.d_env.get_admin_remote(),
-            plugin=os.path.basename(conf.INFLUXDB_GRAFANA_PLUGIN_PATH))
+            # install plugins
+            checkers.install_plugin_check_code(
+                remote,
+                plugin=os.path.basename(conf.LMA_COLLECTOR_PLUGIN_PATH))
+            checkers.install_plugin_check_code(
+                remote,
+                plugin=os.path.basename(conf.ELASTICSEARCH_KIBANA_PLUGIN_PATH))
+            checkers.install_plugin_check_code(
+                remote,
+                plugin=os.path.basename(conf.INFLUXDB_GRAFANA_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,

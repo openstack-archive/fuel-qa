@@ -299,9 +299,8 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-03")['ip']
-        remote = self.env.d_env.get_ssh_to_remote(_ip)
-
-        result = remote.execute('readlink /etc/astute.yaml')['stdout']
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            result = remote.execute('readlink /etc/astute.yaml')['stdout']
 
         assert_true("base-os" in result[0],
                     "Role mismatch. Node slave-03 is not base-os")
@@ -970,6 +969,8 @@ class ProvisioningScripts(TestBasic):
                 zero_length_files.append(f_name)
             full_path = os.path.join(self.base_path, f_name)
             logger.info("File %s has size %s", full_path, file_size)
+
+        remote.clear()
 
         return zero_length_files
 
