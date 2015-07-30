@@ -56,17 +56,16 @@ class TestElasticsearchPlugin(TestBasic):
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        # copy plugin to the master node
+        with self.env.d_env.get_admin_remote() as remote:
+            # copy plugin to the master node
+            checkers.upload_tarball(
+                remote,
+                ELASTICSEARCH_KIBANA_PLUGIN_PATH, '/var')
 
-        checkers.upload_tarball(
-            self.env.d_env.get_admin_remote(),
-            ELASTICSEARCH_KIBANA_PLUGIN_PATH, '/var')
-
-        # install plugin
-
-        checkers.install_plugin_check_code(
-            self.env.d_env.get_admin_remote(),
-            plugin=os.path.basename(ELASTICSEARCH_KIBANA_PLUGIN_PATH))
+            # install plugin
+            checkers.install_plugin_check_code(
+                remote,
+                plugin=os.path.basename(ELASTICSEARCH_KIBANA_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
