@@ -18,7 +18,6 @@ from proboscis import test
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers import http
-from fuelweb_test.helpers import os_actions
 from fuelweb_test import settings as hlp
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -54,19 +53,15 @@ class HAOneControllerZabbix(TestBasic):
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        node_ssh = self.env.d_env.get_ssh_to_remote(
-            self.fuel_web.admin_node_ip)
+        with self.env.d_env.get_admin_remote() as admin_remote:
+            # Turn on experimental mode
+            checkers.check_enable_experimental_mode(
+                admin_remote, '/etc/fuel/version.yaml')
 
-        # Turn on experimental mode
-        checkers.check_enable_experimental_mode(
-            node_ssh, '/etc/fuel/version.yaml')
-
-        # restart nailgun
-
-        checkers.restart_nailgun(node_ssh)
+            # restart nailgun
+            checkers.restart_nailgun(admin_remote)
 
         # check if zabbix role appears
-
         self.fuel_web.assert_release_role_present(
             release_name=hlp.OPENSTACK_RELEASE,
             role_name='zabbix-server')
@@ -77,7 +72,9 @@ class HAOneControllerZabbix(TestBasic):
             settings={
                 'tenant': 'admin',
                 'user': 'admin',
-                'password': 'admin'
+                'password': 'admin',
+                'net_provider': 'neutron',
+                'net_segment_type': hlp.NEUTRON_SEGMENT_TYPE,
             }
         )
         self.fuel_web.update_nodes(
@@ -89,15 +86,9 @@ class HAOneControllerZabbix(TestBasic):
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id))
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=6, networks_count=1, timeout=300)
 
         self.fuel_web.verify_network(cluster_id)
-
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         # login in dashboard
         node_ip = self.fuel_web.get_nailgun_node_by_devops_node(
