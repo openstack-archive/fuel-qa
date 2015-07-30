@@ -55,10 +55,10 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["non_functional",
-                  "deploy_ha_one_controller_flat_master_node_fail"])
+                  "deploy_ha_one_controller_neutron_master_node_fail"])
     @log_snapshot_after_test
-    def deploy_ha_one_controller_flat_master_node_fail(self):
-        """Deploy HA cluster with nova-network and check it without master node
+    def deploy_ha_one_controller_neutron_master_node_fail(self):
+        """Deploy HA cluster with neutron and check it without master node
 
         Scenario:
             1. Create cluster in ha mode with 1 controller
@@ -79,7 +79,11 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=settings.DEPLOYMENT_MODE
+            mode=settings.DEPLOYMENT_MODE,
+            settings={
+                'net_provider': 'neutron',
+                'net_segment_type': settings.NEUTRON_SEGMENT_TYPE
+            }
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -90,9 +94,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
         controller_ip = self.fuel_web.get_public_vip(cluster_id)
-        os_conn = os_actions.OpenStackActions(controller_ip)
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=6, networks_count=1, timeout=300)
+        self.fuel_web.assert_os_services_ready(cluster_id)
 
         self.fuel_web.verify_network(cluster_id)
         logger.info('PASS DEPLOYMENT')
@@ -131,7 +133,8 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         finally:
             self.resume_admin_node()
 
-        self.env.make_snapshot("deploy_flat_master_node_destroy")
+        self.env.make_snapshot(
+            "deploy_ha_one_controller_neutron_master_node_fail")
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha_dns_ntp"])
