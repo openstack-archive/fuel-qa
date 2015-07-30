@@ -431,10 +431,8 @@ class EnvironmentModel(object):
 
     def verify_network_configuration(self, node_name):
         node = self.fuel_web.get_nailgun_node_by_name(node_name)
-        checkers.verify_network_configuration(
-            node=node,
-            remote=self.d_env.get_ssh_to_remote(node['ip'])
-        )
+        with self.fuel_web.get_ssh_for_node(node_name) as ssh:
+            checkers.verify_network_configuration(node=node, remote=ssh)
 
     def wait_bootstrap(self):
         logger.info("Waiting while bootstrapping is in progress")
