@@ -130,10 +130,10 @@ class PatchingTests(TestBasic):
         for repo in patching_repos:
             patching.connect_slaves_to_repo(self.env, slaves, repo)
         if settings.PATCHING_MASTER_MIRRORS:
-            for repo in patching_master_repos:
-                remote = self.env.d_env.get_admin_remote()
-                install_pkg(remote, 'yum-utils')
-                patching.connect_admin_to_repo(self.env, repo)
+            with self.env.d_env.get_admin_remote() as remote:
+                for repo in patching_master_repos:
+                    install_pkg(remote, 'yum-utils')
+                    patching.connect_admin_to_repo(self.env, repo)
 
         # Step #5
         if settings.LATE_ARTIFACTS_JOB_URL:
@@ -219,9 +219,10 @@ class PatchingTests(TestBasic):
                                    test_sets=['smoke', 'ha'])
 
             if "ceph-osd" in roles:
-                remote_ceph = self.fuel_web.get_ssh_for_node(
-                    'slave-0{}'.format(number_of_nodes + 1))
-                self.fuel_web.prepare_ceph_to_delete(remote_ceph)
+                with self.fuel_web.get_ssh_for_node(
+                        'slave-0{}'.format(number_of_nodes + 1)
+                ) as remote_ceph:
+                    self.fuel_web.prepare_ceph_to_delete(remote_ceph)
 
             nailgun_node = self.fuel_web.update_nodes(
                 cluster_id, node, False, True)
@@ -302,8 +303,8 @@ class PatchingMasterTests(TestBasic):
                                         '" failed.'.format(self.snapshot_name))
 
         # Step #1
-        remote = self.env.d_env.get_admin_remote()
-        install_pkg(remote, 'yum-utils')
+        with self.env.d_env.get_admin_remote() as remote:
+            install_pkg(remote, 'yum-utils')
         patching_repos = patching.add_remote_repositories(
             self.env, settings.PATCHING_MASTER_MIRRORS)
 
@@ -377,9 +378,10 @@ class PatchingMasterTests(TestBasic):
                                        test_sets=['smoke', 'ha'])
 
                 if "ceph-osd" in roles:
-                    remote_ceph = self.fuel_web.get_ssh_for_node(
-                        'slave-0{}'.format(number_of_nodes + 1))
-                    self.fuel_web.prepare_ceph_to_delete(remote_ceph)
+                    with self.fuel_web.get_ssh_for_node(
+                            'slave-0{}'.format(number_of_nodes + 1)
+                    ) as remote:
+                        self.fuel_web.prepare_ceph_to_delete(remote)
                 nailgun_node = self.fuel_web.update_nodes(
                     cluster_id, node, False, True)
                 nodes = filter(

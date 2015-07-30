@@ -104,17 +104,16 @@ class EMCPlugin(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        # copy plugin to the master node
+        with self.env.d_env.get_admin_remote() as remote:
+            # copy plugin to the master node
+            checkers.upload_tarball(
+                remote,
+                CONF.EMC_PLUGIN_PATH, '/var')
 
-        checkers.upload_tarball(
-            self.env.d_env.get_admin_remote(),
-            CONF.EMC_PLUGIN_PATH, '/var')
-
-        # install plugin
-
-        checkers.install_plugin_check_code(
-            self.env.d_env.get_admin_remote(),
-            plugin=os.path.basename(CONF.EMC_PLUGIN_PATH))
+            # install plugin
+            checkers.install_plugin_check_code(
+                remote,
+                plugin=os.path.basename(CONF.EMC_PLUGIN_PATH))
 
         settings = None
 
@@ -200,6 +199,10 @@ class EMCPlugin(TestBasic):
 
         cinder_volume_comps = [self.check_service(compute, "cinder-volume")
                                for compute in compute_remotes]
+        # closing connections
+        [remote.clear() for remote in controller_remotes]
+        [remote.clear() for remote in compute_remotes]
+
         asserts.assert_equal(sum(cinder_volume_comps), 0,
                              "Cluster has active cinder-volume on compute")
 
