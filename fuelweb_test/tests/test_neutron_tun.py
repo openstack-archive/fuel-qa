@@ -437,8 +437,6 @@ class BackupRestoreHa(TestBasic):
 
         with self.env.d_env.get_admin_remote() as remote:
             self.fuel_web.backup_master(remote)
-
-        with self.env.d_env.get_admin_remote() as remote:
             checkers.backup_check(remote)
 
         self.env.bootstrap_nodes(
@@ -452,14 +450,8 @@ class BackupRestoreHa(TestBasic):
 
         with self.env.d_env.get_admin_remote() as remote:
             self.fuel_web.restore_master(remote)
-
-        with self.env.d_env.get_admin_remote() as remote:
             checkers.restore_check_sum(remote)
-
-        with self.env.d_env.get_admin_remote() as remote:
             self.fuel_web.restore_check_nailgun_api(remote)
-
-        with self.env.d_env.get_admin_remote() as remote:
             checkers.iptables_check(remote)
 
         assert_equal(

@@ -409,6 +409,7 @@ class EnvironmentModel(object):
         # with @retry, failure on any step of time synchronization causes
         # restart the time synchronization starting from the admin node
 
+        # TODO(mstrukov): close ssh
         admin_ntp = Ntp.get_ntp(self.d_env.get_admin_remote(), 'admin')
         controller_nodes = [
             n for n in nailgun_nodes if "controller" in n['roles']]
@@ -431,10 +432,8 @@ class EnvironmentModel(object):
 
     def verify_network_configuration(self, node_name):
         node = self.fuel_web.get_nailgun_node_by_name(node_name)
-        checkers.verify_network_configuration(
-            node=node,
-            remote=self.d_env.get_ssh_to_remote(node['ip'])
-        )
+        with self.fuel_web.get_ssh_for_node(node_name) as ssh:
+            checkers.verify_network_configuration(node=node, remote=ssh)
 
     def wait_bootstrap(self):
         logger.info("Waiting while bootstrapping is in progress")

@@ -89,6 +89,8 @@ class CustomHostname(TestBasic):
                 "{0} node is not accessible by its default "
                 "hostname {1}".format(devops_node.name, node['hostname']))
 
+        admin_remote.clear()
+
         self.env.make_snapshot("default_hostname")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
@@ -167,6 +169,8 @@ class CustomHostname(TestBasic):
                     "Failed to apply the new '{0}' hostname to '{1}' node. "
                     "Current hostname is '{2}'".format(
                         custom_hostname, devops_node.name, hostname))
+
+        admin_remote.clear()
 
         self.env.make_snapshot("set_custom_hostname")
 
