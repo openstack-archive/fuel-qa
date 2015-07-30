@@ -20,8 +20,10 @@ from fuelweb_test.tests import base_test_case
 from fuelweb_test.helpers import os_actions
 
 
-@test(groups=["huge_environments", "huge_ha_nova"])
+@test(enabled=False,
+      groups=["huge_environments", "huge_ha_nova"])
 class HugeEnvironments(base_test_case.TestBasic):
+    # REMOVE THIS NOVA_NETWORK CLASS WHEN NEUTRON BE DEFAULT
     """HugeEnvironments."""  # TODO documentation
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_9],
