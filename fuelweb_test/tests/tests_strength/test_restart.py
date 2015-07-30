@@ -17,6 +17,7 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import logger
 from fuelweb_test import ostf_test_mapping as map_ostf
 from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -191,12 +192,12 @@ class CephRestart(TestBasic):
 
 
 @test(groups=["thread_1"])
-class HAOneControllerFlatRestart(TestBasic):
+class HAOneControllerNeutronRestart(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["ha_one_controller_flat_warm_restart"])
+          groups=["ha_one_controller_neutron_warm_restart"])
     @log_snapshot_after_test
-    def ha_one_controller_flat_warm_restart(self):
+    def ha_one_controller_neutron_warm_restart(self):
         """Cold restart for ha one controller environment
 
         Scenario:
@@ -218,7 +219,11 @@ class HAOneControllerFlatRestart(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT_TYPE
+            }
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -241,22 +246,6 @@ class HAOneControllerFlatRestart(TestBasic):
         # Wait until OpenStack services are UP
         self.fuel_web.assert_os_services_ready(cluster_id)
         self.fuel_web.wait_mysql_galera_is_up(['slave-01'])
-
-        try:
-            self.fuel_web.run_single_ostf_test(
-                cluster_id, test_sets=['sanity'],
-                test_name=map_ostf.OSTF_TEST_MAPPING.get(
-                    'Check that required services are running'))
-        except AssertionError:
-            logger.debug("Test failed from first probe,"
-                         " we sleep 60 second try one more time "
-                         "and if it fails again - test will fails ")
-            time.sleep(60)
-            self.fuel_web.run_single_ostf_test(
-                cluster_id, test_sets=['sanity'],
-                test_name=map_ostf.OSTF_TEST_MAPPING.get(
-                    'Check that required services are running'))
-
         self.fuel_web.security.verify_firewall(cluster_id)
 
         self.fuel_web.verify_network(cluster_id)
