@@ -201,7 +201,10 @@ class EnvironmentModel(object):
         admin = self.d_env.nodes().admin
 
         try:
-            admin.await(self.d_env.admin_net, timeout=30, by_port=8000)
+            if settings.FUEL_SSL_ENABLED:
+                admin.await(self.d_env.admin_net, timeout=30, by_port=8443)
+            else:
+                admin.await(self.d_env.admin_net, timeout=30, by_port=8000)
         except Exception as e:
             logger.warning("From first time admin isn't reverted: "
                            "{0}".format(e))
@@ -374,6 +377,18 @@ class EnvironmentModel(object):
             settings.FUEL_STATS_SSL)
         # Restart statsenderd in order to apply new settings(Collector address)
         self.nailgun_actions.force_fuel_stats_sending()
+        # Disable http in nginx container
+        cmd = ("sed -i -e 's/listen   8000;/#listen  8000;/g' "
+               "/etc/nginx/conf.d/nailgun.conf")
+
+        self.nailgun_actions.execute_in_container(
+            command=cmd, container='nginx')
+
+        # reload conf
+        cmd = "/etc/init.d/nginx reload"
+        self.nailgun_actions.execute_in_container(
+            command=cmd, container='nginx')
+
         if settings.FUEL_STATS_ENABLED:
             self.fuel_web.client.send_fuel_stats(enabled=True)
             logger.info('Enabled sending of statistics to {0}:{1}'.format(
