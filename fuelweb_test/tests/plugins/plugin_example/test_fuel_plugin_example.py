@@ -21,6 +21,7 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import checkers
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import EXAMPLE_PLUGIN_PATH
+from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -98,17 +99,16 @@ class ExamplePlugin(TestBasic):
         cmd_curl = 'curl localhost:8234'
         cmd = 'pgrep -f fuel-simple-service'
 
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        res_pgrep = self.env.d_env.get_ssh_to_remote(_ip).execute(cmd)
-        assert_equal(0, res_pgrep['exit_code'],
-                     'Failed with error {0}'.format(res_pgrep['stderr']))
-        assert_equal(1, len(res_pgrep['stdout']),
-                     'Failed with error {0}'.format(res_pgrep['stderr']))
-        # curl to service
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        res_curl = self.env.d_env.get_ssh_to_remote(_ip).execute(cmd_curl)
-        assert_equal(0, res_pgrep['exit_code'],
-                     'Failed with error {0}'.format(res_curl['stderr']))
+        with self.fuel_web.get_ssh_for_node("slave-01") as remote:
+            res_pgrep = remote.execute(cmd)
+            assert_equal(0, res_pgrep['exit_code'],
+                         'Failed with error {0}'.format(res_pgrep['stderr']))
+            assert_equal(1, len(res_pgrep['stdout']),
+                         'Failed with error {0}'.format(res_pgrep['stderr']))
+            # curl to service
+            res_curl = remote.execute(cmd_curl)
+            assert_equal(0, res_pgrep['exit_code'],
+                         'Failed with error {0}'.format(res_curl['stderr']))
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
@@ -153,6 +153,10 @@ class ExamplePlugin(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT_TYPE
+            }
         )
 
         plugin_name = 'fuel_plugin_example'
@@ -180,20 +184,19 @@ class ExamplePlugin(TestBasic):
             logger.debug("Start to check service on node {0}".format(node))
             cmd_curl = 'curl localhost:8234'
             cmd = 'pgrep -f fuel-simple-service'
-            _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            res_pgrep = self.env.d_env.get_ssh_to_remote(_ip).execute(cmd)
-            assert_equal(0, res_pgrep['exit_code'],
-                         'Failed with error {0} '
-                         'on node {1}'.format(res_pgrep['stderr'], node))
-            assert_equal(1, len(res_pgrep['stdout']),
-                         'Failed with error {0} on the '
-                         'node {1}'.format(res_pgrep['stderr'], node))
-            # curl to service
-            _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            res_curl = self.env.d_env.get_ssh_to_remote(_ip).execute(cmd_curl)
-            assert_equal(0, res_pgrep['exit_code'],
-                         'Failed with error {0} '
-                         'on node {1}'.format(res_curl['stderr'], node))
+            with self.fuel_web.get_ssh_for_node(node) as remote:
+                res_pgrep = remote.execute(cmd)
+                assert_equal(0, res_pgrep['exit_code'],
+                             'Failed with error {0} '
+                             'on node {1}'.format(res_pgrep['stderr'], node))
+                assert_equal(1, len(res_pgrep['stdout']),
+                             'Failed with error {0} on the '
+                             'node {1}'.format(res_pgrep['stderr'], node))
+                # curl to service
+                res_curl = remote.execute(cmd_curl)
+                assert_equal(0, res_pgrep['exit_code'],
+                             'Failed with error {0} '
+                             'on node {1}'.format(res_curl['stderr'], node))
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
@@ -271,17 +274,16 @@ class ExamplePlugin(TestBasic):
         cmd_curl = 'curl localhost:8234'
         cmd = 'pgrep -f fuel-simple-service'
 
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        res_pgrep = self.env.d_env.get_ssh_to_remote(_ip).execute(cmd)
-        assert_equal(0, res_pgrep['exit_code'],
-                     'Failed with error {0}'.format(res_pgrep['stderr']))
-        assert_equal(1, len(res_pgrep['stdout']),
-                     'Failed with error {0}'.format(res_pgrep['stderr']))
-        # curl to service
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        res_curl = self.env.d_env.get_ssh_to_remote(_ip).execute(cmd_curl)
-        assert_equal(0, res_pgrep['exit_code'],
-                     'Failed with error {0}'.format(res_curl['stderr']))
+        with self.fuel_web.get_ssh_for_node('slave-01') as remote:
+            res_pgrep = remote.execute(cmd)
+            assert_equal(0, res_pgrep['exit_code'],
+                         'Failed with error {0}'.format(res_pgrep['stderr']))
+            assert_equal(1, len(res_pgrep['stdout']),
+                         'Failed with error {0}'.format(res_pgrep['stderr']))
+            # curl to service
+            res_curl = remote.execute(cmd_curl)
+            assert_equal(0, res_pgrep['exit_code'],
+                         'Failed with error {0}'.format(res_curl['stderr']))
 
         self.fuel_web.update_nodes(
             cluster_id,
@@ -298,20 +300,19 @@ class ExamplePlugin(TestBasic):
             cmd_curl = 'curl localhost:8234'
             cmd = 'pgrep -f fuel-simple-service'
 
-            _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            res_pgrep = self.env.d_env.get_ssh_to_remote(_ip).execute(cmd)
-            assert_equal(0, res_pgrep['exit_code'],
-                         'Failed with error {0} '
-                         'on node {1}'.format(res_pgrep['stderr'], node))
-            assert_equal(1, len(res_pgrep['stdout']),
-                         'Failed with error {0} on the '
-                         'node {1}'.format(res_pgrep['stderr'], node))
-            # curl to service
-            _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            res_curl = self.env.d_env.get_ssh_to_remote(_ip).execute(cmd_curl)
-            assert_equal(0, res_pgrep['exit_code'],
-                         'Failed with error {0} '
-                         'on node {1}'.format(res_curl['stderr'], node))
+            with self.fuel_web.get_ssh_for_node(node) as remote:
+                res_pgrep = remote.execute(cmd)
+                assert_equal(0, res_pgrep['exit_code'],
+                             'Failed with error {0} '
+                             'on node {1}'.format(res_pgrep['stderr'], node))
+                assert_equal(1, len(res_pgrep['stdout']),
+                             'Failed with error {0} on the '
+                             'node {1}'.format(res_pgrep['stderr'], node))
+                # curl to service
+                res_curl = remote.execute(cmd_curl)
+                assert_equal(0, res_pgrep['exit_code'],
+                             'Failed with error {0} '
+                             'on node {1}'.format(res_curl['stderr'], node))
 
         # add verification here
         self.fuel_web.run_ostf(
