@@ -25,30 +25,33 @@ class OstfRepeatableTests(base_test_case.TestBasic):
     """OstfRepeatableTests."""  # TODO documentation
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
-          groups=["create_delete_ip_n_times_nova_vlan"])
+          groups=["create_delete_ip_n_times_neutron_vlan"])
     @log_snapshot_after_test
-    def create_delete_ip_n_times_nova_vlan(self):
+    def create_delete_ip_n_times_neutron_vlan(self):
         """Deploy cluster in ha mode with VLAN Manager
 
         Scenario:
             1. Create cluster in ha mode with 1 controller
             2. Add 1 nodes with controller roles
             3. Add 2 nodes with compute roles
-            4. Set up cluster to use Network VLAN manager with 8 networks
-            5. Deploy the cluster
-            6. Run network verification
-            7. Run test Check network connectivity
+            4. Deploy the cluster
+            5. Run network verification
+            6. Run test Check network connectivity
                from instance via floating IP' n times
 
         Duration 1000m
-        Snapshot create_delete_ip_n_times_nova_vlan
+        Snapshot create_delete_ip_n_times_neutron_vlan
 
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_date.DEPLOYMENT_MODE
+            mode=hlp_date.DEPLOYMENT_MODE,
+            settings={
+                'net_provider': 'neutron',
+                'net_segment_type': hlp_date.NEUTRON_SEGMENT['vlan']
+            }
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -57,19 +60,18 @@ class OstfRepeatableTests(base_test_case.TestBasic):
                 'slave-02': ['compute']
             }
         )
-        self.fuel_web.update_vlan_network_fixed(
-            cluster_id, amount=8, network_size=32)
+
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf_repeatably(cluster_id)
 
-        self.env.make_snapshot("create_delete_ip_n_times_nova_vlan")
+        self.env.make_snapshot("create_delete_ip_n_times_neutron_vlan")
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
-          groups=["create_delete_ip_n_times_nova_flat"])
+          groups=["create_delete_ip_n_times_neutron_tun"])
     @log_snapshot_after_test
-    def deploy_create_delete_ip_n_times_nova_flat(self):
+    def deploy_create_delete_ip_n_times_neutron_tun(self):
         """Deploy HA cluster, check connectivity from instance n times
 
         Scenario:
@@ -82,14 +84,18 @@ class OstfRepeatableTests(base_test_case.TestBasic):
                from instance via floating IP' n times
 
         Duration 1000m
-        Snapshot: create_delete_ip_n_times_nova_flat
+        Snapshot: create_delete_ip_n_times_neutron_tun
 
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_date.DEPLOYMENT_MODE
+            mode=hlp_date.DEPLOYMENT_MODE,
+            settings={
+                'net_provider': 'neutron',
+                'net_segment_type': hlp_date.NEUTRON_SEGMENT['tun']
+            }
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -103,7 +109,7 @@ class OstfRepeatableTests(base_test_case.TestBasic):
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf_repeatably(cluster_id)
 
-        self.env.make_snapshot("create_delete_ip_n_times_nova_flat")
+        self.env.make_snapshot("create_delete_ip_n_times_neutron_tun")
 
     @test(groups=["run_ostf_n_times_against_custom_environment"])
     @log_snapshot_after_test
