@@ -48,7 +48,7 @@ def save_logs(url, path, auth_token=None, chunk_size=1024):
     if auth_token is not None:
         headers['X-Auth-Token'] = auth_token
 
-    stream = requests.get(url, headers=headers, stream=True)
+    stream = requests.get(url, headers=headers, stream=True, verify=False)
     if stream.status_code != 200:
         logger.error("%s %s: %s", stream.status_code, stream.reason,
                      stream.content)
@@ -341,9 +341,13 @@ def update_ostf(func):
 
 def create_diagnostic_snapshot(env, status, name=""):
     task = env.fuel_web.task_wait(env.fuel_web.client.generate_logs(), 60 * 10)
-    url = "http://{}:8000{}".format(
-        env.get_admin_node_ip(), task['message']
-    )
+    if settings.FUEL_SSL_ENABLED:
+        url = "https://{}:8443{}".format(env.get_admin_node_ip(),
+                                         task['message'])
+    else:
+        url = "http://{}:8000{}".format(
+            env.get_admin_node_ip(), task['message']
+        )
     log_file_name = '{status}_{name}-{basename}'.format(
         status=status,
         name=name,

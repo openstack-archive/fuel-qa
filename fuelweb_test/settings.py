@@ -37,6 +37,7 @@ DNS = os.environ.get('DNS', '8.8.8.8')
 PUBLIC_TEST_IP = os.environ.get('PUBLIC_TEST_IP', '8.8.8.8')
 
 DISABLE_SSL = get_var_as_bool('DISABLE_SSL', True)
+FUEL_SSL_ENABLED = get_var_as_bool('FUEL_SSL_ENABLED', True)
 
 OPENSTACK_RELEASE_CENTOS = 'centos'
 OPENSTACK_RELEASE_UBUNTU = 'ubuntu'

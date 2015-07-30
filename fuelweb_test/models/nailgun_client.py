@@ -18,13 +18,17 @@ from fuelweb_test.helpers.decorators import json_parse
 from fuelweb_test.helpers.http import HTTPClient
 from fuelweb_test.settings import KEYSTONE_CREDS
 from fuelweb_test.settings import OPENSTACK_RELEASE
+from fuelweb_test.settings import FUEL_SSL_ENABLED
 
 
 class NailgunClient(object):
     """NailgunClient"""  # TODO documentation
 
     def __init__(self, admin_node_ip, **kwargs):
-        url = "http://{0}:8000".format(admin_node_ip)
+        if FUEL_SSL_ENABLED:
+            url = "https://{0}:8443".format(admin_node_ip)
+        else:
+            url = "http://{0}:8000".format(admin_node_ip)
         logger.info('Initiate Nailgun client with url %s', url)
         self.keystone_url = "http://{0}:5000/v2.0".format(admin_node_ip)
         self._client = HTTPClient(url=url, keystone_url=self.keystone_url,
