@@ -137,17 +137,17 @@ class NeutronGreHa(TestBasic):
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
-        remote = self.env.d_env.get_ssh_to_remote(_ip)
-        for i in range(5):
-            try:
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            for i in range(5):
+                try:
+                    checkers.check_swift_ring(remote)
+                    break
+                except AssertionError:
+                    result = remote.execute(
+                        "/usr/local/bin/swift-rings-rebalance.sh")
+                    logger.debug("command execution result is {0}".format(result))
+            else:
                 checkers.check_swift_ring(remote)
-                break
-            except AssertionError:
-                result = remote.execute(
-                    "/usr/local/bin/swift-rings-rebalance.sh")
-                logger.debug("command execution result is {0}".format(result))
-        else:
-            checkers.check_swift_ring(remote)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
@@ -215,17 +215,17 @@ class NeutronVlanHa(TestBasic):
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
-        remote = self.env.d_env.get_ssh_to_remote(_ip)
-        for i in range(5):
-            try:
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            for i in range(5):
+                try:
+                    checkers.check_swift_ring(remote)
+                    break
+                except AssertionError:
+                    result = remote.execute(
+                        "/usr/local/bin/swift-rings-rebalance.sh")
+                    logger.debug("command execution result is {0}".format(result))
+            else:
                 checkers.check_swift_ring(remote)
-                break
-            except AssertionError:
-                result = remote.execute(
-                    "/usr/local/bin/swift-rings-rebalance.sh")
-                logger.debug("command execution result is {0}".format(result))
-        else:
-            checkers.check_swift_ring(remote)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'])

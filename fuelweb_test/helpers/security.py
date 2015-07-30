@@ -77,6 +77,8 @@ class SecurityChecks(object):
             format(proto=protocol, ip=ip_address, file=tmp_file_path,
                    port=test_port)
         result = remote.execute(cmd)
+        #TODO(mstrukov) what if assert raise? Use context manager for ssh
+        remote.clear()
         assert_equal(result['exit_code'], 0,
                      'Listening on {0}:{1}/{2} port failed: {3}'.
                      format(ip_address, test_port, protocol,
@@ -86,7 +88,6 @@ class SecurityChecks(object):
     @retry()
     @logwrap
     def verify_firewall(self, cluster_id):
-        admin_remote = self.environment.d_env.get_admin_remote()
         # Install NetCat
         if not self.environment.admin_install_pkg('nc') == 0:
             raise Exception('Can not install package "nc".')
@@ -108,10 +109,11 @@ class SecurityChecks(object):
                 cmd = 'echo {string} | nc {opts} {ip} {port}'.\
                     format(opts=nc_opts, string=check_string, ip=node['ip'],
                            port=port)
-                admin_remote.execute(cmd)
-                remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
-                cmd = 'cat {0}; mv {0}{{,.old}}'.format(tmp_file_path)
-                result = remote.execute(cmd)
+                with self.environment.d_env.get_admin_remote() as admin_remote:
+                    admin_remote.execute(cmd)
+                with self.environment.d_env.get_ssh_to_remote(node['ip']) as remote:
+                    cmd = 'cat {0}; mv {0}{{,.old}}'.format(tmp_file_path)
+                    result = remote.execute(cmd)
                 if ''.join(result['stdout']).strip() == check_string:
                     msg = ('Firewall vulnerability detected. Unused port '
                            '{0}/{1} can be accessed on {2} (node-{3}) node. '

@@ -119,8 +119,8 @@ class CephCompact(TestBasic):
                                      data=image_data)
         volume = os_conn.create_volume(size=1, image_id=image.id)
 
-        remote = self.fuel_web.get_ssh_for_node('slave-01')
-        rbd_list = ceph.get_rbd_images_list(remote, 'volumes')
+        with self.fuel_web.get_ssh_for_node('slave-01') as remote:
+            rbd_list = ceph.get_rbd_images_list(remote, 'volumes')
 
         for item in rbd_list:
             if volume.id in item['image']:
@@ -341,17 +341,17 @@ class CephHA(TestBasic):
         # create image
         devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
-        slave = self.fuel_web.get_ssh_for_node(devops_node.name)
-        if settings.OPENSTACK_RELEASE_CENTOS in settings.OPENSTACK_RELEASE:
-            slave.execute(". openrc; glance image-create --name"
-                          " 'custom-image' --disk-format qcow2"
-                          " --container-format bare"
-                          " --file /opt/vm/cirros-x86_64-disk.img")
-        else:
-            slave.execute(". openrc; glance image-create --name"
-                          " 'custom-image' --disk-format qcow2"
-                          " --container-format bare --file"
-                          " /usr/share/cirros-testvm/cirros-x86_64-disk.img")
+        with self.fuel_web.get_ssh_for_node(devops_node.name) as slave:
+            if settings.OPENSTACK_RELEASE_CENTOS in settings.OPENSTACK_RELEASE:
+                slave.execute(". openrc; glance image-create --name"
+                              " 'custom-image' --disk-format qcow2"
+                              " --container-format bare"
+                              " --file /opt/vm/cirros-x86_64-disk.img")
+            else:
+                slave.execute(". openrc; glance image-create --name"
+                              " 'custom-image' --disk-format qcow2"
+                              " --container-format bare --file"
+                              " /usr/share/cirros-testvm/cirros-x86_64-disk.img")
 
         image = os_conn.get_image_by_name('custom-image')
 
@@ -477,10 +477,10 @@ class CephRadosGW(TestBasic):
             logger.info("Check all HAProxy backends on {}".format(
                 node['meta']['system']['fqdn']))
             haproxy_status = checkers.check_haproxy_backend(remote)
+            remote.clear()
             assert_equal(haproxy_status['exit_code'], 1,
                          "HAProxy backends are DOWN. {0}".format(
                              haproxy_status))
-            remote.clear()
 
         self.fuel_web.check_ceph_status(cluster_id)
 
@@ -489,12 +489,11 @@ class CephRadosGW(TestBasic):
                                test_sets=['ha', 'smoke', 'sanity'])
 
         # Check the radosqw daemon is started
-        remote = self.fuel_web.get_ssh_for_node('slave-01')
-        radosgw_started = lambda: len(remote.check_call(
-            'ps aux | grep "/usr/bin/radosgw -n '
-            'client.radosgw.gateway"')['stdout']) == 3
-        assert_true(radosgw_started(), 'radosgw daemon started')
-        remote.clear()
+        with self.fuel_web.get_ssh_for_node('slave-01') as remote:
+            radosgw_started = lambda: len(remote.check_call(
+                'ps aux | grep "/usr/bin/radosgw -n '
+                'client.radosgw.gateway"')['stdout']) == 3
+            assert_true(radosgw_started(), 'radosgw daemon started')
 
         self.env.make_snapshot("ceph_rados_gw")
 
@@ -581,14 +580,15 @@ class VmBackedWithCephMigrationBasic(TestBasic):
             scenario='./fuelweb_test/helpers/instance_initial_scenario')
         logger.info("Srv is currently in status: %s" % srv.status)
 
-        srv_remote_node = self.fuel_web.get_ssh_for_node(
+        with self.fuel_web.get_ssh_for_node(
             self.fuel_web.find_devops_node_by_nailgun_fqdn(
                 os.get_srv_hypervisor_name(srv),
-                self.env.d_env.nodes().slaves[:3]).name)
-        srv_instance_ip = os.get_nova_instance_ip(srv)
-        srv_instance_mac = os.get_instance_mac(srv_remote_node, srv)
-        res = ''.join(srv_remote_node.execute('ip r | fgrep br100')['stdout'])
-        srv_node_dhcp_ip = res.split()[-1]
+                self.env.d_env.nodes().slaves[:3]).name) as srv_remote_node:
+            srv_instance_ip = os.get_nova_instance_ip(srv)
+            srv_instance_mac = os.get_instance_mac(srv_remote_node, srv)
+            res = ''.join(srv_remote_node
+                          .execute('ip r | fgrep br100')['stdout'])
+            srv_node_dhcp_ip = res.split()[-1]
 
         logger.info("Assigning floating ip to server")
         floating_ip = os.assign_floating_ip(srv)
@@ -597,10 +597,11 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
         wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120)
 
-        md5before = os.get_md5sum(
-            "/home/test_file",
-            self.fuel_web.get_ssh_for_node("slave-01"),
-            floating_ip.ip, creds)
+        with self.fuel_web.get_ssh_for_node("slave-01") as remote:
+            md5before = os.get_md5sum(
+                "/home/test_file",
+                remote,
+                floating_ip.ip, creds)
 
         logger.info("Get available computes")
         avail_hosts = os.get_hosts_for_migr(srv_host)
@@ -611,10 +612,11 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
         wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120)
 
-        md5after = os.get_md5sum(
-            "/home/test_file",
-            self.fuel_web.get_ssh_for_node("slave-01"),
-            floating_ip.ip, creds)
+        with self.fuel_web.get_ssh_for_node("slave-01") as remote:
+            md5after = os.get_md5sum(
+                "/home/test_file",
+                remote,
+                floating_ip.ip, creds)
 
         assert_true(
             md5after in md5before,
@@ -622,11 +624,12 @@ class VmBackedWithCephMigrationBasic(TestBasic):
             "Before migration md5 was equal to: {bef}"
             "Now it eqals: {aft}".format(bef=md5before, aft=md5after))
 
-        res = os.execute_through_host(
-            self.fuel_web.get_ssh_for_node("slave-01"),
-            floating_ip.ip, "ping -q -c3 -w10 {0} | grep 'received' |"
-            " grep -v '0 packets received'"
-            .format(settings.PUBLIC_TEST_IP), creds)
+        with self.fuel_web.get_ssh_for_node("slave-01") as remote:
+            res = os.execute_through_host(
+                remote,
+                floating_ip.ip, "ping -q -c3 -w10 {0} | grep 'received' |"
+                " grep -v '0 packets received'"
+                .format(settings.PUBLIC_TEST_IP), creds)
         logger.info("Ping {0} result on vm is: {1}"
                     .format(settings.PUBLIC_TEST_IP, res['stdout']))
 
@@ -670,13 +673,15 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
         wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120)
         logger.info("Create filesystem and mount volume")
-        os.execute_through_host(
-            self.fuel_web.get_ssh_for_node("slave-01"),
-            floating_ip.ip, 'sudo sh /home/mount_volume.sh', creds)
+        with self.fuel_web.get_ssh_for_node("slave-01") as remote:
+            os.execute_through_host(
+                remote,
+                floating_ip.ip, 'sudo sh /home/mount_volume.sh', creds)
 
-        os.execute_through_host(
-            self.fuel_web.get_ssh_for_node("slave-01"),
-            floating_ip.ip, 'sudo touch /mnt/file-on-volume', creds)
+        with self.fuel_web.get_ssh_for_node("slave-01") as remote:
+            os.execute_through_host(
+                remote,
+                floating_ip.ip, 'sudo touch /mnt/file-on-volume', creds)
 
         logger.info("Get available computes")
         avail_hosts = os.get_hosts_for_migr(srv_host)
@@ -687,16 +692,17 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
         wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120)
         logger.info("Mount volume after migration")
-        out = os.execute_through_host(
-            self.fuel_web.get_ssh_for_node("slave-01"),
-            floating_ip.ip, 'sudo mount /dev/vdb /mnt', creds)
+        with self.fuel_web.get_ssh_for_node("slave-01") as remote:
+            out = os.execute_through_host(
+                remote,
+                floating_ip.ip, 'sudo mount /dev/vdb /mnt', creds)
 
         logger.info("out of mounting volume is: %s" % out['stdout'])
-
-        assert_true("file-on-volume" in os.execute_through_host(
-                    self.fuel_web.get_ssh_for_node("slave-01"),
-                    floating_ip.ip, "sudo ls /mnt", creds)['stdout'],
-                    "File is abscent in /mnt")
+        with self.fuel_web.get_ssh_for_node("slave-01") as remote:
+            assert_true("file-on-volume" in os.execute_through_host(
+                        remote,
+                        floating_ip.ip, "sudo ls /mnt", creds)['stdout'],
+                        "File is abscent in /mnt")
 
         logger.info("Check Ceph health is ok after migration")
         self.fuel_web.check_ceph_status(cluster_id)
@@ -768,9 +774,10 @@ class CheckCephPartitionsAfterReboot(TestBasic):
         for node in ["slave-02", "slave-03"]:
             logger.info("Get partitions for {node}".format(node=node))
             _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            before_reboot_partitions = [checkers.get_ceph_partitions(
-                self.env.d_env.get_ssh_to_remote(_ip),
-                "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
+            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+                before_reboot_partitions = [checkers.get_ceph_partitions(
+                    remote,
+                    "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
 
             logger.info("Warm-restart nodes")
             self.fuel_web.warm_restart_nodes(
@@ -780,9 +787,10 @@ class CheckCephPartitionsAfterReboot(TestBasic):
                 node=node
             ))
             _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            after_reboot_partitions = [checkers.get_ceph_partitions(
-                self.env.d_env.get_ssh_to_remote(_ip),
-                "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
+            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+                after_reboot_partitions = [checkers.get_ceph_partitions(
+                    remote,
+                    "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
 
             if before_reboot_partitions != after_reboot_partitions:
                 logger.info("Partitions don`t match")
@@ -798,9 +806,10 @@ class CheckCephPartitionsAfterReboot(TestBasic):
                 [self.fuel_web.environment.d_env.get_node(name=node)])
 
             _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            after_reboot_partitions = [checkers.get_ceph_partitions(
-                self.env.d_env.get_ssh_to_remote(_ip),
-                "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
+            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+                after_reboot_partitions = [checkers.get_ceph_partitions(
+                    remote,
+                    "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
 
             if before_reboot_partitions != after_reboot_partitions:
                 logger.info("Partitions don`t match")

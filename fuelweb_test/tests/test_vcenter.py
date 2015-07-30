@@ -201,7 +201,8 @@ class VcenterDeploy(TestBasic):
         """
         self.env.revert_snapshot("ready_with_1_slaves")
 
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
+        with self.env.d_env.get_admin_remote() as remote:
+            self.add_dhcp_lease(remote=remote)
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -259,7 +260,8 @@ class VcenterDeploy(TestBasic):
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
+        with self.env.d_env.get_admin_remote() as remote:
+            self.add_dhcp_lease(remote=remote)
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -324,7 +326,8 @@ class VcenterDeploy(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
+        with self.env.d_env.get_admin_remote() as remote:
+            self.add_dhcp_lease(remote=remote)
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -385,7 +388,8 @@ class VcenterDeploy(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
+        with self.env.d_env.get_admin_remote() as remote:
+            self.add_dhcp_lease(remote=remote)
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -451,7 +455,8 @@ class VcenterDeploy(TestBasic):
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
+        with self.env.d_env.get_admin_remote() as remote:
+            self.add_dhcp_lease(remote=remote)
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -519,7 +524,8 @@ class VcenterDeploy(TestBasic):
 
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
+        with self.env.d_env.get_admin_remote() as remote:
+            self.add_dhcp_lease(remote=remote)
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -602,7 +608,8 @@ class VcenterDeploy(TestBasic):
 
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
+        with self.env.d_env.get_admin_remote() as remote:
+            self.add_dhcp_lease(remote=remote)
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -688,7 +695,8 @@ class VcenterDeploy(TestBasic):
 
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
+        with self.env.d_env.get_admin_remote() as remote:
+            self.add_dhcp_lease(remote=remote)
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -774,7 +782,8 @@ class VcenterDeploy(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
+        with self.env.d_env.get_admin_remote() as remote:
+            self.add_dhcp_lease(remote=remote)
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -861,7 +870,8 @@ class VcenterDeploy(TestBasic):
 
         self.env.revert_snapshot("ready_with_9_slaves")
 
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
+        with self.env.d_env.get_admin_remote() as remote:
+            self.add_dhcp_lease(remote=remote)
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -1323,7 +1333,8 @@ class VcenterDeploy(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
+        with self.env.d_env.get_admin_remote() as remote:
+            self.add_dhcp_lease(remote=remote)
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -1413,6 +1424,7 @@ class VcenterDeploy(TestBasic):
 
         # VMs on different hypervisors should communicate between each other
         for ip_1 in srv_ip:
+            # TODO(mstrukov): add context manager for ssh or do ssh.clear()
             ssh = self.fuel_web.get_ssh_for_node("slave-01")
             logger.info("Connect to VM {0}".format(ip_1))
             for ip_2 in srv_ip:
@@ -1452,7 +1464,8 @@ class VcenterDeploy(TestBasic):
         """
         self.env.revert_snapshot("ready_with_9_slaves")
 
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
+        with self.env.d_env.get_admin_remote() as remote:
+            self.add_dhcp_lease(remote=remote)
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
