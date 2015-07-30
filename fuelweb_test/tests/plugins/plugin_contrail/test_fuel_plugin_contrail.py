@@ -49,14 +49,13 @@ class ContrailPlugin(TestBasic):
 
     _pack_path = [CONTRAIL_PLUGIN_PACK_UB_PATH, CONTRAIL_PLUGIN_PACK_CEN_PATH]
 
-    def _upload_contrail_packages(self):
+    def _upload_contrail_packages(self, remote):
         for pack in self._pack_path:
-            node_ssh = self.env.d_env.get_admin_remote()
             if os.path.splitext(pack)[1] in [".deb", ".rpm"]:
                 pkg_name = os.path.basename(pack)
                 logger.debug("Uploading package {0} "
                              "to master node".format(pkg_name))
-                node_ssh.upload(pack, self._pack_copy_path)
+                remote.upload(pack, self._pack_copy_path)
             else:
                 logger.error('Failed to upload file')
 
@@ -86,21 +85,23 @@ class ContrailPlugin(TestBasic):
 
         self.env.revert_snapshot("ready_with_%d_slaves" % slaves)
 
-        # copy plugin to the master node
-        checkers.upload_tarball(
-            self.env.d_env.get_admin_remote(),
-            CONTRAIL_PLUGIN_PATH, '/var')
+        with self.env.d_env.get_admin_remote() as remote:
 
-        # install plugin
-        checkers.install_plugin_check_code(
-            self.env.d_env.get_admin_remote(),
-            plugin=os.path.basename(CONTRAIL_PLUGIN_PATH))
+            # copy plugin to the master node
+            checkers.upload_tarball(
+                remote,
+                CONTRAIL_PLUGIN_PATH, '/var')
 
-        # copy additional packages to the master node
-        self._upload_contrail_packages()
+            # install plugin
+            checkers.install_plugin_check_code(
+                remote,
+                plugin=os.path.basename(CONTRAIL_PLUGIN_PATH))
 
-        # install packages
-        self._install_packages(self.env.d_env.get_admin_remote())
+            # copy additional packages to the master node
+            self._upload_contrail_packages(remote)
+
+            # install packages
+            self._install_packages(remote)
 
         # prepare fuel
         self._assign_net_provider(pub_net)
