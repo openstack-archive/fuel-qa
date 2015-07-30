@@ -17,6 +17,7 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import logger
 from fuelweb_test import ostf_test_mapping as map_ostf
 from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -191,12 +192,12 @@ class CephRestart(TestBasic):
 
 
 @test(groups=["thread_1"])
-class HAOneControllerFlatRestart(TestBasic):
+class HAOneControllerNeutronRestart(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["ha_one_controller_flat_warm_restart"])
+          groups=["ha_one_controller_neutron_warm_restart"])
     @log_snapshot_after_test
-    def ha_one_controller_flat_warm_restart(self):
+    def ha_one_controller_neutron_warm_restart(self):
         """Cold restart for ha one controller environment
 
         Scenario:
@@ -218,7 +219,11 @@ class HAOneControllerFlatRestart(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT_TYPE
+            }
         )
         self.fuel_web.update_nodes(
             cluster_id,
