@@ -95,7 +95,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nailgun_upgrade_migration()
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[3:4])
         self.fuel_web.update_nodes(
@@ -104,7 +105,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
             _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
             remote = self.env.d_env.get_ssh_to_remote(_ip)
@@ -163,7 +165,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nailgun_upgrade_migration()
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
         remote_ceph = self.fuel_web.get_ssh_for_node('slave-03')
         self.fuel_web.prepare_ceph_to_delete(remote_ceph)
         nailgun_nodes = self.fuel_web.update_nodes(
@@ -178,7 +181,9 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             assert_true(len(self.fuel_web.client.list_nodes()) == 3,
                         'Node {0} is not discovered in timeout 10 *60'.format(
                             nodes[0]))
-        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'],
+                               should_fail=1)
         self.env.make_snapshot("upgrade_ha_one_controller_delete_node")
 
     @test(groups=["upgrade_ha", "upgrade_neutron_gre_ha"])
@@ -228,7 +233,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             self.env.d_env.nodes().slaves[:5])
         self.fuel_web.assert_nailgun_upgrade_migration()
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
 
         available_releases_after = self.fuel_web.get_releases_list_for_os(
             release_name=hlp_data.OPENSTACK_RELEASE)
@@ -263,8 +269,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                          " on new node is {}".format(kernel))
         self.fuel_web.verify_network(cluster_id)
 
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
         self.env.make_snapshot("upgrade_ha")
 
     @test(groups=["upgrade_ha_restart_containers", "upgrade_neutron_gre_ha"])
@@ -317,7 +323,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             self.env.d_env.nodes().slaves[:5])
         self.fuel_web.assert_nailgun_upgrade_migration()
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
 
         remote = self.env.d_env.get_admin_remote()
 
@@ -347,7 +354,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                      'Start containers failed, '
                      'inspect logs for details')
         self.env.docker_actions.wait_for_ready_containers()
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
 
         # Deploy new cluster
         available_releases_after = self.fuel_web.get_releases_list_for_os(
@@ -376,7 +384,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         )
         self.fuel_web.run_network_verify(new_cluster_id)
         self.fuel_web.deploy_cluster_wait(new_cluster_id)
-        self.fuel_web.run_ostf(new_cluster_id)
+        self.fuel_web.run_ostf(new_cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
         self.fuel_web.run_network_verify(new_cluster_id)
 
         self.env.make_snapshot("upgrade_ha_restart_containers")
@@ -433,7 +442,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         added_release = [id for id in available_releases_after
                          if id not in available_releases_before]
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[3:9])
         segment_type = 'vlan'
@@ -467,8 +477,9 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             kernel = self.get_slave_kernel(remote)
             logger.debug("ubuntu kernel version"
                          " on new node is {}".format(kernel))
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
+        self.fuel_web.verify_network(cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
         self.env.make_snapshot("deploy_ha_after_upgrade")
 
     @test(groups=["upgrade_fuel_after_rollback",
@@ -523,7 +534,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_FROM)
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id)
+        self.fuel_web.run_ostf(cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
 
         # Upgrade fuel master
         checkers.run_script(remote(), '/var', 'upgrade.sh',
@@ -567,7 +579,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         )
         self.fuel_web.run_network_verify(new_cluster_id)
         self.fuel_web.deploy_cluster_wait(new_cluster_id)
-        self.fuel_web.run_ostf(new_cluster_id)
+        self.fuel_web.run_ostf(new_cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
         self.fuel_web.run_network_verify(new_cluster_id)
 
         self.env.make_snapshot("upgrade_fuel_after_rollback")
@@ -626,7 +639,8 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_FROM)
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
 
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[5:6])
@@ -635,7 +649,8 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             True, False
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
 
         self.env.make_snapshot("rollback_automatically_ha")
 
@@ -696,7 +711,8 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_FROM)
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[3:4])
         self.fuel_web.update_nodes(
@@ -709,7 +725,8 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             remote = self.env.d_env.get_ssh_to_remote(_ip)
             kernel = UpgradeFuelMaster.get_slave_kernel(remote)
             checkers.check_kernel(kernel, expected_kernel)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
 
         self.env.make_snapshot("rollback_automatically_ha_one_controller")
 
@@ -767,7 +784,8 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_FROM)
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
         nailgun_nodes = self.fuel_web.update_nodes(
             cluster_id, {'slave-03': ['compute', 'cinder']}, False, True)
         task = self.fuel_web.deploy_cluster(cluster_id)
@@ -780,6 +798,8 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             assert_true(len(self.fuel_web.client.list_nodes()) == 3,
                         'Node {0} is not discovered in timeout 10 *60'.format(
                             nodes[0]))
-        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'],
+                               should_fail=1)
 
         self.env.make_snapshot("rollback_automatically_delete_node")
