@@ -225,6 +225,56 @@ class NeutronGreHa(TestBasic):
         self.env.make_snapshot("deploy_neutron_gre_ha")
 
 
+@test(groups=["tun"])
+class NeutronTunHa(TestBasic):
+    """NeutronGreHa."""  # TODO documentation
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["deploy_ha_controller_neutron_tun"])
+    @log_snapshot_after_test
+    def deploy_ha_one_controller_neutron_tun(self):
+        """Deploy cluster with one controller
+
+        Scenario:
+            1. Create cluster
+            2. Add 1 node with controller role
+            3. Add 2 nodes with compute role
+            4. Deploy the cluster
+            5. Run network verification
+            6. Run OSTF
+
+        Duration 35m
+        Snapshot deploy_ha_one_controller_neutron_tun
+        """
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": 'tun',
+            }
+        )
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['compute'],
+                'slave-03': ['cinder']
+            }
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.verify_network(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id)
+
+        self.env.make_snapshot("deploy_ha_one_controller_neutron_tun")
+
+
 @test(groups=["thread_6", "neutron", "ha", "ha_neutron"])
 class NeutronGreHaPublicNetwork(TestBasic):
     """NeutronGreHaPublicNetwork."""  # TODO documentation

@@ -223,7 +223,8 @@ NEUTRON = 'neutron'
 
 NEUTRON_SEGMENT = {
     'gre': 'gre',
-    'vlan': 'vlan'
+    'vlan': 'vlan',
+    'tun': 'tun'
 }
 
 LOGS_DIR = os.environ.get('LOGS_DIR', os.getcwd())
