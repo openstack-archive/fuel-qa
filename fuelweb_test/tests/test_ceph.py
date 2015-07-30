@@ -28,6 +28,7 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import ostf_test_mapping as map_ostf
 from fuelweb_test import settings
 from fuelweb_test.settings import NEUTRON_ENABLE
+from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test import logger
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -407,7 +408,7 @@ class CephHA(TestBasic):
                                             'tenant', 'keystone_user'])
 
 
-@test(groups=["thread_4", "ceph"])
+@test(groups=["ha_neutron_tun", "ceph"])
 class CephRadosGW(TestBasic):
     """CephRadosGW."""  # TODO documentation
 
@@ -418,7 +419,7 @@ class CephRadosGW(TestBasic):
         """Deploy ceph HA with RadosGW for objects
 
         Scenario:
-            1. Create cluster with Neurton/VLAN
+            1. Create cluster with Neutron
             2. Add 3 nodes with controller role
             3. Add 3 nodes with compute and ceph-osd role
             4. Deploy the cluster
@@ -443,7 +444,7 @@ class CephRadosGW(TestBasic):
                 'images_ceph': True,
                 'objects_ceph': True,
                 'net_provider': 'neutron',
-                'net_segment_type': settings.NEUTRON_SEGMENT['vlan'],
+                'net_segment_type': NEUTRON_SEGMENT_TYPE,
                 'tenant': 'rados',
                 'user': 'rados',
                 'password': 'rados'
