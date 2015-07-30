@@ -232,8 +232,10 @@ class EnvironmentModel(object):
 
     def make_snapshot(self, snapshot_name, description="", is_make=False):
         if settings.MAKE_SNAPSHOT or is_make:
-            self.d_env.suspend(verbose=False)
-            time.sleep(10)
+            with self.d_env.get_admin_remote() as remote:
+                logger.info("Stopping rsyslog ....")
+                remote.execute("/etc/init.d/rsyslog stop")
+            time.sleep(60)
 
             self.d_env.snapshot(snapshot_name, force=True)
             revert_info(snapshot_name, self.get_admin_node_ip(), description)
@@ -274,6 +276,9 @@ class EnvironmentModel(object):
 
         logger.info("Resuming the snapshot '{0}' ....".format(name))
         self.resume_environment()
+        with self.d_env.get_admin_remote() as remote:
+            logger.info("Starting rsyslog ....")
+            remote.execute("/etc/init.d/rsyslog start")
 
         if not skip_timesync:
             nailgun_nodes = [self.fuel_web.get_nailgun_node_by_name(node.name)
