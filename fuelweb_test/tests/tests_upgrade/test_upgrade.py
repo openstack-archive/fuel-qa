@@ -66,8 +66,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
-        remote = self.env.d_env.get_ssh_to_remote(_ip)
-        expected_kernel = self.get_slave_kernel(remote)
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            expected_kernel = self.get_slave_kernel(remote)
 
         self.env.admin_actions.upgrade_master_node()
 
@@ -91,8 +91,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                                test_sets=['ha', 'smoke', 'sanity'])
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
             _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
-            remote = self.env.d_env.get_ssh_to_remote(_ip)
-            kernel = self.get_slave_kernel(remote)
+            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+                kernel = self.get_slave_kernel(remote)
             checkers.check_kernel(kernel, expected_kernel)
         create_diagnostic_snapshot(
             self.env, "pass", "upgrade_ha_one_controller")
@@ -134,8 +134,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['ha', 'smoke', 'sanity'])
-        remote_ceph = self.fuel_web.get_ssh_for_node('slave-03')
-        self.fuel_web.prepare_ceph_to_delete(remote_ceph)
+        with self.fuel_web.get_ssh_for_node('slave-03') as remote_ceph:
+            self.fuel_web.prepare_ceph_to_delete(remote_ceph)
         nailgun_nodes = self.fuel_web.update_nodes(
             cluster_id, {'slave-03': ['compute', 'ceph-osd']}, False, True)
         task = self.fuel_web.deploy_cluster(cluster_id)
@@ -216,8 +216,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
             _ip = self.fuel_web.get_nailgun_node_by_name('slave-06')['ip']
-            remote = self.env.d_env.get_ssh_to_remote(_ip)
-            kernel = self.get_slave_kernel(remote)
+            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+                kernel = self.get_slave_kernel(remote)
             logger.debug("ubuntu kernel version"
                          " on new node is {}".format(kernel))
         self.fuel_web.verify_network(cluster_id)
@@ -263,30 +263,30 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['ha', 'smoke', 'sanity'])
 
-        remote = self.env.d_env.get_admin_remote()
+        with self.env.d_env.get_admin_remote() as remote:
 
-        # Patching
-        update_command = 'yum update -y'
-        update_result = remote.execute(update_command)
-        logger.debug('Result of "{1}" command on master node: '
-                     '{0}'.format(update_result, update_command))
-        assert_equal(int(update_result['exit_code']), 0,
-                     'Packages update failed, '
-                     'inspect logs for details')
+            # Patching
+            update_command = 'yum update -y'
+            update_result = remote.execute(update_command)
+            logger.debug('Result of "{1}" command on master node: '
+                         '{0}'.format(update_result, update_command))
+            assert_equal(int(update_result['exit_code']), 0,
+                         'Packages update failed, '
+                         'inspect logs for details')
 
-        # Restart containers
-        destroy_command = 'dockerctl destroy all'
-        destroy_result = remote.execute(destroy_command)
-        logger.debug('Result of "{1}" command on master node: '
-                     '{0}'.format(destroy_result, destroy_command))
-        assert_equal(int(destroy_result['exit_code']), 0,
-                     'Destroy containers failed, '
-                     'inspect logs for details')
+            # Restart containers
+            destroy_command = 'dockerctl destroy all'
+            destroy_result = remote.execute(destroy_command)
+            logger.debug('Result of "{1}" command on master node: '
+                         '{0}'.format(destroy_result, destroy_command))
+            assert_equal(int(destroy_result['exit_code']), 0,
+                         'Destroy containers failed, '
+                         'inspect logs for details')
 
-        start_command = 'dockerctl start all'
-        start_result = remote.execute(start_command)
-        logger.debug('Result of "{1}" command on master node: '
-                     '{0}'.format(start_result, start_command))
+            start_command = 'dockerctl start all'
+            start_result = remote.execute(start_command)
+            logger.debug('Result of "{1}" command on master node: '
+                         '{0}'.format(start_result, start_command))
         assert_equal(int(start_result['exit_code']), 0,
                      'Start containers failed, '
                      'inspect logs for details')
@@ -395,8 +395,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         assert_equal(str(cluster['net_provider']), 'neutron')
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
             _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
-            remote = self.env.d_env.get_ssh_to_remote(_ip)
-            kernel = self.get_slave_kernel(remote)
+            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+                kernel = self.get_slave_kernel(remote)
             logger.debug("ubuntu kernel version"
                          " on new node is {}".format(kernel))
         self.fuel_web.verify_network(cluster_id=cluster_id)
@@ -563,8 +563,8 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
-        remote = self.env.d_env.get_ssh_to_remote(_ip)
-        expected_kernel = UpgradeFuelMaster.get_slave_kernel(remote)
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            expected_kernel = UpgradeFuelMaster.get_slave_kernel(remote)
 
         self.env.admin_actions.upgrade_master_node(rollback=True)
 
@@ -587,8 +587,8 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
             _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
-            remote = self.env.d_env.get_ssh_to_remote(_ip)
-            kernel = UpgradeFuelMaster.get_slave_kernel(remote)
+            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+                kernel = UpgradeFuelMaster.get_slave_kernel(remote)
             checkers.check_kernel(kernel, expected_kernel)
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['ha', 'smoke', 'sanity'])

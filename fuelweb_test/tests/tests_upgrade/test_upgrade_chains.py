@@ -167,8 +167,8 @@ class UpgradeFuelChains(base_test_data.TestBasic):
         if not self.env.revert_snapshot('upgrade_first_stage'):
             raise SkipTest()
 
-        remote = self.env.d_env.get_admin_remote()
-        remote.execute("rm -rf /var/*upgrade*")
+        with self.env.d_env.get_admin_remote() as remote:
+            remote.execute("rm -rf /var/*upgrade*")
 
         self.env.admin_actions.upgrade_master_node()
 

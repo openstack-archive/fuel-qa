@@ -303,33 +303,33 @@ class EnvironmentModel(object):
 
     def set_admin_ssh_password(self):
         try:
-            remote = self.d_env.get_admin_remote(
-                login=settings.SSH_CREDENTIALS['login'],
-                password=settings.SSH_CREDENTIALS['password'])
-            self.execute_remote_cmd(remote, 'date')
+            with self.d_env.get_admin_remote(
+                    login=settings.SSH_CREDENTIALS['login'],
+                    password=settings.SSH_CREDENTIALS['password']) as remote:
+                self.execute_remote_cmd(remote, 'date')
             logger.debug('Accessing admin node using SSH: SUCCESS')
         except Exception:
             logger.debug('Accessing admin node using SSH credentials:'
                          ' FAIL, trying to change password from default')
-            remote = self.d_env.get_admin_remote(
-                login='root', password='r00tme')
-            self.execute_remote_cmd(
-                remote, 'echo -e "{1}\\n{1}" | passwd {0}'
-                .format(settings.SSH_CREDENTIALS['login'],
-                        settings.SSH_CREDENTIALS['password']))
+            with self.d_env.get_admin_remote(
+                    login='root', password='r00tme') as remote:
+                self.execute_remote_cmd(
+                    remote, 'echo -e "{1}\\n{1}" | passwd {0}'
+                    .format(settings.SSH_CREDENTIALS['login'],
+                            settings.SSH_CREDENTIALS['password']))
             logger.debug("Admin node password has changed.")
         logger.info("Admin node login name: '{0}' , password: '{1}'".
                     format(settings.SSH_CREDENTIALS['login'],
                            settings.SSH_CREDENTIALS['password']))
 
     def set_admin_keystone_password(self):
-        remote = self.d_env.get_admin_remote()
         try:
             self.fuel_web.client.get_releases()
         except exceptions.Unauthorized:
-            self.execute_remote_cmd(
-                remote, 'fuel user --newpass {0} --change-password'
-                .format(settings.KEYSTONE_CREDS['password']))
+            with self.d_env.get_admin_remote() as remote:
+                self.execute_remote_cmd(
+                    remote, 'fuel user --newpass {0} --change-password'
+                    .format(settings.KEYSTONE_CREDS['password']))
             logger.info(
                 'New Fuel UI (keystone) username: "{0}", password: "{1}"'
                 .format(settings.KEYSTONE_CREDS['username'],
@@ -396,11 +396,11 @@ class EnvironmentModel(object):
                 settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
             ))
         if settings.PATCHING_DISABLE_UPDATES:
-            remote = self.d_env.get_admin_remote()
-            cmd = "find /etc/yum.repos.d/ -type f -regextype posix-egrep" \
-                  " -regex '.*/mos[0-9,\.]+\-(updates|security).repo' | " \
-                  "xargs -n1 -i sed '$aenabled=0' -i {}"
-            self.execute_remote_cmd(remote, cmd)
+            with self.d_env.get_admin_remote() as remote:
+                cmd = "find /etc/yum.repos.d/ -type f -regextype posix-egrep" \
+                      " -regex '.*/mos[0-9,\.]+\-(updates|security).repo' | " \
+                      "xargs -n1 -i sed '$aenabled=0' -i {}"
+                self.execute_remote_cmd(remote, cmd)
 
     @update_packages
     @upload_manifests
@@ -413,9 +413,9 @@ class EnvironmentModel(object):
     def setup_customisation(self):
         self.wait_for_provisioning()
         try:
-            remote = self.d_env.get_admin_remote()
             cmd = "pkill -sigusr1 -f '^.*/fuelmenu$'"
-            wait(lambda: remote.execute(cmd)['exit_code'] == 0, timeout=60)
+            with self.d_env.get_admin_remote() as remote:
+                wait(lambda: remote.execute(cmd)['exit_code'] == 0, timeout=60)
         except Exception:
             logger.error("Could not kill process of fuelmenu")
             raise
@@ -449,10 +449,8 @@ class EnvironmentModel(object):
 
     def verify_network_configuration(self, node_name):
         node = self.fuel_web.get_nailgun_node_by_name(node_name)
-        checkers.verify_network_configuration(
-            node=node,
-            remote=self.d_env.get_ssh_to_remote(node['ip'])
-        )
+        with self.fuel_web.get_ssh_for_node(node_name) as ssh:
+            checkers.verify_network_configuration(node=node, remote=ssh)
 
     def wait_bootstrap(self):
         logger.info("Waiting while bootstrapping is in progress")
@@ -473,20 +471,24 @@ class EnvironmentModel(object):
             raise Exception('Fuel node deployment failed.')
 
     def dhcrelay_check(self):
-        admin_remote = self.d_env.get_admin_remote()
-        out = admin_remote.execute("dhcpcheck discover "
-                                   "--ifaces eth0 "
-                                   "--repeat 3 "
-                                   "--timeout 10")['stdout']
+        with self.d_env.get_admin_remote() as admin_remote:
+            out = admin_remote.execute("dhcpcheck discover "
+                                       "--ifaces eth0 "
+                                       "--repeat 3 "
+                                       "--timeout 10")['stdout']
 
         assert_true(self.get_admin_node_ip() in "".join(out),
                     "dhcpcheck doesn't discover master ip")
 
     def get_fuel_settings(self, remote=None):
-        if not remote:
-            remote = self.d_env.get_admin_remote()
         cmd = 'cat {cfg_file}'.format(cfg_file=settings.FUEL_SETTINGS_YAML)
-        result = remote.execute(cmd)
+
+        if not remote:
+            with self.d_env.get_admin_remote() as remote:
+                remote.execute(cmd)
+        else:
+            result = remote.execute(cmd)
+
         if result['exit_code'] == 0:
             fuel_settings = yaml.load(''.join(result['stdout']))
         else:
@@ -497,25 +499,26 @@ class EnvironmentModel(object):
 
     def admin_install_pkg(self, pkg_name):
         """Install a package <pkg_name> on the admin node"""
-        admin_remote = self.d_env.get_admin_remote()
-        remote_status = admin_remote.execute("rpm -q {0}'".format(pkg_name))
-        if remote_status['exit_code'] == 0:
-            logger.info("Package '{0}' already installed.".format(pkg_name))
-        else:
-            logger.info("Installing package '{0}' ...".format(pkg_name))
-            remote_status = admin_remote.execute("yum -y install {0}"
-                                                 .format(pkg_name))
-            logger.info("Installation of the package '{0}' has been"
-                        " completed with exit code {1}"
-                        .format(pkg_name, remote_status['exit_code']))
+        with self.d_env.get_admin_remote() as remote:
+            remote_status = remote.execute("rpm -q {0}'".format(pkg_name))
+            if remote_status['exit_code'] == 0:
+                logger.info("Package '{0}' already installed."
+                            .format(pkg_name))
+            else:
+                logger.info("Installing package '{0}' ...".format(pkg_name))
+                remote_status = remote.execute("yum -y install {0}"
+                                               .format(pkg_name))
+                logger.info("Installation of the package '{0}' has been"
+                            " completed with exit code {1}"
+                            .format(pkg_name, remote_status['exit_code']))
         return remote_status['exit_code']
 
     def admin_run_service(self, service_name):
         """Start a service <service_name> on the admin node"""
-        admin_remote = self.d_env.get_admin_remote()
-        admin_remote.execute("service {0} start".format(service_name))
-        remote_status = admin_remote.execute("service {0} status"
-                                             .format(service_name))
+        with self.d_env.get_admin_remote() as admin_remote:
+            admin_remote.execute("service {0} start".format(service_name))
+            remote_status = admin_remote.execute("service {0} status"
+                                                 .format(service_name))
         if any('running...' in status for status in remote_status['stdout']):
             logger.info("Service '{0}' is running".format(service_name))
         else:
@@ -530,9 +533,9 @@ class EnvironmentModel(object):
     # then `dockerctl destroy all; bootstrap_admin_node.sh;`
     def admin_install_updates(self):
         logger.info('Searching for updates..')
-        admin_remote = self.d_env.get_admin_remote()
         update_command = 'yum clean expire-cache; yum update -y'
-        update_result = admin_remote.execute(update_command)
+        with self.d_env.get_admin_remote() as admin_remote:
+            update_result = admin_remote.execute(update_command)
         logger.info('Result of "{1}" command on master node: '
                     '{0}'.format(update_result, update_command))
         assert_equal(int(update_result['exit_code']), 0,
@@ -556,7 +559,8 @@ class EnvironmentModel(object):
         logger.info('{0} packet(s) were updated'.format(updates_count))
 
         cmd = 'dockerctl destroy all; bootstrap_admin_node.sh;'
-        result = admin_remote.execute(cmd)
+        with self.d_env.get_admin_remote() as admin_remote:
+            result = admin_remote.execute(cmd)
         logger.info('Result of "{1}" command on master node: '
                     '{0}'.format(result, cmd))
         assert_equal(int(result['exit_code']), 0,
@@ -568,23 +572,24 @@ class EnvironmentModel(object):
     # * adds 'nameservers' at start of resolv.conf if merge=True
     # * replaces resolv.conf with 'nameservers' if merge=False
     def modify_resolv_conf(self, nameservers=[], merge=True):
-        remote = self.d_env.get_admin_remote()
-        resolv_conf = remote.execute('cat /etc/resolv.conf')
-        assert_equal(0, resolv_conf['exit_code'], 'Executing "{0}" on the '
-                     'admin node has failed with: {1}'
-                     .format('cat /etc/resolv.conf', resolv_conf['stderr']))
-        if merge:
-            nameservers.extend(resolv_conf['stdout'])
+        with self.d_env.get_admin_remote() as remote:
+            resolv_conf = remote.execute('cat /etc/resolv.conf')
+            assert_equal(0, resolv_conf['exit_code'], 'Executing "{0}" on the '
+                         'admin node has failed with: {1}'
+                         .format('cat /etc/resolv.conf',
+                                 resolv_conf['stderr']))
+            if merge:
+                nameservers.extend(resolv_conf['stdout'])
 
-        resolv_keys = ['search', 'domain', 'nameserver']
-        resolv_new = "".join('{0}\n'.format(ns) for ns in nameservers
-                             if any(x in ns for x in resolv_keys))
-        logger.debug('echo "{0}" > /etc/resolv.conf'.format(resolv_new))
-        echo_cmd = 'echo "{0}" > /etc/resolv.conf'.format(resolv_new)
-        echo_result = remote.execute(echo_cmd)
-        assert_equal(0, echo_result['exit_code'], 'Executing "{0}" on the '
-                     'admin node has failed with: {1}'
-                     .format(echo_cmd, echo_result['stderr']))
+            resolv_keys = ['search', 'domain', 'nameserver']
+            resolv_new = "".join('{0}\n'.format(ns) for ns in nameservers
+                                 if any(x in ns for x in resolv_keys))
+            logger.debug('echo "{0}" > /etc/resolv.conf'.format(resolv_new))
+            echo_cmd = 'echo "{0}" > /etc/resolv.conf'.format(resolv_new)
+            echo_result = remote.execute(echo_cmd)
+            assert_equal(0, echo_result['exit_code'], 'Executing "{0}" on the '
+                         'admin node has failed with: {1}'
+                         .format(echo_cmd, echo_result['stderr']))
         return resolv_conf['stdout']
 
     @logwrap
@@ -597,7 +602,6 @@ class EnvironmentModel(object):
 
     @logwrap
     def describe_second_admin_interface(self):
-        remote = self.d_env.get_admin_remote()
         admin_net2_object = self.d_env.get_network(name=self.d_env.admin_net2)
         second_admin_network = admin_net2_object.ip.network
         second_admin_netmask = admin_net2_object.ip.netmask
@@ -625,7 +629,8 @@ class EnvironmentModel(object):
             add_second_admin_ip, second_admin_if, second_admin_ip)
         logger.debug('Trying to assign {0} IP to the {1} on master node...'.
                      format(second_admin_ip, second_admin_if))
-        result = remote.execute(cmd)
+        with self.d_env.get_admin_remote() as remote:
+            result = remote.execute(cmd)
         assert_equal(result['exit_code'], 0, ('Failed to assign second admin '
                      'IP address on master node: {0}').format(result))
         logger.debug('Done: {0}'.format(result['stdout']))
