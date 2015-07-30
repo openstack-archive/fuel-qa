@@ -165,11 +165,13 @@ class ZabbixPlugin(TestBasic):
 
         """
         self.env.revert_snapshot("ready_with_5_slaves")
-        checkers.upload_tarball(
-            self.env.d_env.get_admin_remote(), conf.ZABBIX_PLUGIN_PATH, "/var")
-        checkers.install_plugin_check_code(
-            self.env.d_env.get_admin_remote(),
-            plugin=os.path.basename(conf.ZABBIX_PLUGIN_PATH))
+        
+        with self.env.d_env.get_admin_remote() as remote:
+            checkers.upload_tarball(
+                remote, conf.ZABBIX_PLUGIN_PATH, "/var")
+            checkers.install_plugin_check_code(
+                remote,
+                plugin=os.path.basename(conf.ZABBIX_PLUGIN_PATH))
 
         settings = None
         if conf.NEUTRON_ENABLE:
@@ -251,13 +253,14 @@ class ZabbixPlugin(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        for plugin in [conf.ZABBIX_PLUGIN_PATH,
-                       conf.ZABBIX_SNMP_PLUGIN_PATH]:
-            checkers.upload_tarball(
-                self.env.d_env.get_admin_remote(), plugin, "/var")
-            checkers.install_plugin_check_code(
-                self.env.d_env.get_admin_remote(),
-                plugin=os.path.basename(plugin))
+        with self.env.d_env.get_admin_remote() as remote:
+            for plugin in [conf.ZABBIX_PLUGIN_PATH,
+                           conf.ZABBIX_SNMP_PLUGIN_PATH]:
+                checkers.upload_tarball(
+                    remote, plugin, "/var")
+                checkers.install_plugin_check_code(
+                    remote,
+                    plugin=os.path.basename(plugin))
 
         settings = None
 
@@ -373,14 +376,15 @@ class ZabbixPlugin(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        for plugin in [conf.ZABBIX_PLUGIN_PATH,
-                       conf.ZABBIX_SNMP_PLUGIN_PATH,
-                       conf.ZABBIX_SNMP_EMC_PLUGIN_PATH]:
-            checkers.upload_tarball(
-                self.env.d_env.get_admin_remote(), plugin, "/var")
-            checkers.install_plugin_check_code(
-                self.env.d_env.get_admin_remote(),
-                plugin=os.path.basename(plugin))
+        with self.env.d_env.get_admin_remote() as remote:
+            for plugin in [conf.ZABBIX_PLUGIN_PATH,
+                           conf.ZABBIX_SNMP_PLUGIN_PATH,
+                           conf.ZABBIX_SNMP_EMC_PLUGIN_PATH]:
+                checkers.upload_tarball(
+                    remote, plugin, "/var")
+                checkers.install_plugin_check_code(
+                    remote,
+                    plugin=os.path.basename(plugin))
 
         settings = None
 
@@ -463,14 +467,15 @@ class ZabbixPlugin(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        for plugin in [conf.ZABBIX_PLUGIN_PATH,
-                       conf.ZABBIX_SNMP_PLUGIN_PATH,
-                       conf.ZABBIX_SNMP_EXTREME_PLUGIN_PATH]:
-            checkers.upload_tarball(
-                self.env.d_env.get_admin_remote(), plugin, "/var")
-            checkers.install_plugin_check_code(
-                self.env.d_env.get_admin_remote(),
-                plugin=os.path.basename(plugin))
+        with self.env.d_env.get_admin_remote() as remote:
+            for plugin in [conf.ZABBIX_PLUGIN_PATH,
+                           conf.ZABBIX_SNMP_PLUGIN_PATH,
+                           conf.ZABBIX_SNMP_EXTREME_PLUGIN_PATH]:
+                checkers.upload_tarball(
+                    remote, plugin, "/var")
+                checkers.install_plugin_check_code(
+                    remote,
+                    plugin=os.path.basename(plugin))
 
         settings = None
 

@@ -68,22 +68,22 @@ class CommandLineMinimal(TestBasic):
             cluster_id,
             {'slave-01': ['controller']}
         )
-        remote = self.env.d_env.get_admin_remote()
-        node_id = self.fuel_web.get_nailgun_node_by_devops_node(
-            self.env.d_env.nodes().slaves[0])['id']
-        remote.execute('fuel node --node {0} --provision --env {1}'.format
-                       (node_id, cluster_id))
-        self.fuel_web.provisioning_cluster_wait(cluster_id)
-        remote.execute('fuel node --node {0} --end hiera --env {1}'.format
-                       (node_id, cluster_id))
-        try:
-            wait(lambda: int(
-                remote.execute(
-                    'fuel task | grep deployment | awk \'{print $9}\'')
-                ['stdout'][0].rstrip()) == 100, timeout=120)
-        except TimeoutError:
-            raise TimeoutError("hiera manifest was not applyed")
-        role = remote.execute('ssh -q node-{0} "hiera role"'.format
+        with self.env.d_env.get_admin_remote() as remote:
+            node_id = self.fuel_web.get_nailgun_node_by_devops_node(
+                self.env.d_env.nodes().slaves[0])['id']
+            remote.execute('fuel node --node {0} --provision --env {1}'.format
+                           (node_id, cluster_id))
+            self.fuel_web.provisioning_cluster_wait(cluster_id)
+            remote.execute('fuel node --node {0} --end hiera --env {1}'.format
+                           (node_id, cluster_id))
+            try:
+                wait(lambda: int(
+                    remote.execute(
+                        'fuel task | grep deployment | awk \'{print $9}\'')
+                    ['stdout'][0].rstrip()) == 100, timeout=120)
+            except TimeoutError:
+                raise TimeoutError("hiera manifest was not applyed")
+            role = remote.execute('ssh -q node-{0} "hiera role"'.format
                               (node_id))['stdout'][0].rstrip()
         assert_equal(role, 'primary-controller', "node with deployed hiera "
                                                  "was not found")
@@ -268,12 +268,12 @@ class CommandLine(TestBasic):
         """
         self.env.revert_snapshot("cli_selected_nodes_deploy")
 
-        remote = self.env.d_env.get_admin_remote()
-        node_id = self.fuel_web.get_nailgun_node_by_devops_node(
-            self.env.d_env.nodes().slaves[2])['id']
+        with self.env.d_env.get_admin_remote() as remote:
+            node_id = self.fuel_web.get_nailgun_node_by_devops_node(
+                self.env.d_env.nodes().slaves[2])['id']
 
-        assert_true(check_cobbler_node_exists(remote, node_id),
-                    "node-{0} is not found".format(node_id))
+            assert_true(check_cobbler_node_exists(remote, node_id),
+                        "node-{0} is not found".format(node_id))
         self.env.d_env.nodes().slaves[2].destroy()
         try:
             wait(
@@ -282,25 +282,26 @@ class CommandLine(TestBasic):
                     slaves[2])['online'], timeout=60 * 6)
         except TimeoutError:
             raise
-        assert_true(
-            remote.execute('fuel node --node-id {0} --delete-from-db'.
-                           format(node_id))['exit_code'] == 0,
-            "Offline node-{0} was not deleted from database".format(node_id)
-        )
-        try:
-            wait(
-                lambda: not remote.execute(
-                    "fuel node | awk '{{print $1}}' | grep -w '{0}'".
-                    format(node_id))['exit_code'] == 0, timeout=60 * 2)
-        except TimeoutError:
-            raise TimeoutError(
-                "After deletion node-{0} is found in fuel list".
-                format(node_id))
-        assert_false(check_cobbler_node_exists(remote, node_id),
-                     "After deletion node-{0} is found in cobbler list".
-                     format(node_id))
-        cluster_id = ''.join(remote.execute(
-            "fuel env | tail -n 1 | awk {'print $1'}")['stdout']).rstrip()
+        with self.env.d_env.get_admin_remote() as remote:
+            assert_true(
+                remote.execute('fuel node --node-id {0} --delete-from-db'.
+                               format(node_id))['exit_code'] == 0,
+                "Offline node-{0} was not deleted from database".format(node_id)
+            )
+            try:
+                wait(
+                    lambda: not remote.execute(
+                        "fuel node | awk '{{print $1}}' | grep -w '{0}'".
+                        format(node_id))['exit_code'] == 0, timeout=60 * 2)
+            except TimeoutError:
+                raise TimeoutError(
+                    "After deletion node-{0} is found in fuel list".
+                    format(node_id))
+            assert_false(check_cobbler_node_exists(remote, node_id),
+                         "After deletion node-{0} is found in cobbler list".
+                         format(node_id))
+            cluster_id = ''.join(remote.execute(
+                "fuel env | tail -n 1 | awk {'print $1'}")['stdout']).rstrip()
 
         self.fuel_web.verify_network(cluster_id)
 
@@ -337,6 +338,7 @@ class CommandLine(TestBasic):
         except TimeoutError:
             raise TimeoutError(
                 "cluster {0} was not deleted".format(cluster_id))
+        remote.clear()
         assert_false(
             check_cluster_presence(cluster_id, self.env.postgres_actions),
             "cluster {0} is found".format(cluster_id))

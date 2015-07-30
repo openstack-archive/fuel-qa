@@ -36,6 +36,7 @@ class GroupNtpSync(object):
                             " connections to {0}".format(nailgun_nodes))
 
         # 1. Create a list of 'Ntp' connections to the nodes
+        #TODO(mstrukov): close ssh sessions
         self.ntps = [Ntp.get_ntp(env.d_env.get_ssh_to_remote(node['ip']),
                                  'node-{0}'.format(node['id']),
                                  env.get_admin_node_ip())
