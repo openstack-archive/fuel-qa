@@ -120,8 +120,8 @@ class CephCompact(TestBasic):
                                      data=image_data)
         volume = os_conn.create_volume(size=1, image_id=image.id)
 
-        remote = self.fuel_web.get_ssh_for_node('slave-01')
-        rbd_list = ceph.get_rbd_images_list(remote, 'volumes')
+        with self.fuel_web.get_ssh_for_node('slave-01') as remote:
+            rbd_list = ceph.get_rbd_images_list(remote, 'volumes')
 
         for item in rbd_list:
             if volume.id in item['image']:
@@ -342,17 +342,18 @@ class CephHA(TestBasic):
         # create image
         devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
-        slave = self.fuel_web.get_ssh_for_node(devops_node.name)
-        if settings.OPENSTACK_RELEASE_CENTOS in settings.OPENSTACK_RELEASE:
-            slave.execute(". openrc; glance image-create --name"
-                          " 'custom-image' --disk-format qcow2"
-                          " --container-format bare"
-                          " --file /opt/vm/cirros-x86_64-disk.img")
-        else:
-            slave.execute(". openrc; glance image-create --name"
-                          " 'custom-image' --disk-format qcow2"
-                          " --container-format bare --file"
-                          " /usr/share/cirros-testvm/cirros-x86_64-disk.img")
+        with self.fuel_web.get_ssh_for_node(devops_node.name) as slave:
+            if settings.OPENSTACK_RELEASE_CENTOS in settings.OPENSTACK_RELEASE:
+                slave.execute(". openrc; glance image-create --name"
+                              " 'custom-image' --disk-format qcow2"
+                              " --container-format bare"
+                              " --file /opt/vm/cirros-x86_64-disk.img")
+            else:
+                slave.execute(
+                    ". openrc; glance image-create --name"
+                    " 'custom-image' --disk-format qcow2"
+                    " --container-format bare --file"
+                    " /usr/share/cirros-testvm/cirros-x86_64-disk.img")
 
         image = os_conn.get_image_by_name('custom-image')
 
@@ -478,10 +479,10 @@ class CephRadosGW(TestBasic):
             logger.info("Check all HAProxy backends on {}".format(
                 node['meta']['system']['fqdn']))
             haproxy_status = checkers.check_haproxy_backend(remote)
+            remote.clear()
             assert_equal(haproxy_status['exit_code'], 1,
                          "HAProxy backends are DOWN. {0}".format(
                              haproxy_status))
-            remote.clear()
 
         self.fuel_web.check_ceph_status(cluster_id)
 
@@ -490,12 +491,11 @@ class CephRadosGW(TestBasic):
                                test_sets=['ha', 'smoke', 'sanity'])
 
         # Check the radosqw daemon is started
-        remote = self.fuel_web.get_ssh_for_node('slave-01')
-        radosgw_started = lambda: len(remote.check_call(
-            'ps aux | grep "/usr/bin/radosgw -n '
-            'client.radosgw.gateway"')['stdout']) == 3
-        assert_true(radosgw_started(), 'radosgw daemon started')
-        remote.clear()
+        with self.fuel_web.get_ssh_for_node('slave-01') as remote:
+            radosgw_started = lambda: len(remote.check_call(
+                'ps aux | grep "/usr/bin/radosgw -n '
+                'client.radosgw.gateway"')['stdout']) == 3
+            assert_true(radosgw_started(), 'radosgw daemon started')
 
         self.env.make_snapshot("ceph_rados_gw")
 
@@ -829,9 +829,10 @@ class CheckCephPartitionsAfterReboot(TestBasic):
             self.show_step(7, node)
             logger.info("Get partitions for {node}".format(node=node))
             _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            before_reboot_partitions = [checkers.get_ceph_partitions(
-                self.env.d_env.get_ssh_to_remote(_ip),
-                "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
+            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+                before_reboot_partitions = [checkers.get_ceph_partitions(
+                    remote,
+                    "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
 
             self.show_step(8, node)
             logger.info("Warm-restart nodes")
@@ -843,9 +844,10 @@ class CheckCephPartitionsAfterReboot(TestBasic):
                 node=node
             ))
             _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            after_reboot_partitions = [checkers.get_ceph_partitions(
-                self.env.d_env.get_ssh_to_remote(_ip),
-                "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
+            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+                after_reboot_partitions = [checkers.get_ceph_partitions(
+                    remote,
+                    "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
 
             if before_reboot_partitions != after_reboot_partitions:
                 logger.info("Partitions don`t match")
@@ -864,9 +866,10 @@ class CheckCephPartitionsAfterReboot(TestBasic):
 
             self.show_step(12, node)
             _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            after_reboot_partitions = [checkers.get_ceph_partitions(
-                self.env.d_env.get_ssh_to_remote(_ip),
-                "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
+            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+                after_reboot_partitions = [checkers.get_ceph_partitions(
+                    remote,
+                    "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
 
             if before_reboot_partitions != after_reboot_partitions:
                 logger.info("Partitions don`t match")

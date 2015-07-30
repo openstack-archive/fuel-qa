@@ -101,24 +101,29 @@ class UpgradeFuelChains(base_test_data.TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
         available_releases_before = self.fuel_web.get_releases_list_for_os(
             release_name=hlp_data.OPENSTACK_RELEASE)
-        checkers.upload_tarball(self.env.d_env.get_admin_remote(),
-                                hlp_data.TARBALL_PATH, '/var')
-        checkers.check_file_exists(self.env.d_env.get_admin_remote(),
-                                   os.path.join('/var',
-                                                os.path.basename(
-                                                    hlp_data.TARBALL_PATH)))
-        checkers.untar(self.env.d_env.get_admin_remote(),
-                       os.path.basename(hlp_data.
-                                        TARBALL_PATH), '/var')
-        checkers.run_script(self.env.d_env.get_admin_remote(),
-                            '/var', 'upgrade.sh',
-                            password=hlp_data.KEYSTONE_CREDS['password'])
-        checkers.wait_upgrade_is_done(self.env.d_env.get_admin_remote(), 3000,
-                                      phrase='*** UPGRADING MASTER NODE'
-                                             ' DONE SUCCESSFULLY')
-        checkers.check_upgraded_containers(self.env.d_env.get_admin_remote(),
-                                           hlp_data.UPGRADE_FUEL_FROM,
-                                           hlp_data.UPGRADE_FUEL_TO)
+
+        with self.env.d_env.get_admin_remote() as remote:
+            checkers.upload_tarball(remote,
+                                    hlp_data.TARBALL_PATH,
+                                    '/var')
+            checkers.check_file_exists(remote,
+                                       os.path.join('/var',
+                                                    os.path.basename(
+                                                        hlp_data.TARBALL_PATH))
+                                       )
+            checkers.untar(remote,
+                           os.path.basename(hlp_data.TARBALL_PATH),
+                           '/var')
+            checkers.run_script(remote,
+                                '/var', 'upgrade.sh',
+                                password=hlp_data.KEYSTONE_CREDS['password'])
+            checkers.wait_upgrade_is_done(remote, 3000,
+                                          phrase='*** UPGRADING MASTER NODE'
+                                                 ' DONE SUCCESSFULLY')
+            checkers.check_upgraded_containers(remote,
+                                               hlp_data.UPGRADE_FUEL_FROM,
+                                               hlp_data.UPGRADE_FUEL_TO)
+
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
@@ -185,27 +190,30 @@ class UpgradeFuelChains(base_test_data.TestBasic):
         if not self.env.revert_snapshot('upgrade_first_stage'):
             raise SkipTest()
 
-        remote = self.env.d_env.get_admin_remote()
-        remote.execute("rm -rf /var/*upgrade*")
+        with self.env.d_env.get_admin_remote() as remote:
+            remote.execute("rm -rf /var/*upgrade*")
 
-        checkers.upload_tarball(remote,
-                                hlp_data.TARBALL_PATH, '/var')
-        checkers.check_file_exists(remote,
-                                   os.path.join('/var',
-                                                os.path.basename(
-                                                    hlp_data.TARBALL_PATH)))
-        checkers.untar(remote,
-                       os.path.basename(hlp_data.
-                                        TARBALL_PATH), '/var')
-        checkers.run_script(remote,
-                            '/var', 'upgrade.sh',
-                            password=hlp_data.KEYSTONE_CREDS['password'])
-        checkers.wait_upgrade_is_done(remote, 3000,
-                                      phrase='*** UPGRADING MASTER NODE'
-                                             ' DONE SUCCESSFULLY')
-        checkers.check_upgraded_containers(remote,
-                                           hlp_data.UPGRADE_FUEL_FROM,
-                                           hlp_data.UPGRADE_FUEL_TO)
+            checkers.upload_tarball(remote,
+                                    hlp_data.TARBALL_PATH, '/var')
+            checkers.check_file_exists(remote,
+                                       os.path.join('/var',
+                                                    os.path.basename(
+                                                        hlp_data.TARBALL_PATH))
+                                       )
+            checkers.untar(remote,
+                           os.path.basename(hlp_data.
+                                            TARBALL_PATH),
+                           '/var')
+            checkers.run_script(remote,
+                                '/var', 'upgrade.sh',
+                                password=hlp_data.KEYSTONE_CREDS['password'])
+            checkers.wait_upgrade_is_done(remote, 3000,
+                                          phrase='*** UPGRADING MASTER NODE'
+                                                 ' DONE SUCCESSFULLY')
+            checkers.check_upgraded_containers(remote,
+                                               hlp_data.UPGRADE_FUEL_FROM,
+                                               hlp_data.UPGRADE_FUEL_TO)
+
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:6])

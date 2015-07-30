@@ -90,12 +90,13 @@ class SaharaHAOneController(TestBasic):
 
         LOGGER.debug('Verify Sahara service on controller')
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(
-            self.env.d_env.get_ssh_to_remote(_ip),
-            service_name='sahara-api')
-        checkers.verify_service(
-            self.env.d_env.get_ssh_to_remote(_ip),
-            service_name='sahara-engine')
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            checkers.verify_service(
+                remote,
+                service_name='sahara-api')
+            checkers.verify_service(
+                remote,
+                service_name='sahara-engine')
 
         LOGGER.debug('Run all sanity and smoke tests')
         path_to_tests = 'fuel_health.tests.sanity.test_sanity_sahara.'
@@ -198,12 +199,13 @@ class SaharaHA(TestBasic):
         LOGGER.debug('Verify Sahara service on all controllers')
         for slave in ["slave-01", "slave-02", "slave-03"]:
             _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
-            checkers.verify_service(
-                self.env.d_env.get_ssh_to_remote(_ip),
-                service_name='sahara-api')
-            checkers.verify_service(
-                self.env.d_env.get_ssh_to_remote(_ip),
-                service_name='sahara-engine')
+            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+                checkers.verify_service(
+                    remote,
+                    service_name='sahara-api')
+                checkers.verify_service(
+                    remote,
+                    service_name='sahara-engine')
 
         LOGGER.debug('Run all sanity and smoke tests')
         path_to_tests = 'fuel_health.tests.sanity.test_sanity_sahara.'
@@ -292,9 +294,10 @@ class MuranoHAOneController(TestBasic):
             data['user'], data['password'], data['tenant'])
         self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(
-            self.env.d_env.get_ssh_to_remote(_ip),
-            service_name='murano-api')
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            checkers.verify_service(
+                remote,
+                service_name='murano-api')
 
         LOGGER.debug('Run sanity and functional Murano OSTF tests')
         self.fuel_web.run_single_ostf_test(
@@ -380,9 +383,10 @@ class MuranoHA(TestBasic):
         self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)
         for slave in ["slave-01", "slave-02", "slave-03"]:
             _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
-            checkers.verify_service(
-                self.env.d_env.get_ssh_to_remote(_ip),
-                service_name='murano-api')
+            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+                checkers.verify_service(
+                    remote,
+                    service_name='murano-api')
 
         LOGGER.debug('Run sanity and functional Murano OSTF tests')
         self.fuel_web.run_single_ostf_test(
@@ -543,13 +547,15 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(
-            self.env.d_env.get_ssh_to_remote(_ip),
-            service_name='ceilometer-api')
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            checkers.verify_service(
+                remote,
+                service_name='ceilometer-api')
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-03")['ip']
-        partitions = checkers.get_mongo_partitions(
-            self.env.d_env.get_ssh_to_remote(_ip), "vda5")
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            partitions = checkers.get_mongo_partitions(remote, "vda5")
+
         assert_equal(partitions[0].rstrip(), mongo_disk_gb,
                      'Mongo size {0} before deployment is not equal'
                      ' to size after {1}'.format(mongo_disk_gb, partitions))
@@ -598,9 +604,10 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(
-            self.env.d_env.get_ssh_to_remote(_ip),
-            service_name='ceilometer-api')
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            checkers.verify_service(
+                remote,
+                service_name='ceilometer-api')
 
         self.run_tests(cluster_id)
         self.env.make_snapshot("deploy_ceilometer_ha_one_controller_multirole")
@@ -655,9 +662,10 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(
-            self.env.d_env.get_ssh_to_remote(_ip),
-            service_name='ceilometer-api')
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            checkers.verify_service(
+                remote,
+                service_name='ceilometer-api')
 
         self.run_tests(cluster_id,
                        skip_tests=['test_check_volume_notifications'])
@@ -706,9 +714,10 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(
-            self.env.d_env.get_ssh_to_remote(_ip),
-            service_name='ceilometer-api')
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            checkers.verify_service(
+                remote,
+                service_name='ceilometer-api')
 
         self.run_tests(cluster_id)
         self.env.make_snapshot("deploy_ceilometer_ha_multirole")
@@ -770,9 +779,10 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(
-            self.env.d_env.get_ssh_to_remote(_ip),
-            service_name='ceilometer-api')
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            checkers.verify_service(
+                remote,
+                service_name='ceilometer-api')
 
         self.run_tests(cluster_id)
         self.env.make_snapshot("deploy_ceilometer_ha_with_external_mongo")
@@ -833,14 +843,16 @@ class HeatHAOneController(TestBasic):
         self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(
-            self.env.d_env.get_ssh_to_remote(_ip),
-            service_name='heat-api', count=3)
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            checkers.verify_service(
+                remote,
+                service_name='heat-api', count=3)
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(
-            self.env.d_env.get_ssh_to_remote(_ip),
-            service_name='ceilometer-api')
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            checkers.verify_service(
+                remote,
+                service_name='ceilometer-api')
 
         LOGGER.debug('Run Heat OSTF platform tests')
 
@@ -925,14 +937,13 @@ class HeatHA(TestBasic):
 
         for slave in ["slave-01", "slave-02", "slave-03"]:
             _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
-            checkers.verify_service(
-                self.env.d_env.get_ssh_to_remote(_ip),
-                service_name='heat-api', count=3)
-
-            _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
-            checkers.verify_service(
-                self.env.d_env.get_ssh_to_remote(_ip),
-                service_name='ceilometer-api')
+            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+                checkers.verify_service(
+                    remote,
+                    service_name='heat-api', count=3)
+                checkers.verify_service(
+                    remote,
+                    service_name='ceilometer-api')
 
         LOGGER.debug('Run Heat OSTF platform tests')
 

@@ -56,15 +56,17 @@ class ExamplePlugin(TestBasic):
 
         # copy plugin to the master node
         checkers.check_archive_type(EXAMPLE_PLUGIN_PATH)
-        checkers.upload_tarball(
-            self.env.d_env.get_admin_remote(),
-            EXAMPLE_PLUGIN_PATH, '/var')
 
-        # install plugin
+        with self.env.d_env.get_admin_remote() as remote:
+            checkers.upload_tarball(
+                remote,
+                EXAMPLE_PLUGIN_PATH, '/var')
 
-        checkers.install_plugin_check_code(
-            self.env.d_env.get_admin_remote(),
-            plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
+            # install plugin
+
+            checkers.install_plugin_check_code(
+                remote,
+                plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
 
         segment_type = NEUTRON_SEGMENT['vlan']
         cluster_id = self.fuel_web.create_cluster(
@@ -282,14 +284,16 @@ class ExamplePlugin(TestBasic):
 
         # copy plugin to the master node
         checkers.check_archive_type(EXAMPLE_PLUGIN_PATH)
-        checkers.upload_tarball(
-            self.env.d_env.get_admin_remote(), EXAMPLE_PLUGIN_PATH, '/var')
 
-        # install plugin
+        with self.env.d_env.get_admin_remote() as remote:
+            checkers.upload_tarball(
+                remote, EXAMPLE_PLUGIN_PATH, '/var')
 
-        checkers.install_plugin_check_code(
-            self.env.d_env.get_admin_remote(),
-            plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
+            # install plugin
+
+            checkers.install_plugin_check_code(
+                remote,
+                plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -373,14 +377,16 @@ class ExamplePlugin(TestBasic):
 
         # copy plugin to the master node
         checkers.check_archive_type(EXAMPLE_PLUGIN_PATH)
-        checkers.upload_tarball(
-            self.env.d_env.get_admin_remote(), EXAMPLE_PLUGIN_PATH, '/var')
 
-        # install plugin
+        with self.env.d_env.get_admin_remote() as remote:
+            checkers.upload_tarball(
+                remote, EXAMPLE_PLUGIN_PATH, '/var')
 
-        checkers.install_plugin_check_code(
-            self.env.d_env.get_admin_remote(),
-            plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
+            # install plugin
+
+            checkers.install_plugin_check_code(
+                remote,
+                plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
