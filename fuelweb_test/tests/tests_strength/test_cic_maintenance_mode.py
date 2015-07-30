@@ -52,7 +52,9 @@ class CICMaintenanceMode(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
         data = {
-            'ceilometer': True
+            'ceilometer': True,
+            'net_provider': 'neutron',
+            'net_segment_type': settings.NEUTRON_SEGMENT_TYPE
         }
 
         cluster_id = self.fuel_web.create_cluster(
@@ -103,15 +105,15 @@ class CICMaintenanceMode(TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         for nailgun_node in self.env.d_env.nodes().slaves[0:3]:
-            remote = self.fuel_web.get_ssh_for_node(nailgun_node.name)
-            assert_true('True' in check_available_mode(remote),
-                        "Maintenance mode is not available")
+            with self.fuel_web.get_ssh_for_node(nailgun_node.name) as remote:
+                assert_true('True' in check_available_mode(remote),
+                            "Maintenance mode is not available")
 
-            logger.info('Maintenance mode for node %s', nailgun_node.name)
-            result = remote.execute('umm on')
-            assert_equal(result['exit_code'], 0,
-                         'Failed to execute "{0}" on remote host: {1}'.
-                         format('umm on', result))
+                logger.info('Maintenance mode for node %s', nailgun_node.name)
+                result = remote.execute('umm on')
+                assert_equal(result['exit_code'], 0,
+                             'Failed to execute "{0}" on remote host: {1}'.
+                             format('umm on', result))
             logger.info('Wait a %s node offline status after switching '
                         'maintenance mode ', nailgun_node.name)
             try:
@@ -129,14 +131,14 @@ class CICMaintenanceMode(TestBasic):
             logger.info('Check that %s node in maintenance mode after '
                         'switching', nailgun_node.name)
 
-            remote = self.fuel_web.get_ssh_for_node(nailgun_node.name)
-            assert_true('True' in check_auto_mode(remote),
-                        "Maintenance mode is not switch")
+            with self.fuel_web.get_ssh_for_node(nailgun_node.name) as remote:
+                assert_true('True' in check_auto_mode(remote),
+                            "Maintenance mode is not switch")
 
-            result = remote.execute('umm off')
-            assert_equal(result['exit_code'], 0,
-                         'Failed to execute "{0}" on remote host: {1}'.
-                         format('umm off', result))
+                result = remote.execute('umm off')
+                assert_equal(result['exit_code'], 0,
+                             'Failed to execute "{0}" on remote host: {1}'.
+                             format('umm off', result))
 
             logger.info('Wait a %s node online status', nailgun_node.name)
             try:
@@ -204,25 +206,25 @@ class CICMaintenanceMode(TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         for nailgun_node in self.env.d_env.nodes().slaves[0:3]:
-            remote = self.fuel_web.get_ssh_for_node(nailgun_node.name)
-            assert_true('True' in check_available_mode(remote),
-                        "Maintenance mode is not available")
+            with self.fuel_web.get_ssh_for_node(nailgun_node.name) as remote:
+                assert_true('True' in check_available_mode(remote),
+                            "Maintenance mode is not available")
 
-            logger.info('Change UMM.CONF on node %s', nailgun_node.name)
-            command1 = ("echo -e 'UMM=yes\nREBOOT_COUNT=0\n"
-                        "COUNTER_RESET_TIME=10' > /etc/umm.conf")
+                logger.info('Change UMM.CONF on node %s', nailgun_node.name)
+                command1 = ("echo -e 'UMM=yes\nREBOOT_COUNT=0\n"
+                            "COUNTER_RESET_TIME=10' > /etc/umm.conf")
 
-            result = remote.execute(command1)
-            assert_equal(result['exit_code'], 0,
-                         'Failed to execute "{0}" on remote host: {1}'.
-                         format(command1, result))
+                result = remote.execute(command1)
+                assert_equal(result['exit_code'], 0,
+                             'Failed to execute "{0}" on remote host: {1}'.
+                             format(command1, result))
 
-            logger.info('Unexpected reboot on node %s', nailgun_node.name)
-            command2 = ('reboot --force >/dev/null & ')
-            result = remote.execute(command2)
-            assert_equal(result['exit_code'], 0,
-                         'Failed to execute "{0}" on remote host: {1}'.
-                         format(command2, result))
+                logger.info('Unexpected reboot on node %s', nailgun_node.name)
+                command2 = ('reboot --force >/dev/null & ')
+                result = remote.execute(command2)
+                assert_equal(result['exit_code'], 0,
+                             'Failed to execute "{0}" on remote host: {1}'.
+                             format(command2, result))
 
             logger.info('Wait a %s node offline status after unexpected '
                         'reboot', nailgun_node.name)
@@ -241,22 +243,22 @@ class CICMaintenanceMode(TestBasic):
             logger.info('Check that %s node in maintenance mode after'
                         ' unexpected reboot', nailgun_node.name)
 
-            remote = self.fuel_web.get_ssh_for_node(nailgun_node.name)
-            assert_true('True' in check_auto_mode(remote),
-                        "Maintenance mode is not switch")
+            with self.fuel_web.get_ssh_for_node(nailgun_node.name) as remote:
+                assert_true('True' in check_auto_mode(remote),
+                            "Maintenance mode is not switch")
 
-            result = remote.execute('umm off')
-            assert_equal(result['exit_code'], 0,
-                         'Failed to execute "{0}" on remote host: {1}'.
-                         format('umm off', result))
-            # Wait umm stops
-            time.sleep(30)
-            command3 = ("echo -e 'UMM=yes\nREBOOT_COUNT=2\n"
-                        "COUNTER_RESET_TIME=10' > /etc/umm.conf")
-            result = remote.execute(command3)
-            assert_equal(result['exit_code'], 0,
-                         'Failed to execute "{0}" on remote host: {1}'.
-                         format(command3, result))
+                result = remote.execute('umm off')
+                assert_equal(result['exit_code'], 0,
+                             'Failed to execute "{0}" on remote host: {1}'.
+                             format('umm off', result))
+                # Wait umm stops
+                time.sleep(30)
+                command3 = ("echo -e 'UMM=yes\nREBOOT_COUNT=2\n"
+                            "COUNTER_RESET_TIME=10' > /etc/umm.conf")
+                result = remote.execute(command3)
+                assert_equal(result['exit_code'], 0,
+                             'Failed to execute "{0}" on remote host: {1}'.
+                             format(command3, result))
 
             logger.info('Wait a %s node online status', nailgun_node.name)
             try:
@@ -324,26 +326,26 @@ class CICMaintenanceMode(TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         for nailgun_node in self.env.d_env.nodes().slaves[0:3]:
-            remote = self.fuel_web.get_ssh_for_node(nailgun_node.name)
-            assert_true('True' in check_available_mode(remote),
-                        "Maintenance mode is not available")
+            with self.fuel_web.get_ssh_for_node(nailgun_node.name) as remote:
+                assert_true('True' in check_available_mode(remote),
+                            "Maintenance mode is not available")
 
-            logger.info('Maintenance mode for node %s is disable',
-                        nailgun_node.name)
-            result = remote.execute('umm disable')
-            assert_equal(result['exit_code'], 0,
-                         'Failed to execute "{0}" on remote host: {1}'.
-                         format('umm disable', result))
+                logger.info('Maintenance mode for node %s is disable',
+                            nailgun_node.name)
+                result = remote.execute('umm disable')
+                assert_equal(result['exit_code'], 0,
+                             'Failed to execute "{0}" on remote host: {1}'.
+                             format('umm disable', result))
 
-            assert_false('True' in check_available_mode(remote),
-                         "Maintenance mode should not be available")
+                assert_false('True' in check_available_mode(remote),
+                             "Maintenance mode should not be available")
 
-            logger.info('Try to execute maintenance mode for node %s',
-                        nailgun_node.name)
-            result = remote.execute('umm on')
-            assert_equal(result['exit_code'], 1,
-                         'Failed to execute "{0}" on remote host: {1}'.
-                         format('umm on', result))
+                logger.info('Try to execute maintenance mode for node %s',
+                            nailgun_node.name)
+                result = remote.execute('umm on')
+                assert_equal(result['exit_code'], 1,
+                             'Failed to execute "{0}" on remote host: {1}'.
+                             format('umm on', result))
 
             # If we don't disable maintenance mode,
             # the node would have gone to reboot, so we just expect
@@ -387,33 +389,33 @@ class CICMaintenanceMode(TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         for nailgun_node in self.env.d_env.nodes().slaves[0:3]:
-            remote = self.fuel_web.get_ssh_for_node(nailgun_node.name)
-            assert_true('True' in check_available_mode(remote),
-                        "Maintenance mode is not available")
+            with self.fuel_web.get_ssh_for_node(nailgun_node.name) as remote:
+                assert_true('True' in check_available_mode(remote),
+                            "Maintenance mode is not available")
 
-            logger.info('Change UMM.CONF on node %s', nailgun_node.name)
-            command1 = ("echo -e 'UMM=yes\nREBOOT_COUNT=0\n"
-                        "COUNTER_RESET_TIME=10' > /etc/umm.conf")
+                logger.info('Change UMM.CONF on node %s', nailgun_node.name)
+                command1 = ("echo -e 'UMM=yes\nREBOOT_COUNT=0\n"
+                            "COUNTER_RESET_TIME=10' > /etc/umm.conf")
 
-            result = remote.execute(command1)
-            assert_equal(result['exit_code'], 0,
-                         'Failed to execute "{0}" on remote host: {1}'.
-                         format(command1, result))
+                result = remote.execute(command1)
+                assert_equal(result['exit_code'], 0,
+                             'Failed to execute "{0}" on remote host: {1}'.
+                             format(command1, result))
 
-            result = remote.execute('umm disable')
-            assert_equal(result['exit_code'], 0,
-                         'Failed to execute "{0}" on remote host: {1}'.
-                         format('umm disable', result))
+                result = remote.execute('umm disable')
+                assert_equal(result['exit_code'], 0,
+                             'Failed to execute "{0}" on remote host: {1}'.
+                             format('umm disable', result))
 
-            assert_false('True' in check_available_mode(remote),
-                         "Maintenance mode should not be available")
+                assert_false('True' in check_available_mode(remote),
+                             "Maintenance mode should not be available")
 
-            logger.info('Unexpected reboot on node %s', nailgun_node.name)
-            command2 = ('reboot --force >/dev/null & ')
-            result = remote.execute(command2)
-            assert_equal(result['exit_code'], 0,
-                         'Failed to execute "{0}" on remote host: {1}'.
-                         format(command2, result))
+                logger.info('Unexpected reboot on node %s', nailgun_node.name)
+                command2 = ('reboot --force >/dev/null & ')
+                result = remote.execute(command2)
+                assert_equal(result['exit_code'], 0,
+                             'Failed to execute "{0}" on remote host: {1}'.
+                             format(command2, result))
 
             # Node don't have enough time for set offline status
             # after reboot --force
@@ -430,9 +432,9 @@ class CICMaintenanceMode(TestBasic):
             logger.info('Check that %s node not in maintenance mode after'
                         ' unexpected reboot', nailgun_node.name)
 
-            remote = self.fuel_web.get_ssh_for_node(nailgun_node.name)
-            assert_false('True' in check_auto_mode(remote),
-                         "Maintenance mode should not switched")
+            with self.fuel_web.get_ssh_for_node(nailgun_node.name) as remote:
+                assert_false('True' in check_auto_mode(remote),
+                             "Maintenance mode should not switched")
 
             # Wait until MySQL Galera is UP on some controller
             self.fuel_web.wait_mysql_galera_is_up(
