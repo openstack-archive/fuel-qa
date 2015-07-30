@@ -862,10 +862,10 @@ class HeatHAOneController(TestBasic):
         self.env.make_snapshot("deploy_heat_ha_one_controller_neutron")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_heat_ha_one_controller_nova"])
+          groups=["deploy_heat_ha_one_controller_neutron"])
     @log_snapshot_after_test
-    def deploy_heat_ha_one_controller_nova(self):
-        """Deploy Heat cluster in ha mode with Nova Network
+    def deploy_heat_ha_one_controller_neutron(self):
+        """Deploy Heat cluster in ha mode with Neutron Network
 
         Scenario:
             1. Create cluster
@@ -886,7 +886,9 @@ class HeatHAOneController(TestBasic):
             'ceilometer': True,
             'tenant': 'heatSimple',
             'user': 'heatSimple',
-            'password': 'heatSimple'
+            'password': 'heatSimple',
+            'net_provider': 'neutron',
+            'net_segment_type': settings.NEUTRON_SEGMENT_TYPE
         }
 
         cluster_id = self.fuel_web.create_cluster(
@@ -903,21 +905,14 @@ class HeatHAOneController(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id),
-            data['user'], data['password'], data['tenant'])
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=6, networks_count=1, timeout=300)
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(
-            self.env.d_env.get_ssh_to_remote(_ip),
-            service_name='heat-api', count=3)
-
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(
-            self.env.d_env.get_ssh_to_remote(_ip),
-            service_name='ceilometer-api')
+        with self.fuel_web.get_ssh_for_node("slave-01") as slave01_remote:
+            checkers.verify_service(slave01_remote,
+                                    service_name='heat-api', count=3)
+            checkers.verify_service(slave01_remote,
+                                    service_name='ceilometer-api')
 
         LOGGER.debug('Run Heat OSTF platform tests')
 
