@@ -314,8 +314,8 @@ class FuelWebClient(object):
     @logwrap
     def get_pcm_nodes(self, ctrl_node, pure=False):
         nodes = {}
-        remote = self.get_ssh_for_node(ctrl_node)
-        pcs_status = remote.execute('pcs status nodes')['stdout']
+        with self.get_ssh_for_node(ctrl_node) as remote:
+            pcs_status = remote.execute('pcs status nodes')['stdout']
         pcm_nodes = yaml.load(''.join(pcs_status).strip())
         for status in ('Online', 'Offline', 'Standby'):
             list_nodes = (pcm_nodes['Pacemaker Nodes'][status] or '').split()
@@ -328,9 +328,9 @@ class FuelWebClient(object):
 
     @logwrap
     def get_rabbit_running_nodes(self, ctrl_node):
-        remote = self.get_ssh_for_node(ctrl_node)
-        rabbit_status = ''.join(remote.execute(
-            'rabbitmqctl cluster_status')['stdout']).strip()
+        with self.get_ssh_for_node(ctrl_node) as remote:
+            rabbit_status = ''.join(remote.execute(
+                'rabbitmqctl cluster_status')['stdout']).strip()
         rabbit_nodes = re.search(
             "\{running_nodes,\[(.*)\]\}",
             rabbit_status).group(1).replace("'", "").split(',')
@@ -440,13 +440,15 @@ class FuelWebClient(object):
 
             public_gw = self.environment.d_env.router(router_name="public")
 
-            if help_data.FUEL_USE_LOCAL_NTPD and ('ntp_list' not in settings)\
-                    and checkers.is_ntpd_active(
-                        self.environment.d_env.get_admin_remote(), public_gw):
-                attributes['editable']['external_ntp']['ntp_list']['value'] =\
-                    public_gw
-                logger.info("Configuring cluster #{0} to use NTP server {1}"
-                            .format(cluster_id, public_gw))
+            with self.environment.d_env.get_admin_remote() as remote:
+                if help_data.FUEL_USE_LOCAL_NTPD\
+                        and ('ntp_list' not in settings)\
+                        and checkers.is_ntpd_active(
+                            remote, public_gw):
+                    attributes['editable']['external_ntp']['ntp_list']['value'] = public_gw
+                    logger.info("Configuring cluster #{0}"
+                                "to use NTP server {1}"
+                                .format(cluster_id, public_gw))
 
             if help_data.FUEL_USE_LOCAL_DNS and ('dns_list' not in settings):
                 attributes['editable']['external_dns']['dns_list']['value'] =\
@@ -818,29 +820,29 @@ class FuelWebClient(object):
     @logwrap
     def get_cluster_floating_list(self, node_name):
         logger.info('Get floating IPs list at %s devops node', node_name)
-        remote = self.get_ssh_for_node(node_name)
-        ret = remote.check_call('/usr/bin/nova-manage floating list')
+        with self.get_ssh_for_node(node_name) as remote:
+            ret = remote.check_call('/usr/bin/nova-manage floating list')
         ret_str = ''.join(ret['stdout'])
         return re.findall('(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', ret_str)
 
     @logwrap
     def get_cluster_block_devices(self, node_name):
         logger.info('Get %s node block devices (lsblk)', node_name)
-        remote = self.get_ssh_for_node(node_name)
-        ret = remote.check_call('/bin/lsblk')
+        with self.get_ssh_for_node(node_name) as remote:
+            ret = remote.check_call('/bin/lsblk')
         return ''.join(ret['stdout'])
 
     @logwrap
     def get_pacemaker_status(self, controller_node_name):
         logger.info('Get pacemaker status at %s node', controller_node_name)
-        remote = self.get_ssh_for_node(controller_node_name)
-        return ''.join(remote.check_call('crm_mon -1')['stdout'])
+        with self.get_ssh_for_node(controller_node_name) as remote:
+            return ''.join(remote.check_call('crm_mon -1')['stdout'])
 
     @logwrap
     def get_pacemaker_config(self, controller_node_name):
         logger.info('Get pacemaker config at %s node', controller_node_name)
-        remote = self.get_ssh_for_node(controller_node_name)
-        return ''.join(remote.check_call('crm_resource --list')['stdout'])
+        with self.get_ssh_for_node(controller_node_name) as remote:
+            return ''.join(remote.check_call('crm_resource --list')['stdout'])
 
     @logwrap
     def get_pacemaker_resource_location(self, controller_node_name,
@@ -848,14 +850,14 @@ class FuelWebClient(object):
         """Get devops nodes where the resource is running."""
         logger.info('Get pacemaker resource %s life status at %s node',
                     resource_name, controller_node_name)
-        remote = self.get_ssh_for_node(controller_node_name)
         hosts = []
-        for line in remote.check_call(
-                'crm_resource --resource {0} '
-                '--locate --quiet'.format(resource_name))['stdout']:
-            hosts.append(
-                self.get_devops_node_by_nailgun_fqdn(line.strip()))
-        remote.clear()
+        with self.get_ssh_for_node(controller_node_name) as remote:
+            for line in remote.check_call(
+                    'crm_resource --resource {0} '
+                    '--locate --quiet'.format(resource_name))['stdout']:
+                hosts.append(
+                    self.get_devops_node_by_nailgun_fqdn(line.strip()))
+        # remote.clear()
         return hosts
 
     @logwrap
@@ -957,7 +959,7 @@ class FuelWebClient(object):
     def get_devops_nodes_by_nailgun_nodes(self, nailgun_nodes):
         """Return devops node by nailgun node
 
-        :type nailgun_node: List
+        :type nailgun_nodes: List
             :rtype: list of Nodes or None
         """
         d_nodes = [self.get_devops_node_by_nailgun_node(n) for n
@@ -1494,8 +1496,8 @@ class FuelWebClient(object):
                     [n.name for n in devops_nodes])
         for node in devops_nodes:
             logger.debug('Shutdown node %s', node.name)
-            remote = self.get_ssh_for_node(node.name)
-            remote.check_call('/sbin/shutdown -Ph now')
+            with self.get_ssh_for_node(node.name) as remote:
+                remote.check_call('/sbin/shutdown -Ph now')
 
         for node in devops_nodes:
             logger.info('Wait a %s node offline status', node.name)
@@ -1572,15 +1574,15 @@ class FuelWebClient(object):
             :rtype: String on None
         """
         try:
-            remote = self.get_ssh_for_node(node_name)
             if namespace:
                 cmd = 'ip netns exec {0} ip -4 ' \
                       '-o address show {1}'.format(namespace, interface)
             else:
                 cmd = 'ip -4 -o address show {1}'.format(interface)
 
-            ret = remote.check_call(cmd)
-            remote.clear()
+            with self.get_ssh_for_node(node_name) as remote:
+                ret = remote.check_call(cmd)
+            # remote.clear()
             ip_search = re.search(
                 'inet (?P<ip>\d+\.\d+\.\d+.\d+/\d+).*scope .* '
                 '{0}'.format(interface), ' '.join(ret['stdout']))
@@ -1600,11 +1602,11 @@ class FuelWebClient(object):
     def ip_address_del(self, node_name, namespace, interface, ip):
         logger.info('Delete %s ip address of %s interface at %s node',
                     ip, interface, node_name)
-        remote = self.get_ssh_for_node(node_name)
-        remote.check_call(
-            'ip netns exec {0} ip addr'
-            ' del {1} dev {2}'.format(namespace, ip, interface))
-        remote.clear()
+        with self.get_ssh_for_node(node_name) as remote:
+            remote.check_call(
+                'ip netns exec {0} ip addr'
+                ' del {1} dev {2}'.format(namespace, ip, interface))
+        # remote.clear()
 
     @logwrap
     def provisioning_cluster_wait(self, cluster_id, progress=None):
@@ -1660,35 +1662,34 @@ class FuelWebClient(object):
                 return ''.join(result['stderr']).strip()
 
         for node_name in node_names:
-            _ip = self.get_nailgun_node_by_name(node_name)['ip']
-            remote = self.environment.d_env.get_ssh_to_remote(_ip)
-            try:
-                wait(lambda: _get_galera_status(remote) == 'ON',
-                     timeout=timeout)
-                logger.info("MySQL Galera is up on {host} node.".format(
-                            host=node_name))
-            except TimeoutError:
-                logger.error("MySQL Galera isn't ready on {0}: {1}"
-                             .format(node_name, _get_galera_status(remote)))
-                raise TimeoutError(
-                    "MySQL Galera isn't ready on {0}: {1}".format(
-                        node_name, _get_galera_status(remote)))
+            with self.get_ssh_for_node(node_name) as remote:
+                try:
+                    wait(lambda: _get_galera_status(remote) == 'ON',
+                         timeout=timeout)
+                    logger.info("MySQL Galera is up on {host} node.".format(
+                                host=node_name))
+                except TimeoutError:
+                    logger.error("MySQL Galera isn't ready on {0}: {1}"
+                                 .format(node_name,
+                                         _get_galera_status(remote)))
+                    raise TimeoutError(
+                        "MySQL Galera isn't ready on {0}: {1}".format(
+                            node_name, _get_galera_status(remote)))
         return True
 
     @logwrap
     def wait_cinder_is_up(self, node_names):
         logger.info("Waiting for all Cinder services up.")
         for node_name in node_names:
-            _ip = self.get_nailgun_node_by_name(node_name)['ip']
-            remote = self.environment.d_env.get_ssh_to_remote(_ip)
-            try:
-                wait(lambda: checkers.check_cinder_status(remote),
-                     timeout=300)
-                logger.info("All Cinder services up.")
-            except TimeoutError:
-                logger.error("Cinder services not ready.")
-                raise TimeoutError(
-                    "Cinder services not ready. ")
+            with self.get_ssh_for_node(node_name) as remote:
+                try:
+                    wait(lambda: checkers.check_cinder_status(remote),
+                         timeout=300)
+                    logger.info("All Cinder services up.")
+                except TimeoutError:
+                    logger.error("Cinder services not ready.")
+                    raise TimeoutError(
+                        "Cinder services not ready. ")
         return True
 
     def run_ostf_repeatably(self, cluster_id, test_name=None,
@@ -1794,43 +1795,43 @@ class FuelWebClient(object):
 
         logger.info('Waiting until Ceph service become up...')
         for node in online_ceph_nodes:
-            remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
-            try:
-                wait(lambda: ceph.check_service_ready(remote) is True,
-                     interval=20, timeout=600)
-            except TimeoutError:
-                error_msg = 'Ceph service is not properly started' \
-                            ' on {0}'.format(node['name'])
-                logger.error(error_msg)
-                raise TimeoutError(error_msg)
+            with self.get_ssh_for_node(node['name']) as remote:
+                try:
+                    wait(lambda: ceph.check_service_ready(remote) is True,
+                         interval=20, timeout=600)
+                except TimeoutError:
+                    error_msg = 'Ceph service is not properly started' \
+                                ' on {0}'.format(node['name'])
+                    logger.error(error_msg)
+                    raise TimeoutError(error_msg)
 
         logger.info('Ceph service is ready. Checking Ceph Health...')
         self.check_ceph_time_skew(cluster_id, offline_nodes)
 
         node = online_ceph_nodes[0]
-        remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
-        if not ceph.is_health_ok(remote):
-            if ceph.is_pgs_recovering(remote) and len(offline_nodes) > 0:
-                logger.info('Ceph is being recovered after osd node(s)'
-                            ' shutdown.')
-                try:
-                    wait(lambda: ceph.is_health_ok(remote),
-                         interval=30, timeout=recovery_timeout)
-                except TimeoutError:
-                    result = ceph.health_detail(remote)
-                    msg = 'Ceph HEALTH is not OK on {0}. Details: {1}'.format(
-                        node['name'], result)
-                    logger.error(msg)
-                    raise TimeoutError(msg)
-        else:
-            result = ceph.health_detail(remote)
-            msg = 'Ceph HEALTH is not OK on {0}. Details: {1}'.format(
-                node['name'], result)
-            assert_true(ceph.is_health_ok(remote), msg)
+        with self.get_ssh_for_node(node['name']) as remote:
+            if not ceph.is_health_ok(remote):
+                if ceph.is_pgs_recovering(remote) and len(offline_nodes) > 0:
+                    logger.info('Ceph is being recovered after osd node(s)'
+                                ' shutdown.')
+                    try:
+                        wait(lambda: ceph.is_health_ok(remote),
+                             interval=30, timeout=recovery_timeout)
+                    except TimeoutError:
+                        result = ceph.health_detail(remote)
+                        msg = 'Ceph HEALTH is not OK on {0}. Details: {1}'\
+                            .format(node['name'], result)
+                        logger.error(msg)
+                        raise TimeoutError(msg)
+            else:
+                result = ceph.health_detail(remote)
+                msg = 'Ceph HEALTH is not OK on {0}. Details: {1}'.format(
+                    node['name'], result)
+                assert_true(ceph.is_health_ok(remote), msg)
 
-        logger.info('Checking Ceph OSD Tree...')
-        ceph.check_disks(remote, [n['id'] for n in online_ceph_nodes])
-        remote.clear()
+            logger.info('Checking Ceph OSD Tree...')
+            ceph.check_disks(remote, [n['id'] for n in online_ceph_nodes])
+        # remote.clear()
         logger.info('Ceph cluster status is OK')
 
     @logwrap
@@ -2094,9 +2095,9 @@ class FuelWebClient(object):
     @logwrap
     def get_nailgun_primary_node(self, slave, role='primary-controller'):
         # returns controller or mongo that is primary in nailgun
-        remote = self.get_ssh_for_node(slave.name)
-        data = yaml.load(''.join(
-            remote.execute('cat /etc/astute.yaml')['stdout']))
+        with self.get_ssh_for_node(slave.name) as remote:
+            data = yaml.load(''.join(
+                remote.execute('cat /etc/astute.yaml')['stdout']))
         node_name = [node['fqdn'] for node in data['nodes']
                      if node['role'] == role][0]
         logger.debug("node name is {0}".format(node_name))
@@ -2209,17 +2210,17 @@ class FuelWebClient(object):
                                   cluster_id,
                                   roles=['controller', ]) if node['online']]
 
-        admin_remote = self.environment.d_env.get_admin_remote()
-        check_proxy_cmd = ('[[ $(curl -s -w "%{{http_code}}" '
-                           '{0} -o /dev/null) -eq 200 ]]')
+        with self.environment.d_env.get_admin_remote() as admin_remote:
+            check_proxy_cmd = ('[[ $(curl -s -w "%{{http_code}}" '
+                               '{0} -o /dev/null) -eq 200 ]]')
 
-        for controller in online_controllers:
-            proxy_url = 'http://{0}:{1}/'.format(controller['ip'], port)
-            logger.debug('Trying to connect to {0} from master node...'.format(
-                proxy_url))
-            if admin_remote.execute(
-                    check_proxy_cmd.format(proxy_url))['exit_code'] == 0:
-                return proxy_url
+            for controller in online_controllers:
+                proxy_url = 'http://{0}:{1}/'.format(controller['ip'], port)
+                logger.debug('Trying to connect to {0} from master node...'
+                    .format(proxy_url))
+                if admin_remote.execute(
+                        check_proxy_cmd.format(proxy_url))['exit_code'] == 0:
+                    return proxy_url
 
         assert_true(len(online_controllers) > 0,
                     'There are no online controllers available '
