@@ -80,8 +80,8 @@ class TestAdminNode(TestBasic):
 
         """
         self.env.revert_snapshot("empty")
-        ps_output = self.env.d_env.get_admin_remote().execute(
-            'ps ax')['stdout']
+        with self.env.d_env.get_admin_remote() as remote:
+            ps_output = remote.execute('ps ax')['stdout']
         astute_master = filter(lambda x: 'astute master' in x, ps_output)
         logger.info("Found astute processes: %s" % astute_master)
         assert_equal(len(astute_master), 1)
@@ -521,14 +521,14 @@ class FuelMasterMigrate(TestBasic):
         wait(lambda: icmp_ping(self.env.get_admin_node_ip()),
              timeout=60 * 15, timeout_msg='Master node has not become online '
                                           'after rebooting')
-        wait(lambda: self.env.d_env.get_admin_remote(), timeout=60 * 15,
-             timeout_msg='Master node has not become online after rebooting')
-
-        checkers.wait_phrase_in_log(self.env.d_env.get_admin_remote(),
-                                    60 * 90, interval=0.1,
-                                    phrase='Stop network and up with '
-                                           'new settings',
-                                    log_path='/var/log/fuel-migrate.log')
+        self.env.d_env.nodes().admin.await(network_name=self.d_env.admin_net,
+                                           timeout=60 * 15)
+        with self.env.d_env.get_admin_remote() as remote:
+            checkers.wait_phrase_in_log(remote,
+                                        60 * 90, interval=0.1,
+                                        phrase='Stop network and up with '
+                                               'new settings',
+                                        log_path='/var/log/fuel-migrate.log')
         logger.info('Shutting down network')
 
         wait(lambda: not icmp_ping(self.env.get_admin_node_ip()),
@@ -538,7 +538,8 @@ class FuelMasterMigrate(TestBasic):
              timeout=60 * 15,
              timeout_msg='Master node has not become online shutting network')
 
-        wait(lambda: self.env.d_env.get_admin_remote(), timeout=60 * 10)
+        self.env.d_env.nodes().admin.await(network_name=self.d_env.admin_net,
+                                           timeout=60 * 10)
 
         logger.info("Check containers")
         self.env.docker_actions.wait_for_ready_containers(timeout=60 * 30)
