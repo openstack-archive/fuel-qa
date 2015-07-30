@@ -29,7 +29,6 @@ from fuelweb_test import logwrap
 @logwrap
 def configure_second_admin_cobbler(self):
     dhcp_template = '/etc/cobbler/dnsmasq.template'
-    remote = self.d_env.get_admin_remote()
     admin_net2 = self.d_env.admin_net2
     second_admin_if = settings.INTERFACES.get(admin_net2)
     second_admin_ip = str(
@@ -53,14 +52,14 @@ def configure_second_admin_cobbler(self):
     cmd = ("dockerctl shell cobbler sed -r '$a \{0}' -i {1};"
            "dockerctl shell cobbler cobbler sync").format(new_range,
                                                           dhcp_template)
-    result = remote.execute(cmd)
+    with self.d_env.get_admin_remote() as remote:
+        result = remote.execute(cmd)
     assert_equal(result['exit_code'], 0, ('Failed to add second admin'
                  'network to cobbler: {0}').format(result))
 
 
 @logwrap
 def configure_second_admin_firewall(self, network, netmask):
-    remote = self.d_env.get_admin_remote()
     # Allow input/forwarding for nodes from the second admin network
     rules = [
         ('-I INPUT -i {0} -m comment --comment "input from 2nd admin network" '
@@ -69,16 +68,17 @@ def configure_second_admin_firewall(self, network, netmask):
          '"004 forward_admin_net2" -j MASQUERADE').
         format(network, netmask)
     ]
-
-    for rule in rules:
-        cmd = 'iptables {0}'.format(rule)
+    with self.d_env.get_admin_remote() as remote:
+        for rule in rules:
+            cmd = 'iptables {0}'.format(rule)
+            result = remote.execute(cmd)
+            assert_equal(result['exit_code'], 0,
+                         ('Failed to add firewall rule for second admin net'
+                          'on master node: {0}, {1}').format(rule, result))
+        # Save new firewall configuration
+        cmd = 'service iptables save'
         result = remote.execute(cmd)
-        assert_equal(result['exit_code'], 0,
-                     ('Failed to add firewall rule for second admin net'
-                      'on master node: {0}, {1}').format(rule, result))
-    # Save new firewall configuration
-    cmd = 'service iptables save'
-    result = remote.execute(cmd)
+
     assert_equal(result['exit_code'], 0,
                  ('Failed to save firewall configuration on master node:'
                   ' {0}').format(result))

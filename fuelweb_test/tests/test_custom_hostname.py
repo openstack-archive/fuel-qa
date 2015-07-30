@@ -95,6 +95,8 @@ class CustomHostname(TestBasic):
                 "{0} node is not accessible by its default "
                 "hostname {1}".format(devops_node.name, node['hostname']))
 
+        admin_remote.clear()
+
         self.env.make_snapshot("default_hostname")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
@@ -119,8 +121,6 @@ class CustomHostname(TestBasic):
         """
         for method in ('API', 'CLI'):
             self.env.revert_snapshot("ready_with_5_slaves")
-
-            admin_remote = self.env.d_env.get_admin_remote()
 
             cluster_id = self.fuel_web.create_cluster(
                 name=self.__class__.__name__,
@@ -150,9 +150,10 @@ class CustomHostname(TestBasic):
                     self.fuel_web.client.set_hostname(node['id'],
                                                       custom_hostname)
                 elif method == 'CLI':
-                    admin_remote.execute(
-                        'fuel node --node-id {0} --hostname '
-                        '{1}'.format(node['id'], custom_hostname))
+                    with self.env.d_env.get_admin_remote() as admin_remote:
+                        admin_remote.execute(
+                            'fuel node --node-id {0} --hostname '
+                            '{1}'.format(node['id'], custom_hostname))
 
             self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
 
@@ -170,9 +171,10 @@ class CustomHostname(TestBasic):
                     custom_hostnames):
                 devops_node = self.fuel_web.get_devops_node_by_nailgun_node(
                     node)
-                hostname = admin_remote.execute(
-                    "ssh -q {0} hostname "
-                    "-s".format(custom_hostname))['stdout'][0].strip()
+                with self.env.d_env.get_admin_remote() as admin_remote:
+                    hostname = admin_remote.execute(
+                        "ssh -q {0} hostname "
+                        "-s".format(custom_hostname))['stdout'][0].strip()
                 assert_equal(
                     custom_hostname,
                     hostname,
