@@ -401,6 +401,9 @@ class RallyBenchmarkTest(object):
         )
         self.current_task = None
 
+    def __del__(self):
+        self.admin_remote.clear()
+
     def run(self, timeout=60 * 10):
         self.current_task = RallyTask(self.deployment, self.test_type)
         logger.info('Starting Rally benchmark test...')

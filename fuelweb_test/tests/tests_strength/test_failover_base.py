@@ -131,9 +131,8 @@ class TestHaFailoverBase(TestBasic):
         # Bug #1289297. Pause 5 min to make sure that all remain activity
         # on the admin node has over before creating a snapshot.
         time.sleep(5 * 60)
-        remotes = [self.fuel_web.get_ssh_for_node(node) for node
-                   in ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]]
-        check_public_ping(remotes)
+        nodes = ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]
+        check_public_ping(self, nodes)
 
         self.env.make_snapshot(self.snapshot_name, is_make=True)
 
@@ -513,11 +512,11 @@ class TestHaFailoverBase(TestBasic):
         self.env.revert_snapshot(self.snapshot_name)
         cluster_id = self.fuel_web.get_last_created_cluster()
         for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
-            remote = self.env.d_env.get_ssh_to_remote(node['ip'])
-            assert_true(
-                check_ping(remote, DNS, deadline=120, interval=10),
-                "No Internet access from {0}".format(node['fqdn'])
-            )
+            with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
+                assert_true(
+                    check_ping(remote, DNS, deadline=120, interval=10),
+                    "No Internet access from {0}".format(node['fqdn'])
+                )
         remote_compute = self.fuel_web.get_ssh_for_node(
             self.env.d_env.nodes().slaves[4].name)
         devops_node = self.fuel_web.get_nailgun_primary_node(
@@ -800,29 +799,31 @@ class TestHaFailoverBase(TestBasic):
         slave1_remote.execute('crm configure property maintenance-mode=true')
         slave1_remote.execute('service corosync stop')
 
-        remote = self.env.d_env.get_admin_remote()
-        cmd = "grep 'Ignoring alive node rabbit@{0}' /var/log/remote" \
-              "/{1}/rabbit-fence.log".format(rabbit_slave1_name, pcm_nodes[0])
-        try:
-            wait(
-                lambda: not remote.execute(cmd)['exit_code'], timeout=2 * 60)
-        except TimeoutError:
-            result = remote.execute(cmd)
-            assert_equal(0, result['exit_code'],
-                         'alive rabbit node was not ignored,'
-                         ' result is {}'.format(result))
-        assert_equal(0, remote.execute(
-            "grep 'Got {0} that left cluster' /var/log/remote/{1}/"
-            "rabbit-fence.log".format(slave1_name,
-                                      pcm_nodes[0]))['exit_code'],
-                     "slave {} didn't leave cluster".format(slave1_name))
-        assert_equal(0, remote.execute(
-            "grep 'Preparing to fence node rabbit@{0} from rabbit cluster'"
-            " /var/log/remote/{1}/"
-            "rabbit-fence.log".format(rabbit_slave1_name,
-                                      pcm_nodes[0]))['exit_code'],
-                     "node {} wasn't prepared for"
-                     " fencing".format(rabbit_slave1_name))
+        with self.env.d_env.get_admin_remote() as remote:
+            cmd = "grep 'Ignoring alive node rabbit@{0}' /var/log/remote" \
+                  "/{1}/rabbit-fence.log".format(rabbit_slave1_name,
+                                                 pcm_nodes[0])
+            try:
+                wait(
+                    lambda: not remote.execute(cmd)['exit_code'],
+                    timeout=2 * 60)
+            except TimeoutError:
+                result = remote.execute(cmd)
+                assert_equal(0, result['exit_code'],
+                             'alive rabbit node was not ignored,'
+                             ' result is {}'.format(result))
+            assert_equal(0, remote.execute(
+                "grep 'Got {0} that left cluster' /var/log/remote/{1}/"
+                "rabbit-fence.log".format(slave1_name,
+                                          pcm_nodes[0]))['exit_code'],
+                         "slave {} didn't leave cluster".format(slave1_name))
+            assert_equal(0, remote.execute(
+                "grep 'Preparing to fence node rabbit@{0} from rabbit cluster'"
+                " /var/log/remote/{1}/"
+                "rabbit-fence.log".format(rabbit_slave1_name,
+                                          pcm_nodes[0]))['exit_code'],
+                         "node {} wasn't prepared for"
+                         " fencing".format(rabbit_slave1_name))
 
         rabbit_status = self.fuel_web.get_rabbit_running_nodes(
             self.env.d_env.nodes().slaves[1].name)
@@ -868,36 +869,39 @@ class TestHaFailoverBase(TestBasic):
         slave1_remote.execute('rabbitmqctl stop_app')
         slave1_remote.execute('service corosync stop')
 
-        remote = self.env.d_env.get_admin_remote()
+        with self.env.d_env.get_admin_remote() as remote:
 
-        cmd = "grep 'Forgetting cluster node rabbit@{0}' /var/log/remote" \
-              "/{1}/rabbit-fence.log".format(rabbit_slave1_name, pcm_nodes[0])
-        try:
-            wait(
-                lambda: not remote.execute(cmd)['exit_code'], timeout=2 * 60)
-        except TimeoutError:
-            result = remote.execute(cmd)
-            assert_equal(0, result['exit_code'],
-                         'dead rabbit node was not removed,'
-                         ' result is {}'.format(result))
+            cmd = "grep 'Forgetting cluster node rabbit@{0}' /var/log/remote" \
+                  "/{1}/rabbit-fence.log".format(rabbit_slave1_name,
+                                                 pcm_nodes[0])
+            try:
+                wait(
+                    lambda: not remote.execute(cmd)['exit_code'],
+                    timeout=2 * 60)
+            except TimeoutError:
+                result = remote.execute(cmd)
+                assert_equal(0, result['exit_code'],
+                             'dead rabbit node was not removed,'
+                             ' result is {}'.format(result))
 
-        assert_equal(0, remote.execute(
-            "grep 'Got {0} that left cluster' /var/log/remote/{1}/"
-            "rabbit-fence.log".format(slave1_name,
-                                      pcm_nodes[0]))['exit_code'],
-                     "node {} didn't leave cluster".format(slave1_name))
-        assert_equal(0, remote.execute(
-            "grep 'Preparing to fence node rabbit@{0} from rabbit cluster'"
-            " /var/log/remote/{1}/"
-            "rabbit-fence.log".format(rabbit_slave1_name,
-                                      pcm_nodes[0]))['exit_code'],
-                     "node {} wasn't prepared for"
-                     " fencing".format(rabbit_slave1_name))
-        assert_equal(0, remote.execute(
-            "grep 'Disconnecting node rabbit@{0}' /var/log/remote/{1}/"
-            "rabbit-fence.log".format(rabbit_slave1_name,
-                                      pcm_nodes[0]))['exit_code'],
-                     "node {} wasn't disconnected".format(rabbit_slave1_name))
+            assert_equal(0, remote.execute(
+                "grep 'Got {0} that left cluster' /var/log/remote/{1}/"
+                "rabbit-fence.log".format(slave1_name,
+                                          pcm_nodes[0]))['exit_code'],
+                         "node {} didn't leave cluster".format(slave1_name))
+            assert_equal(0, remote.execute(
+                "grep 'Preparing to fence node rabbit@{0} from rabbit cluster'"
+                " /var/log/remote/{1}/"
+                "rabbit-fence.log".format(rabbit_slave1_name,
+                                          pcm_nodes[0]))['exit_code'],
+                         "node {} wasn't prepared for"
+                         " fencing".format(rabbit_slave1_name))
+            assert_equal(0, remote.execute(
+                "grep 'Disconnecting node rabbit@{0}' /var/log/remote/{1}/"
+                "rabbit-fence.log".format(rabbit_slave1_name,
+                                          pcm_nodes[0]))['exit_code'],
+                         "node {} wasn't disconnected"
+                         .format(rabbit_slave1_name))
 
         rabbit_nodes.remove(rabbit_slave1_name)
         rabbit_status = self.fuel_web.get_rabbit_running_nodes(

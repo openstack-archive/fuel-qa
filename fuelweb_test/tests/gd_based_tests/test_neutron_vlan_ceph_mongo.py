@@ -196,50 +196,57 @@ class NeutronVlanCephMongo(TestBasic):
         # check hiera
 
         if self.get_post_test(tasks, 'hiera'):
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=self.get_post_test(tasks, 'hiera')[0]['cmd'])
-             for node in nodes]
+            for node in nodes:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=self.get_post_test(tasks, 'hiera')[0]['cmd'])
 
         # check globals
 
         if self.get_post_test(tasks, 'globals'):
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=self.get_post_test(tasks, 'globals')[0]['cmd'])
-             for node in nodes]
+            for node in nodes:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=self.get_post_test(tasks, 'globals')[0]['cmd'])
 
         # check netcondfig
 
         if self.get_post_test(tasks, 'netconfig'):
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=self.get_post_test(tasks, 'netconfig')[0]['cmd'])
-             for node in nodes]
+            for node in nodes:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=self.get_post_test(tasks, 'netconfig')[0]['cmd'])
 
         # check firewall
 
         if self.get_post_test(all_tasks, 'firewall'):
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=self.get_post_test(all_tasks, 'firewall')[0]['cmd'])
-             for node in nodes]
+            for node in nodes:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=self.get_post_test(all_tasks,
+                                                'firewall')[0]['cmd'])
 
         # check hosts
 
         if self.get_post_test(tasks, 'hosts'):
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=self.get_post_test(tasks, 'hosts')[0]['cmd'])
-             for node in nodes]
+            for node in nodes:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=self.get_post_test(tasks, 'hosts')[0]['cmd'])
 
         # check tools
 
         if self.get_post_test(all_tasks, 'tools'):
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=self.get_post_test(all_tasks, 'tools')[0]['cmd'])
-             for node in nodes]
+            for node in nodes:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=self.get_post_test(all_tasks, 'tools')[0]['cmd'])
 
         self.env.make_snapshot('step_2_run_tasks_end_with_hosts')
 
@@ -298,10 +305,12 @@ class NeutronVlanCephMongo(TestBasic):
         # check mongo
 
         if self.get_post_test(tasks, 'top-role-mongo'):
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=self.get_post_test(tasks, 'tope-role-mongo')[0]['cmd'])
-             for node in mongo_nodes]
+            for node in mongo_nodes:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=self.get_post_test(tasks,
+                                                'tope-role-mongo')[0]['cmd'])
 
         self.env.make_snapshot('step_3_run_top_role_mongo_single')
 
@@ -356,10 +365,11 @@ class NeutronVlanCephMongo(TestBasic):
         self.fuel_web.assert_task_success(task)
 
         if self.get_post_test(tasks, 'top-role-primary-mongo'):
-            gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(primary_mongo.name),
-                path=self.get_post_test(
-                    tasks, 'top-role-primary-mongo')[0]['cmd'])
+            with self.fuel_web.get_ssh_for_node(primary_mongo.name) as remote:
+                gd.run_check_from_task(
+                    remote=remote,
+                    path=self.get_post_test(
+                        tasks, 'top-role-primary-mongo')[0]['cmd'])
 
         self.env.make_snapshot('step_4_run_top_role_primary_mongo_single')
 
@@ -403,9 +413,11 @@ class NeutronVlanCephMongo(TestBasic):
         pre_cluster = self.get_pre_test(tasks, 'cluster')
         post_cluster = self.get_post_test(tasks, 'cluster')
         if pre_cluster:
-            gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(primary_controller.name),
-                path=pre_cluster[0]['cmd'])
+            with self.fuel_web.get_ssh_for_node(
+                    primary_controller.name) as remote:
+                gd.run_check_from_task(
+                    remote=remote,
+                    path=pre_cluster[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['cluster'],
@@ -413,9 +425,12 @@ class NeutronVlanCephMongo(TestBasic):
 
         self.fuel_web.assert_task_success(task=res)
         if post_cluster:
-            gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(primary_controller.name),
-                path=post_cluster[0]['cmd'])
+            with self.fuel_web\
+                    .get_ssh_for_node(primary_controller.name) as remote:
+                gd.run_check_from_task(
+                    remote=remote,
+                    path=post_cluster[0]['cmd'])
+
         self.env.make_snapshot("step_5_run_cluster_primary_controller")
 
     @test(depends_on=[step_5_run_cluster_primary_controller],
@@ -458,10 +473,11 @@ class NeutronVlanCephMongo(TestBasic):
         pre_virtual_ips = self.get_pre_test(tasks, 'virtual_ips')
         post_virtual_ips = self.get_post_test(tasks, 'virtual_ips')
         if pre_virtual_ips:
-            gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(
-                    primary_controller.name),
-                path=pre_virtual_ips[0]['cmd'])
+            with self.fuel_web\
+                    .get_ssh_for_node(primary_controller.name) as remote:
+                gd.run_check_from_task(
+                    remote=remote,
+                    path=pre_virtual_ips[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['virtual_ips'],
@@ -469,10 +485,11 @@ class NeutronVlanCephMongo(TestBasic):
 
         self.fuel_web.assert_task_success(task=res)
         if post_virtual_ips:
-            gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(
-                    primary_controller.name),
-                path=post_virtual_ips[0]['cmd'])
+            with self.fuel_web\
+                    .get_ssh_for_node(primary_controller.name) as remote:
+                gd.run_check_from_task(
+                    remote=remote,
+                    path=post_virtual_ips[0]['cmd'])
 
         self.env.make_snapshot('step_6_run_virtual_ips_primary_controller')
 
@@ -519,10 +536,11 @@ class NeutronVlanCephMongo(TestBasic):
         post_cluster_haproxy = self.get_post_test(tasks, 'cluster-haproxy')
 
         if pre_cluster_haproxy:
-            gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(
-                    primary_controller.name),
-                path=pre_cluster_haproxy[0]['cmd'])
+            with self.fuel_web\
+                    .get_ssh_for_node(primary_controller.name) as remote:
+                gd.run_check_from_task(
+                    remote=remote,
+                    path=pre_cluster_haproxy[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['cluster-haproxy'],
@@ -532,10 +550,11 @@ class NeutronVlanCephMongo(TestBasic):
 
         self.fuel_web.assert_task_success(task=res)
         if post_cluster_haproxy:
-            gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(
-                    primary_controller.name),
-                path=post_cluster_haproxy[0]['cmd'])
+            with self.fuel_web\
+                    .get_ssh_for_node(primary_controller.name) as remote:
+                gd.run_check_from_task(
+                    remote=remote,
+                    path=post_cluster_haproxy[0]['cmd'])
 
         self.env.make_snapshot(
             "step_7_run_cluster_haproxy_primary_controller")
@@ -581,10 +600,11 @@ class NeutronVlanCephMongo(TestBasic):
         post_openstack_haproxy = self.get_post_test(tasks, 'openstack-haproxy')
 
         if pre_openstack_haproxy:
-            gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(
-                    primary_controller.name),
-                path=pre_openstack_haproxy[0]['cmd'])
+            with self.fuel_web\
+                    .get_ssh_for_node(primary_controller.name) as remote:
+                gd.run_check_from_task(
+                    remote=remote,
+                    path=pre_openstack_haproxy[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['openstack-haproxy'],
@@ -594,10 +614,11 @@ class NeutronVlanCephMongo(TestBasic):
 
         self.fuel_web.assert_task_success(task=res)
         if post_openstack_haproxy:
-            gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(
-                    primary_controller.name),
-                path=post_openstack_haproxy[0]['cmd'])
+            with self.fuel_web\
+                    .get_ssh_for_node(primary_controller.name) as remote:
+                gd.run_check_from_task(
+                    remote=remote,
+                    path=post_openstack_haproxy[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['dns-server'],
@@ -623,10 +644,11 @@ class NeutronVlanCephMongo(TestBasic):
         for service in ['memcached', 'openstack-cinder', 'database'
                         'rabbitmq', 'keystone', 'glance']:
             if self.get_post_test(tasks, service):
-                gd.run_check_from_task(
-                    remote=self.fuel_web.get_ssh_for_node(
-                        primary_controller.name),
-                    path=self.get_post_test(tasks, service)[0]['cmd'])
+                with self.fuel_web\
+                        .get_ssh_for_node(primary_controller.name) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=self.get_post_test(tasks, service)[0]['cmd'])
 
         self.env.make_snapshot(
             "step_8_run_openstack_haproxy_primary_controller")
@@ -674,10 +696,11 @@ class NeutronVlanCephMongo(TestBasic):
         pre_openstack_ctr = self.get_pre_test(tasks, 'openstack-controller')
         post_openstack_ctr = self.get_post_test(tasks, 'openstack-controller')
         if pre_openstack_ctr:
-            gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(
-                    primary_controller.name),
-                path=pre_openstack_ctr[0]['cmd'])
+            with self.fuel_web\
+                    .get_ssh_for_node(primary_controller.name) as remote:
+                gd.run_check_from_task(
+                    remote=remote,
+                    path=pre_openstack_ctr[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['openstack-controller'],
@@ -686,10 +709,11 @@ class NeutronVlanCephMongo(TestBasic):
 
         self.fuel_web.assert_task_success(task=res)
         if post_openstack_ctr:
-            gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(
-                    primary_controller.name),
-                path=post_openstack_ctr[0]['cmd'])
+            with self.fuel_web\
+                    .get_ssh_for_node(primary_controller.name) as remote:
+                gd.run_check_from_task(
+                    remote=remote,
+                    path=post_openstack_ctr[0]['cmd'])
 
         self.env.make_snapshot(
             "step_9_run_openstack_primary_controller")
@@ -745,10 +769,11 @@ class NeutronVlanCephMongo(TestBasic):
 
         pre_net = self.get_pre_test(tasks, 'openstack-network')
         if pre_net:
-            gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(
-                    primary_controller.name),
-                path=pre_net[0]['cmd'])
+            with self.fuel_web\
+                    .get_ssh_for_node(primary_controller.name) as remote:
+                gd.run_check_from_task(
+                    remote=remote,
+                    path=pre_net[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=[task['id'] for task in tasks],
@@ -770,10 +795,11 @@ class NeutronVlanCephMongo(TestBasic):
 
         for task in expected_task_list:
             if self.get_post_test(tasks, task):
-                gd.run_check_from_task(
-                    remote=self.fuel_web.get_ssh_for_node(
-                        primary_controller.name),
-                    path=self.get_post_test(tasks, task)[0]['cmd'])
+                with self.fuel_web\
+                        .get_ssh_for_node(primary_controller.name) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=self.get_post_test(tasks, task)[0]['cmd'])
         try:
             self.fuel_web.run_ostf(cluster_id=cluster_id,
                                    test_sets=['sanity'],
@@ -834,10 +860,11 @@ class NeutronVlanCephMongo(TestBasic):
         pre_cluster = self.get_pre_test(tasks, 'cluster')
         post_cluster = self.get_post_test(tasks, 'cluster')
         if pre_cluster:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=pre_cluster[0]['cmd'])
-             for node in ['slave-02', 'slave-03']]
+            for node in ['slave-02', 'slave-03']:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=pre_cluster[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['cluster'],
@@ -845,10 +872,12 @@ class NeutronVlanCephMongo(TestBasic):
 
         self.fuel_web.assert_task_success(task=res)
         if post_cluster:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=post_cluster[0]['cmd'])
-             for node in ['slave-02', 'slave-03']]
+            for node in ['slave-02', 'slave-03']:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=post_cluster[0]['cmd'])
+
         self.env.make_snapshot("step_11_run_cluster_controller")
 
     @test(depends_on=[step_11_run_cluster_controller],
@@ -895,10 +924,11 @@ class NeutronVlanCephMongo(TestBasic):
         pre_virtual_ips = self.get_pre_test(tasks, 'virtual_ips')
         post_virtual_ips = self.get_post_test(tasks, 'virtual_ips')
         if pre_virtual_ips:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=pre_virtual_ips[0]['cmd'])
-             for node in ['slave-02', 'slave-03']]
+            for node in ['slave-02', 'slave-03']:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=pre_virtual_ips[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['virtual_ips'],
@@ -907,10 +937,11 @@ class NeutronVlanCephMongo(TestBasic):
         self.fuel_web.assert_task_success(task=res)
 
         if post_virtual_ips:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=post_virtual_ips[0]['cmd'])
-             for node in ['slave-02', 'slave-03']]
+            for node in ['slave-02', 'slave-03']:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=post_virtual_ips[0]['cmd'])
 
         self.env.make_snapshot("step_12_run_virtual_ips_controller")
 
@@ -958,10 +989,11 @@ class NeutronVlanCephMongo(TestBasic):
         post_cluster_haproxy = self.get_post_test(tasks, 'cluster-haproxy')
 
         if pre_cluster_haproxy:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=pre_cluster_haproxy[0]['cmd'])
-             for node in ['slave-02', 'slave-3']]
+            for node in ['slave-02', 'slave-3']:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=pre_cluster_haproxy[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['cluster-haproxy'],
@@ -971,10 +1003,11 @@ class NeutronVlanCephMongo(TestBasic):
 
         self.fuel_web.assert_task_success(task=res)
         if post_cluster_haproxy:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=post_cluster_haproxy[0]['cmd'])
-             for node in ['slave-02', 'slave-03']]
+            for node in ['slave-02', 'slave-03']:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=post_cluster_haproxy[0]['cmd'])
 
         self.env.make_snapshot(
             "step_13_run_cluster_haproxy_controller")
@@ -1024,10 +1057,11 @@ class NeutronVlanCephMongo(TestBasic):
         pre_openstack_haproxy = self.get_pre_test(tasks, 'openstack-haproxy')
         post_openstack_haproxy = self.get_post_test(tasks, 'openstack-haproxy')
         if pre_openstack_haproxy:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=pre_openstack_haproxy[0]['cmd'])
-             for node in ['slave-02', 'slave-03']]
+            for node in ['slave-02', 'slave-03']:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=pre_openstack_haproxy[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['openstack-haproxy'],
@@ -1057,17 +1091,20 @@ class NeutronVlanCephMongo(TestBasic):
         logger.debug('res info is {0}'.format(res))
         self.fuel_web.assert_task_success(task=res)
         if post_openstack_haproxy:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=post_openstack_haproxy[0]['cmd'])
-             for node in ['slave-01']]
+            for node in ['slave-01']:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=post_openstack_haproxy[0]['cmd'])
+
         for service in ['memcached', 'openstack-cinder'
                         'rabbitmq', 'keystone', 'glance', 'database']:
             if self.get_post_test(tasks, service):
-                [gd.run_check_from_task(
-                    remote=self.fuel_web.get_ssh_for_node(node),
-                    path=self.get_post_test(tasks, service)[0]['cmd'])
-                 for node in ['slave-02', 'slave-03']]
+                for node in ['slave-02', 'slave-03']:
+                    with self.fuel_web.get_ssh_for_node(node) as remote:
+                        gd.run_check_from_task(
+                            remote=remote,
+                            path=self.get_post_test(tasks, service)[0]['cmd'])
 
         self.env.make_snapshot("step_14_run_openstack_haproxy_controller")
 
@@ -1114,10 +1151,11 @@ class NeutronVlanCephMongo(TestBasic):
         pre_openstack_ctr = self.get_pre_test(tasks, 'openstack-controller')
         post_openstack_ctr = self.get_post_test(tasks, 'openstack-controller')
         if pre_openstack_ctr:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=pre_openstack_ctr[0]['cmd'])
-             for node in ['slave-02', 'slave-01']]
+            for node in ['slave-02', 'slave-01']:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=pre_openstack_ctr[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['openstack-controller'],
@@ -1126,10 +1164,11 @@ class NeutronVlanCephMongo(TestBasic):
 
         self.fuel_web.assert_task_success(task=res)
         if post_openstack_ctr:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=post_openstack_ctr[0]['cmd'])
-             for node in ['slave-02', 'slave-03']]
+            for node in ['slave-02', 'slave-03']:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=post_openstack_ctr[0]['cmd'])
 
         self.env.make_snapshot("step_15_run_openstack_controller")
 
@@ -1183,10 +1222,11 @@ class NeutronVlanCephMongo(TestBasic):
 
         pre_net = self.get_pre_test(tasks, 'openstack-network')
         if pre_net:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=pre_net[0]['cmd'])
-             for node in ['slave-02', 'slave-03']]
+            for node in ['slave-02', 'slave-03']:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=pre_net[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=[task['id'] for task in tasks],
@@ -1207,10 +1247,11 @@ class NeutronVlanCephMongo(TestBasic):
 
         for task in expected_task_list:
             if self.get_post_test(tasks, task):
-                [gd.run_check_from_task(
-                    remote=self.fuel_web.get_ssh_for_node(node),
-                    path=self.get_post_test(tasks, task)[0]['cmd'])
-                 for node in ['slave-02', 'slave-03']]
+                for node in ['slave-02', 'slave-03']:
+                    with self.fuel_web.get_ssh_for_node(node) as remote:
+                        gd.run_check_from_task(
+                            remote=remote,
+                            path=self.get_post_test(tasks, task)[0]['cmd'])
         try:
             self.fuel_web.run_ostf(cluster_id=cluster_id,
                                    test_sets=['sanity'],
@@ -1261,10 +1302,11 @@ class NeutronVlanCephMongo(TestBasic):
         pre_top_compute = self.get_pre_test(tasks, 'top-role-compute')
         post_top_compute = self.get_post_test(tasks, 'top-role-compute')
         if pre_top_compute:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=pre_top_compute[0]['cmd'])
-             for node in ['slave-04', 'slave-05']]
+            for node in ['slave-04', 'slave-05']:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=pre_top_compute[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['top-role-compute'],
@@ -1273,19 +1315,21 @@ class NeutronVlanCephMongo(TestBasic):
 
         self.fuel_web.assert_task_success(task=res)
         if post_top_compute:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=post_top_compute[0]['cmd'])
-             for node in ['slave-04', 'slave-05']]
+            for node in ['slave-04', 'slave-05']:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=post_top_compute[0]['cmd'])
 
         for service in ['openstack-network-compute', 'ceilometer-compute']:
             pre_test = self.get_pre_test(tasks, service)
             post_test = self.get_post_test(tasks, service)
             if pre_test:
-                [gd.run_check_from_task(
-                    remote=self.fuel_web.get_ssh_for_node(node),
-                    path=pre_test[0]['cmd'])
-                 for node in ['slave-04', 'slave-05']]
+                for node in ['slave-04', 'slave-05']:
+                    with self.fuel_web.get_ssh_for_node(node) as remote:
+                        gd.run_check_from_task(
+                            remote=remote,
+                            path=pre_test[0]['cmd'])
 
                 res = self.fuel_web.client.put_deployment_tasks_for_cluster(
                     cluster_id, data=[service],
@@ -1295,10 +1339,11 @@ class NeutronVlanCephMongo(TestBasic):
             self.fuel_web.assert_task_success(task=res)
 
             if post_test:
-                [gd.run_check_from_task(
-                    remote=self.fuel_web.get_ssh_for_node(node),
-                    path=post_test[0]['cmd'])
-                 for node in ['slave-04', 'slave-05']]
+                for node in ['slave-04', 'slave-05']:
+                    with self.fuel_web.get_ssh_for_node(node) as remote:
+                        gd.run_check_from_task(
+                            remote=remote,
+                            path=post_test[0]['cmd'])
 
         self.env.make_snapshot("step_17_run_top_role_compute")
 
@@ -1340,10 +1385,11 @@ class NeutronVlanCephMongo(TestBasic):
         pre_top_ceph = self.get_pre_test(tasks, 'top-role-ceph-osd')
         post_top_ceph = self.get_post_test(tasks, 'top-role-ceph-osd')
         if pre_top_ceph:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=pre_top_ceph[0]['cmd'])
-             for node in ['slave-04', 'slave-05']]
+            for node in ['slave-04', 'slave-05']:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=pre_top_ceph[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['top-role-ceph-osd'],
@@ -1352,10 +1398,11 @@ class NeutronVlanCephMongo(TestBasic):
 
         self.fuel_web.assert_task_success(task=res)
         if post_top_ceph:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=post_top_ceph[0]['cmd'])
-             for node in ['slave-02', 'slave-03']]
+            for node in ['slave-02', 'slave-03']:
+                with self.fuel_web.get_ssh_for_node(node) as remote:
+                    gd.run_check_from_task(
+                        remote=remote,
+                        path=post_top_ceph[0]['cmd'])
 
         self.env.make_snapshot("step_18_run_top_role_ceph_osd")
 

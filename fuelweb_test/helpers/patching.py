@@ -269,10 +269,11 @@ def add_remote_repositories(environment, mirrors, prefix_name='custom_repo'):
         name = '{0}_{1}'.format(prefix_name, mirrors.index(mir))
         local_repo_path = '/'.join([settings.PATCHING_WEB_DIR, name])
         remote_repo_url = mir
-        mirror_remote_repository(
-            admin_remote=environment.d_env.get_admin_remote(),
-            remote_repo_url=remote_repo_url,
-            local_repo_path=local_repo_path)
+        with environment.d_env.get_admin_remote() as remote:
+            mirror_remote_repository(
+                admin_remote=remote,
+                remote_repo_url=remote_repo_url,
+                local_repo_path=local_repo_path)
         repositories.add(name)
     return repositories
 
@@ -303,9 +304,9 @@ def connect_slaves_to_repo(environment, nodes, repo_name):
         ]
 
     for slave in nodes:
-        remote = environment.d_env.get_ssh_to_remote(slave['ip'])
-        for cmd in cmds:
-            environment.execute_remote_cmd(remote, cmd, exit_code=0)
+        with environment.d_env.get_ssh_to_remote(slave['ip']) as remote:
+            for cmd in cmds:
+                environment.execute_remote_cmd(remote, cmd, exit_code=0)
 
 
 def connect_admin_to_repo(environment, repo_name):
@@ -327,9 +328,9 @@ def connect_admin_to_repo(environment, repo_name):
         "yum check-update; [[ $? -eq 100 || $? -eq 0 ]]"
     ]
 
-    remote = environment.d_env.get_admin_remote()
-    for cmd in cmds:
-        environment.execute_remote_cmd(remote, cmd, exit_code=0)
+    with environment.d_env.get_admin_remote() as remote:
+        for cmd in cmds:
+            environment.execute_remote_cmd(remote, cmd, exit_code=0)
 
 
 def update_packages(environment, remote, packages, exclude_packages=None):
@@ -358,8 +359,8 @@ def update_packages_on_slaves(environment, slaves, packages=None,
         # Install all updates
         packages = ' '
     for slave in slaves:
-        remote = environment.d_env.get_ssh_to_remote(slave['ip'])
-        update_packages(environment, remote, packages, exclude_packages)
+        with environment.d_env.get_ssh_to_remote(slave['ip']) as remote:
+            update_packages(environment, remote, packages, exclude_packages)
 
 
 def get_slaves_ips_by_role(slaves, role=None):
@@ -421,6 +422,7 @@ def verify_fix_apply_step(apply_step):
 
 
 def validate_fix_apply_step(apply_step, environment, slaves):
+    #TODO(mstrukov) close remotes or .clear()
     verify_fix_apply_step(apply_step)
     slaves = [] if not slaves else slaves
     command = ''
