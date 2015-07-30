@@ -20,6 +20,7 @@ from proboscis import test
 from fuelweb_test.helpers import checkers
 from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.helpers.fuel_actions import FuelPluginBuilder
@@ -57,38 +58,42 @@ class RebootPlugin(TestBasic):
         tasks_file = 'reboot_tasks.yaml'
         self.env.revert_snapshot("ready_with_5_slaves")
         # let's get ssh client for the master node
-        admin_remote = self.env.d_env.get_admin_remote()
-        # initiate fuel plugin builder instance
-        fpb = FuelPluginBuilder(admin_remote)
-        # install fuel_plugin_builder on master node
-        fpb.fpb_install()
-        # create plugin template on the master node
-        fpb.fpb_create_plugin(plugin_name)
-        # replace plugin tasks with our file
-        fpb.fpb_replace_plugin_content(
-            os.path.join(tasks_path, tasks_file),
-            os.path.join('/root/', plugin_name, 'tasks.yaml'))
-        # change default supported version to 7.0
-        fpb.change_yaml_file_in_container(
-            '/root/{}/metadata.yaml'.format(plugin_name),
-            ['fuel_version'], ['7.0'])
-        for elem in range(2):
+        with self.env.d_env.get_admin_remote() as admin_remote:
+            # initiate fuel plugin builder instance
+            fpb = FuelPluginBuilder(admin_remote)
+            # install fuel_plugin_builder on master node
+            fpb.fpb_install()
+            # create plugin template on the master node
+            fpb.fpb_create_plugin(plugin_name)
+            # replace plugin tasks with our file
+            fpb.fpb_replace_plugin_content(
+                os.path.join(tasks_path, tasks_file),
+                os.path.join('/root/', plugin_name, 'tasks.yaml'))
+            # change default supported version to 7.0
             fpb.change_yaml_file_in_container(
                 '/root/{}/metadata.yaml'.format(plugin_name),
-                ['releases', elem, 'version'], '-')
-        # build plugin
-        fpb.fpb_build_plugin(os.path.join('/root/', plugin_name))
-        # copy plugin archive file from nailgun container
-        # to the /var directory on the master node
-        fpb.fpb_copy_plugin_from_container(plugin_name, plugin_path)
-        # let's install plugin
-        checkers.install_plugin_check_code(
-            admin_remote,
-            plugin=os.path.join(plugin_path, '{}.rpm'.format(plugin_name)))
+                ['fuel_version'], ['7.0'])
+            for elem in range(2):
+                fpb.change_yaml_file_in_container(
+                    '/root/{}/metadata.yaml'.format(plugin_name),
+                    ['releases', elem, 'version'], '-')
+            # build plugin
+            fpb.fpb_build_plugin(os.path.join('/root/', plugin_name))
+            # copy plugin archive file from nailgun container
+            # to the /var directory on the master node
+            fpb.fpb_copy_plugin_from_container(plugin_name, plugin_path)
+            # let's install plugin
+            checkers.install_plugin_check_code(
+                admin_remote,
+                plugin=os.path.join(plugin_path, '{}.rpm'.format(plugin_name)))
         # create cluster
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT_TYPE
+            }
         )
         # get plugins from fuel and enable our one
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
@@ -123,9 +128,8 @@ class RebootPlugin(TestBasic):
             logger.debug(
                 "Get init object creation time from node {0}".format(node))
             cmd = 'stat --printf=\'%Y\' /proc/1'
-            _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            old_timestamps[node] = self.env.d_env.get_ssh_to_remote(
-                _ip).execute(cmd)['stdout'][0]
+            with self.fuel_web.get_ssh_for_node(node) as node_ssh:
+                old_timestamps[node] = node_ssh.execute(cmd)['stdout'][0]
 
         # start deploying nodes
         # here nodes with controller and ceph roles should be rebooted
@@ -136,9 +140,8 @@ class RebootPlugin(TestBasic):
             logger.debug(
                 "Get init object creation time from node {0}".format(node))
             cmd = 'stat --printf=\'%Y\' /proc/1'
-            _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            new_timestamp = self.env.d_env.get_ssh_to_remote(
-                _ip).execute(cmd)['stdout'][0]
+            with self.fuel_web.get_ssh_for_node(node) as node_ssh:
+                new_timestamp = node_ssh.execute(cmd)['stdout'][0]
             # compute node without ceph role shouldn't reboot
             if not nodes[node]:
                 asserts.assert_equal(
@@ -186,44 +189,48 @@ class RebootPlugin(TestBasic):
         # start reverting snapshot
         self.env.revert_snapshot("ready_with_3_slaves")
         # let's get ssh client for the master node
-        admin_remote = self.env.d_env.get_admin_remote()
-        # initiate fuel plugin builder instance
-        fpb = FuelPluginBuilder(admin_remote)
-        # install fuel_plugin_builder on master node
-        fpb.fpb_install()
-        # change timeout to a new value '1'
-        fpb.change_content_in_yaml(os.path.join(tasks_path, tasks_file),
-                                   os.path.join('/tmp/', tasks_file),
-                                   [1, 'parameters', 'timeout'],
-                                   1)
-        # create plugin template on the master node
-        fpb.fpb_create_plugin(plugin_name)
-        # replace plugin tasks with our file
-        fpb.fpb_replace_plugin_content(
-            os.path.join('/tmp/', tasks_file),
-            os.path.join('/root/', plugin_name, 'tasks.yaml')
-        )
-        # change default supported version to 7.0
-        fpb.change_yaml_file_in_container(
-            '/root/{}/metadata.yaml'.format(plugin_name),
-            ['fuel_version'], ['7.0'])
-        for elem in range(2):
+        with self.env.d_env.get_admin_remote() as admin_remote:
+            # initiate fuel plugin builder instance
+            fpb = FuelPluginBuilder(admin_remote)
+            # install fuel_plugin_builder on master node
+            fpb.fpb_install()
+            # change timeout to a new value '1'
+            fpb.change_content_in_yaml(os.path.join(tasks_path, tasks_file),
+                                       os.path.join('/tmp/', tasks_file),
+                                       [1, 'parameters', 'timeout'],
+                                       1)
+            # create plugin template on the master node
+            fpb.fpb_create_plugin(plugin_name)
+            # replace plugin tasks with our file
+            fpb.fpb_replace_plugin_content(
+                os.path.join('/tmp/', tasks_file),
+                os.path.join('/root/', plugin_name, 'tasks.yaml')
+            )
+            # change default supported version to 7.0
             fpb.change_yaml_file_in_container(
                 '/root/{}/metadata.yaml'.format(plugin_name),
-                ['releases', elem, 'version'], '-')
-        # build plugin
-        fpb.fpb_build_plugin(os.path.join('/root/', plugin_name))
-        # copy plugin archive file from nailgun container
-        # to the /var directory on the master node
-        fpb.fpb_copy_plugin_from_container(plugin_name, plugin_path)
-        # let's install plugin
-        checkers.install_plugin_check_code(
-            admin_remote,
-            plugin=os.path.join(plugin_path, '{}.rpm'.format(plugin_name)))
+                ['fuel_version'], ['7.0'])
+            for elem in range(2):
+                fpb.change_yaml_file_in_container(
+                    '/root/{}/metadata.yaml'.format(plugin_name),
+                    ['releases', elem, 'version'], '-')
+            # build plugin
+            fpb.fpb_build_plugin(os.path.join('/root/', plugin_name))
+            # copy plugin archive file from nailgun container
+            # to the /var directory on the master node
+            fpb.fpb_copy_plugin_from_container(plugin_name, plugin_path)
+            # let's install plugin
+            checkers.install_plugin_check_code(
+                admin_remote,
+                plugin=os.path.join(plugin_path, '{}.rpm'.format(plugin_name)))
         # create cluster
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT_TYPE
+            }
         )
         # get plugins from fuel and enable it
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
