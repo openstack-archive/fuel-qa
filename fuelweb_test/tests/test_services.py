@@ -861,7 +861,8 @@ class HeatHAOneController(TestBasic):
 
         self.env.make_snapshot("deploy_heat_ha_one_controller_neutron")
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_heat_ha_one_controller_nova"])
     @log_snapshot_after_test
     def deploy_heat_ha_one_controller_nova(self):
