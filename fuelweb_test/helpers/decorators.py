@@ -92,8 +92,9 @@ def log_snapshot_after_test(func):
                     logger.error("Fetching of diagnostic snapshot failed: {0}".
                                  format(traceback.format_exc()))
                     try:
-                        admin_remote = args[0].env.d_env.get_admin_remote()
-                        pull_out_logs_via_ssh(admin_remote, name)
+                        with args[0].env.d_env.get_admin_remote()\
+                                as admin_remote:
+                            pull_out_logs_via_ssh(admin_remote, name)
                     except:
                         logger.error("Fetching of raw logs failed: {0}".
                                      format(traceback.format_exc()))
@@ -145,17 +146,17 @@ def upload_manifests(func):
                     logger.warning("Can't upload manifests: method of "
                                    "unexpected class is decorated.")
                     return result
-                remote = environment.d_env.get_admin_remote()
-                remote.execute('rm -rf /etc/puppet/modules/*')
-                remote.upload(settings.UPLOAD_MANIFESTS_PATH,
-                              '/etc/puppet/modules/')
-                logger.info("Copying new site.pp from %s" %
-                            settings.SITEPP_FOR_UPLOAD)
-                remote.execute("cp %s /etc/puppet/manifests" %
-                               settings.SITEPP_FOR_UPLOAD)
-                if settings.SYNC_DEPL_TASKS:
-                    remote.execute("fuel release --sync-deployment-tasks"
-                                   " --dir /etc/puppet/")
+                with environment.d_env.get_admin_remote() as remote:
+                    remote.execute('rm -rf /etc/puppet/modules/*')
+                    remote.upload(settings.UPLOAD_MANIFESTS_PATH,
+                                  '/etc/puppet/modules/')
+                    logger.info("Copying new site.pp from %s" %
+                                settings.SITEPP_FOR_UPLOAD)
+                    remote.execute("cp %s /etc/puppet/manifests" %
+                                   settings.SITEPP_FOR_UPLOAD)
+                    if settings.SYNC_DEPL_TASKS:
+                        remote.execute("fuel release --sync-deployment-tasks"
+                                       " --dir /etc/puppet/")
         except Exception:
             logger.error("Could not upload manifests")
             raise
@@ -175,8 +176,6 @@ def update_packages(func):
                 logger.warning("Can't update packages: method of "
                                "unexpected class is decorated.")
                 return result
-
-            remote = environment.d_env.get_admin_remote()
 
             if settings.UPDATE_FUEL_MIRROR:
                 for url in settings.UPDATE_FUEL_MIRROR:
@@ -210,17 +209,19 @@ def update_packages(func):
             cmd = ("echo -e '[temporary]\nname=temporary\nbaseurl=file://{0}/"
                    "\ngpgcheck=0\npriority=1' > {1}").format(
                 settings.LOCAL_MIRROR_CENTOS, conf_file)
-            environment.execute_remote_cmd(remote, cmd, exit_code=0)
-            update_command = 'yum clean expire-cache; yum update -y -d3'
-            result = remote.execute(update_command)
-            logger.debug('Result of "yum update" command on master node: '
-                         '{0}'.format(result))
-            assert_equal(int(result['exit_code']), 0,
-                         'Packages update failed, '
-                         'inspect logs for details')
-            environment.execute_remote_cmd(remote,
-                                           cmd='rm -f {0}'.format(conf_file),
-                                           exit_code=0)
+            with environment.d_env.get_admin_remote() as remote:
+                environment.execute_remote_cmd(remote, cmd, exit_code=0)
+                update_command = 'yum clean expire-cache; yum update -y -d3'
+                result = remote.execute(update_command)
+                logger.debug('Result of "yum update" command on master node: '
+                             '{0}'.format(result))
+                assert_equal(int(result['exit_code']), 0,
+                             'Packages update failed, '
+                             'inspect logs for details')
+                environment.execute_remote_cmd(remote,
+                                               cmd='rm -f {0}'
+                                               .format(conf_file),
+                                               exit_code=0)
         except Exception:
             logger.error("Could not update packages")
             raise
@@ -247,7 +248,6 @@ def update_fuel(func):
                     centos_repo_path=settings.LOCAL_MIRROR_CENTOS,
                     ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
 
-            remote = environment.d_env.get_admin_remote()
             cluster_id = environment.fuel_web.get_last_created_cluster()
 
             if centos_files_count > 0:
@@ -259,10 +259,11 @@ def update_fuel(func):
                     cmd='yum clean expire-cache; yum update -y')
                 environment.docker_actions.restart_containers()
 
-                # Update packages on master node
-                remote.execute(
-                    'yum -y install yum-plugin-priorities;'
-                    'yum clean expire-cache; yum update -y')
+                with environment.d_env.get_admin_remote() as remote:
+                    # Update packages on master node
+                    remote.execute(
+                        'yum -y install yum-plugin-priorities;'
+                        'yum clean expire-cache; yum update -y')
 
                 # Add auxiliary repository to the cluster attributes
                 if settings.OPENSTACK_RELEASE_UBUNTU not in \
@@ -285,6 +286,7 @@ def update_fuel(func):
                                  " because of deploying wrong release!"
                                  .format(ubuntu_files_count))
             if settings.SYNC_DEPL_TASKS:
+                with environment.d_env.get_admin_remote() as remote:
                     remote.execute("fuel release --sync-deployment-tasks"
                                    " --dir /etc/puppet/")
         return result
@@ -318,19 +320,19 @@ def update_ostf(func):
                     raise ValueError('REFSPEC should be set for CI tests.')
                 logger.info("Uploading new patchset from {0}"
                             .format(settings.GERRIT_REFSPEC))
-                remote = args[0].environment.d_env.get_admin_remote()
-                remote.upload(settings.PATCH_PATH.rstrip('/'),
-                              '/var/www/nailgun/fuel-ostf')
-                remote.execute('dockerctl shell ostf '
-                               'bash -c "cd /var/www/nailgun/fuel-ostf; '
-                               'python setup.py develop"')
-                remote.execute('dockerctl shell ostf '
-                               'bash -c "supervisorctl restart ostf"')
-                helpers.wait(
-                    lambda: "0" in
+                with args[0].environment.d_env.get_admin_remote() as remote:
+                    remote.upload(settings.PATCH_PATH.rstrip('/'),
+                                  '/var/www/nailgun/fuel-ostf')
                     remote.execute('dockerctl shell ostf '
-                                   'bash -c "pgrep [o]stf; echo $?"')
-                    ['stdout'][1], timeout=60)
+                                   'bash -c "cd /var/www/nailgun/fuel-ostf; '
+                                   'python setup.py develop"')
+                    remote.execute('dockerctl shell ostf '
+                                   'bash -c "supervisorctl restart ostf"')
+                    helpers.wait(
+                        lambda: "0" in
+                        remote.execute('dockerctl shell ostf '
+                                       'bash -c "pgrep [o]stf; echo $?"')
+                        ['stdout'][1], timeout=60)
                 logger.info("OSTF status: RUNNING")
         except Exception as e:
             logger.error("Could not upload patch set {e}".format(e=e))
@@ -372,22 +374,23 @@ def retry(count=3, delay=30):
 def custom_repo(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        custom_pkgs = CustomRepo(args[0].environment.d_env.get_admin_remote())
-        try:
-            if settings.CUSTOM_PKGS_MIRROR:
-                custom_pkgs.prepare_repository()
+        with args[0].environment.d_env.get_admin_remote() as remote:
+            custom_pkgs = CustomRepo(remote)
+            try:
+                if settings.CUSTOM_PKGS_MIRROR:
+                    custom_pkgs.prepare_repository()
 
-        except Exception:
-            logger.error("Unable to get custom packages from {0}\n{1}"
-                         .format(settings.CUSTOM_PKGS_MIRROR,
-                                 traceback.format_exc()))
-            raise
+            except Exception:
+                logger.error("Unable to get custom packages from {0}\n{1}"
+                             .format(settings.CUSTOM_PKGS_MIRROR,
+                                     traceback.format_exc()))
+                raise
 
-        try:
-            return func(*args, **kwargs)
-        except Exception:
-            custom_pkgs.check_puppet_logs()
-            raise
+            try:
+                return func(*args, **kwargs)
+            except Exception:
+                custom_pkgs.check_puppet_logs()
+                raise
     return wrapper
 
 
@@ -507,7 +510,7 @@ def check_repos_management(func):
             nailgun_nodes = env.fuel_web.client.list_cluster_nodes(
                 env.fuel_web.get_last_created_cluster())
             for n in nailgun_nodes:
-                check_repo_managment(
-                    env.d_env.get_ssh_to_remote(n['ip']))
+                with env.d_env.get_ssh_to_remote(n['ip']) as node_ssh:
+                    check_repo_managment(node_ssh)
         return result
     return wrapper
