@@ -92,8 +92,8 @@ def log_snapshot_after_test(func):
                     logger.error("Fetching of diagnostic snapshot failed: {0}".
                                  format(traceback.format_exc()))
                     try:
-                        admin_remote = args[0].env.d_env.get_admin_remote()
-                        pull_out_logs_via_ssh(admin_remote, name)
+                        with args[0].env.d_env.get_admin_remote() as admin_remote:
+                            pull_out_logs_via_ssh(admin_remote, name)
                     except:
                         logger.error("Fetching of raw logs failed: {0}".
                                      format(traceback.format_exc()))
@@ -372,7 +372,8 @@ def retry(count=3, delay=30):
 def custom_repo(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        custom_pkgs = CustomRepo(args[0].environment.d_env.get_admin_remote())
+        with args[0].environment.d_env.get_admin_remote() as remote:
+            custom_pkgs = CustomRepo(remote)
         try:
             if settings.CUSTOM_PKGS_MIRROR:
                 custom_pkgs.prepare_repository()
@@ -507,7 +508,7 @@ def check_repos_management(func):
             nailgun_nodes = env.fuel_web.client.list_cluster_nodes(
                 env.fuel_web.get_last_created_cluster())
             for n in nailgun_nodes:
-                check_repo_managment(
-                    env.d_env.get_ssh_to_remote(n['ip']))
+                with env.d_env.get_ssh_to_remote(n['ip']) as node_ssh:
+                    check_repo_managment(node_ssh)
         return result
     return wrapper
