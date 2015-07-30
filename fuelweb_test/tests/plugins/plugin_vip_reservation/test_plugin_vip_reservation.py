@@ -61,32 +61,33 @@ class VipReservation(TestBasic):
 
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        admin_remote = self.env.d_env.get_admin_remote()
-        # initiate fuel plugin builder instance
-        fpb = FuelPluginBuilder(admin_remote)
-        # install fuel_plugin_builder on master node
-        fpb.fpb_install()
-        # create plugin template on the master node
-        fpb.fpb_create_plugin(plugin_name)
-        # replace plugin tasks, metadata, network_roles
-        fpb.fpb_replace_plugin_content(
-            os.path.join(dir_path, net_role_file),
-            os.path.join('/root/', plugin_name, net_role_file))
-        fpb.fpb_replace_plugin_content(
-            os.path.join(dir_path, tasks_file),
-            os.path.join('/root/', plugin_name, tasks_file))
-        fpb.fpb_replace_plugin_content(
-            os.path.join(dir_path, metadata_file),
-            os.path.join('/root/', plugin_name, metadata_file))
-        # build plugin
-        fpb.fpb_build_plugin(os.path.join('/root/', plugin_name))
-        # copy plugin archive file from nailgun container
-        # to the /var directory on the master node
-        fpb.fpb_copy_plugin_from_container(plugin_name, plugin_path)
-        # let's install plugin
-        checkers.install_plugin_check_code(
-            admin_remote,
-            plugin=os.path.join(plugin_path, '{}.rpm'.format(plugin_name)))
+        with self.env.d_env.get_admin_remote() as admin_remote:
+            # initiate fuel plugin builder instance
+            fpb = FuelPluginBuilder(admin_remote)
+            # install fuel_plugin_builder on master node
+            fpb.fpb_install()
+            # create plugin template on the master node
+            fpb.fpb_create_plugin(plugin_name)
+            # replace plugin tasks, metadata, network_roles
+            fpb.fpb_replace_plugin_content(
+                os.path.join(dir_path, net_role_file),
+                os.path.join('/root/', plugin_name, net_role_file))
+            fpb.fpb_replace_plugin_content(
+                os.path.join(dir_path, tasks_file),
+                os.path.join('/root/', plugin_name, tasks_file))
+            fpb.fpb_replace_plugin_content(
+                os.path.join(dir_path, metadata_file),
+                os.path.join('/root/', plugin_name, metadata_file))
+            # build plugin
+            fpb.fpb_build_plugin(os.path.join('/root/', plugin_name))
+            # copy plugin archive file from nailgun container
+            # to the /var directory on the master node
+            fpb.fpb_copy_plugin_from_container(plugin_name, plugin_path)
+            # let's install plugin
+            checkers.install_plugin_check_code(
+                admin_remote,
+                plugin=os.path.join(plugin_path, '{}.rpm'.format(plugin_name)))
+
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -115,12 +116,12 @@ class VipReservation(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        remote = self.fuel_web.get_ssh_for_node('slave-01')
-        # get vips from hiera
-        reserved_vip_pub = remote.execute(
-            'hiera reserved_vip_pub')['stdout'][1].split('"')[3]
-        reserved_vip_mng = remote.execute(
-            'hiera reserved_vip_mng')['stdout'][1].split('"')[3]
+        with self.fuel_web.get_ssh_for_node('slave-01') as remote:
+            # get vips from hiera
+            reserved_vip_pub = remote.execute(
+                'hiera reserved_vip_pub')['stdout'][1].split('"')[3]
+            reserved_vip_mng = remote.execute(
+                'hiera reserved_vip_mng')['stdout'][1].split('"')[3]
         # get vips from database
         reserved_vip_pub_db = self.env.postgres_actions.run_query(
             db='nailgun', query="select ip_addr from ip_addrs where "
