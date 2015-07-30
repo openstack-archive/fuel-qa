@@ -131,9 +131,8 @@ class TestHaFailoverBase(TestBasic):
         # Bug #1289297. Pause 5 min to make sure that all remain activity
         # on the admin node has over before creating a snapshot.
         time.sleep(5 * 60)
-        remotes = [self.fuel_web.get_ssh_for_node(node) for node
-                   in ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]]
-        check_public_ping(remotes)
+        nodes = ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]
+        check_public_ping(self, nodes)
 
         self.env.make_snapshot(self.snapshot_name, is_make=True)
 
@@ -317,17 +316,18 @@ class TestHaFailoverBase(TestBasic):
         self.env.revert_snapshot(self.snapshot_name)
 
         for devops_node in self.env.d_env.nodes().slaves[:3]:
-            remote = self.fuel_web.get_ssh_for_node(devops_node.name)
-            logger.info('Terminating MySQL on {0}'.format(devops_node.name))
+            with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
+                logger.info('Terminating MySQL on {0}'
+                            .format(devops_node.name))
 
-            try:
-                remote.check_call('pkill -9 -x "mysqld"')
-            except:
-                logger.error('MySQL on {0} is down after snapshot revert'.
-                             format(devops_node.name))
-                raise
+                try:
+                    remote.check_call('pkill -9 -x "mysqld"')
+                except:
+                    logger.error('MySQL on {0} is down after snapshot revert'.
+                                 format(devops_node.name))
+                    raise
 
-            check_mysql(remote, devops_node.name)
+                check_mysql(remote, devops_node.name)
 
         cluster_id = self.fuel_web.client.get_cluster_id(
             self.__class__.__name__)
@@ -346,16 +346,16 @@ class TestHaFailoverBase(TestBasic):
         self.env.revert_snapshot(self.snapshot_name)
 
         for devops_node in self.env.d_env.nodes().slaves[:3]:
-            remote = self.fuel_web.get_ssh_for_node(devops_node.name)
-            remote.check_call('kill -9 $(pidof haproxy)')
+            with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
+                remote.check_call('kill -9 $(pidof haproxy)')
 
-            def haproxy_started():
-                ret = remote.execute(
-                    '[ -f /var/run/haproxy.pid ] && '
-                    '[ "$(ps -p $(cat /var/run/haproxy.pid) -o pid=)" == '
-                    '"$(pidof haproxy)" ]'
-                )
-                return ret['exit_code'] == 0
+                def haproxy_started():
+                    ret = remote.execute(
+                        '[ -f /var/run/haproxy.pid ] && '
+                        '[ "$(ps -p $(cat /var/run/haproxy.pid) -o pid=)" == '
+                        '"$(pidof haproxy)" ]'
+                    )
+                    return ret['exit_code'] == 0
 
             wait(haproxy_started, timeout=20)
             assert_true(haproxy_started(), 'haproxy restarted')
@@ -432,51 +432,62 @@ class TestHaFailoverBase(TestBasic):
                     " AMQP server: AMQP connection test returned 1"
 
         heat_name = 'heat-engine'
-
         ocf_status = \
             'script -q -c "OCF_ROOT=/usr/lib/ocf' \
             ' /usr/lib/ocf/resource.d/fuel/{0}' \
             ' monitor 2>&1"'.format(heat_name)
 
-        remote = self.fuel_web.get_ssh_for_node(
-            self.env.d_env.nodes().slaves[0].name)
-        pid = ''.join(remote.execute('pgrep heat-engine')['stdout'])
-        get_ocf_status = ''.join(
-            remote.execute(ocf_status)['stdout']).rstrip()
+        node_name = self.env.d_env.nodes().slaves[0].name
+
+        with self.fuel_web.get_ssh_for_node(node_name) as remote:
+            pid = ''.join(remote.execute('pgrep {0}'
+                                         .format(heat_name))['stdout'])
+            get_ocf_status = ''.join(
+                remote.execute(ocf_status)['stdout']).rstrip()
         assert_true(ocf_success in get_ocf_status,
                     "heat engine is not succeeded, status is {0}".format(
                         get_ocf_status))
-        assert_true(len(remote.execute(
-            "netstat -nap | grep {0} | grep :5673".
-            format(pid))['stdout']) > 0, 'There is no amqp connections')
-        remote.execute("iptables -I OUTPUT 1 -m owner --uid-owner heat -m"
-                       " state --state NEW,ESTABLISHED,RELATED -j DROP")
 
-        cmd = "netstat -nap | grep {0} | grep :5673".format(pid)
-        wait(lambda: len(remote.execute(cmd)['stdout']) == 0, timeout=300)
+        with self.fuel_web.get_ssh_for_node(node_name) as remote:
+            amqp_con = len(remote.execute(
+                "netstat -nap | grep {0} | grep :5673".
+                format(pid))['stdout'])
+        assert_true(amqp_con > 0, 'There is no amqp connections')
 
-        get_ocf_status = ''.join(
-            remote.execute(ocf_status)['stdout']).rstrip()
+        with self.fuel_web.get_ssh_for_node(node_name) as remote:
+            remote.execute("iptables -I OUTPUT 1 -m owner --uid-owner heat -m"
+                           " state --state NEW,ESTABLISHED,RELATED -j DROP")
+            cmd = "netstat -nap | grep {0} | grep :5673".format(pid)
+            wait(lambda: len(remote.execute(cmd)['stdout']) == 0, timeout=300)
+
+            get_ocf_status = ''.join(
+                remote.execute(ocf_status)['stdout']).rstrip()
         logger.info('ocf status after blocking is {0}'.format(
             get_ocf_status))
         assert_true(ocf_error in get_ocf_status,
                     "heat engine is running, status is {0}".format(
                         get_ocf_status))
 
-        remote.execute("iptables -D OUTPUT 1 -m owner --uid-owner heat -m"
-                       " state --state NEW,ESTABLISHED,RELATED")
-        _wait(lambda: assert_true(ocf_success in ''.join(
-            remote.execute(ocf_status)['stdout']).rstrip()), timeout=240)
-        newpid = ''.join(remote.execute('pgrep heat-engine')['stdout'])
-        assert_true(pid != newpid, "heat pid is still the same")
-        get_ocf_status = ''.join(remote.execute(
-            ocf_status)['stdout']).rstrip()
+        with self.fuel_web.get_ssh_for_node(node_name) as remote:
+            remote.execute("iptables -D OUTPUT 1 -m owner --uid-owner heat -m"
+                           " state --state NEW,ESTABLISHED,RELATED")
+            _wait(lambda: assert_true(ocf_success in ''.join(
+                remote.execute(ocf_status)['stdout']).rstrip()), timeout=240)
+            newpid = ''.join(remote.execute('pgrep {0}'
+                                            .format(heat_name))['stdout'])
+            assert_true(pid != newpid, "heat pid is still the same")
+            get_ocf_status = ''.join(remote.execute(
+                ocf_status)['stdout']).rstrip()
+
         assert_true(ocf_success in get_ocf_status,
                     "heat engine is not succeeded, status is {0}".format(
                         get_ocf_status))
-        assert_true(len(
-            remote.execute("netstat -nap | grep {0} | grep :5673".format(
-                newpid))['stdout']) > 0)
+
+        with self.fuel_web.get_ssh_for_node(node_name) as remote:
+            heat = len(
+                remote.execute("netstat -nap | grep {0} | grep :5673"
+                               .format(newpid))['stdout'])
+        assert_true(heat > 0)
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
@@ -486,17 +497,17 @@ class TestHaFailoverBase(TestBasic):
 
         self.env.revert_snapshot(self.snapshot_name)
         for devops_node in self.env.d_env.nodes().slaves[3:5]:
-            remote = self.fuel_web.get_ssh_for_node(devops_node.name)
-            remote.execute("kill -9 `pgrep nova-compute`")
-            wait(
-                lambda: len(remote.execute('pgrep nova-compute')['stdout'])
-                == 1, timeout=120)
-            assert_true(len(remote.execute('pgrep nova-compute')['stdout'])
-                        == 1, 'Nova service was not restarted')
-            assert_true(len(remote.execute(
-                "grep \"nova-compute.*trying to restart\" "
-                "/var/log/monit.log")['stdout']) > 0,
-                'Nova service was not restarted')
+            with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
+                remote.execute("kill -9 `pgrep nova-compute`")
+                wait(
+                    lambda: len(remote.execute('pgrep nova-compute')['stdout'])
+                    == 1, timeout=120)
+                assert_true(len(remote.execute('pgrep nova-compute')['stdout'])
+                            == 1, 'Nova service was not restarted')
+                assert_true(len(remote.execute(
+                    "grep \"nova-compute.*trying to restart\" "
+                    "/var/log/monit.log")['stdout']) > 0,
+                    'Nova service was not restarted')
 
     def check_firewall_vulnerability(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
@@ -513,31 +524,35 @@ class TestHaFailoverBase(TestBasic):
         self.env.revert_snapshot(self.snapshot_name)
         cluster_id = self.fuel_web.get_last_created_cluster()
         for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
-            remote = self.env.d_env.get_ssh_to_remote(node['ip'])
-            assert_true(
-                check_ping(remote, DNS, deadline=120, interval=10),
-                "No Internet access from {0}".format(node['fqdn'])
-            )
-        remote_compute = self.fuel_web.get_ssh_for_node(
-            self.env.d_env.nodes().slaves[4].name)
+            with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
+                assert_true(
+                    check_ping(remote, DNS, deadline=120, interval=10),
+                    "No Internet access from {0}".format(node['fqdn'])
+                )
+        compute_name = self.env.d_env.nodes().slaves[4].name
         devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         file_name = DOWNLOAD_LINK.split('/')[-1]
         file_path = '/root/tmp'
-        remote_compute.execute(
-            "screen -S download -d -m bash -c 'mkdir -p {0} &&"
-            " cd {0} && wget --limit-rate=100k {1}'".format(file_path,
-                                                            DOWNLOAD_LINK))
-        try:
-            wait(
-                lambda: remote_compute.execute("ls -1 {0}/{1}".format(
-                    file_path, file_name))['exit_code'] == 0, timeout=60)
-        except TimeoutError:
-            raise TimeoutError(
-                "File download was not started")
-        file_size1 = get_file_size(remote_compute, file_name, file_path)
-        time.sleep(60)
-        file_size2 = get_file_size(remote_compute, file_name, file_path)
+        with self.fuel_web.get_ssh_for_node(compute_name) as remote:
+            remote.execute(
+                "screen -S download -d -m bash -c 'mkdir -p {0} &&"
+                " cd {0} && wget --limit-rate=100k {1}'".format(file_path,
+                                                                DOWNLOAD_LINK))
+
+        with self.fuel_web.get_ssh_for_node(compute_name) as remote:
+            try:
+                wait(
+                    lambda: remote.execute("ls -1 {0}/{1}".format(
+                        file_path, file_name))['exit_code'] == 0, timeout=60)
+            except TimeoutError:
+                raise TimeoutError(
+                    "File download was not started")
+
+        with self.fuel_web.get_ssh_for_node(compute_name) as remote:
+            file_size1 = get_file_size(remote, file_name, file_path)
+            time.sleep(60)
+            file_size2 = get_file_size(remote, file_name, file_path)
         assert_true(file_size2 > file_size1,
                     "File download was interrupted, size of downloading "
                     "does not change")
@@ -549,14 +564,16 @@ class TestHaFailoverBase(TestBasic):
         except TimeoutError:
             raise TimeoutError(
                 "Primary controller was not destroyed")
-        assert_true(
-            check_ping(remote_compute, DNS, deadline=120, interval=10),
-            "No Internet access from {0}".format(node['fqdn'])
-        )
+        with self.fuel_web.get_ssh_for_node(compute_name) as remote:
+            assert_true(
+                check_ping(remote, DNS, deadline=120, interval=10),
+                "No Internet access from {0}".format(node['fqdn'])
+            )
         if OPENSTACK_RELEASE == OPENSTACK_RELEASE_UBUNTU:
-            file_size1 = get_file_size(remote_compute, file_name, file_path)
-            time.sleep(60)
-            file_size2 = get_file_size(remote_compute, file_name, file_path)
+            with self.fuel_web.get_ssh_for_node(compute_name) as remote:
+                file_size1 = get_file_size(remote, file_name, file_path)
+                time.sleep(60)
+                file_size2 = get_file_size(remote, file_name, file_path)
             assert_true(file_size2 > file_size1,
                         "File download was interrupted, size of downloading "
                         "does not change")
@@ -586,6 +603,8 @@ class TestHaFailoverBase(TestBasic):
             logger.error('command failed to be executed'.format(
                 self.env.d_env.nodes().slaves[:1].name))
             raise
+        finally:
+            remote.clear()
 
         cluster_id = self.fuel_web.client.get_cluster_id(
             self.__class__.__name__)
@@ -784,11 +803,11 @@ class TestHaFailoverBase(TestBasic):
                         for node in pcm_nodes]
         logger.debug("rabbit nodes are {}".format(rabbit_nodes))
 
-        slave1_remote = self.fuel_web.get_ssh_for_node(
-            self.env.d_env.nodes().slaves[0].name)
         rabbit_slave1_name = None
-        slave1_name = ''.join(
-            slave1_remote.execute('hostname')['stdout']).strip()
+        with self.fuel_web.get_ssh_for_node(
+                self.env.d_env.nodes().slaves[0].name) as remote:
+            slave1_name = ''.join(
+                remote.execute('hostname')['stdout']).strip()
         logger.debug('slave1 name is {}'.format(slave1_name))
         for rabbit_node in rabbit_nodes:
             if rabbit_node in slave1_name:
@@ -797,32 +816,36 @@ class TestHaFailoverBase(TestBasic):
 
         pcm_nodes.remove(slave1_name)
 
-        slave1_remote.execute('crm configure property maintenance-mode=true')
-        slave1_remote.execute('service corosync stop')
+        with self.fuel_web.get_ssh_for_node(
+                self.env.d_env.nodes().slaves[0].name) as remote:
+            remote.execute('crm configure property maintenance-mode=true')
+            remote.execute('service corosync stop')
 
-        remote = self.env.d_env.get_admin_remote()
-        cmd = "grep 'Ignoring alive node rabbit@{0}' /var/log/remote" \
-              "/{1}/rabbit-fence.log".format(rabbit_slave1_name, pcm_nodes[0])
-        try:
-            wait(
-                lambda: not remote.execute(cmd)['exit_code'], timeout=2 * 60)
-        except TimeoutError:
-            result = remote.execute(cmd)
-            assert_equal(0, result['exit_code'],
-                         'alive rabbit node was not ignored,'
-                         ' result is {}'.format(result))
-        assert_equal(0, remote.execute(
-            "grep 'Got {0} that left cluster' /var/log/remote/{1}/"
-            "rabbit-fence.log".format(slave1_name,
-                                      pcm_nodes[0]))['exit_code'],
-                     "slave {} didn't leave cluster".format(slave1_name))
-        assert_equal(0, remote.execute(
-            "grep 'Preparing to fence node rabbit@{0} from rabbit cluster'"
-            " /var/log/remote/{1}/"
-            "rabbit-fence.log".format(rabbit_slave1_name,
-                                      pcm_nodes[0]))['exit_code'],
-                     "node {} wasn't prepared for"
-                     " fencing".format(rabbit_slave1_name))
+        with self.env.d_env.get_admin_remote() as remote:
+            cmd = "grep 'Ignoring alive node rabbit@{0}' /var/log/remote" \
+                  "/{1}/rabbit-fence.log".format(rabbit_slave1_name,
+                                                 pcm_nodes[0])
+            try:
+                wait(
+                    lambda: not remote.execute(cmd)['exit_code'],
+                    timeout=2 * 60)
+            except TimeoutError:
+                result = remote.execute(cmd)
+                assert_equal(0, result['exit_code'],
+                             'alive rabbit node was not ignored,'
+                             ' result is {}'.format(result))
+            assert_equal(0, remote.execute(
+                "grep 'Got {0} that left cluster' /var/log/remote/{1}/"
+                "rabbit-fence.log".format(slave1_name,
+                                          pcm_nodes[0]))['exit_code'],
+                         "slave {} didn't leave cluster".format(slave1_name))
+            assert_equal(0, remote.execute(
+                "grep 'Preparing to fence node rabbit@{0} from rabbit cluster'"
+                " /var/log/remote/{1}/"
+                "rabbit-fence.log".format(rabbit_slave1_name,
+                                          pcm_nodes[0]))['exit_code'],
+                         "node {} wasn't prepared for"
+                         " fencing".format(rabbit_slave1_name))
 
         rabbit_status = self.fuel_web.get_rabbit_running_nodes(
             self.env.d_env.nodes().slaves[1].name)
@@ -851,11 +874,10 @@ class TestHaFailoverBase(TestBasic):
                         for node in pcm_nodes]
         logger.debug("rabbit nodes are {}".format(rabbit_nodes))
 
-        slave1_remote = self.fuel_web.get_ssh_for_node(
-            self.env.d_env.nodes().slaves[0].name)
-
-        slave1_name = ''.join(
-            slave1_remote.execute('hostname')['stdout']).strip()
+        with self.fuel_web.get_ssh_for_node(
+                self.env.d_env.nodes().slaves[0].name) as remote:
+            slave1_name = ''.join(
+                remote.execute('hostname')['stdout']).strip()
         logger.debug('slave1 name is {}'.format(slave1_name))
         for rabbit_node in rabbit_nodes:
             if rabbit_node in slave1_name:
@@ -864,40 +886,45 @@ class TestHaFailoverBase(TestBasic):
 
         pcm_nodes.remove(slave1_name)
 
-        slave1_remote.execute('crm configure property maintenance-mode=true')
-        slave1_remote.execute('rabbitmqctl stop_app')
-        slave1_remote.execute('service corosync stop')
+        with self.fuel_web.get_ssh_for_node(
+                self.env.d_env.nodes().slaves[0].name) as remote:
+            remote.execute('crm configure property maintenance-mode=true')
+            remote.execute('rabbitmqctl stop_app')
+            remote.execute('service corosync stop')
 
-        remote = self.env.d_env.get_admin_remote()
+        with self.env.d_env.get_admin_remote() as remote:
 
-        cmd = "grep 'Forgetting cluster node rabbit@{0}' /var/log/remote" \
-              "/{1}/rabbit-fence.log".format(rabbit_slave1_name, pcm_nodes[0])
-        try:
-            wait(
-                lambda: not remote.execute(cmd)['exit_code'], timeout=2 * 60)
-        except TimeoutError:
-            result = remote.execute(cmd)
-            assert_equal(0, result['exit_code'],
-                         'dead rabbit node was not removed,'
-                         ' result is {}'.format(result))
+            cmd = "grep 'Forgetting cluster node rabbit@{0}' /var/log/remote" \
+                  "/{1}/rabbit-fence.log".format(rabbit_slave1_name,
+                                                 pcm_nodes[0])
+            try:
+                wait(
+                    lambda: not remote.execute(cmd)['exit_code'],
+                    timeout=2 * 60)
+            except TimeoutError:
+                result = remote.execute(cmd)
+                assert_equal(0, result['exit_code'],
+                             'dead rabbit node was not removed,'
+                             ' result is {}'.format(result))
 
-        assert_equal(0, remote.execute(
-            "grep 'Got {0} that left cluster' /var/log/remote/{1}/"
-            "rabbit-fence.log".format(slave1_name,
-                                      pcm_nodes[0]))['exit_code'],
-                     "node {} didn't leave cluster".format(slave1_name))
-        assert_equal(0, remote.execute(
-            "grep 'Preparing to fence node rabbit@{0} from rabbit cluster'"
-            " /var/log/remote/{1}/"
-            "rabbit-fence.log".format(rabbit_slave1_name,
-                                      pcm_nodes[0]))['exit_code'],
-                     "node {} wasn't prepared for"
-                     " fencing".format(rabbit_slave1_name))
-        assert_equal(0, remote.execute(
-            "grep 'Disconnecting node rabbit@{0}' /var/log/remote/{1}/"
-            "rabbit-fence.log".format(rabbit_slave1_name,
-                                      pcm_nodes[0]))['exit_code'],
-                     "node {} wasn't disconnected".format(rabbit_slave1_name))
+            assert_equal(0, remote.execute(
+                "grep 'Got {0} that left cluster' /var/log/remote/{1}/"
+                "rabbit-fence.log".format(slave1_name,
+                                          pcm_nodes[0]))['exit_code'],
+                         "node {} didn't leave cluster".format(slave1_name))
+            assert_equal(0, remote.execute(
+                "grep 'Preparing to fence node rabbit@{0} from rabbit cluster'"
+                " /var/log/remote/{1}/"
+                "rabbit-fence.log".format(rabbit_slave1_name,
+                                          pcm_nodes[0]))['exit_code'],
+                         "node {} wasn't prepared for"
+                         " fencing".format(rabbit_slave1_name))
+            assert_equal(0, remote.execute(
+                "grep 'Disconnecting node rabbit@{0}' /var/log/remote/{1}/"
+                "rabbit-fence.log".format(rabbit_slave1_name,
+                                          pcm_nodes[0]))['exit_code'],
+                         "node {} wasn't disconnected"
+                         .format(rabbit_slave1_name))
 
         rabbit_nodes.remove(rabbit_slave1_name)
         rabbit_status = self.fuel_web.get_rabbit_running_nodes(
