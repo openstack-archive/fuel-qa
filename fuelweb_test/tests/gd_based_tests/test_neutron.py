@@ -203,72 +203,80 @@ class NeutronTun(TestBasic):
         # check hiera
 
         if self.get_post_test(tasks, 'hiera'):
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=self.get_post_test(tasks, 'hiera')[0]['cmd'])
-             for node in nodes]
+            for node in nodes:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=self.get_post_test(tasks, 'hiera')[0]['cmd'])
 
         # check globals
 
         if self.get_post_test(tasks, 'globals'):
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=self.get_post_test(tasks, 'globals')[0]['cmd'])
-             for node in nodes]
+            for node in nodes:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=self.get_post_test(tasks, 'globals')[0]['cmd'])
 
         # check netconfig
 
         if self.get_post_test(tasks, 'netconfig'):
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=self.get_post_test(tasks, 'netconfig')[0]['cmd'])
-             for node in nodes]
+            for node in nodes:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=self.get_post_test(tasks, 'netconfig')[0]['cmd'])
 
         # check firewall
 
         if self.get_post_test(all_tasks, 'firewall'):
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=self.get_post_test(all_tasks, 'firewall')[0]['cmd'])
-             for node in nodes]
-
+            for node in nodes:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=self.get_post_test(all_tasks,
+                                                'firewall')[0]['cmd'])
         # check hosts
 
         if self.get_post_test(tasks, 'hosts'):
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=self.get_post_test(tasks, 'hosts')[0]['cmd'])
-             for node in nodes]
+            for node in nodes:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=self.get_post_test(tasks, 'hosts')[0]['cmd'])
 
         # check tools
 
         if self.get_post_test(all_tasks, 'tools'):
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=self.get_post_test(all_tasks, 'tools')[0]['cmd'])
-             for node in nodes]
+            for node in nodes:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=self.get_post_test(all_tasks, 'tools')[0]['cmd'])
 
         # check cluster on controller
 
         post_cluster = self.get_post_test(all_tasks, 'cluster')
 
         if post_cluster:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=post_cluster[0]['cmd'])
-             for node in ['slave-01']]
+            for node in ['slave-01']:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=post_cluster[0]['cmd'])
         post_virtual_ips = self.get_post_test(tasks, 'virtual_ips')
         if post_virtual_ips:
-            try:
-                gd.run_check_from_task(
-                    remote=self.fuel_web.get_ssh_for_node('slave-01'),
-                    path=post_virtual_ips[0]['cmd'])
-            except AssertionError:
-                import time
-                time.sleep(60)
-                gd.run_check_from_task(
-                    remote=self.fuel_web.get_ssh_for_node('slave-01'),
-                    path=post_virtual_ips[0]['cmd'])
+            with self.fuel_web.get_ssh_for_node('slave-01') as ssh:
+                try:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=post_virtual_ips[0]['cmd'])
+                except AssertionError:
+                    import time
+                    time.sleep(60)
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=post_virtual_ips[0]['cmd'])
 
         self.env.make_snapshot("run_tasks_end_with_vips")
 
@@ -309,10 +317,11 @@ class NeutronTun(TestBasic):
         pre_cluster_haproxy = self.get_pre_test(tasks, 'cluster-haproxy')
         post_cluster_haproxy = self.get_post_test(tasks, 'cluster-haproxy')
         if pre_cluster_haproxy:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=pre_cluster_haproxy[0]['cmd'])
-             for node in ['slave-01']]
+            for node in ['slave-01']:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=pre_cluster_haproxy[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['conntrackd'],
@@ -327,10 +336,11 @@ class NeutronTun(TestBasic):
 
         self.fuel_web.assert_task_success(task=res)
         if post_cluster_haproxy:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=post_cluster_haproxy[0]['cmd'])
-             for node in ['slave-01']]
+            for node in ['slave-01']:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=post_cluster_haproxy[0]['cmd'])
 
         self.env.make_snapshot("step_5_run_cluster_haproxy_controller")
 
@@ -371,10 +381,11 @@ class NeutronTun(TestBasic):
         pre_openstack_haproxy = self.get_pre_test(tasks, 'openstack-haproxy')
         post_openstack_haproxy = self.get_post_test(tasks, 'openstack-haproxy')
         if pre_openstack_haproxy:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=pre_openstack_haproxy[0]['cmd'])
-             for node in ['slave-01']]
+            for node in ['slave-01']:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=pre_openstack_haproxy[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['openstack-haproxy'],
@@ -400,19 +411,21 @@ class NeutronTun(TestBasic):
         logger.debug('res info is {0}'.format(res))
         self.fuel_web.assert_task_success(task=res)
         if post_openstack_haproxy:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=post_openstack_haproxy[0]['cmd'])
-             for node in ['slave-01']]
+            for node in ['slave-01']:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=post_openstack_haproxy[0]['cmd'])
         for service in ['memcached', 'openstack-cinder', 'database'
                         'rabbitmq', 'apache']:
         # for service in ['memcached', 'openstack-cinder', 'database'
         #                 'rabbitmq', 'keystone', 'glance']:
             if self.get_post_test(tasks, service):
-                [gd.run_check_from_task(
-                    remote=self.fuel_web.get_ssh_for_node(node),
-                    path=self.get_post_test(tasks, service)[0]['cmd'])
-                 for node in ['slave-01']]
+                for node in ['slave-01']:
+                    with self.fuel_web.get_ssh_for_node(node) as ssh:
+                        gd.run_check_from_task(
+                            remote=ssh,
+                            path=self.get_post_test(tasks, service)[0]['cmd'])
 
         self.env.make_snapshot("step_6_run_openstack_haproxy_controller")
 
@@ -454,10 +467,11 @@ class NeutronTun(TestBasic):
         pre_openstack_ctr = self.get_pre_test(tasks, 'openstack-controller')
         post_openstack_ctr = self.get_post_test(tasks, 'openstack-controller')
         if pre_openstack_ctr:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=pre_openstack_ctr[0]['cmd'])
-             for node in ['slave-01']]
+            for node in ['slave-01']:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=pre_openstack_ctr[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['openstack-controller'],
@@ -466,10 +480,11 @@ class NeutronTun(TestBasic):
 
         self.fuel_web.assert_task_success(task=res)
         if post_openstack_ctr:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=post_openstack_ctr[0]['cmd'])
-             for node in ['slave-01']]
+            for node in ['slave-01']:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=post_openstack_ctr[0]['cmd'])
 
         self.env.make_snapshot("step_7_run_openstack_controller")
 
@@ -517,10 +532,11 @@ class NeutronTun(TestBasic):
 
         pre_net = self.get_pre_test(tasks, 'openstack-network')
         if pre_net:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=pre_net[0]['cmd'])
-             for node in ['slave-01']]
+            for node in ['slave-01']:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=pre_net[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=[task['id'] for task in tasks],
@@ -548,10 +564,11 @@ class NeutronTun(TestBasic):
 
         for task in expected_task_list:
             if self.get_post_test(tasks, task):
-                [gd.run_check_from_task(
-                    remote=self.fuel_web.get_ssh_for_node(node),
-                    path=self.get_post_test(tasks, task)[0]['cmd'])
-                 for node in ['slave-01']]
+                for node in ['slave-01']:
+                    with self.fuel_web.get_ssh_for_node(node) as ssh:
+                        gd.run_check_from_task(
+                            remote=ssh,
+                            path=self.get_post_test(tasks, task)[0]['cmd'])
         try:
             self.fuel_web.run_ostf(cluster_id=cluster_id,
                                    test_sets=['sanity'],
@@ -601,10 +618,11 @@ class NeutronTun(TestBasic):
         pre_top_compute = self.get_pre_test(tasks, 'top-role-compute')
         post_top_compute = self.get_post_test(tasks, 'top-role-compute')
         if pre_top_compute:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=pre_top_compute[0]['cmd'])
-             for node in ['slave-02']]
+            for node in ['slave-02']:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=pre_top_compute[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['top-role-compute'],
@@ -613,18 +631,20 @@ class NeutronTun(TestBasic):
 
         self.fuel_web.assert_task_success(task=res)
         if post_top_compute:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=post_top_compute[0]['cmd'])
-             for node in ['slave-02']]
+            for node in ['slave-02']:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=post_top_compute[0]['cmd'])
 
         pre_net = self.get_pre_test(tasks, 'openstack-network-compute')
         post_net = self.get_post_test(tasks, 'openstack-network-compute')
         if pre_net:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=pre_net[0]['cmd'])
-             for node in ['slave-02', 'slave-03']]
+            for node in ['slave-02', 'slave-03']:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=pre_net[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['openstack-network-compute'],
@@ -634,10 +654,11 @@ class NeutronTun(TestBasic):
         self.fuel_web.assert_task_success(task=res)
 
         if post_net:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=post_net[0]['cmd'])
-             for node in ['slave-02']]
+            for node in ['slave-02']:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=post_net[0]['cmd'])
 
         self.env.make_snapshot("step_9_run_top_role_compute")
 
@@ -682,10 +703,11 @@ class NeutronTun(TestBasic):
         pre_top_cinder = self.get_pre_test(tasks, 'top-role-cinder')
         post_top_cinder = self.get_post_test(tasks, 'top-role-cinder')
         if pre_top_cinder:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=pre_top_cinder[0]['cmd'])
-             for node in ['slave-03']]
+            for node in ['slave-03']:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=pre_top_cinder[0]['cmd'])
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['top-role-cinder'],
@@ -694,10 +716,11 @@ class NeutronTun(TestBasic):
 
         self.fuel_web.assert_task_success(task=res)
         if post_top_cinder:
-            [gd.run_check_from_task(
-                remote=self.fuel_web.get_ssh_for_node(node),
-                path=post_top_cinder[0]['cmd'])
-             for node in ['slave-03']]
+            for node in ['slave-03']:
+                with self.fuel_web.get_ssh_for_node(node) as ssh:
+                    gd.run_check_from_task(
+                        remote=ssh,
+                        path=post_top_cinder[0]['cmd'])
 
         # Run post_deployment
         tasks = self.fuel_web.client.get_end_deployment_tasks(
