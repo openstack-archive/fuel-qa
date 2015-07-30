@@ -48,7 +48,11 @@ class OstfRepeatableTests(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_date.DEPLOYMENT_MODE
+            mode=hlp_date.DEPLOYMENT_MODE,
+            settings={
+                'net_provider': 'neutron',
+                'net_segment_type': hlp_date.NEUTRON_SEGMENT_TYPE
+            }
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -89,7 +93,11 @@ class OstfRepeatableTests(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_date.DEPLOYMENT_MODE
+            mode=hlp_date.DEPLOYMENT_MODE,
+            settings={
+                'net_provider': 'neutron',
+                'net_segment_type': hlp_date.NEUTRON_SEGMENT_TYPE
+            }
         )
         self.fuel_web.update_nodes(
             cluster_id,
