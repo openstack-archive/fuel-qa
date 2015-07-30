@@ -206,6 +206,9 @@ class TestNeutronFailover(base_test_case.TestBasic):
         new_remote.execute("pcs resource clear p_neutron-l3-agent {0}".
                            format(node_with_l3))
 
+        new_remote.clear()
+        remote.clear()
+
     @test(depends_on=[deploy_ha_neutron],
           groups=["neutron_l3_migration_after_reset"])
     @log_snapshot_after_test
@@ -274,6 +277,8 @@ class TestNeutronFailover(base_test_case.TestBasic):
         remote.reconnect()
 
         self.check_instance_connectivity(remote, dhcp_namespace, instance_ip)
+
+        remote.clear()
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
@@ -346,6 +351,8 @@ class TestNeutronFailover(base_test_case.TestBasic):
         wait(lambda: os_conn.get_l3_agent_ids(router_id), timeout=60)
 
         self.check_instance_connectivity(remote, dhcp_namespace, instance_ip)
+
+        remote.clear()
 
         @retry(count=3, delay=120)
         def run_single_test(cluster_id):
@@ -427,6 +434,6 @@ class TestNeutronFailover(base_test_case.TestBasic):
                                     .format(cmd))
                         res = remote.execute(cmd)
                         break
-
+        remote.clear()
         assert_equal(0, res['exit_code'],
                      'Most packages were dropped, result is {0}'.format(res))
