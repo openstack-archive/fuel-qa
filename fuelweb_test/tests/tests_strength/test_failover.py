@@ -309,6 +309,24 @@ class TestHaNeutronFailover(TestHaFailoverBase):
         """
         super(self.__class__, self).test_3_1_rabbit_failover()
 
+    @test(depends_on_groups=['prepare_ha_neutron'],
+          groups=["ha_corosync_stability_check", "ha"])
+    @log_snapshot_after_test
+    def ha_corosync_stability_check(self):
+        """Check after corosync failover that "pcs status nodes" reports
+           the same DC with quorum, "offline"/"online" statuses
+
+        Scenario:
+            1. On the first controller kill corosync
+            2. Verify for all controllers "pcs status nodes" reports
+            3. Start corosync on the first controller
+            4. Repeat steps 1-3 500 times
+
+        Duration 120m
+
+        """
+        super(self.__class__, self).ha_corosync_stability_check()
+
 
 @test(enabled=False,
       groups=["thread_5", "ha", "ha_nova_destructive"])
