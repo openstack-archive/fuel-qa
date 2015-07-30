@@ -19,7 +19,6 @@ from proboscis import test
 
 from fuelweb_test.helpers.decorators import check_fuel_statistics
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.helpers import os_actions
 from fuelweb_test import settings as hlp_data
 from fuelweb_test import logger
 from fuelweb_test.tests import base_test_case
@@ -30,12 +29,12 @@ class EnvironmentAction(base_test_case.TestBasic):
     """EnvironmentAction."""  # TODO documentation
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
-          groups=["smoke", "deploy_flat_stop_reset_on_deploying",
+          groups=["smoke", "deploy_neutron_stop_reset_on_deploying",
                   "classic_provisioning"])
     @log_snapshot_after_test
     @check_fuel_statistics
-    def deploy_flat_stop_on_deploying(self):
-        """Stop reset cluster in HA mode with flat nova-network
+    def deploy_neutron_stop_on_deploying(self):
+        """Stop reset cluster in HA mode with neutron
 
         Scenario:
             1. Create cluster in HA mode with 1 controller
@@ -49,7 +48,7 @@ class EnvironmentAction(base_test_case.TestBasic):
             9. Run OSTF
 
         Duration 50m
-        Snapshot: deploy_flat_stop_reset_on_deploying
+        Snapshot: deploy_neutron_stop_reset_on_deploying
 
         """
         self.env.revert_snapshot("ready_with_3_slaves")
@@ -60,8 +59,9 @@ class EnvironmentAction(base_test_case.TestBasic):
             settings={
                 'tenant': 'stop_deploy',
                 'user': 'stop_deploy',
-                'password': 'stop_deploy'
-
+                'password': 'stop_deploy',
+                "net_provider": 'neutron',
+                "net_segment_type": hlp_data.NEUTRON_SEGMENT_TYPE
             }
         )
         self.fuel_web.update_nodes(
@@ -93,13 +93,13 @@ class EnvironmentAction(base_test_case.TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_flat_stop_reset_on_deploying")
+        self.env.make_snapshot("deploy_neutron_stop_reset_on_deploying")
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
-          groups=["smoke", "deploy_flat_stop_reset_on_provisioning"])
+          groups=["smoke", "deploy_neutron_stop_reset_on_provisioning"])
     @log_snapshot_after_test
-    def deploy_flat_stop_reset_on_provisioning(self):
-        """Stop provisioning cluster in HA mode with flat nova-network
+    def deploy_neutron_stop_reset_on_provisioning(self):
+        """Stop provisioning cluster in HA mode with neutron
 
         Scenario:
             1. Create cluster in HA mode with 1 controller
@@ -113,14 +113,18 @@ class EnvironmentAction(base_test_case.TestBasic):
             9. Run OSTF
 
         Duration 40m
-        Snapshot: deploy_flat_stop_reset_on_deploying
+        Snapshot: deploy_neutron_stop_reset_on_deploying
 
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_data.DEPLOYMENT_MODE
+            mode=hlp_data.DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": hlp_data.NEUTRON_SEGMENT_TYPE
+            }
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -154,7 +158,7 @@ class EnvironmentAction(base_test_case.TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_flat_stop_reset_on_provisioning")
+        self.env.make_snapshot("deploy_neutron_stop_reset_on_provisioning")
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_reset_on_ready"])
@@ -182,7 +186,11 @@ class EnvironmentAction(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_data.DEPLOYMENT_MODE
+            mode=hlp_data.DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": hlp_data.NEUTRON_SEGMENT_TYPE
+            }
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -193,22 +201,12 @@ class EnvironmentAction(base_test_case.TestBasic):
         )
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id))
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=6, networks_count=1, timeout=300)
 
         self.fuel_web.stop_reset_env_wait(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:2], timeout=10 * 60)
 
-        self.fuel_web.update_vlan_network_fixed(
-            cluster_id, amount=8, network_size=32)
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id))
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=6, networks_count=8, timeout=300)
 
         self.fuel_web.verify_network(cluster_id)
 
@@ -246,8 +244,11 @@ class EnvironmentActionOnHA(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_data.DEPLOYMENT_MODE_HA
-
+            mode=hlp_data.DEPLOYMENT_MODE_HA,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": hlp_data.NEUTRON_SEGMENT_TYPE
+            }
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -271,10 +272,6 @@ class EnvironmentActionOnHA(base_test_case.TestBasic):
         )
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id))
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=16, networks_count=1, timeout=300)
 
         self.fuel_web.verify_network(cluster_id)
 
