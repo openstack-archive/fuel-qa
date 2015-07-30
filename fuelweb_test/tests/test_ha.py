@@ -95,10 +95,10 @@ class TestHaVLAN(TestBasic):
                 node['meta']['system']['fqdn']))
             haproxy_status = checkers.check_haproxy_backend(
                 remote, ignore_services=['nova-metadata-api'])
+            remote.clear()
             assert_equal(haproxy_status['exit_code'], 1,
                          "HAProxy backends are DOWN. {0}".format(
                              haproxy_status))
-            remote.clear()
 
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id),
@@ -108,26 +108,27 @@ class TestHaVLAN(TestBasic):
             os_conn, smiles_count=16, networks_count=8, timeout=300)
 
         _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
-        self.fuel_web.check_fixed_nova_splited_cidr(
-            os_conn, self.fuel_web.get_nailgun_cidr_nova(cluster_id),
-            self.env.d_env.get_ssh_to_remote(_ip))
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            self.fuel_web.check_fixed_nova_splited_cidr(
+                os_conn, self.fuel_web.get_nailgun_cidr_nova(cluster_id),
+                remote)
 
         devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
 
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
-        remote = self.env.d_env.get_ssh_to_remote(_ip)
-        for i in range(5):
-            try:
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            for i in range(5):
+                try:
+                    checkers.check_swift_ring(remote)
+                    break
+                except AssertionError:
+                    result = remote.execute(
+                        "/usr/local/bin/swift-rings-rebalance.sh")
+                    logger.debug("command execution result is {0}".format(result))
+            else:
                 checkers.check_swift_ring(remote)
-                break
-            except AssertionError:
-                result = remote.execute(
-                    "/usr/local/bin/swift-rings-rebalance.sh")
-                logger.debug("command execution result is {0}".format(result))
-        else:
-            checkers.check_swift_ring(remote)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
@@ -204,17 +205,17 @@ class TestHaFlat(TestBasic):
         logger.debug("devops node name is {0}".format(devops_node.name))
 
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
-        remote = self.env.d_env.get_ssh_to_remote(_ip)
-        for i in range(5):
-            try:
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            for i in range(5):
+                try:
+                    checkers.check_swift_ring(remote)
+                    break
+                except AssertionError:
+                    result = remote.execute(
+                        "/usr/local/bin/swift-rings-rebalance.sh")
+                    logger.debug("command execution result is {0}".format(result))
+            else:
                 checkers.check_swift_ring(remote)
-                break
-            except AssertionError:
-                result = remote.execute(
-                    "/usr/local/bin/swift-rings-rebalance.sh")
-                logger.debug("command execution result is {0}".format(result))
-        else:
-            checkers.check_swift_ring(remote)
 
         self.fuel_web.security.verify_firewall(cluster_id)
 
