@@ -19,21 +19,22 @@ from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
 
 
 @test(groups=["thread_1", "neutron", "smoke_neutron", "deployment"])
-class NeutronGre(TestBasic):
-    """NeutronGre."""  # TODO documentation
+class NeutronTun(TestBasic):
+    """NeutronTun."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_neutron_gre", "ha_one_controller_neutron_gre",
+          groups=["deploy_neutron_tun", "ha_one_controller_neutron_tun",
                   "cinder", "swift", "glance", "neutron", "deployment"])
     @log_snapshot_after_test
-    def deploy_neutron_gre(self):
-        """Deploy cluster in ha mode with 1 controller and Neutron GRE
+    def deploy_neutron_tun(self):
+        """Deploy cluster in ha mode with 1 controller and Neutron VXLAN
 
         Scenario:
             1. Create cluster
@@ -44,18 +45,17 @@ class NeutronGre(TestBasic):
             6. Run OSTF
 
         Duration 35m
-        Snapshot deploy_neutron_gre
+        Snapshot deploy_neutron_tun
 
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        segment_type = 'gre'
         data = {
             "net_provider": 'neutron',
-            "net_segment_type": segment_type,
-            'tenant': 'simpleGre',
-            'user': 'simpleGre',
-            'password': 'simpleGre'
+            "net_segment_type": NEUTRON_SEGMENT['tun'],
+            'tenant': 'simpleTun',
+            'user': 'simpleTun',
+            'password': 'simpleTun'
         }
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -88,7 +88,7 @@ class NeutronGre(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_gre")
+        self.env.make_snapshot("deploy_neutron_tun")
 
 
 @test(groups=["thread_1", "neutron"])
@@ -116,13 +116,12 @@ class NeutronVlan(TestBasic):
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        segment_type = 'vlan'
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": segment_type,
+                "net_segment_type": NEUTRON_SEGMENT['vlan'],
                 'tenant': 'simpleVlan',
                 'user': 'simpleVlan',
                 'password': 'simpleVlan'
@@ -151,6 +150,80 @@ class NeutronVlan(TestBasic):
 
 
 @test(groups=["neutron", "ha", "ha_neutron", "classic_provisioning"])
+class NeutronTunHa(TestBasic):
+    """NeutronTunHa."""  # TODO documentation
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["deploy_neutron_tun_ha", "ha_neutron_tun"])
+    @log_snapshot_after_test
+    def deploy_neutron_tun_ha(self):
+        """Deploy cluster in HA mode with Neutron VXLAN
+
+        Scenario:
+            1. Create cluster
+            2. Add 3 nodes with controller role
+            3. Add 2 nodes with compute role
+            4. Deploy the cluster
+            5. Run network verification
+            6. Run OSTF
+
+        Duration 80m
+        Snapshot deploy_neutron_tun_ha
+
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT['tun'],
+                'tenant': 'haTun',
+                'user': 'haTun',
+                'password': 'haTun'
+            }
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute'],
+                'slave-05': ['compute']
+            }
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        cluster = self.fuel_web.client.get_cluster(cluster_id)
+        assert_equal(str(cluster['net_provider']), 'neutron')
+
+        self.fuel_web.verify_network(cluster_id)
+        devops_node = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+        logger.debug("devops node name is {0}".format(devops_node.name))
+        with self.env.d_env.get_ssh_for_node(devops_node.name) as remote:
+            for i in range(5):
+                try:
+                    checkers.check_swift_ring(remote)
+                    break
+                except AssertionError:
+                    result = remote.execute(
+                        "/usr/local/bin/swift-rings-rebalance.sh")
+                    logger.debug("command execution result is {0}"
+                                 .format(result))
+            else:
+                checkers.check_swift_ring(remote)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['ha', 'smoke', 'sanity'])
+
+        self.env.make_snapshot("deploy_neutron_tun_ha")
+
+
+@test(groups=["neutron", "ha", "ha_neutron", "classic_provisioning"])
 class NeutronGreHa(TestBasic):
     """NeutronGreHa."""  # TODO documentation
 
@@ -158,7 +231,7 @@ class NeutronGreHa(TestBasic):
           groups=["deploy_neutron_gre_ha", "ha_neutron_gre"])
     @log_snapshot_after_test
     def deploy_neutron_gre_ha(self):
-        """Deploy cluster in HA mode with Neutron GRE
+        """Deploy cluster in HA mode with Neutron GRE (DEPRECATED)
 
         Scenario:
             1. Create cluster
@@ -174,13 +247,12 @@ class NeutronGreHa(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        segment_type = 'gre'
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": segment_type,
+                "net_segment_type": NEUTRON_SEGMENT['gre'],
                 'tenant': 'haGre',
                 'user': 'haGre',
                 'password': 'haGre'
@@ -226,14 +298,14 @@ class NeutronGreHa(TestBasic):
 
 
 @test(groups=["thread_6", "neutron", "ha", "ha_neutron"])
-class NeutronGreHaPublicNetwork(TestBasic):
-    """NeutronGreHaPublicNetwork."""  # TODO documentation
+class NeutronTunHaPublicNetwork(TestBasic):
+    """NeutronTunHaPublicNetwork."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_neutron_gre_ha_public_network"])
+          groups=["deploy_neutron_tun_ha_public_network"])
     @log_snapshot_after_test
-    def deploy_neutron_gre_ha_with_public_network(self):
-        """Deploy cluster in HA mode with Neutron GRE and public network
+    def deploy_neutron_tun_ha_with_public_network(self):
+        """Deploy cluster in HA mode with Neutron VXLAN and public network
            assigned to all nodes
 
         Scenario:
@@ -247,21 +319,20 @@ class NeutronGreHaPublicNetwork(TestBasic):
             8. Run OSTF
 
         Duration 80m
-        Snapshot deploy_neutron_gre_ha_public_network
+        Snapshot deploy_neutron_tun_ha_public_network
 
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        segment_type = 'gre'
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": segment_type,
-                'tenant': 'haGre',
-                'user': 'haGre',
-                'password': 'haGre',
+                "net_segment_type": NEUTRON_SEGMENT['tun'],
+                'tenant': 'haTun',
+                'user': 'haTun',
+                'password': 'haTun',
                 'assign_to_all_nodes': True
             }
         )
@@ -288,7 +359,7 @@ class NeutronGreHaPublicNetwork(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot("deploy_neutron_gre_ha_public_network")
+        self.env.make_snapshot("deploy_neutron_tun_ha_public_network")
 
 
 @test(groups=["neutron", "ha", "ha_neutron"])
@@ -315,13 +386,12 @@ class NeutronVlanHa(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        segment_type = 'vlan'
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": segment_type
+                "net_segment_type": NEUTRON_SEGMENT['vlan']
             }
         )
         self.fuel_web.update_nodes(
@@ -396,13 +466,12 @@ class NeutronVlanHaPublicNetwork(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        segment_type = 'vlan'
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": segment_type,
+                "net_segment_type": NEUTRON_SEGMENT['vlan'],
                 'assign_to_all_nodes': True
             }
         )
