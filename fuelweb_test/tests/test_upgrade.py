@@ -192,7 +192,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         """Upgrade ha deployed cluster
 
         Scenario:
-            1. Revert snapshot with neutron gre ha env
+            1. Revert snapshot with Neutron GRE HA 6.1 env
             2. Run upgrade on master
             3. Check that upgrade was successful
             4. Run network verification
@@ -202,6 +202,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             8. Run OSTF
 
         """
+        #(ddmitriev)TODO: change the snapshot name to actual when reverting 7.0
         if not self.env.d_env.has_snapshot('deploy_neutron_gre_ha'):
             raise SkipTest()
 
@@ -279,7 +280,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         """Upgrade ha deployed cluster and restart containers
 
         Scenario:
-            1. Revert snapshot with neutron gre ha env
+            1. Revert snapshot with Neutron GRE HA 6.1 env
             2. Run upgrade on master
             3. Check that upgrade was successful
             4. Run patching and restart containers
@@ -290,6 +291,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             9. Run OSTF
 
         """
+        #(ddmitriev)TODO: change the snapshot name to actual when reverting 7.0
         if not self.env.d_env.has_snapshot('deploy_neutron_gre_ha'):
             raise SkipTest()
 
@@ -446,7 +448,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                                test_sets=['ha', 'smoke', 'sanity'])
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[3:9])
-        segment_type = 'vlan'
+        segment_type = hlp_data.NEUTRON_SEGMENT['vlan']
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=hlp_data.DEPLOYMENT_MODE,
@@ -489,7 +491,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         """Upgrade Fuel after rollback and deploy new cluster
 
         Scenario:
-            1. Revert deploy_neutron_gre snapshot
+            1. Revert deploy_neutron_gre snapshot with 6.1 env
             2. Upgrade with rollback
             3. Run OSTF
             4. Run network verification
@@ -499,6 +501,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             8. Run OSTF for new cluster
             9. Run network verification
         """
+        #(ddmitriev)TODO: change the snapshot name to actual when reverting 7.0
         if not self.env.d_env.has_snapshot('deploy_neutron_gre'):
             raise SkipTest()
 
@@ -567,7 +570,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             mode=hlp_data.DEPLOYMENT_MODE,
             settings={
                 'net_provider': 'neutron',
-                'net_segment_type': 'vlan'
+                'net_segment_type': hlp_data.NEUTRON_SEGMENT['vlan']
             }
         )
         self.fuel_web.update_nodes(
@@ -596,7 +599,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         """Rollback manually ha deployed cluster
 
         Scenario:
-            1. Revert snapshot with neutron gre ha env
+            1. Revert snapshot with Neutron GRE HA 6.1 env
             2. Add raise exception to openstack.py file
             3. Run upgrade on master
             4. Check that rollback starts automatically
@@ -607,6 +610,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             9. Run OSTF
 
         """
+        #(ddmitriev)TODO: change the snapshot name to actual when reverting 7.0
         if not self.env.d_env.has_snapshot('deploy_neutron_gre_ha'):
             raise SkipTest()
 
@@ -661,7 +665,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         """Rollback automatically ha one controller deployed cluster
 
         Scenario:
-            1. Revert snapshot with deploy neutron gre env
+            1. Revert snapshot with deploy Neutron VXLAN env
             2. Add raise exception to docker_engine.py file
             3. Run upgrade on master
             4. Check that rollback starts automatically
@@ -738,7 +742,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
            and delete node from cluster
 
         Scenario:
-            1. Revert snapshot with deploy neutron gre env
+            1. Revert snapshot with deploy Neutron GRE 6.1 env
             2. Add raise exception to docker_engine.py file
             3. Run upgrade on master
             4. Check that rollback starts automatically
@@ -749,6 +753,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             9. Run OSTF
 
         """
+        #(ddmitriev)TODO: change the snapshot name to actual when reverting 7.0
         if not self.env.d_env.has_snapshot('deploy_neutron_gre'):
             raise SkipTest()
 

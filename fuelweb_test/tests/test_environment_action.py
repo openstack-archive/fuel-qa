@@ -292,13 +292,13 @@ class ControllerReplacement(base_test_case.TestBasic):
     """
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_ha_neutron_gre_ctrl_replacement"])
+          groups=["deploy_ha_neutron_tun_ctrl_replacement"])
     @log_snapshot_after_test
-    def deploy_ha_neutron_gre_ctrl_replacement(self):
+    def deploy_ha_neutron_tun_ctrl_replacement(self):
         """Replace 1 controller and re-deploy on ha env with neutron gre
 
         Scenario:
-            1. Create cluster with neutron gre
+            1. Create cluster with Neutron VXLAN
             2. Add 3 node with controller role
             3. Add 1 node with compute
             3. Deploy cluster
@@ -307,7 +307,7 @@ class ControllerReplacement(base_test_case.TestBasic):
             6. Run OSTF
 
         Duration 90m
-        Snapshot: deploy_ha_neutron_gre_ctrl_replacement
+        Snapshot: deploy_ha_neutron_tun_ctrl_replacement
 
         """
         self.env.revert_snapshot("ready_with_5_slaves")
@@ -343,7 +343,7 @@ class ControllerReplacement(base_test_case.TestBasic):
                                test_sets=['ha', 'smoke', 'sanity'],
                                should_fail=1)
 
-        self.env.make_snapshot("deploy_ha_neutron_gre_ctrl_replacement")
+        self.env.make_snapshot("deploy_ha_neutron_tun_ctrl_replacement")
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha_neutron_vlan_ctrl_replacement"])
@@ -397,7 +397,7 @@ class ControllerReplacement(base_test_case.TestBasic):
                                test_sets=['ha', 'smoke', 'sanity'],
                                should_fail=1)
 
-        self.env.make_snapshot("deploy_ha_neutron_gre_ctrl_replacement")
+        self.env.make_snapshot("deploy_ha_neutron_vlan_ctrl_replacement")
 
     @test(enabled=False,
           depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
