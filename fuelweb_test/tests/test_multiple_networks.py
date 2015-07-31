@@ -20,6 +20,7 @@ from fuelweb_test.helpers.decorators import check_fuel_statistics
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
 from fuelweb_test.settings import MULTIPLE_NETWORKS
+from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import NODEGROUPS
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -67,22 +68,22 @@ class TestMultipleClusterNets(TestBasic):
 
     @test(depends_on=[multiple_cluster_net_setup],
           groups=["multiple_cluster_networks",
-                  "multiple_cluster_net_neutron_gre_ha", "thread_7"])
+                  "multiple_cluster_net_neutron_tun_ha", "thread_7"])
     @log_snapshot_after_test
     @check_fuel_statistics
-    def deploy_neutron_gre_ha_nodegroups(self):
-        """Deploy HA environment with NeutronGRE and 2 nodegroups
+    def deploy_neutron_tun_ha_nodegroups(self):
+        """Deploy HA environment with NeutronVXLAN and 2 nodegroups
 
         Scenario:
             1. Revert snapshot with 2 networks sets for slaves
-            2. Create cluster (HA) with Neutron GRE
+            2. Create cluster (HA) with Neutron VXLAN
             3. Add 3 controller nodes from default nodegroup
             4. Add 2 compute nodes from custom nodegroup
             5. Deploy cluster
             6. Run health checks (OSTF)
 
         Duration 110m
-        Snapshot deploy_neutron_gre_ha_nodegroups
+        Snapshot deploy_neutron_tun_ha_nodegroups
 
         """
 
@@ -95,10 +96,10 @@ class TestMultipleClusterNets(TestBasic):
             mode=DEPLOYMENT_MODE_HA,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": 'gre',
-                'tenant': 'haGre',
-                'user': 'haGre',
-                'password': 'haGre'
+                "net_segment_type": NEUTRON_SEGMENT['tun'],
+                'tenant': 'haVxlan',
+                'user': 'haVxlan',
+                'password': 'haVxlan'
             }
         )
 
@@ -119,25 +120,25 @@ class TestMultipleClusterNets(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
-        self.env.make_snapshot("deploy_neutron_gre_ha_nodegroups")
+        self.env.make_snapshot("deploy_neutron_tun_ha_nodegroups")
 
     @test(depends_on=[multiple_cluster_net_setup],
           groups=["multiple_cluster_networks",
                   "multiple_cluster_net_ceph_ha", "thread_7"])
     @log_snapshot_after_test
     def deploy_ceph_ha_nodegroups(self):
-        """Deploy HA environment with NeutronGRE, Ceph and 2 nodegroups
+        """Deploy HA environment with Neutron VXLAN, Ceph and 2 nodegroups
 
         Scenario:
             1. Revert snapshot with 2 networks sets for slaves
-            2. Create cluster (HA) with Neutron GRE and Ceph
+            2. Create cluster (HA) with Neutron VXLAN and Ceph
             3. Add 3 controller + ceph nodes from default nodegroup
             4. Add 2 compute + ceph nodes from custom nodegroup
             5. Deploy cluster
             6. Run health checks (OSTF)
 
         Duration 110m
-        Snapshot deploy_neutron_gre_ha_nodegroups
+        Snapshot deploy_neutron_tun_ha_nodegroups
 
         """
 
@@ -153,10 +154,10 @@ class TestMultipleClusterNets(TestBasic):
                 'images_ceph': True,
                 'volumes_lvm': False,
                 "net_provider": 'neutron',
-                "net_segment_type": 'gre',
-                'tenant': 'haGreCeph',
-                'user': 'haGreCeph',
-                'password': 'haGreCeph'
+                "net_segment_type": NEUTRON_SEGMENT['tun'],
+                'tenant': 'haVxlanCeph',
+                'user': 'haVxlanCeph',
+                'password': 'haVxlanCeph'
             }
         )
 
@@ -177,4 +178,4 @@ class TestMultipleClusterNets(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id, timeout=150 * 60)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
-        self.env.make_snapshot("deploy_neutron_gre_ha_nodegroups")
+        self.env.make_snapshot("deploy_neutron_tun_ha_nodegroups")

@@ -17,6 +17,7 @@ from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -49,7 +50,7 @@ class RepeatableImageBased(TestBasic):
             mode=DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": 'gre'})
+                "net_segment_type": NEUTRON_SEGMENT['tun']})
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -84,7 +85,7 @@ class RepeatableImageBased(TestBasic):
                 mode=DEPLOYMENT_MODE,
                 settings={
                     "net_provider": 'neutron',
-                    "net_segment_type": 'vlan'
+                    "net_segment_type": NEUTRON_SEGMENT['vlan']
                 }
             )
 
