@@ -368,6 +368,9 @@ def main():
                       dest="bug_statistics", default=False,
                       help="Make a statistics for bugs linked to TestRail for "
                       "the test run")
+    parser.add_option('-c', '--create-plan-only', action="store_true",
+                      dest="create_plan_only", default=False,
+                      help='Jenkins swarm runner job name')
     parser.add_option("-v", "--verbose",
                       action="store_true", dest="verbose", default=False,
                       help="Enable debug output")
@@ -402,12 +405,14 @@ def main():
     if options.jenkins_view:
         jobs = get_jobs_for_view(options.jenkins_view)
         tests_jobs = [{'name': j, 'number': 'latest'}
-                      for j in jobs if 'system_test' in j]
+                      for j in jobs if 'system_test' in j] if \
+            not options.create_plan_only else []
         runner_job = [j for j in jobs if 'runner' in j][0]
         runner_build = Build(runner_job, 'latest')
     elif options.job_name:
         runner_build = Build(options.job_name, options.build_number)
-        tests_jobs = get_downstream_builds(runner_build.build_data)
+        tests_jobs = get_downstream_builds(runner_build.build_data) if \
+            not options.create_plan_only else []
     else:
         logger.error("Please specify either Jenkins swarm runner job name (-j)"
                      " or Jenkins view with system tests jobs (-w). Exiting..")
@@ -460,6 +465,9 @@ def main():
         logger.info('Created new TestPlan "{0}".'.format(test_plan_name))
     else:
         logger.info('Found existing TestPlan "{0}".'.format(test_plan_name))
+
+    if options.create_plan_only:
+        return
 
     plan_entries = []
     all_cases = project.get_cases(suite_id=tests_suite['id'])
