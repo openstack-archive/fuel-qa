@@ -26,7 +26,6 @@ from fuelweb_test.helpers import checkers
 from devops.helpers.helpers import tcp_ping
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.eb_tables import Ebtables
-from fuelweb_test.helpers import os_actions
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NODE_VOLUME_SIZE
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
@@ -36,7 +35,7 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
 from fuelweb_test.tests.test_ha_one_controller_base\
-    import HAOneControllerFlatBase
+    import HAOneControllerNeutronBase
 
 
 @test(groups=["thread_2"])
@@ -66,7 +65,11 @@ class OneNodeDeploy(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT_TYPE
+            }
         )
         logger.info('cluster is %s' % str(cluster_id))
         self.fuel_web.update_nodes(
@@ -74,10 +77,6 @@ class OneNodeDeploy(TestBasic):
             {'slave-01': ['controller']}
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id))
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=4, networks_count=1, timeout=300)
         self.fuel_web.run_single_ostf_test(
             cluster_id=cluster_id, test_sets=['sanity'],
             test_name=('fuel_health.tests.sanity.test_sanity_identity'
@@ -85,15 +84,14 @@ class OneNodeDeploy(TestBasic):
 
 
 @test(groups=["thread_2"])
-class HAOneControllerFlat(HAOneControllerFlatBase):
-    """HAOneControllerFlat."""  # TODO documentation
+class HAOneControllerNeutron(HAOneControllerNeutronBase):
+    """HAOneControllerNeutron."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["smoke", "deploy_ha_one_controller_flat",
-                  "ha_one_controller_nova_flat", "smoke_nova"])
+          groups=["smoke", "deploy_ha_one_controller_neutron"])
     @log_snapshot_after_test
-    def deploy_ha_one_controller_flat(self):
-        """Deploy cluster in HA mode (one controller) with flat nova-network
+    def deploy_ha_one_controller_neutron(self):
+        """Deploy cluster in HA mode (one controller) with neutron
 
         Scenario:
             1. Create cluster in HA mode
@@ -107,56 +105,19 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
             8. Run OSTF
 
         Duration 30m
-        Snapshot: deploy_ha_one_controller_flat
+        Snapshot: deploy_ha_one_controller_neutron
         """
-        super(self.__class__, self).deploy_ha_one_controller_flat_base()
+        super(self.__class__, self).deploy_ha_one_controller_neutron_base()
 
-    @test(enabled=False, depends_on=[deploy_ha_one_controller_flat],
-          groups=["ha_one_controller_flat_create_instance"])
+
+    @test(depends_on=[deploy_ha_one_controller_neutron],
+          groups=["ha_one_controller_neutron_node_deletion"])
     @log_snapshot_after_test
-    def ha_one_controller_flat_create_instance(self):
-        """Create instance with file injection
+    def ha_one_controller_neutron_node_deletion(self):
+        """Remove compute from cluster in ha mode with neutron
 
          Scenario:
-            1. Revert "ha one controller flat" environment
-            2. Create instance with file injection
-            3. Assert instance was created
-            4. Assert file is on instance
-
-        Duration 20m
-
-        """
-        self.env.revert_snapshot("deploy_ha_one_controller_flat")
-        data = {
-            'tenant': 'novaSimpleFlat',
-            'user': 'novaSimpleFlat',
-            'password': 'novaSimpleFlat'
-        }
-        cluster_id = self.fuel_web.get_last_created_cluster()
-        os = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id),
-            data['user'], data['password'], data['tenant'])
-
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        remote = self.env.d_env.get_ssh_to_remote(_ip)
-        remote.execute("echo 'Hello World' > /root/test.txt")
-        server_files = {"/root/test.txt": 'Hello World'}
-        instance = os.create_server_for_migration(file=server_files)
-        floating_ip = os.assign_floating_ip(instance)
-        wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120)
-        res = os.execute_through_host(
-            remote,
-            floating_ip.ip, "sudo cat /root/test.txt")
-        assert_true(res == 'Hello World', 'file content is {0}'.format(res))
-
-    @test(depends_on=[deploy_ha_one_controller_flat],
-          groups=["ha_one_controller_flat_node_deletion"])
-    @log_snapshot_after_test
-    def ha_one_controller_flat_node_deletion(self):
-        """Remove compute from cluster in ha mode with flat nova-network
-
-         Scenario:
-            1. Revert "deploy_ha_one_controller_flat" environment
+            1. Revert "deploy_ha_one_controller_neutron" environment
             2. Remove compute node
             3. Deploy changes
             4. Verify node returns to unallocated pull
@@ -164,7 +125,7 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
         Duration 8m
 
         """
-        self.env.revert_snapshot("deploy_ha_one_controller_flat")
+        self.env.revert_snapshot("deploy_ha_one_controller_neutron")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         nailgun_nodes = self.fuel_web.update_nodes(
@@ -181,9 +142,9 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
         )
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["ha_one_controller_flat_blocked_vlan"])
+          groups=["ha_one_controller_neutron_blocked_vlan"])
     @log_snapshot_after_test
-    def ha_one_controller_flat_blocked_vlan(self):
+    def ha_one_controller_neutron_blocked_vlan(self):
         """Verify network verification with blocked VLANs
 
         Scenario:
@@ -204,7 +165,11 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT_TYPE
+            }
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -214,10 +179,6 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id))
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=6, networks_count=1, timeout=300)
 
         ebtables = self.env.get_ebtables(
             cluster_id, self.env.d_env.nodes().slaves[:2])
@@ -229,9 +190,9 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
             ebtables.restore_first_vlan()
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["ha_one_controller_flat_add_compute"])
+          groups=["ha_one_controller_neutron_add_compute"])
     @log_snapshot_after_test
-    def ha_one_controller_flat_add_compute(self):
+    def ha_one_controller_neutron_add_compute(self):
         """Add compute node to cluster in ha mode
 
         Scenario:
@@ -249,15 +210,16 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
             10. Run OSTF
 
         Duration 40m
-        Snapshot: ha_one_controller_flat_add_compute
+        Snapshot: ha_one_controller_neutron_add_compute
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
         data = {
-            'tenant': 'flatAddCompute',
-            'user': 'flatAddCompute',
-            'password': 'flatAddCompute'
-
+            'tenant': 'neutronAddCompute',
+            'user': 'neutronAddCompute',
+            'password': 'neutronAddCompute',
+            'net_provider': 'neutron',
+            'net_segment_type': NEUTRON_SEGMENT_TYPE
         }
 
         cluster_id = self.fuel_web.create_cluster(
@@ -273,11 +235,6 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id),
-            data['user'], data['password'], data['tenant'])
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=6, networks_count=1, timeout=300)
 
         self.fuel_web.update_nodes(
             cluster_id, {'slave-03': ['compute']}, True, False)
@@ -286,87 +243,20 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
         assert_equal(
             3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
 
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=8, networks_count=1, timeout=300)
-
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("ha_one_controller_flat_add_compute")
+        self.env.make_snapshot("ha_one_controller_neutron_add_compute")
 
 
-@test(groups=["thread_2"])
-class HAOneControllerVlan(TestBasic):
-    """HAOneControllerVlan."""  # TODO documentation
-
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_ha_one_controller_vlan",
-                  "ha_one_controller_nova_vlan"])
-    @log_snapshot_after_test
-    def deploy_ha_one_controller_vlan(self):
-        """Deploy cluster in ha mode with nova-network VLAN Manager
-
-        Scenario:
-            1. Create cluster in Ha mode
-            2. Add 1 node with controller role
-            3. Add 1 node with compute role
-            4. Set up cluster to use Network VLAN manager with 8 networks
-            5. Deploy the cluster
-            6. Validate cluster was set up correctly, there are no dead
-               services, there are no errors in logs
-            7. Run network verification
-            8. Run OSTF
-
-        Duration 30m
-        Snapshot: deploy_ha_one_controller_vlan
-        """
-        self.env.revert_snapshot("ready_with_3_slaves")
-
-        data = {
-            'tenant': 'novaSimpleVlan',
-            'user': 'novaSimpleVlan',
-            'password': 'novaSimpleVlan'
-        }
-
-        cluster_id = self.fuel_web.create_cluster(
-            name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
-            settings=data
-        )
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {
-                'slave-01': ['controller'],
-                'slave-02': ['compute']
-            }
-        )
-
-        self.fuel_web.update_vlan_network_fixed(
-            cluster_id, amount=8, network_size=32)
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id),
-            data['user'], data['password'], data['tenant'])
-
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=6, networks_count=8, timeout=300)
-
-        self.fuel_web.verify_network(cluster_id)
-
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
-
-        self.env.make_snapshot("deploy_ha_one_controller_vlan", is_make=True)
-
-    @test(depends_on=[deploy_ha_one_controller_vlan],
+    @test(depends_on=[deploy_ha_one_controller_neutron],
           groups=["deploy_base_os_node"])
     @log_snapshot_after_test
     def deploy_base_os_node(self):
         """Add base-os node to cluster in HA mode with one controller
 
         Scenario:
-            1. Revert snapshot "deploy_ha_one_controller_vlan"
+            1. Revert snapshot "deploy_ha_one_controller_neutron"
             2. Add 1 node with base-os role
             3. Deploy the cluster
             4. Run network verification
@@ -377,7 +267,7 @@ class HAOneControllerVlan(TestBasic):
         Snapshot: deploy_base_os_node
 
         """
-        self.env.revert_snapshot("deploy_ha_one_controller_vlan")
+        self.env.revert_snapshot("deploy_ha_one_controller_neutron")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -430,7 +320,9 @@ class MultiroleControllerCinder(TestBasic):
         data = {
             'tenant': 'multirolecinder',
             'user': 'multirolecinder',
-            'password': 'multirolecinder'
+            'password': 'multirolecinder',
+            "net_provider": 'neutron',
+            "net_segment_type": NEUTRON_SEGMENT_TYPE
         }
 
         cluster_id = self.fuel_web.create_cluster(
@@ -480,7 +372,11 @@ class MultiroleComputeCinder(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT_TYPE
+            }
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -625,7 +521,9 @@ class FloatingIPs(TestBasic):
             settings={
                 'tenant': 'floatingip',
                 'user': 'floatingip',
-                'password': 'floatingip'
+                'password': 'floatingip',
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT_TYPE
             }
         )
         self.fuel_web.update_nodes(
@@ -661,8 +559,7 @@ class HAOneControllerCinder(TestBasic):
     """HAOneControllerCinder."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_ha_one_controller_cinder",
-                  "ha_one_controller_nova_cinder"])
+          groups=["deploy_ha_one_controller_cinder"])
     @log_snapshot_after_test
     def deploy_ha_one_controller_cinder(self):
         """Deploy cluster in HA mode with cinder
@@ -684,7 +581,11 @@ class HAOneControllerCinder(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT_TYPE
+            }
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -696,14 +597,6 @@ class HAOneControllerCinder(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id))
-
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=6, networks_count=1, timeout=300)
-
-        self.fuel_web.check_fixed_network_cidr(
-            cluster_id, os_conn)
         self.fuel_web.verify_network(cluster_id)
         self.env.verify_network_configuration("slave-01")
 
@@ -747,7 +640,11 @@ class NodeMultipleInterfaces(TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT_TYPE
+            }
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -910,7 +807,7 @@ class MultinicBootstrap(TestBasic):
 class DeleteEnvironment(TestBasic):
     """DeleteEnvironment."""  # TODO documentation
 
-    @test(depends_on=[HAOneControllerFlat.deploy_ha_one_controller_flat],
+    @test(depends_on=[HAOneControllerNeutron.deploy_ha_one_controller_neutron],
           groups=["delete_environment"])
     @log_snapshot_after_test
     def delete_environment(self):
@@ -925,7 +822,7 @@ class DeleteEnvironment(TestBasic):
         Duration 15m
 
         """
-        self.env.revert_snapshot("deploy_ha_one_controller_flat")
+        self.env.revert_snapshot("deploy_ha_one_controller_neutron")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.fuel_web.client.delete_cluster(cluster_id)
@@ -1012,14 +909,14 @@ class UntaggedNetworksNegative(TestBasic):
 class BackupRestoreHAOneController(TestBasic):
     """BackupRestoreHAOneController"""  # TODO documentation
 
-    @test(depends_on=[HAOneControllerFlat.deploy_ha_one_controller_flat],
+    @test(depends_on=[HAOneControllerNeutron.deploy_ha_one_controller_neutron],
           groups=["ha_one_controller_backup_restore"])
     @log_snapshot_after_test
     def ha_one_controller_backup_restore(self):
         """Backup/restore master node with one controller in cluster
 
         Scenario:
-            1. Revert snapshot "deploy_ha_one_controller_flat"
+            1. Revert snapshot "deploy_ha_one_controller_neutron"
             2. Backup master
             3. Check backup
             4. Run OSTF
@@ -1031,14 +928,10 @@ class BackupRestoreHAOneController(TestBasic):
         Duration 35m
 
         """
-        self.env.revert_snapshot("deploy_ha_one_controller_flat")
+        self.env.revert_snapshot("deploy_ha_one_controller_neutron")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id),
-            'novaSimpleFlat', 'novaSimpleFlat', 'novaSimpleFlat')
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=6, networks_count=1, timeout=300)
+
         # Execute master node backup
         self.fuel_web.backup_master(self.env.d_env.get_admin_remote())
 
@@ -1071,13 +964,13 @@ class BackupRestoreHAOneController(TestBasic):
 
 
 @test(groups=["thread_usb"])
-class HAOneControllerFlatUSB(HAOneControllerFlatBase):
-    """HAOneControllerFlatUSB."""  # TODO documentation
+class HAOneControllerNeutronUSB(HAOneControllerNeutronBase):
+    """HAOneControllerNeutronUSB."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3])
     @log_snapshot_after_test
-    def deploy_ha_one_controller_flat_usb(self):
-        """Deploy cluster in HA mode (1 controller) with flat nova-network USB
+    def deploy_ha_one_controller_neutron_usb(self):
+        """Deploy cluster in HA mode (1 controller) with neutron USB
 
         Scenario:
             1. Create cluster in HA mode
@@ -1091,10 +984,10 @@ class HAOneControllerFlatUSB(HAOneControllerFlatBase):
             8. Run OSTF
 
         Duration 30m
-        Snapshot: deploy_ha_one_controller_flat
+        Snapshot: deploy_ha_one_controller_neutron
         """
 
-        super(self.__class__, self).deploy_ha_one_controller_flat_base()
+        super(self.__class__, self).deploy_ha_one_controller_neutron_base()
 
 
 @test(groups=["thread_usb", "classic_provisioning"])
@@ -1149,7 +1042,12 @@ class ProvisioningScripts(TestBasic):
             self.env.d_env.nodes().slaves[:1])
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE)
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT_TYPE
+            }
+        )
         logger.info('cluster is %s' % str(cluster_id))
         self.fuel_web.update_nodes(
             cluster_id,
@@ -1161,3 +1059,4 @@ class ProvisioningScripts(TestBasic):
         assert_false(
             zero_length_files,
             "Files {0} have 0 length".format(', '.join(zero_length_files)))
+
