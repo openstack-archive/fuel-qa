@@ -93,7 +93,7 @@ class SaharaHAOneController(TestBasic):
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         checkers.verify_service(
             self.env.d_env.get_ssh_to_remote(_ip),
-            service_name='sahara-api', count=5)
+            service_name='sahara-api')
         checkers.verify_service(
             self.env.d_env.get_ssh_to_remote(_ip),
             service_name='sahara-engine')
@@ -202,7 +202,7 @@ class SaharaHA(TestBasic):
             _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
             checkers.verify_service(
                 self.env.d_env.get_ssh_to_remote(_ip),
-                service_name='sahara-api', count=5)
+                service_name='sahara-api')
             checkers.verify_service(
                 self.env.d_env.get_ssh_to_remote(_ip),
                 service_name='sahara-engine')
