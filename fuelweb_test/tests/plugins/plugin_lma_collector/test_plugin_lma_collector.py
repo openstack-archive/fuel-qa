@@ -29,6 +29,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 @test(groups=["plugins"])
 class TestLmaCollectorPlugin(TestBasic):
+    """Class for testing the LMA collector plugin."""
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_lma_collector_ha"])
