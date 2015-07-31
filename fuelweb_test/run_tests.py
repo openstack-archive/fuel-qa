@@ -72,6 +72,7 @@ def import_tests():
     from tests.plugins.plugin_lbaas import test_plugin_lbaas  # noqa
     from tests.plugins.plugin_lma_collector import test_plugin_lma_collector  # noqa
     from tests.plugins.plugin_reboot import test_plugin_reboot_task  # noqa
+    from tests.plugins.plugin_vip_reservation import test_plugin_vip_reservation  # noqa
     from tests.plugins.plugin_zabbix import test_plugin_zabbix  # noqa
     from tests import test_multiple_networks  # noqa
     from tests.gd_based_tests import test_neutron  # noqa
