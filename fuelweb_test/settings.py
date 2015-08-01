@@ -348,8 +348,13 @@ SSH_CREDENTIALS = {
     'login': os.environ.get('ENV_FUEL_LOGIN', 'root'),
     'password': os.environ.get('ENV_FUEL_PASSWORD', 'r00tme')}
 
+CISCO_ACI_APIC_HOSTS = os.environ.get('CISCO_ACI_APIC_HOSTS', '10.0.0.100')
+CISCO_ACI_APIC_USERNAME = os.environ.get('CISCO_ACI_APIC_USERNAME', 'admin')
+CISCO_ACI_APIC_PASSWORD = os.environ.get('CISCO_ACI_APIC_PASSWORD', 'admin')
+
 # Plugin path for plugins tests
 
+CISCO_ACI_PLUGIN_PATH = os.environ.get('CISCO_ACI_PLUGIN_PATH')
 CONTRAIL_PLUGIN_PATH = os.environ.get('CONTRAIL_PLUGIN_PATH')
 CONTRAIL_PLUGIN_PACK_UB_PATH = os.environ.get('CONTRAIL_PLUGIN_PACK_UB_PATH')
 CONTRAIL_PLUGIN_PACK_CEN_PATH = os.environ.get('CONTRAIL_PLUGIN_PACK_CEN_PATH')
