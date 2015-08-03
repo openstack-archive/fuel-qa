@@ -111,6 +111,8 @@ class EnvironmentModel(object):
 
     @logwrap
     def get_admin_node_ip(self):
+        import traceback
+        logger.error("!!!!!!!!!!!!!! trace: %s" %  traceback.print_stack())
         return str(
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name(
