@@ -34,8 +34,10 @@ class OpenStackActions(common.Common):
                                                tenant)
 
     def _get_cirros_image(self):
+        logger.debug("TRYING TO GET CIRROS IMAGE!!!!!!!")
         for image in self.glance.images.list():
             if image.name.startswith("TestVM"):
+                logger.debug("IMAGE IS: %s" % image.id)
                 return image
 
     def get_image_by_name(self, name):
@@ -78,27 +80,39 @@ class OpenStackActions(common.Common):
             logger.info("Error opening file: %s" % exc)
             raise Exception()
         image_id = self._get_cirros_image().id
+        logger.debug("WE HAVE GOT IMAGE ID")
         security_group[self.keystone.tenant_id] =\
             self.create_sec_group_for_ssh()
         security_group = [security_group[
             self.keystone.tenant_id].name]
+        logger.debug("WE CREATED SECURITY GROUP")
 
         if neutron:
             network = [net.id for net in self.nova.networks.list()
                        if net.label == 'net04']
+            logger.debug("NETWORK IS GOT")
 
             kwargs.update({'nics': [{'net-id': network[0]}],
                            'security_groups': security_group})
         else:
             kwargs.update({'security_groups': security_group})
 
-        srv = self.nova.servers.create(name=name,
-                                       image=image_id,
-                                       flavor=1,
-                                       userdata=scenario,
-                                       files=file,
-                                       key_name=key_name,
-                                       **kwargs)
+        logger.debug("BEFORE INSTANCE CREATING")
+        try:
+            srv = self.nova.servers.create(name=name,
+                                           image=image_id,
+                                           flavor=1,
+                                           userdata=scenario,
+                                           files=file,
+                                           key_name=key_name,
+                                           **kwargs)
+        except Exception as e:
+            logger.debug("EXCEPTION:")
+            logger.debug("{0}".format(e.message))
+            logger.debug("{0}".format(e))
+
+
+        logger.debug("INSTANCE IS CREATED")
         try:
             helpers.wait(
                 lambda: self.get_instance_detail(srv).status == "ACTIVE",
@@ -401,6 +415,14 @@ class OpenStackActions(common.Common):
     def add_l3_to_router(self, l3_agent, router_id):
         return self.neutron.add_router_to_l3_agent(
             l3_agent, {"router_id": router_id})
+
+    def get_dhcp_for_net(self, net_id):
+        return self.neutron.list_dhcp_agent_hosting_networks(net_id)
+
+    def get_dhcp_agent_hosts(self, net_id):
+        result = self.get_dhcp_for_net(net_id)
+        hosts = [i['host'] for i in result['agents']]
+        return hosts
 
     def list_agents(self):
         return self.neutron.list_agents()
