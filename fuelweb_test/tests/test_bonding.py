@@ -21,6 +21,7 @@ from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -246,7 +247,7 @@ class BondingHA(TestBasic):
 
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        segment_type = 'vlan'
+        segment_type = NEUTRON_SEGMENT['vlan']
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -288,10 +289,10 @@ class BondingHA(TestBasic):
         self.env.make_snapshot("deploy_bonding_neutron_vlan")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_bonding_neutron_gre"])
+          groups=["deploy_bonding_neutron_tun"])
     @log_snapshot_after_test
-    def deploy_bonding_neutron_gre(self):
-        """Deploy cluster with active-backup bonding and Neutron GRE
+    def deploy_bonding_neutron_tun(self):
+        """Deploy cluster with active-backup bonding and Neutron VXLAN
 
         Scenario:
             1. Create cluster
@@ -305,12 +306,12 @@ class BondingHA(TestBasic):
             8. Run OSTF
 
         Duration 70m
-        Snapshot deploy_bonding_neutron_gre
+        Snapshot deploy_bonding_neutron_tun
         """
 
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        segment_type = 'gre'
+        segment_type = NEUTRON_SEGMENT['tun']
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -349,4 +350,4 @@ class BondingHA(TestBasic):
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_bonding_neutron_gre")
+        self.env.make_snapshot("deploy_bonding_neutron_tun")
