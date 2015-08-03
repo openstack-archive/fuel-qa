@@ -113,6 +113,7 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
         """
         super(self.__class__, self).deploy_ha_one_controller_neutron_base()
 
+
     @test(depends_on=[deploy_ha_one_controller_neutron],
           groups=["ha_one_controller_neutron_node_deletion"])
     @log_snapshot_after_test
