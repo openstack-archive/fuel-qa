@@ -1068,8 +1068,15 @@ class FuelWebClient(object):
 
     @logwrap
     def get_ssh_for_node(self, node_name):
+        x = self.environment.d_env.get_node(name=node_name)
+        logger.error("!!!!! tk get_d_env.get_node by name. Node = %s " % x)
+        x = self.get_nailgun_node_by_devops_node(
+            self.environment.d_env.get_node(name=node_name))
+        logger.error("!!!!! tk get_nailgun_node_by_devops_node.Node = %s " % x)
         ip = self.get_nailgun_node_by_devops_node(
             self.environment.d_env.get_node(name=node_name))['ip']
+        logger.error("!!!!! tk get_nailgun_node_by_devops_node.Node = %s " % x)
+        logger.error("!!!!! tk ip_nailgun_node_by_devops_node.Node = %s " % ip)
         return self.environment.d_env.get_ssh_to_remote(ip)
 
     @logwrap
