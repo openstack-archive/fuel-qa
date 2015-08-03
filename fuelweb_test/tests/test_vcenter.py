@@ -1348,7 +1348,7 @@ class VcenterDeploy(TestBasic):
                     assert_true(
                         res == 3,
                         "VM{0} not ping from Vm {1}, received {2} icmp".format(
-                            ip_1, ip_2, res))
+                            ip_1, ip_2, res['stdout']))
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["vcenter_delete_controler"])
