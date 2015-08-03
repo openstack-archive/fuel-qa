@@ -153,10 +153,10 @@ class HugeEnvironments(base_test_case.TestBasic):
 class HugeHaNeutron(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_9],
-          groups=["huge_ha_neutron_gre_ceph_ceilometer_rados"])
+          groups=["huge_ha_neutron_tun_ceph_ceilometer_rados"])
     @log_snapshot_after_test
-    def huge_ha_neutron_gre_ceph_ceilometer_rados(self):
-        """Deploy cluster in HA mode with Neutron GRE, RadosGW
+    def huge_ha_neutron_tun_ceph_ceilometer_rados(self):
+        """Deploy cluster in HA mode with Neutron VXLAN, RadosGW
 
         Scenario:
             1. Create cluster
@@ -180,10 +180,10 @@ class HugeHaNeutron(base_test_case.TestBasic):
             'objects_ceph': True,
             'ceilometer': True,
             'net_provider': 'neutron',
-            'net_segment_type': 'gre',
-            'tenant': 'haGreCephHugeScale',
-            'user': 'haGreCephHugeScale',
-            'password': 'haGreCephHugeScale'
+            'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
+            'tenant': 'haVxlanCephHugeScale',
+            'user': 'haVxlanCephHugeScale',
+            'password': 'haVxlanCephHugeScale'
         }
 
         cluster_id = self.fuel_web.create_cluster(
@@ -269,7 +269,7 @@ class HugeHaNeutron(base_test_case.TestBasic):
             'volumes_lvm': False,
             'objects_ceph': True,
             'net_provider': 'neutron',
-            'net_segment_type': 'vlan',
+            'net_segment_type': settings.NEUTRON_SEGMENT['vlan'],
             'tenant': 'haVlanCephHugeScale',
             'user': 'haVlanCephHugeScale',
             'password': 'haVlanCephHugeScale'

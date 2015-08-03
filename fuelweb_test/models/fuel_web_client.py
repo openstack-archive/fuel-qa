@@ -1398,7 +1398,8 @@ class FuelWebClient(object):
 
     def set_network(self, net_config, net_name, net_pools=None, seg_type=None):
         nets_wo_floating = ['public', 'management', 'storage']
-        if seg_type == NEUTRON_SEGMENT['gre']:
+        if (seg_type == NEUTRON_SEGMENT['tun'] or
+                seg_type == NEUTRON_SEGMENT['gre']):
             nets_wo_floating.append('private')
 
         if not net_pools:
