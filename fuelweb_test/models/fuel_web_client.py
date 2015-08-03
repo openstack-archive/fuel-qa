@@ -1115,7 +1115,7 @@ class FuelWebClient(object):
     @logwrap
     def update_nodes(self, cluster_id, nodes_dict,
                      pending_addition=True, pending_deletion=False,
-                     update_nodegroups=False, contrail=False):
+                     update_nodegroups=False, custom_names=None):
 
         # update nodes in cluster
         nodes_data = []
@@ -1138,9 +1138,11 @@ class FuelWebClient(object):
             assert_true(node['online'],
                         'Node {} is online'.format(node['mac']))
 
-            if contrail and nodes_dict[node_name][0] == 'base-os':
-                name = 'contrail-' + node_name.split('-')[1].strip('0')
-
+            if custom_names:
+                name = custom_names.get(node_name,
+                                        '{}_{}'.format(
+                                            node_name,
+                                            "_".join(node_roles)))
             else:
                 name = '{}_{}'.format(node_name, "_".join(node_roles))
 
