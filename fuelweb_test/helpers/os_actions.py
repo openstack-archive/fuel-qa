@@ -402,6 +402,14 @@ class OpenStackActions(common.Common):
         return self.neutron.add_router_to_l3_agent(
             l3_agent, {"router_id": router_id})
 
+    def get_dhcp_for_net(self, net_id):
+        return self.neutron.list_dhcp_agent_hosting_networks(net_id)
+
+    def get_dhcp_agent_hosts(self, net_id):
+        result = self.get_dhcp_for_net(net_id)
+        hosts = [i['host'] for i in result['agents']]
+        return hosts
+
     def list_agents(self):
         return self.neutron.list_agents()
 
