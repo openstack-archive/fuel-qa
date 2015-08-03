@@ -147,7 +147,8 @@ class HAOneControllerFlat(HAOneControllerFlatBase):
         res = os.execute_through_host(
             remote,
             floating_ip.ip, "sudo cat /root/test.txt")
-        assert_true(res == 'Hello World', 'file content is {0}'.format(res))
+        assert_true(res == 'Hello World', 'file content is {0}'
+                    .format(res['stdout']))
 
     @test(depends_on=[deploy_ha_one_controller_flat],
           groups=["ha_one_controller_flat_node_deletion"])
