@@ -34,10 +34,10 @@ class SaharaHAOneController(TestBasic):
     Put Sahara image before start
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_sahara_ha_one_controller_gre"])
+          groups=["deploy_sahara_ha_one_controller_tun"])
     @log_snapshot_after_test
-    def deploy_sahara_ha_one_controller_gre(self):
-        """Deploy cluster in ha mode with 1 controller Sahara and Neutron GRE
+    def deploy_sahara_ha_one_controller_tun(self):
+        """Deploy cluster in ha mode with 1 controller Sahara and Neutron VXLAN
 
         Scenario:
             1. Create a Fuel cluster. Set the option for Sahara installation
@@ -50,7 +50,7 @@ class SaharaHAOneController(TestBasic):
             8. Run platform Vanilla2 test for Sahara
 
         Duration 65m
-        Snapshot: deploy_sahara_ha_one_controller_gre
+        Snapshot: deploy_sahara_ha_one_controller_tun
         """
         LOGGER.debug('Check MD5 sum of Vanilla2 image')
         check_image = checkers.check_image(
@@ -65,7 +65,7 @@ class SaharaHAOneController(TestBasic):
         data = {
             'sahara': True,
             'net_provider': 'neutron',
-            'net_segment_type': 'gre',
+            'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
             'tenant': 'saharaSimple',
             'user': 'saharaSimple',
             'password': 'saharaSimple'
@@ -129,7 +129,7 @@ class SaharaHAOneController(TestBasic):
                 cluster_id=cluster_id, test_sets=['tests_platform'],
                 test_name=path_to_tests + test_name, timeout=60 * 200)
 
-        self.env.make_snapshot("deploy_sahara_ha_one_controller_gre")
+        self.env.make_snapshot("deploy_sahara_ha_one_controller_tun")
 
 
 @test(groups=["services", "services.sahara", "services_ha"])
@@ -139,10 +139,10 @@ class SaharaHA(TestBasic):
     Put Sahara image before start
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_sahara_ha_gre"])
+          groups=["deploy_sahara_ha_tun"])
     @log_snapshot_after_test
-    def deploy_sahara_ha_gre(self):
-        """Deploy cluster in HA mode with Sahara and Neutron GRE
+    def deploy_sahara_ha_tun(self):
+        """Deploy cluster in HA mode with Sahara and Neutron VXLAN
 
         Scenario:
             1. Create a Fuel cluster. Set the option for Sahara installation
@@ -155,7 +155,7 @@ class SaharaHA(TestBasic):
             8. Run platform Vanilla2 test for Sahara
 
         Duration 130m
-        Snapshot: deploy_sahara_ha_gre
+        Snapshot: deploy_sahara_ha_tun
 
         """
         LOGGER.debug('Check MD5 sum of Vanilla2 image')
@@ -171,7 +171,7 @@ class SaharaHA(TestBasic):
         data = {
             'sahara': True,
             'net_provider': 'neutron',
-            'net_segment_type': 'gre',
+            'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
             'tenant': 'saharaHA',
             'user': 'saharaHA',
             'password': 'saharaHA'
@@ -238,7 +238,7 @@ class SaharaHA(TestBasic):
                 cluster_id=cluster_id, test_sets=['tests_platform'],
                 test_name=path_to_tests + test_name, timeout=60 * 200)
 
-        self.env.make_snapshot("deploy_sahara_ha_gre")
+        self.env.make_snapshot("deploy_sahara_ha_tun")
 
 
 @test(groups=["services", "services.murano", "services_ha_one_controller"])
@@ -247,10 +247,10 @@ class MuranoHAOneController(TestBasic):
     Don't recommend to start tests without kvm.
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_murano_ha_one_controller_gre"])
+          groups=["deploy_murano_ha_one_controller_tun"])
     @log_snapshot_after_test
-    def deploy_murano_ha_one_controller_gre(self):
-        """Deploy cluster in HA mode with Murano and Neutron GRE
+    def deploy_murano_ha_one_controller_tun(self):
+        """Deploy cluster in HA mode with Murano and Neutron VXLAN
 
         Scenario:
             1. Create cluster. Set install Murano option
@@ -262,14 +262,14 @@ class MuranoHAOneController(TestBasic):
             7. Run OSTF Murano platform tests
 
         Duration 40m
-        Snapshot: deploy_murano_ha_one_controller_gre
+        Snapshot: deploy_murano_ha_one_controller_tun
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
         data = {
             'murano': True,
             'net_provider': 'neutron',
-            'net_segment_type': 'gre',
+            'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
             'tenant': 'muranoSimple',
             'user': 'muranoSimple',
             'password': 'muranoSimple'
@@ -324,7 +324,7 @@ class MuranoHAOneController(TestBasic):
                 cluster_id=cluster_id, test_sets=['tests_platform'],
                 test_name=test_name, timeout=60 * 20)
 
-        self.env.make_snapshot("deploy_murano_ha_one_controller_gre")
+        self.env.make_snapshot("deploy_murano_ha_one_controller_tun")
 
 
 @test(groups=["services", "services.murano", "services_ha"])
@@ -333,10 +333,10 @@ class MuranoHA(TestBasic):
     Don't recommend to start tests without kvm.
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_murano_ha_with_gre"])
+          groups=["deploy_murano_ha_with_tun"])
     @log_snapshot_after_test
-    def deploy_murano_ha_with_gre(self):
-        """Deploy cluster in ha mode with Murano and Neutron GRE
+    def deploy_murano_ha_with_tun(self):
+        """Deploy cluster in ha mode with Murano and Neutron VXLAN
 
         Scenario:
             1. Create cluster. Set install Murano option
@@ -348,7 +348,7 @@ class MuranoHA(TestBasic):
             7. Run OSTF Murano platform tests
 
         Duration 100m
-        Snapshot: deploy_murano_ha_with_gre
+        Snapshot: deploy_murano_ha_with_tun
 
         """
         self.env.revert_snapshot("ready_with_5_slaves")
@@ -356,7 +356,7 @@ class MuranoHA(TestBasic):
         data = {
             'murano': True,
             'net_provider': 'neutron',
-            'net_segment_type': 'gre',
+            'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
             'tenant': 'muranoHA',
             'user': 'muranoHA',
             'password': 'muranoHA'
@@ -413,7 +413,7 @@ class MuranoHA(TestBasic):
                 cluster_id=cluster_id, test_sets=['tests_platform'],
                 test_name=test_name, timeout=60 * 20)
 
-        self.env.make_snapshot("deploy_murano_ha_with_gre")
+        self.env.make_snapshot("deploy_murano_ha_with_tun")
 
 
 class OSTFCeilometerHelper(TestBasic):
@@ -781,7 +781,7 @@ class HeatHAOneController(TestBasic):
           groups=["deploy_heat_ha_one_controller_neutron"])
     @log_snapshot_after_test
     def deploy_heat_ha_one_controller_neutron(self):
-        """Deploy Heat cluster in HA mode with Neutron GRE
+        """Deploy Heat cluster in HA mode with Neutron VXLAN
 
         Scenario:
             1. Create cluster
@@ -801,7 +801,7 @@ class HeatHAOneController(TestBasic):
         data = {
             'ceilometer': True,
             'net_provider': 'neutron',
-            'net_segment_type': 'gre',
+            'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
             'tenant': 'heatSimple',
             'user': 'heatSimple',
             'password': 'heatSimple'
@@ -974,7 +974,7 @@ class HeatHA(TestBasic):
         data = {
             'ceilometer': True,
             'net_provider': 'neutron',
-            'net_segment_type': 'gre',
+            'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
             'tenant': 'heatHA',
             'user': 'heatHA',
             'password': 'heatHA'
