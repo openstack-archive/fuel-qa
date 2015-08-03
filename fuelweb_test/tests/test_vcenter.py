@@ -1342,9 +1342,11 @@ class VcenterDeploy(TestBasic):
             for ip_2 in srv_ip:
                 if ip_1 != ip_2:
                     # Check server's connectivity
-                    res = int(os_conn.execute_through_host(
-                        ssh, ip_1, "ping -q -c3 " + ip_2 +
-                        "| grep -o '[0-9] packets received' | cut -f1 -d ' '"))
+                    res = int(
+                        os_conn.execute_through_host(
+                            ssh, ip_1, "ping -q -c3 " + ip_2 +
+                                       "| grep -o '[0-9] packets received'"
+                                       "| cut -f1 -d ' '"))['stdout']
                     assert_true(
                         res == 3,
                         "VM{0} not ping from Vm {1}, received {2} icmp".format(
