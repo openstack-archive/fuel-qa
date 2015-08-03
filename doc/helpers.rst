@@ -53,6 +53,11 @@ Multiple Networks Hacks
 .. automodule:: fuelweb_test.helpers.multiple_networks_hacks
    :members:
 
+Nessus REST Client
+------------------
+.. automodule:: fuelweb_test.helpers.nessus
+   :members:
+
 Ntp
 ---
 .. automodule:: fuelweb_test.helpers.ntp

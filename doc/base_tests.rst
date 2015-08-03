@@ -224,6 +224,15 @@ Patching tests
    :members:
 
 
+Security tests
+==============
+
+Nessus scan tests
+-----------------
+.. automodule:: fuelweb_test.tests.tests_security_test_run_nessus
+   :members:
+
+
 Strength tests
 ==============
 
