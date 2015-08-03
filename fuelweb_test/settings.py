@@ -472,3 +472,9 @@ RALLY_TAGS = os.environ.get('RALLY_TAGS', 'nova').split(',')
 
 REGENERATE_ENV_IMAGE = get_var_as_bool('REGENERATE_ENV_IMAGE', False)
 LATE_ARTIFACTS_JOB_URL = os.environ.get("LATE_ARTIFACTS_JOB_URL", '')
+
+NESSUS_ADDRESS = os.environ.get("NESSUS_ADDRESS")
+NESSUS_PORT = os.environ.get("NESSUS_PORT", 8834)
+NESSUS_USERNAME = os.environ.get("NESSUS_USERNAME")
+NESSUS_PASSWORD = os.environ.get("NESSUS_PASSWORD")
+NESSUS_SSL_VERIFY = get_var_as_bool("NESSUS_SSL_VERIFY", False)
