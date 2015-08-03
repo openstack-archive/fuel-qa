@@ -106,16 +106,23 @@ class TestJumboFrames(base_test_case.TestBasic):
         devops_helpers.wait(lambda: devops_helpers.tcp_ping(
             instance1_floating_ip.ip, 22), timeout=120)
 
-        def ping_instance(source, destination, size):
+        def ping_instance(source, destination, size, count=1):
             with self.fuel_web.get_ssh_for_node("slave-01") as ssh:
-                command = "ping -c 1 -s {0} {1}".format(size, destination)
+                command = "ping -c {0} -s {1} {2}"\
+                    .format(count, size, destination)
                 logger.info("Try to ping private address {0} from {1} "
-                            "with {2} bytes packet: {3}"
-                            .format(destination, source, size, command))
+                            "with {2} {3} bytes packet(s): {4}"
+                            .format(destination, source, count, size, command))
                 ping = os_conn.execute_through_host(
                     ssh, source, command, creds)
-                logger.info("Ping result:\n{0}".format(ping))
-                return "1 packets received" in ping
+                logger.info("Ping result:\n"
+                            "cmd: '{0}'"
+                            "=== stdout ===\n{1}\n === stdout ===\n"
+                            "=== stderr ===\n{2}\n === stderr ===\n"
+                            .format(ping['exit_code'],
+                                    ping['stdout'],
+                                    ping['stderr']))
+                return 0 == ping['exit_code']
 
         asserts.assert_true(
             ping_instance(source=instance1_floating_ip.ip,
