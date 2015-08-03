@@ -58,6 +58,7 @@ class RebootPlugin(TestBasic):
         tasks_file = 'reboot_tasks.yaml'
         self.env.revert_snapshot("ready_with_5_slaves")
         # let's get ssh client for the master node
+
         with self.env.d_env.get_admin_remote() as admin_remote:
             # initiate fuel plugin builder instance
             fpb = FuelPluginBuilder(admin_remote)
@@ -69,14 +70,6 @@ class RebootPlugin(TestBasic):
             fpb.fpb_replace_plugin_content(
                 os.path.join(tasks_path, tasks_file),
                 os.path.join('/root/', plugin_name, 'tasks.yaml'))
-            # change default supported version to 7.0
-            fpb.change_yaml_file_in_container(
-                '/root/{}/metadata.yaml'.format(plugin_name),
-                ['fuel_version'], ['7.0'])
-            for elem in range(2):
-                fpb.change_yaml_file_in_container(
-                    '/root/{}/metadata.yaml'.format(plugin_name),
-                    ['releases', elem, 'version'], '-')
             # build plugin
             fpb.fpb_build_plugin(os.path.join('/root/', plugin_name))
             # copy plugin archive file from nailgun container
@@ -86,6 +79,7 @@ class RebootPlugin(TestBasic):
             checkers.install_plugin_check_code(
                 admin_remote,
                 plugin=os.path.join(plugin_path, '{}.rpm'.format(plugin_name)))
+
         # create cluster
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
