@@ -1,4 +1,4 @@
-#    Copyright 2014 Mirantis, Inc.
+# Copyright 2014 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -77,11 +77,10 @@ class OpenStackActions(common.Common):
             logger.info("Error opening file: %s" % exc)
             raise Exception()
         image_id = self._get_cirros_image().id
-        security_group[self.keystone.tenant_id] =\
+        security_group[self.keystone.tenant_id] = \
             self.create_sec_group_for_ssh()
         security_group = [security_group[
             self.keystone.tenant_id].name]
-
         if neutron:
             network = [net.id for net in self.nova.networks.list()
                        if net.label == 'net04']
@@ -117,7 +116,7 @@ class OpenStackActions(common.Common):
                 logger.info("Try getting server another time.")
                 time.sleep(30)
                 if self.get_instance_detail(srv.id) in \
-                   self.nova.servers.list():
+                        self.nova.servers.list():
                     return False
         except Exception:
             logger.info("Server was successfully deleted")
@@ -406,6 +405,14 @@ class OpenStackActions(common.Common):
         return self.neutron.add_router_to_l3_agent(
             l3_agent, {"router_id": router_id})
 
+    def get_dhcp_for_net(self, net_id):
+        return self.neutron.list_dhcp_agent_hosting_networks(net_id)
+
+    def get_dhcp_agent_hosts(self, net_id):
+        result = self.get_dhcp_for_net(net_id)
+        hosts = [i['host'] for i in result['agents']]
+        return hosts
+
     def list_agents(self):
         return self.neutron.list_agents()
 
@@ -459,5 +466,6 @@ class OpenStackActions(common.Common):
 
     def get_instance_mac(self, remote, srv):
         res = ''.join(remote.execute('virsh dumpxml {0} | grep "mac address="'
-                      .format(self.get_srv_instance_name(srv)))['stdout'])
+                                     .format(self.get_srv_instance_name(srv)))[
+            'stdout'])
         return res.split('\'')[1]
