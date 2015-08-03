@@ -46,6 +46,23 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
     @classmethod
     @logwrap
+    def get_node_with_dhcp(cls, self, node_dhcp):
+        node_with_dhcp_fqdn = self.fuel_web.get_fqdn_by_hostname(node_dhcp)
+        logger.debug("new node with dhcp is {0}".format(node_dhcp))
+        devops_node = self.fuel_web.find_devops_node_by_nailgun_fqdn(
+            node_with_dhcp_fqdn,
+            self.env.d_env.nodes().slaves[0:6])
+        return devops_node
+
+    @classmethod
+    @logwrap
+    def get_remote(cls, self, devops_node):
+        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
+        remote = self.env.d_env.get_ssh_to_remote(_ip)
+        return remote
+
+    @classmethod
+    @logwrap
     def create_instance_with_keypair(cls, os_conn, remote):
         remote.execute(
             '. openrc;'
@@ -54,6 +71,19 @@ class TestNeutronFailover(base_test_case.TestBasic):
         instance = os_conn.create_server_for_migration(
             neutron=True, key_name='instancekey')
         return instance
+
+    @classmethod
+    @logwrap
+    def copy_vm_key_on_all_nodes(cls, self, remote):
+        node_for_copy = self.env.get_admin_node_ip()
+        cmd = "scp /root/.ssh/webserver_rsa %s:/root/.ssh/" % node_for_copy
+        remote_admin =  self.env.d_env.get_admin_remote()
+        list_with_names = ['slave-01' 'slave-02', 'slave-03']
+        for devops_node in list_with_names:
+            ip = self.get_nailgun_node_by_devops_node(
+            self.environment.d_env.get_node(name=devops_node))['ip']
+            cmd = "scp /root/.ssh/webserver_rsa %i:/root/.ssh/" % ip
+            remote_admin.execute(cmd)
 
     @classmethod
     @logwrap
@@ -142,29 +172,33 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         net_id = os_conn.get_network('net04')['id']
 
-        # any controller could be used as devops_node
+         # any controller could be used as devops_node
         devops_node = self.env.d_env.nodes().slaves[0]
-
-        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
-        remote = self.env.d_env.get_ssh_to_remote(_ip)
-
-        dhcp_namespace = ''.join(remote.execute('ip netns | grep {0}'.format(
-            net_id))['stdout']).rstrip()
-        logger.debug('dhcp namespace is {0}'.format(dhcp_namespace))
+        remote = self.get_remote(self, devops_node)
 
         instance_ip = \
             self.create_instance_with_keypair(
                 os_conn, remote).addresses['net04'][0]['addr']
         logger.debug('instance internal ip is {0}'.format(instance_ip))
+        self.copy_vm_key_on_all_nodes(self, remote)
+
+         # get remote with qdhcp-namespace
+        node_with_dhcp = os_conn.get_dhcp_agent_hosts(net_id)
+        devops_node_with_dhcpc = self.get_node_with_dhcp(self, node_with_dhcp)
+        remote_qdhcp = self.get_remote(self, devops_node_with_dhcpc)
+
+        cmd = 'ip netns | grep {0}'.format(net_id)
+        dhcp_namespace = ''.join(remote_qdhcp.execute(cmd)['stdout']).rstrip()
+        logger.debug('dhcp namespace is {0}'.format(dhcp_namespace))
 
         router_id = os_conn.get_routers_ids()[0]
         self.reshedule_router_manually(os_conn, router_id)
-        self.check_instance_connectivity(remote, dhcp_namespace, instance_ip)
+        self.check_instance_connectivity(remote_qdhcp, dhcp_namespace,
+                                         instance_ip)
 
         node_with_l3 = os_conn.get_l3_agent_hosts(router_id)[0]
-        self.get_node_with_l3(self, node_with_l3)
-        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
-        new_remote = self.env.d_env.get_ssh_to_remote(_ip)
+        devops_node_with_l3 = self.get_node_with_l3(self, node_with_l3)
+        new_remote = self.get_remote(devops_node_with_l3)
 
         new_remote.execute("pcs resource ban p_neutron-l3-agent {0}".format(
             node_with_l3))
@@ -178,7 +212,8 @@ class TestNeutronFailover(base_test_case.TestBasic):
                     os_conn.get_l3_agent_hosts(router_id)[0]))
         wait(lambda: os_conn.get_l3_agent_ids(router_id), timeout=60)
 
-        self.check_instance_connectivity(remote, dhcp_namespace, instance_ip)
+        self.check_instance_connectivity(remote_qdhcp, dhcp_namespace,
+                                         instance_ip)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
@@ -186,6 +221,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         new_remote.execute("pcs resource clear p_neutron-l3-agent {0}".
                            format(node_with_l3))
+
 
     @log_snapshot_after_test
     def neutron_l3_migration_after_reset(self, segment_type):
@@ -204,7 +240,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         Duration 30m
         """
-        self.env.revert_snapshot("deploy_ha_neutron_{}".format(segment_type))
+        self.env.revert_snapshot("deploy_ha_neutron")
         cluster_id = self.fuel_web.get_last_created_cluster()
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
@@ -214,18 +250,25 @@ class TestNeutronFailover(base_test_case.TestBasic):
         # any controller could be used
         remote = self.fuel_web.get_ssh_for_node("slave-01")
 
-        dhcp_namespace = ''.join(remote.execute('ip netns | grep {0}'.format(
-            net_id))['stdout']).rstrip()
-        logger.debug('dhcp namespace is {0}'.format(dhcp_namespace))
-
         instance_ip = \
             self.create_instance_with_keypair(
                 os_conn, remote).addresses['net04'][0]['addr']
         logger.debug('instance internal ip is {0}'.format(instance_ip))
+        self.copy_vm_key_on_all_nodes(self, remote)
+
+        # get remote with qdhcp-namespace
+        node_with_dhcp = os_conn.get_dhcp_agent_hosts(net_id)
+        devops_node_with_dhcpc = self.get_node_with_dhcp(self, node_with_dhcp)
+        remote_qdhcp = self.get_remote(self, devops_node_with_dhcpc)
+
+        cmd = 'ip netns | grep {0}'.format(net_id)
+        dhcp_namespace = ''.join(remote_qdhcp.execute(cmd)['stdout']).rstrip()
+        logger.debug('dhcp namespace is {0}'.format(dhcp_namespace))
 
         router_id = os_conn.get_routers_ids()[0]
         self.reshedule_router_manually(os_conn, router_id)
-        self.check_instance_connectivity(remote, dhcp_namespace, instance_ip)
+        self.check_instance_connectivity(remote_qdhcp, dhcp_namespace,
+                                         instance_ip)
 
         node_with_l3 = os_conn.get_l3_agent_hosts(router_id)[0]
         new_devops = self.get_node_with_l3(self, node_with_l3)
@@ -249,10 +292,13 @@ class TestNeutronFailover(base_test_case.TestBasic):
                     os_conn.get_l3_agent_hosts(router_id)[0]))
         wait(lambda: os_conn.get_l3_agent_ids(router_id), timeout=60)
 
-        # Re-initialize SSHClient after slave-01 was rebooted
-        remote.reconnect()
+        # get remote with qdhcp-namespace
+        node_with_dhcp = os_conn.get_dhcp_agent_hosts(net_id)
+        devops_node_with_dhcpc = self.get_node_with_dhcp(self, node_with_dhcp)
+        remote_qdhcp = self.get_remote(self, devops_node_with_dhcpc)
 
-        self.check_instance_connectivity(remote, dhcp_namespace, instance_ip)
+        self.check_instance_connectivity(remote_qdhcp, dhcp_namespace,
+                                         instance_ip)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
@@ -275,7 +321,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         Duration 30m
         """
-        self.env.revert_snapshot("deploy_ha_neutron_{}".format(segment_type))
+        self.env.revert_snapshot("deploy_ha_neutron")
         cluster_id = self.fuel_web.get_last_created_cluster()
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
@@ -284,21 +330,28 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         # Get remote to the current l3 router
         router_id = os_conn.get_routers_ids()[0]
-        node_with_l3 = os_conn.get_l3_agent_hosts(router_id)[0]
-        d_node = self.fuel_web.get_devops_node_by_nailgun_fqdn(node_with_l3)
-        remote = self.fuel_web.get_ssh_for_node(d_node.name)
 
-        dhcp_namespace = ''.join(remote.execute('ip netns | grep {0}'.format(
-            net_id))['stdout']).rstrip()
-        logger.debug('dhcp namespace is {0}'.format(dhcp_namespace))
+        # any controller could be used
+        remote = self.fuel_web.get_ssh_for_node("slave-01")
 
         instance_ip = \
             self.create_instance_with_keypair(
                 os_conn, remote).addresses['net04'][0]['addr']
         logger.debug('instance internal ip is {0}'.format(instance_ip))
+        self.copy_vm_key_on_all_nodes(self, remote)
+
+        # get remote with qdhcp-namespace
+        node_with_dhcp = os_conn.get_dhcp_agent_hosts(net_id)
+        devops_node_with_dhcpc = self.get_node_with_dhcp(self, node_with_dhcp)
+        remote_qdhcp = self.get_remote(self, devops_node_with_dhcpc)
+
+        cmd = 'ip netns | grep {0}'.format(net_id)
+        dhcp_namespace = ''.join(remote_qdhcp.execute(cmd)['stdout']).rstrip()
+        logger.debug('dhcp namespace is {0}'.format(dhcp_namespace))
 
         self.reshedule_router_manually(os_conn, router_id)
-        self.check_instance_connectivity(remote, dhcp_namespace, instance_ip)
+        self.check_instance_connectivity(remote_qdhcp, dhcp_namespace,
+                                         instance_ip)
 
         new_node_with_l3 = os_conn.get_l3_agent_hosts(router_id)[0]
         new_devops = self.get_node_with_l3(self, new_node_with_l3)
@@ -321,6 +374,10 @@ class TestNeutronFailover(base_test_case.TestBasic):
                 "l3 agent wasn't rescheduled, it is still {0}".format(
                     os_conn.get_l3_agent_hosts(router_id)[0]))
         wait(lambda: os_conn.get_l3_agent_ids(router_id), timeout=60)
+
+        node_with_dhcp = os_conn.get_dhcp_agent_hosts(net_id)
+        devops_node_with_dhcpc = self.get_node_with_dhcp(self, node_with_dhcp)
+        remote_qdhcp = self.get_remote(self, devops_node_with_dhcpc)
 
         self.check_instance_connectivity(remote, dhcp_namespace, instance_ip)
 
