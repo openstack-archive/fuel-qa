@@ -506,6 +506,8 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
             mode=settings.DEPLOYMENT_MODE,
             settings={
                 'ceilometer': True,
+                'net_provider': 'neutron',
+                'net_segment_type': 'tun',
                 'tenant': 'ceilometerSimple',
                 'user': 'ceilometerSimple',
                 'password': 'ceilometerSimple'
@@ -584,7 +586,9 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE,
             settings={
-                'ceilometer': True
+                'ceilometer': True,
+                'net_provider': 'neutron',
+                'net_segment_type': 'tun',
             }
         )
         self.fuel_web.update_nodes(
@@ -603,7 +607,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
             service_name='ceilometer-api')
 
         self.run_tests(cluster_id)
-        self.env.make_snapshot("deploy_ceilometer_ha_one_controller_mulirole")
+        self.env.make_snapshot("deploy_ceilometer_ha_one_controller_multirole")
 
 
 @test(groups=["services", "services.ceilometer", "services_ha.ceilometer"])
@@ -635,6 +639,8 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             mode=settings.DEPLOYMENT_MODE,
             settings={
                 'ceilometer': True,
+                'net_provider': 'neutron',
+                'net_segment_type': 'tun',
                 'tenant': 'ceilometerHA',
                 'user': 'ceilometerHA',
                 'password': 'ceilometerHA'
@@ -686,7 +692,9 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE,
             settings={
-                'ceilometer': True
+                'ceilometer': True,
+                'net_provider': 'neutron',
+                'net_segment_type': 'tun',
             }
         )
         self.fuel_web.update_nodes(
@@ -707,7 +715,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             service_name='ceilometer-api')
 
         self.run_tests(cluster_id)
-        self.env.make_snapshot("deploy_ceilometer_ha_mulirole")
+        self.env.make_snapshot("deploy_ceilometer_ha_multirole")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ceilometer_ha_with_external_mongo"])
@@ -739,6 +747,8 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
                 'tenant': 'ceilometerHA',
                 'user': 'ceilometerHA',
                 'password': 'ceilometerHA',
+                'net_provider': 'neutron',
+                'net_segment_type': 'tun',
                 'volumes_ceph': True,
                 'images_ceph': True,
                 'volumes_lvm': False,
