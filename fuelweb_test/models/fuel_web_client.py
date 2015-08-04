@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
 import re
 import time
 import traceback
@@ -225,7 +226,7 @@ class FuelWebClient(object):
              for test in set_result['tests']
              if test['status'] not in ['success', 'disabled', 'skipped']]
 
-        logger.info('OSTF test statuses are : {0}'.format(test_result))
+        logger.info('OSTF test statuses are : {0}'.format(json.dumps(test_result, indent=1)))
 
         if failed_test_name:
             for test_name in failed_test_name:
@@ -238,7 +239,7 @@ class FuelWebClient(object):
             failed <= should_fail, 'Failed {0} OSTF tests; should fail'
                                    ' {1} tests. Names of failed tests: {2}'
                                    .format(failed, should_fail,
-                                           failed_tests_res))
+                                           json.dumps(failed_tests_res, indent=1)))
 
     def assert_release_state(self, release_name, state='available'):
         logger.info('Assert release %s has state %s', release_name, state)
