@@ -203,7 +203,7 @@ class NeutronTunHa(TestBasic):
         devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
-        with self.env.d_env.get_ssh_for_node(devops_node.name) as remote:
+        with self.env.fuel_web.get_ssh_for_node(devops_node.name) as remote:
             for i in range(5):
                 try:
                     checkers.check_swift_ring(remote)
