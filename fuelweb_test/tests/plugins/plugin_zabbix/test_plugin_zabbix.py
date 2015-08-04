@@ -329,7 +329,10 @@ class ZabbixPlugin(TestBasic):
         snmp_heartbeat_command = \
             ("snmptrap -v 2c -c {0} {1} '' .1.3.6.1.4.1.8072.2.3.0.1"
              .format(snmp_community, management_vip))
-        self.env.d_env.get_admin_remote().execute(snmp_heartbeat_command)
+
+        with self.fuel_web.get_ssh_for_node("slave-01") as remote:
+            remote.execute("apt-get install snmp -y")
+            remote.execute(snmp_heartbeat_command)
 
         mgmt_vip_devops_node = self.fuel_web.get_pacemaker_resource_location(
             'slave-01', 'vip__management')[0]
@@ -341,9 +344,8 @@ class ZabbixPlugin(TestBasic):
             cmd = ('grep netSnmpExampleHeartbeatNotification '
                    '/var/log/zabbix/zabbix_server.log | '
                    'grep "Status Events"')
-            check_snmp_event = lambda: \
-                "".join(remote.execute(cmd).get('output', [])).strip() != ""
-            wait(check_snmp_event)
+
+            wait(lambda: remote.execute(cmd)['exit_code'] == 0)
 
         self.env.make_snapshot("deploy_zabbix_snmptrap_ha")
 
