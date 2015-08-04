@@ -432,7 +432,8 @@ class FuelWebClient(object):
                 if section:
                     attributes['editable'][section][option]['value'] =\
                         settings[option]
-            if help_data.DISABLE_SSL:
+            is_ssl_available = attributes['editable'].get('public_ssl', None)
+            if help_data.DISABLE_SSL and is_ssl_available:
                 attributes['editable']['public_ssl']['services'][
                     'value'] = False
                 attributes['editable']['public_ssl']['horizon'][
