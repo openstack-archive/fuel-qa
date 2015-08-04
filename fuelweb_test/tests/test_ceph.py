@@ -247,7 +247,7 @@ class CephHA(TestBasic):
         if settings.NEUTRON_ENABLE:
             csettings = {
                 "net_provider": 'neutron',
-                "net_segment_type": settings.NEUTRON_SEGMENT_TYPE['vlan']
+                "net_segment_type": settings.NEUTRON_SEGMENT['vlan']
             }
         csettings.update(
             {
