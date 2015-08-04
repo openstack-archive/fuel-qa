@@ -56,7 +56,7 @@ class ExamplePlugin(TestBasic):
 
         # copy plugin to the master node
         checkers.check_archive_type(EXAMPLE_PLUGIN_PATH)
-        checkers.upload_file(
+        checkers.upload_tarball(
             self.env.d_env.get_admin_remote(),
             EXAMPLE_PLUGIN_PATH, '/var')
 
@@ -282,7 +282,7 @@ class ExamplePlugin(TestBasic):
 
         # copy plugin to the master node
         checkers.check_archive_type(EXAMPLE_PLUGIN_PATH)
-        checkers.upload_file(
+        checkers.upload_tarball(
             self.env.d_env.get_admin_remote(), EXAMPLE_PLUGIN_PATH, '/var')
 
         # install plugin
@@ -373,7 +373,7 @@ class ExamplePlugin(TestBasic):
 
         # copy plugin to the master node
         checkers.check_archive_type(EXAMPLE_PLUGIN_PATH)
-        checkers.upload_file(
+        checkers.upload_tarball(
             self.env.d_env.get_admin_remote(), EXAMPLE_PLUGIN_PATH, '/var')
 
         # install plugin
