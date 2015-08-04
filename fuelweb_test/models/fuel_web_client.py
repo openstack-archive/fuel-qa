@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
 import re
 import time
 import traceback
@@ -225,7 +226,7 @@ class FuelWebClient(object):
              for test in set_result['tests']
              if test['status'] not in ['success', 'disabled', 'skipped']]
 
-        logger.info('OSTF test statuses are : {0}'.format(test_result))
+        logger.info('OSTF test statuses are : {0}'.format(json.dumps(test_result, indent=1)))
 
         if failed_test_name:
             for test_name in failed_test_name:
@@ -238,7 +239,7 @@ class FuelWebClient(object):
             failed <= should_fail, 'Failed {0} OSTF tests; should fail'
                                    ' {1} tests. Names of failed tests: {2}'
                                    .format(failed, should_fail,
-                                           failed_tests_res))
+                                           json.dumps(failed_tests_res, indent=1)))
 
     def assert_release_state(self, release_name, state='available'):
         logger.info('Assert release %s has state %s', release_name, state)
@@ -407,7 +408,7 @@ class FuelWebClient(object):
             cluster_id = self.client.get_cluster_id(name)
             logger.info('The cluster id is %s', cluster_id)
 
-            logger.info('Set cluster settings to %s', settings)
+            logger.info('Set cluster settings to %s', json.dumps(settings, indent=1))
             attributes = self.client.get_cluster_attributes(cluster_id)
 
             for option in settings:
@@ -1056,7 +1057,7 @@ class FuelWebClient(object):
                         test['status'] != 'disabled'):
                     tests_res.append({test['name']: test['status']})
 
-        logger.info('OSTF test statuses are : {0}'.format(tests_res))
+        logger.info('OSTF test statuses are : {0}'.format(json.dumps(tests_res, indent=1)))
         return tests_res
 
     @logwrap
@@ -1076,7 +1077,7 @@ class FuelWebClient(object):
 
     @logwrap
     def task_wait(self, task, timeout, interval=5):
-        logger.info('Wait for task %s %s seconds', task, timeout)
+        logger.info('Wait for task %s seconds: %s', timeout, json.dumps(task, indent=1))
         start = time.time()
         try:
             wait(
@@ -1091,7 +1092,7 @@ class FuelWebClient(object):
                 "was exceeded: ".format(task=task["name"], timeout=timeout))
         took = time.time() - start
         task = self.client.get_task(task['id'])
-        logger.info('Task %s finished. Took %d seconds', task, took)
+        logger.info('Task finished. Took %d seconds. %s', took, json.dumps(task, indent=1))
         return task
 
     @logwrap
@@ -1731,7 +1732,7 @@ class FuelWebClient(object):
             return failed_count
 
     def get_nailgun_version(self):
-        logger.info("ISO version: %s" % self.client.get_api_version())
+        logger.info("ISO version: %s" % json.dumps(self.client.get_api_version(), indent=1))
 
     @logwrap
     def run_ceph_task(self, cluster_id, offline_nodes):
