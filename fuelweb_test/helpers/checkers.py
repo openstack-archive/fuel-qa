@@ -17,8 +17,9 @@ import os
 import re
 import traceback
 
-from ipaddr import IPAddress
-from ipaddr import IPNetwork
+from devops.error import TimeoutError
+from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
@@ -28,12 +29,12 @@ from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import POOLS
 from fuelweb_test.settings import PUBLIC_TEST_IP
+
+from ipaddr import IPAddress
+from ipaddr import IPNetwork
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
-from devops.error import TimeoutError
-from devops.helpers.helpers import wait
-from devops.helpers.helpers import _wait
 
 from time import sleep
 
@@ -302,6 +303,16 @@ def wait_upgrade_is_done(node_ssh, timeout, phrase):
         a = node_ssh.execute(cmd)
         logger.error(e)
         assert_equal(0, a['exit_code'], a['stderr'])
+
+
+@logwrap
+def wait_phrase_in_log(node_ssh, timeout, interval, phrase, log_path):
+    cmd = "grep '{0}' '{1}'".format(phrase, log_path)
+    wait(
+        lambda: not node_ssh.execute(cmd)['exit_code'], interval=interval,
+        timeout=timeout,
+        timeout_msg="The phrase {0} not found in {1} file on "
+                    "remote node".format(phrase, log_path))
 
 
 @logwrap
