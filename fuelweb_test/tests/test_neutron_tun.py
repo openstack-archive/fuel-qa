@@ -288,31 +288,11 @@ class TestHaNeutronScalability(TestBasic):
             14. Run sync_time() to check that NTPD daemon is operational
 
         Duration 110m
-        Snapshot neutron_tun_scalabilit
+        Snapshot neutron_tun_scalability
 
         """
-        self.env.revert_snapshot("ready_with_9_slaves")
-
-        cluster_id = self.fuel_web.create_cluster(
-            name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT['tun']
-            }
-        )
-
-        nodes = {'slave-01': ['controller']}
-        logger.info("Adding new node to the cluster: {0}".format(nodes))
-        self.fuel_web.update_nodes(
-            cluster_id, nodes)
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-        devops_node = self.fuel_web.get_nailgun_primary_node(
-            self.env.d_env.nodes().slaves[0])
-        logger.debug("devops node name is {0}".format(devops_node.name))
-
-        def _check_swift(remote):
-            with self.fuel_web.get_ssh_for_remote(devops_node.name) as remote:
+        def _check_swift(primary_node):
+            with self.fuel_web.get_ssh_for_remote(primary_node.name) as remote:
                 for i in range(5):
                     try:
                         checkers.check_swift_ring(remote)
@@ -324,8 +304,6 @@ class TestHaNeutronScalability(TestBasic):
                             "command execution result is {0}".format(result))
                 else:
                     checkers.check_swift_ring(remote)
-
-        _check_swift()
 
         def _check_pacemarker(devops_nodes):
             for devops_node in devops_nodes:
@@ -343,6 +321,28 @@ class TestHaNeutronScalability(TestBasic):
                               '\s+Started node', ret),
                     'vip public started')
 
+        self.env.revert_snapshot("ready_with_9_slaves")
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT['tun']
+            }
+        )
+
+        nodes = {'slave-01': ['controller']}
+        logger.info("Adding new node to the cluster: {0}".format(nodes))
+        self.fuel_web.update_nodes(
+            cluster_id, nodes)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        primary_node = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+
+        _check_swift(primary_node)
+
         nodes = {'slave-02': ['controller'],
                  'slave-03': ['controller']}
         logger.info("Adding new nodes to the cluster: {0}".format(nodes))
@@ -353,11 +353,7 @@ class TestHaNeutronScalability(TestBasic):
 
         _check_pacemarker(self.env.d_env.nodes().slaves[:3])
 
-        devops_node = self.fuel_web.get_nailgun_primary_node(
-            self.env.d_env.nodes().slaves[0])
-        logger.debug("devops node name is {0}".format(devops_node.name))
-
-        _check_swift()
+        _check_swift(primary_node)
 
         nodes = {'slave-04': ['controller'],
                  'slave-05': ['controller'],
@@ -371,17 +367,14 @@ class TestHaNeutronScalability(TestBasic):
         _check_pacemarker(self.env.d_env.nodes().slaves[:5])
 
         self.fuel_web.security.verify_firewall(cluster_id)
-        devops_node = self.fuel_web.get_nailgun_primary_node(
-            self.env.d_env.nodes().slaves[0])
-        logger.debug("devops node name is {0}".format(devops_node.name))\
 
-        _check_swift()
+        _check_swift(primary_node)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
             test_sets=['ha', 'sanity'])
 
-        nodes = {devops_node.name: ['controller'],
+        nodes = {primary_node.name: ['controller'],
                  'slave-05': ['controller']}
         logger.info("Deleting nodes from the cluster: {0}".format(nodes))
         self.fuel_web.update_nodes(
@@ -398,11 +391,8 @@ class TestHaNeutronScalability(TestBasic):
         _check_pacemarker(devops_nodes)
 
         self.fuel_web.security.verify_firewall(cluster_id)
-        devops_node = self.fuel_web.get_nailgun_primary_node(
-            devops_nodes[0])
-        logger.debug("devops node name is {0}".format(devops_node.name))\
 
-        _check_swift()
+        _check_swift(primary_node)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
