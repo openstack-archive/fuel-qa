@@ -298,9 +298,8 @@ class NailgunClient(object):
     def get_cluster_vlans(self, cluster_id):
         cluster_vlans = []
         nc = self.get_networks(cluster_id)['networking_parameters']
-        vlan_start = nc["fixed_networks_vlan_start"]
-        network_amound = int(nc["fixed_networks_amount"] - 1)
-        cluster_vlans.extend([vlan_start, vlan_start + network_amound])
+        vlans = nc["vlan_range"]
+        cluster_vlans.extend(vlans)
 
         return cluster_vlans
 
