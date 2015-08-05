@@ -176,8 +176,6 @@ def update_packages(func):
                                "unexpected class is decorated.")
                 return result
 
-            remote = environment.d_env.get_admin_remote()
-
             if settings.UPDATE_FUEL_MIRROR:
                 for url in settings.UPDATE_FUEL_MIRROR:
                     repo_url = urlparse(url)
@@ -210,16 +208,15 @@ def update_packages(func):
             cmd = ("echo -e '[temporary]\nname=temporary\nbaseurl=file://{0}/"
                    "\ngpgcheck=0\npriority=1' > {1}").format(
                 settings.LOCAL_MIRROR_CENTOS, conf_file)
-            environment.execute_remote_cmd(remote, cmd, exit_code=0)
+            environment.fuel_web.ssh.run_on_admin(cmd, exit_code=0)
             update_command = 'yum clean expire-cache; yum update -y -d3'
-            result = remote.execute(update_command)
+            environment.fuel_web.ssh.run_on_admin(update_command)
             logger.debug('Result of "yum update" command on master node: '
                          '{0}'.format(result))
             assert_equal(int(result['exit_code']), 0,
                          'Packages update failed, '
                          'inspect logs for details')
-            environment.execute_remote_cmd(remote,
-                                           cmd='rm -f {0}'.format(conf_file),
+            environment.fuel_web.ssh.run_on_admin('rm -f {0}'.format(conf_file),
                                            exit_code=0)
         except Exception:
             logger.error("Could not update packages")

@@ -230,24 +230,21 @@ def check_upgraded_containers(remote, version_from, version_to):
                 in symlink[0],
                 'Symlink is set not to {0}'.format(version_to))
 
-
 @logwrap
-def upload_tarball(node_ssh, tar_path, tar_target):
-    assert_true(tar_path, "Source path for uploading 'tar_path' is empty, "
-                "please check test settings!")
-    check_archive_type(tar_path)
-    try:
-        logger.debug("Start to upload tar file")
-        node_ssh.upload(tar_path, tar_target)
-    except Exception:
-        logger.error('Failed to upload file')
-        logger.error(traceback.format_exc())
-
+def check_file_type(file_path, target_types):
+    filename = os.path.basename(file_path)
+    ext = os.path.splitext(filename)[1]
+    if ext not in target_types:
+        raise Exception("Wrong file type! {0} not in {1}".format(ext, target_types))
+    return ext
 
 @logwrap
 def check_archive_type(tar_path):
-    if os.path.splitext(tar_path)[1] not in [".tar", ".lrz", ".fp", ".rpm"]:
-        raise Exception("Wrong archive type!")
+    return check_file_type(tar_path, [".tar", ".lrz"])
+
+@logwrap
+def check_plugin_type(plugin_path):
+    return check_file_type(plugin_path, [".fp", ".rpm"])
 
 
 @logwrap
@@ -353,12 +350,12 @@ def restart_nailgun(remote):
     assert_equal(0, result['exit_code'], result['stderr'])
 
 
-def find_backup(remote):
+def find_backup(self):
     try:
         arch_dir = ''.join(
-            remote.execute("ls -1u /var/backup/fuel/ | sed -n 1p")['stdout'])
+            self.ssh.run_on_admin("ls -1u /var/backup/fuel/ | sed -n 1p")['stdout'])
         arch_path = ''.join(
-            remote.execute("ls -1u /var/backup/fuel/{0}/*.lrz".
+            self.ssh.run_on_admin("ls -1u /var/backup/fuel/{0}/*.lrz".
                            format(arch_dir.strip()))["stdout"])
         logger.debug('arch_path is {0}'.format(arch_path))
         return arch_path
@@ -368,12 +365,12 @@ def find_backup(remote):
 
 
 @logwrap
-def backup_check(remote):
+def backup_check(self):
     logger.info("Backup check archive status")
-    path = find_backup(remote)
+    path = find_backup() # ssh to admin
     assert_true(path, "Can not find backup. Path value {0}".format(path))
     arch_result = ''.join(
-        remote.execute(("if [ -e {0} ]; "
+        self.ssh.run_on_admin(("if [ -e {0} ]; "
                         "then echo  Archive exists;"
                         " fi").format(path.rstrip()))["stdout"])
     assert_true("Archive exists" in arch_result, "Archive does not exist")
@@ -807,20 +804,20 @@ def external_dns_check(remote_slave):
 
 
 @logwrap
-def external_ntp_check(remote_slave, vrouter_vip):
+def external_ntp_check(self, node_name, vrouter_vip):
     logger.info("External ntp check")
     ext_ntp_ip = ''.join(
-        remote_slave.execute("awk '/^server +{0}/{{print $2}}' "
+        self.ssh.run_on_remote_by_name("awk '/^server +{0}/{{print $2}}' "
                              "/etc/ntp.conf".
-                             format(EXTERNAL_NTP))["stdout"]).rstrip()
+                             format(EXTERNAL_NTP), node_name)["stdout"]).rstrip()
     assert_equal(ext_ntp_ip, EXTERNAL_NTP,
                  "/etc/ntp.conf does not contain external ntp ip")
     try:
         wait(
-            lambda: not is_ntpd_active(remote_slave, vrouter_vip), timeout=120)
+            lambda: not is_ntpd_active(node_name, vrouter_vip), timeout=120)
     except Exception as e:
         logger.error(e)
-        status = is_ntpd_active(remote_slave, vrouter_vip)
+        status = is_ntpd_active(node_name, vrouter_vip)
         assert_equal(
             status, 1, "Failed updated ntp. "
                        "Exit code is {0}".format(status))
@@ -996,9 +993,13 @@ def check_auto_mode(remote):
         return ''.join(remote.execute(command)['stderr']).strip()
 
 
-def is_ntpd_active(remote, ntpd_ip):
+def is_ntpd_active(self, node_name, ntpd_ip):
     cmd = 'ntpdate -d -p 4 -t 0.2 -u {0}'.format(ntpd_ip)
-    return (not remote.execute(cmd)['exit_code'])
+    return (not self.ssh.run_on_remote_by_name(cmd, node_name)['exit_code'])
+
+def is_ntpd_active_on_admin(self, ntpd_ip):
+    cmd = 'ntpdate -d -p 4 -t 0.2 -u {0}'.format(ntpd_ip)
+    return (not self.ssh.run_on_admin(cmd)['exit_code'])
 
 
 def check_repo_managment(remote):

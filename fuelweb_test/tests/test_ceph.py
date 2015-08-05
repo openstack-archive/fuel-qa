@@ -119,8 +119,7 @@ class CephCompact(TestBasic):
                                      data=image_data)
         volume = os_conn.create_volume(size=1, image_id=image.id)
 
-        remote = self.fuel_web.get_ssh_for_node('slave-01')
-        rbd_list = ceph.get_rbd_images_list(remote, 'volumes')
+        rbd_list = ceph.get_rbd_images_list('slave-01', 'volumes')
 
         for item in rbd_list:
             if volume.id in item['image']:

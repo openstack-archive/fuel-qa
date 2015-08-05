@@ -13,6 +13,7 @@
 #    under the License.
 
 import json
+import paramiko
 import re
 import time
 import traceback
@@ -318,8 +319,7 @@ class FuelWebClient(object):
     @logwrap
     def get_pcm_nodes(self, ctrl_node, pure=False):
         nodes = {}
-        remote = self.get_ssh_for_node(ctrl_node)
-        pcs_status = remote.execute('pcs status nodes')['stdout']
+        pcs_status = self.ssh.run_on_remote_by_name('pcs status nodes', ctrl_node)['stdout']
         pcm_nodes = yaml.load(''.join(pcs_status).strip())
         for status in ('Online', 'Offline', 'Standby'):
             list_nodes = (pcm_nodes['Pacemaker Nodes'][status] or '').split()
@@ -332,9 +332,7 @@ class FuelWebClient(object):
 
     @logwrap
     def get_rabbit_running_nodes(self, ctrl_node):
-        remote = self.get_ssh_for_node(ctrl_node)
-        rabbit_status = ''.join(remote.execute(
-            'rabbitmqctl cluster_status')['stdout']).strip()
+        rabbit_status = ''.join(self.ssh.run_on_remote_by_name('rabbitmqctl cluster_status', ctrl_node)['stdout']).strip()
         rabbit_nodes = re.search(
             "\{running_nodes,\[(.*)\]\}",
             rabbit_status).group(1).replace("'", "").split(',')
@@ -447,8 +445,7 @@ class FuelWebClient(object):
             public_gw = self.environment.d_env.router(router_name="public")
 
             if help_data.FUEL_USE_LOCAL_NTPD and ('ntp_list' not in settings)\
-                    and checkers.is_ntpd_active(
-                        self.environment.d_env.get_admin_remote(), public_gw):
+                    and checkers.is_ntpd_active_on_admin(public_gw):
                 attributes['editable']['external_ntp']['ntp_list']['value'] =\
                     public_gw
                 logger.info("Configuring cluster #{0} to use NTP server {1}"
@@ -824,29 +821,25 @@ class FuelWebClient(object):
     @logwrap
     def get_cluster_floating_list(self, node_name):
         logger.info('Get floating IPs list at %s devops node', node_name)
-        remote = self.get_ssh_for_node(node_name)
-        ret = remote.check_call('/usr/bin/nova-manage floating list')
+        ret = self.ssh.run_on_remote_by_name('/usr/bin/nova-manage floating list', node_name, check_call=True)
         ret_str = ''.join(ret['stdout'])
         return re.findall('(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', ret_str)
 
     @logwrap
     def get_cluster_block_devices(self, node_name):
         logger.info('Get %s node block devices (lsblk)', node_name)
-        remote = self.get_ssh_for_node(node_name)
-        ret = remote.check_call('/bin/lsblk')
+        ret = self.ssh.run_on_remote_by_name('/bin/lsblk', node_name, check_call=True)
         return ''.join(ret['stdout'])
 
     @logwrap
     def get_pacemaker_status(self, controller_node_name):
         logger.info('Get pacemaker status at %s node', controller_node_name)
-        remote = self.get_ssh_for_node(controller_node_name)
-        return ''.join(remote.check_call('crm_mon -1')['stdout'])
+        return ''.join(self.ssh.run_on_remote_by_name('crm_mon -1', controller_node_name, check_call=True)['stdout'])
 
     @logwrap
     def get_pacemaker_config(self, controller_node_name):
         logger.info('Get pacemaker config at %s node', controller_node_name)
-        remote = self.get_ssh_for_node(controller_node_name)
-        return ''.join(remote.check_call('crm_resource --list')['stdout'])
+        return ''.join(self.ssh.run_on_remote_by_name('crm_resource --list', controller_node_name, check_call=True)['stdout'])
 
     @logwrap
     def get_pacemaker_resource_location(self, controller_node_name,
@@ -854,14 +847,14 @@ class FuelWebClient(object):
         """Get devops nodes where the resource is running."""
         logger.info('Get pacemaker resource %s life status at %s node',
                     resource_name, controller_node_name)
-        remote = self.get_ssh_for_node(controller_node_name)
         hosts = []
-        for line in remote.check_call(
+        for line in self.ssh.run_on_remote_by_name(
                 'crm_resource --resource {0} '
-                '--locate --quiet'.format(resource_name))['stdout']:
+                '--locate --quiet'.format(resource_name),
+                controller_node_name,
+                check_call=True)['stdout']:
             hosts.append(
                 self.get_devops_node_by_nailgun_fqdn(line.strip()))
-        remote.clear()
         return hosts
 
     @logwrap
@@ -1002,18 +995,6 @@ class FuelWebClient(object):
         """
         nodes = self.client.list_cluster_nodes(cluster_id=cluster_id)
         return [n for n in nodes if set(roles) <= set(n['roles'])]
-
-    @logwrap
-    def get_ssh_for_node(self, node_name):
-        ip = self.get_nailgun_node_by_devops_node(
-            self.environment.d_env.get_node(name=node_name))['ip']
-        return self.environment.d_env.get_ssh_to_remote(ip)
-
-    @logwrap
-    def get_ssh_for_role(self, nodes_dict, role):
-        node_name = sorted(filter(lambda name: role in nodes_dict[name],
-                           nodes_dict.keys()))[0]
-        return self.get_ssh_for_node(node_name)
 
     @logwrap
     def is_node_discovered(self, nailgun_node):
@@ -1507,8 +1488,7 @@ class FuelWebClient(object):
                     [n.name for n in devops_nodes])
         for node in devops_nodes:
             logger.debug('Shutdown node %s', node.name)
-            remote = self.get_ssh_for_node(node.name)
-            remote.check_call('/sbin/shutdown -Ph now')
+            self.ssh.run_on_remote_by_name('/sbin/shutdown -Ph now', node.name, check_call=True)
 
         for node in devops_nodes:
             logger.info('Wait a %s node offline status', node.name)
@@ -1585,15 +1565,13 @@ class FuelWebClient(object):
             :rtype: String on None
         """
         try:
-            remote = self.get_ssh_for_node(node_name)
             if namespace:
                 cmd = 'ip netns exec {0} ip -4 ' \
                       '-o address show {1}'.format(namespace, interface)
             else:
                 cmd = 'ip -4 -o address show {1}'.format(interface)
 
-            ret = remote.check_call(cmd)
-            remote.clear()
+            ret = self.ssh.run_on_remote_by_name(cmd, node_name, check_call=True)
             ip_search = re.search(
                 'inet (?P<ip>\d+\.\d+\.\d+.\d+/\d+).*scope .* '
                 '{0}'.format(interface), ' '.join(ret['stdout']))
@@ -1613,11 +1591,11 @@ class FuelWebClient(object):
     def ip_address_del(self, node_name, namespace, interface, ip):
         logger.info('Delete %s ip address of %s interface at %s node',
                     ip, interface, node_name)
-        remote = self.get_ssh_for_node(node_name)
-        remote.check_call(
+        self.ssh.run_on_remote_by_name(
             'ip netns exec {0} ip addr'
-            ' del {1} dev {2}'.format(namespace, ip, interface))
-        remote.clear()
+            ' del {1} dev {2}'.format(namespace, ip, interface),
+            node_name,
+            check_call=True)
 
     @logwrap
     def provisioning_cluster_wait(self, cluster_id, progress=None):
@@ -1662,11 +1640,11 @@ class FuelWebClient(object):
 
     @logwrap
     def wait_mysql_galera_is_up(self, node_names, timeout=60 * 4):
-        def _get_galera_status(_remote):
+        def _get_galera_status(node_name):
             cmd = ("mysql --connect_timeout=5 -sse \"SELECT VARIABLE_VALUE "
                    "FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME"
                    " = 'wsrep_ready';\"")
-            result = _remote.execute(cmd)
+            result = self.ssh.run_on_remote_by_name(cmd, node_name)
             if result['exit_code'] == 0:
                 return ''.join(result['stdout']).strip()
             else:
@@ -1676,16 +1654,16 @@ class FuelWebClient(object):
             _ip = self.get_nailgun_node_by_name(node_name)['ip']
             remote = self.environment.d_env.get_ssh_to_remote(_ip)
             try:
-                wait(lambda: _get_galera_status(remote) == 'ON',
+                wait(lambda: _get_galera_status(node_name) == 'ON',
                      timeout=timeout)
                 logger.info("MySQL Galera is up on {host} node.".format(
                             host=node_name))
             except TimeoutError:
                 logger.error("MySQL Galera isn't ready on {0}: {1}"
-                             .format(node_name, _get_galera_status(remote)))
+                             .format(node_name, _get_galera_status(node_name)))
                 raise TimeoutError(
                     "MySQL Galera isn't ready on {0}: {1}".format(
-                        node_name, _get_galera_status(remote)))
+                        node_name, _get_galera_status(node_name)))
         return True
 
     @logwrap
@@ -1762,41 +1740,40 @@ class FuelWebClient(object):
         online_ceph_nodes = [
             n for n in ceph_nodes if n['id'] not in offline_nodes]
 
+        node_name = online_ceph_nodes[0]['name']
+
         # Let's find nodes where are a time skew. It can be checked on
         # an arbitrary one.
         logger.debug("Looking up nodes with a time skew and try to fix them")
-        with self.environment.d_env.get_ssh_to_remote(
-                online_ceph_nodes[0]['ip']) as remote:
-            if ceph.is_clock_skew(remote):
-                skewed = ceph.get_node_fqdns_w_clock_skew(remote)
-                logger.warning("Time on nodes {0} are to be "
-                               "re-syncronized".format(skewed))
-                nodes_to_sync = [
-                    n for n in online_ceph_nodes
-                    if n['fqdn'].split('.')[0] in skewed]
-                self.environment.sync_time(nodes_to_sync)
+        if ceph.is_clock_skew(node_name):
+            skewed = ceph.get_node_fqdns_w_clock_skew(node_name)
+            logger.warning("Time on nodes {0} are to be "
+                           "re-syncronized".format(skewed))
+            nodes_to_sync = [
+                n for n in online_ceph_nodes
+                if n['fqdn'].split('.')[0] in skewed]
+            self.environment.sync_time(nodes_to_sync)
 
-            try:
-                wait(lambda: not ceph.is_clock_skew(remote),
-                     timeout=120)
-            except TimeoutError:
-                skewed = ceph.get_node_fqdns_w_clock_skew(remote)
-                logger.error("Time on Ceph nodes {0} is still skewed. "
-                             "Restarting Ceph monitor on these "
-                             "nodes".format(', '.join(skewed)))
+        try:
+            wait(lambda: not ceph.is_clock_skew(node_name),
+                 timeout=120)
+        except TimeoutError:
+            skewed = ceph.get_node_fqdns_w_clock_skew(node_name)
+            logger.error("Time on Ceph nodes {0} is still skewed. "
+                         "Restarting Ceph monitor on these "
+                         "nodes".format(', '.join(skewed)))
 
-                for node in skewed:
-                    fqdn = self.get_fqdn_by_hostname(node)
-                    d_node = self.get_devops_node_by_nailgun_fqdn(fqdn)
-                    logger.debug("Establish SSH connection to first Ceph "
-                                 "monitor node %s", fqdn)
+            for node in skewed:
+                fqdn = self.get_fqdn_by_hostname(node)
+                d_node = self.get_devops_node_by_nailgun_fqdn(fqdn)
+                logger.debug("Establish SSH connection to first Ceph "
+                             "monitor node %s", fqdn)
 
-                    with self.get_ssh_for_node(d_node.name) as remote_to_mon:
-                        logger.debug("Restart Ceph monitor service "
-                                     "on node %s", fqdn)
-                        ceph.restart_monitor(remote_to_mon)
+                logger.debug("Restart Ceph monitor service "
+                             "on node %s", fqdn)
+                ceph.restart_monitor(d_node.name)
 
-                wait(lambda: not ceph.is_clock_skew(remote), timeout=120)
+            wait(lambda: not ceph.is_clock_skew(node_name), timeout=120)
 
     @logwrap
     def check_ceph_status(self, cluster_id, offline_nodes=(),
@@ -1808,9 +1785,8 @@ class FuelWebClient(object):
 
         logger.info('Waiting until Ceph service become up...')
         for node in online_ceph_nodes:
-            remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
             try:
-                wait(lambda: ceph.check_service_ready(remote) is True,
+                wait(lambda: ceph.check_service_ready(node['name']) is True,
                      interval=20, timeout=600)
             except TimeoutError:
                 error_msg = 'Ceph service is not properly started' \
@@ -1822,29 +1798,27 @@ class FuelWebClient(object):
         self.check_ceph_time_skew(cluster_id, offline_nodes)
 
         node = online_ceph_nodes[0]
-        remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
-        if not ceph.is_health_ok(remote):
-            if ceph.is_pgs_recovering(remote) and len(offline_nodes) > 0:
+        if not ceph.is_health_ok(node['name']):
+            if ceph.is_pgs_recovering(node['name']) and len(offline_nodes) > 0:
                 logger.info('Ceph is being recovered after osd node(s)'
                             ' shutdown.')
                 try:
-                    wait(lambda: ceph.is_health_ok(remote),
+                    wait(lambda: ceph.is_health_ok(node['name']),
                          interval=30, timeout=recovery_timeout)
                 except TimeoutError:
-                    result = ceph.health_detail(remote)
+                    result = ceph.health_detail(node['name'])
                     msg = 'Ceph HEALTH is not OK on {0}. Details: {1}'.format(
                         node['name'], result)
                     logger.error(msg)
                     raise TimeoutError(msg)
         else:
-            result = ceph.health_detail(remote)
+            result = ceph.health_detail(node['name'])
             msg = 'Ceph HEALTH is not OK on {0}. Details: {1}'.format(
                 node['name'], result)
-            assert_true(ceph.is_health_ok(remote), msg)
+            assert_true(ceph.is_health_ok(node['name']), msg)
 
         logger.info('Checking Ceph OSD Tree...')
-        ceph.check_disks(remote, [n['id'] for n in online_ceph_nodes])
-        remote.clear()
+        ceph.check_disks(node['name'], [n['id'] for n in online_ceph_nodes])
         logger.info('Ceph cluster status is OK')
 
     @logwrap
@@ -1888,72 +1862,77 @@ class FuelWebClient(object):
 
     @logwrap
     def manual_rollback(self, remote, rollback_version):
-        remote.execute('rm /etc/supervisord.d/current')
-        remote.execute('ln -s /etc/supervisord.d/{0}/ '
-                       '/etc/supervisord.d/current'.format(rollback_version))
-        remote.execute('rm /etc/fuel/version.yaml')
-        remote.execute('ln -s /etc/fuel/{0}/version.yaml '
-                       '/etc/fuel/version.yaml'.format(rollback_version))
-        remote.execute('rm /var/www/nailgun/bootstrap')
-        remote.execute('ln -s /var/www/nailgun/{}_bootstrap '
-                       '/var/www/nailgun/bootstrap'.format(rollback_version))
+        # TODO(mstrukov): not used anywhere
+        self.ssh.run_on_admin('rm /etc/supervisord.d/current')
+        self.ssh.run_on_admin('ln -s /etc/supervisord.d/{0}/ '
+                              '/etc/supervisord.d/current'
+                              .format(rollback_version))
+        self.ssh.run_on_admin('rm /etc/fuel/version.yaml')
+        self.ssh.run_on_admin('ln -s /etc/fuel/{0}/version.yaml '
+                              '/etc/fuel/version.yaml'
+                              .format(rollback_version))
+        self.ssh.run_on_admin('rm /var/www/nailgun/bootstrap')
+        self.ssh.run_on_admin('ln -s /var/www/nailgun/{}_bootstrap '
+                              '/var/www/nailgun/bootstrap'
+                              .format(rollback_version))
         logger.debug('stopping supervisor')
         try:
-            remote.execute('/etc/init.d/supervisord stop')
+            self.ssh.run_on_admin('/etc/init.d/supervisord stop')
         except Exception as e:
             logger.debug('exception is {0}'.format(e))
         logger.debug('stop docker')
         try:
-            remote.execute('docker stop $(docker ps -q)')
+            self.ssh.run_on_admin('docker stop $(docker ps -q)')
         except Exception as e:
             logger.debug('exception is {0}'.format(e))
         logger.debug('start supervisor')
         time.sleep(60)
         try:
-            remote.execute('/etc/init.d/supervisord start')
+            self.ssh.run_on_admin('/etc/init.d/supervisord start')
         except Exception as e:
             logger.debug('exception is {0}'.format(e))
         time.sleep(60)
 
     @logwrap
     def modify_python_file(self, remote, modification, file):
+        # TODO(mstrukov): not used anywhere
         remote.execute('sed -i "{0}" {1}'.format(modification, file))
 
-    def backup_master(self, remote):
+    def backup_master(self):
         logger.debug("Start backup of master node")
         assert_equal(
-            0, remote.execute(
+            0, self.ssh.run_on_admin(
                 "echo CALC_MY_MD5SUM > /etc/fuel/data")['exit_code'],
             'command calc_my_mdsum failed')
         assert_equal(
-            0, remote.execute(
+            0, self.ssh.run_on_admin(
                 "iptables-save > /etc/fuel/iptables-backup")['exit_code'],
             'can not save iptables in iptables-backup')
 
-        assert_equal(0, remote.execute(
+        assert_equal(0, self.ssh.run_on_admin(
             "md5sum /etc/fuel/data | sed -n 1p | "
             "awk '{print $1}'>/etc/fuel/sum")['exit_code'],
             'failed to create sum file')
 
-        assert_equal(0, remote.execute('dockerctl backup')['exit_code'],
+        assert_equal(0, self.ssh.run_on_admin('dockerctl backup')['exit_code'],
                      'dockerctl backup failed with non zero exit code')
 
-        assert_equal(0, remote.execute('rm -f /etc/fuel/data')['exit_code'],
+        assert_equal(0, self.ssh.run_on_admin('rm -f /etc/fuel/data')['exit_code'],
                      'Can not remove /etc/fuel/data')
         logger.debug("Finish backup of master node")
 
     @logwrap
-    def restore_master(self, remote):
+    def restore_master(self):
         logger.debug("Start restore master node")
-        path = checkers.find_backup(remote)
+        path = checkers.find_backup()
         assert_equal(
             0,
-            remote.execute('dockerctl restore {0}'.format(path))['exit_code'],
+            self.ssh.run_on_admin('dockerctl restore {0}'.format(path))['exit_code'],
             'dockerctl restore finishes with non-zero exit code')
         logger.debug("Finish restore master node")
 
     @logwrap
-    def restore_check_nailgun_api(self, remote):
+    def restore_check_nailgun_api(self):
         logger.info("Restore check nailgun api")
         info = self.client.get_api_version()
         build_number = info["build_number"]
@@ -2108,9 +2087,7 @@ class FuelWebClient(object):
     @logwrap
     def get_nailgun_primary_node(self, slave, role='primary-controller'):
         # returns controller or mongo that is primary in nailgun
-        remote = self.get_ssh_for_node(slave.name)
-        data = yaml.load(''.join(
-            remote.execute('cat /etc/astute.yaml')['stdout']))
+        data = yaml.load(''.join(self.ssh.run_on_remote_by_name('cat /etc/astute.yaml', slave.name)['stdout']))
         node_name = [node['fqdn'] for node in data['nodes']
                      if node['role'] == role][0]
         logger.debug("node name is {0}".format(node_name))
@@ -2121,9 +2098,8 @@ class FuelWebClient(object):
 
     @logwrap
     def get_rabbit_master_node(self, node, fqdn_needed=False):
-        with self.get_ssh_for_node(node) as remote:
-            cmd = 'crm resource status master_p_rabbitmq-server'
-            output = ''.join(remote.execute(cmd)['stdout'])
+        cmd = 'crm resource status master_p_rabbitmq-server'
+        output = ''.join(self.ssh.run_on_remote_by_name(cmd, node)['stdout'])
         master_node = re.search(
             'resource master_p_rabbitmq-server is running on: (.*) Master',
             output).group(1)
@@ -2149,10 +2125,9 @@ class FuelWebClient(object):
         self.client.update_cluster_attributes(cluster_id, attr)
 
     @logwrap
-    def prepare_ceph_to_delete(self, remote_ceph):
-        hostname = ''.join(remote_ceph.execute(
-            "hostname -s")['stdout']).strip()
-        osd_tree = ceph.get_osd_tree(remote_ceph)
+    def prepare_ceph_to_delete(self, node_name):
+        hostname = ''.join(self.ssh.run_on_remote_by_name("hostname -s", node_name)['stdout']).strip()
+        osd_tree = ceph.get_osd_tree(node_name)
         logger.debug("osd tree is {0}".format(osd_tree))
         ids = []
         for osd in osd_tree['nodes']:
@@ -2162,25 +2137,24 @@ class FuelWebClient(object):
         logger.debug("ids are {}".format(ids))
         assert_true(ids, "osd ids for {} weren't found".format(hostname))
         for id in ids:
-            remote_ceph.execute("ceph osd out {}".format(id))
-        wait(lambda: ceph.is_health_ok(remote_ceph),
+            self.ssh.run_on_remote_by_name("ceph osd out {}".format(id), node_name)
+        wait(lambda: ceph.is_health_ok(node_name),
              interval=30, timeout=10 * 60)
         for id in ids:
             if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
-                remote_ceph.execute("stop ceph-osd id={}".format(id))
+                self.ssh.run_on_remote_by_name("stop ceph-osd id={}".format(id), node_name)
             else:
-                remote_ceph.execute("service ceph stop osd.{}".format(id))
-            remote_ceph.execute("ceph osd crush remove osd.{}".format(id))
-            remote_ceph.execute("ceph auth del osd.{}".format(id))
-            remote_ceph.execute("ceph osd rm osd.{}".format(id))
+                self.ssh.run_on_remote_by_name("service ceph stop osd.{}".format(id), node_name)
+            self.ssh.run_on_remote_by_name("ceph osd crush remove osd.{}".format(id), node_name)
+            self.ssh.run_on_remote_by_name("ceph auth del osd.{}".format(id), node_name)
+            self.ssh.run_on_remote_by_name("ceph osd rm osd.{}".format(id), node_name)
         # remove ceph node from crush map
-        remote_ceph.execute("ceph osd crush remove {}".format(hostname))
+        self.ssh.run_on_remote_by_name("ceph osd crush remove {}".format(hostname), node_name)
 
     @logwrap
     def get_rabbit_slaves_node(self, node, fqdn_needed=False):
-        with self.get_ssh_for_node(node) as remote:
-            cmd = 'crm resource status master_p_rabbitmq-server'
-            list_output = ''.join(remote.execute(cmd)['stdout']).split('\n')
+        cmd = 'crm resource status master_p_rabbitmq-server'
+        list_output = ''.join(self.ssh.run_on_remote_by_name(node, cmd)['stdout']).split('\n')
         filtered_list = [el for el in list_output
                          if el and not el.endswith('Master')]
         slaves_nodes = []
@@ -2253,3 +2227,207 @@ class FuelWebClient(object):
         return {'username': username,
                 'password': password,
                 'tenant': tenant}
+
+    class ssh:
+
+        # ssh sessions
+        def __get_ssh_to_remote(self, ip):
+            return self.env.d_env.get_ssh_to_remote(ip)
+
+        def __get_ssh_to_admin(self):
+            return self.environment.d_env.get_admin_remote()
+
+        # resolving
+        def __resolve_node_ip_by_name(self, node_name):
+            return self.get_nailgun_node_by_devops_node(
+                self.environment.d_env.get_node(name=node_name))['ip']
+
+        def __resolve_node_name_by_role(self, nodes_dict, role_name):
+            node_name = sorted(filter(lambda name: role_name in nodes_dict[name], nodes_dict.keys()))[0]
+            return
+
+        # execution
+        def __run_on_remote(self, remote, cmd, jsonify=False, check_call=False):
+            # TODO(ivankliuk): move it to devops.helpers.SSHClient
+            """Execute ``cmd`` on ``remote`` and return result.
+
+            :param remote: devops.helpers.helpers.SSHClient
+            :param cmd: command to execute on remote host
+            :param jsonify: return result of execution as JSON-like object
+            :return: None
+            """
+
+            #:raise: Exception
+            #"""
+
+            logger.debug("Run '{0}' on host '{1}'..".format(cmd, remote.host))
+            result = remote.execute(cmd)
+            result_details = {
+                'command': cmd,
+                'host': remote.host,
+                'stdout': result['stdout'],
+                'stderr': result['stderr'],
+                'exit_code': result['exit_code']}
+
+            # to log
+            if result['exit_code'] == 0:
+                logger.debug("Remote execution details: {0}".format(**result_details))
+            else:
+                error_msg = ("Unexpected error occurred during execution. "
+                             "Details: {0}".format(**result_details))
+                logger.error(error_msg)
+                if check_call:
+                    raise Exception(error_msg)
+
+            if jsonify:
+                try:
+                    stdout_obj = json.loads(''.join(result['stdout']))
+                except Exception:
+                    error_msg = (
+                        "Unable to deserialize output of command"
+                        " '{0}' on host {1}".format(cmd, remote.host))
+                    logger.error(error_msg)
+                    raise Exception(error_msg)
+                result['stdout_json'] = stdout_obj
+
+            return result
+
+        def run_on_admin(self, cmd, jsonify=False, check_call=False):
+            remote = self.__get_ssh_to_admin()
+            result = self.__run_on_remote(cmd, remote, jsonify, check_call)
+            remote.clear()
+            return result
+
+        def run_on_remote_by_ip(self, cmd, node_ip, jsonify=False, check_call=False):
+            remote = self.__get_ssh_to_remote(node_ip)
+            result = self.__run_on_remote(cmd, remote, jsonify, check_call)
+            remote.clear()
+            return result
+
+        def run_on_remote_by_name(self, cmd, node_name, jsonify=False, check_call=False):
+            node_ip = self.__resolve_node_ip_by_name(node_name)
+            result = self.run_on_remote_by_ip(cmd, node_ip, jsonify, check_call)
+            return result
+
+        def run_on_remote_by_role(self, cmd, role_name, jsonify=False):
+            node_name = self.__resolve_node_name_by_role(role_name)
+            return self.run_on_remote_by_name(cmd, node_name, jsonify)
+
+        # execution through host
+        def __run_through_host(self, remote, vm_host, cmd, creds=()):
+            logger.debug("Making intermediate transport")
+            with remote._ssh.get_transport() as interm_transp:
+                logger.debug("Opening channel to VM")
+                interm_chan = interm_transp.open_channel('direct-tcpip',
+                                                         (vm_host, 22),
+                                                         (remote.host, 0))
+                logger.debug("Opening paramiko transport")
+                transport = paramiko.Transport(interm_chan)
+                logger.debug("Starting client")
+                transport.start_client()
+                logger.info("Passing authentication to VM: {}".format(creds))
+                transport.auth_password(creds[0], creds[1])
+
+                logger.debug("Opening session")
+                channel = transport.open_session()
+                logger.info("Executing command: {}".format(cmd))
+                channel.exec_command(cmd)
+
+                result = {
+                    'stdout': [],
+                    'stderr': [],
+                    'exit_code': 0
+                }
+
+                logger.debug("Receiving exit_code")
+                result['exit_code'] = channel.recv_exit_status()
+                logger.debug("Receiving stdout")
+                result['stdout'] = channel.recv(1024)
+                logger.debug("Receiving stderr")
+                result['stderr'] = channel.recv_stderr(1024)
+
+                logger.debug("Closing channel")
+                channel.close()
+
+            return result
+
+        def run_on_vm_through_admin(self, target_host, cmd, creds=()):
+            remote = self.__get_ssh_to_admin()
+            result = self.__run_through_host(remote, target_host, cmd, creds)
+            remote.clear()
+            return result
+
+        def run_on_cirros_through_admin(self, target_host, cmd, creds=()):
+            if not creds:
+                creds = ('cirros', 'cubswin:)')
+            return self.run_on_vm_through_admin(self, target_host, cmd, creds)
+
+        def run_on_vm_through_node_by_ip(self, node_ip, target_host, cmd, creds=()):
+            remote = self.__get_ssh_to_remote(node_ip)
+            result = self.__run_through_host(remote, target_host, cmd, creds)
+            remote.clear()
+            return result
+
+        def run_on_cirros_through_node_by_ip(self, node_ip, target_host, cmd, creds=()):
+            if not creds:
+                creds = ('cirros', 'cubswin:)')
+            return self.run_on_vm_through_node_by_ip(self, node_ip, target_host, cmd, creds)
+
+        def run_on_vm_through_node_by_name(self, node_name, target_host, cmd, creds=()):
+            node_ip = self.__resolve_node_ip_by_name(node_name)
+            return self.run_on_vm_through_node_by_ip(node_ip, target_host, cmd, creds)
+
+        def run_on_cirros_through_node_by_name(self, node_name, target_host, cmd, creds=()):
+            if not creds:
+                creds = ('cirros', 'cubswin:)')
+            return self.run_on_vm_through_node_by_name(self, node_name, target_host, cmd, creds)
+
+        # upload
+        def __upload_file(remote, local_path, remote_target):
+            try:
+                logger.debug("Start to upload file")
+                remote.upload(local_path, remote_target)
+            except Exception:
+                logger.error('Failed to upload file')
+                logger.error(traceback.format_exc())
+
+        def upload_file_on_admin(self, local_path, remote_target):
+            remote = self.__get_ssh_to_admin()
+            result = self.__upload_file(remote, local_path, remote_target)
+            remote.clear()
+            return result
+
+        def upload_file_on_remote_by_ip(self, node_ip, local_path, remote_target):
+            remote = self.__get_ssh_to_remote(node_ip)
+            result = self.__upload_file(remote, local_path, remote_target)
+            remote.clear()
+            return result
+
+        def upload_file_on_remote_by_name(self, node_name, local_path, remote_target):
+            node_ip = self.__resolve_node_ip_by_name(node_name)
+            return self.upload_file_on_remote_by_ip(node_ip, local_path, remote_target)
+
+        # download
+        def __download_file(remote, remote_path, local_target):
+            try:
+                logger.debug("Start to download file")
+                remote.download(remote_path, local_target)
+            except Exception:
+                logger.error('Failed to download file')
+                logger.error(traceback.format_exc())
+
+        def download_file_on_admin(self, remote_path, local_target):
+            remote = self.__get_ssh_to_admin()
+            result = self.__download_file(remote, remote_path, local_target)
+            remote.clear()
+            return result
+
+        def download_file_on_remote_by_ip(self, node_ip, remote_path, local_target):
+            remote = self.__get_ssh_to_remote(node_ip)
+            result = self.__download_file(remote, remote_path, local_target)
+            remote.clear()
+            return result
+
+        def download_file_on_remote_by_name(self, node_name, remote_path, local_target):
+            node_ip = self.__resolve_node_ip_by_name(node_name)
+            return self.download_file_on_remote_by_ip(node_ip, remote_path, local_target)

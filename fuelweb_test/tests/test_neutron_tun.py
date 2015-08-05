@@ -435,11 +435,9 @@ class BackupRestoreHa(TestBasic):
         self.fuel_web.check_fixed_network_cidr(
             cluster_id, os_conn)
 
-        with self.env.d_env.get_admin_remote() as remote:
-            self.fuel_web.backup_master(remote)
+        self.fuel_web.backup_master()
 
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.backup_check(remote)
+        checkers.backup_check()
 
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[5:6])
@@ -450,14 +448,12 @@ class BackupRestoreHa(TestBasic):
         assert_equal(
             6, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
 
-        with self.env.d_env.get_admin_remote() as remote:
-            self.fuel_web.restore_master(remote)
+        self.fuel_web.restore_master(remote)
 
         with self.env.d_env.get_admin_remote() as remote:
             checkers.restore_check_sum(remote)
 
-        with self.env.d_env.get_admin_remote() as remote:
-            self.fuel_web.restore_check_nailgun_api(remote)
+        self.fuel_web.restore_check_nailgun_api()
 
         with self.env.d_env.get_admin_remote() as remote:
             checkers.iptables_check(remote)

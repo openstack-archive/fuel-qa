@@ -167,8 +167,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['ha', 'smoke', 'sanity'])
-        remote_ceph = self.fuel_web.get_ssh_for_node('slave-03')
-        self.fuel_web.prepare_ceph_to_delete(remote_ceph)
+        self.fuel_web.prepare_ceph_to_delete('slave-03')
         nailgun_nodes = self.fuel_web.update_nodes(
             cluster_id, {'slave-03': ['compute', 'ceph-osd']}, False, True)
         task = self.fuel_web.deploy_cluster(cluster_id)

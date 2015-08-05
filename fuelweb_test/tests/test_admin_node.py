@@ -111,11 +111,10 @@ class TestAdminNodeBackupRestore(TestBasic):
 
         """
         self.env.revert_snapshot("empty")
-        self.fuel_web.backup_master(self.env.d_env.get_admin_remote())
-        checkers.backup_check(self.env.d_env.get_admin_remote())
-        self.fuel_web.restore_master(self.env.d_env.get_admin_remote())
-        self.fuel_web.restore_check_nailgun_api(
-            self.env.d_env.get_admin_remote())
+        self.fuel_web.backup_master()
+        checkers.backup_check()
+        self.fuel_web.restore_master()
+        self.fuel_web.restore_check_nailgun_api()
         checkers.restore_check_sum(self.env.d_env.get_admin_remote())
         checkers.iptables_check(self.env.d_env.get_admin_remote())
 

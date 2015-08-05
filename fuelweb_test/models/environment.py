@@ -293,17 +293,14 @@ class EnvironmentModel(object):
 
     def set_admin_ssh_password(self):
         try:
-            remote = self.d_env.get_admin_remote(
-                login=settings.SSH_CREDENTIALS['login'],
-                password=settings.SSH_CREDENTIALS['password'])
-            self.execute_remote_cmd(remote, 'date')
+            self.fuel_web.ssh.run_on_admin('date')
             logger.debug('Accessing admin node using SSH: SUCCESS')
         except Exception:
             logger.debug('Accessing admin node using SSH credentials:'
                          ' FAIL, trying to change password from default')
             remote = self.d_env.get_admin_remote(
                 login='root', password='r00tme')
-            self.execute_remote_cmd(
+            self.fuel_web.ssh.run_on_admin(
                 remote, 'echo -e "{1}\\n{1}" | passwd {0}'
                 .format(settings.SSH_CREDENTIALS['login'],
                         settings.SSH_CREDENTIALS['password']))
@@ -313,12 +310,10 @@ class EnvironmentModel(object):
                            settings.SSH_CREDENTIALS['password']))
 
     def set_admin_keystone_password(self):
-        remote = self.d_env.get_admin_remote()
         try:
             self.fuel_web.client.get_releases()
         except exceptions.Unauthorized:
-            self.execute_remote_cmd(
-                remote, 'fuel user --newpass {0} --change-password'
+            self.fuel_web.ssh.run_on_admin('fuel user --newpass {0} --change-password'
                 .format(settings.KEYSTONE_CREDS['password']))
             logger.info(
                 'New Fuel UI (keystone) username: "{0}", password: "{1}"'
@@ -380,11 +375,10 @@ class EnvironmentModel(object):
                 settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
             ))
         if settings.PATCHING_DISABLE_UPDATES:
-            remote = self.d_env.get_admin_remote()
             cmd = "find /etc/yum.repos.d/ -type f -regextype posix-egrep" \
                   " -regex '.*/mos[0-9,\.]+\-(updates|security).repo' | " \
                   "xargs -n1 -i sed '$aenabled=0' -i {}"
-            self.execute_remote_cmd(remote, cmd)
+            self.fuel_web.ssh.run_on_admin(cmd)
 
     @update_packages
     @upload_manifests

@@ -961,10 +961,10 @@ class BackupRestoreHAOneController(TestBasic):
                                            networks_count=2, timeout=300)
 
         # Execute master node backup
-        self.fuel_web.backup_master(self.env.d_env.get_admin_remote())
+        self.fuel_web.backup_master()
 
         # Check created backup
-        checkers.backup_check(self.env.d_env.get_admin_remote())
+        checkers.backup_check()
 
         self.fuel_web.update_nodes(
             cluster_id, {'slave-03': ['compute']}, True, False)
@@ -972,10 +972,9 @@ class BackupRestoreHAOneController(TestBasic):
         assert_equal(
             3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
 
-        self.fuel_web.restore_master(self.env.d_env.get_admin_remote())
+        self.fuel_web.restore_master()
         checkers.restore_check_sum(self.env.d_env.get_admin_remote())
-        self.fuel_web.restore_check_nailgun_api(
-            self.env.d_env.get_admin_remote())
+        self.fuel_web.restore_check_nailgun_api()
         checkers.iptables_check(self.env.d_env.get_admin_remote())
 
         assert_equal(
