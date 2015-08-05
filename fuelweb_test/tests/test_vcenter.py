@@ -110,6 +110,82 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.update_vlan_network_fixed(
             cluster_id, amount=8, network_size=32)
 
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["vcenter_bvt"])
+    @log_snapshot_after_test
+    def vcenter_bvt(self):
+        """Deploy environment with vCenter as backend for glance \
+        and multiple clusters
+
+        Scenario:
+            1. Create cluster with vCenter support
+            2. Add 5 nodes with following roles:
+                Controller
+                Controller
+                Controller
+                CinderVMDK
+                Compute + Cinder
+            3. Set Nova-Network VlanManager as a network backend
+            4. Deploy the cluster
+            5. Run network verification
+            6. Run OSTF
+
+        Duration: 2h
+
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={'images_vcenter': True},
+            vcenter_value={
+                "glance": {
+                    "vcenter_username": VCENTER_USERNAME,
+                    "datacenter": VCENTER_DATACENTER,
+                    "vcenter_host": VCENTER_IP,
+                    "vcenter_password": VCENTER_PASSWORD,
+                    "datastore": VCENTER_DATASTORE},
+                "availability_zones": [
+                    {"vcenter_username": VCENTER_USERNAME,
+                     "nova_computes": [
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster1",
+                          "service_name": "vmcluster1"},
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster2",
+                          "service_name": "vmcluster2"}, ],
+                     "vcenter_host": VCENTER_IP,
+                     "az_name": "vcenter",
+                     "vcenter_password": VCENTER_PASSWORD,
+                     }],
+                "network": {"esxi_vlan_interface": "vmnic0"}}, )
+
+        logger.info("cluster is {}".format(cluster_id))
+
+        # Assign role to node
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller'],
+             'slave-02': ['controller'],
+             'slave-03': ['controller'],
+             'slave-04': ['cinder-vmware'],
+             'slave-05': ['compute', 'cinder'],
+             })
+
+        self.configure_nova_vlan(cluster_id)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['sanity', 'ha'])
+
+        self.run_smoke(cluster_id=cluster_id)
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["smoke", "vcenter_smoke"])
     @log_snapshot_after_test
