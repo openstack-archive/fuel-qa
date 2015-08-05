@@ -202,7 +202,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             8. Run OSTF
 
         """
-        # TODO(ddmitriev): change snapshot name to actual when reverting 7.0
+        #(ddmitriev)TODO: change the snapshot name to actual when reverting 7.0
         if not self.env.d_env.has_snapshot('deploy_neutron_gre_ha'):
             raise SkipTest()
 
@@ -291,7 +291,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             9. Run OSTF
 
         """
-        # TODO(ddmitriev): change snapshot name to actual when reverting 7.0
+        #(ddmitriev)TODO: change the snapshot name to actual when reverting 7.0
         if not self.env.d_env.has_snapshot('deploy_neutron_gre_ha'):
             raise SkipTest()
 
@@ -501,7 +501,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             8. Run OSTF for new cluster
             9. Run network verification
         """
-        # TODO(ddmitriev): change snapshot name to actual when reverting 7.0
+        #(ddmitriev)TODO: change the snapshot name to actual when reverting 7.0
         if not self.env.d_env.has_snapshot('deploy_neutron_gre'):
             raise SkipTest()
 
@@ -611,7 +611,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             9. Run OSTF
 
         """
-        # TODO(ddmitriev): change snapshot name to actual when reverting 7.0
+        #(ddmitriev)TODO: change the snapshot name to actual when reverting 7.0
         if not self.env.d_env.has_snapshot('deploy_neutron_gre_ha'):
             raise SkipTest()
 
@@ -754,7 +754,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             9. Run OSTF
 
         """
-        # TODO(ddmitriev): change snapshot name to actual when reverting 7.0
+        #(ddmitriev)TODO: change the snapshot name to actual when reverting 7.0
         if not self.env.d_env.has_snapshot('deploy_neutron_gre'):
             raise SkipTest()
 
@@ -809,3 +809,398 @@ class RollbackFuelMaster(base_test_data.TestBasic):
                                should_fail=1)
 
         self.env.make_snapshot("rollback_automatically_delete_node")
+
+
+@test(groups=['upgrade_neutron_ceph'])
+class UpgradeNeutronCeph(base_test_data.TestBasic):
+
+    @test(groups=['upgrade_master_neutron_ceph'])
+    @log_snapshot_after_test
+    def upgrade_master_neutron_ceph(self):
+        """
+        Scenario:
+          1. Check availability snapshots
+          2. Upgrade  master
+          3. Make snapshot
+
+        Duration: 50 min
+        """
+        self.check_run('upgrade_master_neutron_ceph')
+        if not self.env.revert_snapshot('ceph_rados_gw'):
+            raise SkipTest()
+
+        self.env.admin_actions.upgrade_master_node()
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        nodes_count = len(self.fuel_web.client.list_cluster_nodes(cluster_id))
+
+        self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
+        self.fuel_web.assert_nodes_in_ready_state(cluster_id)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:nodes_count])
+        self.fuel_web.assert_nailgun_upgrade_migration()
+
+        self.env.make_snapshot('upgrade_master_neutron_ceph', is_make=True)
+
+    @test(depends_on=[upgrade_master_neutron_ceph],
+          groups=['delete_node_after_upgrade_neutron_ceph'])
+    @log_snapshot_after_test
+    def delete_node_after_upgrade_neutron_ceph(self):
+        """
+        Scenario:
+          1. Revert snapshot upgrade_master_neutron_ceph
+          2. Delete controller
+          3. Deploy changes
+          4. Run OSTF
+
+        """
+        self.env.revert_snapshot('upgrade_master_neutron_ceph')
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller']},
+            False, True
+        )
+
+        self.fuel_web.run_network_verify(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'sanity', 'smoke'])
+
+    @test(depends_on=[upgrade_master_neutron_ceph],
+          groups=['add_node_after_upgrade_neutron_ceph'])
+    @log_snapshot_after_test
+    def add_node_after_upgrade_neutron_ceph(self):
+        """
+        Scenario:
+          1. Revert snapshot upgrade_master_neutron_ceph
+          2. Add controller
+          3. Initialize stop deployment action
+          4. Deploy changes
+          5. Run OSTF
+
+        """
+        self.env.revert_snapshot('upgrade_master_neutron_ceph')
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[6:7])
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-07': ['controller']}
+        )
+
+        self.fuel_web.provisioning_cluster_wait(cluster_id)
+        self.fuel_web.deploy_task_wait(cluster_id=cluster_id, progress=13)
+        self.fuel_web.stop_deployment_wait(cluster_id)
+
+        self.fuel_web.run_network_verify(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'sanity', 'smoke'])
+
+    @test(depends_on=[upgrade_master_neutron_ceph],
+          groups=['add_delete_node_after_upgrade_neutron_ceph'])
+    @log_snapshot_after_test
+    def add_delete_node_after_upgrade_neutron_ceph(self):
+        """
+        Scenario:
+          1. Revert snapshot upgrade_master_neutron_ceph
+          2. Delete controller and add new node with controller role
+          3. Deploy changes
+          4. Run OSTF
+
+        """
+        self.env.revert_snapshot('upgrade_master_neutron_ceph')
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[6:7])
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller']},
+            False, True
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-07': ['controller']}
+        )
+
+        self.fuel_web.run_network_verify(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'sanity', 'smoke'])
+
+    @test(depends_on=[upgrade_master_neutron_ceph],
+          groups=['reset_cluster_after_upgrade_neutron_ceph'])
+    @log_snapshot_after_test
+    def reset_cluster_after_upgrade_neutron_ceph(self):
+        """
+        Scenario:
+          1. Revert snapshot upgrade_master_neutron_ceph
+          2. Reset cluster
+          3. Delete 2 controllers and 2 computes
+          4. Add new controller
+          5. Deploy changes
+          6. Run OSTF
+
+        """
+        self.env.revert_snapshot('upgrade_master_neutron_ceph')
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.fuel_web.stop_reset_env_wait(cluster_id)
+
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[6:7])
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-02': ['controller'],
+             'slave-03': ['controller'],
+             'slave-05': ['compute', 'ceph-osd'],
+             'slave-06': ['compute', 'ceph-osd']
+             }, False, True
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-07': ['controller']}
+        )
+
+        self.fuel_web.run_network_verify(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'sanity', 'smoke'])
+
+    @test(depends_on=[upgrade_master_neutron_ceph],
+          groups=['destroy_node_after_upgrade_neutron_ceph'])
+    @log_snapshot_after_test
+    def destroy_node_after_upgrade_neutron_ceph(self):
+        """
+        Scenario:
+          1. Revert snapshot upgrade_master_neutron_ceph
+          2. Destroy primary controller
+          3. Run OSTF
+
+        """
+        self.env.revert_snapshot('upgrade_master_neutron_ceph')
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        nailgun_controllers = self.fuel_web.\
+            get_nailgun_cluster_nodes_by_roles(cluster_id=cluster_id,
+                                               roles=['controller'])
+        devops_controllers = self.fuel_web.\
+            get_devops_nodes_by_nailgun_nodes(nailgun_controllers)
+
+        primary_controller = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+        primary_controller.destroy()
+
+        wait(lambda: not self.fuel_web.
+             get_nailgun_node_by_devops_node(primary_controller)['online'],
+             timeout=60 * 10)
+
+        # Wait for HA services ready
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
+        # Wait until OpenStack services are UP
+        self.fuel_web.assert_os_services_ready(cluster_id, should_fail=1)
+
+        logger.info("Waiting 300 sec before MySQL Galera will up, "
+                    "then run OSTF")
+
+        # Wait until MySQL Galera is UP on online controllers
+        self.fuel_web.wait_mysql_galera_is_up(
+            [n.name for n in
+                set(devops_controllers) - {primary_controller}], timeout=300)
+        self.fuel_web.run_ostf(cluster_id,
+                               test_sets=['ha', 'sanity', 'smoke'],
+                               should_fail=1)
+
+
+@test(groups=['upgrade_nova_cinder'])
+class UpgradeNovaCinder(base_test_data.TestBasic):
+
+    @test(groups=['upgrade_master_nova_cinder'])
+    @log_snapshot_after_test
+    def upgrade_master_nova_cinder(self):
+        """
+        Scenario:
+          1. Check availability snapshots
+          2. Upgrade  master
+          3. Make snapshot
+
+        Duration: 35 min
+        """
+        self.check_run('upgrade_master_nova_cinder')
+        if not self.env.revert_snapshot('deploy_multirole_compute_cinder'):
+            raise SkipTest()
+
+        self.env.admin_actions.upgrade_master_node()
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        nodes_count = len(self.fuel_web.client.list_cluster_nodes(cluster_id))
+
+        self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
+        self.fuel_web.assert_nodes_in_ready_state(cluster_id)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:nodes_count])
+        self.fuel_web.assert_nailgun_upgrade_migration()
+
+        self.env.make_snapshot('upgrade_master_nova_cinder', is_make=True)
+
+    @test(depends_on=[upgrade_master_nova_cinder],
+          groups=['delete_node_after_upgrade_nova_cinder'])
+    @log_snapshot_after_test
+    def delete_node_after_upgrade_nova_cinder(self):
+        """
+        Scenario:
+          1. Revert snapshot upgrade_master_nova_cinder
+          2. Delete second node
+          3. Deploy changes
+          4. Run OSTF
+
+        Duration: 15 min
+
+        """
+        self.env.revert_snapshot('upgrade_master_nova_cinder')
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-02': ['compute', 'cinder']},
+            False, True
+        )
+
+        self.fuel_web.run_network_verify(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.run_ostf(cluster_id)
+
+    @test(depends_on=[upgrade_master_nova_cinder],
+          groups=['add_node_after_upgrade_nova_cinder'])
+    @log_snapshot_after_test
+    def add_node_after_upgrade_nova_cinder(self):
+        """
+        Scenario:
+          1. Revert snapshot upgrade_master_nova_cinder
+          2. Add controller
+          3. Initialize stop deployment action
+          4. Deploy changes
+          5. Run OSTF
+
+        Duration: 45 min
+
+        """
+        self.env.revert_snapshot('upgrade_master_nova_cinder')
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[3:4])
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-04': ['controller']}
+        )
+
+        self.fuel_web.provisioning_cluster_wait(cluster_id)
+        self.fuel_web.deploy_task_wait(cluster_id=cluster_id, progress=13)
+        self.fuel_web.stop_deployment_wait(cluster_id)
+
+        self.fuel_web.run_network_verify(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.run_ostf(cluster_id)
+
+        self.env.make_snapshot('add_node_after_upgrade_nova_cinder')
+
+    @test(depends_on=[upgrade_master_nova_cinder],
+          groups=['add_delete_node_after_upgrade_nova_cinder'])
+    @log_snapshot_after_test
+    def add_delete_node_after_upgrade_nova_cinder(self):
+        """
+        Scenario:
+          1. Revert snapshot upgrade_master_nova_cinder
+          2. Delete compute and add new node with compute role
+          3. Deploy changes
+          4. Run OSTF
+
+        Duration: 30 min
+
+        """
+        self.env.revert_snapshot('upgrade_master_nova_cinder')
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[3:4])
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-02': ['compute', 'cinder']},
+            False, True
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-04': ['compute', 'cinder']}
+        )
+
+        self.fuel_web.run_network_verify(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.run_ostf(cluster_id)
+
+    @test(depends_on=[upgrade_master_nova_cinder],
+          groups=['reset_cluster_after_upgrade_nova_cinder'])
+    @log_snapshot_after_test
+    def reset_cluster_after_upgrade_nova_cinder(self):
+        """
+        Scenario:
+          1. Revert snapshot upgrade_master_nova_cinder
+          2. Reset cluster
+          3. Add 2 controllers and 1 compute
+          4. Deploy changes
+          4. Destroy primary controller
+          5. Run OSTF
+
+        Duration: 120 min
+
+        """
+        self.env.revert_snapshot('upgrade_master_nova_cinder')
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.fuel_web.stop_reset_env_wait(cluster_id)
+
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[3:6])
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-04': ['controller'],
+             'slave-05': ['controller'],
+             'slave-06': ['compute']
+             }
+        )
+
+        self.fuel_web.run_network_verify(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.run_ostf(cluster_id)
+
+        nailgun_controllers = self.fuel_web.\
+            get_nailgun_cluster_nodes_by_roles(cluster_id=cluster_id,
+                                               roles=['controller'])
+        devops_controllers = self.fuel_web.\
+            get_devops_nodes_by_nailgun_nodes(nailgun_controllers)
+
+        primary_controller = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+        primary_controller.destroy()
+
+        wait(lambda: not self.fuel_web.
+             get_nailgun_node_by_devops_node(primary_controller)['online'],
+             timeout=60 * 10)
+
+        # Wait for HA services ready
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
+        # Wait until OpenStack services are UP
+        self.fuel_web.assert_os_services_ready(cluster_id, should_fail=1)
+
+        logger.info("Waiting 300 sec before MySQL Galera will up, "
+                    "then run OSTF")
+
+        # Wait until MySQL Galera is UP on online controllers
+        self.fuel_web.wait_mysql_galera_is_up(
+            [n.name for n in
+                set(devops_controllers) - {primary_controller}], timeout=300)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'],
+                               should_fail=1)
