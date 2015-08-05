@@ -28,6 +28,7 @@ from fuelweb_test.helpers.decorators import create_diagnostic_snapshot
 from fuelweb_test import logger
 from fuelweb_test import settings as hlp_data
 from fuelweb_test.tests import base_test_case as base_test_data
+from fuelweb_test.tests.base_test_case import SetupEnvironment
 
 
 @test(groups=["upgrade"])
@@ -589,6 +590,201 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 
         self.env.make_snapshot("upgrade_fuel_after_rollback")
 
+    @test(groups=['upgrade_centos',
+                  'upgrade_with_node_additional_nova_flat'])
+    @log_snapshot_after_test
+    def upgrade_with_node_additional_nova_flat(self):
+        """ Upgrade master node from 6.1 to 7.0 with node additional
+        to running 6.1 cluster with nova flat network provider
+
+        Scenario:
+            1. Revert snapshot with Centos, nova flat, ipb provisioning
+            2. Run upgrade on master
+            3. Delete 1 controller and add new node as controller, re-deploy
+            4. Run OSTF
+            5. Reset cluster and change cinder role to compute, deploy changes
+            6. Run OSTF
+
+            Duration: TODO
+        """
+        if not self.env.revert_snapshot("nova_flat_6.1"):
+            raise SkipTest()
+
+        master = self.env.d_env.get_admin_remote
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        checkers.upload_tarball(master(), hlp_data.TARBALL_PATH, '/var')
+        checkers.check_file_exists(master(),
+                                   os.path.join('/var',
+                                                os.path.basename(
+                                                    hlp_data.TARBALL_PATH)))
+        checkers.untar(master(), os.path.basename(hlp_data.TARBALL_PATH),
+                       '/var')
+
+        keystone_pass = hlp_data.KEYSTONE_CREDS['password']
+        checkers.run_script(master(), '/var', 'upgrade.sh',
+                            password=keystone_pass)
+        checkers.wait_upgrade_is_done(master(), 3000,
+                                      phrase='*** UPGRADING MASTER NODE'
+                                             ' DONE SUCCESSFULLY')
+        checkers.check_upgraded_containers(master(),
+                                           hlp_data.UPGRADE_FUEL_FROM,
+                                           hlp_data.UPGRADE_FUEL_TO)
+        self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
+        self.fuel_web.assert_nodes_in_ready_state(cluster_id)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:3])
+        self.fuel_web.assert_nailgun_upgrade_migration()
+
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[3:4])
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller']},
+            False, True
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-04': ['controller']},
+        )
+        self.fuel_web.run_network_verify(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.stop_reset_env_wait(cluster_id)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-03': ['compute']},
+        )
+        self.fuel_web.run_network_verify(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.run_ostf(cluster_id)
+
+        self.env.make_snapshot("upgrade_node_additional_to_running_cluster")
+
+    @test(groups=['upgrade_centos',
+                  'upgrade_neutron_vlan_controller_power_off'])
+    @log_snapshot_after_test
+    def upgrade_neutron_vlan_controller_power_off(self):
+        """ Upgrade master node from 6.1 to 7.0 with controller power off
+        on running 6.1 cluster with neutron vlan network provider
+
+        Scenario:
+            1. Revert snapshot with Centos, neutron vlan, ibp provisioning,
+               3 controllers and 2 compute
+            2. Upgrade master node
+            3. Power off primary controller
+            4. run ostf
+            5. Try to create 7.0 cluster with Centos
+
+        Duration: 50+ min
+        """
+        if not self.env.revert_snapshot("neutron_vlan_ha_6.1"):
+            raise SkipTest()
+
+        master = self.env.d_env.get_admin_remote
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        checkers.upload_tarball(master(), hlp_data.TARBALL_PATH, '/var')
+        checkers.check_file_exists(master(),
+                                   os.path.join('/var',
+                                                os.path.basename(
+                                                    hlp_data.TARBALL_PATH)))
+        checkers.untar(master(), os.path.basename(hlp_data.TARBALL_PATH),
+                       '/var')
+
+        keystone_pass = hlp_data.KEYSTONE_CREDS['password']
+        checkers.run_script(master(), '/var', 'upgrade.sh',
+                            password=keystone_pass)
+        checkers.wait_upgrade_is_done(master(), 3000,
+                                      phrase='*** UPGRADING MASTER NODE'
+                                             ' DONE SUCCESSFULLY')
+        checkers.check_upgraded_containers(master(),
+                                           hlp_data.UPGRADE_FUEL_FROM,
+                                           hlp_data.UPGRADE_FUEL_TO)
+        self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
+        self.fuel_web.assert_nodes_in_ready_state(cluster_id)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:5])
+        self.fuel_web.assert_nailgun_upgrade_migration()
+
+        primary_controller = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+        primary_controller.destroy()
+        self.fuel_web.run_ostf(cluster_id, should_fail=1)
+
+        self.env.make_snapshot("upgrade_neutron_vlan_controller_power_off")
+
+    @test(groups=['upgrade_centos',
+                  'upgrade_with_node_additional_nova_vlan'])
+    @log_snapshot_after_test
+    def upgrade_with_node_additional_nova_vlan(self):
+        """ Upgrade master node from 6.1 to 7.0 with node additional
+        to running 6.1 cluster with nova vlan network provider
+
+        Scenario:
+            1. Revert snapshot with Centos, nova vlan, ibp provisioning,
+               controller, compute, cinder.
+            2. Upgrade master node
+            3. Add new node as compute, re-deploy
+            4. Add cinder node, deploy changes and initialize stop deploying
+            5. Deploy cluster
+            5. Run OSTF
+
+        Duration: 120 min
+        """
+        if not self.env.revert_snapshot("nova_vlan_6.1"):
+            raise SkipTest()
+
+        master = self.env.d_env.get_admin_remote
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        checkers.upload_tarball(master(), hlp_data.TARBALL_PATH, '/var')
+        checkers.check_file_exists(master(),
+                                   os.path.join('/var',
+                                                os.path.basename(
+                                                    hlp_data.TARBALL_PATH)))
+        checkers.untar(master(), os.path.basename(hlp_data.TARBALL_PATH),
+                       '/var')
+
+        keystone_pass = hlp_data.KEYSTONE_CREDS['password']
+        checkers.run_script(master(), '/var', 'upgrade.sh',
+                            password=keystone_pass)
+        checkers.wait_upgrade_is_done(master(), 3000,
+                                      phrase='*** UPGRADING MASTER NODE'
+                                             ' DONE SUCCESSFULLY')
+        checkers.check_upgraded_containers(master(),
+                                           hlp_data.UPGRADE_FUEL_FROM,
+                                           hlp_data.UPGRADE_FUEL_TO)
+        self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
+        self.fuel_web.assert_nodes_in_ready_state(cluster_id)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:3])
+        self.fuel_web.assert_nailgun_upgrade_migration()
+
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[3:5])
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-04': ['compute']},
+        )
+        self.fuel_web.run_network_verify(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-05': ['cinder']},
+        )
+        self.fuel_web.run_network_verify(cluster_id)
+        self.fuel_web.provisioning_cluster_wait(cluster_id)
+        self.fuel_web.deploy_task_wait(cluster_id=cluster_id, progress=10)
+        self.fuel_web.stop_deployment_wait(cluster_id)
+
+        self.fuel_web.run_network_verify(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.run_ostf(cluster_id)
+
+        self.env.make_snapshot("upgrade_with_node_additional_nova_vlan")
 
 @test(groups=["rollback"])
 class RollbackFuelMaster(base_test_data.TestBasic):
@@ -809,3 +1005,101 @@ class RollbackFuelMaster(base_test_data.TestBasic):
                                should_fail=1)
 
         self.env.make_snapshot("rollback_automatically_delete_node")
+
+
+@test(groups=['prepare_upgrade_envs'])
+class PrepareUpgradeEnvs(base_test_data.TestBasic):
+    """Class includes methods, which prepare environments for upgrade tests"""
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=['nova_flat_6.1'])
+    @log_snapshot_after_test
+    def prepare_nova_flat(self):
+        """
+        Prepare environment with 1 controller, 1 compute, cinder, Nova flat.
+
+        Provisioning type: ibp
+        OS: Centos
+
+         Duration: 40 min
+        """
+        self.env.revert_snapshot("ready_with_3_slaves")
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=hlp_data.DEPLOYMENT_MODE_HA,
+        )
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller'],
+             'slave-02': ['compute'],
+             'slave-03': ['cinder']
+             }
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.env.make_snapshot('nova_flat_6.1', is_make=True)
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=['neutron_vlan_ha_6.1'])
+    @log_snapshot_after_test
+    def prepare_neutron_vlan_ha(self):
+        """
+        Prepare environment with 3 controllers, 2 compute, neutron vlan.
+
+        Provisioning type: ibp
+        OS: Centos
+
+        Duration: 90 min
+        """
+        self.env.revert_snapshot('ready_with_5_slaves')
+        data = {
+            'net_provider': 'neutron',
+            'net_segment_type': 'vlan'
+        }
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            settings=data,
+            mode=hlp_data.DEPLOYMENT_MODE_HA
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller'],
+             'slave-02': ['controller'],
+             'slave-03': ['controller'],
+             'slave-04': ['compute'],
+             'slave-05': ['compute']
+             }
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.env.make_snapshot('neutron_vlan_ha_6.1', is_make=True)
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=['nova_vlan_6.1'])
+    @log_snapshot_after_test
+    def prepare_nova_vlan(self):
+        """
+        Prepare environment with controller, compute, cinder, nova vlan.
+
+        Provisioning type: ibp
+        OS: Centos
+
+        Duration: 45 min
+        """
+        self.env.revert_snapshot('ready_with_3_slaves')
+        data = {
+            'net_segment_type': 'vlan'
+        }
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            settings=data,
+            mode=hlp_data.DEPLOYMENT_MODE_HA
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller'],
+             'slave-02': ['compute'],
+             'slave-03': ['cinder']
+             }
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.env.make_snapshot('nova_vlan_6.1', is_make=True)
