@@ -19,7 +19,10 @@ from devops.error import TimeoutError
 from devops.helpers.helpers import _tcp_ping
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
+from devops.models import DiskDevice
 from devops.models import Environment
+from devops.models import Node
+from devops.models import Volume
 from keystoneclient import exceptions
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
@@ -324,7 +327,8 @@ class EnvironmentModel(object):
 
     def setup_environment(self, custom=settings.CUSTOM_ENV,
                           build_images=settings.BUILD_IMAGES,
-                          iso_connect_as=settings.ADMIN_BOOT_DEVICE):
+                          iso_connect_as=settings.ADMIN_BOOT_DEVICE,
+                          security=settings.SECURITY_TEST):
         # start admin node
         admin = self.d_env.nodes().admin
         if(iso_connect_as == 'usb'):
@@ -343,6 +347,8 @@ class EnvironmentModel(object):
                                       iso_connect_as=iso_connect_as))
         if custom:
             self.setup_customisation()
+        if security:
+            self.add_nessus_node()
         # wait while installation complete
         admin.await(self.d_env.admin_net, timeout=10 * 60)
         self.set_admin_ssh_password()
@@ -390,6 +396,18 @@ class EnvironmentModel(object):
         except Exception:
             logger.error("Could not kill process of fuelmenu")
             raise
+
+    def add_nessus_node(self):
+        node = Node.node_create(
+            name='slave-nessus',
+            environment=self.d_env,
+            boot=['hd'])
+        node.attach_to_networks()
+        volume = Volume.volume_get_predefined(
+            settings.NESSUS_IMAGE_PATH)
+        DiskDevice.node_attach_volume(node=node, volume=volume)
+        node.define()
+        node.start()
 
     @retry(count=3, delay=60)
     def sync_time(self, nailgun_nodes=[]):
