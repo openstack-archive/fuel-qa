@@ -232,6 +232,14 @@ class EnvironmentModel(object):
 
     def make_snapshot(self, snapshot_name, description="", is_make=False):
         if settings.MAKE_SNAPSHOT or is_make:
+            with self.env.d_env.get_admin_remote() as remote:
+                remote.execute("ps -C sftp-server|"
+                               "fgrep -v 'PID'|"
+                               "awk '{print $1}'|"
+                               "xargs -I {} ps -p {} -o ppid=|"
+                               "xargs -I {} kill {}"
+                              )
+            time.sleep(10)
             self.d_env.suspend(verbose=False)
             time.sleep(10)
 
