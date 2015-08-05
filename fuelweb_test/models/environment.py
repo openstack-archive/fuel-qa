@@ -232,8 +232,15 @@ class EnvironmentModel(object):
 
     def make_snapshot(self, snapshot_name, description="", is_make=False):
         if settings.MAKE_SNAPSHOT or is_make:
-            self.d_env.suspend(verbose=False)
-            time.sleep(10)
+            logger.info("suspending slave nodes")
+            for node in self.d_env.nodes().slaves:
+                node.suspend()
+            logger.info("suspended slave nodes")
+            time.sleep(60)
+            logger.info("suspending admin nodes")
+            for node in self.d_env.nodes().admins:
+                node.suspend()
+            logger.info("suspended admin nodes")
 
             self.d_env.snapshot(snapshot_name, force=True)
             revert_info(snapshot_name, self.get_admin_node_ip(), description)
