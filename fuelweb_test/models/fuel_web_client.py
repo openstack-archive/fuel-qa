@@ -13,6 +13,7 @@
 #    under the License.
 
 import json
+import paramiko
 import re
 import time
 import traceback
@@ -1002,18 +1003,6 @@ class FuelWebClient(object):
         """
         nodes = self.client.list_cluster_nodes(cluster_id=cluster_id)
         return [n for n in nodes if set(roles) <= set(n['roles'])]
-
-    @logwrap
-    def get_ssh_for_node(self, node_name):
-        ip = self.get_nailgun_node_by_devops_node(
-            self.environment.d_env.get_node(name=node_name))['ip']
-        return self.environment.d_env.get_ssh_to_remote(ip)
-
-    @logwrap
-    def get_ssh_for_role(self, nodes_dict, role):
-        node_name = sorted(filter(lambda name: role in nodes_dict[name],
-                           nodes_dict.keys()))[0]
-        return self.get_ssh_for_node(node_name)
 
     @logwrap
     def is_node_discovered(self, nailgun_node):
@@ -2149,10 +2138,9 @@ class FuelWebClient(object):
         self.client.update_cluster_attributes(cluster_id, attr)
 
     @logwrap
-    def prepare_ceph_to_delete(self, remote_ceph):
-        hostname = ''.join(remote_ceph.execute(
-            "hostname -s")['stdout']).strip()
-        osd_tree = ceph.get_osd_tree(remote_ceph)
+    def prepare_ceph_to_delete(self, node_name):
+        hostname = ''.join(self.ssh.run_on_remote_by_name("hostname -s", node_name)['stdout']).strip()
+        osd_tree = ceph.get_osd_tree(node_name)
         logger.debug("osd tree is {0}".format(osd_tree))
         ids = []
         for osd in osd_tree['nodes']:
@@ -2162,25 +2150,24 @@ class FuelWebClient(object):
         logger.debug("ids are {}".format(ids))
         assert_true(ids, "osd ids for {} weren't found".format(hostname))
         for id in ids:
-            remote_ceph.execute("ceph osd out {}".format(id))
-        wait(lambda: ceph.is_health_ok(remote_ceph),
+            self.ssh.run_on_remote_by_name("ceph osd out {}".format(id), node_name)
+        wait(lambda: ceph.is_health_ok(node_name),
              interval=30, timeout=10 * 60)
         for id in ids:
             if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
-                remote_ceph.execute("stop ceph-osd id={}".format(id))
+                self.ssh.run_on_remote_by_name("stop ceph-osd id={}".format(id), node_name)
             else:
-                remote_ceph.execute("service ceph stop osd.{}".format(id))
-            remote_ceph.execute("ceph osd crush remove osd.{}".format(id))
-            remote_ceph.execute("ceph auth del osd.{}".format(id))
-            remote_ceph.execute("ceph osd rm osd.{}".format(id))
+                self.ssh.run_on_remote_by_name("service ceph stop osd.{}".format(id), node_name)
+            self.ssh.run_on_remote_by_name("ceph osd crush remove osd.{}".format(id), node_name)
+            self.ssh.run_on_remote_by_name("ceph auth del osd.{}".format(id), node_name)
+            self.ssh.run_on_remote_by_name("ceph osd rm osd.{}".format(id), node_name)
         # remove ceph node from crush map
-        remote_ceph.execute("ceph osd crush remove {}".format(hostname))
+        self.ssh.run_on_remote_by_name("ceph osd crush remove {}".format(hostname), node_name)
 
     @logwrap
     def get_rabbit_slaves_node(self, node, fqdn_needed=False):
-        with self.get_ssh_for_node(node) as remote:
-            cmd = 'crm resource status master_p_rabbitmq-server'
-            list_output = ''.join(remote.execute(cmd)['stdout']).split('\n')
+        cmd = 'crm resource status master_p_rabbitmq-server'
+        list_output = ''.join(self.ssh.run_on_remote_by_name(node, cmd)['stdout']).split('\n')
         filtered_list = [el for el in list_output
                          if el and not el.endswith('Master')]
         slaves_nodes = []
@@ -2253,3 +2240,206 @@ class FuelWebClient(object):
         return {'username': username,
                 'password': password,
                 'tenant': tenant}
+
+    class ssh:
+
+        # ssh sessions
+        def __get_ssh_to_remote(self, ip):
+            return self.env.d_env.get_ssh_to_remote(ip)
+
+        def __get_ssh_to_admin(self):
+            return self.environment.d_env.get_admin_remote()
+
+        # resolving
+        def __resolve_node_ip_by_name(self, node_name):
+            return self.get_nailgun_node_by_devops_node(
+                self.environment.d_env.get_node(name=node_name))['ip']
+
+        def __resolve_node_name_by_role(self, nodes_dict, role_name):
+            node_name = sorted(filter(lambda name: role_name in nodes_dict[name], nodes_dict.keys()))[0]
+            return
+
+        # execution
+        def __run_on_remote(self, remote, cmd, jsonify=False):
+            # TODO(ivankliuk): move it to devops.helpers.SSHClient
+            """Execute ``cmd`` on ``remote`` and return result.
+
+            :param remote: devops.helpers.helpers.SSHClient
+            :param cmd: command to execute on remote host
+            :param jsonify: return result of execution as JSON-like object
+            :return: None
+            """
+
+            #:raise: Exception
+            #"""
+
+            logger.debug("Run '{0}' on host '{1}'..".format(cmd, remote.host))
+            result = remote.execute(cmd)
+            result_details = {
+                'command': cmd,
+                'host': remote.host,
+                'stdout': result['stdout'],
+                'stderr': result['stderr'],
+                'exit_code': result['exit_code']}
+
+            # to log
+            if result['exit_code'] == 0:
+                logger.debug("Remote execution details: {0}".format(**result_details))
+            else:
+                error_msg = ("Unexpected error occurred during execution. "
+                             "Details: {0}".format(**result_details))
+                logger.error(error_msg)
+                # raise Exception(error_msg)
+
+            if jsonify:
+                try:
+                    stdout_obj = json.loads(''.join(result['stdout']))
+                except Exception:
+                    error_msg = (
+                        "Unable to deserialize output of command"
+                        " '{0}' on host {1}".format(cmd, remote.host))
+                    logger.error(error_msg)
+                    raise Exception(error_msg)
+                result['stdout_json'] = stdout_obj
+
+            return result
+
+        def run_on_admin(self, cmd, jsonify=False):
+            remote = self.__get_ssh_to_admin()
+            result = self.__run_on_remote(cmd, remote, jsonify)
+            remote.clear()
+            return result
+
+        def run_on_remote_by_ip(self, cmd, node_ip, jsonify=False):
+            remote = self.__get_ssh_to_remote(node_ip)
+            result = self.__run_on_remote(cmd, remote, jsonify)
+            remote.clear()
+            return result
+
+        def run_on_remote_by_name(self, cmd, node_name, jsonify=False):
+            node_ip = self.__resolve_node_ip_by_name(node_name)
+            result = self.run_on_remote_by_ip(cmd, node_ip,jsonify)
+            return result
+
+        def run_on_remote_by_role(self, cmd, role_name, jsonify=False):
+            node_name = self.__resolve_node_name_by_role(role_name)
+            return self.run_on_remote_by_name(cmd, node_name, jsonify)
+
+        # execution through host
+        def __run_through_host(self, remote, vm_host, cmd, creds=()):
+            logger.debug("Making intermediate transport")
+            with remote._ssh.get_transport() as interm_transp:
+                logger.debug("Opening channel to VM")
+                interm_chan = interm_transp.open_channel('direct-tcpip',
+                                                         (vm_host, 22),
+                                                         (remote.host, 0))
+                logger.debug("Opening paramiko transport")
+                transport = paramiko.Transport(interm_chan)
+                logger.debug("Starting client")
+                transport.start_client()
+                logger.info("Passing authentication to VM: {}".format(creds))
+                transport.auth_password(creds[0], creds[1])
+
+                logger.debug("Opening session")
+                channel = transport.open_session()
+                logger.info("Executing command: {}".format(cmd))
+                channel.exec_command(cmd)
+
+                result = {
+                    'stdout': [],
+                    'stderr': [],
+                    'exit_code': 0
+                }
+
+                logger.debug("Receiving exit_code")
+                result['exit_code'] = channel.recv_exit_status()
+                logger.debug("Receiving stdout")
+                result['stdout'] = channel.recv(1024)
+                logger.debug("Receiving stderr")
+                result['stderr'] = channel.recv_stderr(1024)
+
+                logger.debug("Closing channel")
+                channel.close()
+
+            return result
+
+        def run_on_vm_through_admin(self, target_host, cmd, creds=()):
+            remote = self.__get_ssh_to_admin()
+            result = self.__run_through_host(remote, target_host, cmd, creds)
+            remote.clear()
+            return result
+
+        def run_on_cirros_through_admin(self, target_host, cmd, creds=()):
+            if not creds:
+                creds = ('cirros', 'cubswin:)')
+            return self.run_on_vm_through_admin(self, target_host, cmd, creds)
+
+        def run_on_vm_through_node_by_ip(self, node_ip, target_host, cmd, creds=()):
+            remote = self.__get_ssh_to_remote(node_ip)
+            result = self.__run_through_host(remote, target_host, cmd, creds)
+            remote.clear()
+            return result
+
+        def run_on_cirros_through_node_by_ip(self, node_ip, target_host, cmd, creds=()):
+            if not creds:
+                creds = ('cirros', 'cubswin:)')
+            return self.run_on_vm_through_node_by_ip(self, node_ip, target_host, cmd, creds)
+
+        def run_on_vm_through_node_by_name(self, node_name, target_host, cmd, creds=()):
+            node_ip = self.__resolve_node_ip_by_name(node_name)
+            return self.run_on_vm_through_node_by_ip(node_ip, target_host, cmd, creds)
+
+        def run_on_vm_through_node_by_name(self, node_name, target_host, cmd, creds=()):
+            if not creds:
+                creds = ('cirros', 'cubswin:)')
+            return self.run_on_vm_through_node_by_name(self, node_name, target_host, cmd, creds)
+
+        # upload
+        def __upload_file(remote, local_path, remote_target):
+            try:
+                logger.debug("Start to upload file")
+                remote.upload(local_path, remote_target)
+            except Exception:
+                logger.error('Failed to upload file')
+                logger.error(traceback.format_exc())
+
+        def upload_file_on_admin(self, local_path, remote_target):
+            remote = self.__get_ssh_to_admin()
+            result = self.__upload_file(remote, local_path, remote_target)
+            remote.clear()
+            return result
+
+        def upload_file_on_remote_by_ip(self, node_ip, local_path, remote_target):
+            remote = self.__get_ssh_to_remote(node_ip)
+            result = self.__upload_file(remote, local_path, remote_target)
+            remote.clear()
+            return result
+
+        def upload_file_on_remote_by_name(self, node_name, local_path, remote_target):
+            node_ip = self.__resolve_node_ip_by_name(node_name)
+            return self.upload_file_on_remote_by_ip(node_ip, local_path, remote_target)
+
+        # download
+        def __download_file(remote, remote_path, local_target):
+            try:
+                logger.debug("Start to download file")
+                remote.download(remote_path, local_target)
+            except Exception:
+                logger.error('Failed to download file')
+                logger.error(traceback.format_exc())
+
+        def download_file_on_admin(self, remote_path, local_target):
+            remote = self.__get_ssh_to_admin()
+            result = self.__download_file(remote, remote_path, local_target)
+            remote.clear()
+            return result
+
+        def download_file_on_remote_by_ip(self, node_ip, remote_path, local_target):
+            remote = self.__get_ssh_to_remote(node_ip)
+            result = self.__download_file(remote, remote_path, local_target)
+            remote.clear()
+            return result
+
+        def download_file_on_remote_by_name(self, node_name, remote_path, local_target):
+            node_ip = self.__resolve_node_ip_by_name(node_name)
+            return self.download_file_on_remote_by_ip(node_ip, remote_path, local_target)

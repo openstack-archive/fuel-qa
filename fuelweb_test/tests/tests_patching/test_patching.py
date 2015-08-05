@@ -219,9 +219,7 @@ class PatchingTests(TestBasic):
                                    test_sets=['smoke', 'ha'])
 
             if "ceph-osd" in roles:
-                remote_ceph = self.fuel_web.get_ssh_for_node(
-                    'slave-0{}'.format(number_of_nodes + 1))
-                self.fuel_web.prepare_ceph_to_delete(remote_ceph)
+                self.fuel_web.prepare_ceph_to_delete('slave-0{}'.format(number_of_nodes + 1))
 
             nailgun_node = self.fuel_web.update_nodes(
                 cluster_id, node, False, True)
@@ -377,9 +375,7 @@ class PatchingMasterTests(TestBasic):
                                        test_sets=['smoke', 'ha'])
 
                 if "ceph-osd" in roles:
-                    remote_ceph = self.fuel_web.get_ssh_for_node(
-                        'slave-0{}'.format(number_of_nodes + 1))
-                    self.fuel_web.prepare_ceph_to_delete(remote_ceph)
+                    self.fuel_web.prepare_ceph_to_delete('slave-0{}'.format(number_of_nodes + 1))
                 nailgun_node = self.fuel_web.update_nodes(
                     cluster_id, node, False, True)
                 nodes = filter(

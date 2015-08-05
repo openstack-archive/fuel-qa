@@ -230,24 +230,21 @@ def check_upgraded_containers(remote, version_from, version_to):
                 in symlink[0],
                 'Symlink is set not to {0}'.format(version_to))
 
-
 @logwrap
-def upload_tarball(node_ssh, tar_path, tar_target):
-    assert_true(tar_path, "Source path for uploading 'tar_path' is empty, "
-                "please check test settings!")
-    check_archive_type(tar_path)
-    try:
-        logger.debug("Start to upload tar file")
-        node_ssh.upload(tar_path, tar_target)
-    except Exception:
-        logger.error('Failed to upload file')
-        logger.error(traceback.format_exc())
-
+def check_file_type(file_path, target_types):
+    filename = os.path.basename(file_path)
+    ext = os.path.splitext(filename)[1]
+    if ext not in target_types:
+        raise Exception("Wrong file type! {0} not in {1}".format(ext, target_types))
+    return ext
 
 @logwrap
 def check_archive_type(tar_path):
-    if os.path.splitext(tar_path)[1] not in [".tar", ".lrz", ".fp", ".rpm"]:
-        raise Exception("Wrong archive type!")
+    return check_file_type(tar_path, [".tar", ".lrz"])
+
+@logwrap
+def check_plugin_type(plugin_path):
+    return check_file_type(plugin_path, [".fp", ".rpm"])
 
 
 @logwrap
