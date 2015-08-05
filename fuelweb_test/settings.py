@@ -381,6 +381,9 @@ ANALYTICS_IP = os.environ.get('ANALYTICS_IP',
                               'fuel-stats-systest.infra.mirantis.net')
 
 CUSTOM_ENV = get_var_as_bool('CUSTOM_ENV', False)
+SECURITY_TEST = get_var_as_bool('SECURITY_TEST', False)
+NESSUS_IMAGE_PATH = os.environ.get('NESSUS_IMAGE_PATH',
+                                   '/var/lib/libvirt/images/nessus.qcow2')
 BUILD_IMAGES = get_var_as_bool('BUILD_IMAGES', False)
 
 STORE_ASTUTE_YAML = get_var_as_bool('STORE_ASTUTE_YAML', False)
