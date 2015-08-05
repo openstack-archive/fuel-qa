@@ -25,13 +25,14 @@ from proboscis.asserts import assert_equal
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
-
+from fuelweb_test.helpers import checkers
 
 from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
 from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
 from fuelweb_test.helpers.utils import cond_upload
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
+from fuelweb_test import settings as hlp_data
 from fuelweb_test.settings import NESSUS_IMAGE_PATH
 
 
@@ -105,10 +106,11 @@ class BaseActions(object):
         :param old_file: a path to the file content from to be changed
         :param new_file: a path to the new file to ve created with new content
         :param element: tuple with path to element to be changed
-        for example: ['root_elem', 'first_elem', 'target_elem']
-        if there are a few elements with equal names use integer
-        to identify which element should be used
+            for example: ['root_elem', 'first_elem', 'target_elem']
+            if there are a few elements with equal names use integer
+            to identify which element should be used
         :return: nothing
+
         """
 
         with open(old_file, 'r') as f_old:
@@ -126,11 +128,13 @@ class BaseActions(object):
             self, path_to_file, element, value, container=None):
         """Changes values in the yaml file stored at container
         There is no need to copy file manually
+
         :param path_to_file: absolutely path to the file
         :param element: list with path to the element be changed
         :param value: new value for element
         :param container: Container with file. By default it is nailgun
         :return: Nothing
+
         """
         if not container:
             container = self.container
@@ -226,6 +230,30 @@ class AdminActions(BaseActions):
         self.admin_remote.execute(
             "find /var/www/nailgun/targetimages/ -name 'env*{}*'"
             " -delete".format(distro.lower()))
+
+    def upgrade_master_node(self):
+        """This method upgrades master node with current state."""
+
+        master = self.admin_remote
+
+        checkers.upload_tarball(master, hlp_data.TARBALL_PATH, '/var')
+        checkers.check_file_exists(master,
+                                   os.path.join(
+                                       '/var',
+                                       os.path.basename(hlp_data.
+                                                        TARBALL_PATH)))
+        checkers.untar(master, os.path.basename(hlp_data.TARBALL_PATH),
+                       '/var')
+
+        keystone_pass = hlp_data.KEYSTONE_CREDS['password']
+        checkers.run_script(master, '/var', 'upgrade.sh',
+                            password=keystone_pass)
+        checkers.wait_upgrade_is_done(master, 3000,
+                                      phrase='*** UPGRADING MASTER NODE'
+                                             ' DONE SUCCESSFULLY')
+        checkers.check_upgraded_containers(master,
+                                           hlp_data.UPGRADE_FUEL_FROM,
+                                           hlp_data.UPGRADE_FUEL_TO)
 
 
 class NailgunActions(BaseActions):
