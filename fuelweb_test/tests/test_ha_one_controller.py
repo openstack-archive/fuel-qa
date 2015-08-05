@@ -14,6 +14,7 @@
 
 import os
 import re
+import time
 
 from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
@@ -61,7 +62,9 @@ class OneNodeDeploy(TestBasic):
         self.env.revert_snapshot("ready")
         self.fuel_web.client.get_root()
         self.env.bootstrap_nodes(
-            self.env.d_env.nodes().slaves[:1])
+            self.env.d_env.nodes().slaves[:5])
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[5:9])
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -77,15 +80,27 @@ class OneNodeDeploy(TestBasic):
             {'slave-01': ['controller']}
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id))
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=4,
-                                           networks_count=2, timeout=300)
-        self.fuel_web.run_single_ostf_test(
-            cluster_id=cluster_id, test_sets=['sanity'],
-            test_name=('fuel_health.tests.sanity.test_sanity_identity'
-                       '.SanityIdentityTest.test_list_users'))
+        self.fuel_web.assert_os_services_ready(cluster_id)
 
+        added_node = 'slave-01'
+        # Snapshot testing by increasing number of nodes in the cluster,
+        # DO NOT MERGE!
+        for x in range(2, 10):
+            self.env.make_snapshot("deploy_one_node_{0}".format(added_node),
+                                   is_make=True)
+            time.sleep(10)
+            self.env.revert_snapshot("deploy_one_node_{0}".format(added_node))
+
+            added_node = 'slave-0{0}'.format(x)
+            self.fuel_web.update_nodes(
+                cluster_id,
+                {added_node: ['compute']}
+            )
+            self.fuel_web.deploy_cluster_wait(cluster_id)
+            self.fuel_web.assert_os_services_ready(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id)
 
 @test(groups=["thread_2"])
 class HAOneControllerNeutron(HAOneControllerNeutronBase):
