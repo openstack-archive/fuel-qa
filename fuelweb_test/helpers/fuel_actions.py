@@ -25,13 +25,14 @@ from proboscis.asserts import assert_equal
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
-
+from fuelweb_test.helpers import checkers
 
 from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
 from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
 from fuelweb_test.helpers.utils import cond_upload
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
+from fuelweb_test import settings as hlp_data
 from fuelweb_test.settings import NESSUS_IMAGE_PATH
 
 
@@ -226,6 +227,29 @@ class AdminActions(BaseActions):
         self.admin_remote.execute(
             "find /var/www/nailgun/targetimages/ -name 'env*{}*'"
             " -delete".format(distro.lower()))
+
+    def upgrade_master_node(self):
+        """This method upgrades master node with current state."""
+
+        with self.admin_remote as master:
+            checkers.upload_tarball(master, hlp_data.TARBALL_PATH, '/var')
+            checkers.check_file_exists(master,
+                                       os.path.join(
+                                           '/var',
+                                           os.path.basename(hlp_data.
+                                                            TARBALL_PATH)))
+            checkers.untar(master, os.path.basename(hlp_data.TARBALL_PATH),
+                           '/var')
+
+            keystone_pass = hlp_data.KEYSTONE_CREDS['password']
+            checkers.run_script(master, '/var', 'upgrade.sh',
+                                password=keystone_pass)
+            checkers.wait_upgrade_is_done(master, 3000,
+                                          phrase='*** UPGRADING MASTER NODE'
+                                                 ' DONE SUCCESSFULLY')
+            checkers.check_upgraded_containers(master,
+                                               hlp_data.UPGRADE_FUEL_FROM,
+                                               hlp_data.UPGRADE_FUEL_TO)
 
 
 class NailgunActions(BaseActions):
