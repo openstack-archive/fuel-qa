@@ -14,26 +14,23 @@
 
 import os
 import re
+from proboscis import SkipTest
 import yaml
 
 from devops.helpers.helpers import wait
 from devops.error import TimeoutError
-from devops.models import DiskDevice
-from devops.models import Node
-from devops.models import Volume
 from proboscis.asserts import assert_equal
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
-
+from fuelweb_test.helpers import checkers
 
 from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
 from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
 from fuelweb_test.helpers.utils import cond_upload
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
-from fuelweb_test.settings import NESSUS_IMAGE_PATH
-
+from fuelweb_test import settings as hlp_data
 
 class BaseActions(object):
     """BaseActions."""  # TODO documentation
@@ -100,14 +97,15 @@ class BaseActions(object):
         wait(lambda: self.is_container_ready, timeout=timeout)
 
     def change_content_in_yaml(self, old_file, new_file, element, value):
-        """Changes content in old_file at element is given to the new value
+        """
+        Changes content in old_file at element is given to the new value
         and creates new file with changed content
         :param old_file: a path to the file content from to be changed
         :param new_file: a path to the new file to ve created with new content
         :param element: tuple with path to element to be changed
-        for example: ['root_elem', 'first_elem', 'target_elem']
-        if there are a few elements with equal names use integer
-        to identify which element should be used
+            for example: ['root_elem', 'first_elem', 'target_elem']
+            if there are a few elements with equal names use integer
+            to identify which element should be used
         :return: nothing
         """
 
@@ -124,7 +122,8 @@ class BaseActions(object):
 
     def change_yaml_file_in_container(
             self, path_to_file, element, value, container=None):
-        """Changes values in the yaml file stored at container
+        """
+        Changes values in the yaml file stored at container
         There is no need to copy file manually
         :param path_to_file: absolutely path to the file
         :param element: list with path to the element be changed
@@ -148,7 +147,8 @@ class BaseActions(object):
 
 
 class AdminActions(BaseActions):
-    """ All actions relating to the admin node."""
+    """ All actions relating to the admin node.
+    """
 
     def __init__(self, admin_remote):
         super(AdminActions, self).__init__(admin_remote)
@@ -226,6 +226,33 @@ class AdminActions(BaseActions):
         self.admin_remote.execute(
             "find /var/www/nailgun/targetimages/ -name 'env*{}*'"
             " -delete".format(distro.lower()))
+
+    def upgrade_master_node(self):
+        """
+
+        This method upgrades master node with
+        current state.
+        """
+        with self.admin_remote as master:
+
+            checkers.upload_tarball(master, hlp_data.TARBALL_PATH, '/var')
+            checkers.check_file_exists(master,
+                                       os.path.join(
+                                           '/var',
+                                           os.path.basename(hlp_data.
+                                                            TARBALL_PATH)))
+            checkers.untar(master, os.path.basename(hlp_data.TARBALL_PATH),
+                           '/var')
+
+            keystone_pass = hlp_data.KEYSTONE_CREDS['password']
+            checkers.run_script(master, '/var', 'upgrade.sh',
+                                password=keystone_pass)
+            checkers.wait_upgrade_is_done(master, 3000,
+                                          phrase='*** UPGRADING MASTER NODE'
+                                                 ' DONE SUCCESSFULLY')
+            checkers.check_upgraded_containers(master,
+                                               hlp_data.UPGRADE_FUEL_FROM,
+                                               hlp_data.UPGRADE_FUEL_TO)
 
 
 class NailgunActions(BaseActions):
@@ -484,21 +511,3 @@ class DockerActions(object):
         for container in self.list_containers():
             self.admin_remote.execute(
                 "dockerctl shell {0} bash -c '{1}'".format(container, cmd))
-
-
-class NessusActions(object):
-    """ NessusActions."""   # TODO documentation
-
-    def __init__(self, d_env):
-        self.devops_env = d_env
-
-    def add_nessus_node(self):
-        node = Node.node_create(
-            name='slave-nessus',
-            environment=self.devops_env,
-            boot=['hd'])
-        node.attach_to_networks()
-        volume = Volume.volume_get_predefined(NESSUS_IMAGE_PATH)
-        DiskDevice.node_attach_volume(node=node, volume=volume)
-        node.define()
-        node.start()
