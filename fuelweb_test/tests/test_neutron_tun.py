@@ -292,7 +292,7 @@ class TestHaNeutronScalability(TestBasic):
 
         """
         def _check_swift(primary_node):
-            with self.fuel_web.get_ssh_for_remote(primary_node.name) as remote:
+            with self.fuel_web.get_ssh_for_node(primary_node.name) as remote:
                 for i in range(5):
                     try:
                         checkers.check_swift_ring(remote)
