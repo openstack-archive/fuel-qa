@@ -216,7 +216,7 @@ class EnvironmentAction(base_test_case.TestBasic):
         self.env.make_snapshot("deploy_reset_on_ready")
 
 
-@test(groups=["cluster_actions"])
+@test(groups=["cluster_actions_ha"])
 class EnvironmentActionOnHA(base_test_case.TestBasic):
     """EnvironmentActionOnHA."""  # TODO documentation
 
