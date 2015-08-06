@@ -88,6 +88,11 @@ Rally
 .. automodule:: fuelweb_test.helpers.rally
    :members:
 
+Rally-http
+----------
+.. automodule:: fuelweb_test.helpers.rally_impl_http
+   :members:
+
 Regenerate Repo
 ---------------
 .. automodule:: fuelweb_test.helpers.regenerate_repo
