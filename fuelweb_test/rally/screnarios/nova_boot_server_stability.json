@@ -1,0 +1,26 @@
+{
+    "NovaServers.boot_and_delete_server": [
+        {
+            "args": {
+                "flavor": {
+                    "name": "m1.tiny"
+                },
+                "image": {
+                    "name": "TestVM"
+                },
+                "force_delete": true
+            },
+            "runner": {
+                "type": "constant_for_duration",
+                "concurrency": 2,
+                "duration": 7200
+            },
+            "context": {
+                "users": {
+                    "tenants": 2,
+                    "users_per_tenant": 1
+                }
+            }
+        }
+    ]
+}
