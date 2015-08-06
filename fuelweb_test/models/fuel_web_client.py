@@ -1183,7 +1183,8 @@ class FuelWebClient(object):
         if not pending_deletion:
             self.update_nodes_interfaces(cluster_id, updated_nodes)
         if update_nodegroups:
-            self.update_nodegroups(nodes_groups)
+            self.update_nodegroups(cluster_id=cluster_id,
+                                   node_groups=nodes_groups)
 
         return nailgun_nodes
 
