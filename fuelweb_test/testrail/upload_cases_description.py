@@ -20,6 +20,7 @@ from proboscis import TestProgram
 
 from builds import Build
 from fuelweb_test.run_tests import import_tests
+from settings import GROUPS_TO_EXPAND
 from settings import logger
 from settings import TestRailSettings
 from testrail_client import TestRailProject
@@ -54,18 +55,41 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups):
                  docstring.split('\n') if s and s[0].isdigit()]
 
         test_duration = re.search(r'Duration\s+(\d+[s,m])\b', docstring)
-        test_case = {
-            "title": docstring.split('\n')[0] or case.entry.home.func_name,
-            "type_id": 1,
-            "milestone_id": milestone_id,
-            "priority_id": 5,
-            "estimate": test_duration.group(1) if test_duration else "3m",
-            "refs": "",
-            "custom_test_group": case.entry.home.func_name,
-            "custom_test_case_description": docstring or " ",
-            "custom_test_case_steps": steps
-        }
-        tests.append(test_case)
+
+        title = docstring.split('\n')[0] or case.entry.home.func_name
+        actual_groups = set(groups) & set(case.entry.info.groups)
+        if case.entry.home.func_name in GROUPS_TO_EXPAND and actual_groups:
+            """Expand specified test names with the group names that are used
+               in jenkins jobs where this test is started.
+            """
+            for actual_group in actual_groups:
+                test_case = {
+                    "title": ' - '.join([title, actual_group]),
+                    "type_id": 1,
+                    "milestone_id": milestone_id,
+                    "priority_id": 5,
+                    "estimate": (test_duration.group(1)
+                                 if test_duration else "3m"),
+                    "refs": "",
+                    "custom_test_group": '_'.join([case.entry.home.func_name,
+                                                   actual_group]),
+                    "custom_test_case_description": docstring or " ",
+                    "custom_test_case_steps": steps
+                }
+                tests.append(test_case)
+        else:
+            test_case = {
+                "title": title,
+                "type_id": 1,
+                "milestone_id": milestone_id,
+                "priority_id": 5,
+                "estimate": test_duration.group(1) if test_duration else "3m",
+                "refs": "",
+                "custom_test_group": case.entry.home.func_name,
+                "custom_test_case_description": docstring or " ",
+                "custom_test_case_steps": steps
+            }
+            tests.append(test_case)
     return tests
 
 
