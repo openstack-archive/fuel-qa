@@ -628,7 +628,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
             " grep -v '0 packets received'"
             .format(settings.PUBLIC_TEST_IP), creds)
         logger.info("Ping {0} result on vm is: {1}"
-                    .format(settings.PUBLIC_TEST_IP, res))
+                    .format(settings.PUBLIC_TEST_IP, res['stdout']))
 
         logger.info("Check Ceph health is ok after migration")
         self.fuel_web.check_ceph_status(cluster_id)
@@ -691,11 +691,11 @@ class VmBackedWithCephMigrationBasic(TestBasic):
             self.fuel_web.get_ssh_for_node("slave-01"),
             floating_ip.ip, 'sudo mount /dev/vdb /mnt', creds)
 
-        logger.info("out of mounting volume is: %s" % out)
+        logger.info("out of mounting volume is: %s" % out['stdout'])
 
         assert_true("file-on-volume" in os.execute_through_host(
                     self.fuel_web.get_ssh_for_node("slave-01"),
-                    floating_ip.ip, "sudo ls /mnt", creds),
+                    floating_ip.ip, "sudo ls /mnt", creds)['stdout'],
                     "File is abscent in /mnt")
 
         logger.info("Check Ceph health is ok after migration")

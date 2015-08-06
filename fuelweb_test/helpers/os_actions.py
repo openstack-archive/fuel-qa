@@ -21,7 +21,6 @@ from devops.error import TimeoutError
 from devops.helpers import helpers
 from fuelweb_test.helpers import common
 from fuelweb_test import logger
-from fuelweb_test.helpers.decorators import retry
 
 
 class OpenStackActions(common.Common):
@@ -235,41 +234,46 @@ class OpenStackActions(common.Common):
         logger.info("Get file md5sum and compare it with previous one")
         out = self.execute_through_host(
             controller_ssh, vm_ip, "md5sum %s" % file_path, creds)
-        return out
-
-    @retry(count=6, delay=10)
-    def _execute_through_host_retry(self, ssh, vm_host, cmd, creds):
-        logger.debug("Making intermediate transport")
-        interm_transp = ssh._ssh.get_transport()
-        logger.debug("Opening channel to VM")
-        interm_chan = interm_transp.open_channel('direct-tcpip',
-                                                 (vm_host, 22),
-                                                 (ssh.host, 0))
-        logger.debug("Opening paramiko transport")
-        transport = paramiko.Transport(interm_chan)
-        logger.debug("Starting client")
-        transport.start_client()
-        logger.info("Passing authentication to VM: {}".format(creds))
-        if not creds:
-            creds = ('cirros', 'cubswin:)')
-        transport.auth_password(creds[0], creds[1])
-
-        logger.debug("Opening session")
-        channel = transport.open_session()
-        logger.info("Executing command: {}".format(cmd))
-        channel.exec_command(cmd)
-        logger.debug("Getting exit status")
-        output = channel.recv(1024)
-        logger.debug("Sending shutdown write signal")
-        channel.shutdown_write()
-        return output
+        return out['stdout']
 
     def execute_through_host(self, ssh, vm_host, cmd, creds=()):
-        try:
-            return self._execute_through_host_retry(ssh, vm_host, cmd, creds)
-        except Exception as exc:
-            logger.error("An exception occurred: %s" % exc)
-            return ''
+        logger.debug("Making intermediate transport")
+        with ssh._ssh.get_transport() as interm_transp:
+            logger.debug("Opening channel to VM")
+            interm_chan = interm_transp.open_channel('direct-tcpip',
+                                                     (vm_host, 22),
+                                                     (ssh.host, 0))
+            logger.debug("Opening paramiko transport")
+            transport = paramiko.Transport(interm_chan)
+            logger.debug("Starting client")
+            transport.start_client()
+            logger.info("Passing authentication to VM: {}".format(creds))
+            if not creds:
+                creds = ('cirros', 'cubswin:)')
+            transport.auth_password(creds[0], creds[1])
+
+            logger.debug("Opening session")
+            channel = transport.open_session()
+            logger.info("Executing command: {}".format(cmd))
+            channel.exec_command(cmd)
+
+            result = {
+                'stdout': [],
+                'stderr': [],
+                'exit_code': 0
+            }
+
+            logger.debug("Receiving exit_code")
+            result['exit_code'] = channel.recv_exit_status()
+            logger.debug("Receiving stdout")
+            result['stdout'] = channel.recv(1024)
+            logger.debug("Receiving stderr")
+            result['stderr'] = channel.recv_stderr(1024)
+
+            logger.debug("Closing channel")
+            channel.close()
+
+        return result
 
     def get_tenant(self, tenant_name):
         tenant_list = self.keystone.tenants.list()
