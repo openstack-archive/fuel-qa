@@ -231,6 +231,15 @@ Zabbix tests
    :members:
 
 
+Rally tests
+===========
+
+Rally tests
+-----------
+.. automodule:: fuelweb_test.tests.rally.test_stability
+   :members:
+
+
 Patching tests
 ==============
 
