@@ -506,3 +506,7 @@ NESSUS_PORT = os.environ.get("NESSUS_PORT", 8834)
 NESSUS_USERNAME = os.environ.get("NESSUS_USERNAME")
 NESSUS_PASSWORD = os.environ.get("NESSUS_PASSWORD")
 NESSUS_SSL_VERIFY = get_var_as_bool("NESSUS_SSL_VERIFY", False)
+
+RALLY_DOCKER_HTTP = os.environ.get('RALLY_DOCKER_HTTP',
+                                   'http://dkalashnik.srt.mirantis.net/'
+                                   'rallyd-docker-1.0.0-0.noarch.rpm')
