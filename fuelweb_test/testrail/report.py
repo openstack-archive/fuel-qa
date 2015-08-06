@@ -27,6 +27,7 @@ from builds import get_downstream_builds_from_html
 from builds import get_jobs_for_view
 from launchpad_client import LaunchpadBug
 from settings import JENKINS
+from settings import GROUPS_TO_EXPAND
 from settings import LaunchpadSettings
 from settings import LOGS_DIR
 from settings import logger
@@ -163,6 +164,20 @@ def get_version_from_artifacts(jenkins_build_data):
         ''
 
 
+def expand_test_group(group, systest_build_name):
+    """Expand specified test names with the group name of the job
+       which is taken from the build name, for example:
+       group: 'setup_master'
+       systest_build_name: '7.0.system_test.ubuntu.bonding_ha_one_controller'
+       return: 'setup_master_bonding_ha_one_controller'
+    """
+    if group in GROUPS_TO_EXPAND:
+        systest_group_name = systest_build_name.split('.')[-1]
+        if systest_group_name:
+            group = '_'.join([group, systest_group_name])
+    return group
+
+
 @retry(count=3)
 def get_tests_results(systest_build):
     tests_results = []
@@ -170,7 +185,7 @@ def get_tests_results(systest_build):
     for test in test_build.test_data()['suites'][0]['cases']:
         test_result = TestResult(
             name=test['name'],
-            group=test['className'],
+            group=expand_test_group(test['className'], systest_build['name']),
             status=test['status'].lower(),
             duration='{0}s'.format(int(test['duration']) + 1),
             url='{0}testReport/(root)/{1}/'.format(test_build.url,
@@ -280,6 +295,8 @@ def make_bug_statistics(tests_results, operation_systems):
     if bugs_sorted:
         bugs_link_file = os_path.join(LOGS_DIR, 'bugs_link_stat.html')
         with open(bugs_link_file, 'w') as fout:
+            fout.write("<b>Summary of bugs in TestRail at {0}</b><br>"
+                       .format(time.strftime("%c")))
             for bug in bugs_sorted:
                 jresults = ""
                 for distro in bugs[bug]['distro'].keys():
