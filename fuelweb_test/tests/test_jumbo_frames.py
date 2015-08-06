@@ -67,11 +67,12 @@ class TestJumboFrames(base_test_case.TestBasic):
 
         Scenario:
             1. Boot two instances on different compute hosts
-            2. Ping one from another with 1472 bytes package
-            3. Ping one from another with 8972 bytes package
-            4. Ping one from another with 8973 bytes package
-            5. Ping one from another with 14472 bytes package
-            6. Delete instances
+            2. Check MTU of instances' nic
+            3. Ping one from another with 1472 bytes package
+            4. Ping one from another with 8972 bytes package
+            5. Ping one from another with 8973 bytes package
+            6. Ping one from another with 14472 bytes package
+            7. Delete instances
 
         """
 
@@ -105,6 +106,18 @@ class TestJumboFrames(base_test_case.TestBasic):
 
         devops_helpers.wait(lambda: devops_helpers.tcp_ping(
             instance1_floating_ip.ip, 22), timeout=120)
+
+        command = "sudo ip link show eth0"
+        with self.fuel_web.get_ssh_for_node("slave-01") as ssh:
+            instance_link = os_conn.execute_through_host(
+                ssh=ssh,
+                vm_host=instance1_floating_ip.ip,
+                cmd=command,
+                creds=creds)
+        asserts.assert_true(
+            "mtu {0}".format(9000 - mtu_offset) in instance_link,
+            "Instance eth0 MTU is not {0}, actual link: {1}"
+            .format(9000 - mtu_offset, instance_link))
 
         def ping_instance(source, destination, size, count=1):
             with self.fuel_web.get_ssh_for_node("slave-01") as ssh:
@@ -301,7 +314,7 @@ class TestJumboFrames(base_test_case.TestBasic):
             mode=CONF.DEPLOYMENT_MODE_HA,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": 'gre',
+                "net_segment_type": 'tun',
             }
         )
 
