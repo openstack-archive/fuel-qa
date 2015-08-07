@@ -37,7 +37,6 @@ from fuelweb_test.helpers.fuel_actions import DockerActions
 from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.fuel_actions import PostgresActions
 from fuelweb_test.helpers.fuel_actions import NessusActions
-from fuelweb_test.helpers.ntp import Ntp
 from fuelweb_test.helpers.ntp import GroupNtpSync
 from fuelweb_test.helpers.utils import timestat
 from fuelweb_test.helpers import multiple_networks_hacks
@@ -414,7 +413,6 @@ class EnvironmentModel(object):
         # with @retry, failure on any step of time synchronization causes
         # restart the time synchronization starting from the admin node
 
-        admin_ntp = Ntp.get_ntp(self.d_env.get_admin_remote(), 'admin')
         controller_nodes = [
             n for n in nailgun_nodes if "controller" in n['roles']]
         other_nodes = [
@@ -422,17 +420,20 @@ class EnvironmentModel(object):
 
         # 1. The first time source for the environment: admin node
         logger.info("Synchronizing time on Fuel admin node")
-        GroupNtpSync().do_sync_time([admin_ntp])
+        with GroupNtpSync(self, sync_admin_node=True) as g_ntp:
+            g_ntp.do_sync_time()
 
         # 2. Controllers should be synchronized before providing time to others
         if controller_nodes:
             logger.info("Synchronizing time on all controllers")
-            GroupNtpSync(self, controller_nodes).do_sync_time()
+            with GroupNtpSync(self, nailgun_nodes=controller_nodes) as g_ntp:
+                g_ntp.do_sync_time()
 
         # 3. Synchronize time on all the rest nodes
         if other_nodes:
             logger.info("Synchronizing time on other active nodes")
-            GroupNtpSync(self, other_nodes).do_sync_time()
+            with GroupNtpSync(self, nailgun_nodes=other_nodes) as g_ntp:
+                g_ntp.do_sync_time()
 
     def verify_network_configuration(self, node_name):
         node = self.fuel_web.get_nailgun_node_by_name(node_name)
