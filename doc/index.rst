@@ -8,6 +8,5 @@ Documentation for the QA test code repo
     models.rst
     helpers.rst
     base_tests.rst
-    puppet_tests.rst
     testrail.rst
 
