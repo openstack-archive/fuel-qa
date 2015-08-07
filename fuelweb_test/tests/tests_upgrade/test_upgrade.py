@@ -202,7 +202,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             8. Run OSTF
 
         """
-        #(ddmitriev)TODO: change the snapshot name to actual when reverting 7.0
+        # TODO(ddmitriev): change snapshot name to actual when reverting 7.0
         if not self.env.d_env.has_snapshot('deploy_neutron_gre_ha'):
             raise SkipTest()
 
@@ -291,7 +291,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             9. Run OSTF
 
         """
-        #(ddmitriev)TODO: change the snapshot name to actual when reverting 7.0
+        # TODO(ddmitriev): change snapshot name to actual when reverting 7.0
         if not self.env.d_env.has_snapshot('deploy_neutron_gre_ha'):
             raise SkipTest()
 
@@ -501,7 +501,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             8. Run OSTF for new cluster
             9. Run network verification
         """
-        #(ddmitriev)TODO: change the snapshot name to actual when reverting 7.0
+        # TODO(ddmitriev): change snapshot name to actual when reverting 7.0
         if not self.env.d_env.has_snapshot('deploy_neutron_gre'):
             raise SkipTest()
 
@@ -611,7 +611,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             9. Run OSTF
 
         """
-        #(ddmitriev)TODO: change the snapshot name to actual when reverting 7.0
+        # TODO(ddmitriev): change the snapshot name to actual when reverting 7.0
         if not self.env.d_env.has_snapshot('deploy_neutron_gre_ha'):
             raise SkipTest()
 
@@ -754,7 +754,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
             9. Run OSTF
 
         """
-        #(ddmitriev)TODO: change the snapshot name to actual when reverting 7.0
+        # TODO(ddmitriev): change snapshot name to actual when reverting 7.0
         if not self.env.d_env.has_snapshot('deploy_neutron_gre'):
             raise SkipTest()
 

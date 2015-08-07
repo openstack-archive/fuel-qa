@@ -48,8 +48,8 @@ class RallyEngine(object):
         return [self.container_repo, tag] in existing_images
 
     def pull_image(self):
-        #TODO(apanchenko): add possibility to load image from local path or
-        #remote link provided in settings, in order to speed up downloading
+        # TODO(apanchenko): add possibility to load image from local path or
+        # remote link provided in settings, in order to speed up downloading
         cmd = 'docker pull {0}'.format(self.container_repo)
         logger.debug('Downloading Rally repository/image from registry...')
         result = self.admin_remote.execute(cmd)

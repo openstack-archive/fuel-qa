@@ -963,7 +963,7 @@ class FuelWebClient(object):
     def get_devops_nodes_by_nailgun_nodes(self, nailgun_nodes):
         """Return devops node by nailgun node
 
-        :type nailgun_node: List
+        :type nailgun_nodes: List
             :rtype: list of Nodes or None
         """
         d_nodes = [self.get_devops_node_by_nailgun_node(n) for n

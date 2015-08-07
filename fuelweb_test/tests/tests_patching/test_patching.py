@@ -214,7 +214,7 @@ class PatchingTests(TestBasic):
             self.fuel_web.deploy_cluster_wait(cluster_id,
                                               check_services=False)
             self.fuel_web.verify_network(cluster_id)
-            #sanity set isn't running due to LP1457515
+            # sanity set isn't running due to LP1457515
             self.fuel_web.run_ostf(cluster_id=cluster_id,
                                    test_sets=['smoke', 'ha'])
 
@@ -231,7 +231,7 @@ class PatchingTests(TestBasic):
             wait(
                 lambda: self.fuel_web.is_node_discovered(nodes[0]),
                 timeout=6 * 60)
-            #sanity set isn't running due to LP1457515
+            # sanity set isn't running due to LP1457515
             self.fuel_web.run_ostf(cluster_id=cluster_id,
                                    test_sets=['smoke', 'ha'])
 
@@ -372,7 +372,7 @@ class PatchingMasterTests(TestBasic):
                 self.fuel_web.deploy_cluster_wait(cluster_id,
                                                   check_services=False)
                 self.fuel_web.verify_network(cluster_id)
-                #sanity set isn't running due to LP1457515
+                # sanity set isn't running due to LP1457515
                 self.fuel_web.run_ostf(cluster_id=cluster_id,
                                        test_sets=['smoke', 'ha'])
 
@@ -388,7 +388,7 @@ class PatchingMasterTests(TestBasic):
                 wait(
                     lambda: self.fuel_web.is_node_discovered(nodes[0]),
                     timeout=6 * 60)
-                #sanity set isn't running due to LP1457515
+                # sanity set isn't running due to LP1457515
                 self.fuel_web.run_ostf(cluster_id=cluster_id,
                                        test_sets=['smoke', 'ha'])
 

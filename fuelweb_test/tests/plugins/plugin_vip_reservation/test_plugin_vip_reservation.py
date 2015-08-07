@@ -116,12 +116,12 @@ class VipReservation(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         remote = self.fuel_web.get_ssh_for_node('slave-01')
-        #get vips from hiera
+        # get vips from hiera
         reserved_vip_pub = remote.execute(
             'hiera reserved_vip_pub')['stdout'][1].split('"')[3]
         reserved_vip_mng = remote.execute(
             'hiera reserved_vip_mng')['stdout'][1].split('"')[3]
-        #get vips from database
+        # get vips from database
         reserved_vip_pub_db = self.env.postgres_actions.run_query(
             db='nailgun', query="select ip_addr from ip_addrs where "
                                 "vip_type = '\"'\"'reserved_vip_pub'\"'\"';")

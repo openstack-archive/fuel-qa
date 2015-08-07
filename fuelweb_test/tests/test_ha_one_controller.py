@@ -528,7 +528,7 @@ class FloatingIPs(TestBasic):
         Snapshot: deploy_floating_ips
 
         """
-        #Test should be re-worked for neutron according to LP#1481322
+        # Test should be re-worked for neutron according to LP#1481322
         self.env.revert_snapshot("ready_with_3_slaves")
 
         cluster_id = self.fuel_web.create_cluster(

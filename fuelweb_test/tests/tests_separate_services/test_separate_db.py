@@ -132,7 +132,7 @@ class SeparateDbFailover(TestBasic):
         """
         self.env.revert_snapshot("separate_db_service")
         cluster_id = self.fuel_web.get_last_created_cluster()
-        #destroy one db node
+        # destroy one db node
         db_node = self.env.d_env.nodes().slaves[3]
         db_node.destroy()
         wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
@@ -161,7 +161,7 @@ class SeparateDbFailover(TestBasic):
         """
         self.env.revert_snapshot("separate_db_service")
         cluster_id = self.fuel_web.get_last_created_cluster()
-        #restart one db node
+        # restart one db node
         db_node = self.env.d_env.nodes().slaves[3]
         self.fuel_web.warm_restart_nodes([db_node])
         wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
@@ -190,7 +190,7 @@ class SeparateDbFailover(TestBasic):
         """
         self.env.revert_snapshot("separate_db_service")
         cluster_id = self.fuel_web.get_last_created_cluster()
-        #shutdown primary controller
+        # shutdown primary controller
         controller = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         logger.debug(
