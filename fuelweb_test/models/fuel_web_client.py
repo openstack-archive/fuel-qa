@@ -411,8 +411,7 @@ class FuelWebClient(object):
             cluster_id = self.client.get_cluster_id(name)
             logger.info('The cluster id is %s', cluster_id)
 
-            logger.info('Set cluster settings to %s',
-                        json.dumps(settings, indent=1))
+            logger.info('Set cluster settings to %s', settings)
             attributes = self.client.get_cluster_attributes(cluster_id)
 
             for option in settings:
@@ -437,8 +436,7 @@ class FuelWebClient(object):
                 if section:
                     attributes['editable'][section][option]['value'] =\
                         settings[option]
-            is_ssl_available = attributes['editable'].get('public_ssl', None)
-            if help_data.DISABLE_SSL and is_ssl_available:
+            if help_data.DISABLE_SSL:
                 attributes['editable']['public_ssl']['services'][
                     'value'] = False
                 attributes['editable']['public_ssl']['horizon'][
@@ -469,7 +467,7 @@ class FuelWebClient(object):
                 hpv_data = attributes['editable']['common']['libvirt_type']
                 hpv_data['value'] = "kvm"
 
-            if help_data.VCENTER_USE and vcenter_value:
+            if help_data.VCENTER_USE:
                 logger.info('Enable Dual Hypervisors Mode')
                 hpv_data = attributes['editable']['common']['use_vcenter']
                 hpv_data['value'] = True
@@ -478,19 +476,6 @@ class FuelWebClient(object):
                          "with next attributes {0}".format(attributes))
             self.client.update_cluster_attributes(cluster_id, attributes)
 
-            if help_data.VCENTER_USE and vcenter_value:
-                logger.info('Configuring vCenter...')
-                vmware_attributes = \
-                    self.client.get_cluster_vmware_attributes(cluster_id)
-                vcenter_data = vmware_attributes['editable']
-                vcenter_data['value'] = vcenter_value
-                logger.debug("Try to update cluster with next "
-                             "vmware_attributes {0}".format(vmware_attributes))
-                self.client.update_cluster_vmware_attributes(cluster_id,
-                                                             vmware_attributes)
-
-            logger.debug("Attributes of cluster were updated,"
-                         " going to update networks ...")
             if MULTIPLE_NETWORKS:
                 node_groups = {n['name']: [] for n in NODEGROUPS}
                 self.update_nodegroups(cluster_id, node_groups)
@@ -507,6 +492,26 @@ class FuelWebClient(object):
         #    cluster_id, self.environment.get_host_node_ip(), port)
 
         return cluster_id
+
+
+
+    @logwrap
+    def vcenter_configure(self, cluster_id, vcenter_value):
+
+        if help_data.VCENTER_USE:
+            logger.info('Configuring vCenter...')
+            vmware_attributes = \
+                self.client.get_cluster_vmware_attributes(cluster_id)
+            vcenter_data = vmware_attributes['editable']
+            vcenter_data['value'] = vcenter_value
+            logger.debug("Try to update cluster with next "
+                         "vmware_attributes {0}".format(vmware_attributes))
+            self.client.update_cluster_vmware_attributes(cluster_id,
+                                                         vmware_attributes)
+
+        logger.debug("Attributes of cluster were updated")
+
+
 
     def add_local_ubuntu_mirror(self, cluster_id, name='Auxiliary',
                                 path=help_data.LOCAL_MIRROR_UBUNTU,
