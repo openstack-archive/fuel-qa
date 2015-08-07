@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import time
+import ipdb
 
 from proboscis import test
 from proboscis.asserts import assert_true
@@ -39,21 +39,8 @@ from fuelweb_test.helpers import os_actions
 class VcenterDeploy(TestBasic):
     """VcenterDeploy."""  # TODO documentation
 
-    # TODO: Fix the function when bugs #1457404 and 1455468 will be fixed.
-    def run_smoke(self, cluster_id=None):
-        try:
-            self.fuel_web.run_ostf(cluster_id, test_sets=['smoke'],
-                                   timeout=60 * 60)
-        except AssertionError:
-            time_to_wait = 660
-            logger.debug("Tests failed from first probe,"
-                         " wait {} seconds try one more time"
-                         " and if it fails again - "
-                         "tests will fail ".format(time_to_wait))
-            time.sleep(time_to_wait)
-            self.fuel_web.run_ostf(cluster_id,
-                                   test_sets=['smoke'],
-                                   timeout=60 * 60)
+    node_name = lambda self, name: self.fuel_web.\
+        get_nailgun_node_by_name(name)['hostname']
 
     def create_vm(self, os_conn=None, vm_count=None):
         # Get list of available images,flavors and hipervisors
@@ -77,17 +64,6 @@ class VcenterDeploy(TestBasic):
         for hypervisor in hypervisors_list:
             wait(lambda: os_conn.get_hypervisor_vms_count(hypervisor) != 0,
                  timeout=300)
-
-    def add_dhcp_lease(self, remote=None):
-        path = '/etc/puppet/modules/nova/manifests/network.pp'
-        d = '  nova_config { \'DEFAULT/dhcp_lease_time\': ''value=> \'600\'}\n'
-        old_file = remote.open(path, 'r')
-        contents = old_file.readlines()
-        contents.insert((contents.index('  if $floating_range {\n') - 1), d)
-        new_file = remote.open(path, 'w')
-        contents = "".join(contents)
-        new_file.write(contents)
-        new_file.close()
 
     def configure_nova_vlan(self, cluster_id):
         # Configure network interfaces.
@@ -133,6 +109,9 @@ class VcenterDeploy(TestBasic):
         Duration: 2h
 
         """
+
+        ipdb.set_trace()
+
         self.env.revert_snapshot("ready_with_5_slaves")
 
         self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
@@ -206,7 +185,18 @@ class VcenterDeploy(TestBasic):
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
+            mode=DEPLOYMENT_MODE,)
+
+        logger.info("cluster is {}".format(cluster_id))
+
+        # Assign role to node
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller'], }
+        )
+
+        self.fuel_web.vcenter_configure(
+            cluster_id,
             vcenter_value={
                 "glance": {
                     "vcenter_username": "",
@@ -219,24 +209,21 @@ class VcenterDeploy(TestBasic):
                      "nova_computes": [
                          {"datastore_regex": ".*",
                           "vsphere_cluster": "Cluster1",
-                          "service_name": "vmcluster"
-                          },
+                          "service_name": "vmcluster1",
+                          "target_node": {
+                              "current": {"id": "controllers",
+                                          "label": "controllers"},
+                              "options": [{"id":"controllers",
+                                           "label":"controllers"}, ]},
+                          }
                      ],
                      "vcenter_host": VCENTER_IP,
                      "az_name": "vcenter",
                      "vcenter_password": VCENTER_PASSWORD,
                      }],
                 "network": {"esxi_vlan_interface": "vmnic0"}
-            }
-        )
+            })
 
-        logger.info("cluster is {}".format(cluster_id))
-
-        # Assign role to node
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {'slave-01': ['controller'], }
-        )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
