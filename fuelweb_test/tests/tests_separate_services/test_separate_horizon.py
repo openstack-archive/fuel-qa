@@ -56,7 +56,7 @@ class SeparateHorizon(TestBasic):
 
         checkers.upload_tarball(
             self.env.d_env.get_admin_remote(),
-            settings.SEPARATE_SERVICE_HORIZON_PLUGIN_PATHPLUGIN_PATH, "/var")
+            settings.SEPARATE_SERVICE_HORIZON_PLUGIN_PATH, "/var")
 
         # install plugins
 
