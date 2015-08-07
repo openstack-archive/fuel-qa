@@ -57,12 +57,19 @@ class GroupNtpSync(object):
         return [(ntp.node_name, ntp.peers)
                 for ntp in self.ntps if not ntp.is_connected]
 
+    def close_remotes_if_not(condition):
+        if condition:
+            return
+        [ntp.remote.clear() for ntp in self.ntps]
+
     def do_sync_time(self, ntps=[]):
         # 0. 'ntps' can be filled by __init__() or outside the class
         self.ntps = ntps or self.ntps
 
         # 1. Set actual time on all nodes via 'ntpdate'
         [ntp.set_actual_time() for ntp in self.ntps]
+
+        self.close_remotes_if_not(self.is_synchronized)
         assert_true(self.is_synchronized, "Time on nodes was not set:"
                     " \n{0}".format(self.report_not_synchronized()))
 
@@ -72,6 +79,8 @@ class GroupNtpSync(object):
 
         # 3. Wait for established peers
         [ntp.wait_peer() for ntp in self.ntps]
+
+        self.close_remotes_if_not(self.is_connected)
         assert_true(self.is_connected, "Time on nodes was not synchronized:"
                     " \n{0}".format(self.report_not_connected()))
 
@@ -79,6 +88,7 @@ class GroupNtpSync(object):
         for ntp in self.ntps:
             logger.info("Time on '{0}' = {1}".format(ntp.node_name,
                                                      ntp.date()[0].rstrip()))
+        [ntp.remote.clear() for ntp in self.ntps]
 
 
 class Ntp(object):
