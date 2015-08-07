@@ -138,7 +138,7 @@ class SeparateHorizonFailover(TestBasic):
         """
         self.env.revert_snapshot("separate_horizon_service")
         cluster_id = self.fuel_web.get_last_created_cluster()
-        #destroy one horizon node
+        # destroy one horizon node
         horizon_node = self.env.d_env.nodes().slaves[3]
         horizon_node.destroy()
         wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
@@ -164,7 +164,7 @@ class SeparateHorizonFailover(TestBasic):
         """
         self.env.revert_snapshot("separate_horizon_service")
         cluster_id = self.fuel_web.get_last_created_cluster()
-        #restart one horizon node
+        # restart one horizon node
         horizon_node = self.env.d_env.nodes().slaves[3]
         self.fuel_web.warm_restart_nodes([horizon_node])
         wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
@@ -190,7 +190,7 @@ class SeparateHorizonFailover(TestBasic):
         """
         self.env.revert_snapshot("separate_horizon_service")
         cluster_id = self.fuel_web.get_last_created_cluster()
-        #shutdown primary controller
+        # shutdown primary controller
         controller = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         logger.debug(

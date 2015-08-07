@@ -157,7 +157,7 @@ class SeparateAllFailover(TestBasic):
         """
         self.env.revert_snapshot("separate_all_service")
         cluster_id = self.fuel_web.get_last_created_cluster()
-        #destroy node with rabbit master
+        # destroy node with rabbit master
         all_node = self.fuel_web.get_rabbit_master_node(
             self.env.d_env.nodes().slaves[3].name)
         all_node.destroy()
@@ -186,7 +186,7 @@ class SeparateAllFailover(TestBasic):
         """
         self.env.revert_snapshot("separate_all_service")
         cluster_id = self.fuel_web.get_last_created_cluster()
-        #shutdown primary controller
+        # shutdown primary controller
         controller = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         logger.debug(
