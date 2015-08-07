@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import time
-
 from proboscis import test
 from proboscis.asserts import assert_true
 from devops.helpers.helpers import wait
@@ -39,21 +37,8 @@ from fuelweb_test.helpers import os_actions
 class VcenterDeploy(TestBasic):
     """VcenterDeploy."""  # TODO documentation
 
-    # TODO: Fix the function when bugs #1457404 and 1455468 will be fixed.
-    def run_smoke(self, cluster_id=None):
-        try:
-            self.fuel_web.run_ostf(cluster_id, test_sets=['smoke'],
-                                   timeout=60 * 60)
-        except AssertionError:
-            time_to_wait = 660
-            logger.debug("Tests failed from first probe,"
-                         " wait {} seconds try one more time"
-                         " and if it fails again - "
-                         "tests will fail ".format(time_to_wait))
-            time.sleep(time_to_wait)
-            self.fuel_web.run_ostf(cluster_id,
-                                   test_sets=['smoke'],
-                                   timeout=60 * 60)
+    node_name = lambda self, name_node: self.fuel_web.\
+        get_nailgun_node_by_name(name_node)['hostname']
 
     def create_vm(self, os_conn=None, vm_count=None):
         # Get list of available images,flavors and hipervisors
@@ -77,17 +62,6 @@ class VcenterDeploy(TestBasic):
         for hypervisor in hypervisors_list:
             wait(lambda: os_conn.get_hypervisor_vms_count(hypervisor) != 0,
                  timeout=300)
-
-    def add_dhcp_lease(self, remote=None):
-        path = '/etc/puppet/modules/nova/manifests/network.pp'
-        d = '  nova_config { \'DEFAULT/dhcp_lease_time\': ''value=> \'600\'}\n'
-        old_file = remote.open(path, 'r')
-        contents = old_file.readlines()
-        contents.insert((contents.index('  if $floating_range {\n') - 1), d)
-        new_file = remote.open(path, 'w')
-        contents = "".join(contents)
-        new_file.write(contents)
-        new_file.close()
 
     def configure_nova_vlan(self, cluster_id):
         # Configure network interfaces.
@@ -122,7 +96,7 @@ class VcenterDeploy(TestBasic):
             2. Add 5 nodes with following roles:
                 Controller
                 Controller
-                Controller
+                Controller + cinder-vmware
                 CinderVMDK
                 Compute + Cinder
             3. Set Nova-Network VlanManager as a network backend
@@ -133,36 +107,14 @@ class VcenterDeploy(TestBasic):
         Duration: 2h
 
         """
-        self.env.revert_snapshot("ready_with_5_slaves")
 
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
+        self.env.revert_snapshot("ready_with_5_slaves")
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings={'images_vcenter': True},
-            vcenter_value={
-                "glance": {
-                    "vcenter_username": VCENTER_USERNAME,
-                    "datacenter": VCENTER_DATACENTER,
-                    "vcenter_host": VCENTER_IP,
-                    "vcenter_password": VCENTER_PASSWORD,
-                    "datastore": VCENTER_DATASTORE},
-                "availability_zones": [
-                    {"vcenter_username": VCENTER_USERNAME,
-                     "nova_computes": [
-                         {"datastore_regex": ".*",
-                          "vsphere_cluster": "Cluster1",
-                          "service_name": "vmcluster1"},
-                         {"datastore_regex": ".*",
-                          "vsphere_cluster": "Cluster2",
-                          "service_name": "vmcluster2"}, ],
-                     "vcenter_host": VCENTER_IP,
-                     "az_name": "vcenter",
-                     "vcenter_password": VCENTER_PASSWORD,
-                     }],
-                "network": {"esxi_vlan_interface": "vmnic0"}}, )
+            settings={'images_vcenter': True},)
 
         logger.info("cluster is {}".format(cluster_id))
 
@@ -171,20 +123,28 @@ class VcenterDeploy(TestBasic):
             cluster_id,
             {'slave-01': ['controller'],
              'slave-02': ['controller'],
-             'slave-03': ['controller'],
-             'slave-04': ['cinder-vmware'],
+             'slave-03': ['cinder-vmware', 'controller'],
+             'slave-04': ['compute-vmware'],
              'slave-05': ['compute', 'cinder'],
              })
 
+        target_node_1 = self.node_name('slave-04')
         self.configure_nova_vlan(cluster_id)
+        self.fuel_web.vcenter_configure(
+            cluster_id, multiclusters=True, vc_glance=True,
+            target_node_1=target_node_1
+        )
 
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        # FIXME when bug #1475346 will be fixed.
+        self.fuel_web.deploy_cluster_wait(cluster_id,
+                                          check_services=False)
         self.fuel_web.verify_network(cluster_id)
 
+        # FIXME when bugs #1482166 and  #1475346 will be fixed.
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity', 'ha'])
-
-        self.run_smoke(cluster_id=cluster_id)
+            cluster_id=cluster_id, test_sets=['sanity', 'smoke', 'ha'],
+            should_fail=3
+        )
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["smoke", "vcenter_smoke"])
@@ -201,51 +161,33 @@ class VcenterDeploy(TestBasic):
         """
         self.env.revert_snapshot("ready_with_1_slaves")
 
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
-
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
-            vcenter_value={
-                "glance": {
-                    "vcenter_username": "",
-                    "datacenter": "",
-                    "vcenter_host": "",
-                    "vcenter_password": "",
-                    "datastore": "", },
-                "availability_zones": [
-                    {"vcenter_username": VCENTER_USERNAME,
-                     "nova_computes": [
-                         {"datastore_regex": ".*",
-                          "vsphere_cluster": "Cluster1",
-                          "service_name": "vmcluster"
-                          },
-                     ],
-                     "vcenter_host": VCENTER_IP,
-                     "az_name": "vcenter",
-                     "vcenter_password": VCENTER_PASSWORD,
-                     }],
-                "network": {"esxi_vlan_interface": "vmnic0"}
-            }
-        )
+            mode=DEPLOYMENT_MODE,)
 
         logger.info("cluster is {}".format(cluster_id))
 
         # Assign role to node
         self.fuel_web.update_nodes(
             cluster_id,
-            {'slave-01': ['controller'], }
-        )
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+            {'slave-01': ['controller']})
 
+        # Configure VMWare vCenter
+        self.fuel_web.vcenter_configure(cluster_id)
+
+        # FIXME when bug #1475346 will be fixed.
+        self.fuel_web.deploy_cluster_wait(cluster_id,
+                                          check_services=False)
+
+        # FIXME when bugs #1482166 and  #1475346 will be fixed.
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity', 'ha'])
+            cluster_id=cluster_id, test_sets=['sanity', 'smoke', 'ha'],
+            should_fail=3
+        )
 
-        self.run_smoke(cluster_id=cluster_id)
-
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["smoke", "vcenter_ceilometer"])
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["vcenter_ceilometer"])
     @log_snapshot_after_test
     def vcenter_ceilometer(self):
         """Deploy environment with vCenter and Ceilometer enabled
@@ -253,13 +195,12 @@ class VcenterDeploy(TestBasic):
         Scenario:
             1. Create cluster with Ceilometer support
             2. Add 3 nodes with controller+MongoDB roles
-            3. Deploy the cluster
-            4. Run OSTF
+            3. Add 2 nodes with compute-vmware roles
+            4. Deploy the cluster
+            5. Run OSTF
 
         """
-        self.env.revert_snapshot("ready_with_3_slaves")
-
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
+        self.env.revert_snapshot("ready_with_5_slaves")
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -267,28 +208,7 @@ class VcenterDeploy(TestBasic):
             mode=DEPLOYMENT_MODE,
             settings={
                 'ceilometer': True
-            },
-            vcenter_value={
-                "glance": {
-                    "vcenter_username": "",
-                    "datacenter": "",
-                    "vcenter_host": "",
-                    "vcenter_password": "",
-                    "datastore": "", },
-                "availability_zones": [
-                    {"vcenter_username": VCENTER_USERNAME,
-                     "nova_computes": [
-                         {"datastore_regex": ".*",
-                          "vsphere_cluster": "Cluster1",
-                          "service_name": "vmcluster1"},
-                         {"datastore_regex": ".*",
-                          "vsphere_cluster": "Cluster2",
-                          "service_name": "vmcluster2"}, ],
-                     "vcenter_host": VCENTER_IP,
-                     "az_name": "vcenter",
-                     "vcenter_password": VCENTER_PASSWORD,
-                     }],
-                "network": {"esxi_vlan_interface": "vmnic0"}}, )
+            },)
 
         logger.info("cluster is {}".format(cluster_id))
 
@@ -297,18 +217,35 @@ class VcenterDeploy(TestBasic):
             cluster_id,
             {'slave-01': ['controller', 'mongo'],
              'slave-02': ['controller', 'mongo'],
-             'slave-03': ['controller', 'mongo'], })
+             'slave-03': ['controller', 'mongo'],
+             'slave-04': ['compute-vmware'],
+             'slave-05': ['compute-vmware'],
+             })
 
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        target_node_1 = self.node_name('slave-04')
+        target_node_2 = self.node_name('slave-05')
 
+        self.fuel_web.vcenter_configure(
+            cluster_id,
+            target_node_1=target_node_1,
+            target_node_2=target_node_2,
+            multiclusters=True,
+        )
+
+        # FIXME when bug #1475346 will be fixed.
+        self.fuel_web.deploy_cluster_wait(cluster_id,
+                                          check_services=False)
+        self.fuel_web.verify_network(cluster_id)
+
+        # FIXME when bugs #1482166 and  #1475346 will be fixed.
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
-            test_sets=['sanity', 'ha', 'tests_platform'])
-
-        self.run_smoke(cluster_id=cluster_id)
+            test_sets=['sanity', 'smoke', 'ha', 'tests_platform'],
+            should_fail=3
+        )
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["smoke", "vcenter_cindervmdk"])
+          groups=["vcenter_cindervmdk"])
     @log_snapshot_after_test
     def vcenter_cindervmdk(self):
         """Deploy environment with vCenter and CinderVMDK
@@ -324,30 +261,10 @@ class VcenterDeploy(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
-
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
-            vcenter_value={
-                "glance": {
-                    "vcenter_username": "",
-                    "datacenter": "",
-                    "vcenter_host": "",
-                    "vcenter_password": "",
-                    "datastore": "", },
-                "availability_zones": [
-                    {"vcenter_username": VCENTER_USERNAME,
-                     "nova_computes": [
-                         {"datastore_regex": ".*",
-                          "vsphere_cluster": "Cluster1",
-                          "service_name": "vmcluster1"}, ],
-                     "vcenter_host": VCENTER_IP,
-                     "az_name": "vcenter",
-                     "vcenter_password": VCENTER_PASSWORD,
-                     }],
-                "network": {"esxi_vlan_interface": "vmnic0"}}, )
+            mode=DEPLOYMENT_MODE)
 
         logger.info("cluster is {}".format(cluster_id))
 
@@ -359,15 +276,20 @@ class VcenterDeploy(TestBasic):
              'slave-03': ['controller'],
              'slave-04': ['cinder-vmware'], })
 
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        # Configure VMWare vCenter
+        self.fuel_web.vcenter_configure(cluster_id)
+
+        # FIXME when bug #1475346 will be fixed.
+        self.fuel_web.deploy_cluster_wait(cluster_id,
+                                          check_services=False)
         self.fuel_web.verify_network(cluster_id)
 
+        # FIXME when bugs #1482166 and  #1475346 will be fixed.
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity', 'ha'])
+            cluster_id=cluster_id, test_sets=['sanity', 'smoke', 'ha'],
+            should_fail=3)
 
-        self.run_smoke(cluster_id=cluster_id)
-
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["vcenter_dualhv_ceph"])
     @log_snapshot_after_test
     def vcenter_dualhv_ceph(self):
@@ -379,13 +301,12 @@ class VcenterDeploy(TestBasic):
             2. Configure CephOSD as backend for Glance and Cinder
             3. Add 3 nodes with Controller+CephOSD roles
             4. Add 2 nodes with compute role
-            5. Deploy the cluster
-            6. Run network verification
-            7. Run OSTF
+            5. Add 2 nodes with compute-vmware role
+            6. Deploy the cluster
+            7. Run network verification
+            8. Run OSTF
         """
-        self.env.revert_snapshot("ready_with_5_slaves")
-
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
+        self.env.revert_snapshot("ready_with_9_slaves")
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -393,28 +314,7 @@ class VcenterDeploy(TestBasic):
             mode=DEPLOYMENT_MODE,
             settings={'images_ceph': True,
                       'volumes_ceph': True,
-                      'volumes_lvm': False},
-            vcenter_value={
-                "glance": {
-                    "vcenter_username": "",
-                    "datacenter": "",
-                    "vcenter_host": "",
-                    "vcenter_password": "",
-                    "datastore": "", },
-                "availability_zones": [
-                    {"vcenter_username": VCENTER_USERNAME,
-                     "nova_computes": [
-                         {"datastore_regex": ".*",
-                          "vsphere_cluster": "Cluster1",
-                          "service_name": "vmcluster1"},
-                         {"datastore_regex": ".*",
-                          "vsphere_cluster": "Cluster2",
-                          "service_name": "vmcluster2"}, ],
-                     "vcenter_host": VCENTER_IP,
-                     "az_name": "vcenter",
-                     "vcenter_password": VCENTER_PASSWORD,
-                     }],
-                "network": {"esxi_vlan_interface": "vmnic0"}}, )
+                      'volumes_lvm': False},)
 
         logger.info("cluster is {}".format(cluster_id))
 
@@ -425,17 +325,32 @@ class VcenterDeploy(TestBasic):
              'slave-02': ['controller', 'ceph-osd'],
              'slave-03': ['controller', 'ceph-osd'],
              'slave-04': ['compute'],
-             'slave-05': ['compute']})
+             'slave-05': ['compute'],
+             'slave-06': ['compute-vmware'],
+             'slave-07': ['compute-vmware']})
 
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        target_node_1 = self.node_name('slave-06')
+        target_node_2 = self.node_name('slave-07')
+
+        self.fuel_web.vcenter_configure(
+            cluster_id,
+            target_node_1=target_node_1,
+            target_node_2=target_node_2,
+            multiclusters=True,
+        )
+
+        # FIXME when bug #1475346 will be fixed.
+        self.fuel_web.deploy_cluster_wait(cluster_id,
+                                          check_services=False)
         self.fuel_web.verify_network(cluster_id)
 
+        # FIXME when bugs #1482166 and  #1475346 will be fixed.
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity', 'ha'])
+            cluster_id=cluster_id,
+            test_sets=['sanity', 'smoke', 'ha'],
+            should_fail=3)
 
-        self.run_smoke(cluster_id=cluster_id)
-
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_glance_backend"])
     @log_snapshot_after_test
     def vcenter_glance_backend(self):
@@ -444,42 +359,20 @@ class VcenterDeploy(TestBasic):
         Scenario:
             1. Create cluster with vCenter support
             2. Add 3 nodes with controller role
-            3. Deploy the cluster
-            4. Run network verification
-            5. Run OSTF
+            3. Add a node with compute role
+            4. Deploy the cluster
+            5. Run network verification
+            6. Run OSTF
 
         """
-        self.env.revert_snapshot("ready_with_3_slaves")
-
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
+        self.env.revert_snapshot("ready_with_5_slaves")
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
             settings={'images_vcenter': True,
-                      'images_ceph': False},
-            vcenter_value={
-                "glance": {
-                    "vcenter_username": VCENTER_USERNAME,
-                    "datacenter": "Datacenter",
-                    "vcenter_host": VCENTER_IP,
-                    "vcenter_password": VCENTER_PASSWORD,
-                    "datastore": "nfs", },
-                "availability_zones": [
-                    {"vcenter_username": VCENTER_USERNAME,
-                     "nova_computes": [
-                         {"datastore_regex": ".*",
-                          "vsphere_cluster": "Cluster1",
-                          "service_name": "vmcluster1"},
-                         {"datastore_regex": ".*",
-                          "vsphere_cluster": "Cluster2",
-                          "service_name": "vmcluster2"}, ],
-                     "vcenter_host": VCENTER_IP,
-                     "az_name": "vcenter",
-                     "vcenter_password": VCENTER_PASSWORD,
-                     }],
-                "network": {"esxi_vlan_interface": "vmnic0"}}, )
+                      'images_ceph': False})
 
         logger.info("cluster is {}".format(cluster_id))
 
@@ -488,15 +381,27 @@ class VcenterDeploy(TestBasic):
             cluster_id,
             {'slave-01': ['controller'],
              'slave-02': ['controller'],
-             'slave-03': ['controller']})
+             'slave-03': ['controller'],
+             'slave-04': ['compute-vmware']})
 
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        target_node_1 = self.node_name('slave-04')
+        self.fuel_web.vcenter_configure(
+            cluster_id,
+            target_node_1=target_node_1,
+            multiclusters=True,
+            vc_glance=True
+        )
+
+        # FIXME when bug #1475346 will be fixed.
+        self.fuel_web.deploy_cluster_wait(cluster_id,
+                                          check_services=False)
         self.fuel_web.verify_network(cluster_id)
 
+        # FIXME when bugs #1482166 and  #1475346 will be fixed.
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity', 'ha'])
-
-        self.run_smoke(cluster_id=cluster_id)
+            cluster_id=cluster_id,
+            test_sets=['sanity', 'smoke', 'ha'],
+            should_fail=3)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_vlan_cindervmdk"])
@@ -518,8 +423,6 @@ class VcenterDeploy(TestBasic):
         """
 
         self.env.revert_snapshot("ready_with_5_slaves")
-
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -579,9 +482,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity', 'ha'])
-
-        self.run_smoke(cluster_id=cluster_id)
+            cluster_id=cluster_id, test_sets=['sanity', 'smoke', 'ha'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_vlan_cinder"])
@@ -601,8 +502,6 @@ class VcenterDeploy(TestBasic):
         """
 
         self.env.revert_snapshot("ready_with_5_slaves")
-
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -664,9 +563,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity', 'ha'])
-
-        self.run_smoke(cluster_id=cluster_id)
+            cluster_id=cluster_id, test_sets=['sanity', 'smoke', 'ha'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_vlan_cindervmdk_cinder_ceph"])
@@ -687,8 +584,6 @@ class VcenterDeploy(TestBasic):
         """
 
         self.env.revert_snapshot("ready_with_5_slaves")
-
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -751,9 +646,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity', 'ha'])
-
-        self.run_smoke(cluster_id=cluster_id)
+            cluster_id=cluster_id, test_sets=['sanity', 'smoke', 'ha'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_glance_dualhv"])
@@ -773,8 +666,6 @@ class VcenterDeploy(TestBasic):
 
         """
         self.env.revert_snapshot("ready_with_5_slaves")
-
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -819,9 +710,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity', 'ha'])
-
-        self.run_smoke(cluster_id=cluster_id)
+            cluster_id=cluster_id, test_sets=['sanity', 'smoke', 'ha'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["vcenter_add_delete_nodes"])
@@ -860,8 +749,6 @@ class VcenterDeploy(TestBasic):
         """
 
         self.env.revert_snapshot("ready_with_9_slaves")
-
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -919,9 +806,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity'])
-
-        self.run_smoke(cluster_id=cluster_id)
+            cluster_id=cluster_id, test_sets=['sanity', 'smoke'])
 
         # Add 1 node with cinder role and redeploy cluster
         self.fuel_web.update_nodes(
@@ -937,9 +822,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity'])
-
-        self.run_smoke(cluster_id=cluster_id)
+            cluster_id=cluster_id, test_sets=['sanity', 'smoke'])
 
         # Remove 1 node with cinder role
         self.fuel_web.update_nodes(
@@ -959,9 +842,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity'])
-
-        self.run_smoke(cluster_id=cluster_id)
+            cluster_id=cluster_id, test_sets=['sanity', 'smoke'])
 
         # Add 1 node with cinder role and redeploy cluster
         self.fuel_web.update_nodes(
@@ -977,9 +858,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity'])
-
-        self.run_smoke(cluster_id=cluster_id)
+            cluster_id=cluster_id, test_sets=['sanity', 'smoke'])
 
         # Remove nodes with roles: cinder-vmdk and cinder
         self.fuel_web.update_nodes(
@@ -1001,9 +880,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity'])
-
-        self.run_smoke(cluster_id=cluster_id)
+            cluster_id=cluster_id, test_sets=['sanity', 'smoke'])
 
         # Add 1 node with cinder role and redeploy cluster
         self.fuel_web.update_nodes(
@@ -1019,9 +896,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity'])
-
-        self.run_smoke(cluster_id=cluster_id)
+            cluster_id=cluster_id, test_sets=['sanity', 'smoke'])
 
         # Remove node with cinder role
         self.fuel_web.update_nodes(
@@ -1042,9 +917,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity'])
-
-        self.run_smoke(cluster_id=cluster_id)
+            cluster_id=cluster_id, test_sets=['sanity', 'smoke'])
 
         # Add 1 node with compute role and 1 node with cinder role and redeploy
         # cluster
@@ -1066,9 +939,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity', 'ha'])
-
-        self.run_smoke(cluster_id=cluster_id)
+            cluster_id=cluster_id, test_sets=['sanity', 'smoke', 'ha'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["multiroles",
@@ -1142,9 +1013,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity', 'ha'])
-
-        self.run_smoke(cluster_id=cluster_id)
+            cluster_id=cluster_id, test_sets=['sanity', 'smoke', 'ha'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["multiroles",
@@ -1221,9 +1090,7 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity', 'ha'])
-
-        self.run_smoke(cluster_id=cluster_id)
+            cluster_id=cluster_id, test_sets=['sanity', 'smoke', 'ha'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["multiroles",
@@ -1296,9 +1163,7 @@ class VcenterDeploy(TestBasic):
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
-            test_sets=['sanity', 'ha'])
-
-        self.run_smoke(cluster_id=cluster_id)
+            test_sets=['sanity', 'smoke', 'ha'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_multiple_cluster"])
@@ -1322,8 +1187,6 @@ class VcenterDeploy(TestBasic):
 
         """
         self.env.revert_snapshot("ready_with_5_slaves")
-
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -1370,11 +1233,9 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity', 'ha'])
+            cluster_id=cluster_id, test_sets=['sanity', 'smoke', 'ha'])
 
         # TODO: Fix the function when bug #1457404 will be fixed.
-        self.run_smoke(cluster_id=cluster_id)
-
         os_ip = self.fuel_web.get_public_vip(cluster_id)
         os_conn = os_actions.OpenStackActions(
             os_ip, SERVTEST_USERNAME,
@@ -1451,8 +1312,6 @@ class VcenterDeploy(TestBasic):
 
         """
         self.env.revert_snapshot("ready_with_9_slaves")
-
-        self.add_dhcp_lease(remote=self.env.d_env.get_admin_remote())
 
         # Configure cluster
         cluster_id = self.fuel_web.create_cluster(
