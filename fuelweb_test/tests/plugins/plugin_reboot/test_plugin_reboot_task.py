@@ -200,14 +200,6 @@ class RebootPlugin(TestBasic):
                 os.path.join('/tmp/', tasks_file),
                 os.path.join('/root/', plugin_name, 'tasks.yaml')
             )
-            # change default supported version to 7.0
-            fpb.change_yaml_file_in_container(
-                '/root/{}/metadata.yaml'.format(plugin_name),
-                ['fuel_version'], ['7.0'])
-            for elem in range(2):
-                fpb.change_yaml_file_in_container(
-                    '/root/{}/metadata.yaml'.format(plugin_name),
-                    ['releases', elem, 'version'], '-')
             # build plugin
             fpb.fpb_build_plugin(os.path.join('/root/', plugin_name))
             # copy plugin archive file from nailgun container
