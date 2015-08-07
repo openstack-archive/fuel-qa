@@ -361,14 +361,16 @@ class EnvironmentModel(object):
         self.set_admin_keystone_password()
         self.sync_time()
         if settings.UPDATE_MASTER:
-            for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
-                conf_file = '/etc/yum.repos.d/temporary-{}.repo'.format(i)
-                cmd = ("echo -e"
-                       " '[temporary-{0}]\nname=temporary-{0}\nbaseurl={1}/"
-                       "\ngpgcheck=0\npriority=1' > {2}").format(i, url,
-                                                                 conf_file)
-                with self.d_env.get_admin_remote() as remote:
-                    remote.execute(cmd)
+            if settings.UPDATE_FUEL_MIRROR:
+                for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
+                    conf_file = '/etc/yum.repos.d/temporary-{}.repo'.format(i)
+                    cmd = ("echo -e"
+                           " '[temporary-{0}]\nname="
+                           "temporary-{0}\nbaseurl={1}/"
+                           "\ngpgcheck=0\npriority="
+                           "1' > {2}").format(i, url, conf_file)
+                    with self.d_env.get_admin_remote() as remote:
+                        remote.execute(cmd)
             self.admin_install_updates()
         if settings.MULTIPLE_NETWORKS:
             self.describe_second_admin_interface()
