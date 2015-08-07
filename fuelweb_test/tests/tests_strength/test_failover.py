@@ -524,7 +524,7 @@ class TestHaNovaFailover(TestHaFailoverBase):
         Duration
 
         """
-         # TODO enable tests when fencing will be implements
+        # TODO: enable tests when fencing will be implements
         super(self.__class__, self).ha_controller_loss_packages()
 
     @test(depends_on_groups=['prepare_ha_nova'],

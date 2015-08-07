@@ -1007,8 +1007,8 @@ def check_repo_managment(remote):
     run 'yum -y clean all && yum check-update' or
         'apt-get clean all && apt-get update' exit code should be 0
 
-    :type devops_node: Node
-        :rtype True or False
+    :type remote: SSHClient
+        :rtype Dict
     """
     if OPENSTACK_RELEASE == OPENSTACK_RELEASE_UBUNTU:
         cmd = "apt-get clean all && apt-get update > /dev/null"
@@ -1062,7 +1062,7 @@ def check_haproxy_backend(remote,
     all nodes. Ignoring has a bigger priority.
 
     :type remote: SSHClient
-    :type service: List
+    :type services: List
     :type nodes: List
     :type ignore_services: List
     :type ignore_nodes: List

@@ -489,7 +489,7 @@ class ContrailPlugin(TestBasic):
 
         self.fuel_web.deploy_cluster_wait(self.cluster_id)
 
-        #TODO
+        # TODO:
         # Tests using north-south connectivity are expected to fail because
         # they require additional gateway nodes, and specific contrail
         # settings. This mark is a workaround until it's verified

@@ -133,7 +133,7 @@ class SeparateRabbitFailover(TestBasic):
         """
         self.env.revert_snapshot("separate_rabbit_service")
         cluster_id = self.fuel_web.get_last_created_cluster()
-        #destroy master rabbit node
+        # destroy master rabbit node
         rabbit_node = self.fuel_web.get_rabbit_master_node(
             self.env.d_env.nodes().slaves[3].name)
         rabbit_node.destroy()
@@ -161,7 +161,7 @@ class SeparateRabbitFailover(TestBasic):
         """
         self.env.revert_snapshot("separate_rabbit_service")
         cluster_id = self.fuel_web.get_last_created_cluster()
-        #restart rabbit master node
+        # restart rabbit master node
         rabbit_node = self.fuel_web.get_rabbit_master_node(
             self.env.d_env.nodes().slaves[3].name)
         self.fuel_web.warm_restart_nodes([rabbit_node])
@@ -190,7 +190,7 @@ class SeparateRabbitFailover(TestBasic):
         """
         self.env.revert_snapshot("separate_rabbit_service")
         cluster_id = self.fuel_web.get_last_created_cluster()
-        #shutdown primary controller
+        # shutdown primary controller
         controller = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         logger.debug(

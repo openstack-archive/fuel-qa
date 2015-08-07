@@ -1001,7 +1001,7 @@ class TestHaFailoverBase(TestBasic):
         # turn off rabbit master
         master_rabbit.suspend(False)
 
-         # Wait until Nailgun marked suspended controller as offline
+        # Wait until Nailgun marked suspended controller as offline
         try:
             wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
                 master_rabbit)['online'], timeout=60 * 5)
