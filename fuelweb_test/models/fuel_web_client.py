@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 import re
 import time
 import traceback
@@ -226,8 +225,7 @@ class FuelWebClient(object):
              for test in set_result['tests']
              if test['status'] not in ['success', 'disabled', 'skipped']]
 
-        logger.info('OSTF test statuses are : {0}'
-                    .format(json.dumps(test_result, indent=1)))
+        logger.info('OSTF test statuses are : {0}'.format(test_result))
 
         if failed_test_name:
             for test_name in failed_test_name:
@@ -239,10 +237,8 @@ class FuelWebClient(object):
         assert_true(
             failed <= should_fail, 'Failed {0} OSTF tests; should fail'
                                    ' {1} tests. Names of failed tests: {2}'
-                                   .format(failed,
-                                           should_fail,
-                                           json.dumps(failed_tests_res,
-                                                      indent=1)))
+                                   .format(failed, should_fail,
+                                           failed_tests_res))
 
     def assert_release_state(self, release_name, state='available'):
         logger.info('Assert release %s has state %s', release_name, state)
@@ -411,8 +407,7 @@ class FuelWebClient(object):
             cluster_id = self.client.get_cluster_id(name)
             logger.info('The cluster id is %s', cluster_id)
 
-            logger.info('Set cluster settings to %s',
-                        json.dumps(settings, indent=1))
+            logger.info('Set cluster settings to %s', settings)
             attributes = self.client.get_cluster_attributes(cluster_id)
 
             for option in settings:
@@ -437,8 +432,7 @@ class FuelWebClient(object):
                 if section:
                     attributes['editable'][section][option]['value'] =\
                         settings[option]
-            is_ssl_available = attributes['editable'].get('public_ssl', None)
-            if help_data.DISABLE_SSL and is_ssl_available:
+            if help_data.DISABLE_SSL:
                 attributes['editable']['public_ssl']['services'][
                     'value'] = False
                 attributes['editable']['public_ssl']['horizon'][
@@ -469,7 +463,7 @@ class FuelWebClient(object):
                 hpv_data = attributes['editable']['common']['libvirt_type']
                 hpv_data['value'] = "kvm"
 
-            if help_data.VCENTER_USE and vcenter_value:
+            if help_data.VCENTER_USE:
                 logger.info('Enable Dual Hypervisors Mode')
                 hpv_data = attributes['editable']['common']['use_vcenter']
                 hpv_data['value'] = True
@@ -478,19 +472,6 @@ class FuelWebClient(object):
                          "with next attributes {0}".format(attributes))
             self.client.update_cluster_attributes(cluster_id, attributes)
 
-            if help_data.VCENTER_USE and vcenter_value:
-                logger.info('Configuring vCenter...')
-                vmware_attributes = \
-                    self.client.get_cluster_vmware_attributes(cluster_id)
-                vcenter_data = vmware_attributes['editable']
-                vcenter_data['value'] = vcenter_value
-                logger.debug("Try to update cluster with next "
-                             "vmware_attributes {0}".format(vmware_attributes))
-                self.client.update_cluster_vmware_attributes(cluster_id,
-                                                             vmware_attributes)
-
-            logger.debug("Attributes of cluster were updated,"
-                         " going to update networks ...")
             if MULTIPLE_NETWORKS:
                 node_groups = {n['name']: [] for n in NODEGROUPS}
                 self.update_nodegroups(cluster_id, node_groups)
@@ -507,6 +488,26 @@ class FuelWebClient(object):
         #    cluster_id, self.environment.get_host_node_ip(), port)
 
         return cluster_id
+
+
+
+    @logwrap
+    def vcenter_configure(self, cluster_id, vcenter_value):
+
+        if help_data.VCENTER_USE:
+            logger.info('Configuring vCenter...')
+            vmware_attributes = \
+                self.client.get_cluster_vmware_attributes(cluster_id)
+            vcenter_data = vmware_attributes['editable']
+            vcenter_data['value'] = vcenter_value
+            logger.debug("Try to update cluster with next "
+                         "vmware_attributes {0}".format(vmware_attributes))
+            self.client.update_cluster_vmware_attributes(cluster_id,
+                                                         vmware_attributes)
+
+        logger.debug("Attributes of cluster were updated")
+
+
 
     def add_local_ubuntu_mirror(self, cluster_id, name='Auxiliary',
                                 path=help_data.LOCAL_MIRROR_UBUNTU,
@@ -1061,8 +1062,7 @@ class FuelWebClient(object):
                         test['status'] != 'disabled'):
                     tests_res.append({test['name']: test['status']})
 
-        logger.info('OSTF test statuses are : {0}'
-                    .format(json.dumps(tests_res, indent=1)))
+        logger.info('OSTF test statuses are : {0}'.format(tests_res))
         return tests_res
 
     @logwrap
@@ -1082,8 +1082,7 @@ class FuelWebClient(object):
 
     @logwrap
     def task_wait(self, task, timeout, interval=5):
-        logger.info('Wait for task %s seconds: %s',
-                    timeout, json.dumps(task, indent=1))
+        logger.info('Wait for task %s %s seconds', task, timeout)
         start = time.time()
         try:
             wait(
@@ -1098,9 +1097,7 @@ class FuelWebClient(object):
                 "was exceeded: ".format(task=task["name"], timeout=timeout))
         took = time.time() - start
         task = self.client.get_task(task['id'])
-        logger.info('Task finished. Took %d seconds. %s',
-                    took,
-                    json.dumps(task, indent=1))
+        logger.info('Task %s finished. Took %d seconds', task, took)
         return task
 
     @logwrap
@@ -1183,8 +1180,7 @@ class FuelWebClient(object):
         if not pending_deletion:
             self.update_nodes_interfaces(cluster_id, updated_nodes)
         if update_nodegroups:
-            self.update_nodegroups(cluster_id=cluster_id,
-                                   node_groups=nodes_groups)
+            self.update_nodegroups(nodes_groups)
 
         return nailgun_nodes
 
@@ -1409,8 +1405,7 @@ class FuelWebClient(object):
 
     def set_network(self, net_config, net_name, net_pools=None, seg_type=None):
         nets_wo_floating = ['public', 'management', 'storage']
-        if (seg_type == NEUTRON_SEGMENT['tun'] or
-                seg_type == NEUTRON_SEGMENT['gre']):
+        if seg_type == NEUTRON_SEGMENT['gre']:
             nets_wo_floating.append('private')
 
         if not net_pools:
@@ -1741,8 +1736,7 @@ class FuelWebClient(object):
             return failed_count
 
     def get_nailgun_version(self):
-        logger.info("ISO version: %s" % json.dumps(
-            self.client.get_api_version(), indent=1))
+        logger.info("ISO version: %s" % self.client.get_api_version())
 
     @logwrap
     def run_ceph_task(self, cluster_id, offline_nodes):
