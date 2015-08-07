@@ -59,6 +59,11 @@ from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import OSTF_TEST_NAME
 from fuelweb_test.settings import OSTF_TEST_RETRIES_COUNT
 from fuelweb_test.settings import TIMEOUT
+from fuelweb_test.settings import VCENTER_IP
+from fuelweb_test.settings import VCENTER_USERNAME
+from fuelweb_test.settings import VCENTER_PASSWORD
+from fuelweb_test.settings import VCENTER_DATACENTER
+from fuelweb_test.settings import VCENTER_DATASTORE
 
 import fuelweb_test.settings as help_data
 
@@ -372,8 +377,7 @@ class FuelWebClient(object):
                        release_name=help_data.OPENSTACK_RELEASE,
                        mode=DEPLOYMENT_MODE_HA,
                        port=514,
-                       release_id=None,
-                       vcenter_value=None, ):
+                       release_id=None, ):
         """Creates a cluster
         :param name:
         :param release_name:
@@ -469,7 +473,7 @@ class FuelWebClient(object):
                 hpv_data = attributes['editable']['common']['libvirt_type']
                 hpv_data['value'] = "kvm"
 
-            if help_data.VCENTER_USE and vcenter_value:
+            if help_data.VCENTER_USE:
                 logger.info('Enable Dual Hypervisors Mode')
                 hpv_data = attributes['editable']['common']['use_vcenter']
                 hpv_data['value'] = True
@@ -478,19 +482,6 @@ class FuelWebClient(object):
                          "with next attributes {0}".format(attributes))
             self.client.update_cluster_attributes(cluster_id, attributes)
 
-            if help_data.VCENTER_USE and vcenter_value:
-                logger.info('Configuring vCenter...')
-                vmware_attributes = \
-                    self.client.get_cluster_vmware_attributes(cluster_id)
-                vcenter_data = vmware_attributes['editable']
-                vcenter_data['value'] = vcenter_value
-                logger.debug("Try to update cluster with next "
-                             "vmware_attributes {0}".format(vmware_attributes))
-                self.client.update_cluster_vmware_attributes(cluster_id,
-                                                             vmware_attributes)
-
-            logger.debug("Attributes of cluster were updated,"
-                         " going to update networks ...")
             if MULTIPLE_NETWORKS:
                 node_groups = {n['name']: [] for n in NODEGROUPS}
                 self.update_nodegroups(cluster_id, node_groups)
@@ -507,6 +498,79 @@ class FuelWebClient(object):
         #    cluster_id, self.environment.get_host_node_ip(), port)
 
         return cluster_id
+
+
+
+    @logwrap
+    def vcenter_configure(self, cluster_id, vcenter_value=None,
+                          multiclusters = None, vmglance = None,
+                          target_node = 'controllers'):
+
+        import ipdb
+        ipdb.set_trace()
+
+        if not vcenter_value:
+            vcenter_value={
+                "glance": {
+                    "vcenter_username": "",
+                    "datacenter": "",
+                    "vcenter_host": "",
+                    "vcenter_password": "",
+                    "datastore": "", },
+                "availability_zones": [
+                    {"vcenter_username": VCENTER_USERNAME,
+                     "nova_computes": [
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster1",
+                          "service_name": "vmcluster1",
+                          "target_node": {
+                              "current": {"id": target_node,
+                                          "label": target_node},
+                              "options": [{"id": "controllers",
+                                           "label": "controllers"}, ]},
+                          },
+
+                     ],
+                     "vcenter_host": VCENTER_IP,
+                     "az_name": "vcenter",
+                     "vcenter_password": VCENTER_PASSWORD,
+                     }],
+                "network": {"esxi_vlan_interface": "vmnic0"}
+            }
+            if multiclusters:
+                multiclusters = vcenter_value["availability_zones"]\
+                    [0]["nova_computes"]
+                multiclusters.append(
+                    {"datastore_regex": ".*",
+                    "vsphere_cluster": "Cluster2",
+                    "service_name": "vmcluster2",
+                    "target_node": {
+                        "current": {"id": 'controllers',
+                                    "label": 'controllers'},
+                    "options": [{"id": "controllers",
+                                 "label": "controllers"}, ]},
+                    })
+            if vmglance:
+                vcenter_value["glance"]["vcenter_username"]= VCENTER_USERNAME
+                vcenter_value["glance"]["datacenter"]= VCENTER_DATACENTER
+                vcenter_value["glance"]["vcenter_host"]= VCENTER_IP
+                vcenter_value["glance"]["vcenter_password"]= VCENTER_PASSWORD
+                vcenter_value["glance"]["datastore"]= VCENTER_DATASTORE
+
+        if help_data.VCENTER_USE:
+            logger.info('Configuring vCenter...')
+            vmware_attributes = \
+                self.client.get_cluster_vmware_attributes(cluster_id)
+            vcenter_data = vmware_attributes['editable']
+            vcenter_data['value'] = vcenter_value
+            logger.debug("Try to update cluster with next "
+                         "vmware_attributes {0}".format(vmware_attributes))
+            self.client.update_cluster_vmware_attributes(cluster_id,
+                                                         vmware_attributes)
+
+        logger.debug("Attributes of cluster were updated")
+
+
 
     def add_local_ubuntu_mirror(self, cluster_id, name='Auxiliary',
                                 path=help_data.LOCAL_MIRROR_UBUNTU,
