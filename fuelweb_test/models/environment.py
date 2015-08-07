@@ -36,6 +36,7 @@ from fuelweb_test.helpers.fuel_actions import CobblerActions
 from fuelweb_test.helpers.fuel_actions import DockerActions
 from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.fuel_actions import PostgresActions
+from fuelweb_test.helpers.fuel_actions import NessusActions
 from fuelweb_test.helpers.ntp import Ntp
 from fuelweb_test.helpers.ntp import GroupNtpSync
 from fuelweb_test.helpers.utils import timestat
@@ -327,7 +328,8 @@ class EnvironmentModel(object):
 
     def setup_environment(self, custom=settings.CUSTOM_ENV,
                           build_images=settings.BUILD_IMAGES,
-                          iso_connect_as=settings.ADMIN_BOOT_DEVICE):
+                          iso_connect_as=settings.ADMIN_BOOT_DEVICE,
+                          security=settings.SECURITY_TEST):
         # start admin node
         admin = self.d_env.nodes().admin
         if(iso_connect_as == 'usb'):
@@ -346,6 +348,9 @@ class EnvironmentModel(object):
                                       iso_connect_as=iso_connect_as))
         if custom:
             self.setup_customisation()
+        if security:
+            nessus_node = NessusActions(self.d_env)
+            nessus_node.add_nessus_node()
         # wait while installation complete
         admin.await(self.d_env.admin_net, timeout=10 * 60)
         self.set_admin_ssh_password()
