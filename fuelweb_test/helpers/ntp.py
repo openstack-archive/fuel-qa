@@ -25,21 +25,34 @@ from fuelweb_test import logwrap
 class GroupNtpSync(object):
     """Synchronize a group of nodes."""
 
-    ntps = []
-
-    def __init__(self, env=None, nailgun_nodes=[]):
+    def __init__(self, env=None, sync_admin_node=False, nailgun_nodes=None):
         """ env - EnvironmentModel, to create remote connections
+            sync_admin_node - bool, should the Fuel admin node be synchronized?
             nailgun_nodes - list of Nailgun node objects
         """
-        if nailgun_nodes and not env:
+        if not env:
             raise Exception("'env' is not set, failed to initialize"
                             " connections to {0}".format(nailgun_nodes))
+        self.ntps = None
 
-        # 1. Create a list of 'Ntp' connections to the nodes
-        self.ntps = [Ntp.get_ntp(env.d_env.get_ssh_to_remote(node['ip']),
-                                 'node-{0}'.format(node['id']),
-                                 env.get_admin_node_ip())
-                     for node in nailgun_nodes]
+        if sync_admin_node:
+            # Add a 'Ntp' instance with connection to Fuel admin node
+            self.ntps.append(
+                Ntp.get_ntp(self.d_env.get_admin_remote(), 'admin'))
+
+        if nailgun_nodes:
+            # 1. Create a list of 'Ntp' connections to the nodes
+            self.ntps.extend([
+                Ntp.get_ntp(env.d_env.get_ssh_to_remote(node['ip']),
+                            'node-{0}'.format(node['id']),
+                            env.get_admin_node_ip())
+                for node in nailgun_nodes])
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exp_type, exp_value, traceback):
+        [ntp.remote.clear() for ntp in self.ntps]
 
     @property
     def is_synchronized(self):
@@ -57,12 +70,16 @@ class GroupNtpSync(object):
         return [(ntp.node_name, ntp.peers)
                 for ntp in self.ntps if not ntp.is_connected]
 
-    def do_sync_time(self, ntps=[]):
+    def do_sync_time(self, ntps=None):
         # 0. 'ntps' can be filled by __init__() or outside the class
         self.ntps = ntps or self.ntps
+        if not self.ntps:
+            raise ValueError("No servers were provided to synchronize "
+                             "the time in self.ntps")
 
         # 1. Set actual time on all nodes via 'ntpdate'
         [ntp.set_actual_time() for ntp in self.ntps]
+
         assert_true(self.is_synchronized, "Time on nodes was not set:"
                     " \n{0}".format(self.report_not_synchronized()))
 
@@ -72,6 +89,7 @@ class GroupNtpSync(object):
 
         # 3. Wait for established peers
         [ntp.wait_peer() for ntp in self.ntps]
+
         assert_true(self.is_connected, "Time on nodes was not synchronized:"
                     " \n{0}".format(self.report_not_connected()))
 
