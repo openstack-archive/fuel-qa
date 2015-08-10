@@ -1865,6 +1865,20 @@ class FuelWebClient(object):
         return release_ids
 
     @logwrap
+    def get_next_deployable_release_id(self, release_id):
+        releases = self.client.get_releases()
+        release_details = self.client.get_releases_details(release_id)
+
+        for release in releases:
+            if (release["id"] > release_id and
+                    release["operating_system"] ==
+                    release_details["operating_system"] and
+                    release["is_deployable"]):
+                return release["id"]
+
+        return None
+
+    @logwrap
     def update_cluster(self, cluster_id, data):
         logger.debug(
             "Try to update cluster with data {0}".format(data))
