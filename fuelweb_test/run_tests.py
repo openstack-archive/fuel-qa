@@ -98,6 +98,10 @@ def import_tests():
 def run_tests():
     from proboscis import TestProgram  # noqa
 
+    # Check if the specified test group starts any test case
+    if not TestProgram().cases:
+        sys.exit(1)
+
     # Run Proboscis and exit.
     TestProgram(
         addplugins=[CloseSSHConnectionsPlugin()]
