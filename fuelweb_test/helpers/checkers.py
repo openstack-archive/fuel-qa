@@ -281,7 +281,12 @@ def run_script(node_ssh, script_path, script_name, password='admin',
         logger.debug('Try to read status code from chain...')
         assert_equal(chan.recv_exit_status(), exit_code,
                      'Upgrade script fails with next message {0}'.format(
-                         ''.join(stderr)))
+                         ''.join(
+                             node_ssh.execute(
+                                 "awk -v p=\"UPGRADE FAILED\" 'BEGIN{m=\"\"}"
+                                 " {if ($0 ~ p) {m=$0} else m=m\"\\n\"$0}"
+                                 " END{if (m ~ p) print m}'"
+                                 " /var/log/fuel_upgrade.log")['stdout'])))
     else:
         path = "{0}/{1} --no-rollback --password {2}".format(script_path,
                                                              script_name,
@@ -290,7 +295,12 @@ def run_script(node_ssh, script_path, script_name, password='admin',
         logger.debug('Try to read status code from chain...')
         assert_equal(chan.recv_exit_status(), exit_code,
                      'Upgrade script fails with next message {0}'.format(
-                         ''.join(stderr)))
+                         ''.join(
+                             node_ssh.execute(
+                                 "awk -v p=\"UPGRADE FAILED\" 'BEGIN{m=\"\"}"
+                                 " {if ($0 ~ p) {m=$0} else m=m\"\\n\"$0}"
+                                 " END{if (m ~ p) print m}'"
+                                 " /var/log/fuel_upgrade.log")['stdout'])))
 
 
 @logwrap
