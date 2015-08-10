@@ -64,7 +64,7 @@ class OpenStackActions(common.Common):
         if servers:
             return servers
 
-    def create_server_for_migration(self, neutron=False, scenario='',
+    def create_server_for_migration(self, neutron=True, scenario='',
                                     timeout=100, file=None, key_name=None,
                                     **kwargs):
         name = "test-serv" + str(random.randint(1, 0x7fffffff))

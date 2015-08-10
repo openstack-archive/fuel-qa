@@ -85,7 +85,7 @@ class Common(object):
 
     def create_instance(self, flavor_name='test_flavor', ram=64, vcpus=1,
                         disk=1, server_name='test_instance', image_name=None,
-                        neutron_network=False):
+                        neutron_network=True):
         LOGGER.debug('Try to create instance')
 
         start_time = time.time()
