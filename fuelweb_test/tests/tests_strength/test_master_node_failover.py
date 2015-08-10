@@ -117,7 +117,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
                 settings.SERVTEST_TENANT)
 
             # create instance
-            server = common_func.create_instance()
+            server = common_func.create_instance(neutron_network=True)
 
             # get_instance details
             details = common_func.get_instance_detail(server)
