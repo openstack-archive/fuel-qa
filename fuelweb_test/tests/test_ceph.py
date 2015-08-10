@@ -327,6 +327,10 @@ class CephHA(TestBasic):
             self.fuel_web.get_public_vip(cluster_id), 'cephHA', 'cephHA',
             'cephHA')
 
+        # Wait until MySQL Galera is UP on some controller
+        self.fuel_web.wait_mysql_galera_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
         # Check resources addition
         # create instance
         server = os_conn.create_instance(
