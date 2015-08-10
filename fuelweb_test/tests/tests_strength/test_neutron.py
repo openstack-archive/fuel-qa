@@ -30,7 +30,7 @@ from fuelweb_test.helpers import os_actions
 from fuelweb_test.tests import base_test_case
 
 
-@test(groups=["ha_neutron_destructive", "ha"])
+@test(groups=["ha_neutron_destructive_2", "ha"])
 class TestNeutronFailover(base_test_case.TestBasic):
     """TestNeutronFailover."""  # TODO documentation
 
