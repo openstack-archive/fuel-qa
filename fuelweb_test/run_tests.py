@@ -97,7 +97,6 @@ def import_tests():
 
 def run_tests():
     from proboscis import TestProgram  # noqa
-    import_tests()
 
     # Run Proboscis and exit.
     TestProgram(
