@@ -350,6 +350,7 @@ class TestHaNeutronScalability(TestBasic):
             cluster_id, nodes,
             True, False
         )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         _check_pacemarker(self.env.d_env.nodes().slaves[:3])
 
@@ -363,6 +364,7 @@ class TestHaNeutronScalability(TestBasic):
             cluster_id, nodes,
             True, False
         )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         _check_pacemarker(self.env.d_env.nodes().slaves[:5])
 
