@@ -310,7 +310,7 @@ class TestHaNeutronScalability(TestBasic):
                 with quiet_logger():
                     self.fuel_web.assert_pacemaker(
                         devops_node.name,
-                        self.env.d_env.nodes().slaves[:5], [])
+                        devops_nodes, [])
                 ret = self.fuel_web.get_pacemaker_status(devops_node.name)
                 assert_true(
                     re.search('vip__management\s+\(ocf::fuel:ns_IPaddr2\):'
@@ -350,6 +350,7 @@ class TestHaNeutronScalability(TestBasic):
             cluster_id, nodes,
             True, False
         )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         _check_pacemarker(self.env.d_env.nodes().slaves[:3])
 
@@ -363,6 +364,7 @@ class TestHaNeutronScalability(TestBasic):
             cluster_id, nodes,
             True, False
         )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         _check_pacemarker(self.env.d_env.nodes().slaves[:5])
 
