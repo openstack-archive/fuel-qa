@@ -312,7 +312,7 @@ class ControllerReplacement(base_test_case.TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        data = {"net_provider": "neutron", "net_segment_type": 'gre'}
+        data = {"net_provider": "neutron", "net_segment_type": 'tun'}
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
