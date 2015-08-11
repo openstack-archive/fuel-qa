@@ -17,8 +17,3 @@ Nailgun Client
 --------------
 .. automodule:: fuelweb_test.models.nailgun_client
    :members:
-
-Puppet Environment
-------------------
-.. automodule:: fuelweb_test.models.pp_environment
-   :members:
