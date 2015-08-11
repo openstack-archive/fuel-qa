@@ -241,7 +241,7 @@ class CustomHostname(TestBasic):
         self.env.make_snapshot("set_duplicate_hostname")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=['known_issues', 'set_custom_hostname_for_provisioned_node'])
+          groups=['set_custom_hostname_for_provisioned_node'])
     @log_snapshot_after_test
     def set_custom_hostname_for_provisioned_node(self):
         """Verify that it is not allowed to change a hostname of a
