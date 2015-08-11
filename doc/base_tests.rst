@@ -51,6 +51,11 @@ Test High Availability on one controller
 .. automodule:: fuelweb_test.tests.test_ha_one_controller
    :members:
 
+Test Openstack Upgrades
+-----------------------
+.. automodule:: fuelweb_test.tests.test_os_upgrade
+   :members:
+
 Test Multiple Networks
 ----------------------
 .. automodule:: fuelweb_test.tests.test_multiple_networks
