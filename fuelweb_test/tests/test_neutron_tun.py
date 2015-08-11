@@ -94,28 +94,10 @@ class NeutronTun(TestBasic):
         self.env.make_snapshot("deploy_neutron_tun")
 
 
-@test(groups=["neutron", "ha", "ha_neutron_tun"])
-class NeutronTunHa(TestBasic):
-    """NeutronTunHa."""  # TODO documentation
+class NeutronTunHaBase(TestBasic):
+    """NeutronTunHaBase."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_neutron_tun_ha", "ha_neutron_tun"])
-    @log_snapshot_after_test
-    def deploy_neutron_tun_ha(self):
-        """Deploy cluster in HA mode with Neutron VXLAN
-
-        Scenario:
-            1. Create cluster
-            2. Add 3 nodes with controller role
-            3. Add 2 nodes with compute role
-            4. Deploy the cluster
-            5. Run network verification
-            6. Run OSTF
-
-        Duration 80m
-        Snapshot deploy_neutron_tun_ha
-
-        """
+    def deploy_neutron_tun_ha_base(self, snapshot_name):
         self.env.revert_snapshot("ready_with_5_slaves")
 
         cluster_id = self.fuel_web.create_cluster(
@@ -165,7 +147,32 @@ class NeutronTunHa(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot("deploy_neutron_tun_ha")
+        self.env.make_snapshot(snapshot_name)
+
+
+@test(groups=["neutron", "ha", "ha_neutron_tun"])
+class NeutronTunHa(NeutronTunHaBase):
+    """NeutronTunHa."""  # TODO documentation
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["deploy_neutron_tun_ha", "ha_neutron_tun"])
+    @log_snapshot_after_test
+    def deploy_neutron_tun_ha(self):
+        """Deploy cluster in HA mode with Neutron VXLAN
+
+        Scenario:
+            1. Create cluster
+            2. Add 3 nodes with controller role
+            3. Add 2 nodes with compute role
+            4. Deploy the cluster
+            5. Run network verification
+            6. Run OSTF
+
+        Duration 80m
+        Snapshot deploy_neutron_tun_ha
+        """
+        super(self.__class__, self).deploy_neutron_tun_ha_base(
+            snapshot_name="deploy_neutron_tun_ha")
 
 
 @test(groups=["ha", "ha_neutron_tun"])
@@ -399,81 +406,3 @@ class TestHaNeutronScalability(TestBasic):
             test_sets=['sanity', 'smoke', 'ha'], should_fail=1)
         self.env.sync_time()
         self.env.make_snapshot("neutron_vlan_ha_scalability")
-
-
-@test(groups=["known_issues", "ha", "ha_neutron_tun"])
-class BackupRestoreHa(TestBasic):
-    """BackupRestoreHa."""  # TODO documentation
-
-    @test(depends_on_groups=['deploy_neutron_tun_ha'],
-          groups=["known_issues", "backup_restore_neutron_tun_ha"])
-    @log_snapshot_after_test
-    def backup_restore_neutron_tun_ha(self):
-        """Backup/restore master node with cluster in ha mode
-
-        Scenario:
-            1. Revert snapshot "deploy_neutron_tun_ha"
-            2. Backup master
-            3. Check backup
-            4. Run OSTF
-            5. Add 1 node with compute role
-            6. Restore master
-            7. Check restore
-            8. Run OSTF
-
-        Duration 50m
-
-        """
-        self.env.revert_snapshot("deploy_neutron_tun_ha")
-
-        cluster_id = self.fuel_web.get_last_created_cluster()
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
-        assert_equal(str(cluster['net_provider']), 'neutron')
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id))
-        # assert_equal(str(cluster['net_segment_type']), segment_type)
-        self.fuel_web.check_fixed_network_cidr(
-            cluster_id, os_conn)
-
-        with self.env.d_env.get_admin_remote() as remote:
-            self.fuel_web.backup_master(remote)
-
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.backup_check(remote)
-
-        self.env.bootstrap_nodes(
-            self.env.d_env.nodes().slaves[5:6])
-        self.fuel_web.update_nodes(
-            cluster_id, {'slave-06': ['compute']}, True, False
-        )
-
-        assert_equal(
-            6, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
-
-        with self.env.d_env.get_admin_remote() as remote:
-            self.fuel_web.restore_master(remote)
-
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.restore_check_sum(remote)
-
-        with self.env.d_env.get_admin_remote() as remote:
-            self.fuel_web.restore_check_nailgun_api(remote)
-
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.iptables_check(remote)
-
-        assert_equal(
-            5, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
-
-        self.env.bootstrap_nodes(
-            self.env.d_env.nodes().slaves[5:6])
-        self.fuel_web.update_nodes(
-            cluster_id, {'slave-06': ['compute']}, True, False
-        )
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id,
-            test_sets=['ha', 'smoke', 'sanity'])
-
-        self.env.make_snapshot("backup_restore_neutron_tun_ha")

@@ -92,34 +92,6 @@ class TestAdminNode(TestBasic):
         assert_equal(True, len(astute_workers) > 1)
 
 
-@test(groups=["known_issues"])
-class TestAdminNodeBackupRestore(TestBasic):
-    @test(depends_on=[SetupEnvironment.setup_master],
-          groups=["backup_restore_master_base"])
-    @log_snapshot_after_test
-    def backup_restore_master_base(self):
-        """Backup/restore master node
-
-        Scenario:
-            1. Revert snapshot "empty"
-            2. Backup master
-            3. Check backup
-            4. Restore master
-            5. Check restore
-
-        Duration 30m
-
-        """
-        self.env.revert_snapshot("empty")
-        self.fuel_web.backup_master(self.env.d_env.get_admin_remote())
-        checkers.backup_check(self.env.d_env.get_admin_remote())
-        self.fuel_web.restore_master(self.env.d_env.get_admin_remote())
-        self.fuel_web.restore_check_nailgun_api(
-            self.env.d_env.get_admin_remote())
-        checkers.restore_check_sum(self.env.d_env.get_admin_remote())
-        checkers.iptables_check(self.env.d_env.get_admin_remote())
-
-
 @test(groups=["logrotate"])
 class TestLogrotateBase(TestBasic):
 
