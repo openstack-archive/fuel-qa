@@ -16,6 +16,11 @@ Admin Node Tests
 .. automodule:: fuelweb_test.tests.test_admin_node
    :members:
 
+Test Admin Node Backup-Restore
+------------------------------
+.. automodule:: fuelweb_test.tests.test_backup_restore
+   :members:
+
 Test Bonding
 ------------
 .. automodule:: fuelweb_test.tests.test_bonding
