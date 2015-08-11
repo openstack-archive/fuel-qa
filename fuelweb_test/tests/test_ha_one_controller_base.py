@@ -19,9 +19,12 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 
 class HAOneControllerNeutronBase(TestBasic):
-    def deploy_ha_one_controller_neutron_base(self):
-        self.env.revert_snapshot("ready_with_3_slaves")
+    """HAOneControllerNeutronBase"""  # TODO documentation
 
+    def deploy_ha_one_controller_neutron_base(
+            self, snapshot_name):
+
+        self.env.revert_snapshot("ready_with_3_slaves")
         data = {
             'tenant': 'neutronOneController',
             'user': 'neutronOneController',
@@ -55,5 +58,4 @@ class HAOneControllerNeutronBase(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_ha_one_controller_neutron",
-                               is_make=True)
+        self.env.make_snapshot(snapshot_name, is_make=True)

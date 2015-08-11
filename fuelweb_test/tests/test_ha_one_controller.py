@@ -111,7 +111,8 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
         Duration 30m
         Snapshot: deploy_ha_one_controller_neutron
         """
-        super(self.__class__, self).deploy_ha_one_controller_neutron_base()
+        super(self.__class__, self).deploy_ha_one_controller_neutron_base(
+            snapshot_name="deploy_ha_one_controller_neutron")
 
     @test(depends_on=[deploy_ha_one_controller_neutron],
           groups=["ha_one_controller_neutron_node_deletion"])
@@ -924,71 +925,6 @@ class UntaggedNetworksNegative(TestBasic):
         # deploy cluster:
         task = self.fuel_web.deploy_cluster(cluster_id)
         self.fuel_web.assert_task_failed(task)
-
-
-@test(groups=["known_issues"])
-class BackupRestoreHAOneController(TestBasic):
-    """BackupRestoreHAOneController"""  # TODO documentation
-
-    @test(depends_on=[HAOneControllerNeutron.deploy_ha_one_controller_neutron],
-          groups=["ha_one_controller_backup_restore"])
-    @log_snapshot_after_test
-    def ha_one_controller_backup_restore(self):
-        """Backup/restore master node with one controller in cluster
-
-        Scenario:
-            1. Revert snapshot "deploy_ha_one_controller_neutron"
-            2. Backup master
-            3. Check backup
-            4. Run OSTF
-            5. Add 1 node with compute role
-            6. Restore master
-            7. Check restore
-            8. Run OSTF
-
-        Duration 35m
-
-        """
-        self.env.revert_snapshot("deploy_ha_one_controller_neutron")
-
-        cluster_id = self.fuel_web.get_last_created_cluster()
-
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id),
-            'neutronOneController', 'neutronOneController',
-            'neutronOneController')
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5,
-                                           networks_count=2, timeout=300)
-
-        # Execute master node backup
-        self.fuel_web.backup_master(self.env.d_env.get_admin_remote())
-
-        # Check created backup
-        checkers.backup_check(self.env.d_env.get_admin_remote())
-
-        self.fuel_web.update_nodes(
-            cluster_id, {'slave-03': ['compute']}, True, False)
-
-        assert_equal(
-            3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
-
-        self.fuel_web.restore_master(self.env.d_env.get_admin_remote())
-        checkers.restore_check_sum(self.env.d_env.get_admin_remote())
-        self.fuel_web.restore_check_nailgun_api(
-            self.env.d_env.get_admin_remote())
-        checkers.iptables_check(self.env.d_env.get_admin_remote())
-
-        assert_equal(
-            2, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
-
-        self.fuel_web.update_nodes(
-            cluster_id, {'slave-03': ['compute']}, True, False)
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
-
-        self.env.make_snapshot("ha_one_controller_backup_restore")
 
 
 @test(groups=["thread_usb"])
