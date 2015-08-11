@@ -18,6 +18,11 @@ Report
 .. automodule:: fuelweb_test.testrail.report
    :members:
 
+Report partner ingreation
+-------------------------
+.. automodule:: fuelweb_test.testrail.report_pi
+   :members:
+
 Report tempest results
 ----------------------
 .. automodule:: fuelweb_test.testrail.report_tempest_results

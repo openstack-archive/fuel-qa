@@ -306,6 +306,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
             11. Power on destroyed node
             12. Check that new rabbit-master was not elected
             13. Run ostf ha
+
         Duration 25m
 
         """

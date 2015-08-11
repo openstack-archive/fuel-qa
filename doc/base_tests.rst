@@ -36,6 +36,16 @@ Test Cli
 .. automodule:: fuelweb_test.tests.test_cli
    :members:
 
+Test Clone Environment
+----------------------
+.. automodule:: fuelweb_test.tests.test_clone_env
+   :members:
+
+Test custom hostname
+--------------------
+.. automodule:: fuelweb_test.tests.test_custom_hostname
+   :members:
+
 Test Environment Action
 -----------------------
 .. automodule:: fuelweb_test.tests.test_environment_action
@@ -51,14 +61,49 @@ Test High Availability on one controller
 .. automodule:: fuelweb_test.tests.test_ha_one_controller
    :members:
 
+Test High Availability on one controller base
+---------------------------------------------
+.. automodule:: fuelweb_test.tests.test_ha_one_controller_base
+   :members:
+
+Test jumbo frames
+-----------------
+.. automodule:: fuelweb_test.tests.test_jumbo_frames
+   :members:
+
 Test Multiple Networks
 ----------------------
 .. automodule:: fuelweb_test.tests.test_multiple_networks
    :members:
 
+Test network templates
+----------------------
+.. automodule:: fuelweb_test.tests.test_net_templates
+   :members:
+
 Test Neutron
 ------------
 .. automodule:: fuelweb_test.tests.test_neutron
+   :members:
+
+Test Neutron Public
+-------------------
+.. automodule:: fuelweb_test.tests.test_neutron_public
+   :members:
+
+Test Neutron VXLAN
+------------------
+.. automodule:: fuelweb_test.tests.test_neutron_tun
+   :members:
+
+Test Node reinstallation
+------------------------
+.. automodule:: fuelweb_test.tests.test_node_reinstallation
+   :members:
+
+Test offloading types
+---------------------
+.. automodule:: fuelweb_test.tests.test_offloading_types
    :members:
 
 Test Pull Requests
@@ -71,9 +116,9 @@ Test Services
 .. automodule:: fuelweb_test.tests.test_services
    :members:
 
-Test Upgrade
-------------
-.. automodule:: fuelweb_test.tests.test_upgrade
+Test Ubuntu bootstrap
+---------------------
+.. automodule:: fuelweb_test.tests.test_ubuntu_bootstrap
    :members:
 
 Test Vcenter
@@ -104,11 +149,6 @@ Test Neutron Vlan Ceph Mongo
 Plugins tests
 =============
 
-Example tests
--------------
-.. automodule:: fuelweb_test.tests.plugins.plugin_example.test_fuel_plugin_example
-   :members:
-
 Contrail tests
 --------------
 .. automodule:: fuelweb_test.tests.plugins.plugin_contrail.test_fuel_plugin_contrail
@@ -122,6 +162,11 @@ Elasticsearch-Kibana tests
 Emc tests
 ---------
 .. automodule:: fuelweb_test.tests.plugins.plugin_emc.test_plugin_emc
+   :members:
+
+Example tests
+-------------
+.. automodule:: fuelweb_test.tests.plugins.plugin_example.test_fuel_plugin_example
    :members:
 
 Glusterfs tests
@@ -147,6 +192,11 @@ LMA collector tests
 Reboot tests
 ------------
 .. automodule:: fuelweb_test.tests.plugins.plugin_reboot.test_plugin_reboot_task
+   :members:
+
+Vip reservation tests
+---------------------
+.. automodule:: fuelweb_test.tests.plugins.plugin_vip_reservation.test_plugin_vip_reservation
    :members:
 
 Zabbix tests
@@ -182,6 +232,11 @@ Base failover tests
 .. automodule:: fuelweb_test.tests.tests_strength.test_failover_base
    :members:
 
+Failover with CEPH tests
+------------------------
+.. automodule:: fuelweb_test.tests.tests_strength.test_failover_with_ceph
+   :members:
+
 Huge environments tests
 -----------------------
 .. automodule:: fuelweb_test.tests.tests_strength.test_huge_environments
@@ -210,4 +265,17 @@ OSTF repeatable tests
 Restart tests
 -------------
 .. automodule:: fuelweb_test.tests.tests_strength.test_restart
+   :members:
+
+Upgrade tests
+=============
+
+Test Upgrade
+------------
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_upgrade
+   :members:
+
+Test Upgrade Chains
+-------------------
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_upgrade_chains
    :members:
