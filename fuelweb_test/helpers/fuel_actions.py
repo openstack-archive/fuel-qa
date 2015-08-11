@@ -100,15 +100,14 @@ class BaseActions(object):
         wait(lambda: self.is_container_ready, timeout=timeout)
 
     def change_content_in_yaml(self, old_file, new_file, element, value):
-        """
-        Changes content in old_file at element is given to the new value
+        """Changes content in old_file at element is given to the new value
         and creates new file with changed content
         :param old_file: a path to the file content from to be changed
         :param new_file: a path to the new file to ve created with new content
         :param element: tuple with path to element to be changed
-            for example: ['root_elem', 'first_elem', 'target_elem']
-            if there are a few elements with equal names use integer
-            to identify which element should be used
+        for example: ['root_elem', 'first_elem', 'target_elem']
+        if there are a few elements with equal names use integer
+        to identify which element should be used
         :return: nothing
         """
 
@@ -125,8 +124,7 @@ class BaseActions(object):
 
     def change_yaml_file_in_container(
             self, path_to_file, element, value, container=None):
-        """
-        Changes values in the yaml file stored at container
+        """Changes values in the yaml file stored at container
         There is no need to copy file manually
         :param path_to_file: absolutely path to the file
         :param element: list with path to the element be changed
@@ -150,8 +148,7 @@ class BaseActions(object):
 
 
 class AdminActions(BaseActions):
-    """ All actions relating to the admin node.
-    """
+    """ All actions relating to the admin node."""
 
     def __init__(self, admin_remote):
         super(AdminActions, self).__init__(admin_remote)

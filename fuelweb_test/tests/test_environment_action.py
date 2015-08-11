@@ -301,15 +301,15 @@ class ControllerReplacement(base_test_case.TestBasic):
             1. Create cluster with Neutron VXLAN
             2. Add 3 node with controller role
             3. Add 1 node with compute
-            3. Deploy cluster
-            4. Remove one controller add new controller
-            5. Deploy changes
-            6. Run OSTF
+            4. Deploy cluster
+            5. Remove one controller add new controller
+            6. Deploy changes
+            7. Run OSTF
 
         Duration 90m
         Snapshot: deploy_ha_neutron_tun_ctrl_replacement
-
         """
+        
         self.env.revert_snapshot("ready_with_5_slaves")
 
         data = {"net_provider": "neutron", "net_segment_type": 'gre'}
@@ -355,15 +355,15 @@ class ControllerReplacement(base_test_case.TestBasic):
             1. Create cluster with neutron vlan
             2. Add 3 node with controller role
             3. Add 1 node with compute
-            3. Deploy cluster
-            4. Remove one controller add new controller
-            5. Deploy changes
-            6. Run OSTF
+            4. Deploy cluster
+            5. Remove one controller add new controller
+            6. Deploy changes
+            7. Run OSTF
 
         Duration 90m
         Snapshot: deploy_ha_neutron_vlan_ctrl_replacement
-
         """
+
         self.env.revert_snapshot("ready_with_5_slaves")
 
         data = {"net_provider": "neutron", "net_segment_type": 'vlan'}
@@ -411,15 +411,15 @@ class ControllerReplacement(base_test_case.TestBasic):
             1. Create cluster with nova
             2. Add 3 node with controller role
             3. Add 1 node with compute
-            3. Deploy cluster
-            4. Remove one controller add new controller
-            5. Deploy changes
-            6. Run OSTF
+            4. Deploy cluster
+            5. Remove one controller add new controller
+            6. Deploy changes
+            7. Run OSTF
 
         Duration 90m
         Snapshot: deploy_ha_nova_ctrl_replacement
-
         """
+
         self.env.revert_snapshot("ready_with_5_slaves")
 
         cluster_id = self.fuel_web.create_cluster(
