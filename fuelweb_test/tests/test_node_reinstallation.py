@@ -12,11 +12,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import yaml
+
+from cinderclient.exceptions import NotFound
+from devops.helpers import helpers as devops_helpers
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import ostf_test_mapping as map_ostf
+from fuelweb_test.helpers import os_actions
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -43,10 +49,11 @@ class NodeReinstallationEnv(TestBasic):
 
         Scenario:
             1. Create a cluster
-            2. Add 3 nodes with controller and mongo roles
-            3. Add 2 nodes with compute and cinder roles
-            4. Deploy the cluster
-            5. Verify that the deployment is completed successfully
+            2. Add 3 nodes with controller
+            3. Add a nodes with compute role
+            4. Add a nodes with mongo role
+            5. Deploy the cluster
+            6. Verify that the deployment is completed successfully
 
         Duration 190m
         """
@@ -65,11 +72,11 @@ class NodeReinstallationEnv(TestBasic):
 
         self.fuel_web.update_nodes(
             cluster_id, {
-                'slave-01': ['controller', 'mongo'],
-                'slave-02': ['controller', 'mongo'],
-                'slave-03': ['controller', 'mongo'],
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
                 'slave-04': ['compute', 'cinder'],
-                'slave-05': ['compute', 'cinder']
+                'slave-05': ['mongo']
             }
         )
 
@@ -89,8 +96,9 @@ class NodeReinstallationEnv(TestBasic):
             1. Revert the snapshot
             2. Create a cluster
             3. Add 3 nodes with controller and mongo roles
-            4. Add 2 nodes with compute and cinder roles
-            5. Provision nodes
+            4. Add a nodes with compute role
+            5. Add a nodes with mongo role
+            6. Provision nodes
 
         Duration 25m
         """
@@ -108,11 +116,11 @@ class NodeReinstallationEnv(TestBasic):
 
         self.fuel_web.update_nodes(
             cluster_id, {
-                'slave-01': ['controller', 'mongo'],
-                'slave-02': ['controller', 'mongo'],
-                'slave-03': ['controller', 'mongo'],
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
                 'slave-04': ['compute', 'cinder'],
-                'slave-05': ['compute', 'cinder']
+                'slave-05': ['mongo']
             }
         )
 
@@ -148,8 +156,7 @@ class ReadyNodeReinstallation(TestBasic):
             3. Reinstall the controller
             4. Run network verification
             5. Run OSTF
-            6. Verify that Ceilometer API service is up and running
-            7. Verify that the hostname is not changed on reinstallation
+            6. Verify that the hostname is not changed on reinstallation
                of the node
 
         Duration: 100m
@@ -168,12 +175,6 @@ class ReadyNodeReinstallation(TestBasic):
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
-        # Verify that Ceilometer API service is up and running
-        self.fuel_web.run_single_ostf_test(
-            cluster_id, test_sets=['sanity'],
-            test_name=map_ostf.OSTF_TEST_MAPPING.get(
-                'List ceilometer availability'))
-
         # Verify that the hostname isn't changed on reinstallation of the node
         self._check_hostname(
             regular_ctrl, self.fuel_web.get_nailgun_node_by_name("slave-02"))
@@ -190,10 +191,9 @@ class ReadyNodeReinstallation(TestBasic):
             3. Reinstall the controller
             4. Run network verification
             5. Run OSTF
-            6. Verify that Ceilometer API service is up and running
-            7. Verify that the hostname is not changed on reinstallation
+            6. Verify that the hostname is not changed on reinstallation
                of the node
-            8. Verify that the primary-controller role is not migrated on
+            7. Verify that the primary-controller role is not migrated on
                reinstallation of the node
 
         Duration: 100m
@@ -215,12 +215,6 @@ class ReadyNodeReinstallation(TestBasic):
 
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
-
-        # Verify that Ceilometer API service is up and running
-        self.fuel_web.run_single_ostf_test(
-            cluster_id, test_sets=['sanity'],
-            test_name=map_ostf.OSTF_TEST_MAPPING.get(
-                'List ceilometer availability'))
 
         # Verify that the hostname isn't changed on reinstallation of the node
         self._check_hostname(
@@ -279,6 +273,48 @@ class ReadyNodeReinstallation(TestBasic):
         # Verify that the hostname isn't changed on reinstallation of the node
         self._check_hostname(
             cmp_nailgun, self.fuel_web.get_nailgun_node_by_name('slave-04'))
+
+    @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
+          groups=["reinstall_single_mongo_node"])
+    @log_snapshot_after_test
+    def reinstall_single_mongo_node(self):
+        """Verify reinstallation of a mongo node.
+
+        Scenario:
+            1. Revert snapshot
+            2. Select a mongo node
+            3. Reinstall the node
+            4. Run network verification
+            5. Run OSTF
+            6. Verify that Ceilometer API service is up and running
+            7. Verify that the hostname is not changed on reinstallation
+               of the node
+
+        Duration: 55m
+        """
+        self.env.revert_snapshot("node_reinstallation_env")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        # Select a compute
+        cmp_nailgun = self.fuel_web.get_nailgun_node_by_name('slave-05')
+
+        # Reinstall the compute
+        NodeReinstallationEnv._reinstall_nodes(
+            self.fuel_web, cluster_id, [str(cmp_nailgun['id'])])
+
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+
+        # Verify that Ceilometer API service is up and running
+        self.fuel_web.run_single_ostf_test(
+            cluster_id, test_sets=['sanity'],
+            test_name=map_ostf.OSTF_TEST_MAPPING.get(
+                'List ceilometer availability'))
+
+        # Verify that the hostname isn't changed on reinstallation of the node
+        self._check_hostname(
+            cmp_nailgun, self.fuel_web.get_nailgun_node_by_name('slave-05'))
 
     @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
           groups=["full_cluster_reinstallation"])
@@ -352,7 +388,6 @@ class ErrorNodeReinstallation(TestBasic):
             3. Reinstall the cluster
             4. Run network verification
             5. Run OSTF
-            6. Verify that Ceilometer API service is up and running
 
         Duration: 145m
         """
@@ -375,12 +410,6 @@ class ErrorNodeReinstallation(TestBasic):
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
-        # Verify that Ceilometer API service is up and running
-        self.fuel_web.run_single_ostf_test(
-            cluster_id, test_sets=['sanity'],
-            test_name=map_ostf.OSTF_TEST_MAPPING.get(
-                'List ceilometer availability'))
-
     @test(depends_on=[NodeReinstallationEnv.failed_node_reinstallation_env],
           groups=["reinstall_failed_regular_controller_deployment"])
     @log_snapshot_after_test
@@ -394,7 +423,6 @@ class ErrorNodeReinstallation(TestBasic):
             3. Reinstall the cluster
             4. Run network verification
             5. Run OSTF
-            6. Verify that Ceilometer API service is up and running
 
         Duration: 145m
         """
@@ -416,12 +444,6 @@ class ErrorNodeReinstallation(TestBasic):
 
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
-
-        # Verify that Ceilometer API service is up and running
-        self.fuel_web.run_single_ostf_test(
-            cluster_id, test_sets=['sanity'],
-            test_name=map_ostf.OSTF_TEST_MAPPING.get(
-                'List ceilometer availability'))
 
     @test(depends_on=[NodeReinstallationEnv.failed_node_reinstallation_env],
           groups=["reinstall_failed_compute_deployment"])
@@ -465,3 +487,211 @@ class ErrorNodeReinstallation(TestBasic):
         # Verify that all cinder services are up and running on computes
         self.fuel_web.wait_cinder_is_up(
             [self.env.d_env.nodes().slaves[0].name])
+
+
+@test(groups=["partition_preservation"])
+class PartitionPreservation(TestBasic):
+    """PartitionPreservation."""  # TODO documentation
+
+    def _preserve_partition(self, node_id, partition):
+        # Retrieve disks config for the given node
+        with self.env.d_env.get_admin_remote() as admin_remote:
+            res = admin_remote.execute(
+                "fuel node --node-id {0} "
+                "--disk --download".format(str(node_id)))
+            rem_yaml = res['stdout'][-1].rstrip()
+
+            # Get local copy of the disks config file in question
+            tmp_yaml = "/tmp/tmp_disk.yaml"
+            admin_remote.execute("cp {0} {1}".format(rem_yaml, tmp_yaml))
+            admin_remote.download(tmp_yaml, tmp_yaml)
+
+            # Update the local copy of the disk config file, mark the partition
+            # in question to be preserved during provisioning of the node
+            with open(tmp_yaml) as f:
+                disks_data = yaml.load(f)
+
+            for disk in disks_data:
+                for volume in disk['volumes']:
+                    if volume['name'] == partition:
+                        volume['keep_data'] = True
+
+            with open(tmp_yaml, 'w') as f:
+                yaml.dump(disks_data, f)
+
+            # Upload the updated disks config to the corresponding node
+            admin_remote.upload(tmp_yaml, tmp_yaml)
+            admin_remote.execute("cp {0} {1}".format(tmp_yaml, rem_yaml))
+            admin_remote.execute("fuel node --node-id {0} "
+                                 "--disk --upload".format(str(node_id)))
+
+    @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
+          groups=["cinder_partition_preservation"])
+    @log_snapshot_after_test
+    def cinder_partition_preservation(self):
+        """Verify partition preservation of Cinder data.
+
+        Scenario:
+            1. Revert the snapshot
+            2. Create an OS volume
+            3. Mark 'cinder' partition to be preserved on the node that hosts
+               the created volume
+            4. Reinstall the compute node that hosts the created volume
+            5. Run network verification
+            6. Run OSTF
+            7. Verify that the volume is present and has 'available' status
+               after the node reinstallation
+
+        Duration: 105m
+        """
+        self.env.revert_snapshot("node_reinstallation_env")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        # Create an OS volume
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+
+        volume = os_conn.create_volume()
+        volume_host = getattr(volume, 'os-vol-host-attr:host')
+        cmp_nailgun = self.fuel_web.get_nailgun_node_by_fqdn(
+            volume_host.rsplit('#')[0])
+
+        # Mark 'cinder' partititon to be preserved
+        self._preserve_partition(cmp_nailgun['id'], "cinder")
+
+        NodeReinstallationEnv._reinstall_nodes(
+            self.fuel_web, cluster_id, [str(cmp_nailgun['id'])])
+
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+
+        # Verify that the created volume is still available
+        try:
+            volume = os_conn.cinder.volumes.get(volume.id)
+        except NotFound:
+            raise AssertionError(
+                "{0} volume is not available after its {1} hosting node "
+                "reinstallation".format(volume.id, cmp_nailgun['fqdn']))
+        expected_status = "available"
+        assert_equal(
+            expected_status,
+            volume.status,
+            "{0} volume status is {1} after its {2} hosting node "
+            "reinstallation. Expected status is {3}.".format(
+                volume.id, volume.status, cmp_nailgun['fqdn'], expected_status)
+        )
+
+    @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
+          groups=["mongo_partition_preservation"])
+    @log_snapshot_after_test
+    def mongo_partition_preservation(self):
+        """Verify partition preservation of Ceilometer data.
+
+        Scenario:
+            1. Revert the snapshot
+            2. Create a ceilometer alarm
+            3. Mark 'mongo' partition to be preserved on the mongo node
+            4. Reinstall the mongo node
+            5. Verify that the alarm is present after the node reinstallation
+            6. Run network verification
+            7. Run OSTF
+
+        Duration: 105m
+        """
+        self.env.revert_snapshot("node_reinstallation_env", skip_timesync=True)
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        # Create a ceilometer alarm
+        with self.fuel_web.get_ssh_for_node("slave-02") as remote:
+            alarm_name = "test_alarm"
+            res = remote.execute(
+                "source openrc; "
+                "ceilometer alarm-threshold-create "
+                "--name {0} "
+                "-m {1} "
+                "--threshold {2}".format(alarm_name, "cpu_util", "80.0")
+            )
+            assert_equal(0, res['exit_code'],
+                         "Creating alarm via ceilometer CLI failed.")
+            initial_alarms = remote.execute(
+                "source openrc; ceilometer alarm-list")
+
+        # Mark 'mongo' partition to be preserved on all controllers
+        mongo_nailgun = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['mongo'])[0]
+        self._preserve_partition(mongo_nailgun['id'], "mongo")
+
+        NodeReinstallationEnv._reinstall_nodes(
+            self.fuel_web, cluster_id, [str(mongo_nailgun['id'])])
+
+        with self.fuel_web.get_ssh_for_node("slave-02") as remote:
+            alarms = remote.execute("source openrc; ceilometer alarm-list")
+            assert_equal(
+                initial_alarms['stdout'],
+                alarms['stdout'],
+                "{0} alarm is not available in mongo after reinstallation "
+                "of the controllers".format(alarm_name))
+
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+
+    @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
+          groups=["nova_partition_preservation"])
+    @log_snapshot_after_test
+    def nova_partition_preservation(self):
+        """Verify partition preservation of Nova instances data.
+
+        Scenario:
+            1. Revert the snapshot
+            2. Create an OS instance
+            3. Mark 'vm' partition to be preserved on the node that hosts
+               the created VM
+            4. Reinstall the compute node that hosts the created VM
+            5. Run network verification
+            6. Run OSTF
+            7. Verify that the VM is available and pingable
+               after the node reinstallation
+
+        Duration: 105m
+        """
+        self.env.revert_snapshot("node_reinstallation_env")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        # Create an OS instance
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+
+        cmp_host = os_conn.get_hypervisors()[0]
+
+        vm = os_conn.create_server_for_migration(
+            neutron=True,
+            availability_zone="nova:{0}".format(cmp_host.hypervisor_hostname))
+        vm_floating_ip = os_conn.assign_floating_ip(vm)
+        devops_helpers.wait(
+            lambda: devops_helpers.tcp_ping(vm_floating_ip.ip, 22),
+            timeout=120)
+
+        # Mark 'vm' partititon to be preserved
+        cmp_nailgun = self.fuel_web.get_nailgun_node_by_fqdn(
+            cmp_host.hypervisor_hostname)
+        self._preserve_partition(cmp_nailgun['id'], "vm")
+
+        NodeReinstallationEnv._reinstall_nodes(
+            self.fuel_web, cluster_id, [str(cmp_nailgun['id'])])
+
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+
+        # Verify that the VM is still available
+        try:
+            os_conn.verify_instance_status(vm, 'ACTIVE')
+        except AssertionError:
+            raise AssertionError(
+                "{0} VM is not available after its {1} hosting node "
+                "reinstallation".format(vm.name, cmp_host.hypervisor_hostname))
+        assert_true(devops_helpers.tcp_ping(vm_floating_ip.ip, 22),
+                    "{0} VM is not accessible via its {1} floating "
+                    "ip".format(vm.name, vm_floating_ip))
