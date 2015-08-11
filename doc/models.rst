@@ -3,6 +3,11 @@
 Models
 ======
 
+Collector client
+----------------
+.. automodule:: fuelweb_test.models.collector_client
+   :members:
+
 Environment
 -----------
 .. automodule:: fuelweb_test.models.environment
@@ -16,9 +21,4 @@ Fuel Web Client
 Nailgun Client
 --------------
 .. automodule:: fuelweb_test.models.nailgun_client
-   :members:
-
-Puppet Environment
-------------------
-.. automodule:: fuelweb_test.models.pp_environment
    :members:
