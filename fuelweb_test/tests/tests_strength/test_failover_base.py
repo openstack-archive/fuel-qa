@@ -217,8 +217,8 @@ class TestHaFailoverBase(TestBasic):
             self.fuel_web.client.get_cluster_id(self.__class__.__name__)
         logger.debug('Cluster id is {0}'.format(cluster_id))
         resources = {
-            "vip__management": {"iface": "hapr-m", "netns": "haproxy"},
-            "vip__public": {"iface": "hapr-p", "netns": "haproxy"}
+            "vip__management": {"iface": "mgmt-ns", "netns": "haproxy"},
+            "vip__public": {"iface": "pub-ns", "netns": "haproxy"}
         }
         nailgun_controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id=cluster_id,
