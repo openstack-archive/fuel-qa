@@ -27,7 +27,7 @@ from fuelweb_test.helpers.fuel_actions import FuelPluginBuilder
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 
 
-@test(groups=["fuel_plugins"])
+@test(groups=["fuel_plugins", "fuel_plugin_reboot"])
 class RebootPlugin(TestBasic):
     """Test class for testing reboot task in plugins."""
 

@@ -28,7 +28,7 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["fuel_plugins"])
+@test(groups=["fuel_plugins", "fuel_plugin_example"])
 class ExamplePlugin(TestBasic):
     """ExamplePlugin."""  # TODO documentation
 

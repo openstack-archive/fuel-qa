@@ -28,7 +28,7 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from proboscis.asserts import assert_equal
 
 
-@test(groups=["fuel_plugins"])
+@test(groups=["fuel_plugins", "fuel_plugin_vip_reservation"])
 class VipReservation(TestBasic):
     """Test class for testing allocation of vip for plugin."""
 
