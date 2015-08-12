@@ -295,7 +295,7 @@ class ControllerReplacement(base_test_case.TestBasic):
           groups=["deploy_ha_neutron_tun_ctrl_replacement"])
     @log_snapshot_after_test
     def deploy_ha_neutron_tun_ctrl_replacement(self):
-        """Replace 1 controller and re-deploy on ha env with neutron gre
+        """Replace 1 controller and re-deploy on ha env with neutron vxlan
 
         Scenario:
             1. Create cluster with Neutron VXLAN
@@ -312,7 +312,7 @@ class ControllerReplacement(base_test_case.TestBasic):
 
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        data = {"net_provider": "neutron", "net_segment_type": 'gre'}
+        data = {"net_provider": "neutron", "net_segment_type": 'tun'}
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
