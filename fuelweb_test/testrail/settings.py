@@ -30,6 +30,10 @@ JENKINS = {
                                        'version.yaml.txt')
 }
 
+GROUPS_TO_EXPAND = [
+    'setup_master', 'prepare_release', 'prepare_slaves_1', 'prepare_slaves_3',
+    'prepare_slaves_5', 'prepare_slaves_9']
+
 
 class LaunchpadSettings(object):
     """LaunchpadSettings."""  # TODO documentation

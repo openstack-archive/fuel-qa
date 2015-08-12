@@ -20,6 +20,7 @@ from proboscis import TestProgram
 
 from builds import Build
 from fuelweb_test.run_tests import import_tests
+from settings import GROUPS_TO_EXPAND
 from settings import logger
 from settings import TestRailSettings
 from testrail_client import TestRailProject
@@ -30,42 +31,59 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups):
 
     tests = []
 
-    for case in TestProgram(groups=groups).cases:
-        if not case.entry.info.enabled:
-            continue
-        if tests_include:
-            if tests_include not in case.entry.home.func_name:
-                logger.debug("Skipping '{0}' test because it doesn't contain '"
-                             "{1}' in method name".format(
-                                 case.entry.home.func_name,
-                                 tests_include))
+    for group in groups:
+        for case in TestProgram(groups=[group]).cases:
+            if not case.entry.info.enabled:
                 continue
-        if tests_exclude:
-            if tests_exclude in case.entry.home.func_name:
-                logger.debug("Skipping '{0}' test because it contains '{1}' in"
-                             "method name".format(case.entry.home.func_name,
-                                                  tests_exclude))
-                continue
+            if tests_include:
+                if tests_include not in case.entry.home.func_name:
+                    logger.debug("Skipping '{0}' test because it doesn't "
+                                 "contain '{1}' in method name"
+                                 .format(case.entry.home.func_name,
+                                         tests_include))
+                    continue
+            if tests_exclude:
+                if tests_exclude in case.entry.home.func_name:
+                    logger.debug("Skipping '{0}' test because it contains"
+                                 " '{1}' in method name"
+                                 .format(case.entry.home.func_name,
+                                         tests_exclude))
+                    continue
 
-        docstring = case.entry.home.func_doc or ''
-        docstring = '\n'.join([s.strip() for s in docstring.split('\n')])
+            docstring = case.entry.home.func_doc or ''
+            docstring = '\n'.join([s.strip() for s in docstring.split('\n')])
 
-        steps = [{"content": s, "expected": "pass"} for s in
-                 docstring.split('\n') if s and s[0].isdigit()]
+            steps = [{"content": s, "expected": "pass"} for s in
+                     docstring.split('\n') if s and s[0].isdigit()]
 
-        test_duration = re.search(r'Duration\s+(\d+[s,m])\b', docstring)
-        test_case = {
-            "title": docstring.split('\n')[0] or case.entry.home.func_name,
-            "type_id": 1,
-            "milestone_id": milestone_id,
-            "priority_id": 5,
-            "estimate": test_duration.group(1) if test_duration else "3m",
-            "refs": "",
-            "custom_test_group": case.entry.home.func_name,
-            "custom_test_case_description": docstring or " ",
-            "custom_test_case_steps": steps
-        }
-        tests.append(test_case)
+            test_duration = re.search(r'Duration\s+(\d+[s,m])\b', docstring)
+            title = docstring.split('\n')[0] or case.entry.home.func_name
+            test_group = case.entry.home.func_name
+
+            if case.entry.home.func_name in GROUPS_TO_EXPAND:
+                """Expand specified test names with the group names that are
+                   used in jenkins jobs where this test is started.
+                """
+                title = ' - '.join([title, group])
+                test_group = '_'.join([case.entry.home.func_name, group])
+
+            test_case = {
+                "title": title,
+                "type_id": 1,
+                "milestone_id": milestone_id,
+                "priority_id": 5,
+                "estimate": test_duration.group(1) if test_duration else "3m",
+                "refs": "",
+                "custom_test_group": test_group,
+                "custom_test_case_description": docstring or " ",
+                "custom_test_case_steps": steps
+            }
+
+            if not any([x['custom_test_group'] == test_group for x in tests]):
+                tests.append(test_case)
+            else:
+                logger.warning("Testcase '{0}' run in multiple Jenkins jobs!"
+                               .format(test_group))
     return tests
 
 
