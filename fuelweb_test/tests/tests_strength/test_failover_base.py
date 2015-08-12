@@ -518,8 +518,7 @@ class TestHaFailoverBase(TestBasic):
                 check_ping(remote, DNS, deadline=120, interval=10),
                 "No Internet access from {0}".format(node['fqdn'])
             )
-        remote_compute = self.fuel_web.get_ssh_for_node(
-            self.env.d_env.nodes().slaves[4].name)
+        remote_compute = self.fuel_web.get_ssh_for_node('slave-05')
         devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         file_name = DOWNLOAD_LINK.split('/')[-1]
