@@ -51,11 +51,6 @@ Test Environment Action
 .. automodule:: fuelweb_test.tests.test_environment_action
    :members:
 
-Test High Availability
-----------------------
-.. automodule:: fuelweb_test.tests.test_ha
-   :members:
-
 Test High Availability on one controller
 ----------------------------------------
 .. automodule:: fuelweb_test.tests.test_ha_one_controller
