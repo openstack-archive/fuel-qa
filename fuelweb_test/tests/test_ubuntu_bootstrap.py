@@ -187,7 +187,7 @@ class UbuntuBootstrap(TestBasic):
         # then verify bootstrap on slaves and re-deploy cluster
         self.fuel_web.stop_reset_env_wait(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.d_env.nodes().slaves[:2], timeout=10 * 60)
+            self.env.d_env.nodes().slaves[:3], timeout=10 * 60)
         self.verify_bootstrap_on_slaves(self.env.d_env.nodes().slaves[:3])
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
