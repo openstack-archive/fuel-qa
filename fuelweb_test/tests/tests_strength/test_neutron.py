@@ -87,10 +87,10 @@ class TestNeutronFailover(base_test_case.TestBasic):
           groups=["deploy_ha_neutron"])
     @log_snapshot_after_test
     def deploy_ha_neutron(self):
-        """Deploy cluster in HA mode, Neutron with GRE segmentation
+        """Deploy cluster in HA mode, Neutron with VXLAN segmentation
 
         Scenario:
-            1. Create cluster. HA, Neutron with GRE segmentation
+            1. Create cluster. HA, Neutron with VXLAN segmentation
             2. Add 3 nodes with controller roles
             3. Add 2 nodes with compute roles
             4. Add 1 node with cinder role
@@ -128,9 +128,11 @@ class TestNeutronFailover(base_test_case.TestBasic):
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        remotes = [self.fuel_web.get_ssh_for_node(node) for node
-                   in ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]]
-        checkers.check_public_ping(remotes)
+
+        for node in ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]:
+            with self.fuel_web.get_ssh_for_node(node) as remote:
+            checkers.check_public_ping(remote)
+
         self.env.make_snapshot("deploy_ha_neutron", is_make=True)
 
     @test(depends_on=[deploy_ha_neutron],

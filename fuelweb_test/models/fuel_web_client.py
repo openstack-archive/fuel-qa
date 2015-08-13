@@ -485,9 +485,9 @@ class FuelWebClient(object):
             if MULTIPLE_NETWORKS:
                 node_groups = {n['name']: [] for n in NODEGROUPS}
                 self.update_nodegroups(cluster_id, node_groups)
-                for NODEGROUP in NODEGROUPS:
+                for nodegroup in NODEGROUPS:
                     self.update_network_configuration(cluster_id,
-                                                      nodegroup=NODEGROUP)
+                                                      nodegroup=nodegroup)
             else:
                 self.update_network_configuration(cluster_id)
 
@@ -1205,7 +1205,7 @@ class FuelWebClient(object):
                  timeout=60 * 2)
             node = self.get_nailgun_node_by_devops_node(devops_node)
             assert_true(node['online'],
-                        'Node {} is online'.format(node['mac']))
+                        'Node {0} is offline'.format(node['mac']))
 
             if custom_names:
                 name = custom_names.get(node_name,
@@ -1213,7 +1213,7 @@ class FuelWebClient(object):
                                             node_name,
                                             "_".join(node_roles)))
             else:
-                name = '{}_{}'.format(node_name, "_".join(node_roles))
+                name = '{0}_{1}'.format(node_name, "_".join(node_roles))
 
             node_data = {
                 'cluster_id': cluster_id,
