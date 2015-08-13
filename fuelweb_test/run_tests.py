@@ -73,6 +73,7 @@ def import_tests():
     from tests.plugins.plugin_lma_collector import test_plugin_lma_collector  # noqa
     from tests.plugins.plugin_reboot import test_plugin_reboot_task  # noqa
     from tests.plugins.plugin_zabbix import test_plugin_zabbix  # noqa
+    from tests.plugins.plugin_dvs import test_plugin_dvs  # noqa
     from tests import test_multiple_networks  # noqa
     from tests.gd_based_tests import test_neutron  # noqa
     from tests.gd_based_tests import test_neutron_vlan_ceph_mongo  # noqa
