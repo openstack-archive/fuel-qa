@@ -557,7 +557,7 @@ class PartitionPreservation(TestBasic):
         cmp_nailgun = self.fuel_web.get_nailgun_node_by_fqdn(
             volume_host.rsplit('#')[0])
 
-        # Mark 'cinder' partititon to be preserved
+        # Mark 'cinder' partition to be preserved
         self._preserve_partition(cmp_nailgun['id'], "cinder")
 
         NodeReinstallationEnv._reinstall_nodes(
@@ -638,6 +638,46 @@ class PartitionPreservation(TestBasic):
         self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
     @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
+          groups=["mysql_partition_preservation"])
+    @log_snapshot_after_test
+    def mysql_partition_preservation(self):
+        """Verify partition preservation of mysql data.
+
+        Scenario:
+            1. Revert the snapshot
+            2. Mark 'mysql' partition to be preserved on one of controllers
+            3. Reinstall the controller
+            4. Verify IST has been received for the reinstalled controller
+            5. Run network verification
+            6. Run OSTF
+
+        Duration: 105m
+        """
+        self.env.revert_snapshot("node_reinstallation_env")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        # Select a controller node and mark its 'mysql'
+        # partition to be preserved
+        ctrl_nailgun = self.fuel_web.get_nailgun_node_by_name("slave-03")
+        self._preserve_partition(ctrl_nailgun['id'], "mysql")
+
+        NodeReinstallationEnv._reinstall_nodes(
+            self.fuel_web, cluster_id, [str(ctrl_nailgun['id'])])
+
+        with self.fuel_web.get_ssh_for_node("slave-03") as remote:
+            log_path = "/var/log/mysql/error.log"
+            output = remote.execute(
+                'grep "IST received" {0} | grep -v grep &>/dev/null '
+                '&& echo "OK" || echo "FAIL"'.format(log_path))
+        assert_true('OK' in output['stdout'][0],
+                    "IST was not received after the {0} node "
+                    "reinstallation.".format(ctrl_nailgun['hostname']))
+
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+
+    @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
           groups=["nova_partition_preservation"])
     @log_snapshot_after_test
     def nova_partition_preservation(self):
@@ -674,7 +714,7 @@ class PartitionPreservation(TestBasic):
             lambda: devops_helpers.tcp_ping(vm_floating_ip.ip, 22),
             timeout=120)
 
-        # Mark 'vm' partititon to be preserved
+        # Mark 'vm' partition to be preserved
         cmp_nailgun = self.fuel_web.get_nailgun_node_by_fqdn(
             cmp_host.hypervisor_hostname)
         self._preserve_partition(cmp_nailgun['id'], "vm")
