@@ -70,8 +70,7 @@ class UbuntuBootstrap(TestBasic):
             cmd = 'fuel-bootstrap-image-set ubuntu'
             run_on_remote(remote, cmd)
 
-        # Should be removed after Bug#1482242 will be fixed
-        with self.env.d_env.get_admin_remote() as remote:
+            # Should be removed after Bug#1482242 will be fixed
             cmd = 'dockerctl shell cobbler service dnsmasq restart'
             run_on_remote(remote, cmd)
 
