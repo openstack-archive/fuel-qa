@@ -138,7 +138,7 @@ class TestMultipleClusterNets(TestBasic):
             6. Run health checks (OSTF)
 
         Duration 110m
-        Snapshot deploy_neutron_tun_ha_nodegroups
+        Snapshot deploy_ceph_ha_nodegroups
 
         """
 
@@ -178,4 +178,4 @@ class TestMultipleClusterNets(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id, timeout=150 * 60)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
-        self.env.make_snapshot("deploy_neutron_tun_ha_nodegroups")
+        self.env.make_snapshot("deploy_ceph_ha_nodegroups")

@@ -128,12 +128,9 @@ class TestHaFailoverBase(TestBasic):
                 os_conn, smiles_count=16, networks_count=1, timeout=300)
         self.fuel_web.verify_network(cluster_id)
 
-        # Bug #1289297. Pause 5 min to make sure that all remain activity
-        # on the admin node has over before creating a snapshot.
-        time.sleep(5 * 60)
-        remotes = [self.fuel_web.get_ssh_for_node(node) for node
-                   in ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]]
-        check_public_ping(remotes)
+        for node in ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]:
+            with self.fuel_web.get_ssh_for_node(node) as remote:
+                check_public_ping(remote)
 
         self.env.make_snapshot(self.snapshot_name, is_make=True)
 
