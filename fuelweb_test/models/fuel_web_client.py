@@ -58,6 +58,8 @@ from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import OSTF_TEST_NAME
 from fuelweb_test.settings import OSTF_TEST_RETRIES_COUNT
+from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
+from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
 from fuelweb_test.settings import TIMEOUT
 from fuelweb_test.settings import VCENTER_IP
 from fuelweb_test.settings import VCENTER_USERNAME
@@ -394,6 +396,9 @@ class FuelWebClient(object):
 
         if settings is None:
             settings = {}
+
+        if REPLACE_DEFAULT_REPOS and not REPLACE_DEFAULT_REPOS_ONLY_ONCE:
+            self.replace_default_repos()
 
         cluster_id = self.client.get_cluster_id(name)
         if not cluster_id:

@@ -426,8 +426,13 @@ AUX_DEB_REPO_PRIORITY = os.environ.get('AUX_DEB_REPO_PRIORITY', 1150)
 AUX_RPM_REPO_PRIORITY = os.environ.get('AUX_RPM_REPO_PRIORITY', 15)
 
 # True: replace the default list of repositories in Nailgun
-# False: replace list of reposiroties for a cluster when it is created by tests
+# False: keep original list of repositories in Nailgun
 REPLACE_DEFAULT_REPOS = get_var_as_bool('REPLACE_DEFAULT_REPOS', True)
+
+# True: replace the default list of repositories once admin node is installed
+# False: replace list of repositories before every cluster creation
+REPLACE_DEFAULT_REPOS_ONLY_ONCE = get_var_as_bool(
+    'REPLACE_DEFAULT_REPOS_ONLY_ONCE', True)
 
 # Set gateway of 'admin' network as NTPD server for Fuel master node
 # , set gateway of 'public' network as NTPD server for new OS clusters

@@ -19,6 +19,7 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import timestat
 from fuelweb_test.models.environment import EnvironmentModel
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
+from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
 
 
 class TestBasic(object):
@@ -74,7 +75,7 @@ class SetupEnvironment(TestBasic):
         """
         self.check_run("empty_custom_manifests")
         self.env.setup_environment(custom=True, build_images=True)
-        if REPLACE_DEFAULT_REPOS:
+        if REPLACE_DEFAULT_REPOS and REPLACE_DEFAULT_REPOS_ONLY_ONCE:
             self.fuel_web.replace_default_repos()
         self.env.make_snapshot("empty_custom_manifests", is_make=True)
 
@@ -94,7 +95,7 @@ class SetupEnvironment(TestBasic):
         self.env.revert_snapshot("empty", skip_timesync=True)
 
         self.fuel_web.get_nailgun_version()
-        if REPLACE_DEFAULT_REPOS:
+        if REPLACE_DEFAULT_REPOS and REPLACE_DEFAULT_REPOS_ONLY_ONCE:
             self.fuel_web.replace_default_repos()
         self.env.make_snapshot("ready", is_make=True)
 
