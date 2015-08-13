@@ -1,0 +1,12 @@
+Verified+2: Jenkins
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+2: Andrey Sledzinskiy <asledzinskiy@mirantis.com>
+Workflow+1: Andrey Sledzinskiy <asledzinskiy@mirantis.com>
+Code-Review+1: Igor Gajsin <igajsin@mirantis.com>
+Code-Review+1: Iryna Vovk <ivovk@mirantis.com>
+Code-Review+1: Ilya Bumarskov <ibumarskov@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Thu, 13 Aug 2015 14:51:39 +0000
+Reviewed-on: https://review.openstack.org/206929
+Project: stackforge/fuel-qa
+Branch: refs/heads/stable/6.1
