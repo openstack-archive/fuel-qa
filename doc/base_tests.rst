@@ -96,6 +96,11 @@ Test Neutron VXLAN
 .. automodule:: fuelweb_test.tests.test_neutron_tun
    :members:
 
+Test Neutron VXLAN base
+-----------------------
+.. automodule:: fuelweb_test.tests.test_neutron_tun_base
+   :members:
+
 Test Node reinstallation
 ------------------------
 .. automodule:: fuelweb_test.tests.test_node_reinstallation
