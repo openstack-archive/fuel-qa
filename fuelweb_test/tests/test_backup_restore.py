@@ -22,7 +22,7 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.tests.test_ha_one_controller_base\
     import HAOneControllerNeutronBase
-from fuelweb_test.tests.test_neutron_tun import NeutronTunHaBase
+from fuelweb_test.tests.test_neutron_tun_base import NeutronTunHaBase
 
 
 @test(groups=["known_issues"])
