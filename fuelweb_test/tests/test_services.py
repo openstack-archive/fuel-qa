@@ -609,6 +609,64 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
         self.run_tests(cluster_id)
         self.env.make_snapshot("deploy_ceilometer_ha_one_controller_multirole")
 
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["deploy_ceilometer_ha_one_controller_add_mongo"])
+    @log_snapshot_after_test
+    def deploy_ceilometer_ha_one_controller_add_mongo(self):
+        """Deploy cluster with Ceilometer and then add mongo node
+
+        Scenario:
+            1. Create cluster. Set install Ceilometer option
+            2. Add 1 node with controller and mongo role
+            3. Add 1 nodes with compute and cinder role
+            4. Deploy the cluster
+            5. Verify ceilometer api is running
+            6. Run OSTF
+            7. Add 1 node with mongo role
+            8. Deploy changes
+            9. Run OSTF
+
+
+        Duration 35m
+        Snapshot: deploy_ceilometer_ha_one_controller_add_mongo
+        """
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings={
+                'ceilometer': True,
+                'net_provider': 'neutron',
+                'net_segment_type': 'tun',
+            }
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller', 'mongo'],
+                'slave-02': ['compute', 'cinder']
+            }
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
+        checkers.verify_service(
+            self.env.d_env.get_ssh_to_remote(_ip),
+            service_name='ceilometer-api')
+
+        self.run_tests(cluster_id)
+
+        self.fuel_web.update_nodes(
+            cluster_id, {'slave-03': ['mongo']})
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        assert_equal(3, len(
+            self.fuel_web.client.list_cluster_nodes(cluster_id)))
+
+        self.run_tests(cluster_id)
+        self.env.make_snapshot("deploy_ceilometer_ha_one_controller_add_mongo")
+
 
 @test(groups=["services", "services.ceilometer", "services_ha.ceilometer"])
 class CeilometerHAMongo(OSTFCeilometerHelper):
