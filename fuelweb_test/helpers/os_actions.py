@@ -447,3 +447,52 @@ class OpenStackActions(common.Common):
         res = ''.join(remote.execute('virsh dumpxml {0} | grep "mac address="'
                       .format(self.get_srv_instance_name(srv)))['stdout'])
         return res.split('\'')[1]
+
+    def add_router(self, router_name=None, ext_net=None, tenant_name='admin'):
+
+        if ext_net is None:
+            ext_net = [net for net
+                       in self.neutron.list_networks()["networks"]
+                       if net['name'] == "net04_ext"][0]
+
+        gateway = {"network_id": ext_net["id"],
+                   "enable_snat": True
+                   }
+        tenant_id = self.get_tenant(tenant_name).id
+        tenant_id = self.keystone.tenant_id
+        router_param = {'router': {'name': router_name,
+                                   'external_gateway_info': gateway,
+                                   'tenant_id': tenant_id}}
+        router = self.neutron.create_router(body=router_param)['router']
+        return router
+
+    def add_sub_net_to_router(self, router_id, sub_id):
+        self.neutron.add_interface_router(
+            router_id,
+            {'subnet_id': sub_id}
+        )
+
+    def create_network(self, name=None,
+                       tenant_name='admin'):
+        tenant_id = self.get_tenant(tenant_name).id
+
+        net_body = {"network": {"name": name,
+                                "tenant_id": tenant_id
+                                }
+                    }
+        network = self.neutron.create_network(net_body)['network']
+        return network
+
+    def create_subnet(self, network=None,
+                      cidr=None, tenant_name='admin'):
+        tenant_id = self.get_tenant(tenant_name).id
+        subnet_body = {"subnet": {"network_id": network['id'],
+                                  "ip_version": 4,
+                                  "cidr": cidr,
+                                  "name": 'subnet_{}'.format(
+                                      network['name'][-1]),
+                                  "tenant_id": tenant_id
+                                  }
+                       }
+        subnet = self.neutron.create_subnet(subnet_body)['subnet']
+        return subnet
