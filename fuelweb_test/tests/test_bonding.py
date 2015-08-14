@@ -65,7 +65,7 @@ INTERFACES = {
 }
 
 
-@test(groups=["bonding_nova", "bonding_ha_one_controller", "bonding"])
+@test(groups=["bonding_ha_one_controller", "bonding"])
 class BondingHAOneController(TestBasic):
     """BondingHAOneController."""  # TODO documentation
 
@@ -74,10 +74,10 @@ class BondingHAOneController(TestBasic):
     NOVANET_INTERFACES['lnx-bond0'].append('fixed')
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_bonding_nova_flat"])
+          groups=["deploy_bonding_one_controller_tun"])
     @log_snapshot_after_test
-    def deploy_bonding_nova_flat(self):
-        """Deploy cluster with active-backup bonding and Nova Network
+    def deploy_bonding_one_controller_tun(self):
+        """Deploy cluster with active-backup bonding and Neutron VXLAN
 
         Scenario:
             1. Create cluster
@@ -91,14 +91,20 @@ class BondingHAOneController(TestBasic):
             8. Run OSTF
 
         Duration 30m
-        Snapshot deploy_bonding_nova_flat
+        Snapshot deploy_bonding_one_controller_tun
         """
 
         self.env.revert_snapshot("ready_with_3_slaves")
 
+        segment_type = NEUTRON_SEGMENT['tun']
+
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": segment_type,
+            }
         )
 
         self.fuel_web.update_nodes(
@@ -121,13 +127,13 @@ class BondingHAOneController(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_bonding_nova_flat")
+        self.env.make_snapshot("deploy_bonding_one_controller_tun")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_bonding_nova_vlan"])
+          groups=["deploy_bonding_one_controller_vlan"])
     @log_snapshot_after_test
-    def deploy_bonding_nova_vlan(self):
-        """Deploy cluster with active-backup bonding and Nova Network + Vlan
+    def deploy_bonding_one_controller_vlan(self):
+        """Deploy cluster with active-backup bonding and Neutron VLAN
 
         Scenario:
             1. Create cluster
@@ -142,14 +148,20 @@ class BondingHAOneController(TestBasic):
 
 
         Duration 30m
-        Snapshot deploy_bonding_nova_vlan
+        Snapshot deploy_bonding_one_controller_vlan
         """
 
         self.env.revert_snapshot("ready_with_3_slaves")
 
+        segment_type = NEUTRON_SEGMENT['vlan']
+
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": segment_type,
+            }
         )
         self.fuel_web.update_nodes(
             cluster_id, {
@@ -173,7 +185,7 @@ class BondingHAOneController(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_bonding_nova_vlan")
+        self.env.make_snapshot("deploy_bonding_one_controller_vlan")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["negative_admin_bonding_in_lacp_mode"])
@@ -192,9 +204,15 @@ class BondingHAOneController(TestBasic):
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
+        segment_type = NEUTRON_SEGMENT['tun']
+
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": segment_type,
+            }
         )
         self.fuel_web.update_nodes(
             cluster_id, {
