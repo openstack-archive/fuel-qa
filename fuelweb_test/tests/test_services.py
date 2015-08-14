@@ -425,7 +425,7 @@ class OSTFCeilometerHelper(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
             test_sets=['smoke', 'sanity'],
-            timeout=60 * 10
+            timeout=60 * 15
         )
 
         LOGGER.debug('Run platform OSTF Ceilometer tests')
@@ -715,7 +715,37 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             service_name='ceilometer-api')
 
         self.run_tests(cluster_id)
-        self.env.make_snapshot("deploy_ceilometer_ha_multirole")
+        self.env.make_snapshot("deploy_ceilometer_ha_multirole", is_make=True)
+
+    @test(depends_on=[deploy_ceilometer_ha_multirole],
+          groups=["ceilometer_ha_multirole_add_mongo"])
+    @log_snapshot_after_test
+    def ceilometer_ha_multirole_add_mongo(self):
+        """Add mongo node to cluster with HA mode and Ceilometer
+
+        Scenario:
+            1. Revert snapshot deploy_ceilometer_ha_multirole
+            2. Add 1 node with mongo role
+            3. Deploy the cluster
+            4. Run OSTF
+
+        Duration 80m
+        Snapshot: ceilometer_ha_multirole_add_mongo
+
+        """
+        self.env.revert_snapshot("deploy_ceilometer_ha_multirole")
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[5:6])
+        self.fuel_web.update_nodes(
+            cluster_id, {'slave-06': ['mongo']}, True, False
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.run_tests(cluster_id)
+
+        self.env.make_snapshot("ceilometer_ha_multirole_add_mongo")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ceilometer_ha_with_external_mongo"])
