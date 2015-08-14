@@ -947,4 +947,5 @@ class HAOneControllerNeutronUSB(HAOneControllerNeutronBase):
         Snapshot: deploy_ha_one_controller_neutron
         """
 
-        super(self.__class__, self).deploy_ha_one_controller_neutron_base()
+        super(self.__class__, self).deploy_ha_one_controller_neutron_base(
+            snapshot_name="deploy_ha_one_controller_neutron_usb")
