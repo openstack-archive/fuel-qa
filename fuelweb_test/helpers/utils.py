@@ -334,7 +334,7 @@ def run_on_remote(remote, cmd, jsonify=False, clear=False):
             'stderr': result['stderr'],
             'exit_code': result['exit_code']}
         error_msg = ("Unexpected error occurred during execution. "
-                     "Details: {0}".format(**error_details))
+                     "Details: {0}".format(error_details))
         logger.error(error_msg)
         raise Exception(error_msg)
 
