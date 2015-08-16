@@ -44,9 +44,10 @@ class NeutronTun(TestBasic):
             1. Create cluster
             2. Add 1 node with controller role
             3. Add 2 nodes with compute role
-            4. Deploy the cluster
-            5. Run network verification
-            6. Run OSTF
+            4. Run network verification
+            5. Deploy the cluster
+            6. Run network verification
+            7. Run OSTF
 
         Duration 35m
         Snapshot deploy_neutron_tun
@@ -76,6 +77,7 @@ class NeutronTun(TestBasic):
         )
         self.fuel_web.update_internal_network(cluster_id, '192.168.196.0/26',
                                               '192.168.196.1')
+        self.fuel_web.verify_network(cluster_id)
         self.fuel_web.deploy_cluster_wait(cluster_id)
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id),
