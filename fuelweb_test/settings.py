@@ -492,3 +492,10 @@ RALLY_TAGS = os.environ.get('RALLY_TAGS', 'nova').split(',')
 
 REGENERATE_ENV_IMAGE = get_var_as_bool('REGENERATE_ENV_IMAGE', False)
 LATE_ARTIFACTS_JOB_URL = os.environ.get("LATE_ARTIFACTS_JOB_URL", '')
+
+# NOTE(dkalashnik): VM memory is measured in Gb, so convert slave_node_memory
+# to Gb and set VM memory to half of this calculated value.
+VIRTUAL_NODE_MEMORY = int(os.environ.get('VIRTUAL_NODE_MEMORY',
+                                         HARDWARE["slave_node_memory"] / 2048))
+VIRTUAL_NODE_CPU = int(os.environ.get('VIRTUAL_NODE_CPU',
+                                      HARDWARE["slave_node_cpu"]))
