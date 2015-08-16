@@ -111,6 +111,11 @@ Test Pull Requests
 .. automodule:: fuelweb_test.tests.test_pullrequest
    :members:
 
+Test Reduced Footprint
+----------------------
+.. automodule:: fuelweb_test.tests.test_reduced_footprint
+   :members:
+
 Test Services
 -------------
 .. automodule:: fuelweb_test.tests.test_services
