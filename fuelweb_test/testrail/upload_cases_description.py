@@ -112,10 +112,19 @@ def upload_tests_descriptions(testrail_project, section_id,
         testrail_project.add_case(section_id=section_id, case=test_case)
 
 
-def get_tests_groups_from_jenkins(runner_name, build_number):
+def get_tests_groups_from_jenkins(runner_name, build_number, distros):
     runner_build = Build(runner_name, build_number)
-    return [b['jobName'].split('.')[-1]
-            for b in runner_build.build_data['subBuilds']]
+    res = []
+    for b in runner_build.build_data['subBuilds']:
+        job_name = b['jobName']
+        for distro in distros:
+            if distro in job_name:
+                sep = '.' + distro + '.'
+                res.append(job_name.split(sep)[-1])
+                break
+            else:
+                res.append(job_name.split('.')[-1])
+    return res
 
 
 def main():
@@ -156,8 +165,15 @@ def main():
     testrail_milestone = project.get_milestone_by_name(
         name=TestRailSettings.milestone)
 
+    distros = [config['name'].split()[0].lower()
+               for config in project.get_config_by_name(
+                   'Operation System')['configs']
+               if config['name'] in TestRailSettings.operation_systems]
+
     tests_groups = get_tests_groups_from_jenkins(
-        options.job_name, options.build_number) if options.job_name else []
+        options.job_name,
+        options.build_number,
+        distros) if options.job_name else []
 
     # If Jenkins job build is specified, but it doesn't have downstream builds
     # with tests groups in jobs names, then skip tests cases uploading because
