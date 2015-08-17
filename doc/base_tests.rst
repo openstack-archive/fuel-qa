@@ -284,3 +284,11 @@ Test Upgrade Chains
 -------------------
 .. automodule:: fuelweb_test.tests.tests_upgrade.test_upgrade_chains
    :members:
+
+OS upgrade tests
+================
+
+Test Openstack Upgrades
+-----------------------
+.. automodule:: fuelweb_test.tests.test_os_upgrade
+   :members:
