@@ -102,6 +102,8 @@ def run_tests():
 
     # Check if the specified test group starts any test case
     if not TestProgram().cases:
+        from fuelweb_test import logger
+        logger.fatal('No test cases matched provided groups')
         sys.exit(1)
 
     # Run Proboscis and exit.
