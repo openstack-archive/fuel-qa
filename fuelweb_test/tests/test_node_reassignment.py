@@ -20,12 +20,14 @@ from proboscis import test
 from proboscis import SkipTest
 
 from fuelweb_test.tests import base_test_case as base_test_data
+from fuelweb_test.tests.test_os_upgrade import TestOSupgrade as upgrade
 
 
 @test(groups=["reassign_node_for_os_upgrade", "os_upgrade"])
 class TestReassignNode(base_test_data.TestBasic):
 
-    @test(groups=["reassign_node_to_cloned_environment"])
+    @test(depends_on=upgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan,
+          groups=["reassign_node_to_cloned_environment"])
     def reassign_node_to_cloned_environment(self):
         """Test reassign node
         Scenario:
@@ -103,7 +105,8 @@ class TestReassignNode(base_test_data.TestBasic):
                     )
         self.fuel_web.assert_task_success(task)
 
-    @test(groups=["reassign_node_to_nonexistent_cluster"])
+    @test(depends_on=upgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan,
+          groups=["reassign_node_to_nonexistent_cluster"])
     def reassign_node_to_nonexistent_cluster(self):
         """Test reassign node to nonexistent cluster
         Scenario:
@@ -136,7 +139,8 @@ class TestReassignNode(base_test_data.TestBasic):
                  "to non-existing"
                  "cluster 123456".format(controller_node["id"]))
 
-    @test(groups=["reassign_node_with_empty_body"])
+    @test(depends_on=upgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan,
+          groups=["reassign_node_with_empty_body"])
     def reassign_node_with_empty_body(self):
         """Test reassign node with empty body
         Scenario:
@@ -172,7 +176,8 @@ class TestReassignNode(base_test_data.TestBasic):
             fail("Doesn't raise HTTP 400 error on request"
                  "to reassigning node with empty body")
 
-    @test(groups=["reassign_node_with_incorrect_node"])
+    @test(depends_on=upgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan,
+          groups=["reassign_node_with_incorrect_node"])
     def reassign_node_with_incorrect_node(self):
         """Test reassign node with incorrect node in POST body
         Scenario:
@@ -212,7 +217,8 @@ class TestReassignNode(base_test_data.TestBasic):
             fail("Doesn't raise HTTP 400 error on request"
                  "to reassigning node with incorrect node_id")
 
-    @test(groups=["reassign_nonexistent_node_to_cloned_environment"])
+    @test(depends_on=upgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan,
+          groups=["reassign_nonexistent_node_to_cloned_environment"])
     def reassign_nonexistent_node_to_cloned_environment(self):
         """Test reassign node with nonexistent node in POST body
         Scenario:

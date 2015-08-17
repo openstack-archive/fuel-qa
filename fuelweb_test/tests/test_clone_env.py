@@ -20,12 +20,14 @@ from proboscis import test
 from proboscis import SkipTest
 
 from fuelweb_test.tests import base_test_case as base_test_data
+from fuelweb_test.tests.test_os_upgrade import TestOSupgrade as upgrade
 
 
 @test(groups=["clone_env_for_os_upgrade", "os_upgrade"])
 class TestCloneEnv(base_test_data.TestBasic):
 
-    @test(groups=["test_clone_environment"])
+    @test(depends_on=upgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan,
+          groups=["test_clone_environment"])
     def test_clone_environment(self):
         """Test clone environment
         Scenario:
@@ -108,7 +110,8 @@ class TestCloneEnv(base_test_data.TestBasic):
                     assert_equal(old_network["vlan_start"],
                                  network["vlan_start"])
 
-    @test(groups=["test_clone_nonexistent_cluster"])
+    @test(depends_on=upgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan,
+          groups=["test_clone_nonexistent_cluster"])
     def test_clone_nonexistent_cluster(self):
         """Test clone environment with nonexistent cluster id as argument
         Scenario:
@@ -133,7 +136,8 @@ class TestCloneEnv(base_test_data.TestBasic):
         else:
             fail("Doesn't raise needed error")
 
-    @test(groups=["test_clone_wo_name_in_body"])
+    @test(depends_on=upgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan,
+          groups=["test_clone_wo_name_in_body"])
     def test_clone_wo_name_in_body(self):
         """Test clone without name in POST body
         Scenario:
@@ -163,7 +167,8 @@ class TestCloneEnv(base_test_data.TestBasic):
         else:
             fail("Doesn't raise needed error")
 
-    @test(groups=["test_clone_wo_release_id_in_body"])
+    @test(depends_on=upgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan,
+          groups=["test_clone_wo_release_id_in_body"])
     def test_clone_wo_release_id_in_body(self):
         """Test clone without release id in POST body
         Scenario:
@@ -190,7 +195,8 @@ class TestCloneEnv(base_test_data.TestBasic):
         else:
             fail("Doesn't raise needed error")
 
-    @test(groups=["test_clone_with_empty_body"])
+    @test(depends_on=upgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan,
+          groups=["test_clone_with_empty_body"])
     def test_clone_with_empty_body(self):
         """Test clone with empty body
         Scenario:
@@ -213,7 +219,8 @@ class TestCloneEnv(base_test_data.TestBasic):
         else:
             fail("Doesn't raise needed error")
 
-    @test(groups=["test_clone_with_nonexistent_release_id"])
+    @test(depends_on=upgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan,
+          groups=["test_clone_with_nonexistent_release_id"])
     def test_clone_with_nonexistent_release_id(self):
         """Test clone with nonexistent release id in POST body
         Scenario:
@@ -242,7 +249,8 @@ class TestCloneEnv(base_test_data.TestBasic):
         else:
             fail("Doesn't raise needed error")
 
-    @test(groups=["test_clone_with_incorrect_release_id"])
+    @test(depends_on=upgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan,
+          groups=["test_clone_with_incorrect_release_id"])
     def test_clone_with_incorrect_release_id(self):
         """Test clone with incorrect release id in POST body
         Scenario:
@@ -271,7 +279,8 @@ class TestCloneEnv(base_test_data.TestBasic):
         else:
             fail("Doesn't raise needed error")
 
-    @test(groups=["test_double_clone_environment"])
+    @test(depends_on=upgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan,
+          groups=["test_double_clone_environment"])
     def test_double_clone_environment(self):
         """Test double clone environment
         Scenario:
