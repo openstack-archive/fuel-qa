@@ -30,6 +30,7 @@ from proboscis.asserts import assert_true
 
 from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test import logwrap
 from fuelweb_test import logger
 from fuelweb_test import quiet_logger
@@ -1999,37 +2000,25 @@ class FuelWebClient(object):
         remote.execute('sed -i "{0}" {1}'.format(modification, file))
 
     def backup_master(self, remote):
-        logger.debug("Start backup of master node")
-        assert_equal(
-            0, remote.execute(
-                "echo CALC_MY_MD5SUM > /etc/fuel/data")['exit_code'],
-            'command calc_my_mdsum failed')
-        assert_equal(
-            0, remote.execute(
-                "iptables-save > /etc/fuel/iptables-backup")['exit_code'],
-            'can not save iptables in iptables-backup')
-
-        assert_equal(0, remote.execute(
-            "md5sum /etc/fuel/data | sed -n 1p | "
-            "awk '{print $1}'>/etc/fuel/sum")['exit_code'],
-            'failed to create sum file')
-
-        assert_equal(0, remote.execute('dockerctl backup')['exit_code'],
-                     'dockerctl backup failed with non zero exit code')
-
-        assert_equal(0, remote.execute('rm -f /etc/fuel/data')['exit_code'],
-                     'Can not remove /etc/fuel/data')
-        logger.debug("Finish backup of master node")
+        logger.info("Backup of the master node is started.")
+        run_on_remote(remote, "echo CALC_MY_MD5SUM > /etc/fuel/data",
+                      err_msg='command calc_my_mdsum failed')
+        run_on_remote(remote, "iptables-save > /etc/fuel/iptables-backup",
+                      err_msg='can not save iptables in iptables-backup')
+        run_on_remote(remote,
+                      "md5sum /etc/fuel/data | cut -d" " -f1 > /etc/fuel/sum",
+                      err_msg='failed to create sum file')
+        run_on_remote(remote, 'dockerctl backup')
+        run_on_remote(remote, 'rm -f /etc/fuel/data',
+                      err_msg='Can not remove /etc/fuel/data')
+        logger.info("Backup of the master node is complete.")
 
     @logwrap
     def restore_master(self, remote):
-        logger.debug("Start restore master node")
+        logger.info("Restore of the master node is started.")
         path = checkers.find_backup(remote)
-        assert_equal(
-            0,
-            remote.execute('dockerctl restore {0}'.format(path))['exit_code'],
-            'dockerctl restore finishes with non-zero exit code')
-        logger.debug("Finish restore master node")
+        run_on_remote(remote, 'dockerctl restore {0}'.format(path))
+        logger.info("Restore of the master node is complete.")
 
     @logwrap
     def restore_check_nailgun_api(self, remote):
