@@ -25,6 +25,7 @@ from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers.ovs import ovs_get_tag_by_port
 from fuelweb_test import ostf_test_mapping as map_ostf
 from fuelweb_test import settings
 from fuelweb_test.settings import NEUTRON_ENABLE
@@ -523,9 +524,10 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
         Duration 35m
         Snapshot vm_backed_with_ceph_live_migration
-
         """
         self.env.revert_snapshot("ready_with_3_slaves")
+
+        self.show_step(1)
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -534,9 +536,14 @@ class VmBackedWithCephMigrationBasic(TestBasic):
                 'volumes_ceph': True,
                 'images_ceph': True,
                 'ephemeral_ceph': True,
-                'volumes_lvm': False
+                'volumes_lvm': False,
+                'net_provider': 'neutron',
+                'net_segment_type': NEUTRON_SEGMENT_TYPE,
             }
         )
+
+        self.show_step(2)
+        self.show_step(3)
 
         self.fuel_web.update_nodes(
             cluster_id,
@@ -547,6 +554,8 @@ class VmBackedWithCephMigrationBasic(TestBasic):
             }
         )
         creds = ("cirros", "test")
+
+        self.show_step(4)
 
         # Cluster deploy
         self.fuel_web.deploy_cluster_wait(cluster_id)
@@ -559,6 +568,8 @@ class VmBackedWithCephMigrationBasic(TestBasic):
             self.fuel_web.run_single_ostf_test(
                 cluster_id, test_sets=['smoke'],
                 test_name=test_path)
+
+        self.show_step(5)
         try:
             _check()
         except AssertionError:
@@ -569,8 +580,12 @@ class VmBackedWithCephMigrationBasic(TestBasic):
             time.sleep(60)
             _check()
 
+        self.show_step(6)
+
         # Run ostf
         self.fuel_web.run_ostf(cluster_id)
+
+        self.show_step(7)
 
         # Create new server
         os = os_actions.OpenStackActions(
@@ -578,17 +593,20 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
         logger.info("Create new server")
         srv = os.create_server_for_migration(
+            neutron=True,
             scenario='./fuelweb_test/helpers/instance_initial_scenario')
         logger.info("Srv is currently in status: %s" % srv.status)
 
-        srv_remote_node = self.fuel_web.get_ssh_for_node(
-            self.fuel_web.find_devops_node_by_nailgun_fqdn(
-                os.get_srv_hypervisor_name(srv),
-                self.env.d_env.nodes().slaves[:3]).name)
-        srv_instance_ip = os.get_nova_instance_ip(srv)
-        srv_instance_mac = os.get_instance_mac(srv_remote_node, srv)
-        res = ''.join(srv_remote_node.execute('ip r | fgrep br100')['stdout'])
-        srv_node_dhcp_ip = res.split()[-1]
+        # Prepare to DHCP leases checks
+        srv_instance_ip = os.get_nova_instance_ip(srv, net_name='net04')
+        srv_host_name = self.fuel_web.find_devops_node_by_nailgun_fqdn(
+            os.get_srv_hypervisor_name(srv),
+            self.env.d_env.nodes().slaves[:3]).name
+        net_id = os.get_network('net04')['id']
+        ports = os.get_neutron_dhcp_ports(net_id)
+        dhcp_server_ip = ports[0]['fixed_ips'][0]['ip_address']
+        with self.fuel_web.get_ssh_for_node(srv_host_name) as srv_remote_node:
+            srv_instance_mac = os.get_instance_mac(srv_remote_node, srv)
 
         logger.info("Assigning floating ip to server")
         floating_ip = os.assign_floating_ip(srv)
@@ -601,6 +619,8 @@ class VmBackedWithCephMigrationBasic(TestBasic):
             "/home/test_file",
             self.fuel_web.get_ssh_for_node("slave-01"),
             floating_ip.ip, creds)
+
+        self.show_step(8)
 
         logger.info("Get available computes")
         avail_hosts = os.get_hosts_for_migr(srv_host)
@@ -622,6 +642,8 @@ class VmBackedWithCephMigrationBasic(TestBasic):
             "Before migration md5 was equal to: {bef}"
             "Now it eqals: {aft}".format(bef=md5before, aft=md5after))
 
+        self.show_step(9)
+
         res = os.execute_through_host(
             self.fuel_web.get_ssh_for_node("slave-01"),
             floating_ip.ip, "ping -q -c3 -w10 {0} | grep 'received' |"
@@ -636,6 +658,8 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         logger.info("Server is now on host %s" %
                     os.get_srv_host_name(new_srv))
 
+        self.show_step(10)
+
         logger.info("Terminate migrated server")
         os.delete_instance(new_srv)
         assert_true(os.verify_srv_deleted(new_srv),
@@ -643,18 +667,21 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
         # Check if the dhcp lease for instance still remains
         # on the previous compute node. Related Bug: #1391010
-        assert_false(checkers.check_nova_dhcp_lease(srv_remote_node,
-                                                    srv_instance_ip,
-                                                    srv_instance_mac,
-                                                    srv_node_dhcp_ip),
-                     "Instance has been deleted, but it\'s DHCP lease "
-                     "for IP:{0} with MAC:{1} still remains on the "
-                     "compute node {2}".format(srv_instance_ip,
-                                               srv_instance_mac,
-                                               srv_host))
+        with self.fuel_web.get_ssh_for_node('slave-01') as remote:
+            dhcp_port_tag = ovs_get_tag_by_port(remote, ports[0]['id'])
+            assert_false(checkers.check_neutron_dhcp_lease(remote,
+                                                           srv_instance_ip,
+                                                           srv_instance_mac,
+                                                           dhcp_server_ip,
+                                                           dhcp_port_tag),
+                         "Instance has been deleted, but it's DHCP lease "
+                         "for IP:{0} with MAC:{1} still offers by Neutron DHCP"
+                         " agent.".format(srv_instance_ip,
+                                          srv_instance_mac))
         # Create a new server
         logger.info("Create new server")
         srv = os.create_server_for_migration(
+            neutron=True,
             scenario='./fuelweb_test/helpers/instance_initial_scenario')
         logger.info("Srv is currently in status: %s" % srv.status)
 
@@ -751,7 +778,9 @@ class CheckCephPartitionsAfterReboot(TestBasic):
                 'volumes_ceph': True,
                 'images_ceph': True,
                 'ephemeral_ceph': True,
-                'volumes_lvm': False
+                'volumes_lvm': False,
+                'net_provider': 'neutron',
+                'net_segment_type': NEUTRON_SEGMENT_TYPE,
             }
         )
 
