@@ -424,6 +424,13 @@ class OpenStackActions(common.Common):
         nodes = [i['host'] for i in result['agents']]
         return nodes
 
+    def get_neutron_dhcp_ports(self, net_id):
+        ports = self.neutron.list_ports()['ports']
+        network_ports = [x for x in ports
+                         if x['device_owner'] == 'network:dhcp'
+                         and x['network_id'] == net_id]
+        return network_ports
+
     def create_pool(self, pool_name):
         sub_net = self.neutron.list_subnets()
         body = {"pool": {"name": pool_name,
