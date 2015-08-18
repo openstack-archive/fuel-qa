@@ -1019,17 +1019,16 @@ def check_repo_managment(remote):
     remote.check_call(cmd)
 
 
-def check_public_ping(remotes):
+def check_public_ping(remote):
     """ Check if ping public vip
-    :type remotes: list
+    :type remote: SSHClient object
     """
     cmd = ('ruby /etc/puppet/modules/osnailyfacter/'
            'modular/virtual_ips/public_vip_ping_post.rb')
-    for remote in remotes:
-        res = remote.execute(cmd)
-        assert_equal(0, res['exit_code'],
-                     'Public ping check failed:'
-                     ' {0}'.format(res))
+    res = remote.execute(cmd)
+    assert_equal(0, res['exit_code'],
+                 'Public ping check failed:'
+                 ' {0}'.format(res))
 
 
 def check_cobbler_node_exists(remote, node_id):
