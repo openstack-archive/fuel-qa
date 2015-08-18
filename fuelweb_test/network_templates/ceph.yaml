@@ -149,11 +149,16 @@ adv_net_template:
             name: <% if3 %>.101
           - action: add-br
             name: br-fake
+          - action: add-port
+            name: <% if5 %>.555
+          - action: add-port
+            name: <% if5 %>.666
           - action: add-bond
             bridge: br-fake
-            name: lnx-bond0
+            name: lnxbond0
             interfaces:
-            - <% if5 %>
+            - <% if5 %>.555
+            - <% if5 %>.666
             bond_properties:
               mode: active-backup
             interface_properties: {}
