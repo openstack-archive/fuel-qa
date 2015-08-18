@@ -15,7 +15,9 @@
 from proboscis import SkipTest
 from proboscis import test
 
+from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers.utils import get_test_method_name
 from fuelweb_test.helpers.utils import timestat
 from fuelweb_test.models.environment import EnvironmentModel
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
@@ -43,6 +45,20 @@ class TestBasic(object):
         if snapshot_name:
             if self.env.d_env.has_snapshot(snapshot_name):
                 raise SkipTest()
+
+    def show_step(self, step):
+        test_func_name = utils.get_test_method_name()
+        test_func = getattr(self.__class__, method_name)
+        docstring = test_func.__doc__
+        docstring = '\n'.join([s.strip() for s in docstring.split('\n')])
+        steps = {s.split('. ')[0]: s for s in
+                 docstring.split('\n') if s and s[0].isdigit()}
+        if str(step) in steps:
+            logger.info("\n" + "<" * 5 + "-" * 30 + "{0}"
+                        .format(steps[str(step)]))
+        else:
+            logger.info("\n" + "<" * 5 + "-" * 30 + "Step #{0} "
+                        "(no description in scenario)".format(str(step)))
 
 
 @test

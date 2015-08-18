@@ -356,29 +356,23 @@ def restart_nailgun(remote):
 
 
 def find_backup(remote):
-    try:
-        arch_dir = ''.join(
-            remote.execute("ls -1u /var/backup/fuel/ | sed -n 1p")['stdout'])
-        arch_path = ''.join(
-            remote.execute("ls -1u /var/backup/fuel/{0}/*.lrz".
-                           format(arch_dir.strip()))["stdout"])
-        logger.debug('arch_path is {0}'.format(arch_path))
+    backups = remote.execute("ls -1u /var/backup/fuel/*/*.lrz")["stdout"]
+    if backups:
+        arch_path = backups[0]
+        logger.info('Backup archive found: {0}'.format(arch_path))
         return arch_path
-    except Exception as e:
-        logger.error('exception is {0}'.format(e))
-        raise e
+    else:
+        raise ValueError("No backup file found in the '/var/backup/fuel/'")
 
 
 @logwrap
 def backup_check(remote):
     logger.info("Backup check archive status")
     path = find_backup(remote)
-    assert_true(path, "Can not find backup. Path value {0}".format(path))
-    arch_result = ''.join(
-        remote.execute(("if [ -e {0} ]; "
-                        "then echo  Archive exists;"
-                        " fi").format(path.rstrip()))["stdout"])
-    assert_true("Archive exists" in arch_result, "Archive does not exist")
+    assert_true(path, "Can not find backup. Path value '{0}'".format(path))
+    test_result = remote.execute("test -e {0}".format(path.rstrip()))
+    assert_true(test_result['exit_code'] == 0,
+                "Archive '{0}' does not exist".format(path.rstrip()))
 
 
 @logwrap
