@@ -443,3 +443,19 @@ def get_net_settings(remote, skip_interfaces=set()):
             'bridge_slaves': bridge_slaves
         }
     return net_settings
+
+
+@logwrap
+def get_ip_listen_stats(remote, proto='tcp'):
+    # If bindv6only is disabled, then IPv6 sockets listen on IPv4 too
+    check_v6_bind_cmd = 'cat /proc/sys/net/ipv6/bindv6only'
+    bindv6only = ''.join([l.strip()
+                          for l in run_on_remote(remote, check_v6_bind_cmd)])
+    check_v6 = bindv6only == '0'
+    if check_v6:
+        cmd = ("awk '$4 == \"0A\" {{gsub(\"00000000000000000000000000000000\","
+               "\"00000000\", $2); print $2}}' "
+               "/proc/net/{0} /proc/net/{0}6").format(proto)
+    else:
+        cmd = "awk '$4 == \"0A\" {{print $2}}' /proc/net/{0}".format(proto)
+    return [l.strip() for l in run_on_remote(remote, cmd)]

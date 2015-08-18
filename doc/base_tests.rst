@@ -81,6 +81,12 @@ Test Multiple Networks
 .. automodule:: fuelweb_test.tests.test_multiple_networks
    :members:
 
+Test network templates base
+---------------------------
+.. automodule:: fuelweb_test.tests.test_net_templates_base
+   :members:
+
+
 Test network templates
 ----------------------
 .. automodule:: fuelweb_test.tests.test_net_templates
