@@ -1520,6 +1520,9 @@ class FuelWebClient(object):
                     self.net_settings(net_config, pub_subnets[i], jbond=True)
                 elif net_name in 'fuelweb_admin':
                     self.net_settings(net_config, admin_net)
+        if 'ip_ranges' in net_config:
+            if net_config['ip_ranges']:
+                net_config['meta']['notation'] = 'ip_ranges'
 
     def net_settings(self, net_config, net_name, floating=False, jbond=False):
         if jbond:
