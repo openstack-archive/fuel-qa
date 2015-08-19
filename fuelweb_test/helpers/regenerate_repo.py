@@ -53,10 +53,6 @@ class CustomRepo(object):
         self.local_mirror_ubuntu = settings.LOCAL_MIRROR_UBUNTU
         self.local_mirror_centos = settings.LOCAL_MIRROR_CENTOS
         self.ubuntu_release = settings.UBUNTU_RELEASE
-        self.ubuntu_yaml_versions = ('/etc/puppet/manifests/'
-                                     'ubuntu-versions.yaml')
-        self.centos_yaml_versions = ('/etc/puppet/manifests/'
-                                     'centos-versions.yaml')
         self.centos_supported_archs = ['noarch', 'x86_64']
         self.pkgs_list = []
 
@@ -98,7 +94,6 @@ class CustomRepo(object):
             pkgs_local_path = ('{0}/pool/'
                                .format(self.local_mirror_ubuntu))
             self.download_pkgs(pkgs_local_path)
-            self.update_yaml(self.ubuntu_yaml_versions)
             self.regenerate_repo(self.ubuntu_script, self.local_mirror_ubuntu)
         else:
             # CentOS
@@ -107,7 +102,6 @@ class CustomRepo(object):
             self.get_pkgs_list_centos()
             pkgs_local_path = '{0}/Packages/'.format(self.local_mirror_centos)
             self.download_pkgs(pkgs_local_path)
-            self.update_yaml(self.centos_yaml_versions)
             self.regenerate_repo(self.centos_script, self.local_mirror_centos)
 
     # Install tools to masternode
@@ -247,32 +241,6 @@ class CustomRepo(object):
             wget_result = self.remote.execute(wget_cmd)
             assert_equal(0, wget_result['exit_code'],
                          self.assert_msg(wget_cmd, wget_result['stderr']))
-
-    # Update yaml (pacth_to_yaml)
-    def update_yaml(self, yaml_versions):
-            # Update the corresponding .yaml with the new package version.
-        for pkg in self.pkgs_list:
-            result = self.remote.execute(
-                'grep -e "^{0}: " {1}'.format(pkg["package:"], yaml_versions))
-            if result['exit_code'] == 0:
-                sed_cmd = ('sed -i \'s/^{0}: .*/{0}: "{1}"/\' {2}'
-                           .format(pkg["package:"],
-                                   pkg["version:"],
-                                   yaml_versions))
-                sed_result = self.remote.execute(sed_cmd)
-                assert_equal(0, sed_result['exit_code'],
-                             self.assert_msg(sed_cmd, sed_result['stderr']))
-            else:
-                assert_equal(1, result['exit_code'], 'Error updating {0}\n{1}'
-                             .format(yaml_versions, traceback.format_exc()))
-                echo_cmd = ('echo "{0}: \\"{1}\\"" >> {2}'
-                            .format(pkg["package:"],
-                                    pkg["version:"],
-                                    yaml_versions))
-                echo_result = self.remote.execute(echo_cmd)
-                assert_equal(0, echo_result['exit_code'],
-                             self.assert_msg(echo_cmd,
-                                             echo_result['stderr']))
 
     # Upload regenerate* script to masternode (script name)
     def regenerate_repo(self, regenerate_script, local_mirror_path):
