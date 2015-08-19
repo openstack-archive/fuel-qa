@@ -316,6 +316,9 @@ class ReadyNodeReinstallation(TestBasic):
         self._check_hostname(
             mongo_nailgun, self.fuel_web.get_nailgun_node_by_name('slave-05'))
 
+
+@test(groups=["full_cluster_reinstallation"])
+class FullClusterReinstallation(TestBasic):
     @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
           groups=["full_cluster_reinstallation"])
     @log_snapshot_after_test
