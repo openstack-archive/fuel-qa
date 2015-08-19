@@ -23,55 +23,12 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.tests.base_test_case import SetupEnvironment
-from fuelweb_test.tests.base_test_case import TestBasic
-
-
-BOND_CONFIG = [
-    {
-        'mac': None,
-        'mode': 'active-backup',
-        'name': 'lnx-bond0',
-        'slaves': [
-            {'name': 'eth5'},
-            {'name': 'eth4'},
-            {'name': 'eth3'},
-            {'name': 'eth2'}
-        ],
-        'state': None,
-        'type': 'bond',
-        'assigned_networks': []
-    },
-    {
-        'mac': None,
-        'mode': 'active-backup',
-        'name': 'lnx-bond1',
-        'slaves': [
-            {'name': 'eth1'},
-            {'name': 'eth0'}
-        ],
-        'state': None,
-        'type': 'bond',
-        'assigned_networks': []
-    }
-]
-
-INTERFACES = {
-    'lnx-bond0': [
-        'public',
-        'management',
-        'storage'
-    ],
-    'lnx-bond1': ['fuelweb_admin']
-}
+from fuelweb_test.tests.test_bonding_base import BondingTest
 
 
 @test(groups=["bonding_ha_one_controller", "bonding"])
-class BondingHAOneController(TestBasic):
+class BondingHAOneController(BondingTest):
     """BondingHAOneController."""  # TODO documentation
-
-    NOVANET_BOND_CONFIG = deepcopy(BOND_CONFIG)
-    NOVANET_INTERFACES = deepcopy(INTERFACES)
-    NOVANET_INTERFACES['lnx-bond0'].append('fixed')
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_bonding_one_controller_tun"])
@@ -118,8 +75,8 @@ class BondingHAOneController(TestBasic):
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
-                node['id'], interfaces_dict=self.NOVANET_INTERFACES,
-                raw_data=self.NOVANET_BOND_CONFIG
+                node['id'], interfaces_dict=deepcopy(self.INTERFACES),
+                raw_data=deepcopy(self.BOND_CONFIG)
             )
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
@@ -174,8 +131,8 @@ class BondingHAOneController(TestBasic):
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
-                node['id'], interfaces_dict=self.NOVANET_INTERFACES,
-                raw_data=self.NOVANET_BOND_CONFIG
+                node['id'], interfaces_dict=deepcopy(self.INTERFACES),
+                raw_data=deepcopy(self.BOND_CONFIG)
             )
         self.fuel_web.update_vlan_network_fixed(
             cluster_id, amount=8, network_size=32)
@@ -223,23 +180,19 @@ class BondingHAOneController(TestBasic):
         )
 
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
-        invalid_bond_conf = deepcopy(self.NOVANET_BOND_CONFIG)
+        invalid_bond_conf = deepcopy(self.BOND_CONFIG)
         invalid_bond_conf[1]['mode'] = '802.3ad'
         assert_raises(
             HTTPError,
             self.fuel_web.update_node_networks,
             nailgun_nodes[0]['id'],
-            interfaces_dict=self.NOVANET_INTERFACES,
+            interfaces_dict=deepcopy(self.INTERFACES),
             raw_data=invalid_bond_conf)
 
 
 @test(groups=["bonding_neutron", "bonding_ha", "bonding"])
-class BondingHA(TestBasic):
+class BondingHA(BondingTest):
     """Tests for HA bonding."""
-
-    NEUTRON_BOND_CONFIG = deepcopy(BOND_CONFIG)
-    NEUTRON_INTERFACES = deepcopy(INTERFACES)
-    NEUTRON_INTERFACES['lnx-bond0'].append('private')
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_bonding_neutron_vlan"])
@@ -257,7 +210,9 @@ class BondingHA(TestBasic):
             6. Deploy the cluster
             7. Run network verification
             8. Run OSTF
-
+            9. Save network configuration from slave nodes
+            10. Reboot all environment nodes
+            11. Verify that network configuration is the same after reboot
 
         Duration 70m
         Snapshot deploy_bonding_neutron_vlan
@@ -290,8 +245,8 @@ class BondingHA(TestBasic):
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
-                node['id'], interfaces_dict=self.NEUTRON_INTERFACES,
-                raw_data=self.NEUTRON_BOND_CONFIG
+                node['id'], interfaces_dict=deepcopy(self.INTERFACES),
+                raw_data=deepcopy(self.BOND_CONFIG)
             )
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
@@ -303,7 +258,7 @@ class BondingHA(TestBasic):
 
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
-
+        self.check_interfaces_config_after_reboot(cluster_id)
         self.env.make_snapshot("deploy_bonding_neutron_vlan")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
@@ -322,6 +277,9 @@ class BondingHA(TestBasic):
             6. Deploy the cluster
             7. Run network verification
             8. Run OSTF
+            9. Save network configuration from slave nodes
+            10. Reboot all environment nodes
+            11. Verify that network configuration is the same after reboot
 
         Duration 70m
         Snapshot deploy_bonding_neutron_tun
@@ -354,8 +312,8 @@ class BondingHA(TestBasic):
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
-                node['id'], interfaces_dict=self.NEUTRON_INTERFACES,
-                raw_data=self.NEUTRON_BOND_CONFIG
+                node['id'], interfaces_dict=deepcopy(self.INTERFACES),
+                raw_data=deepcopy(self.BOND_CONFIG)
             )
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
@@ -367,5 +325,6 @@ class BondingHA(TestBasic):
 
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.check_interfaces_config_after_reboot(cluster_id)
 
         self.env.make_snapshot("deploy_bonding_neutron_tun")
