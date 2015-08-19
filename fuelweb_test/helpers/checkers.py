@@ -349,6 +349,14 @@ def check_enable_experimental_mode(remote, path):
 
 
 @logwrap
+def enable_advanced_mode(remote, path):
+        cmd = "sed '/feature_groups:" \
+              "/a \ \ \ \ - advanced' -i {0}".format(path)
+        result = remote.execute(cmd)
+        assert_equal(0, result['exit_code'], result['stderr'])
+
+
+@logwrap
 def restart_nailgun(remote):
     cmd = 'dockerctl shell nailgun supervisorctl restart nailgun'
     result = remote.execute(cmd)
