@@ -297,3 +297,31 @@ Test Openstack Upgrades
 -----------------------
 .. automodule:: fuelweb_test.tests.test_os_upgrade
    :members:
+
+Tests for separated services
+============================
+
+Test for separate keystone service
+----------------------------------
+.. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_keystone
+   :members:
+
+Test for separate horizon service
+---------------------------------
+.. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_horizon
+   :members:
+
+Test for separate mysql service
+-------------------------------
+.. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_db
+   :members:
+
+Test for separate multiroles
+----------------------------
+.. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_multiroles
+   :members:
+
+Test for separate rabbitmq service
+----------------------------------
+.. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_rabbitmq
+   :members:
