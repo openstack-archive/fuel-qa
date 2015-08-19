@@ -20,25 +20,28 @@ from proboscis import test
 from proboscis import SkipTest
 
 from fuelweb_test.tests import base_test_case as base_test_data
+from fuelweb_test.tests.test_os_upgrade import TestOSupgrade as upgrade
 
 
 @test(groups=["reassign_node_for_os_upgrade", "os_upgrade"])
 class TestReassignNode(base_test_data.TestBasic):
 
-    @test(groups=["reassign_node_to_cloned_environment"])
+    @test(depends_on=[upgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan],
+          groups=["reassign_node_to_cloned_environment"])
     def reassign_node_to_cloned_environment(self):
         """Test reassign node
         Scenario:
-            1. Revert snapshot "upgrade_ha_one_controller"
+            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
             2. Clone cluster
             3. Reassign node
             4. Verify node settings
             5. Wait node successful provision
 
         """
-        if not self.env.d_env.has_snapshot("upgrade_ha_one_controller"):
+        if not self.env.d_env.has_snapshot(
+                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
             raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_one_controller")
+        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         cluster = self.fuel_web.client.get_cluster(cluster_id)
@@ -74,7 +77,7 @@ class TestReassignNode(base_test_data.TestBasic):
         new_controller_disks = self.fuel_web.client.get_node_disks(
             new_controller["id"])
 
-        assert_equal(["controller", "ceph-osd"],
+        assert_equal(["controller"],
                      new_controller["pending_roles"])
         assert_equal(controller_node["id"], new_controller["id"])
         assert_equal(controller_node["hostname"], new_controller["hostname"])
@@ -103,18 +106,20 @@ class TestReassignNode(base_test_data.TestBasic):
                     )
         self.fuel_web.assert_task_success(task)
 
-    @test(groups=["reassign_node_to_nonexistent_cluster"])
+    @test(depends_on=[upgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan],
+          groups=["reassign_node_to_nonexistent_cluster"])
     def reassign_node_to_nonexistent_cluster(self):
         """Test reassign node to nonexistent cluster
         Scenario:
-            1. Revert snapshot "upgrade_ha_one_controller"
+            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
             2. Reassign node to nonexistent cluster
             3. Check status code: 404
 
         """
-        if not self.env.d_env.has_snapshot("upgrade_ha_one_controller"):
+        if not self.env.d_env.has_snapshot(
+                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
             raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_one_controller")
+        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -136,19 +141,21 @@ class TestReassignNode(base_test_data.TestBasic):
                  "to non-existing"
                  "cluster 123456".format(controller_node["id"]))
 
-    @test(groups=["reassign_node_with_empty_body"])
+    @test(depends_on=[upgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan],
+          groups=["reassign_node_with_empty_body"])
     def reassign_node_with_empty_body(self):
         """Test reassign node with empty body
         Scenario:
-            1. Revert snapshot "upgrade_ha_one_controller"
+            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
             2. Clone cluster
             3. Reassign node with empty POST body
             4. Check status code: 400
 
         """
-        if not self.env.d_env.has_snapshot("upgrade_ha_one_controller"):
+        if not self.env.d_env.has_snapshot(
+                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
             raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_one_controller")
+        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         cluster = self.fuel_web.client.get_cluster(cluster_id)
@@ -172,19 +179,21 @@ class TestReassignNode(base_test_data.TestBasic):
             fail("Doesn't raise HTTP 400 error on request"
                  "to reassigning node with empty body")
 
-    @test(groups=["reassign_node_with_incorrect_node"])
+    @test(depends_on=[upgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan],
+          groups=["reassign_node_with_incorrect_node"])
     def reassign_node_with_incorrect_node(self):
         """Test reassign node with incorrect node in POST body
         Scenario:
-            1. Revert snapshot "upgrade_ha_one_controller"
+            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
             2. Clone cluster
             3. Reassign node with incorrect node in POST body
             4. Check status code: 400
 
         """
-        if not self.env.d_env.has_snapshot("upgrade_ha_one_controller"):
+        if not self.env.d_env.has_snapshot(
+                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
             raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_one_controller")
+        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         cluster = self.fuel_web.client.get_cluster(cluster_id)
@@ -212,19 +221,21 @@ class TestReassignNode(base_test_data.TestBasic):
             fail("Doesn't raise HTTP 400 error on request"
                  "to reassigning node with incorrect node_id")
 
-    @test(groups=["reassign_nonexistent_node_to_cloned_environment"])
+    @test(depends_on=[upgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan],
+          groups=["reassign_nonexistent_node_to_cloned_environment"])
     def reassign_nonexistent_node_to_cloned_environment(self):
         """Test reassign node with nonexistent node in POST body
         Scenario:
-            1. Revert snapshot "upgrade_ha_one_controller"
+            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
             2. Clone cluster
             3. Reassign node with nonexistent node in POST body
             4. Check status code: 404
 
         """
-        if not self.env.d_env.has_snapshot("upgrade_ha_one_controller"):
+        if not self.env.d_env.has_snapshot(
+                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
             raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_one_controller")
+        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         cluster = self.fuel_web.client.get_cluster(cluster_id)
