@@ -25,6 +25,7 @@ class NeutronTunHaBase(TestBasic):
     """NeutronTunHaBase."""  # TODO documentation
 
     def deploy_neutron_tun_ha_base(self, snapshot_name):
+        self.check_run(snapshot_name)
         self.env.revert_snapshot("ready_with_5_slaves")
 
         cluster_id = self.fuel_web.create_cluster(
@@ -74,4 +75,4 @@ class NeutronTunHaBase(TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot(snapshot_name)
+        self.env.make_snapshot(snapshot_name, is_make=True)
