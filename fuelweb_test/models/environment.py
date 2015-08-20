@@ -38,6 +38,7 @@ from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.fuel_actions import PostgresActions
 from fuelweb_test.helpers.fuel_actions import NessusActions
 from fuelweb_test.helpers.ntp import GroupNtpSync
+from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers.utils import timestat
 from fuelweb_test.helpers import multiple_networks_hacks
 from fuelweb_test.models.fuel_web_client import FuelWebClient
@@ -146,7 +147,8 @@ class EnvironmentModel(object):
                                  settings.DNS_SUFFIX)),
             'nat_interface': self.d_env.nat_interface,
             'dns1': settings.DNS,
-            'showmenu': 'yes' if custom else 'no',
+            'showmenu': 'no',
+            'wait_for_external_config': 'yes',
             'build_images': '1' if build_images else '0'
         }
         keys = ''
@@ -364,6 +366,7 @@ class EnvironmentModel(object):
         admin.await(self.d_env.admin_net, timeout=10 * 60)
         self.set_admin_ssh_password()
         self.admin_actions.modify_configs(self.d_env.router())
+        self.kill_wait_for_external_config()
         self.wait_bootstrap()
         self.docker_actions.wait_for_ready_containers()
         time.sleep(10)
@@ -404,21 +407,19 @@ class EnvironmentModel(object):
 
     @update_packages
     @upload_manifests
-    def wait_for_provisioning(self):
+    def setup_customisation(self):
         _wait(lambda: _tcp_ping(
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
             (self.d_env.admin_net), 22), timeout=7 * 60)
 
-    def setup_customisation(self):
-        self.wait_for_provisioning()
-        try:
-            cmd = "pkill -sigusr1 -f '^.*/fuelmenu$'"
-            with self.d_env.get_admin_remote() as remote:
-                wait(lambda: remote.execute(cmd)['exit_code'] == 0, timeout=60)
-        except Exception:
-            logger.error("Could not kill process of fuelmenu")
-            raise
+    @logwrap
+    def kill_wait_for_external_config(self):
+        kill_cmd = 'pkill -f wait_for_external_config'
+        check_cmd = ' pkill -f wait_for_external_config; [[ $? -eq 1 ]]'
+        with self.d_env.get_admin_remote() as remote:
+            run_on_remote(remote, kill_cmd)
+            run_on_remote(remote, check_cmd)
 
     @retry(count=3, delay=60)
     def sync_time(self, nailgun_nodes=[]):
