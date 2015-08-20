@@ -42,6 +42,9 @@ class BaseActions(object):
         self.admin_remote = admin_remote
         self.container = None
 
+    def __repr__(self):
+        return "[{} container:{}]".format(type(self), self.container)
+
     def execute_in_container(self, command, container=None, exit_code=None,
                              stdin=None):
         if not container:
