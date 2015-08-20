@@ -118,9 +118,9 @@ class SetupEnvironment(TestBasic):
         """Setup master node with custom manifests
         Scenario:
             1. Start installation of master
-            2. Enter "fuelmenu"
+            2. Enable option 'wait_for_external_config'
             3. Upload custom manifests
-            4. Kill "fuelmenu" pid
+            4. Kill 'wait_for_external_config' countdown
         Snapshot: empty_custom_manifests
 
         Duration 20m
