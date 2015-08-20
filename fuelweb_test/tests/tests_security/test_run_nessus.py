@@ -22,11 +22,11 @@ from fuelweb_test.helpers import decorators
 from fuelweb_test.helpers import nessus
 from fuelweb_test import settings as CONF
 from fuelweb_test.tests import base_test_case
-from fuelweb_test.tests import test_neutron_tun
+from fuelweb_test.tests.test_neutron_tun_base import NeutronTunHaBase
 
 
 @test(groups=["nessus"])
-class TestNessus(test_neutron_tun.NeutronTunHaBase):
+class TestNessus(NeutronTunHaBase):
     """Security tests by Nessus
 
     Environment variables:
