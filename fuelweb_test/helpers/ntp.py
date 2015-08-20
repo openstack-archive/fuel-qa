@@ -100,6 +100,22 @@ class GroupNtpSync(object):
 class Ntp(object):
     """Common methods to work with ntpd service."""
 
+    def __repr__(self):
+        klass, obj_id = type(self), hex(id(self))
+        admin_ip = getattr(self, 'admin_ip', None)
+        node_name = getattr(self, 'node_name', None)
+        is_sync = getattr(self, 'is_synchronized', None)
+        is_conn = getattr(self, 'is_connected', None)
+        return ("[{klass}({obj_id}) admin_ip:{admin_ip}, "
+                "node_name:{node_name}, sync:{is_sync}, "
+                "conn:{is_conn}]").format(
+                    klass=klass,
+                    obj_id=obj_id,
+                    admin_ip=admin_ip,
+                    node_name=node_name,
+                    is_sync=is_sync,
+                    is_conn=is_conn)
+
     @staticmethod
     @logwrap
     def get_ntp(remote, node_name='node', admin_ip=None):

@@ -32,6 +32,13 @@ class NailgunClient(object):
                                   **kwargs)
         super(NailgunClient, self).__init__()
 
+    def __repr__(self):
+        klass, obj_id = type(self), hex(id(self))
+        url = getattr(self, 'url', None)
+        return "[{klass}({obj_id}), url:{url}]".format(klass=klass,
+                                                       obj_id=obj_id,
+                                                       url=url)
+
     @property
     def client(self):
         return self._client
