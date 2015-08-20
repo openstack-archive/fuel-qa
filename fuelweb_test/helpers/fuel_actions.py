@@ -43,6 +43,13 @@ class BaseActions(object):
         self.admin_remote = admin_remote
         self.container = None
 
+    def __repr__(self):
+        klass, obj_id = type(self), hex(id(self))
+        container = getattr(self, 'container', None)
+        return "[{}({}), container:{}]".format(klass=klass,
+                                               obj_id=obj_id,
+                                               container=container)
+
     def execute_in_container(self, command, container=None, exit_code=None,
                              stdin=None):
         if not container:
