@@ -5,6 +5,7 @@ Documentation for the QA test code repo
     :numbered:
     :maxdepth: 3
 
+    general.rst
     models.rst
     helpers.rst
     base_tests.rst

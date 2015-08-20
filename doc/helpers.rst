@@ -3,6 +3,11 @@
 Helpers
 =======
 
+Ceph
+----
+.. automodule:: fuelweb_test.helpers.ceph
+   :members:
+
 Checkers
 --------
 .. automodule:: fuelweb_test.helpers.checkers
@@ -68,6 +73,11 @@ Patching
 .. automodule:: fuelweb_test.helpers.patching
    :members:
 
+Rally
+-----
+.. automodule:: fuelweb_test.helpers.rally
+   :members:
+
 Regenerate Repo
 ---------------
 .. automodule:: fuelweb_test.helpers.regenerate_repo
@@ -82,6 +92,3 @@ Utils
 -----
 .. automodule:: fuelweb_test.helpers.utils
    :members:
-
-
-
