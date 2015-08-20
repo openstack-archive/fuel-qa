@@ -18,6 +18,7 @@ from proboscis import test
 from proboscis import SkipTest
 
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests import base_test_case as base_test_data
 from fuelweb_test import settings as hlp_data
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
@@ -28,6 +29,7 @@ class TestOSupgrade(base_test_data.TestBasic):
 
     @test(depends_on=[base_test_data.SetupEnvironment.prepare_slaves_9],
           groups=["ha_ceph_for_all_ubuntu_neutron_vlan"])
+    @log_snapshot_after_test
     def ha_ceph_for_all_ubuntu_neutron_vlan(self):
         """Deploy cluster with ha mode, ceph for all, neutron vlan
 
@@ -83,6 +85,7 @@ class TestOSupgrade(base_test_data.TestBasic):
 
     @test(depends_on=[ha_ceph_for_all_ubuntu_neutron_vlan],
           groups=["upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"])
+    @log_snapshot_after_test
     def upgrade_ha_ceph_for_all_ubuntu_neutron_vlan(self):
         """Upgrade master node ha mode, ceph for all, neutron vlan
 
