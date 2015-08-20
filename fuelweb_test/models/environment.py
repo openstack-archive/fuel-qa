@@ -136,7 +136,8 @@ class EnvironmentModel(object):
                                  settings.DNS_SUFFIX)),
             'nat_interface': self.d_env.nat_interface,
             'dns1': settings.DNS,
-            'showmenu': 'yes' if custom else 'no',
+            'showmenu': 'no',
+            'wait_for_external_config': 'yes' if custom else 'no',
             'build_images': '1' if build_images else '0'
         }
         keys = ''
@@ -404,10 +405,12 @@ class EnvironmentModel(object):
         self.wait_for_provisioning()
         try:
             remote = self.d_env.get_admin_remote()
-            cmd = "pkill -sigusr1 -f '^.*/fuelmenu$'"
+            pidfile = '/var/lock/waiting_for_external_config'
+            cmd = "pkill -F {0}".fromat(pidfile)
             wait(lambda: remote.execute(cmd)['exit_code'] == 0, timeout=60)
         except Exception:
-            logger.error("Could not kill process of fuelmenu")
+            logger.error("Could not kill process with PID from "
+                         "file {0}!".format(pidfile))
             raise
 
     @retry(count=3, delay=60)
