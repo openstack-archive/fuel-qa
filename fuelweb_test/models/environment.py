@@ -54,6 +54,10 @@ class EnvironmentModel(object):
         self._virtual_environment = None
         self.fuel_web = FuelWebClient(self.get_admin_node_ip(), self)
 
+    def __repr__(self):
+        return "[EnvironmentModel, ip:{}]".format(
+            self.fuel_web.admin_node_ip())
+
     @property
     def admin_actions(self):
         return AdminActions(self.d_env.get_admin_remote())
