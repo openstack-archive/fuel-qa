@@ -23,6 +23,7 @@ from devops.helpers.helpers import wait
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
+from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import EXTERNAL_DNS
 from fuelweb_test.settings import EXTERNAL_NTP
 from fuelweb_test.settings import OPENSTACK_RELEASE
@@ -364,29 +365,23 @@ def restart_nailgun(remote):
 
 
 def find_backup(remote):
-    try:
-        arch_dir = ''.join(
-            remote.execute("ls -1u /var/backup/fuel/ | sed -n 1p")['stdout'])
-        arch_path = ''.join(
-            remote.execute("ls -1u /var/backup/fuel/{0}/*.lrz".
-                           format(arch_dir.strip()))["stdout"])
-        logger.debug('arch_path is {0}'.format(arch_path))
+    backups = remote.execute("ls -1u /var/backup/fuel/*/*.lrz")["stdout"]
+    if backups:
+        arch_path = backups[0]
+        logger.info('Backup archive found: {0}'.format(arch_path))
         return arch_path
-    except Exception as e:
-        logger.error('exception is {0}'.format(e))
-        raise e
+    else:
+        raise ValueError("No backup file found in the '/var/backup/fuel/'")
 
 
 @logwrap
 def backup_check(remote):
     logger.info("Backup check archive status")
     path = find_backup(remote)
-    assert_true(path, "Can not find backup. Path value {0}".format(path))
-    arch_result = ''.join(
-        remote.execute(("if [ -e {0} ]; "
-                        "then echo  Archive exists;"
-                        " fi").format(path.rstrip()))["stdout"])
-    assert_true("Archive exists" in arch_result, "Archive does not exist")
+    assert_true(path, "Can not find backup. Path value '{0}'".format(path))
+    test_result = remote.execute("test -e {0}".format(path.rstrip()))
+    assert_true(test_result['exit_code'] == 0,
+                "Archive '{0}' does not exist".format(path.rstrip()))
 
 
 @logwrap
@@ -968,24 +963,48 @@ def check_ping(remote, host, deadline=10, size=56, timeout=1, interval=1):
 
 
 @logwrap
-def check_nova_dhcp_lease(remote, instance_ip, instance_mac, node_dhcp_ip):
+def check_neutron_dhcp_lease(remote, instance_ip, instance_mac,
+                             dhcp_server_ip, dhcp_port_tag):
+    """Check if the DHCP server offers a lease for a client with the specified
+       MAC address
+       :param SSHClient remote: fuel-devops.helpers.helpers object
+       :param str instance_ip: IP address of instance
+       :param str instance_mac: MAC address that will be checked
+       :param str dhcp_server_ip: IP address of DHCP server for request a lease
+       :param str dhcp_port_tag: OVS port tag used for access the DHCP server
+       :return bool: True if DHCP lease for the 'instance_mac' was obtained
+    """
     logger.debug("Checking DHCP server {0} for lease {1} with MAC address {2}"
-                 .format(node_dhcp_ip, instance_ip, instance_mac))
-    res = remote.execute('ip link add dhcptest0 type veth peer name dhcptest1;'
-                         'brctl addif br100 dhcptest0;'
-                         'ifconfig dhcptest0 up;'
-                         'ifconfig dhcptest1 hw ether {1};'
-                         'ifconfig dhcptest1 up;'
-                         'dhcpcheck request dhcptest1 {2} --range_start {0} '
-                         '--range_end 255.255.255.255 | fgrep \" {2} \";'
-                         'ifconfig dhcptest1 down;'
-                         'ifconfig dhcptest0 down;'
-                         'brctl delif br100 dhcptest0;'
-                         'ip link delete dhcptest0;'
-                         .format(instance_ip, instance_mac, node_dhcp_ip))
-    res_str = ''.join(res['stdout'])
-    logger.debug("DHCP server answer: {}".format(res_str))
-    return ' ack ' in res_str
+                 .format(dhcp_server_ip, instance_ip, instance_mac))
+    ovs_port_name = 'tapdhcptest1'
+    ovs_cmd = '/usr/bin/ovs-vsctl --timeout=10 --oneline --format=json -- '
+    ovs_add_port_cmd = ("--if-exists del-port {0} -- "
+                        "add-port br-int {0} -- "
+                        "set Interface {0} type=internal -- "
+                        "set Port {0} tag={1}"
+                        .format(ovs_port_name, dhcp_port_tag))
+    ovs_del_port_cmd = ("--if-exists del-port {0}".format(ovs_port_name))
+
+    # Add an OVS interface with a tag for accessing the DHCP server
+    run_on_remote(remote, ovs_cmd + ovs_add_port_cmd)
+
+    # Set to the created interface the same MAC address
+    # that was used for the instance.
+    run_on_remote(remote, "ifconfig {0} hw ether {1}".format(ovs_port_name,
+                                                             instance_mac))
+    run_on_remote(remote, "ifconfig {0} up".format(ovs_port_name))
+
+    # Perform a 'dhcpcheck' request to check if the lease can be obtained
+    lease = run_on_remote(remote,
+                          "dhcpcheck request {0} {1} --range_start {2} "
+                          "--range_end 255.255.255.255 | fgrep \" {1} \""
+                          .format(ovs_port_name, dhcp_server_ip, instance_ip))
+
+    # Remove the OVS interface
+    run_on_remote(remote, ovs_cmd + ovs_del_port_cmd)
+
+    logger.debug("DHCP server answer: {}".format(lease))
+    return ' ack ' in lease
 
 
 def check_available_mode(remote):
