@@ -1084,20 +1084,20 @@ class VcenterDeploy(TestBasic):
 
         # VMs on different hypervisors should communicate between each other
         for ip_1 in srv_ip:
-            ssh = self.fuel_web.get_ssh_for_node("slave-01")
-            logger.info("Connect to VM {0}".format(ip_1))
-            for ip_2 in srv_ip:
-                if ip_1 != ip_2:
-                    # Check server's connectivity
-                    res = int(
-                        os_conn.execute_through_host(
-                            ssh, ip_1, "ping -q -c3 " + ip_2 +
-                                       "| grep -o '[0-9] packets received'"
-                                       "| cut -f1 -d ' '")['stdout'])
-                    assert_true(
-                        res == 3,
-                        "VM{0} not ping from Vm {1}, received {2} icmp".format(
-                            ip_1, ip_2, res))
+            with self.fuel_web.get_ssh_for_node("slave-01") as ssh:
+                logger.info("Connect to VM {0}".format(ip_1))
+                for ip_2 in srv_ip:
+                    if ip_1 != ip_2:
+                        # Check server's connectivity
+                        res = int(
+                            os_conn.execute_through_host(
+                                ssh, ip_1, "ping -q -c3 " + ip_2 +
+                                           "| grep -o '[0-9] packets received'"
+                                           "| cut -f1 -d ' '")['stdout'])
+                        assert_true(
+                            res == 3,
+                            "VM{0} not ping from Vm {1}, received {2} icmp"
+                            .format(ip_1, ip_2, res))
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["vcenter_delete_controler"])

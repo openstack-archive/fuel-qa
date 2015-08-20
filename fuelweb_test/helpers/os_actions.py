@@ -238,40 +238,41 @@ class OpenStackActions(common.Common):
 
     def execute_through_host(self, ssh, vm_host, cmd, creds=()):
         logger.debug("Making intermediate transport")
-        with ssh._ssh.get_transport() as interm_transp:
-            logger.debug("Opening channel to VM")
-            interm_chan = interm_transp.open_channel('direct-tcpip',
-                                                     (vm_host, 22),
-                                                     (ssh.host, 0))
-            logger.debug("Opening paramiko transport")
-            transport = paramiko.Transport(interm_chan)
-            logger.debug("Starting client")
-            transport.start_client()
-            logger.info("Passing authentication to VM: {}".format(creds))
-            if not creds:
-                creds = ('cirros', 'cubswin:)')
-            transport.auth_password(creds[0], creds[1])
+        interm_transp = ssh._ssh.get_transport()
 
-            logger.debug("Opening session")
-            channel = transport.open_session()
-            logger.info("Executing command: {}".format(cmd))
-            channel.exec_command(cmd)
+        logger.debug("Opening channel to VM")
+        interm_chan = interm_transp.open_channel('direct-tcpip',
+                                                 (vm_host, 22),
+                                                 (ssh.host, 0))
+        logger.debug("Opening paramiko transport")
+        transport = paramiko.Transport(interm_chan)
+        logger.debug("Starting client")
+        transport.start_client()
+        logger.info("Passing authentication to VM: {}".format(creds))
+        if not creds:
+            creds = ('cirros', 'cubswin:)')
+        transport.auth_password(creds[0], creds[1])
 
-            result = {
-                'stdout': [],
-                'stderr': [],
-                'exit_code': 0
-            }
+        logger.debug("Opening session")
+        channel = transport.open_session()
+        logger.info("Executing command: {}".format(cmd))
+        channel.exec_command(cmd)
 
-            logger.debug("Receiving exit_code")
-            result['exit_code'] = channel.recv_exit_status()
-            logger.debug("Receiving stdout")
-            result['stdout'] = channel.recv(1024)
-            logger.debug("Receiving stderr")
-            result['stderr'] = channel.recv_stderr(1024)
+        result = {
+            'stdout': [],
+            'stderr': [],
+            'exit_code': 0
+        }
 
-            logger.debug("Closing channel")
-            channel.close()
+        logger.debug("Receiving exit_code")
+        result['exit_code'] = channel.recv_exit_status()
+        logger.debug("Receiving stdout")
+        result['stdout'] = channel.recv(1024)
+        logger.debug("Receiving stderr")
+        result['stderr'] = channel.recv_stderr(1024)
+
+        logger.debug("Closing channel")
+        channel.close()
 
         return result
 
@@ -423,6 +424,13 @@ class OpenStackActions(common.Common):
         result = self.list_dhcp_agents_for_network(net_id)
         nodes = [i['host'] for i in result['agents']]
         return nodes
+
+    def get_neutron_dhcp_ports(self, net_id):
+        ports = self.neutron.list_ports()['ports']
+        network_ports = [x for x in ports
+                         if x['device_owner'] == 'network:dhcp'
+                         and x['network_id'] == net_id]
+        return network_ports
 
     def create_pool(self, pool_name):
         sub_net = self.neutron.list_subnets()

@@ -314,7 +314,7 @@ def cond_upload(remote, source, target, condition=''):
 
 
 @logwrap
-def run_on_remote(remote, cmd, jsonify=False, clear=False):
+def run_on_remote(remote, cmd, jsonify=False, clear=False, err_msg=None):
     # TODO(ivankliuk): move it to devops.helpers.SSHClient
     """Execute ``cmd`` on ``remote`` and return result.
 
@@ -333,8 +333,10 @@ def run_on_remote(remote, cmd, jsonify=False, clear=False):
             'stdout': result['stdout'],
             'stderr': result['stderr'],
             'exit_code': result['exit_code']}
-        error_msg = ("Unexpected error occurred during execution. "
-                     "Details: {0}".format(error_details))
+        error_msg = ("{0}  Command: '{1}'  Details: {2}"
+                     .format(err_msg or "Unexpected error occurred.",
+                             cmd,
+                             error_details))
         logger.error(error_msg)
         raise Exception(error_msg)
 
