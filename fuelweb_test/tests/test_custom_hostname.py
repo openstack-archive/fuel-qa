@@ -53,7 +53,13 @@ class CustomHostname(TestBasic):
         self.env.revert_snapshot("ready_with_5_slaves")
 
         cluster_id = self.fuel_web.create_cluster(
-            name=self.__class__.__name__, mode=settings.DEPLOYMENT_MODE_HA)
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE_HA,
+            settings={
+                'net_provider': 'neutron',
+                'net_segment_type': settings.NEUTRON_SEGMENT_TYPE,
+            }
+        )
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -117,7 +123,13 @@ class CustomHostname(TestBasic):
             admin_remote = self.env.d_env.get_admin_remote()
 
             cluster_id = self.fuel_web.create_cluster(
-                name=self.__class__.__name__, mode=settings.DEPLOYMENT_MODE)
+                name=self.__class__.__name__,
+                mode=settings.DEPLOYMENT_MODE,
+                settings={
+                    'net_provider': 'neutron',
+                    'net_segment_type': settings.NEUTRON_SEGMENT_TYPE
+                }
+            )
             self.fuel_web.update_nodes(
                 cluster_id,
                 {
@@ -261,7 +273,14 @@ class CustomHostname(TestBasic):
         self.env.revert_snapshot("ready_with_5_slaves")
 
         cluster_id = self.fuel_web.create_cluster(
-            name=self.__class__.__name__, mode=settings.DEPLOYMENT_MODE)
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings={
+                'net_provider': 'neutron',
+                'net_segment_type': settings.NEUTRON_SEGMENT_TYPE
+            }
+        )
+
         self.fuel_web.update_nodes(cluster_id, {'slave-01': ['controller']})
 
         # Set a custom hostname for a node for the 1st time
