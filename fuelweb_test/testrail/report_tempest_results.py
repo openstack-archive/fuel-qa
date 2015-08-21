@@ -58,17 +58,35 @@ def parse_xml_report(path_to_report):
     return test_results
 
 
-def mark_all_tests_as_failed(client, tests_suite):
-    """This function marks all Tempest tests as failed and returns the list
+def mark_all_tests_as_blocked(client, tests_suite):
+    """This function marks all Tempest tests as blocked and returns the list
     with TestResult objects. Each TestResult object corresponds to one of
-    the tests and contains the information that the test failed.
+    the tests and contains the information that the test blocked.
     """
 
     test_results = []
     for case in client.get_cases(tests_suite['id']):
         test_result = report.TestResult(name=case['title'],
                                         group=case['custom_test_group'],
-                                        status='failed',
+                                        status='blocked',
+                                        description=None,
+                                        duration=1)
+        test_results.append(test_result)
+
+    return test_results
+
+
+def mark_all_tests_as_in_progress(client, tests_suite):
+    """This function marks all Tempest tests as 'in progress' and returns
+    the list with TestResult objects. Each TestResult object corresponds
+    to one of the tests.
+    """
+
+    test_results = []
+    for case in client.get_cases(tests_suite['id']):
+        test_result = report.TestResult(name=case['title'],
+                                        group=case['custom_test_group'],
+                                        status='custom_status2',
                                         description=None,
                                         duration=1)
         test_results.append(test_result)
@@ -129,10 +147,14 @@ def main():
     parser.add_option('-m', '--multithreading', dest='threads_count',
                       default=100, help='The count of threads '
                                         'for uploading the test results')
-    parser.add_option('-f', '--fail-all-tests', dest='all_tests_failed',
+    parser.add_option('-b', '--block-all-tests', dest='all_tests_blocked',
                       action='store_true', help='Mark all Tempest tests as '
-                                                'failed regardless of genuine '
-                                                'results')
+                                                'blocked regardless of '
+                                                'genuine results')
+    parser.add_option('-t', '--tests-in-progress',
+                      dest='all_tests_in_progress', action='store_true',
+                      help='Mark all Tempest tests as "in progress" '
+                           'regardless of genuine results')
 
     (options, args) = parser.parse_args()
 
@@ -140,7 +162,8 @@ def main():
         raise optparse.OptionValueError('No run name was specified!')
     if options.iso_number is None:
         raise optparse.OptionValueError('No ISO number was specified!')
-    if options.path is None and not options.all_tests_failed:
+    if (options.path is None and not
+            options.all_tests_blocked and not options.all_tests_in_progress):
         raise optparse.OptionValueError('No path to the Tempest '
                                         'XML report was specified!')
 
@@ -158,8 +181,10 @@ def main():
 
     # STEP #2
     # Parse the test results
-    if options.all_tests_failed:
-        test_results = mark_all_tests_as_failed(client, tests_suite)
+    if options.all_tests_blocked:
+        test_results = mark_all_tests_as_blocked(client, tests_suite)
+    elif options.all_tests_in_progress:
+        test_results = mark_all_tests_as_in_progress(client, tests_suite)
     else:
         LOG.info('Parsing the test results...')
         test_results = parse_xml_report(options.path)
