@@ -811,11 +811,12 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         self.env.make_snapshot("rollback_automatically_delete_node")
 
 
-@test(groups=['upgrade_neutron_ceph'])
+@test(groups=['upgrade_neutron_ceph', 'upgrade_neutron_ceph_classic'])
 class UpgradeNeutronCeph(base_test_data.TestBasic):
     """ Upgrade Neutron Ceph."""
 
-    @test(groups=['upgrade_master_neutron_ceph'])
+    @test(groups=['upgrade_master_neutron_ceph',
+                  'upgrade_master_neutron_ceph_classic'])
     @log_snapshot_after_test
     def upgrade_master_neutron_ceph(self):
         """Upgrade master neutron ceph
@@ -846,7 +847,8 @@ class UpgradeNeutronCeph(base_test_data.TestBasic):
         self.env.make_snapshot('upgrade_master_neutron_ceph', is_make=True)
 
     @test(depends_on=[upgrade_master_neutron_ceph],
-          groups=['delete_node_after_upgrade_neutron_ceph'])
+          groups=['delete_node_after_upgrade_neutron_ceph',
+                  'delete_node_after_upgrade_neutron_ceph_classic'])
     @log_snapshot_after_test
     def delete_node_after_upgrade_neutron_ceph(self):
         """Delete node after upgrade neutron ceph
@@ -874,7 +876,8 @@ class UpgradeNeutronCeph(base_test_data.TestBasic):
                                should_fail=1)
 
     @test(depends_on=[upgrade_master_neutron_ceph],
-          groups=['add_node_after_upgrade_neutron_ceph'])
+          groups=['add_node_after_upgrade_neutron_ceph',
+                  'add_node_after_upgrade_neutron_ceph_classic'])
     @log_snapshot_after_test
     def add_node_after_upgrade_neutron_ceph(self):
         """Add node after upgrade neutron ceph
@@ -906,7 +909,8 @@ class UpgradeNeutronCeph(base_test_data.TestBasic):
         self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'sanity', 'smoke'])
 
     @test(depends_on=[upgrade_master_neutron_ceph],
-          groups=['add_delete_node_after_upgrade_neutron_ceph'])
+          groups=['add_delete_node_after_upgrade_neutron_ceph',
+                  'add_delete_node_after_upgrade_neutron_ceph_classic'])
     @log_snapshot_after_test
     def add_delete_node_after_upgrade_neutron_ceph(self):
         """Add delete node after upgrade neutron ceph
@@ -940,7 +944,8 @@ class UpgradeNeutronCeph(base_test_data.TestBasic):
                                should_fail=1)
 
     @test(depends_on=[upgrade_master_neutron_ceph],
-          groups=['reset_cluster_after_upgrade_neutron_ceph'])
+          groups=['reset_cluster_after_upgrade_neutron_ceph',
+                  'reset_cluster_after_upgrade_neutron_ceph_classic'])
     @log_snapshot_after_test
     def reset_cluster_after_upgrade_neutron_ceph(self):
         """Reset cluster after upgrade neutron ceph
@@ -981,7 +986,8 @@ class UpgradeNeutronCeph(base_test_data.TestBasic):
                                should_fail=1)
 
     @test(depends_on=[upgrade_master_neutron_ceph],
-          groups=['destroy_node_after_upgrade_neutron_ceph'])
+          groups=['destroy_node_after_upgrade_neutron_ceph',
+                  'destroy_node_after_upgrade_neutron_ceph_classic'])
     @log_snapshot_after_test
     def destroy_node_after_upgrade_neutron_ceph(self):
         """Destroy node after upgrade neutron ceph
@@ -1027,11 +1033,12 @@ class UpgradeNeutronCeph(base_test_data.TestBasic):
                                should_fail=1)
 
 
-@test(groups=['upgrade_nova_cinder'])
+@test(groups=['upgrade_nova_cinder', 'upgrade_nova_cinder_classic'])
 class UpgradeNovaCinder(base_test_data.TestBasic):
     """Upgrade Nova Cinder."""
 
-    @test(groups=['upgrade_master_nova_cinder'])
+    @test(groups=['upgrade_master_nova_cinder',
+                  'upgrade_master_nova_cinder_classic'])
     @log_snapshot_after_test
     def upgrade_master_nova_cinder(self):
         """Upgrade master nova cinder
@@ -1063,7 +1070,8 @@ class UpgradeNovaCinder(base_test_data.TestBasic):
         self.env.make_snapshot('upgrade_master_nova_cinder', is_make=True)
 
     @test(depends_on=[upgrade_master_nova_cinder],
-          groups=['delete_node_after_upgrade_nova_cinder'])
+          groups=['delete_node_after_upgrade_nova_cinder',
+                  'delete_node_after_upgrade_nova_cinder_classic'])
     @log_snapshot_after_test
     def delete_node_after_upgrade_nova_cinder(self):
         """Delete node after upgrade nova cinder
@@ -1091,7 +1099,8 @@ class UpgradeNovaCinder(base_test_data.TestBasic):
         self.fuel_web.run_ostf(cluster_id, should_fail=1)
 
     @test(depends_on=[upgrade_master_nova_cinder],
-          groups=['add_node_after_upgrade_nova_cinder'])
+          groups=['add_node_after_upgrade_nova_cinder',
+                  'add_node_after_upgrade_nova_cinder_classic'])
     @log_snapshot_after_test
     def add_node_after_upgrade_nova_cinder(self):
         """Add node after upgrade nova cinder
@@ -1127,7 +1136,8 @@ class UpgradeNovaCinder(base_test_data.TestBasic):
         self.env.make_snapshot('add_node_after_upgrade_nova_cinder')
 
     @test(depends_on=[upgrade_master_nova_cinder],
-          groups=['add_delete_node_after_upgrade_nova_cinder'])
+          groups=['add_delete_node_after_upgrade_nova_cinder',
+                  'add_delete_node_after_upgrade_nova_cinder_classic'])
     @log_snapshot_after_test
     def add_delete_node_after_upgrade_nova_cinder(self):
         """Add delete node after upgrade nova cinder
@@ -1161,7 +1171,8 @@ class UpgradeNovaCinder(base_test_data.TestBasic):
         self.fuel_web.run_ostf(cluster_id, should_fail=1)
 
     @test(depends_on=[upgrade_master_nova_cinder],
-          groups=['reset_cluster_after_upgrade_nova_cinder'])
+          groups=['reset_cluster_after_upgrade_nova_cinder',
+                  'reset_cluster_after_upgrade_nova_cinder_classic'])
     @log_snapshot_after_test
     def reset_cluster_after_upgrade_nova_cinder(self):
         """Reset cluster after upgrade nova cinder
