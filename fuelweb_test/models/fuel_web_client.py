@@ -30,6 +30,7 @@ from proboscis.asserts import assert_true
 
 from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import replace_repos
 from fuelweb_test import logwrap
 from fuelweb_test import logger
 from fuelweb_test import quiet_logger
@@ -581,15 +582,15 @@ class FuelWebClient(object):
         mirror = '{0},deb {1} {2} {3}'.format(name, mirror_url, suite, section)
 
         attributes = self.client.get_cluster_attributes(cluster_id)
-
         repos_attr = attributes['editable']['repo_setup']['repos']
-        repos_attr['value'] = self.add_ubuntu_extra_mirrors(
+
+        repos_attr['value'] = replace_repos.add_ubuntu_extra_mirrors(
             repos=repos_attr['value'],
             prefix=suite,
             mirrors=mirror,
             priority=priority)
 
-        self.report_ubuntu_repos(repos_attr['value'])
+        replace_repos.report_ubuntu_repos(repos_attr['value'])
         self.client.update_cluster_attributes(cluster_id, attributes)
 
     def add_local_centos_mirror(self, cluster_id, name='Auxiliary',
@@ -602,14 +603,14 @@ class FuelWebClient(object):
         mirror = '{0},{1}'.format(repo_name, mirror_url)
 
         attributes = self.client.get_cluster_attributes(cluster_id)
-
         repos_attr = attributes['editable']['repo_setup']['repos']
-        repos_attr['value'] = self.add_centos_extra_mirrors(
+
+        repos_attr['value'] = replace_repos.add_centos_extra_mirrors(
             repos=repos_attr['value'],
             mirrors=mirror,
             priority=priority)
 
-        self.report_centos_repos(repos_attr['value'])
+        replace_repos.report_centos_repos(repos_attr['value'])
         self.client.update_cluster_attributes(cluster_id, attributes)
 
     def replace_default_repos(self):
@@ -621,7 +622,9 @@ class FuelWebClient(object):
         ubuntu_meta = ubuntu_release["attributes_metadata"]
         repos_ubuntu = ubuntu_meta["editable"]["repo_setup"]["repos"]
 
-        repos_ubuntu["value"] = self.replace_ubuntu_repos(repos_ubuntu)
+        repos_ubuntu["value"] = replace_repos.replace_ubuntu_repos(
+            repos_ubuntu, upstream_host='archive.ubuntu.com')
+
         self.client.put_release(ubuntu_id, ubuntu_release)
 
         # Replace CentOS default repositories for the release
@@ -632,224 +635,14 @@ class FuelWebClient(object):
         centos_meta = centos_release["attributes_metadata"]
         repos_centos = centos_meta["editable"]["repo_setup"]["repos"]
 
-        repos_centos["value"] = self.replace_centos_repos(repos_centos)
+        repos_centos["value"] = replace_repos.replace_centos_repos(
+            repos_centos, upstream_host=self.admin_node_ip)
+
         self.client.put_release(centos_id, centos_release)
 
-    def replace_ubuntu_repos(self, repos_attr):
-        # Walk thru repos_attr and replace/add extra Ubuntu mirrors
-        repos = []
-        if help_data.MIRROR_UBUNTU:
-            logger.info("Adding new mirrors: '{0}'"
-                        .format(help_data.MIRROR_UBUNTU))
-            repos = self.add_ubuntu_mirrors()
-            # Keep other (not upstream) repos, skip previously added ones
-            for repo_value in repos_attr['value']:
-                if 'archive.ubuntu.com' not in repo_value['uri']:
-                    if self.check_new_ubuntu_repo(repos, repo_value):
-                        repos.append(repo_value)
-                else:
-                    logger.warning("Removing mirror: '{0}'"
-                                   .format(repo_value['uri']))
-        else:
-            # Use defaults from Nailgun if MIRROR_UBUNTU is not set
-            repos = repos_attr['value']
-        if help_data.EXTRA_DEB_REPOS:
-            repos = self.add_ubuntu_extra_mirrors(repos=repos)
-        if help_data.PATCHING_DISABLE_UPDATES:
-            for repo in repos:
-                if repo['name'] in ('mos-updates', 'mos-security'):
-                    repos.remove(repo)
-
-        self.report_ubuntu_repos(repos)
-        return repos
-
-    def replace_centos_repos(self, repos_attr):
-        # Walk thru repos_attr and replace/add extra Centos mirrors
-        repos = []
-        if help_data.MIRROR_CENTOS:
-            logger.info("Adding new mirrors: '{0}'"
-                        .format(help_data.MIRROR_CENTOS))
-            repos = self.add_centos_mirrors()
-            # Keep other (not upstream) repos, skip previously added ones
-            for repo_value in repos_attr['value']:
-                # self.admin_node_ip while repo is located on master node
-                if self.admin_node_ip not in repo_value['uri']:
-                    if self.check_new_centos_repo(repos, repo_value):
-                        repos.append(repo_value)
-                else:
-                    logger.warning("Removing mirror: '{0}'"
-                                   .format(repo_value['uri']))
-        else:
-            # Use defaults from Nailgun if MIRROR_CENTOS is not set
-            repos = repos_attr['value']
-        if help_data.EXTRA_RPM_REPOS:
-            repos = self.add_centos_extra_mirrors(repos=repos)
-        if help_data.PATCHING_DISABLE_UPDATES:
-            for repo in repos:
-                if repo['name'] in ('mos-updates', 'mos-security'):
-                    repos.remove(repo)
-
-        self.report_centos_repos(repos)
-        return repos
-
-    def report_repos(self, cluster_id, release=help_data.OPENSTACK_RELEASE):
-        """Show list of reposifories for specified cluster"""
+    def get_cluster_repos(self, cluster_id):
         attributes = self.client.get_cluster_attributes(cluster_id)
-        repos_attr = attributes['editable']['repo_setup']['repos']
-
-        if help_data.OPENSTACK_RELEASE_UBUNTU in release:
-            self.report_ubuntu_repos(repos_attr['value'])
-        else:
-            self.report_centos_repos(repos_attr['value'])
-
-    def report_ubuntu_repos(self, repos):
-        for x, rep in enumerate(repos):
-            logger.info(
-                "Ubuntu repo {0} '{1}': '{2} {3} {4} {5}', priority:{6}"
-                .format(x, rep['name'], rep['type'], rep['uri'],
-                        rep['suite'], rep['section'], rep['priority']))
-
-    def report_centos_repos(self, repos):
-        for x, rep in enumerate(repos):
-            logger.info(
-                "Centos repo {0} '{1}': '{2} {3}', priority:{4}"
-                .format(x, rep['name'], rep['type'], rep['uri'],
-                        rep['priority']))
-
-    def add_ubuntu_mirrors(self, repos=None, mirrors=help_data.MIRROR_UBUNTU,
-                           priority=help_data.MIRROR_UBUNTU_PRIORITY):
-        if not repos:
-            repos = []
-        # Add external Ubuntu repositories
-        for x, repo_str in enumerate(mirrors.split('|')):
-            repo_value = self.parse_ubuntu_repo(
-                repo_str, 'ubuntu-{0}'.format(x), priority)
-            if repo_value and self.check_new_ubuntu_repo(repos, repo_value):
-                repos.append(repo_value)
-        return repos
-
-    def add_centos_mirrors(self, repos=None, mirrors=help_data.MIRROR_CENTOS,
-                           priority=help_data.MIRROR_CENTOS_PRIORITY):
-        if not repos:
-            repos = []
-        # Add external Centos repositories
-        for x, repo_str in enumerate(mirrors.split('|')):
-            repo_value = self.parse_centos_repo(repo_str, priority)
-            if repo_value and self.check_new_centos_repo(repos, repo_value):
-                repos.append(repo_value)
-        return repos
-
-    def add_ubuntu_extra_mirrors(self, repos=None, prefix='extra',
-                                 mirrors=help_data.EXTRA_DEB_REPOS,
-                                 priority=help_data.EXTRA_DEB_REPOS_PRIORITY):
-        if not repos:
-            repos = []
-        # Add extra Ubuntu repositories with higher priority
-        for x, repo_str in enumerate(mirrors.split('|')):
-            repo_value = self.parse_ubuntu_repo(
-                repo_str, '{0}-{1}'.format(prefix, x), priority)
-
-            if repo_value and self.check_new_ubuntu_repo(repos, repo_value):
-                # Remove repos that use the same name
-                for repo in repos:
-                    if repo["name"] == repo_value["name"]:
-                        repos.remove(repo)
-                repos.append(repo_value)
-        return repos
-
-    def add_centos_extra_mirrors(self, repos=None,
-                                 mirrors=help_data.EXTRA_RPM_REPOS,
-                                 priority=help_data.EXTRA_RPM_REPOS_PRIORITY):
-        if not repos:
-            repos = []
-        # Add extra Centos repositories
-        for x, repo_str in enumerate(mirrors.split('|')):
-            repo_value = self.parse_centos_repo(repo_str, priority)
-            if repo_value and self.check_new_centos_repo(repos, repo_value):
-                # Remove repos that use the same name
-                for repo in repos:
-                    if repo["name"] == repo_value["name"]:
-                        repos.remove(repo)
-                repos.append(repo_value)
-        return repos
-
-    def check_new_ubuntu_repo(self, repos, repo_value):
-        # Checks that 'repo_value' is a new unique record for Ubuntu 'repos'
-        for repo in repos:
-            if (repo["type"] == repo_value["type"] and
-                    repo["uri"] == repo_value["uri"] and
-                    repo["suite"] == repo_value["suite"] and
-                    repo["section"] == repo_value["section"]):
-                return False
-        return True
-
-    def check_new_centos_repo(self, repos, repo_value):
-        # Checks that 'repo_value' is a new unique record for Centos 'repos'
-        for repo in repos:
-            if repo["uri"] == repo_value["uri"]:
-                return False
-        return True
-
-    def parse_ubuntu_repo(self, repo_string, name, priority):
-        # Validate DEB repository string format
-        results = re.search("""
-            ^                 # [beginning of the string]
-            ([\w\-\.\/]+)?    # group 1: optional repository name (for Nailgun)
-            ,?                # [optional comma separator]
-            (deb|deb-src)     # group 2: type; search for 'deb' or 'deb-src'
-            \s+               # [space separator]
-            (                 # group 3: uri;
-            \w+:\/\/          #   - protocol, i.e. 'http://'
-            [\w\-\.\/]+       #   - hostname
-            (?::\d+)          #   - port, i.e. ':8080', if exists
-            ?[\w\-\.\/]+      #   - rest of the path, if exists
-            )                 #   - end of group 2
-            \s+               # [space separator]
-            ([\w\-\.\/]+)     # group 4: suite;
-            \s*               # [space separator], if exists
-            (                 # group 5: section;
-            [\w\-\.\/\s]*     #   - several space-separated names, or None
-            )                 #   - end of group 4
-            ,?                # [optional comma separator]
-            (\d+)?            # group 6: optional priority of the repository
-            $                 # [ending of the string]""",
-                            repo_string.strip(), re.VERBOSE)
-        if results:
-            return {"name": results.group(1) or name,
-                    "priority": int(results.group(6) or priority),
-                    "type": results.group(2),
-                    "uri": results.group(3),
-                    "suite": results.group(4),
-                    "section": results.group(5) or ''}
-        else:
-            logger.error("Provided DEB repository has incorrect format: {}"
-                         .format(repo_string))
-
-    def parse_centos_repo(self, repo_string, priority):
-        # Validate RPM repository string format
-        results = re.search("""
-            ^                 # [beginning of the string]
-            ([\w\-\.\/]+)     # group 1: repo name
-            ,                 # [comma separator]
-            (                 # group 2: uri;
-            \w+:\/\/          #   - protocol, i.e. 'http://'
-            [\w\-\.\/]+       #   - hostname
-            (?::\d+)          #   - port, i.e. ':8080', if exists
-            ?[\w\-\.\/]+      #   - rest of the path, if exists
-            )                 #   - end of group 2
-            \s*               # [space separator]
-            ,?                # [optional comma separator]
-            (\d+)?            # group 3: optional priority of the repository
-            $                 # [ending of the string]""",
-                            repo_string.strip(), re.VERBOSE)
-        if results:
-            return {"name": results.group(1),
-                    "priority": int(results.group(3) or priority),
-                    "type": 'rpm',
-                    "uri": results.group(2)}
-        else:
-            logger.error("Provided RPM repository has incorrect format: {}"
-                         .format(repo_string))
+        return attributes['editable']['repo_setup']['repos']
 
     @download_packages_json
     @download_astute_yaml
