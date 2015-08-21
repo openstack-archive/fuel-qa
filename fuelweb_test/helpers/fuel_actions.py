@@ -29,9 +29,11 @@ from fuelweb_test.helpers import checkers
 
 from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
 from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
+from fuelweb_test.helpers import replace_repos
 from fuelweb_test.helpers.utils import cond_upload
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
+from fuelweb_test.settings import MIRROR_UBUNTU
 from fuelweb_test import settings as hlp_data
 from fuelweb_test.settings import NESSUS_IMAGE_PATH
 
@@ -108,7 +110,7 @@ class BaseActions(object):
     def wait_for_ready_container(self, timeout=300):
         wait(lambda: self.is_container_ready, timeout=timeout)
 
-    def change_content_in_yaml(self, old_file, new_file, element, value):
+    def put_value_to_local_yaml(self, old_file, new_file, element, value):
         """Changes content in old_file at element is given to the new value
         and creates new file with changed content
         :param old_file: a path to the file content from to be changed
@@ -129,7 +131,32 @@ class BaseActions(object):
         yaml_dict[element[-1]] = value
 
         with open(new_file, 'w') as f_new:
-            yaml.dump(origin_yaml, f_new)
+            yaml.dump(origin_yaml, f_new, default_flow_style=False)
+
+    def get_value_from_local_yaml(self, yaml_file, element):
+        """Get a value of the element from the local yaml file
+
+           :param str yaml_file: a path to the yaml file
+           :param list element:
+               list with path to element to be readed
+               for example: ['root_elem', 'first_elem', 'target_elem']
+               if there are a few elements with equal names use integer
+               to identify which element should be used
+           :return obj: value
+        """
+        with open(yaml_file, 'r') as f_old:
+            yaml_dict = yaml.load(f_old)
+
+        for i, k in enumerate(element):
+            try:
+                yaml_dict = yaml_dict[k]
+            except IndexError:
+                raise IndexError("Element {0} not found in the file {1}"
+                                 .format(element[: i + 1], f_old))
+            except KeyError:
+                raise KeyError("Element {0} not found in the file {1}"
+                               .format(element[: i + 1], f_old))
+        return yaml_dict
 
     def change_yaml_file_in_container(
             self, path_to_file, element, value, container=None):
@@ -144,16 +171,69 @@ class BaseActions(object):
         if not container:
             container = self.container
 
-        old_file = '/tmp/temp_file.old.yaml'
-        new_file = '/tmp/temp_file.new.yaml'
+        old_file = '/tmp/temp_file_{0}.old.yaml'.format(str(os.getpid()))
+        new_file = '/tmp/temp_file_{0}.new.yaml'.format(str(os.getpid()))
 
         self.copy_between_node_and_container(
             '{0}:{1}'.format(container, path_to_file), old_file)
         self.admin_remote.download(old_file, old_file)
-        self.change_content_in_yaml(old_file, new_file, element, value)
+        self.put_value_to_local_yaml(old_file, new_file, element, value)
         self.admin_remote.upload(new_file, new_file)
         self.copy_between_node_and_container(
             new_file, '{0}:{1}'.format(container, path_to_file))
+        os.remove(old_file)
+        os.remove(new_file)
+
+    def get_value_from_yaml(self, path_to_file, element):
+        """Get a value from the yaml file stored in container
+           or on master node if self.container is None
+
+        :param str path_to_file: absolutely path to the file
+        :param list element: list with path to the element be changed
+        :return obj: value
+        """
+
+        if self.container:
+            admin_tmp_file = '/tmp/temp_file_{0}.yaml'.format(str(os.getpid()))
+            self.copy_between_node_and_container(
+                '{0}:{1}'.format(self.container, path_to_file), admin_tmp_file)
+        else:
+            admin_tmp_file = path_to_file
+
+        host_tmp_file = '/tmp/temp_file_{0}.yaml'.format(str(os.getpid()))
+
+        self.admin_remote.download(admin_tmp_file, host_tmp_file)
+        value = self.get_value_from_local_yaml(host_tmp_file, element)
+        os.remove(host_tmp_file)
+        return value
+
+    def put_value_to_yaml(self, path_to_file, element, value):
+        """Put a value to the yaml file stored in container
+           or on master node if self.container is None
+
+        :param str path_to_file: absolutely path to the file
+        :param list element: list with path to the element be changed
+        :param value: new value for element
+        :return: None
+        """
+
+        if self.container:
+            admin_tmp_file = '/tmp/temp_file_{0}.yaml'.format(str(os.getpid()))
+            self.copy_between_node_and_container(
+                '{0}:{1}'.format(self.container, path_to_file), admin_tmp_file)
+        else:
+            admin_tmp_file = path_to_file
+
+        host_tmp_file = '/tmp/temp_file_{0}.yaml'.format(str(os.getpid()))
+
+        self.admin_remote.download(admin_tmp_file, host_tmp_file)
+        self.put_value_to_local_yaml(host_tmp_file, host_tmp_file,
+                                     element, value)
+        self.admin_remote.upload(host_tmp_file, admin_tmp_file)
+        if self.container:
+            self.copy_between_node_and_container(
+                admin_tmp_file, '{0}:{1}'.format(self.container, path_to_file))
+        os.remove(host_tmp_file)
 
 
 class AdminActions(BaseActions):
@@ -202,6 +282,15 @@ class AdminActions(BaseActions):
                 assert_equal(0, result['exit_code'],
                              "Command [{cmd}] failed with the following "
                              "result: {res}".format(cmd=cmd, res=result))
+        if MIRROR_UBUNTU:
+            logger.info("Replace Ubuntu mirror for bootstrap image in {0}"
+                        .format(config))
+            repo_url = self.get_value_from_yaml(config, ['BOOTSTRAP',
+                                                         'MIRROR_DISTRO'])
+            new_repo_url = replace_repos.replace_ubuntu_repo_url(
+                repo_url, upstream_host='archive.ubuntu.com')
+            self.put_value_to_yaml(config, ['BOOTSTRAP', 'MIRROR_DISTRO'],
+                                   new_repo_url)
 
     @logwrap
     def upload_packages(self, local_packages_dir, centos_repo_path,
