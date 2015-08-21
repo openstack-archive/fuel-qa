@@ -93,6 +93,11 @@ Regenerate Repo
 .. automodule:: fuelweb_test.helpers.regenerate_repo
    :members:
 
+Replace Reposiroties
+--------------------
+.. automodule:: fuelweb_test.helpers.replace_repos
+   :members:
+
 Security
 --------
 .. automodule:: fuelweb_test.helpers.security
