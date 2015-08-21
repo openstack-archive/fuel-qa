@@ -494,7 +494,9 @@ class MultiroleMultipleServices(TestBasic):
                 'slave-05': ['mongo']
             }
         )
-        self.fuel_web.report_repos(cluster_id)
+
+        repos_attr = self.get_cluster_repos(cluster_id)
+        self.fuel_web.report_repos(repos_attr)
 
         # (ddmitriev): No additional checks is required after deploy,
         # just make sure that all components are installed from the
