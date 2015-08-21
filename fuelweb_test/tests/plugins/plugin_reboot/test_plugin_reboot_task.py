@@ -189,10 +189,10 @@ class RebootPlugin(TestBasic):
             # install fuel_plugin_builder on master node
             fpb.fpb_install()
             # change timeout to a new value '1'
-            fpb.change_content_in_yaml(os.path.join(tasks_path, tasks_file),
-                                       os.path.join('/tmp/', tasks_file),
-                                       [1, 'parameters', 'timeout'],
-                                       1)
+            fpb.put_value_to_local_yaml(os.path.join(tasks_path, tasks_file),
+                                        os.path.join('/tmp/', tasks_file),
+                                        [1, 'parameters', 'timeout'],
+                                        1)
             # create plugin template on the master node
             fpb.fpb_create_plugin(plugin_name)
             # replace plugin tasks with our file
