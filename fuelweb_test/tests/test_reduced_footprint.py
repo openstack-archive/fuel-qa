@@ -48,7 +48,6 @@ class TestVirtRole(TestBasic):
 
         Duration: 60m
         """
-
         self.env.revert_snapshot("ready_with_1_slaves")
 
         with self.env.d_env.get_admin_remote() as remote:
@@ -223,3 +222,124 @@ class TestVirtRole(TestBasic):
                               ['Name: {0}, status: {1}, online: {2}'.
                                format(i['name'], i['status'], i['online'])
                                for i in self.fuel_web.client.list_nodes()])))
+
+
+@test(groups=["reduced_footprint"])
+class TestReducedFoorprint(TestBasic):
+    """Reduced footprint tests
+
+    Reduced footprint is about deployment cluster on reduced number
+    of physical nodes. The minimal nodes count is 5 for the default
+    implementation and HA mode (1 master, 3 controllers, 1 compute/storage).
+    Reduced footprint allows to use not production ready setup on 1 node and
+    full working HA will be possible with 3 physical nodes (each
+    controller located on other physical server).
+    """
+
+    def update_virtual_nodes(self, cluster_id, nodes_dict):
+        """Update nodes attributes with nailgun client.
+
+        FuelWebClient.update_nodes uses devops nodes as data source.
+        Virtual nodes are not in devops database so we have to
+        update nodes attributes manually via nailgun client.
+        """
+
+        nodes = self.fuel_web.client.list_nodes()
+
+        virt_nodes = [node for node in nodes
+                      if node['cluster'] != cluster_id]
+        asserts.assert_equal(len(nodes_dict),
+                             len(virt_nodes),
+                             "Length of given nodes dict is differ from "
+                             "count of available nodes in nailgun:\n"
+                             "Nodes dict: {0}\nAvailable nodes: {1}"
+                             .format(nodes_dict,
+                                     [node['name'] for node in virt_nodes]))
+
+        for virt_node, virt_node_name in zip(virt_nodes, nodes_dict):
+            new_roles = nodes_dict[virt_node_name]
+            new_name = '{}_{}'.format(virt_node_name, "_".join(new_roles))
+            data = {"cluster_id": cluster_id,
+                    "pending_addition": True,
+                    "pending_deletion": False,
+                    "pending_roles": new_roles,
+                    "name": new_name}
+            self.fuel_web.client.update_node(virt_node['id'], data)
+
+        self.fuel_web.update_nodes_interfaces(cluster_id, virt_nodes)
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_1],
+          groups=["deploy_ha_compact_on_one_node"])
+    @log_snapshot_after_test
+    def deploy_ha_compact_on_one_node(self):
+        """Deploy ha_compact on one HW node
+
+        Scenario:
+            1. Create cluster
+            2. Assign compute and virt roles to slave node
+            3. Upload configuration for one VM
+            4. Spawn VM
+            5. Wait till VM become available for allocation
+            6. Assign controller role to VM and deploy ha_compact
+            7. Run Network tests
+            8. Run OSTF check
+
+        Environment variables:
+            - SLAVE_NODE_CPU: recommended value 4
+            - SLAVE_NODE_MEMORY: recommended value 4096
+
+        Duration 310m
+        """
+
+        self.env.revert_snapshot("ready_with_1_slaves")
+
+        with self.env.d_env.get_admin_remote() as remote:
+            checkers.enable_advanced_mode(remote, '/etc/fuel/version.yaml')
+            checkers.restart_nailgun(remote)
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE_HA,
+            settings={
+                'net_provider': 'neutron',
+                'net_segment_type': settings.NEUTRON_SEGMENT['tun']
+            })
+
+        asserts.assert_true(settings.HARDWARE['slave_node_memory'] >= 1024,
+                            "Wrong SLAVE_NODE_MEMORY value: {0}."
+                            "Please allocate more than 1024Mb.".
+                            format(settings.HARDWARE['slave_node_memory']))
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['compute', 'virt']
+            })
+
+        node_id = self.fuel_web.get_nailgun_node_by_name("slave-01")['id']
+
+        self.fuel_web.client.create_vm_nodes(
+            node_id,
+            [{
+                "id": 1,
+                "mem": settings.HARDWARE['slave_node_memory'] / 1024 - 1,
+                "cpu": int(settings.HARDWARE['slave_node_cpu']) - 1
+            }])
+
+        self.fuel_web.spawn_vms_wait(cluster_id)
+        wait(lambda: len(self.fuel_web.client.list_nodes()) == 2,
+             timeout=60 * 60,
+             timeout_msg=("Timeout waiting 2 available nodes, "
+                          "current nodes: \n{0}" + '\n'.join(
+                              ['Name: {0}, status: {1}, online: {2}'.
+                               format(i['name'], i['status'], i['online'])
+                               for i in self.fuel_web.client.list_nodes()])))
+
+        self.update_virtual_nodes(cluster_id,
+                                  {
+                                      'slave-02': ['controller'],
+                                  })
+
+        self.fuel_web.deploy_cluster_wait(cluster_id, timeout=4 * 60 * 60)
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id)
