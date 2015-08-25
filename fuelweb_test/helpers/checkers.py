@@ -23,6 +23,7 @@ from devops.helpers.helpers import wait
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
+from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import EXTERNAL_DNS
 from fuelweb_test.settings import EXTERNAL_NTP
 from fuelweb_test.settings import OPENSTACK_RELEASE
@@ -1138,3 +1139,21 @@ def check_log_lines_order(remote, log_file_path, line_matcher):
 
         previous_line_pos = previous_line_pos + current_line_pos
         previous_line = current_line
+
+
+def check_hiera_hosts(self, nodes, cmd):
+    hiera_hosts = []
+    for node in nodes:
+        with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
+            hosts = ''.join(run_on_remote(remote, cmd)).strip().split(',')
+            logger.debug("hosts on {0} are {1}".format(node['hostname'],
+                                                       hosts))
+            if not hiera_hosts:
+                hiera_hosts = hosts
+                continue
+            elif set(hosts) == set(hiera_hosts):
+                continue
+            else:
+                assert_true(set(hosts) == set(hiera_hosts),
+                            'Hosts on node {0} differ from'
+                            ' others'.format(node['hostname']))
