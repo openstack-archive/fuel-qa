@@ -232,6 +232,17 @@ class SeparateDbFailover(TestBasic):
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['sanity', 'smoke', 'ha'])
+        
+        checkers.check_hiera_hosts(
+            self, self.fuel_web.client.list_cluster_nodes(cluster_id),
+            cmd='hiera memcache_roles')
+
+        database_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+                cluster_id, ['standalone-database'])
+        logger.debug("database nodes are {0}".format(database_nodes))
+        checkers.check_hiera_hosts(
+            self, database_nodes,
+            cmd='hiera corosync_roles')
 
         nailgun_node = self.fuel_web.update_nodes(cluster_id, node,
                                                   False, True)
@@ -242,3 +253,14 @@ class SeparateDbFailover(TestBasic):
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['sanity', 'smoke', 'ha'])
+
+        checkers.check_hiera_hosts(
+            self, self.fuel_web.client.list_cluster_nodes(cluster_id),
+            cmd='hiera memcache_roles')
+
+        database_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+                cluster_id, ['standalone-database'])
+        logger.debug("database nodes are {0}".format(database_nodes))
+        checkers.check_hiera_hosts(
+            self, database_nodes,
+            cmd='hiera corosync_roles')
