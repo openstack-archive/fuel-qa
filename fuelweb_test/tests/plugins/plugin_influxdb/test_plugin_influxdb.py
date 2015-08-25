@@ -78,6 +78,7 @@ class TestInfluxdbPlugin(TestBasic):
             'node_name/value': 'slave-03_base-os',
             'influxdb_rootpass/value': 'lmapass',
             'influxdb_userpass/value': 'lmapass',
+            'grafana_userpass/value': 'lmapass',
         }
 
         assert_true(
@@ -104,16 +105,20 @@ class TestInfluxdbPlugin(TestBasic):
 
         logger.debug("Check that InfluxDB is ready")
 
-        r = requests.get(
-            "http://{}:8086/db/lma/series?u=lma&p={}&q=list+series".format(
-                influxdb_server_ip, options['influxdb_userpass/value']))
+        influxdb_url = "http://{0}:8086/query?db=lma&u={1}&p={2}&" + \
+            "q=show+measurements"
+        r = requests.get(influxdb_url.format(
+            influxdb_server_ip, 'lma', options['influxdb_userpass/value']))
         msg = "InfluxDB responded with {}, expected 200".format(r.status_code)
         assert_equal(r.status_code, 200, msg)
 
-        logger.debug("Check that the HTTP server is running")
+        logger.debug("Check that the Grafana server is running")
 
-        r = requests.get("http://{}/".format(influxdb_server_ip))
-        msg = "HTTP server responded with {}, expected 200".format(
+        r = requests.get(
+            "http://{0}:{1}@{2}:8000/api/org".format(
+                'grafana', options['grafana_userpass/value'],
+                influxdb_server_ip))
+        msg = "Grafana server responded with {}, expected 200".format(
             r.status_code)
         assert_equal(r.status_code, 200, msg)
 

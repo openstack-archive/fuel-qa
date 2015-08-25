@@ -93,6 +93,11 @@ class TestLmaCollectorPlugin(TestBasic):
 
         # this is how the base-os node will be named eventually
         analytics_node_name = 'slave-05_base-os'
+        influxdb_user = "influxdb"
+        influxdb_pass = "influxdbpass"
+        influxdb_rootpass = "r00tme"
+        grafana_user = "grafana"
+        grafana_pass = "grafanapass"
         plugins = [
             {
                 'name': 'lma_collector',
@@ -101,7 +106,6 @@ class TestLmaCollectorPlugin(TestBasic):
                     'environment_label/value': 'deploy_lma_collector_ha',
                     'elasticsearch_mode/value': 'local',
                     'influxdb_mode/value': 'local',
-                    'influxdb_password/value': 'lmapass',
                 }
             },
             {
@@ -116,8 +120,11 @@ class TestLmaCollectorPlugin(TestBasic):
                 'options': {
                     'metadata/enabled': True,
                     'node_name/value': analytics_node_name,
-                    'influxdb_rootpass/value': 'lmapass',
-                    'influxdb_userpass/value': 'lmapass',
+                    'influxdb_rootpass/value': influxdb_rootpass,
+                    'influxdb_username/value': influxdb_user,
+                    'influxdb_userpass/value': influxdb_pass,
+                    'grafana_username/value': grafana_user,
+                    'grafana_userpass/value': grafana_pass,
                 }
             },
         ]
@@ -157,18 +164,27 @@ class TestLmaCollectorPlugin(TestBasic):
                              url, r.status_code, expected))
 
         logger.debug("Check that Elasticsearch is ready")
-        assert_http_get_response("http://{}:9200/".format(analytics_node_ip))
+        assert_http_get_response("http://{0}:9200/".format(analytics_node_ip))
 
         logger.debug("Check that Kibana is ready")
-        assert_http_get_response("http://{}/".format(analytics_node_ip))
+        assert_http_get_response("http://{0}/".format(analytics_node_ip))
 
-        logger.debug("Check that InfluxDB is ready")
+        logger.debug("Check that the root user can access InfluxDB")
+        influxdb_url = "http://{0}:8086/query?db=lma&u={1}&p={2}&" + \
+            "q=show+measurements"
+        assert_http_get_response(influxdb_url.format(analytics_node_ip,
+                                                     'root',
+                                                     influxdb_rootpass))
+        logger.debug("Check that the LMA user can access InfluxDB")
+        assert_http_get_response(influxdb_url.format(analytics_node_ip,
+                                                     influxdb_user,
+                                                     influxdb_pass))
+
+        logger.debug("Check that the LMA user can access Grafana")
         assert_http_get_response(
-            "http://{}:8086/db/lma/series?u=lma&p={}&q=list+series".format(
-                analytics_node_ip, "lmapass"))
-
-        logger.debug("Check that Grafana is ready")
-        assert_http_get_response("http://{}/".format(analytics_node_ip))
+            "http://{0}:{1}@{2}:8000/api/org".format(grafana_user,
+                                                     grafana_pass,
+                                                     analytics_node_ip))
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
