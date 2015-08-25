@@ -219,6 +219,10 @@ Zabbix tests
 .. automodule:: fuelweb_test.tests.plugins.plugin_zabbix.test_plugin_zabbix
    :members:
 
+LMA infrastructure alreting tests
+---------------------------------
+.. automodule:: fuelweb_test.tests.plugins.plugin_lma_infra_alerting.test_plugin_lma_infra_alerting
+   :members:
 
 Patching tests
 ==============
