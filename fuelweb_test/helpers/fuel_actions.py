@@ -228,28 +228,41 @@ class AdminActions(BaseActions):
             "find /var/www/nailgun/targetimages/ -name 'env*{}*'"
             " -delete".format(distro.lower()))
 
-    def upgrade_master_node(self):
+    def upgrade_master_node(self, rollback=False, file_upload=True):
         """This method upgrades master node with current state."""
 
         with self.admin_remote as master:
-            checkers.upload_tarball(master, hlp_data.TARBALL_PATH, '/var')
-            checkers.check_file_exists(master,
-                                       os.path.join(
-                                           '/var',
-                                           os.path.basename(hlp_data.
-                                                            TARBALL_PATH)))
-            checkers.untar(master, os.path.basename(hlp_data.TARBALL_PATH),
-                           '/var')
+            if file_upload:
+                checkers.upload_tarball(master, hlp_data.TARBALL_PATH, '/var')
+                checkers.check_file_exists(master,
+                                           os.path.join(
+                                               '/var',
+                                               os.path.basename(hlp_data.
+                                                                TARBALL_PATH)))
+                checkers.untar(master, os.path.basename(hlp_data.TARBALL_PATH),
+                               '/var')
 
             keystone_pass = hlp_data.KEYSTONE_CREDS['password']
-            checkers.run_script(master, '/var', 'upgrade.sh',
-                                password=keystone_pass)
-            checkers.wait_upgrade_is_done(master, 3000,
-                                          phrase='*** UPGRADING MASTER NODE'
-                                                 ' DONE SUCCESSFULLY')
-            checkers.check_upgraded_containers(master,
-                                               hlp_data.UPGRADE_FUEL_FROM,
-                                               hlp_data.UPGRADE_FUEL_TO)
+            if not rollback:
+                checkers.run_script(master, '/var', 'upgrade.sh',
+                                    password=keystone_pass)
+                checkers.wait_upgrade_is_done(master, 3000,
+                                              phrase='***UPGRADING MASTER NODE'
+                                                     ' DONE SUCCESSFULLY')
+                checkers.check_upgraded_containers(master,
+                                                   hlp_data.UPGRADE_FUEL_FROM,
+                                                   hlp_data.UPGRADE_FUEL_TO)
+            elif rollback:
+                # we expect 255 exit code here because upgrade failed
+                # and exit status is 255
+                checkers.run_script(master, '/var', 'upgrade.sh',
+                                    password=keystone_pass, rollback=True,
+                                    exit_code=255)
+                checkers.wait_rollback_is_done(master, 3000)
+                checkers.check_upgraded_containers(master,
+                                                   hlp_data.UPGRADE_FUEL_TO,
+                                                   hlp_data.UPGRADE_FUEL_FROM)
+                logger.debug("all containers are ok")
 
 
 class NailgunActions(BaseActions):
