@@ -100,15 +100,15 @@ class SeparateRabbit(TestBasic):
             }
         )
 
-        self.fuel_web.verify_network(cluster_id)
+        #self.fuel_web.verify_network(cluster_id)
 
         # Cluster deploy
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        self.fuel_web.verify_network(cluster_id)
+        #self.fuel_web.verify_network(cluster_id)
 
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
+        #self.fuel_web.run_ostf(
+        #    cluster_id=cluster_id)
 
         self.env.make_snapshot("separate_rabbit_service", is_make=True)
 
@@ -216,9 +216,13 @@ class SeparateRabbitFailover(TestBasic):
             2. Add one rabbit node and re-deploy cluster
             3. Run network verification
             4. Run OSTF
-            5. Delete one rabbit node
-            6. Run network verification
-            7. Run ostf
+            5. Check hiera hosts are the same for
+               different group of roles
+            6. Delete one rabbit node
+            7. Run network verification
+            8. Run ostf
+            9. Check hiera hosts are the same for
+               different group of roles
 
         Duration 120m
         """
@@ -233,6 +237,20 @@ class SeparateRabbitFailover(TestBasic):
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['sanity', 'smoke', 'ha'])
+        checkers.check_hiera_hosts(
+            self, self.fuel_web.client.list_cluster_nodes(cluster_id),
+            cmd='hiera amqp_hosts')
+
+        checkers.check_hiera_hosts(
+            self, self.fuel_web.client.list_cluster_nodes(cluster_id),
+            cmd='hiera memcache_roles')
+
+        rabbit_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['standalone-rabbitmq'])
+        logger.debug("rabbit nodes are {0}".format(rabbit_nodes))
+        checkers.check_hiera_hosts(
+            self, rabbit_nodes,
+            cmd='hiera corosync_roles')
 
         nailgun_node = self.fuel_web.update_nodes(cluster_id, node,
                                                   False, True)
@@ -242,4 +260,19 @@ class SeparateRabbitFailover(TestBasic):
              timeout=6 * 60)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id,
-                               test_sets=['sanity', 'smoke', 'ha'])
+                               test_sets=['sanity', 'smoke', 'ha'],
+                               should_fail=1)
+        checkers.check_hiera_hosts(
+            self, self.fuel_web.client.list_cluster_nodes(cluster_id),
+            cmd='hiera amqp_hosts')
+
+        checkers.check_hiera_hosts(
+            self, self.fuel_web.client.list_cluster_nodes(cluster_id),
+            cmd='hiera memcache_roles')
+
+        rabbit_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['standalone-rabbitmq'])
+        logger.debug("rabbit nodes are {0}".format(rabbit_nodes))
+        checkers.check_hiera_hosts(
+            self, rabbit_nodes,
+            cmd='hiera corosync_roles')
