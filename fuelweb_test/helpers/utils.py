@@ -314,7 +314,8 @@ def cond_upload(remote, source, target, condition=''):
 
 
 @logwrap
-def run_on_remote(remote, cmd, jsonify=False, clear=False, err_msg=None):
+def run_on_remote(remote, cmd, jsonify=False, clear=False, err_msg=None,
+                  assert_ec=0, raiseOnAssert=True):
     # TODO(ivankliuk): move it to devops.helpers.SSHClient
     """Execute ``cmd`` on ``remote`` and return result.
 
@@ -322,23 +323,30 @@ def run_on_remote(remote, cmd, jsonify=False, clear=False, err_msg=None):
     :param cmd: command to execute on remote host
     :param jsonify: return result of execution as JSON-like object
     :param clear: clear SSH session
+    :param err_msg: custom error message
+    :param assert_ec: expected exit_code
+    :param raiseOnAssert: Boolean
     :return: None
     :raise: Exception
     """
     result = remote.execute(cmd)
-    if result['exit_code'] != 0:
+    if result['exit_code'] != assert_ec:
         error_details = {
             'command': cmd,
             'host': remote.host,
             'stdout': result['stdout'],
             'stderr': result['stderr'],
             'exit_code': result['exit_code']}
-        error_msg = ("{0}  Command: '{1}'  Details: {2}"
-                     .format(err_msg or "Unexpected error occurred.",
-                             cmd,
-                             error_details))
-        logger.error(error_msg)
-        raise Exception(error_msg)
+
+        error_msg = err_msg or "Unexpected exit_code returned:" \
+                               " actual {0}, expected {1}."\
+            .format(error_details['exit_code'], assert_ec)
+        log_msg = ("{0}  Command: '{1}'  Details: {2}".format(error_msg,
+                                                              cmd,
+                                                              error_details))
+        logger.error(log_msg)
+        if raiseOnAssert:
+            raise Exception(log_msg)
 
     stdout = result['stdout']
 
@@ -346,11 +354,11 @@ def run_on_remote(remote, cmd, jsonify=False, clear=False, err_msg=None):
         try:
             obj = json.loads(''.join(stdout))
         except Exception:
-            error_msg = (
+            log_msg = (
                 "Unable to deserialize output of command"
                 " '{0}' on host {1}".format(cmd, remote.host))
-            logger.error(error_msg)
-            raise Exception(error_msg)
+            logger.error(log_msg)
+            raise Exception(log_msg)
         return obj
 
     if clear:
