@@ -39,6 +39,7 @@ def configure_second_admin_cobbler(self):
     second_admin_netmask = admin_net2_object.ip.netmask
     network = IPNetwork('{0}/{1}'.format(second_admin_network,
                                          second_admin_netmask))
+    # TODO(akostrikov) describe why (1)][0]
     discovery_subnet = [net for net in network.iter_subnets(1)][-1]
     first_discovery_address = str(discovery_subnet.network)
     last_discovery_address = str(discovery_subnet.broadcast - 1)
