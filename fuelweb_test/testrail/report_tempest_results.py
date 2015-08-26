@@ -58,17 +58,36 @@ def parse_xml_report(path_to_report):
     return test_results
 
 
-def mark_all_tests_as_failed(client, tests_suite):
-    """This function marks all Tempest tests as failed and returns the list
+def mark_all_tests_as_blocked(client, tests_suite):
+    """This function marks all Tempest tests as blocked and returns the list
     with TestResult objects. Each TestResult object corresponds to one of
-    the tests and contains the information that the test failed.
+    the tests and contains the information that the test is blocked.
     """
 
     test_results = []
     for case in client.get_cases(tests_suite['id']):
         test_result = report.TestResult(name=case['title'],
                                         group=case['custom_test_group'],
-                                        status='failed',
+                                        status='blocked',
+                                        description=None,
+                                        duration=1)
+        test_results.append(test_result)
+
+    return test_results
+
+
+def mark_all_tests_as_in_progress(client, tests_suite):
+    """This function marks all Tempest tests as "in progress" and returns
+    the list with TestResult objects. Each TestResult object corresponds
+    to one of the tests and contains the information that the test is
+    "in progress" status.
+    """
+
+    test_results = []
+    for case in client.get_cases(tests_suite['id']):
+        test_result = report.TestResult(name=case['title'],
+                                        group=case['custom_test_group'],
+                                        status='in_progress',
                                         description=None,
                                         duration=1)
         test_results.append(test_result)
@@ -124,15 +143,17 @@ def main():
     parser.add_option('-i', '--iso', dest='iso_number', help='ISO number')
     parser.add_option('-p', '--path-to-report', dest='path',
                       help='The path to the Tempest XML report')
-    parser.add_option('-c', '--conf', dest='config', default='Centos 6.5',
+    parser.add_option('-c', '--conf', dest='config', default='Ubuntu 14.04',
                       help='The name of one of the configurations')
     parser.add_option('-m', '--multithreading', dest='threads_count',
                       default=100, help='The count of threads '
                                         'for uploading the test results')
-    parser.add_option('-f', '--fail-all-tests', dest='all_tests_failed',
-                      action='store_true', help='Mark all Tempest tests as '
-                                                'failed regardless of genuine '
-                                                'results')
+    parser.add_option('-b', '--block-all-tests',
+                      dest='all_tests_blocked', action='store_true',
+                      help='Mark all Tempest tests as "blocked"')
+    parser.add_option('-t', '--tests-in-progress',
+                      dest='tests_in_progress', action='store_true',
+                      help='Mark all Tempest tests as "in progress"')
 
     (options, args) = parser.parse_args()
 
@@ -140,7 +161,8 @@ def main():
         raise optparse.OptionValueError('No run name was specified!')
     if options.iso_number is None:
         raise optparse.OptionValueError('No ISO number was specified!')
-    if options.path is None and not options.all_tests_failed:
+    if (options.path is None and
+            not options.all_tests_blocked and not options.tests_in_progress):
         raise optparse.OptionValueError('No path to the Tempest '
                                         'XML report was specified!')
 
@@ -158,8 +180,10 @@ def main():
 
     # STEP #2
     # Parse the test results
-    if options.all_tests_failed:
-        test_results = mark_all_tests_as_failed(client, tests_suite)
+    if options.all_tests_blocked:
+        test_results = mark_all_tests_as_blocked(client, tests_suite)
+    elif options.tests_in_progress:
+        test_results = mark_all_tests_as_in_progress(client, tests_suite)
     else:
         LOG.info('Parsing the test results...')
         test_results = parse_xml_report(options.path)

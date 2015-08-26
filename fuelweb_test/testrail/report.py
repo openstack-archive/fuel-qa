@@ -55,7 +55,9 @@ class TestResult():
         self.available_statuses = {
             'passed': ['passed', 'fixed'],
             'failed': ['failed', 'regression'],
-            'skipped': ['skipped']
+            'skipped': ['skipped'],
+            'blocked': ['blocked'],
+            'custom_status2': ['in_progress']
         }
 
     @property
