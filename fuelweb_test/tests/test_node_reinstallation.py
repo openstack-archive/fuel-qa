@@ -12,17 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import yaml
-
 from cinderclient.exceptions import NotFound
 from devops.helpers import helpers as devops_helpers
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import test
+import yaml
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test import ostf_test_mapping as map_ostf
 from fuelweb_test.helpers import os_actions
+from fuelweb_test import ostf_test_mapping as map_ostf
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -349,8 +348,9 @@ class FullClusterReinstallation(TestBasic):
         for slave in self.env.d_env.nodes().slaves[0:5]:
             with self.fuel_web.get_ssh_for_node(slave.name) as remote:
                 remote.execute("touch {0}".format(file_name))
-
-        NodeReinstallationEnv._reinstall_nodes(self.fuel_web, cluster_id)
+            node = self.fuel_web.get_nailgun_node_by_name(slave.name)
+            NodeReinstallationEnv._reinstall_nodes(
+                self.fuel_web, cluster_id, [str(node['id'])])
 
         # Verify that all node are reinstalled (not just rebooted),
         # i.e. there is no sample file on a node
