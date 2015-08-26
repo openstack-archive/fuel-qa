@@ -25,10 +25,23 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 
 class TestNetworkTemplatesBase(TestBasic):
-    """TestNetworkTemplates."""  # TODO documentation
+    """Base class to store all utility methods for network templates tests."""
+
     @logwrap
-    def generate_networks_for_template(self, template, ip_network,
+    def generate_networks_for_template(self, template, ip_nets,
                                        ip_prefixlen):
+        """Generate networks from network template and ip_nets descriptions
+        for node groups and value to slice that descriptions.
+
+        :param template: Yaml template with network assignments on interfaces.
+        :param ip_nets: Dict with key named as nodegroup and strings values for
+        with description of network for that nodegroup in format '127.0.0.1/24'
+        to be sliced in pieces for networks.
+        :param ip_prefixlen: An integer, the amount the network prefix length
+        should be sliced by. 24 will create networks '127.0.0.1/24' from
+        network '127.0.0.1/16'.
+        :return: Data to be used to assign networks to nodes.
+        """
         networks_data = []
         nodegroups = self.fuel_web.client.get_nodegroups()
         for nodegroup, section in template['adv_net_template'].items():
@@ -39,7 +52,7 @@ class TestNetworkTemplatesBase(TestBasic):
                         '"{0}", which does not exist!'.format(nodegroup))
             group_id = [n['id'] for n in nodegroups if
                         n['name'] == nodegroup][0]
-            ip_network = IPNetwork(ip_network)
+            ip_network = IPNetwork(ip_nets[nodegroup])
             ip_subnets = ip_network.subnet(
                 int(ip_prefixlen) - int(ip_network.prefixlen))
             for network, interface in networks:
