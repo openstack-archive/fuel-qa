@@ -130,9 +130,7 @@ class VcenterDeploy(TestBasic):
             target_node_1=target_node_1
         )
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'smoke', 'ha'])
@@ -167,9 +165,7 @@ class VcenterDeploy(TestBasic):
         # Configure VMWare vCenter
         self.fuel_web.vcenter_configure(cluster_id)
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'smoke', 'ha'])
 
@@ -217,9 +213,7 @@ class VcenterDeploy(TestBasic):
             multiclusters=True
         )
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
@@ -263,9 +257,7 @@ class VcenterDeploy(TestBasic):
         # Configure VMWare vCenter
         self.fuel_web.vcenter_configure(cluster_id)
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'smoke', 'ha'])
@@ -322,9 +314,7 @@ class VcenterDeploy(TestBasic):
             multiclusters=True
         )
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
@@ -372,9 +362,7 @@ class VcenterDeploy(TestBasic):
             vc_glance=True
         )
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
@@ -429,9 +417,7 @@ class VcenterDeploy(TestBasic):
             vc_glance=True
         )
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
@@ -478,9 +464,7 @@ class VcenterDeploy(TestBasic):
             vc_glance=True
         )
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
@@ -534,9 +518,7 @@ class VcenterDeploy(TestBasic):
             multiclusters=True
         )
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
@@ -587,9 +569,7 @@ class VcenterDeploy(TestBasic):
             multiclusters=True
         )
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'smoke', 'ha'])
 
@@ -659,9 +639,7 @@ class VcenterDeploy(TestBasic):
         # Configure VMWare vCenter
         self.fuel_web.vcenter_configure(cluster_id)
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'smoke'])
@@ -675,9 +653,7 @@ class VcenterDeploy(TestBasic):
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         self.fuel_web.update_node_networks(slave_nodes[-1]['id'], interfaces)
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'smoke'])
@@ -695,9 +671,7 @@ class VcenterDeploy(TestBasic):
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         self.fuel_web.update_node_networks(slave_nodes[-1]['id'], interfaces)
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'smoke'])
@@ -731,9 +705,7 @@ class VcenterDeploy(TestBasic):
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         self.fuel_web.update_node_networks(slave_nodes[-1]['id'], interfaces)
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'smoke'])
@@ -747,9 +719,7 @@ class VcenterDeploy(TestBasic):
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         self.fuel_web.update_node_networks(slave_nodes[-1]['id'], interfaces)
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'smoke'])
@@ -768,9 +738,7 @@ class VcenterDeploy(TestBasic):
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         self.fuel_web.update_node_networks(slave_nodes[-1]['id'], interfaces)
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'smoke'])
@@ -790,9 +758,7 @@ class VcenterDeploy(TestBasic):
                 slave_nodes[node_index]['id'], interfaces
             )
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity', 'smoke', 'ha'])
@@ -858,9 +824,7 @@ class VcenterDeploy(TestBasic):
             multiclusters=True
         )
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(
@@ -922,9 +886,7 @@ class VcenterDeploy(TestBasic):
             multiclusters=True
         )
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(
@@ -979,9 +941,7 @@ class VcenterDeploy(TestBasic):
             multiclusters=True
         )
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(
@@ -1037,9 +997,7 @@ class VcenterDeploy(TestBasic):
             multiclusters=True
         )
 
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
@@ -1156,9 +1114,8 @@ class VcenterDeploy(TestBasic):
             cluster_id,
             target_node_1=target_node_1
         )
-        # FIXME when bug #1475346 will be fixed.
-        self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          check_services=False)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
             timeout=60 * 60)
