@@ -314,49 +314,64 @@ def cond_upload(remote, source, target, condition=''):
 
 
 @logwrap
-def run_on_remote(remote, cmd, jsonify=False, clear=False, err_msg=None):
+def run_on_remote(remote, cmd, clear=False, err_msg=None,
+                  assert_ec_equal=[0], raise_on_assert=True):
     # TODO(ivankliuk): move it to devops.helpers.SSHClient
     """Execute ``cmd`` on ``remote`` and return result.
 
     :param remote: devops.helpers.helpers.SSHClient
     :param cmd: command to execute on remote host
-    :param jsonify: return result of execution as JSON-like object
     :param clear: clear SSH session
-    :return: None
+    :param err_msg: custom error message
+    :param assert_ec_equal: list of expected exit_code
+    :param raise_on_assert: Boolean
+    :return: dict
     :raise: Exception
     """
     result = remote.execute(cmd)
-    if result['exit_code'] != 0:
+    if result['exit_code'] not in assert_ec_equal:
         error_details = {
             'command': cmd,
             'host': remote.host,
             'stdout': result['stdout'],
             'stderr': result['stderr'],
             'exit_code': result['exit_code']}
-        error_msg = ("{0}  Command: '{1}'  Details: {2}"
-                     .format(err_msg or "Unexpected error occurred.",
-                             cmd,
-                             error_details))
-        logger.error(error_msg)
-        raise Exception(error_msg)
 
-    stdout = result['stdout']
-
-    if jsonify:
-        try:
-            obj = json.loads(''.join(stdout))
-        except Exception:
-            error_msg = (
-                "Unable to deserialize output of command"
-                " '{0}' on host {1}".format(cmd, remote.host))
-            logger.error(error_msg)
-            raise Exception(error_msg)
-        return obj
+        error_msg = (err_msg or "Unexpected exit_code returned:"
+                                " actual {0}, expected {1}."
+                     .format(error_details['exit_code'],
+                             ' '.join(map(str, assert_ec_equal))))
+        log_msg = ("{0}  Command: '{1}'  Details: {2}".format(error_msg,
+                                                              cmd,
+                                                              error_details))
+        logger.error(log_msg)
+        if raise_on_assert:
+            raise Exception(log_msg)
 
     if clear:
         remote.clear()
 
-    return stdout
+    return result
+
+
+def json_deserialize(json_string):
+    """
+    Deserealize json_string and return object
+
+    :param json_string: string or list with json
+    :return: obj
+    :raise: Exception
+    """
+    if isinstance(json_string, (list)):
+        json_string = ''.join(json_string)
+
+    try:
+        obj = json.loads(json_string)
+    except Exception:
+        log_msg = "Unable to deserialize"
+        logger.error("{0}. Actual string:\n{1}".format(log_msg, json_string))
+        raise Exception(log_msg)
+    return obj
 
 
 def check_distribution():

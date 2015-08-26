@@ -998,7 +998,9 @@ def check_neutron_dhcp_lease(remote, instance_ip, instance_mac,
     lease = run_on_remote(remote,
                           "dhcpcheck request {0} {1} --range_start {2} "
                           "--range_end 255.255.255.255 | fgrep \" {1} \""
-                          .format(ovs_port_name, dhcp_server_ip, instance_ip))
+                          .format(ovs_port_name,
+                                  dhcp_server_ip,
+                                  instance_ip))['stdout']
 
     # Remove the OVS interface
     run_on_remote(remote, ovs_cmd + ovs_del_port_cmd)

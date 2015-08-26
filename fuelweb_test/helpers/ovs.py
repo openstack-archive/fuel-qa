@@ -13,6 +13,7 @@
 #    under the License.
 
 from fuelweb_test import logger
+from fuelweb_test.helpers.utils import json_deserialize
 from fuelweb_test.helpers.utils import run_on_remote
 
 
@@ -32,7 +33,7 @@ def ovs_get_data(remote, table, columns=None):
         col = ''
     cmd = ('ovs-vsctl --oneline --format=json {columns} list {table}'
            .format(columns=col, table=table))
-    res = run_on_remote(remote, cmd, jsonify=True)
+    res = json_deserialize(run_on_remote(remote, cmd)['stdout'])
     logger.debug("OVS output of the command '{0}': {1}".format(cmd, res))
     return res
 
