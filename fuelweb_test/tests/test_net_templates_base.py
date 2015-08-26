@@ -27,7 +27,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 class TestNetworkTemplatesBase(TestBasic):
     """TestNetworkTemplates."""  # TODO documentation
     @logwrap
-    def generate_networks_for_template(self, template, ip_network,
+    def generate_networks_for_template(self, template, ip_nets,
                                        ip_prefixlen):
         networks_data = []
         nodegroups = self.fuel_web.client.get_nodegroups()
@@ -39,7 +39,7 @@ class TestNetworkTemplatesBase(TestBasic):
                         '"{0}", which does not exist!'.format(nodegroup))
             group_id = [n['id'] for n in nodegroups if
                         n['name'] == nodegroup][0]
-            ip_network = IPNetwork(ip_network)
+            ip_network = IPNetwork(ip_nets[nodegroup])
             ip_subnets = ip_network.subnet(
                 int(ip_prefixlen) - int(ip_network.prefixlen))
             for network, interface in networks:
