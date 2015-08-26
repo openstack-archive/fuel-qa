@@ -73,6 +73,11 @@ Os Actions
 .. automodule:: fuelweb_test.helpers.os_actions
    :members:
 
+Ovs helper
+----------
+.. automodule:: fuelweb_test.helpers.ovs
+   :members:
+
 Patching
 --------
 .. automodule:: fuelweb_test.helpers.patching
