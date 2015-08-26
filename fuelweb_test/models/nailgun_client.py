@@ -513,6 +513,12 @@ class NailgunClient(object):
 
     @logwrap
     @json_parse
+    def update_network_group(self, network_id, network_data):
+        return self.client.put('/api/networks/{0}/'.format(network_id),
+                               data=network_data)
+
+    @logwrap
+    @json_parse
     def create_vm_nodes(self, node_id, data):
         logger.info("Uploading VMs configuration to node {0}: {1}".
                     format(node_id, data))
