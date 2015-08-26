@@ -39,7 +39,7 @@ class UbuntuBootstrap(TestBasic):
                     slave.name) as slave_remote:
                 cmd = 'cat /etc/*release'
                 output = run_on_remote(
-                    slave_remote, cmd)[0].lower()
+                    slave_remote, cmd)['stdout'][0].lower()
                 assert_true(
                     "ubuntu" in output,
                     "Slave {0} doesn't use Ubuntu image for\
