@@ -459,4 +459,6 @@ def get_ip_listen_stats(remote, proto='tcp'):
                "/proc/net/{0} /proc/net/{0}6").format(proto)
     else:
         cmd = "awk '$4 == \"0A\" {{print $2}}' /proc/net/{0}".format(proto)
-    return [l.strip() for l in run_on_remote(remote, cmd)]
+    # NOTE(akostrikov) run_on_remote now returns not a list since commit
+    #  32b6bc8cea5c595aa92e2c2c825762b53c49e191
+    return [l.strip() for l in run_on_remote(remote, cmd).strip().split('\n')]
