@@ -1409,6 +1409,8 @@ class FuelWebClient(object):
         if not nailgun_nodes:
             nailgun_nodes = self.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
+            # TODO There is a possible problems with net assignment
+            # if update node interfaces in update_nodes
             self.update_node_networks(node['id'], assigned_networks)
 
     @logwrap
