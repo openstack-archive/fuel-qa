@@ -16,6 +16,7 @@ from proboscis.asserts import assert_equal
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.utils import check_distribution
+from fuelweb_test.helpers.utils import json_deserialize
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import DNS_SUFFIX
 from fuelweb_test.settings import OPENSTACK_RELEASE
@@ -67,7 +68,7 @@ def restart_monitor(remote):
 def get_health(remote):
     logger.debug("Checking Ceph cluster health on {0}".format(remote.host))
     cmd = 'ceph health -f json'
-    return run_on_remote(remote, cmd, jsonify=True)
+    return json_deserialize(run_on_remote(remote, cmd))
 
 
 def get_monitor_node_fqdns(remote):
@@ -77,7 +78,7 @@ def get_monitor_node_fqdns(remote):
     :return: list of FQDNs
     """
     cmd = 'ceph mon_status -f json'
-    result = run_on_remote(remote, cmd, jsonify=True)
+    result = json_deserialize(run_on_remote(remote, cmd))
     fqdns = [i['name'] + DNS_SUFFIX for i in result['monmap']['mons']]
     msg = "Ceph monitor service is running on {0}".format(', '.join(fqdns))
     logger.debug(msg)
@@ -209,7 +210,7 @@ def get_osd_tree(remote):
     """
     logger.debug("Fetching Ceph OSD tree")
     cmd = 'ceph osd tree -f json'
-    return run_on_remote(remote, cmd, jsonify=True)
+    return json_deserialize(run_on_remote(remote, cmd))
 
 
 def get_osd_ids(remote):
@@ -220,7 +221,7 @@ def get_osd_ids(remote):
     """
     logger.debug("Fetching Ceph OSD ids")
     cmd = 'ceph osd ls -f json'
-    return run_on_remote(remote, cmd, jsonify=True)
+    return json_deserialize(run_on_remote(remote, cmd))
 
 
 def get_rbd_images_list(remote, pool):
@@ -231,4 +232,4 @@ def get_rbd_images_list(remote, pool):
     :return: JSON-like object
     """
     cmd = 'rbd --pool {pool} --format json ls -l'.format(pool=pool)
-    return run_on_remote(remote, cmd, jsonify=True)
+    return json_deserialize(run_on_remote(remote, cmd))
