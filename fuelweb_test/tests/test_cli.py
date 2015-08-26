@@ -25,6 +25,7 @@ from devops.helpers.helpers import wait
 from fuelweb_test.helpers.checkers import check_cluster_presence
 from fuelweb_test.helpers.checkers import check_cobbler_node_exists
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers.utils import json_deserialize
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NEUTRON_ENABLE
@@ -95,22 +96,25 @@ class CommandLine(TestBasic):
 
     @logwrap
     def get_task(self, remote, task_id):
-        tasks = run_on_remote(remote, 'fuel task --task-id {0} --json'
-                              .format(task_id), jsonify=True)
+        tasks = json_deserialize(run_on_remote(remote,
+                                               'fuel task --task-id {0} --json'
+                                               .format(task_id)))
         return tasks[0]
 
     @logwrap
     def get_network_filename(self, cluster_id, remote):
         cmd = ('fuel --env {0} network --download --dir /tmp --json'
                .format(cluster_id))
-        net_download = ''.join(run_on_remote(remote, cmd))
+        net_download = run_on_remote(remote, cmd)
         # net_download = 'Network ... downloaded to /tmp/network_1.json'
         return net_download.split()[-1]
 
     @logwrap
     def get_networks(self, cluster_id, remote):
         net_file = self.get_network_filename(cluster_id, remote)
-        return run_on_remote(remote, 'cat {0}'.format(net_file), jsonify=True)
+        return json_deserialize(run_on_remote(remote,
+                                              'cat {0}'
+                                              .format(net_file)))
 
     @logwrap
     def update_network(self, cluster_id, remote, net_config):
@@ -201,7 +205,7 @@ class CommandLine(TestBasic):
             cmd = ('fuel env create --name={0} --release={1} --mode=ha '
                    '--net={2} --json'.format(self.__class__.__name__,
                                              release_id, net))
-            env_result = run_on_remote(remote, cmd, jsonify=True)
+            env_result = json_deserialize(run_on_remote(remote, cmd))
             cluster_id = env_result['id']
 
             # Update network parameters
@@ -215,7 +219,7 @@ class CommandLine(TestBasic):
             remote.execute(cmd)
             cmd = ('fuel --env-id={0} node --provision --node={1} --json'
                    .format(cluster_id, node_ids[0]))
-            task = run_on_remote(remote, cmd, jsonify=True)
+            task = json_deserialize(run_on_remote(remote, cmd))
             self.assert_cli_task_success(task, remote, timeout=20 * 60)
 
             # Add and provision 2 compute+cinder
@@ -228,19 +232,19 @@ class CommandLine(TestBasic):
             remote.execute(cmd)
             cmd = ('fuel --env-id={0} node --provision --node={1},{2} --json'
                    .format(cluster_id, node_ids[1], node_ids[2]))
-            task = run_on_remote(remote, cmd, jsonify=True)
+            task = json_deserialize(run_on_remote(remote, cmd))
             self.assert_cli_task_success(task, remote, timeout=10 * 60)
 
             # Deploy the controller node
             cmd = ('fuel --env-id={0} node --deploy --node {1} --json'
                    .format(cluster_id, node_ids[0]))
-            task = run_on_remote(remote, cmd, jsonify=True)
+            task = json_deserialize(run_on_remote(remote, cmd))
             self.assert_cli_task_success(task, remote, timeout=60 * 60)
 
             # Deploy the compute nodes
             cmd = ('fuel --env-id={0} node --deploy --node {1},{2} --json'
                    .format(cluster_id, node_ids[1], node_ids[2]))
-            task = run_on_remote(remote, cmd, jsonify=True)
+            task = json_deserialize(run_on_remote(remote, cmd))
             self.assert_cli_task_success(task, remote, timeout=30 * 60)
 
             self.fuel_web.run_ostf(
