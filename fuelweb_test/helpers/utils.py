@@ -381,3 +381,65 @@ def get_network_template(template_name):
     if os.path.exists(template):
         with open(template) as template_file:
             return yaml.load(template_file)
+
+
+@logwrap
+def get_net_settings(remote, skip_interfaces=set()):
+    net_settings = dict()
+    interface_cmd = ('awk \'$1~/:/{split($1,iface,":"); print iface[1]}\''
+                     ' /proc/net/dev')
+    vlan_cmd = 'awk \'$1~/\./{print $1}\' /proc/net/vlan/config'
+    bond_cmd = ('awk \'{gsub(" ","\\n"); print}\' '
+                '/sys/class/net/bonding_masters')
+    bridge_cmd = 'ls -d1 /sys/class/net/*/bridge/ | cut -d/ -f5'
+    ip_cmd = 'ip -o -4 addr show dev {0} | awk \'{{print $4}}\''
+    bond_mode_cmd = 'awk \'{{print $1}}\' /sys/class/net/{0}/bonding/mode'
+    bond_slaves_cmd = ('awk \'{{gsub(" ","\\n"); print}}\' '
+                       '/sys/class/net/{0}/bonding/slaves')
+    bridge_slaves_cmd = ('ls -1 /sys/class/net/{0}/brif/')
+
+    node_interfaces = [l.strip() for l in run_on_remote(remote, interface_cmd)
+                       if not any(re.search(regex, l.strip()) for regex
+                                  in skip_interfaces)]
+    node_vlans = [l.strip() for l in run_on_remote(remote, vlan_cmd)]
+    node_bonds = [l.strip() for l in run_on_remote(remote, bond_cmd)]
+    node_bridges = [l.strip() for l in run_on_remote(remote, bridge_cmd)]
+
+    for interface in node_interfaces:
+        bond_mode = None
+        bond_slaves = None
+        bridge_slaves = None
+        if interface in node_vlans:
+            if_type = 'vlan'
+        elif interface in node_bonds:
+            if_type = 'bond'
+            bond_mode = ''.join(
+                [l.strip() for l in
+                 run_on_remote(remote, bond_mode_cmd.format(interface))])
+            bond_slaves = set(
+                [l.strip() for l in
+                 run_on_remote(remote, bond_slaves_cmd.format(interface))]
+            )
+        elif interface in node_bridges:
+            if_type = 'bridge'
+            bridge_slaves = set(
+                [l.strip() for l in
+                 run_on_remote(remote, bridge_slaves_cmd.format(interface))
+                 if not any(re.search(regex, l.strip())
+                            for regex in skip_interfaces)]
+            )
+        else:
+            if_type = 'common'
+        if_ips = set(
+            [l.strip()
+             for l in run_on_remote(remote, ip_cmd.format(interface))]
+        )
+
+        net_settings[interface] = {
+            'type': if_type,
+            'ip_addresses': if_ips,
+            'bond_mode': bond_mode,
+            'bond_slaves': bond_slaves,
+            'bridge_slaves': bridge_slaves
+        }
+    return net_settings

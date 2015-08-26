@@ -953,6 +953,15 @@ class FuelWebClient(object):
             self.environment.d_env.get_node(name=node_name))
 
     @logwrap
+    def get_nailgun_node_by_base_name(self, base_node_name):
+        logger.debug('Get nailgun node by "{0}" base '
+                     'node name.'.format(base_node_name))
+        nodes = self.client.list_nodes()
+        for node in nodes:
+            if base_node_name in node['name']:
+                return node
+
+    @logwrap
     def get_nailgun_node_by_devops_node(self, devops_node):
         """Return slave node description.
         Returns dict with nailgun slave node description if node is
@@ -982,7 +991,10 @@ class FuelWebClient(object):
             if d_macs.issubset(macs):
                 nailgun_node['devops_name'] = devops_node.name
                 return nailgun_node
-        return None
+        # On deployed environment MAC addresses of bonded network interfaces
+        # are changes and don't match addresses associated with devops node
+        if help_data.BONDING:
+            return self.get_nailgun_node_by_base_name(devops_node.name)
 
     @logwrap
     def get_nailgun_node_by_fqdn(self, fqdn):
@@ -1069,9 +1081,11 @@ class FuelWebClient(object):
 
     @logwrap
     def get_ssh_for_node(self, node_name):
-        ip = self.get_nailgun_node_by_devops_node(
-            self.environment.d_env.get_node(name=node_name))['ip']
-        return self.environment.d_env.get_ssh_to_remote(ip)
+        node = self.get_nailgun_node_by_devops_node(
+            self.environment.d_env.get_node(name=node_name))
+        assert_true(node is not None,
+                    'Node with name "{0}" not found!'.format(node_name))
+        return self.environment.d_env.get_ssh_to_remote(node['ip'])
 
     @logwrap
     def get_ssh_for_role(self, nodes_dict, role):
