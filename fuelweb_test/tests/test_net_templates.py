@@ -12,7 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from copy import deepcopy
+
+from proboscis import SkipTest
 from proboscis import test
+from proboscis.asserts import assert_equal
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -20,6 +24,8 @@ from fuelweb_test.helpers.utils import get_network_template
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
+from fuelweb_test.settings import NODEGROUPS
+from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.test_net_templates_base import TestNetworkTemplatesBase
 
@@ -274,3 +280,91 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
         self.check_services_networks(cluster_id, network_template)
 
         self.env.make_snapshot("add_nodes_net_tmpl")
+
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=['network_templates_multiple_cluster_networks'])
+    @log_snapshot_after_test
+    def multiple_cluster_net_template_setup(self):
+        """Deploy HA environment with Cinder, Neutron and network template on
+        two nodegroups.
+
+        TODO(akostrikov) Need to create/update networks on second nodegroup.
+        'Too many nodes failed to provision'
+
+        Scenario:
+            1. Revert snapshot with 5 slaves
+            2. Create cluster (HA) with Neutron VLAN/VXLAN/GRE
+            3. Add 3 controller nodes
+            4. Add 2 compute + cinder nodes
+            5. Upload 'two_nodegroups' network template
+            6. Deploy cluster
+            7. Run health checks (OSTF)
+
+        Duration 110m
+        Snapshot deploy_ceph_net_tmpl
+        """
+        if not MULTIPLE_NETWORKS:
+            raise SkipTest()
+
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        admin_net = self.env.d_env.admin_net
+        admin_net2 = self.env.d_env.admin_net2
+        get_network = lambda x: self.env.d_env.get_network(name=x).ip_network
+
+        # This should be refactored
+        networks = ['.'.join(get_network(n).split('.')[0:-1])
+                    for n in [admin_net, admin_net2]]
+        nodes_addresses = ['.'.join(node['ip'].split('.')[0:-1]) for node in
+                           self.fuel_web.client.list_nodes()]
+
+        assert_equal(set(networks), set(nodes_addresses),
+                     "Only one admin network is used for discovering slaves:"
+                     " '{0}'".format(set(nodes_addresses)))
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE_HA,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT['tun'],
+                'tenant': 'netTemplate',
+                'user': 'netTemplate',
+                'password': 'netTemplate',
+            }
+        )
+        nodegroup1 = NODEGROUPS[0]['name']
+        nodegroup2 = NODEGROUPS[1]['name']
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': [['controller'], nodegroup1],
+                'slave-05': [['controller'], nodegroup1],
+                'slave-03': [['controller'], nodegroup1],
+                'slave-02': [['compute', 'cinder'], nodegroup2],
+                'slave-04': [['compute', 'cinder'], nodegroup2],
+            }
+        )
+
+        network_template = get_network_template('two_nodegroups')
+        self.fuel_web.client.upload_network_template(
+            cluster_id=cluster_id, network_template=network_template)
+        networks = self.generate_networks_for_template(
+            template=network_template,
+            ip_network='10.200.0.0/16',
+            ip_prefixlen='24')
+        existing_networks = self.fuel_web.client.get_network_groups()
+        networks = self.create_custom_networks(networks, existing_networks)
+
+        logger.debug('Networks: {0}'.format(
+            self.fuel_web.client.get_network_groups()))
+
+        self.fuel_web.verify_network(cluster_id)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id, timeout=180 * 60)
+
+        self.env.make_snapshot("network_templates_multiple_cluster_networks")
+
+        self.check_ipconfig_for_template(cluster_id, network_template,
+                                         networks)
