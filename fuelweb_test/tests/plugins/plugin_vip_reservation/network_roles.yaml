@@ -1,14 +1,14 @@
-- id: "reserved_vip_public"
+- id: "network_role_public"
   default_mapping: "public"
   properties:
     subnet: true
     gateway: false
     vip:
-      - name: "reserved_vip_pub"
-- id: "reserved_vip_management"
+      - name: "reserved_pub"
+- id: "network_role_management"
   default_mapping: "management"
   properties:
     subnet: true
     gateway: false
     vip:
-      - name: "reserved_vip_mng"
+      - name: "reserved_mng"
