@@ -24,6 +24,7 @@ from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
 from ipaddr import IPNetwork
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_true
@@ -287,19 +288,29 @@ class FuelWebClient(object):
     @logwrap
     def assert_task_success(
             self, task, timeout=130 * 60, interval=5, progress=None):
+        def _message(_task):
+            if 'message' in _task:
+                return _task['message']
+            else:
+                return ''
+
         logger.info('Assert task %s is success', task)
         if not progress:
             task = self.task_wait(task, timeout, interval)
             assert_equal(
                 task['status'], 'ready',
-                "Task '{name}' has incorrect status. {} != {}".format(
-                    task['status'], 'ready', name=task["name"]
+                "Task '{0}' has incorrect status. {1} != {2}, '{3}'".format(
+                    task["name"], task['status'], 'ready', _message(task)
                 )
             )
         else:
             logger.info('Start to polling task progress')
             task = self.task_wait_progress(
                 task, timeout=timeout, interval=interval, progress=progress)
+            assert_not_equal(
+                task['status'], 'error',
+                "Task '{0}' has error status. '{1}'"
+                .format(task['status'], _message(task)))
             assert_true(
                 task['progress'] >= progress,
                 'Task has other progress{0}'.format(task['progress']))
