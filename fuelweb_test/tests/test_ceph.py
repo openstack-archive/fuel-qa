@@ -276,7 +276,7 @@ class CephHA(TestBasic):
             }
         )
         # Depoy cluster
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id, timeout=260 * 60)
 
         self.env.make_snapshot("ceph_ha", is_make=True)
 
