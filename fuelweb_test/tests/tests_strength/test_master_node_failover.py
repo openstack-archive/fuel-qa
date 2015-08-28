@@ -96,8 +96,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         controller_ip = self.fuel_web.get_public_vip(cluster_id)
 
         os_conn = os_actions.OpenStackActions(controller_ip)
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=5, networks_count=2, timeout=300)
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
 
         self.fuel_web.verify_network(cluster_id)
         logger.info('PASS DEPLOYMENT')
@@ -162,13 +161,10 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
 
         net_provider_data = {
             'ntp_list': settings.EXTERNAL_NTP,
-            'dns_list': external_dns
+            'dns_list': external_dns,
+            "net_provider": 'neutron',
+            "net_segment_type": settings.NEUTRON_SEGMENT_TYPE
         }
-        if settings.NEUTRON_ENABLE:
-            net_provider_data.update({
-                "net_provider": 'neutron',
-                "net_segment_type": settings.NEUTRON_SEGMENT_TYPE
-            })
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -188,12 +184,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         os_conn = os_actions.OpenStackActions(self.fuel_web.
                                               get_public_vip(cluster_id))
-        if settings.NEUTRON_ENABLE:
-            self.fuel_web.assert_cluster_ready(
-                os_conn, smiles_count=14, networks_count=2, timeout=300)
-        else:
-            self.fuel_web.assert_cluster_ready(
-                os_conn, smiles_count=16, networks_count=1, timeout=300)
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=14)
 
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)

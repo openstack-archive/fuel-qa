@@ -86,8 +86,7 @@ class SaharaHAOneController(TestBasic):
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id),
             data['user'], data['password'], data['tenant'])
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=5, networks_count=2, timeout=300)
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
 
         LOGGER.debug('Verify Sahara service on controller')
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
@@ -194,8 +193,7 @@ class SaharaHA(TestBasic):
         cluster_vip = self.fuel_web.get_public_vip(cluster_id)
         os_conn = os_actions.OpenStackActions(
             cluster_vip, data['user'], data['password'], data['tenant'])
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=13, networks_count=2, timeout=300)
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)
 
         LOGGER.debug('Verify Sahara service on all controllers')
         for slave in ["slave-01", "slave-02", "slave-03"]:
@@ -292,8 +290,7 @@ class MuranoHAOneController(TestBasic):
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id),
             data['user'], data['password'], data['tenant'])
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=5, networks_count=2, timeout=300)
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         checkers.verify_service(
             self.env.d_env.get_ssh_to_remote(_ip),
@@ -380,8 +377,7 @@ class MuranoHA(TestBasic):
         cluster_vip = self.fuel_web.get_public_vip(cluster_id)
         os_conn = os_actions.OpenStackActions(
             cluster_vip, data['user'], data['password'], data['tenant'])
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=13, networks_count=2, timeout=300)
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)
         for slave in ["slave-01", "slave-02", "slave-03"]:
             _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
             checkers.verify_service(
@@ -834,8 +830,7 @@ class HeatHAOneController(TestBasic):
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id),
             data['user'], data['password'], data['tenant'])
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=5, networks_count=2, timeout=300)
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         checkers.verify_service(
@@ -926,8 +921,7 @@ class HeatHA(TestBasic):
         cluster_vip = self.fuel_web.get_public_vip(cluster_id)
         os_conn = os_actions.OpenStackActions(
             cluster_vip, data['user'], data['password'], data['tenant'])
-        self.fuel_web.assert_cluster_ready(
-            os_conn, smiles_count=13, networks_count=2, timeout=300)
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)
 
         for slave in ["slave-01", "slave-02", "slave-03"]:
             _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
