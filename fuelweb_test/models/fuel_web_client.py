@@ -16,7 +16,6 @@ import json
 import re
 import time
 import traceback
-import yaml
 
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
@@ -27,29 +26,31 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_true
+import yaml
 
 from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
-from fuelweb_test.helpers.utils import run_on_remote
-from fuelweb_test import logwrap
-from fuelweb_test import logger
-from fuelweb_test import quiet_logger
-from fuelweb_test.helpers.decorators import custom_repo
 from fuelweb_test.helpers.decorators import check_repos_management
+from fuelweb_test.helpers.decorators import custom_repo
 from fuelweb_test.helpers.decorators import download_astute_yaml
 from fuelweb_test.helpers.decorators import download_packages_json
 from fuelweb_test.helpers.decorators import duration
 from fuelweb_test.helpers.decorators import retry
-from fuelweb_test.helpers.decorators import update_ostf
 from fuelweb_test.helpers.decorators import update_fuel
+from fuelweb_test.helpers.decorators import update_ostf
 from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers.security import SecurityChecks
+from fuelweb_test.helpers.utils import run_on_remote
+from fuelweb_test import logger
+from fuelweb_test import logwrap
 from fuelweb_test.models.nailgun_client import NailgunClient
 from fuelweb_test import ostf_test_mapping as map_ostf
+from fuelweb_test import quiet_logger
+import fuelweb_test.settings as help_data
 from fuelweb_test.settings import ATTEMPTS
 from fuelweb_test.settings import BONDING
-from fuelweb_test.settings import DNS_SUFFIX
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
+from fuelweb_test.settings import DNS_SUFFIX
 from fuelweb_test.settings import KVM_USE
 from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import NEUTRON
@@ -62,13 +63,11 @@ from fuelweb_test.settings import OSTF_TEST_RETRIES_COUNT
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
 from fuelweb_test.settings import TIMEOUT
-from fuelweb_test.settings import VCENTER_IP
-from fuelweb_test.settings import VCENTER_USERNAME
-from fuelweb_test.settings import VCENTER_PASSWORD
 from fuelweb_test.settings import VCENTER_DATACENTER
 from fuelweb_test.settings import VCENTER_DATASTORE
-
-import fuelweb_test.settings as help_data
+from fuelweb_test.settings import VCENTER_IP
+from fuelweb_test.settings import VCENTER_PASSWORD
+from fuelweb_test.settings import VCENTER_USERNAME
 
 
 class FuelWebClient(object):
@@ -90,7 +89,7 @@ class FuelWebClient(object):
 
     @staticmethod
     @logwrap
-    def get_cluster_status(os_conn, smiles_count, networks_count=1):
+    def get_cluster_status(os_conn, smiles_count, networks_count=2):
         checkers.verify_service_list_api(os_conn, service_count=smiles_count)
         checkers.verify_glance_image_api(os_conn)
         checkers.verify_network_list_api(os_conn, networks_count)
@@ -126,7 +125,7 @@ class FuelWebClient(object):
 
     @logwrap
     def assert_cluster_ready(self, os_conn, smiles_count,
-                             networks_count=1, timeout=300):
+                             networks_count=2, timeout=300):
         logger.info('Assert cluster services are UP')
         _wait(
             lambda: self.get_cluster_status(
