@@ -178,7 +178,7 @@ class FuelWebClient(object):
            in [tests_must_be_passed] are passed"""
 
         logger.info('Assert OSTF tests are passed at cluster #%s: %s',
-                    cluster_id, tests_must_be_passed)
+                    cluster_id, json.dumps(tests_must_be_passed, indent=1))
         set_result_list = self._ostf_test_wait(cluster_id, timeout)
         tests_pass_count = 0
         tests_count = len(tests_must_be_passed)
@@ -198,7 +198,8 @@ class FuelWebClient(object):
 
         assert_true(tests_pass_count == tests_count,
                     'The following tests have not succeeded, while they '
-                    'must have passed: %s' % fail_details)
+                    'must have passed: %s' % json.dumps(fail_details,
+                                                        indent=1))
 
     @logwrap
     def assert_ostf_run(self, cluster_id, should_fail=0, failed_test_name=None,
