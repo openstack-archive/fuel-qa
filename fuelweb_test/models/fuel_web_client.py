@@ -491,9 +491,8 @@ class FuelWebClient(object):
             if MULTIPLE_NETWORKS:
                 node_groups = {n['name']: [] for n in NODEGROUPS}
                 self.update_nodegroups(cluster_id, node_groups)
-                for nodegroup in NODEGROUPS:
-                    self.update_network_configuration(cluster_id,
-                                                      nodegroup=nodegroup)
+                self.update_network_configuration(cluster_id,
+                                                  nodegroups=NODEGROUPS)
             else:
                 self.update_network_configuration(cluster_id)
 
@@ -1426,26 +1425,35 @@ class FuelWebClient(object):
             self.update_node_networks(node['id'], assigned_networks)
 
     @logwrap
-    def update_network_configuration(self, cluster_id, nodegroup=None):
+    def update_network_configuration(self, cluster_id, nodegroups=None):
         net_config = self.client.get_networks(cluster_id)
-        if not nodegroup:
+        if not nodegroups:
             logger.info('Update network settings of cluster %s', cluster_id)
             new_settings = self.update_net_settings(net_config)
-            self.client.update_network(
-                cluster_id=cluster_id,
-                networking_parameters=new_settings["networking_parameters"],
-                networks=new_settings["networks"]
-            )
+            self.update_floating_ranges(new_settings, public_nets=['public'])
         else:
-            logger.info('Update network settings of cluster %s, nodegroup %s',
-                        cluster_id, nodegroup['name'])
-            new_settings = self.update_net_settings(net_config, nodegroup,
-                                                    cluster_id)
-            self.client.update_network(
-                cluster_id=cluster_id,
-                networking_parameters=new_settings["networking_parameters"],
-                networks=new_settings["networks"]
-            )
+            new_settings = net_config
+            for nodegroup in nodegroups:
+                logger.info('Update network settings of cluster %s, '
+                            'nodegroup %s', cluster_id, nodegroup['name'])
+                new_settings = self.update_net_settings(new_settings,
+                                                        nodegroup,
+                                                        cluster_id)
+            public_nets = [self._get_true_net_name('public', ng['pools'])
+                           for ng in nodegroups]
+            self.update_floating_ranges(new_settings, public_nets=public_nets)
+
+        self.client.update_network(
+            cluster_id=cluster_id,
+            networking_parameters=new_settings["networking_parameters"],
+            networks=new_settings["networks"]
+        )
+
+    def _get_true_net_name(self, name, net_pools):
+        """Find a devops network name in net_pools"""
+        for net in net_pools:
+            if name in net:
+                return net
 
     def update_net_settings(self, network_configuration, nodegroup=None,
                             cluster_id=None):
@@ -1456,8 +1464,6 @@ class FuelWebClient(object):
                 self.set_network(net_config=net,
                                  net_name=net['name'],
                                  seg_type=seg_type)
-
-            self.common_net_settings(network_configuration)
             return network_configuration
         else:
             nodegroup_id = self.get_nodegroup(cluster_id,
@@ -1472,19 +1478,20 @@ class FuelWebClient(object):
                                      net_name=net['name'],
                                      net_pools=nodegroup['pools'],
                                      seg_type=seg_type)
-
-            self.common_net_settings(network_configuration)
             return network_configuration
 
-    def common_net_settings(self, network_configuration):
+    def update_floating_ranges(self, network_configuration, public_nets):
         nc = network_configuration["networking_parameters"]
-        public = self.environment.d_env.get_network(name="public").ip
+        nc["floating_ranges"] = []
 
-        if not BONDING:
-            float_range = public
-        else:
-            float_range = list(public.subnet(new_prefix=27))[0]
-        nc["floating_ranges"] = self.get_range(float_range, 1)
+        for pub_net_name in public_nets:
+            public = self.environment.d_env.get_network(name=pub_net_name).ip
+
+            if not BONDING:
+                float_range = public
+            else:
+                float_range = list(public.subnet(new_prefix=27))[0]
+            nc["floating_ranges"].extend(self.get_range(float_range, 1))
 
     def set_network(self, net_config, net_name, net_pools=None, seg_type=None):
         nets_wo_floating = ['public', 'management', 'storage']
@@ -1508,19 +1515,17 @@ class FuelWebClient(object):
                     i = nets_wo_floating.index(net_name)
                     self.net_settings(net_config, pub_subnets[i], jbond=True)
         else:
-            def _get_true_net_name(_name):
-                for _net in net_pools:
-                    if _name in _net:
-                        return _net
 
-            public_net = _get_true_net_name('public')
-            admin_net = _get_true_net_name('admin')
+            public_net = self._get_true_net_name('public', net_pools)
+            admin_net = self._get_true_net_name('admin', net_pools)
 
             if not BONDING:
                 if 'floating' == net_name:
                     self.net_settings(net_config, public_net, floating=True)
                 elif net_name in nets_wo_floating:
-                    self.net_settings(net_config, _get_true_net_name(net_name))
+                    self.net_settings(net_config,
+                                      self._get_true_net_name(net_name,
+                                                              net_pools))
                 elif net_name in 'fuelweb_admin':
                     self.net_settings(net_config, admin_net)
             else:
@@ -1545,11 +1550,13 @@ class FuelWebClient(object):
         else:
             ip_network = self.environment.d_env.get_network(
                 name=net_name).ip_network
-            if 'admin' in net_name:
-                net_config['ip_ranges'] = self.get_range(ip_network, 2)
 
-        net_config['ip_ranges'] = self.get_range(ip_network, 1) \
-            if floating else self.get_range(ip_network, -1)
+        if 'admin' in net_name:
+            net_config['ip_ranges'] = self.get_range(ip_network, 2)
+        elif floating:
+            net_config['ip_ranges'] = self.get_range(ip_network, 1)
+        else:
+            net_config['ip_ranges'] = self.get_range(ip_network, -1)
 
         net_config['cidr'] = str(ip_network)
 
