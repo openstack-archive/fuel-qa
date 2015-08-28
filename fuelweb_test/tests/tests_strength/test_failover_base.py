@@ -46,18 +46,16 @@ from fuelweb_test.tests.base_test_case import TestBasic
 class TestHaFailoverBase(TestBasic):
     """TestHaFailoverBase."""  # TODO documentation
 
-    def deploy_ha(self, network='neutron'):
+    def deploy_ha(self):
 
         self.check_run(self.snapshot_name)
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        settings = None
+        settings = {
+            "net_provider": 'neutron',
+            "net_segment_type": NEUTRON_SEGMENT_TYPE
+        }
 
-        if network == 'neutron':
-            settings = {
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE
-            }
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -76,18 +74,12 @@ class TestHaFailoverBase(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         public_vip = self.fuel_web.get_public_vip(cluster_id)
         os_conn = os_actions.OpenStackActions(public_vip)
-        if network == 'neutron':
-            self.fuel_web.assert_cluster_ready(
-                os_conn, smiles_count=14, networks_count=2, timeout=300)
-        else:
-            self.fuel_web.assert_cluster_ready(
-                os_conn, smiles_count=16, networks_count=1, timeout=300)
-
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)
         self.fuel_web.verify_network(cluster_id)
 
         self.env.make_snapshot(self.snapshot_name, is_make=True)
 
-    def deploy_ha_ceph(self, network='neutron'):
+    def deploy_ha_ceph(self):
 
         self.check_run(self.snapshot_name)
         self.env.revert_snapshot("ready_with_5_slaves")
@@ -96,11 +88,10 @@ class TestHaFailoverBase(TestBasic):
             'volumes_ceph': True,
             'images_ceph': True,
             'volumes_lvm': False,
+            "net_provider": 'neutron',
+            "net_segment_type": NEUTRON_SEGMENT_TYPE
         }
 
-        if network == 'neutron':
-            settings["net_provider"] = 'neutron'
-            settings["net_segment_type"] = NEUTRON_SEGMENT_TYPE
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -120,12 +111,7 @@ class TestHaFailoverBase(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         public_vip = self.fuel_web.get_public_vip(cluster_id)
         os_conn = os_actions.OpenStackActions(public_vip)
-        if network == 'neutron':
-            self.fuel_web.assert_cluster_ready(
-                os_conn, smiles_count=14, networks_count=2, timeout=300)
-        else:
-            self.fuel_web.assert_cluster_ready(
-                os_conn, smiles_count=16, networks_count=1, timeout=300)
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)
         self.fuel_web.verify_network(cluster_id)
 
         for node in ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]:

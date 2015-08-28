@@ -126,7 +126,7 @@ class FuelWebClient(object):
 
     @logwrap
     def assert_cluster_ready(self, os_conn, smiles_count,
-                             networks_count=1, timeout=300):
+                             networks_count=2, timeout=300):
         logger.info('Assert cluster services are UP')
         _wait(
             lambda: self.get_cluster_status(
