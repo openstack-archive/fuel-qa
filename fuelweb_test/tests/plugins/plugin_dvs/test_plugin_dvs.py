@@ -465,3 +465,214 @@ class TestDVSPlugin(TestBasic):
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['smoke', 'sanity'])
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
+          groups=["dvs_vcenter_add_delete_controller", "dvs_vcenter_plugin"])
+    @log_snapshot_after_test
+    def dvs_vcenter_add_delete_controller(self):
+        """Deploy cluster with plugin, adding  and deletion controler node.
+
+        Scenario:
+            1. Upload plugins to the master node.
+            2. Install plugin.
+            3. Create cluster with vcenter.
+            4. Add 4 node with controller role.
+            5. Add 1 node with cinder-vmdk role.
+            6. Add 1 node with compute role.
+            7. Deploy cluster.
+            8. Run OSTF.
+            9. Remove node with controller role.
+            10. Redeploy cluster.
+            11. Run OSTF.
+            12. Add node with controller role.
+            13. Redeploy cluster.
+            14. Run OSTF.
+
+        Duration 3.5 hours
+
+        """
+        self.env.revert_snapshot("ready_with_9_slaves")
+
+        self.install_dvs_plugin()
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "images_vcenter": True,
+                'images_ceph': False,
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT_TYPE,
+            },
+            vcenter_value={
+                "glance": {
+                    "vcenter_username": VCENTER_USERNAME,
+                    "datacenter": VCENTER_DATACENTER,
+                    "vcenter_host": VCENTER_IP,
+                    "vcenter_password": VCENTER_PASSWORD,
+                    "datastore": VCENTER_DATASTORE},
+                "availability_zones": [
+                    {"vcenter_username": VCENTER_USERNAME,
+                     "nova_computes": [
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster1",
+                          "service_name": "vmcluster1"
+                          },
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster2",
+                          "service_name": "vmcluster2"
+                          },
+                     ],
+                     "vcenter_host": VCENTER_IP,
+                     "az_name": "vcenter",
+                     "vcenter_password": VCENTER_PASSWORD,
+                     }]
+            }
+        )
+
+        self.enable_plugin(cluster_id=cluster_id)
+
+        # Assign role to node
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller'],
+             'slave-02': ['controller'],
+             'slave-03': ['controller'],
+             'slave-04': ['controller'],
+             'slave-05': ['cinder-vmware'],
+             'slave-06': ['compute'], })
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity'])
+
+        logger.info("Connect to primary controler")
+
+        primary_controller = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0]
+        )
+        remote = self.fuel_web.get_ssh_for_node(primary_controller.name)
+        # Remove networks before redeployment
+        command = '/etc/fuel/plugins/' + \
+                  'fuel-plugin-vmware-dvs-1.0/del_predefined_networks.sh'
+        result = remote.execute(command)
+        for output in result['stdout']:
+            logger.info(" {0}".format(output))
+
+        # Remove node with controller role
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-04': ['controller'], }, False, True)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+
+        # Fixme #1457515
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
+            should_fail=1,
+            failed_test_name=['Check that required services are running'])
+
+        # Add node with controller role
+
+        logger.info("Connect to primary controler")
+
+        primary_controller = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0]
+        )
+        remote = self.fuel_web.get_ssh_for_node(primary_controller.name)
+
+        # Remove networks before redeployment
+        result = remote.execute(command)
+        for output in result['stdout']:
+            logger.info(" {0}".format(output))
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-04': ['controller'],
+            }
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+
+        # Fixme #1457515
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
+            should_fail=1,
+            failed_test_name=['Check that required services are running'])
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["dvs_vcenter_multiroles", "dvs_vcenter_plugin"])
+    @log_snapshot_after_test
+    def dvs_vcenter_multiroles(self):
+        """Deploy cluster with plugin and multiroles
+
+        Scenario:
+            1. Upload plugins to the master node.
+            2. Install plugin.
+            3. Create cluster with vcenter.
+            4. Add 3 node with controller role + ceph-osd roles.
+            5. Add 2 node with compute + cinder-vmware.
+            6. Deploy the cluster.
+            7. Run OSTF.
+
+        Duration 2.5 hours
+
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        self.install_dvs_plugin()
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "images_vcenter": True,
+                'volumes_ceph': True,
+                'volumes_lvm': False,
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT_TYPE,
+            },
+            vcenter_value={
+                "glance": {
+                    "vcenter_username": VCENTER_USERNAME,
+                    "datacenter": VCENTER_DATACENTER,
+                    "vcenter_host": VCENTER_IP,
+                    "vcenter_password": VCENTER_PASSWORD,
+                    "datastore": VCENTER_DATASTORE},
+                "availability_zones": [
+                    {"vcenter_username": VCENTER_USERNAME,
+                     "nova_computes": [
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster1",
+                          "service_name": "vmcluster"
+                          },
+                         {"datastore_regex": ".*",
+                          "vsphere_cluster": "Cluster2",
+                          "service_name": "vmcluster2"
+                          },
+                     ],
+                     "vcenter_host": VCENTER_IP,
+                     "az_name": "vcenter",
+                     "vcenter_password": VCENTER_PASSWORD,
+                     }]
+            }
+        )
+
+        self.enable_plugin(cluster_id=cluster_id)
+
+        # Assign role to node
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller', 'ceph-osd'],
+             'slave-02': ['controller', 'ceph-osd'],
+             'slave-03': ['controller', 'ceph-osd'],
+             'slave-04': ['compute', 'cinder-vmware'],
+             'slave-05': ['compute', 'cinder-vmware']}
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
