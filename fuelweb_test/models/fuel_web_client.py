@@ -195,7 +195,8 @@ class FuelWebClient(object):
 
         assert_true(tests_pass_count == tests_count,
                     'The following tests have not succeeded, while they '
-                    'must have passed: %s' % fail_details)
+                    'must have passed: %s' % json.loads(fail_details,
+                                                        indent=1)
 
     @logwrap
     def assert_ostf_run(self, cluster_id, should_fail=0, failed_test_name=None,
