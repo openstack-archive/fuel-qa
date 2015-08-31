@@ -17,6 +17,7 @@ from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
 import netaddr
 from proboscis import test
+from settings import LOGS_DIR
 
 from fuelweb_test.helpers import decorators
 from fuelweb_test.helpers import nessus
@@ -138,7 +139,7 @@ class TestNessus(NeutronTunHaBase):
 
         file_id = nessus_client.export_scan(scan_id, history_id, 'html')
         nessus_client.download_scan_result(scan_id, file_id,
-                                           'master_cpa', 'html')
+                                           'master_cpa', 'html', LOGS_DIR)
 
         self.env.make_snapshot("nessus_fuel_master_cpa")
 
@@ -196,7 +197,7 @@ class TestNessus(NeutronTunHaBase):
 
         file_id = nessus_client.export_scan(scan_id, history_id, 'html')
         nessus_client.download_scan_result(scan_id, file_id,
-                                           'master_wat', 'html')
+                                           'master_wat', 'html', LOGS_DIR)
 
         self.env.make_snapshot("nessus_fuel_master_wat")
 
@@ -258,6 +259,6 @@ class TestNessus(NeutronTunHaBase):
 
         file_id = nessus_client.export_scan(scan_id, history_id, 'html')
         nessus_client.download_scan_result(scan_id, file_id,
-                                           'controller_cpa', 'html')
+                                           'controller_cpa', 'html', LOGS_DIR)
 
         self.env.make_snapshot("nessus_controller_ubuntu_cpa")

@@ -1,4 +1,5 @@
 import json
+import os
 import urlparse
 
 from devops.helpers.helpers import wait
@@ -164,12 +165,14 @@ class NessusClient(object):
              interval=10, timeout=600)
         return file_id
 
-    def download_scan_result(self, scan_id, file_id, scan_type, save_format):
+    def download_scan_result(
+            self, scan_id, file_id, scan_type, save_format, file_path):
         report = self.get_raw('/scans/{0}/export/{1}/download'
                               .format(scan_id, file_id))
 
         filename = 'nessus_report_scan_{0}_{1}.{2}'\
             .format(scan_id, scan_type, save_format)
-        logger.info("Saving Nessus scan report: {0}".format(filename))
-        with open(filename, 'w') as report_file:
+        file_with_path = os.path.join(file_path, filename)
+        logger.info("Saving Nessus scan report: {0}".format(file_with_path))
+        with open(file_with_path, 'w') as report_file:
             report_file.write(report)
