@@ -25,7 +25,7 @@ from fuelweb_test.tests.test_ha_one_controller_base\
 from fuelweb_test.tests.test_neutron_tun_base import NeutronTunHaBase
 
 
-@test(groups=["known_issues"])
+@test(groups=["backup_restore_master"])
 class TestAdminNodeBackupRestore(TestBasic):
 
     @test(depends_on=[SetupEnvironment.setup_master],
@@ -56,7 +56,7 @@ class TestAdminNodeBackupRestore(TestBasic):
             checkers.iptables_check(remote)
 
 
-@test(groups=["known_issues"])
+@test(groups=["backup_restore_master"])
 class BackupRestoreHAOneController(HAOneControllerNeutronBase):
     """BackupRestoreHAOneController"""  # TODO documentation
 
@@ -144,7 +144,7 @@ class BackupRestoreHAOneController(HAOneControllerNeutronBase):
         self.env.make_snapshot("ha_one_controller_backup_restore")
 
 
-@test(groups=["known_issues"])
+@test(groups=["backup_restore_master"])
 class BackupRestoreHA(NeutronTunHaBase):
     """BackupRestoreHAOneController"""  # TODO documentation
 

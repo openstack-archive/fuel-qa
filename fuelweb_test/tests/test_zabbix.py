@@ -24,7 +24,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
 
 
-@test(enabled=False, groups=["known_issues"])
+@test(enabled=False, groups=["thread_2"])
 class HAOneControllerZabbix(TestBasic):
     """HAOneControllerZabbix."""  # TODO documentation
 
