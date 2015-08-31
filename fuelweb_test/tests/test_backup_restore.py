@@ -110,8 +110,7 @@ class BackupRestoreHAOneController(HAOneControllerNeutronBase):
             self.fuel_web.get_public_vip(cluster_id),
             'neutronOneController', 'neutronOneController',
             'neutronOneController')
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5,
-                                           networks_count=2, timeout=300)
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
 
         with self.env.d_env.get_admin_remote() as remote:
             # Execute master node backup
