@@ -1,0 +1,10 @@
+Verified+2: Jenkins
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+2: Andrey Sledzinskiy <asledzinskiy@mirantis.com>
+Workflow+1: Andrey Sledzinskiy <asledzinskiy@mirantis.com>
+Code-Review+1: Maksym Strukov <mstrukov@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Tue, 01 Sep 2015 15:05:17 +0000
+Reviewed-on: https://review.openstack.org/219189
+Project: stackforge/fuel-qa
+Branch: refs/heads/master
