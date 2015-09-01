@@ -140,7 +140,7 @@ class SeparateDbFailover(TestBasic):
         # Wait until MySQL Galera is UP on some db node
         self.fuel_web.wait_mysql_galera_is_up(['slave-05'])
         self.fuel_web.assert_ha_services_ready(cluster_id)
-        self.fuel_web.assert_os_services_ready(cluster_id)
+        self.fuel_web.assert_os_services_ready(cluster_id, timeout=15 * 60)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
@@ -169,7 +169,7 @@ class SeparateDbFailover(TestBasic):
         # Wait until MySQL Galera is UP on some db node
         self.fuel_web.wait_mysql_galera_is_up(['slave-05'])
         self.fuel_web.assert_ha_services_ready(cluster_id)
-        self.fuel_web.assert_os_services_ready(cluster_id)
+        self.fuel_web.assert_os_services_ready(cluster_id, timeout=15 * 60)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
@@ -200,7 +200,8 @@ class SeparateDbFailover(TestBasic):
             controller)['online'], timeout=60 * 5)
 
         self.fuel_web.assert_ha_services_ready(cluster_id)
-        self.fuel_web.assert_os_services_ready(cluster_id, should_fail=1)
+        self.fuel_web.assert_os_services_ready(cluster_id, timeout=15 * 60,
+                                               should_fail=1)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, should_fail=1)
 
