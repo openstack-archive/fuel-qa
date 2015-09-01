@@ -14,29 +14,29 @@
 
 import re
 import time
-import yaml
 
 from devops.error import TimeoutError
+from devops.helpers.helpers import _wait
 from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
-from devops.helpers.helpers import _wait
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_false
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
-from proboscis.asserts import assert_false
 from proboscis import SkipTest
+import yaml
 
-from fuelweb_test.helpers.checkers import get_file_size
-from fuelweb_test.helpers.checkers import check_ping
 from fuelweb_test.helpers.checkers import check_mysql
+from fuelweb_test.helpers.checkers import check_ping
 from fuelweb_test.helpers.checkers import check_public_ping
+from fuelweb_test.helpers.checkers import get_file_size
 from fuelweb_test.helpers import os_actions
 from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test.settings import DEPLOYMENT_MODE
-from fuelweb_test.settings import DOWNLOAD_LINK
 from fuelweb_test.settings import DNS
 from fuelweb_test.settings import DNS_SUFFIX
+from fuelweb_test.settings import DOWNLOAD_LINK
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
@@ -46,18 +46,16 @@ from fuelweb_test.tests.base_test_case import TestBasic
 class TestHaFailoverBase(TestBasic):
     """TestHaFailoverBase."""  # TODO documentation
 
-    def deploy_ha(self, network='neutron'):
+    def deploy_ha(self):
 
         self.check_run(self.snapshot_name)
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        settings = None
+        settings = {
+            "net_provider": 'neutron',
+            "net_segment_type": NEUTRON_SEGMENT_TYPE
+        }
 
-        if network == 'neutron':
-            settings = {
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE
-            }
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -81,7 +79,7 @@ class TestHaFailoverBase(TestBasic):
 
         self.env.make_snapshot(self.snapshot_name, is_make=True)
 
-    def deploy_ha_ceph(self, network='neutron'):
+    def deploy_ha_ceph(self):
 
         self.check_run(self.snapshot_name)
         self.env.revert_snapshot("ready_with_5_slaves")
@@ -90,11 +88,10 @@ class TestHaFailoverBase(TestBasic):
             'volumes_ceph': True,
             'images_ceph': True,
             'volumes_lvm': False,
+            "net_provider": 'neutron',
+            "net_segment_type": NEUTRON_SEGMENT_TYPE
         }
 
-        if network == 'neutron':
-            settings["net_provider"] = 'neutron'
-            settings["net_segment_type"] = NEUTRON_SEGMENT_TYPE
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
