@@ -1556,26 +1556,23 @@ class FuelWebClient(object):
 
     def net_settings(self, net_config, net_name, floating=False, jbond=False):
         if jbond:
+            if net_config['name'] == 'public':
+                net_config['gateway'] = self.environment.d_env.router('public')
             ip_network = net_name
         else:
+            net_config['vlan_start'] = None
+            net_config['gateway'] = self.environment.d_env.router(net_name)
             ip_network = self.environment.d_env.get_network(
                 name=net_name).ip_network
 
-        if 'admin' in net_name:
+        net_config['cidr'] = str(ip_network)
+
+        if 'admin' in net_config['name']:
             net_config['ip_ranges'] = self.get_range(ip_network, 2)
         elif floating:
             net_config['ip_ranges'] = self.get_range(ip_network, 1)
         else:
             net_config['ip_ranges'] = self.get_range(ip_network, -1)
-
-        net_config['cidr'] = str(ip_network)
-
-        if jbond:
-            if net_config['name'] == 'public':
-                net_config['gateway'] = self.environment.d_env.router('public')
-        else:
-            net_config['vlan_start'] = None
-            net_config['gateway'] = self.environment.d_env.router(net_name)
 
     def get_range(self, ip_network, ip_range=0):
         net = list(IPNetwork(ip_network))
