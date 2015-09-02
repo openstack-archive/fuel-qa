@@ -220,7 +220,7 @@ class TestJumboFrames(base_test_case.TestBasic):
             mode=CONF.DEPLOYMENT_MODE_HA,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": 'vlan',
+                "net_segment_type": CONF.NEUTRON_SEGMENT['vlan'],
             }
         )
 
@@ -301,7 +301,7 @@ class TestJumboFrames(base_test_case.TestBasic):
             mode=CONF.DEPLOYMENT_MODE_HA,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": 'gre',
+                "net_segment_type": CONF.NEUTRON_SEGMENT['tun'],
             }
         )
 
