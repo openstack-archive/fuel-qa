@@ -36,6 +36,16 @@ logger = logging.getLogger(__name__)
 logger.addHandler(console)
 
 
+# suppress iso8601 and paramiko debug logging
+class NoDebugMessageFilter(logging.Filter):
+    def filter(self, record):
+        return not record.levelno <= logging.DEBUG
+
+logging.getLogger('paramiko.transport').addFilter(NoDebugMessageFilter())
+logging.getLogger('paramiko.hostkeys').addFilter(NoDebugMessageFilter())
+logging.getLogger('iso8601.iso8601').addFilter(NoDebugMessageFilter())
+
+
 def debug(logger):
     def wrapper(func):
         @functools.wraps(func)
