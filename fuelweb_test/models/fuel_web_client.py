@@ -1790,6 +1790,31 @@ class FuelWebClient(object):
         return True
 
     @logwrap
+    def wait_keystone_is_up(self, node_names, timeout=60 * 3):
+        def _get_keystone_status(_remote):
+            cmd = ("OS_AUTH_URL='http://localhost:5000/v2.0/' "
+                   "keystone --timeout 1 discover | "
+                   "grep 'Keystone found at http://localhost:5000/v2.0/'")
+            return _remote.execute(cmd)['exit_code'] == 0
+
+        for node_name in node_names:
+            _ip = self.get_nailgun_node_by_name(node_name)['ip']
+            with self.environment.d_env.get_ssh_to_remote(_ip) as remote:
+                try:
+                    wait(lambda: _get_keystone_status(remote),
+                         timeout=timeout)
+                    logger.info("Keystone is up on {host} node.".format(
+                                host=node_name))
+                except TimeoutError:
+                    logger.error("Keystone isn't ready on {0}"
+                                 .format(node_name))
+                    raise TimeoutError(
+                        "Keystone isn't ready on {0}".format(
+                            node_name))
+        time.sleep(60)
+        return True
+
+    @logwrap
     def wait_cinder_is_up(self, node_names):
         logger.info("Waiting for all Cinder services up.")
         for node_name in node_names:
