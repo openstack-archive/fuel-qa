@@ -1787,6 +1787,122 @@ class FuelWebClient(object):
         return True
 
     @logwrap
+    def wait_keystone_alive(self, node_names, timeout=60 * 2):
+        hosts = {h['hostname']: h['ip'] for h in
+                 [self.get_nailgun_node_by_name(n) for n in node_names]}
+        logger.info("Wait keystone alive on {0}".format(hosts))
+
+        def _get_keystone_status(_remote):
+            cmd = ("OS_AUTH_URL='http://localhost:5000/v2.0/' "
+                   "keystone --timeout 1 discover | "
+                   "grep 'Keystone found at http://localhost:5000/v2.0/'")
+            return _remote.execute(cmd)['exit_code'] == 0
+
+        def _check_keystone_alive(retrun_dict):
+            hosts_status = []
+            for host, ip in hosts.iteritems():
+                with self.environment.d_env.get_ssh_to_remote(ip) as remote:
+                    if _get_keystone_status(remote):
+                        hosts_status.append(host)
+            retrun_dict['hosts_status'] = hosts_status
+            logger.debug("Keystone active on "
+                         "{0} of {1}".format(hosts_status,
+                                             list(hosts.iterkeys())))
+            return set(hosts_status) == set(hosts.iterkeys())
+
+        try:
+            retrun_dict = {}
+            wait(lambda: _check_keystone_alive(retrun_dict),
+                 timeout=timeout)
+            logger.info("Keystone alive on "
+                        "{0}".format(retrun_dict['hosts_status']))
+        except TimeoutError:
+            logger.error("Keystone isn't ready on "
+                         "{0}".format(set(hosts) -
+                                      set(retrun_dict.get('hosts_status',
+                                                          set([])))))
+            return False
+
+        return True
+
+    @logwrap
+    def wait_keystone_cluster_alive(self, node_names, timeout=60 * 2):
+        hosts = {h['hostname']: h['ip'] for h in
+                 [self.get_nailgun_node_by_name(n) for n in node_names]}
+        logger.info("Check keystone cluster alive on {}".format(hosts))
+
+        def _get_token(_remote):
+            cmd = (". ~/openrc; "
+                   "OS_AUTH_URL='http://localhost:5000/v2.0/' "
+                   "openstack token issue -f shell --prefix x_ "
+                   "| grep x_id ")
+            result = _remote.execute(cmd)
+            if result['exit_code'] == 0:
+                return result['stdout'][0].split('=')[1].split()[0]
+            else:
+                return False
+
+        def _check_token(_remote, token, auth_host):
+            cmd = ('OS_AUTH_URL="http://{auth_host}:5000/v2.0/" '
+                   'OS_TOKEN={token} '
+                   'openstack project list'.format(token=token,
+                                                   auth_host=auth_host))
+            return _remote.execute(cmd)['exit_code'] == 0
+
+        def _check_keystone_cluster_alive(retrun_dict):
+            hosts_status = []
+            for host, ip in hosts.iteritems():
+                with self.environment.d_env.get_ssh_to_remote(ip) as remote:
+                    token = _get_token(remote)
+                    if token is False:
+                        logger.warning("Keystone on {} hasn't "
+                                       "given token".format(host))
+                        continue
+                    token_status = []
+                    for auth_host in hosts.iterkeys():
+                        if _check_token(remote, token, auth_host):
+                            token_status.append(auth_host)
+                            logger.debug("Token {} on {} "
+                                         "via {} is valid".format(token,
+                                                                  host,
+                                                                  auth_host))
+                        else:
+                            logger.debug("Token {} on {} "
+                                         "via {} is invalid".format(token,
+                                                                    host,
+                                                                    auth_host))
+                    if set(token_status) == set(hosts.iterkeys()):
+                        hosts_status.append(host)
+            retrun_dict['hosts_status'] = hosts_status
+            logger.debug("Keystone cluster alive on "
+                         "{0} of {1}".format(hosts_status,
+                                             list(hosts.iterkeys())))
+            return set(hosts_status) == set(hosts.iterkeys())
+
+        try:
+            retrun_dict = {}
+            wait(lambda: _check_keystone_cluster_alive(retrun_dict),
+                 timeout=timeout)
+            logger.info("Keystone cluster alive on "
+                        "{0}".format(retrun_dict['hosts_status']))
+        except TimeoutError:
+            logger.error("Keystone cluster isn't ready on "
+                         "{0}".format(set(hosts) -
+                                      set(retrun_dict.get('hosts_status',
+                                                          set([])))))
+            return False
+        return True
+
+    @logwrap
+    def wait_keystone_is_up(self, node_names, timeout=60 * 2):
+        logger.info("Wait keystone is up on {}".format(node_names))
+        if (self.wait_keystone_alive(node_names, timeout) and
+                self.wait_keystone_cluster_alive(node_names, timeout=60)):
+            return True
+        else:
+            return False
+
+    @logwrap
     def wait_cinder_is_up(self, node_names):
         logger.info("Waiting for all Cinder services up.")
         for node_name in node_names:
