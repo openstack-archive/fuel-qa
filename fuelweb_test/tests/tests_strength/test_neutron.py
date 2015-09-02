@@ -290,6 +290,8 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         self.fuel_web.wait_mysql_galera_is_up(['slave-01', 'slave-02',
                                                'slave-03'])
+        self.fuel_web.wait_keystone_is_up(['slave-01', 'slave-02',
+                                           'slave-03'])
 
         try:
             wait(lambda: not node_with_l3 == os_conn.get_l3_agent_hosts(
@@ -372,6 +374,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
         online_controllers_names = [n.name for n in set(
             self.env.d_env.nodes().slaves[:3]) - {new_devops}]
         self.fuel_web.wait_mysql_galera_is_up(online_controllers_names)
+        self.fuel_web.wait_keystone_is_up(online_controllers_names)
 
         try:
             wait(lambda: not new_node_with_l3 == os_conn.get_l3_agent_hosts(
