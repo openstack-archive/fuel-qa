@@ -100,10 +100,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
         Snapshot deploy_ha_neutron
 
         """
-        try:
-            self.check_run('deploy_ha_neutron')
-        except SkipTest:
-            return
+        self.check_run('deploy_ha_neutron')
         self.env.revert_snapshot("ready")
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[:6])
@@ -206,9 +203,9 @@ class TestNeutronFailover(base_test_case.TestBasic):
         new_remote.execute("pcs resource clear p_neutron-l3-agent {0}".
                            format(node_with_l3))
 
+    # @log_snapshot_after_test
     @test(depends_on=[deploy_ha_neutron],
           groups=["neutron_l3_migration_after_reset"])
-    @log_snapshot_after_test
     def neutron_l3_migration_after_reset(self):
         """Check l3-agent rescheduling after reset non-primary controller
 
@@ -260,6 +257,8 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         self.fuel_web.wait_mysql_galera_is_up(['slave-01', 'slave-02',
                                                'slave-03'])
+        self.fuel_web.wait_keystone_is_up(['slave-01', 'slave-02',
+                                           'slave-03'])
 
         try:
             wait(lambda: not node_with_l3 == os_conn.get_l3_agent_hosts(
