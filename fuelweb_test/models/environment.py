@@ -97,7 +97,7 @@ class EnvironmentModel(object):
         self.fuel_web.add_syslog_server(
             cluster_id, self.d_env.router(), port)
 
-    def bootstrap_nodes(self, devops_nodes, timeout=600, skip_timesync=False):
+    def bootstrap_nodes(self, devops_nodes, timeout=900, skip_timesync=False):
         """Lists registered nailgun nodes
         Start vms and wait until they are registered on nailgun.
         :rtype : List of registered nailgun nodes
