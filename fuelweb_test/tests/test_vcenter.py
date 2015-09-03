@@ -229,6 +229,59 @@ class VcenterDeploy(TestBasic):
             cluster_id=cluster_id, test_sets=['sanity', 'smoke', 'ha'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["vcenter_cindervmdk_and_computevmware"])
+    @log_snapshot_after_test
+    def vcenter_cindervmdk_and_computevmware(self):
+        """Deploy environment with vCenter, CinderVMDK and ComputeVMWare
+
+        Scenario:
+            1. Create cluster with vCenter support
+            2. Set Nova-Network FlatDHCP Manager as a network backend
+            3. Add nodes with following roles:
+                controller
+                cinder-vmware
+                compute-vmware
+            4. Assign vCenter cluster(s) to:
+                controller
+            5. Deploy the cluster
+            6. Run network verification
+            7. Run OSTF
+
+        Duration: 1h 40min
+
+        """
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE)
+
+        logger.info("cluster is {}".format(cluster_id))
+
+        # Assign roles to nodes
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['cinder-vmware'],
+                'slave-03': ['compute-vmware']
+            }
+        )
+
+        # Configure VMWare vCenter settings
+        target_node_1 = self.node_name('slave-03')
+        self.fuel_web.vcenter_configure(
+            cluster_id,
+            target_node_1=target_node_1,
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['sanity', 'smoke', 'ha'])
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["vcenter_computevmware"])
     @log_snapshot_after_test
     def vcenter_computevmware(self):
@@ -296,8 +349,7 @@ class VcenterDeploy(TestBasic):
             5. Assign vCenter cluster(s) to:
                 controller
             6. Deploy the cluster
-            7. Run network verification
-            8. Run OSTF
+            7. Run OSTF
 
         Duration: 1h 40min
 
@@ -325,7 +377,6 @@ class VcenterDeploy(TestBasic):
         self.fuel_web.vcenter_configure(cluster_id, vc_glance=True)
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
             test_sets=['sanity', 'smoke', 'ha'])
