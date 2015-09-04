@@ -34,9 +34,9 @@ from fuelweb_test.tests.test_ha_one_controller_base\
     import HAOneControllerNeutronBase
 
 
-@test(groups=["thread_2"])
+@test()
 class OneNodeDeploy(TestBasic):
-    """OneNodeDeploy."""  # TODO documentation
+    """OneNodeDeploy. DEPRECATED!"""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["deploy_one_node", 'master'])
@@ -82,7 +82,7 @@ class OneNodeDeploy(TestBasic):
                        '.SanityIdentityTest.test_list_users'))
 
 
-@test(groups=["thread_2"])
+@test(groups=["one_controller_actions"])
 class HAOneControllerNeutron(HAOneControllerNeutronBase):
     """HAOneControllerNeutron."""  # TODO documentation
 
@@ -300,8 +300,39 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
 
         self.env.make_snapshot("deploy_base_os_node")
 
+    @test(depends_on=[deploy_ha_one_controller_neutron],
+          groups=["delete_environment"])
+    @log_snapshot_after_test
+    def delete_environment(self):
+        """Delete existing environment
+        and verify nodes returns to unallocated state
 
-@test(groups=["thread_2", "multirole"])
+        Scenario:
+            1. Revert "deploy_ha_one_controller" environment
+            2. Delete environment
+            3. Verify node returns to unallocated pull
+
+        Duration 15m
+        """
+        self.env.revert_snapshot("deploy_ha_one_controller_neutron")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        self.fuel_web.client.delete_cluster(cluster_id)
+        nailgun_nodes = self.fuel_web.client.list_nodes()
+        nodes = filter(lambda x: x["pending_deletion"] is True, nailgun_nodes)
+        assert_true(
+            len(nodes) == 2, "Verify 2 node has pending deletion status"
+        )
+        wait(
+            lambda:
+            self.fuel_web.is_node_discovered(nodes[0]) and
+            self.fuel_web.is_node_discovered(nodes[1]),
+            timeout=10 * 60,
+            interval=15
+        )
+
+
+@test(groups=["multirole"])
 class MultiroleControllerCinder(TestBasic):
     """MultiroleControllerCinder."""  # TODO documentation
 
@@ -354,7 +385,7 @@ class MultiroleControllerCinder(TestBasic):
         self.env.make_snapshot("deploy_multirole_controller_cinder")
 
 
-@test(groups=["thread_2", "multirole"])
+@test(groups=["multirole"])
 class MultiroleComputeCinder(TestBasic):
     """MultiroleComputeCinder."""  # TODO documentation
 
@@ -403,7 +434,7 @@ class MultiroleComputeCinder(TestBasic):
         self.env.make_snapshot("deploy_multirole_compute_cinder")
 
 
-@test(groups=["thread_2"])
+@test(groups=["multirole"])
 class MultiroleMultipleServices(TestBasic):
     """MultiroleMultipleServices."""  # TODO documentation
 
@@ -498,7 +529,7 @@ class MultiroleMultipleServices(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
 
-@test(groups=["thread_2"])
+@test(enabled=False)
 class FloatingIPs(TestBasic):
     """FloatingIPs."""  # TODO documentation
 
@@ -561,61 +592,6 @@ class FloatingIPs(TestBasic):
             cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_floating_ips")
-
-
-@test(groups=["ha_one_controller"])
-class HAOneControllerCinder(TestBasic):
-    """HAOneControllerCinder."""  # TODO documentation
-
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_ha_one_controller_cinder"])
-    @log_snapshot_after_test
-    def deploy_ha_one_controller_cinder(self):
-        """Deploy cluster in HA mode with cinder
-
-        Scenario:
-            1. Create cluster in Ha mode
-            2. Add 1 node with controller role
-            3. Add 1 node with compute role
-            4. Add 1 node with cinder role
-            5. Deploy the cluster
-            6. Validate cluster was set up correctly, there are no dead
-               services, there are no errors in logs
-            7. Run OSTF
-
-        Duration 30m
-        Snapshot: deploy_ha_one_controller_cinder
-        """
-        self.env.revert_snapshot("ready_with_3_slaves")
-
-        cluster_id = self.fuel_web.create_cluster(
-            name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE
-            }
-        )
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {
-                'slave-01': ['controller'],
-                'slave-02': ['compute'],
-                'slave-03': ['cinder']
-            }
-        )
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id))
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
-
-        self.fuel_web.verify_network(cluster_id)
-        self.env.verify_network_configuration("slave-01")
-
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
-
-        self.env.make_snapshot("deploy_ha_one_controller_cinder")
 
 
 @test(groups=["thread_1"])
@@ -814,43 +790,6 @@ class MultinicBootstrap(TestBasic):
         finally:
             for mac in mac_addresses:
                 Ebtables.restore_mac(mac)
-
-
-@test(groups=["thread_2", "test"])
-class DeleteEnvironment(TestBasic):
-    """DeleteEnvironment."""  # TODO documentation
-
-    @test(depends_on=[HAOneControllerNeutron.deploy_ha_one_controller_neutron],
-          groups=["delete_environment"])
-    @log_snapshot_after_test
-    def delete_environment(self):
-        """Delete existing environment
-        and verify nodes returns to unallocated state
-
-        Scenario:
-            1. Revert "deploy_ha_one_controller" environment
-            2. Delete environment
-            3. Verify node returns to unallocated pull
-
-        Duration 15m
-
-        """
-        self.env.revert_snapshot("deploy_ha_one_controller_neutron")
-
-        cluster_id = self.fuel_web.get_last_created_cluster()
-        self.fuel_web.client.delete_cluster(cluster_id)
-        nailgun_nodes = self.fuel_web.client.list_nodes()
-        nodes = filter(lambda x: x["pending_deletion"] is True, nailgun_nodes)
-        assert_true(
-            len(nodes) == 2, "Verify 2 node has pending deletion status"
-        )
-        wait(
-            lambda:
-            self.fuel_web.is_node_discovered(nodes[0]) and
-            self.fuel_web.is_node_discovered(nodes[1]),
-            timeout=10 * 60,
-            interval=15
-        )
 
 
 @test(groups=["thread_1"])
