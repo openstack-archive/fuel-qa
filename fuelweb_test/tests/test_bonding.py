@@ -55,6 +55,7 @@ class BondingHAOneController(BondingTest):
 
         segment_type = NEUTRON_SEGMENT['tun']
 
+        self.show_step(1)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -64,6 +65,8 @@ class BondingHAOneController(BondingTest):
             }
         )
 
+        self.show_step(2)
+        self.show_step(3)
         self.fuel_web.update_nodes(
             cluster_id, {
                 'slave-01': ['controller'],
@@ -72,16 +75,23 @@ class BondingHAOneController(BondingTest):
             }
         )
 
+        self.show_step(4)
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
                 node['id'], interfaces_dict=deepcopy(self.INTERFACES),
                 raw_data=deepcopy(self.BOND_CONFIG)
             )
-        self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.show_step(5)
         self.fuel_web.verify_network(cluster_id)
 
+        self.show_step(6)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+
+        self.show_step(7)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(8)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_bonding_one_controller_tun")
@@ -112,6 +122,7 @@ class BondingHAOneController(BondingTest):
 
         segment_type = NEUTRON_SEGMENT['vlan']
 
+        self.show_step(1)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -120,6 +131,9 @@ class BondingHAOneController(BondingTest):
                 "net_segment_type": segment_type,
             }
         )
+
+        self.show_step(2)
+        self.show_step(3)
         self.fuel_web.update_nodes(
             cluster_id, {
                 'slave-01': ['controller'],
@@ -128,18 +142,24 @@ class BondingHAOneController(BondingTest):
             }
         )
 
+        self.show_step(4)
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
                 node['id'], interfaces_dict=deepcopy(self.INTERFACES),
                 raw_data=deepcopy(self.BOND_CONFIG)
             )
-        self.fuel_web.update_vlan_network_fixed(
-            cluster_id, amount=8, network_size=32)
-        self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+
+        self.show_step(5)
         self.fuel_web.verify_network(cluster_id)
 
+        self.show_step(6)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+
+        self.show_step(7)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(8)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_bonding_one_controller_vlan")
@@ -163,6 +183,7 @@ class BondingHAOneController(BondingTest):
 
         segment_type = NEUTRON_SEGMENT['tun']
 
+        self.show_step(1)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -171,6 +192,9 @@ class BondingHAOneController(BondingTest):
                 "net_segment_type": segment_type,
             }
         )
+
+        self.show_step(2)
+        self.show_step(3)
         self.fuel_web.update_nodes(
             cluster_id, {
                 'slave-01': ['controller'],
@@ -179,6 +203,7 @@ class BondingHAOneController(BondingTest):
             }
         )
 
+        self.show_step(4)
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         invalid_bond_conf = deepcopy(self.BOND_CONFIG)
         invalid_bond_conf[1]['mode'] = '802.3ad'
@@ -203,7 +228,7 @@ class BondingHA(BondingTest):
         Scenario:
             1. Create cluster
             2. Add 3 nodes with controller role
-            3. Add 2 node with compute role
+            3. Add 1 node with compute role and 1 node with cinder role
             4. Setup bonding for all interfaces (including admin interface
                bonding)
             5. Run network verification
@@ -222,6 +247,7 @@ class BondingHA(BondingTest):
 
         segment_type = NEUTRON_SEGMENT['vlan']
 
+        self.show_step(1)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -230,6 +256,9 @@ class BondingHA(BondingTest):
                 "net_segment_type": segment_type,
             }
         )
+
+        self.show_step(2)
+        self.show_step(3)
         self.fuel_web.update_nodes(
             cluster_id, {
                 'slave-01': ['controller'],
@@ -242,13 +271,18 @@ class BondingHA(BondingTest):
 
         net_params = self.fuel_web.client.get_networks(cluster_id)
 
+        self.show_step(4)
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
                 node['id'], interfaces_dict=deepcopy(self.INTERFACES),
                 raw_data=deepcopy(self.BOND_CONFIG)
             )
+
+        self.show_step(5)
         self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(6)
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
 
         cluster = self.fuel_web.client.get_cluster(cluster_id)
@@ -256,9 +290,17 @@ class BondingHA(BondingTest):
         assert_equal(str(net_params["networking_parameters"]
                          ['segmentation_type']), segment_type)
 
+        self.show_step(7)
         self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(8)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(9)
+        self.show_step(10)
+        self.show_step(11)
         self.check_interfaces_config_after_reboot(cluster_id)
+
         self.env.make_snapshot("deploy_bonding_neutron_vlan")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
@@ -270,7 +312,7 @@ class BondingHA(BondingTest):
         Scenario:
             1. Create cluster
             2. Add 3 nodes with controller role
-            3. Add 2 node with compute role
+            3. Add 1 node with compute role and 1 node with cinder role
             4. Setup bonding for all interfaces (including admin interface
                bonding)
             5. Run network verification
@@ -289,6 +331,7 @@ class BondingHA(BondingTest):
 
         segment_type = NEUTRON_SEGMENT['tun']
 
+        self.show_step(1)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -297,6 +340,9 @@ class BondingHA(BondingTest):
                 "net_segment_type": segment_type,
             }
         )
+
+        self.show_step(2)
+        self.show_step(3)
         self.fuel_web.update_nodes(
             cluster_id, {
                 'slave-01': ['controller'],
@@ -309,13 +355,18 @@ class BondingHA(BondingTest):
 
         net_params = self.fuel_web.client.get_networks(cluster_id)
 
+        self.show_step(4)
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
                 node['id'], interfaces_dict=deepcopy(self.INTERFACES),
                 raw_data=deepcopy(self.BOND_CONFIG)
             )
+
+        self.show_step(5)
         self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(6)
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
 
         cluster = self.fuel_web.client.get_cluster(cluster_id)
@@ -323,8 +374,15 @@ class BondingHA(BondingTest):
         assert_equal(str(net_params["networking_parameters"]
                          ['segmentation_type']), segment_type)
 
+        self.show_step(7)
         self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(8)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(9)
+        self.show_step(10)
+        self.show_step(11)
         self.check_interfaces_config_after_reboot(cluster_id)
 
         self.env.make_snapshot("deploy_bonding_neutron_tun")
