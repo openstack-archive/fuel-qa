@@ -1271,6 +1271,7 @@ class VcenterDeploy(TestBasic):
         )
 
         # Configure VMWare vCenter settings
+        self.configure_nova_vlan(cluster_id)
         self.fuel_web.vcenter_configure(cluster_id, multiclusters=True)
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
@@ -1334,3 +1335,324 @@ class VcenterDeploy(TestBasic):
                         res == 3,
                         "VM{0} not ping from Vm {1}, received {2} icmp".format(
                             ip_1, ip_2, res))
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["vcenter_ha_glance_backend_multiple_cluster"])
+    @log_snapshot_after_test
+    def vcenter_ha_glance_backend_multiple_cluster(self):
+        """Deploy environment with nova-vlan in HA with multiple cluster \
+         (Controller + ComputeVMWare), CinderVMDK, Cinder and VMWare \
+         datastore as backend for Glance
+
+        Scenario:
+            1. Create cluster with vCenter support
+            2. Set Nova-Network VLAN Manager as a network backend
+            3. Set VMWare vCenter/ESXi datastore for images (Glance)
+            4. Add nodes with following roles:
+                controller
+                controller
+                controller
+                compute + cinder
+                compute-vmware
+            5. Assign vCenter cluster(s) to:
+                controller
+                compute-vmware
+            6. Deploy the cluster
+            7. Run network verification
+            8. Run OSTF
+
+        Duration: 2h 10min
+
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={'images_vcenter': True,
+                      'images_ceph': False})
+
+        logger.info("cluster is {}".format(cluster_id))
+
+        # Assign roles to nodes
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute', 'cinder'],
+                'slave-05': ['compute-vmware']
+            }
+        )
+
+        # Configure VMWare vCenter settings
+        self.configure_nova_vlan(cluster_id)
+        target_node_2 = self.node_name('slave-05')
+        self.fuel_web.vcenter_configure(
+            cluster_id,
+            vc_glance=True,
+            multiclusters=True,
+            target_node_2=target_node_2
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['sanity', 'smoke', 'ha', 'tests_platform'])
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
+          groups=["vcenter_ha_ceph"])
+    @log_snapshot_after_test
+    def vcenter_ha_ceph(self):
+        """Deploy environment in HA with ComputeVMWare and Ceph \
+        (Ceph RBD for volumes/images and RadosGW)
+
+        Scenario:
+            1. Create cluster with vCenter support
+            2. Set Nova-Network VLAN Manager as a network backend
+            3. Set Ceph as storage backend
+            4. Add nodes with following roles:
+                controller
+                controller
+                controller
+                ceph-osd
+                ceph-osd
+                compute + cinder
+                compute-vmware
+            5. Assign vCenter cluster(s) to:
+                controller
+                compute-vmware
+            6. Deploy the cluster
+            7. Run network verification
+            8. Run OSTF
+
+        Duration: 2h 10min
+
+        """
+        self.env.revert_snapshot("ready_with_9_slaves")
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={'images_ceph': True,
+                      'volumes_ceph': True,
+                      'objects_ceph': True,
+                      'volumes_lvm': False})
+
+        logger.info("cluster is {}".format(cluster_id))
+
+        # Assign roles to nodes
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['ceph-osd'],
+                'slave-05': ['ceph-osd'],
+                'slave-06': ['compute', 'cinder'],
+                'slave-07': ['compute-vmware']
+            }
+        )
+
+        # Configure VMWare vCenter settings
+        self.configure_nova_vlan(cluster_id)
+        target_node_2 = self.node_name('slave-07')
+        self.fuel_web.vcenter_configure(
+            cluster_id,
+            multiclusters=True,
+            target_node_2=target_node_2
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['sanity', 'smoke', 'ha', 'tests_platform'])
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
+          groups=["vcenter_ha_cinder_and_ceph"])
+    @log_snapshot_after_test
+    def vcenter_ha_cinder_and_ceph(self):
+        """Deploy environment in HA with Cinder and Ceph \
+        (Ceph RBD for images/ephemeral volumes and RadosGW)
+
+        Scenario:
+            1. Create cluster with vCenter support
+            2. Set Nova-Network VLAN Manager as a network backend
+            3. Set VMWare vCenter/ESXi datastore for images (Glance)
+            4. Add nodes with following roles:
+                controller
+                controller
+                controller
+                ceph-osd + cinder
+                ceph-osd + cinder-vmware
+            5. Assign vCenter cluster(s) to:
+                controller
+            6. Deploy the cluster
+            7. Run network verification
+            8. Run OSTF
+
+        Duration: 2h 10min
+
+        """
+        self.env.revert_snapshot("ready_with_9_slaves")
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={'volumes_lvm': True,
+                      'volumes_ceph': True,
+                      'objects_ceph': True})
+
+        logger.info("cluster is {}".format(cluster_id))
+
+        # Assign roles to nodes
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['ceph-osd', 'cinder'],
+                'slave-05': ['ceph-osd', 'cinder-vmware']
+            }
+        )
+
+        # Configure VMWare vCenter settings
+        self.configure_nova_vlan(cluster_id)
+        self.fuel_web.vcenter_configure(cluster_id)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['sanity', 'smoke', 'ha', 'tests_platform'])
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["vcenter_ha_multiroles_cindervmdk_and_cinder"])
+    @log_snapshot_after_test
+    def vcenter_ha_multiroles_cindervmdk_and_cinder(self):
+        """Deploy environment in HA with ComputeVMWare, Cinder and \
+        check multiroles with CinderVMDK
+
+        Scenario:
+            1. Create cluster with vCenter support
+            2. Set Nova-Network FlatDHCP Manager as a network backend
+            3. Set Ceph as storage backend
+            4. Add nodes with following roles:
+                controller
+                controller
+                controller + cinder + cinder-vmware
+                compute + cinder + cinder-vmware
+                compute-vmware
+            5. Assign vCenter cluster(s) to:
+                controller
+                compute-vmware
+            6. Deploy the cluster
+            7. Run network verification
+            8. Run OSTF
+
+        Duration: 2h 10min
+
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE)
+
+        logger.info("cluster is {}".format(cluster_id))
+
+        # Assign roles to nodes
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller', 'cinder', 'cinder-vmware'],
+                'slave-04': ['compute', 'cinder', 'cinder-vmware'],
+                'slave-05': ['compute-vmware']
+            }
+        )
+
+        # Configure VMWare vCenter settings
+        target_node_2 = self.node_name('slave-05')
+        self.fuel_web.vcenter_configure(
+            cluster_id,
+            target_node_2=target_node_2,
+            multiclusters=True
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['sanity', 'smoke', 'ha', 'tests_platform'])
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["vcenter_ha_multiroles_cindervmdk_and_ceph"])
+    @log_snapshot_after_test
+    def vcenter_ha_multiroles_cindervmdk_and_ceph(self):
+        """Deploy environment in HA with ComputeVMWare, Ceph and \
+        check multiroles with CinderVMDK
+
+        Scenario:
+            1. Create cluster with vCenter support
+            2. Set Nova-Network FlatDHCP Manager as a network backend
+            3. Set Ceph as storage backend
+            4. Add nodes with following roles:
+                controller
+                controller
+                controller + ceph-osd + cinder-vmware
+                compute + ceph-osd + cinder-vmware
+                compute-vmware
+            5. Assign vCenter cluster(s) to:
+                controller
+                compute-vmware
+            6. Deploy the cluster
+            7. Run network verification
+            8. Run OSTF
+
+        Duration: 2h 10min
+
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={'images_ceph': True,
+                      'volumes_ceph': True,
+                      'objects_ceph': True,
+                      'volumes_lvm': False})
+
+        logger.info("cluster is {}".format(cluster_id))
+
+        # Assign roles to nodes
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller', 'ceph-osd', 'cinder-vmware'],
+                'slave-04': ['compute', 'ceph-osd', 'cinder-vmware'],
+                'slave-05': ['compute-vmware']
+            }
+        )
+
+        # Configure VMWare vCenter settings
+        target_node_2 = self.node_name('slave-05')
+        self.fuel_web.vcenter_configure(
+            cluster_id,
+            target_node_2=target_node_2,
+            multiclusters=True
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['sanity', 'smoke', 'ha', 'tests_platform'])
