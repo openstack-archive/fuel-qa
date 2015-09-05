@@ -31,6 +31,7 @@ ENV_NAME = os.environ.get("ENV_NAME", "fuel_system_test")
 VIRTUAL_ENV = os.environ.get("VIRTUAL_ENV", "")
 
 ISO_PATH = os.environ.get('ISO_PATH')
+LOGS_DIR = os.environ.get('LOGS_DIR', os.getcwd())
 # cdrom or usb
 ADMIN_BOOT_DEVICE = os.environ.get('ADMIN_BOOT_DEVICE', 'cdrom')
 DNS = os.environ.get('DNS', '8.8.8.8')
@@ -38,8 +39,10 @@ PUBLIC_TEST_IP = os.environ.get('PUBLIC_TEST_IP', '8.8.8.8')
 
 DISABLE_SSL = get_var_as_bool('DISABLE_SSL', False)
 USER_OWNED_CERT = get_var_as_bool('USER_OWNED_CERT', True)
-PATH_TO_CERT = os.environ.get('PATH_TO_CERT', '/tmp/ca.crt')
-PATH_TO_PEM = os.environ.get('PATH_TO_PEM', '/tmp/ca.pem')
+PATH_TO_CERT = os.environ.get('PATH_TO_CERT', os.path.join(
+    LOGS_DIR, 'ca.crt'))
+PATH_TO_PEM = os.environ.get('PATH_TO_PEM', os.path.join(
+    LOGS_DIR, 'ca.pem'))
 
 OPENSTACK_RELEASE_CENTOS = 'centos'
 OPENSTACK_RELEASE_UBUNTU = 'ubuntu'
@@ -230,7 +233,6 @@ NEUTRON_SEGMENT = {
     'tun': 'tun'
 }
 
-LOGS_DIR = os.environ.get('LOGS_DIR', os.getcwd())
 USE_ALL_DISKS = get_var_as_bool('USE_ALL_DISKS', True)
 
 UPLOAD_MANIFESTS = get_var_as_bool('UPLOAD_MANIFESTS', False)
