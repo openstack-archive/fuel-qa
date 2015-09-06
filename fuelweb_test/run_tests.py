@@ -52,6 +52,8 @@ def import_tests():
     from tests import test_services  # noqa
     from tests import test_ha_one_controller  # noqa
     from tests import test_vcenter  # noqa
+    from tests import test_nsxv  # noqa
+
     from tests import test_reduced_footprint  # noqa
     from tests.tests_security import test_run_nessus  # noqa
     from tests.tests_separate_services import test_separate_db  # noqa
@@ -84,6 +86,7 @@ def import_tests():
     from tests.plugins.plugin_influxdb import test_plugin_influxdb  # noqa
     from tests.plugins.plugin_lbaas import test_plugin_lbaas  # noqa
     from tests.plugins.plugin_lma_collector import test_plugin_lma_collector  # noqa
+    from tests.plugins.plugin_nsxv import test_fuel_plugin_nsxv  # noqa
     from tests.plugins.plugin_reboot import test_plugin_reboot_task  # noqa
     from tests.plugins.plugin_vip_reservation import test_plugin_vip_reservation  # noqa
     from tests.plugins.plugin_zabbix import test_plugin_zabbix  # noqa
