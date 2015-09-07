@@ -482,10 +482,6 @@ class EnvironmentModel(object):
         assert_true(self.get_admin_node_ip() in "".join(out),
                     "dhcpcheck doesn't discover master ip")
 
-    def run_nailgun_agent(self, remote):
-        agent = remote.execute('/opt/nailgun/bin/agent')['exit_code']
-        logger.info("Nailgun agent run with exit_code: %s" % agent)
-
     def get_fuel_settings(self, remote=None):
         if not remote:
             remote = self.d_env.get_admin_remote()
