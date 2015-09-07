@@ -215,7 +215,7 @@ class TestHaNeutronAddCompute(TestBasic):
             should_fail=1)
 
 
-@test(groups=["ha", "ha_neutron_tun"])
+@test(groups=["ha", "ha_neutron_tun_scale"])
 class TestHaNeutronScalability(TestBasic):
     """TestHaNeutronScalability."""  # TODO documentation
 
