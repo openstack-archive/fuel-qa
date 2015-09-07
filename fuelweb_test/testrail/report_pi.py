@@ -25,7 +25,9 @@ from settings import JENKINS
 from settings import logger
 from settings import TestRailSettings
 from testrail_client import TestRailProject
-from report import get_tests_results
+from report import retry
+from report import TestResult
+
 from report import publish_results
 
 
@@ -42,6 +44,28 @@ def get_job_info(url):
     job_url = "/".join([url, 'api/json'])
     logger.debug("Request job info from %s", job_url)
     return json.load(urllib2.urlopen(job_url))
+
+
+@retry(count=3)
+def get_tests_results(systest_build):
+    tests_results = []
+    test_build = Build(systest_build['name'], systest_build['number'])
+    for test in test_build.test_data()['suites'][0]['cases']:
+        test_result = TestResult(
+            name=test['name'],
+            group=test['name'],
+            status=test['status'].lower(),
+            duration='{0}s'.format(int(test['duration']) + 1),
+            url='{0}testReport/(root)/{1}/'.format(test_build.url,
+                                                   test['name']),
+            version='_'.join([test_build.build_data["id"]] +
+                             (test_build.build_data["description"]
+                              or test['name']).split()),
+            description=test_build.build_data["description"] or
+                test['name'],
+        )
+        tests_results.append(test_result)
+    return tests_results
 
 
 def main():
@@ -83,8 +107,7 @@ def main():
                           'distro': config['name'].split()[0].lower()}
                          for config in project.get_config_by_name(
                              'Operation System')['configs']]
-    os_mile = {'6.1': ['Centos 6.5', 'Ubuntu 14.04'],
-               '6.0.1': ['Centos 6.5', 'Ubuntu 12.04']}
+    os_mile = {'7.0': ['Ubuntu 14.04']}
 
     tests_results = {}
 
@@ -95,21 +118,22 @@ def main():
 
     # Analyze each test individually
     for run_one in runs:
-        if '5.1' in run_one['url']:
-            continue  # Release 5.1 to skip
         tests_result = get_job_info(run_one['url'])
         if not tests_result['description']:
             continue  # Not completed results to skip
         if 'skipping' in tests_result['description']:
             continue  # Not performed tests to skip
         tests_job = {'result': tests_result['result'],
-                     'name': (options.job_name + '/' +
-                              tests_result['url'].split('/')[-3]),
+                     'name': (options.job_name + '/' + tests_result['url'].
+                              split('/')[-3]),
                      'number': int(tests_result['url'].split('/')[-2]),
-                     'mile': (tests_result['description'].
-                              split()[0].split('-')[0]),
-                     'iso': (int(tests_result['description'].
-                             split()[0].split('-')[1]))}
+                     'mile': ('7.0'),
+                     'iso': (tests_result['description'].split()[-1].
+                             split('-')[-1])}
+        if tests_job['iso'].isdigit():
+            tests_job['iso'] = int(tests_job['iso'])
+        else:
+            continue    # wrong results
         if tests_job['mile'] not in tests_results:
             tests_results[tests_job['mile']] = {}
         test_mile = tests_results[tests_job['mile']]
@@ -117,8 +141,7 @@ def main():
             test_mile[tests_job['iso']] = {}
         test_iso = test_mile[tests_job['iso']]
         for os in operation_systems:
-            if os['distro'] in tests_job['name'].lower() and\
-                    os['name'] in os_mile[tests_job['mile']]:
+            if os['name'] in os_mile[tests_job['mile']]:
                 if os['id'] not in test_iso:
                     (test_iso[os['id']]) = []
                 test_os_id = test_iso[os['id']]
