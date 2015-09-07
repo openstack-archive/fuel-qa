@@ -1133,16 +1133,38 @@ class FuelWebClient(object):
         return nailgun_nodes
 
     @logwrap
-    def update_node_networks(self, node_id, interfaces_dict, raw_data=None):
-        # fuelweb_admin is always on eth0
-        interfaces_dict['eth0'] = interfaces_dict.get('eth0', [])
-        if 'fuelweb_admin' not in interfaces_dict['eth0']:
-            interfaces_dict['eth0'].append('fuelweb_admin')
-
+    def update_node_networks(self, node_id, interfaces_dict,
+                             raw_data=None,
+                             override_ifaces_params=None):
         interfaces = self.client.get_node_interfaces(node_id)
 
-        if raw_data:
-            interfaces.append(raw_data)
+        if raw_data is not None:
+            interfaces.extend(raw_data)
+
+        def get_bond_ifaces():
+            # Filter out all interfaces to be bonded
+            ifaces = []
+            for bond in [i for i in interfaces if i['type'] == 'bond']:
+                ifaces.extend(s['name'] for s in bond['slaves'])
+            return ifaces
+
+        # fuelweb_admin is always on eth0 unless the interface is not bonded
+        if 'eth0' not in get_bond_ifaces():
+            interfaces_dict['eth0'] = interfaces_dict.get('eth0', [])
+            if 'fuelweb_admin' not in interfaces_dict['eth0']:
+                interfaces_dict['eth0'].append('fuelweb_admin')
+
+        def get_iface_by_name(ifaces, name):
+            iface = filter(lambda iface: iface['name'] == name, ifaces)
+            assert_true(len(iface) > 0,
+                        "Interface with name {} is not present on "
+                        "node. Please check override params.".format(name))
+            return iface[0]
+
+        if override_ifaces_params is not None:
+            for interface in override_ifaces_params:
+                get_iface_by_name(interfaces, interface['name']).\
+                    update(interface)
 
         all_networks = dict()
         for interface in interfaces:

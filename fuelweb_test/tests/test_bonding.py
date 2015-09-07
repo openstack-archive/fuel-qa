@@ -12,7 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from copy import deepcopy
+from urllib2 import HTTPError
+
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_raises
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -21,9 +25,40 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
+BOND_CONFIG = [
+    {
+        'mac': None,
+        'mode': 'active-backup',
+        'name': 'lnx-bond0',
+        'slaves': [
+            {'name': 'eth5'},
+            {'name': 'eth4'},
+            {'name': 'eth3'},
+            {'name': 'eth2'}
+        ],
+        'state': None,
+        'type': 'bond',
+        'assigned_networks': []
+    }
+]
+
+INTERFACES = {
+    'lnx-bond0': [
+        'public',
+        'management',
+        'storage'
+    ],
+    'eth0': ['fuelweb_admin']
+}
+
+
 @test(groups=["bonding_nova", "bonding_ha_one_controller", "bonding"])
 class BondingHAOneController(TestBasic):
     """BondingHAOneController."""  # TODO documentation
+
+    NOVANET_BOND_CONFIG = deepcopy(BOND_CONFIG)
+    NOVANET_INTERFACES = deepcopy(INTERFACES)
+    NOVANET_INTERFACES['lnx-bond0'].append('fixed')
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_bonding_nova_flat"])
@@ -34,8 +69,9 @@ class BondingHAOneController(TestBasic):
         Scenario:
             1. Create cluster
             2. Add 1 node with controller role
-            3. Add 1 node with compute role
-            4. Setup bonding for all interfaces except admin/pxe
+            3. Add 1 node with compute role and 1 node with cinder role
+            4. Setup bonding for all interfaces (including admin interface
+               bonding)
             5. Run network verification
             6. Deploy the cluster
             7. Run network verification
@@ -43,7 +79,6 @@ class BondingHAOneController(TestBasic):
 
         Duration 30m
         Snapshot deploy_bonding_nova_flat
-
         """
 
         self.env.revert_snapshot("ready_with_3_slaves")
@@ -61,43 +96,17 @@ class BondingHAOneController(TestBasic):
             }
         )
 
-        raw_data = {
-            'mac': None,
-            'mode': 'active-backup',
-            'name': 'lnx-bond0',
-            'slaves': [
-                {'name': 'eth4'},
-                {'name': 'eth3'},
-                {'name': 'eth2'},
-                {'name': 'eth1'}
-            ],
-            'state': None,
-            'type': 'bond',
-            'assigned_networks': []
-        }
-
-        interfaces = {
-            'eth0': ['fuelweb_admin'],
-            'lnx-bond0': [
-                'public',
-                'management',
-                'fixed',
-                'storage'
-            ]
-        }
-
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
-                node['id'], interfaces_dict=interfaces,
-                raw_data=raw_data
+                node['id'], interfaces_dict=self.NOVANET_INTERFACES,
+                raw_data=self.NOVANET_BOND_CONFIG
             )
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
         self.fuel_web.verify_network(cluster_id)
 
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_bonding_nova_flat")
 
@@ -111,7 +120,8 @@ class BondingHAOneController(TestBasic):
             1. Create cluster
             2. Add 1 node with controller role
             3. Add 1 node with compute role and 1 node with cinder role
-            4. Setup bonding for all interfaces except admin/pxe
+            4. Setup bonding for all interfaces (including admin interface
+               bonding)
             5. Run network verification
             6. Deploy the cluster
             7. Run network verification
@@ -120,7 +130,6 @@ class BondingHAOneController(TestBasic):
 
         Duration 30m
         Snapshot deploy_bonding_nova_vlan
-
         """
 
         self.env.revert_snapshot("ready_with_3_slaves")
@@ -137,53 +146,69 @@ class BondingHAOneController(TestBasic):
             }
         )
 
-        bond_config = {
-            'mac': None,
-            'mode': 'active-backup',
-            'name': 'lnx-bond0',
-            'slaves': [
-                {'name': 'eth4'},
-                {'name': 'eth3'},
-                {'name': 'eth2'},
-                {'name': 'eth1'}
-            ],
-            'state': None,
-            'type': 'bond',
-            'assigned_networks': []
-        }
-
-        interfaces = {
-            'eth0': ['fuelweb_admin'],
-            'lnx-bond0': [
-                'public',
-                'management',
-                'storage',
-                'fixed'
-            ]
-        }
-
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
-                node['id'], interfaces_dict=interfaces,
-                raw_data=bond_config
+                node['id'], interfaces_dict=self.NOVANET_INTERFACES,
+                raw_data=self.NOVANET_BOND_CONFIG
             )
         self.fuel_web.update_vlan_network_fixed(
             cluster_id, amount=8, network_size=32)
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
         self.fuel_web.verify_network(cluster_id)
 
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_bonding_nova_vlan")
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["negative_admin_bonding_in_lacp_mode"])
+    @log_snapshot_after_test
+    def negative_admin_bonding_in_lacp_mode(self):
+        """Verify that lacp mode cannot be enabled for admin bond
+
+        Scenario:
+            1. Create cluster
+            2. Add 1 node with controller role
+            3. Add 1 node with compute role and 1 node with cinder role
+            4. Verify that lacp mode cannot be enabled for admin bond
+
+        Duration 4m
+        Snapshot negative_admin_bonding_in_lacp_mode
+        """
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+        )
+        self.fuel_web.update_nodes(
+            cluster_id, {
+                'slave-01': ['controller'],
+                'slave-02': ['compute'],
+                'slave-03': ['cinder']
+            }
+        )
+
+        nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        invalid_bond_conf = deepcopy(self.NOVANET_BOND_CONFIG)
+        invalid_bond_conf[1]['mode'] = '802.3ad'
+        assert_raises(
+            HTTPError,
+            self.fuel_web.update_node_networks,
+            nailgun_nodes[0]['id'],
+            interfaces_dict=self.NOVANET_INTERFACES,
+            raw_data=invalid_bond_conf)
 
 
 @test(groups=["bonding_neutron", "bonding_ha", "bonding"])
 class BondingHA(TestBasic):
     """Tests for HA bonding."""
+
+    NEUTRON_BOND_CONFIG = deepcopy(BOND_CONFIG)
+    NEUTRON_INTERFACES = deepcopy(INTERFACES)
+    NEUTRON_INTERFACES['lnx-bond0'].append('private')
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_bonding_neutron_vlan"])
@@ -195,7 +220,8 @@ class BondingHA(TestBasic):
             1. Create cluster
             2. Add 3 nodes with controller role
             3. Add 2 node with compute role
-            4. Setup bonding for all interfaces except admin/pxe
+            4. Setup bonding for all interfaces (including admin interface
+               bonding)
             5. Run network verification
             6. Deploy the cluster
             7. Run network verification
@@ -204,7 +230,6 @@ class BondingHA(TestBasic):
 
         Duration 70m
         Snapshot deploy_bonding_neutron_vlan
-
         """
 
         self.env.revert_snapshot("ready_with_5_slaves")
@@ -229,41 +254,16 @@ class BondingHA(TestBasic):
             }
         )
 
-        raw_data = {
-            'mac': None,
-            'mode': 'active-backup',
-            'name': 'lnx-bond0',
-            'slaves': [
-                {'name': 'eth4'},
-                {'name': 'eth3'},
-                {'name': 'eth2'},
-                {'name': 'eth1'}
-            ],
-            'state': None,
-            'type': 'bond',
-            'assigned_networks': []
-        }
-
-        interfaces = {
-            'eth0': ['fuelweb_admin'],
-            'lnx-bond0': [
-                'public',
-                'management',
-                'storage',
-                'private'
-            ]
-        }
-
         net_params = self.fuel_web.client.get_networks(cluster_id)
 
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
-                node['id'], interfaces_dict=interfaces,
-                raw_data=raw_data
+                node['id'], interfaces_dict=self.NEUTRON_INTERFACES,
+                raw_data=self.NEUTRON_BOND_CONFIG
             )
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
 
         cluster = self.fuel_web.client.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
@@ -271,9 +271,7 @@ class BondingHA(TestBasic):
                          ['segmentation_type']), segment_type)
 
         self.fuel_web.verify_network(cluster_id)
-
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_bonding_neutron_vlan")
 
@@ -287,7 +285,8 @@ class BondingHA(TestBasic):
             1. Create cluster
             2. Add 3 nodes with controller role
             3. Add 2 node with compute role
-            4. Setup bonding for all interfaces
+            4. Setup bonding for all interfaces (including admin interface
+               bonding)
             5. Run network verification
             6. Deploy the cluster
             7. Run network verification
@@ -295,7 +294,6 @@ class BondingHA(TestBasic):
 
         Duration 70m
         Snapshot deploy_bonding_neutron_gre
-
         """
 
         self.env.revert_snapshot("ready_with_5_slaves")
@@ -320,41 +318,16 @@ class BondingHA(TestBasic):
             }
         )
 
-        raw_data = {
-            'mac': None,
-            'mode': 'active-backup',
-            'name': 'lnx-bond0',
-            'slaves': [
-                {'name': 'eth4'},
-                {'name': 'eth3'},
-                {'name': 'eth2'},
-                {'name': 'eth1'}
-            ],
-            'state': None,
-            'type': 'bond',
-            'assigned_networks': []
-        }
-
-        interfaces = {
-            'eth0': ['fuelweb_admin'],
-            'lnx-bond0': [
-                'public',
-                'management',
-                'private',
-                'storage'
-            ]
-        }
-
         net_params = self.fuel_web.client.get_networks(cluster_id)
 
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
-                node['id'], interfaces_dict=interfaces,
-                raw_data=raw_data
+                node['id'], interfaces_dict=self.NEUTRON_INTERFACES,
+                raw_data=self.NEUTRON_BOND_CONFIG
             )
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
 
         cluster = self.fuel_web.client.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
@@ -362,8 +335,6 @@ class BondingHA(TestBasic):
                          ['segmentation_type']), segment_type)
 
         self.fuel_web.verify_network(cluster_id)
-
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_bonding_neutron_gre")
