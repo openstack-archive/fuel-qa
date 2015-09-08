@@ -167,7 +167,7 @@ def get_version_from_artifacts(jenkins_build_data):
         ''
 
 
-def expand_test_group(group, systest_build_name):
+def expand_test_group(group, systest_build_name, os):
     """Expand specified test names with the group name of the job
        which is taken from the build name, for example:
        group: 'setup_master'
@@ -175,20 +175,27 @@ def expand_test_group(group, systest_build_name):
        return: 'setup_master_bonding_ha_one_controller'
     """
     if group in GROUPS_TO_EXPAND:
-        systest_group_name = systest_build_name.split('.')[-1]
+        if os in systest_build_name:
+            sep = '.' + os + '.'
+        else:
+            sep = '.'
+        systest_group_name = systest_build_name.split(sep)[-1]
+
         if systest_group_name:
             group = '_'.join([group, systest_group_name])
     return group
 
 
 @retry(count=3)
-def get_tests_results(systest_build):
+def get_tests_results(systest_build, os):
     tests_results = []
     test_build = Build(systest_build['name'], systest_build['number'])
     for test in test_build.test_data()['suites'][0]['cases']:
         test_result = TestResult(
             name=test['name'],
-            group=expand_test_group(test['className'], systest_build['name']),
+            group=expand_test_group(test['className'],
+                                    systest_build['name'],
+                                    os),
             status=test['status'].lower(),
             duration='{0}s'.format(int(test['duration']) + 1),
             url='{0}testReport/(root)/{1}/'.format(test_build.url,
@@ -461,7 +468,7 @@ def main():
                 continue
         for os in tests_results.keys():
             if os in systest_build['name'].lower():
-                tests_results[os].extend(get_tests_results(systest_build))
+                tests_results[os].extend(get_tests_results(systest_build, os))
 
     # STEP #3
     # Create new TestPlan in TestRail (or get existing) and add TestRuns
