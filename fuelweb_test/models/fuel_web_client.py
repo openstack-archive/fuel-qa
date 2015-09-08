@@ -1444,7 +1444,6 @@ class FuelWebClient(object):
         if not nodegroups:
             logger.info('Update network settings of cluster %s', cluster_id)
             new_settings = self.update_net_settings(net_config)
-            self.update_floating_ranges(new_settings, public_nets=['public'])
         else:
             new_settings = net_config
             for nodegroup in nodegroups:
@@ -1453,10 +1452,8 @@ class FuelWebClient(object):
                 new_settings = self.update_net_settings(new_settings,
                                                         nodegroup,
                                                         cluster_id)
-            public_nets = [self._get_true_net_name('public', ng['pools'])
-                           for ng in nodegroups]
-            self.update_floating_ranges(new_settings, public_nets=public_nets)
 
+        self.update_floating_ranges(new_settings)
         self.client.update_network(
             cluster_id=cluster_id,
             networking_parameters=new_settings["networking_parameters"],
@@ -1494,18 +1491,18 @@ class FuelWebClient(object):
                                      seg_type=seg_type)
             return network_configuration
 
-    def update_floating_ranges(self, network_configuration, public_nets):
+    def update_floating_ranges(self, network_configuration):
         nc = network_configuration["networking_parameters"]
-        nc["floating_ranges"] = []
 
-        for pub_net_name in public_nets:
-            public = self.environment.d_env.get_network(name=pub_net_name).ip
+        public = self.environment.d_env.get_network(name='public').ip
 
-            if not BONDING:
-                float_range = public
-            else:
-                float_range = list(public.subnet(new_prefix=27))[0]
-            nc["floating_ranges"].extend(self.get_range(float_range, 1))
+        if not BONDING:
+            float_range = public
+        else:
+            float_range = list(public.subnet(new_prefix=27))[0]
+        # Setting of multiple floating IP ranges disabled for 7.0, LP#1490657
+        # This feature moved to 8.0: LP#1371363, LP#1490578
+        nc["floating_ranges"] = self.get_range(float_range, 1)
 
     def set_network(self, net_config, net_name, net_pools=None, seg_type=None):
         nets_wo_floating = ['public', 'management', 'storage']
