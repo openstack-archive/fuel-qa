@@ -237,7 +237,7 @@ class SeparateHorizonFailover(TestBasic):
         nailgun_node = self.fuel_web.update_nodes(cluster_id, node,
                                                   False, True)
         nodes = filter(lambda x: x["pending_deletion"] is True, nailgun_node)
-        self.fuel_web.deploy_cluster(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         wait(lambda: self.fuel_web.is_node_discovered(nodes[0]),
              timeout=6 * 60)
         self.fuel_web.verify_network(cluster_id)
