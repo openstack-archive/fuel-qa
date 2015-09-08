@@ -162,10 +162,11 @@ class TestHaFailoverBase(TestBasic):
                 should_fail=1)
 
     def ha_disconnect_controllers(self):
-        if not self.env.d_env.has_snapshot(self.snapshot_name):
+        if not self.env.revert_snapshot(self.snapshot_name):
             raise SkipTest()
 
-        self.env.revert_snapshot(self.snapshot_name)
+        cluster_id = self.fuel_web.client.get_cluster_id(
+            self.__class__.__name__)
 
         with self.fuel_web.get_ssh_for_node(
                 self.env.d_env.nodes().slaves[0].name) as remote:
@@ -174,15 +175,12 @@ class TestHaFailoverBase(TestBasic):
                    'iptables -I OUTPUT -o br-mgmt -j DROP')
             remote.check_call(cmd)
 
-        cluster_id = self.fuel_web.client.get_cluster_id(
-            self.__class__.__name__)
-
         # Wait until MySQL Galera is UP on some controller
         self.fuel_web.wait_mysql_galera_is_up(['slave-02'])
         try:
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
-                test_sets=['sanity', 'smoke'], should_fail=1)
+                test_sets=['sanity', 'smoke', 'ha'], should_fail=1)
         except AssertionError:
             time.sleep(600)
             self.fuel_web.run_ostf(cluster_id=cluster_id,
