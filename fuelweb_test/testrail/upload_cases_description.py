@@ -122,8 +122,8 @@ def get_tests_groups_from_jenkins(runner_name, build_number, distros):
                 sep = '.' + distro + '.'
                 res.append(job_name.split(sep)[-1])
                 break
-            else:
-                res.append(job_name.split('.')[-1])
+        else:
+            res.append(job_name.split('.')[-1])
     return res
 
 
