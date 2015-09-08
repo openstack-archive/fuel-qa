@@ -73,13 +73,10 @@ class TestHaNeutronFailover(TestHaFailoverBase):
         Scenario:
             1. Block traffic on br-mgmt of the first controller
             2. Check pacemaker status
-            3. Revert environment
-            4. Block traffic on br-mgmt of the second controller
-            5. Check pacemaker status
-            6. Wait until MySQL Galera is UP on some controller
-            7. Run OSTF
+            3. Wait until MySQL Galera is UP on some controller
+            4. Run OSTF
 
-        Duration 45m
+        Duration 15m
         """
         super(self.__class__, self).ha_disconnect_controllers()
 
