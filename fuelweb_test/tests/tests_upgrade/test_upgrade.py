@@ -502,7 +502,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             9. Run network verification
         """
         # TODO(ddmitriev): change snapshot name to actual when reverting 7.0
-        if not self.env.d_env.has_snapshot('deploy_neutron_gre'):
+        if hlp_data.OPENSTACK_RELEASE_CENTOS == hlp_data.OPENSTACK_RELEASE or\
+           not self.env.d_env.has_snapshot('deploy_neutron_gre'):
             raise SkipTest()
 
         self.env.revert_snapshot("deploy_neutron_gre")
