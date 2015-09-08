@@ -66,7 +66,8 @@ class BondingTest(TestBasic):
         skip_interfaces = set([r'^pub-base$', r'^vr_pub-base$', r'^vr-base$',
                                r'^mgmt-base$', r'^vr-host-base$',
                                r'^mgmt-conntrd$', r'^hapr-host$',
-                               r'^(tap|qr-|qg-|p_).*$'])
+                               r'^(tap|qr-|qg-|p_).*$', r'^v_vrouter.*$',
+                               r'^v_(management|public)$'])
 
         nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
 
@@ -97,14 +98,16 @@ class BondingTest(TestBasic):
 
                     for iface in saved_settings:
                         if iface not in actual_settings:
-                            logger.error("Interface '{0}' doesn't exist after"
+                            logger.error("Interface '{0}' doesn't exist after "
                                          "reboot of '{1}'!".format(
                                              iface, node['hostname']))
                             continue
                         if saved_settings[iface] != actual_settings[iface]:
-                            logger.error("Interface '{0}' settings were "
-                                         "changed after reboot: was {1}, now "
-                                         "{2}.".format(iface,
+                            logger.error("Interface '{0}' settings "
+                                         "were changed after reboot "
+                                         "of '{1}': was  {2}, now "
+                                         "{3}.".format(iface,
+                                                       node['hostname'],
                                                        saved_settings[iface],
                                                        actual_settings[iface]))
 
