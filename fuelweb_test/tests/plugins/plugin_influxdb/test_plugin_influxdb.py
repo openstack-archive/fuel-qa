@@ -46,7 +46,7 @@ class TestInfluxdbPlugin(TestBasic):
             3. Create cluster
             4. Add 1 node with controller role
             5. Add 1 node with compute role
-            6. Add 1 node with base-os role
+            6. Add 1 node with influxdb_grafana role
             7. Deploy the cluster
             8. Check that plugin is working
             9. Run OSTF
@@ -75,7 +75,7 @@ class TestInfluxdbPlugin(TestBasic):
         plugin_name = 'influxdb_grafana'
         options = {
             'metadata/enabled': True,
-            'node_name/value': 'slave-03_base-os',
+            'node_name/value': 'slave-03_influxdb_grafana',
             'influxdb_rootpass/value': 'lmapass',
             'influxdb_userpass/value': 'lmapass',
             'grafana_userpass/value': 'lmapass',
@@ -92,7 +92,7 @@ class TestInfluxdbPlugin(TestBasic):
             {
                 'slave-01': ['controller'],
                 'slave-02': ['compute'],
-                'slave-03': ['base-os']
+                'slave-03': ['influxdb_grafana']
             }
         )
 
