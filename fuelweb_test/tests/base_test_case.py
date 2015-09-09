@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from proboscis import TestProgram
 from proboscis import SkipTest
 from proboscis import test
 
@@ -33,6 +34,7 @@ class TestBasic(object):
     def __init__(self):
         self.env = EnvironmentModel()
         self.fuel_web = self.env.fuel_web
+        self.test_program = TestProgram()
 
     def check_run(self, snapshot_name):
         """Checks if run of current test is required.
@@ -67,6 +69,32 @@ class TestBasic(object):
         else:
             logger.info("\n" + " " * 55 + "<<< {0}. (no step description "
                         "in scenario) {1}>>>".format(str(step), details_msg))
+
+    def is_make_snapshot(self):
+        """Check if the test 'test_name' is a dependency for other planned
+        tests (snapshot is required). If yes return True, if no - False.
+
+        :rtype: bool
+        """
+        test_name = get_test_method_name()
+        tests = self.test_program.plan.tests
+        test_cases = [t for t in tests if t.entry.method.__name__ == test_name]
+        if len(test_cases) != 1:
+            logger.warning("Method 'is_make_snapshot' is called from function "
+                           "which is not a test case: {0}".format(test_name))
+            return False
+        test_groups = set(test_cases[0].entry.info.groups)
+        dependent_tests = set()
+        dependent_groups = set()
+        for t in tests:
+            for func in t.entry.info.depends_on:
+                dependent_tests.add(func.__name__)
+            for group in t.entry.info.depends_on_groups:
+                dependent_groups.add(group)
+        if test_name in dependent_tests or \
+                test_groups & dependent_groups:
+            return True
+        return False
 
 
 @test

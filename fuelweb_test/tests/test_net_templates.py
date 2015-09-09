@@ -108,7 +108,8 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
 
         self.check_services_networks(cluster_id, network_template)
 
-        self.env.make_snapshot("deploy_cinder_net_tmpl")
+        self.env.make_snapshot("deploy_cinder_net_tmpl",
+                               is_make=self.is_make_snapshot())
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ceph_net_tmpl"])
@@ -195,3 +196,81 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
         self.check_services_networks(cluster_id, network_template)
 
         self.env.make_snapshot("deploy_ceph_net_tmpl")
+
+    @test(depends_on_groups=["deploy_cinder_net_tmpl"],
+          groups=["add_nodes_net_tmpl"])
+    @log_snapshot_after_test
+    def add_nodes_net_tmpl(self):
+        """Add nodes to operational environment with network template
+
+        Scenario:
+            1. Revert snapshot with deployed environment
+            2. Bootstrap 2 more slave nodes
+            3. Add 1 controller + cinder and 1 compute + cinder nodes
+            4. Upload 'cinder_add_nodes' network template with broken
+               network mapping for new nodes
+            5. Run network verification. Check it failed.
+            6. Upload 'cinder' network template'
+            7. Run network verification
+            8. Deploy cluster
+            9. Run network verification
+            10. Run health checks (OSTF)
+            11. Check L3 network configuration on slaves
+            12. Check that services are listening on their networks only
+
+        Duration 60m
+        Snapshot add_nodes_net_tmpl
+        """
+
+        self.env.revert_snapshot("deploy_cinder_net_tmpl")
+
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[3:5])
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-04': ['controller', 'cinder'],
+                'slave-05': ['compute', 'cinder'],
+            },
+            update_interfaces=False
+        )
+
+        network_template = get_network_template('cinder_add_nodes')
+        self.fuel_web.client.upload_network_template(
+            cluster_id=cluster_id, network_template=network_template)
+        self.fuel_web.verify_network(cluster_id, success=False)
+
+        network_template = get_network_template('cinder')
+        self.fuel_web.client.upload_network_template(
+            cluster_id=cluster_id, network_template=network_template)
+        networks = self.generate_networks_for_template(
+            template=network_template,
+            ip_network='10.200.0.0/16',
+            ip_prefixlen='24')
+        existing_networks = self.fuel_web.client.get_network_groups()
+        networks = self.create_custom_networks(networks, existing_networks)
+
+        logger.debug('Networks: {0}'.format(
+            self.fuel_web.client.get_network_groups()))
+
+        self.fuel_web.verify_network(cluster_id)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.verify_network(cluster_id)
+
+        self.check_ipconfig_for_template(cluster_id, network_template,
+                                         networks)
+        self.check_services_networks(cluster_id, network_template)
+
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['smoke', 'sanity',
+                                          'ha', 'tests_platform'])
+        self.check_ipconfig_for_template(cluster_id, network_template,
+                                         networks)
+
+        self.check_services_networks(cluster_id, network_template)
+
+        self.env.make_snapshot("add_nodes_net_tmpl")
