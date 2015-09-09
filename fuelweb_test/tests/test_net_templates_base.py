@@ -220,7 +220,14 @@ class TestNetworkTemplatesBase(TestBasic):
             {
                 'name': 'swift-api',
                 'network_roles': ['swift/api'],
-                'tcp_ports': [6000, 6001, 6002, 8080],
+                'tcp_ports': [8080],
+                'udp_ports': [],
+                'enabled': True
+            },
+            {
+                'name': 'swift-replication',
+                'network_roles': ['swift/replication'],
+                'tcp_ports': [6000, 6001, 6002],
                 'udp_ports': [],
                 'enabled': True
             },
