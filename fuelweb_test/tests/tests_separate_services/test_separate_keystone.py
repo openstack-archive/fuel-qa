@@ -26,7 +26,8 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["thread_separate_services", "thread_1_separate_services"])
+@test(groups=["thread_separate_services",
+              "thread_keystone_separate_services"])
 class SeparateKeystone(TestBasic):
     """SeparateKeystone"""  # TODO documentation
 
@@ -122,7 +123,8 @@ class SeparateKeystone(TestBasic):
         self.env.make_snapshot("separate_keystone_service", is_make=True)
 
 
-@test(groups=["thread_separate_services", "thread_1_separate_services"])
+@test(groups=["thread_separate_services",
+              "thread_keystone_separate_services"])
 class SeparateKeystoneFailover(TestBasic):
     """SeparateKeystoneFailover"""  # TODO documentation
 
