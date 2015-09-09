@@ -76,10 +76,6 @@ adv_net_template:
           ep: br-cinderiscsi
         swift-replication:
           ep: br-swiftrepl
-        ceph-replication:
-          ep: br-cephrepl
-        ceph-radosgw:
-          ep: br-cephrados
     network_scheme:
       storage:
         transformations:
@@ -311,5 +307,21 @@ adv_net_template:
           mgmt/database: br-database
           cinder/iscsi: br-cinderiscsi
           swift/replication: br-swiftrepl
+      unused:
+        transformations:
+          - action: add-br
+            name: br-cephrepl
+          - action: add-port
+            bridge: br-cephrepl
+            name: <% if4 %>.221
+          - action: add-br
+            name: br-cephrados
+          - action: add-port
+            bridge: br-cephrados
+            name: <% if4 %>.222
+        endpoints:
+          - br-cephrepl
+          - br-cephrados
+        roles:
           ceph/replication: br-cephrepl
           ceph/radosgw: br-cephrados
