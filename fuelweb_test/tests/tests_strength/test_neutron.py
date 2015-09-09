@@ -36,6 +36,16 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
     @classmethod
     @logwrap
+    def get_node_with_dhcp(cls, self, os_conn, net_id):
+        node = os_conn.get_node_with_dhcp_for_network(net_id)[0]
+        node_fqdn = self.fuel_web.get_fqdn_by_hostname(node)
+        logger.debug('node name with dhcp is {0}'.format(node))
+        devops_node = self.fuel_web.find_devops_node_by_nailgun_fqdn(
+            node_fqdn, self.env.d_env.nodes().slaves[0:6])
+        return devops_node
+
+    @classmethod
+    @logwrap
     def get_node_with_l3(cls, self, node_with_l3):
         node_with_l3_fqdn = self.fuel_web.get_fqdn_by_hostname(node_with_l3)
         logger.debug("new node with l3 is {0}".format(node_with_l3))
@@ -159,11 +169,9 @@ class TestNeutronFailover(base_test_case.TestBasic):
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
 
+        # Get remote to the controller with running DHCP agent for net04
         net_id = os_conn.get_network('net04')['id']
-
-        # any controller could be used as devops_node
-        devops_node = self.env.d_env.nodes().slaves[0]
-
+        devops_node = self.get_node_with_dhcp(self, os_conn, net_id)
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
         remote = self.env.d_env.get_ssh_to_remote(_ip)
 
@@ -230,10 +238,11 @@ class TestNeutronFailover(base_test_case.TestBasic):
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
 
+        # Get remote to the controller with running DHCP agent for net04
         net_id = os_conn.get_network('net04')['id']
-
-        # any controller could be used
-        remote = self.fuel_web.get_ssh_for_node("slave-01")
+        devops_node = self.get_node_with_dhcp(self, os_conn, net_id)
+        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
+        remote = self.env.d_env.get_ssh_to_remote(_ip)
 
         dhcp_namespace = ''.join(remote.execute('ip netns | grep {0}'.format(
             net_id))['stdout']).rstrip()
@@ -304,12 +313,12 @@ class TestNeutronFailover(base_test_case.TestBasic):
             self.fuel_web.get_public_vip(cluster_id))
 
         net_id = os_conn.get_network('net04')['id']
-
-        # Get remote to the current l3 router
         router_id = os_conn.get_routers_ids()[0]
-        node_with_l3 = os_conn.get_l3_agent_hosts(router_id)[0]
-        d_node = self.fuel_web.get_devops_node_by_nailgun_fqdn(node_with_l3)
-        remote = self.fuel_web.get_ssh_for_node(d_node.name)
+
+        # Get remote to the controller with running DHCP agent for net04
+        devops_node = self.get_node_with_dhcp(self, os_conn, net_id)
+        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
+        remote = self.env.d_env.get_ssh_to_remote(_ip)
 
         dhcp_namespace = ''.join(remote.execute('ip netns | grep {0}'.format(
             net_id))['stdout']).rstrip()
