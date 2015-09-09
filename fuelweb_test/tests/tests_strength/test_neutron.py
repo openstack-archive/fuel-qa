@@ -46,11 +46,15 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
     @classmethod
     @logwrap
-    def create_instance_with_keypair(cls, os_conn, remote):
+    def create_instance_with_keypair(cls, os_conn, remote, sync_host=None):
         remote.execute(
             '. openrc;'
             ' nova keypair-add instancekey > /root/.ssh/webserver_rsa')
         remote.execute('chmod 400 /root/.ssh/webserver_rsa')
+        if sync_host:
+            for host in sync_host:
+                remote.execute("scp /root/.ssh/webserver_rsa "
+                               "{0}:/root/.ssh/".format(host))
         instance = os_conn.create_server_for_migration(
             neutron=True, key_name='instancekey')
         return instance
@@ -161,19 +165,23 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         net_id = os_conn.get_network('net04')['id']
 
-        # any controller could be used as devops_node
-        devops_node = self.env.d_env.nodes().slaves[0]
-
-        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
+        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         remote = self.env.d_env.get_ssh_to_remote(_ip)
 
         dhcp_namespace = ''.join(remote.execute('ip netns | grep {0}'.format(
             net_id))['stdout']).rstrip()
         logger.debug('dhcp namespace is {0}'.format(dhcp_namespace))
 
+        ctrl_hostnames = {}
+        for n in ['slave-02', 'slave-03']:
+            n_host = self.fuel_web.get_nailgun_node_by_name('slave-02')
+            ctrl_hostnames.append(n_host['hostname'])
+
         instance_ip = \
             self.create_instance_with_keypair(
-                os_conn, remote).addresses['net04'][0]['addr']
+                os_conn,
+                remote,
+                sync_host=ctrl_hostnames).addresses['net04'][0]['addr']
         logger.debug('instance internal ip is {0}'.format(instance_ip))
 
         router_id = os_conn.get_routers_ids()[0]
@@ -181,7 +189,7 @@ class TestNeutronFailover(base_test_case.TestBasic):
         self.check_instance_connectivity(remote, dhcp_namespace, instance_ip)
 
         node_with_l3 = os_conn.get_l3_agent_hosts(router_id)[0]
-        self.get_node_with_l3(self, node_with_l3)
+        devops_node = self.get_node_with_l3(self, node_with_l3)
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
         new_remote = self.env.d_env.get_ssh_to_remote(_ip)
 
