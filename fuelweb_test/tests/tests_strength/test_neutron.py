@@ -17,6 +17,7 @@ import re
 from devops.helpers.helpers import wait
 from devops.error import TimeoutError
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
 from proboscis import SkipTest
 from proboscis import test
 
@@ -25,6 +26,7 @@ from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.decorators import retry
+from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.tests import base_test_case
@@ -82,6 +84,12 @@ class TestNeutronFailover(base_test_case.TestBasic):
     @classmethod
     @logwrap
     def check_instance_connectivity(cls, remote, dhcp_namespace, instance_ip):
+        cmd_check_ns = 'ip netns list'
+        namespaces = [l.strip() for l in run_on_remote(remote, cmd_check_ns)]
+        logger.debug('Net namespaces on remote: {0}.'.format(namespaces))
+        assert_true(dhcp_namespace in namespaces,
+                    "Network namespace '{0}' doesn't exist on "
+                    "remote slave!".format(dhcp_namespace))
         cmd = ". openrc; ip netns exec {0} ssh -i /root/.ssh/webserver_rsa" \
               " -o 'StrictHostKeyChecking no'" \
               " cirros@{1} \"ping -c 1 {2}\"".format(dhcp_namespace,
@@ -279,8 +287,9 @@ class TestNeutronFailover(base_test_case.TestBasic):
                     os_conn.get_l3_agent_hosts(router_id)[0]))
         wait(lambda: os_conn.get_l3_agent_ids(router_id), timeout=60)
 
-        # Re-initialize SSHClient after slave-01 was rebooted
-        remote.reconnect()
+        devops_node = self.get_node_with_dhcp(self, os_conn, net_id)
+        _ip = self.fuel_web.get_nailgun_node_by_devops_node(devops_node)['ip']
+        remote = self.env.d_env.get_ssh_to_remote(_ip)
 
         self.check_instance_connectivity(remote, dhcp_namespace, instance_ip)
 
