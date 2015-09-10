@@ -2004,9 +2004,9 @@ class FuelWebClient(object):
     @logwrap
     def get_nailgun_primary_node(self, slave, role='primary-controller'):
         # returns controller or mongo that is primary in nailgun
-        remote = self.get_ssh_for_node(slave.name)
-        data = yaml.load(''.join(
-            remote.execute('cat /etc/astute.yaml')['stdout']))
+        with self.get_ssh_for_node(slave.name) as remote:
+            data = yaml.load(''.join(
+                remote.execute('cat /etc/astute.yaml')['stdout']))
         node_name = [node['fqdn'] for node in data['nodes']
                      if node['role'] == role][0]
         logger.debug("node name is {0}".format(node_name))
