@@ -31,7 +31,8 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups):
 
     tests = []
 
-    for group in groups:
+    for jenkins_suffix in groups:
+        group = groups[jenkins_suffix]
         for case in TestProgram(groups=[group]).cases:
             if not case.entry.info.enabled:
                 continue
@@ -64,8 +65,8 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups):
                 """Expand specified test names with the group names that are
                    used in jenkins jobs where this test is started.
                 """
-                title = ' - '.join([title, group])
-                test_group = '_'.join([case.entry.home.func_name, group])
+                title = ' - '.join([title, jenkins_suffix])
+                test_group = '_'.join([case.entry.home.func_name, jenkins_suffix])
 
             test_case = {
                 "title": title,
@@ -114,16 +115,33 @@ def upload_tests_descriptions(testrail_project, section_id,
 
 def get_tests_groups_from_jenkins(runner_name, build_number, distros):
     runner_build = Build(runner_name, build_number)
-    res = []
+    res = {}
     for b in runner_build.build_data['subBuilds']:
+
+        # Get the test group from the console of the job
+        z = Build(b['jobName'], b['buildNumber'])
+        console = z.get_job_console()
+        groups = [keyword.split('=')[1]
+                  for line in console
+                  for keyword in line.split()
+                  if 'run_tests.py' in line and '--group=' in keyword]
+        if not groups:
+            logger.error("No test group found in console of the job {0}/{1}"
+                .format(b['jobName'], b['buildNumber']))
+            continue
+        # Use the last group (there can be several groups in upgrade jobs)
+        test_group = groups[-1]
+
+        # Get the job suffix
         job_name = b['jobName']
         for distro in distros:
             if distro in job_name:
                 sep = '.' + distro + '.'
-                res.append(job_name.split(sep)[-1])
+                job_suffix = job_name.split(sep)[-1]
                 break
         else:
-            res.append(job_name.split('.')[-1])
+            job_suffix = job_name.split('.')[-1]
+        res[job_suffix] = test_group
     return res
 
 
