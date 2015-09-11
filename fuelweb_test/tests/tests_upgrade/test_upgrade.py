@@ -974,7 +974,8 @@ class UpgradeNovaCinder(base_test_data.TestBasic):
         self.fuel_web.stop_deployment_wait(cluster_id)
 
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.d_env.nodes().slaves[:4])
+            nodes=self.env.d_env.nodes().slaves[:4],
+            timeout=6 * 60)
 
         self.fuel_web.run_network_verify(cluster_id)
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
