@@ -101,6 +101,12 @@ class Build():
         logger.debug("Request job info from {}".format(job_url))
         return json.load(urllib2.urlopen(job_url))
 
+    def get_job_console(self):
+        job_url = "/".join([JENKINS["url"], 'job', self.name,
+                            str(self.number), 'consoleText'])
+        logger.debug("Request job console from {}".format(job_url))
+        return urllib2.urlopen(job_url)
+
     def get_build_data(self, depth=1):
         build_url = "/".join([JENKINS["url"], 'job',
                               self.name,
