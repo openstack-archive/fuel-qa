@@ -12,8 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import time
+
 from cinderclient.exceptions import NotFound
 from devops.helpers import helpers as devops_helpers
+from devops.helpers.helpers import _wait
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import test
@@ -21,7 +24,7 @@ import yaml
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
-from fuelweb_test import ostf_test_mapping as map_ostf
+from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -48,11 +51,10 @@ class NodeReinstallationEnv(TestBasic):
 
         Scenario:
             1. Create a cluster
-            2. Add 3 nodes with controller roles
+            2. Add 3 nodes with controller and mongo roles
             3. Add a node with compute and cinder roles
-            4. Add a node with mongo role
-            5. Deploy the cluster
-            6. Verify that the deployment is completed successfully
+            4. Deploy the cluster
+            5. Verify that the deployment is completed successfully
 
         Duration 190m
         """
@@ -71,11 +73,10 @@ class NodeReinstallationEnv(TestBasic):
 
         self.fuel_web.update_nodes(
             cluster_id, {
-                'slave-01': ['controller'],
-                'slave-02': ['controller'],
-                'slave-03': ['controller'],
+                'slave-01': ['controller', 'mongo'],
+                'slave-02': ['controller', 'mongo'],
+                'slave-03': ['controller', 'mongo'],
                 'slave-04': ['compute', 'cinder'],
-                'slave-05': ['mongo']
             }
         )
 
@@ -94,10 +95,9 @@ class NodeReinstallationEnv(TestBasic):
         Scenario:
             1. Revert the snapshot
             2. Create a cluster
-            3. Add 3 nodes with controller roles
+            3. Add 3 nodes with controller and mongo roles
             4. Add a node with compute and cinder roles
-            5. Add a node with mongo role
-            6. Provision nodes
+            5. Provision nodes
 
         Duration 25m
         """
@@ -115,11 +115,10 @@ class NodeReinstallationEnv(TestBasic):
 
         self.fuel_web.update_nodes(
             cluster_id, {
-                'slave-01': ['controller'],
-                'slave-02': ['controller'],
-                'slave-03': ['controller'],
+                'slave-01': ['controller', 'mongo'],
+                'slave-02': ['controller', 'mongo'],
+                'slave-03': ['controller', 'mongo'],
                 'slave-04': ['compute', 'cinder'],
-                'slave-05': ['mongo']
             }
         )
 
@@ -172,7 +171,28 @@ class ReadyNodeReinstallation(TestBasic):
             self.fuel_web, cluster_id, [str(regular_ctrl['id'])])
 
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+        # Wait until MySQL Galera is UP on some controller
+        self.fuel_web.wait_mysql_galera_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        # Wait until Cinder services UP on a controller
+        self.fuel_web.wait_cinder_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        _wait(lambda:
+              self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
+              timeout=1500)
+
+        try:
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
+        except AssertionError:
+            logger.debug("Test failed from first probe,"
+                         " we sleep 600 second try one more time "
+                         "and if it fails again - test will fails ")
+            time.sleep(600)
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
 
         # Verify that the hostname isn't changed on reinstallation of the node
         self._check_hostname(
@@ -213,7 +233,28 @@ class ReadyNodeReinstallation(TestBasic):
             self.fuel_web, cluster_id, [str(primary_ctrl_nailgun['id'])])
 
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+        # Wait until MySQL Galera is UP on some controller
+        self.fuel_web.wait_mysql_galera_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        # Wait until Cinder services UP on a controller
+        self.fuel_web.wait_cinder_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        _wait(lambda:
+              self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
+              timeout=1500)
+
+        try:
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
+        except AssertionError:
+            logger.debug("Test failed from first probe,"
+                         " we sleep 600 second try one more time "
+                         "and if it fails again - test will fails ")
+            time.sleep(600)
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
 
         # Verify that the hostname isn't changed on reinstallation of the node
         self._check_hostname(
@@ -263,7 +304,28 @@ class ReadyNodeReinstallation(TestBasic):
             self.fuel_web, cluster_id, [str(cmp_nailgun['id'])])
 
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+        # Wait until MySQL Galera is UP on some controller
+        self.fuel_web.wait_mysql_galera_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        # Wait until Cinder services UP on a controller
+        self.fuel_web.wait_cinder_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        _wait(lambda:
+              self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
+              timeout=1500)
+
+        try:
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
+        except AssertionError:
+            logger.debug("Test failed from first probe,"
+                         " we sleep 600 second try one more time "
+                         "and if it fails again - test will fails ")
+            time.sleep(600)
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
 
         # Verify that all cinder services are up and running on computes
         self.fuel_web.wait_cinder_is_up(
@@ -272,48 +334,6 @@ class ReadyNodeReinstallation(TestBasic):
         # Verify that the hostname isn't changed on reinstallation of the node
         self._check_hostname(
             cmp_nailgun, self.fuel_web.get_nailgun_node_by_name('slave-04'))
-
-    @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
-          groups=["reinstall_single_mongo_node"])
-    @log_snapshot_after_test
-    def reinstall_single_mongo_node(self):
-        """Verify reinstallation of a mongo node.
-
-        Scenario:
-            1. Revert snapshot
-            2. Select a mongo node
-            3. Reinstall the node
-            4. Run network verification
-            5. Run OSTF
-            6. Verify that Ceilometer API service is up and running
-            7. Verify that the hostname is not changed on reinstallation
-               of the node
-
-        Duration: 55m
-        """
-        self.env.revert_snapshot("node_reinstallation_env")
-
-        cluster_id = self.fuel_web.get_last_created_cluster()
-
-        # Select a mongo node
-        mongo_nailgun = self.fuel_web.get_nailgun_node_by_name('slave-05')
-
-        # Reinstall the compute
-        NodeReinstallationEnv._reinstall_nodes(
-            self.fuel_web, cluster_id, [str(mongo_nailgun['id'])])
-
-        self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
-
-        # Verify that Ceilometer API service is up and running
-        self.fuel_web.run_single_ostf_test(
-            cluster_id, test_sets=['sanity'],
-            test_name=map_ostf.OSTF_TEST_MAPPING.get(
-                'List ceilometer availability'))
-
-        # Verify that the hostname isn't changed on reinstallation of the node
-        self._check_hostname(
-            mongo_nailgun, self.fuel_web.get_nailgun_node_by_name('slave-05'))
 
 
 @test(groups=["full_cluster_reinstallation"])
@@ -332,9 +352,8 @@ class FullClusterReinstallation(TestBasic):
             4. Verify that all nodes are reinstalled (not just rebooted),
                i.e. there is no sample file on a node
             5. Run network verification
-            6. Run OSTF
-            7. Verify that Ceilometer API service is up and running
-            8. Verify that all cinder services are up and running on nodes
+            6. Verify that all cinder services are up and running on nodes
+            7. Run OSTF
 
         Duration: 145m
         """
@@ -345,7 +364,7 @@ class FullClusterReinstallation(TestBasic):
         # Create a sample file on each node to check that it is not
         # available after nodes' reinstallation
         file_name = "node_reinstallation.test"
-        for slave in self.env.d_env.nodes().slaves[0:5]:
+        for slave in self.env.d_env.nodes().slaves[0:4]:
             with self.fuel_web.get_ssh_for_node(slave.name) as remote:
                 remote.execute("touch {0}".format(file_name))
             node = self.fuel_web.get_nailgun_node_by_name(slave.name)
@@ -354,24 +373,35 @@ class FullClusterReinstallation(TestBasic):
 
         # Verify that all node are reinstalled (not just rebooted),
         # i.e. there is no sample file on a node
-        for slave in self.env.d_env.nodes().slaves[0:5]:
+        for slave in self.env.d_env.nodes().slaves[0:4]:
             with self.fuel_web.get_ssh_for_node(slave.name) as remote:
                 res = remote.execute("test -e {0}".format(file_name))
             assert_equal(1, res['exit_code'],
                          "{0} node was not reinstalled.".format(slave.name))
 
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+        # Wait until MySQL Galera is UP on some controller
+        self.fuel_web.wait_mysql_galera_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
 
-        # Verify that Ceilometer API service is up and running
-        self.fuel_web.run_single_ostf_test(
-            cluster_id, test_sets=['sanity'],
-            test_name=map_ostf.OSTF_TEST_MAPPING.get(
-                'List ceilometer availability'))
-
-        # Verify that all cinder services are up and running on nodes
+        # Wait until Cinder services UP on a controller
         self.fuel_web.wait_cinder_is_up(
-            [self.env.d_env.nodes().slaves[0].name])
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        _wait(lambda:
+              self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
+              timeout=1500)
+
+        try:
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
+        except AssertionError:
+            logger.debug("Test failed from first probe,"
+                         " we sleep 600 second try one more time "
+                         "and if it fails again - test will fails ")
+            time.sleep(600)
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
 
 
 @test(groups=["error_node_reinstallation"])
@@ -411,7 +441,28 @@ class ErrorNodeReinstallation(TestBasic):
         NodeReinstallationEnv._reinstall_nodes(self.fuel_web, cluster_id)
 
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+        # Wait until MySQL Galera is UP on some controller
+        self.fuel_web.wait_mysql_galera_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        # Wait until Cinder services UP on a controller
+        self.fuel_web.wait_cinder_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        _wait(lambda:
+              self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
+              timeout=1500)
+
+        try:
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
+        except AssertionError:
+            logger.debug("Test failed from first probe,"
+                         " we sleep 600 second try one more time "
+                         "and if it fails again - test will fails ")
+            time.sleep(600)
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
 
     @test(depends_on=[NodeReinstallationEnv.failed_node_reinstallation_env],
           groups=["reinstall_failed_regular_controller_deployment"])
@@ -446,7 +497,28 @@ class ErrorNodeReinstallation(TestBasic):
         NodeReinstallationEnv._reinstall_nodes(self.fuel_web, cluster_id)
 
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+        # Wait until MySQL Galera is UP on some controller
+        self.fuel_web.wait_mysql_galera_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        # Wait until Cinder services UP on a controller
+        self.fuel_web.wait_cinder_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        _wait(lambda:
+              self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
+              timeout=1500)
+
+        try:
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
+        except AssertionError:
+            logger.debug("Test failed from first probe,"
+                         " we sleep 600 second try one more time "
+                         "and if it fails again - test will fails ")
+            time.sleep(600)
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
 
     @test(depends_on=[NodeReinstallationEnv.failed_node_reinstallation_env],
           groups=["reinstall_failed_compute_deployment"])
@@ -460,8 +532,8 @@ class ErrorNodeReinstallation(TestBasic):
                to be executed to cause a failure on deployment
             3. Reinstall the cluster
             4. Run network verification
-            5. Run OSTF
-            6. Verify that all cinder services are up and running on computes
+            5. Verify that all cinder services are up and running on computes
+            6. Run OSTF
 
         Duration: 45m
         """
@@ -485,11 +557,28 @@ class ErrorNodeReinstallation(TestBasic):
         NodeReinstallationEnv._reinstall_nodes(self.fuel_web, cluster_id)
 
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+        # Wait until MySQL Galera is UP on some controller
+        self.fuel_web.wait_mysql_galera_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
 
-        # Verify that all cinder services are up and running on computes
+        # Wait until Cinder services UP on a controller
         self.fuel_web.wait_cinder_is_up(
-            [self.env.d_env.nodes().slaves[0].name])
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        _wait(lambda:
+              self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
+              timeout=1500)
+
+        try:
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
+        except AssertionError:
+            logger.debug("Test failed from first probe,"
+                         " we sleep 600 second try one more time "
+                         "and if it fails again - test will fails ")
+            time.sleep(600)
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
 
 
 @test(groups=["partition_preservation"])
@@ -567,7 +656,28 @@ class PartitionPreservation(TestBasic):
             self.fuel_web, cluster_id, [str(cmp_nailgun['id'])])
 
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+        # Wait until MySQL Galera is UP on some controller
+        self.fuel_web.wait_mysql_galera_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        # Wait until Cinder services UP on a controller
+        self.fuel_web.wait_cinder_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        _wait(lambda:
+              self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
+              timeout=1500)
+
+        try:
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
+        except AssertionError:
+            logger.debug("Test failed from first probe,"
+                         " we sleep 600 second try one more time "
+                         "and if it fails again - test will fails ")
+            time.sleep(600)
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
 
         # Verify that the created volume is still available
         try:
@@ -638,7 +748,28 @@ class PartitionPreservation(TestBasic):
                 "of the controllers".format(alarm_name))
 
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+        # Wait until MySQL Galera is UP on some controller
+        self.fuel_web.wait_mysql_galera_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        # Wait until Cinder services UP on a controller
+        self.fuel_web.wait_cinder_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        _wait(lambda:
+              self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
+              timeout=1500)
+
+        try:
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
+        except AssertionError:
+            logger.debug("Test failed from first probe,"
+                         " we sleep 600 second try one more time "
+                         "and if it fails again - test will fails ")
+            time.sleep(600)
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
 
     @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
           groups=["mysql_partition_preservation"])
@@ -678,7 +809,28 @@ class PartitionPreservation(TestBasic):
                     "reinstallation.".format(ctrl_nailgun['hostname']))
 
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+        # Wait until MySQL Galera is UP on some controller
+        self.fuel_web.wait_mysql_galera_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        # Wait until Cinder services UP on a controller
+        self.fuel_web.wait_cinder_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        _wait(lambda:
+              self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
+              timeout=1500)
+
+        try:
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
+        except AssertionError:
+            logger.debug("Test failed from first probe,"
+                         " we sleep 600 second try one more time "
+                         "and if it fails again - test will fails ")
+            time.sleep(600)
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
 
     @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
           groups=["nova_partition_preservation"])
@@ -726,7 +878,28 @@ class PartitionPreservation(TestBasic):
             self.fuel_web, cluster_id, [str(cmp_nailgun['id'])])
 
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+        # Wait until MySQL Galera is UP on some controller
+        self.fuel_web.wait_mysql_galera_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        # Wait until Cinder services UP on a controller
+        self.fuel_web.wait_cinder_is_up(
+            [n.name for n in self.env.d_env.nodes().slaves[0:3]])
+
+        _wait(lambda:
+              self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
+              timeout=1500)
+
+        try:
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
+        except AssertionError:
+            logger.debug("Test failed from first probe,"
+                         " we sleep 600 second try one more time "
+                         "and if it fails again - test will fails ")
+            time.sleep(600)
+            self.fuel_web.run_ostf(cluster_id,
+                                   test_sets=['smoke', 'sanity'])
 
         # Verify that the VM is still available
         try:
