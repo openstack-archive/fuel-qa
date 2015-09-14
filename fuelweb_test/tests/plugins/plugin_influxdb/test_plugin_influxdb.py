@@ -46,7 +46,7 @@ class TestInfluxdbPlugin(TestBasic):
             3. Create cluster
             4. Add 1 node with controller role
             5. Add 1 node with compute role
-            6. Add 1 node with base-os role
+            6. Add 1 node with influxdb_grafana role
             7. Deploy the cluster
             8. Check that plugin is working
             9. Run OSTF
@@ -75,9 +75,10 @@ class TestInfluxdbPlugin(TestBasic):
         plugin_name = 'influxdb_grafana'
         options = {
             'metadata/enabled': True,
-            'node_name/value': 'slave-03_base-os',
+            'node_name/value': 'slave-03_influxdb_grafana',
             'influxdb_rootpass/value': 'lmapass',
             'influxdb_userpass/value': 'lmapass',
+            'grafana_userpass/value': 'lmapass',
         }
 
         assert_true(
@@ -91,7 +92,7 @@ class TestInfluxdbPlugin(TestBasic):
             {
                 'slave-01': ['controller'],
                 'slave-02': ['compute'],
-                'slave-03': ['base-os']
+                'slave-03': ['influxdb_grafana']
             }
         )
 
@@ -104,16 +105,20 @@ class TestInfluxdbPlugin(TestBasic):
 
         logger.debug("Check that InfluxDB is ready")
 
-        r = requests.get(
-            "http://{}:8086/db/lma/series?u=lma&p={}&q=list+series".format(
-                influxdb_server_ip, options['influxdb_userpass/value']))
+        influxdb_url = "http://{0}:8086/query?db=lma&u={1}&p={2}&" + \
+            "q=show+measurements"
+        r = requests.get(influxdb_url.format(
+            influxdb_server_ip, 'lma', options['influxdb_userpass/value']))
         msg = "InfluxDB responded with {}, expected 200".format(r.status_code)
         assert_equal(r.status_code, 200, msg)
 
-        logger.debug("Check that the HTTP server is running")
+        logger.debug("Check that the Grafana server is running")
 
-        r = requests.get("http://{}/".format(influxdb_server_ip))
-        msg = "HTTP server responded with {}, expected 200".format(
+        r = requests.get(
+            "http://{0}:{1}@{2}:8000/api/org".format(
+                'grafana', options['grafana_userpass/value'],
+                influxdb_server_ip))
+        msg = "Grafana server responded with {}, expected 200".format(
             r.status_code)
         assert_equal(r.status_code, 200, msg)
 
