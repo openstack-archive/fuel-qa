@@ -263,6 +263,7 @@ class NailgunClient(object):
     def update_network(self, cluster_id, networking_parameters=None,
                        networks=None):
         nc = self.get_networks(cluster_id)
+        logger.info('The data is %s', nc)
         if networking_parameters is not None:
             for k in networking_parameters:
                 nc["networking_parameters"][k] = networking_parameters[k]
