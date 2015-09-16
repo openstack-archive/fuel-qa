@@ -14,6 +14,7 @@
 
 import os
 
+from proboscis.asserts import assert_equal
 from proboscis import test
 from proboscis import SkipTest
 
@@ -131,3 +132,77 @@ class TestOSupgrade(base_test_data.TestBasic):
 
         self.env.make_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan",
                                is_make=True)
+
+    @test(depends_on=[upgrade_ha_ceph_for_all_ubuntu_neutron_vlan],
+          groups=["prepare_before_os_upgrade"])
+    @log_snapshot_after_test
+    def prepare_before_os_upgrade(self):
+        """Make prepare actions before os upgrade
+
+        Scenario:
+            1. Revert snapshot upgraded with ceph, neutron vlan
+            2. yum install fuel-createmirror git
+            3. git clone https://github.com/stackforge/fuel-octane
+            4. Create mirrors
+            5. Run ./octane  prepare
+
+        """
+        if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
+            raise SkipTest()
+
+        self.check_run('prepare_before_os_upgrade')
+        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan")
+
+        with self.env.d_env.get_admin_remote() as remote:
+            # TODO: remove install of fuel-createmirorr, after
+            # fixing of https://bugs.launchpad.net/fuel/+bug/1496762
+            remote.execute("yum install -y fuel-createmirror git")
+            remote.execute(
+                "git clone https://github.com/stackforge/fuel-octane"
+            )
+            cmd = (
+                "sed -i 's/DEBUG=\"no\"/DEBUG=\"yes\"/' {}".format(
+                    '/etc/fuel-createmirror/config/ubuntu.cfg'
+                )
+            )
+            remote.execute(cmd)
+            remote.execute("/opt/fuel-createmirror-7.0/fuel-createmirror")
+            remote.execute("pip install pyzabbix")
+            octane_prepare = remote.execute(
+                "cd fuel-octane/octane/bin; ./octane prepare"
+            )
+
+        assert_equal(0, octane_prepare['exit_code'])
+        self.env.make_snapshot("prepare_before_os_upgrade", is_make=True)
+
+    @test(depends_on=[prepare_before_os_upgrade],
+          groups=["os_upgrade_env"])
+    @log_snapshot_after_test
+    def os_upgrade_env(self):
+        """Make prepare actions before os upgrade
+
+        Scenario:
+            1. Revert snapshot prepare_before_os_upgrade
+            2. run octane upgrade-env <target_env_id>
+
+        """
+        if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
+            raise SkipTest()
+
+        self.check_run('os_upgrade_env')
+        self.env.revert_snapshot("prepare_before_os_upgrade")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        with self.env.d_env.get_admin_remote() as remote:
+            octane_upgrade_env = remote.execute(
+                "octane upgrade-env {0}".format(cluster_id)
+            )
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        assert_equal(0, octane_upgrade_env['exit_code'])
+        assert_equal(cluster_id,
+                     int(octane_upgrade_env['stdout'][0].split()[0]))
+
+        self.env.make_snapshot("os_upgrade_env", is_make=True)
