@@ -308,6 +308,9 @@ class TestHaNeutronScalability(TestBasic):
 
         _check_pacemarker(self.env.d_env.nodes().slaves[:3])
 
+        primary_node = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+
         _check_swift(primary_node)
 
         nodes = {'slave-04': ['controller'],
@@ -323,6 +326,9 @@ class TestHaNeutronScalability(TestBasic):
         _check_pacemarker(self.env.d_env.nodes().slaves[:5])
 
         self.fuel_web.security.verify_firewall(cluster_id)
+
+        primary_node = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
 
         _check_swift(primary_node)
 
@@ -347,6 +353,9 @@ class TestHaNeutronScalability(TestBasic):
         _check_pacemarker(devops_nodes)
 
         self.fuel_web.security.verify_firewall(cluster_id)
+
+        primary_node = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
 
         _check_swift(primary_node)
 
