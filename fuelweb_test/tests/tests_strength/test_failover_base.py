@@ -51,6 +51,9 @@ class TestHaFailoverBase(TestBasic):
         self.check_run(self.snapshot_name)
         self.env.revert_snapshot("ready_with_5_slaves")
 
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[5:6])
+
         settings = {
             "net_provider": 'neutron',
             "net_segment_type": NEUTRON_SEGMENT_TYPE
@@ -68,7 +71,8 @@ class TestHaFailoverBase(TestBasic):
                 'slave-02': ['controller'],
                 'slave-03': ['controller'],
                 'slave-04': ['compute'],
-                'slave-05': ['compute']
+                'slave-05': ['compute'],
+                'slave-06': ['cinder']
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
