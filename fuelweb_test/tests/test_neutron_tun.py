@@ -230,22 +230,24 @@ class TestHaNeutronScalability(TestBasic):
             1. Create cluster
             2. Add 1 controller node
             3. Deploy the cluster
-            4. Add 2 controller nodes
-            5. Deploy changes
-            6. Check swift, and invoke swift-rings-rebalance.sh
+            4. Check swift, and invoke swift-rings-rebalance.sh
                on primary controller if check failed
-            7. Run OSTF
-            8. Add 2 controller 1 compute nodes
-            9. Deploy changes
-            10. Check swift, and invoke swift-rings-rebalance.sh
+            5. Add 2 controller nodes
+            6. Deploy changes
+            7. Check swift, and invoke swift-rings-rebalance.sh
+               on primary controller if check failed
+            8. Run OSTF
+            9. Add 2 controller 1 compute nodes
+            10. Deploy changes
+            11. Check swift, and invoke swift-rings-rebalance.sh
                 on all the controllers
-            11. Run OSTF
-            12. Delete the primary and the last added controller.
-            13. Deploy changes
-            14. Check swift, and invoke swift-rings-rebalance.sh
+            12. Run OSTF
+            13. Delete the primary and the last added controller.
+            14. Deploy changes
+            15. Check swift, and invoke swift-rings-rebalance.sh
                 on all the controllers
-            15. Run OSTF
-            16. Run sync_time() to check that NTPD daemon is operational
+            16. Run OSTF
+            17. Run sync_time() to check that NTPD daemon is operational
 
         Duration 160m
         Snapshot neutron_tun_scalability
@@ -306,6 +308,12 @@ class TestHaNeutronScalability(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         logger.info("STEP3: Deploy 1 node cluster finishes")
+        primary_node = self.env.d_env.get_node(name='slave-01')
+
+        # Step 4. Check swift
+        logger.info("STEP4: Check swift on primary controller {0}".format(
+            primary_node))
+        _check_swift(primary_node)
 
         nodes = {'slave-02': ['controller'],
                  'slave-03': ['controller']}
@@ -317,16 +325,16 @@ class TestHaNeutronScalability(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        logger.info("STEP5: Deploy 3 ctrl node cluster finishes")
-
-        _check_pacemarker(self.env.d_env.nodes().slaves[:3])
+        logger.info("STEP6: Deploy 3 ctrl node cluster has finished")
+        controllers = ['slave-01', 'slave-02', 'slave-03']
+        _check_pacemarker(self.env.d_env.get_nodes(name__in=controllers))
 
         primary_node_s3 = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
 
-        logger.info("Primary controller after STEP5 is {0}".format(
+        logger.info("Primary controller after STEP6 is {0}".format(
             primary_node_s3.name))
-        logger.info("STEP6: Check swift on primary controller".format(
+        logger.info("STEP7: Check swift on primary controller {0}".format(
             primary_node_s3))
         _check_swift(primary_node_s3)
 
@@ -347,17 +355,18 @@ class TestHaNeutronScalability(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        logger.info("STEP9: Deploy 5 ctrl node cluster finishes")
-
-        _check_pacemarker(self.env.d_env.nodes().slaves[:5])
+        logger.info("STEP10: Deploy 5 ctrl node cluster has finished")
+        controllers = ['slave-01', 'slave-02', 'slave-03', 'slave-04',
+                       'slave-05']
+        _check_pacemarker(self.env.d_env.get_nodes(name__in=controllers))
 
         primary_node_s9 = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
 
-        logger.info("Primary controller after STEP9 is {0}".format(
+        logger.info("Primary controller after STEP10 is {0}".format(
             primary_node_s9.name))
 
-        logger.info("STEP10: Check swift on primary controller".format(
+        logger.info("STEP11: Check swift on primary controller {0}".format(
             primary_node_s9))
 
         _check_swift(primary_node_s9)
@@ -378,7 +387,7 @@ class TestHaNeutronScalability(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
 
-        logger.info("STEP15: Scale down happens. 3 controller should be now")
+        logger.info("STEP16: Scale down happens. 3 controller should be now")
 
         nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])
@@ -387,10 +396,7 @@ class TestHaNeutronScalability(TestBasic):
 
         _check_pacemarker(devops_nodes)
 
-        primary_node = self.fuel_web.get_nailgun_primary_node(
-            self.env.d_env.nodes().slaves[1])
-
-        _check_swift(primary_node)
+        _check_swift(self.env.d_env.get_node(name='slave-02'))
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
