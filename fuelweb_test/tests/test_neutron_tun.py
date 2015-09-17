@@ -306,6 +306,9 @@ class TestHaNeutronScalability(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         logger.info("STEP3: Deploy 1 node cluster finishes")
+        primary_node = self.env.d_env.get_node(name='slave-01')
+
+        _check_swift(primary_node)
 
         nodes = {'slave-02': ['controller'],
                  'slave-03': ['controller']}
@@ -318,8 +321,10 @@ class TestHaNeutronScalability(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         logger.info("STEP5: Deploy 3 ctrl node cluster finishes")
+        controllers = ['slave-01', 'slave-02', 'slave-03']
+        _check_pacemarker(self.env.d_env.get_nodes(name__in=controllers))
 
-        _check_pacemarker(self.env.d_env.nodes().slaves[:3])
+        _check_swift(primary_node)
 
         primary_node_s3 = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
@@ -348,8 +353,11 @@ class TestHaNeutronScalability(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         logger.info("STEP9: Deploy 5 ctrl node cluster finishes")
+        controllers = ['slave-01', 'slave-02', 'slave-03', 'slave-04',
+                       'slave-05']
+        _check_pacemarker(self.env.d_env.get_nodes(name__in=controllers))
 
-        _check_pacemarker(self.env.d_env.nodes().slaves[:5])
+        self.fuel_web.security.verify_firewall(cluster_id)
 
         primary_node_s9 = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
@@ -387,10 +395,7 @@ class TestHaNeutronScalability(TestBasic):
 
         _check_pacemarker(devops_nodes)
 
-        primary_node = self.fuel_web.get_nailgun_primary_node(
-            self.env.d_env.nodes().slaves[1])
-
-        _check_swift(primary_node)
+        _check_swift(self.env.d_env.get_node(name='slave-02'))
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
