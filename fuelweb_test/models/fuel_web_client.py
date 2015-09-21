@@ -45,6 +45,7 @@ from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers import replace_repos
 from fuelweb_test.helpers.security import SecurityChecks
 from fuelweb_test.helpers.utils import run_on_remote
+from fuelweb_test.helpers.utils import node_freemem
 from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test.models.nailgun_client import NailgunClient
@@ -688,6 +689,22 @@ class FuelWebClient(object):
         if not DISABLE_SSL and not USER_OWNED_CERT:
             with self.environment.d_env.get_admin_remote() as admin_remote:
                 copy_cert_from_master(admin_remote, cluster_id)
+        n_nodes = self.client.list_cluster_nodes(cluster_id)
+        # logger.error("NODES in cluster is {}".format(n_nodes))
+        n_nodes = filter(lambda n: 'ready' in n['status'], n_nodes)
+        # logger.error("READY NODES in cluster is {}".format(n_nodes))
+        for n in n_nodes:
+            node_name = self.get_devops_node_by_nailgun_node(n).name
+            with self.get_ssh_for_node(node_name) as remote:
+                free = node_freemem(remote)
+            logger.info("Node {name}({host})[{roles}] "
+                        "memory status is {mem_free}, "
+                        "swap status is {swap_free}".format(
+                            name=node_name,
+                            host=n['hostname'],
+                            roles=n['roles'],
+                            mem_free=free['mem'],
+                            swap_free=free['swap']))
 
     def deploy_cluster_wait_progress(self, cluster_id, progress):
         task = self.deploy_cluster(cluster_id)
