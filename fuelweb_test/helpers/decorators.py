@@ -506,11 +506,17 @@ def check_repos_management(func):
         result = func(*args, **kwargs)
         # FIXME: Enable me for all release after fix #1403088 and #1448114
         if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_UBUNTU:
-            env = get_current_env(args)
-            nailgun_nodes = env.fuel_web.client.list_cluster_nodes(
-                env.fuel_web.get_last_created_cluster())
-            for n in nailgun_nodes:
-                with env.d_env.get_ssh_to_remote(n['ip']) as node_ssh:
-                    check_repo_managment(node_ssh)
+            try:
+                env = get_current_env(args)
+                nailgun_nodes = env.fuel_web.client.list_cluster_nodes(
+                    env.fuel_web.get_last_created_cluster())
+                for n in nailgun_nodes:
+                    logger.debug("Check repository management on {0}"
+                                 .format(n['ip']))
+                    with env.d_env.get_ssh_to_remote(n['ip']) as node_ssh:
+                        check_repo_managment(node_ssh)
+            except:
+                logger.error("An error happened during check repositories "
+                             "management on nodes. Please see the debug log.")
         return result
     return wrapper
