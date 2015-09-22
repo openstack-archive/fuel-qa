@@ -359,6 +359,9 @@ class TestHaNeutronScalability(TestBasic):
 
         _check_swift(primary_node)
 
+        import time
+        time.sleep(5)
+
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
             test_sets=['sanity', 'smoke', 'ha'], should_fail=1)
