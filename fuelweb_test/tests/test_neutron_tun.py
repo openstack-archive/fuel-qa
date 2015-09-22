@@ -16,6 +16,7 @@ import re
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import test
+import time
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers import os_actions
@@ -256,6 +257,7 @@ class TestHaNeutronScalability(TestBasic):
                             "/usr/local/bin/swift-rings-rebalance.sh")
                         logger.debug(
                             "command execution result is {0}".format(result))
+                        time.sleep(600)
                 else:
                     checkers.check_swift_ring(remote)
 
@@ -312,6 +314,7 @@ class TestHaNeutronScalability(TestBasic):
             self.env.d_env.nodes().slaves[0])
 
         _check_swift(primary_node)
+
 
         nodes = {'slave-04': ['controller'],
                  'slave-05': ['controller'],
