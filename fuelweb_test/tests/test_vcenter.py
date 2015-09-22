@@ -778,6 +778,74 @@ class VcenterDeploy(TestBasic):
             test_sets=['sanity', 'smoke', 'ha', 'tests_platform']
         )
 
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
+          groups=["vcenter_ceilometer_and_computevmware"])
+    @log_snapshot_after_test
+    def vcenter_ceilometer_and_computevmware(self):
+        """Deploy environment with vCenter, Ceilometer enabled and\
+        ComputeVMWare
+
+        Scenario:
+            1. Create cluster with vCenter and Ceilometer support
+            2. Set Nova-Network VLAN Manager as a network backend
+            3. Add nodes with following roles:
+                controller
+                compute + cinder
+                cinder-vmware
+                compute-vmware
+                compute-vmware
+                mongo
+            4. Assign vCenter cluster(s) to:
+                compute-vmware
+            5. Deploy the cluster
+            6. Run network verification
+            7. Run OSTF
+
+        Duration: 2h
+
+        """
+        self.env.revert_snapshot("ready_with_9_slaves")
+
+        # Configure cluster
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={'ceilometer': True})
+
+        logger.info("cluster is {}".format(cluster_id))
+
+        # Assign roles to nodes
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['compute', 'cinder'],
+                'slave-03': ['cinder-vmware'],
+                'slave-04': ['compute-vmware'],
+                'slave-05': ['compute-vmware'],
+                'slave-06': ['mongo']
+            }
+        )
+
+        self.configure_nova_vlan(cluster_id)
+
+        # Configure VMWare vCenter settings
+        target_node_1 = self.node_name('slave-04')
+        target_node_2 = self.node_name('slave-05')
+        self.fuel_web.vcenter_configure(
+            cluster_id,
+            target_node_1=target_node_1,
+            target_node_2=target_node_2,
+            multiclusters=True
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['sanity', 'smoke', 'ha', 'tests_platform']
+        )
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["vcenter_multiroles_ceilometer"])
     @log_snapshot_after_test
@@ -1419,7 +1487,7 @@ class VcenterDeploy(TestBasic):
                 controller
                 ceph-osd
                 ceph-osd
-                compute + cinder
+                compute
                 compute-vmware
             5. Assign vCenter cluster(s) to:
                 controller
@@ -1453,7 +1521,7 @@ class VcenterDeploy(TestBasic):
                 'slave-03': ['controller'],
                 'slave-04': ['ceph-osd'],
                 'slave-05': ['ceph-osd'],
-                'slave-06': ['compute', 'cinder'],
+                'slave-06': ['compute'],
                 'slave-07': ['compute-vmware']
             }
         )
