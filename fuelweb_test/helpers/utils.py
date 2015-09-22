@@ -319,7 +319,7 @@ def run_on_remote(*args, **kwargs):
         if kwargs['jsonify']:
             return run_on_remote_get_results(*args, **kwargs)['stdout_json']
     else:
-        return run_on_remote_get_results(*args, **kwargs)['stdout_str']
+        return run_on_remote_get_results(*args, **kwargs)['stdout']
 
 
 @logwrap
