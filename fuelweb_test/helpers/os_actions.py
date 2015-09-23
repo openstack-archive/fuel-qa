@@ -290,6 +290,13 @@ class OpenStackActions(common.Common):
                 return user
         return None
 
+    def get_role(self, role_name):
+        role_list = self.keystone.roles.list()
+        for role in role_list:
+            if role.name == role_name:
+                return role
+        return None
+
     def create_tenant(self, tenant_name):
         tenant = self.get_tenant(tenant_name)
         if tenant:
@@ -312,6 +319,12 @@ class OpenStackActions(common.Common):
             return user
         return self.keystone.users.create(
             name=username, password=passw, tenant_id=tenant.id)
+
+    def add_role_to_user(self, user_name, role_name, tenant_name):
+        tenant_id = self.get_tenant(tenant_name).id
+        user_id = self.get_user(user_name).id
+        role_id = self.get_role(role_name).id
+        self.keystone.roles.add_user_role(user_id, role_id, tenant_id)
 
     def update_user_enabled(self, user, enabled=True):
         self.keystone.users.update_enabled(user, enabled)
@@ -404,7 +417,7 @@ class OpenStackActions(common.Common):
         return self.neutron.remove_router_from_l3_agent(l3_agent, router_id)
 
     def add_l3_to_router(self, l3_agent, router_id):
-        return self.neutron.add_router_to_l3_agent(
+        return self.neutron.add_roter_to_l3_agent(
             l3_agent, {"router_id": router_id})
 
     def list_agents(self):
@@ -469,3 +482,39 @@ class OpenStackActions(common.Common):
         res = ''.join(remote.execute('virsh dumpxml {0} | grep "mac address="'
                       .format(self.get_srv_instance_name(srv)))['stdout'])
         return res.split('\'')[1]
+
+    def add_router(self, router_name, ext_net, distributed=False,
+                   router_type='shared'):
+        gateway = {"network_id": ext_net["id"],
+                   "enable_snat": True}
+        router_param = {'router': {'name': router_name,
+                                   'admin_state_up': True,
+                                   'router_type': router_type,
+                                   'distributed': distributed,
+                                   'external_gateway_info': gateway}}
+        router = self.neutron.create_router(body=router_param)['router']
+        return router
+
+    def add_subnet_to_router(self, router_id, sub_id):
+        self.neutron.add_interface_router(
+            router_id,
+            {'subnet_id': sub_id}
+        )
+
+    def create_network(self, name):
+        net_body = {"network": {"name": name,
+                                }
+                    }
+        network = self.neutron.create_network(net_body)['network']
+        return network
+
+    def create_subnet(self, network, cidr):
+        subnet_body = {"subnet": {"network_id": network['id'],
+                                  "ip_version": 4,
+                                  "cidr": cidr,
+                                  "name": 'subnet_{}'.format(
+                                      network['name']),
+                                  }
+                       }
+        subnet = self.neutron.create_subnet(subnet_body)['subnet']
+        return subnet
