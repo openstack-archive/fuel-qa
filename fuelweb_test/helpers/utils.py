@@ -499,3 +499,41 @@ def get_ip_listen_stats(remote, proto='tcp'):
     else:
         cmd = "awk '$4 == \"0A\" {{print $2}}' /proc/net/{0}".format(proto)
     return [l.strip() for l in run_on_remote(remote, cmd)]
+
+
+@logwrap
+def node_freemem(remote, unit='MB'):
+    """Return free memory and swap
+
+    units :type : str, can be a KB, MB, GB. Default is MB
+    """
+#              total       used       free     shared    buffers     cached
+# Mem:      65871488   38505556   27365932       4792     175620   21448180
+# -/+ buffers/cache:   16881756   48989732
+# Swap:     67002364      80736   66921628
+    denominators = {
+        'KB': 1,
+        'MB': 1024,
+        'GB': 1024 ** 2
+    }
+    denominator = denominators.get(unit, denominators['MB'])
+    cmd_mem_free = 'free -k | grep Mem:'
+    cmd_swap_free = 'free -k | grep Swap:'
+    mem_free = run_on_remote(remote, cmd_mem_free)[0]
+    swap_free = run_on_remote(remote, cmd_swap_free)[0]
+    ret = {
+        "mem": {
+            "total": int(mem_free.split()[1]) / denominator,
+            "used": int(mem_free.split()[2]) / denominator,
+            "free": int(mem_free.split()[3]) / denominator,
+            "shared": int(mem_free.split()[4]) / denominator,
+            "buffers": int(mem_free.split()[5]) / denominator,
+            "cached": int(mem_free.split()[6]) / denominator
+        },
+        "swap": {
+            "total": int(swap_free.split()[1]) / denominator,
+            "used": int(swap_free.split()[2]) / denominator,
+            "free": int(swap_free.split()[3]) / denominator,
+        }
+    }
+    return ret
