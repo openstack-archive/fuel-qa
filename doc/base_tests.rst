@@ -220,6 +220,11 @@ LMA infrastructure alerting tests
 .. automodule:: fuelweb_test.tests.plugins.plugin_lma_infra_alerting.test_plugin_lma_infra_alerting
    :members:
 
+NSX-v tests
+---------------------------------
+.. automodule:: fuelweb_test.tests.plugins.plugin_nsxv.test_plugin_nsxv
+   :members:
+
 Reboot tests
 ------------
 .. automodule:: fuelweb_test.tests.plugins.plugin_reboot.test_plugin_reboot_task
