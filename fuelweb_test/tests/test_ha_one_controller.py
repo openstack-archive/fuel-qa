@@ -24,6 +24,7 @@ from fuelweb_test.helpers.eb_tables import Ebtables
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NODE_VOLUME_SIZE
+from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
@@ -167,7 +168,7 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
             mode=DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE
+                "net_segment_type": NEUTRON_SEGMENT['vlan']
             }
         )
         self.fuel_web.update_nodes(
