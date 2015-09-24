@@ -248,15 +248,28 @@ class SeparateKeystoneFailover(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['sanity', 'smoke', 'ha'])
 
+        keystone_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['standalone-keystone'])
+        logger.debug("keystone nodes are {0}".format(keystone_nodes))
         checkers.check_hiera_hosts(
-            self, self.fuel_web.client.list_cluster_nodes(cluster_id),
+            self, keystone_nodes,
             cmd='hiera memcache_roles')
 
-        database_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            cluster_id, ['standalone-keystone'])
-        logger.debug("database nodes are {0}".format(database_nodes))
+        other_nodes = []
+        for role in ['compute', 'cinder', 'controller']:
+            for nodes_list in self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+                    cluster_id, [role]):
+                other_nodes.append(nodes_list)
+        logger.debug("other nodes are {0}".format(other_nodes))
         checkers.check_hiera_hosts(
-            self, database_nodes,
+            self, other_nodes,
+            cmd='hiera memcache_roles')
+
+        keystone_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['standalone-keystone'])
+        logger.debug("keystone nodes are {0}".format(keystone_nodes))
+        checkers.check_hiera_hosts(
+            self, keystone_nodes,
             cmd='hiera corosync_roles')
 
         nailgun_node = self.fuel_web.update_nodes(cluster_id, node,
@@ -269,13 +282,26 @@ class SeparateKeystoneFailover(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['sanity', 'smoke', 'ha'])
 
+        keystone_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['standalone-keystone'])
+        logger.debug("keystone nodes are {0}".format(keystone_nodes))
         checkers.check_hiera_hosts(
-            self, self.fuel_web.client.list_cluster_nodes(cluster_id),
+            self, keystone_nodes,
             cmd='hiera memcache_roles')
 
-        database_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            cluster_id, ['standalone-keystone'])
-        logger.debug("database nodes are {0}".format(database_nodes))
+        other_nodes = []
+        for role in ['compute', 'cinder', 'controller']:
+            for nodes_list in self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+                    cluster_id, [role]):
+                other_nodes.append(nodes_list)
+        logger.debug("other nodes are {0}".format(other_nodes))
         checkers.check_hiera_hosts(
-            self, database_nodes,
+            self, other_nodes,
+            cmd='hiera memcache_roles')
+
+        keystone_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['standalone-keystone'])
+        logger.debug("keystone nodes are {0}".format(keystone_nodes))
+        checkers.check_hiera_hosts(
+            self, keystone_nodes,
             cmd='hiera corosync_roles')
