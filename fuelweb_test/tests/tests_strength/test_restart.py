@@ -83,7 +83,7 @@ class CephRestart(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-    @test(depends_on_groups=['ceph_ha'],
+    @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["ceph_ha_restart"])
     @log_snapshot_after_test
     def ceph_ha_restart(self):
@@ -109,7 +109,39 @@ class CephRestart(TestBasic):
         Snapshot ceph_ha_restart
 
         """
-        self.env.revert_snapshot("ceph_ha")
+        self.env.revert_snapshot("ready")
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[:6])
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT_TYPE,
+                'volumes_ceph': True,
+                'images_ceph': True,
+                'volumes_lvm': False,
+                'tenant': 'cephHA',
+                'user': 'cephHA',
+                'password': 'cephHA',
+                'osd_pool_size': "3"
+            }
+
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller', 'ceph-osd'],
+                'slave-02': ['controller', 'ceph-osd'],
+                'slave-03': ['controller', 'ceph-osd'],
+                'slave-04': ['compute', 'ceph-osd'],
+                'slave-05': ['compute', 'ceph-osd'],
+                'slave-06': ['ceph-osd']
+            }
+        )
+        # Depoy cluster
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         # Wait until MySQL Galera is UP on some controller
         self.fuel_web.wait_mysql_galera_is_up(['slave-01'])
