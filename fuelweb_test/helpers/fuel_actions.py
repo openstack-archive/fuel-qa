@@ -250,13 +250,6 @@ class AdminActions(BaseActions):
         config = '/etc/fuel/astute.yaml'
         resolv = '/etc/resolv.conf'
 
-        # wait until fuelmenu fill the astute.yaml
-        cmd = "fgrep 'dhcp_gateway' {0}".format(config)
-        wait(lambda: not self.admin_remote.execute(cmd)['exit_code'], 60)
-        # wait until fuelmenu is finished
-        cmd = "ps -C fuelmenu"
-        wait(lambda: self.admin_remote.execute(cmd)['exit_code'], 60)
-
         cmd = ("sed -i 's/\"dhcp_gateway\":.*/\"dhcp_gateway\": \"{0}\"/' {1} "
                "&& sed -i 's/\\(\"DNS_UPSTREAM\":\\).*/\\1 \"{0}\"/' {1} &&"
                "sed -i 's/\\(nameserver\\) \\(.*\\)/\\1 {0} \\2/' {2}"
