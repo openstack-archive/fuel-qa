@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import re
+import time
 
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
@@ -231,22 +232,27 @@ class TestHaNeutronScalability(TestBasic):
             3. Deploy the cluster
             4. Add 2 controller nodes
             5. Deploy changes
-            6. Run network verification
-            7. Add 2 controller 1 compute nodes
-            8. Deploy changes
-            9. Run network verification
-            10. Run OSTF
-            11. Delete the primary and the last added controller.
-            12. Deploy changes
-            13. Run OSTF ha, sanity, smoke
-            14. Run sync_time() to check that NTPD daemon is operational
+            6. Check swift, and invoke swift-rings-rebalance.sh
+               on primary controller if check failed
+            7. Run OSTF
+            8. Add 2 controller 1 compute nodes
+            9. Deploy changes
+            10. Check swift, and invoke swift-rings-rebalance.sh
+                on all the controllers
+            11. Run OSTF
+            12. Delete the primary and the last added controller.
+            13. Deploy changes
+            14. Check swift, and invoke swift-rings-rebalance.sh
+                on all the controllers
+            15. Run OSTF
+            16. Run sync_time() to check that NTPD daemon is operational
 
-        Duration 110m
+        Duration 160m
         Snapshot neutron_tun_scalability
 
         """
-        def _check_swift(primary_node):
-            with self.fuel_web.get_ssh_for_node(primary_node.name) as remote:
+        def _check_swift(node):
+            with self.fuel_web.get_ssh_for_node(node.name) as remote:
                 for i in range(5):
                     try:
                         checkers.check_swift_ring(remote)
@@ -256,6 +262,11 @@ class TestHaNeutronScalability(TestBasic):
                             "/usr/local/bin/swift-rings-rebalance.sh")
                         logger.debug(
                             "command execution result is {0}".format(result))
+                        if result['exit_code'] == 0:
+                            # (tleontovich) We should sleep here near 5-10
+                            #  minute and waiting for replica
+                            # LP1498368/comments/16
+                            time.sleep(600)
                 else:
                     checkers.check_swift_ring(remote)
 
@@ -276,7 +287,9 @@ class TestHaNeutronScalability(TestBasic):
                     'vip public started')
 
         self.env.revert_snapshot("ready_with_9_slaves")
-
+        # Step 1  Create cluster with 1 controller
+        logger.info("STEP1: Create new cluster {0}".format(
+            self.__class__.__name__))
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -292,26 +305,37 @@ class TestHaNeutronScalability(TestBasic):
             cluster_id, nodes)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        primary_node = self.fuel_web.get_nailgun_primary_node(
-            self.env.d_env.nodes().slaves[0])
-
-        _check_swift(primary_node)
+        logger.info("STEP3: Deploy 1 node cluster finishes")
 
         nodes = {'slave-02': ['controller'],
                  'slave-03': ['controller']}
-        logger.info("Adding new nodes to the cluster: {0}".format(nodes))
+        logger.info("STEP 4: Adding new nodes "
+                    "to the cluster: {0}".format(nodes))
         self.fuel_web.update_nodes(
             cluster_id, nodes,
             True, False
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
+        logger.info("STEP5: Deploy 3 ctrl node cluster finishes")
+
         _check_pacemarker(self.env.d_env.nodes().slaves[:3])
 
-        primary_node = self.fuel_web.get_nailgun_primary_node(
+        primary_node_s3 = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
 
-        _check_swift(primary_node)
+        logger.info("Primary controller after STEP5 is {0}".format(
+            primary_node_s3.name))
+        logger.info("STEP6: Check swift on primary controller".format(
+            primary_node_s3))
+        _check_swift(primary_node_s3)
+
+        # Run smoke tests only according to ha and
+        # sanity executed in scope of deploy_cluster_wait()
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['smoke'])
 
         nodes = {'slave-04': ['controller'],
                  'slave-05': ['controller'],
@@ -323,20 +347,29 @@ class TestHaNeutronScalability(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
+        logger.info("STEP9: Deploy 5 ctrl node cluster finishes")
+
         _check_pacemarker(self.env.d_env.nodes().slaves[:5])
 
-        self.fuel_web.security.verify_firewall(cluster_id)
-
-        primary_node = self.fuel_web.get_nailgun_primary_node(
+        primary_node_s9 = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
 
-        _check_swift(primary_node)
+        logger.info("Primary controller after STEP9 is {0}".format(
+            primary_node_s9.name))
+
+        logger.info("STEP10: Check swift on primary controller".format(
+            primary_node_s9))
+
+        _check_swift(primary_node_s9)
+
+        # Run smoke tests only according to ha and
+        # sanity executed in scope of deploy_cluster_wait()
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
-            test_sets=['ha', 'sanity'])
+            test_sets=['smoke'])
 
-        nodes = {primary_node.name: ['controller'],
+        nodes = {primary_node_s9.name: ['controller'],
                  'slave-05': ['controller']}
         logger.info("Deleting nodes from the cluster: {0}".format(nodes))
         self.fuel_web.update_nodes(
@@ -345,14 +378,14 @@ class TestHaNeutronScalability(TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
 
+        logger.info("STEP15: Scale down happens. 3 controller should be now")
+
         nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])
         devops_nodes = [self.fuel_web.get_devops_node_by_nailgun_node(node)
                         for node in nodes]
 
         _check_pacemarker(devops_nodes)
-
-        self.fuel_web.security.verify_firewall(cluster_id)
 
         primary_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[1])
