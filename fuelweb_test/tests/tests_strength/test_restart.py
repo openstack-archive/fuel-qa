@@ -83,41 +83,64 @@ class CephRestart(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-    @test(depends_on_groups=['ceph_ha'],
+    @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["ceph_ha_restart"])
     @log_snapshot_after_test
     def ceph_ha_restart(self):
         """Destructive ceph test in HA mode
 
         Scenario:
-            1. Revert from ceph_ha
-            2. Waiting up galera and cinder
-            3. Check ceph status
-            4. Run OSTF
-            5. Destroy osd-node
-            6. Check ceph status
-            7. Run OSTF
-            8. Destroy one compute node
-            9. Check ceph status
-            10. Run OSTF
-            11. Cold restart
-            12. Waiting up galera and cinder
-            13. Run single OSTF - Create volume and attach it to instance
-            14. Run OSTF
+            1. Deploy cluster
+            2. Check ceph status
+            3. Run OSTF
+            4. Destroy osd-node
+            5. Check ceph status
+            6. Run OSTF
+            7. Destroy one compute node
+            8. Check ceph status
+            9. Run OSTF
+            10. Cold restart
+            11. Waiting up galera and cinder
+            12. Run single OSTF - Create volume and attach it to instance
+            13. Run OSTF
 
         Duration 30m
         Snapshot ceph_ha_restart
 
         """
-        self.env.revert_snapshot("ceph_ha")
+        self.env.revert_snapshot("ready")
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[:6])
 
-        # Wait until MySQL Galera is UP on some controller
-        self.fuel_web.wait_mysql_galera_is_up(['slave-01'])
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT_TYPE,
+                'volumes_ceph': True,
+                'images_ceph': True,
+                'volumes_lvm': False,
+                'tenant': 'cephHA',
+                'user': 'cephHA',
+                'password': 'cephHA',
+                'osd_pool_size': "3"
+            }
 
-        # Wait until Cinder services UP on a controller
-        self.fuel_web.wait_cinder_is_up(['slave-01'])
-
-        cluster_id = self.fuel_web.get_last_created_cluster()
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller', 'ceph-osd'],
+                'slave-02': ['controller', 'ceph-osd'],
+                'slave-03': ['controller', 'ceph-osd'],
+                'slave-04': ['compute', 'ceph-osd'],
+                'slave-05': ['compute', 'ceph-osd'],
+                'slave-06': ['ceph-osd']
+            }
+        )
+        # Depoy cluster
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.check_ceph_status(cluster_id)
 
