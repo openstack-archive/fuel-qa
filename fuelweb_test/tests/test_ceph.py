@@ -257,7 +257,8 @@ class CephHA(TestBasic):
                 'volumes_lvm': False,
                 'tenant': 'cephHA',
                 'user': 'cephHA',
-                'password': 'cephHA'
+                'password': 'cephHA',
+                'osd_pool_size': "3"
             }
         )
         cluster_id = self.fuel_web.create_cluster(
