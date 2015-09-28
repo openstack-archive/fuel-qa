@@ -119,6 +119,11 @@ def get_tests_groups_from_jenkins(runner_name, build_number, distros):
     res = {}
     for b in runner_build.build_data['subBuilds']:
 
+        if b['result'] is None:
+            logger.debug("Skipping '{0}' job (build #{1}) because it's still "
+                         "running...".format(b['jobName'], b['buildNumber'],))
+            continue
+
         # Get the test group from the console of the job
         z = Build(b['jobName'], b['buildNumber'])
         console = z.get_job_console()
