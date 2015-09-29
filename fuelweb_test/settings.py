@@ -105,6 +105,10 @@ DEFAULT_INTERFACE_ORDER = 'admin,public,management,private,storage'
 INTERFACE_ORDER = os.environ.get('INTERFACE_ORDER',
                                  DEFAULT_INTERFACE_ORDER).split(',')
 
+DEFAULT_ADMIN_INTERFACE = 'eth0'
+ADMIN_INTERFACE = os.environ.get('ADMIN_INTERFACE',
+                                 DEFAULT_ADMIN_INTERFACE)
+
 FORWARDING = {
     'admin': ADMIN_FORWARD,
     'public': PUBLIC_FORWARD,
