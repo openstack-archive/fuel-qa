@@ -694,17 +694,19 @@ class FuelWebClient(object):
         n_nodes = filter(lambda n: 'ready' in n['status'], n_nodes)
         # logger.error("READY NODES in cluster is {}".format(n_nodes))
         for n in n_nodes:
-            node_name = self.get_devops_node_by_nailgun_node(n).name
-            with self.get_ssh_for_node(node_name) as remote:
-                free = node_freemem(remote)
-            logger.info("Node {name}({host})[{roles}] "
-                        "memory status is {mem_free}, "
-                        "swap status is {swap_free}".format(
-                            name=node_name,
-                            host=n['hostname'],
-                            roles=n['roles'],
-                            mem_free=free['mem'],
-                            swap_free=free['swap']))
+            node = self.get_devops_node_by_nailgun_node(n)
+            if node:
+            node_name = node.name
+              with self.get_ssh_for_node(node_name) as remote:
+                  free = node_freemem(remote)
+              logger.info("Node {name}({host})[{roles}] "
+                          "memory status is {mem_free}, "
+                          "swap status is {swap_free}".format(
+                              name=node_name,
+                              host=n['hostname'],
+                              roles=n['roles'],
+                              mem_free=free['mem'],
+                              swap_free=free['swap']))
 
     def deploy_cluster_wait_progress(self, cluster_id, progress):
         task = self.deploy_cluster(cluster_id)
