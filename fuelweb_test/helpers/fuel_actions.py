@@ -131,7 +131,8 @@ class BaseActions(object):
         yaml_dict[element[-1]] = value
 
         with open(new_file, 'w') as f_new:
-            yaml.dump(origin_yaml, f_new, default_flow_style=False)
+            yaml.dump(origin_yaml, f_new, default_flow_style=False,
+                      default_style='"')
 
     def get_value_from_local_yaml(self, yaml_file, element):
         """Get a value of the element from the local yaml file
