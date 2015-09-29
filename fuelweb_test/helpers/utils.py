@@ -558,6 +558,25 @@ def get_node_hiera_roles(remote):
     return roles
 
 
+def map_ifaces_names_to_nets(ifaces_names_order,
+                             ifaces_nets_order,
+                             net_provider=settings.NEUTRON):
+    # TODO(akostrikov) Two nodegroups check.
+    if settings.NEUTRON != net_provider:
+        ifaces_nets_order = ['fixed' if n == 'private' else n
+                             for n in ifaces_nets_order]
+    # TODO(akostrikov) Rename admin to fuelweb_admin.
+    ifaces_nets_order = ['fuelweb_admin' if n == 'admin' else n
+                         for n in ifaces_nets_order]
+    names_nets_list = zip(ifaces_names_order, ifaces_nets_order)
+    names_nets_mapping = {}
+    for name_net_item in names_nets_list:
+        names_nets_mapping[name_net_item[0]] = [name_net_item[1]]
+    if settings.BONDING:
+        names_nets_mapping['eth5'] = ['']
+    return names_nets_mapping
+
+
 class runlimit(object):
     def __init__(self, seconds=60, error_message='Timeout'):
         self.seconds = seconds

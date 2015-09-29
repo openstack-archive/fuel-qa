@@ -63,11 +63,11 @@ class BondingTest(TestBasic):
 
     def check_interfaces_config_after_reboot(self, cluster_id):
         network_settings = dict()
-        skip_interfaces = set([r'^pub-base$', r'^vr_pub-base$', r'^vr-base$',
-                               r'^mgmt-base$', r'^vr-host-base$',
-                               r'^mgmt-conntrd$', r'^hapr-host$',
-                               r'^(tap|qr-|qg-|p_).*$', r'^v_vrouter.*$',
-                               r'^v_(management|public)$'])
+        skip_interfaces = ([r'^pub-base$', r'^vr_pub-base$', r'^vr-base$',
+                            r'^mgmt-base$', r'^vr-host-base$',
+                            r'^mgmt-conntrd$', r'^hapr-host$',
+                            r'^(tap|qr-|qg-|p_).*$', r'^v_vrouter.*$',
+                            r'^v_(management|public)$'])
 
         nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
 

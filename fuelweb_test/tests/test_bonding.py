@@ -22,6 +22,7 @@ from proboscis import test
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NEUTRON_SEGMENT
+from fuelweb_test.settings import BOND_INTERFACES_MAP
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.test_bonding_base import BondingTest
 
@@ -79,7 +80,7 @@ class BondingHAOneController(BondingTest):
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
-                node['id'], interfaces_dict=deepcopy(self.INTERFACES),
+                node['id'], interfaces_dict=deepcopy(BOND_INTERFACES_MAP),
                 raw_data=deepcopy(self.BOND_CONFIG)
             )
         self.show_step(5)
@@ -146,7 +147,7 @@ class BondingHAOneController(BondingTest):
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
-                node['id'], interfaces_dict=deepcopy(self.INTERFACES),
+                node['id'], interfaces_dict=deepcopy(BOND_INTERFACES_MAP),
                 raw_data=deepcopy(self.BOND_CONFIG)
             )
 
@@ -211,7 +212,7 @@ class BondingHAOneController(BondingTest):
             HTTPError,
             self.fuel_web.update_node_networks,
             nailgun_nodes[0]['id'],
-            interfaces_dict=deepcopy(self.INTERFACES),
+            interfaces_dict=deepcopy(BOND_INTERFACES_MAP),
             raw_data=invalid_bond_conf)
 
 
@@ -275,7 +276,7 @@ class BondingHA(BondingTest):
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
-                node['id'], interfaces_dict=deepcopy(self.INTERFACES),
+                node['id'], interfaces_dict=deepcopy(BOND_INTERFACES_MAP),
                 raw_data=deepcopy(self.BOND_CONFIG)
             )
 
@@ -359,7 +360,7 @@ class BondingHA(BondingTest):
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
-                node['id'], interfaces_dict=deepcopy(self.INTERFACES),
+                node['id'], interfaces_dict=deepcopy(BOND_INTERFACES_MAP),
                 raw_data=deepcopy(self.BOND_CONFIG)
             )
 
