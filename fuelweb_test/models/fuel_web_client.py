@@ -445,7 +445,8 @@ class FuelWebClient(object):
 
             for option in settings:
                 section = False
-                if option in ('sahara', 'murano', 'ceilometer', 'mongo'):
+                if option in ('sahara', 'murano', 'ceilometer', 'mongo',
+                              'ironic'):
                     section = 'additional_components'
                 if option in ('mongo_db_name', 'mongo_replset', 'mongo_user',
                               'hosts_ip', 'mongo_password'):
@@ -499,6 +500,11 @@ class FuelWebClient(object):
                 logger.info('Enable Dual Hypervisors Mode')
                 hpv_data = attributes['editable']['common']['use_vcenter']
                 hpv_data['value'] = True
+
+            # Updating attributes is needed before calling
+            # update_network_configuration() because addtional networks
+            # may be created by new components like ironic
+            self.client.update_cluster_attributes(cluster_id, attributes)
 
             if MULTIPLE_NETWORKS:
                 node_groups = {n['name']: [] for n in NODEGROUPS}
@@ -1254,6 +1260,9 @@ class FuelWebClient(object):
                 'eth4': ['storage'],
             }
 
+        if self.get_cluster_additional_components(cluster_id)['ironic']:
+            assigned_networks['eth5'] = ['baremetal']
+
         if not nailgun_nodes:
             nailgun_nodes = self.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
@@ -1275,6 +1284,9 @@ class FuelWebClient(object):
                                                         cluster_id)
 
         self.update_floating_ranges(new_settings)
+        for net in net_config['networks']:
+            if 'baremetal' in net['name']:
+                self.update_baremetal_ranges(new_settings)
         self.client.update_network(
             cluster_id=cluster_id,
             networking_parameters=new_settings["networking_parameters"],
@@ -1325,8 +1337,16 @@ class FuelWebClient(object):
         # This feature moved to 8.0: LP#1371363, LP#1490578
         nc["floating_ranges"] = self.get_range(float_range, 1)
 
+    def update_baremetal_ranges(self, network_configuration):
+        nc = network_configuration["networking_parameters"]
+
+        baremetal_net = self.environment.d_env.get_network(
+            name='ironic').ip_network
+
+        nc["baremetal_ranges"] = self.get_range(baremetal_net, 3)
+
     def set_network(self, net_config, net_name, net_pools=None, seg_type=None):
-        nets_wo_floating = ['public', 'management', 'storage']
+        nets_wo_floating = ['public', 'management', 'storage', 'baremetal']
         if (seg_type == NEUTRON_SEGMENT['tun'] or
                 seg_type == NEUTRON_SEGMENT['gre']):
             nets_wo_floating.append('private')
@@ -1347,7 +1367,6 @@ class FuelWebClient(object):
                     i = nets_wo_floating.index(net_name)
                     self.net_settings(net_config, pub_subnets[i], jbond=True)
         else:
-
             public_net = self._get_true_net_name('public', net_pools)
             admin_net = self._get_true_net_name('admin', net_pools)
 
@@ -1383,9 +1402,16 @@ class FuelWebClient(object):
             ip_network = net_name
         else:
             net_config['vlan_start'] = None
-            net_config['gateway'] = self.environment.d_env.router(net_name)
-            ip_network = self.environment.d_env.get_network(
-                name=net_name).ip_network
+            if net_config['name'] == 'baremetal':
+                baremetal_net = self.environment.d_env.get_network(
+                    name='ironic').ip_network
+                net_config['gateway'] = str(
+                    list(IPNetwork(baremetal_net))[-2])
+                ip_network = baremetal_net
+            else:
+                net_config['gateway'] = self.environment.d_env.router(net_name)
+                ip_network = self.environment.d_env.get_network(
+                    name=net_name).ip_network
 
         net_config['cidr'] = str(ip_network)
 
@@ -1407,6 +1433,8 @@ class FuelWebClient(object):
             return [[str(net[2]), str(net[half - 1])]]
         elif ip_range == 2:
             return [[str(net[3]), str(net[half - 1])]]
+        elif ip_range == 3:
+            return [[str(net[half]), str(net[-3])]]
 
     def get_floating_ranges(self, network_set=''):
         net_name = 'public{0}'.format(network_set)
@@ -2173,6 +2201,17 @@ class FuelWebClient(object):
         return {'username': username,
                 'password': password,
                 'tenant': tenant}
+
+    @logwrap
+    def get_cluster_additional_components(self, cluster_id):
+        components = {}
+        attributes = self.client.get_cluster_attributes(cluster_id)
+        add_comps = attributes['editable']['additional_components'].items()
+        for comp, opts in add_comps:
+            # exclude metadata
+            if 'metadata' not in comp:
+                components[comp] = opts['value']
+        return components
 
     @logwrap
     def spawn_vms_wait(self, cluster_id, timeout=60 * 60, interval=30):
