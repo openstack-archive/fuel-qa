@@ -73,64 +73,57 @@ HARDWARE["slave_node_memory"] = int(
 NODE_VOLUME_SIZE = int(os.environ.get('NODE_VOLUME_SIZE', 50))
 NODES_COUNT = os.environ.get('NODES_COUNT', 10)
 
+# NETWORK START
+# May be one of virtio, e1000, pcnet, rtl8139
+INTERFACE_MODEL = os.environ.get('INTERFACE_MODEL', 'virtio')
 MULTIPLE_NETWORKS = get_var_as_bool('MULTIPLE_NETWORKS', False)
-
 if MULTIPLE_NETWORKS:
     NODEGROUPS = (
         {
             'name': 'default',
-            'pools': ['admin', 'public', 'management', 'private',
+            'pools': ['admin',
+                      'public',
+                      'management',
+                      'private',
                       'storage']
         },
         {
             'name': 'group-custom-1',
-            'pools': ['admin2', 'public2', 'management2', 'private2',
+            'pools': ['admin2',
+                      'public2',
+                      'management2',
+                      'private2',
                       'storage2']
         }
     )
-    FORWARD_DEFAULT = os.environ.get('FORWARD_DEFAULT', 'route')
-    ADMIN_FORWARD = os.environ.get('ADMIN_FORWARD', 'nat')
-    PUBLIC_FORWARD = os.environ.get('PUBLIC_FORWARD', 'nat')
 else:
     NODEGROUPS = {}
-    FORWARD_DEFAULT = os.environ.get('FORWARD_DEFAULT', None)
-    ADMIN_FORWARD = os.environ.get('ADMIN_FORWARD', FORWARD_DEFAULT or 'nat')
-    PUBLIC_FORWARD = os.environ.get('PUBLIC_FORWARD', FORWARD_DEFAULT or 'nat')
 
-MGMT_FORWARD = os.environ.get('MGMT_FORWARD', FORWARD_DEFAULT)
-PRIVATE_FORWARD = os.environ.get('PRIVATE_FORWARD', FORWARD_DEFAULT)
-STORAGE_FORWARD = os.environ.get('STORAGE_FORWARD', FORWARD_DEFAULT)
+DEFAULT_INTERFACES_NAMES = 'eth0,eth1,eth2,eth3,eth4'
+SLAVES_INTERFACES_NAMES = os.environ.get('SLAVES_INTERFACES_NAMES',
+                                         DEFAULT_INTERFACES_NAMES).split(',')
 
 DEFAULT_INTERFACE_ORDER = 'admin,public,management,private,storage'
 INTERFACE_ORDER = os.environ.get('INTERFACE_ORDER',
                                  DEFAULT_INTERFACE_ORDER).split(',')
 
-FORWARDING = {
-    'admin': ADMIN_FORWARD,
-    'public': PUBLIC_FORWARD,
-    'management': MGMT_FORWARD,
-    'private': PRIVATE_FORWARD,
-    'storage': STORAGE_FORWARD,
-}
+# NOTE(akostrikov) Now it is always the same eth interface on admin and slave.
+# Later when we will have custom interfaces/networks mapping on each machine,
+# it will be false.
+PXE_INTERFACE = os.environ.get('PXE_INTERFACE', 'eth0')
+ADMIN_SECOND_PXE_INTERFACE = os.environ.get('ADMIN_SECOND_PXE_INTERFACE',
+                                            'eth5')
 
-DHCP = {
-    'admin': False,
-    'public': False,
-    'management': False,
-    'private': False,
-    'storage': False,
+BONDING = get_var_as_bool('BONDING', False)
+BOND_INTERFACES_MAP = {
+    'lnx-bond0': [
+        'public',
+        'management',
+        'storage',
+        'private'
+    ],
+    'lnx-bond1': ['fuelweb_admin']
 }
-
-INTERFACES = {
-    'admin': 'eth0',
-    'public': 'eth1',
-    'management': 'eth2',
-    'private': 'eth3',
-    'storage': 'eth4',
-}
-
-# May be one of virtio, e1000, pcnet, rtl8139
-INTERFACE_MODEL = os.environ.get('INTERFACE_MODEL', 'virtio')
 
 POOL_DEFAULT = os.environ.get('POOL_DEFAULT', '10.109.0.0/16:24')
 POOL_ADMIN = os.environ.get('POOL_ADMIN', POOL_DEFAULT)
@@ -166,19 +159,10 @@ POOLS = {
 }
 
 if MULTIPLE_NETWORKS:
-    FORWARDING['admin2'] = ADMIN_FORWARD
-    FORWARDING['public2'] = PUBLIC_FORWARD
-    FORWARDING['management2'] = MGMT_FORWARD
-    FORWARDING['private2'] = PRIVATE_FORWARD
-    FORWARDING['storage2'] = STORAGE_FORWARD
-
-    DHCP['admin2'] = False
-    DHCP['public2'] = False
-    DHCP['management2'] = False
-    DHCP['private2'] = False
-    DHCP['storage2'] = False
-
-    INTERFACES['admin2'] = 'eth5'
+    CUSTOM_INTERFACE_ORDER = os.environ.get(
+        'CUSTOM_INTERFACE_ORDER',
+        'admin2,public2,management2,private2,storage2')
+    INTERFACE_ORDER.extend(CUSTOM_INTERFACE_ORDER.split(','))
 
     POOL_DEFAULT2 = os.environ.get('POOL_DEFAULT2', '10.108.0.0/16:24')
     POOL_ADMIN2 = os.environ.get('POOL_ADMIN2', POOL_DEFAULT2)
@@ -210,19 +194,9 @@ if MULTIPLE_NETWORKS:
     POOLS['storage2'] = os.environ.get(
         'PUBLIC_POOL2',
         CUSTOM_POOLS.get('storage2')).split(':')
+# NETWORK END
 
-    CUSTOM_INTERFACE_ORDER = os.environ.get(
-        'CUSTOM_INTERFACE_ORDER',
-        'admin2,public2,management2,private2,storage2')
-    INTERFACE_ORDER.extend(CUSTOM_INTERFACE_ORDER.split(','))
-
-BONDING = get_var_as_bool("BONDING", False)
-
-BONDING_INTERFACES = {
-    'admin': ['eth0'],
-    'public': ['eth1', 'eth2', 'eth3', 'eth4']
-}
-
+# NEUTRON SETTINGS START
 NETWORK_MANAGERS = {
     'flat': 'FlatDHCPManager',
     'vlan': 'VlanManager'
@@ -235,6 +209,7 @@ NEUTRON_SEGMENT = {
     'vlan': 'vlan',
     'tun': 'tun'
 }
+# NEUTRON SETTINGS END
 
 USE_ALL_DISKS = get_var_as_bool('USE_ALL_DISKS', True)
 
