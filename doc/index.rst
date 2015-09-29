@@ -10,4 +10,5 @@ Documentation for the QA test code repo
     helpers.rst
     base_tests.rst
     testrail.rst
+    unit_tests.rst
 
