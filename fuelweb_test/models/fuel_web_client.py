@@ -47,12 +47,16 @@ from fuelweb_test.helpers.security import SecurityChecks
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers.utils import node_freemem
 from fuelweb_test.helpers.utils import get_node_hiera_roles
+from fuelweb_test.helpers.utils import map_ifaces_names_to_nets
 from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test.models.nailgun_client import NailgunClient
 from fuelweb_test import ostf_test_mapping as map_ostf
 from fuelweb_test import quiet_logger
 import fuelweb_test.settings as help_data
+from fuelweb_test.settings import PXE_INTERFACE
+from fuelweb_test.settings import SLAVES_INTERFACES_NAMES
+from fuelweb_test.settings import INTERFACE_ORDER
 from fuelweb_test.settings import ATTEMPTS
 from fuelweb_test.settings import BONDING
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
@@ -60,7 +64,6 @@ from fuelweb_test.settings import DISABLE_SSL
 from fuelweb_test.settings import DNS_SUFFIX
 from fuelweb_test.settings import KVM_USE
 from fuelweb_test.settings import MULTIPLE_NETWORKS
-from fuelweb_test.settings import NEUTRON
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import NODEGROUPS
 from fuelweb_test.settings import OPENSTACK_RELEASE
@@ -1105,23 +1108,27 @@ class FuelWebClient(object):
     def update_node_networks(self, node_id, interfaces_dict,
                              raw_data=None,
                              override_ifaces_params=None):
-        interfaces = self.client.get_node_interfaces(node_id)
+        logger.debug('Updating interfaces on node: %s', node_id)
+        logger.debug('Data to update interfaces: %s', interfaces_dict)
+
+        node_interfaces = self.client.get_node_interfaces(node_id)
+        logger.debug('Interfaces data from fuel to update: %s', node_interfaces)
 
         if raw_data is not None:
-            interfaces.extend(raw_data)
+            node_interfaces.extend(raw_data)
 
-        def get_bond_ifaces():
-            # Filter out all interfaces to be bonded
+        def get_interfaces_from_bonds():
+            # Get all interfaces in bonds
             ifaces = []
-            for bond in [i for i in interfaces if i['type'] == 'bond']:
+            for bond in [i for i in node_interfaces if i['type'] == 'bond']:
                 ifaces.extend(s['name'] for s in bond['slaves'])
             return ifaces
 
-        # fuelweb_admin is always on eth0 unless the interface is not bonded
-        if 'eth0' not in get_bond_ifaces():
-            interfaces_dict['eth0'] = interfaces_dict.get('eth0', [])
-            if 'fuelweb_admin' not in interfaces_dict['eth0']:
-                interfaces_dict['eth0'].append('fuelweb_admin')
+        if PXE_INTERFACE not in get_interfaces_from_bonds():
+            interfaces_dict[PXE_INTERFACE] = \
+                interfaces_dict.get(PXE_INTERFACE, [])
+            if 'fuelweb_admin' not in interfaces_dict[PXE_INTERFACE]:
+                interfaces_dict[PXE_INTERFACE].append('fuelweb_admin')
 
         def get_iface_by_name(ifaces, name):
             iface = filter(lambda iface: iface['name'] == name, ifaces)
@@ -1130,24 +1137,29 @@ class FuelWebClient(object):
                         "node. Please check override params.".format(name))
             return iface[0]
 
-        if override_ifaces_params is not None:
-            for interface in override_ifaces_params:
-                get_iface_by_name(interfaces, interface['name']).\
-                    update(interface)
+        logger.debug('Params to overwrite ifaces: %s', override_ifaces_params)
+        if override_ifaces_params:
+            for override_interface in override_ifaces_params:
+                get_iface_by_name(node_interfaces,
+                                  override_interface['name']).\
+                    update(override_interface)
 
-        all_networks = dict()
-        for interface in interfaces:
-            all_networks.update(
+        # We get network assignments from Fuel
+        fuel_networks = dict()
+        for interface in node_interfaces:
+            fuel_networks.update(
                 {net['name']: net for net in interface['assigned_networks']})
 
-        for interface in interfaces:
-            name = interface["name"]
+        # Update node networks from fuel_networks if fuel network was in dict?
+        for interface in node_interfaces:
+            name = interface['name']
             interface['assigned_networks'] = \
-                [all_networks[i] for i in interfaces_dict.get(name, []) if
-                 i in all_networks.keys()]
+                [fuel_networks[i] for i in interfaces_dict.get(name, []) if
+                 i in fuel_networks.keys()]
+        logger.debug('Ifaces to send to fuel: %s', node_interfaces)
 
         self.client.put_node_interfaces(
-            [{'id': node_id, 'interfaces': interfaces}])
+            [{'id': node_id, 'interfaces': node_interfaces}])
 
     @logwrap
     def update_node_disk(self, node_id, disks_dict):
@@ -1239,25 +1251,17 @@ class FuelWebClient(object):
     @logwrap
     def update_nodes_interfaces(self, cluster_id, nailgun_nodes=[]):
         net_provider = self.client.get_cluster(cluster_id)['net_provider']
-        if NEUTRON == net_provider:
-            assigned_networks = {
-                'eth1': ['public'],
-                'eth2': ['management'],
-                'eth3': ['private'],
-                'eth4': ['storage'],
-            }
-        else:
-            assigned_networks = {
-                'eth1': ['public'],
-                'eth2': ['management'],
-                'eth3': ['fixed'],
-                'eth4': ['storage'],
-            }
+
+        ifaces_names_to_networks = map_ifaces_names_to_nets(
+            SLAVES_INTERFACES_NAMES,  # BONDING HERE
+            INTERFACE_ORDER,  # BONDING HERE
+            net_provider
+        )
 
         if not nailgun_nodes:
             nailgun_nodes = self.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
-            self.update_node_networks(node['id'], assigned_networks)
+            self.update_node_networks(node['id'], ifaces_names_to_networks)
 
     @logwrap
     def update_network_configuration(self, cluster_id, nodegroups=None):
