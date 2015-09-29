@@ -1107,19 +1107,6 @@ class FuelWebClient(object):
         if raw_data is not None:
             interfaces.extend(raw_data)
 
-        def get_bond_ifaces():
-            # Filter out all interfaces to be bonded
-            ifaces = []
-            for bond in [i for i in interfaces if i['type'] == 'bond']:
-                ifaces.extend(s['name'] for s in bond['slaves'])
-            return ifaces
-
-        # fuelweb_admin is always on eth0 unless the interface is not bonded
-        if 'eth0' not in get_bond_ifaces():
-            interfaces_dict['eth0'] = interfaces_dict.get('eth0', [])
-            if 'fuelweb_admin' not in interfaces_dict['eth0']:
-                interfaces_dict['eth0'].append('fuelweb_admin')
-
         def get_iface_by_name(ifaces, name):
             iface = filter(lambda iface: iface['name'] == name, ifaces)
             assert_true(len(iface) > 0,
