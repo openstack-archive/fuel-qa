@@ -157,6 +157,10 @@ Test Zabbix
 .. automodule:: fuelweb_test.tests.test_zabbix
    :members:
 
+Test Ironic Base
+----------------
+.. automodule:: fuelweb_test.tests.test_ironic_base
+  :members:
 
 GD based tests
 ==============
@@ -180,7 +184,7 @@ Contrail tests
 .. automodule:: fuelweb_test.tests.plugins.plugin_contrail.test_fuel_plugin_contrail
    :members:
 
-Elasticsearch-Kibana tests
+Elastict.tests.test_ha_one_controllerearch-Kibana tests
 --------------------------
 .. automodule:: fuelweb_test.tests.plugins.plugin_elasticsearch.test_plugin_elasticsearch
    :members:
