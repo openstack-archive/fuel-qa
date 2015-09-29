@@ -19,6 +19,11 @@ import re
 from nose.plugins import Plugin
 from paramiko.transport import _join_lingering_threads
 
+from fuelweb_test.helpers.utils import map_ifaces_names_to_nets
+from fuelweb_test.settings import SLAVES_INTERFACES_NAMES
+from fuelweb_test.settings import INTERFACE_ORDER
+from fuelweb_test.settings import PXE_INTERFACE
+
 
 class CloseSSHConnectionsPlugin(Plugin):
     """Closes all paramiko's ssh connections after each test case
@@ -106,6 +111,17 @@ def import_tests():
 
 def run_tests():
     from proboscis import TestProgram  # noqa
+
+    # Check nic/network assignments.
+    ifaces_map = map_ifaces_names_to_nets(SLAVES_INTERFACES_NAMES,
+                                          INTERFACE_ORDER)
+    if 'fuelweb_admin' not in ifaces_map[PXE_INTERFACE]:
+        from fuelweb_test import logger
+        logger.info('Interface assignment of "%s" is %r',
+                    PXE_INTERFACE,
+                    ifaces_map[PXE_INTERFACE])
+        logger.fatal('Nic/network assignment is broken from ENV params')
+        sys.exit(1)
 
     # Check if the specified test group starts any test case
     if not TestProgram().cases:
