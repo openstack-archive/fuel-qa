@@ -52,6 +52,7 @@ from fuelweb_test.models.nailgun_client import NailgunClient
 from fuelweb_test import ostf_test_mapping as map_ostf
 from fuelweb_test import quiet_logger
 import fuelweb_test.settings as help_data
+from fuelweb_test.settings import ADMIN_INTERFACE
 from fuelweb_test.settings import ATTEMPTS
 from fuelweb_test.settings import BONDING
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
@@ -1103,10 +1104,17 @@ class FuelWebClient(object):
                              raw_data=None,
                              override_ifaces_params=None):
         interfaces = self.client.get_node_interfaces(node_id)
+        logger.info('Interfaces')
+        logger.info(str(node_id))
+        logger.info(str(interfaces))
+        logger.info(str(raw_data))
 
         if raw_data is not None:
             interfaces.extend(raw_data)
 
+        # can be removed?
+        # because eth0 is not in interfaces dict we are applying it.
+        # todo bonding
         def get_bond_ifaces():
             # Filter out all interfaces to be bonded
             ifaces = []
@@ -1114,11 +1122,13 @@ class FuelWebClient(object):
                 ifaces.extend(s['name'] for s in bond['slaves'])
             return ifaces
 
+        # can be removed?
         # fuelweb_admin is always on eth0 unless the interface is not bonded
-        if 'eth0' not in get_bond_ifaces():
-            interfaces_dict['eth0'] = interfaces_dict.get('eth0', [])
-            if 'fuelweb_admin' not in interfaces_dict['eth0']:
-                interfaces_dict['eth0'].append('fuelweb_admin')
+        if ADMIN_INTERFACE not in get_bond_ifaces():
+            interfaces_dict[ADMIN_INTERFACE] = \
+                interfaces_dict.get(ADMIN_INTERFACE, [])
+            if 'fuelweb_admin' not in interfaces_dict[ADMIN_INTERFACE]:
+                interfaces_dict[ADMIN_INTERFACE].append('fuelweb_admin')
 
         def get_iface_by_name(ifaces, name):
             iface = filter(lambda iface: iface['name'] == name, ifaces)
@@ -1142,7 +1152,8 @@ class FuelWebClient(object):
             interface['assigned_networks'] = \
                 [all_networks[i] for i in interfaces_dict.get(name, []) if
                  i in all_networks.keys()]
-
+        logger.info('FInal data')
+        logger.info(str(interfaces))
         self.client.put_node_interfaces(
             [{'id': node_id, 'interfaces': interfaces}])
 
@@ -1237,6 +1248,8 @@ class FuelWebClient(object):
     def update_nodes_interfaces(self, cluster_id, nailgun_nodes=[]):
         net_provider = self.client.get_cluster(cluster_id)['net_provider']
         if NEUTRON == net_provider:
+            # TODO insert here
+            # Merge with INTERFACE_ORDER
             assigned_networks = {
                 'eth1': ['public'],
                 'eth2': ['management'],
@@ -1254,6 +1267,7 @@ class FuelWebClient(object):
         if not nailgun_nodes:
             nailgun_nodes = self.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
+            # TODO View update_node_networks usages
             self.update_node_networks(node['id'], assigned_networks)
 
     @logwrap
