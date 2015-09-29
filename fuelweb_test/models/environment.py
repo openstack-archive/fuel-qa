@@ -132,12 +132,25 @@ class EnvironmentModel(object):
         return Ebtables(self.get_target_devs(devops_nodes),
                         self.fuel_web.client.get_cluster_vlans(cluster_id))
 
-    def get_keys(self, node, custom=None, build_images=None,
-                 iso_connect_as='cdrom'):
+    def get_keys(self, node, build_images=None, iso_connect_as='cdrom'):
+        if iso_connect_as == 'usb':
+            prologue = ('<Wait>\n'
+                        '<F12>\n'
+                        '2\n'
+                        '<Esc><Enter>\n'
+                        '<Wait>\n'
+                        'vmlinuz initrd=initrd.img ks=hd:LABEL='
+                        '"Mirantis_Fuel":/ks.cfg\n'
+                        ' repo=hd:LABEL="Mirantis_Fuel":/\n')
+        else:
+            prologue = ('<Wait>\n'
+                        '<Wait>\n'
+                        '<Wait>\n'
+                        '<Esc>\n'
+                        '<Wait>\n'
+                        'vmlinuz initrd=initrd.img ks=cdrom:/ks.cfg\n')
+
         params = {
-            'ks': 'hd:LABEL="Mirantis_Fuel":/ks.cfg' if iso_connect_as == 'usb'
-            else 'cdrom:/ks.cfg',
-            'repo': 'hd:LABEL="Mirantis_Fuel":/',  # only required for USB boot
             'ip': node.get_ip_address_by_network_name(
                 self.d_env.admin_net),
             'mask': self.d_env.get_network(
@@ -146,52 +159,25 @@ class EnvironmentModel(object):
             'hostname': ''.join((settings.FUEL_MASTER_HOSTNAME,
                                  settings.DNS_SUFFIX)),
             'nat_interface': self.d_env.nat_interface,
+            'admin_interface': settings.ADMIN_PXE_INTERFACE,
             'dns1': settings.DNS,
             'showmenu': 'no',
             'wait_for_external_config': 'yes',
             'build_images': '1' if build_images else '0'
         }
-        keys = ''
-        if(iso_connect_as == 'usb'):
-            keys = (
-                "<Wait>\n"  # USB boot uses boot_menu=yes for master node
-                "<F12>\n"
-                "2\n"
-                "<Esc><Enter>\n"
-                "<Wait>\n"
-                "vmlinuz initrd=initrd.img ks=%(ks)s\n"
-                " repo=%(repo)s\n"
-                " ip=%(ip)s\n"
-                " netmask=%(mask)s\n"
-                " gw=%(gw)s\n"
-                " dns1=%(dns1)s\n"
-                " hostname=%(hostname)s\n"
-                " dhcp_interface=%(nat_interface)s\n"
-                " showmenu=%(showmenu)s\n"
-                " wait_for_external_config=%(wait_for_external_config)s\n"
-                " build_images=%(build_images)s\n"
-                " <Enter>\n"
-            ) % params
-        else:  # cdrom case is default
-            keys = (
-                "<Wait>\n"
-                "<Wait>\n"
-                "<Wait>\n"
-                "<Esc>\n"
-                "<Wait>\n"
-                "vmlinuz initrd=initrd.img ks=%(ks)s\n"
-                " ip=%(ip)s\n"
-                " netmask=%(mask)s\n"
-                " gw=%(gw)s\n"
-                " dns1=%(dns1)s\n"
-                " hostname=%(hostname)s\n"
-                " dhcp_interface=%(nat_interface)s\n"
-                " showmenu=%(showmenu)s\n"
-                " wait_for_external_config=%(wait_for_external_config)s\n"
-                " build_images=%(build_images)s\n"
-                " <Enter>\n"
-            ) % params
-        return keys
+        epilogue = (' ip=%(ip)s\n'
+                    ' netmask=%(mask)s\n'
+                    ' gw=%(gw)s\n'
+                    ' dns1=%(dns1)s\n'
+                    ' hostname=%(hostname)s\n'
+                    ' dhcp_interface=%(nat_interface)s\n'
+                    ' admin_interface=%(admin_interface)s\n'
+                    ' showmenu=%(showmenu)s\n'
+                    ' wait_for_external_config=%(wait_for_external_config)s\n'
+                    ' build_images=%(build_images)s\n'
+                    ' <Enter>\n') % params
+
+        return prologue + epilogue
 
     def get_target_devs(self, devops_nodes):
         return [
@@ -356,7 +342,7 @@ class EnvironmentModel(object):
         wait(lambda: admin.driver.node_active(admin), 60)
         logger.info("Proceed with installation")
         # update network parameters at boot screen
-        admin.send_keys(self.get_keys(admin, custom=custom,
+        admin.send_keys(self.get_keys(admin,
                                       build_images=build_images,
                                       iso_connect_as=iso_connect_as))
         self.wait_for_provisioning()
@@ -622,7 +608,7 @@ class EnvironmentModel(object):
         admin_net2_object = self.d_env.get_network(name=self.d_env.admin_net2)
         second_admin_network = admin_net2_object.ip.network
         second_admin_netmask = admin_net2_object.ip.netmask
-        second_admin_if = settings.INTERFACES.get(self.d_env.admin_net2)
+        second_admin_if = settings.ADMIN_SECOND_PXE_INTERFACE
         second_admin_ip = str(self.d_env.nodes(
         ).admin.get_ip_address_by_network_name(self.d_env.admin_net2))
         logger.info(('Parameters for second admin interface configuration: '
