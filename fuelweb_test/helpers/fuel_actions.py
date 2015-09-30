@@ -333,10 +333,10 @@ class AdminActions(BaseActions):
                                '/var')
 
             keystone_pass = hlp_data.KEYSTONE_CREDS['password']
-            checkers.run_script(master, '/var', 'upgrade.sh',
-                                password=keystone_pass,
-                                rollback=rollback,
-                                exit_code=255 if rollback else 0)
+            checkers.run_upgrade_script(master, '/var', 'upgrade.sh',
+                                        password=keystone_pass,
+                                        rollback=rollback,
+                                        exit_code=255 if rollback else 0)
             if not rollback:
                 checkers.wait_upgrade_is_done(master, 3000,
                                               phrase='***UPGRADING MASTER NODE'
