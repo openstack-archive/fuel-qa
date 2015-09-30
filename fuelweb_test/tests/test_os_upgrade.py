@@ -12,12 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-
 from proboscis import test
 from proboscis import SkipTest
 
-from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests import base_test_case as base_test_data
 from fuelweb_test import settings as hlp_data
@@ -103,26 +100,8 @@ class TestOSupgrade(base_test_data.TestBasic):
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.upload_tarball(remote,
-                                    hlp_data.TARBALL_PATH, '/var')
-            checkers.check_file_exists(remote,
-                                       os.path.join('/var',
-                                                    os.path.basename(
-                                                        hlp_data.TARBALL_PATH))
-                                       )
-            checkers.untar(remote,
-                           os.path.basename(hlp_data.
-                                            TARBALL_PATH), '/var')
-            checkers.run_script(remote,
-                                '/var', 'upgrade.sh',
-                                password=hlp_data.KEYSTONE_CREDS['password'])
-            checkers.wait_upgrade_is_done(remote, 3000,
-                                          phrase='*** UPGRADING MASTER NODE'
-                                                 ' DONE SUCCESSFULLY')
-            checkers.check_upgraded_containers(remote,
-                                               hlp_data.UPGRADE_FUEL_FROM,
-                                               hlp_data.UPGRADE_FUEL_TO)
+        self.env.admin_actions.upgrade_master_node()
+
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:6])
