@@ -214,6 +214,7 @@ def check_unallocated_space(disks, contr_img_ceph=False):
 
 @logwrap
 def check_upgraded_containers(remote, version_from, version_to):
+    logger.info('Checking of containers')
     containers = remote.execute("docker ps | tail -n +2 |"
                                 "awk '{ print $NF;}'")['stdout']
     symlink = remote.execute("readlink /etc/supervisord.d/current")['stdout']
@@ -238,8 +239,9 @@ def upload_tarball(node_ssh, tar_path, tar_target):
                 "please check test settings!")
     check_archive_type(tar_path)
     try:
-        logger.debug("Start to upload tar file")
+        logger.info("Start to upload tar file")
         node_ssh.upload(tar_path, tar_target)
+        logger.info('File {} was uploaded on master'.format(tar_path))
     except Exception:
         logger.error('Failed to upload file')
         logger.error(traceback.format_exc())
@@ -257,10 +259,12 @@ def check_file_exists(node_ssh, path):
     assert_equal(result['exit_code'],
                  0,
                  'Can not find {0}'.format(path))
+    logger.info('File {} exists on master'.format(path))
 
 
 @logwrap
 def untar(node_ssh, name, path):
+    logger.info('Unpacking file')
     filename, ext = os.path.splitext(name)
     cmd = "tar -xpvf" if ext.endswith("tar") else "lrzuntar"
     result = ''.join(node_ssh.execute(
@@ -269,11 +273,11 @@ def untar(node_ssh, name, path):
 
 
 @logwrap
-def run_script(node_ssh, script_path, script_name, password='admin',
+def run_upgrade_script(node_ssh, script_path, script_name, password='admin',
                rollback=False, exit_code=0):
     path = os.path.join(script_path, script_name)
     c_res = node_ssh.execute('chmod 755 {0}'.format(path))
-    logger.debug("Result of cmod is {0}".format(c_res))
+    logger.debug("Result of chmod is {0}".format(c_res))
     if rollback:
         path = "UPGRADERS='host-system docker openstack" \
                " raise-error' {0}/{1}" \
@@ -298,6 +302,7 @@ def run_script(node_ssh, script_path, script_name, password='admin',
 
 @logwrap
 def wait_upgrade_is_done(node_ssh, timeout, phrase):
+    logger.info('Waiting while upgrade is done')
     cmd = "grep '{0}' /var/log/fuel_upgrade.log".format(phrase)
     try:
         wait(
@@ -320,7 +325,7 @@ def wait_phrase_in_log(node_ssh, timeout, interval, phrase, log_path):
 
 @logwrap
 def wait_rollback_is_done(node_ssh, timeout):
-    logger.debug('start waiting for rollback done')
+    logger.info('start waiting for rollback done')
     wait(
         lambda: not node_ssh.execute(
             "grep 'UPGRADE FAILED' /var/log/fuel_upgrade.log"
