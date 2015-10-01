@@ -510,10 +510,6 @@ def node_freemem(remote, unit='MB'):
 
     units :type : str, can be a KB, MB, GB. Default is MB
     """
-#              total       used       free     shared    buffers     cached
-# Mem:      65871488   38505556   27365932       4792     175620   21448180
-# -/+ buffers/cache:   16881756   48989732
-# Swap:     67002364      80736   66921628
     denominators = {
         'KB': 1,
         'MB': 1024,
@@ -540,3 +536,16 @@ def node_freemem(remote, unit='MB'):
         }
     }
     return ret
+
+
+def get_node_hiera_roles(self, remote):
+    """Get hiera roles assigned to host
+
+    :param :remote: SSHClient to node
+        :rtype: dict host plus role
+    """
+    cmd = 'hiera roles'
+    roles = ''.join(run_on_remote(remote, cmd)).strip()
+    # Contert string with roles like a ["ceph-osd", "controller"] to list
+    roles = map(lambda s: s.strip('" '), roles.strip("[]").split(','))
+    return roles
