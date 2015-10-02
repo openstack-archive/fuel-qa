@@ -2035,8 +2035,7 @@ class FuelWebClient(object):
                      if node['role'] == role][0]
         logger.debug("node name is {0}".format(node_name))
         fqdn = self.get_fqdn_by_hostname(node_name)
-        devops_node = self.find_devops_node_by_nailgun_fqdn(
-            fqdn, self.environment.d_env.nodes().slaves)
+        devops_node = self.get_devops_node_by_nailgun_fqdn(fqdn)
         return devops_node
 
     @logwrap
