@@ -263,19 +263,10 @@ def check_file_exists(node_ssh, path):
 
 
 @logwrap
-def untar(node_ssh, name, path):
-    logger.info('Unpacking file')
-    filename, ext = os.path.splitext(name)
-    cmd = "tar -xpvf" if ext.endswith("tar") else "lrzuntar"
-    result = ''.join(node_ssh.execute(
-        'cd {0} && {2} {1}'.format(path, name, cmd))['stdout'])
-    logger.debug('Result from tar command is {0}'.format(result))
-
-
-@logwrap
 def run_upgrade_script(node_ssh, script_path, script_name, password='admin',
                        rollback=False, exit_code=0):
     path = os.path.join(script_path, script_name)
+    check_file_exists(node_ssh, path)
     c_res = node_ssh.execute('chmod 755 {0}'.format(path))
     logger.debug("Result of chmod is {0}".format(c_res))
     if rollback:
