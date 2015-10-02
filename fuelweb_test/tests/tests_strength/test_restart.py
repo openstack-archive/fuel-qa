@@ -126,25 +126,27 @@ class CephRestart(TestBasic):
 
         # Destroy osd-node
         logger.info("Destory slave-06")
-        self.env.d_env.nodes().slaves[5].destroy()
+        slave_06 = self.env.d_env.get_node(name='slave-06')
+        slave_06.destroy()
 
         wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
-            self.env.d_env.nodes().slaves[5])['online'], timeout=30 * 8)
+            slave_06)['online'], timeout=30 * 8)
         offline_nodes = [self.fuel_web.get_nailgun_node_by_devops_node(
-            self.env.d_env.nodes().slaves[5])['id']]
+            slave_06)['id']]
         self.fuel_web.run_ceph_task(cluster_id, offline_nodes)
         self.fuel_web.check_ceph_status(cluster_id, offline_nodes)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         # Destroy compute node
         logger.info("Destory slave-05")
-        self.env.d_env.nodes().slaves[4].destroy()
+        slave_05 = self.env.d_env.get_node(name='slave-05')
+        slave_05.destroy()
 
         wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
-            self.env.d_env.nodes().slaves[4])['online'], timeout=30 * 8)
+            slave_05)['online'], timeout=30 * 8)
 
         offline_nodes.append(self.fuel_web.get_nailgun_node_by_devops_node(
-            self.env.d_env.nodes().slaves[4])['id'])
+            slave_05)['id'])
         self.fuel_web.run_ceph_task(cluster_id, offline_nodes)
         self.fuel_web.check_ceph_status(cluster_id, offline_nodes)
 
@@ -152,7 +154,11 @@ class CephRestart(TestBasic):
 
         # Cold restart
         self.fuel_web.cold_restart_nodes(
-            self.env.d_env.nodes().slaves[:4])
+            self.env.d_env.get_nodes(name__in=[
+                'slave-01',
+                'slave-02',
+                'slave-03',
+                'slave-04']))
 
         # Wait for HA services ready
         self.fuel_web.assert_ha_services_ready(cluster_id)
@@ -239,7 +245,7 @@ class HAOneControllerNeutronRestart(TestBasic):
 
         # Warm restart
         self.fuel_web.warm_restart_nodes(
-            self.env.d_env.nodes().slaves[:2])
+            self.env.d_env.get_nodes(name__in=['slave-01', 'slave-02']))
 
         # Wait for HA services ready
         self.fuel_web.assert_ha_services_ready(cluster_id)
