@@ -521,7 +521,7 @@ class FuelMasterMigrate(TestBasic):
         wait(lambda: icmp_ping(self.env.get_admin_node_ip()),
              timeout=60 * 15, timeout_msg='Master node has not become online '
                                           'after rebooting')
-        self.env.d_env.nodes().admin.await(network_name=self.d_env.admin_net,
+        self.env.d_env.nodes().admin.await(network_name=self.env.d_env.admin_net,
                                            timeout=60 * 15)
         with self.env.d_env.get_admin_remote() as remote:
             checkers.wait_phrase_in_log(remote,
