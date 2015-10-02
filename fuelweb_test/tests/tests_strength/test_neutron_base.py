@@ -360,8 +360,13 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         self.fuel_web.assert_ha_services_ready(cluster_id)
 
         #   Wait for Galera service get ready
-        online_controllers_names = [n.name for n in set(
-            self.env.d_env.nodes().slaves[:3]) - {devops_node_with_l3}]
+        n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id,
+            ['controller'])
+        d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
+
+        online_controllers_names = [n.name for n in
+                                    set(d_ctrls) - set([devops_node_with_l3])]
         self.fuel_web.wait_mysql_galera_is_up(online_controllers_names)
 
         #   Wait reschedule l3 agent
