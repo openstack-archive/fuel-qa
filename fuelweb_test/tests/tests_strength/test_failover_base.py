@@ -128,16 +128,42 @@ class TestHaFailoverBase(TestBasic):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
             raise SkipTest()
 
-        for devops_node in self.env.d_env.nodes().slaves[:2]:
+        def get_needed_controllers(cluster_id):
+            n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+                cluster_id=cluster_id,
+                roles=['controller'])
+            ret = []
+            d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
+            p_d_ctrl = self.fuel_web.get_nailgun_primary_node(d_ctrls[0])
+            ret.append(p_d_ctrl)
+            ret.append((set(d_ctrls) - set(p_d_ctrl)).pop())
+
+            return ret
+
+        controllers = []
+
+        for num in xrange(2):
             self.env.revert_snapshot(self.snapshot_name)
-            devops_node.suspend(False)
-            self.fuel_web.assert_pacemaker(
-                self.env.d_env.nodes().slaves[2].name,
-                set(self.env.d_env.nodes().slaves[:3]) - {devops_node},
-                [devops_node])
 
             cluster_id = self.fuel_web.client.get_cluster_id(
                 self.__class__.__name__)
+
+            if not controllers:
+                controllers = get_needed_controllers(cluster_id)
+
+            devops_node = self.fuel_web.get_devops_node_by_nailgun_node(
+                controllers.pop(0))
+            devops_node.suspend(False)
+
+            n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+                cluster_id=cluster_id,
+                roles=['controller'])
+            d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
+
+            self.fuel_web.assert_pacemaker(
+                (set(d_ctrls) - set(devops_node))[0].name,
+                set(d_ctrls) - set(devops_node),
+                [devops_node])
 
             # Wait until Nailgun marked suspended controller as offline
             wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
@@ -157,7 +183,7 @@ class TestHaFailoverBase(TestBasic):
             # Wait until MySQL Galera is UP on online controllers
             self.fuel_web.wait_mysql_galera_is_up(
                 [n.name for n in
-                 set(self.env.d_env.nodes().slaves[:3]) - {devops_node}],
+                 set(d_ctrls) - set(devops_node)],
                 timeout=300)
 
             self.fuel_web.run_ostf(
@@ -172,8 +198,9 @@ class TestHaFailoverBase(TestBasic):
         cluster_id = self.fuel_web.client.get_cluster_id(
             self.__class__.__name__)
 
-        with self.fuel_web.get_ssh_for_node(
-                self.env.d_env.nodes().slaves[0].name) as remote:
+        p_d_ctrl = self.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+        with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
 
             cmd = ('iptables -I INPUT -i br-mgmt -j DROP && '
                    'iptables -I OUTPUT -o br-mgmt -j DROP')
@@ -300,8 +327,12 @@ class TestHaFailoverBase(TestBasic):
             raise SkipTest()
 
         self.env.revert_snapshot(self.snapshot_name)
-
-        for devops_node in self.env.d_env.nodes().slaves[:3]:
+        cluster_id = self.fuel_web.client.get_cluster_id(
+            self.__class__.__name__)
+        n_ctrls = self.get_nailgun_cluster_nodes_by_roles(cluster_id,
+                                                          ['controller'])
+        d_ctrls = self.get_devops_nodes_by_nailgun_nodes(n_ctrls)
+        for devops_node in d_ctrls:
             with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
                 logger.info('Terminating MySQL on {0}'
                             .format(devops_node.name))
@@ -331,7 +362,13 @@ class TestHaFailoverBase(TestBasic):
 
         self.env.revert_snapshot(self.snapshot_name)
 
-        for devops_node in self.env.d_env.nodes().slaves[:3]:
+        cluster_id = self.fuel_web.client.get_cluster_id(
+            self.__class__.__name__)
+        n_ctrls = self.get_nailgun_cluster_nodes_by_roles(cluster_id,
+                                                          ['controller'])
+        d_ctrls = self.get_devops_nodes_by_nailgun_nodes(n_ctrls)
+
+        for devops_node in d_ctrls:
             with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
                 remote.check_call('kill -9 $(pidof haproxy)')
 
@@ -372,11 +409,15 @@ class TestHaFailoverBase(TestBasic):
 
         self.env.revert_snapshot(self.snapshot_name)
 
-        devops_ctrls = self.env.d_env.nodes().slaves[:3]
+        cluster_id = self.fuel_web.client.get_cluster_id(
+            self.__class__.__name__)
+        n_ctrls = self.get_nailgun_cluster_nodes_by_roles(cluster_id,
+                                                          ['controller'])
+        d_ctrls = self.get_devops_nodes_by_nailgun_nodes(n_ctrls)
         pcm_nodes = ' '.join(self.fuel_web.get_pcm_nodes(
             self.env.d_env.nodes().slaves[0].name, pure=True)['Online'])
         logger.debug("pacemaker nodes are {0}".format(pcm_nodes))
-        for devops_node in devops_ctrls:
+        for devops_node in d_ctrls:
             config = self.fuel_web.get_pacemaker_config(devops_node.name)
             logger.debug("config on node {0} is {1}".format(
                 devops_node.name, config))
@@ -423,9 +464,10 @@ class TestHaFailoverBase(TestBasic):
             ' /usr/lib/ocf/resource.d/fuel/{0}' \
             ' monitor 2>&1"'.format(heat_name)
 
-        node_name = self.env.d_env.nodes().slaves[0].name
+        p_d_ctrl = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
 
-        with self.fuel_web.get_ssh_for_node(node_name) as remote:
+        with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
             pid = ''.join(remote.execute('pgrep {0}'
                                          .format(heat_name))['stdout'])
             get_ocf_status = ''.join(
@@ -434,13 +476,13 @@ class TestHaFailoverBase(TestBasic):
                     "heat engine is not succeeded, status is {0}".format(
                         get_ocf_status))
 
-        with self.fuel_web.get_ssh_for_node(node_name) as remote:
+        with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
             amqp_con = len(remote.execute(
                 "netstat -nap | grep {0} | grep :5673".
                 format(pid))['stdout'])
         assert_true(amqp_con > 0, 'There is no amqp connections')
 
-        with self.fuel_web.get_ssh_for_node(node_name) as remote:
+        with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
             remote.execute("iptables -I OUTPUT 1 -m owner --uid-owner heat -m"
                            " state --state NEW,ESTABLISHED,RELATED -j DROP")
             cmd = "netstat -nap | grep {0} | grep :5673".format(pid)
@@ -454,7 +496,7 @@ class TestHaFailoverBase(TestBasic):
                     "heat engine is running, status is {0}".format(
                         get_ocf_status))
 
-        with self.fuel_web.get_ssh_for_node(node_name) as remote:
+        with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
             remote.execute("iptables -D OUTPUT 1 -m owner --uid-owner heat -m"
                            " state --state NEW,ESTABLISHED,RELATED")
             _wait(lambda: assert_true(ocf_success in ''.join(
@@ -469,7 +511,7 @@ class TestHaFailoverBase(TestBasic):
                     "heat engine is not succeeded, status is {0}".format(
                         get_ocf_status))
 
-        with self.fuel_web.get_ssh_for_node(node_name) as remote:
+        with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
             heat = len(
                 remote.execute("netstat -nap | grep {0} | grep :5673"
                                .format(newpid))['stdout'])
@@ -482,7 +524,12 @@ class TestHaFailoverBase(TestBasic):
             raise SkipTest()
 
         self.env.revert_snapshot(self.snapshot_name)
-        for devops_node in self.env.d_env.nodes().slaves[3:5]:
+        cluster_id = self.fuel_web.client.get_cluster_id(
+            self.__class__.__name__)
+        n_computes = self.get_nailgun_cluster_nodes_by_roles(cluster_id,
+                                                             ['compute'])
+        d_computes = self.get_devops_nodes_by_nailgun_nodes(n_computes)
+        for devops_node in d_computes:
             with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
                 remote.execute("kill -9 `pgrep nova-compute`")
                 wait(
@@ -574,8 +621,9 @@ class TestHaFailoverBase(TestBasic):
             'start to execute command on the slave'
             ' for dev{0}, loss percent {1}'. format(dev, loss_percent))
 
-        remote = self.fuel_web.get_ssh_for_node(
-            self.env.d_env.nodes().slaves[0].name)
+        p_d_ctrl = self.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+        remote = self.fuel_web.get_ssh_for_node(p_d_ctrl.name)
         cmd_input = ('iptables -I INPUT -m statistic --mode random '
                      '--probability {0} -i '
                      '{1} -j DROP'.format(loss_percent, dev))
@@ -587,7 +635,7 @@ class TestHaFailoverBase(TestBasic):
             remote.check_call(cmd_output)
         except:
             logger.error('command failed to be executed'.format(
-                self.env.d_env.nodes().slaves[:1].name))
+                p_d_ctrl.name))
             raise
         finally:
             remote.clear()
@@ -653,9 +701,10 @@ class TestHaFailoverBase(TestBasic):
             raise TimeoutError('Can not ping instance'
                                ' by floating ip {0}'.format(floating_ip.ip))
 
+        p_d_ctrl = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
         # get master rabbit controller
-        master_rabbit = self.fuel_web.get_rabbit_master_node(
-            self.env.d_env.nodes().slaves[0].name)
+        master_rabbit = self.fuel_web.get_rabbit_master_node(p_d_ctrl.name)
 
         # suspend devops node with master rabbit
         master_rabbit.suspend(False)
@@ -686,8 +735,13 @@ class TestHaFailoverBase(TestBasic):
         except TimeoutError:
             raise TimeoutError('Can not ping instance'
                                ' by floating ip {0}'.format(floating_ip.ip))
+
+        n_ctrls = self.fuel_web.get_nailgun_primary_node(
+            cluster_id,
+            ['controller'])
+        d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
         active_slaves = [slave for slave
-                         in self.env.d_env.nodes().slaves[0:4]
+                         in d_ctrls
                          if slave.name != master_rabbit.name]
         second_master_rabbit = self.fuel_web.get_rabbit_master_node(
             active_slaves[0].name)
@@ -790,8 +844,11 @@ class TestHaFailoverBase(TestBasic):
         logger.debug("rabbit nodes are {}".format(rabbit_nodes))
 
         rabbit_slave1_name = None
-        with self.fuel_web.get_ssh_for_node(
-                self.env.d_env.nodes().slaves[0].name) as remote:
+
+        p_d_ctrl = self.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+
+        with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
             slave1_name = ''.join(
                 remote.execute('hostname')['stdout']).strip()
         logger.debug('slave1 name is {}'.format(slave1_name))
@@ -802,8 +859,7 @@ class TestHaFailoverBase(TestBasic):
 
         pcm_nodes.remove(slave1_name)
 
-        with self.fuel_web.get_ssh_for_node(
-                self.env.d_env.nodes().slaves[0].name) as remote:
+        with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
             remote.execute('crm configure property maintenance-mode=true')
             remote.execute('service corosync stop')
 
@@ -833,20 +889,28 @@ class TestHaFailoverBase(TestBasic):
                          "node {} wasn't prepared for"
                          " fencing".format(rabbit_slave1_name))
 
+        cluster_id = self.fuel_web.client.get_cluster_id(
+            self.__class__.__name__)
+
+        n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id,
+            ['controller'])
+        d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
+
         rabbit_status = self.fuel_web.get_rabbit_running_nodes(
-            self.env.d_env.nodes().slaves[1].name)
+            (set(d_ctrls) - set(p_d_ctrl))[0].name)
         logger.debug("rabbit status is {}".format(rabbit_status))
         for rabbit_node in rabbit_nodes:
             assert_true(rabbit_node in rabbit_status,
                         "rabbit node {} is not in"
                         " rabbit status".format(rabbit_node))
 
-        with self.fuel_web.get_ssh_for_node(
-                self.env.d_env.nodes().slaves[0].name) as remote:
+        with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
             remote.execute("service corosync start")
             remote.execute("service pacemaker restart")
-        self.fuel_web.assert_pacemaker(self.env.d_env.nodes().slaves[0].name,
-                                       self.env.d_env.nodes().slaves[:3], [])
+
+        self.fuel_web.assert_pacemaker(p_d_ctrl.name,
+                                       d_ctrls, [])
 
     def check_dead_rabbit_node_kicked(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
@@ -854,16 +918,18 @@ class TestHaFailoverBase(TestBasic):
 
         self.env.revert_snapshot(self.snapshot_name)
 
+        p_d_ctrl = self.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+
         pcm_nodes = self.fuel_web.get_pcm_nodes(
-            self.env.d_env.nodes().slaves[0].name, pure=True)['Online']
+            p_d_ctrl.name, pure=True)['Online']
         logger.debug("pcm nodes are {}".format(pcm_nodes))
 
         rabbit_nodes = [node.replace(DNS_SUFFIX, "")
                         for node in pcm_nodes]
         logger.debug("rabbit nodes are {}".format(rabbit_nodes))
 
-        with self.fuel_web.get_ssh_for_node(
-                self.env.d_env.nodes().slaves[0].name) as remote:
+        with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
             slave1_name = ''.join(
                 remote.execute('hostname')['stdout']).strip()
         logger.debug('slave1 name is {}'.format(slave1_name))
@@ -874,8 +940,7 @@ class TestHaFailoverBase(TestBasic):
 
         pcm_nodes.remove(slave1_name)
 
-        with self.fuel_web.get_ssh_for_node(
-                self.env.d_env.nodes().slaves[0].name) as remote:
+        with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
             remote.execute('crm configure property maintenance-mode=true')
             remote.execute('rabbitmqctl stop_app')
             remote.execute('service corosync stop')
@@ -915,8 +980,10 @@ class TestHaFailoverBase(TestBasic):
                          .format(rabbit_slave1_name))
 
         rabbit_nodes.remove(rabbit_slave1_name)
-        rabbit_status = self.fuel_web.get_rabbit_running_nodes(
-            self.env.d_env.nodes().slaves[1].name)
+
+        d_ctrl = self.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0], role='controller')
+        rabbit_status = self.fuel_web.get_rabbit_running_nodes(d_ctrl.name)
         logger.debug("rabbit status is {}".format(rabbit_status))
 
         for rabbit_node in rabbit_nodes:
@@ -945,13 +1012,14 @@ class TestHaFailoverBase(TestBasic):
         self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300)
         self.fuel_web.assert_os_services_ready(cluster_id)
 
+        p_d_ctrl = self.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+
         # get master rabbit controller
-        master_rabbit = self.fuel_web.get_rabbit_master_node(
-            self.env.d_env.nodes().slaves[0].name)
+        master_rabbit = self.fuel_web.get_rabbit_master_node(p_d_ctrl.name)
         logger.info('Try to find slave where rabbit slaves are running')
         # get rabbit slaves
-        rabbit_slaves = self.fuel_web.get_rabbit_slaves_node(
-            self.env.d_env.nodes().slaves[0].name)
+        rabbit_slaves = self.fuel_web.get_rabbit_slaves_node(p_d_ctrl.name)
         assert_true(rabbit_slaves,
                     'Can not find rabbit slaves. '
                     'current result is {0}'.format(rabbit_slaves))
@@ -977,8 +1045,12 @@ class TestHaFailoverBase(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                should_fail=1)
 
+        n_ctrls = self.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, 'controller')
+        d_ctrls = self.get_devops_nodes_by_nailgun_nodes(n_ctrls)
+
         active_slaves = [slave for slave
-                         in self.env.d_env.nodes().slaves[0:4]
+                         in d_ctrls
                          if slave.name != rabbit_slaves[0].name]
 
         master_rabbit_after_slave_fail = self.fuel_web.get_rabbit_master_node(
@@ -1030,7 +1102,7 @@ class TestHaFailoverBase(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
 
         active_slaves = [slave for slave
-                         in self.env.d_env.nodes().slaves[0:4]
+                         in d_ctrls
                          if slave.name != master_rabbit.name]
         master_rabbit_after_fail = self.fuel_web.get_rabbit_master_node(
             active_slaves[0].name)
@@ -1093,11 +1165,13 @@ class TestHaFailoverBase(TestBasic):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
             raise SkipTest()
         self.env.revert_snapshot(self.snapshot_name)
-        devops_name = self.env.d_env.nodes().slaves[0].name
-        controller_node = self.fuel_web.get_nailgun_node_by_name(devops_name)
+
+        p_d_ctrl = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+        controller_node = self.fuel_web.get_nailgun_node_by_name(p_d_ctrl.name)
         with self.fuel_web.get_ssh_for_node(
-                devops_name) as remote_controller:
-            pcs_nodes = self.fuel_web.get_pcm_nodes(devops_name)
+                p_d_ctrl.name) as remote_controller:
+            pcs_nodes = self.fuel_web.get_pcm_nodes(p_d_ctrl.name)
             assert_true(
                 not pcs_nodes['Offline'], "There are offline nodes: {0}".
                 format(pcs_nodes['Offline']))
