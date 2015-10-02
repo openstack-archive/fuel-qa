@@ -521,8 +521,9 @@ class FuelMasterMigrate(TestBasic):
         wait(lambda: icmp_ping(self.env.get_admin_node_ip()),
              timeout=60 * 15, timeout_msg='Master node has not become online '
                                           'after rebooting')
-        self.env.d_env.nodes().admin.await(network_name=self.d_env.admin_net,
-                                           timeout=60 * 15)
+        self.env.d_env.nodes().admin.await(
+            network_name=self.env.d_env.admin_net,
+            timeout=60 * 15)
         with self.env.d_env.get_admin_remote() as remote:
             checkers.wait_phrase_in_log(remote,
                                         60 * 90, interval=0.1,
@@ -538,8 +539,9 @@ class FuelMasterMigrate(TestBasic):
              timeout=60 * 15,
              timeout_msg='Master node has not become online shutting network')
 
-        self.env.d_env.nodes().admin.await(network_name=self.d_env.admin_net,
-                                           timeout=60 * 10)
+        self.env.d_env.nodes().admin.await(
+            network_name=self.env.d_env.admin_net,
+            timeout=60 * 10)
 
         logger.info("Check containers")
         self.env.docker_actions.wait_for_ready_containers(timeout=60 * 30)
