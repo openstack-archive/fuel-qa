@@ -741,10 +741,15 @@ class UpgradeNeutronCeph(base_test_data.TestBasic):
             {'slave-07': ['controller']}
         )
 
-        self.fuel_web.provisioning_cluster_wait(cluster_id)
-        self.fuel_web.deploy_task_wait(cluster_id=cluster_id, progress=13)
+        self.fuel_web.deploy_cluster_wait_progress(cluster_id=cluster_id,
+                                                   progress=60)
         self.fuel_web.stop_deployment_wait(cluster_id)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:7],
+            timeout=8 * 60
+        )
 
+        self.fuel_web.stop_reset_env_wait(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:7],
             timeout=8 * 60
@@ -972,15 +977,18 @@ class UpgradeNovaCinder(base_test_data.TestBasic):
             {'slave-04': ['controller']}
         )
 
-        self.fuel_web.provisioning_cluster_wait(cluster_id)
-        self.fuel_web.deploy_task_wait(cluster_id=cluster_id, progress=13)
+        self.fuel_web.deploy_cluster_wait_progress(cluster_id=cluster_id,
+                                                   progress=60)
         self.fuel_web.stop_deployment_wait(cluster_id)
-
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:4],
             timeout=8 * 60
         )
-
+        self.fuel_web.stop_reset_env_wait(cluster_id)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:4],
+            timeout=8 * 60
+        )
         self.fuel_web.run_network_verify(cluster_id)
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
         self.fuel_web.run_ostf(cluster_id)
