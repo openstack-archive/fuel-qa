@@ -352,6 +352,18 @@ class AdminActions(BaseActions):
                                                    hlp_data.UPGRADE_FUEL_FROM)
             logger.debug("all containers are ok")
 
+    def get_fuel_settings(self):
+        cmd = 'cat {cfg_file}'.format(cfg_file=settings.FUEL_SETTINGS_YAML)
+        result = self.admin_remote.execute(cmd)
+
+        if result['exit_code'] == 0:
+            fuel_settings = yaml.load(''.join(result['stdout']))
+        else:
+            raise Exception('Can\'t output {cfg_file} file: {error}'.
+                            format(cfg_file=settings.FUEL_SETTINGS_YAML,
+                                   error=result['stderr']))
+        return fuel_settings
+
 
 class NailgunActions(BaseActions):
     """NailgunActions."""  # TODO documentation
