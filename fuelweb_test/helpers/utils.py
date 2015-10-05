@@ -233,7 +233,7 @@ class timestat(object):
     def __enter__(self):
         self.begin_time = time.time()
 
-    def __exit__(self, exp_type, exp_value, traceback):
+    def __exit__(self, exp_type, exp_value, trcback):
         self.end_time = time.time()
         self.total_time = self.end_time - self.begin_time
 
