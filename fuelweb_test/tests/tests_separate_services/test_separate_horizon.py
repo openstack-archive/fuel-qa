@@ -52,18 +52,20 @@ class SeparateHorizon(TestBasic):
         self.check_run("separate_horizon_service")
         self.env.revert_snapshot("ready_with_9_slaves")
 
-        # copy plugins to the master node
+        with self.env.d_env.get_admin_remote() as remote:
 
-        checkers.upload_tarball(
-            self.env.d_env.get_admin_remote(),
-            settings.SEPARATE_SERVICE_HORIZON_PLUGIN_PATH, "/var")
+            # copy plugins to the master node
 
-        # install plugins
+            checkers.upload_tarball(
+                remote,
+                settings.SEPARATE_SERVICE_HORIZON_PLUGIN_PATH, "/var")
 
-        checkers.install_plugin_check_code(
-            self.env.d_env.get_admin_remote(),
-            plugin=os.path.basename(
-                settings.SEPARATE_SERVICE_HORIZON_PLUGIN_PATH))
+            # install plugins
+
+            checkers.install_plugin_check_code(
+                remote,
+                plugin=os.path.basename(
+                    settings.SEPARATE_SERVICE_HORIZON_PLUGIN_PATH))
 
         data = {
             'volumes_lvm': False,
