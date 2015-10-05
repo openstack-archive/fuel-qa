@@ -502,7 +502,7 @@ class EnvironmentModel(object):
 
         if not remote:
             with self.d_env.get_admin_remote() as remote:
-                remote.execute(cmd)
+                result = remote.execute(cmd)
         else:
             result = remote.execute(cmd)
 
