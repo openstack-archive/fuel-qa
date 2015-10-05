@@ -401,7 +401,7 @@ def check_fuel_statistics(func):
         if not settings.FUEL_STATS_CHECK:
             return result
         logger.info('Test "{0}" passed. Checking stats.'.format(func.__name__))
-        fuel_settings = args[0].env.get_fuel_settings()
+        fuel_settings = args[0].env.admin_actions.get_fuel_settings()
         nailgun_actions = args[0].env.nailgun_actions
         postgres_actions = args[0].env.postgres_actions
         remote_collector = args[0].env.collector
