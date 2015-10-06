@@ -531,11 +531,11 @@ class MultiroleMultipleServices(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
 
-@test(enabled=False)
+@test
 class FloatingIPs(TestBasic):
     """FloatingIPs."""  # TODO documentation
 
-    @test(enabled=False, depends_on=[SetupEnvironment.prepare_slaves_3],
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_floating_ips"])
     @log_snapshot_after_test
     def deploy_floating_ips(self):
@@ -577,7 +577,7 @@ class FloatingIPs(TestBasic):
         )
 
         networking_parameters = {
-            "floating_ranges": self.fuel_web.get_floating_ranges()[0]}
+            "floating_ranges": self.fuel_web.get_floating_ranges()[0][0]}
 
         self.fuel_web.client.update_network(
             cluster_id,
@@ -588,7 +588,7 @@ class FloatingIPs(TestBasic):
 
         # assert ips
         expected_ips = self.fuel_web.get_floating_ranges()[1]
-        self.fuel_web.assert_cluster_floating_list('slave-02', expected_ips)
+        self.fuel_web.assert_cluster_floating_list(cluster_id, expected_ips)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
