@@ -26,6 +26,7 @@ from proboscis.asserts import assert_equal
 from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers.decorators import retry
 
 from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
 from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
@@ -319,38 +320,51 @@ class AdminActions(BaseActions):
             "find /var/www/nailgun/targetimages/ -name 'env*{}*'"
             " -delete".format(distro.lower()))
 
+    @logwrap
+    @retry(2)
+    def untar(self, node_ssh, name, path):
+        logger.info('Unpacking file')
+        filename, ext = os.path.splitext(name)
+        cmd = "tar -xpvf" if ext.endswith("tar") else "lrzuntar"
+        result = node_ssh.execute(
+            'cd {0} && {2} {1}'.format(path, name, cmd))
+        stdout, stderr = ''.join(result['stdout']), ''.join(result['stderr'])
+        logger.debug('Result from tar command is {0}\n{1}'.format(stdout,
+                                                                  stderr))
+        assert_equal(result['exit_code'], 0)
+
     def upgrade_master_node(self, rollback=False, file_upload=True):
         """This method upgrades master node with current state."""
 
-        with self.admin_remote as master:
-            if file_upload:
-                checkers.upload_tarball(master, hlp_data.TARBALL_PATH, '/var')
-                checkers.check_file_exists(master,
-                                           os.path.join(
-                                               '/var',
-                                               os.path.basename(hlp_data.
-                                                                TARBALL_PATH)))
-                checkers.untar(master, os.path.basename(hlp_data.TARBALL_PATH),
-                               '/var')
+        master = self.admin_remote
+        if file_upload:
+            checkers.upload_tarball(master, hlp_data.TARBALL_PATH, '/var')
+            checkers.check_file_exists(master,
+                                       os.path.join(
+                                           '/var',
+                                           os.path.basename(hlp_data.
+                                                            TARBALL_PATH)))
+            self.untar(master, os.path.basename(hlp_data.TARBALL_PATH),
+                       '/var')
 
-            keystone_pass = hlp_data.KEYSTONE_CREDS['password']
-            checkers.run_upgrade_script(master, '/var', 'upgrade.sh',
-                                        password=keystone_pass,
-                                        rollback=rollback,
-                                        exit_code=255 if rollback else 0)
-            if not rollback:
-                checkers.wait_upgrade_is_done(master, 3000,
-                                              phrase='***UPGRADING MASTER NODE'
-                                                     ' DONE SUCCESSFULLY')
-                checkers.check_upgraded_containers(master,
-                                                   hlp_data.UPGRADE_FUEL_FROM,
-                                                   hlp_data.UPGRADE_FUEL_TO)
-            elif rollback:
-                checkers.wait_rollback_is_done(master, 3000)
-                checkers.check_upgraded_containers(master,
-                                                   hlp_data.UPGRADE_FUEL_TO,
-                                                   hlp_data.UPGRADE_FUEL_FROM)
-            logger.debug("all containers are ok")
+        keystone_pass = hlp_data.KEYSTONE_CREDS['password']
+        checkers.run_upgrade_script(master, '/var', 'upgrade.sh',
+                                    password=keystone_pass,
+                                    rollback=rollback,
+                                    exit_code=255 if rollback else 0)
+        if not rollback:
+            checkers.wait_upgrade_is_done(master, 3000,
+                                          phrase='***UPGRADING MASTER NODE'
+                                                 ' DONE SUCCESSFULLY')
+            checkers.check_upgraded_containers(master,
+                                               hlp_data.UPGRADE_FUEL_FROM,
+                                               hlp_data.UPGRADE_FUEL_TO)
+        elif rollback:
+            checkers.wait_rollback_is_done(master, 3000)
+            checkers.check_upgraded_containers(master,
+                                               hlp_data.UPGRADE_FUEL_TO,
+                                               hlp_data.UPGRADE_FUEL_FROM)
+        logger.debug("all containers are ok")
 
     def get_fuel_settings(self):
         cmd = 'cat {cfg_file}'.format(cfg_file=hlp_data.FUEL_SETTINGS_YAML)
