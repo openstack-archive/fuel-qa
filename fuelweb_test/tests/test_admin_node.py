@@ -59,7 +59,7 @@ class TestAdminNode(TestBasic):
         server = xmlrpclib.Server(
             'http://%s/cobbler_api' % self.env.get_admin_node_ip())
 
-        config = self.env.get_fuel_settings()
+        config = self.env.admin_actions.get_fuel_settings()
         username = config['cobbler']['user']
         password = config['cobbler']['password']
 

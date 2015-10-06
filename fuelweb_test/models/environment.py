@@ -14,7 +14,6 @@
 
 import re
 import time
-import yaml
 from devops.error import TimeoutError
 
 from devops.helpers.helpers import _tcp_ping
@@ -496,23 +495,6 @@ class EnvironmentModel(object):
 
         assert_true(self.get_admin_node_ip() in "".join(out),
                     "dhcpcheck doesn't discover master ip")
-
-    def get_fuel_settings(self, remote=None):
-        cmd = 'cat {cfg_file}'.format(cfg_file=settings.FUEL_SETTINGS_YAML)
-
-        if not remote:
-            with self.d_env.get_admin_remote() as remote:
-                remote.execute(cmd)
-        else:
-            result = remote.execute(cmd)
-
-        if result['exit_code'] == 0:
-            fuel_settings = yaml.load(''.join(result['stdout']))
-        else:
-            raise Exception('Can\'t output {cfg_file} file: {error}'.
-                            format(cfg_file=settings.FUEL_SETTINGS_YAML,
-                                   error=result['stderr']))
-        return fuel_settings
 
     def admin_install_pkg(self, pkg_name):
         """Install a package <pkg_name> on the admin node"""
