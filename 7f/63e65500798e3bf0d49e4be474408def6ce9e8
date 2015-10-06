@@ -1,0 +1,11 @@
+Verified+2: Jenkins
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+1: Veronica Krayneva <vkrayneva@mirantis.com>
+Code-Review+2: Dennis Dmitriev <ddmitriev@mirantis.com>
+Workflow+1: Dennis Dmitriev <ddmitriev@mirantis.com>
+Code-Review+1: Dmitry Tyzhnenko <dtyzhnenko@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Tue, 06 Oct 2015 10:18:46 +0000
+Reviewed-on: https://review.openstack.org/230558
+Project: stackforge/fuel-qa
+Branch: refs/heads/master
