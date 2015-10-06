@@ -16,6 +16,7 @@ import json
 import re
 import time
 import traceback
+import ipaddr
 
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
@@ -124,10 +125,10 @@ class FuelWebClient(object):
         self.client.add_syslog_server(cluster_id, host, port)
 
     @logwrap
-    def assert_cluster_floating_list(self, node_name, expected_ips):
-        logger.info('Assert floating IPs at node %s. Expected %s',
-                    node_name, expected_ips)
-        current_ips = self.get_cluster_floating_list(node_name)
+    def assert_cluster_floating_list(self, os_conn, cluster_id, expected_ips):
+        logger.info('Assert floating IPs on cluster #{0}. Expected {1}'.format(
+            cluster_id, expected_ips))
+        current_ips = self.get_cluster_floating_list(os_conn, cluster_id)
         assert_equal(set(expected_ips), set(current_ips),
                      'Current floating IPs {0}'.format(current_ips))
 
@@ -726,12 +727,17 @@ class FuelWebClient(object):
         return self.client.deploy_cluster_changes(cluster_id)
 
     @logwrap
-    def get_cluster_floating_list(self, node_name):
-        logger.info('Get floating IPs list at %s devops node', node_name)
-        with self.get_ssh_for_node(node_name) as remote:
-            ret = remote.check_call('/usr/bin/nova-manage floating list')
-        ret_str = ''.join(ret['stdout'])
-        return re.findall('(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', ret_str)
+    def get_cluster_floating_list(self, os_conn, cluster_id):
+        logger.info('Get floating IPs list at cluster #{0}'.format(cluster_id))
+
+        subnet = os_conn.get_subnet('net04_ext__subnet')
+        ret = []
+        for pool in subnet['allocation_pools']:
+            ip = ipaddr.IPv4Address(pool['start'])
+            while ip <= ipaddr.IPv4Address(pool['end']):
+                ret.append(str(ip))
+                ip += 1
+        return ret
 
     @logwrap
     def get_cluster_block_devices(self, node_name):
@@ -1451,8 +1457,10 @@ class FuelWebClient(object):
         ip_ranges, expected_ips = [], []
 
         for i in [0, -20, -40]:
+            l = []
             for k in range(11):
-                expected_ips.append(str(net[-12 + i + k]))
+                l.append(str(net[-12 + i + k]))
+            expected_ips.append(l)
             e, s = str(net[-12 + i]), str(net[-2 + i])
             ip_ranges.append([e, s])
 
