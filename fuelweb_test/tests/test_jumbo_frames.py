@@ -102,9 +102,21 @@ class TestJumboFrames(base_test_case.TestBasic):
 
         instance2_private_address = os_conn.get_nova_instance_ip(
             instance2, net_name='net04')
+        instance2_floating_ip = os_conn.assign_floating_ip(instance2)
+        logger.info("Floating address {0} associated with instance {1}"
+                    .format(instance2_floating_ip.ip, instance2.id))
 
-        devops_helpers.wait(lambda: devops_helpers.tcp_ping(
-            instance1_floating_ip.ip, 22), timeout=120)
+        devops_helpers.wait(
+            lambda: devops_helpers.tcp_ping(instance1_floating_ip.ip, 22),
+            timeout=120,
+            timeout_msg=("Instance {0} is unreachable for 120 seconds"
+                         .format(instance1.id)))
+
+        devops_helpers.wait(
+            lambda: devops_helpers.tcp_ping(instance2_floating_ip.ip, 22),
+            timeout=120,
+            timeout_msg=("Instance {0} is unreachable for 120 seconds"
+                         .format(instance2.id)))
 
         def ping_instance(source, destination, size, count=1):
             with self.fuel_web.get_ssh_for_node("slave-01") as ssh:
