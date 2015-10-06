@@ -13,6 +13,7 @@
 #    under the License.
 
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
 from proboscis import test
 from proboscis import SkipTest
 
@@ -178,3 +179,172 @@ class TestOSupgrade(base_test_data.TestBasic):
                      int(octane_upgrade_env['stdout'][0].split()[0]))
 
         self.env.make_snapshot("os_upgrade_env", is_make=True)
+
+    @test(depends_on=[os_upgrade_env],
+          groups=["upgrade_first_cic"])
+    @log_snapshot_after_test
+    def upgrade_first_cic(self):
+        """Upgrade first controller
+
+        Scenario:
+            1. Revert snapshot os_upgrade_env
+            2. run octane upgrade-node --isolated <seed_env_id> <node_id>
+
+        """
+        if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
+            raise SkipTest()
+
+        self.check_run('upgrade_first_cic')
+        self.env.revert_snapshot("os_upgrade_env")
+
+        target_cluster_id = self.fuel_web.client.get_cluster_id(
+            'TestOSupgrade'
+        )
+        seed_cluster_id = self.fuel_web.get_last_created_cluster()
+        controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            target_cluster_id, ["controller"]
+        )
+        with self.env.d_env.get_admin_remote() as remote:
+            octane_upgrade_node = remote.execute(
+                "octane upgrade-node --isolated {0} {1}".format(
+                    seed_cluster_id, controllers[-1]["id"])
+            )
+        assert_equal(0, octane_upgrade_node['exit_code'],
+                     "octane upgrade-node returns non zero"
+                     "status code,"
+                     "current result {}".format(octane_upgrade_node))
+        tasks_started_by_octane = [
+            task for task in self.fuel_web.client.get_tasks()
+            if task['cluster'] == seed_cluster_id
+        ]
+
+        for task in tasks_started_by_octane:
+            self.fuel_web.assert_task_success(task)
+        self.env.make_snapshot("upgrade_first_cic", is_make=True)
+
+    @test(depends_on=[upgrade_first_cic],
+          groups=["upgrade_db"])
+    @log_snapshot_after_test
+    def upgrade_db(self):
+        """Move and upgrade mysql db from target cluster to seed cluster
+
+        Scenario:
+            1. Revert snapshot upgrade_first_cic
+            2. run octane upgrade-db <target_env_id> <seed_env_id>
+
+        """
+
+        if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
+            raise SkipTest()
+
+        self.check_run('upgrade_db')
+        self.env.revert_snapshot("upgrade_first_cic")
+
+        target_cluster_id = self.fuel_web.client.get_cluster_id(
+            'TestOSupgrade'
+        )
+        target_controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            target_cluster_id, ["controller"]
+        )[0]
+        seed_cluster_id = self.fuel_web.get_last_created_cluster()
+        controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            seed_cluster_id, ["controller"]
+        )[0]
+
+        with self.env.d_env.get_ssh_to_remote(
+                target_controller["ip"]) as remote:
+            target_ids = remote.execute(
+                'mysql cinder <<< "select id from volumes;"; '
+                'mysql glance <<< "select id from images"; '
+                'mysql neutron <<< "(select id from networks) '
+                'UNION (select id from routers) '
+                'UNION (select id from subnets)"; '
+                'mysql keystone <<< "(select id from project) '
+                'UNION (select id from user)"'
+            )["stdout"]
+
+        with self.env.d_env.get_admin_remote() as remote:
+            octane_upgrade_db = remote.execute(
+                "octane upgrade-db {0} {1}".format(
+                    target_cluster_id, seed_cluster_id)
+            )
+
+        assert_equal(0, octane_upgrade_db['exit_code'],
+                     "octane upgrade-db returns non zero"
+                     "status code,"
+                     "current result is {}".format(octane_upgrade_db))
+
+        with self.env.d_env.get_ssh_to_remote(controller["ip"]) as remote:
+            stdout = remote.execute("crm resource status")["stdout"]
+            seed_ids = remote.execute(
+                'mysql cinder <<< "select id from volumes;"; '
+                'mysql glance <<< "select id from images"; '
+                'mysql neutron <<< "(select id from networks) '
+                'UNION (select id from routers) '
+                'UNION (select id from subnets)"; '
+                'mysql keystone <<< "(select id from project) '
+                'UNION (select id from user)"'
+            )["stdout"]
+
+        while stdout:
+            current = stdout.pop(0)
+            if "vip" in current:
+                assert_true("Started" in current)
+            elif "master_p" in current:
+                next_element = stdout.pop(0)
+                assert_true("Masters: [ node-" in next_element)
+            elif any(x in current for x in ["ntp", "mysql", "dns"]):
+                next_element = stdout.pop(0)
+                assert_true("Started" in next_element)
+            elif any(x in current for x in ["nova", "cinder", "keystone",
+                                            "heat", "neutron", "glance"]):
+                next_element = stdout.pop(0)
+                assert_true("Stopped" in next_element)
+
+        assert_equal(sorted(target_ids), sorted(seed_ids),
+                     "Objects in target and seed dbs are different")
+
+        self.env.make_snapshot("upgrade_db", is_make=True)
+
+    @test(depends_on=[upgrade_db],
+          groups=["upgrade_ceph"])
+    @log_snapshot_after_test
+    def upgrade_ceph(self):
+        """Upgrade ceph
+
+        Scenario:
+            1. Revert snapshot upgrade_db
+            2. run octane upgrade-ceph <target_env_id> <seed_env_id>
+
+        """
+
+        if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
+            raise SkipTest()
+
+        self.check_run('upgrade_ceph')
+        self.env.revert_snapshot("upgrade_db")
+
+        target_cluster_id = self.fuel_web.client.get_cluster_id(
+            'TestOSupgrade'
+        )
+        seed_cluster_id = self.fuel_web.get_last_created_cluster()
+        controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            seed_cluster_id, ["controller"]
+        )[0]
+
+        with self.env.d_env.get_admin_remote() as remote:
+            octane_upgrade_ceph = remote.execute(
+                "octane upgrade-ceph {0} {1}".format(
+                    target_cluster_id, seed_cluster_id)
+            )
+
+        assert_equal(0, octane_upgrade_ceph['exit_code'],
+                     "octane upgrade-ceph returns non zero status code,"
+                     "current result is {}".format(octane_upgrade_ceph))
+
+        with self.env.d_env.get_ssh_to_remote(controller["ip"]) as remote:
+            ceph_health = remote.execute("ceph health")["stdout"][0][:-1]
+
+        assert_equal("HEALTH_OK", ceph_health)
+
+        self.env.make_snapshot("upgrade_ceph", is_make=True)
