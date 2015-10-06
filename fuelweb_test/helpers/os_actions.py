@@ -462,8 +462,15 @@ class OpenStackActions(common.Common):
     def get_vip(self, vip):
         return self.neutron.show_vip(vip)
 
-    def get_nova_instance_ip(self, srv, net_name='novanetwork'):
-        return srv.networks[net_name][0]
+    def get_nova_instance_ip(self, srv, net_name='novanetwork', type='fixed'):
+        for network_label, address_list in srv.addresses.items():
+            if network_label != net_name:
+                continue
+            for addr in address_list:
+                if addr['OS-EXT-IPS:type'] == type:
+                    return addr['addr']
+        raise Exception("Instance {0} doesn't have {1} address for network "
+                        "{2}".format(srv.id, type, net_name))
 
     def get_instance_mac(self, remote, srv):
         res = ''.join(remote.execute('virsh dumpxml {0} | grep "mac address="'
