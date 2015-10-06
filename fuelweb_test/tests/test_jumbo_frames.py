@@ -62,6 +62,57 @@ class TestJumboFrames(base_test_case.TestBasic):
 
         return ifaces
 
+    def boot_instance_on_node(self, hypervisor_name):
+        instance = self.os_conn.create_server_for_migration(
+            neutron=True,
+            availability_zone="nova:{0}".format(hypervisor_name))
+        logger.info("New instance {0} created on {1}"
+                    .format(instance.id, hypervisor_name))
+
+        instance_floating_ip = self.os_conn.assign_floating_ip(instance)
+        logger.info("Floating address {0} associated with instance {1}"
+                    .format(instance_floating_ip.ip, instance.id))
+
+        devops_helpers.wait(
+            lambda: devops_helpers.tcp_ping(instance_floating_ip.ip, 22),
+            timeout=120,
+            timeout_msg=("Instance {0} is unreachable for 120 seconds"
+                         .format(instance.id)))
+
+        return self.os_conn.nova.servers.get(instance.id)
+
+    def ping_instance_from_instance(self,
+                                    source_instance,
+                                    destination_instance,
+                                    size, count=1):
+        creds = ("cirros", "cubswin:)")
+        source_floating_ip = self.os_conn.get_nova_instance_ip(
+            source_instance, net_name='net04', type='floating')
+        destination_fixed_ip = self.os_conn.get_nova_instance_ip(
+            destination_instance, net_name='net04', type='fixed')
+
+        with self.fuel_web.get_ssh_for_node("slave-01") as ssh:
+            command = "ping -c {0} -s {1} {2}"\
+                .format(count, size, destination_fixed_ip)
+            logger.info("Try to ping private address {0} from {1} "
+                        "with {2} {3} bytes packet(s): {4}"
+                        .format(destination_fixed_ip,
+                                source_floating_ip,
+                                count,
+                                size,
+                                command))
+
+            ping = self.os_conn.execute_through_host(
+                ssh, source_floating_ip, command, creds)
+            logger.info("Ping result: \n"
+                        "{0}\n"
+                        "{1}\n"
+                        "exit_code={2}"
+                        .format(ping['stdout'],
+                                ping['stderr'],
+                                ping['exit_code']))
+            return 0 == ping['exit_code']
+
     def check_mtu_size_between_instances(self, mtu_offset):
         """Check private network mtu size
 
@@ -74,89 +125,48 @@ class TestJumboFrames(base_test_case.TestBasic):
             6. Delete instances
 
         """
-
-        creds = ("cirros", "cubswin:)")
-
         cluster_id = self.fuel_web.get_last_created_cluster()
-        os_conn = os_actions.OpenStackActions(
+        self.os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
 
-        hypervisor_names = [hypervisor.hypervisor_hostname
-                            for hypervisor in os_conn.get_hypervisors()]
+        instances = []
+        for hypervisor in self.os_conn.get_hypervisors():
+            instances.append(
+                self.boot_instance_on_node(hypervisor.hypervisor_hostname))
 
-        instance1 = os_conn.create_server_for_migration(
-            neutron=True,
-            availability_zone="nova:{0}".format(hypervisor_names[0]))
-        logger.info("New instance {0} created on {1}"
-                    .format(instance1.id, hypervisor_names[0]))
+        source_instance = instances[0]
+        for destination_instance in instances[1:]:
+            asserts.assert_true(
+                self.ping_instance_from_instance(
+                    source_instance=source_instance,
+                    destination_instance=destination_instance,
+                    size=1472 - mtu_offset, count=3),
+                "Ping response was not received for 1500 bytes package")
 
-        instance2 = os_conn.create_server_for_migration(
-            neutron=True,
-            availability_zone="nova:{0}".format(hypervisor_names[1]))
-        logger.info("New instance {0} created on {1}"
-                    .format(instance2.id, hypervisor_names[1]))
+            asserts.assert_true(
+                self.ping_instance_from_instance(
+                    source_instance=source_instance,
+                    destination_instance=destination_instance,
+                    size=8972 - mtu_offset, count=3),
+                "Ping response was not received for 9000 bytes package")
 
-        instance1_floating_ip = os_conn.assign_floating_ip(instance1)
-        logger.info("Floating address {0} associated with instance {1}"
-                    .format(instance1_floating_ip.ip, instance1.id))
+            asserts.assert_false(
+                self.ping_instance_from_instance(
+                    source_instance=source_instance,
+                    destination_instance=destination_instance,
+                    size=8973 - mtu_offset, count=3),
+                "Ping response was received for 9001 bytes package")
 
-        instance2_private_address = os_conn.get_nova_instance_ip(
-            instance2, net_name='net04')
+            asserts.assert_false(
+                self.ping_instance_from_instance(
+                    source_instance=source_instance,
+                    destination_instance=destination_instance,
+                    size=14472 - mtu_offset, count=3),
+                "Ping response was received for 15000 bytes package")
 
-        devops_helpers.wait(lambda: devops_helpers.tcp_ping(
-            instance1_floating_ip.ip, 22), timeout=120)
-
-        def ping_instance(source, destination, size, count=1):
-            with self.fuel_web.get_ssh_for_node("slave-01") as ssh:
-                command = "ping -c {0} -s {1} {2}"\
-                    .format(count, size, destination)
-                logger.info("Try to ping private address {0} from {1} "
-                            "with {2} {3} bytes packet(s): {4}"
-                            .format(destination, source, count, size, command))
-                ping = os_conn.execute_through_host(
-                    ssh, source, command, creds)
-                logger.info("Ping result: \n"
-                            "{0}\n"
-                            "{1}\n"
-                            "exit_code={2}"
-                            .format(ping['stdout'],
-                                    ping['stderr'],
-                                    ping['exit_code']))
-                return 0 == ping['exit_code']
-
-        asserts.assert_true(
-            ping_instance(source=instance1_floating_ip.ip,
-                          destination=instance2_private_address,
-                          size=1472 - mtu_offset,
-                          count=3),
-            "Ping response was not received for 1500 bytes package")
-
-        asserts.assert_true(
-            ping_instance(source=instance1_floating_ip.ip,
-                          destination=instance2_private_address,
-                          size=8972 - mtu_offset,
-                          count=3),
-            "Ping response was not received for 9000 bytes package")
-
-        asserts.assert_false(
-            ping_instance(source=instance1_floating_ip.ip,
-                          destination=instance2_private_address,
-                          size=8973 - mtu_offset,
-                          count=3),
-            "Ping response was received for 9001 bytes package")
-
-        asserts.assert_false(
-            ping_instance(source=instance1_floating_ip.ip,
-                          destination=instance2_private_address,
-                          size=14472 - mtu_offset,
-                          count=3),
-            "Ping response was received for 15000 bytes package")
-
-        os_conn.delete_instance(instance1)
-        os_conn.delete_instance(instance2)
-
-        os_conn.verify_srv_deleted(instance1)
-        os_conn.verify_srv_deleted(instance2)
+        for instance in instances:
+            self.os_conn.delete_instance(instance)
+            self.os_conn.verify_srv_deleted(instance)
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
           groups=["prepare_5_slaves_with_jumbo_frames"])
