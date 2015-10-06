@@ -611,7 +611,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         logger.info("Srv is currently in status: %s" % srv.status)
 
         # Prepare to DHCP leases checks
-        srv_instance_ip = os.get_nova_instance_ip(srv, net_name='net04')
+        srv_instance_ip = os.get_nova_instance_ip(srv, network_name='net04')
         srv_host_name = self.fuel_web.find_devops_node_by_nailgun_fqdn(
             os.get_srv_hypervisor_name(srv),
             self.env.d_env.nodes().slaves[:3]).name
