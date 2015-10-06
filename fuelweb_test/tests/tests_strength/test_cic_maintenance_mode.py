@@ -104,39 +104,34 @@ class CICMaintenanceMode(TestBasic):
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
-        n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            cluster_id,
-            ['controller'])
-        d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
-
-        for devops_node in d_ctrls:
-            with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
+        for nailgun_node in self.env.d_env.nodes().slaves[0:3]:
+            with self.fuel_web.get_ssh_for_node(nailgun_node.name) as remote:
                 assert_true('True' in check_available_mode(remote),
                             "Maintenance mode is not available")
 
-                logger.info('Maintenance mode for node %s', devops_node.name)
+                logger.info('Maintenance mode for node %s', nailgun_node.name)
                 result = remote.execute('umm on')
                 assert_equal(result['exit_code'], 0,
                              'Failed to execute "{0}" on remote host: {1}'.
                              format('umm on', result))
             logger.info('Wait a %s node offline status after switching '
-                        'maintenance mode ', devops_node.name)
+                        'maintenance mode ', nailgun_node.name)
             try:
                 wait(
                     lambda: not
-                    self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
+                    self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
                     ['online'], timeout=60 * 10)
             except TimeoutError:
                 assert_false(
-                    self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
+                    self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
                     ['online'],
                     'Node {0} has not become offline after'
-                    'switching maintenance mode'.format(devops_node.name))
+                    'switching maintenance mode'.format(nailgun_node.name))
 
             logger.info('Check that %s node in maintenance mode after '
-                        'switching', devops_node.name)
+                        'switching', nailgun_node.name)
 
-            with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
+            with self.fuel_web.get_ssh_for_node(nailgun_node.name) as remote:
                 assert_true('True' in check_auto_mode(remote),
                             "Maintenance mode is not switch")
 
@@ -145,26 +140,26 @@ class CICMaintenanceMode(TestBasic):
                              'Failed to execute "{0}" on remote host: {1}'.
                              format('umm off', result))
 
-            logger.info('Wait a %s node online status', devops_node.name)
+            logger.info('Wait a %s node online status', nailgun_node.name)
             try:
                 wait(
                     lambda:
-                    self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
+                    self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
                     ['online'], timeout=60 * 10)
             except TimeoutError:
                 assert_true(
-                    self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
+                    self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
                     ['online'],
                     'Node {0} has not become online after '
-                    'exiting maintenance mode'.format(devops_node.name))
+                    'exiting maintenance mode'.format(nailgun_node.name))
 
             # Wait until MySQL Galera is UP on some controller
             self.fuel_web.wait_mysql_galera_is_up(
-                [n.name for n in d_ctrls])
+                [n.name for n in self.env.d_env.nodes().slaves[0:3]])
 
             # Wait until Cinder services UP on a controller
             self.fuel_web.wait_cinder_is_up(
-                [n.name for n in d_ctrls])
+                [n.name for n in self.env.d_env.nodes().slaves[0:3]])
 
             _wait(lambda:
                   self.fuel_web.run_single_ostf_test(
@@ -210,17 +205,12 @@ class CICMaintenanceMode(TestBasic):
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
-        n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            cluster_id,
-            ['controller'])
-        d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
-
-        for devops_node in d_ctrls:
-            with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
+        for nailgun_node in self.env.d_env.nodes().slaves[0:3]:
+            with self.fuel_web.get_ssh_for_node(nailgun_node.name) as remote:
                 assert_true('True' in check_available_mode(remote),
                             "Maintenance mode is not available")
 
-                logger.info('Change UMM.CONF on node %s', devops_node.name)
+                logger.info('Change UMM.CONF on node %s', nailgun_node.name)
                 command1 = ("echo -e 'UMM=yes\nREBOOT_COUNT=0\n"
                             "COUNTER_RESET_TIME=10' > /etc/umm.conf")
 
@@ -229,7 +219,7 @@ class CICMaintenanceMode(TestBasic):
                              'Failed to execute "{0}" on remote host: {1}'.
                              format(command1, result))
 
-                logger.info('Unexpected reboot on node %s', devops_node.name)
+                logger.info('Unexpected reboot on node %s', nailgun_node.name)
                 command2 = ('reboot --force >/dev/null & ')
                 result = remote.execute(command2)
                 assert_equal(result['exit_code'], 0,
@@ -237,23 +227,23 @@ class CICMaintenanceMode(TestBasic):
                              format(command2, result))
 
             logger.info('Wait a %s node offline status after unexpected '
-                        'reboot', devops_node.name)
+                        'reboot', nailgun_node.name)
             try:
                 wait(
                     lambda: not
-                    self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
+                    self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
                     ['online'], timeout=60 * 10)
             except TimeoutError:
                 assert_false(
-                    self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
+                    self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
                     ['online'],
                     'Node {0} has not become offline after unexpected'
-                    'reboot'.format(devops_node.name))
+                    'reboot'.format(nailgun_node.name))
 
             logger.info('Check that %s node in maintenance mode after'
-                        ' unexpected reboot', devops_node.name)
+                        ' unexpected reboot', nailgun_node.name)
 
-            with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
+            with self.fuel_web.get_ssh_for_node(nailgun_node.name) as remote:
                 assert_true('True' in check_auto_mode(remote),
                             "Maintenance mode is not switch")
 
@@ -270,26 +260,26 @@ class CICMaintenanceMode(TestBasic):
                              'Failed to execute "{0}" on remote host: {1}'.
                              format(command3, result))
 
-            logger.info('Wait a %s node online status', devops_node.name)
+            logger.info('Wait a %s node online status', nailgun_node.name)
             try:
                 wait(
                     lambda:
-                    self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
+                    self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
                     ['online'], timeout=90 * 10)
             except TimeoutError:
                 assert_true(
-                    self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
+                    self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
                     ['online'],
                     'Node {0} has not become online after umm off'.format(
-                        devops_node.name))
+                        nailgun_node.name))
 
             # Wait until MySQL Galera is UP on some controller
             self.fuel_web.wait_mysql_galera_is_up(
-                [n.name for n in d_ctrls])
+                [n.name for n in self.env.d_env.nodes().slaves[0:3]])
 
             # Wait until Cinder services UP on a controller
             self.fuel_web.wait_cinder_is_up(
-                [n.name for n in d_ctrls])
+                [n.name for n in self.env.d_env.nodes().slaves[0:3]])
 
             _wait(lambda:
                   self.fuel_web.run_single_ostf_test(
@@ -335,18 +325,13 @@ class CICMaintenanceMode(TestBasic):
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
-        n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            cluster_id,
-            ['controller'])
-        d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
-
-        for devops_node in d_ctrls:
-            with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
+        for nailgun_node in self.env.d_env.nodes().slaves[0:3]:
+            with self.fuel_web.get_ssh_for_node(nailgun_node.name) as remote:
                 assert_true('True' in check_available_mode(remote),
                             "Maintenance mode is not available")
 
                 logger.info('Maintenance mode for node %s is disable',
-                            devops_node.name)
+                            nailgun_node.name)
                 result = remote.execute('umm disable')
                 assert_equal(result['exit_code'], 0,
                              'Failed to execute "{0}" on remote host: {1}'.
@@ -356,7 +341,7 @@ class CICMaintenanceMode(TestBasic):
                              "Maintenance mode should not be available")
 
                 logger.info('Try to execute maintenance mode for node %s',
-                            devops_node.name)
+                            nailgun_node.name)
                 result = remote.execute('umm on')
                 assert_equal(result['exit_code'], 1,
                              'Failed to execute "{0}" on remote host: {1}'.
@@ -366,10 +351,10 @@ class CICMaintenanceMode(TestBasic):
             # the node would have gone to reboot, so we just expect
             time.sleep(30)
             assert_true(
-                self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
+                self.fuel_web.get_nailgun_node_by_devops_node(nailgun_node)
                 ['online'],
                 'Node {0} should be online after command "umm on"'.
-                format(devops_node.name))
+                format(nailgun_node.name))
 
             try:
                 self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke',
@@ -403,17 +388,12 @@ class CICMaintenanceMode(TestBasic):
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
-        n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            cluster_id,
-            ['controller'])
-        d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
-
-        for devops_node in d_ctrls:
-            with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
+        for nailgun_node in self.env.d_env.nodes().slaves[0:3]:
+            with self.fuel_web.get_ssh_for_node(nailgun_node.name) as remote:
                 assert_true('True' in check_available_mode(remote),
                             "Maintenance mode is not available")
 
-                logger.info('Change UMM.CONF on node %s', devops_node.name)
+                logger.info('Change UMM.CONF on node %s', nailgun_node.name)
                 command1 = ("echo -e 'UMM=yes\nREBOOT_COUNT=0\n"
                             "COUNTER_RESET_TIME=10' > /etc/umm.conf")
 
@@ -430,7 +410,7 @@ class CICMaintenanceMode(TestBasic):
                 assert_false('True' in check_available_mode(remote),
                              "Maintenance mode should not be available")
 
-                logger.info('Unexpected reboot on node %s', devops_node.name)
+                logger.info('Unexpected reboot on node %s', nailgun_node.name)
                 command2 = ('reboot --force >/dev/null & ')
                 result = remote.execute(command2)
                 assert_equal(result['exit_code'], 0,
@@ -442,27 +422,27 @@ class CICMaintenanceMode(TestBasic):
             # Just waiting
 
             _ip = self.fuel_web.get_nailgun_node_by_name(
-                devops_node.name)['ip']
+                nailgun_node.name)['ip']
             _wait(lambda: _tcp_ping(_ip, 22), timeout=120)
 
             logger.info('Wait a %s node online status after unexpected '
-                        'reboot', devops_node.name)
-            self.fuel_web.wait_nodes_get_online_state([devops_node])
+                        'reboot', nailgun_node.name)
+            self.fuel_web.wait_nodes_get_online_state([nailgun_node])
 
             logger.info('Check that %s node not in maintenance mode after'
-                        ' unexpected reboot', devops_node.name)
+                        ' unexpected reboot', nailgun_node.name)
 
-            with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
+            with self.fuel_web.get_ssh_for_node(nailgun_node.name) as remote:
                 assert_false('True' in check_auto_mode(remote),
                              "Maintenance mode should not switched")
 
             # Wait until MySQL Galera is UP on some controller
             self.fuel_web.wait_mysql_galera_is_up(
-                [n.name for n in d_ctrls])
+                [n.name for n in self.env.d_env.nodes().slaves[0:3]])
 
             # Wait until Cinder services UP on a controller
             self.fuel_web.wait_cinder_is_up(
-                [n.name for n in d_ctrls])
+                [n.name for n in self.env.d_env.nodes().slaves[0:3]])
 
             _wait(lambda:
                   self.fuel_web.run_single_ostf_test(

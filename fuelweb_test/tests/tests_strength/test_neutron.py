@@ -369,13 +369,8 @@ class TestNeutronFailover(base_test_case.TestBasic):
         # Wait for HA services ready
         self.fuel_web.assert_ha_services_ready(cluster_id)
 
-        n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            cluster_id,
-            ['controller'])
-        d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
-
-        online_controllers_names = [n.name for n in
-                                    set(d_ctrls) - set([new_devops])]
+        online_controllers_names = [n.name for n in set(
+            self.env.d_env.nodes().slaves[:3]) - {new_devops}]
         self.fuel_web.wait_mysql_galera_is_up(online_controllers_names)
 
         try:
