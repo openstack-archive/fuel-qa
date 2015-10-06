@@ -531,11 +531,11 @@ class MultiroleMultipleServices(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
 
-@test(enabled=False)
+@test
 class FloatingIPs(TestBasic):
     """FloatingIPs."""  # TODO documentation
 
-    @test(enabled=False, depends_on=[SetupEnvironment.prepare_slaves_3],
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_floating_ips"])
     @log_snapshot_after_test
     def deploy_floating_ips(self):
@@ -557,16 +557,18 @@ class FloatingIPs(TestBasic):
         # Test should be re-worked for neutron according to LP#1481322
         self.env.revert_snapshot("ready_with_3_slaves")
 
+        settings={
+            'tenant': 'floatingip',
+            'user': 'floatingip',
+            'password': 'floatingip',
+            "net_provider": 'neutron',
+            "net_segment_type": NEUTRON_SEGMENT_TYPE
+        }
+
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings={
-                'tenant': 'floatingip',
-                'user': 'floatingip',
-                'password': 'floatingip',
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE
-            }
+            settings=settings
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -577,7 +579,7 @@ class FloatingIPs(TestBasic):
         )
 
         networking_parameters = {
-            "floating_ranges": self.fuel_web.get_floating_ranges()[0]}
+            "floating_ranges": self.fuel_web.get_floating_ranges()[0][0]}
 
         self.fuel_web.client.update_network(
             cluster_id,
@@ -588,7 +590,12 @@ class FloatingIPs(TestBasic):
 
         # assert ips
         expected_ips = self.fuel_web.get_floating_ranges()[1]
-        self.fuel_web.assert_cluster_floating_list('slave-02', expected_ips)
+        self.fuel_web.assert_cluster_floating_list(
+            {"cluster_id": cluster_id,
+             "user": settings['user'],
+             "password": settings['password'],
+             "tenant": settings['tenant']},
+            expected_ips)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)

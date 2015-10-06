@@ -16,11 +16,13 @@ import json
 import re
 import time
 import traceback
+import ipaddr
 
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
+from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.ssl import copy_cert_from_master
 from fuelweb_test.helpers.ssl import change_cluster_ssl_config
 from ipaddr import IPNetwork
@@ -124,10 +126,10 @@ class FuelWebClient(object):
         self.client.add_syslog_server(cluster_id, host, port)
 
     @logwrap
-    def assert_cluster_floating_list(self, node_name, expected_ips):
-        logger.info('Assert floating IPs at node %s. Expected %s',
-                    node_name, expected_ips)
-        current_ips = self.get_cluster_floating_list(node_name)
+    def assert_cluster_floating_list(self, settings, expected_ips):
+        logger.info('Assert floating IPs on cluster #{0}. Expected {1}'.format(
+            settings['cluster_id'], expected_ips))
+        current_ips = self.get_cluster_floating_list(settings)
         assert_equal(set(expected_ips), set(current_ips),
                      'Current floating IPs {0}'.format(current_ips))
 
@@ -726,12 +728,26 @@ class FuelWebClient(object):
         return self.client.deploy_cluster_changes(cluster_id)
 
     @logwrap
-    def get_cluster_floating_list(self, node_name):
-        logger.info('Get floating IPs list at %s devops node', node_name)
-        with self.get_ssh_for_node(node_name) as remote:
-            ret = remote.check_call('/usr/bin/nova-manage floating list')
-        ret_str = ''.join(ret['stdout'])
-        return re.findall('(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', ret_str)
+    def get_cluster_floating_list(self, settings):
+        logger.info('Get floating IPs list at cluster #{}'.format(
+            settings['cluster_id']))
+        os_conn = os_actions.OpenStackActions(
+            self.get_public_vip(settings['cluster_id']),
+            user=settings['user'],
+            passwd=settings['password'],
+            tenant=settings['tenant'])
+        subnet = os_conn.get_subnet('net04_ext__subnet')
+        ret = []
+        for pool in subnet['allocation_pools']:
+            ip = ipaddr.IPv4Address(pool['start'])
+            while ip <= ipaddr.IPv4Address(pool['end']):
+                ret.append(str(ip))
+                ip += 1
+        return ret
+        # with self.get_ssh_for_node(node_name) as remote:
+        #     ret = remote.check_call('/usr/bin/nova-manage floating list')
+        # ret_str = ''.join(ret['stdout'])
+        # return re.findall('(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', ret_str)
 
     @logwrap
     def get_cluster_block_devices(self, node_name):
