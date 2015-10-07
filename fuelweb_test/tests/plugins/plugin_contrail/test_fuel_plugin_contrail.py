@@ -719,7 +719,7 @@ class ContrailPlugin(TestBasic):
         raw_data = [{
             'mac': None,
             'mode': 'active-backup',
-            'name': 'lnx-bond0',
+            'name': 'bond0',
             'slaves': [
                 {'name': 'eth4'},
                 {'name': 'eth2'},
@@ -733,7 +733,7 @@ class ContrailPlugin(TestBasic):
             'eth0': ['fuelweb_admin'],
             'eth1': ['public'],
             'eth3': ['private'],
-            'lnx-bond0': [
+            'bond0': [
                 'management',
                 'storage',
             ]
