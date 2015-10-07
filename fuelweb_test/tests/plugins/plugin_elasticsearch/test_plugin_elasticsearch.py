@@ -46,7 +46,7 @@ class TestElasticsearchPlugin(TestBasic):
             3. Create cluster
             4. Add 1 node with controller role
             5. Add 1 node with compute role
-            6. Add 1 node with base-os role
+            6. Add 1 node with elasticsearch_kibana role
             7. Deploy the cluster
             8. Check that plugin is working
             9. Run OSTF
@@ -78,7 +78,7 @@ class TestElasticsearchPlugin(TestBasic):
 
         plugin_name = 'elasticsearch_kibana'
         options = {'metadata/enabled': True,
-                   'node_name/value': 'slave-03_base-os'}
+                   'node_name/value': 'slave-03_elasticsearch_kibana'}
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
 
         assert_true(
@@ -92,7 +92,7 @@ class TestElasticsearchPlugin(TestBasic):
             {
                 'slave-01': ['controller'],
                 'slave-02': ['compute'],
-                'slave-03': ['base-os']
+                'slave-03': ['elasticsearch_kibana']
             }
         )
 
