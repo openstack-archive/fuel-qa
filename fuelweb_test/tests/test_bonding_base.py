@@ -25,7 +25,7 @@ class BondingTest(TestBasic):
             {
                 'mac': None,
                 'mode': 'active-backup',
-                'name': 'lnx-bond0',
+                'name': 'bond0',
                 'slaves': [
                     {'name': 'eth5'},
                     {'name': 'eth4'},
@@ -39,7 +39,7 @@ class BondingTest(TestBasic):
             {
                 'mac': None,
                 'mode': 'active-backup',
-                'name': 'lnx-bond1',
+                'name': 'bond1',
                 'slaves': [
                     {'name': 'eth1'},
                     {'name': 'eth0'}
@@ -51,13 +51,13 @@ class BondingTest(TestBasic):
         ]
 
         self.INTERFACES = {
-            'lnx-bond0': [
+            'bond0': [
                 'public',
                 'management',
                 'storage',
                 'private'
             ],
-            'lnx-bond1': ['fuelweb_admin']
+            'bond1': ['fuelweb_admin']
         }
         super(BondingTest, self).__init__()
 
