@@ -21,7 +21,6 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import get_network_template
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
 from fuelweb_test.settings import NEUTRON_SEGMENT
-from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import NODEGROUPS
 from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -63,8 +62,6 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE_HA,
             settings={
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT[NEUTRON_SEGMENT_TYPE],
                 'tenant': 'netTemplate',
                 'user': 'netTemplate',
                 'password': 'netTemplate',
@@ -151,8 +148,6 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
                 'volumes_lvm': False,
                 'ephemeral_ceph': True,
                 'objects_ceph': True,
-                'net_provider': 'neutron',
-                'net_segment_type': NEUTRON_SEGMENT[NEUTRON_SEGMENT_TYPE],
                 'tenant': 'netTemplate',
                 'user': 'netTemplate',
                 'password': 'netTemplate',

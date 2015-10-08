@@ -37,7 +37,6 @@ from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import DNS
 from fuelweb_test.settings import DNS_SUFFIX
 from fuelweb_test.settings import DOWNLOAD_LINK
-from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -54,15 +53,9 @@ class TestHaFailoverBase(TestBasic):
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[5:6])
 
-        settings = {
-            "net_provider": 'neutron',
-            "net_segment_type": NEUTRON_SEGMENT_TYPE
-        }
-
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings=settings
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -92,8 +85,6 @@ class TestHaFailoverBase(TestBasic):
             'volumes_ceph': True,
             'images_ceph': True,
             'volumes_lvm': False,
-            "net_provider": 'neutron',
-            "net_segment_type": NEUTRON_SEGMENT_TYPE
         }
 
         cluster_id = self.fuel_web.create_cluster(

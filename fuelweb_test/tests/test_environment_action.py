@@ -60,8 +60,6 @@ class EnvironmentAction(base_test_case.TestBasic):
                 'tenant': 'stop_deploy',
                 'user': 'stop_deploy',
                 'password': 'stop_deploy',
-                "net_provider": 'neutron',
-                "net_segment_type": hlp_data.NEUTRON_SEGMENT_TYPE
             }
         )
         self.fuel_web.update_nodes(
@@ -121,10 +119,6 @@ class EnvironmentAction(base_test_case.TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=hlp_data.DEPLOYMENT_MODE,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": hlp_data.NEUTRON_SEGMENT_TYPE
-            }
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -187,10 +181,6 @@ class EnvironmentAction(base_test_case.TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=hlp_data.DEPLOYMENT_MODE,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": hlp_data.NEUTRON_SEGMENT_TYPE
-            }
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -245,10 +235,6 @@ class EnvironmentActionOnHA(base_test_case.TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=hlp_data.DEPLOYMENT_MODE_HA,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": hlp_data.NEUTRON_SEGMENT_TYPE
-            }
         )
         self.fuel_web.update_nodes(
             cluster_id,

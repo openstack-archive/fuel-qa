@@ -28,8 +28,6 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.ovs import ovs_get_tag_by_port
 from fuelweb_test import ostf_test_mapping as map_ostf
 from fuelweb_test import settings
-from fuelweb_test.settings import NEUTRON_ENABLE
-from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test import logger
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -66,11 +64,10 @@ class CephCompact(TestBasic):
             'volumes_lvm': False,
             'tenant': 'ceph1',
             'user': 'ceph1',
-            'password': 'ceph1'
+            'password': 'ceph1',
+            'net_provider': 'neutron',
+            'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
         }
-        if NEUTRON_ENABLE:
-            data["net_provider"] = 'neutron'
-            data["net_segment_type"] = settings.NEUTRON_SEGMENT['vlan']
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -244,27 +241,22 @@ class CephHA(TestBasic):
         self.env.revert_snapshot("ready")
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[:6])
-        csettings = {}
-        if settings.NEUTRON_ENABLE:
-            csettings = {
-                "net_provider": 'neutron',
-                "net_segment_type": settings.NEUTRON_SEGMENT['vlan']
-            }
-        csettings.update(
-            {
-                'volumes_ceph': True,
-                'images_ceph': True,
-                'volumes_lvm': False,
-                'tenant': 'cephHA',
-                'user': 'cephHA',
-                'password': 'cephHA',
-                'osd_pool_size': "3"
-            }
-        )
+
+        data = {
+            'volumes_ceph': True,
+            'images_ceph': True,
+            'volumes_lvm': False,
+            'tenant': 'cephHA',
+            'user': 'cephHA',
+            'password': 'cephHA',
+            'osd_pool_size': "3",
+            'net_provider': 'neutron',
+            'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
+        }
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE,
-            settings=csettings
+            settings=data
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -331,8 +323,7 @@ class CephHA(TestBasic):
 
         # Check resources addition
         # create instance
-        server = os_conn.create_instance(
-            neutron_network=settings.NEUTRON_ENABLE)
+        server = os_conn.create_instance(neutron_network=True)
 
         # create flavor
         flavor = os_conn.create_flavor('openstackstat', 1024, 1, 1)
@@ -446,8 +437,6 @@ class CephRadosGW(TestBasic):
                 'volumes_ceph': True,
                 'images_ceph': True,
                 'objects_ceph': True,
-                'net_provider': 'neutron',
-                'net_segment_type': NEUTRON_SEGMENT_TYPE,
                 'tenant': 'rados',
                 'user': 'rados',
                 'password': 'rados'
@@ -546,8 +535,6 @@ class VmBackedWithCephMigrationBasic(TestBasic):
                 'images_ceph': True,
                 'ephemeral_ceph': True,
                 'volumes_lvm': False,
-                'net_provider': 'neutron',
-                'net_segment_type': NEUTRON_SEGMENT_TYPE,
             }
         )
 
@@ -803,8 +790,6 @@ class CheckCephPartitionsAfterReboot(TestBasic):
                 'images_ceph': True,
                 'ephemeral_ceph': True,
                 'volumes_lvm': False,
-                'net_provider': 'neutron',
-                'net_segment_type': NEUTRON_SEGMENT_TYPE,
             }
         )
 

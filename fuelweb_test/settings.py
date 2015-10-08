@@ -236,6 +236,9 @@ NEUTRON_SEGMENT = {
     'tun': 'tun'
 }
 
+NEUTRON_SEGMENT_TYPE = os.environ.get('NEUTRON_SEGMENT_TYPE', None)
+
+
 USE_ALL_DISKS = get_var_as_bool('USE_ALL_DISKS', True)
 
 UPLOAD_MANIFESTS = get_var_as_bool('UPLOAD_MANIFESTS', False)
@@ -313,10 +316,6 @@ ATTEMPTS = int(os.environ.get('ATTEMPTS', 5))
 
 # Create snapshots as last step in test-case
 MAKE_SNAPSHOT = get_var_as_bool('MAKE_SNAPSHOT', False)
-
-NEUTRON_ENABLE = get_var_as_bool('NEUTRON_ENABLE', False)
-NEUTRON_SEGMENT_TYPE = os.environ.get('NEUTRON_SEGMENT_TYPE',
-                                      NEUTRON_SEGMENT["vlan"])
 
 FUEL_SETTINGS_YAML = os.environ.get('FUEL_SETTINGS_YAML',
                                     '/etc/fuel/astute.yaml')
