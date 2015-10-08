@@ -174,17 +174,9 @@ class ZabbixPlugin(TestBasic):
                 remote,
                 plugin=os.path.basename(conf.ZABBIX_PLUGIN_PATH))
 
-        settings = None
-        if conf.NEUTRON_ENABLE:
-            settings = {
-                "net_provider": "neutron",
-                "net_segment_type": conf.NEUTRON_SEGMENT_TYPE
-            }
-
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=conf.DEPLOYMENT_MODE,
-            settings=settings
         )
 
         zabbix_username = 'admin'
@@ -263,18 +255,9 @@ class ZabbixPlugin(TestBasic):
                     remote,
                     plugin=os.path.basename(plugin))
 
-        settings = None
-
-        if conf.NEUTRON_ENABLE:
-            settings = {
-                "net_provider": "neutron",
-                "net_segment_type": conf.NEUTRON_SEGMENT_TYPE
-            }
-
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=conf.DEPLOYMENT_MODE,
-            settings=settings
         )
 
         zabbix_username = 'admin'
@@ -387,18 +370,9 @@ class ZabbixPlugin(TestBasic):
                     remote,
                     plugin=os.path.basename(plugin))
 
-        settings = None
-
-        if conf.NEUTRON_ENABLE:
-            settings = {
-                "net_provider": "neutron",
-                "net_segment_type": conf.NEUTRON_SEGMENT_TYPE
-            }
-
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=conf.DEPLOYMENT_MODE,
-            settings=settings
         )
 
         zabbix_username = 'admin'
@@ -478,18 +452,9 @@ class ZabbixPlugin(TestBasic):
                     remote,
                     plugin=os.path.basename(plugin))
 
-        settings = None
-
-        if conf.NEUTRON_ENABLE:
-            settings = {
-                "net_provider": "neutron",
-                "net_segment_type": conf.NEUTRON_SEGMENT_TYPE
-            }
-
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=conf.DEPLOYMENT_MODE,
-            settings=settings
         )
 
         zabbix_username = 'admin'
