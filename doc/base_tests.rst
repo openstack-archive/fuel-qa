@@ -359,3 +359,7 @@ Test for separate rabbitmq service
 ----------------------------------
 .. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_rabbitmq
    :members:
+
+Template based tests
+--------------------
+.. automodule:: fuelweb_test.actions_tests
