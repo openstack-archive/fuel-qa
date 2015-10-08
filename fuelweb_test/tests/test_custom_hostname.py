@@ -55,10 +55,6 @@ class CustomHostname(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE_HA,
-            settings={
-                'net_provider': 'neutron',
-                'net_segment_type': settings.NEUTRON_SEGMENT_TYPE,
-            }
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -125,10 +121,6 @@ class CustomHostname(TestBasic):
             cluster_id = self.fuel_web.create_cluster(
                 name=self.__class__.__name__,
                 mode=settings.DEPLOYMENT_MODE,
-                settings={
-                    'net_provider': 'neutron',
-                    'net_segment_type': settings.NEUTRON_SEGMENT_TYPE
-                }
             )
             self.fuel_web.update_nodes(
                 cluster_id,
@@ -276,10 +268,6 @@ class CustomHostname(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE,
-            settings={
-                'net_provider': 'neutron',
-                'net_segment_type': settings.NEUTRON_SEGMENT_TYPE
-            }
         )
 
         self.fuel_web.update_nodes(cluster_id, {'slave-01': ['controller']})

@@ -22,7 +22,6 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test import settings
 from fuelweb_test import logger
-from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -115,8 +114,6 @@ class UbuntuBootstrap(TestBasic):
                 'tenant': 'stop_deploy',
                 'user': 'stop_deploy',
                 'password': 'stop_deploy',
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE
             }
         )
         self.fuel_web.update_nodes(

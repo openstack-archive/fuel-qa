@@ -53,8 +53,6 @@ class CICMaintenanceMode(TestBasic):
         self.env.revert_snapshot("ready_with_5_slaves")
         data = {
             'ceilometer': True,
-            'net_provider': 'neutron',
-            'net_segment_type': settings.NEUTRON_SEGMENT_TYPE
         }
 
         cluster_id = self.fuel_web.create_cluster(

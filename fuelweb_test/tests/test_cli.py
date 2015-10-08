@@ -28,7 +28,7 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers.ssl import change_cluster_ssl_config
 from fuelweb_test.settings import DEPLOYMENT_MODE
-from fuelweb_test.settings import NEUTRON_ENABLE
+from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -222,10 +222,8 @@ class CommandLine(TestBasic):
             release_name=OPENSTACK_RELEASE)[0]
 
         # Choose network type
-        if NEUTRON_ENABLE:
-            net = 'neutron --nst={nst}'.format(nst=NEUTRON_SEGMENT_TYPE)
-        else:
-            net = 'nova'
+        net = 'neutron --nst={nst}'.format(nst=NEUTRON_SEGMENT_TYPE
+                                           or NEUTRON_SEGMENT['vlan'])
 
         with self.env.d_env.get_admin_remote() as remote:
 

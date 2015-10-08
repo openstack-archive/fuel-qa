@@ -62,6 +62,7 @@ from fuelweb_test.settings import KVM_USE
 from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import NEUTRON
 from fuelweb_test.settings import NEUTRON_SEGMENT
+from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import NODEGROUPS
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
@@ -428,10 +429,22 @@ class FuelWebClient(object):
             }
 
             if "net_provider" in settings:
+                data.update({'net_provider': settings["net_provider"]})
+
+            if "net_segment_type" in settings:
+                data.update({'net_segment_type': settings["net_segment_type"]})
+
+            # NEUTRON_SEGMENT_TYPE should not override any option
+            # configured from test, in case if test is going to set only
+            # 'net_provider' for a cluster.
+            if (NEUTRON_SEGMENT_TYPE and
+                    "net_provider" not in settings and
+                    "net_segment_type" not in settings):
                 data.update(
                     {
-                        'net_provider': settings["net_provider"],
-                        'net_segment_type': settings["net_segment_type"],
+                        'net_provider': NEUTRON,
+                        'net_segment_type': NEUTRON_SEGMENT[
+                            NEUTRON_SEGMENT_TYPE]
                     }
                 )
 
@@ -440,7 +453,7 @@ class FuelWebClient(object):
             logger.info('The cluster id is %s', cluster_id)
 
             logger.info('Set cluster settings to %s',
-                        json.dumps(settings, indent=1))
+                        json.dumps(data, indent=1))
             attributes = self.client.get_cluster_attributes(cluster_id)
 
             for option in settings:
