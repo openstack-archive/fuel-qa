@@ -65,10 +65,6 @@ class OneNodeDeploy(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE
-            }
         )
         logger.info('cluster is %s' % str(cluster_id))
         self.fuel_web.update_nodes(
@@ -223,8 +219,6 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
             'tenant': 'neutronAddCompute',
             'user': 'neutronAddCompute',
             'password': 'neutronAddCompute',
-            'net_provider': 'neutron',
-            'net_segment_type': NEUTRON_SEGMENT_TYPE
         }
 
         cluster_id = self.fuel_web.create_cluster(
@@ -362,8 +356,6 @@ class MultiroleControllerCinder(TestBasic):
             'tenant': 'multirolecinder',
             'user': 'multirolecinder',
             'password': 'multirolecinder',
-            "net_provider": 'neutron',
-            "net_segment_type": NEUTRON_SEGMENT_TYPE
         }
 
         cluster_id = self.fuel_web.create_cluster(
@@ -414,10 +406,6 @@ class MultiroleComputeCinder(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE
-            }
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -493,8 +481,6 @@ class MultiroleMultipleServices(TestBasic):
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
             settings={
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE,
                 'sahara': True,
                 'murano': True,
                 'ceilometer': True,
@@ -550,18 +536,18 @@ class FloatingIPs(TestBasic):
         # Test should be re-worked for neutron according to LP#1481322
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        settings = {
+        csettings = {
             'tenant': 'floatingip',
             'user': 'floatingip',
             'password': 'floatingip',
-            "net_provider": 'neutron',
-            "net_segment_type": NEUTRON_SEGMENT_TYPE
+            'net_provider': 'neutron',
+            'net_segment_type': NEUTRON_SEGMENT_TYPE,
         }
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings=settings
+            settings=csettings,
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -584,9 +570,9 @@ class FloatingIPs(TestBasic):
 
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id),
-            user=settings['user'],
-            passwd=settings['password'],
-            tenant=settings['tenant'])
+            user=csettings['user'],
+            passwd=csettings['password'],
+            tenant=csettings['tenant'])
 
         # assert ips
         expected_ips = self.fuel_web.get_floating_ranges()[1][0]
@@ -641,10 +627,6 @@ class NodeMultipleInterfaces(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE
-            }
         )
         self.fuel_web.update_nodes(
             cluster_id,

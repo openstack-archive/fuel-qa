@@ -115,18 +115,9 @@ class EMCPlugin(TestBasic):
                 remote,
                 plugin=os.path.basename(CONF.EMC_PLUGIN_PATH))
 
-        settings = None
-
-        if CONF.NEUTRON_ENABLE:
-            settings = {
-                "net_provider": 'neutron',
-                "net_segment_type": CONF.NEUTRON_SEGMENT_TYPE
-            }
-
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=CONF.DEPLOYMENT_MODE,
-            settings=settings
         )
 
         attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
