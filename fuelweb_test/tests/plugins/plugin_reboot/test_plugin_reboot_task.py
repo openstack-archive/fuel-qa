@@ -20,7 +20,6 @@ from proboscis import test
 from fuelweb_test.helpers import checkers
 from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE
-from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.helpers.fuel_actions import FuelPluginBuilder
@@ -84,10 +83,6 @@ class RebootPlugin(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE
-            }
         )
         # get plugins from fuel and enable our one
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
@@ -213,10 +208,6 @@ class RebootPlugin(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE
-            }
         )
         # get plugins from fuel and enable it
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"

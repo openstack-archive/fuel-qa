@@ -469,15 +469,11 @@ class FuelMasterMigrate(TestBasic):
         Duration 210m
         """
         self.env.revert_snapshot("ready_with_3_slaves")
-        data = {
-            'net_provider': 'neutron',
-            'net_segment_type': settings.NEUTRON_SEGMENT_TYPE
-        }
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE_HA,
-            settings=data)
+        )
 
         self.fuel_web.update_nodes(
             cluster_id,

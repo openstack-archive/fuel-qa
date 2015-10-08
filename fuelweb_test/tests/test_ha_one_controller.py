@@ -25,7 +25,6 @@ from fuelweb_test.helpers import os_actions
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NODE_VOLUME_SIZE
 from fuelweb_test.settings import NEUTRON_SEGMENT
-from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -63,10 +62,6 @@ class OneNodeDeploy(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE
-            }
         )
         logger.info('cluster is %s' % str(cluster_id))
         self.fuel_web.update_nodes(
@@ -221,8 +216,6 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
             'tenant': 'neutronAddCompute',
             'user': 'neutronAddCompute',
             'password': 'neutronAddCompute',
-            'net_provider': 'neutron',
-            'net_segment_type': NEUTRON_SEGMENT_TYPE
         }
 
         cluster_id = self.fuel_web.create_cluster(
@@ -360,8 +353,6 @@ class MultiroleControllerCinder(TestBasic):
             'tenant': 'multirolecinder',
             'user': 'multirolecinder',
             'password': 'multirolecinder',
-            "net_provider": 'neutron',
-            "net_segment_type": NEUTRON_SEGMENT_TYPE
         }
 
         cluster_id = self.fuel_web.create_cluster(
@@ -412,10 +403,6 @@ class MultiroleComputeCinder(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE
-            }
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -500,8 +487,6 @@ class MultiroleMultipleServices(TestBasic):
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
             settings={
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE,
                 'sahara': True,
                 'murano': True,
                 'ceilometer': True,
@@ -564,8 +549,6 @@ class FloatingIPs(TestBasic):
                 'tenant': 'floatingip',
                 'user': 'floatingip',
                 'password': 'floatingip',
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE
             }
         )
         self.fuel_web.update_nodes(
@@ -632,10 +615,6 @@ class NodeMultipleInterfaces(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE
-            }
         )
         self.fuel_web.update_nodes(
             cluster_id,

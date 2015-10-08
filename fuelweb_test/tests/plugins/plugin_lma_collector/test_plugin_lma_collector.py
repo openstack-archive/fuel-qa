@@ -84,10 +84,6 @@ class TestLmaCollectorPlugin(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=conf.DEPLOYMENT_MODE,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": conf.NEUTRON_SEGMENT_TYPE,
-            }
         )
 
         influxdb_user = "influxdb"

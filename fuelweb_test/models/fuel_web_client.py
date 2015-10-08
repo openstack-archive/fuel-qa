@@ -62,6 +62,7 @@ from fuelweb_test.settings import KVM_USE
 from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import NEUTRON
 from fuelweb_test.settings import NEUTRON_SEGMENT
+from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import NODEGROUPS
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
@@ -421,19 +422,25 @@ class FuelWebClient(object):
 
         cluster_id = self.client.get_cluster_id(name)
         if not cluster_id:
+
+            if "net_provider" not in settings:
+                # Default network provider: 'neutron'
+                # Default segment type: 'vlan'
+                settings.update(
+                    {
+                        'net_provider': NEUTRON,
+                        'net_segment_type': NEUTRON_SEGMENT[
+                            NEUTRON_SEGMENT_TYPE],
+                    }
+                )
+
             data = {
                 "name": name,
                 "release": str(release_id),
-                "mode": mode
+                "mode": mode,
+                'net_provider': settings["net_provider"],
+                'net_segment_type': settings["net_segment_type"],
             }
-
-            if "net_provider" in settings:
-                data.update(
-                    {
-                        'net_provider': settings["net_provider"],
-                        'net_segment_type': settings["net_segment_type"],
-                    }
-                )
 
             self.client.create_cluster(data=data)
             cluster_id = self.client.get_cluster_id(name)
