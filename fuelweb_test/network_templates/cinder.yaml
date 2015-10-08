@@ -147,7 +147,7 @@ adv_net_template:
             name: br-fake
           - action: add-bond
             bridge: br-fake
-            name: lnx-bond0
+            name: bond0
             interfaces:
             - <% if5 %>
             bond_properties:
