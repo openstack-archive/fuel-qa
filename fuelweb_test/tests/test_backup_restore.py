@@ -13,16 +13,25 @@
 #    under the License.
 
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
 from proboscis import test
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
+from devops.helpers.helpers import wait
+from devops.error import TimeoutError
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.tests.test_ha_one_controller_base\
     import HAOneControllerNeutronBase
 from fuelweb_test.tests.test_neutron_tun_base import NeutronTunHaBase
+from fuelweb_test.helpers.utils import run_on_remote
+from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
+from fuelweb_test.settings import OPENSTACK_RELEASE
+from fuelweb_test.tests.test_cli import CommandLine
+from fuelweb_test import logger
 
 
 @test(groups=["backup_restore_master"])
@@ -232,3 +241,107 @@ class BackupRestoreHA(NeutronTunHaBase):
             test_sets=['ha', 'smoke', 'sanity'])
 
         self.env.make_snapshot("neutron_tun_ha_backup_restore")
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["create_backup_reset_restore_and_deploy_via_cli"])
+    @log_snapshot_after_test
+    def create_backup_reset_restore_and_deploy_via_cli(self):
+        """Backup/restore master node with cluster in ha mode
+
+        Scenario:
+            1. Create env with 1Controller, 1Compute, 1Ceph
+            2. Start provisioning
+            3. Backup master
+            4. Reset env
+            5. Restore master
+            6. Delete env
+            7. Create new env via CLI with the same staff
+            8. Start provisioning via CLI
+
+        Duration 75m
+        """
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT_TYPE
+            }
+        )
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-01': ['controller'],
+             'slave-02': ['compute'],
+             'slave-03': ['ceph-osd']}
+        )
+        self.fuel_web.provisioning_cluster_wait(cluster_id)
+
+        with self.env.d_env.get_admin_remote() as remote:
+            self.fuel_web.backup_master(remote)
+            checkers.backup_check(remote)
+
+        self.fuel_web.stop_reset_env_wait(cluster_id)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:3], timeout=10 * 60)
+
+        with self.env.d_env.get_admin_remote() as remote:
+            self.fuel_web.restore_master(remote)
+            checkers.restore_check_sum(remote)
+
+        number_of_nodes = len(self.fuel_web.client.list_cluster_nodes(
+            cluster_id))
+
+        self.fuel_web.client.delete_cluster(cluster_id)
+
+        try:
+            wait((lambda: len(
+                self.fuel_web.client.list_nodes()) == number_of_nodes),
+                timeout=5 * 60)
+        except TimeoutError:
+            assert_true(len(
+                self.fuel_web.client.list_nodes()) == number_of_nodes,
+                'Nodes are not discovered in timeout 5 *60')
+
+        cl = CommandLine()
+        release_id = self.fuel_web.get_releases_list_for_os(
+            release_name=OPENSTACK_RELEASE)[0]
+        net = 'neutron --nst={nst}'.format(nst=NEUTRON_SEGMENT_TYPE)
+        node_ids = [self.fuel_web.get_nailgun_node_by_devops_node(
+            self.env.d_env.nodes().slaves[slave_id])['id']
+            for slave_id in range(3)]
+
+        with self.env.d_env.get_admin_remote() as remote:
+            # Create an environment
+            cmd = ('fuel env create --name={0} --release={1} --mode=ha '
+                   '--net={2} --json'.format(self.__class__.__name__,
+                                             release_id, net))
+            env_result = run_on_remote(remote, cmd, jsonify=True)
+            cluster_id = env_result['id']
+
+            # Update network parameters
+            cl.update_cli_network_configuration(cluster_id, remote)
+
+            # Update SSL configuration
+            cl.update_ssl_configuration(cluster_id, remote)
+
+            roles = {'controller': node_ids[0],
+                     'compute': node_ids[1],
+                     'ceph-osd': node_ids[2]}
+
+            for role in roles:
+                cmd = ('fuel --env-id={0} node set --node {1} --role={2}'
+                       .format(cluster_id,
+                               roles[role],
+                               role))
+                remote.execute(cmd)
+            cmd = (
+                'fuel --env-id={0} node --provision --node={1} --json'.format(
+                    cluster_id, ','.join(str(l) for l in node_ids))
+            )
+            logger.info("Started provisioning via CLI")
+            task = run_on_remote(remote, cmd, jsonify=True)
+            cl.assert_cli_task_success(task, remote, timeout=200 * 60)
+            logger.info("Finished provisioning via CLI")
