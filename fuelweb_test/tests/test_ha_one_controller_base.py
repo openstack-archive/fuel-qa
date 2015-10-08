@@ -14,7 +14,6 @@
 
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.settings import DEPLOYMENT_MODE
-from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
@@ -29,8 +28,6 @@ class HAOneControllerNeutronBase(TestBasic):
             'tenant': 'neutronOneController',
             'user': 'neutronOneController',
             'password': 'neutronOneController',
-            "net_provider": 'neutron',
-            "net_segment_type": NEUTRON_SEGMENT_TYPE
         }
 
         cluster_id = self.fuel_web.create_cluster(
