@@ -73,8 +73,6 @@ class HAOneControllerZabbix(TestBasic):
                 'tenant': 'admin',
                 'user': 'admin',
                 'password': 'admin',
-                'net_provider': 'neutron',
-                'net_segment_type': hlp.NEUTRON_SEGMENT_TYPE,
             }
         )
         self.fuel_web.update_nodes(

@@ -22,8 +22,6 @@ from fuelweb_test.helpers import checkers
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import GLUSTER_CLUSTER_ENDPOINT
 from fuelweb_test.settings import GLUSTER_PLUGIN_PATH
-from fuelweb_test.settings import NEUTRON_ENABLE
-from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -77,18 +75,9 @@ class GlusterfsPlugin(TestBasic):
                 remote,
                 plugin=os.path.basename(GLUSTER_PLUGIN_PATH))
 
-        settings = None
-
-        if NEUTRON_ENABLE:
-            settings = {
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE
-            }
-
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings=settings
         )
 
         plugin_name = 'external_glusterfs'
@@ -164,18 +153,9 @@ class GlusterfsPlugin(TestBasic):
                 remote,
                 plugin=os.path.basename(GLUSTER_PLUGIN_PATH))
 
-        settings = None
-
-        if NEUTRON_ENABLE:
-            settings = {
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE
-            }
-
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings=settings
         )
 
         plugin_name = 'external_glusterfs'

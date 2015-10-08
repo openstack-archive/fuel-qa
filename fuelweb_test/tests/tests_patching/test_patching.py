@@ -435,8 +435,6 @@ class PatchingMasterTests(TestBasic):
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE,
             settings={
-                "net_provider": 'neutron',
-                "net_segment_type": settings.NEUTRON_SEGMENT_TYPE,
                 'tenant': 'patchingMaster',
                 'user': 'patchingMaster',
                 'password': 'patchingMaster'
