@@ -184,6 +184,22 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         instance_ip = self.create_instance_with_keypair(
             os_conn, instance_keypair.name).addresses['net04'][0]['addr']
 
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            dhcp_namespace = ''.join(remote.execute(
+                'ip netns | grep {0}'.format(net_id))['stdout']).rstrip()
+
+            logger.debug('dhcp namespace is {0}'.format(dhcp_namespace))
+
+            ssh_awail_cmd = ('ip netns exec {ns} /bin/bash -c "{cmd}"'.format(
+                ns=dhcp_namespace,
+                cmd="echo '' | nc -w 1 {ip} 22 > /dev/null".format(
+                    ip=instance_ip)))
+
+            # Wait 60 second until ssh is available on instance
+            wait(
+                lambda: remote.execute(ssh_awail_cmd)['exit_code'] == 0,
+                timeout=60)
+
         logger.debug('instance internal ip is {0}'.format(instance_ip))
 
         # Reshedule router for net for created instance to new controller
