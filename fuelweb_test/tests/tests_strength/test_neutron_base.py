@@ -23,6 +23,7 @@ from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.utils import run_on_remote
+from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test import settings
@@ -195,6 +196,17 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
                 'ip netns | grep {0}'.format(net_id))['stdout']).rstrip()
 
             logger.debug('dhcp namespace is {0}'.format(dhcp_namespace))
+
+            ssh_awail_cmd = ('ip netns exec {ns} /bin/bash -c "{cmd}"'.format(
+                ns=dhcp_namespace,
+                cmd="echo '' | nc -w 1 {ip} 22 > /dev/null".format(
+                    ip=instance_ip)))
+
+            # Wait 60 second until ssh is available on instance
+            wait(
+                lambda: run_on_remote_get_results(
+                    remote, ssh_awail_cmd)['exit_code'] == 0,
+                timeout=60)
 
             #   Check connect to public network from instance after
             # rescheduling l3 agent for router
