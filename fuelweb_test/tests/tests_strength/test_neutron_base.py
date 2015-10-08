@@ -23,6 +23,7 @@ from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.utils import run_on_remote
+from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test import settings
@@ -87,6 +88,17 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         instance_key_path = '/root/.ssh/instancekey_rsa'
         run_on_remote(remote, 'echo "{0}" > {1} && chmod 400 {1}'.format(
             instance_keypair.private_key, instance_key_path))
+
+        ssh_awail_cmd = ('ip netns exec {ns} /bin/bash -c "{cmd}"'.format(
+            ns=dhcp_namespace,
+            cmd="echo '' | nc -w 1 {instance_ip} 22 > /dev/null".format(
+                instance_ip=instance_ip)))
+
+        # Wait 60 second until ssh is available on instance
+        wait(
+            lambda: run_on_remote_get_results(
+                remote, ssh_awail_cmd)['exit_code'] == 0,
+            timeout=60)
 
         cmd = (". openrc; ip netns exec {0} ssh -i {1}"
                " -o 'StrictHostKeyChecking no'"
