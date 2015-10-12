@@ -1260,7 +1260,8 @@ class FuelWebClient(object):
                 'eth4': ['storage'],
             }
 
-        if self.get_cluster_additional_components(cluster_id)['ironic']:
+        if self.get_cluster_additional_components(cluster_id).get(
+                'ironic', False):
             assigned_networks['eth5'] = ['baremetal']
 
         if not nailgun_nodes:
