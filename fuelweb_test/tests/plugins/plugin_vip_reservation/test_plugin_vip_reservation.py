@@ -156,7 +156,7 @@ class VipReservation(TestBasic):
                   "vip_reservation_for_plugin_haproxy_ns_vxlan"])
     @log_snapshot_after_test
     def vip_reservation_for_plugin_haproxy_ns(self):
-        """Check vip reservation for fuel plugin
+        """Check vip reservation for haproxy ns plugin
 
         Scenario:
         1. Revert snapshot with 3 nodes
@@ -186,18 +186,19 @@ class VipReservation(TestBasic):
             # install fuel_plugin_builder on master node
             fpb.fpb_install()
             # create plugin template on the master node
-            fpb.change_content_in_yaml(
-                os.path.join(task_path, net_role_file), os.path.join(
-                    '/tmp/', net_role_file), [0, 'properties', 'vip', 0,
-                                              'namespace'], namespace)
-            fpb.change_content_in_yaml(
-                os.path.join('/tmp/', net_role_file), os.path.join(
-                    '/tmp/', net_role_file), [1, 'properties', 'vip', 0,
-                                              'namespace'], namespace)
             fpb.fpb_create_plugin(plugin_name)
+
             # replace plugin tasks, metadata, network_roles
+            fpb.change_yaml_file_in_container(
+                os.path.join(task_path, net_role_file),
+                [0, 'properties', 'vip', 0, 'namespace'],
+                namespace)
+            fpb.change_yaml_file_in_container(
+                os.path.join(task_path, net_role_file),
+                [1, 'properties', 'vip', 0, 'namespace'],
+                namespace)
             fpb.fpb_replace_plugin_content(
-                os.path.join('/tmp/', net_role_file),
+                os.path.join(task_path, net_role_file),
                 os.path.join('/root/', plugin_name, net_role_file))
             fpb.fpb_replace_plugin_content(
                 os.path.join(task_path, tasks_file),
@@ -280,7 +281,7 @@ class VipReservation(TestBasic):
                   "vip_reservation_for_plugin_custom_ns_vxlan"])
     @log_snapshot_after_test
     def vip_reservation_for_plugin_custom_ns(self):
-        """Check vip reservation for fuel plugin
+        """Check vip reservation for custom ns plugin
 
         Scenario:
         1. Revert snapshot with 3 nodes
@@ -307,21 +308,21 @@ class VipReservation(TestBasic):
         with self.env.d_env.get_admin_remote() as admin_remote:
             # initiate fuel plugin builder instance
             fpb = FuelPluginBuilder(admin_remote)
-            fpb.change_content_in_yaml(
-                os.path.join(task_path, net_role_file),
-                os.path.join('/tmp/', net_role_file),
-                [0, 'properties', 'vip', 0, 'namespace'], namespace)
-            fpb.change_content_in_yaml(
-                os.path.join('/tmp/', net_role_file),
-                os.path.join('/tmp/', net_role_file),
-                [1, 'properties', 'vip', 0, 'namespace'], namespace)
             # install fuel_plugin_builder on master node
             fpb.fpb_install()
             # create plugin template on the master node
             fpb.fpb_create_plugin(plugin_name)
             # replace plugin tasks, metadata, network_roles
+            fpb.change_yaml_file_in_container(
+                os.path.join(task_path, net_role_file),
+                [0, 'properties', 'vip', 0, 'namespace'],
+                namespace)
+            fpb.change_yaml_file_in_container(
+                os.path.join(task_path, net_role_file),
+                [1, 'properties', 'vip', 0, 'namespace'],
+                namespace)
             fpb.fpb_replace_plugin_content(
-                os.path.join('/tmp/', net_role_file),
+                os.path.join(task_path, net_role_file),
                 os.path.join('/root/', plugin_name, net_role_file))
             fpb.fpb_replace_plugin_content(
                 os.path.join(task_path, tasks_file),
