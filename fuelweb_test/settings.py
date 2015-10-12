@@ -477,9 +477,8 @@ PATCHING_DISABLE_UPDATES = get_var_as_bool('PATCHING_DISABLE_UPDATES', False)
 PATCHING_RUN_RALLY = get_var_as_bool("PATCHING_RUN_RALLY", False)
 
 DOWNLOAD_LINK = os.environ.get(
-    'DOWNLOAD_LINK', 'http://releases.ubuntu.com/14.04.2/'
-                     'ubuntu-14.04.2-desktop-amd64.iso')
-
+    'DOWNLOAD_LINK', 'http://cdimage.ubuntu.com/ubuntu/releases/14.04.2/'
+                     'release/ubuntu-14.04.2-desktop-amd64+mac.iso')
 UPDATE_FUEL = get_var_as_bool('UPDATE_FUEL', False)
 UPDATE_FUEL_PATH = os.environ.get('UPDATE_FUEL_PATH', '~/fuel/pkgs/')
 UPDATE_FUEL_MIRROR = os.environ.get("UPDATE_FUEL_MIRROR", '').split()
