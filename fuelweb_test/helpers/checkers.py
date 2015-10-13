@@ -425,7 +425,7 @@ def check_mysql(remote, node_name):
                         " = 'wsrep_local_state_comment';\"")
     try:
         wait(lambda: remote.execute(check_cmd)['exit_code'] == 0,
-             timeout=300)
+             timeout=10*60)
         logger.info('MySQL daemon is started on {0}'.format(node_name))
     except TimeoutError:
         logger.error('MySQL daemon is down on {0}'.format(node_name))
