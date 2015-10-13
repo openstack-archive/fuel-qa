@@ -163,6 +163,20 @@ Test Ironic
   :members:
 
 
+Fuel mirror verification
+========================
+
+Tests to check that mirror is created in various scenarios
+----------------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_mirrors.test_create_mirror
+   :members:
+
+Tests to verify installation from packages mirrors
+--------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_mirrors.test_use_mirror
+   :members:
+
+
 GD based tests
 ==============
 
