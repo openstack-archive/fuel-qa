@@ -163,7 +163,7 @@ def upload_manifests(func):
     return wrapper
 
 
-def update_packages(func):
+def update_rpm_packages(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
@@ -200,7 +200,7 @@ def update_packages(func):
                 environment.admin_actions.upload_packages(
                     local_packages_dir=settings.UPDATE_FUEL_PATH,
                     centos_repo_path=settings.LOCAL_MIRROR_CENTOS,
-                    ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
+                    ubuntu_repo_path=None)
 
             if centos_files_count == 0:
                 return result
