@@ -168,6 +168,86 @@ Test Ironic
   :members:
 
 
+Fuel mirror verification
+========================
+
+Tests to check that mirror is created in various scenarios
+----------------------------------------------------------
+Fuel create mirror is made to simplify process of mirror creation for our
+customers who do not have internet access on-site. It is rewritten from bash
+to python.
+
+Fuel create mirror features:
+
+1) Minimize size of packages in a mirror;
+
+2) Download packages in parallel.
+
+Such features can cause some problems:
+
+1) During packages resolving to minimize mirror size we found such issues:
+
+1.1) Incorrect versions. When we have multiple mirrors, some version can be
+skipped due to name duplication. But it is still needed by bootstrap/deploy.
+
+1.2) Mirror/version collisions. Sometimes package present in number of mirrors
+and not always correct version corresponds to correct site.
+
+1.3) There are special mirror on Fuel iso, which differs from
+http://mirror.fuel-infra.org/ .
+
+2) With concurrent packages fetching complications are:
+
+2.1) Some mirrors are unable to support download in multiple threads and fail
+or reject to support concurrency. In such cases we are abandoning concurrent
+downloads on such mirrors.
+
+2.2) Common concurrency pitfalls: race conditions for resources like lists to
+process.
+
+2.3) Problems with offset based downloads. Some packages were broken and it had
+been found out only during package installation.
+
+.. automodule:: fuelweb_test.tests.tests_mirrors.test_create_mirror
+   :members:
+
+Tests to verify installation from packages mirrors
+--------------------------------------------------
+After mirror is created we should be able to deploy environment with it.
+
+Fuel-mirror updates default repo urls for deployment and we do not have to
+set them up for new environments.But be careful. If you want to deploy
+environments with vanilla mirrors from iso, You should update settings in
+environment. Currently there is no option to update default mirrors from
+UI/cli.
+
+Fuel-mirror updates repo list with internal structures:
+https://github.com/bgaifullin/packetary/blob/packetary3/contrib/fuel_mirror/fuel_mirror/commands/create.py#L224-L243
+
+Repository should be able to do two things:
+
+1) Create bootstrap iso for provisioning;
+
+2) Provide packages for deployment. Packages from dependencies in http://mirror.fuel-infra.org/ do not cover all the needed packages.
+So we need to mix in list of required packages:
+https://github.com/bgaifullin/packetary/blob/packetary3/contrib/fuel_mirror/etc/config.yaml#L46-L96
+
+Problems:
+
+1) We need to install not only 'depends', but also 'recommends' packages:
+https://wiki.ubuntu.com/LucidLynx/ReleaseNotes/#Recommended_packages_installed_by_default
+http://askubuntu.com/questions/18545/installing-suggested-recommended-packages
+
+2) We have a problem with support of a custom packages list.
+It is only tracked via system test failure without exact team assigned for a
+job. Also debootstrap and other tools are not informative about package errors.
+It may fail with 'unable to mount', '/proc not mounted', 'file not found' even
+if a problem is a missing package.
+
+.. automodule:: fuelweb_test.tests.tests_mirrors.test_use_mirror
+   :members:
+
+
 GD based tests
 ==============
 
