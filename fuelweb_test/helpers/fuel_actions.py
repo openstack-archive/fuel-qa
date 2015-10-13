@@ -292,20 +292,26 @@ class AdminActions(BaseActions):
                         ubuntu_repo_path):
         logger.info("Upload fuel's packages from directory {0}."
                     .format(local_packages_dir))
-        centos_files_count = cond_upload(
-            self.admin_remote, local_packages_dir,
-            os.path.join(centos_repo_path, 'Packages'),
-            "(?i).*\.rpm$")
 
-        ubuntu_files_count = cond_upload(
-            self.admin_remote, local_packages_dir,
-            os.path.join(ubuntu_repo_path, 'pool/main'),
-            "(?i).*\.deb$")
+        centos_files_count = 0
+        ubuntu_files_count = 0
 
-        if centos_files_count > 0:
-            regenerate_centos_repo(self.admin_remote, centos_repo_path)
-        if ubuntu_files_count > 0:
-            regenerate_ubuntu_repo(self.admin_remote, ubuntu_repo_path)
+        if centos_repo_path:
+            centos_files_count = cond_upload(
+                self.admin_remote, local_packages_dir,
+                os.path.join(centos_repo_path, 'Packages'),
+                "(?i).*\.rpm$")
+            if centos_files_count > 0:
+                regenerate_centos_repo(self.admin_remote, centos_repo_path)
+
+        if ubuntu_repo_path:
+            ubuntu_files_count = cond_upload(
+                self.admin_remote, local_packages_dir,
+                os.path.join(ubuntu_repo_path, 'pool/main'),
+                "(?i).*\.deb$")
+            if ubuntu_files_count > 0:
+                regenerate_ubuntu_repo(self.admin_remote, ubuntu_repo_path)
+
         return centos_files_count, ubuntu_files_count
 
     @logwrap

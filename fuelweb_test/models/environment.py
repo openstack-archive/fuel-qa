@@ -27,7 +27,7 @@ from proboscis.asserts import assert_true
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import revert_info
 from fuelweb_test.helpers.decorators import retry
-from fuelweb_test.helpers.decorators import update_packages
+from fuelweb_test.helpers.decorators import update_rpm_packages
 from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers.eb_tables import Ebtables
 from fuelweb_test.helpers.fuel_actions import AdminActions
@@ -387,6 +387,15 @@ class EnvironmentModel(object):
         self.admin_actions.modify_configs(self.d_env.router())
         self.kill_wait_for_external_config()
         self.wait_bootstrap()
+
+        if settings.UPDATE_FUEL:
+            # Update Ubuntu packages
+            centos_files_count, ubuntu_files_count = \
+                self.admin_actions.upload_packages(
+                    local_packages_dir=settings.UPDATE_FUEL_PATH,
+                    centos_repo_path=None,
+                    ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
+
         self.docker_actions.wait_for_ready_containers()
         time.sleep(10)
         self.set_admin_keystone_password()
@@ -424,7 +433,7 @@ class EnvironmentModel(object):
                       "xargs -n1 -i sed '$aenabled=0' -i {}"
                 self.execute_remote_cmd(remote, cmd)
 
-    @update_packages
+    @update_rpm_packages
     @upload_manifests
     def setup_customisation(self):
         logger.info('Installing custom packages/manifests '
