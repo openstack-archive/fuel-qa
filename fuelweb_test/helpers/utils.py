@@ -17,7 +17,6 @@ import json
 import time
 import traceback
 import yaml
-import os.path
 import os
 import posixpath
 import re
