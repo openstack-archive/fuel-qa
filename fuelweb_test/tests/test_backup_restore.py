@@ -18,6 +18,7 @@ from proboscis import test
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
+from fuelweb_test.helpers.utils import runlimit
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.tests.test_ha_one_controller_base\
@@ -50,7 +51,11 @@ class TestAdminNodeBackupRestore(TestBasic):
         with self.env.d_env.get_admin_remote() as remote:
             self.fuel_web.backup_master(remote)
             checkers.backup_check(remote)
-            self.fuel_web.restore_master(remote)
+            with runlimit(
+                    seconds=60 * 10,
+                    error_message="'dockerctl restore' "
+                                  "runned longer then 600 sec"):
+                self.fuel_web.restore_master(remote)
             self.fuel_web.restore_check_nailgun_api(remote)
             checkers.restore_check_sum(remote)
             checkers.iptables_check(remote)
@@ -125,7 +130,11 @@ class BackupRestoreHAOneController(HAOneControllerNeutronBase):
             3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
 
         with self.env.d_env.get_admin_remote() as remote:
-            self.fuel_web.restore_master(remote)
+            with runlimit(
+                    seconds=60 * 10,
+                    error_message="'dockerctl restore' "
+                                  "runned longer then 600 sec"):
+                self.fuel_web.restore_master(remote)
             checkers.restore_check_sum(remote)
             self.fuel_web.restore_check_nailgun_api(remote)
             checkers.iptables_check(remote)
@@ -211,7 +220,11 @@ class BackupRestoreHA(NeutronTunHaBase):
             6, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
 
         with self.env.d_env.get_admin_remote() as remote:
-            self.fuel_web.restore_master(remote)
+            with runlimit(
+                    seconds=60 * 10,
+                    error_message="'dockerctl restore' "
+                                  "runned longer then 600 sec"):
+                self.fuel_web.restore_master(remote)
             checkers.restore_check_sum(remote)
 
             self.fuel_web.restore_check_nailgun_api(remote)

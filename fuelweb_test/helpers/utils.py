@@ -21,6 +21,7 @@ import os.path
 import os
 import posixpath
 import re
+import signal
 
 from proboscis import asserts
 
@@ -556,3 +557,23 @@ def get_node_hiera_roles(remote):
     # Contert string with roles like a ["ceph-osd", "controller"] to list
     roles = map(lambda s: s.strip('" '), roles.strip("[]").split(','))
     return roles
+
+
+class runlimit(object):
+    def __init__(self, seconds=60, error_message='Timeout'):
+        self.seconds = seconds
+        self.error_message = error_message
+
+    def handle_timeout(self, signum, frame):
+        raise TimeoutException(self.error_message)
+
+    def __enter__(self):
+        signal.signal(signal.SIGALRM, self.handle_timeout)
+        signal.alarm(self.seconds)
+
+    def __exit__(self, type, value, traceback):
+        signal.alarm(0)
+
+
+class TimeoutException(Exception):
+    pass
