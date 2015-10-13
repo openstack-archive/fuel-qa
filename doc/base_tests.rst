@@ -163,6 +163,15 @@ Test Ironic
   :members:
 
 
+Fuel mirror verification
+========================
+
+Test create mirror
+------------------
+.. automodule:: fuelweb_test.tests.tests_mirrors.test_create_mirror
+   :members:
+
+
 GD based tests
 ==============
 
