@@ -1077,6 +1077,8 @@ class FuelWebClient(object):
                 node_group = 'default'
 
             devops_node = self.environment.d_env.get_node(name=node_name)
+            import sys
+            sys.stderr.write(str(devops_node))
 
             wait(lambda:
                  self.get_nailgun_node_by_devops_node(devops_node)['online'],
