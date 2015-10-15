@@ -1,0 +1,15 @@
+---
+template:
+ name: 1 Controller, 1 Compute, 1 Cinder, 3 Ceph on Neutron/VLAN use Ceph Image and Rados
+ testrail: https://mirantis.testrail.com/index.php?/cases/view/375022
+ group-name: 1ctrl_1comp_1cndr_3ceph_neutronVLAN_cephImgRados
+ slaves: 6
+ cluster-template:
+  name: SimpleCinderCephImgRadosNeutronVLAN
+  release: ubuntu
+  network:
+   !include ../../../cluster_configs/networks/neutron_vlan.yaml
+  settings:
+   !include ../../../cluster_configs/settings/cinder_cephImgRados_wo_components.yaml
+  nodes:
+   !include ../../../cluster_configs/nodes/single/1ctrl_1comp_1cndr_3ceph.yaml

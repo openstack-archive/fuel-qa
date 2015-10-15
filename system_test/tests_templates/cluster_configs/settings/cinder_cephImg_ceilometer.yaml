@@ -1,0 +1,5 @@
+---
+storages:
+ !include storages/cinder_cephImg.yaml
+components:
+ !include components/ceilometer.yaml
