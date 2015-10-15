@@ -503,6 +503,54 @@ def get_ip_listen_stats(remote, proto='tcp'):
     return [l.strip() for l in remote.check_call(cmd).stdout]
 
 
+def pretty_log(src, indent=0, invert=False):
+    """ Make log more readable and awesome
+    The main application is using instead of json.dumps().
+
+    :param src: dictionary with data, list of dicts
+                can be also used for strings or lists of strings,
+                but it makes no sense.
+                Note: Indent for list by default is +3. If you want to call
+                pretty_log for list , call it with indent=-3 for 0,
+                indent=-3+1 for 1 and etc.
+    :param indent: int
+    :param invert: Swaps first and second columns. Can be used ONLY
+     with one levels dictionary
+    :return: formatted string with result, can be used in log
+
+    """
+
+    result = ''
+    templates = ["\n{indent}{item:{len}}{value}" if not invert else
+                 "\n{indent}{value:{len}}{item}",
+                 "\n{indent}{item}:",
+                 '\n{indent}{value}']
+
+    if src and isinstance(src, dict):
+        max_len = len(max(src.values() if invert else src.keys(),
+                          key=lambda x: len(str(x))))
+        for key, value in src.iteritems():
+            if (isinstance(value, dict) and value) or \
+                    isinstance(value, list):
+                result += templates[1].format(indent=' ' * indent, item=key)
+                result += pretty_log(value, indent + 3)
+            else:
+                result += templates[0].format(indent=' ' * indent,
+                                              item=key,
+                                              value=str(value),
+                                              len=max_len + 5)
+
+    elif src and isinstance(src, list):
+        for el in src:
+            if (isinstance(el, dict) and el) or isinstance(el, list):
+                res = pretty_log(el, indent + 3)
+            else:
+                res = templates[2].format(indent=' ' * (indent + 3),
+                                          value=str(el))
+            result += res[:indent + 2] + '-' + res[indent + 3:]
+    return result
+
+
 def erase_data_from_hdd(remote,
                         device=None,
                         mount_point=None,
