@@ -188,7 +188,7 @@ def update_yaml(yaml_tree=[], yaml_value='', is_uniq=True,
 
     yaml_tree - path to the variable in YAML file, will be created if absent,
     yaml_value - value of the variable, will be overwritten if exists,
-    is_uniq - If true, add the unique two-digit suffix to the variable name.
+    is_uniq - If false, add the unique two-digit suffix to the variable name.
     """
     yaml_data = {}
     if os.path.isfile(yaml_file):
