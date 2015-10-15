@@ -332,7 +332,7 @@ class CephHA(TestBasic):
         # Check resources addition
         # create instance
         server = os_conn.create_instance(
-            neutron_network=settings.NEUTRON_ENABLE)
+            neutron_network=True)
 
         # create flavor
         flavor = os_conn.create_flavor('openstackstat', 1024, 1, 1)
