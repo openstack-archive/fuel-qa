@@ -576,3 +576,48 @@ class runlimit(object):
 
 class TimeoutException(Exception):
     pass
+
+
+def pretty_log(src, indent=0, invert=False):
+    """ Make log more readable and awesome
+    Main application is use instead of json.dumps().
+
+    :param src: dictionary with data, list of dicts
+                can be also used for strings or lists of strings,
+                but it makes no sense.
+                Note: Indent for list by default is +3. If you want to call
+                pretty_log for list , call it with indent=-3
+    :param indent: int
+    :param invert: Swaps first and second columns. Can be used ONLY
+     with one levels dictionary
+    :return: formatted string with result, can be used in log
+
+    """
+
+    result = ''
+    templates = ["\n{indent}{item:{len}}{value}" if not invert else
+                 "\n{indent}{value:{len}}{item}",
+                 "\n{indent}{item}:",
+                 '\n{indent}{value}']
+
+    if isinstance(src, dict):
+        max_len = len(max(src.values() if invert else src.keys(),
+                          key=lambda x: len(str(x))))
+        for key, value in src.iteritems():
+            if (isinstance(value, dict) and value) or \
+                    isinstance(value, list):
+                result += templates[1].format(indent=' ' * indent,
+                                              item=key)
+                result += pretty_log(value, indent + 3)
+            else:
+                result += templates[0].format(indent=' ' * indent,
+                                              item=key,
+                                              value=str(value),
+                                              len=max_len + 5)
+    elif isinstance(src, list):
+        for el in src:
+            result += '\n' if isinstance(el, dict) else ''
+            result += pretty_log(el, indent + 3)
+    else:
+        result += templates[2].format(indent=' ' * indent, value=str(src))
+    return result
