@@ -182,7 +182,7 @@ def get_current_env(args):
 
 
 @logwrap
-def update_yaml(yaml_tree=[], yaml_value='', is_uniq=True,
+def update_yaml(yaml_tree=[], yaml_value='', is_uniq=False,
                 yaml_file=settings.TIMESTAT_PATH_YAML):
     """Store/update a variable in YAML file.
 
@@ -203,7 +203,7 @@ def update_yaml(yaml_tree=[], yaml_value='', is_uniq=True,
             item[n] = {}
         item = item[n]
 
-    if is_uniq:
+    if not is_uniq:
         last = yaml_tree[-1]
     else:
         # Create an uniq suffix in range '_00' to '_99'
