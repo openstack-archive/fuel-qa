@@ -242,8 +242,12 @@ class FuelWebClient(object):
              for test in set_result['tests']
              if test['status'] not in ['success', 'disabled', 'skipped']]
 
-        logger.info('OSTF test statuses are : {0}'
-                    .format(json.dumps(test_result, indent=1)))
+        form_result = ''.join(
+            ['\n  {result:15}{name}'.format(name=case,
+                                            result=test_result[case])
+             for case in test_result])
+
+        logger.info('OSTF test statuses are :\n{}\n'.format(form_result))
 
         if failed_test_name:
             for test_name in failed_test_name:
