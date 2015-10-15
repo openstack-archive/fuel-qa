@@ -555,3 +555,44 @@ def get_node_hiera_roles(remote):
     # Contert string with roles like a ["ceph-osd", "controller"] to list
     roles = map(lambda s: s.strip('" '), roles.strip("[]").split(','))
     return roles
+
+
+def pretty_log(src, indent=0, invert=False):
+    """ Make log more readable and awesome
+
+    :param src: dictionary with data
+    :param indent: int
+    :param invert: Swaps first and second columns. Can be used ONLY
+     with one levels dictionary
+    :return: formatted string with result, can be used in log
+
+    """
+    result = ''
+    templates = ["\n{indent}{item:{len}}{value}" if not invert else
+                 "\n{indent}{value:{len}}{item}",
+                 "\n{indent}{item:}{value}",
+                 '\n{indent}{value}']
+
+    if isinstance(src, dict):
+        max_len = max([len(str(src[key])) for key in src if invert] +
+                      [len(key) for key in src if not invert])
+        for key, value in src.iteritems():
+            if (isinstance(value, dict) and len(value) != 0) or \
+                    isinstance(value, list):
+                result += templates[1].format(indent=' ' * indent,
+                                              item=key,
+                                              value=":")
+                result += pretty_log(value, indent + 3)
+            else:
+                result += templates[0].format(indent=' ' * indent,
+                                              item=key,
+                                              value=str(value),
+                                              len=max_len + 5)
+    elif isinstance(src, list):
+        for el in src:
+            if type(el) is dict:
+                result += '\n'
+            result += pretty_log(el, indent + 3)
+    else:
+        result += templates[2].format(indent=' ' * indent, value=src)
+    return result
