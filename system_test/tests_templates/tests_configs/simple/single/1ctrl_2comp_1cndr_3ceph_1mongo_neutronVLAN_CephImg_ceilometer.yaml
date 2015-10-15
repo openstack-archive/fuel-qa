@@ -1,0 +1,14 @@
+---
+template:
+ name: 1 Controller, 2 Compute, 1 Cinder, 3 Ceph, 1 Mongo on Neutron/VLAN use Ceph Image with Ceilometer
+ group-name: 1ctrl_2comp_1cndr_3ceph_1mongo_neutronVLAN_CephImg_ceilometer
+ slaves: 8
+ cluster-template:
+  name: SimpleCinderCephImgMongoCeiloNeutronVLAN
+  release: ubuntu
+  network:
+   !include ../../../cluster_configs/networks/neutron_vlan.yaml
+  settings:
+   !include ../../../cluster_configs/settings/cinder_cephImg_ceilometer.yaml
+  nodes:
+   !include ../../../cluster_configs/nodes/single/1ctrl_2comp_1cndr_3ceph_1mongo.yaml

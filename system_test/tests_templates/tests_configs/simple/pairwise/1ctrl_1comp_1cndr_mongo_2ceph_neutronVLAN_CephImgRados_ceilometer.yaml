@@ -1,0 +1,15 @@
+---
+template:
+ name: 1 Controller, 1 Compute, 1 Cinder and Mongo, 2 Ceph on Neutron/VLAN use Ceph Image and Rados with Ceilometer
+ testrail: https://mirantis.testrail.com/index.php?/cases/view/375025
+ group-name: 1ctrl_1comp_1cndr_mongo_2ceph_neutronVLAN_CephImgRados_ceilometer
+ slaves: 5
+ cluster-template:
+  name: SimpleCinderMongoCephImgRadosCeiloNeutronVLAN
+  release: ubuntu
+  network:
+   !include ../../../cluster_configs/networks/neutron_vlan.yaml
+  settings:
+   !include ../../../cluster_configs/settings/cinder_cephImgRados_ceilometer.yaml
+  nodes:
+   !include ../../../cluster_configs/nodes/mixed/1ctrl_1comp_1cndr_mongo_2ceph.yaml
