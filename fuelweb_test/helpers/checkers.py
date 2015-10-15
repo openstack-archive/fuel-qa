@@ -24,6 +24,7 @@ from devops.helpers.helpers import wait
 from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test.helpers.utils import run_on_remote
+from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test.settings import EXTERNAL_DNS
 from fuelweb_test.settings import EXTERNAL_NTP
 from fuelweb_test.settings import OPENSTACK_RELEASE
@@ -273,22 +274,38 @@ def run_upgrade_script(node_ssh, script_path, script_name, password='admin',
         path = "UPGRADERS='host-system docker openstack" \
                " raise-error' {0}/{1}" \
                " --password {2}".format(script_path, script_name, password)
-        chan, stdin, stderr, stdout = node_ssh.execute_async(path)
     else:
         path = "{0}/{1} --no-rollback --password {2}".format(script_path,
                                                              script_name,
                                                              password)
-        chan, stdin, stderr, stdout = node_ssh.execute_async(path)
 
-    logger.debug('Try to read status code from chain...')
-    assert_equal(chan.recv_exit_status(), exit_code,
-                 'Upgrade script fails with next message {0}'.format(
-                     ''.join(
-                         node_ssh.execute(
-                             "awk -v p=\"UPGRADE FAILED\" 'BEGIN{m=\"\"}"
-                             " {if ($0 ~ p) {m=$0} else m=m\"\\n\"$0}"
-                             " END{if (m ~ p) print m}'"
-                             " /var/log/fuel_upgrade.log")['stdout'])))
+    result = run_on_remote_get_results(node_ssh, path,
+                                       assert_ec_equal=[exit_code],
+                                       raise_on_assert=False)
+
+    # TODO: check that we really need this log from fuel_upgrade.log
+    if result['exit_code'] != exit_code:
+        log = "".join(
+            run_on_remote(node_ssh,
+                          "awk -v p=\"UPGRADE FAILED\" 'BEGIN{m=\"\"}"
+                          " {if ($0 ~ p) {m=$0} else m=m\"\\n\"$0}"
+                          " END{if (m ~ p) print m}'"
+                          " /var/log/fuel_upgrade.log",
+                          raise_on_assert=False)
+        )
+
+        logger.error("Message from /var/log/fuel_upgrade.log:\n"
+                     "{log}".format(log))
+
+    assert_equal(
+        result['exit_code'],
+        exit_code,
+        "Upgrade script failed with exit code {exit_code}, "
+        "please inspect logs for details.\n"
+        "last output: \"{output}\""
+        "".format(exit_code=result['exit_code'],
+                  output=''.join(result['stdout'][-5:]) + result['stderr_str'])
+    )
 
 
 @logwrap
