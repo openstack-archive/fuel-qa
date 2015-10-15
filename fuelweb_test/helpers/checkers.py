@@ -273,22 +273,29 @@ def run_upgrade_script(node_ssh, script_path, script_name, password='admin',
         path = "UPGRADERS='host-system docker openstack" \
                " raise-error' {0}/{1}" \
                " --password {2}".format(script_path, script_name, password)
-        chan, stdin, stderr, stdout = node_ssh.execute_async(path)
     else:
         path = "{0}/{1} --no-rollback --password {2}".format(script_path,
                                                              script_name,
                                                              password)
-        chan, stdin, stderr, stdout = node_ssh.execute_async(path)
 
-    logger.debug('Try to read status code from chain...')
-    assert_equal(chan.recv_exit_status(), exit_code,
-                 'Upgrade script fails with next message {0}'.format(
-                     ''.join(
-                         node_ssh.execute(
-                             "awk -v p=\"UPGRADE FAILED\" 'BEGIN{m=\"\"}"
-                             " {if ($0 ~ p) {m=$0} else m=m\"\\n\"$0}"
-                             " END{if (m ~ p) print m}'"
-                             " /var/log/fuel_upgrade.log")['stdout'])))
+    result = run_on_remote(node_ssh, path,
+                           assert_ec_equal=[exit_code],
+                           raise_on_assert=False)
+
+    error_msg = ("Upgrade script fails! "
+                 "Message from /var/log/fuel_upgrade.log:\n{log}")
+    log = ''
+
+    if result['exit_code'] != exit_code:
+        log = ''.join(
+            run_on_remote(node_ssh,
+                          "awk -v p=\"UPGRADE FAILED\" 'BEGIN{m=\"\"}"
+                          " {if ($0 ~ p) {m=$0} else m=m\"\\n\"$0}"
+                          " END{if (m ~ p) print m}'"
+                          " /var/log/fuel_upgrade.log")
+        )
+
+    assert_equal(result['exit_code'], exit_code, error_msg.format(log=log))
 
 
 @logwrap
