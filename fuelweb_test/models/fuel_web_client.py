@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 import re
 import time
 import traceback
@@ -45,6 +44,7 @@ from fuelweb_test.helpers.decorators import update_ostf
 from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers.security import SecurityChecks
 from fuelweb_test.helpers.utils import run_on_remote
+from fuelweb_test.helpers.utils import pretty_log
 from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test.models.nailgun_client import NailgunClient
@@ -179,8 +179,9 @@ class FuelWebClient(object):
         """Wait for OSTF tests to finish, check that the tests specified
            in [tests_must_be_passed] are passed"""
 
-        logger.info('Assert OSTF tests are passed at cluster #%s: %s',
-                    cluster_id, tests_must_be_passed)
+        logger.info('Assert OSTF tests are passed at cluster #{0}: {1}'.format(
+                    cluster_id, pretty_log(tests_must_be_passed, indent=1)))
+
         set_result_list = self._ostf_test_wait(cluster_id, timeout)
         tests_pass_count = 0
         tests_count = len(tests_must_be_passed)
@@ -200,7 +201,8 @@ class FuelWebClient(object):
 
         assert_true(tests_pass_count == tests_count,
                     'The following tests have not succeeded, while they '
-                    'must have passed: %s' % fail_details)
+                    'must have passed: {}'.format(pretty_log(fail_details,
+                                                             indent=1)))
 
     @logwrap
     def assert_ostf_run(self, cluster_id, should_fail=0, failed_test_name=None,
@@ -209,9 +211,10 @@ class FuelWebClient(object):
            If [failed_test_name] tests are expected, ensure that these tests
            are not passed"""
 
-        logger.info('Assert OSTF run at cluster #%s. '
-                    'Should fail %s tests named %s',
-                    cluster_id, should_fail, failed_test_name)
+        logger.info('Assert OSTF run at cluster #{0}. '
+                    'Should fail {1} tests named {2}'.format(cluster_id,
+                                                             should_fail,
+                                                             failed_test_name))
         set_result_list = self._ostf_test_wait(cluster_id, timeout)
         failed_tests_res = []
         failed = 0
@@ -240,8 +243,8 @@ class FuelWebClient(object):
              for test in set_result['tests']
              if test['status'] not in ['success', 'disabled', 'skipped']]
 
-        logger.info('OSTF test statuses are : {0}'
-                    .format(json.dumps(test_result, indent=1)))
+        logger.info('OSTF test statuses are :\n{}\n'
+                    .format(pretty_log(test_result, indent=1)))
 
         if failed_test_name:
             for test_name in failed_test_name:
@@ -250,13 +253,11 @@ class FuelWebClient(object):
                             'expected {0}, actual {1}'.format(
                                 failed_test_name, actual_failed_names))
 
-        assert_true(
-            failed <= should_fail, 'Failed {0} OSTF tests; should fail'
-                                   ' {1} tests. Names of failed tests: {2}'
-                                   .format(failed,
-                                           should_fail,
-                                           json.dumps(failed_tests_res,
-                                                      indent=1)))
+        assert_true(failed <= should_fail,
+                    'Failed {0} OSTF tests; should fail'
+                    ' {1} tests. Names of failed tests: {2}'
+                    .format(failed, should_fail,
+                            pretty_log(failed_tests_res, indent=1)))
 
     def assert_release_state(self, release_name, state='available'):
         logger.info('Assert release %s has state %s', release_name, state)
@@ -436,8 +437,8 @@ class FuelWebClient(object):
             cluster_id = self.client.get_cluster_id(name)
             logger.info('The cluster id is %s', cluster_id)
 
-            logger.info('Set cluster settings to %s',
-                        json.dumps(settings, indent=1))
+            logger.info('Set cluster settings to {}'.format(
+                        pretty_log(settings, indent=1)))
             attributes = self.client.get_cluster_attributes(cluster_id)
 
             for option in settings:
@@ -1159,7 +1160,7 @@ class FuelWebClient(object):
                     tests_res.append({test['name']: test['status']})
 
         logger.info('OSTF test statuses are : {0}'
-                    .format(json.dumps(tests_res, indent=1)))
+                    .format(pretty_log(tests_res, indent=1)))
         return tests_res
 
     @logwrap
@@ -1179,8 +1180,8 @@ class FuelWebClient(object):
 
     @logwrap
     def task_wait(self, task, timeout, interval=5):
-        logger.info('Wait for task %s seconds: %s',
-                    timeout, json.dumps(task, indent=1))
+        logger.info('Wait for task {0} seconds: {1}'.format(
+                    timeout, pretty_log(task, indent=1)))
         start = time.time()
         try:
             wait(
@@ -1195,9 +1196,9 @@ class FuelWebClient(object):
                 "was exceeded: ".format(task=task["name"], timeout=timeout))
         took = time.time() - start
         task = self.client.get_task(task['id'])
-        logger.info('Task finished. Took %d seconds. %s',
+        logger.info('Task finished. Took {0} seconds. {1}'.format(
                     took,
-                    json.dumps(task, indent=1))
+                    pretty_log(task, indent=1)))
         return task
 
     @logwrap
@@ -1844,8 +1845,8 @@ class FuelWebClient(object):
             return failed_count
 
     def get_nailgun_version(self):
-        logger.info("ISO version: %s" % json.dumps(
-            self.client.get_api_version(), indent=1))
+        logger.info("ISO version: {}".format(pretty_log(
+            self.client.get_api_version(), indent=1)))
 
     @logwrap
     def run_ceph_task(self, cluster_id, offline_nodes):
