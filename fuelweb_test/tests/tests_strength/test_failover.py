@@ -63,7 +63,8 @@ class TestHaNeutronFailover(TestHaFailoverBase):
         """
         super(self.__class__, self).ha_destroy_controllers()
 
-    @test(depends_on_groups=['prepare_ha_neutron'],
+    @test(enabled=False,
+          depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_disconnect_controllers",
                   "ha_disconnect_controllers"])
     @log_snapshot_after_test
