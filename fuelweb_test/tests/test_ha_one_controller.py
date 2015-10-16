@@ -531,21 +531,21 @@ class MultiroleMultipleServices(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
 
-@test(enabled=False)
+@test
 class FloatingIPs(TestBasic):
     """FloatingIPs."""  # TODO documentation
 
-    @test(enabled=False, depends_on=[SetupEnvironment.prepare_slaves_3],
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_floating_ips"])
     @log_snapshot_after_test
     def deploy_floating_ips(self):
-        """Deploy cluster with non-default 3 floating IPs ranges
+        """Deploy cluster with non-default 1 floating IPs ranges
 
         Scenario:
-            1. Create cluster in Ha mode
+            1. Create cluster in HA mode
             2. Add 1 node with controller role
             3. Add 1 node with compute and cinder roles
-            4. Update floating IP ranges. Use 3 ranges
+            4. Update floating IP ranges. Use 1 range
             5. Deploy the cluster
             6. Verify available floating IP list
             7. Run OSTF
@@ -557,16 +557,18 @@ class FloatingIPs(TestBasic):
         # Test should be re-worked for neutron according to LP#1481322
         self.env.revert_snapshot("ready_with_3_slaves")
 
+        settings = {
+            'tenant': 'floatingip',
+            'user': 'floatingip',
+            'password': 'floatingip',
+            "net_provider": 'neutron',
+            "net_segment_type": NEUTRON_SEGMENT_TYPE
+        }
+
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings={
-                'tenant': 'floatingip',
-                'user': 'floatingip',
-                'password': 'floatingip',
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT_TYPE
-            }
+            settings=settings
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -576,8 +578,10 @@ class FloatingIPs(TestBasic):
             }
         )
 
+        floating_list = []
+        floating_list.append(self.fuel_web.get_floating_ranges()[0][0])
         networking_parameters = {
-            "floating_ranges": self.fuel_web.get_floating_ranges()[0]}
+            "floating_ranges": floating_list}
 
         self.fuel_web.client.update_network(
             cluster_id,
@@ -586,12 +590,18 @@ class FloatingIPs(TestBasic):
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        # assert ips
-        expected_ips = self.fuel_web.get_floating_ranges()[1]
-        self.fuel_web.assert_cluster_floating_list('slave-02', expected_ips)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id),
+            user=settings['user'],
+            passwd=settings['password'],
+            tenant=settings['tenant'])
 
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
+        # assert ips
+        expected_ips = self.fuel_web.get_floating_ranges()[1][0]
+        self.fuel_web.assert_cluster_floating_list(
+            os_conn, cluster_id, expected_ips)
+
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_floating_ips")
 
