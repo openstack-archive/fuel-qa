@@ -144,7 +144,7 @@ class TestOSupgrade(base_test_data.TestBasic):
                 )
             )
             remote.execute(cmd)
-            remote.execute("/opt/fuel-createmirror-7.0/fuel-createmirror")
+            remote.execute("/usr/bin/fuel-createmirror")
 
         self.env.make_snapshot("prepare_before_os_upgrade", is_make=True)
 
