@@ -28,6 +28,7 @@ from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
+from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
@@ -470,16 +471,7 @@ class MultiroleMultipleServices(TestBasic):
                 # CentOS is not supported yet, see bug#1467403
                 pass
 
-            result = remote.execute('fuel-createmirror')
-            logger.debug("'fuel-createmirror' [stdout]:\n{}"
-                         .format(''.join(result['stdout'])))
-            logger.debug("'fuel-createmirror' [stderr]:\n{}"
-                         .format(''.join(result['stderr'])))
-            assert_true(result['exit_code'] == 0,
-                        "Executing 'fuel-createmirror' on admin node failed "
-                        "with the ['exit_code']='{0}'. Please inspect "
-                        "'sys_test.log' for more details."
-                        .format(result['exit_code']))
+            run_on_remote_get_results(remote, 'fuel-createmirror')
 
         # Check if there all repos were replaced with local mirrors
         ubuntu_id = self.fuel_web.client.get_release_id(
