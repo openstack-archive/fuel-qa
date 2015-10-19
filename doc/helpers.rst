@@ -78,6 +78,11 @@ Ovs helper
 .. automodule:: fuelweb_test.helpers.ovs
    :members:
 
+Pacemaker
+--------
+.. automodule:: fuelweb_test.helpers.pacemaker
+   :members:
+
 Patching
 --------
 .. automodule:: fuelweb_test.helpers.patching
