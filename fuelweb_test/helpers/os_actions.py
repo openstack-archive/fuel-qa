@@ -378,7 +378,7 @@ class OpenStackActions(common.Common):
     def create_image(self, **kwargs):
         image = self.glance.images.create(**kwargs)
         logger.info("Created image: '{0}'".format(image.id))
-        return self.glance.images.get(image.id)
+        return self.glance.images.get(image)
 
     def get_image_list(self):
         return self.glance.images.list()
