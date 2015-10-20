@@ -154,6 +154,9 @@ def main():
     parser.add_option('-t', '--tests-in-progress',
                       dest='tests_in_progress', action='store_true',
                       help='Mark all Tempest tests as "in progress"')
+    parser.add_option('-k', '--kilo',
+                      dest='kilo', action='store_true', default=False,
+                      help='Use test suite for MOS 8.0 with Kilo packages')
 
     (options, args) = parser.parse_args()
 
@@ -191,9 +194,13 @@ def main():
 
     # STEP #3
     # Create new test plan (or find existing)
+    name = '{0} iso #{1}'
+    if options.kilo is True:
+        name = '{0} kilo iso #{1}'
+
     milestone = client.get_milestone_by_name(TestRailSettings.milestone)
-    test_plan_name = '{0} iso #{1}'.format(milestone['name'],
-                                           options.iso_number)
+    test_plan_name = name.format(milestone['name'],
+                                 options.iso_number)
     LOG.info('Test plan name is "{0}".'.format(test_plan_name))
 
     LOG.info('Trying to find test plan "{0}"...'.format(test_plan_name))
