@@ -416,10 +416,10 @@ class NeutronTun(TestBasic):
                     gd.run_check_from_task(
                         remote=ssh,
                         path=post_openstack_haproxy[0]['cmd'])
-        for service in ['memcached', 'openstack-cinder', 'database'
-                        'rabbitmq', 'apache']:
         # for service in ['memcached', 'openstack-cinder', 'database'
         #                 'rabbitmq', 'keystone', 'glance']:
+        for service in ['memcached', 'openstack-cinder', 'database'
+                        'rabbitmq', 'apache']:
             if self.get_post_test(tasks, service):
                 for node in ['slave-01']:
                     with self.fuel_web.get_ssh_for_node(node) as ssh:
