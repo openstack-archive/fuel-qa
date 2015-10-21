@@ -26,6 +26,44 @@ from fuelweb_test.helpers.utils import install_pkg
 from fuelweb_test.tests import base_test_case as base_test_data
 from fuelweb_test import settings as hlp_data
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
+from fuelweb_test.settings import NEUTRON_SEGMENT
+from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
+
+
+YUM_OCTANE_REQUIREMENTS = ['git']
+PIP_OCTANE_REQUIREMENTS = ['pyzabbix']
+
+
+def install_octane_requirements(node_ssh):
+    for req in YUM_OCTANE_REQUIREMENTS:
+        result = node_ssh.execute('yum install -y "{0}"'.format(req))
+        assert_equal(result['exit_code'],
+                     0,
+                     'Can not install {0}. '
+                     'Please, see details: {1}'.format(req, result))
+
+    for req in PIP_OCTANE_REQUIREMENTS:
+        result = node_ssh.execute('pip install "{0}"'.format(req))
+        assert_equal(result['exit_code'],
+                     0,
+                     'Can not install {0}. '
+                     'Please, see details: {1}'.format(req, result))
+
+
+def create_mirrors(node_ssh):
+    cmd = ("sed -i 's/DEBUG=\"no\"/DEBUG=\"yes\"/' {0}".format(
+        '/etc/fuel-createmirror/config/ubuntu.cfg')
+        )
+    result = node_ssh.execute(cmd)
+    assert_equal(result['exit_code'],
+                 0,
+                 'Can not execute command {0}. '
+                 'Please, see details: {1}'.format(cmd, result))
+    result = node_ssh.execute("/usr/bin/fuel-createmirror")
+    assert_equal(result['exit_code'],
+                 0,
+                 'Can not create mirrors. '
+                 'Please, see details: {0}'.format(result))
 
 
 @test(groups=["os_upgrade"])
@@ -139,16 +177,9 @@ class TestOSupgrade(base_test_data.TestBasic):
         self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan")
 
         with self.env.d_env.get_admin_remote() as remote:
-            remote.execute("yum -y update")
-            remote.execute("pip install pyzabbix")
+            install_octane_requirements(remote)
             install_pkg(remote, "fuel-octane")
-            cmd = (
-                "sed -i 's/DEBUG=\"no\"/DEBUG=\"yes\"/' {}".format(
-                    '/etc/fuel-createmirror/config/ubuntu.cfg'
-                )
-            )
-            remote.execute(cmd)
-            remote.execute("/usr/bin/fuel-createmirror")
+            create_mirrors(remote)
 
         self.env.make_snapshot("prepare_before_os_upgrade", is_make=True)
 
@@ -465,3 +496,202 @@ class TestOSupgrade(base_test_data.TestBasic):
             self.fuel_web.assert_task_success(task)
 
         self.env.make_snapshot("upgrade_control_plane", is_make=True)
+
+
+@test(groups=["os_upgrade_with_swift_and_network_template"])
+class TestOSupgradeSwiftNeutronVlan(base_test_data.TestBasic):
+
+    @test(depends_on=[base_test_data.SetupEnvironment.prepare_slaves_9],
+          groups=["ha_swift_ubuntu_neutron_vlan"])
+    @log_snapshot_after_test
+    def ha_swift_ubuntu_neutron_vlan(self):
+        """Deploy cluster with ha mode, swift for images,cinder for volumes,
+         neutron vlan
+
+        Scenario:
+            1. Create cluster
+            2. Add 3 nodes with controller role
+            3. Add 2 nodes with compute and cinder roles
+            4. Deploy the cluster
+            5. Run ostf
+            6. Make snapshot
+
+        Duration 50m
+        Snapshot ha_swift_ubuntu_neutron_vlan
+        """
+        if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
+            raise SkipTest()
+
+        self.check_run('ha_ceph_for_all_ubuntu_neutron_vlan')
+        self.env.revert_snapshot("ready_with_9_slaves")
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE_HA,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT[NEUTRON_SEGMENT_TYPE],
+                'tenant': 'admin',
+                'user': 'admin',
+                'password': 'admin',
+            }
+        )
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute', 'cinder'],
+                'slave-05': ['compute', 'cinder'],
+            },
+            update_interfaces=False
+        )
+
+        self.fuel_web.verify_network(cluster_id)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id, timeout=180 * 60)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.env.make_snapshot("ha_swift_ubuntu_neutron_vlan",
+                               is_make=True)
+
+    @test(depends_on=[ha_swift_ubuntu_neutron_vlan],
+          groups=["upgrade_ha_swift_ubuntu_neutron_vlan"])
+    @log_snapshot_after_test
+    def upgrade_ha_swift_ubuntu_neutron_vlan(self):
+        """Upgrade master node
+
+        Scenario:
+            1. Revert snapshot 'ha_swift_ubuntu_neutron_vlan'
+            2. Run upgrade on master
+            3. Check that upgrade was successful
+
+        """
+        if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
+            raise SkipTest()
+
+        self.check_run('upgrade_ha_swift_ubuntu_neutron_vlan')
+        self.env.revert_snapshot("ha_swift_ubuntu_neutron_vlan")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.env.admin_actions.upgrade_master_node()
+
+        self.fuel_web.assert_nodes_in_ready_state(cluster_id)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:6])
+        self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
+        self.fuel_web.assert_nailgun_upgrade_migration()
+
+        self.env.make_snapshot("upgrade_ha_swift_ubuntu_neutron_vlan",
+                               is_make=True)
+
+    @test(depends_on=[upgrade_ha_swift_ubuntu_neutron_vlan],
+          groups=["prepare_before_os_upgrade_env_with_swift"])
+    @log_snapshot_after_test
+    def prepare_before_os_upgrade_env_with_swift(self):
+        """Make prepare actions before os upgrade
+
+        Scenario:
+            1. Revert snapshot 'upgrade_ha_swift_ubuntu_neutron_vlan'
+            2. yum update
+            3. pip install pyzabbix
+            4. yum install fuel-octane
+            5. Create mirrors
+
+        """
+        if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
+            raise SkipTest()
+
+        self.check_run('prepare_before_os_upgrade_env_with_swift')
+        self.env.revert_snapshot("upgrade_ha_swift_ubuntu_neutron_vlan")
+
+        with self.env.d_env.get_admin_remote() as remote:
+            install_octane_requirements(remote)
+            install_pkg(remote, "fuel-octane")
+            create_mirrors(remote)
+
+        self.env.make_snapshot("prepare_before_os_upgrade_env_with_swift",
+                               is_make=True)
+
+    @test(depends_on=[prepare_before_os_upgrade_env_with_swift],
+          groups=["os_upgrade_env_with_swift"])
+    @log_snapshot_after_test
+    def os_upgrade_env_with_swift(self):
+        """Octane clone target environment
+
+        Scenario:
+            1. Revert snapshot 'prepare_before_os_upgrade_env_with_swift'
+            2. run octane upgrade-env <target_env_id>
+
+        """
+        if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
+            raise SkipTest()
+
+        self.check_run('os_upgrade_env_with_swift')
+        self.env.revert_snapshot("prepare_before_os_upgrade_env_with_swift")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        with self.env.d_env.get_admin_remote() as remote:
+            octane_upgrade_env = remote.execute(
+                "octane upgrade-env {0}".format(cluster_id)
+            )
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        assert_equal(0, octane_upgrade_env['exit_code'])
+        assert_equal(cluster_id,
+                     int(octane_upgrade_env['stdout'][0].split()[0]))
+
+        self.env.make_snapshot("os_upgrade_env_with_swift", is_make=True)
+
+    @test(depends_on=[os_upgrade_env_with_swift],
+          groups=["install_three_cics"])
+    @log_snapshot_after_test
+    def install_three_cics(self):
+        """Upgrade three controllers
+
+        Scenario:
+            1. Revert snapshot 'os_upgrade_env_with_swift'
+            2. run octane upgrade-node --isolated <seed_env_id> <node_id>
+               --network public management
+
+        """
+        if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
+            raise SkipTest()
+
+        self.check_run('install_three_cics')
+        self.env.revert_snapshot("os_upgrade_env_with_swift")
+
+        target_cluster_id = self.fuel_web.client.get_cluster_id(
+            'TestOSupgradeSwiftNeutronVlan'
+        )
+        seed_cluster_id = self.fuel_web.get_last_created_cluster()
+
+        # power on 3 nodes
+
+        b_nodes = self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[-3:],
+                                           timeout=1200)
+        bootstrap_nodes = ' '.join([str(node['id']) for node in b_nodes])
+
+        with self.env.d_env.get_admin_remote() as remote:
+            octane_install_node = remote.execute(
+                "octane install-node --isolated {0} {1} {2} "
+                "--networks public management".format(
+                    target_cluster_id, seed_cluster_id, bootstrap_nodes)
+            )
+        assert_equal(0, octane_install_node['exit_code'],
+                     "octane install-node returns non zero"
+                     "status code,"
+                     "current result {}".format(octane_install_node))
+        tasks_started_by_octane = [
+            task for task in self.fuel_web.client.get_tasks()
+            if task['cluster'] == seed_cluster_id
+        ]
+
+        for task in tasks_started_by_octane:
+            self.fuel_web.assert_task_success(task)
+
+        self.env.make_snapshot("install_three_cics", is_make=True)
