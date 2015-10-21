@@ -11,7 +11,9 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-from xml import etree
+from fuelweb_test.helpers.utils import run_on_remote_get_results
+
+from xml.etree import ElementTree as etree
 
 
 def get_pacemaker_nodes_attributes(cibadmin_status_xml):
@@ -94,3 +96,14 @@ def get_pcs_nodes(pcs_status_xml):
         for node in nodes_group:
             nodes[node.get('name')] = node.attrib
     return nodes
+
+
+def get_pcs_status_xml(self, devops_node_name):
+    """Parse 'pcs status xml'. <Nodes> section
+    :param devops_node_name: name of controller
+    :return: nested dictionary with node-fqdn and attribute name as keys
+    """
+    with self.fuel_web.get_ssh_for_node(devops_node_name) as remote:
+            pcs_status_xml = run_on_remote_get_results(
+                remote, 'pcs status xml')['stdout_str']
+    return pcs_status_xml
