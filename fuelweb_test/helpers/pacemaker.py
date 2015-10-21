@@ -11,7 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-from xml import etree
+from xml.etree import ElementTree as etree
 
 
 def get_pacemaker_nodes_attributes(cibadmin_status_xml):
