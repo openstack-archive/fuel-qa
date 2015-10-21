@@ -2025,7 +2025,8 @@ class FuelWebClient(object):
 
     def get_public_vip(self, cluster_id):
         if self.get_cluster_mode(cluster_id) == DEPLOYMENT_MODE_HA:
-            return self.client.get_networks(cluster_id)['public_vip']
+            return self.client.get_networks(
+                cluster_id)['vips']['public']['ipaddr']
         else:
             logger.error("Public VIP for cluster '{0}' not found, searching "
                          "for public IP on the controller".format(cluster_id))
@@ -2035,10 +2036,15 @@ class FuelWebClient(object):
 
     def get_management_vrouter_vip(self, cluster_id):
         return self.client.get_networks(
-            cluster_id)['management_vrouter_vip']
+            cluster_id)['vips']['vrouter']['ipaddr']
 
     def get_mgmt_vip(self, cluster_id):
-        return self.client.get_networks(cluster_id)['management_vip']
+        return self.client.get_networks(
+            cluster_id)['vips']['management']['ipaddr']
+
+    def get_public_vrouter_vip(self, cluster_id):
+        return self.client.get_networks(
+            cluster_id)['vips']['vrouter_pub']['ipaddr']
 
     @logwrap
     def get_controller_with_running_service(self, slave, service_name):
