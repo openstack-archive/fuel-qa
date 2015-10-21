@@ -25,10 +25,12 @@ description:
   to read this as a configuration data.
 
 maintainers:
-  - name:   Artem Panchenko
-    email:  apanchenko@mirantis.com
-    IRC:    artem_panchenko
 
-  - name:   Dmytro Tyzhnenko
-    email:  dtyzhnenko@mirantis.com
-    IRC:    t_dmitry
+  - ./:
+      - name:   Artem Panchenko
+        email:  apanchenko@mirantis.com
+        IRC:    artem_panchenko
+
+      - name:   Dmytro Tyzhnenko
+        email:  dtyzhnenko@mirantis.com
+        IRC:    t_dmitry
