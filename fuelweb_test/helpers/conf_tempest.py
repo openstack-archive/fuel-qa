@@ -17,9 +17,10 @@ import os
 
 import jinja2
 
+from fuelweb_test.helpers import os_actions
 from fuelweb_test import logger
 from fuelweb_test.models import nailgun_client
-from fuelweb_test.helpers import os_actions
+from fuelweb_test.settings import FLOATING_POOL_NAME
 
 
 class TempestConfigState(object):
@@ -31,7 +32,7 @@ class TempestConfigState(object):
                        'alt_username': 'alt_test',
                        'alt_password': 'alt_test',
                        'alt_tenant_name': 'alt_test',
-                       'public_network_name': 'net04_ext',
+                       'public_network_name': FLOATING_POOL_NAME,
                        'image_name': 'TestVM'}
 
     def __init__(self, admin_ip, cluster_id,
