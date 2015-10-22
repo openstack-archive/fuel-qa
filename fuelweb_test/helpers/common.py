@@ -18,6 +18,7 @@ from fuelweb_test import logger as LOGGER
 from fuelweb_test import logwrap as LOGWRAP
 from fuelweb_test.settings import DISABLE_SSL
 from fuelweb_test.settings import PATH_TO_CERT
+from fuelweb_test.settings import PRIVATE_POOL_NAME
 
 
 from cinderclient import client as cinderclient
@@ -123,7 +124,7 @@ class Common(object):
 
         kwargs = {}
         if neutron_network:
-            network = self.nova.networks.find(label='net04')
+            network = self.nova.networks.find(label=PRIVATE_POOL_NAME)
             kwargs['nics'] = [{'net-id': network.id, 'v4-fixed-ip': ''}]
 
         LOGGER.info('image uuid is {0}'.format(image))

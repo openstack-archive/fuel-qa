@@ -236,6 +236,10 @@ NEUTRON_SEGMENT = {
     'tun': 'tun'
 }
 
+FLOATING_POOL_NAME = os.environ.get('FLOATING_POOL_NAME', 'net04_ext')
+PRIVATE_POOL_NAME = os.environ.get('PRIVATE_POOL_NAME', 'net04')
+PRIVATE_ROUTER_NAME = os.environ.get('PRIVATE_ROUTER_NAME', 'router04')
+
 USE_ALL_DISKS = get_var_as_bool('USE_ALL_DISKS', True)
 
 UPLOAD_MANIFESTS = get_var_as_bool('UPLOAD_MANIFESTS', False)
