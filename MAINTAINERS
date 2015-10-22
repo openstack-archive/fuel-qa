@@ -34,3 +34,21 @@ maintainers:
       - name:   Dmytro Tyzhnenko
         email:  dtyzhnenko@mirantis.com
         IRC:    t_dmitry
+
+  - fuelweb_test/tests/plugins/plugin_elasticsearch: &lma_experts
+
+      - name:   Swann Croiset
+        email:  scroiset@mirantis.com
+        IRC:    swann
+
+      - name:   Simon Pasquier
+        email:  spasquier@mirantis.com
+        IRC:    pasquier-s
+
+      - name:   Guillaume Thouvenin
+        email:  gthouvenin@mirantis.com
+        IRC:    tuvenen
+
+  - fuelweb_test/tests/plugins/plugin_lma_influxdb: *lma_experts
+  - fuelweb_test/tests/plugins/plugin_lma_collector: *lma_experts
+  - fuelweb_test/tests/plugins/plugin_lma_infra_alerting: *lma_experts
