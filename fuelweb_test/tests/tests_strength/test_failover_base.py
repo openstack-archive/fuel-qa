@@ -1053,6 +1053,8 @@ class TestHaFailoverBase(TestBasic):
         active_slaves = [slave for slave
                          in d_ctrls
                          if slave.name != rabbit_slaves[0].name]
+        logger.debug('Active slaves are {0}'.format(active_slaves))
+        assert_true(active_slaves, 'Can not find any active slaves')
 
         master_rabbit_after_slave_fail = self.fuel_web.get_rabbit_master_node(
             active_slaves[0].name)
@@ -1105,6 +1107,9 @@ class TestHaFailoverBase(TestBasic):
         active_slaves = [slave for slave
                          in d_ctrls
                          if slave.name != master_rabbit.name]
+        logger.debug('Active slaves are {0}'.format(active_slaves))
+        assert_true(active_slaves, 'Can not find any active slaves')
+
         master_rabbit_after_fail = self.fuel_web.get_rabbit_master_node(
             active_slaves[0].name)
         assert_not_equal(master_rabbit.name, master_rabbit_after_fail.name)
