@@ -51,13 +51,14 @@ class TestHaNeutronFailover(TestHaFailoverBase):
         """Destroy two controllers and check pacemaker status is correct
 
         Scenario:
-            1. Destroy first controller
-            2. Check pacemaker status
-            3. Run OSTF
-            4. Revert environment
-            5. Destroy second controller
-            6. Check pacemaker status
-            7. Run OSTF
+            1. Revert environment
+            2. Destroy first controller
+            3. Check pacemaker status
+            4. Run OSTF
+            5. Revert environment
+            6. Destroy second controller
+            7. Check pacemaker status
+            8. Run OSTF
 
         Duration 35m
         """
