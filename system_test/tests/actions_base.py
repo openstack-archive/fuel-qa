@@ -204,9 +204,10 @@ class ActionsBase(PrepareBase):
         if self.cluster_id is None:
             raise SkipTest()
 
+        slaves = int(self.full_config['template']['slaves'])
         logger.info("Add nodes to env {}".format(self.cluster_id))
         names = "slave-{:02}"
-        num = iter(xrange(1, test_settings.NODES_COUNT))
+        num = iter(xrange(1, slaves + 1))
         nodes = {}
         for new in self.env_config['nodes']:
             for one in xrange(new['count']):
