@@ -140,29 +140,34 @@ class TestHaFailoverBase(TestBasic):
 
             return ret
 
-        controllers = []
-
         for num in xrange(2):
+
+            # STEP: Revert environment
+            # if num==0: show_step(1); if num==1: show_step(5)
+            self.show_step([1, 5][num])
             self.env.revert_snapshot(self.snapshot_name)
 
             cluster_id = self.fuel_web.client.get_cluster_id(
                 self.__class__.__name__)
+            controllers = list(get_needed_controllers(cluster_id))
 
-            if not controllers:
-                controllers = get_needed_controllers(cluster_id)
-
-            devops_node = self.fuel_web.get_devops_node_by_nailgun_node(
-                controllers.pop(0))
+            # STEP: Destroy first/second controller
+            devops_node = controllers[num]
+            # if num==0: show_step(2); if num==1: show_step(6)
+            self.show_step([2, 6][num], details="Suspending node: "
+                           "{0}".format(devops_node.name))
             devops_node.suspend(False)
 
+            # STEP: Check pacemaker status
+            self.show_step([3, 7][num])
             n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
                 cluster_id=cluster_id,
                 roles=['controller'])
             d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
 
             self.fuel_web.assert_pacemaker(
-                (set(d_ctrls) - set(devops_node))[0].name,
-                set(d_ctrls) - set(devops_node),
+                (set(d_ctrls) - set([devops_node])).pop().name,
+                set(d_ctrls) - set([devops_node]),
                 [devops_node])
 
             # Wait until Nailgun marked suspended controller as offline
@@ -186,6 +191,8 @@ class TestHaFailoverBase(TestBasic):
                  set(d_ctrls) - set(devops_node)],
                 timeout=300)
 
+            # STEP: Run OSTF
+            self.show_step([4, 8][num])
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
                 test_sets=['ha', 'smoke', 'sanity'],
