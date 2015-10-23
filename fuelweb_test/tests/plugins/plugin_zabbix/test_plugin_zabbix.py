@@ -204,7 +204,12 @@ class ZabbixPlugin(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.check_zabbix_configuration(cluster_id, zabbix_username,
+                                        zabbix_password)
 
+        self.env.make_snapshot("deploy_zabbix_ha")
+
+    def check_zabbix_configuration(self, cluster_id, user, password):
         cmd = "crm resource status p_zabbix-server"
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
             response = remote.execute(cmd)["stdout"][0]
@@ -214,7 +219,7 @@ class ZabbixPlugin(TestBasic):
 
         public_vip = self.fuel_web.get_public_vip(cluster_id)
 
-        zabbix_web = ZabbixWeb(public_vip, zabbix_username, zabbix_password)
+        zabbix_web = ZabbixWeb(public_vip, user, password)
         zabbix_web.login()
 
         screens_html = bs4.BeautifulSoup(zabbix_web.get_screens())
@@ -223,8 +228,6 @@ class ZabbixPlugin(TestBasic):
                         for link in screens_links),
                     "Zabbix screen page does not contain graphs:\n{0}".
                     format(screens_links))
-
-        self.env.make_snapshot("deploy_zabbix_ha")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_zabbix_snmptrap_ha"])
@@ -296,25 +299,8 @@ class ZabbixPlugin(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
-
-        cmd = "crm resource status p_zabbix-server"
-        with self.fuel_web.get_ssh_for_node("slave-01") as remote:
-            response = remote.execute(cmd)["stdout"][0]
-        assert_true("p_zabbix-server is running" in response,
-                    "p_zabbix-server resource wasn't found in pacemaker:\n{0}"
-                    .format(response))
-
-        public_vip = self.fuel_web.get_public_vip(cluster_id)
-
-        zabbix_web = ZabbixWeb(public_vip, zabbix_username, zabbix_password)
-        zabbix_web.login()
-
-        screens_html = bs4.BeautifulSoup(zabbix_web.get_screens())
-        screens_links = screens_html.find_all('a')
-        assert_true(any('charts.php?graphid=' in link.get('href')
-                        for link in screens_links),
-                    "Zabbix screen page does not contain graphs:\n{0}".
-                    format(screens_links))
+        self.check_zabbix_configuration(cluster_id, zabbix_username,
+                                        zabbix_password)
 
         for node_name in ['slave-01', 'slave-02', 'slave-03']:
             with self.fuel_web.get_ssh_for_node(node_name) as remote:
@@ -533,3 +519,81 @@ class ZabbixPlugin(TestBasic):
             zabbix_web, 'extreme', 'Power Supply Failed'))
 
         self.env.make_snapshot("deploy_zabbix_snmp_extreme_ha")
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["deploy_zabbix_ceph_ha"])
+    @log_snapshot_after_test
+    def deploy_zabbix_ceph_ha(self):
+        """Deploy cluster in ha mode with zabbix plugin
+
+        Scenario:
+            1. Upload plugin to the master node
+            2. Install plugin
+            3. Create cluster
+            4. Add 3 nodes with controller/ceph-osd role
+            5. Add 2 node with compute/ceph-osd role
+            7. Deploy the cluster
+            8. Run network verification
+            9. Run OSTF
+            10. Check zabbix service in pacemaker
+            11. Check login to zabbix dashboard
+
+        Duration 180m
+        Snapshot deploy_zabbix_ha
+
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        with self.env.d_env.get_admin_remote() as remote:
+            checkers.upload_tarball(
+                remote, conf.ZABBIX_PLUGIN_PATH, "/var")
+            checkers.install_plugin_check_code(
+                remote,
+                plugin=os.path.basename(conf.ZABBIX_PLUGIN_PATH))
+
+        settings = {}
+        if conf.NEUTRON_ENABLE:
+            settings = {
+                "net_provider": "neutron",
+                "net_segment_type": conf.NEUTRON_SEGMENT_TYPE
+            }
+
+        settings.update(
+            {
+                'volumes_ceph': True,
+                'images_ceph': True,
+                'volumes_lvm': False,
+                'tenant': 'cephHA',
+                'user': 'cephHA',
+                'password': 'cephHA',
+                'osd_pool_size': "3"
+            }
+        )
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=conf.DEPLOYMENT_MODE,
+            settings=settings
+        )
+
+        zabbix_username = 'admin'
+        zabbix_password = 'zabbix'
+        self.setup_zabbix_plugin(cluster_id, zabbix_username, zabbix_password)
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller', 'ceph-osd'],
+                'slave-02': ['controller', 'ceph-osd'],
+                'slave-03': ['controller', 'ceph-osd'],
+                'slave-04': ['compute', 'ceph-osd'],
+                'slave-05': ['compute', 'ceph-osd'],
+            }
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id, timeout=190 * 60)
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.check_zabbix_configuration(cluster_id, zabbix_username,
+                                        zabbix_password)
+
+        self.env.make_snapshot("deploy_zabbix_ceph_ha")
