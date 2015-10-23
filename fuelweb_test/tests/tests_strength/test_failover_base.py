@@ -589,7 +589,10 @@ class TestHaFailoverBase(TestBasic):
             file_size2 = get_file_size(remote, file_name, file_path)
         assert_true(file_size2 > file_size1,
                     "File download was interrupted, size of downloading "
-                    "does not change")
+                    "does not change. File: {0}. Current size: {1} byte(s), "
+                    "prev size: {2} byte(s)".format(file_name,
+                                                    file_size2,
+                                                    file_size1))
         devops_node.destroy()
         try:
             wait(
