@@ -54,6 +54,7 @@ class TestHaFailoverBase(TestBasic):
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[5:6])
 
+        self.show_step(1)
         settings = {
             "net_provider": 'neutron',
             "net_segment_type": NEUTRON_SEGMENT_TYPE
@@ -64,6 +65,10 @@ class TestHaFailoverBase(TestBasic):
             mode=DEPLOYMENT_MODE,
             settings=settings
         )
+
+
+        self.show_step(2)
+        self.show_step(3)
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -75,12 +80,15 @@ class TestHaFailoverBase(TestBasic):
                 'slave-06': ['cinder']
             }
         )
+
+        self.show_step(4)
         self.fuel_web.deploy_cluster_wait(cluster_id)
         public_vip = self.fuel_web.get_public_vip(cluster_id)
         os_conn = os_actions.OpenStackActions(public_vip)
         self.fuel_web.assert_cluster_ready(os_conn, smiles_count=14)
         self.fuel_web.verify_network(cluster_id)
 
+        self.show_step(5)
         self.env.make_snapshot(self.snapshot_name, is_make=True)
 
     def deploy_ha_ceph(self):
@@ -88,6 +96,7 @@ class TestHaFailoverBase(TestBasic):
         self.check_run(self.snapshot_name)
         self.env.revert_snapshot("ready_with_5_slaves")
 
+        self.show_step(1)
         settings = {
             'volumes_ceph': True,
             'images_ceph': True,
@@ -102,6 +111,8 @@ class TestHaFailoverBase(TestBasic):
             settings=settings
         )
 
+        self.show_step(2)
+        self.show_step(3)
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -112,6 +123,8 @@ class TestHaFailoverBase(TestBasic):
                 'slave-05': ['compute']
             }
         )
+
+        self.show_step(4)
         self.fuel_web.deploy_cluster_wait(cluster_id)
         public_vip = self.fuel_web.get_public_vip(cluster_id)
         os_conn = os_actions.OpenStackActions(public_vip)
@@ -122,6 +135,7 @@ class TestHaFailoverBase(TestBasic):
             with self.fuel_web.get_ssh_for_node(node) as remote:
                 check_public_ping(remote)
 
+        self.show_step(5)
         self.env.make_snapshot(self.snapshot_name, is_make=True)
 
     def ha_destroy_controllers(self):
@@ -140,21 +154,26 @@ class TestHaFailoverBase(TestBasic):
 
             return ret
 
-        controllers = []
+        cluster_id = self.fuel_web.client.get_cluster_id(
+            self.__class__.__name__)
+        controllers = list(get_needed_controllers(cluster_id))
 
         for num in xrange(2):
+
+            # STEP: Revert environment
+            # if num==0: show_step(1); if num==1: show_step(5)
+            self.show_step([1, 5][num])
             self.env.revert_snapshot(self.snapshot_name)
 
-            cluster_id = self.fuel_web.client.get_cluster_id(
-                self.__class__.__name__)
-
-            if not controllers:
-                controllers = get_needed_controllers(cluster_id)
-
-            devops_node = self.fuel_web.get_devops_node_by_nailgun_node(
-                controllers.pop(0))
+            # STEP: Destroy first/second controller
+            devops_node = controllers[num]
+            # if num==0: show_step(2); if num==1: show_step(6)
+            self.show_step([2, 6][num], details="Suspending node: "
+                           "{0}".format(devops_node.name))
             devops_node.suspend(False)
 
+            # STEP: Check pacemaker status
+            self.show_step([3, 7][num])
             n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
                 cluster_id=cluster_id,
                 roles=['controller'])
@@ -186,6 +205,8 @@ class TestHaFailoverBase(TestBasic):
                  set(d_ctrls) - set(devops_node)],
                 timeout=300)
 
+            # STEP: Run OSTF
+            self.show_step([4, 8][num])
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
                 test_sets=['ha', 'smoke', 'sanity'],
@@ -273,6 +294,8 @@ class TestHaFailoverBase(TestBasic):
                              "interface {2} ".format(address,
                                                      active_nodes[0].name,
                                                      resources[resource]))
+                self.show_step(1, details="{0}, pass #{1}"
+                               .format(resource, check_counter))
                 self.fuel_web.ip_address_del(
                     node_name=active_nodes[0].name,
                     interface=resources[resource]['iface'],
@@ -295,6 +318,8 @@ class TestHaFailoverBase(TestBasic):
 
                 # 3. Waiting for restore the IP
                 logger.debug("Waiting while deleted ip restores ...")
+                self.show_step(2, details="{0}, pass #{1}"
+                               .format(resource, check_counter))
                 try:
                     wait(check_restore, timeout=60)
                 except TimeoutError as e:
@@ -304,6 +329,8 @@ class TestHaFailoverBase(TestBasic):
                 new_nodes = self.fuel_web.get_pacemaker_resource_location(
                     devops_controllers[0].name,
                     resource)
+                self.show_step(3, details="{0}, pass #{1}"
+                               .format(resource, check_counter))
                 assert_true(len(new_nodes) == 1,
                             "After ip deletion resource should run on a single"
                             " node, but runned on {0}. On {1} attempt".format(
@@ -317,6 +344,7 @@ class TestHaFailoverBase(TestBasic):
             logger.info("Resource {0} restored "
                         "{1} times".format(resource, check_counter))
 
+            self.show_step(4, details="{0}".format(resource))
             # Run OSTF tests
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
@@ -332,11 +360,16 @@ class TestHaFailoverBase(TestBasic):
         n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])
         d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
+
+        cluster_id = self.fuel_web.client.get_cluster_id(
+            self.__class__.__name__)
+
         for devops_node in d_ctrls:
             with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
                 logger.info('Terminating MySQL on {0}'
                             .format(devops_node.name))
 
+                self.show_step(1, details=devops_node.name)
                 try:
                     remote.check_call('pkill -9 -x "mysqld"')
                 except:
@@ -344,14 +377,14 @@ class TestHaFailoverBase(TestBasic):
                                  format(devops_node.name))
                     raise
 
+                self.show_step(2, details=devops_node.name)
                 check_mysql(remote, devops_node.name)
 
-        cluster_id = self.fuel_web.client.get_cluster_id(
-            self.__class__.__name__)
+            self.show_step(3, details=devops_node.name)
+            self.fuel_web.wait_mysql_galera_is_up(
+                ['slave-01', 'slave-02', 'slave-03'], timeout=300)
 
-        self.fuel_web.wait_mysql_galera_is_up(['slave-01', 'slave-02',
-                                               'slave-03'], timeout=300)
-
+        self.show_step(5)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
@@ -370,6 +403,7 @@ class TestHaFailoverBase(TestBasic):
 
         for devops_node in d_ctrls:
             with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
+                self.show_step(1)
                 remote.check_call('kill -9 $(pidof haproxy)')
 
                 def haproxy_started():
@@ -380,7 +414,9 @@ class TestHaFailoverBase(TestBasic):
                     )
                     return ret['exit_code'] == 0
 
+                self.show_step(2)
                 wait(haproxy_started, timeout=20)
+                self.show_step(3)
                 assert_true(haproxy_started(), 'haproxy restarted')
 
         cluster_id = self.fuel_web.client.get_cluster_id(
@@ -399,6 +435,7 @@ class TestHaFailoverBase(TestBasic):
             cluster_id=cluster_id,
             timeout=timeout)
 
+        self.show_step(5)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
@@ -418,9 +455,13 @@ class TestHaFailoverBase(TestBasic):
             self.env.d_env.nodes().slaves[0].name, pure=True)['Online'])
         logger.debug("pacemaker nodes are {0}".format(pcm_nodes))
         for devops_node in d_ctrls:
+
+            self.show_step(1, details=devops_node.name)
             config = self.fuel_web.get_pacemaker_config(devops_node.name)
             logger.debug("config on node {0} is {1}".format(
                 devops_node.name, config))
+
+            self.show_step(2, details=devops_node.name)
             assert_not_equal(
                 re.search("vip__public\s+\(ocf::fuel:ns_IPaddr2\):\s+Started",
                           config)
@@ -467,6 +508,7 @@ class TestHaFailoverBase(TestBasic):
         p_d_ctrl = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
 
+        self.show_step(2, details=p_d_ctrl.name)
         with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
             pid = ''.join(remote.execute('pgrep {0}'
                                          .format(heat_name))['stdout'])
@@ -482,6 +524,7 @@ class TestHaFailoverBase(TestBasic):
                 format(pid))['stdout'])
         assert_true(amqp_con > 0, 'There is no amqp connections')
 
+        self.show_step(3, details=p_d_ctrl.name)
         with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
             remote.execute("iptables -I OUTPUT 1 -m owner --uid-owner heat -m"
                            " state --state NEW,ESTABLISHED,RELATED -j DROP")
@@ -490,17 +533,22 @@ class TestHaFailoverBase(TestBasic):
 
             get_ocf_status = ''.join(
                 remote.execute(ocf_status)['stdout']).rstrip()
+
+        self.show_step(4, details=p_d_ctrl.name)
         logger.info('ocf status after blocking is {0}'.format(
             get_ocf_status))
         assert_true(ocf_error in get_ocf_status,
                     "heat engine is running, status is {0}".format(
                         get_ocf_status))
 
+        self.show_step(5, details=p_d_ctrl.name)
         with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
             remote.execute("iptables -D OUTPUT 1 -m owner --uid-owner heat -m"
                            " state --state NEW,ESTABLISHED,RELATED")
             _wait(lambda: assert_true(ocf_success in ''.join(
                 remote.execute(ocf_status)['stdout']).rstrip()), timeout=240)
+
+            self.show_step(6, details=p_d_ctrl.name)
             newpid = ''.join(remote.execute('pgrep {0}'
                                             .format(heat_name))['stdout'])
             assert_true(pid != newpid, "heat pid is still the same")
@@ -511,6 +559,7 @@ class TestHaFailoverBase(TestBasic):
                     "heat engine is not succeeded, status is {0}".format(
                         get_ocf_status))
 
+        self.show_step(7, details=p_d_ctrl.name)
         with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
             heat = len(
                 remote.execute("netstat -nap | grep {0} | grep :5673"
@@ -532,10 +581,14 @@ class TestHaFailoverBase(TestBasic):
             n_computes)
         for devops_node in d_computes:
             with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
+
+                self.show_step(2, details=devops_node.name)
                 remote.execute("kill -9 `pgrep nova-compute`")
                 wait(
                     lambda: len(remote.execute('pgrep nova-compute')['stdout'])
                     == 1, timeout=120)
+
+                self.show_step(3, details=devops_node.name)
                 assert_true(len(remote.execute('pgrep nova-compute')['stdout'])
                             == 1, 'Nova service was not restarted')
                 assert_true(len(remote.execute(
@@ -558,6 +611,7 @@ class TestHaFailoverBase(TestBasic):
         self.env.revert_snapshot(self.snapshot_name)
         cluster_id = self.fuel_web.get_last_created_cluster()
         for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
+            self.show_step(2, details=node['fqdn'])
             with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
                 assert_true(
                     check_ping(remote, DNS, deadline=120, interval=10),
@@ -590,6 +644,8 @@ class TestHaFailoverBase(TestBasic):
         assert_true(file_size2 > file_size1,
                     "File download was interrupted, size of downloading "
                     "does not change")
+
+        self.show_step(3, details=devops_node.name)
         devops_node.destroy()
         try:
             wait(
@@ -598,6 +654,8 @@ class TestHaFailoverBase(TestBasic):
         except TimeoutError:
             raise TimeoutError(
                 "Primary controller was not destroyed")
+
+        self.show_step(4)
         with self.fuel_web.get_ssh_for_node('slave-05') as remote:
             assert_true(
                 check_ping(remote, DNS, deadline=120, interval=10),
@@ -622,6 +680,8 @@ class TestHaFailoverBase(TestBasic):
             'start to execute command on the slave'
             ' for dev{0}, loss percent {1}'. format(dev, loss_percent))
 
+
+        self.show_step(2)
         p_d_ctrl = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         remote = self.fuel_web.get_ssh_for_node(p_d_ctrl.name)
@@ -647,6 +707,7 @@ class TestHaFailoverBase(TestBasic):
         # Wait until MySQL Galera is UP on some controller
         self.fuel_web.wait_mysql_galera_is_up(['slave-02'])
 
+        self.show_step(3)
         try:
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
@@ -861,9 +922,13 @@ class TestHaFailoverBase(TestBasic):
         pcm_nodes.remove(slave1_name)
 
         with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
+            self.show_step(1, details=p_d_ctrl.name)
             remote.execute('crm configure property maintenance-mode=true')
+
+            self.show_step(2, details=p_d_ctrl.name)
             remote.execute('service corosync stop')
 
+        self.show_step(3)
         with self.env.d_env.get_admin_remote() as remote:
             cmd = "grep 'Ignoring alive node rabbit@{0}' /var/log/remote" \
                   "/{1}/rabbit-fence.log".format(rabbit_slave1_name,
@@ -898,8 +963,10 @@ class TestHaFailoverBase(TestBasic):
             ['controller'])
         d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
 
+        second_ctrl = (set(d_ctrls) - set([p_d_ctrl]))[0]
+        self.show_step(4, details=second_ctrl.name)
         rabbit_status = self.fuel_web.get_rabbit_running_nodes(
-            (set(d_ctrls) - set([p_d_ctrl]))[0].name)
+            second_ctrl.name)
         logger.debug("rabbit status is {}".format(rabbit_status))
         for rabbit_node in rabbit_nodes:
             assert_true(rabbit_node in rabbit_status,
@@ -907,9 +974,11 @@ class TestHaFailoverBase(TestBasic):
                         " rabbit status".format(rabbit_node))
 
         with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
+            self.show_step(5, details=p_d_ctrl.name)
             remote.execute("service corosync start")
             remote.execute("service pacemaker restart")
 
+        self.show_step(6)
         self.fuel_web.assert_pacemaker(p_d_ctrl.name,
                                        d_ctrls, [])
 
@@ -942,10 +1011,14 @@ class TestHaFailoverBase(TestBasic):
         pcm_nodes.remove(slave1_name)
 
         with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
+            self.show_step(1)
             remote.execute('crm configure property maintenance-mode=true')
+
+            self.show_step(2)
             remote.execute('rabbitmqctl stop_app')
             remote.execute('service corosync stop')
 
+        self.show_step(3)
         with self.env.d_env.get_admin_remote() as remote:
 
             cmd = "grep 'Forgetting cluster node rabbit@{0}' /var/log/remote" \
@@ -984,6 +1057,8 @@ class TestHaFailoverBase(TestBasic):
 
         d_ctrl = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0], role='controller')
+
+        self.show_step(4, details=d_ctrl.name)
         rabbit_status = self.fuel_web.get_rabbit_running_nodes(d_ctrl.name)
         logger.debug("rabbit status is {}".format(rabbit_status))
 
@@ -1017,6 +1092,7 @@ class TestHaFailoverBase(TestBasic):
             self.env.d_env.nodes().slaves[0])
 
         # get master rabbit controller
+        self.show_step(1, details="controller {0}".format(p_d_ctrl.name))
         master_rabbit = self.fuel_web.get_rabbit_master_node(p_d_ctrl.name)
         logger.info('Try to find slave where rabbit slaves are running')
         # get rabbit slaves
@@ -1024,6 +1100,8 @@ class TestHaFailoverBase(TestBasic):
         assert_true(rabbit_slaves,
                     'Can not find rabbit slaves. '
                     'current result is {0}'.format(rabbit_slaves))
+
+        self.show_step(2, details=rabbit_slaves[0].name)
         logger.info('Suspend node {0}'.format(rabbit_slaves[0].name))
         # suspend devops node with rabbit slave
         rabbit_slaves[0].suspend(False)
@@ -1037,6 +1115,7 @@ class TestHaFailoverBase(TestBasic):
                                ' not become offline '
                                'in nailgun'.format(rabbit_slaves[0].name))
 
+        self.show_step(3)
         # check ha
 
         self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300)
@@ -1054,12 +1133,14 @@ class TestHaFailoverBase(TestBasic):
                          in d_ctrls
                          if slave.name != rabbit_slaves[0].name]
 
+        self.show_step(4)
         master_rabbit_after_slave_fail = self.fuel_web.get_rabbit_master_node(
             active_slaves[0].name)
         assert_equal(master_rabbit.name, master_rabbit_after_slave_fail.name)
 
         # turn on rabbit slave
 
+        self.show_step(5)
         rabbit_slaves[0].resume(False)
 
         # Wait until Nailgun marked suspended controller as online
@@ -1080,12 +1161,18 @@ class TestHaFailoverBase(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id, test_sets=['smoke'])
 
         # check that master rabbit is the same
-
+        self.show_step(6)
         master_rabbit_after_slave_back = self.fuel_web.get_rabbit_master_node(
             active_slaves[0].name)
 
         assert_equal(master_rabbit.name, master_rabbit_after_slave_back.name)
 
+        self.show_step(7)
+        # check ha
+        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300)
+        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
+
+        self.show_step(8)
         # turn off rabbit master
         master_rabbit.suspend(False)
 
@@ -1098,10 +1185,7 @@ class TestHaFailoverBase(TestBasic):
                                ' not become offline'
                                'in nailgun'.format(master_rabbit.name))
 
-        # check ha
-        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300)
-        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
-
+        self.show_step(9)
         active_slaves = [slave for slave
                          in d_ctrls
                          if slave.name != master_rabbit.name]
@@ -1109,8 +1193,13 @@ class TestHaFailoverBase(TestBasic):
             active_slaves[0].name)
         assert_not_equal(master_rabbit.name, master_rabbit_after_fail.name)
 
-        # turn on rabbit master
+        # check ha
+        self.show_step(10)
+        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
+        # turn on rabbit master
+        self.show_step(11)
         master_rabbit.resume(False)
 
         # Wait until Nailgun marked suspended controller as online
@@ -1122,18 +1211,19 @@ class TestHaFailoverBase(TestBasic):
                                ' not become online '
                                'in nailgun'.format(master_rabbit.name))
 
-        # check ha
-
-        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         # check that master rabbit is the same
-
+        self.show_step(12)
         master_rabbit_after_node_back = self.fuel_web.get_rabbit_master_node(
             active_slaves[0].name)
 
         assert_equal(master_rabbit_after_fail.name,
                      master_rabbit_after_node_back.name)
+
+        # check ha
+        self.show_step(13)
+        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
     def ha_corosync_stability_check(self):
 
