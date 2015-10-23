@@ -51,13 +51,14 @@ class TestHaNeutronFailover(TestHaFailoverBase):
         """Destroy two controllers and check pacemaker status is correct
 
         Scenario:
-            1. Destroy first controller
-            2. Check pacemaker status
-            3. Run OSTF
-            4. Revert environment
-            5. Destroy second controller
-            6. Check pacemaker status
-            7. Run OSTF
+            1. Revert environment
+            2. Destroy first controller
+            3. Check pacemaker status
+            4. Run OSTF
+            5. Revert environment
+            6. Destroy second controller
+            7. Check pacemaker status
+            8. Run OSTF
 
         Duration 35m
         """
@@ -293,8 +294,8 @@ class TestHaNeutronFailover(TestHaFailoverBase):
         Scenario:
             1. SSH to controller and get rabbit master
             2. Destroy not rabbit master node
-            3. Check that rabbit master stay as was
-            4. Run ostf ha
+            3. Run ostf ha
+            4. Check that rabbit master stay as was
             5. Turn on destroyed slave
             6. Check rabbit master is the same
             7. Run ostf ha
