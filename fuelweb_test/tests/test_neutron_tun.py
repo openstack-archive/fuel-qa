@@ -28,6 +28,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.tests.test_neutron_tun_base import NeutronTunHaBase
 from fuelweb_test import logger
 from fuelweb_test import quiet_logger
+from proboscis.decorators import factory
 
 
 @test(groups=["ha_neutron_tun", "neutron", "smoke_neutron", "deployment"])
@@ -96,6 +97,13 @@ class NeutronTun(TestBasic):
             cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_neutron_tun")
+
+
+@test(groups=["NeutronTunMulty"])
+class NeutronTunMulty(NeutronTun):
+
+    def deploy_neutron_tun_mult(self):
+        super(self.__class__, self).deploy_neutron_tun()
 
 
 @test(groups=["neutron", "ha", "ha_neutron_tun"])
@@ -417,3 +425,9 @@ class TestHaNeutronScalability(TestBasic):
             test_sets=['sanity', 'smoke', 'ha'], should_fail=1)
         self.env.sync_time()
         self.env.make_snapshot("neutron_vlan_ha_scalability")
+
+
+@factory
+def generate_tests():
+    result = [NeutronTunMulty() for s in range(0, 10)]
+    return result
