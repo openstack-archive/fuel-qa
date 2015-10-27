@@ -33,7 +33,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 class ZabbixWeb(object):
     def __init__(self, public_vip, username, password):
         self.session = requests.Session()
-        self.base_url = "http://{0}/zabbix/".format(public_vip)
+        self.base_url = "https://{0}/zabbix/".format(public_vip)
         self.username = username
         self.password = password
 
