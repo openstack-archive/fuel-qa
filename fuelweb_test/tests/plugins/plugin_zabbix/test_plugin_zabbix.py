@@ -31,11 +31,12 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 
 class ZabbixWeb(object):
-    def __init__(self, public_vip, username, password):
+    def __init__(self, public_vip, username, password, verify=False):
         self.session = requests.Session()
-        self.base_url = "http://{0}/zabbix/".format(public_vip)
+        self.base_url = "https://{0}/zabbix/".format(public_vip)
         self.username = username
         self.password = password
+        self.verify = verify
 
     def login(self):
         login_params = urllib.urlencode({'request': '',
@@ -44,14 +45,14 @@ class ZabbixWeb(object):
                                          'autologin': 1,
                                          'enter': 'Sign in'})
         url = urlparse.urljoin(self.base_url, '?{0}'.format(login_params))
-        response = self.session.post(url)
+        response = self.session.post(url, verify=self.verify)
 
         assert_equal(response.status_code, 200,
                      "Login to Zabbix failed: {0}".format(response.content))
 
     def get_trigger_statuses(self):
         url = urlparse.urljoin(self.base_url, 'tr_status.php')
-        response = self.session.get(url)
+        response = self.session.get(url, verify=self.verify)
 
         assert_equal(response.status_code, 200,
                      "Getting Zabbix trigger statuses failed: {0}"
@@ -61,7 +62,7 @@ class ZabbixWeb(object):
 
     def get_screens(self):
         url = urlparse.urljoin(self.base_url, 'screens.php')
-        response = self.session.get(url)
+        response = self.session.get(url, verify=self.verify)
 
         assert_equal(response.status_code, 200,
                      "Getting Zabbix screens failed: {0}"
