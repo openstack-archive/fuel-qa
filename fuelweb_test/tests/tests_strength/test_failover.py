@@ -327,3 +327,25 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
         """
         super(self.__class__, self).ha_corosync_stability_check()
+
+    @test(depends_on_groups=['prepare_ha_neutron'],
+          groups=['change_pacemaker_parameter_does_not_break_rabbitmq'])
+    @log_snapshot_after_test
+    def change_pacemaker_parameter_not_break_rabbitmq(self):
+        """Change pacemaker parameters doesn't break RabbitMQ.
+
+        Scenario:
+            1. Deploy environment with at least 3 controllers
+            2. Change max_rabbitmqctl_timeouts parameter on one of
+               controllers,after that slaves rabbitmq will be restarted by
+               Pacemaker.
+            3. Wait for 1 minute.
+            4. Check RabbitMQ cluster is assembled until success in 10 min
+            5. Run OSTF
+            6. Repeat two more times steps 2-5
+
+        Duration 50 min
+
+        """
+        super(self.__class__, self). \
+            change_pacemaker_parameter_not_break_rabbitmq()
