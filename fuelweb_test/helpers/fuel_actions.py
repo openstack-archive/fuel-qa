@@ -520,6 +520,7 @@ class FuelPluginBuilder(BaseActions):
         :param path: path to plugin. For ex.: /root/example_plugin
         :return: nothing
         """
+        #self.execute_in_container("fpb --build {0}".format(
         self.execute_in_container("fpb --build {0}".format(
             path), self.container, 0)
 
@@ -529,6 +530,7 @@ class FuelPluginBuilder(BaseActions):
         :param path: path to plugin to be verified
         :return: nothing
         """
+        #self.execute_in_container("fpb --check {0}".format(
         self.execute_in_container("fpb --check {0}".format(
             path), self.container, 0)
 

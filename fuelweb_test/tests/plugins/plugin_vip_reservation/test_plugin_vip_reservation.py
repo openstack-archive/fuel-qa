@@ -67,7 +67,7 @@ class VipReservation(TestBasic):
             # install fuel_plugin_builder on master node
             fpb.fpb_install()
             # create plugin template on the master node
-            fpb.fpb_create_plugin(plugin_name)
+            fpb.fpb_create_plugin(os.path.join('/root/', plugin_name))
             # replace plugin tasks, metadata, network_roles
             fpb.fpb_replace_plugin_content(
                 os.path.join(dir_path, net_role_file),
@@ -186,8 +186,7 @@ class VipReservation(TestBasic):
             # install fuel_plugin_builder on master node
             fpb.fpb_install()
             # create plugin template on the master node
-            fpb.fpb_create_plugin(plugin_name)
-
+            fpb.fpb_create_plugin(os.path.join('/root/', plugin_name))
             # replace plugin tasks, metadata, network_roles
             fpb.fpb_replace_plugin_content(
                 os.path.join(task_path, net_role_file),
@@ -312,7 +311,7 @@ class VipReservation(TestBasic):
             # install fuel_plugin_builder on master node
             fpb.fpb_install()
             # create plugin template on the master node
-            fpb.fpb_create_plugin(plugin_name)
+            fpb.fpb_create_plugin(os.path.join('/root/', plugin_name))
             # replace plugin tasks, metadata, network_roles
             fpb.fpb_replace_plugin_content(
                 os.path.join(task_path, net_role_file),
@@ -332,7 +331,6 @@ class VipReservation(TestBasic):
                 os.path.join('/root/', plugin_name, net_role_file),
                 [1, 'properties', 'vip', 0, 'namespace'],
                 namespace)
-
             # build plugin
             fpb.fpb_build_plugin(os.path.join('/root/', plugin_name))
             # copy plugin archive file from nailgun container
