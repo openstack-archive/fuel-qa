@@ -41,7 +41,7 @@ class StrenghtDestroyFirstContorller(strenght_base.StrenghtBaseActions):
     base_group = ['system_test',
                   'system_test.failover',
                   'system_test.failover.destroy_controllers',
-                  'system_test.failover.destroy_controllers.second']
+                  'system_test.failover.destroy_controllers.first']
 
     actions_order = [
         '_action_setup_master',
@@ -88,10 +88,10 @@ class StrenghtDestroySecondContorller(strenght_base.StrenghtBaseActions):
 
     """
 
-    base_group = ['actions_tests',
-                  'actions_tests.failover',
-                  'actions_tests.failover.destroy_controllers',
-                  'actions_tests.failover.destroy_controllers.second']
+    base_group = ['system_test',
+                  'system_test.failover',
+                  'system_test.failover.destroy_controllers',
+                  'system_test.failover.destroy_controllers.second']
 
     actions_order = [
         '_action_setup_master',
@@ -122,5 +122,9 @@ class StrenghtDestroySecondContorller(strenght_base.StrenghtBaseActions):
 
 @factory
 def cases():
+    # l = []
+    # l.extend(case_factory(StrenghtDestroyFirstContorller))
+    # l.extend(case_factory(StrenghtDestroySecondContorller))
+    # return (l)
     return (case_factory(StrenghtDestroyFirstContorller) +
             case_factory(StrenghtDestroySecondContorller))

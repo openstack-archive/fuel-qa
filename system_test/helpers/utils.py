@@ -32,37 +32,53 @@ def copy_func(f, name=None):
     return fn
 
 
+def get_list_confignames(filelist):
+    ret = []
+    for f in filelist:
+        ret.append(get_configname(f))
+    return ret
+
+
+def get_configname(path):
+    """Get config name from path to yaml file"""
+    return os.path.splitext(os.path.basename(path))[0]
+
+
+def get_path_to_config():
+    import system_test
+    return os.path.join(os.path.dirname(system_test.__file__),
+                        'tests_templates/tests_configs')
+
+
+def collect_yamls(path):
+    ret = []
+    for n in os.listdir(path):
+        n = "{}/{}".format(path, n)
+        if os.path.isdir(n):
+            ret.extend(collect_yamls(n))
+        else:
+            ret.append(n)
+    return ret
+
+
 def load_yaml_files(path):
     def yaml_include(loader, node):
         file_name = os.path.join(os.path.dirname(loader.name), node.value)
         with file(file_name) as inputfile:
             return yaml.load(inputfile)
 
-    def collect_yamls(path):
-        ret = []
-        for n in os.listdir(path):
-            n = "{}/{}".format(path, n)
-            if os.path.isdir(n):
-                ret.extend(collect_yamls(n))
-            else:
-                ret.append(n)
-        return ret
-
     yamls = collect_yamls(path)
     yaml.add_constructor("!include", yaml_include)
-    return [yaml.load(open(y)) for y in yamls]
+    return {get_configname(y): yaml.load(open(y)) for y in yamls}
 
 
 def get_configs():
     """Return list of dict environment configurations"""
-    import system_test
-    path = os.path.join(os.path.dirname(system_test.__file__),
-                        'tests_templates/tests_configs')
+    path = get_path_to_config()
     return load_yaml_files(path)
 
 
 def case_factory(baseclass):
     """Return list of instance """
     configs = get_configs()
-    return [baseclass.caseclass_factory(
-        c['template']['group-name'])(c) for c in configs]
+    return [baseclass.caseclass_factory(g)(c) for g, c in configs.iteritems()]
