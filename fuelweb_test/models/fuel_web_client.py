@@ -1345,7 +1345,7 @@ class FuelWebClient(object):
                 networks['public']['ip_range'] = [
                     str(static[2]), str(static[-1])]
 
-                # use the secong half of public network as floating range
+                # use the second half of public network as floating range
                 net_settings[net_provider]['config']['floating_ranges'] = \
                     [[str(floating[0]), str(floating[-2])]]
 
@@ -1399,6 +1399,12 @@ class FuelWebClient(object):
             networking_parameters=new_settings["networking_parameters"],
             networks=new_settings["networks"]
         )
+
+    @logwrap
+    def update_cluster_network(self, cluster_id, new_settings):
+        settings = self.client.get_networks(cluster_id)
+        settings.update(new_settings)
+        self.client.update_network(settings)
 
     def _get_true_net_name(self, name, net_pools):
         """Find a devops network name in net_pools"""
