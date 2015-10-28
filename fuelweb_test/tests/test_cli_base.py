@@ -66,8 +66,8 @@ class CommandLine(TestBasic):
         start = time.time()
         try:
             wait(
-                lambda: self.get_task(
-                    remote, task['id'])['status'] != 'running',
+                lambda: (self.get_task(remote, task['id'])['status'] not in
+                         ('pending', 'running')),
                 interval=interval,
                 timeout=timeout
             )
