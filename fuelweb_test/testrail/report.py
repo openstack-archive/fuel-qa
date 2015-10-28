@@ -27,12 +27,12 @@ from builds import get_build_artifact
 from builds import get_downstream_builds_from_html
 from builds import get_jobs_for_view
 from launchpad_client import LaunchpadBug
-from settings import JENKINS
-from settings import GROUPS_TO_EXPAND
-from settings import LaunchpadSettings
-from settings import LOGS_DIR
-from settings import logger
-from settings import TestRailSettings
+from fuelweb_test.settings import JENKINS
+from fuelweb_test.settings import GROUPS_TO_EXPAND
+from fuelweb_test.settings import LaunchpadSettings
+from fuelweb_test.settings import LOGS_DIR
+from fuelweb_test.settings import logger
+from fuelweb_test.settings import TestRailSettings
 from testrail_client import TestRailProject
 
 

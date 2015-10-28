@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import os
-from settings import LOGS_DIR
+from fuelweb_test.settings import LOGS_DIR
 
 if not os.path.exists(LOGS_DIR):
     os.makedirs(LOGS_DIR)
