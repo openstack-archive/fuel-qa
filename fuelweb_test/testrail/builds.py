@@ -16,8 +16,8 @@ import json
 import re
 import urllib2
 
-from settings import JENKINS
-from settings import logger
+from fuelweb_test.settings import JENKINS
+from fuelweb_test.settings import logger
 
 
 def get_jobs_for_view(view):
