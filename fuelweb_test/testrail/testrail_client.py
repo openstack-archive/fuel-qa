@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from settings import logger
+from fuelweb_test.settings import logger
 from testrail import APIClient
 from testrail import APIError
 
