@@ -16,7 +16,7 @@ import subprocess
 
 from joblib import Parallel, delayed
 
-from settings import TestRailSettings
+from fuelweb_test.settings import TestRailSettings
 from testrail_client import TestRailProject
 
 

@@ -22,9 +22,9 @@ from proboscis.decorators import DEFAULT_REGISTRY
 from builds import Build
 from fuelweb_test.run_tests import import_tests
 from system_test import define_custom_groups
-from settings import GROUPS_TO_EXPAND
-from settings import logger
-from settings import TestRailSettings
+from fuelweb_test.settings import GROUPS_TO_EXPAND
+from fuelweb_test.settings import logger
+from fuelweb_test.settings import TestRailSettings
 from testrail_client import TestRailProject
 
 
