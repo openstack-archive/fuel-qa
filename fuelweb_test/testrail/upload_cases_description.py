@@ -20,9 +20,9 @@ from proboscis import TestProgram
 
 from builds import Build
 from fuelweb_test.run_tests import import_tests
-from settings import GROUPS_TO_EXPAND
-from settings import logger
-from settings import TestRailSettings
+from fuelweb_test.testrail.settings import GROUPS_TO_EXPAND
+from fuelweb_test.testrail.settings import logger
+from fuelweb_test.testrail.settings import TestRailSettings
 from testrail_client import TestRailProject
 
 
