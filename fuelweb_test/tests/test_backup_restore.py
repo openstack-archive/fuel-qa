@@ -31,7 +31,7 @@ from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
-from fuelweb_test.tests.test_cli import CommandLine
+from fuelweb_test.tests.test_cli_base import CommandLine
 from fuelweb_test import logger
 
 
