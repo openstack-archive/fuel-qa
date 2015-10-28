@@ -350,3 +350,26 @@ class TestHaNeutronFailover(TestHaFailoverBase):
         """
         super(self.__class__, self). \
             change_pacemaker_parameter_not_break_rabbitmq()
+
+    @test(depends_on_groups=['prepare_ha_neutron'],
+          groups=['ha_rabbitmq_stability_check'])
+    @log_snapshot_after_test
+    def ha_rabbitmq_stability_check(self):
+        """Check after repeatable failover rabbit cluster is healthy.
+
+        Scenario:
+            1. Deploy environment with at least 3 controllers
+            2. Get rabbit master node
+            3. Move master rabbit resource to slave with pcs
+            4. Delete pcs constraint for rabbit resource
+            5. Run OSTF
+            6. Get new rabbit master node
+            7. Destroy it
+            8. Run OSTF
+            9. Power on destroyed node
+            10. Run OSTF
+
+        Duration 50 min
+
+        """
+        super(self.__class__, self).ha_rabbitmq_stability_check()
