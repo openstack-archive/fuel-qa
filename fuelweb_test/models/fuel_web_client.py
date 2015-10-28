@@ -865,10 +865,9 @@ class FuelWebClient(object):
             :rtype: Devops Node or None
         """
         nailgun_node = self.get_nailgun_node_by_fqdn(fqdn)
-        macs = {i['mac'] for i in nailgun_node['meta']['interfaces']}
+        macs = {EUI(i['mac']) for i in nailgun_node['meta']['interfaces']}
         for devops_node in devops_nodes:
-            devops_macs = {i.mac_address.upper()
-                           for i in devops_node.interfaces}
+            devops_macs = {EUI(i.mac_address) for i in devops_node.interfaces}
             if devops_macs == macs:
                 return devops_node
 
@@ -881,7 +880,7 @@ class FuelWebClient(object):
         """
         for node in self.environment.d_env.nodes():
             for iface in node.interfaces:
-                if iface.mac_address.lower() == mac_address.lower():
+                if EUI(iface.mac_address.lower) == EUI(mac_address):
                     return node
 
     @logwrap
