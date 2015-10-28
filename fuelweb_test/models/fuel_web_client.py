@@ -1023,8 +1023,8 @@ class FuelWebClient(object):
         start = time.time()
         try:
             wait(
-                lambda: self.client.get_task(
-                    task['id'])['status'] != 'running',
+                lambda: (self.client.get_task(task['id'])['status']
+                         not in ('pending', 'running')),
                 interval=interval,
                 timeout=timeout
             )
@@ -2246,9 +2246,10 @@ class FuelWebClient(object):
             cluster_id=cluster_id, data=tasks,
             node_id=','.join(map(str, nodes)))
         tasks = self.client.get_tasks()
-        deploy_tasks = [t for t in tasks if t['status'] == 'running'
-                        and t['name'] == 'deployment'
-                        and t['cluster'] == cluster_id]
+        deploy_tasks = [t for t in tasks if t['status']
+                        in ('pending', 'running') and
+                        t['name'] == 'deployment' and
+                        t['cluster'] == cluster_id]
         for task in deploy_tasks:
             if min([t['progress'] for t in deploy_tasks]) == task['progress']:
                 return task
