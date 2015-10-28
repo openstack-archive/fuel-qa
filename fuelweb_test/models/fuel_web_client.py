@@ -402,7 +402,8 @@ class FuelWebClient(object):
                        release_name=help_data.OPENSTACK_RELEASE,
                        mode=DEPLOYMENT_MODE_HA,
                        port=514,
-                       release_id=None, ):
+                       release_id=None,
+                       configure_ssl=True, ):
         """Creates a cluster
         :param name:
         :param release_name:
@@ -515,8 +516,8 @@ class FuelWebClient(object):
                 self.update_nodegroups(cluster_id, node_groups)
                 self.update_nodegroups_network_configuration(cluster_id)
 
-            cn = self.get_public_vip(cluster_id)
-            change_cluster_ssl_config(attributes, cn)
+            if configure_ssl:
+                self.ssl_configure(cluster_id)
 
             logger.debug("Try to update cluster "
                          "with next attributes {0}".format(attributes))
@@ -529,6 +530,15 @@ class FuelWebClient(object):
         #    cluster_id, self.environment.get_host_node_ip(), port)
 
         return cluster_id
+
+    @logwrap
+    def ssl_configure(self, cluster_id):
+        attributes = self.client.get_cluster_attributes(cluster_id)
+        cn = self.get_public_vip(cluster_id)
+        change_cluster_ssl_config(attributes, cn)
+        logger.debug("Try to update cluster "
+                     "with next attributes {0}".format(attributes))
+        self.client.update_cluster_attributes(cluster_id, attributes)
 
     @logwrap
     def vcenter_configure(self, cluster_id, vcenter_value=None,
@@ -1345,7 +1355,7 @@ class FuelWebClient(object):
                 networks['public']['ip_range'] = [
                     str(static[2]), str(static[-1])]
 
-                # use the secong half of public network as floating range
+                # use the second half of public network as floating range
                 net_settings[net_provider]['config']['floating_ranges'] = \
                     [[str(floating[0]), str(floating[-2])]]
 
@@ -1399,6 +1409,21 @@ class FuelWebClient(object):
             networking_parameters=new_settings["networking_parameters"],
             networks=new_settings["networks"]
         )
+
+    # TODO(mstrukov): remove me
+    ''' testing purposes '''
+    def get_networks(self, cluster_id):
+        return self.client.get_networks(cluster_id)
+
+    @logwrap
+    def update_cluster_vips(self, cluster_id, new_settings):
+        self.client.update_vips(cluster_id=cluster_id,
+                                vips_parameters=new_settings)
+
+    @logwrap
+    def update_cluster_network(self, cluster_id, new_settings):
+        self.client.update_network(cluster_id=cluster_id,
+                                   networking_parameters=new_settings)
 
     def _get_true_net_name(self, name, net_pools):
         """Find a devops network name in net_pools"""
