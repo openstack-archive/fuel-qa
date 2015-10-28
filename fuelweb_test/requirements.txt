@@ -18,3 +18,4 @@ launchpadlib
 beautifulsoup4>=4.2.0
 requests>=2.2.0
 joblib>=0.8.4
+Click

@@ -46,7 +46,7 @@ class BaseActionsFactory(base_test_case.TestBasic):
 
         #  Generate human readable class_name, if was method docstring not
         #  described, use generated name
-        class_name = "Case_{}_{}".format(cls.__name__, case_group)
+        class_name = "Case_{}__Config_{}".format(cls.__name__, case_group)
 
         #  Make methods for new testcase class, following by order
         scenario.append("    Scenario:")
