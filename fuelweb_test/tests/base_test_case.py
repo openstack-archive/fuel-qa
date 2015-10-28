@@ -217,6 +217,25 @@ class SetupEnvironment(TestBasic):
         self.env.make_snapshot("ready_with_5_slaves", is_make=True)
 
     @test(depends_on=[prepare_release],
+          groups=["prepare_slaves_7"])
+    @log_snapshot_after_test
+    def prepare_slaves_7(self):
+        """Bootstrap 7 slave nodes
+
+        Scenario:
+            1. Revert snapshot "ready"
+            2. Start 7 slave nodes
+
+        Snapshot: ready_with_7_slaves
+
+        """
+        self.check_run("ready_with_7_slaves")
+        self.env.revert_snapshot("ready", skip_timesync=True)
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:7],
+                                 skip_timesync=True)
+        self.env.make_snapshot("ready_with_7_slaves", is_make=True)
+
+    @test(depends_on=[prepare_release],
           groups=["prepare_slaves_9"])
     @log_snapshot_after_test
     def prepare_slaves_9(self):
