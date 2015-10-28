@@ -46,6 +46,11 @@ Test Cli
 .. automodule:: fuelweb_test.tests.test_cli
    :members:
 
+Test Cli Base
+--------
+.. automodule:: fuelweb_test.tests.test_cli_base
+   :members:
+
 Test Clone Environment
 ----------------------
 .. automodule:: fuelweb_test.tests.test_clone_env
