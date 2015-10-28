@@ -53,7 +53,9 @@ def configure_second_admin_firewall(remote, network, netmask, interface,
         ("-t nat -I POSTROUTING -o {0} -d {1}/{2} -p udp -m addrtype "
          "--src-type LOCAL -j SNAT --to-source {3}").format(interface,
                                                             network, netmask,
-                                                            master_ip)
+                                                            master_ip),
+        ("-t nat -I POSTROUTING -d {0}/{1} -p tcp --dport 8888 -j SNAT "
+         "--to-source {2}").format(network, netmask, master_ip)
     ]
 
     for rule in rules:
