@@ -22,9 +22,9 @@ from xml.etree import ElementTree
 import joblib
 
 import report
-from settings import JENKINS
-from settings import logger
-from settings import TestRailSettings
+from fuelweb_test.settings import JENKINS
+from fuelweb_test.settings import logger
+from fuelweb_test.settings import TestRailSettings
 from testrail_client import TestRailProject
 
 
