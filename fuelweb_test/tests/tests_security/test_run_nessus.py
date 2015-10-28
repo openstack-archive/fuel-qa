@@ -17,7 +17,7 @@ from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
 import netaddr
 from proboscis import test
-from settings import LOGS_DIR
+from fuelweb_test.settings import LOGS_DIR
 
 from fuelweb_test.helpers import decorators
 from fuelweb_test.helpers import nessus
