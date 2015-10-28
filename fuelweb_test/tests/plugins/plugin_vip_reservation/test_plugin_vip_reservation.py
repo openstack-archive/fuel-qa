@@ -26,6 +26,7 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.helpers.fuel_actions import FuelPluginBuilder
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers.granular_deployment_checkers import get_hiera_data_as_json
 
 
 @test(groups=["fuel_plugins", "fuel_plugin_vip_reservation"])
@@ -118,15 +119,9 @@ class VipReservation(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         with self.fuel_web.get_ssh_for_node('slave-01') as remote:
-            hiera_json_out = "ruby -rhiera -rjson -e \"h = Hiera.new(); " \
-                             "Hiera.logger = 'noop'; puts JSON.dump " \
-                             "(h.lookup('network_metadata', " \
-                             "[], {}, nil, nil))\""
             for vip in ('reserved_pub', 'reserved_mng'):
                 # get vips from hiera
-                vip_hiera = json.loads(
-                    remote.execute(
-                        hiera_json_out)['stdout'][0])["vips"][vip]["ipaddr"]
+                vip_hiera = get_hiera_data_as_json(remote, 'network_metadata')["vips"][vip]["ipaddr"]
                 # get vips from database
                 vip_db = self.env.postgres_actions.run_query(
                     db='nailgun',
