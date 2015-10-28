@@ -53,6 +53,7 @@ class VipReservation(TestBasic):
         Duration 40m
         """
         plugin_name = 'vip_reservation_plugin'
+        container_plugin_path = os.path.join('/root/', plugin_name)
         plugin_path = '/var'
         dir_path = os.path.dirname(os.path.abspath(__file__))
         tasks_file = 'tasks.yaml'
@@ -67,19 +68,19 @@ class VipReservation(TestBasic):
             # install fuel_plugin_builder on master node
             fpb.fpb_install()
             # create plugin template on the master node
-            fpb.fpb_create_plugin(plugin_name)
+            fpb.fpb_create_plugin(container_plugin_path)
             # replace plugin tasks, metadata, network_roles
             fpb.fpb_replace_plugin_content(
                 os.path.join(dir_path, net_role_file),
-                os.path.join('/root/', plugin_name, net_role_file))
+                os.path.join(container_plugin_path, net_role_file))
             fpb.fpb_replace_plugin_content(
                 os.path.join(dir_path, tasks_file),
-                os.path.join('/root/', plugin_name, tasks_file))
+                os.path.join(container_plugin_path, tasks_file))
             fpb.fpb_replace_plugin_content(
                 os.path.join(dir_path, metadata_file),
-                os.path.join('/root/', plugin_name, metadata_file))
+                os.path.join(container_plugin_path, metadata_file))
             # build plugin
-            fpb.fpb_build_plugin(os.path.join('/root/', plugin_name))
+            fpb.fpb_build_plugin(container_plugin_path)
             # copy plugin archive file from nailgun container
             # to the /var directory on the master node
             fpb.fpb_copy_plugin_from_container(plugin_name, plugin_path)
@@ -171,6 +172,7 @@ class VipReservation(TestBasic):
         Duration 40m
         """
         plugin_name = 'vip_reservation_plugin'
+        container_plugin_path = os.path.join('/root/', plugin_name)
         plugin_path = '/var'
         task_path = os.path.dirname(os.path.abspath(__file__))
         tasks_file = 'tasks.yaml'
@@ -186,29 +188,28 @@ class VipReservation(TestBasic):
             # install fuel_plugin_builder on master node
             fpb.fpb_install()
             # create plugin template on the master node
-            fpb.fpb_create_plugin(plugin_name)
-
+            fpb.fpb_create_plugin(container_plugin_path)
             # replace plugin tasks, metadata, network_roles
             fpb.fpb_replace_plugin_content(
                 os.path.join(task_path, net_role_file),
-                os.path.join('/root/', plugin_name, net_role_file))
+                os.path.join(container_plugin_path, net_role_file))
             fpb.fpb_replace_plugin_content(
                 os.path.join(task_path, tasks_file),
-                os.path.join('/root/', plugin_name, tasks_file))
+                os.path.join(container_plugin_path, tasks_file))
             fpb.fpb_replace_plugin_content(
                 os.path.join(task_path, metadata_file),
-                os.path.join('/root/', plugin_name, metadata_file))
+                os.path.join(container_plugin_path, metadata_file))
 
             fpb.change_yaml_file_in_container(
-                os.path.join('/root/', plugin_name, net_role_file),
+                os.path.join(container_plugin_path, net_role_file),
                 [0, 'properties', 'vip', 0, 'namespace'],
                 namespace)
             fpb.change_yaml_file_in_container(
-                os.path.join('/root/', plugin_name, net_role_file),
+                os.path.join(container_plugin_path, net_role_file),
                 [1, 'properties', 'vip', 0, 'namespace'],
                 namespace)
             # build plugin
-            fpb.fpb_build_plugin(os.path.join('/root/', plugin_name))
+            fpb.fpb_build_plugin(container_plugin_path)
             # copy plugin archive file from nailgun container
             # to the /var directory on the master node
             fpb.fpb_copy_plugin_from_container(plugin_name, plugin_path)
@@ -297,6 +298,7 @@ class VipReservation(TestBasic):
         Duration 40m
         """
         plugin_name = 'vip_reservation_plugin'
+        container_plugin_path = os.path.join('/root/', plugin_name)
         plugin_path = '/var'
         task_path = os.path.dirname(os.path.abspath(__file__))
         tasks_file = 'tasks.yaml'
@@ -312,29 +314,28 @@ class VipReservation(TestBasic):
             # install fuel_plugin_builder on master node
             fpb.fpb_install()
             # create plugin template on the master node
-            fpb.fpb_create_plugin(plugin_name)
+            fpb.fpb_create_plugin(container_plugin_path)
             # replace plugin tasks, metadata, network_roles
             fpb.fpb_replace_plugin_content(
                 os.path.join(task_path, net_role_file),
-                os.path.join('/root/', plugin_name, net_role_file))
+                os.path.join(container_plugin_path, net_role_file))
             fpb.fpb_replace_plugin_content(
                 os.path.join(task_path, tasks_file),
-                os.path.join('/root/', plugin_name, tasks_file))
+                os.path.join(container_plugin_path, tasks_file))
             fpb.fpb_replace_plugin_content(
                 os.path.join(task_path, metadata_file),
-                os.path.join('/root/', plugin_name, metadata_file))
+                os.path.join(container_plugin_path, metadata_file))
 
             fpb.change_yaml_file_in_container(
-                os.path.join('/root/', plugin_name, net_role_file),
+                os.path.join(container_plugin_path, net_role_file),
                 [0, 'properties', 'vip', 0, 'namespace'],
                 namespace)
             fpb.change_yaml_file_in_container(
-                os.path.join('/root/', plugin_name, net_role_file),
+                os.path.join(container_plugin_path, net_role_file),
                 [1, 'properties', 'vip', 0, 'namespace'],
                 namespace)
-
             # build plugin
-            fpb.fpb_build_plugin(os.path.join('/root/', plugin_name))
+            fpb.fpb_build_plugin(container_plugin_path)
             # copy plugin archive file from nailgun container
             # to the /var directory on the master node
             fpb.fpb_copy_plugin_from_container(plugin_name, plugin_path)
