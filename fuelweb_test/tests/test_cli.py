@@ -90,7 +90,6 @@ class CommandLineMinimal(TestBasic):
                                                  "was not found")
 
 
-@test(groups=["command_line"])
 class CommandLine(TestBasic):
     """CommandLine."""  # TODO documentation
 
@@ -195,6 +194,11 @@ class CommandLine(TestBasic):
         cn = self.get_public_vip(cluster_id, remote)
         change_cluster_ssl_config(settings, cn)
         self.upload_settings(cluster_id, remote, settings)
+
+
+@test(groups=["command_line"])
+class CommandLineTest(CommandLine):
+    """CommandLine."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["cli_selected_nodes_deploy"])
