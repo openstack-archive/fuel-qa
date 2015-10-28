@@ -53,6 +53,7 @@ class RebootPlugin(TestBasic):
         """
         # define some plugin related variables
         plugin_name = 'reboot_plugin'
+        container_plugin_path = os.path.join('/root/', plugin_name)
         plugin_path = '/var'
         tasks_path = os.path.dirname(os.path.abspath(__file__))
         tasks_file = 'reboot_tasks.yaml'
@@ -65,13 +66,13 @@ class RebootPlugin(TestBasic):
             # install fuel_plugin_builder on master node
             fpb.fpb_install()
             # create plugin template on the master node
-            fpb.fpb_create_plugin(plugin_name)
+            fpb.fpb_create_plugin(container_plugin_path)
             # replace plugin tasks with our file
             fpb.fpb_replace_plugin_content(
                 os.path.join(tasks_path, tasks_file),
                 os.path.join('/root/', plugin_name, 'tasks.yaml'))
             # build plugin
-            fpb.fpb_build_plugin(os.path.join('/root/', plugin_name))
+            fpb.fpb_build_plugin(container_plugin_path)
             # copy plugin archive file from nailgun container
             # to the /var directory on the master node
             fpb.fpb_copy_plugin_from_container(plugin_name, plugin_path)
@@ -177,6 +178,7 @@ class RebootPlugin(TestBasic):
         """
         # define some plugin related variables
         plugin_name = 'timeout_plugin'
+        container_plugin_path = os.path.join('/root/', plugin_name)
         plugin_path = '/var'
         tasks_path = os.path.dirname(os.path.abspath(__file__))
         tasks_file = 'reboot_tasks.yaml'
@@ -194,14 +196,14 @@ class RebootPlugin(TestBasic):
                                         [1, 'parameters', 'timeout'],
                                         1)
             # create plugin template on the master node
-            fpb.fpb_create_plugin(plugin_name)
+            fpb.fpb_create_plugin(container_plugin_path)
             # replace plugin tasks with our file
             fpb.fpb_replace_plugin_content(
                 os.path.join('/tmp/', tasks_file),
-                os.path.join('/root/', plugin_name, 'tasks.yaml')
+                os.path.join(container_plugin_path, 'tasks.yaml')
             )
             # build plugin
-            fpb.fpb_build_plugin(os.path.join('/root/', plugin_name))
+            fpb.fpb_build_plugin(container_plugin_path)
             # copy plugin archive file from nailgun container
             # to the /var directory on the master node
             fpb.fpb_copy_plugin_from_container(plugin_name, plugin_path)
