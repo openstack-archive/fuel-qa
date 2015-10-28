@@ -312,6 +312,26 @@ class NailgunClient(object):
         )
 
     @logwrap
+    @json_parse
+    def update_vips(self, cluster_id, vips_parameters):
+        nc = self.get_networks(cluster_id)
+        for k in vips_parameters:
+            nc["vips"][k] = vips_parameters[k]
+
+        '''
+        return self.client.put(
+            "/api/clusters/{}/network_configuration/vips".format(
+                cluster_id
+            ),
+            nc
+        )
+        '''
+        logger.warning('Vips endpoint are not ready. This should change vips. '
+                       'PUT /api/clusters/{}/network_configuration/vips: '
+                       '{}',
+                       cluster_id, nc)
+
+    @logwrap
     def get_cluster_id(self, name):
         for cluster in self.list_clusters():
             if cluster["name"] == name:
