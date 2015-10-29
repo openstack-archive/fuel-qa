@@ -910,7 +910,7 @@ class TestHaFailoverBase(TestBasic):
         d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
 
         rabbit_status = self.fuel_web.get_rabbit_running_nodes(
-            list((set(d_ctrls) - set(p_d_ctrl)))[0].name)
+            list((set(d_ctrls) - set([p_d_ctrl])))[0].name)
         logger.debug("rabbit status is {}".format(rabbit_status))
         for rabbit_node in rabbit_nodes:
             assert_true(rabbit_node in rabbit_status,
