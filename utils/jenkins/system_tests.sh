@@ -63,6 +63,7 @@ if you do need to override them.
               Useful for debugging.
 -k          - Keep previously created test environment before tests run
 -K          - Keep test environment after tests are finished
+-x          - Enable external snapshots
 -h          - Show this help page
 
 Most variables uses guesing from Jenkins' job name but can be overriden
@@ -136,7 +137,7 @@ GlobalVariables() {
 }
 
 GetoptsVariables() {
-  while getopts ":w:j:i:t:o:a:A:m:U:r:b:V:l:LdkKe:v:h" opt; do
+  while getopts ":w:j:i:t:o:a:A:m:U:r:b:V:l:LdkKe:v:xh" opt; do
     case $opt in
       w)
         WORKSPACE="${OPTARG}"
@@ -194,6 +195,9 @@ GetoptsVariables() {
         ;;
       v)
         VENV="no"
+        ;;
+      x)
+        export SNAPSHOTS_EXTERNAL=true
         ;;
       h)
         ShowHelp
