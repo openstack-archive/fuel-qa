@@ -26,7 +26,8 @@ from settings import TestRailSettings
 from testrail_client import TestRailProject
 
 
-def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups):
+def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
+                           default_test_priority):
     import_tests()
 
     tests = []
@@ -71,7 +72,7 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups):
                 "title": title,
                 "type_id": 1,
                 "milestone_id": milestone_id,
-                "priority_id": 5,
+                "priority_id": default_test_priority,
                 "estimate": test_duration.group(1) if test_duration else "3m",
                 "refs": "",
                 "custom_test_group": test_group,
@@ -165,6 +166,10 @@ def main():
     testrail_milestone = project.get_milestone_by_name(
         name=TestRailSettings.milestone)
 
+    testrail_default_test_priority = [priority['id'] for priority in
+                                      project.get_priorities() if
+                                      priority['is_default'] is True][0]
+
     distros = [config['name'].split()[0].lower()
                for config in project.get_config_by_name(
                    'Operation System')['configs']
@@ -185,7 +190,8 @@ def main():
         milestone_id=testrail_milestone['id'],
         tests_include=TestRailSettings.tests_include,
         tests_exclude=TestRailSettings.tests_exclude,
-        groups=tests_groups
+        groups=tests_groups,
+        default_test_priority=testrail_default_test_priority
     )
 
     upload_tests_descriptions(testrail_project=project,
