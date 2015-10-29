@@ -45,8 +45,9 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
 
     @staticmethod
     @logwrap
-    def create_instance_with_keypair(os_conn, key_name):
-        return os_conn.create_server_for_migration(key_name=key_name)
+    def create_instance_with_keypair(os_conn, key_name, label):
+        return os_conn.create_server_for_migration(key_name=key_name,
+                                                   label=label)
 
     @staticmethod
     @logwrap
@@ -173,7 +174,9 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
-        net_id = os_conn.get_network('net04')['id']
+        net_name = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+        net_id = os_conn.get_network(net_name)['id']
         router_id = os_conn.get_routers_ids()[0]
         devops_node = self.get_node_with_dhcp(os_conn, net_id)
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
@@ -182,7 +185,8 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
 
         #   create instance for check neutron migration processes
         instance_ip = self.create_instance_with_keypair(
-            os_conn, instance_keypair.name).addresses['net04'][0]['addr']
+            os_conn, instance_keypair.name,
+            label=net_name).addresses[net_name][0]['addr']
 
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
             dhcp_namespace = ''.join(remote.execute(
@@ -205,7 +209,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         # Reshedule router for net for created instance to new controller
         self.reshedule_router_manually(os_conn, router_id)
 
-        # Get remote to the controller with running DHCP agent for net04
+        # Get remote to the controller with running DHCP agent
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
             dhcp_namespace = ''.join(remote.execute(
                 'ip netns | grep {0}'.format(net_id))['stdout']).rstrip()
@@ -253,7 +257,9 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
-        net_id = os_conn.get_network('net04')['id']
+        net_name = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+        net_id = os_conn.get_network(net_name)['id']
         devops_node = self.get_node_with_dhcp(os_conn, net_id)
         instance_keypair = os_conn.create_key(key_name='instancekey')
         router_id = os_conn.get_routers_ids()[0]
@@ -261,13 +267,14 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
 
         #   create instance for check neutron migration processes
         instance_ip = self.create_instance_with_keypair(
-            os_conn, instance_keypair.name).addresses['net04'][0]['addr']
+            os_conn, instance_keypair.name,
+            label=net_name).addresses[net_name][0]['addr']
         logger.debug('instance internal ip is {0}'.format(instance_ip))
 
         #   Reshedule router for net for created instance to new controller
         self.reshedule_router_manually(os_conn, router_id)
 
-        #   Get remote to the controller with running DHCP agent for net04
+        #   Get remote to the controller with running DHCP agent
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
             dhcp_namespace = ''.join(remote.execute(
                 'ip netns | grep {0}'.format(net_id))['stdout']).rstrip()
@@ -309,12 +316,12 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
              router_id)[0], timeout=60 * 3,
              timeout_msg=err_msg.format(node_with_l3))
 
-        #   Find host with dhcp agent for net04 network
+        #   Find host with dhcp agent for private network
         # after reset one of controllers
         devops_node = self.get_node_with_dhcp(os_conn, net_id)
         _ip = self.fuel_web.get_nailgun_node_by_devops_node(devops_node)['ip']
 
-        #   Get remote to the controller with running DHCP agent for net04
+        #   Get remote to the controller with running DHCP agent
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
             #   Check connect to public network from instance after
             # reset controller with l3 agent from this instance
@@ -332,7 +339,9 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
-        net_id = os_conn.get_network('net04')['id']
+        net_name = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+        net_id = os_conn.get_network(net_name)['id']
         router_id = os_conn.get_routers_ids()[0]
         devops_node = self.get_node_with_dhcp(os_conn, net_id)
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
@@ -340,13 +349,14 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
 
         #   create instance for check neutron migration processes
         instance_ip = self.create_instance_with_keypair(
-            os_conn, instance_keypair.name).addresses['net04'][0]['addr']
+            os_conn, instance_keypair.name,
+            label=net_name).addresses[net_name][0]['addr']
         logger.debug('instance internal ip is {0}'.format(instance_ip))
 
         #   Reshedule router for net for created instance to new controller
         self.reshedule_router_manually(os_conn, router_id)
 
-        #   Get remote to the controller with running DHCP agent for net04
+        #   Get remote to the controller with running DHCP agent
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
             dhcp_namespace = ''.join(remote.execute(
                 'ip netns | grep {0}'.format(net_id))['stdout']).rstrip()
@@ -391,7 +401,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
              router_id)[0], timeout=60 * 3,
              timeout_msg=err_msg.format(node_with_l3))
 
-        #   Find host with dhcp agent for net04 network
+        #   Find host with dhcp agent for private network
         # after reset one of controllers
         err_msg = ("Not found new controller node after destroy old "
                    "controller node:{node} with dhcp for net:{net}")
@@ -401,7 +411,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         _ip = self.fuel_web.get_nailgun_node_by_devops_node(
             new_devops_node)['ip']
 
-        #   Get remote to the controller with running DHCP agent for net04
+        #   Get remote to the controller with running DHCP agent
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
             #   Check connect to public network from instance after
             # reset controller with l3 agent from this instance
@@ -440,9 +450,11 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
         #   Size of the header in ICMP package in bytes
         ping_header_size = 28
+        net_label = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
 
         #   Create instance with floating ip for check ping from ext network
-        instance = os_conn.create_server_for_migration()
+        instance = os_conn.create_server_for_migration(label=net_label)
         floating_ip = os_conn.assign_floating_ip(
             instance, use_neutron=True)['floating_ip_address']
         logger.debug("Instance floating ip is {ip}".format(ip=floating_ip))

@@ -31,7 +31,6 @@ class TempestConfigState(object):
                        'alt_username': 'alt_test',
                        'alt_password': 'alt_test',
                        'alt_tenant_name': 'alt_test',
-                       'public_network_name': 'net04_ext',
                        'image_name': 'TestVM'}
 
     def __init__(self, admin_ip, cluster_id,
@@ -74,6 +73,10 @@ class TempestConfigState(object):
         self.options['internal_cidr'] = cidr
         _, self.options['internal_mask'] = cidr.split('/')
         self.options['management_vip'] = network_attrs['management_vip']
+        self.options['public_network_name'] = networking_params.get(
+            'floating_name', 'net04_ext')
+        self.options['private_network_name'] = networking_params.get(
+            'internal_name', 'net04')
 
     def configure_openstack(self):
         """
