@@ -97,6 +97,8 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
 
         os_conn = os_actions.OpenStackActions(controller_ip)
         self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
+        net_name = self.fuel_web.get_cluster_predefined_networks_name(
+                cluster_id)['private_net']
 
         self.fuel_web.verify_network(cluster_id)
         logger.info('PASS DEPLOYMENT')
@@ -116,7 +118,8 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
                 settings.SERVTEST_TENANT)
 
             # create instance
-            server = common_func.create_instance(neutron_network=True)
+            server = common_func.create_instance(neutron_network=True,
+                                                 label=net_name)
 
             # get_instance details
             details = common_func.get_instance_detail(server)

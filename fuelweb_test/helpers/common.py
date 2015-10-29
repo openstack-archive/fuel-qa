@@ -104,7 +104,7 @@ class Common(object):
 
     def create_instance(self, flavor_name='test_flavor', ram=64, vcpus=1,
                         disk=1, server_name='test_instance', image_name=None,
-                        neutron_network=True):
+                        neutron_network=True, label=None):
         LOGGER.debug('Try to create instance')
 
         start_time = time.time()
@@ -123,7 +123,8 @@ class Common(object):
 
         kwargs = {}
         if neutron_network:
-            network = self.nova.networks.find(label='net04')
+            net_label = label if label else 'net04'
+            network = self.nova.networks.find(label=net_label)
             kwargs['nics'] = [{'net-id': network.id, 'v4-fixed-ip': ''}]
 
         LOGGER.info('image uuid is {0}'.format(image))
