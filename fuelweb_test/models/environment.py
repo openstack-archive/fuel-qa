@@ -656,10 +656,12 @@ class EnvironmentModel(object):
         assert_equal(result['exit_code'], 0, ('Failed to assign second admin '
                      'IP address on master node: {0}').format(result))
         logger.debug('Done: {0}'.format(result['stdout']))
-        multiple_networks_hacks.configure_second_admin_firewall(
-            self,
-            second_admin_network,
-            second_admin_netmask)
+        with self.d_env.get_admin_remote() as remote:
+            multiple_networks_hacks.configure_second_admin_dhcp(
+                remote, second_admin_if)
+            multiple_networks_hacks.configure_second_admin_firewall(
+                remote, second_admin_network, second_admin_netmask,
+                second_admin_if, self.get_admin_node_ip())
 
     @logwrap
     def get_masternode_uuid(self):
