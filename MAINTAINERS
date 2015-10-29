@@ -52,3 +52,21 @@ maintainers:
   - fuelweb_test/tests/plugins/plugin_lma_influxdb: *lma_experts
   - fuelweb_test/tests/plugins/plugin_lma_collector: *lma_experts
   - fuelweb_test/tests/plugins/plugin_lma_infra_alerting: *lma_experts
+
+  - fuelweb_test/tests/plugins/plugin_zabbix/:
+
+      - name:   Swann Croiset
+        email:  scroiset@mirantis.com
+        IRC:    swann
+
+      - name:   Simon Pasquier
+        email:  spasquier@mirantis.com
+        IRC:    pasquier-s
+
+      - name:   Maciej Relewicz
+        email:  mrelewicz@mirantis.com
+        IRC:    rlu
+
+      - name:   Bartosz Kupidura
+        email:  bkupidura@mirantis.com
+        IRC:    zynzel
