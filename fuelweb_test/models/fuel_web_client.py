@@ -16,6 +16,7 @@ import json
 import re
 import time
 import traceback
+from netaddr import EUI
 
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
@@ -980,7 +981,7 @@ class FuelWebClient(object):
         Returns dict with nailgun slave node description if node is
         registered. Otherwise return None.
         """
-        d_macs = {i.mac_address.upper() for i in devops_node.interfaces}
+        d_macs = {EUI(i.mac_address) for i in devops_node.interfaces}
         logger.debug('Verify that nailgun api is running')
         attempts = ATTEMPTS
         nodes = []
@@ -998,7 +999,7 @@ class FuelWebClient(object):
                 time.sleep(TIMEOUT)
         logger.debug('Look for nailgun node by macs %s', d_macs)
         for nailgun_node in nodes:
-            macs = {i['mac'] for i in nailgun_node['meta']['interfaces']}
+            macs = {EUI(i['mac']) for i in nailgun_node['meta']['interfaces']}
             logger.debug('Look for macs returned by nailgun {0}'.format(macs))
             # Because our HAproxy may create some interfaces
             if d_macs.issubset(macs):
