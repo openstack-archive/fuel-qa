@@ -14,7 +14,6 @@
 
 from proboscis import SkipTest
 from proboscis import test
-from proboscis.asserts import assert_equal
 
 from fuelweb_test.helpers.decorators import check_fuel_statistics
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -30,57 +29,24 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 class TestMultipleClusterNets(TestBasic):
     """TestMultipleClusterNets."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["multiple_cluster_networks", "multiple_cluster_net_setup"])
-    @log_snapshot_after_test
-    def multiple_cluster_net_setup(self):
-        """Check master node deployment and configuration with 2 sets of nets
-
-        Scenario:
-            1. Revert snapshot with 5 slaves
-            2. Check that slaves got IPs via DHCP from both admin/pxe networks
-            3. Make environment snapshot
-
-        Duration 6m
-        Snapshot multiple_cluster_net_setup
-        """
-
-        if not MULTIPLE_NETWORKS:
-            raise SkipTest()
-        self.env.revert_snapshot("ready_with_5_slaves")
-
-        # Get network parts of IP addresses with /24 netmask
-        admin_net = self.env.d_env.admin_net
-        admin_net2 = self.env.d_env.admin_net2
-        get_network = lambda x: self.env.d_env.get_network(name=x).ip_network
-
-        # This should be refactored
-        networks = ['.'.join(get_network(n).split('.')[0:-1])
-                    for n in [admin_net, admin_net2]]
-        nodes_addresses = ['.'.join(node['ip'].split('.')[0:-1]) for node in
-                           self.fuel_web.client.list_nodes()]
-
-        assert_equal(set(networks), set(nodes_addresses),
-                     "Only one admin network is used for discovering slaves:"
-                     " '{0}'".format(set(nodes_addresses)))
-
-        self.env.make_snapshot("multiple_cluster_net_setup", is_make=True)
-
-    @test(depends_on=[multiple_cluster_net_setup],
+    @test(depends_on=[SetupEnvironment.setup_master],
           groups=["multiple_cluster_networks",
-                  "multiple_cluster_net_neutron_tun_ha", "thread_7"])
+                  "deploy_neutron_tun_ha_nodegroups", "thread_7"])
     @log_snapshot_after_test
     @check_fuel_statistics
     def deploy_neutron_tun_ha_nodegroups(self):
         """Deploy HA environment with NeutronVXLAN and 2 nodegroups
 
         Scenario:
-            1. Revert snapshot with 2 networks sets for slaves
-            2. Create cluster (HA) with Neutron VXLAN
-            3. Add 3 controller nodes from default nodegroup
-            4. Add 2 compute nodes from custom nodegroup
-            5. Deploy cluster
-            6. Run health checks (OSTF)
+            1. Revert snapshot with ready master node
+            2. Bootstrap slaves from default nodegroup
+            3. Create cluster with Neutron VXLAN and custom nodegroup
+            4. Bootstrap slave nodes from custom nodegroup
+            5. Add 3 controller nodes from default nodegroup
+            6. Add 2 compute nodes from custom nodegroup
+            7. Deploy cluster
+            8. Run network verification
+            9. Run health checks (OSTF)
 
         Duration 110m
         Snapshot deploy_neutron_tun_ha_nodegroups
@@ -89,8 +55,14 @@ class TestMultipleClusterNets(TestBasic):
 
         if not MULTIPLE_NETWORKS:
             raise SkipTest()
-        self.env.revert_snapshot("multiple_cluster_net_setup")
 
+        self.show_step(1)
+        self.env.revert_snapshot("setup")
+
+        self.show_step(2)
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[1, 3, 5])
+
+        self.show_step(3)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE_HA,
@@ -103,39 +75,52 @@ class TestMultipleClusterNets(TestBasic):
             }
         )
 
-        nodegroup1 = NODEGROUPS[0]['name']
-        nodegroup2 = NODEGROUPS[1]['name']
+        self.show_step(4)
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[2, 4])
 
+        self.show_step(5)
+        self.show_step(6)
+        nodegroup_default = NODEGROUPS[0]['name']
+        nodegroup_custom = NODEGROUPS[1]['name']
         self.fuel_web.update_nodes(
             cluster_id,
             {
-                'slave-01': [['controller'], nodegroup1],
-                'slave-05': [['controller'], nodegroup1],
-                'slave-03': [['controller'], nodegroup1],
-                'slave-02': [['compute', 'cinder'], nodegroup2],
-                'slave-04': [['compute', 'cinder'], nodegroup2],
+                'slave-01': [['controller'], nodegroup_default],
+                'slave-05': [['controller'], nodegroup_default],
+                'slave-03': [['controller'], nodegroup_default],
+                'slave-02': [['compute', 'cinder'], nodegroup_custom],
+                'slave-04': [['compute', 'cinder'], nodegroup_custom],
             }
         )
 
+        self.show_step(7)
         self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(8)
         self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(9)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
+
         self.env.make_snapshot("deploy_neutron_tun_ha_nodegroups")
 
-    @test(depends_on=[multiple_cluster_net_setup],
+    @test(depends_on=[SetupEnvironment.setup_master],
           groups=["multiple_cluster_networks",
-                  "multiple_cluster_net_ceph_ha", "thread_7"])
+                  "deploy_ceph_ha_nodegroups", "thread_7"])
     @log_snapshot_after_test
     def deploy_ceph_ha_nodegroups(self):
         """Deploy HA environment with Neutron VXLAN, Ceph and 2 nodegroups
 
         Scenario:
-            1. Revert snapshot with 2 networks sets for slaves
-            2. Create cluster (HA) with Neutron VXLAN and Ceph
-            3. Add 3 controller + ceph nodes from default nodegroup
-            4. Add 2 compute + ceph nodes from custom nodegroup
-            5. Deploy cluster
-            6. Run health checks (OSTF)
+            1. Revert snapshot with ready master node
+            2. Bootstrap slaves from default nodegroup
+            3. Create cluster with Neutron VXLAN, Ceph and custom nodegroup
+            4. Bootstrap slave nodes from custom nodegroup
+            5. Add 3 controller + ceph nodes from default nodegroup
+            6. Add 2 compute + ceph nodes from custom nodegroup
+            7. Deploy cluster
+            8. Run network verification
+            9. Run health checks (OSTF)
 
         Duration 110m
         Snapshot deploy_ceph_ha_nodegroups
@@ -144,8 +129,14 @@ class TestMultipleClusterNets(TestBasic):
 
         if not MULTIPLE_NETWORKS:
             raise SkipTest()
+
+        self.show_step(1)
         self.env.revert_snapshot("multiple_cluster_net_setup")
 
+        self.show_step(2)
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[1, 3, 5])
+
+        self.show_step(3)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE_HA,
@@ -161,21 +152,28 @@ class TestMultipleClusterNets(TestBasic):
             }
         )
 
-        nodegroup1 = NODEGROUPS[0]['name']
-        nodegroup2 = NODEGROUPS[1]['name']
+        self.show_step(4)
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[2, 4])
 
+        self.show_step(5)
+        self.show_step(6)
+        nodegroup_default = NODEGROUPS[0]['name']
+        nodegroup_custom = NODEGROUPS[1]['name']
         self.fuel_web.update_nodes(
             cluster_id,
             {
-                'slave-01': [['controller', 'ceph-osd'], nodegroup1],
-                'slave-05': [['controller', 'ceph-osd'], nodegroup1],
-                'slave-03': [['controller', 'ceph-osd'], nodegroup1],
-                'slave-02': [['compute', 'ceph-osd'], nodegroup2],
-                'slave-04': [['compute', 'ceph-osd'], nodegroup2],
+                'slave-01': [['controller', 'ceph-osd'], nodegroup_default],
+                'slave-05': [['controller', 'ceph-osd'], nodegroup_default],
+                'slave-03': [['controller', 'ceph-osd'], nodegroup_default],
+                'slave-02': [['compute', 'ceph-osd'], nodegroup_custom],
+                'slave-04': [['compute', 'ceph-osd'], nodegroup_custom],
             }
         )
 
+        self.show_step(7)
         self.fuel_web.deploy_cluster_wait(cluster_id, timeout=150 * 60)
+        self.show_step(8)
         self.fuel_web.verify_network(cluster_id)
+        self.show_step(9)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
         self.env.make_snapshot("deploy_ceph_ha_nodegroups")
