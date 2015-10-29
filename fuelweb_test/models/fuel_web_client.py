@@ -880,7 +880,7 @@ class FuelWebClient(object):
         """
         for node in self.environment.d_env.nodes():
             for iface in node.interfaces:
-                if EUI(iface.mac_address.lower) == EUI(mac_address):
+                if EUI(iface.mac_address) == EUI(mac_address):
                     return node
 
     @logwrap
