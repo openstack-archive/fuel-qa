@@ -26,25 +26,47 @@ from fuelweb_test import logwrap
 
 
 @logwrap
-def configure_second_admin_firewall(self, network, netmask):
-    # Allow input/forwarding for nodes from the second admin network
+def configure_second_admin_dhcp(remote, interface):
+    dhcp_conf_file = '/etc/cobbler/dnsmasq.template'
+    docker_start_file = '/usr/local/bin/start.sh'
+    cmd = ("dockerctl shell cobbler sed '/^interface/a interface={0}' -i {1};"
+           "dockerctl shell cobbler sed \"/^puppet apply/a "
+           "sed '/^interface/a interface={0}' -i {1}\" -i {2};"
+           "dockerctl shell cobbler cobbler sync").format(interface,
+                                                          dhcp_conf_file,
+                                                          docker_start_file)
+    result = remote.execute(cmd)
+    assert_equal(result['exit_code'], 0, ('Failed to add second admin '
+                 'network to DHCP server: {0}').format(result))
+
+
+@logwrap
+def configure_second_admin_firewall(remote, network, netmask, interface,
+                                    master_ip):
+    # Allow input/forwarding for nodes from the second admin network and
+    # enable source NAT for UDP (tftp) traffic on master node
     rules = [
         ('-I INPUT -i {0} -m comment --comment "input from 2nd admin network" '
-         '-j ACCEPT').format(settings.INTERFACES.get(self.d_env.admin_net2)),
+         '-j ACCEPT').format(settings.INTERFACES.get(interface)),
         ('-t nat -I POSTROUTING -s {0}/{1} -o eth+ -m comment --comment '
          '"004 forward_admin_net2" -j MASQUERADE').
-        format(network, netmask)
+        format(network, netmask),
+        ("-t nat -I POSTROUTING -o {0} -d {1}/{2} -p udp -m addrtype "
+         "--src-type LOCAL -j SNAT --to-source {3}").format(interface,
+                                                            network, netmask,
+                                                            master_ip)
     ]
-    with self.d_env.get_admin_remote() as remote:
-        for rule in rules:
-            cmd = 'iptables {0}'.format(rule)
-            result = remote.execute(cmd)
-            assert_equal(result['exit_code'], 0,
-                         ('Failed to add firewall rule for second admin net'
-                          'on master node: {0}, {1}').format(rule, result))
-        # Save new firewall configuration
-        cmd = 'service iptables save'
+
+    for rule in rules:
+        cmd = 'iptables {0}'.format(rule)
         result = remote.execute(cmd)
+        assert_equal(result['exit_code'], 0,
+                     ('Failed to add firewall rule for second admin net '
+                      'on master node: {0}, {1}').format(rule, result))
+
+    # Save new firewall configuration
+    cmd = 'service iptables save'
+    result = remote.execute(cmd)
 
     assert_equal(result['exit_code'], 0,
                  ('Failed to save firewall configuration on master node:'
