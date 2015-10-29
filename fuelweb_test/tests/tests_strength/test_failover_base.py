@@ -697,9 +697,12 @@ class TestHaFailoverBase(TestBasic):
         public_vip = self.fuel_web.get_public_vip(cluster_id)
         os_conn = os_actions.OpenStackActions(public_vip)
 
+        net_label = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+
         # Create instance
-        instance = os_conn.create_server_for_migration(neutron=True) \
-            if net_provider == 'neutron' \
+        instance = os_conn.create_server_for_migration(
+            neutron=True, label=net_label) if net_provider == 'neutron' \
             else os_conn.create_server_for_migration()
 
         # Check ping

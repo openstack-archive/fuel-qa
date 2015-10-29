@@ -353,8 +353,10 @@ class CephHA(TestBasic):
 
         # Check resources addition
         # create instance
+        net_name = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
         server = os_conn.create_instance(
-            neutron_network=True)
+            neutron_network=True, label=net_name)
 
         # create flavor
         flavor = os_conn.create_flavor('openstackstat', 1024, 1, 1)
@@ -621,19 +623,24 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         # Create new server
         os = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
+        net_name = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
 
         logger.info("Create new server")
         srv = os.create_server_for_migration(
             neutron=True,
-            scenario='./fuelweb_test/helpers/instance_initial_scenario')
+            scenario='./fuelweb_test/helpers/instance_initial_scenario',
+            label=net_name)
         logger.info("Srv is currently in status: %s" % srv.status)
 
         # Prepare to DHCP leases checks
-        srv_instance_ip = os.get_nova_instance_ip(srv, net_name='net04')
+        net_name = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+        srv_instance_ip = os.get_nova_instance_ip(srv, net_name=net_name)
         srv_host_name = self.fuel_web.find_devops_node_by_nailgun_fqdn(
             os.get_srv_hypervisor_name(srv),
             self.env.d_env.nodes().slaves[:3]).name
-        net_id = os.get_network('net04')['id']
+        net_id = os.get_network(net_name)['id']
         ports = os.get_neutron_dhcp_ports(net_id)
         dhcp_server_ip = ports[0]['fixed_ips'][0]['ip_address']
         with self.fuel_web.get_ssh_for_node(srv_host_name) as srv_remote_node:
@@ -714,7 +721,8 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         logger.info("Create a new server for migration with volume")
         srv = os.create_server_for_migration(
             neutron=True,
-            scenario='./fuelweb_test/helpers/instance_initial_scenario')
+            scenario='./fuelweb_test/helpers/instance_initial_scenario',
+            label=net_name)
         logger.info("Srv is currently in status: %s" % srv.status)
 
         logger.info("Assigning floating ip to server")

@@ -730,10 +730,19 @@ class FuelWebClient(object):
         return self.client.deploy_cluster_changes(cluster_id)
 
     @logwrap
+    def get_cluster_predefined_networks_name(self, cluster_id):
+        net_params = self.client.get_networks(
+            cluster_id)['networking_parameters']
+        return {'private_net': net_params.get('internal_name', 'net04'),
+                'external_net': net_params.get('floating_name', 'net04_ext')}
+
+    @logwrap
     def get_cluster_floating_list(self, os_conn, cluster_id):
         logger.info('Get floating IPs list at cluster #{0}'.format(cluster_id))
 
-        subnet = os_conn.get_subnet('net04_ext__subnet')
+        subnet = os_conn.get_subnet('{0}__subnet'.format(
+            self.get_cluster_predefined_networks_name(
+                cluster_id)['external_net']))
         ret = []
         for pool in subnet['allocation_pools']:
             ip = ipaddr.IPv4Address(pool['start'])
@@ -1956,12 +1965,15 @@ class FuelWebClient(object):
         elif net_provider == 'neutron':
             nailgun_cidr = self.get_nailgun_cidr_neutron(cluster_id)
             logger.debug('nailgun cidr is {0}'.format(nailgun_cidr))
-            subnet = os_conn.get_subnet('net04__subnet')
-            logger.debug('net04__subnet: {0}'.format(
+            private_net_name = self.get_cluster_predefined_networks_name(
+                cluster_id)['private_net']
+            subnet = os_conn.get_subnet('{0}__subnet'.format(private_net_name))
+            logger.debug('subnet of pre-defined fixed network: {0}'.format(
                 subnet))
-            assert_true(subnet, "net04__subnet does not exists")
-            logger.debug('cidr net04__subnet: {0}'.format(
-                subnet['cidr']))
+            assert_true(subnet, '{0}__subnet does not exists'.format(
+                private_net_name))
+            logger.debug('cidr {0}__subnet: {1}'.format(
+                private_net_name, subnet['cidr']))
             assert_equal(nailgun_cidr, subnet['cidr'].rstrip(),
                          'Cidr after deployment is not equal'
                          ' to cidr by default')

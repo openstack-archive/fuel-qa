@@ -115,8 +115,13 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
                 settings.SERVTEST_PASSWORD,
                 settings.SERVTEST_TENANT)
 
+            # get predefined net name
+            net_name = self.fuel_web.get_cluster_predefined_networks_name(
+                cluster_id)['private_net']
+
             # create instance
-            server = common_func.create_instance(neutron_network=True)
+            server = common_func.create_instance(neutron_network=True,
+                                                 label=net_name)
 
             # get_instance details
             details = common_func.get_instance_detail(server)

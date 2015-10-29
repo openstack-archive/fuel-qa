@@ -62,10 +62,10 @@ class TestJumboFrames(base_test_case.TestBasic):
 
         return ifaces
 
-    def boot_instance_on_node(self, hypervisor_name, boot_timeout=300):
+    def boot_instance_on_node(self, hypervisor_name, label, boot_timeout=300):
         instance = self.os_conn.create_server_for_migration(
             neutron=True,
-            availability_zone="nova:{0}".format(hypervisor_name))
+            availability_zone="nova:{0}".format(hypervisor_name), label=label)
         logger.info("New instance {0} created on {1}"
                     .format(instance.id, hypervisor_name))
 
@@ -84,12 +84,13 @@ class TestJumboFrames(base_test_case.TestBasic):
     def ping_instance_from_instance(self,
                                     source_instance,
                                     destination_instance,
-                                    size, count=1):
+                                    size, count=1, net_name=None):
         creds = ("cirros", "cubswin:)")
+        net = net_name if net_name else 'net04'
         source_floating_ip = self.os_conn.get_nova_instance_ip(
-            source_instance, net_name='net04', type='floating')
+            source_instance, net_name=net, type='floating')
         destination_fixed_ip = self.os_conn.get_nova_instance_ip(
-            destination_instance, net_name='net04', type='fixed')
+            destination_instance, net_name=net, type='fixed')
 
         with self.fuel_web.get_ssh_for_node("slave-01") as ssh:
             command = "ping -c {0} -s {1} {2}"\
@@ -130,9 +131,12 @@ class TestJumboFrames(base_test_case.TestBasic):
             self.fuel_web.get_public_vip(cluster_id))
 
         instances = []
+        fixed_net_name = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
         for hypervisor in self.os_conn.get_hypervisors():
             instances.append(
-                self.boot_instance_on_node(hypervisor.hypervisor_hostname))
+                self.boot_instance_on_node(hypervisor.hypervisor_hostname,
+                                           label=fixed_net_name))
 
         source_instance = instances[0]
         for destination_instance in instances[1:]:
@@ -140,28 +144,29 @@ class TestJumboFrames(base_test_case.TestBasic):
                 self.ping_instance_from_instance(
                     source_instance=source_instance,
                     destination_instance=destination_instance,
-                    size=1472 - mtu_offset, count=3),
+                    size=1472 - mtu_offset, count=3, net_name=fixed_net_name),
                 "Ping response was not received for 1500 bytes package")
 
             asserts.assert_true(
                 self.ping_instance_from_instance(
                     source_instance=source_instance,
                     destination_instance=destination_instance,
-                    size=8972 - mtu_offset, count=3),
+                    size=8972 - mtu_offset, count=3, net_name=fixed_net_name),
                 "Ping response was not received for 9000 bytes package")
 
             asserts.assert_false(
                 self.ping_instance_from_instance(
                     source_instance=source_instance,
                     destination_instance=destination_instance,
-                    size=8973 - mtu_offset, count=3),
+                    size=8973 - mtu_offset, count=3, net_name=fixed_net_name),
                 "Ping response was received for 9001 bytes package")
 
             asserts.assert_false(
                 self.ping_instance_from_instance(
                     source_instance=source_instance,
                     destination_instance=destination_instance,
-                    size=14472 - mtu_offset, count=3),
+                    size=14472 - mtu_offset, count=3,
+                    net_name=fixed_net_name),
                 "Ping response was received for 15000 bytes package")
 
         for instance in instances:
