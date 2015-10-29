@@ -81,6 +81,10 @@ class TestRailProject():
             if config['name'] == name:
                 return config
 
+    def get_priorities(self):
+        priorities_uri = 'get_priorities'
+        return self.client.send_get(uri=priorities_uri)
+
     def get_milestones(self):
         milestones_uri = 'get_milestones/{project_id}'.format(
             project_id=self.project['id'])
