@@ -500,10 +500,13 @@ class PartitionPreservation(TestBasic):
 
         cmp_host = os_conn.get_hypervisors()[0]
 
+        net_label = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+
         vm = os_conn.create_server_for_migration(
             neutron=True,
             availability_zone="nova:{0}".format(
-                cmp_host.hypervisor_hostname))
+                cmp_host.hypervisor_hostname), label=net_label)
         vm_floating_ip = os_conn.assign_floating_ip(vm)
         devops_helpers.wait(
             lambda: devops_helpers.tcp_ping(vm_floating_ip.ip, 22),

@@ -66,7 +66,7 @@ class OpenStackActions(common.Common):
 
     def create_server_for_migration(self, neutron=True, scenario='',
                                     timeout=100, file=None, key_name=None,
-                                    **kwargs):
+                                    label=None, **kwargs):
         name = "test-serv" + str(random.randint(1, 0x7fffffff))
         security_group = {}
         try:
@@ -83,8 +83,9 @@ class OpenStackActions(common.Common):
             self.keystone.tenant_id].name]
 
         if neutron:
+            net_label = label if label else 'net04'
             network = [net.id for net in self.nova.networks.list()
-                       if net.label == 'net04']
+                       if net.label == net_label]
 
             kwargs.update({'nics': [{'net-id': network[0]}],
                            'security_groups': security_group})
