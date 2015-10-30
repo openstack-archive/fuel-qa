@@ -158,6 +158,14 @@ def get_version_from_parameters(jenkins_build_data):
             upstream_build = Build(upstream_job_name, upstream_build_number)
             return get_version_from_artifacts(upstream_build.build_data)
 
+    custom_version = get_job_parameter(jenkins_build_data, 'CUSTOM_VERSION')
+    if custom_version:
+        swarm_timestamp = jenkins_build_data['timestamp'] / 1000 \
+            if 'timestamp' in jenkins_build_data else None
+        return (TestRailSettings.milestone,
+                time.strftime("%D %H:%M", time.localtime(swarm_timestamp)),
+                custom_version)
+
 
 def get_version_from_artifacts(jenkins_build_data):
     version = yaml.load(get_build_artifact(
