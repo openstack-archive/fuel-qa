@@ -440,7 +440,9 @@ class OSTFCeilometerHelper(TestBasic):
                        'test_check_keystone_notifications',
                        'test_check_neutron_notifications',
                        'test_check_sahara_notifications',
-                       'test_check_events_and_traits']
+                       'test_check_events_and_traits',
+                       'test_swift_metrics',
+                       'test_radosgw_metrics']
 
         test_classes = []
 
