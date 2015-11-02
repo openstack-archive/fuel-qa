@@ -488,3 +488,63 @@ def check_repos_management(func):
                              "management on nodes. Please see the debug log.")
         return result
     return wrapper
+
+# Setup/Teardown decorators, which is missing in Proboscis.
+# Usage: like in Nose.
+# Python.six is less smart
+
+
+def __getcallargs(func, *positional, **named):
+    if (sys.version_info.major == 2 or
+            sys.version_info.major == 3 and sys.version_info.minor < 5):
+        return inspect.getcallargs(func, *positional, **named)
+    else:
+        return inspect.signature(func).bind(*positional, **named).arguments
+
+
+def __get_arg_names(func):
+    if sys.version_info.major < 3:
+        return [arg for arg in inspect.getargspec(func=func).args]
+    else:
+        return list(inspect.signature(obj=func).parameters.keys())
+
+
+def __call_in_context(func, context_args):
+    if func is None:
+        return
+
+    func_args = __get_arg_names(func)
+    if not func_args:
+        return func()
+
+    # please move this code to method to get_fun_args
+    if 'self' in context_args:
+        context_args.setdefault('cls', context_args['self'].__class__)
+
+    try:
+        arg_values = [context_args[k] for k in func_args]
+    except KeyError as e:
+        raise ValueError("Argument '{}' is missing".format(str(e)))
+
+    return func(*arg_values)
+
+
+def call_conditions(precondition=None, postcondition=None):
+    """
+    Add setup and teardown for functions and methods.
+    :param precondition: function
+    :param postcondition: function
+    :return:
+    """
+    def deco(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            real_args = __getcallargs(func, *args, **kwargs)
+            __call_in_context(precondition, real_args)
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                __call_in_context(postcondition, real_args)
+            return result
+        return wrapper
+    return deco
