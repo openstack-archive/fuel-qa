@@ -1,0 +1,107 @@
+#    Copyright 2015 Mirantis, Inc.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE_2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+from proboscis import factory
+
+from fuelweb_test.settings import EXAMPLE_PLUGIN_V4_PATH
+from system_test.helpers.utils import case_factory
+from system_test.tests.actions_base import ActionsBase
+
+
+class DeployWithPluginExampleV4PreCreate(ActionsBase):
+    """Deploy cluster with one controller and example plugin v4
+
+    Scenario:
+        1. Upload plugin to the master node
+        2. Install plugin
+        3. Create cluster
+        4. Add 1 node with controller role
+        5. Add 2 nodes with compute role
+        6. Deploy the cluster
+        7. Run network verification
+        8. Check plugin health
+        9. Run OSTF
+
+    Duration 35m
+    Snapshot deploy_ha_one_controller_neutron_example
+    """
+
+    base_group = ['system_test',
+                  'system_test.plugins',
+                  'system_test.plugins.example_plugin_v4',
+                  'system_test.plugins.example_plugin_v4.simple']
+
+    plugin_name = "fuel_plugin_example"
+    plugin_path = EXAMPLE_PLUGIN_V4_PATH
+
+    actions_order = [
+        'prepare_env_with_plugin',
+        'create_env',
+        'add_nodes',
+        'network_check',
+        'deploy_cluster',
+        'network_check',
+        'check_example_plugin',
+        'health_check',
+    ]
+
+
+class DeployWithPluginExampleV4PostCreate(ActionsBase):
+    """Deploy cluster with one controller and example plugin v4
+
+    Scenario:
+        1. Create cluster
+        2. Upload plugin to the master node
+        3. Install plugin
+        4. Add 1 node with controller role
+        5. Add 2 nodes with compute role
+        6. Deploy the cluster
+        7. Run network verification
+        8. Check plugin health
+        9. Run OSTF
+
+    Duration 35m
+    Snapshot deploy_ha_one_controller_neutron_example
+    """
+
+    base_group = ['system_test',
+                  'system_test.plugins',
+                  'system_test.plugins.example_plugin_v4',
+                  'system_test.plugins.example_plugin_v4.simple']
+
+    plugin_name = "fuel_plugin_example"
+    plugin_path = EXAMPLE_PLUGIN_V4_PATH
+
+    actions_order = [
+        'setup_master',
+        'config_release',
+        'make_slaves',
+        'revert_slaves',
+        'create_env',
+        'upload_plugin',
+        'install_plugin',
+        'enable_plugin',
+        'add_nodes',
+        'network_check',
+        'deploy_cluster',
+        'network_check',
+        'check_example_plugin',
+        'health_check',
+    ]
+
+
+@factory
+def cases():
+    return (case_factory(DeployWithPluginExampleV4PreCreate) +
+            case_factory(DeployWithPluginExampleV4PostCreate))
