@@ -2297,13 +2297,16 @@ class FuelWebClient(object):
 
     def update_plugin_data(self, cluster_id, plugin_name, data):
         attr = self.client.get_cluster_attributes(cluster_id)
+        # Do not re-upload anything, except selected plugin data
+        real_attr = {'editable': {plugin_name: attr['editable'][plugin_name]}}
+
         for option, value in data.items():
-            plugin_data = attr['editable'][plugin_name]
+            plugin_data = real_attr['editable'][plugin_name]
             path = option.split("/")
             for p in path[:-1]:
                 plugin_data = plugin_data[p]
             plugin_data[path[-1]] = value
-        self.client.update_cluster_attributes(cluster_id, attr)
+        self.client.update_cluster_attributes(cluster_id, real_attr)
 
     @logwrap
     def prepare_ceph_to_delete(self, remote_ceph):
