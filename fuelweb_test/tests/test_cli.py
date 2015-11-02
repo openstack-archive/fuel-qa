@@ -224,7 +224,7 @@ class CommandLineTest(test_cli_base.CommandLine):
                 wait(
                     lambda: not remote.execute(
                         "fuel node | awk '{{print $1}}' | grep -w '{0}'".
-                        format(node_id))['exit_code'] == 0, timeout=60 * 2)
+                        format(node_id))['exit_code'] == 0, timeout=60 * 4)
             except TimeoutError:
                 raise TimeoutError(
                     "After deletion node-{0} is found in fuel list".
@@ -264,6 +264,14 @@ class CommandLineTest(test_cli_base.CommandLine):
         self.env.revert_snapshot("cli_selected_nodes_deploy")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
+
+        nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        online_nodes = [node for node in nodes if node['online']]
+        if nodes != online_nodes:
+            logger.error(
+                'Some slaves do not become online after revert!!'
+                ' Expected {0} Actual {1}'.format(nodes, online_nodes))
+
         with self.env.d_env.get_admin_remote() as remote:
             res = remote.execute('fuel --env {0} env delete'
                                  .format(cluster_id))
@@ -275,7 +283,7 @@ class CommandLineTest(test_cli_base.CommandLine):
                 wait(lambda:
                      remote.execute("fuel env |  awk '{print $1}'"
                                     " |  tail -n 1 | grep '^.$'")
-                     ['exit_code'] == 1, timeout=60 * 6)
+                     ['exit_code'] == 1, timeout=60 * 10)
             except TimeoutError:
                 raise TimeoutError(
                     "cluster {0} was not deleted".format(cluster_id))
