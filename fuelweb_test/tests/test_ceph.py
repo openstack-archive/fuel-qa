@@ -117,7 +117,12 @@ class CephCompact(TestBasic):
         image_data = BytesIO(bytearray(self.__class__.__name__))
         image = os_conn.create_image(disk_format='raw',
                                      container_format='bare',
+                                     name='test_ceph_cinder_cow',
+                                     is_public=True,
                                      data=image_data)
+        wait(lambda: os_conn.get_image(image.name).status == 'active',
+             timeout=60 * 2, timeout_msg='Image is not active')
+
         volume = os_conn.create_volume(size=1, image_id=image.id)
 
         remote = self.fuel_web.get_ssh_for_node('slave-01')
