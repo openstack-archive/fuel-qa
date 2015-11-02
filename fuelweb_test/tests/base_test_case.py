@@ -34,10 +34,11 @@ class TestBasic(object):
     def __init__(self):
         self.env = EnvironmentModel()
         self._current_log_step = 0
+        self._test_program = None
 
     @property
     def test_program(self):
-        if not hasattr(self, '_test_program'):
+        if self._test_program is None:
             self._test_program = TestProgram()
         return self._test_program
 
@@ -187,8 +188,9 @@ class SetupEnvironment(TestBasic):
         """
         self.check_run("ready_with_1_slaves")
         self.env.revert_snapshot("ready", skip_timesync=True)
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:1],
-                                 skip_timesync=True)
+        self.env.bootstrap_nodes(
+            self.env.d_env.get_nodes(role='fuel_slave')[:1],
+            skip_timesync=True)
         self.env.make_snapshot("ready_with_1_slaves", is_make=True)
 
     @test(depends_on=[prepare_release],
@@ -206,8 +208,9 @@ class SetupEnvironment(TestBasic):
         """
         self.check_run("ready_with_3_slaves")
         self.env.revert_snapshot("ready", skip_timesync=True)
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:3],
-                                 skip_timesync=True)
+        self.env.bootstrap_nodes(
+            self.env.d_env.get_nodes(role='fuel_slave')[:3],
+            skip_timesync=True)
         self.env.make_snapshot("ready_with_3_slaves", is_make=True)
 
     @test(depends_on=[prepare_release],
@@ -225,8 +228,9 @@ class SetupEnvironment(TestBasic):
         """
         self.check_run("ready_with_5_slaves")
         self.env.revert_snapshot("ready", skip_timesync=True)
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:5],
-                                 skip_timesync=True)
+        self.env.bootstrap_nodes(
+            self.env.d_env.get_nodes(role='fuel_slave')[:5],
+            skip_timesync=True)
         self.env.make_snapshot("ready_with_5_slaves", is_make=True)
 
     @test(depends_on=[prepare_release],
@@ -245,8 +249,10 @@ class SetupEnvironment(TestBasic):
         self.check_run("ready_with_9_slaves")
         self.env.revert_snapshot("ready", skip_timesync=True)
         # Bootstrap 9 slaves in two stages to get lower load on the host
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:5],
-                                 skip_timesync=True)
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[5:9],
-                                 skip_timesync=True)
+        self.env.bootstrap_nodes(
+            self.env.d_env.get_nodes(role='fuel_slave')[:5],
+            skip_timesync=True)
+        self.env.bootstrap_nodes(
+            self.env.d_env.get_nodes(role='fuel_slave')[5:9],
+            skip_timesync=True)
         self.env.make_snapshot("ready_with_9_slaves", is_make=True)
