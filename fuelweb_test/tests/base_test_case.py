@@ -18,6 +18,7 @@ from proboscis import test
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers.decorators import call_conditions
 from fuelweb_test.helpers.utils import get_test_method_name
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.models.environment import EnvironmentModel
@@ -34,10 +35,14 @@ class TestBasic(object):
     def __init__(self):
         self.env = EnvironmentModel()
         self._current_log_step = 0
+        self._test_program = None
+
+    def _reset_log_step(self):
+        self._current_log_step = 0
 
     @property
     def test_program(self):
-        if not hasattr(self, '_test_program'):
+        if self._test_program is None:
             self._test_program = TestProgram()
         return self._test_program
 
@@ -121,6 +126,7 @@ class TestBasic(object):
 class SetupEnvironment(TestBasic):
     @test(groups=["setup"])
     @log_snapshot_after_test
+    @call_conditions(TestBasic._reset_log_step, TestBasic._reset_log_step)
     def setup_master(self):
         """Create environment and set up master node
 
@@ -134,6 +140,7 @@ class SetupEnvironment(TestBasic):
 
     @test(groups=["setup_master_custom_manifests"])
     @log_snapshot_after_test
+    @call_conditions(TestBasic._reset_log_step, TestBasic._reset_log_step)
     def setup_with_custom_manifests(self):
         """Setup master node with custom manifests
         Scenario:
@@ -146,13 +153,17 @@ class SetupEnvironment(TestBasic):
         Duration 20m
         """
         self.check_run("empty_custom_manifests")
+        self.show_step(1)
+        self.show_step(2)
         self.env.setup_environment(custom=True, build_images=True)
+        self.show_step(3)
         if REPLACE_DEFAULT_REPOS and REPLACE_DEFAULT_REPOS_ONLY_ONCE:
             self.fuel_web.replace_default_repos()
         self.env.make_snapshot("empty_custom_manifests", is_make=True)
 
     @test(depends_on=[setup_master], groups=["prepare_release"])
     @log_snapshot_after_test
+    @call_conditions(TestBasic._reset_log_step, TestBasic._reset_log_step)
     def prepare_release(self):
         """Prepare master node
 
@@ -164,10 +175,12 @@ class SetupEnvironment(TestBasic):
 
         """
         self.check_run("ready")
+        self.show_step(1)
         self.env.revert_snapshot("empty", skip_timesync=True)
 
         self.fuel_web.get_nailgun_version()
         self.fuel_web.change_default_network_settings()
+        self.show_step(2)
         if REPLACE_DEFAULT_REPOS and REPLACE_DEFAULT_REPOS_ONLY_ONCE:
             self.fuel_web.replace_default_repos()
         self.env.make_snapshot("ready", is_make=True)
@@ -175,6 +188,7 @@ class SetupEnvironment(TestBasic):
     @test(depends_on=[prepare_release],
           groups=["prepare_slaves_1"])
     @log_snapshot_after_test
+    @call_conditions(TestBasic._reset_log_step, TestBasic._reset_log_step)
     def prepare_slaves_1(self):
         """Bootstrap 1 slave nodes
 
@@ -186,14 +200,18 @@ class SetupEnvironment(TestBasic):
 
         """
         self.check_run("ready_with_1_slaves")
+        self.show_step(1)
         self.env.revert_snapshot("ready", skip_timesync=True)
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:1],
-                                 skip_timesync=True)
+        self.show_step(2)
+        self.env.bootstrap_nodes(
+            self.env.d_env.get_nodes(role='fuel_slave')[:1],
+            skip_timesync=True)
         self.env.make_snapshot("ready_with_1_slaves", is_make=True)
 
     @test(depends_on=[prepare_release],
           groups=["prepare_slaves_3"])
     @log_snapshot_after_test
+    @call_conditions(TestBasic._reset_log_step, TestBasic._reset_log_step)
     def prepare_slaves_3(self):
         """Bootstrap 3 slave nodes
 
@@ -205,14 +223,18 @@ class SetupEnvironment(TestBasic):
 
         """
         self.check_run("ready_with_3_slaves")
+        self.show_step(1)
         self.env.revert_snapshot("ready", skip_timesync=True)
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:3],
-                                 skip_timesync=True)
+        self.show_step(2)
+        self.env.bootstrap_nodes(
+            self.env.d_env.get_nodes(role='fuel_slave')[:3],
+            skip_timesync=True)
         self.env.make_snapshot("ready_with_3_slaves", is_make=True)
 
     @test(depends_on=[prepare_release],
           groups=["prepare_slaves_5"])
     @log_snapshot_after_test
+    @call_conditions(TestBasic._reset_log_step, TestBasic._reset_log_step)
     def prepare_slaves_5(self):
         """Bootstrap 5 slave nodes
 
@@ -224,14 +246,18 @@ class SetupEnvironment(TestBasic):
 
         """
         self.check_run("ready_with_5_slaves")
+        self.show_step(1)
         self.env.revert_snapshot("ready", skip_timesync=True)
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:5],
-                                 skip_timesync=True)
+        self.show_step(2)
+        self.env.bootstrap_nodes(
+            self.env.d_env.get_nodes(role='fuel_slave')[:5],
+            skip_timesync=True)
         self.env.make_snapshot("ready_with_5_slaves", is_make=True)
 
     @test(depends_on=[prepare_release],
           groups=["prepare_slaves_9"])
     @log_snapshot_after_test
+    @call_conditions(TestBasic._reset_log_step, TestBasic._reset_log_step)
     def prepare_slaves_9(self):
         """Bootstrap 9 slave nodes
 
@@ -243,10 +269,14 @@ class SetupEnvironment(TestBasic):
 
         """
         self.check_run("ready_with_9_slaves")
+        self.show_step(1)
         self.env.revert_snapshot("ready", skip_timesync=True)
         # Bootstrap 9 slaves in two stages to get lower load on the host
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:5],
-                                 skip_timesync=True)
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[5:9],
-                                 skip_timesync=True)
+        self.show_step(2)
+        self.env.bootstrap_nodes(
+            self.env.d_env.get_nodes(role='fuel_slave')[:5],
+            skip_timesync=True)
+        self.env.bootstrap_nodes(
+            self.env.d_env.get_nodes(role='fuel_slave')[5:9],
+            skip_timesync=True)
         self.env.make_snapshot("ready_with_9_slaves", is_make=True)
