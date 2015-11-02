@@ -318,3 +318,18 @@ class ActionsBase(PrepareBase):
     def stop_deploy(self):
         """Deploy environment"""
         raise NotImplementedError
+
+
+class FuelMasterActions(base_actions_factory.BaseActionsFactory):
+    """Actions specific only to Fuel Master node
+
+    _action_check_containers - check that docker containers are up
+        and running
+    """
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def check_containers(self):
+        """Check that containers are up and running"""
+        logger.info("Check containers")
+        self.env.docker_actions.wait_for_ready_containers(timeout=60 * 30)
