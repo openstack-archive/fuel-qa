@@ -342,6 +342,11 @@ Example tests
 .. automodule:: fuelweb_test.tests.plugins.plugin_example.test_fuel_plugin_example
    :members:
 
+Example tests for plugin installation after cluster create
+----------------------------------------------------------
+.. automodule:: fuelweb_test.tests.plugins.plugin_example.test_fuel_plugin_example_postdeploy
+   :members:
+
 Glusterfs tests
 ---------------
 .. automodule:: fuelweb_test.tests.plugins.plugin_glusterfs.test_plugin_glusterfs
