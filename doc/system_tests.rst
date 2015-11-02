@@ -77,6 +77,11 @@ Example plugin v3
 .. automodule:: system_test.tests.plugins.plugin_example.test_plugin_example_v3
     :members:
 
+Example plugin v4
+-----------------
+.. automodule:: system_test.tests.plugins.plugin_example.test_plugin_example_v4
+    :members:
+
 Helpers
 =======
 
