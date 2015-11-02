@@ -26,6 +26,11 @@ Deploy cluster and check RadosGW
 .. automodule:: system_test.tests.test_deploy_check_rados
    :members:
 
+Fuel master migration
+---------------------
+.. automodule:: system_test.tests.test_fuel_migration
+   :members:
+
 Strength tests
 ==============
 
