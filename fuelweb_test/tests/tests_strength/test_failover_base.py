@@ -752,7 +752,7 @@ class TestHaFailoverBase(TestBasic):
                                ' by floating ip {0}'.format(floating_ip.ip))
 
         n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            cluster_id, 'controller')
+            cluster_id, ['controller'])
         d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
         active_slaves = [slave for slave
                          in d_ctrls
@@ -1061,7 +1061,7 @@ class TestHaFailoverBase(TestBasic):
                                should_fail=1)
 
         n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            cluster_id, 'controller')
+            cluster_id, ['controller'])
         d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
 
         active_slaves = [slave for slave
