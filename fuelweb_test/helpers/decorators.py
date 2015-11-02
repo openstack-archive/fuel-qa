@@ -488,3 +488,64 @@ def check_repos_management(func):
                              "management on nodes. Please see the debug log.")
         return result
     return wrapper
+
+# Setup/Teardown decorators, which is missing in Proboscis.
+# Usage: like in Nose.
+# Python.six is less smart
+PYTHON_VER = sys.version_info.major + float(sys.version_info.minor)/10
+
+
+def __getcallargs(func, *positional, **named):
+    if 2.6 <= PYTHON_VER < 3.5:
+        return inspect.getcallargs(func, *positional, **named)
+    else:
+        return inspect.signature(func).bind(*positional, **named).arguments
+
+
+def __arg_names(func):
+    if PYTHON_VER < 3:
+        return [arg for arg in inspect.getargspec(func=func).args]
+    else:
+        return list(inspect.signature(obj=func).parameters.keys())
+
+
+def __call_helper(func_args, helper):
+    expected_args = set(__arg_names(helper)) & {'cls', 'self'}
+    available_args = set(func_args.keys()) & expected_args
+    if available_args != expected_args or len(available_args) > 2:
+        raise KeyError()
+    if expected_args == {}:
+        helper()
+    else:
+        if 'cls' in expected_args:
+            if 'cls' in func_args:
+                helper(func_args['cls'])
+            else:
+                helper(func_args['self'].__class__)
+        else:
+            helper(func_args['self'])
+
+
+def call_conditions(precondition=None, postcondition=None):
+    """
+    Add setup and teardown for functions and methods.
+    :param precondition: function
+    :param postcondition: function
+    :return:
+    """
+    def deco(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            real_args = __getcallargs(func, *args, **kwargs)
+            if precondition is not None:
+                __call_helper(real_args, precondition)
+            try:
+                result = func(*args, **kwargs)
+            except:
+                raise
+            finally:
+                if postcondition is not None:
+                    __call_helper(real_args, postcondition)
+            return result
+        return wrapper
+    return deco
