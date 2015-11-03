@@ -393,7 +393,8 @@ TIMESTAT_PATH_YAML = os.environ.get(
     'TIMESTAT_PATH_YAML', os.path.join(
         LOGS_DIR, 'timestat_{}.yaml'.format(time.strftime("%Y%m%d"))))
 
-FUEL_PLUGIN_BUILDER_REPO = 'https://github.com/stackforge/fuel-plugins.git'
+FUEL_PLUGIN_BUILDER_REPO = ('https://github.com/stackforge/fuel-plugins.git '
+                            '--branch stable/7.0')
 
 ###############################################################################
 # Change various Fuel master node default settings                           #
