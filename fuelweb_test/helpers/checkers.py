@@ -1186,3 +1186,12 @@ def check_hiera_hosts(self, nodes, cmd):
                 assert_true(set(hosts) == set(hiera_hosts),
                             'Hosts on node {0} differ from'
                             ' others'.format(node['hostname']))
+
+
+def check_client_smoke(remote):
+    fuel_output = remote.execute(
+        'fuel env list')['stdout'][2].split('|')[2].strip()
+    fuel_2_output = remote.execute(
+        'fuel2 env list')['stdout'][3].split('|')[3].strip()
+    assert_equal(fuel_output, fuel_2_output,
+                 "The fuel: {0} and fuel2: {1} outputs are not equal")
