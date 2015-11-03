@@ -392,7 +392,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
 
         online_controllers_names = [n.name for n in
-                                    set(d_ctrls) - set([devops_node_with_l3])]
+                                    set(d_ctrls) - {devops_node_with_l3}]
         self.fuel_web.wait_mysql_galera_is_up(online_controllers_names)
 
         #   Wait reschedule l3 agent

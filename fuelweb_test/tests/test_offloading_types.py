@@ -29,7 +29,7 @@ class TestOffloading(TestBasic):
         modes = None
         updated_offloads = None
         for i in interfaces:
-            if (i['name'] == interface_to_update):
+            if i['name'] == interface_to_update:
                 modes = i['offloading_modes']
 
         for k in update_values:

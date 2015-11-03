@@ -66,6 +66,15 @@ class TestNessus(NeutronTunHaBase):
             if tcp_ping(address.format(), nessus_port):
                 return address.format()
 
+    @staticmethod
+    def get_check_scan_complete(nessus_client, scan_id, history_id):
+        def check_scan_complete():
+            return (
+                nessus_client.get_scan_status(
+                    scan_id,
+                    history_id) == 'completed')
+        return check_scan_complete
+
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_tun_ha_nessus"])
     @decorators.log_snapshot_after_test
@@ -132,9 +141,8 @@ class TestNessus(NeutronTunHaBase):
         scan_uuid = nessus_client.launch_scan(scan_id)
         history_id = nessus_client.list_scan_history_ids(scan_id)[scan_uuid]
 
-        check_scan_complete = \
-            lambda: (nessus_client.get_scan_status(scan_id, history_id) ==
-                     'completed')
+        check_scan_complete = self.get_check_scan_complete(
+            nessus_client, scan_id, history_id)
         wait(check_scan_complete, interval=10, timeout=60 * 30)
 
         file_id = nessus_client.export_scan(scan_id, history_id, 'html')
@@ -190,9 +198,8 @@ class TestNessus(NeutronTunHaBase):
         scan_uuid = nessus_client.launch_scan(scan_id)
         history_id = nessus_client.list_scan_history_ids(scan_id)[scan_uuid]
 
-        check_scan_complete = \
-            lambda: (nessus_client.get_scan_status(scan_id, history_id) ==
-                     'completed')
+        check_scan_complete = self.get_check_scan_complete(
+            nessus_client, scan_id, history_id)
         wait(check_scan_complete, interval=10, timeout=60 * 30)
 
         file_id = nessus_client.export_scan(scan_id, history_id, 'html')
@@ -252,9 +259,8 @@ class TestNessus(NeutronTunHaBase):
         scan_uuid = nessus_client.launch_scan(scan_id)
         history_id = nessus_client.list_scan_history_ids(scan_id)[scan_uuid]
 
-        check_scan_complete = \
-            lambda: (nessus_client.get_scan_status(scan_id, history_id) ==
-                     'completed')
+        check_scan_complete = self.get_check_scan_complete(
+            nessus_client, scan_id, history_id)
         wait(check_scan_complete, interval=10, timeout=60 * 30)
 
         file_id = nessus_client.export_scan(scan_id, history_id, 'html')

@@ -28,7 +28,7 @@ import json
 import urllib2
 
 
-class APIClient:
+class APIClient(object):
     """APIClient."""  # TODO documentation
 
     def __init__(self, base_url):
