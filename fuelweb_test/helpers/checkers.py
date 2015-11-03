@@ -858,8 +858,11 @@ def check_swift_ring(remote):
 
 def check_oswl_stat(postgres_actions, remote_collector, master_uid,
                     operation='current',
-                    resources=['vm', 'flavor', 'volume', 'image',
-                               'tenant', 'keystone_user']):
+                    resources=None):
+    if resources is None:
+        resources = [
+            'vm', 'flavor', 'volume', 'image', 'tenant', 'keystone_user'
+        ]
     logger.info("Checking that all resources were collected...")
     expected_resource_count = {
         'current':
@@ -1040,7 +1043,7 @@ def check_auto_mode(remote):
 
 def is_ntpd_active(remote, ntpd_ip):
     cmd = 'ntpdate -d -p 4 -t 0.2 -u {0}'.format(ntpd_ip)
-    return (not remote.execute(cmd)['exit_code'])
+    return not remote.execute(cmd)['exit_code']
 
 
 def check_repo_managment(remote):
@@ -1168,7 +1171,7 @@ def check_log_lines_order(remote, log_file_path, line_matcher):
 
         current_line_pos = int(result['stdout'][0].split(':')[0])
 
-        previous_line_pos = previous_line_pos + current_line_pos
+        previous_line_pos += current_line_pos
         previous_line = current_line
 
 

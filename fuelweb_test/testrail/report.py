@@ -36,7 +36,7 @@ from settings import TestRailSettings
 from testrail_client import TestRailProject
 
 
-class TestResult():
+class TestResult(object):
     """TestResult."""  # TODO documentation
 
     def __init__(self, name, group, status, duration, url=None,

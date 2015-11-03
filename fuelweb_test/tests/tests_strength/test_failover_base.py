@@ -138,7 +138,7 @@ class TestHaFailoverBase(TestBasic):
             d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
             p_d_ctrl = self.fuel_web.get_nailgun_primary_node(d_ctrls[0])
             ret.append(p_d_ctrl)
-            ret.append((set(d_ctrls) - set([p_d_ctrl])).pop())
+            ret.append((set(d_ctrls) - {p_d_ctrl}).pop())
 
             return ret
 
@@ -168,8 +168,8 @@ class TestHaFailoverBase(TestBasic):
             d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
 
             self.fuel_web.assert_pacemaker(
-                (set(d_ctrls) - set([devops_node])).pop().name,
-                set(d_ctrls) - set([devops_node]),
+                (set(d_ctrls) - {devops_node}).pop().name,
+                set(d_ctrls) - {devops_node},
                 [devops_node])
 
             # Wait until Nailgun marked suspended controller as offline
@@ -189,7 +189,7 @@ class TestHaFailoverBase(TestBasic):
 
             # Wait until MySQL Galera is UP on online controllers
             self.fuel_web.wait_mysql_galera_is_up(
-                [n.name for n in set(d_ctrls) - set([devops_node])],
+                [n.name for n in set(d_ctrls) - {devops_node}],
                 timeout=300)
 
             # STEP: Run OSTF
@@ -913,7 +913,7 @@ class TestHaFailoverBase(TestBasic):
         d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
 
         rabbit_status = self.fuel_web.get_rabbit_running_nodes(
-            list((set(d_ctrls) - set([p_d_ctrl])))[0].name)
+            list((set(d_ctrls) - {p_d_ctrl}))[0].name)
         logger.debug("rabbit status is {}".format(rabbit_status))
         for rabbit_node in rabbit_nodes:
             assert_true(rabbit_node in rabbit_status,

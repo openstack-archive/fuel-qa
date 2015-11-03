@@ -463,9 +463,9 @@ class FuelWebClient(object):
                     section = 'access'
                 if option == 'assign_to_all_nodes':
                     section = 'public_network_assignment'
-                if option in ('dns_list'):
+                if option in 'dns_list':
                     section = 'external_dns'
-                if option in ('ntp_list'):
+                if option in 'ntp_list':
                     section = 'external_ntp'
                 if section:
                     attributes['editable'][section][option]['value'] =\
@@ -1261,7 +1261,9 @@ class FuelWebClient(object):
             raise
 
     @logwrap
-    def update_nodes_interfaces(self, cluster_id, nailgun_nodes=[]):
+    def update_nodes_interfaces(self, cluster_id, nailgun_nodes=None):
+        if nailgun_nodes is None:
+            nailgun_nodes = []
         net_provider = self.client.get_cluster(cluster_id)['net_provider']
         if NEUTRON == net_provider:
             assigned_networks = {

@@ -298,7 +298,7 @@ class ContrailPlugin(TestBasic):
             should_fail=2,
             failed_test_name=[('Check network connectivity '
                                'from instance via floating IP'),
-                              ('Launch instance with file injection')]
+                              'Launch instance with file injection']
         )
 
         logger.info(self._ostf_msg)
@@ -391,8 +391,8 @@ class ContrailPlugin(TestBasic):
             should_fail=3,
             failed_test_name=[('Check network connectivity '
                                'from instance via floating IP'),
-                              ('Launch instance with file injection'),
-                              ('Check that required services are running')]
+                              'Launch instance with file injection',
+                              'Check that required services are running']
         )
 
         logger.info(self._ostf_msg)
@@ -470,7 +470,7 @@ class ContrailPlugin(TestBasic):
             should_fail=2,
             failed_test_name=[('Check network connectivity '
                                'from instance via floating IP'),
-                              ('Launch instance with file injection')]
+                              'Launch instance with file injection']
         )
 
         logger.info(self._ostf_msg)
@@ -503,7 +503,7 @@ class ContrailPlugin(TestBasic):
             should_fail=2,
             failed_test_name=[('Check network connectivity '
                                'from instance via floating IP'),
-                              ('Launch instance with file injection')]
+                              'Launch instance with file injection']
         )
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
@@ -594,8 +594,8 @@ class ContrailPlugin(TestBasic):
             should_fail=3,
             failed_test_name=[('Check network connectivity '
                                'from instance via floating IP'),
-                              ('Launch instance with file injection'),
-                              ('Check that required services are running')]
+                              'Launch instance with file injection',
+                              'Check that required services are running']
         )
 
         logger.info(self._ostf_msg)
@@ -676,7 +676,7 @@ class ContrailPlugin(TestBasic):
             should_fail=2,
             failed_test_name=[('Check network connectivity '
                                'from instance via floating IP'),
-                              ('Launch instance with file injection')])
+                              'Launch instance with file injection'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["check_bonding_with_contrail"])
@@ -770,6 +770,6 @@ class ContrailPlugin(TestBasic):
             should_fail=3,
             failed_test_name=[('Check network connectivity '
                                'from instance via floating IP'),
-                              ('Launch instance with file injection'),
-                              ('Check that required services are running')]
+                              'Launch instance with file injection',
+                              'Check that required services are running']
         )
