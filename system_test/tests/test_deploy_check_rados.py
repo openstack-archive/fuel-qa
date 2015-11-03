@@ -67,11 +67,12 @@ class DeployCheckRadosGW(actions_base.ActionsBase):
     @action
     def check_rados_daemon(self):
         """Check the radosqw daemon is started"""
-        with self.fuel_web.get_ssh_for_node('slave-01') as remote:
-            radosgw_started = lambda: len(remote.check_call(
+        def radosgw_started(remote):
+            return len(remote.check_call(
                 'ps aux | grep "/usr/bin/radosgw -n '
                 'client.radosgw.gateway"')['stdout']) == 3
-            assert_true(radosgw_started(), 'radosgw daemon started')
+        with self.fuel_web.get_ssh_for_node('slave-01') as remote:
+            assert_true(radosgw_started(remote), 'radosgw daemon started')
 
 
 @factory

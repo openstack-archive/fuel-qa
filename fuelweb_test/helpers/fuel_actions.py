@@ -106,7 +106,7 @@ class BaseActions(object):
     def is_container_ready(self):
         result = self.admin_remote.execute("timeout 5 dockerctl check {0}"
                                            .format(self.container))
-        return (result['exit_code'] == 0)
+        return result['exit_code'] == 0
 
     def wait_for_ready_container(self, timeout=300):
         wait(lambda: self.is_container_ready, timeout=timeout)
@@ -440,9 +440,11 @@ class NailgunActions(BaseActions):
                          "s in {0} for details.").format(log_file))
             raise
 
-    def force_oswl_collect(self, resources=['vm', 'flavor', 'volume',
-                                            'image', 'tenant',
-                                            'keystone_user']):
+    def force_oswl_collect(self, resources=None):
+        if resources is None:
+            resources = [
+                'vm', 'flavor', 'volume', 'image', 'tenant', 'keystone_user'
+            ]
         for resource in resources:
             cmd = 'supervisorctl restart oswl' \
                   '_{0}_collectord'.format(resource)

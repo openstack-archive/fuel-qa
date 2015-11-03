@@ -105,7 +105,9 @@ class CustomRepo(object):
             self.regenerate_repo(self.centos_script, self.local_mirror_centos)
 
     # Install tools to masternode
-    def install_tools(self, master_tools=[]):
+    def install_tools(self, master_tools=None):
+        if master_tools is None:
+            master_tools = []
         logger.info("Installing necessary tools for {0}"
                     .format(settings.OPENSTACK_RELEASE))
         for master_tool in master_tools:
