@@ -168,7 +168,7 @@ class TestNetworkTemplatesBase(TestBasic):
                     "corresponds to used networking template...")
         # Network for Neutron is configured in namespaces (l3/dhcp agents)
         # and a bridge for it doesn't have IP, so skipping it for now
-        skip_roles = set(['neutron/private'])
+        skip_roles = {'neutron/private'}
         for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
             node_networks = set()
             node_group_name = [ng['name'] for ng in

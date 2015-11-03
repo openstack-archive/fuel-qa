@@ -17,7 +17,7 @@ from testrail import APIClient
 from testrail import APIError
 
 
-class TestRailProject():
+class TestRailProject(object):
     """TestRailProject."""  # TODO documentation
 
     def __init__(self, url, user, password, project):

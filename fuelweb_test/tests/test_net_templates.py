@@ -301,6 +301,9 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
         Duration 120m
         Snapshot two_nodegroups_network_templates
         """
+        def get_network(x):
+            return self.env.d_env.get_network(name=x).ip_network
+
         if not MULTIPLE_NETWORKS:
             raise SkipTest()
 
@@ -309,7 +312,7 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
         # TODO(akostrikov) This should be refactored.
         admin_net = self.env.d_env.admin_net
         admin_net2 = self.env.d_env.admin_net2
-        get_network = lambda x: self.env.d_env.get_network(name=x).ip_network
+
         networks = ['.'.join(get_network(n).split('.')[0:-1])
                     for n in [admin_net, admin_net2]]
         nodes_addresses = ['.'.join(node['ip'].split('.')[0:-1]) for node in

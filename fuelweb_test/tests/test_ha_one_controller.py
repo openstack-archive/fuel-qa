@@ -570,8 +570,7 @@ class FloatingIPs(TestBasic):
             }
         )
 
-        floating_list = []
-        floating_list.append(self.fuel_web.get_floating_ranges()[0][0])
+        floating_list = [self.fuel_web.get_floating_ranges()[0][0]]
         networking_parameters = {
             "floating_ranges": floating_list}
 
