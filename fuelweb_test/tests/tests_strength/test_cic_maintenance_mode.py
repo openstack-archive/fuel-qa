@@ -230,7 +230,7 @@ class CICMaintenanceMode(TestBasic):
                              format(command1, result))
 
                 logger.info('Unexpected reboot on node %s', devops_node.name)
-                command2 = ('reboot --force >/dev/null & ')
+                command2 = 'reboot --force >/dev/null & '
                 result = remote.execute(command2)
                 assert_equal(result['exit_code'], 0,
                              'Failed to execute "{0}" on remote host: {1}'.
@@ -431,7 +431,7 @@ class CICMaintenanceMode(TestBasic):
                              "Maintenance mode should not be available")
 
                 logger.info('Unexpected reboot on node %s', devops_node.name)
-                command2 = ('reboot --force >/dev/null & ')
+                command2 = 'reboot --force >/dev/null & '
                 result = remote.execute(command2)
                 assert_equal(result['exit_code'], 0,
                              'Failed to execute "{0}" on remote host: {1}'.

@@ -167,7 +167,7 @@ class EnvironmentModel(object):
             'build_images': '1' if build_images else '0'
         }
         keys = ''
-        if(iso_connect_as == 'usb'):
+        if iso_connect_as == 'usb':
             keys = (
                 "<Wait>\n"  # USB boot uses boot_menu=yes for master node
                 "<F12>\n"
@@ -360,7 +360,7 @@ class EnvironmentModel(object):
                           security=settings.SECURITY_TEST):
         # start admin node
         admin = self.d_env.nodes().admin
-        if(iso_connect_as == 'usb'):
+        if iso_connect_as == 'usb':
             admin.disk_devices.get(device='disk',
                                    bus='usb').volume.upload(settings.ISO_PATH)
         else:  # cdrom is default
@@ -460,10 +460,11 @@ class EnvironmentModel(object):
             run_on_remote(remote, check_cmd)
 
     @retry(count=3, delay=60)
-    def sync_time(self, nailgun_nodes=[]):
+    def sync_time(self, nailgun_nodes=None):
         # with @retry, failure on any step of time synchronization causes
         # restart the time synchronization starting from the admin node
-
+        if nailgun_nodes is None:
+            nailgun_nodes = []
         controller_nodes = [
             n for n in nailgun_nodes if "controller" in n['roles']]
         other_nodes = [
@@ -593,7 +594,9 @@ class EnvironmentModel(object):
     # its original content.
     # * adds 'nameservers' at start of resolv.conf if merge=True
     # * replaces resolv.conf with 'nameservers' if merge=False
-    def modify_resolv_conf(self, nameservers=[], merge=True):
+    def modify_resolv_conf(self, nameservers=None, merge=True):
+        if nameservers is None:
+            nameservers = []
         with self.d_env.get_admin_remote() as remote:
             resolv_conf = remote.execute('cat /etc/resolv.conf')
             assert_equal(0, resolv_conf['exit_code'], 'Executing "{0}" on the '

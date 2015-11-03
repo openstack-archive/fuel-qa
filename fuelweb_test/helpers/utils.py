@@ -183,7 +183,7 @@ def get_current_env(args):
 
 
 @logwrap
-def update_yaml(yaml_tree=[], yaml_value='', is_uniq=True,
+def update_yaml(yaml_tree=None, yaml_value='', is_uniq=True,
                 yaml_file=settings.TIMESTAT_PATH_YAML):
     """Store/update a variable in YAML file.
 
@@ -191,6 +191,8 @@ def update_yaml(yaml_tree=[], yaml_value='', is_uniq=True,
     yaml_value - value of the variable, will be overwritten if exists,
     is_uniq - If false, add the unique two-digit suffix to the variable name.
     """
+    if yaml_tree is None:
+        yaml_tree = []
     yaml_data = {}
     if os.path.isfile(yaml_file):
         with open(yaml_file, 'r') as f:
@@ -334,7 +336,7 @@ def run_on_remote(*args, **kwargs):
 
 @logwrap
 def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
-                              jsonify=False, assert_ec_equal=[0],
+                              jsonify=False, assert_ec_equal=None,
                               raise_on_assert=True):
     # TODO(ivankliuk): move it to devops.helpers.SSHClient
     """Execute ``cmd`` on ``remote`` and return result.
@@ -348,6 +350,8 @@ def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
     :return: dict
     :raise: Exception
     """
+    if assert_ec_equal is None:
+        assert_ec_equal = [0]
     result = remote.execute(cmd)
     if result['exit_code'] not in assert_ec_equal:
         error_details = {
@@ -397,7 +401,7 @@ def json_deserialize(json_string):
     :return: obj
     :raise: Exception
     """
-    if isinstance(json_string, (list)):
+    if isinstance(json_string, list):
         json_string = ''.join(json_string)
 
     try:
@@ -446,7 +450,7 @@ def get_net_settings(remote, skip_interfaces=set()):
     bond_mode_cmd = 'awk \'{{print $1}}\' /sys/class/net/{0}/bonding/mode'
     bond_slaves_cmd = ('awk \'{{gsub(" ","\\n"); print}}\' '
                        '/sys/class/net/{0}/bonding/slaves')
-    bridge_slaves_cmd = ('ls -1 /sys/class/net/{0}/brif/')
+    bridge_slaves_cmd = 'ls -1 /sys/class/net/{0}/brif/'
 
     node_interfaces = [l.strip() for l in run_on_remote(remote, interface_cmd)
                        if not any(re.search(regex, l.strip()) for regex
