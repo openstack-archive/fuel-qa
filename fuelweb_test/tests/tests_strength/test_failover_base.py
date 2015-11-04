@@ -1039,12 +1039,12 @@ class TestHaFailoverBase(TestBasic):
         rabbit_slaves = self.fuel_web.get_rabbit_slaves_node(p_d_ctrl.name)
         assert_true(rabbit_slaves,
                     'Can not find rabbit slaves. '
-                    'current result is {0}'.format(rabbit_slaves))
-        logger.info('Suspend node {0}'.format(rabbit_slaves[0].name))
-        # suspend devops node with rabbit slave
-        rabbit_slaves[0].suspend(False)
+                    'Current result is {0}'.format(rabbit_slaves))
+        logger.info('Destroy node {0}'.format(rabbit_slaves[0].name))
+        # destroy devops node with rabbit slave
+        rabbit_slaves[0].destroy()
 
-        # Wait until Nailgun marked suspended controller as offline
+        # Wait until Nailgun marked destroyed controller as offline
         try:
             wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
                 rabbit_slaves[0])['online'], timeout=60 * 5)
@@ -1054,9 +1054,10 @@ class TestHaFailoverBase(TestBasic):
                                'in nailgun'.format(rabbit_slaves[0].name))
 
         # check ha
-        # backends for suspended node will be down
+        logger.info('Node was destroyed {0}'.format(rabbit_slaves[0].name))
+        # backend for destroyed node will be down
 
-        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300,
+        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=600,
                                                should_fail=1)
 
         # Run sanity and smoke tests to see if cluster operable
@@ -1072,15 +1073,15 @@ class TestHaFailoverBase(TestBasic):
                          in d_ctrls
                          if slave.name != rabbit_slaves[0].name]
         logger.debug('Active slaves are {0}'.format(active_slaves))
-        assert_true(active_slaves, 'Can not find any active slaves')
+        assert_true(active_slaves, 'Can not find any active slaves.')
 
         master_rabbit_after_slave_fail = self.fuel_web.get_rabbit_master_node(
             active_slaves[0].name)
         assert_equal(master_rabbit.name, master_rabbit_after_slave_fail.name)
 
         # turn on rabbit slave
-
-        rabbit_slaves[0].resume(False)
+        logger.info('Try to power on node: {0}'.format(rabbit_slaves[0].name))
+        rabbit_slaves[0].create()
 
         # Wait until Nailgun marked suspended controller as online
         try:
@@ -1092,7 +1093,7 @@ class TestHaFailoverBase(TestBasic):
                                'in nailgun'.format(rabbit_slaves[0].name))
 
         # check ha
-        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300)
+        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=600)
         # check os
         self.fuel_web.assert_os_services_ready(cluster_id)
 
@@ -1107,9 +1108,10 @@ class TestHaFailoverBase(TestBasic):
         assert_equal(master_rabbit.name, master_rabbit_after_slave_back.name)
 
         # turn off rabbit master
-        master_rabbit.suspend(False)
+        logger.info('Destroy node {0}'.format(master_rabbit.name))
+        master_rabbit.destroy()
 
-        # Wait until Nailgun marked suspended controller as offline
+        # Wait until Nailgun marked destroyed controller as offline
         try:
             wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
                 master_rabbit)['online'], timeout=60 * 5)
@@ -1118,8 +1120,8 @@ class TestHaFailoverBase(TestBasic):
                                ' not become offline'
                                'in nailgun'.format(master_rabbit.name))
 
-        # check ha and note that backends for suspended node will be down
-        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300,
+        # check ha and note that backend for destroyed node will be down
+        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=600,
                                                should_fail=1)
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
 
@@ -1134,10 +1136,10 @@ class TestHaFailoverBase(TestBasic):
         assert_not_equal(master_rabbit.name, master_rabbit_after_fail.name)
 
         # turn on rabbit master
+        logger.info('Power on node {0}'.format(master_rabbit.name))
+        master_rabbit.create()
 
-        master_rabbit.resume(False)
-
-        # Wait until Nailgun marked suspended controller as online
+        # Wait until Nailgun marked controller as online
         try:
             wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
                 master_rabbit)['online'], timeout=60 * 5)
@@ -1148,7 +1150,7 @@ class TestHaFailoverBase(TestBasic):
 
         # check ha
 
-        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300)
+        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=600)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         # check that master rabbit is the same
