@@ -515,8 +515,8 @@ class FuelWebClient(object):
                 self.update_nodegroups(cluster_id, node_groups)
                 self.update_nodegroups_network_configuration(cluster_id)
 
-            cn = self.get_public_vip(cluster_id)
-            change_cluster_ssl_config(attributes, cn)
+            #cn = self.get_public_vip(cluster_id)
+            #change_cluster_ssl_config(attributes, cn)
 
             logger.debug("Try to update cluster "
                          "with next attributes {0}".format(attributes))
