@@ -296,7 +296,7 @@ def update_fuel(func):
 def revert_info(snapshot_name, master_ip, description=""):
     logger.info("<" * 5 + "*" * 100 + ">" * 5)
     logger.info("{} Make snapshot: {}".format(description, snapshot_name))
-    command = ("dos.py revert-resume {env} --snapshot-name {name} "
+    command = ("dos.py revert-resume {env} {name} "
                "&& ssh root@{master_ip}".format(
                    env=settings.ENV_NAME,
                    name=snapshot_name,
