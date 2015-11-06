@@ -31,16 +31,16 @@ class CreateDeployOstf(actions_base.ActionsBase):
 
     base_group = ['system_test', 'system_test.create_deploy_ostf']
     actions_order = [
-        '_action_setup_master',
-        '_action_config_release',
-        '_action_make_slaves',
-        '_action_revert_slaves',
-        '_action_create_env',
-        '_action_add_nodes',
-        '_action_network_check',
-        '_action_deploy_cluster',
-        '_action_network_check',
-        '_action_health_check',
+        'setup_master',
+        'config_release',
+        'make_slaves',
+        'revert_slaves',
+        'create_env',
+        'add_nodes',
+        'network_check',
+        'deploy_cluster',
+        'network_check',
+        'health_check',
     ]
 
 

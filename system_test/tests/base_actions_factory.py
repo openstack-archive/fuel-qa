@@ -28,7 +28,8 @@ class BaseActionsFactory(base_test_case.TestBasic):
     def get_actions(cls):
         """Return all action methods"""
         return {m: getattr(cls, m) for m in
-                dir(cls) if m.startswith('_action_')}
+                dir(cls) if m.startswith('_action_') or
+                getattr(getattr(cls, m), '_action_method_', False)}
 
     @classmethod
     def get_actions_order(cls):

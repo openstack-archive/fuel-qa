@@ -19,6 +19,7 @@ from system_test.tests import actions_base
 from system_test.helpers.utils import case_factory
 from system_test.helpers.decorators import deferred_decorator
 from system_test.helpers.decorators import make_snapshot_if_step_fail
+from system_test.helpers.decorators import action
 
 
 class DeployCheckRadosGW(actions_base.ActionsBase):
@@ -41,28 +42,30 @@ class DeployCheckRadosGW(actions_base.ActionsBase):
                   'system_test.deploy_and_check_radosgw',
                   'system_test.bvt_2']
     actions_order = [
-        '_action_setup_master',
-        '_action_config_release',
-        '_action_make_slaves',
-        '_action_revert_slaves',
-        '_action_create_env',
-        '_action_add_nodes',
-        '_action_network_check',
-        '_action_deploy_cluster',
-        '_action_network_check',
-        '_action_check_haproxy',
-        '_action_check_ceph_status',
-        '_action_health_check',
-        '_action_check_rados_daemon'
+        'setup_master',
+        'config_release',
+        'make_slaves',
+        'revert_slaves',
+        'create_env',
+        'add_nodes',
+        'network_check',
+        'deploy_cluster',
+        'network_check',
+        'check_haproxy',
+        'check_ceph_status',
+        'health_check',
+        'check_rados_daemon'
     ]
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_check_ceph_status(self):
+    @action
+    def check_ceph_status(self):
         """Check Ceph status in cluster"""
         self.fuel_web.check_ceph_status(self.cluster_id)
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_check_rados_daemon(self):
+    @action
+    def check_rados_daemon(self):
         """Check the radosqw daemon is started"""
         with self.fuel_web.get_ssh_for_node('slave-01') as remote:
             radosgw_started = lambda: len(remote.check_call(

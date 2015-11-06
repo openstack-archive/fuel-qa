@@ -19,6 +19,7 @@ from devops.helpers.helpers import wait
 from system_test.tests import actions_base
 from system_test.helpers.decorators import make_snapshot_if_step_fail
 from system_test.helpers.decorators import deferred_decorator
+from system_test.helpers.decorators import action
 
 from system_test import logger
 
@@ -43,7 +44,8 @@ class StrenghtBaseActions(actions_base.ActionsBase):
             logger.warning("Try destory allready destoryed node")
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_wait_offline_nodes(self):
+    @action
+    def wait_offline_nodes(self):
         """Wait offline status of destroyed nodes"""
         assert_true(self.destroyed_devops_nodes,
                     "No destoryed nodes in Environment")
@@ -57,19 +59,22 @@ class StrenghtBaseActions(actions_base.ActionsBase):
         wait(wait_offline_nodes, timeout=60 * 5)
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_check_ha_service_ready(self):
+    @action
+    def check_ha_service_ready(self):
         """Wait for HA services ready"""
         self.fuel_web.assert_ha_services_ready(self.cluster_id)
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_check_os_services_ready(self):
+    @action
+    def check_os_services_ready(self):
         """Wait until OpenStack services are UP"""
         self.fuel_web.assert_os_services_ready(
             self.cluster_id,
             should_fail=self.os_service_should_failed)
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_wait_galera_cluster(self):
+    @action
+    def wait_galera_cluster(self):
         """Wait until MySQL Galera is UP on online controllers"""
         n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             self.cluster_id,
@@ -80,7 +85,8 @@ class StrenghtBaseActions(actions_base.ActionsBase):
             timeout=300)
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_check_pacemaker_status(self):
+    @action
+    def check_pacemaker_status(self):
         """Check controllers status in pacemaker"""
         n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             self.cluster_id,

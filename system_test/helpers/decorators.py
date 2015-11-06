@@ -32,6 +32,11 @@ def deferred_decorator(decorator_list):
     return real_decorator
 
 
+def action(method):
+    setattr(method, '_action_method_', True)
+    return method
+
+
 def step_start_stop(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):

@@ -25,6 +25,7 @@ from system_test import logger
 from system_test.tests import base_actions_factory
 from system_test.helpers.decorators import make_snapshot_if_step_fail
 from system_test.helpers.decorators import deferred_decorator
+from system_test.helpers.decorators import action
 
 
 class PrepareBase(base_actions_factory.BaseActionsFactory):
@@ -70,7 +71,8 @@ class PrepareBase(base_actions_factory.BaseActionsFactory):
         logger.info("\n{footer}\n".format(footer=footer))
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_setup_master(self):
+    @action
+    def setup_master(self):
         """Setup master node"""
         self.check_run("empty")
         with timestat("setup_environment", is_uniq=True):
@@ -79,7 +81,8 @@ class PrepareBase(base_actions_factory.BaseActionsFactory):
         self.env.make_snapshot("empty", is_make=True)
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_config_release(self):
+    @action
+    def config_release(self):
         """Configuration releases"""
         self.check_run("ready")
         self.env.revert_snapshot("empty", skip_timesync=True)
@@ -94,7 +97,8 @@ class PrepareBase(base_actions_factory.BaseActionsFactory):
         self.env.make_snapshot("ready", is_make=True)
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_make_slaves(self):
+    @action
+    def make_slaves(self):
         """Bootstrap slave and make snapshot
 
         Use slaves parameter from case section
@@ -109,7 +113,8 @@ class PrepareBase(base_actions_factory.BaseActionsFactory):
         self.env.make_snapshot(snapshot_name, is_make=True)
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_revert_slaves(self):
+    @action
+    def revert_slaves(self):
         """Revert bootstraped nodes
 
         Skip if snapshot with cluster exists
@@ -126,14 +131,15 @@ class ActionsBase(PrepareBase):
     For chousing action order use actions_order variable, set list of actions
         order
 
-    _action_create_env - create and configure environment
-    _action_add_nodes - add nodes to environment
-    _action_deploy_cluster - deploy en environment
-    _action_network_check - run network check
-    _action_health_check - run all ostf tests
-    _action_reset_cluster - reset an environment (NotImplemented)
-    _action_delete_cluster - delete en environment (NotImplemented)
-    _action_stop_deploy - stop deploying of environment (NotImplemented)
+    Actions:
+        create_env - create and configure environment
+        add_nodes - add nodes to environment
+        deploy_cluster - deploy en environment
+        network_check - run network check
+        health_check - run all ostf tests
+        reset_cluster - reset an environment (NotImplemented)
+        delete_cluster - delete en environment (NotImplemented)
+        stop_deploy - stop deploying of environment (NotImplemented)
     """
 
     base_group = None
@@ -148,7 +154,8 @@ class ActionsBase(PrepareBase):
         self.cluster_id = None
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_create_env(self):
+    @action
+    def create_env(self):
         """Create Fuel Environment
 
         For configure Environment use environment-config section in config file
@@ -196,7 +203,8 @@ class ActionsBase(PrepareBase):
         logger.info("Cluster created with ID:{}".format(self.cluster_id))
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_add_nodes(self):
+    @action
+    def add_nodes(self):
         """Add nodes to environment
 
         Used sub-section nodes in environment-config section
@@ -220,7 +228,8 @@ class ActionsBase(PrepareBase):
         self.fuel_web.update_nodes(self.cluster_id, nodes)
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_deploy_cluster(self):
+    @action
+    def deploy_cluster(self):
         """Deploy environment
 
         Skip action if cluster doesn't exist
@@ -231,7 +240,8 @@ class ActionsBase(PrepareBase):
         self.fuel_web.deploy_cluster_wait(self.cluster_id)
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_network_check(self):
+    @action
+    def network_check(self):
         """Run network checker
 
         Skip action if cluster doesn't exist
@@ -242,7 +252,8 @@ class ActionsBase(PrepareBase):
         self.fuel_web.verify_network(self.cluster_id)
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_health_check(self):
+    @action
+    def health_check(self):
         """Run health checker
 
         Skip action if cluster doesn't exist
@@ -255,7 +266,8 @@ class ActionsBase(PrepareBase):
             should_fail=getattr(self, 'ostf_tests_should_failed', 0))
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_save_load_environment(self):
+    @action
+    def save_load_environment(self):
         """Load existen environment from snapshot or save it"""
         env_name = self.env_config['name']
         if self.cluster_id is None:
@@ -272,7 +284,8 @@ class ActionsBase(PrepareBase):
             self.env.resume_environment()
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_check_haproxy(self):
+    @action
+    def check_haproxy(self):
         """HAProxy backend checking"""
         controller_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             self.cluster_id, ['controller'])
@@ -288,16 +301,19 @@ class ActionsBase(PrepareBase):
                              haproxy_status))
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_reset_cluster(self):
+    @action
+    def reset_cluster(self):
         """Reset environment"""
         raise NotImplementedError
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_delete_cluster(self):
+    @action
+    def delete_cluster(self):
         """Delete environment"""
         raise NotImplementedError
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_stop_deploy(self):
+    @action
+    def stop_deploy(self):
         """Deploy environment"""
         raise NotImplementedError

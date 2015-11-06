@@ -18,6 +18,7 @@ from proboscis import factory
 from system_test.tests.strength import strenght_base
 from system_test.helpers.decorators import make_snapshot_if_step_fail
 from system_test.helpers.decorators import deferred_decorator
+from system_test.helpers.decorators import action
 
 
 class StrenghtDestroyFirstContorller(strenght_base.StrenghtBaseActions):
@@ -44,28 +45,29 @@ class StrenghtDestroyFirstContorller(strenght_base.StrenghtBaseActions):
                   'system_test.failover.destroy_controllers.second']
 
     actions_order = [
-        '_action_setup_master',
-        '_action_config_release',
-        '_action_make_slaves',
-        '_action_revert_slaves',
-        '_action_create_env',
-        '_action_add_nodes',
-        '_action_network_check',
-        '_action_deploy_cluster',
-        '_action_network_check',
-        '_action_health_check',
-        '_action_save_load_environment',
-        '_action_destory_first_controller',
-        '_action_check_pacemaker_status',
-        '_action_wait_offline_nodes',
-        '_action_check_ha_service_ready',
-        '_action_check_os_services_ready',
-        '_action_wait_galera_cluster',
-        '_action_health_check',
+        'setup_master',
+        'config_release',
+        'make_slaves',
+        'revert_slaves',
+        'create_env',
+        'add_nodes',
+        'network_check',
+        'deploy_cluster',
+        'network_check',
+        'health_check',
+        'save_load_environment',
+        'destory_first_controller',
+        'check_pacemaker_status',
+        'wait_offline_nodes',
+        'check_ha_service_ready',
+        'check_os_services_ready',
+        'wait_galera_cluster',
+        'health_check',
     ]
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_destory_first_controller(self):
+    @action
+    def destory_first_controller(self):
         """Destory first controller"""
         self._destory_controller('slave-01')
 
@@ -94,28 +96,29 @@ class StrenghtDestroySecondContorller(strenght_base.StrenghtBaseActions):
                   'actions_tests.failover.destroy_controllers.second']
 
     actions_order = [
-        '_action_setup_master',
-        '_action_config_release',
-        '_action_make_slaves',
-        '_action_revert_slaves',
-        '_action_create_env',
-        '_action_add_nodes',
-        '_action_network_check',
-        '_action_deploy_cluster',
-        '_action_network_check',
-        '_action_health_check',
-        '_action_save_load_environment',
-        '_action_destory_second_controller',
-        '_action_check_pacemaker_status',
-        '_action_wait_offline_nodes',
-        '_action_check_ha_service_ready',
-        '_action_check_os_services_ready',
-        '_action_wait_galera_cluster',
-        '_action_health_check',
+        'setup_master',
+        'config_release',
+        'make_slaves',
+        'revert_slaves',
+        'create_env',
+        'add_nodes',
+        'network_check',
+        'deploy_cluster',
+        'network_check',
+        'health_check',
+        'save_load_environment',
+        'destory_second_controller',
+        'check_pacemaker_status',
+        'wait_offline_nodes',
+        'check_ha_service_ready',
+        'check_os_services_ready',
+        'wait_galera_cluster',
+        'health_check',
     ]
 
     @deferred_decorator([make_snapshot_if_step_fail])
-    def _action_destory_second_controller(self):
+    @action
+    def destory_second_controller(self):
         """Destory second controller"""
         self._destory_controller('slave-02')
 
