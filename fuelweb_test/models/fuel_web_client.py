@@ -275,8 +275,8 @@ class FuelWebClient(object):
     def assert_release_role_present(self, release_name, role_name):
         logger.info('Assert role %s is available in release %s',
                     role_name, release_name)
-        id = self.assert_release_state(release_name)
-        release_data = self.client.get_releases_details(release_id=id)
+        release_id = self.assert_release_state(release_name)
+        release_data = self.client.get_releases_details(release_id=release_id)
         assert_equal(
             True, role_name in release_data['roles'],
             message='There is no {0} role in release id {1}'.format(
@@ -1347,7 +1347,7 @@ class FuelWebClient(object):
                 networks['public']['ip_range'] = [
                     str(static[2]), str(static[-1])]
 
-                # use the secong half of public network as floating range
+                # use the second half of public network as floating range
                 net_settings[net_provider]['config']['floating_ranges'] = \
                     [[str(floating[0]), str(floating[-2])]]
 
@@ -1744,9 +1744,9 @@ class FuelWebClient(object):
         res = []
         passed_count = []
         failed_count = []
-        test_nama_to_ran = test_name or OSTF_TEST_NAME
+        test_name_to_run = test_name or OSTF_TEST_NAME
         retr = test_retries or OSTF_TEST_RETRIES_COUNT
-        test_path = map_ostf.OSTF_TEST_MAPPING.get(test_nama_to_ran)
+        test_path = map_ostf.OSTF_TEST_MAPPING.get(test_name_to_run)
         logger.info('Test path is {0}'.format(test_path))
 
         for i in range(0, retr):
@@ -2207,18 +2207,18 @@ class FuelWebClient(object):
 
         logger.debug("ids are {}".format(ids))
         assert_true(ids, "osd ids for {} weren't found".format(hostname))
-        for id in ids:
-            remote_ceph.execute("ceph osd out {}".format(id))
+        for osd_id in ids:
+            remote_ceph.execute("ceph osd out {}".format(osd_id))
         wait(lambda: ceph.is_health_ok(remote_ceph),
              interval=30, timeout=10 * 60)
-        for id in ids:
+        for osd_id in ids:
             if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
-                remote_ceph.execute("stop ceph-osd id={}".format(id))
+                remote_ceph.execute("stop ceph-osd id={}".format(osd_id))
             else:
-                remote_ceph.execute("service ceph stop osd.{}".format(id))
-            remote_ceph.execute("ceph osd crush remove osd.{}".format(id))
-            remote_ceph.execute("ceph auth del osd.{}".format(id))
-            remote_ceph.execute("ceph osd rm osd.{}".format(id))
+                remote_ceph.execute("service ceph stop osd.{}".format(osd_id))
+            remote_ceph.execute("ceph osd crush remove osd.{}".format(osd_id))
+            remote_ceph.execute("ceph auth del osd.{}".format(osd_id))
+            remote_ceph.execute("ceph osd rm osd.{}".format(osd_id))
         # remove ceph node from crush map
         remote_ceph.execute("ceph osd crush remove {}".format(hostname))
 

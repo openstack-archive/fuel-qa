@@ -79,11 +79,11 @@ class CommandLineMinimal(TestBasic):
                         'fuel task | grep deployment | awk \'{print $9}\'')
                     ['stdout'][0].rstrip()) == 100, timeout=120)
             except TimeoutError:
-                raise TimeoutError("hiera manifest was not applyed")
+                raise TimeoutError("hiera manifest was not applied")
             role = remote.execute('ssh -q node-{0} "hiera role"'
                                   .format(node_id))['stdout'][0].rstrip()
-        assert_equal(role, 'primary-controller', "node with deployed hiera "
-                                                 "was not found")
+        assert_equal(
+            role, 'primary-controller', "node with deployed hiera was not found")
 
 
 @test(groups=["command_line"])
@@ -102,7 +102,7 @@ class CommandLineTest(test_cli_base.CommandLine):
             3. Provision a controller node using Fuel CLI
             4. Provision two compute+cinder nodes using Fuel CLI
             5. Deploy the controller node using Fuel CLI
-            6. Deploy the compute+cinder nodes usin Fuel CLI
+            6. Deploy the compute+cinder nodes using Fuel CLI
             7. Run OSTF
             8. Make snapshot "cli_selected_nodes_deploy"
 
@@ -231,9 +231,9 @@ class CommandLineTest(test_cli_base.CommandLine):
                     format(node_id))
 
         with self.env.d_env.get_admin_remote() as remote:
-            is_cobler_node_exists = check_cobbler_node_exists(remote, node_id)
+            is_cobbler_node_exists = check_cobbler_node_exists(remote, node_id)
 
-        assert_false(is_cobler_node_exists,
+        assert_false(is_cobbler_node_exists,
                      "After deletion node-{0} is found in cobbler list".
                      format(node_id))
 

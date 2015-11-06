@@ -246,7 +246,7 @@ class AdminActions(BaseActions):
 
     @logwrap
     def modify_configs(self, router):
-        # Slave nodes sould use the gateway of 'admin' network as the default
+        # Slave nodes should use the gateway of 'admin' network as the default
         # gateway during provisioning and as an additional DNS server.
         # resolv.conf should contains nameserver that resolve intranet URLs.
         config = '/etc/fuel/astute.yaml'

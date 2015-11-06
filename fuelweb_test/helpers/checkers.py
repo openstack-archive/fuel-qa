@@ -55,8 +55,7 @@ def check_cinder_status(remote):
     if result['exit_code'] == 0:
         return all(' up ' in x.split('enabled')[1]
                    for x in cinder_services.split('\n')
-                   if 'cinder' in x and 'enabled' in x
-                   and len(x.split('enabled')))
+                   if 'cinder' in x and 'enabled' in x and len(x.split('enabled')))
     return False
 
 
@@ -716,7 +715,7 @@ def check_stats_private_info(collector_remote, postgres_actions,
         return _has_private_data
 
     def _contain_public_ip(data, _used_networks):
-        _has_puplic_ip = False
+        _has_public_ip = False
         _ip_regex = (r'\b((\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\.){3}'
                      r'(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\b')
         _not_public_regex = [
@@ -734,12 +733,11 @@ def check_stats_private_info(collector_remote, postgres_actions,
                     and not any(IPAddress(_match.group()) in IPNetwork(net) for
                                 net in _used_networks):
                 continue
-            logger.debug('Usage statistics with piblic IP(s):\n {0}'.
-                         format(data))
+            logger.debug('Usage statistics with public IP(s):\n {0}'.format(data))
             logger.error('Found public IP in usage statistics: "{0}"'.format(
                 _match.group()))
-            _has_puplic_ip = True
-        return _has_puplic_ip
+            _has_public_ip = True
+        return _has_public_ip
 
     private_data = {
         'hostname': _settings['HOSTNAME'],
@@ -757,7 +755,7 @@ def check_stats_private_info(collector_remote, postgres_actions,
         'mcollective_password': _settings['mcollective']['password'],
         'keystone_admin_token': _settings['keystone']['admin_token'],
         'keystone_nailgun_password': _settings['keystone']['nailgun_password'],
-        'kesytone_ostf_password': _settings['keystone']['ostf_password'],
+        'keystone_ostf_password': _settings['keystone']['ostf_password'],
     }
 
     secret_data_types = {
@@ -1047,7 +1045,7 @@ def is_ntpd_active(remote, ntpd_ip):
 
 
 def check_repo_managment(remote):
-    """Check repo managment
+    """Check repo management
 
     run 'yum -y clean all && yum check-update' or
         'apt-get clean all && apt-get update' exit code should be 0
@@ -1115,10 +1113,9 @@ def check_haproxy_backend(remote,
     cmd = 'haproxy-status | egrep -v "BACKEND|FRONTEND" | grep "DOWN"'
 
     positive_filter = (services, nodes)
-    negativ_filter = (ignore_services, ignore_nodes)
+    negative_filter = (ignore_services, ignore_nodes)
     grep = ['|egrep "{}"'.format('|'.join(n)) for n in positive_filter if n]
-    grep.extend(
-        ['|egrep -v "{}"'.format('|'.join(n)) for n in negativ_filter if n])
+    grep.extend(['|egrep -v "{}"'.format('|'.join(n)) for n in negative_filter if n])
 
     return remote.execute("{}{}".format(cmd, ''.join(grep)))
 

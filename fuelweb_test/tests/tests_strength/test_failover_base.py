@@ -314,7 +314,7 @@ class TestHaFailoverBase(TestBasic):
                     resource)
                 assert_true(len(new_nodes) == 1,
                             "After ip deletion resource should run on a single"
-                            " node, but runned on {0}. On {1} attempt".format(
+                            " node, but ran on {0}. On {1} attempt".format(
                                 [n.name for n in new_nodes],
                                 check_counter))
                 logger.info(
@@ -541,11 +541,10 @@ class TestHaFailoverBase(TestBasic):
         for devops_node in d_computes:
             with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
                 remote.execute("kill -9 `pgrep nova-compute`")
-                wait(
-                    lambda: len(remote.execute('pgrep nova-compute')['stdout'])
-                    == 1, timeout=120)
-                assert_true(len(remote.execute('pgrep nova-compute')['stdout'])
-                            == 1, 'Nova service was not restarted')
+                wait(lambda: len(remote.execute('pgrep nova-compute')['stdout']) == 1,
+                     timeout=120)
+                assert_true(len(remote.execute('pgrep nova-compute')['stdout']) == 1,
+                            'Nova service was not restarted')
                 assert_true(len(remote.execute(
                     "grep \"nova-compute.*trying to restart\" "
                     "/var/log/monit.log")['stdout']) > 0,
