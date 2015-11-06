@@ -55,7 +55,7 @@ if you do need to override them.
 -r (yes/no) - Should built ISO file be places with build number tag and
               symlinked to the last build or just copied over the last file.
 -b (num)    - Allows you to override Jenkins' build number if you need to.
--l (dir)    - Path to logs directory. Can be set by LOGS_DIR evironment variable.
+-l (dir)    - Path to logs directory. Can be set by LOGS_DIR environment variable.
               Uses WORKSPACE/logs if not set.
 -L          - Disable fuel_logs tool to extract the useful lines from Astute and Puppet logs
               within the Fuel log snapshot or on the live Fuel Master node.
@@ -65,7 +65,7 @@ if you do need to override them.
 -K          - Keep test environment after tests are finished
 -h          - Show this help page
 
-Most variables uses guesing from Jenkins' job name but can be overriden
+Most variables uses guessing from Jenkins' job name but can be overridden
 by exported variable before script is run or by one of command line options.
 
 You can override following variables using export VARNAME="value" before running this script
@@ -110,7 +110,7 @@ GlobalVariables() {
 
   # full path where iso file should be placed
   # make from iso name and path to iso shared directory
-  # if was not overriden by options or export
+  # if was not overridden by options or export
   if [ -z "${ISO_PATH}" ]; then
     ISO_PATH="${ISO_DIR}/${ISO_NAME}"
   fi
@@ -278,7 +278,7 @@ MakeISO() {
   fi
 
   # copy ISO file to storage dir
-  # if rotation is enabled and build number is aviable
+  # if rotation is enabled and build number is available
   # save iso to tagged file and symlink to the last build
   # if rotation is not enabled just copy iso to iso_dir
 

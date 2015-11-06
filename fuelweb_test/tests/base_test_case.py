@@ -33,10 +33,11 @@ class TestBasic(object):
     """
     def __init__(self):
         self.env = EnvironmentModel()
+        self._test_program = None
 
     @property
     def test_program(self):
-        if not hasattr(self, '_test_program'):
+        if self._test_program is None:
             self._test_program = TestProgram()
         return self._test_program
 

@@ -15,6 +15,7 @@
 
 import os
 import sys
+from datetime import datetime
 
 sys.path.insert(0,
                 os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -35,11 +36,13 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 project = 'Fuel QA'
-copyright = 'Copyright 2015 Mirantis, Inc.' \
-            'Licensed under the Apache License, Version 2.0' \
-            ' (the "License"); you may not use this file except in' \
-            ' compliance with the License. You may obtain a copy' \
-            ' of the License at http://www.apache.org/licenses/LICENSE-2.0'
+copyright = (
+    'Copyright %d Mirantis, Inc.'
+    'Licensed under the Apache License, Version 2.0'
+    ' (the "License"); you may not use this file except in'
+    ' compliance with the License. You may obtain a copy'
+    ' of the License at http://www.apache.org/licenses/LICENSE-2.0'
+    % datetime.now().year)
 
 exclude_patterns = ['_build']
 

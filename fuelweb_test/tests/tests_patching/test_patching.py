@@ -313,8 +313,9 @@ class PatchingMasterTests(TestBasic):
 
         # Step #2
         if settings.LATE_ARTIFACTS_JOB_URL:
-            data = urllib2.urlopen(settings.LATE_ARTIFACTS_JOB_URL
-                                   + "/artifact/artifacts/artifacts.txt")
+            data = urllib2.urlopen(
+                settings.LATE_ARTIFACTS_JOB_URL +
+                "/artifact/artifacts/artifacts.txt")
             for package in data:
                 os.system("wget --directory-prefix"
                           " {0} {1}".format(settings.UPDATE_FUEL_PATH,

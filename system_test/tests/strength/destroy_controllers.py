@@ -30,10 +30,10 @@ class StrenghtDestroyFirstContorller(strenght_base.StrenghtBaseActions):
         4. Deploy Environment
         5. Run network checker
         9. Run OSTF
-        6. Make or use existen snapshot of ready Environment
+        6. Make or use existent snapshot of ready Environment
         7. Destroy first controller
         8. Check pacemaker status
-        9. Wait offlie status in nailgun
+        9. Wait offline status in nailgun
         10. Run OSTF
 
     """
@@ -66,7 +66,7 @@ class StrenghtDestroyFirstContorller(strenght_base.StrenghtBaseActions):
 
     @deferred_decorator([make_snapshot_if_step_fail])
     def _action_destory_first_controller(self):
-        """Destory first controller"""
+        """Destroy first controller"""
         self._destory_controller('slave-01')
 
 
@@ -80,10 +80,10 @@ class StrenghtDestroySecondContorller(strenght_base.StrenghtBaseActions):
         4. Deploy Environment
         5. Run network checker
         9. Run OSTF
-        6. Make or use existen snapshot of ready Environment
+        6. Make or use existent snapshot of ready Environment
         7. Destroy second controller
         8. Check pacemaker status
-        9, Wait offlie status in nailgun
+        9, Wait offline status in nailgun
         10. Run OSTF
 
     """
@@ -116,7 +116,7 @@ class StrenghtDestroySecondContorller(strenght_base.StrenghtBaseActions):
 
     @deferred_decorator([make_snapshot_if_step_fail])
     def _action_destory_second_controller(self):
-        """Destory second controller"""
+        """Destroy second controller"""
         self._destory_controller('slave-02')
 
 
