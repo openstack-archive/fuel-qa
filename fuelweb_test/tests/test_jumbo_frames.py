@@ -26,6 +26,10 @@ from fuelweb_test.tests import base_test_case
 
 @test(groups=["jumbo_frames"])
 class TestJumboFrames(base_test_case.TestBasic):
+    def __init__(self):
+        self.os_conn = None
+        base_test_case.TestBasic.__init__(self)
+
     def check_node_iface_mtu(self, node, iface, mtu):
         """Check mtu on environment node network interface."""
 
@@ -88,9 +92,9 @@ class TestJumboFrames(base_test_case.TestBasic):
         creds = ("cirros", "cubswin:)")
         net = net_name if net_name else 'net04'
         source_floating_ip = self.os_conn.get_nova_instance_ip(
-            source_instance, net_name=net, type='floating')
+            source_instance, net_name=net, addrtype='floating')
         destination_fixed_ip = self.os_conn.get_nova_instance_ip(
-            destination_instance, net_name=net, type='fixed')
+            destination_instance, net_name=net, addrtype='fixed')
 
         with self.fuel_web.get_ssh_for_node("slave-01") as ssh:
             command = "ping -c {0} -s {1} {2}"\

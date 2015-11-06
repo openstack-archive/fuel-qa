@@ -47,7 +47,8 @@ class TestOffloading(TestBasic):
         self.fuel_web.client.put_node_interfaces(
             [{'id': node_id, 'interfaces': interfaces}])
 
-    def check_offload(self, node, eth, offload_type):
+    @staticmethod
+    def check_offload(node, eth, offload_type):
         command = "ethtool --show-offload %s | awk '/%s/ {print $2}'"
 
         offload_status = node.execute(command % (eth, offload_type))

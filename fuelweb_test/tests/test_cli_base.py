@@ -101,15 +101,18 @@ class CommandLine(TestBasic):
         networks = self.get_networks(cluster_id, remote)
         return networks['public_vip']
 
-    def download_settings(self, cluster_id, remote):
+    @staticmethod
+    def download_settings(cluster_id, remote):
         cmd = ('fuel --env {0} settings --download --dir /tmp --json'.format(
             cluster_id))
         run_on_remote(remote, cmd)
-        return run_on_remote(remote,
-                             'cd /tmp && cat settings_{0}.json'.format(
-                                 cluster_id), jsonify=True)
+        return run_on_remote(
+            remote,
+            'cd /tmp && cat settings_{0}.json'.format(cluster_id),
+            jsonify=True)
 
-    def upload_settings(self, cluster_id, remote, settings):
+    @staticmethod
+    def upload_settings(cluster_id, remote, settings):
         data = json.dumps(settings)
         cmd = 'cd /tmp && echo {data} > settings_{id}.json'.format(
             data=json.dumps(data),

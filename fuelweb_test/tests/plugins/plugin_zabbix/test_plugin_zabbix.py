@@ -126,7 +126,8 @@ class ZabbixPlugin(TestBasic):
         self.fuel_web.update_plugin_data(
             cluster_id, plugin_name, plugin_options)
 
-    def check_event_message(self, zabbix_web, zabbix_hostgroup, message):
+    @staticmethod
+    def check_event_message(zabbix_web, zabbix_hostgroup, message):
         statuses_html = bs4.BeautifulSoup(zabbix_web.get_trigger_statuses())
         status_lines = statuses_html.find_all('tr', {'class': 'even_row'})
 
@@ -459,7 +460,7 @@ class ZabbixPlugin(TestBasic):
             7. Deploy the cluster
             8. Run network verification
             9. Run OSTF
-            10. Check Extreme Swich trigger with test SNMP message
+            10. Check Extreme Switch trigger with test SNMP message
 
         Duration 70m
         Snapshot deploy_zabbix_snmp_extreme_ha
