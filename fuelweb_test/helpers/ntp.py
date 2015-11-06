@@ -100,6 +100,11 @@ class GroupNtpSync(object):
 class Ntp(object):
     """Common methods to work with ntpd service."""
 
+    def __init__(self):
+        self.is_synchronized = False
+        self.is_connected = False
+        self.peers = []
+
     def __repr__(self):
         klass, obj_id = type(self), hex(id(self))
         admin_ip = getattr(self, 'admin_ip', None)
@@ -187,12 +192,12 @@ class Ntp(object):
                 if (abs(offset) > 500) or (abs(jitter) > 500):
                     return self.is_connected
 
-                # 2. remote should be marked whith tally  '*'
+                # 2. remote should be marked with tally  '*'
                 if remote[0] != '*':
                     continue
 
                 # 3. reachability bit array should have '1' at least in
-                # two lower bits as the last two sussesful checks
+                # two lower bits as the last two successful checks
                 if reach & 3 == 3:
                     self.is_connected = True
                     return self.is_connected

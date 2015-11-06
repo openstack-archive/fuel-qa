@@ -65,7 +65,7 @@ class OpenStackActions(common.Common):
             return servers
 
     def create_server_for_migration(self, neutron=True, scenario='',
-                                    timeout=100, file=None, key_name=None,
+                                    timeout=100, filename=None, key_name=None,
                                     label=None, **kwargs):
         name = "test-serv" + str(random.randint(1, 0x7fffffff))
         security_group = {}
@@ -96,7 +96,7 @@ class OpenStackActions(common.Common):
                                        image=image_id,
                                        flavor=1,
                                        userdata=scenario,
-                                       files=file,
+                                       files=filename,
                                        key_name=key_name,
                                        **kwargs)
         try:
@@ -129,8 +129,9 @@ class OpenStackActions(common.Common):
             #   Find external net id for tenant
             nets = self.neutron.list_networks()['networks']
             err_msg = "Active external network not found in nets:{}"
-            ext_net_ids = [net['id'] for net in nets if net['router:external']
-                           and net['status'] == "ACTIVE"]
+            ext_net_ids = [
+                net['id'] for net in nets
+                if net['router:external'] and net['status'] == "ACTIVE"]
             asserts.assert_true(ext_net_ids, err_msg.format(nets))
             net_id = ext_net_ids[0]
             #   Find instance port
@@ -144,8 +145,10 @@ class OpenStackActions(common.Common):
             flip = self.neutron.create_floatingip(body)
             #   Wait active state for port
             port_id = flip['floatingip']['port_id']
-            state = lambda: self.neutron.show_port(port_id)['port']['status']
-            helpers.wait(lambda: state() == "ACTIVE")
+            helpers.wait(
+                lambda: (
+                    self.neutron.show_port(port_id)['port']['status'] ==
+                    "ACTIVE"))
             return flip['floatingip']
 
         fl_ips_pool = self.nova.floating_ip_pools.list()
@@ -260,7 +263,8 @@ class OpenStackActions(common.Common):
             controller_ssh, vm_ip, "md5sum %s" % file_path, creds)
         return out['stdout']
 
-    def execute_through_host(self, ssh, vm_host, cmd, creds=()):
+    @staticmethod
+    def execute_through_host(ssh, vm_host, cmd, creds=()):
         logger.debug("Making intermediate transport")
         interm_transp = ssh._ssh.get_transport()
 
@@ -452,9 +456,10 @@ class OpenStackActions(common.Common):
 
     def get_neutron_dhcp_ports(self, net_id):
         ports = self.neutron.list_ports()['ports']
-        network_ports = [x for x in ports
-                         if x['device_owner'] == 'network:dhcp'
-                         and x['network_id'] == net_id]
+        network_ports = [
+            x for x in ports
+            if x['device_owner'] == 'network:dhcp' and
+            x['network_id'] == net_id]
         return network_ports
 
     def create_pool(self, pool_name):
@@ -487,16 +492,17 @@ class OpenStackActions(common.Common):
     def get_vip(self, vip):
         return self.neutron.show_vip(vip)
 
-    def get_nova_instance_ip(self, srv, net_name='novanetwork', type='fixed'):
+    @staticmethod
+    def get_nova_instance_ip(srv, net_name='novanetwork', addrtype='fixed'):
         for network_label, address_list in srv.addresses.items():
             if network_label != net_name:
                 continue
             for addr in address_list:
-                if addr['OS-EXT-IPS:type'] == type:
+                if addr['OS-EXT-IPS:type'] == addrtype:
                     return addr['addr']
         raise Exception("Instance {0} doesn't have {1} address for network "
                         "{2}, available addresses: {3}".format(srv.id,
-                                                               type,
+                                                               addrtype,
                                                                net_name,
                                                                srv.addresses))
 

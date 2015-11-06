@@ -208,7 +208,8 @@ class EnvironmentModel(object):
             ) % params
         return keys
 
-    def get_target_devs(self, devops_nodes):
+    @staticmethod
+    def get_target_devs(devops_nodes):
         return [
             interface.target_dev for interface in [
                 val for var in map(lambda node: node.interfaces, devops_nodes)

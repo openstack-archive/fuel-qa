@@ -130,7 +130,8 @@ class NodeReinstallationEnv(TestBasic):
 class ReadyNodeReinstallation(TestBasic):
     """ReadyNodeReinstallation."""  # TODO documentation
 
-    def _check_hostname(self, old_node_nailgun, reinstalled_node_nailgun):
+    @staticmethod
+    def _check_hostname(old_node_nailgun, reinstalled_node_nailgun):
         """Check that the hostname is the same on both given nodes."""
         assert_equal(old_node_nailgun['hostname'],
                      reinstalled_node_nailgun['hostname'],

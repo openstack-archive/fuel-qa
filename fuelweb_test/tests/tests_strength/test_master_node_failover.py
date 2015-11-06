@@ -125,7 +125,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
             details = common_func.get_instance_detail(server)
             assert_equal(details.name, 'test_instance')
 
-            # Check if instacne active
+            # Check if instance active
             common_func.verify_instance_status(server, 'ACTIVE')
 
             # delete instance
