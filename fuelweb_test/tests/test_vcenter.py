@@ -36,7 +36,7 @@ class VcenterDeploy(TestBasic):
         return self.fuel_web.get_nailgun_node_by_name(name_node)['hostname']
 
     def create_vm(self, os_conn=None, vm_count=None):
-        # Get list of available images,flavors and hipervisors
+        # Get list of available images,flavors and hypervisors
         images_list = os_conn.nova.images.list()
         flavors_list = os_conn.nova.flavors.list()
         hypervisors_list = os_conn.get_hypervisors()
@@ -850,7 +850,7 @@ class VcenterDeploy(TestBasic):
           groups=["vcenter_multiroles_ceilometer"])
     @log_snapshot_after_test
     def vcenter_multiroles_ceilometer(self):
-        """Deploy enviroment with vCenter, Ceilometer and nodes with \
+        """Deploy environment with vCenter, Ceilometer and nodes with \
         multiroles (combinations with CinderVMDK, Cinder and MongoDB)
 
         Scenario:
@@ -910,7 +910,7 @@ class VcenterDeploy(TestBasic):
           groups=["vcenter_add_delete_nodes"])
     @log_snapshot_after_test
     def vcenter_add_delete_nodes(self):
-        """Deploy enviroment of vcenter+qemu nova vlan and default backend for
+        """Deploy environment of vcenter+qemu nova vlan and default backend for
            glance and with addition and deletion of nodes with different roles
 
         Scenario:
@@ -951,7 +951,7 @@ class VcenterDeploy(TestBasic):
 
         logger.debug("cluster is {}".format(cluster_id))
 
-        # Add role controler for node 1
+        # Add role controller for node 1
         self.fuel_web.update_nodes(
             cluster_id,
             {'slave-01': ['controller']}
@@ -1099,7 +1099,7 @@ class VcenterDeploy(TestBasic):
           groups=["vcenter_delete_controler"])
     @log_snapshot_after_test
     def vcenter_delete_controler(self):
-        """Deploy enviroment of vcenter+qemu nova vlan, default backend for
+        """Deploy environment of vcenter+qemu nova vlan, default backend for
            glance and deletion one node with controller role
 
         Scenario:

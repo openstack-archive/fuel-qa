@@ -99,7 +99,8 @@ class SeparateHorizon(TestBasic):
                 'slave-02': ['controller'],
                 'slave-03': ['controller'],
                 'slave-04': ['standalone-horizon'],
-                'slave-05': ['stabdalone-horizon'],
+                'slave-05': ['standalone-horizon'],
+                # was mistype: 'stabdalone-horizon'
                 'slave-06': ['standalone-horizon'],
                 'slave-07': ['compute'],
                 'slave-08': ['ceph-osd'],

@@ -126,8 +126,8 @@ def get_node_packages(remote, func_name, node_role,
     logger.debug("node packages are {0}".format(node_packages))
     packages_dict[func_name][node_role] = node_packages\
         if node_role not in packages_dict[func_name].keys()\
-        else list(set(packages_dict[func_name][node_role])
-                  | set(node_packages))
+        else list(set(packages_dict[func_name][node_role]) |
+                  set(node_packages))
     return packages_dict
 
 
@@ -263,7 +263,7 @@ class timestat(object):
             raise
 
     @property
-    def spended_time(self):
+    def spent_time(self):
         return time.time() - self.begin_time
 
 
@@ -395,7 +395,7 @@ def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
 
 def json_deserialize(json_string):
     """
-    Deserealize json_string and return object
+    Deserialize json_string and return object
 
     :param json_string: string or list with json
     :return: obj
@@ -557,7 +557,7 @@ def get_node_hiera_roles(remote):
     """
     cmd = 'hiera roles'
     roles = ''.join(run_on_remote(remote, cmd)).strip()
-    # Contert string with roles like a ["ceph-osd", "controller"] to list
+    # Content string with roles like a ["ceph-osd", "controller"] to list
     roles = map(lambda s: s.strip('" '), roles.strip("[]").split(','))
     return roles
 
