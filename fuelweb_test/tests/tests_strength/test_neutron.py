@@ -186,7 +186,7 @@ class TestNeutronFailoverGRE(TestNeutronFailoverBase):
                   "neutron_l3_migration_after_reset_gre"])
     @log_snapshot_after_test
     def neutron_l3_migration_after_reset_gre(self):
-        """Check l3-agent rescheduling after reset no-nprimary controller (gre)
+        """Check l3-agent rescheduling after reset no-primary controller (gre)
 
         Scenario:
             1. Revert snapshot with neutron cluster

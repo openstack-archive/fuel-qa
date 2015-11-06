@@ -96,7 +96,7 @@ def replace_centos_repos(repos_attr, upstream_host):
 
 
 def report_repos(repos_attr, release=help_data.OPENSTACK_RELEASE):
-    """Show list of reposifories for specified cluster"""
+    """Show list of repositories for specified cluster"""
     if help_data.OPENSTACK_RELEASE_UBUNTU in release:
         report_ubuntu_repos(repos_attr['value'])
     else:

@@ -40,13 +40,13 @@ class StrenghtBaseActions(actions_base.ActionsBase):
         if d_node not in self.destroyed_devops_nodes:
             self.destroyed_devops_nodes.append(d_node)
         else:
-            logger.warning("Try destory allready destoryed node")
+            logger.warning("Try destroy already destroyed node")
 
     @deferred_decorator([make_snapshot_if_step_fail])
     def _action_wait_offline_nodes(self):
         """Wait offline status of destroyed nodes"""
         assert_true(self.destroyed_devops_nodes,
-                    "No destoryed nodes in Environment")
+                    "No destroyed nodes in Environment")
 
         def wait_offline_nodes():
             n_nodes = map(self.fuel_web.get_nailgun_node_by_devops_node,

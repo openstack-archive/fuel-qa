@@ -74,7 +74,7 @@ class CustomRepo(object):
         Scenario:
             1. Temporary set nameserver to local router on admin node
             2. Install tools to manage rpm/deb repository
-            3. Retrive list of packages from custom repository
+            3. Retrieve list of packages from custom repository
             4. Download packages to local rpm/deb repository
             5. Update .yaml file with new packages version
             6. Re-generate repo using shell scripts on admin node
@@ -119,15 +119,17 @@ class CustomRepo(object):
     def get_pkgs_list_ubuntu(self):
         url = "{0}/{1}/Packages".format(self.custom_pkgs_mirror,
                                         self.custom_pkgs_mirror_path)
-        logger.info("Retriving additional packages from the custom mirror:"
-                    " {0}".format(url))
+        logger.info(
+            "Retrieving additional packages from the custom mirror: "
+            "{0}".format(url))
         try:
             pkgs_release = urllib2.urlopen(url).read()
         except (urllib2.HTTPError, urllib2.URLError):
             logger.error(traceback.format_exc())
             url_gz = '{0}.gz'.format(url)
-            logger.info("Retriving additional packages from the custom mirror:"
-                        " {0}".format(url_gz))
+            logger.info(
+                "Retrieving additional packages from the custom mirror:"
+                " {0}".format(url_gz))
             try:
                 pkgs_release_gz = urllib2.urlopen(url_gz).read()
             except (urllib2.HTTPError, urllib2.URLError):
@@ -150,13 +152,14 @@ class CustomRepo(object):
             assert_equal(True, all(x in upkg for x in upkg_keys),
                          'Missing one of the statements ["Package:", '
                          '"Version:", "Filename:"] in {0}'.format(url))
-            # TODO: add dependences list to upkg
+            # TODO: add dependencies list to upkg
             self.pkgs_list.append(upkg)
 
     # Centos: Creating list of packages from the additional mirror
     def get_pkgs_list_centos(self):
-        logger.info("Retriving additional packages from the custom mirror: {0}"
-                    .format(self.custom_pkgs_mirror))
+        logger.info(
+            "Retrieving additional packages from the custom mirror: "
+            "{0}".format(self.custom_pkgs_mirror))
         url = "{0}/repodata/repomd.xml".format(self.custom_pkgs_mirror)
         try:
             repomd_data = urllib2.urlopen(url).read()
@@ -260,7 +263,7 @@ class CustomRepo(object):
                          '\n{0}'.format(traceback.format_exc()))
             raise
 
-        # Update the local repository using prevously uploaded script.
+        # Update the local repository using previously uploaded script.
         script_cmd = '{0}/{1} {2} {3}'.format(self.remote_path_scripts,
                                               regenerate_script,
                                               local_mirror_path,
@@ -269,7 +272,7 @@ class CustomRepo(object):
         assert_equal(0, script_result['exit_code'],
                      self.assert_msg(script_cmd, script_result['stderr']))
 
-        logger.info('Local repository {0} has been updated successfuly.'
+        logger.info('Local repository {0} has been updated successfully.'
                     .format(local_mirror_path))
 
     def assert_msg(self, cmd, err):

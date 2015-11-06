@@ -39,20 +39,20 @@ class BaseActionsFactory(base_test_case.TestBasic):
 
     @classmethod
     def caseclass_factory(cls, case_group):
-        """Create new clonned cls class contains only action methods"""
+        """Create new cloned cls class contains only action methods"""
         test_steps, scenario = {}, []
         actions_method = cls.get_actions()
 
-        #  Generate human readeble class_name, if was method docstring not
+        #  Generate human readable class_name, if was method docstring not
         #  described, use generated name
         class_name = "Case_{}_{}".format(cls.__name__, case_group)
 
-        #  Make methods for new testcase class, folowing by order
+        #  Make methods for new testcase class, following by order
         scenario.append("    Scenario:")
         for step, action in enumerate(cls.get_actions_order()):
             n_action = action.replace("_action_", "")
-            #  Generate human readeble method name, if was method docstring not
-            #  described, use generated name. Used when metod failed
+            #  Generate human readable method name, if was method docstring not
+            #  described, use generated name. Used when method failed
             step_method_name = "{}.Step{:03d}_{}".format(class_name,
                                                          step,
                                                          n_action)
