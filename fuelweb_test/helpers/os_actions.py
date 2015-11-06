@@ -129,8 +129,9 @@ class OpenStackActions(common.Common):
             #   Find external net id for tenant
             nets = self.neutron.list_networks()['networks']
             err_msg = "Active external network not found in nets:{}"
-            ext_net_ids = [net['id'] for net in nets if net['router:external']
-                           and net['status'] == "ACTIVE"]
+            ext_net_ids = [
+                net['id'] for net in nets
+                if net['router:external'] and net['status'] == "ACTIVE"]
             asserts.assert_true(ext_net_ids, err_msg.format(nets))
             net_id = ext_net_ids[0]
             #   Find instance port
@@ -452,9 +453,10 @@ class OpenStackActions(common.Common):
 
     def get_neutron_dhcp_ports(self, net_id):
         ports = self.neutron.list_ports()['ports']
-        network_ports = [x for x in ports
-                         if x['device_owner'] == 'network:dhcp'
-                         and x['network_id'] == net_id]
+        network_ports = [
+            x for x in ports
+            if x['device_owner'] == 'network:dhcp' and
+            x['network_id'] == net_id]
         return network_ports
 
     def create_pool(self, pool_name):

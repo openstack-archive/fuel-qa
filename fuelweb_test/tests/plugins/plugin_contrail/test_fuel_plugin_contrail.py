@@ -37,10 +37,10 @@ class ContrailPlugin(TestBasic):
     """ContrailPlugin."""  # TODO documentation
 
     _pack_copy_path = '/var/www/nailgun/plugins/contrail-1.0'
-    _add_ub_packag = \
+    _add_ub_package = \
         '/var/www/nailgun/plugins/contrail-1.0/' \
         'repositories/ubuntu/contrail-setup*'
-    _add_cen_packeg = \
+    _add_cen_package = \
         '/var/www/nailgun/plugins/contrail-1.0/' \
         'repositories/centos/Packages/contrail-setup*'
     _ostf_msg = 'OSTF tests passed successfully.'
@@ -64,7 +64,7 @@ class ContrailPlugin(TestBasic):
         logger.info('The command is %s', command)
         remote.execute_async(command)
         time.sleep(50)
-        os.path.isfile(self._add_ub_packag or self._add_cen_packeg)
+        os.path.isfile(self._add_ub_package or self._add_cen_package)
 
     def _assign_net_provider(self, pub_all_nodes=False):
         """Assign neutron with  vlan segmentation"""
