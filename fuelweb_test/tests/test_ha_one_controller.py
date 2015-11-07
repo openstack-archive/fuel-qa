@@ -26,9 +26,6 @@ from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NODE_VOLUME_SIZE
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
-from fuelweb_test.settings import OPENSTACK_RELEASE
-from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
-from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
@@ -459,34 +456,7 @@ class MultiroleMultipleServices(TestBasic):
         self.env.revert_snapshot("empty")
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:5])
 
-        logger.info("Executing 'fuel-createmirror' on Fuel admin node")
-        with self.env.d_env.get_admin_remote() as remote:
-            # TODO(ddmitriev):Enable debug via argument for 'fuel-createmirror'
-            # when bug#1458469 fixed.
-            if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
-                cmd = ("sed -i 's/DEBUG=\"no\"/DEBUG=\"yes\"/' {}"
-                       .format('/etc/fuel-createmirror/ubuntu.cfg'))
-                remote.execute(cmd)
-            else:
-                # CentOS is not supported yet, see bug#1467403
-                pass
-
-            run_on_remote_get_results(remote, 'fuel-createmirror')
-
-        # Check if there all repos were replaced with local mirrors
-        ubuntu_id = self.fuel_web.client.get_release_id(
-            release_name=OPENSTACK_RELEASE_UBUNTU)
-        ubuntu_release = self.fuel_web.client.get_release(ubuntu_id)
-        ubuntu_meta = ubuntu_release["attributes_metadata"]
-        repos_ubuntu = ubuntu_meta["editable"]["repo_setup"]["repos"]['value']
-        remote_repos = []
-        for repo_value in repos_ubuntu:
-            if (self.fuel_web.admin_node_ip not in repo_value['uri'] and
-                    '{settings.MASTER_IP}' not in repo_value['uri']):
-                remote_repos.append({repo_value['name']: repo_value['uri']})
-        assert_true(not remote_repos,
-                    "Some repositories weren't replaced with local mirrors: "
-                    "{0}".format(remote_repos))
+        self.env.setup_local_repositories()
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
