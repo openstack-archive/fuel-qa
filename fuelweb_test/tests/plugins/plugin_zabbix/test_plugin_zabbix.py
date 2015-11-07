@@ -142,6 +142,69 @@ class ZabbixPlugin(TestBasic):
                 return True
         return False
 
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["deploy_zabbix_local_mirror"])
+    @log_snapshot_after_test
+    def deploy_zabbix_local_mirror(self):
+        """Deploy cluster with zabbix plugin
+
+        Scenario:
+            1. Upload plugin to the master node
+            2. Install plugin
+            3. Run fuel-createmirror
+            4. Create cluster
+            5. Add 1 nodes with controller role
+            6. Add 1 node with compute role
+            7. Deploy the cluster
+            8. Check zabbix service in pacemaker
+            9. Check login to zabbix dashboard
+
+        Duration 60m
+        Snapshot deploy_zabbix_local_mirror
+
+        """
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        with self.env.d_env.get_admin_remote() as remote:
+            checkers.upload_tarball(
+                remote, conf.ZABBIX_PLUGIN_PATH, "/var")
+            checkers.install_plugin_check_code(
+                remote,
+                plugin=os.path.basename(conf.ZABBIX_PLUGIN_PATH))
+
+        self.env.setup_local_repositories()
+
+        settings = None
+        if conf.NEUTRON_ENABLE:
+            settings = {
+                "net_provider": "neutron",
+                "net_segment_type": conf.NEUTRON_SEGMENT_TYPE
+            }
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=conf.DEPLOYMENT_MODE,
+            settings=settings
+        )
+
+        zabbix_username = 'admin'
+        zabbix_password = 'zabbix'
+        self.setup_zabbix_plugin(cluster_id, zabbix_username, zabbix_password)
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                "slave-01": ["controller"],
+                "slave-02": ["compute"],
+            }
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.check_zabbix_configuration(cluster_id, zabbix_username,
+                                        zabbix_password)
+
+        self.env.make_snapshot("deploy_zabbix_local_mirror")
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_zabbix_ha"])
     @log_snapshot_after_test
