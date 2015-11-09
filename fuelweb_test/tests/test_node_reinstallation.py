@@ -601,7 +601,7 @@ class PartitionPreservation(TestBasic):
         NodeReinstallationEnv._reinstall_nodes(
             self.fuel_web, cluster_id, [str(mongo_nailgun['id'])])
 
-        with self.fuel_web.get_ssh_for_node("slave-02") as remote:
+        with self.env.d_env.get_ssh_to_remote(mongo_nailgun['ip']) as remote:
             alarms = remote.execute("source openrc; ceilometer alarm-list")
             assert_equal(
                 initial_alarms['stdout'],
