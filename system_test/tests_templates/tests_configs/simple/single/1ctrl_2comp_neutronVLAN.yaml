@@ -1,14 +1,14 @@
 ---
 template:
- name: 3 Controller, 2 Compute, 1 Cinder Neutron/VLAN
- group-name: 3ctrl_2comp_1cndr_neutronVLAN
- slaves: 6
+ name: 1 Controller, 2 Compute on Neutron/VLAN
+ group-name: 1ctrl_2comp_neutronVLAN
+ slaves: 3
  cluster-template:
-  name: HAwithCinderNeutronVLAN
+  name: Simple2ComputeNeutronVLAN
   release: ubuntu
   network:
    !include ../../../cluster_configs/networks/neutron_vlan.yaml
   settings:
    !include ../../../cluster_configs/settings/cinder_wo_components.yaml
   nodes:
-   !include ../../../cluster_configs/nodes/single/3ctrl_2comp_1cndr.yaml
+   !include ../../../cluster_configs/nodes/single/1ctrl_2comp.yaml
