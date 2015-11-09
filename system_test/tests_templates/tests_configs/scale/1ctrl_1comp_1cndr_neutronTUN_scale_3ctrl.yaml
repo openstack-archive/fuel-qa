@@ -12,6 +12,6 @@ template:
   nodes:
    !include cluster_configs/nodes/single/1ctrl_1comp_1cndr.yaml
   scale_nodes:
-  - - role:
+  - - roles:
       - controller
       count: 2
