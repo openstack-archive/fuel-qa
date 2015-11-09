@@ -177,6 +177,27 @@ class ActionsBase(PrepareBase, HealthCheckActions):
         super(ActionsBase, self).__init__()
         self.config_file = config_file
         self.cluster_id = None
+        self.assigned_slaves = set()
+        self.scale_step = 0
+
+    def _add_node(self, nodes_list):
+        """Add nodes to Environment"""
+        logger.info("Add nodes to env {}".format(self.cluster_id))
+        names = "slave-{:02}"
+        slaves = int(self.full_config['template']['slaves'])
+        num = iter(xrange(1, slaves + 1))
+        nodes = {}
+        for new in nodes_list:
+            for one in xrange(new['count']):
+                name = names.format(next(num))
+                while name in self.assigned_slaves:
+                    name = names.format(next(num))
+
+                self.assigned_slaves.add(name)
+                nodes[name] = new['roles']
+                logger.info("Set roles {} to node {}".format(new['roles'],
+                                                             name))
+        self.fuel_web.update_nodes(self.cluster_id, nodes)
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
@@ -239,18 +260,7 @@ class ActionsBase(PrepareBase, HealthCheckActions):
         if self.cluster_id is None:
             raise SkipTest()
 
-        slaves = int(self.full_config['template']['slaves'])
-        logger.info("Add nodes to env {}".format(self.cluster_id))
-        names = "slave-{:02}"
-        num = iter(xrange(1, slaves + 1))
-        nodes = {}
-        for new in self.env_config['nodes']:
-            for one in xrange(new['count']):
-                name = names.format(next(num))
-                nodes[name] = new['roles']
-                logger.info("Set roles {} to node {}".format(new['roles'],
-                                                             name))
-        self.fuel_web.update_nodes(self.cluster_id, nodes)
+        self._add_node(self.env_config['nodes'])
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
@@ -310,6 +320,14 @@ class ActionsBase(PrepareBase, HealthCheckActions):
             assert_equal(haproxy_status['exit_code'], 1,
                          "HAProxy backends are DOWN. {0}".format(
                              haproxy_status))
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def scale_node(self):
+        """Scale node in cluster"""
+        step_config = self.env_config['scale_node'][self.scale_step]
+        self._add_node(step_config)
+        self.scale_step += 1
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
