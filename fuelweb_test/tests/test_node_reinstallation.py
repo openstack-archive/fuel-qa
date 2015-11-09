@@ -593,6 +593,8 @@ class PartitionPreservation(TestBasic):
         # Mark 'mongo' partition to be preserved on all controllers
         mongo_nailgun = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['mongo'])[0]
+        devops_mongo = self.fuel_web.get_devops_nodes_by_nailgun_nodes(
+            [mongo_nailgun])
         self._preserve_partition(mongo_nailgun['id'], "mongo")
 
         # Mark 'mysql' partition to be preserved
@@ -601,7 +603,7 @@ class PartitionPreservation(TestBasic):
         NodeReinstallationEnv._reinstall_nodes(
             self.fuel_web, cluster_id, [str(mongo_nailgun['id'])])
 
-        with self.fuel_web.get_ssh_for_node("slave-02") as remote:
+        with self.fuel_web.get_ssh_for_node(devops_mongo.name) as remote:
             alarms = remote.execute("source openrc; ceilometer alarm-list")
             assert_equal(
                 initial_alarms['stdout'],
