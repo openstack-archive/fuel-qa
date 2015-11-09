@@ -54,6 +54,29 @@ Strength Base
 .. automodule:: system_test.tests.strength.strength_base
    :members:
 
+Plugin tests
+============
+
+Plugins Base
+------------
+.. automodule:: system_test.tests.plugins.plugins_base
+    :members:
+
+Example plugin Base
+-------------------
+.. automodule:: system_test.tests.plugins.plugin_example
+    :members:
+
+Example plugin
+--------------
+.. automodule:: system_test.tests.plugins.plugin_example.test_plugin_example
+    :members:
+
+Example plugin v3
+-----------------
+.. automodule:: system_test.tests.plugins.plugin_example.test_plugin_example_v3
+    :members:
+
 Helpers
 =======
 
