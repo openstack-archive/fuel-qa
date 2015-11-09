@@ -1,0 +1,14 @@
+---
+template:
+ name: 1 Controller, 2 Compute on Neutron/VLAN
+ group-name: 1ctrl_2comp_neutronVLAN
+ slaves: 3
+ cluster-template:
+  name: Simple2ComputeNeutronVLAN
+  release: ubuntu
+  network:
+   !include ../../../cluster_configs/networks/neutron_vlan.yaml
+  settings:
+   !include ../../../cluster_configs/settings/cinder_wo_componets.yaml
+  nodes:
+   !include ../../../cluster_configs/nodes/single/1ctrl_2comp.yaml

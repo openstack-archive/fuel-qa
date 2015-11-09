@@ -152,6 +152,8 @@ class ActionsBase(PrepareBase):
         self.env_settings = config['template']['cluster-template']['settings']
         self.config_name = config['template']['name']
         self.cluster_id = None
+        self.assigned_slaves = set()
+        self.scale_step = 0
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
@@ -222,6 +224,7 @@ class ActionsBase(PrepareBase):
         for new in self.env_config['nodes']:
             for one in xrange(new['count']):
                 name = names.format(next(num))
+                self.assigned_slaves.add(name)
                 nodes[name] = new['roles']
                 logger.info("Set roles {} to node {}".format(new['roles'],
                                                              name))
@@ -299,6 +302,29 @@ class ActionsBase(PrepareBase):
             assert_equal(haproxy_status['exit_code'], 1,
                          "HAProxy backends are DOWN. {0}".format(
                              haproxy_status))
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def scale_node(self):
+        """Scale node in cluster"""
+        step_config = self.env_config['scale_node'][self.scale_step]
+
+        logger.info("Add nodes to env {}".format(self.cluster_id))
+        names = "slave-{:02}"
+        slaves = int(self.full_config['template']['slaves'])
+        num = iter(xrange(1, slaves + 1))
+        nodes = {}
+        for new in step_config:
+            for one in xrange(new['count']):
+                name = names.format(next(num))
+                while name not in self.assigned_slaves:
+                    name = names.format(next(num))
+
+                self.assigned_slaves.add(name)
+                nodes[name] = new['roles']
+                logger.info("Set roles {} to node {}".format(new['roles'],
+                                                             name))
+        self.fuel_web.update_nodes(self.cluster_id, nodes)
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
