@@ -9,6 +9,6 @@ template:
   network:
    !include ../../cluster_configs/networks/neutron_vlan.yaml
   settings:
-   !include ../../cluster_configs/settings/cinder_wo_componets.yaml
+   !include ../../cluster_configs/settings/cinder_wo_components.yaml
   nodes:
    !include ../../cluster_configs/nodes/single/3ctrl_2comp_1cndr.yaml
