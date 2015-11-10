@@ -45,6 +45,17 @@ def get_yaml_to_json(node_ssh, file):
 
 
 @logwrap
+def put_json_on_remote_from_dict(remote, dict, cluster_id):
+    cmd = ('python -c "import json; '
+           'data=json.dumps({0}); print data"').format(dict)
+    result = remote.execute(
+        '{0} > /var/log/network_{1}.json'.format(cmd, cluster_id))
+    asserts.assert_equal(
+        result['exit_code'], 0,
+        'Failed to run cmd {0} with result {1}'.format(cmd, result))
+
+
+@logwrap
 def nova_service_get_pid(node_ssh, nova_services=None):
     pid_dict = {}
     for el in nova_services:

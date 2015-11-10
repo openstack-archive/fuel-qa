@@ -1198,3 +1198,21 @@ def check_client_smoke(remote):
         'fuel2 env list')['stdout'][3].split('|')[3].strip()
     assert_equal(fuel_output, fuel_2_output,
                  "The fuel: {0} and fuel2: {1} outputs are not equal")
+
+
+def check_get_network_data_over_cli(remote, cluster_id, path):
+    logger.info("Download network data over cli")
+    cmd = 'fuel --debug --env {0} network --dir {1} --json -d'.format(
+        cluster_id, path)
+    result = remote.execute(cmd)
+    assert_equal(result['exit_code'], 0,
+                 'Failed to download network data {0}'.format(result))
+
+
+def check_update_network_data_over_cli(remote, cluster_id, path):
+    logger.info("Upload network data over cli")
+    cmd = 'fuel --debug --env {0} network --dir {1} --json -u'.format(
+        cluster_id, path)
+    result = remote.execute(cmd)
+    assert_equal(result['exit_code'], 0,
+                 'Failed to upload network data {0}'.format(result))
