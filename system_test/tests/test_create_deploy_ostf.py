@@ -31,10 +31,7 @@ class CreateDeployOstf(actions_base.ActionsBase):
 
     base_group = ['system_test', 'system_test.create_deploy_ostf']
     actions_order = [
-        'setup_master',
-        'config_release',
-        'make_slaves',
-        'revert_slaves',
+        'prepare_steps',
         'create_env',
         'add_nodes',
         'network_check',

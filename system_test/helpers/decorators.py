@@ -37,6 +37,11 @@ def action(method):
     return method
 
 
+def nested_action(method):
+    setattr(method, '_nested_action_method_', True)
+    return staticmethod(method)
+
+
 def step_start_stop(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
