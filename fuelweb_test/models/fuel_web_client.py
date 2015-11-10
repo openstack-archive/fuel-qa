@@ -706,15 +706,26 @@ class FuelWebClient(object):
                 with self.get_ssh_for_node(node_name) as remote:
                     free = node_freemem(remote)
                     hiera_roles = get_node_hiera_roles(remote)
-                logger.info("Node {name}({host})[{roles}]<{hiera_roles}> "
-                            "memory status is {mem_free}, "
-                            "swap status is {swap_free}".format(
-                                name=node_name,
-                                host=n['hostname'],
-                                roles=n['roles'],
-                                hiera_roles=hiera_roles,
-                                mem_free=free['mem'],
-                                swap_free=free['swap']))
+                node_status = {
+                    node_name:
+                        {
+                            'host': n['hostname'],
+                            'roles':
+                                {
+                                    'nailgun_roles': n['roles'],
+                                    'hiera_roles': hiera_roles,
+                                },
+                            'memory':
+                                {
+                                    'mem_free': free['mem'],
+                                    'swap_free': free['swap'],
+                                },
+                        },
+                }
+
+                logger.info('Node status:\n{}'.format(pretty_log(node_status,
+                                                                 indent=1)))
+                logger.info('== debug ==: n is: {0}'.format(n))
 
     def deploy_cluster_wait_progress(self, cluster_id, progress):
         task = self.deploy_cluster(cluster_id)
