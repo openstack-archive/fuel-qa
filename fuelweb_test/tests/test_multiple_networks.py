@@ -12,11 +12,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import netaddr
+import json
+
+from proboscis import asserts
 from proboscis import SkipTest
 from proboscis import test
 
+from fuelweb_test import logger
+from fuelweb_test.helpers.checkers import check_get_network_data_over_cli
+from fuelweb_test.helpers.checkers import check_update_network_data_over_cli
 from fuelweb_test.helpers.decorators import check_fuel_statistics
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers import utils
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
 from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import NEUTRON_SEGMENT
@@ -28,6 +36,13 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 @test(groups=["multiple_cluster_networks", "thread_7"])
 class TestMultipleClusterNets(TestBasic):
     """TestMultipleClusterNets."""  # TODO documentation
+
+    def get_modified_ranges(self, net_dict, net_name):
+        for net in net_dict['networks']:
+            if net_name in net['name']:
+                cidr = net['cidr']
+                sliced_list = list(netaddr.IPNetwork(cidr))[5:-5]
+                return [str(sliced_list[0]), str(sliced_list[-1])]
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["multiple_cluster_networks",
@@ -42,11 +57,19 @@ class TestMultipleClusterNets(TestBasic):
             2. Bootstrap slaves from default nodegroup
             3. Create cluster with Neutron VXLAN and custom nodegroup
             4. Bootstrap slave nodes from custom nodegroup
-            5. Add 3 controller nodes from default nodegroup
-            6. Add 2 compute nodes from custom nodegroup
-            7. Deploy cluster
-            8. Run network verification
-            9. Run health checks (OSTF)
+            5. Download network configuration using
+               fuel --debug --env {id} --json --dir {dir} network -d
+            6. Update network.json  with customized
+               IP ranges for management and storage networks
+            7. Put new json on master node and update
+               environment network configuration with it
+            8. Verify that new IP ranges are applied for network config
+            9. Add 3 controller nodes from default nodegroup
+            10. Add 2 compute nodes from custom nodegroup
+            11. Deploy cluster
+            12. Run network verification
+            13  Verify that excluded IP addresses aren't allocated for nodes or VIP
+            14. Run health checks (OSTF)
 
         Duration 110m
         Snapshot deploy_neutron_tun_ha_nodegroups
@@ -79,7 +102,65 @@ class TestMultipleClusterNets(TestBasic):
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[1:5:2])
 
         self.show_step(5)
+        with self.env.d_env.get_admin_remote() as remote:
+            check_get_network_data_over_cli(remote, cluster_id, '/var/log/')
+
+        management_ranges = []
+        storage_ranges = []
+
         self.show_step(6)
+        with self.env.d_env.get_admin_remote() as remote:
+            current_net = json.loads(remote.open(
+                '/var/log/network_1.json').read())
+            storage_ranges.append(self.get_modified_ranges(
+                current_net, 'storage'))
+            for net in current_net['networks']:
+                if 'storage' in net['name']:
+                    net['ip_ranges'] = storage_ranges
+                    net['meta']['notation'] = 'ip_ranges'
+
+            management_ranges.append(self.get_modified_ranges(
+                current_net, 'management'))
+            for net in current_net['networks']:
+                if 'management' in net['name']:
+                    net['ip_ranges'] = management_ranges
+                    net['meta']['notation'] = 'ip_ranges'
+
+            logger.info('Plan to update ranges to '
+                        '{0} for storage and {1} for '
+                        'management'.format(storage_ranges,
+                                            management_ranges))
+
+            # need to push to remote
+            self.show_step(7)
+            utils.put_json_on_remote_from_dict(
+                remote, current_net, cluster_id)
+
+            check_update_network_data_over_cli(remote, cluster_id,
+                                               '/var/log/')
+        self.show_step(8)
+        with self.env.d_env.get_admin_remote() as remote:
+            check_get_network_data_over_cli(remote, cluster_id, '/var/log/')
+            latest_net = json.loads(remote.open(
+                '/var/log/network_1.json').read())
+            updated_storage_range = [net['ip_ranges']
+                                     for net in latest_net['networks']
+                                     if 'storage' in net['name']][0]
+            updated_mgmt_range = [net['ip_ranges'] for net
+                                  in latest_net['networks']
+                                  if 'management' in net['name']][0]
+            asserts.assert_equal(
+                updated_storage_range, storage_ranges,
+                'Looks like storage range was not updated. '
+                'Expected {0}, Actual: {1}'.format(
+                    storage_ranges, updated_storage_range))
+
+            asserts.assert_equal(
+                updated_mgmt_range, management_ranges,
+                'Looks like management range was not updated. '
+                'Expected {0}, Actual: {1}'.format(
+                    management_ranges, updated_mgmt_range))
+
         nodegroup_default = NODEGROUPS[0]['name']
         nodegroup_custom = NODEGROUPS[1]['name']
         self.fuel_web.update_nodes(
@@ -93,13 +174,13 @@ class TestMultipleClusterNets(TestBasic):
             }
         )
 
-        self.show_step(7)
+        self.show_step(11)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        self.show_step(8)
+        self.show_step(12)
         self.fuel_web.verify_network(cluster_id)
 
-        self.show_step(9)
+        self.show_step(13)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_neutron_tun_ha_nodegroups")
