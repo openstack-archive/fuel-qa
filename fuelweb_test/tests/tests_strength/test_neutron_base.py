@@ -383,7 +383,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
              devops_node_with_l3)['online'], timeout=60 * 10)
 
         #   Wait for HA services get ready
-        self.fuel_web.assert_ha_services_ready(cluster_id)
+        self.fuel_web.assert_ha_services_ready(cluster_id, should_fail=1)
 
         #   Wait for Galera service get ready
         n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
@@ -437,7 +437,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
-            test_sets=['ha', 'smoke'])
+            test_sets=['ha', 'smoke'], should_fail=1)
 
     def neutron_packets_drop_stat(self):
         self.env.revert_snapshot("deploy_ha_neutron_{}".format(

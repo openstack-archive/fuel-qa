@@ -180,7 +180,7 @@ class TestHaFailoverBase(TestBasic):
             # Wait the pacemaker react to changes in online nodes
             time.sleep(60)
             # Wait for HA services ready
-            self.fuel_web.assert_ha_services_ready(cluster_id)
+            self.fuel_web.assert_ha_services_ready(cluster_id, should_fail=1)
             # Wait until OpenStack services are UP
             self.fuel_web.assert_os_services_ready(cluster_id, should_fail=1)
 
@@ -194,10 +194,11 @@ class TestHaFailoverBase(TestBasic):
 
             # STEP: Run OSTF
             self.show_step([4, 8][num])
+            #should fail 2 according to haproxy backends marked as fail
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
                 test_sets=['ha', 'smoke', 'sanity'],
-                should_fail=1)
+                should_fail=2)
 
     def ha_disconnect_controllers(self):
         if not self.env.revert_snapshot(self.snapshot_name):
@@ -216,15 +217,16 @@ class TestHaFailoverBase(TestBasic):
 
         # Wait until MySQL Galera is UP on some controller
         self.fuel_web.wait_mysql_galera_is_up(['slave-02'])
+        #should fail 2 according to haproxy backends marked as fail
         try:
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
-                test_sets=['sanity', 'smoke'], should_fail=1)
+                test_sets=['sanity', 'smoke'], should_fail=2)
         except AssertionError:
             time.sleep(600)
             self.fuel_web.run_ostf(cluster_id=cluster_id,
                                    test_sets=['smoke', 'sanity'],
-                                   should_fail=1)
+                                   should_fail=2)
 
     def ha_delete_vips(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
@@ -742,7 +744,7 @@ class TestHaFailoverBase(TestBasic):
             time.sleep(300)
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
-                test_sets=['ha'], should_fail=2)
+                test_sets=['ha'], should_fail=3)
 
         # check instance
         try:
@@ -799,7 +801,7 @@ class TestHaFailoverBase(TestBasic):
             time.sleep(600)
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
-                test_sets=['ha'], should_fail=2)
+                test_sets=['ha'], should_fail=3)
 
         # turn on second master
 
@@ -1052,8 +1054,10 @@ class TestHaFailoverBase(TestBasic):
                                'in nailgun'.format(rabbit_slaves[0].name))
 
         # check ha
+        # backends for suspended node will be down
 
-        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300)
+        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300,
+                                               should_fail=1)
 
         # Run sanity and smoke tests to see if cluster operable
 
@@ -1114,8 +1118,9 @@ class TestHaFailoverBase(TestBasic):
                                ' not become offline'
                                'in nailgun'.format(master_rabbit.name))
 
-        # check ha
-        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300)
+        # check ha and note that backends for suspended node will be down
+        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300,
+                                               should_fail=1)
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
 
         active_slaves = [slave for slave
