@@ -16,12 +16,19 @@ from proboscis.asserts import assert_true
 
 from devops.helpers.helpers import wait
 
+from fuelweb_test.helpers.utils import run_on_remote_get_results
+from fuelweb_test.helpers.pacemaker import get_pacemaker_nodes_attributes
+from fuelweb_test.helpers.pacemaker import get_pcs_nodes
+from fuelweb_test.helpers.pacemaker import get_pcs_status_xml
+
 from system_test.tests import actions_base
 from system_test.helpers.decorators import make_snapshot_if_step_fail
 from system_test.helpers.decorators import deferred_decorator
 from system_test.helpers.decorators import action
 
 from system_test import logger
+
+import time
 
 
 class StrenghtBaseActions(actions_base.ActionsBase):
@@ -100,3 +107,241 @@ class StrenghtBaseActions(actions_base.ActionsBase):
                 node.name,
                 online_d_ctrls,
                 self.destroyed_devops_nodes)
+
+
+class FillRootBaseActions(actions_base.ActionsBase):
+
+    def __init__(self, config=None):
+        super(FillRootBaseActions, self).__init__(config)
+        self.ostf_tests_should_failed = 0
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def get_pcs_initial_state(self):
+        """get controllers initial status in pacemaker"""
+        self.primary_controller = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+
+        self.primary_controller_fqdn = str(
+            self.fuel_web.fqdn(self.primary_controller))
+
+        pcs_status_xml = get_pcs_status_xml(self, self.primary_controller.name)
+
+        with self.fuel_web.get_ssh_for_node(
+                self.primary_controller.name) as remote:
+            root_free = run_on_remote_get_results(
+                remote, 'cibadmin --query --scope status')['stdout_str']
+
+        self.primary_controller_space_on_root = get_pacemaker_nodes_attributes(
+            root_free)[self.primary_controller_fqdn]['root_free']
+
+        self.disk_monitor_limit = 512
+
+        self.rabbit_disk_free_limit = 5
+
+        self.primary_controller_space_to_filled = str(
+            int(
+                self.primary_controller_space_on_root
+            ) - self.disk_monitor_limit - 1)
+
+        self.pcs_status = get_pcs_nodes(pcs_status_xml)
+
+        self.slave_nodes_fqdn = list(
+            set(self.pcs_status.keys()).difference(
+                set(self.primary_controller_fqdn.split())))
+        running_resources_slave_1 = int(
+            self.pcs_status[self.slave_nodes_fqdn[0]]['resources_running'])
+
+        running_resources_slave_2 = int(
+            self.pcs_status[self.slave_nodes_fqdn[1]]['resources_running'])
+
+        self.slave_node_running_resources = str(min(running_resources_slave_1,
+                                                    running_resources_slave_2
+                                                    )
+                                                )
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def fill_root_above_rabbit_disk_free_limit(self):
+        """filling root filesystem on primary controller"""
+
+        # Only OSTF HA tests should be failed
+
+        self.ostf_tests_should_failed += 7
+
+        logger.info(
+            "Free space in root on primary controller - {}".format(
+                self.primary_controller_space_on_root
+            ))
+
+        logger.info(
+            "Need to fill space on root - {}".format(
+                self.primary_controller_space_to_filled
+            ))
+
+        with self.fuel_web.get_ssh_for_node(
+                self.primary_controller.name) as remote:
+            run_on_remote_get_results(
+                remote, 'fallocate -l {}M /root/bigfile'.format(
+                    self.primary_controller_space_to_filled))
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def fill_root_below_rabbit_disk_free_limit(self):
+        """filling root more to below rabbit disk free limit"""
+
+        # Only OSTF HA tests should be failed
+
+        with self.fuel_web.get_ssh_for_node(
+                self.primary_controller.name) as remote:
+
+            pacemaker_attributes = run_on_remote_get_results(
+                remote, 'cibadmin --query --scope status')['stdout_str']
+
+            controller_space_on_root = get_pacemaker_nodes_attributes(
+                pacemaker_attributes)[self.primary_controller_fqdn][
+                'root_free']
+
+            logger.info(
+                "Free space in root on primary controller - {}".format(
+                    controller_space_on_root
+                ))
+
+            controller_space_to_filled = str(
+                int(
+                    controller_space_on_root
+                ) - self.rabbit_disk_free_limit - 1)
+
+            logger.info(
+                "Need to fill space on root - {}".format(
+                    controller_space_to_filled
+                ))
+
+            run_on_remote_get_results(
+                remote, 'fallocate -l {}M /root/bigfile2'.format(
+                    controller_space_to_filled))
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def check_stopping_resources(self):
+        """check stopped pacemaker resources"""
+
+        logger.info(
+            "Waiting 120 seconds for changing pacemaker status of {}".format(
+                self.primary_controller_fqdn))
+        time.sleep(120)
+
+        with self.fuel_web.get_ssh_for_node(
+                self.primary_controller.name) as remote:
+
+            def checking_health_disk_attribute():
+                logger.info("Checking for '#health_disk' attribute")
+                cibadmin_status_xml = run_on_remote_get_results(
+                    remote, 'cibadmin --query --scope status')[
+                    'stdout_str']
+                pcs_attribs = get_pacemaker_nodes_attributes(
+                    cibadmin_status_xml)
+                return '#health_disk' in pcs_attribs[
+                    self.primary_controller_fqdn]
+
+            def checking_for_red_in_health_disk_attribute():
+                logger.info(
+                    "Checking for '#health_disk' attribute have 'red' value")
+                cibadmin_status_xml = run_on_remote_get_results(
+                    remote, 'cibadmin --query --scope status')[
+                    'stdout_str']
+                pcs_attribs = get_pacemaker_nodes_attributes(
+                    cibadmin_status_xml)
+                return pcs_attribs[self.primary_controller_fqdn][
+                    '#health_disk'] == 'red'
+
+            def check_stopping_resources():
+                logger.info(
+                    "Checking for 'running_resources "
+                    "attribute have '0' value")
+                pcs_status_xml = run_on_remote_get_results(
+                    remote, 'pcs status xml')['stdout_str']
+                pcs_attribs = get_pcs_nodes(pcs_status_xml)
+                return pcs_attribs[self.primary_controller_fqdn][
+                    'resources_running'] == '0'
+
+            wait(checking_health_disk_attribute,
+                 "Attribute #health_disk wasn't appeared "
+                 "in attributes on node {} in {} seconds".format(
+                     self.primary_controller_fqdn, 300), timeout=5 * 60)
+
+            wait(checking_for_red_in_health_disk_attribute,
+                 "Attribute #health_disk doesn't have 'red' value "
+                 "on node {} in {} seconds".format(
+                     self.primary_controller_fqdn, 300), timeout=5 * 60)
+
+            wait(check_stopping_resources,
+                 "Attribute 'running_resources' doesn't have '0' value "
+                 "on node {} in {} seconds".format(
+                     self.primary_controller_fqdn, 300), timeout=5 * 60)
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def resolve_space_on_root(self):
+        """free space on root filesystem on primary controller"""
+
+        self.ostf_tests_should_failed -= 6
+
+        with self.fuel_web.get_ssh_for_node(
+                self.primary_controller.name) as remote:
+            run_on_remote_get_results(
+                remote, 'rm /root/bigfile, /root/bigfile2')
+
+            run_on_remote_get_results(
+                remote,
+                'crm node status-attr {} delete "#health_disk"'.format(
+                    self.primary_controller_fqdn))
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def check_starting_resources(self):
+        """check starting pacemaker resources"""
+
+        logger.info(
+            "Waiting 150 seconds for changing pacemaker status of {}".format(
+                self.primary_controller_fqdn))
+        time.sleep(150)
+
+        with self.fuel_web.get_ssh_for_node(
+                self.primary_controller.name) as remote:
+
+            def checking_health_disk_attribute_is_not_present():
+                logger.info(
+                    "Checking for '#health_disk' attribute "
+                    "is not present on node {}".format(
+                        self.primary_controller_fqdn))
+                cibadmin_status_xml = run_on_remote_get_results(
+                    remote, 'cibadmin --query --scope status')[
+                    'stdout_str']
+                pcs_attribs = get_pacemaker_nodes_attributes(
+                    cibadmin_status_xml)
+                return '#health_disk' not in pcs_attribs[
+                    self.primary_controller_fqdn]
+
+            def check_started_resources():
+                logger.info(
+                    "Checking for 'running_resources' attribute "
+                    "have {} value on node {}".format(
+                        self.slave_node_running_resources,
+                        self.primary_controller_fqdn))
+                pcs_status_xml = run_on_remote_get_results(
+                    remote, 'pcs status xml')['stdout_str']
+                pcs_attribs = get_pcs_nodes(pcs_status_xml)
+                return pcs_attribs[self.primary_controller_fqdn][
+                    'resources_running'] == self.slave_node_running_resources
+
+            wait(checking_health_disk_attribute_is_not_present,
+                 "Attribute #health_disk was appeared in attributes "
+                 "on node {} in {} seconds".format(
+                     self.primary_controller_fqdn, 300), timeout=5 * 60)
+
+            wait(check_started_resources,
+                 "Attribute 'running_resources' doesn't have {} value "
+                 "on node {} in {} seconds".format(
+                     self.slave_node_running_resources,
+                     self.primary_controller_fqdn, 300), timeout=5 * 60)
