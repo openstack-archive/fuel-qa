@@ -1174,3 +1174,22 @@ def check_offload(node, interface, offload_type):
                  "on node {1}".format(offload_type, node))
     return ''.join(node.execute(
         command % (interface, offload_type))['stdout']).rstrip()
+
+
+def check_get_network_data_over_cli(remote, cluster_id, path):
+    logger.info("Download network data over cli")
+    cmd = 'fuel --debug --env {0} network --dir {1} --json -d'.format(
+        cluster_id, path)
+    result = remote.execute(cmd)
+    assert_equal(result['exit_code'], 0,
+                 'Failed to download network data {0}'.format(result))
+
+
+def check_update_network_data_over_cli(remote, cluster_id, path):
+    logger.info("Upload network data over cli")
+    cmd = 'fuel --debug --env {0} network --dir {1} --json -u'.format(
+        cluster_id, path)
+    result = remote.execute(cmd)
+    assert_equal(result['exit_code'], 0,
+                 'Failed to upload network data {0}'.format(result))
+
