@@ -11,7 +11,9 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-from xml import etree
+from xml.etree import ElementTree
+
+from fuelweb_test.helpers.utils import run_on_remote_get_results
 
 
 def get_pacemaker_nodes_attributes(cibadmin_status_xml):
@@ -50,7 +52,7 @@ def get_pacemaker_nodes_attributes(cibadmin_status_xml):
               ...
             }
     """
-    root = etree.fromstring(cibadmin_status_xml)
+    root = ElementTree.fromstring(cibadmin_status_xml)
     nodes = {}
     for node_state in root.iter('node_state'):
         node_name = node_state.get('uname')
@@ -88,9 +90,19 @@ def get_pcs_nodes(pcs_status_xml):
             }
     """
 
-    root = etree.fromstring(pcs_status_xml)
+    root = ElementTree.fromstring(pcs_status_xml)
     nodes = {}
     for nodes_group in root.iter('nodes'):
         for node in nodes_group:
             nodes[node.get('name')] = node.attrib
     return nodes
+
+
+def parse_pcs_status_xml(remote):
+    """Parse 'pcs status xml'. <Nodes> section
+    :param remote: SSHClient instance
+    :return: nested dictionary with node-fqdn and attribute name as keys
+    """
+    pcs_status_dict = run_on_remote_get_results(
+        remote, 'pcs status xml')['stdout_str']
+    return pcs_status_dict
