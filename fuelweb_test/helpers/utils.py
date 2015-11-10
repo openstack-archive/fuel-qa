@@ -45,6 +45,17 @@ def get_yaml_to_json(node_ssh, file):
 
 
 @logwrap
+def put_json_on_remote_from_dict(remote, dict, cluster_id):
+    cmd = ('python -c "import json; '
+           'data=json.dumps({0}); print data"').format(dict)
+    result = remote.execute(
+        '{0} > /var/log/network_{1}.json'.format(cmd, cluster_id))
+    asserts.assert_equal(
+        result['exit_code'], 0,
+        'Failed to run cmd {0} with result {1}'.format(cmd, result))
+
+
+@logwrap
 def nova_service_get_pid(node_ssh, nova_services=None):
     pid_dict = {}
     for el in nova_services:
@@ -560,6 +571,33 @@ def get_node_hiera_roles(remote):
     # Contert string with roles like a ["ceph-osd", "controller"] to list
     roles = map(lambda s: s.strip('" '), roles.strip("[]").split(','))
     return roles
+
+
+def get_hiera_data(remote, hiera_hash, hash_key=None,
+                   conf_path="/etc/hiera.yaml", json_parse=None):
+    if hash_key is not None:
+        lookup_cmd = ('value = hiera.lookup("{0}", {{}}, '
+                      '{{}}, nil, :hash)["{1}"]').format(
+            hiera_hash, hash_key)
+    else:
+        lookup_cmd = ('value = hiera.lookup("{0}", {{}},'
+                      ' {{}}, nil, :hash)').format(hiera_hash)
+    if json_parse:
+        print_cmd = 'require "json"; puts JSON.dump(value)'
+    else:
+        print_cmd = 'puts value'
+
+        cmd = ('ruby -e \'require "hiera"; '
+               'hiera = Hiera.new(:config => "{0}"); '
+               '{1}; {2};\'').format(conf_path, lookup_cmd, print_cmd)
+
+    res = remote.exec_command(cmd)
+    asserts.assert_equal(
+        res['exit_code'], 0,
+        'Failed to executes command {0} with error {1}'.format(cmd, res))
+    if json_parse:
+        return json.loads(res.strip())
+    return res.strip()
 
 
 class runlimit(object):
