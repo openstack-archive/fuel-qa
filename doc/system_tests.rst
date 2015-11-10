@@ -34,6 +34,11 @@ Destroy controllers
 .. automodule:: system_test.tests.strength.destroy_controllers
    :members:
 
+Fill root and check pacemaker
+-----------------------------
+.. automodule:: system_test.tests.strength.filling_root
+   :members:
+
 Strength Base
 -------------
 .. automodule:: system_test.tests.strength.strength_base
