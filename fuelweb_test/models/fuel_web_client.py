@@ -402,13 +402,16 @@ class FuelWebClient(object):
                        release_name=help_data.OPENSTACK_RELEASE,
                        mode=DEPLOYMENT_MODE_HA,
                        port=514,
-                       release_id=None, ):
+                       release_id=None,
+                       create_nodegroups=True):
         """Creates a cluster
         :param name:
+        :param settings:
         :param release_name:
         :param mode:
-        :param settings:
         :param port:
+        :param release_id:
+        :param create_nodegroups:
         :return: cluster_id
         """
         logger.info('Create cluster with name %s', name)
@@ -510,7 +513,7 @@ class FuelWebClient(object):
             # may be created by new components like ironic
             self.client.update_cluster_attributes(cluster_id, attributes)
 
-            if MULTIPLE_NETWORKS:
+            if MULTIPLE_NETWORKS and create_nodegroups:
                 node_groups = {n['name']: [] for n in NODEGROUPS}
                 self.update_nodegroups(cluster_id, node_groups)
                 self.update_nodegroups_network_configuration(cluster_id)
