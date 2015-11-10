@@ -26,6 +26,7 @@ from system_test.tests import base_actions_factory
 from system_test.helpers.decorators import make_snapshot_if_step_fail
 from system_test.helpers.decorators import deferred_decorator
 from system_test.helpers.decorators import action
+from system_test.helpers.decorators import nested_action
 
 
 class PrepareBase(base_actions_factory.BaseActionsFactory):
@@ -124,6 +125,16 @@ class PrepareBase(base_actions_factory.BaseActionsFactory):
         slaves = int(self.full_config['template']['slaves'])
         snapshot_name = "ready_with_{}_slaves".format(slaves)
         self.env.revert_snapshot(snapshot_name)
+
+    @nested_action
+    def prepare_steps():
+        """Combine preparation steps in alias"""
+        return [
+            'setup_master',
+            'config_release',
+            'make_slaves',
+            'revert_slaves',
+        ]
 
 
 class ActionsBase(PrepareBase):
