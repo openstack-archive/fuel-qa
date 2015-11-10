@@ -18,6 +18,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
 from fuelweb_test import logger
+from fuelweb_test.helpers.utils import run_on_remote
 
 
 def check_hiera_resources(remote, file_name=None):
@@ -42,6 +43,14 @@ def get_hiera_data(remote, data):
     cmd = 'hiera {}'.format(data)
     res = remote.execute(cmd)['stdout']
     return res
+
+
+def get_hiera_data_as_json(remote, data):
+    cmd = "ruby -rhiera -rjson -e \"h = Hiera.new(); " \
+          "Hiera.logger = 'noop'; puts JSON.dump " \
+          "(h.lookup('{}', " \
+          "[], {{}}, nil, nil))\"".format(data)
+    return run_on_remote(remote, cmd, jsonify=True)
 
 
 def check_interface_status(remote, iname):
