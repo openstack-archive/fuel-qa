@@ -128,7 +128,11 @@ def import_tests():
     from system_test.tests import test_create_deploy_ostf  # noqa
     from system_test.tests import test_deploy_check_rados  # noqa
     from system_test.tests.strength import destroy_controllers  # noqa
+<<<<<<< HEAD
     from system_test.tests import test_fuel_migration  # noqa
+=======
+    from system_test.tests.strength import filling_root  # noqa
+>>>>>>> 100b816...  Test for pacemaker resources when disk is full
 
 
 def run_tests():
