@@ -23,6 +23,7 @@ from fuelweb_test import settings as test_settings
 
 from system_test import logger
 from system_test.tests import base_actions_factory
+from system_test.tests.ostf_base_actions import HealthCheckActions
 from system_test.helpers.decorators import make_snapshot_if_step_fail
 from system_test.helpers.decorators import deferred_decorator
 from system_test.helpers.decorators import action
@@ -126,7 +127,7 @@ class PrepareBase(base_actions_factory.BaseActionsFactory):
         self.env.revert_snapshot(snapshot_name)
 
 
-class ActionsBase(PrepareBase):
+class ActionsBase(PrepareBase, HealthCheckActions):
     """Basic actions for acceptance cases
 
     For chousing action order use actions_order variable, set list of actions
@@ -137,7 +138,6 @@ class ActionsBase(PrepareBase):
         add_nodes - add nodes to environment
         deploy_cluster - deploy en environment
         network_check - run network check
-        health_check - run all ostf tests
         reset_cluster - reset an environment (NotImplemented)
         delete_cluster - delete en environment (NotImplemented)
         stop_deploy - stop deploying of environment (NotImplemented)
@@ -251,20 +251,6 @@ class ActionsBase(PrepareBase):
             raise SkipTest()
 
         self.fuel_web.verify_network(self.cluster_id)
-
-    @deferred_decorator([make_snapshot_if_step_fail])
-    @action
-    def health_check(self):
-        """Run health checker
-
-        Skip action if cluster doesn't exist
-        """
-        if self.cluster_id is None:
-            raise SkipTest()
-
-        self.fuel_web.run_ostf(
-            cluster_id=self.cluster_id,
-            should_fail=getattr(self, 'ostf_tests_should_failed', 0))
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
