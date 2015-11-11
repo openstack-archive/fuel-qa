@@ -134,7 +134,17 @@ adv_net_template:
       common:
         transformations:
           - action: add-br
+            name: br-test
+            provider: ovs
+          - action: add-br
             name: br-fw-admin
+            provider: ovs
+          - action: add-patch
+            bridges:
+            - br-fw-admin
+            - br-test
+            provider: ovs
+            mtu: 65000
           - action: add-port
             bridge: br-fw-admin
             name: <% if1 %>
