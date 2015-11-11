@@ -25,7 +25,36 @@
 
 import base64
 import json
+import time
 import urllib2
+
+from settings import logger
+
+
+def request_retry(codes):
+    log_msg = "Got {0} Error! Waiting {1} seconds and trying again..."
+
+    def retry_request(func):
+        def wrapper(*args, **kwargs):
+            iter_number = 0
+            while True:
+                try:
+                    response = func(*args, **kwargs)
+                except urllib2.HTTPError as e:
+                    if e.code in codes:
+                        if iter_number < codes[e.code]:
+                            wait = 5
+                            if 'Retry-After' in e.hdrs:
+                                wait = int(e.hdrs['Retry-after'])
+                            logger.debug(log_msg.format(e.code, wait))
+                            time.sleep(wait)
+                            iter_number += 1
+                            continue
+                    raise e
+                else:
+                    return response
+        return wrapper
+    return retry_request
 
 
 class APIClient(object):
@@ -69,6 +98,12 @@ class APIClient(object):
         return self.__send_request('POST', uri, data)
 
     def __send_request(self, method, uri, data):
+        retry_codes = {429: 3}
+
+        @request_retry(codes=retry_codes)
+        def __get_response(_request):
+            return urllib2.urlopen(_request).read()
+
         url = self.__url + uri
         request = urllib2.Request(url)
         if method == 'POST':
@@ -80,7 +115,7 @@ class APIClient(object):
 
         e = None
         try:
-            response = urllib2.urlopen(request).read()
+            response = __get_response(request)
         except urllib2.HTTPError as e:
             response = e.read()
 
