@@ -25,7 +25,6 @@ from system_test.helpers.decorators import action
 class DeployCheckRadosGW(actions_base.ActionsBase):
     """Deploy cluster and check RadosGW
 
-
     Scenario:
         1. Create Environment
         2. Add nodes to Environment
@@ -33,9 +32,10 @@ class DeployCheckRadosGW(actions_base.ActionsBase):
         4. Deploy Environment
         5. Run network checker
         6. Check HAProxy backends
-        5. Check ceph status
-        6. Run OSTF
-        7. Check the radosqw daemon is started
+        7. Check ceph status
+        8. Run OSTF
+        9. Check the radosqw daemon is started
+
     """
 
     base_group = ['system_test',

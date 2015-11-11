@@ -23,6 +23,7 @@ def copy_func(f, name=None):
     :param name:
     :return: a function with same code, globals, defaults, closure, and
     name (or provide a new name)
+
     """
 
     fn = types.FunctionType(f.__code__, f.__globals__, name or f.__name__,
