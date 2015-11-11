@@ -34,8 +34,9 @@ class PrepareBase(base_actions_factory.BaseActionsFactory):
     _action_setup_master - setup master node in environment
     _action_config_release - preconfig releases if it needs
     _action_make_slaves - boot slaves and snapshop environment with
-        bootstraped slaves
+    bootstraped slaves
     _action_revert_slaves - revert environment with bootstraped slaves
+
     """
 
     def _start_case(self):

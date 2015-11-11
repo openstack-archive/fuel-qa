@@ -36,6 +36,7 @@ class DeployCheckRadosGW(actions_base.ActionsBase):
         5. Check ceph status
         6. Run OSTF
         7. Check the radosqw daemon is started
+
     """
 
     base_group = ['system_test',
