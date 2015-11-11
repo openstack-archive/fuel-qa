@@ -332,7 +332,7 @@ class BackupRestoreHA(NeutronTunHaBase):
 
         with self.env.d_env.get_admin_remote() as remote:
             # Create an environment
-            cmd = ('fuel env create --name={0} --release={1} --mode=ha '
+            cmd = ('fuel env create --name={0} --release={1} '
                    '--net={2} --json'.format(self.__class__.__name__,
                                              release_id, net))
             env_result = run_on_remote(remote, cmd, jsonify=True)
