@@ -15,13 +15,13 @@
 from system_test.helpers.utils import case_factory
 from proboscis import factory
 
-from system_test.tests.strength import strenght_base
+from system_test.tests.strength import strength_base
 from system_test.helpers.decorators import make_snapshot_if_step_fail
 from system_test.helpers.decorators import deferred_decorator
 from system_test.helpers.decorators import action
 
 
-class StrenghtDestroyFirstContorller(strenght_base.StrenghtBaseActions):
+class StrenghtDestroyFirstContorller(strength_base.StrenghtBaseActions):
     """Destroy two controllers and check pacemaker status is correct
 
     Scenario:
@@ -30,12 +30,12 @@ class StrenghtDestroyFirstContorller(strenght_base.StrenghtBaseActions):
         3. Run network checker
         4. Deploy Environment
         5. Run network checker
-        9. Run OSTF
-        6. Make or use existen snapshot of ready Environment
-        7. Destroy first controller
-        8. Check pacemaker status
-        9. Wait offlie status in nailgun
-        10. Run OSTF
+        6. Run OSTF
+        7. Make or use existing snapshot of ready Environment
+        8. Destroy first controller
+        9. Check pacemaker status
+        10. Wait offline status in nailgun
+        11. Run OSTF
 
     """
 
@@ -72,7 +72,7 @@ class StrenghtDestroyFirstContorller(strenght_base.StrenghtBaseActions):
         self._destory_controller('slave-01')
 
 
-class StrenghtDestroySecondContorller(strenght_base.StrenghtBaseActions):
+class StrenghtDestroySecondContorller(strength_base.StrenghtBaseActions):
     """Destroy two controllers and check pacemaker status is correct
 
     Scenario:
@@ -81,12 +81,12 @@ class StrenghtDestroySecondContorller(strenght_base.StrenghtBaseActions):
         3. Run network checker
         4. Deploy Environment
         5. Run network checker
-        9. Run OSTF
-        6. Make or use existen snapshot of ready Environment
-        7. Destroy second controller
-        8. Check pacemaker status
-        9, Wait offlie status in nailgun
-        10. Run OSTF
+        6. Run OSTF
+        7. Make or use existing snapshot of ready Environment
+        8. Destroy second controller
+        9. Check pacemaker status
+        10, Wait offline status in nailgun
+        11. Run OSTF
 
     """
 
