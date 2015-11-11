@@ -15,13 +15,13 @@
 from system_test.helpers.utils import case_factory
 from proboscis import factory
 
-from system_test.tests.strength import strenght_base
+from system_test.tests.strength import strength_base
 from system_test.helpers.decorators import make_snapshot_if_step_fail
 from system_test.helpers.decorators import deferred_decorator
 from system_test.helpers.decorators import action
 
 
-class StrenghtDestroyFirstContorller(strenght_base.StrenghtBaseActions):
+class StrenghtDestroyFirstContorller(strength_base.StrenghtBaseActions):
     """Destroy two controllers and check pacemaker status is correct
 
     Scenario:
@@ -72,7 +72,7 @@ class StrenghtDestroyFirstContorller(strenght_base.StrenghtBaseActions):
         self._destory_controller('slave-01')
 
 
-class StrenghtDestroySecondContorller(strenght_base.StrenghtBaseActions):
+class StrenghtDestroySecondContorller(strength_base.StrenghtBaseActions):
     """Destroy two controllers and check pacemaker status is correct
 
     Scenario:
