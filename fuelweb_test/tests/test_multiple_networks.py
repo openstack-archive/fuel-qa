@@ -14,6 +14,8 @@
 
 from ipaddr import IPAddress
 
+from devops.helpers.helpers import wait
+from devops.error import TimeoutError
 from proboscis import SkipTest
 from proboscis import test
 from proboscis.asserts import assert_true
@@ -209,11 +211,13 @@ class TestMultipleClusterNets(TestBasic):
         Snapshot deploy_controllers_from_custom_nodegroup
 
         """
+        self.check_run('deploy_controllers_from_custom_nodegroup')
 
         if not MULTIPLE_NETWORKS:
             raise SkipTest()
 
         self.show_step(1)
+        self.check_run("deploy_controllers_from_custom_nodegroup")
         self.env.revert_snapshot("ready")
 
         self.show_step(2)
@@ -237,10 +241,12 @@ class TestMultipleClusterNets(TestBasic):
         self.fuel_web.client.update_network(cluster_id, new_settings_float)
 
         self.show_step(4)
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[1:6:2])  # 246
+        custom_nodes = self.env.d_env.nodes().slaves[1:6:2]
+        self.env.bootstrap_nodes(custom_nodes)  # nodes 2, 4 and 6
 
         self.show_step(5)
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[0:3:2])  # 13
+        default_nodes = self.env.d_env.nodes().slaves[0:3:2]
+        self.env.bootstrap_nodes(default_nodes)  # nodes 1 and 3
 
         self.show_step(6)
 
@@ -289,3 +295,66 @@ class TestMultipleClusterNets(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_controllers_from_custom_nodegroup")
+
+    @test(depends_on=[deploy_controllers_from_custom_nodegroup],
+          groups=["delete_cluster_with_custom_nodegroup", "thread_7",
+                  "multiple_cluster_networks"])
+    @log_snapshot_after_test
+    def delete_cluster_with_custom_nodegroup(self):
+        """Delete env, check nodes from custom nodegroup can't bootstrap
+
+        Scenario:
+        1. Revert snapshot with cluster with nodes in custom nodegroup
+        2. Delete cluster
+        3. Check nodes from custom nodegroup can't bootstrap
+        4. Reset nodes from custom nodegroup
+        5. Check nodes from custom nodegroup can't bootstrap
+
+        Duration 15m
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot('deploy_controllers_from_custom_nodegroup')
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        self.fuel_web.assert_nodes_in_ready_state(cluster_id)
+
+        self.show_step(2)
+        custom_nodes = self.env.d_env.nodes().slaves[1:6:2]
+
+        self.fuel_web.delete_env_wait(cluster_id)
+
+        self.show_step(3)
+        logger.info('Wait five nodes online for 900 seconds..')
+        wait(lambda: len(self.fuel_web.client.list_nodes()) == 5,
+             timeout=15 * 60)
+
+        logger.info('Wait all nodes from custom nodegroup become '
+                    'in error state..')
+        # check all custom in error state
+        for slave in custom_nodes:
+            try:
+                wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+                    slave)['status'] == 'error', timeout=15 * 60)
+                logger.info('Node {} become error state'.format(slave.name,
+                                                                'error'))
+            except TimeoutError:
+                raise TimeoutError('Node {} not become '
+                                   'error state'.format(slave.name))
+
+        self.show_step(4)
+        logger.info('Rebooting nodes from custom nodegroup..')
+        self.fuel_web.cold_restart_nodes(custom_nodes, wait_online=False)
+
+        self.show_step(5)
+        logger.info('Wait custom nodes are not online for 600 seconds..')
+        try:
+            wait(
+                lambda: any(self.fuel_web.
+                            get_nailgun_node_by_devops_node(slave)['online']
+                            for slave in custom_nodes),
+                timeout=10 * 60)
+            assert 'Some nodes online'
+        except TimeoutError:
+            logger.info('Nodes are offline')
+
+        self.env.make_snapshot("delete_cluster_with_custom_nodegroup")
