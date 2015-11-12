@@ -14,6 +14,9 @@
 
 from ipaddr import IPAddress
 
+from devops.helpers.helpers import wait
+from devops.error import TimeoutError
+
 from proboscis import SkipTest
 from proboscis import test
 from proboscis.asserts import assert_true
@@ -204,6 +207,7 @@ class TestMultipleClusterNets(TestBasic):
             9. Deploy environment
             10. Run network verification
             11. Run OSTF
+            12. Delete cluster and wait slaves online
 
         Duration 120m
         Snapshot deploy_controllers_from_custom_nodegroup
@@ -287,5 +291,24 @@ class TestMultipleClusterNets(TestBasic):
 
         self.show_step(11)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(12)
+        self.fuel_web.client.delete_cluster(cluster_id)
+
+        devops_nodes = self.env.d_env.nodes().slaves[:6]
+        # wait slaves online
+        wait(lambda: all(map(lambda node: self.fuel_web.get_nailgun_node_by_devops_node(node), devops_nodes)), 15, 900)
+
+        #check status error
+        for slave in self.env.d_env.nodes().slaves[:6]:
+            try:
+                wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+                    slave)['status'], timeout=10 * 60)
+            except TimeoutError:
+                raise TimeoutError('Node {0} does'
+                                   ' not become error '
+                                   'in nailgun'.format(slave.name))
+
+        self.fuel_web.cold_restart_nodes(self.env.d_env.nodes().slaves[:6])
 
         self.env.make_snapshot("deploy_controllers_from_custom_nodegroup")
