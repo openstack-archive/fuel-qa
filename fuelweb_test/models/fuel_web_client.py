@@ -1605,35 +1605,38 @@ class FuelWebClient(object):
         self.warm_shutdown_nodes(devops_nodes)
         self.warm_start_nodes(devops_nodes)
 
-    def cold_restart_nodes(self, devops_nodes):
+    def cold_restart_nodes(self, devops_nodes,
+                           wait_offline=True, wait_online=True):
         logger.info('Cold restart nodes %s',
                     [n.name for n in devops_nodes])
         for node in devops_nodes:
             logger.info('Destroy node %s', node.name)
             node.destroy()
         for node in devops_nodes:
-            logger.info('Wait a %s node offline status', node.name)
-            try:
-                wait(lambda: not self.get_nailgun_node_by_devops_node(
-                     node)['online'], timeout=60 * 10)
-            except TimeoutError:
-                assert_false(
-                    self.get_nailgun_node_by_devops_node(node)['online'],
-                    'Node {0} has not become offline after '
-                    'cold restart'.format(node.name))
+            if wait_offline:
+                logger.info('Wait a %s node offline status', node.name)
+                try:
+                    wait(lambda: not self.get_nailgun_node_by_devops_node(
+                         node)['online'], timeout=60 * 10)
+                except TimeoutError:
+                    assert_false(
+                        self.get_nailgun_node_by_devops_node(node)['online'],
+                        'Node {0} has not become offline after '
+                        'cold restart'.format(node.name))
             logger.info('Start %s node', node.name)
             node.create()
-        for node in devops_nodes:
-            try:
-                wait(
-                    lambda: self.get_nailgun_node_by_devops_node(
-                        node)['online'], timeout=60 * 10)
-            except TimeoutError:
-                assert_true(
-                    self.get_nailgun_node_by_devops_node(node)['online'],
-                    'Node {0} has not become online'
-                    ' after cold start'.format(node.name))
-        self.environment.sync_time()
+        if wait_online:
+            for node in devops_nodes:
+                try:
+                    wait(
+                        lambda: self.get_nailgun_node_by_devops_node(
+                            node)['online'], timeout=60 * 10)
+                except TimeoutError:
+                    assert_true(
+                        self.get_nailgun_node_by_devops_node(node)['online'],
+                        'Node {0} has not become online'
+                        ' after cold start'.format(node.name))
+            self.environment.sync_time()
 
     @logwrap
     def ip_address_show(self, node_name, interface, namespace=None):
@@ -2160,10 +2163,15 @@ class FuelWebClient(object):
     def get_nodegroup(self, cluster_id, name='default', group_id=None):
         ngroups = self.client.get_nodegroups()
         for group in ngroups:
-            if group['cluster'] == cluster_id and group['name'] == name:
-                if group_id and group['id'] != group_id:
-                    continue
-                return group
+            try:
+                if group['cluster'] == cluster_id and group['name'] == name:
+                    if group_id and group['id'] != group_id:
+                        continue
+                    return group
+            except KeyError:
+                logger.error('ngroups is:\n{0}'.format(ngroups))
+                logger.error('current group is:\n{0}'.format(ngroups))
+                raise KeyError
         return None
 
     def update_nodegroups(self, cluster_id, node_groups):
