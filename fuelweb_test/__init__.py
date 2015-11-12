@@ -15,7 +15,7 @@ import functools
 import logging
 import os
 from fuelweb_test.settings import LOGS_DIR
-
+from proboscis import register
 
 if not os.path.exists(LOGS_DIR):
     os.makedirs(LOGS_DIR)
@@ -73,3 +73,23 @@ class quiet_logger(object):
 
     def __exit__(self, exp_type, exp_value, traceback):
         console.setLevel(logging.INFO)
+
+
+def define_custom_groups():
+    groups_list = [
+        {"groups": ["system_test.ceph_ha"],
+         "depends": [
+             "system_test.deploy_and_check_radosgw."
+             "3ctrl_3comp_ceph_neutronVLAN"]},
+        {"groups": ["system_test.strength"],
+         "depends": [
+             "system_test.failover.destroy_controllers."
+             "first.3ctrl_2comp_1cndr_neutronVLAN",
+             "system_test.failover.destroy_controllers."
+             "second.1ctrl_ceph_2ctrl_1comp_1comp_ceph_neutronVLAN"]}
+    ]
+
+    for new_group in groups_list:
+        register(groups=new_group['groups'],
+                 depends_on_groups=new_group['depends'])
+

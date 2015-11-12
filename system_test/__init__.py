@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 import fuelweb_test
 
 logger = fuelweb_test.logger

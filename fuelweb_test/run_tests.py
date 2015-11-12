@@ -120,7 +120,9 @@ def run_tests():
 
 
 if __name__ == '__main__':
+    from fuelweb_test import define_custom_groups
     import_tests()
+    define_custom_groups()
     from fuelweb_test.helpers.patching import map_test
     if any(re.search(r'--group=patching_master_tests', arg)
            for arg in sys.argv):
