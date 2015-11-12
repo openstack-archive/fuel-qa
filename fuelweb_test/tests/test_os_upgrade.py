@@ -28,8 +28,8 @@ from fuelweb_test import settings as hlp_data
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
 
 
-@test(groups=["os_upgrade"])
-class TestOSupgrade(base_test_data.TestBasic):
+@test(groups=["prepare_os_upgrade"])
+class PrepareOSupgrade(base_test_data.TestBasic):
 
     @test(depends_on=[base_test_data.SetupEnvironment.prepare_slaves_9],
           groups=["ha_ceph_for_all_ubuntu_neutron_vlan"])
@@ -87,8 +87,11 @@ class TestOSupgrade(base_test_data.TestBasic):
         self.env.make_snapshot("ha_ceph_for_all_ubuntu_neutron_vlan",
                                is_make=True)
 
-    @test(depends_on=[ha_ceph_for_all_ubuntu_neutron_vlan],
-          groups=["upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"])
+
+@test(groups=["os_upgrade"])
+class TestOSupgrade(base_test_data.TestBasic):
+
+    @test(groups=["upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"])
     @log_snapshot_after_test
     def upgrade_ha_ceph_for_all_ubuntu_neutron_vlan(self):
         """Upgrade master node ha mode, ceph for all, neutron vlan
@@ -103,7 +106,7 @@ class TestOSupgrade(base_test_data.TestBasic):
             raise SkipTest()
 
         self.check_run('upgrade_ha_ceph_for_all_ubuntu_neutron_vlan')
-        self.env.revert_snapshot("ha_ceph_for_all_ubuntu_neutron_vlan")
+        self.env.revert_snapshot('ha_ceph_for_all_ubuntu_neutron_vlan')
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
