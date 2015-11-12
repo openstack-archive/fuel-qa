@@ -304,6 +304,15 @@ class RallyTask(object):
                     "Rally task creation failed: {0}".format(result))
         self.uuid = task_uuid
 
+    def abort(self, task_id):
+        logger.debug('Stop Rally task {0}'.format(task_id))
+        cmd = 'rally task abort {0}'.format(task_id)
+        self.engine.run_container_command(cmd)
+        assert_true(
+            self.status in ('finished', 'aborted'),
+            "Rally task {0} was not aborted; current task status "
+            "is {1}".format(task_id, self.status))
+
     def get_results(self):
         if self.status == 'finished':
             cmd = 'rally task results {0}'.format(self.uuid)
@@ -403,13 +412,15 @@ class RallyBenchmarkTest(object):
         )
         self.current_task = None
 
-    def run(self, timeout=60 * 10):
+    def run(self, timeout=60 * 10, result=True):
         self.current_task = RallyTask(self.deployment, self.test_type)
         logger.info('Starting Rally benchmark test...')
         self.current_task.start()
         assert_equal(self.current_task.status, 'running',
                      'Rally task was started, but it is not running, status: '
                      '{0}'.format(self.current_task.status))
-        wait(lambda: self.current_task.status == 'finished', timeout=timeout)
-        logger.info('Rally benchmark test is finished.')
-        return RallyResult(json_results=self.current_task.get_results())
+        if result:
+            wait(lambda: self.current_task.status == 'finished',
+                 timeout=timeout)
+            logger.info('Rally benchmark test is finished.')
+            return RallyResult(json_results=self.current_task.get_results())
