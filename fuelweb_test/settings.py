@@ -19,7 +19,6 @@ import time
 _boolean_states = {'1': True, 'yes': True, 'true': True, 'on': True,
                    '0': False, 'no': False, 'false': False, 'off': False}
 
-
 def get_var_as_bool(name, default):
     value = os.environ.get(name, '')
     return _boolean_states.get(value.lower(), default)
