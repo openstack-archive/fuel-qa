@@ -18,6 +18,27 @@ import os
 import re
 from nose.plugins import Plugin
 from paramiko.transport import _join_lingering_threads
+from proboscis import register
+
+
+def define_custom_groups():
+    # Should move to system_test.__init__.py after upgrade devops to 2.9.13
+    groups_list = [
+        {"groups": ["system_test.ceph_ha"],
+         "depends": [
+             "system_test.deploy_and_check_radosgw."
+             "3ctrl_3comp_ceph_neutronVLAN"]},
+        {"groups": ["system_test.strength"],
+         "depends": [
+             "system_test.failover.destroy_controllers."
+             "first.3ctrl_2comp_1cndr_neutronVLAN",
+             "system_test.failover.destroy_controllers."
+             "second.1ctrl_ceph_2ctrl_1comp_1comp_ceph_neutronVLAN"]}
+    ]
+
+    for new_group in groups_list:
+        register(groups=new_group['groups'],
+                 depends_on_groups=new_group['depends'])
 
 
 class CloseSSHConnectionsPlugin(Plugin):
@@ -121,6 +142,7 @@ def run_tests():
 
 if __name__ == '__main__':
     import_tests()
+    define_custom_groups()
     from fuelweb_test.helpers.patching import map_test
     if any(re.search(r'--group=patching_master_tests', arg)
            for arg in sys.argv):
