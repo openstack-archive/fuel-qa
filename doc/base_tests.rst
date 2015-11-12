@@ -296,6 +296,11 @@ Image based tests
 .. automodule:: fuelweb_test.tests.tests_strength.test_image_based
    :members:
 
+Load tests
+----------
+.. automodule:: fuelweb_test.tests.tests_strength.test_load
+   :members:
+   
 Master node failover tests
 --------------------------
 .. automodule:: fuelweb_test.tests.tests_strength.test_master_node_failover
