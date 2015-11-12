@@ -124,6 +124,7 @@ def import_tests():
     from system_test.tests import test_deploy_check_rados  # noqa
     from system_test.tests.strength import destroy_controllers  # noqa
     from system_test.tests import test_fuel_migration  # noqa
+    from tests.tests_strength import test_load  # noqa
 
 
 def run_tests():
