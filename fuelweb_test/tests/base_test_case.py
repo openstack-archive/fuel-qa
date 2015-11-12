@@ -33,6 +33,7 @@ class TestBasic(object):
     """
     def __init__(self):
         self.env = EnvironmentModel()
+        self._current_log_step = 0
 
     @property
     def test_program(self):
@@ -62,6 +63,17 @@ class TestBasic(object):
            :param str details: additional info for a step
         """
         test_func_name = get_test_method_name()
+
+        self._current_log_step += 1
+        if self._current_log_step != step:
+            error_message = 'The step {} should be {} at {}'
+            error_message = error_message.format(
+                step,
+                self._current_log_step,
+                test_func_name
+            )
+            raise AssertionError(error_message)
+
         test_func = getattr(self.__class__, test_func_name)
         docstring = test_func.__doc__
         docstring = '\n'.join([s.strip() for s in docstring.split('\n')])
