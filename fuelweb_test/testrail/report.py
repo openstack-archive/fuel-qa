@@ -195,11 +195,28 @@ def expand_test_group(group, systest_build_name, os):
     return group
 
 
+def check_blocked(test):
+    """Change test result status to 'blocked' if it was
+    skipped due to failure of another dependent test
+    :param test: dict, test result info
+    :return: None
+    """
+    if test['status'].lower() != 'skipped':
+        return
+    match = re.match(r'^Failure in <function\s+(\w+)\s+at\s0x[a-f0-9]+>',
+                     test['skippedMessage'])
+    if match:
+        failed_func_name = match.group(1)
+        if test['name'] != failed_func_name:
+            test['status'] = 'blocked'
+
+
 @retry(count=3)
 def get_tests_results(systest_build, os):
     tests_results = []
     test_build = Build(systest_build['name'], systest_build['number'])
     for test in test_build.test_data()['suites'][0]['cases']:
+        check_blocked(test)
         test_result = TestResult(
             name=test['name'],
             group=expand_test_group(test['className'],
