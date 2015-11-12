@@ -401,13 +401,15 @@ class RallyBenchmarkTest(object):
         )
         self.current_task = None
 
-    def run(self, timeout=60 * 10):
+    def run(self, timeout=60 * 10, res=True):
         self.current_task = RallyTask(self.deployment, self.test_type)
         logger.info('Starting Rally benchmark test...')
         self.current_task.start()
         assert_equal(self.current_task.status, 'running',
                      'Rally task was started, but it is not running, status: '
                      '{0}'.format(self.current_task.status))
-        wait(lambda: self.current_task.status == 'finished', timeout=timeout)
-        logger.info('Rally benchmark test is finished.')
-        return RallyResult(json_results=self.current_task.get_results())
+        if res:
+            wait(lambda: self.current_task.status == 'finished',
+                 timeout=timeout)
+            logger.info('Rally benchmark test is finished.')
+            return RallyResult(json_results=self.current_task.get_results())
