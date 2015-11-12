@@ -358,7 +358,10 @@ class TestRailProject(object):
         add_results_test_uri = 'add_result/{test_id}'.format(test_id=test_id)
         new_results = {
             'status_id': self.get_status(test_results.status)['id'],
-            'comment': test_results.url or test_results.description,
+            'comment': '\n'.join(filter(lambda x: x is not None,
+                                        [test_results.description,
+                                         test_results.url,
+                                         test_results.comments])),
             'elapsed': test_results.duration,
             'version': test_results.version
         }
@@ -375,7 +378,10 @@ class TestRailProject(object):
                                                   group=results.group,
                                                   cases=tests_cases)['id'],
                 'status_id': self.get_status(results.status)['id'],
-                'comment': results.url,
+                'comment': '\n'.join(filter(lambda x: x is not None,
+                                            [results.description,
+                                             results.url,
+                                             results.comments])),
                 'elapsed': results.duration,
                 'version': results.version,
                 'custom_launchpad_bug': results.launchpad_bug
