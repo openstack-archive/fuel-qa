@@ -34,7 +34,7 @@ class DeployCheckRadosGW(actions_base.ActionsBase):
         6. Check HAProxy backends
         7. Check ceph status
         8. Run OSTF
-        9. Check the radosqw daemon is started
+        9. Check the radosgw daemon is started
 
     """
 
@@ -66,7 +66,7 @@ class DeployCheckRadosGW(actions_base.ActionsBase):
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def check_rados_daemon(self):
-        """Check the radosqw daemon is started"""
+        """Check the radosgw daemon is started"""
         def radosgw_started(remote):
             return len(remote.check_call(
                 'ps aux | grep "/usr/bin/radosgw -n '
