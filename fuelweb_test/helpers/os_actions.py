@@ -129,8 +129,9 @@ class OpenStackActions(common.Common):
             #   Find external net id for tenant
             nets = self.neutron.list_networks()['networks']
             err_msg = "Active external network not found in nets:{}"
-            ext_net_ids = [net['id'] for net in nets if net['router:external']
-                           and net['status'] == "ACTIVE"]
+            ext_net_ids = [
+                net['id'] for net in nets
+                if net['router:external'] and net['status'] == "ACTIVE"]
             asserts.assert_true(ext_net_ids, err_msg.format(nets))
             net_id = ext_net_ids[0]
             #   Find instance port
@@ -260,7 +261,8 @@ class OpenStackActions(common.Common):
             controller_ssh, vm_ip, "md5sum %s" % file_path, creds)
         return out['stdout']
 
-    def execute_through_host(self, ssh, vm_host, cmd, creds=()):
+    @staticmethod
+    def execute_through_host(ssh, vm_host, cmd, creds=()):
         logger.debug("Making intermediate transport")
         interm_transp = ssh._ssh.get_transport()
 
@@ -453,8 +455,8 @@ class OpenStackActions(common.Common):
     def get_neutron_dhcp_ports(self, net_id):
         ports = self.neutron.list_ports()['ports']
         network_ports = [x for x in ports
-                         if x['device_owner'] == 'network:dhcp'
-                         and x['network_id'] == net_id]
+                         if x['device_owner'] == 'network:dhcp' and
+                         x['network_id'] == net_id]
         return network_ports
 
     def create_pool(self, pool_name):
@@ -487,7 +489,8 @@ class OpenStackActions(common.Common):
     def get_vip(self, vip):
         return self.neutron.show_vip(vip)
 
-    def get_nova_instance_ip(self, srv, net_name='novanetwork', type='fixed'):
+    @staticmethod
+    def get_nova_instance_ip(srv, net_name='novanetwork', type='fixed'):
         for network_label, address_list in srv.addresses.items():
             if network_label != net_name:
                 continue

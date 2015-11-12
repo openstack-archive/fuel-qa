@@ -206,7 +206,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
 
         logger.debug('instance internal ip is {0}'.format(instance_ip))
 
-        # Reshedule router for net for created instance to new controller
+        # Reschedule router for net for created instance to new controller
         self.reshedule_router_manually(os_conn, router_id)
 
         # Get remote to the controller with running DHCP agent
@@ -271,7 +271,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
             label=net_name).addresses[net_name][0]['addr']
         logger.debug('instance internal ip is {0}'.format(instance_ip))
 
-        #   Reshedule router for net for created instance to new controller
+        #   Reschedule router for net for created instance to new controller
         self.reshedule_router_manually(os_conn, router_id)
 
         #   Get remote to the controller with running DHCP agent
@@ -353,7 +353,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
             label=net_name).addresses[net_name][0]['addr']
         logger.debug('instance internal ip is {0}'.format(instance_ip))
 
-        #   Reshedule router for net for created instance to new controller
+        #   Reschedule router for net for created instance to new controller
         self.reshedule_router_manually(os_conn, router_id)
 
         #   Get remote to the controller with running DHCP agent

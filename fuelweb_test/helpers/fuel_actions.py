@@ -111,7 +111,8 @@ class BaseActions(object):
     def wait_for_ready_container(self, timeout=300):
         wait(lambda: self.is_container_ready, timeout=timeout)
 
-    def put_value_to_local_yaml(self, old_file, new_file, element, value):
+    @staticmethod
+    def put_value_to_local_yaml(old_file, new_file, element, value):
         """Changes content in old_file at element is given to the new value
         and creates new file with changed content
         :param old_file: a path to the file content from to be changed
@@ -135,7 +136,8 @@ class BaseActions(object):
             yaml.dump(origin_yaml, f_new, default_flow_style=False,
                       default_style='"')
 
-    def get_value_from_local_yaml(self, yaml_file, element):
+    @staticmethod
+    def get_value_from_local_yaml(yaml_file, element):
         """Get a value of the element from the local yaml file
 
            :param str yaml_file: a path to the yaml file
@@ -246,7 +248,7 @@ class AdminActions(BaseActions):
 
     @logwrap
     def modify_configs(self, router):
-        # Slave nodes sould use the gateway of 'admin' network as the default
+        # Slave nodes should use the gateway of 'admin' network as the default
         # gateway during provisioning and as an additional DNS server.
         # resolv.conf should contains nameserver that resolve intranet URLs.
         config = '/etc/fuel/astute.yaml'

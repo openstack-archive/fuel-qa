@@ -31,25 +31,29 @@ class TestJumboFrames(base_test_case.TestBasic):
 
         return "mtu {0}".format(mtu) in self.get_node_iface(node, iface)
 
-    def get_node_iface(self, node, iface):
+    @staticmethod
+    def get_node_iface(node, iface):
         """Get environment node network interface."""
 
         command = "sudo ip link show {0}".format(iface)
         return ''.join(node.execute(command)['stdout'])
 
-    def set_host_iface_mtu(self, iface, mtu):
+    @staticmethod
+    def set_host_iface_mtu(iface, mtu):
         """Set devops/fuel-qa host network interface mtu."""
 
         command = "sudo ip link set {0} mtu {1}".format(iface, mtu).split()
         return subprocess.call(command, stderr=subprocess.STDOUT)
 
-    def get_host_iface(self, iface):
+    @staticmethod
+    def get_host_iface(iface):
         """Get devops/fuel-qa host network interface."""
 
         command = "sudo ip link show {0}".format(iface).split()
         return subprocess.check_output(command, stderr=subprocess.STDOUT)
 
-    def get_host_bridge_ifaces(self, bridge_name):
+    @staticmethod
+    def get_host_bridge_ifaces(bridge_name):
         """Get list of devops/fuel-qa host network bridge interfaces."""
 
         command = "sudo brctl show {0}".format(bridge_name).split()

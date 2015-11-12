@@ -275,8 +275,8 @@ class FuelWebClient(object):
     def assert_release_role_present(self, release_name, role_name):
         logger.info('Assert role %s is available in release %s',
                     role_name, release_name)
-        id = self.assert_release_state(release_name)
-        release_data = self.client.get_releases_details(release_id=id)
+        release_id = self.assert_release_state(release_name)
+        release_data = self.client.get_releases_details(release_id=release_id)
         assert_equal(
             True, role_name in release_data['roles'],
             message='There is no {0} role in release id {1}'.format(
@@ -375,10 +375,9 @@ class FuelWebClient(object):
     @logwrap
     def assert_pacemaker(self, ctrl_node, online_nodes, offline_nodes):
         logger.info('Assert pacemaker status at devops node %s', ctrl_node)
-        fqdn_names = lambda nodes: sorted([self.fqdn(n) for n in nodes])
 
-        online = fqdn_names(online_nodes)
-        offline = fqdn_names(offline_nodes)
+        online = sorted([self.fqdn(n) for n in online_nodes])
+        offline = sorted([self.fqdn(n) for n in offline_nodes])
         try:
             wait(lambda: self.get_pcm_nodes(ctrl_node)['Online'] == online and
                  self.get_pcm_nodes(ctrl_node)['Offline'] == offline,
@@ -964,8 +963,9 @@ class FuelWebClient(object):
     @logwrap
     def is_node_discovered(self, nailgun_node):
         return any(
-            map(lambda node: node['mac'] == nailgun_node['mac']
-                and node['status'] == 'discover', self.client.list_nodes()))
+            map(lambda node: (node['mac'] == nailgun_node['mac'] and
+                              node['status'] == 'discover'),
+                self.client.list_nodes()))
 
     @logwrap
     def run_network_verify(self, cluster_id):
@@ -1412,7 +1412,8 @@ class FuelWebClient(object):
             networks=new_settings["networks"]
         )
 
-    def _get_true_net_name(self, name, net_pools):
+    @staticmethod
+    def _get_true_net_name(name, net_pools):
         """Find a devops network name in net_pools"""
         for net in net_pools:
             if name in net:
@@ -1520,7 +1521,8 @@ class FuelWebClient(object):
         else:
             net_config['ip_ranges'] = self.get_range(ip_network, -1)
 
-    def get_range(self, ip_network, ip_range=0):
+    @staticmethod
+    def get_range(ip_network, ip_range=0):
         net = list(IPNetwork(ip_network))
         half = len(net) / 2
         if ip_range == 0:
@@ -1754,9 +1756,9 @@ class FuelWebClient(object):
         res = []
         passed_count = []
         failed_count = []
-        test_nama_to_ran = test_name or OSTF_TEST_NAME
+        test_name_to_ran = test_name or OSTF_TEST_NAME
         retr = test_retries or OSTF_TEST_RETRIES_COUNT
-        test_path = map_ostf.OSTF_TEST_MAPPING.get(test_nama_to_ran)
+        test_path = map_ostf.OSTF_TEST_MAPPING.get(test_name_to_ran)
         logger.info('Test path is {0}'.format(test_path))
 
         for i in range(0, retr):
@@ -1979,7 +1981,8 @@ class FuelWebClient(object):
     def modify_python_file(self, remote, modification, file):
         remote.execute('sed -i "{0}" {1}'.format(modification, file))
 
-    def backup_master(self, remote):
+    @staticmethod
+    def backup_master(remote):
         logger.info("Backup of the master node is started.")
         run_on_remote(remote, "echo CALC_MY_MD5SUM > /etc/fuel/data",
                       err_msg='command calc_my_mdsum failed')
@@ -2217,18 +2220,18 @@ class FuelWebClient(object):
 
         logger.debug("ids are {}".format(ids))
         assert_true(ids, "osd ids for {} weren't found".format(hostname))
-        for id in ids:
-            remote_ceph.execute("ceph osd out {}".format(id))
+        for ceph_id in ids:
+            remote_ceph.execute("ceph osd out {}".format(ceph_id))
         wait(lambda: ceph.is_health_ok(remote_ceph),
              interval=30, timeout=10 * 60)
-        for id in ids:
+        for ceph_id in ids:
             if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
-                remote_ceph.execute("stop ceph-osd id={}".format(id))
+                remote_ceph.execute("stop ceph-osd id={}".format(ceph_id))
             else:
-                remote_ceph.execute("service ceph stop osd.{}".format(id))
-            remote_ceph.execute("ceph osd crush remove osd.{}".format(id))
-            remote_ceph.execute("ceph auth del osd.{}".format(id))
-            remote_ceph.execute("ceph osd rm osd.{}".format(id))
+                remote_ceph.execute("service ceph stop osd.{}".format(ceph_id))
+            remote_ceph.execute("ceph osd crush remove osd.{}".format(ceph_id))
+            remote_ceph.execute("ceph auth del osd.{}".format(ceph_id))
+            remote_ceph.execute("ceph osd rm osd.{}".format(ceph_id))
         # remove ceph node from crush map
         remote_ceph.execute("ceph osd crush remove {}".format(hostname))
 
