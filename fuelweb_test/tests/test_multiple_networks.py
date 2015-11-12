@@ -13,10 +13,17 @@
 #    under the License.
 
 from ipaddr import IPAddress
+import time
+import ipdb
+from urllib2 import HTTPError
+
+from devops.helpers.helpers import wait
+from devops.error import TimeoutError
 
 from proboscis import SkipTest
 from proboscis import test
 from proboscis.asserts import assert_true
+from proboscis.asserts import assert_is_not_none
 
 from fuelweb_test.helpers.decorators import check_fuel_statistics
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -204,6 +211,7 @@ class TestMultipleClusterNets(TestBasic):
             9. Deploy environment
             10. Run network verification
             11. Run OSTF
+            12. Delete cluster and wait slaves online
 
         Duration 120m
         Snapshot deploy_controllers_from_custom_nodegroup
@@ -214,6 +222,7 @@ class TestMultipleClusterNets(TestBasic):
             raise SkipTest()
 
         self.show_step(1)
+        self.check_run("deploy_controllers_from_custom_nodegroup")
         self.env.revert_snapshot("ready")
 
         self.show_step(2)
@@ -289,3 +298,100 @@ class TestMultipleClusterNets(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_controllers_from_custom_nodegroup")
+
+    @test(depends_on=[deploy_controllers_from_custom_nodegroup],
+          groups=["deploy_controllers_from_custom_nodegroup_delete", "thread_7",
+                  "multiple_cluster_networks"])
+    @log_snapshot_after_test
+    def deploy_controllers_from_custom_nodegroup_delete(self):
+        """DELETE DELETE
+
+                Scenario:
+                    1. DEL DEL DEL
+        """
+        if not MULTIPLE_NETWORKS:
+            raise SkipTest()
+
+        self.env.revert_snapshot("deploy_controllers_from_custom_nodegroup")
+
+        devops_nodes = self.env.d_env.nodes().slaves[1:6:2] + self.env.d_env.nodes().slaves[0:3:2]
+        self.fuel_web.wait_nodes_get_online_state(devops_nodes)
+
+        #removeme
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        logger.info('cluster id is {0}'.format(cluster_id))
+
+        #removeme
+        for slave in devops_nodes:
+            logger.info('Slave `{0}` status is: {1}'.format(slave.name, self.fuel_web.get_nailgun_node_by_devops_node(slave)['status']))
+
+        #self.show_step(12)
+        logger.info('Removing cluster now..')
+        self.fuel_web.client.delete_cluster(cluster_id)
+
+        tasks = self.fuel_web.client.get_tasks()
+        deploy_tasks = [t for t in tasks if t['status']
+                        in ('pending', 'running') and
+                        t['name'] == 'cluster_deletion' and
+                        t['cluster'] == cluster_id]
+        for task in deploy_tasks:
+            logger.info('Tasks found: {}'.format(task))
+        task = deploy_tasks[0]
+        logger.info('Selected task: {}'.format(task))
+        assert_is_not_none(task,
+                           'Got empty result after running deployment tasks!')
+        try:
+            self.fuel_web.assert_task_success(task=task, timeout=600, progress=True)
+        except HTTPError:
+            logger.warn('Workaround for task which was removed with the cluster')
+
+        # wait all five nodes boot
+        wait(lambda: len(self.fuel_web.client.list_nodes()) == 5,
+             timeout=10 * 60)
+
+
+        logger.info('devops_nodes count = {}'.format(len(devops_nodes)))
+        for slave in devops_nodes:
+            logger.info('Slave `{0}` status is: {1}'.format(slave.name, self.fuel_web.get_nailgun_node_by_devops_node(slave)['status']))
+
+        # check all custom in error state
+        for slave in self.env.d_env.nodes().slaves[1:6:2]:
+            logger.info('for {}'.format(slave.name))
+            try:
+                wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(slave)['status'] == 'error', timeout=10 * 60)
+            except TimeoutError:
+                raise TimeoutError('Node {0} does'
+                                   ' not become error '
+                                   'in nailgun'.format(slave.name))
+            logger.info('success for {}'.format(slave.name))
+
+        #reboot custom
+        self.fuel_web.cold_restart_nodes(self.env.d_env.nodes().slaves[1:6:2], nowaitoffline=False)
+
+        wait(lambda: len(self.fuel_web.client.list_nodes()) == 5,
+             timeout=10 * 60)
+        logger.info('done there')
+
+
+        '''
+        #check status error
+        for slave in devops_nodes:
+            logger.info('for {}'.format(slave.name))
+            try:
+                wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(slave)['status'] == 'error', timeout=10 * 60)
+            except TimeoutError:
+                raise TimeoutError('Node {0} does'
+                                   ' not become error '
+                                   'in nailgun'.format(slave.name))
+            logger.info('success for {}'.format(slave.name))
+
+
+        # wait nodes go to reboot
+        wait(lambda: not self.fuel_web.client.list_nodes(), timeout=10 * 60)
+
+        # wait for nodes to appear after bootstrap
+        wait(lambda: len(self.fuel_web.client.list_nodes()) == 5,
+             timeout=10 * 60)
+        '''
+
+
