@@ -16,7 +16,6 @@ import logging
 import os
 from fuelweb_test.settings import LOGS_DIR
 
-
 if not os.path.exists(LOGS_DIR):
     os.makedirs(LOGS_DIR)
 
