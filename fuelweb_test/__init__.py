@@ -16,7 +16,6 @@ import logging
 import os
 from fuelweb_test.settings import LOGS_DIR
 
-
 if not os.path.exists(LOGS_DIR):
     os.makedirs(LOGS_DIR)
 
@@ -73,3 +72,4 @@ class quiet_logger(object):
 
     def __exit__(self, exp_type, exp_value, traceback):
         console.setLevel(logging.INFO)
+
