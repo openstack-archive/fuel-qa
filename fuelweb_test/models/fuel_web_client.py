@@ -1361,7 +1361,10 @@ class FuelWebClient(object):
                 net_settings[net_provider]['config']['floating_ranges'] = \
                     [[str(floating[0]), str(floating[-2])]]
 
-                if 'baremetal' in networks:
+                devops_env = self.environment.d_env
+
+                if 'baremetal' in networks and devops_env.get_networks(
+                        name='ironic'):
                     ironic_net = self.environment.d_env.get_network(
                         name='ironic').ip
                     subnet1, subnet2 = ironic_net.subnet()
