@@ -401,7 +401,7 @@ FUEL_PLUGIN_BUILDER_REPO = 'https://github.com/openstack/fuel-plugins.git'
 # Change various Fuel master node default settings                           #
 ###############################################################################
 
-# URL to custom mirror with new OSCI packages wich should be tested,
+# URL to custom mirror with new OSCI packages which should be tested,
 # for example:
 # CentOS: http://osci-obs.vm.mirantis.net:82/centos-fuel-master-20921/centos/
 # Ubuntu: http://osci-obs.vm.mirantis.net:82/ubuntu-fuel-master-20921/ubuntu/

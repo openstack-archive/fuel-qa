@@ -304,7 +304,7 @@ class BackupRestoreHA(NeutronTunHaBase):
             with runlimit(
                     seconds=60 * 10,
                     error_message="'dockerctl restore' "
-                                  "runned longer then 600 sec"):
+                                  "ran longer then 600 sec"):
                 self.fuel_web.restore_master(remote)
             checkers.restore_check_sum(remote)
 

@@ -18,7 +18,8 @@ class NessusClient(object):
         self.ssl_verify = ssl_verify
         self.login()
 
-    def log_request(self, url, method, request_headers, request_body,
+    @staticmethod
+    def log_request(url, method, request_headers, request_body,
                     status_code, response_headers, response_body):
         log_fmt = ("Request {method} {url}\n"
                    "Request - Headers: {request_headers}\n"
