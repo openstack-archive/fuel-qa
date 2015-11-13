@@ -64,7 +64,7 @@ def debug(logger):
 logwrap = debug(logger)
 
 
-class quiet_logger(object):
+class QuietLogger(object):
     """Reduce logging level while context is executed."""
 
     def __enter__(self):

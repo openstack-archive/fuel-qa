@@ -53,7 +53,7 @@ from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test.models.nailgun_client import NailgunClient
 from fuelweb_test import ostf_test_mapping as map_ostf
-from fuelweb_test import quiet_logger
+from fuelweb_test import QuietLogger
 import fuelweb_test.settings as help_data
 from fuelweb_test.settings import ATTEMPTS
 from fuelweb_test.settings import BONDING
@@ -152,7 +152,7 @@ class FuelWebClient(object):
         if self.get_cluster_mode(cluster_id) == DEPLOYMENT_MODE_HA:
             logger.info('Waiting {0} sec. for passed OSTF HA tests.'
                         .format(timeout))
-            with quiet_logger():
+            with QuietLogger():
                 _wait(lambda: self.run_ostf(cluster_id,
                                             test_sets=['ha'],
                                             should_fail=should_fail),
@@ -169,7 +169,7 @@ class FuelWebClient(object):
         Should be used before run any other check for services."""
         logger.info('Waiting {0} sec. for passed OSTF Sanity checks.'
                     .format(timeout))
-        with quiet_logger():
+        with QuietLogger():
             _wait(lambda: self.run_ostf(cluster_id,
                                         test_sets=['sanity'],
                                         should_fail=should_fail),
@@ -1257,7 +1257,7 @@ class FuelWebClient(object):
             return
         try:
             task = self.run_network_verify(cluster_id)
-            with quiet_logger():
+            with QuietLogger():
                 if success:
                     self.assert_task_success(task, timeout, interval=10)
                 else:

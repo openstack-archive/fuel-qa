@@ -19,7 +19,7 @@ from proboscis import test
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import get_test_method_name
-from fuelweb_test.helpers.utils import timestat
+from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.models.environment import EnvironmentModel
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
@@ -116,7 +116,7 @@ class SetupEnvironment(TestBasic):
 
         """
         self.check_run("empty")
-        with timestat("setup_environment", is_uniq=True):
+        with TimeStat("setup_environment", is_uniq=True):
             self.env.setup_environment()
         self.env.make_snapshot("empty", is_make=True)
 
