@@ -62,6 +62,9 @@ class BaseActionsFactory(base_test_case.TestBasic):
                                  "__doc__").splitlines()[0]
             setattr(method, "_step_name", "Step {:03d}. {}".format(step,
                                                                    _step_name))
+            setattr(method, "_step_num", step)
+            setattr(method, "_base_class", cls.__name__)
+            setattr(method, "_config_case_group", case_group)
 
             #  Add step to scenario
             scenario.append("        {}. {}".format(step, _step_name))
