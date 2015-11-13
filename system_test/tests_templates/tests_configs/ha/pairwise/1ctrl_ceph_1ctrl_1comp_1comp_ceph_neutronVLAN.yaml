@@ -1,0 +1,14 @@
+---
+template:
+ name: 1 Controller + Ceph, 2 Controller, 1 Compute, 1 Compute + Ceph on Neutron/VLAN
+ group-name: 1ctrl_ceph_2ctrl_1comp_1comp_ceph_neutronVLAN
+ slaves: 5
+ cluster-template:
+  name: HAwithCinderNeutronVLAN
+  release: ubuntu
+  network:
+   !include ../../../cluster_configs/networks/neutron_vlan.yaml
+  settings:
+   !include ../../../cluster_configs/settings/cephVolImg_wo_components.yaml
+  nodes:
+   !include ../../../cluster_configs/nodes/single/3ctrl_2comp_1cndr.yaml
