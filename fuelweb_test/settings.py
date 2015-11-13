@@ -268,10 +268,12 @@ SERVTEST_USERNAME = os.environ.get('SERVTEST_USERNAME', 'admin')
 SERVTEST_PASSWORD = os.environ.get('SERVTEST_PASSWORD', SERVTEST_USERNAME)
 SERVTEST_TENANT = os.environ.get('SERVTEST_TENANT', SERVTEST_USERNAME)
 
-SERVTEST_SAHARA_VANILLA_2_IMAGE = 'sahara-kilo-vanilla-2.6-ubuntu-14.04.qcow2'
-SERVTEST_SAHARA_VANILLA_2_IMAGE_NAME = 'sahara-kilo-vanilla-2.6-ubuntu-14.04'
-SERVTEST_SAHARA_VANILLA_2_IMAGE_MD5 = 'ebfc24a111740acddce713a991bd5607'
-SERVTEST_SAHARA_VANILLA_2_IMAGE_META = {'_sahara_tag_2.6.0': 'True',
+SERVTEST_SAHARA_VANILLA_2_IMAGE = (
+    'sahara-liberty-vanilla-2.7.1-ubuntu-14.04.qcow2')
+SERVTEST_SAHARA_VANILLA_2_IMAGE_NAME = (
+    'sahara-liberty-vanilla-2.7.1-ubuntu-14.04')
+SERVTEST_SAHARA_VANILLA_2_IMAGE_MD5 = '3da49911332fc46db0c5fb7c197e3a77'
+SERVTEST_SAHARA_VANILLA_2_IMAGE_META = {'_sahara_tag_2.7.1': 'True',
                                         '_sahara_tag_vanilla': 'True',
                                         '_sahara_username': 'ubuntu'}
 
