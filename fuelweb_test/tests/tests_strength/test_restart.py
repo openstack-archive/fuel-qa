@@ -125,7 +125,7 @@ class CephRestart(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         # Destroy osd-node
-        logger.info("Destory slave-06")
+        logger.info("Destroy slave-06")
         slave_06 = self.env.d_env.get_node(name='slave-06')
         slave_06.destroy()
 
@@ -138,7 +138,7 @@ class CephRestart(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         # Destroy compute node
-        logger.info("Destory slave-05")
+        logger.info("Destroy slave-05")
         slave_05 = self.env.d_env.get_node(name='slave-05')
         slave_05.destroy()
 
