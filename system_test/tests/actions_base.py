@@ -33,9 +33,9 @@ class PrepareBase(base_actions_factory.BaseActionsFactory):
 
     _action_setup_master - setup master node in environment
     _action_config_release - preconfig releases if it needs
-    _action_make_slaves - boot slaves and snapshop environment with
-    bootstraped slaves
-    _action_revert_slaves - revert environment with bootstraped slaves
+    _action_make_slaves - boot slaves and snapshot environment with
+    bootstrapped slaves
+    _action_revert_slaves - revert environment with bootstrapped slaves
 
     """
 
@@ -116,7 +116,7 @@ class PrepareBase(base_actions_factory.BaseActionsFactory):
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def revert_slaves(self):
-        """Revert bootstraped nodes
+        """Revert bootstrapped nodes
 
         Skip if snapshot with cluster exists
         """
@@ -129,7 +129,7 @@ class PrepareBase(base_actions_factory.BaseActionsFactory):
 class ActionsBase(PrepareBase):
     """Basic actions for acceptance cases
 
-    For chousing action order use actions_order variable, set list of actions
+    For choosing action order use actions_order variable, set list of actions
         order
 
     Actions:
@@ -269,7 +269,7 @@ class ActionsBase(PrepareBase):
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def save_load_environment(self):
-        """Load existen environment from snapshot or save it"""
+        """Load existing environment from snapshot or save it"""
         env_name = self.env_config['name']
         if self.cluster_id is None:
             logger.info("Revert Environment from "

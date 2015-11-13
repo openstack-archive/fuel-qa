@@ -71,7 +71,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
             7. Verify network configuration on controller
             8. Run OSTF
             9. Shut down master node
-            10. Run openstack verification
+            10. Run OpenStack verification
 
         Duration 1000m
         """
