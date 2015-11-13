@@ -18,7 +18,7 @@ import sys
 
 from proboscis import SkipTest
 
-from fuelweb_test.helpers.utils import timestat
+from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.helpers.utils import pull_out_logs_via_ssh
 from fuelweb_test.helpers.decorators import create_diagnostic_snapshot
 
@@ -40,7 +40,7 @@ def action(method):
 def step_start_stop(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        with timestat(func) as timer:
+        with TimeStat(func) as timer:
             step_name = getattr(func, '_step_name')
             start_step = '[ START {} ]'.format(step_name)
             header = "<<< {:-^142} >>>".format(start_step)

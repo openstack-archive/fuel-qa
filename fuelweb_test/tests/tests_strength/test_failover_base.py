@@ -19,7 +19,7 @@ from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
-from fuelweb_test.helpers.utils import runlimit
+from fuelweb_test.helpers.utils import RunLimit
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_not_equal
@@ -1258,7 +1258,7 @@ class TestHaFailoverBase(TestBasic):
             with self.fuel_web.get_ssh_for_node(node.name) as remote:
                 cmd = 'rabbitmqctl cluster_status'
                 exit_code = [2, 0] if negative else [0]
-                with runlimit(seconds=60,
+                with RunLimit(seconds=60,
                               error_message=err_msg.format(cmd)):
                     out = run_on_remote(remote, cmd=cmd,
                                         assert_ec_equal=exit_code)
@@ -1297,7 +1297,7 @@ class TestHaFailoverBase(TestBasic):
             for node in d_ctrls:
                 with self.fuel_web.get_ssh_for_node(node.name) as remote:
                     cmd = 'rabbitmqctl list_queues'
-                    with runlimit(seconds=30,
+                    with RunLimit(seconds=30,
                                   error_message=err_msg.format(cmd)):
                         run_on_remote(remote, cmd)
 

@@ -27,7 +27,7 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.tests.test_neutron_tun_base import NeutronTunHaBase
 from fuelweb_test import logger
-from fuelweb_test import quiet_logger
+from fuelweb_test import QuietLogger
 
 
 @test(groups=["ha_neutron_tun", "neutron", "smoke_neutron", "deployment"])
@@ -280,7 +280,7 @@ class TestHaNeutronScalability(TestBasic):
 
         def _check_pacemarker(devops_nodes):
             for devops_node in devops_nodes:
-                with quiet_logger():
+                with QuietLogger():
                     self.fuel_web.assert_pacemaker(
                         devops_node.name,
                         devops_nodes, [])
