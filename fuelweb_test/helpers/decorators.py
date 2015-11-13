@@ -39,7 +39,7 @@ from fuelweb_test.helpers.utils import get_current_env
 from fuelweb_test.helpers.utils import pull_out_logs_via_ssh
 from fuelweb_test.helpers.utils import store_astute_yaml
 from fuelweb_test.helpers.utils import store_packages_json
-from fuelweb_test.helpers.utils import timestat
+from fuelweb_test.helpers.utils import TimeStat
 
 
 def save_logs(url, path, auth_token=None, chunk_size=1024):
@@ -495,7 +495,7 @@ def duration(func):
     """
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        with timestat(func.__name__):
+        with TimeStat(func.__name__):
             return func(*args, **kwargs)
     return wrapper
 

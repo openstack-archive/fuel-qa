@@ -220,10 +220,10 @@ def update_yaml(yaml_tree=None, yaml_value='', is_uniq=True,
         yaml.dump(yaml_data, f, default_flow_style=False)
 
 
-class timestat(object):
+class TimeStat(object):
     """ Context manager for measuring the execution time of the code.
     Usage:
-    with timestat([name],[is_uniq=True]):
+    with TimeStat([name],[is_uniq=True]):
     """
 
     def __init__(self, name=None, is_uniq=False):
@@ -562,7 +562,7 @@ def get_node_hiera_roles(remote):
     return roles
 
 
-class runlimit(object):
+class RunLimit(object):
     def __init__(self, seconds=60, error_message='Timeout'):
         self.seconds = seconds
         self.error_message = error_message
