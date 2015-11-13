@@ -21,7 +21,7 @@ from system_test.helpers.decorators import deferred_decorator
 from system_test.helpers.decorators import action
 
 
-class StrenghtDestroyFirstContorller(strength_base.StrenghtBaseActions):
+class StrengthDestroyFirstController(strength_base.StrengthBaseActions):
     """Destroy two controllers and check pacemaker status is correct
 
     Scenario:
@@ -56,7 +56,7 @@ class StrenghtDestroyFirstContorller(strength_base.StrenghtBaseActions):
         'network_check',
         'health_check',
         'save_load_environment',
-        'destory_first_controller',
+        'destroy_first_controller',
         'check_pacemaker_status',
         'wait_offline_nodes',
         'check_ha_service_ready',
@@ -67,12 +67,12 @@ class StrenghtDestroyFirstContorller(strength_base.StrenghtBaseActions):
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
-    def destory_first_controller(self):
-        """Destory first controller"""
-        self._destory_controller('slave-01')
+    def destroy_first_controller(self):
+        """Destroy first controller"""
+        self._destroy_controller('slave-01')
 
 
-class StrenghtDestroySecondContorller(strength_base.StrenghtBaseActions):
+class StrengthDestroySecondController(strength_base.StrengthBaseActions):
     """Destroy two controllers and check pacemaker status is correct
 
     Scenario:
@@ -107,7 +107,7 @@ class StrenghtDestroySecondContorller(strength_base.StrenghtBaseActions):
         'network_check',
         'health_check',
         'save_load_environment',
-        'destory_second_controller',
+        'destroy_second_controller',
         'check_pacemaker_status',
         'wait_offline_nodes',
         'check_ha_service_ready',
@@ -119,11 +119,11 @@ class StrenghtDestroySecondContorller(strength_base.StrenghtBaseActions):
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def destory_second_controller(self):
-        """Destory second controller"""
-        self._destory_controller('slave-02')
+        """Destroy second controller"""
+        self._destroy_controller('slave-02')
 
 
 @factory
 def cases():
-    return (case_factory(StrenghtDestroyFirstContorller) +
-            case_factory(StrenghtDestroySecondContorller))
+    return (case_factory(StrengthDestroyFirstController) +
+            case_factory(StrengthDestroySecondController))

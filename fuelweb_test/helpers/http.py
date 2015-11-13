@@ -39,7 +39,7 @@ class HTTPClient(object):
             self.keystone = keystoneclient(
                 auth_url=self.keystone_url, **self.creds)
             # it depends on keystone version, some versions doing auth
-            # explicitly some dont, but we are making it explicitly always
+            # explicitly some don't, but we are making it explicitly always
             self.keystone.authenticate()
             logger.debug('Authorization token is successfully updated')
         except exceptions.AuthorizationFailure:
