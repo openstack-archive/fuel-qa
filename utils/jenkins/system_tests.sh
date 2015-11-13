@@ -65,7 +65,7 @@ if you do need to override them.
 -K          - Keep test environment after tests are finished
 -h          - Show this help page
 
-Most variables uses guesing from Jenkins' job name but can be overriden
+Most variables uses guessing from Jenkins' job name but can be overriden
 by exported variable before script is run or by one of command line options.
 
 You can override following variables using export VARNAME="value" before running this script
@@ -129,7 +129,7 @@ GlobalVariables() {
   USE_MIRROR="${USE_MIRROR:=srt}"
 
   # only show what commands would be executed but do nothing
-  # this feature is usefull if you want to debug this script's behaviour
+  # this feature is useful if you want to debug this script's behaviour
   DRY_RUN="${DRY_RUN:=no}"
 
   VENV="${VENV:=yes}"
@@ -278,7 +278,7 @@ MakeISO() {
   fi
 
   # copy ISO file to storage dir
-  # if rotation is enabled and build number is aviable
+  # if rotation is enabled and build number is available
   # save iso to tagged file and symlink to the last build
   # if rotation is not enabled just copy iso to iso_dir
 
