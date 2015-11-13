@@ -264,7 +264,8 @@ class EnvironmentModel(object):
             self.d_env.suspend(verbose=False)
             time.sleep(10)
 
-            self.d_env.snapshot(snapshot_name, force=True)
+            self.d_env.snapshot(snapshot_name, force=True,
+                                description=description)
             revert_info(snapshot_name, self.get_admin_node_ip(), description)
 
         if settings.FUEL_STATS_CHECK:

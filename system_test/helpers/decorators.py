@@ -15,6 +15,7 @@
 import functools
 import traceback
 import sys
+import hashlib
 
 from proboscis import SkipTest
 
@@ -76,6 +77,9 @@ def make_snapshot_if_step_fail(func):
         except Exception as test_exception:
             exc_trace = sys.exc_traceback
             name = 'error_%s' % func.__name__
+            case_name = getattr(func, '_base_class', None)
+            step_num = getattr(func, '_step_num', None)
+            config_name = getattr(func, '_config_case_group', None)
             description = "Failed in method '%s'." % func.__name__
             if args[0].env is not None:
                 try:
@@ -94,7 +98,17 @@ def make_snapshot_if_step_fail(func):
                 finally:
                     logger.debug(args)
                     try:
-                        args[0].env.make_snapshot(snapshot_name=name[-50:],
+                        if all([case_name, step_num, config_name]):
+                            _hash = hashlib.sha256(config_name)
+                            _hash = _hash.hexdigest()[:8]
+                            snapshot_name = "{case}_{config}_{step}".format(
+                                case=case_name,
+                                config=_hash,
+                                step="Step{:03d}".format(step_num)
+                            )
+                        else:
+                            snapshot_name = name[-50:]
+                        args[0].env.make_snapshot(snapshot_name=snapshot_name,
                                                   description=description,
                                                   is_make=True)
                     except:
