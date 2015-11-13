@@ -24,15 +24,15 @@ from system_test.helpers.decorators import action
 from system_test import logger
 
 
-class StrenghtBaseActions(actions_base.ActionsBase):
+class StrengthBaseActions(actions_base.ActionsBase):
 
     def __init__(self, config=None):
-        super(StrenghtBaseActions, self).__init__(config)
+        super(StrengthBaseActions, self).__init__(config)
         self.destroyed_devops_nodes = []
         self.ostf_tests_should_failed = 0
         self.os_service_should_failed = 0
 
-    def _destory_controller(self, devops_node_name):
+    def _destroy_controller(self, devops_node_name):
         logger.info("Suspend {} node".format(devops_node_name))
         d_node = self.env.d_env.get_node(name=devops_node_name)
         d_node.suspend(False)
@@ -41,7 +41,7 @@ class StrenghtBaseActions(actions_base.ActionsBase):
         if d_node not in self.destroyed_devops_nodes:
             self.destroyed_devops_nodes.append(d_node)
         else:
-            logger.warning("Try destroy already destroyed node")
+            logger.warning("Try destroy allready destroyed node")
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
