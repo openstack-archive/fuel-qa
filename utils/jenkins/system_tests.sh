@@ -129,7 +129,7 @@ GlobalVariables() {
   USE_MIRROR="${USE_MIRROR:=srt}"
 
   # only show what commands would be executed but do nothing
-  # this feature is usefull if you want to debug this script's behaviour
+  # this feature is useful if you want to debug this script's behaviour
   DRY_RUN="${DRY_RUN:=no}"
 
   VENV="${VENV:=yes}"
