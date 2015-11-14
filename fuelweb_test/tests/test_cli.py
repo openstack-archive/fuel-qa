@@ -24,7 +24,6 @@ from fuelweb_test.helpers.checkers import check_cobbler_node_exists
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import DEPLOYMENT_MODE
-from fuelweb_test.settings import NEUTRON_ENABLE
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -115,18 +114,12 @@ class CommandLineTest(test_cli_base.CommandLine):
         release_id = self.fuel_web.get_releases_list_for_os(
             release_name=OPENSTACK_RELEASE)[0]
 
-        # Choose network type
-        if NEUTRON_ENABLE:
-            net = 'neutron --nst={nst}'.format(nst=NEUTRON_SEGMENT_TYPE)
-        else:
-            net = 'nova'
-
         with self.env.d_env.get_admin_remote() as remote:
 
             # Create an environment
             cmd = ('fuel env create --name={0} --release={1} '
-                   '--net={2} --json'.format(self.__class__.__name__,
-                                             release_id, net))
+                   '--nst={2} --json'.format(self.__class__.__name__,
+                                             release_id, NEUTRON_SEGMENT_TYPE))
             env_result = run_on_remote(remote, cmd, jsonify=True)
             cluster_id = env_result['id']
 
