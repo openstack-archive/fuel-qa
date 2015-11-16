@@ -39,8 +39,8 @@ from testrail_client import TestRailProject
 class TestResult(object):
     """TestResult."""  # TODO documentation
 
-    def __init__(self, name, group, status, duration, url=None,
-                 version=None, description=None, launchpad_bug=None):
+    def __init__(self, name, group, status, duration, url=None, version=None,
+                 description=None, comments=None, launchpad_bug=None):
         self.name = name
         self.group = group
         self._status = status
@@ -48,6 +48,7 @@ class TestResult(object):
         self.url = url
         self._version = version
         self.description = description
+        self.comments = comments
         self.launchpad_bug = launchpad_bug
         self.launchpad_bug_status = None
         self.launchpad_bug_importance = None
@@ -91,7 +92,8 @@ class TestResult(object):
             'duration': self.duration,
             'url': self.url,
             'version': self.version,
-            'description': self.description
+            'description': self.description,
+            'comments': self.comments
         }
         return str(result_dict)
 
@@ -209,6 +211,18 @@ def check_blocked(test):
         failed_func_name = match.group(1)
         if test['name'] != failed_func_name:
             test['status'] = 'blocked'
+            test['skippedMessage'] = 'Blocked by "{0}" test.'.format(
+                failed_func_name)
+
+
+def check_untested(test):
+    """Check if test result is fake
+    :param test: dict
+    :return: bool
+    """
+    if test['name'] == 'jenkins' and 'skippedMessage' not in test:
+        return True
+    return False
 
 
 @retry(count=3)
@@ -216,6 +230,8 @@ def get_tests_results(systest_build, os):
     tests_results = []
     test_build = Build(systest_build['name'], systest_build['number'])
     for test in test_build.test_data()['suites'][0]['cases']:
+        if check_untested(test):
+            continue
         check_blocked(test)
         test_result = TestResult(
             name=test['name'],
@@ -231,6 +247,7 @@ def get_tests_results(systest_build, os):
                               or test['name']).split()),
             description=test_build.build_data["description"] or
                 test['name'],
+            comments=test['skippedMessage']
         )
         tests_results.append(test_result)
     return tests_results
