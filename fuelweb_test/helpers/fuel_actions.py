@@ -498,7 +498,7 @@ class FuelPluginBuilder(BaseActions):
         :return: nothing
         """
         fpb_cmd = """bash -c 'yum -y install git tar createrepo \
-                    rpm dpkg-devel rpm-build;
+                    rpm dpkg-devel dpkg-dev rpm-build;
                     git clone {0};
                     cd fuel-plugins;
                     python setup.py sdist;
