@@ -19,7 +19,7 @@ from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
-from fuelweb_test.helpers.utils import RunLimit
+from fuelweb_test.helpers.utils import runlimit
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_not_equal
@@ -42,7 +42,6 @@ from fuelweb_test.settings import DOWNLOAD_LINK
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
-from fuelweb_test.settings import REPEAT_COUNT
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
@@ -115,7 +114,7 @@ class TestHaFailoverBase(TestBasic):
                 'slave-05': ['compute']
             }
         )
-        self.fuel_web.deploy_cluster_wait(cluster_id, timeout=150 * 60)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         public_vip = self.fuel_web.get_public_vip(cluster_id)
         os_conn = os_actions.OpenStackActions(public_vip)
         self.fuel_web.assert_cluster_ready(os_conn, smiles_count=14)
@@ -1040,12 +1039,12 @@ class TestHaFailoverBase(TestBasic):
         rabbit_slaves = self.fuel_web.get_rabbit_slaves_node(p_d_ctrl.name)
         assert_true(rabbit_slaves,
                     'Can not find rabbit slaves. '
-                    'Current result is {0}'.format(rabbit_slaves))
-        logger.info('Destroy node {0}'.format(rabbit_slaves[0].name))
-        # destroy devops node with rabbit slave
-        rabbit_slaves[0].destroy()
+                    'current result is {0}'.format(rabbit_slaves))
+        logger.info('Suspend node {0}'.format(rabbit_slaves[0].name))
+        # suspend devops node with rabbit slave
+        rabbit_slaves[0].suspend(False)
 
-        # Wait until Nailgun marked destroyed controller as offline
+        # Wait until Nailgun marked suspended controller as offline
         try:
             wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
                 rabbit_slaves[0])['online'], timeout=60 * 5)
@@ -1055,10 +1054,9 @@ class TestHaFailoverBase(TestBasic):
                                'in nailgun'.format(rabbit_slaves[0].name))
 
         # check ha
-        logger.info('Node was destroyed {0}'.format(rabbit_slaves[0].name))
-        # backend for destroyed node will be down
+        # backends for suspended node will be down
 
-        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=600,
+        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300,
                                                should_fail=1)
 
         # Run sanity and smoke tests to see if cluster operable
@@ -1074,15 +1072,15 @@ class TestHaFailoverBase(TestBasic):
                          in d_ctrls
                          if slave.name != rabbit_slaves[0].name]
         logger.debug('Active slaves are {0}'.format(active_slaves))
-        assert_true(active_slaves, 'Can not find any active slaves.')
+        assert_true(active_slaves, 'Can not find any active slaves')
 
         master_rabbit_after_slave_fail = self.fuel_web.get_rabbit_master_node(
             active_slaves[0].name)
         assert_equal(master_rabbit.name, master_rabbit_after_slave_fail.name)
 
         # turn on rabbit slave
-        logger.info('Try to power on node: {0}'.format(rabbit_slaves[0].name))
-        rabbit_slaves[0].start()
+
+        rabbit_slaves[0].resume(False)
 
         # Wait until Nailgun marked suspended controller as online
         try:
@@ -1094,7 +1092,7 @@ class TestHaFailoverBase(TestBasic):
                                'in nailgun'.format(rabbit_slaves[0].name))
 
         # check ha
-        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=600)
+        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300)
         # check os
         self.fuel_web.assert_os_services_ready(cluster_id)
 
@@ -1109,10 +1107,9 @@ class TestHaFailoverBase(TestBasic):
         assert_equal(master_rabbit.name, master_rabbit_after_slave_back.name)
 
         # turn off rabbit master
-        logger.info('Destroy node {0}'.format(master_rabbit.name))
-        master_rabbit.destroy()
+        master_rabbit.suspend(False)
 
-        # Wait until Nailgun marked destroyed controller as offline
+        # Wait until Nailgun marked suspended controller as offline
         try:
             wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
                 master_rabbit)['online'], timeout=60 * 5)
@@ -1121,8 +1118,8 @@ class TestHaFailoverBase(TestBasic):
                                ' not become offline'
                                'in nailgun'.format(master_rabbit.name))
 
-        # check ha and note that backend for destroyed node will be down
-        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=600,
+        # check ha and note that backends for suspended node will be down
+        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300,
                                                should_fail=1)
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
 
@@ -1137,10 +1134,10 @@ class TestHaFailoverBase(TestBasic):
         assert_not_equal(master_rabbit.name, master_rabbit_after_fail.name)
 
         # turn on rabbit master
-        logger.info('Power on node {0}'.format(master_rabbit.name))
-        master_rabbit.start()
 
-        # Wait until Nailgun marked controller as online
+        master_rabbit.resume(False)
+
+        # Wait until Nailgun marked suspended controller as online
         try:
             wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
                 master_rabbit)['online'], timeout=60 * 5)
@@ -1151,7 +1148,7 @@ class TestHaFailoverBase(TestBasic):
 
         # check ha
 
-        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=600)
+        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         # check that master rabbit is the same
@@ -1248,7 +1245,12 @@ class TestHaFailoverBase(TestBasic):
                 remote.clear()
 
     def change_pacemaker_parameter_not_break_rabbitmq(self):
-        err_msg = 'Cannot execute command {}. Timeout exceeded'
+        error = 'Cannot execute command {}. Timeout exceeded'
+        cmd = 'rabbitmqctl cluster_status'
+        cmd_1 = 'crm_resource -r p_rabbitmq-server ' \
+                '-p max_rabbitmqctl_timeouts -v {}'
+        cmd_2 = 'crm_resource -r p_rabbitmq-server -g max_rabbitmqctl_timeouts'
+
         self.env.revert_snapshot(self.snapshot_name)
 
         cluster_id = self.env.fuel_web.get_last_created_cluster()
@@ -1256,187 +1258,47 @@ class TestHaFailoverBase(TestBasic):
         n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])
         d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
+        rabbit_master = self.fuel_web.get_rabbit_master_node(d_ctrls[0].name)
+        rabbit_slaves = [node for node in d_ctrls if node != rabbit_master]
 
-        def count_run_rabbit(node, negative=False):
+        def count_run_rabbit(node, all_up=False):
             with self.fuel_web.get_ssh_for_node(node.name) as remote:
-                cmd = 'rabbitmqctl cluster_status'
-                exit_code = [2, 0] if negative else [0]
-                with RunLimit(seconds=60,
-                              error_message=err_msg.format(cmd)):
-                    out = run_on_remote(remote, cmd=cmd,
-                                        assert_ec_equal=exit_code)
-
+                with runlimit(seconds=60, error_message=error.format(cmd)):
+                    out = run_on_remote(remote, cmd=cmd, raise_on_assert=False)
             run_nodes = [el for el in out if 'running_nodes' in el]
             run_nodes = run_nodes[0] if run_nodes else ''
-            logger.debug('### Status for {} \n {}'.format(
-                str(node.name), run_nodes))
-
-            return run_nodes.count('rabbit@')
+            logger.debug('### Status for {} \n {}'.format(str(node.name),
+                                                          run_nodes))
+            return run_nodes.count('rabbit@') == len(n_ctrls) if all_up else 1
 
         for n in xrange(1, 4):
             logger.info('Checking {} time'.format(n))
-            with self.fuel_web.get_ssh_for_node(d_ctrls[0].name) as remote:
-                cmd = 'crm_resource --resource p_rabbitmq-server ' \
-                      '--set-parameter max_rabbitmqctl_timeouts ' \
-                      '--parameter-value {}'.format(3 + n)
-                run_on_remote(remote, cmd)
-            logger.info('Command "{}" was executed on controller'.format(cmd))
+            with self.fuel_web.get_ssh_for_node(rabbit_master.name) as remote:
+                run_on_remote(remote, cmd_1.format(3 + n))
+            logger.info('Command {} was executed on controller'.format(cmd_1))
 
             logger.info('Check nodes left RabbitMQ cluster')
-            for node in d_ctrls:
-                logger.info('Check for {}'.format(node.name))
-                wait(lambda: (count_run_rabbit(node, True) != len(n_ctrls)),
-                     timeout=60,
-                     timeout_msg='All nodes are staying in the cluster')
+            wait(lambda: count_run_rabbit(rabbit_master), timeout=60,
+                 timeout_msg='All nodes are staying in the cluster')
 
-            logger.info('Check nodes back to RabbitMQ cluster')
+            logger.info('Check parameter was changed')
+            for node in rabbit_slaves:
+                with self.fuel_web.get_ssh_for_node(node.name) as remote:
+                    with runlimit(seconds=30,
+                                  error_message=error.format(cmd_2)):
+                        out = int(run_on_remote(remote, cmd=cmd_2)[0])
+                    assert_equal(out, 3 + n)
+
+            logger.info('Wait and check nodes back to the RabbitMQ cluster')
             for node in d_ctrls:
-                logger.info('Check for {}'.format(node.name))
-                wait(lambda: count_run_rabbit(node) == len(n_ctrls),
-                     timeout=60 * 10,
+                wait(lambda: count_run_rabbit(node, all_up=True), timeout=600,
+                     interval=20,
                      timeout_msg='Some nodes did not back to the cluster after'
-                                 ' 10 minutes wait.')
+                                 '10 minutes wait.')
 
             for node in d_ctrls:
                 with self.fuel_web.get_ssh_for_node(node.name) as remote:
-                    cmd = 'rabbitmqctl list_queues'
-                    with RunLimit(seconds=30,
-                                  error_message=err_msg.format(cmd)):
+                    with runlimit(seconds=30, error_message=error.format(cmd)):
                         run_on_remote(remote, cmd)
 
             self.env.fuel_web.run_ostf(cluster_id, ['ha', 'smoke', 'sanity'])
-
-    def ha_rabbitmq_stability_check(self):
-        if not self.env.d_env.has_snapshot(self.snapshot_name):
-            raise SkipTest()
-        logger.info('Revert environment started...')
-        self.env.revert_snapshot(self.snapshot_name)
-
-        cluster_id = self.fuel_web.client.get_cluster_id(
-            self.__class__.__name__)
-
-        logger.info('Waiting for mysql cluster is up')
-
-        # Wait until MySQL Galera is UP on some controller
-        self.fuel_web.wait_mysql_galera_is_up(['slave-02'])
-
-        # Check ha ans services are fine after revert
-        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300)
-        self.fuel_web.assert_os_services_ready(cluster_id)
-
-        # Start the test
-        for count in xrange(REPEAT_COUNT):
-
-            # Get primary controller from nailgun
-            p_d_ctrl = self.fuel_web.get_nailgun_primary_node(
-                self.env.d_env.nodes().slaves[0])
-
-            # get master rabbit controller
-            master_rabbit = self.fuel_web.get_rabbit_master_node(p_d_ctrl.name)
-            logger.info('Try to find slave where rabbit slaves are running'
-                        ' on count {0}'.format(count))
-
-            # get rabbit slaves
-            rabbit_slaves = self.fuel_web.get_rabbit_slaves_node(p_d_ctrl.name)
-            assert_true(rabbit_slaves,
-                        'Can not find rabbit slaves. On count {0} '
-                        'current result is {1}'.format(count, rabbit_slaves))
-
-            # Move rabbit master resource from master rabbit controller
-            master_rabbit_fqdn = self.fuel_web.get_rabbit_master_node(
-                p_d_ctrl.name, fqdn_needed=True)
-
-            logger.info('Master rabbit fqdn {0} on count {1}'.format(
-                master_rabbit_fqdn, count))
-
-            slaves_rabbit_fqdn = self.fuel_web.get_rabbit_slaves_node(
-                p_d_ctrl.name, fqdn_needed=True)
-
-            assert_true(slaves_rabbit_fqdn,
-                        'Failed to get rabbit slaves '
-                        'fqdn on count {0}'.format(count))
-
-            logger.info('Slaves rabbit fqdn {0} '
-                        'on count {1}'.format(slaves_rabbit_fqdn, count))
-            with self.fuel_web.get_ssh_for_node(
-                    master_rabbit.name) as remote_master_rabbit:
-                cmd = ('pcs constraint delete '
-                       'location-p_rabbitmq-server 2>&1 >/dev/null| true')
-                remote_master_rabbit.execute(cmd)
-
-                # Move resource to rabbit slave
-                cmd_move = ('pcs constraint location p_rabbitmq-server '
-                            'rule role=master score=-INFINITY \#uname '
-                            'ne {0}').format(slaves_rabbit_fqdn[0])
-                _wait(lambda: assert_equal(
-                    remote_master_rabbit.execute(cmd_move)['exit_code'], 0,
-                    'Fail to move p_rabbitmq-server with {0} on '
-                    'count {1}'.format(
-                        remote_master_rabbit.execute(cmd_move), count)),
-                      timeout=20)
-
-                # Clear all
-                cmd_clear = ('pcs constraint delete '
-                             'location-p_rabbitmq-server')
-                _wait(lambda: assert_equal(
-                    remote_master_rabbit.execute(cmd_clear)['exit_code'], 0,
-                    'Fail to delete pcs constraint {0} on count {1}'.format(
-                        remote_master_rabbit.execute(cmd_clear), count)),
-                      timeout=20)
-
-            # check ha
-            self.fuel_web.assert_ha_services_ready(cluster_id, timeout=600)
-
-            # get new rabbit master node
-            master_rabbit_2 = self.fuel_web.get_rabbit_master_node(
-                p_d_ctrl.name)
-
-            logger.info('New master rabbit node is {0} on count {1}'.format(
-                master_rabbit_2.name, count))
-
-            # destroy master master_rabbit_node_2
-            logger.info('Destroy master rabbit node {0} on count {1}'.format(
-                master_rabbit_2.name, count))
-
-            # destroy devops node with rabbit master
-            master_rabbit_2.destroy()
-
-            # Wait until Nailgun marked suspended controller as offline
-            try:
-                wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
-                    master_rabbit_2)['online'], timeout=60 * 5)
-            except TimeoutError:
-                raise TimeoutError('Node {0} does'
-                                   ' not become offline '
-                                   'in nailgun'.format(master_rabbit_2.name))
-
-            # check ha, should fail 1 test according
-            # to haproxy backend from destroyed will be down
-
-            self.fuel_web.assert_ha_services_ready(
-                cluster_id, timeout=600, should_fail=1)
-
-            # Run sanity and smoke tests to see if cluster operable
-            self.fuel_web.run_ostf(cluster_id=cluster_id,
-                                   should_fail=1)
-
-            # turn on destroyed node
-
-            master_rabbit_2.start()
-
-            # Wait until Nailgun marked suspended controller as online
-            try:
-                wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
-                    master_rabbit_2)['online'], timeout=60 * 5)
-            except TimeoutError:
-                raise TimeoutError('Node {0} does'
-                                   ' not become online '
-                                   'in nailgun'.format(master_rabbit_2.name))
-
-            # check ha
-            self.fuel_web.assert_ha_services_ready(cluster_id, timeout=600)
-            # check os
-            self.fuel_web.assert_os_services_ready(cluster_id)
-
-            # run ostf smoke and sanity
-            self.fuel_web.run_ostf(cluster_id=cluster_id, test_sets=['smoke'])
