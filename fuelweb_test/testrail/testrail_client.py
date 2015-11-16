@@ -382,3 +382,9 @@ class TestRailProject(object):
             }
             new_results['results'].append(new_result)
         return self.client.send_post(add_results_test_uri, new_results)
+
+    def add_results_for_tempest_cases(self, run_id, tests_results):
+        add_results_test_uri = 'add_results_for_cases/{run_id}'.format(
+            run_id=run_id)
+        new_results = {'results': tests_results}
+        return self.client.send_post(add_results_test_uri, new_results)
