@@ -386,3 +386,134 @@ class BondingHA(BondingTest):
         self.check_interfaces_config_after_reboot(cluster_id)
 
         self.env.make_snapshot("deploy_bonding_neutron_tun")
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["bonding_conf_consistency"])
+    @log_snapshot_after_test
+    def bonding_conf_consistency(self):
+        """Verify that network configuration with bonds is consistent\
+         after deployment failure
+
+        Scenario:
+            1. Create an environment
+            2. Add 3 nodes with controller role
+            3. Add 1 node with compute role
+            4. Setup bonding for all interfaces (including admin interface
+               bonding)
+            5. Run network verification
+            6. Provision all nodes
+            7. Update 'connectivity_tests' puppet manifest to cause the\
+               deployment process fail right after 'netconfig' task is finished
+            8. Start deployment and wait until it fails
+            9. Verify that interfaces are not lost from the configured bonds
+            10. Reset the environment
+            11. Run network verification
+            12. Deploy the cluster and run basic health checks
+            13. Run network verification
+
+        Duration 150m
+        Snapshot bonding_conf_consistency
+        """
+
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        self.show_step(1)
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT['vlan'],
+            }
+        )
+
+        self.show_step(2)
+        self.show_step(3)
+        self.fuel_web.update_nodes(
+            cluster_id, {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute'],
+            }
+        )
+
+        self.show_step(4)
+        nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        for node in nailgun_nodes:
+            self.fuel_web.update_node_networks(
+                node['id'], interfaces_dict=deepcopy(self.INTERFACES),
+                raw_data=deepcopy(self.BOND_CONFIG)
+            )
+
+        self.show_step(5)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(6)
+        self.fuel_web.provisioning_cluster_wait(cluster_id)
+
+        # Get interfaces data of the node for which deployment
+        # will be forced to fail
+        node_id = self.fuel_web.get_nailgun_node_by_name('slave-01')['id']
+        ifaces_data = self.fuel_web.client.get_node_interfaces(node_id)
+
+        self.show_step(7)
+        pp_file = ("/etc/puppet/modules/osnailyfacter/modular/netconfig/"
+                   "connectivity_tests.pp")
+        with self.env.d_env.get_admin_remote() as admin_node:
+            # Backup the manifest to be updated for the sake of the test
+            backup_cmd = "cp {0} {1}".format(pp_file, pp_file + "_bak")
+            res = admin_node.execute(backup_cmd)
+            assert_equal(0, res['exit_code'],
+                         "Failed to create a backup copy of {0} puppet "
+                         "manifest on master node".format(pp_file))
+
+            fail_cmd = ("echo 'fail(\"Emulate deployment failure after "
+                        "netconfig!\")' >> {0}".format(pp_file))
+            res = admin_node.execute(fail_cmd)
+            assert_equal(0, res['exit_code'],
+                         "Failed to update {0} puppet manifest "
+                         "on master node".format(pp_file))
+
+            self.show_step(8)
+            task = self.fuel_web.client.deploy_nodes(cluster_id)
+            self.fuel_web.assert_task_failed(task)
+
+        # Get interfaces data after deployment failure on the node
+        ifaces_data_latest = self.fuel_web.client.get_node_interfaces(node_id)
+
+        self.show_step(9)
+        admin_bond_ifaces = ifaces_data[-1]['slaves']
+        admin_bond_ifaces_latest = ifaces_data_latest[-1]['slaves']
+        assert_equal(len(admin_bond_ifaces), len(admin_bond_ifaces_latest),
+                     "Admin interface bond config is inconsistent; "
+                     "interface(s) have dissapeared from the bond")
+        others_bond_ifaces = ifaces_data[-2]['slaves']
+        others_bond_ifaces_latest = ifaces_data_latest[-2]['slaves']
+        assert_equal(len(others_bond_ifaces), len(others_bond_ifaces_latest),
+                     "Other network interfaces bond config is inconsistent; "
+                     "interface(s) have dissapeared from the bond")
+
+        # Restore the manifest that is updated in the scope of the test
+        with self.env.d_env.get_admin_remote() as admin_node:
+            restore_cmd = "cp {0} {1}".format(pp_file + "_bak", pp_file)
+            res = admin_node.execute(restore_cmd)
+            assert_equal(0, res['exit_code'],
+                         "Failed to restore the backup copy of {0} puppet "
+                         "manifest on master node".format(pp_file))
+
+        self.show_step(10)
+        self.fuel_web.stop_reset_env_wait(cluster_id)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[0: 4], timeout=30 * 60)
+
+        self.show_step(11)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(12)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(13)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.env.make_snapshot("bonding_conf_consistency")
