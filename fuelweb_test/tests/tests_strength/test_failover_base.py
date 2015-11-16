@@ -1254,14 +1254,13 @@ class TestHaFailoverBase(TestBasic):
             cluster_id, ['controller'])
         d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
 
-        def count_run_rabbit(node, negative=False):
+        def count_run_rabbit(node):
             with self.fuel_web.get_ssh_for_node(node.name) as remote:
                 cmd = 'rabbitmqctl cluster_status'
-                exit_code = [2, 0] if negative else [0]
                 with runlimit(seconds=60,
                               error_message=err_msg.format(cmd)):
                     out = run_on_remote(remote, cmd=cmd,
-                                        assert_ec_equal=exit_code)
+                                        assert_ec_equal=[2, 0])
 
             run_nodes = [el for el in out if 'running_nodes' in el]
             run_nodes = run_nodes[0] if run_nodes else ''
@@ -1282,7 +1281,7 @@ class TestHaFailoverBase(TestBasic):
             logger.info('Check nodes left RabbitMQ cluster')
             for node in d_ctrls:
                 logger.info('Check for {}'.format(node.name))
-                wait(lambda: (count_run_rabbit(node, True) != len(n_ctrls)),
+                wait(lambda: (count_run_rabbit(node) != len(n_ctrls)),
                      timeout=60,
                      timeout_msg='All nodes are staying in the cluster')
 

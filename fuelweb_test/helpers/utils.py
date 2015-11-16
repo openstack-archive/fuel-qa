@@ -365,9 +365,8 @@ def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
                                 " actual {0}, expected {1}."
                      .format(error_details['exit_code'],
                              ' '.join(map(str, assert_ec_equal))))
-        log_msg = ("{0}  Command: '{1}'  Details: {2}".format(error_msg,
-                                                              cmd,
-                                                              error_details))
+        log = {'Command': cmd, 'Details': error_details}
+        log_msg = '{0} \n {1}'.format(error_msg, pretty_log(log, indent=1))
         logger.error(log_msg)
         if raise_on_assert:
             raise Exception(log_msg)
