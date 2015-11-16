@@ -1245,7 +1245,7 @@ class TestHaFailoverBase(TestBasic):
                 remote.clear()
 
     def change_pacemaker_parameter_not_break_rabbitmq(self):
-        err_msg = 'Cannot execute command {}. Timeout exceeded'
+        error = 'Cannot execute command {}. Timeout exceeded'
         self.env.revert_snapshot(self.snapshot_name)
 
         cluster_id = self.env.fuel_web.get_last_created_cluster()
@@ -1253,26 +1253,23 @@ class TestHaFailoverBase(TestBasic):
         n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])
         d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
+        p_ctrl = self.fuel_web.get_nailgun_primary_node(d_ctrls[0])
+        n_p_ctrls = [node for node in d_ctrls if node != p_ctrl]
 
-        def count_run_rabbit(node, negative=False):
+        def count_run_rabbit(node):
             with self.fuel_web.get_ssh_for_node(node.name) as remote:
                 cmd = 'rabbitmqctl cluster_status'
-                exit_code = [2, 0] if negative else [0]
-                with runlimit(seconds=60,
-                              error_message=err_msg.format(cmd)):
-                    out = run_on_remote(remote, cmd=cmd,
-                                        assert_ec_equal=exit_code)
-
+                with runlimit(seconds=60, error_message=error.format(cmd)):
+                    out = run_on_remote(remote, cmd=cmd, raise_on_assert=False)
             run_nodes = [el for el in out if 'running_nodes' in el]
             run_nodes = run_nodes[0] if run_nodes else ''
-            logger.debug('### Status for {} \n {}'.format(
-                str(node.name), run_nodes))
-
+            logger.debug('### Status for {} \n {}'.format(str(node.name),
+                                                          run_nodes))
             return run_nodes.count('rabbit@')
 
         for n in xrange(1, 4):
             logger.info('Checking {} time'.format(n))
-            with self.fuel_web.get_ssh_for_node(d_ctrls[0].name) as remote:
+            with self.fuel_web.get_ssh_for_node(p_ctrl.name) as remote:
                 cmd = 'crm_resource --resource p_rabbitmq-server ' \
                       '--set-parameter max_rabbitmqctl_timeouts ' \
                       '--parameter-value {}'.format(3 + n)
@@ -1280,25 +1277,27 @@ class TestHaFailoverBase(TestBasic):
             logger.info('Command "{}" was executed on controller'.format(cmd))
 
             logger.info('Check nodes left RabbitMQ cluster')
-            for node in d_ctrls:
-                logger.info('Check for {}'.format(node.name))
-                wait(lambda: (count_run_rabbit(node, True) != len(n_ctrls)),
-                     timeout=60,
-                     timeout_msg='All nodes are staying in the cluster')
+            wait(lambda: (count_run_rabbit(p_ctrl) == 1), timeout=60,
+                 timeout_msg='All nodes are staying in the cluster')
+            for node in n_p_ctrls:
+                with self.fuel_web.get_ssh_for_node(node.name) as remote:
+                    cmd = 'rabbitmqctl cluster_status'
+                    with runlimit(seconds=70, error_message=error.format(cmd)):
+                        _wait(lambda: run_on_remote(remote, cmd=cmd,
+                                                    assert_ec_equal=[2]),
+                              timeout=60)
 
             logger.info('Check nodes back to RabbitMQ cluster')
             for node in d_ctrls:
-                logger.info('Check for {}'.format(node.name))
                 wait(lambda: count_run_rabbit(node) == len(n_ctrls),
-                     timeout=60 * 10,
+                     timeout=60 * 10, interval=20,
                      timeout_msg='Some nodes did not back to the cluster after'
                                  ' 10 minutes wait.')
 
             for node in d_ctrls:
                 with self.fuel_web.get_ssh_for_node(node.name) as remote:
                     cmd = 'rabbitmqctl list_queues'
-                    with runlimit(seconds=30,
-                                  error_message=err_msg.format(cmd)):
+                    with runlimit(seconds=30, error_message=error.format(cmd)):
                         run_on_remote(remote, cmd)
 
             self.env.fuel_web.run_ostf(cluster_id, ['ha', 'smoke', 'sanity'])
