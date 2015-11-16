@@ -29,7 +29,7 @@ from fuelweb_test.helpers.utils import install_pkg
 def regenerate_ubuntu_repo(remote, path):
     # Ubuntu
     cr = CustomRepo(remote)
-    cr.install_tools(['dpkg', 'dpkg-devel'])
+    cr.install_tools(['dpkg', 'dpkg-devel', 'dpkg-dev'])
     cr.regenerate_repo('regenerate_ubuntu_repo', path)
 
 
@@ -88,7 +88,7 @@ class CustomRepo(object):
 
         if settings.OPENSTACK_RELEASE_UBUNTU in settings.OPENSTACK_RELEASE:
             # Ubuntu
-            master_tools = ['dpkg', 'dpkg-devel']
+            master_tools = ['dpkg', 'dpkg-devel', 'dpkg-dev']
             self.install_tools(master_tools)
             self.get_pkgs_list_ubuntu()
             pkgs_local_path = ('{0}/pool/'
