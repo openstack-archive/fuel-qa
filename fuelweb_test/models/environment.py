@@ -43,6 +43,8 @@ from fuelweb_test.helpers import multiple_networks_hacks
 from fuelweb_test.models.fuel_web_client import FuelWebClient
 from fuelweb_test.models.collector_client import CollectorClient
 from fuelweb_test import settings
+from fuelweb_test.settings import MASTER_IS_CENTOS7
+from fuelweb_test.settings import PREDICTABLE_INTERFACE_NAMES
 from fuelweb_test import logwrap
 from fuelweb_test import logger
 
@@ -133,10 +135,13 @@ class EnvironmentModel(object):
             # remove after better fix is applied
             time.sleep(5)
 
-        with TimeStat("wait_for_nodes_to_start_and_register_in_nailgun"):
+        if not MASTER_IS_CENTOS7:
+            with TimeStat("wait_for_nodes_to_start_and_register_in_nailgun"):
+                wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
+        else:
             wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
 
-        if not skip_timesync:
+        if not skip_timesync and not MASTER_IS_CENTOS7:
             self.sync_time([node for node in self.nailgun_nodes(devops_nodes)])
 
         return self.nailgun_nodes(devops_nodes)
@@ -172,6 +177,7 @@ class EnvironmentModel(object):
             'wait_for_external_config': 'yes',
             'build_images': '1' if build_images else '0'
         }
+        # TODO CENTOS7
         if iso_connect_as == 'usb':
             keys = (
                 "<Wait>\n"  # USB boot uses boot_menu=yes for master node
@@ -200,13 +206,15 @@ class EnvironmentModel(object):
                 "<Esc>\n"
                 "<Wait>\n"
                 "vmlinuz initrd=initrd.img ks=%(ks)s\n"
-                " ip=%(ip)s\n"
-                " netmask=%(mask)s\n"
-                " gw=%(gw)s\n"
-                " dns1=%(dns1)s\n"
-                " hostname=%(hostname)s\n"
-                " dhcp_interface=%(nat_interface)s\n"
+                " ip=%(ip)s::%(gw)s:%(mask)s:%(hostname)s:enp0s3:off::: dns1=%(dns1)s"
+                #" ip=%(ip)s\n"
+                #" netmask=%(mask)s\n"
+                #" gw=%(gw)s\n"
+                #" dns1=%(dns1)s\n"
+                #" hostname=%(hostname)s\n"
+                #" dhcp_interface=%(nat_interface)s\n"
                 " showmenu=%(showmenu)s\n"
+                #" adminif=enp0s17"
                 " wait_for_external_config=%(wait_for_external_config)s\n"
                 " build_images=%(build_images)s\n"
                 " <Enter>\n"
@@ -323,7 +331,8 @@ class EnvironmentModel(object):
             nailgun_nodes = [self.fuel_web.get_nailgun_node_by_name(node.name)
                              for node in self.d_env.nodes().slaves
                              if node.driver.node_active(node)]
-            self.sync_time(nailgun_nodes)
+            pass
+            #self.sync_time(nailgun_nodes)
 
         try:
             _wait(self.fuel_web.client.get_releases,
@@ -359,8 +368,10 @@ class EnvironmentModel(object):
     def set_admin_keystone_password(self):
         try:
             self.fuel_web.client.get_releases()
-        except exceptions.Unauthorized:
+        # TODO CENTOS7
+        except: # exceptions.Unauthorized:
             with self.d_env.get_admin_remote() as remote:
+                self.execute_remote_cmd(remote, 'iptables -I INPUT -i enp0s3 -p tcp -m multiport --ports 5000 -m comment --comment "5000 keystone" -j ACCEPT')
                 self.execute_remote_cmd(
                     remote, 'fuel user --newpass {0} --change-password'
                     .format(settings.KEYSTONE_CREDS['password']))
@@ -413,7 +424,8 @@ class EnvironmentModel(object):
         self.docker_actions.wait_for_ready_containers()
         time.sleep(10)
         self.set_admin_keystone_password()
-        self.sync_time()
+        if not MASTER_IS_CENTOS7:
+            self.sync_time()
         if settings.UPDATE_MASTER:
             if settings.UPDATE_FUEL_MIRROR:
                 for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
@@ -428,13 +440,14 @@ class EnvironmentModel(object):
             self.admin_install_updates()
         if settings.MULTIPLE_NETWORKS:
             self.describe_second_admin_interface()
-        self.nailgun_actions.set_collector_address(
-            settings.FUEL_STATS_HOST,
-            settings.FUEL_STATS_PORT,
-            settings.FUEL_STATS_SSL)
-        # Restart statsenderd in order to apply new settings(Collector address)
-        self.nailgun_actions.force_fuel_stats_sending()
-        if settings.FUEL_STATS_ENABLED:
+        if not MASTER_IS_CENTOS7:
+            self.nailgun_actions.set_collector_address(
+                settings.FUEL_STATS_HOST,
+                settings.FUEL_STATS_PORT,
+                settings.FUEL_STATS_SSL)
+            # Restart statsenderd in order to apply new settings(Collector address)
+            self.nailgun_actions.force_fuel_stats_sending()
+        if settings.FUEL_STATS_ENABLED and not MASTER_IS_CENTOS7:
             self.fuel_web.client.send_fuel_stats(enabled=True)
             logger.info('Enabled sending of statistics to {0}:{1}'.format(
                 settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
@@ -463,8 +476,12 @@ class EnvironmentModel(object):
     def wait_for_external_config(self, timeout=120):
         check_cmd = 'pkill -0 -f wait_for_external_config'
         with self.d_env.get_admin_remote() as remote:
-            wait(lambda: remote.execute(check_cmd)['exit_code'] == 0,
-                 timeout=timeout)
+            if MASTER_IS_CENTOS7:
+                remote.execute(check_cmd)
+            else:
+                wait(lambda: remote.execute(check_cmd)['exit_code'] == 0,
+                    timeout=timeout)
+
 
     @logwrap
     def kill_wait_for_external_config(self):
@@ -521,11 +538,16 @@ class EnvironmentModel(object):
             raise Exception('Fuel node deployment failed.')
 
     def dhcrelay_check(self):
+        if PREDICTABLE_INTERFACE_NAMES:
+            iface = 'enp0s3'
+        else:
+            iface = 'eth0'
+        command = "dhcpcheck discover " \
+                  "--ifaces {iface} " \
+                  "--repeat 3 " \
+                  "--timeout 10".format(iface=iface)
         with self.d_env.get_admin_remote() as admin_remote:
-            out = admin_remote.execute("dhcpcheck discover "
-                                       "--ifaces eth0 "
-                                       "--repeat 3 "
-                                       "--timeout 10")['stdout']
+            out = admin_remote.execute(command)['stdout']
 
         assert_true(self.get_admin_node_ip() in "".join(out),
                     "dhcpcheck doesn't discover master ip")
