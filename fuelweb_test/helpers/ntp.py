@@ -20,6 +20,7 @@ from proboscis.asserts import assert_true
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
+from fuelweb_test.settings import MASTER_IS_CENTOS7
 
 
 class GroupNtpSync(object):
@@ -30,6 +31,8 @@ class GroupNtpSync(object):
             sync_admin_node - bool, should the Fuel admin node be synchronized?
             nailgun_nodes - list of Nailgun node objects
         """
+        if MASTER_IS_CENTOS7:
+            return
         if not env:
             raise Exception("'env' is not set, failed to initialize"
                             " connections to {0}".format(nailgun_nodes))
@@ -140,10 +143,11 @@ class Ntp(object):
         cls.server = remote.execute(cmd)['stdout'][0]
 
         cmd = "find /etc/init.d/ -regex '/etc/init.d/ntp.?'"
-        cls.service = remote.execute(cmd)['stdout'][0].strip()
+        if not MASTER_IS_CENTOS7:
+            cls.service = remote.execute(cmd)['stdout'][0].strip()
 
         # Speedup time synchronization for slaves that use admin node as a peer
-        if admin_ip:
+        if admin_ip and not MASTER_IS_CENTOS7:
             cmd = ("sed -i 's/^server {0} .*/server {0} minpoll 3 maxpoll 5 "
                    "ibrust/' /etc/ntp.conf".format(admin_ip))
             remote.execute(cmd)
