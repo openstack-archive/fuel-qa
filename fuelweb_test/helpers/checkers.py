@@ -35,7 +35,6 @@ from fuelweb_test.settings import PUBLIC_TEST_IP
 from ipaddr import IPAddress
 from ipaddr import IPNetwork
 from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
 
 from time import sleep
@@ -81,39 +80,6 @@ def check_image(image, md5, path):
             path, image))
         return False
     return True
-
-
-@logwrap
-def get_interface_description(ctrl_ssh, interface_short_name):
-    return ''.join(
-        ctrl_ssh.execute(
-            '/sbin/ip addr show dev %s' % interface_short_name
-        )['stdout']
-    )
-
-
-def verify_network_configuration(remote, node):
-    for interface in node['network_data']:
-        if interface.get('vlan') is None:
-            continue  # todo excess check fix interface json format
-        interface_name = "{}.{}@{}".format(
-            interface['dev'], interface['vlan'], interface['dev'])
-        interface_short_name = "{}.{}".format(
-            interface['dev'], interface['vlan'])
-        interface_description = get_interface_description(
-            remote, interface_short_name)
-        assert_true(interface_name in interface_description)
-        if interface.get('name') == 'floating':
-            continue
-        if interface.get('ip'):
-            assert_true(
-                "inet {}".format(interface.get('ip')) in
-                interface_description)
-        else:
-            assert_false("inet " in interface_description)
-        if interface.get('brd'):
-            assert_true(
-                "brd {}".format(interface['brd']) in interface_description)
 
 
 @logwrap
