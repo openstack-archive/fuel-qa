@@ -48,6 +48,9 @@ class NeutronVlan(TestBasic):
 
         """
         self.env.revert_snapshot("ready_with_3_slaves")
+        # vkhlyunev: for debug purpose - remove asap
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[0: 4], timeout=60)
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
