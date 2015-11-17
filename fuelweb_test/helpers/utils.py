@@ -27,6 +27,7 @@ from proboscis import asserts
 from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test import settings
+from fuelweb_test.settings import MASTER_IS_CENTOS7
 
 
 @logwrap
@@ -271,7 +272,8 @@ class TimeStat(object):
         except Exception:
             logger.error("Error storing time statistic for {0}"
                          " {1}".format(yaml_path, traceback.format_exc()))
-            raise
+            if not MASTER_IS_CENTOS7:
+                raise
 
     @property
     def spent_time(self):

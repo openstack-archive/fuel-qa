@@ -20,6 +20,7 @@ from proboscis.asserts import assert_true
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
+from fuelweb_test.settings import MASTER_IS_CENTOS7
 
 
 class GroupNtpSync(object):
@@ -52,7 +53,8 @@ class GroupNtpSync(object):
         return self
 
     def __exit__(self, exp_type, exp_value, traceback):
-        [ntp.remote.clear() for ntp in self.ntps]
+        if not MASTER_IS_CENTOS7:
+            [ntp.remote.clear() for ntp in self.ntps]
 
     @property
     def is_synchronized(self):
@@ -140,10 +142,11 @@ class Ntp(object):
         cls.server = remote.execute(cmd)['stdout'][0]
 
         cmd = "find /etc/init.d/ -regex '/etc/init.d/ntp.?'"
-        cls.service = remote.execute(cmd)['stdout'][0].strip()
+        if not MASTER_IS_CENTOS7:
+            cls.service = remote.execute(cmd)['stdout'][0].strip()
 
         # Speedup time synchronization for slaves that use admin node as a peer
-        if admin_ip:
+        if admin_ip and not MASTER_IS_CENTOS7:
             cmd = ("sed -i 's/^server {0} .*/server {0} minpoll 3 maxpoll 5 "
                    "ibrust/' /etc/ntp.conf".format(admin_ip))
             remote.execute(cmd)
@@ -197,6 +200,13 @@ class Ntp(object):
                     self.is_connected = True
                     return self.is_connected
 
+                # 4. If centos 7 and jitter & offset are less than 500, let it
+                # pass for now.
+                if MASTER_IS_CENTOS7:
+                    if (abs(offset) < 500) and (abs(jitter) < 500):
+                        self.is_connected = True
+                        return self.is_connected
+
             time.sleep(interval)
         return self.is_connected
 
@@ -210,12 +220,14 @@ class NtpInitscript(Ntp):
     @logwrap
     def start(self):
         self.is_connected = False
-        self.remote.execute("{0} start".format(self.service))
+        if not MASTER_IS_CENTOS7:
+            self.remote.execute("{0} start".format(self.service))
 
     @logwrap
     def stop(self):
         self.is_connected = False
-        self.remote.execute("{0} stop".format(self.service))
+        if not MASTER_IS_CENTOS7:
+            self.remote.execute("{0} stop".format(self.service))
 
     @logwrap
     def get_peers(self):
