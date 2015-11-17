@@ -1371,19 +1371,17 @@ class FuelWebClient(object):
                 net_settings[net_provider]['config']['floating_ranges'] = \
                     [[str(floating[0]), str(floating[-2])]]
 
-                devops_env = self.environment.d_env
 
-                if 'baremetal' in networks and devops_env.get_networks(
-                        name='ironic'):
-                    ironic_net = self.environment.d_env.get_network(
-                        name='ironic').ip
-                    subnet1, subnet2 = ironic_net.subnet()
-                    networks['baremetal']['cidr'] = str(ironic_net)
-                    networks['baremetal']['gateway'] = str(ironic_net[-2])
-                    networks['baremetal']['ip_range'] = [
-                        str(subnet1[2]), str(subnet2[0])]
-                    net_settings[net_provider]['config']['baremetal_ranges'] =\
-                        [[str(subnet2[1]), str(subnet2[-3])]]
+                #if 'baremetal' in networks:
+                #    ironic_net = self.environment.d_env.get_network(
+                #        name='ironic').ip
+                #    subnet1, subnet2 = ironic_net.subnet()
+                #    networks['baremetal']['cidr'] = str(ironic_net)
+                #    networks['baremetal']['gateway'] = str(ironic_net[-2])
+                #    networks['baremetal']['ip_range'] = [
+                #        str(subnet1[2]), str(subnet2[0])]
+                #    net_settings[net_provider]['config']['baremetal_ranges'] =\
+                #        [[str(subnet2[1]), str(subnet2[-3])]]
 
                 if BONDING:
                     # leave defaults for mgmt, storage and private if
