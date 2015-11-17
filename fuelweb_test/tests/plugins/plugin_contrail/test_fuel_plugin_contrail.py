@@ -28,6 +28,7 @@ from fuelweb_test.settings import CONTRAIL_PLUGIN_PATH
 from fuelweb_test.settings import CONTRAIL_PLUGIN_PACK_UB_PATH
 from fuelweb_test.settings import CONTRAIL_PLUGIN_PACK_CEN_PATH
 from fuelweb_test.settings import NEUTRON_SEGMENT
+from fuelweb_test.settings import PREDICTABLE_INTERFACE_NAMES
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -738,6 +739,29 @@ class ContrailPlugin(TestBasic):
                 'storage',
             ]
         }
+        if PREDICTABLE_INTERFACE_NAMES:
+            raw_data = [{
+                'mac': None,
+                'mode': 'active-backup',
+                'name': 'bond0',
+                'slaves': [
+                    {'name': 'enp0s7'},
+                    {'name': 'enp0s5'},
+                ],
+                'state': None,
+                'type': 'bond',
+                'assigned_networks': []
+            }, ]
+
+            interfaces = {
+                'enp0s3': ['fuelweb_admin'],
+                'enp0s4': ['public'],
+                'enp0s5': ['private'],
+                'bond0': [
+                    'management',
+                    'storage',
+                ]
+            }
 
         cluster_nodes = \
             self.fuel_web.client.list_cluster_nodes(self.cluster_id)

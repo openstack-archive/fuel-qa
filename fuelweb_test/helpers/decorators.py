@@ -34,6 +34,7 @@ from proboscis.asserts import assert_equal
 
 from fuelweb_test import logger
 from fuelweb_test import settings
+from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test.helpers.regenerate_repo import CustomRepo
 from fuelweb_test.helpers.utils import get_current_env
 from fuelweb_test.helpers.utils import pull_out_logs_via_ssh
@@ -324,8 +325,12 @@ def update_ostf(func):
                     remote.execute('dockerctl shell ostf '
                                    'bash -c "cd /var/www/nailgun/fuel-ostf; '
                                    'python setup.py develop"')
-                    remote.execute('dockerctl shell ostf '
-                                   'bash -c "supervisorctl restart ostf"')
+                    if MASTER_IS_CENTOS7:
+                        remote.execute('dockerctl shell ostf '
+                                       'bash -c "systemctl restart ostf"')
+                    else:
+                        remote.execute('dockerctl shell ostf '
+                                       'bash -c "supervisorctl restart ostf"')
                     helpers.wait(
                         lambda: "0" in
                         remote.execute('dockerctl shell ostf '
@@ -491,8 +496,11 @@ def duration(func):
     """
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        with TimeStat(func.__name__):
+        if MASTER_IS_CENTOS7:
             return func(*args, **kwargs)
+        else:
+            with TimeStat(func.__name__):
+                return func(*args, **kwargs)
     return wrapper
 
 
