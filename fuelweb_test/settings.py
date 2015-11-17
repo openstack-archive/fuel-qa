@@ -30,6 +30,9 @@ TIME_ZONE = 'UTC'
 ENV_NAME = os.environ.get("ENV_NAME", "fuel_system_test")
 VIRTUAL_ENV = os.environ.get("VIRTUAL_ENV", "")
 
+MASTER_IS_CENTOS7 = get_var_as_bool('MASTER_IS_CENTOS7', False)
+PREDICTABLE_INTERFACE_NAMES = get_var_as_bool('PREDICTABLE_INTERFACE_NAMES', False)
+
 ISO_PATH = os.environ.get('ISO_PATH')
 LOGS_DIR = os.environ.get('LOGS_DIR', os.getcwd())
 # cdrom or usb
@@ -129,6 +132,16 @@ INTERFACES = {
     'private': 'eth3',
     'storage': 'eth4',
 }
+PREDICTABLE_INTERFACES = {
+    'admin': 'enp0s3',
+    'public': 'enp0s4',
+    'management': 'enp0s5',
+    'private': 'enp0s6',
+    'storage': 'enp0s7',
+}
+if PREDICTABLE_INTERFACE_NAMES:
+    INTERFACES = PREDICTABLE_INTERFACES
+
 
 # May be one of virtio, e1000, pcnet, rtl8139
 INTERFACE_MODEL = os.environ.get('INTERFACE_MODEL', 'virtio')
@@ -223,6 +236,12 @@ BONDING_INTERFACES = {
     'admin': ['eth0'],
     'public': ['eth1', 'eth2', 'eth3', 'eth4']
 }
+PREDICTABLE_BONDING_INTERFACES = {
+    'admin': ['enp0s3'],
+    'public': ['enp0s4', 'enp0s5', 'enp0s6', 'enp0s7']
+}
+if PREDICTABLE_INTERFACE_NAMES:
+    BONDING_INTERFACES = PREDICTABLE_BONDING_INTERFACES
 
 NETWORK_MANAGERS = {
     'flat': 'FlatDHCPManager',
