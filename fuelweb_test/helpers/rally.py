@@ -62,8 +62,9 @@ class RallyEngine(object):
         if in_background:
             options = '{0} -d'.format(options)
         cmd = ("docker run {options} --user {user_id} --net=\"host\"  -e "
-               "\"http_proxy={proxy_url}\" -v {dir_for_home}:{home_bind_path} "
-               "{container_repo}:{tag} /bin/bash -c '{command}'".format(
+               "\"http_proxy={proxy_url}\" -e \"https_proxy={proxy_url}\" "
+               "-v {dir_for_home}:{home_bind_path} {container_repo}:{tag} "
+               "/bin/bash -c '{command}'".format(
                    options=options,
                    user_id=self.user_id,
                    proxy_url=self.proxy_url,
@@ -80,7 +81,7 @@ class RallyEngine(object):
 
     def setup_utils(self):
         utils = ['gawk', 'vim', 'curl']
-        cmd = ('unset http_proxy; apt-get update; '
+        cmd = ('unset http_proxy https_proxy; apt-get update; '
                'apt-get install -y {0}'.format(' '.join(utils)))
         logger.debug('Installing utils "{0}" to the Rally container...'.format(
             utils))
@@ -236,11 +237,12 @@ class RallyDeployment(object):
     def create_deployment(self):
         if self.is_deployment_exist:
             return
-        cmd = ('export OS_USERNAME={0} OS_PASSWORD={1} OS_TENANT_NAME={2} '
-               'OS_AUTH_URL="{3}"; rally deployment create --name "{4}"'
-               ' --fromenv').format(self.username, self.password,
-                                    self.tenant_name, self.auth_url,
-                                    self.cluster_vip)
+        cmd = ('rally deployment create --name "{0}" --filename '
+               '<(echo \'{{ "admin": {{ "password": "{1}", "tenant_name": "{2}'
+               '", "username": "{3}" }}, "auth_url": "{4}", "endpoint": null, '
+               '"type": "ExistingCloud", "https_insecure": true }}\')').format(
+            self.cluster_vip, self.password, self.tenant_name, self.username,
+            self.auth_url)
         result = self.rally_engine.run_container_command(cmd)
         assert_true(self.is_deployment_exist,
                     'Rally deployment creation failed: {0}'.format(result))
