@@ -28,6 +28,7 @@ from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
+from fuelweb_test.settings import PREDICTABLE_INTERFACE_NAMES
 from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -826,6 +827,13 @@ class UntaggedNetworksNegative(TestBasic):
             'eth2': ["management", "storage"],
             'eth3': []
         }
+        if PREDICTABLE_INTERFACE_NAMES:
+            interfaces = {
+                'enp0s3': ["fixed"],
+                'enp0s4': ["public"],
+                'enp0s5': ["management", "storage"],
+                'enp0s6': []
+            }
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
