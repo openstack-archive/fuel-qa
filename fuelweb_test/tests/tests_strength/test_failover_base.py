@@ -114,7 +114,7 @@ class TestHaFailoverBase(TestBasic):
                 'slave-05': ['compute']
             }
         )
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id, timeout=150 * 60)
         public_vip = self.fuel_web.get_public_vip(cluster_id)
         os_conn = os_actions.OpenStackActions(public_vip)
         self.fuel_web.assert_cluster_ready(os_conn, smiles_count=14)
