@@ -463,9 +463,10 @@ class CephRadosGW(TestBasic):
         Snapshot ceph_rados_gw
 
         """
-        def radosgw_started(remote):
+
+        def radosgw_started(rados_remote):
             return len(
-                remote.check_call(
+                rados_remote.check_call(
                     'ps aux | grep "/usr/bin/radosgw -n '
                     'client.radosgw.gateway"')['stdout']) == 3
 
@@ -499,11 +500,14 @@ class CephRadosGW(TestBasic):
                 'slave-06': ['compute', 'ceph-osd']
             }
         )
-        self.fuel_web.verify_network(cluster_id)
+
+        # self.fuel_web.verify_network(cluster_id)
         # Deploy cluster
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        # TODO Will hang
+        self.fuel_web.deploy_cluster_wait(cluster_id, timeout=240 * 60)
 
         # Network verification
+        # TODO will hang
         self.fuel_web.verify_network(cluster_id)
 
         # HAProxy backend checking
@@ -529,6 +533,8 @@ class CephRadosGW(TestBasic):
         # Check the radosgw daemon is started
         with self.fuel_web.get_ssh_for_node('slave-01') as remote:
             assert_true(radosgw_started(remote), 'radosgw daemon started')
+
+        self.fuel_web.verify_network(cluster_id)
 
         self.env.make_snapshot("ceph_rados_gw")
 
