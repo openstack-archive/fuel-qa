@@ -651,8 +651,6 @@ class NodeMultipleInterfaces(TestBasic):
             self.fuel_web.update_node_networks(node['id'], interfaces_dict)
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        for node in ['slave-01', 'slave-02', 'slave-03']:
-            self.env.verify_network_configuration(node)
 
         self.fuel_web.verify_network(cluster_id)
 
