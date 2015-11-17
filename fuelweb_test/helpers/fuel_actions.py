@@ -32,6 +32,7 @@ from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
 from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
 from fuelweb_test.helpers import replace_repos
 from fuelweb_test.helpers.utils import cond_upload
+from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
 from fuelweb_test.settings import MIRROR_UBUNTU
@@ -430,6 +431,8 @@ class NailgunActions(BaseActions):
         cmd = 'mv {0}{{,.backup_$(date +%s)}}'.format(log_file)
         self.execute_in_container(cmd)
         cmd = 'supervisorctl restart statsenderd'
+        if MASTER_IS_CENTOS7:
+            cmd = 'systemctl restart statsenderd'
         self.execute_in_container(cmd, exit_code=0)
         cmd = 'grep -sw "ERROR" {0}'.format(log_file)
         try:
@@ -447,6 +450,9 @@ class NailgunActions(BaseActions):
         for resource in resources:
             cmd = 'supervisorctl restart oswl' \
                   '_{0}_collectord'.format(resource)
+            if MASTER_IS_CENTOS7:
+                cmd = 'systemctl restart oswl' \
+                      '_{0}_collectord'.format(resource)
             self.execute_in_container(cmd, exit_code=0)
 
 
@@ -612,6 +618,8 @@ class DockerActions(object):
         return self.admin_remote.execute('dockerctl list')['stdout']
 
     def wait_for_ready_containers(self, timeout=300):
+        if MASTER_IS_CENTOS7:
+            return
         cont_actions = []
         for container in self.list_containers():
             cont_action = BaseActions(self.admin_remote)
