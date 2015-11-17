@@ -71,6 +71,7 @@ from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import OSTF_TEST_NAME
 from fuelweb_test.settings import OSTF_TEST_RETRIES_COUNT
+from fuelweb_test.settings import PREDICTABLE_INTERFACE_NAMES
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
 from fuelweb_test.settings import TIMEOUT
@@ -1162,11 +1163,16 @@ class FuelWebClient(object):
                 ifaces.extend(s['name'] for s in bond['slaves'])
             return ifaces
 
-        # fuelweb_admin is always on eth0 unless the interface is not bonded
-        if 'eth0' not in get_bond_ifaces():
-            interfaces_dict['eth0'] = interfaces_dict.get('eth0', [])
-            if 'fuelweb_admin' not in interfaces_dict['eth0']:
-                interfaces_dict['eth0'].append('fuelweb_admin')
+        # fuelweb_admin is always on 1st iface unless the iface is not bonded
+        if PREDICTABLE_INTERFACE_NAMES:
+            iface = 'enp0s3'
+        else:
+            iface = 'eth0'
+        if iface not in get_bond_ifaces():
+            interfaces_dict[iface] = interfaces_dict.get(iface,
+                                                         [])
+            if 'fuelweb_admin' not in interfaces_dict[iface]:
+                interfaces_dict[iface].append('fuelweb_admin')
 
         def get_iface_by_name(ifaces, name):
             iface = filter(lambda iface: iface['name'] == name, ifaces)
@@ -1301,9 +1307,34 @@ class FuelWebClient(object):
                 'eth4': ['storage'],
             }
 
+        if PREDICTABLE_INTERFACE_NAMES:
+            if NEUTRON == net_provider:
+                assigned_networks = {
+                    'enp0s3': ['fuelweb_admin'],
+                    'enp0s4': ['public'],
+                    'enp0s5': ['management'],
+                    'enp0s6': ['private'],
+                    'enp0s7': ['storage'],
+                }
+            else:
+                assigned_networks = {
+                    'enp0s3': ['fuelweb_admin'],
+                    'enp0s4': ['public'],
+                    'enp0s5': ['management'],
+                    'enp0s6': ['fixed'],
+                    'enp0s7': ['storage'],
+                }
+
+        if PREDICTABLE_INTERFACE_NAMES:
+            baremetal_iface = 'eth5'
+        else:
+            baremetal_iface = 'enp0s8'
         if self.get_cluster_additional_components(cluster_id).get(
                 'ironic', False):
-            assigned_networks['eth5'] = ['baremetal']
+            assigned_networks[baremetal_iface] = ['baremetal']
+
+        if PREDICTABLE_INTERFACE_NAMES:
+            logger.info(str(assigned_networks))
 
         if not nailgun_nodes:
             nailgun_nodes = self.client.list_cluster_nodes(cluster_id)
@@ -1392,8 +1423,9 @@ class FuelWebClient(object):
 
                 devops_env = self.environment.d_env
 
-                if 'baremetal' in networks and devops_env.get_networks(
-                        name='ironic'):
+                if not PREDICTABLE_INTERFACE_NAMES and \
+                        'baremetal' in networks and \
+                        devops_env.get_networks(name='ironic'):
                     ironic_net = self.environment.d_env.get_network(
                         name='ironic').ip
                     subnet1, subnet2 = ironic_net.subnet()
