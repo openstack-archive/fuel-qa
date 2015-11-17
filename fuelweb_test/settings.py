@@ -123,11 +123,11 @@ DHCP = {
 }
 
 INTERFACES = {
-    'admin': 'eth0',
-    'public': 'eth1',
-    'management': 'eth2',
-    'private': 'eth3',
-    'storage': 'eth4',
+    'admin': 'enp0s3',
+    'public': 'enp0s4',
+    'management': 'enp0s5',
+    'private': 'enp0s6',
+    'storage': 'enp0s7',
 }
 
 # May be one of virtio, e1000, pcnet, rtl8139
@@ -220,8 +220,8 @@ if MULTIPLE_NETWORKS:
 BONDING = get_var_as_bool("BONDING", False)
 
 BONDING_INTERFACES = {
-    'admin': ['eth0'],
-    'public': ['eth1', 'eth2', 'eth3', 'eth4']
+    'admin': ['enp0s3'],
+    'public': ['enp0s4', 'enp0s5', 'enp0s6', 'enp0s7']
 }
 
 NETWORK_MANAGERS = {
