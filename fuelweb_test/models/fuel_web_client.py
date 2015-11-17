@@ -861,6 +861,10 @@ class FuelWebClient(object):
         if help_data.BONDING:
             return self.get_nailgun_node_by_base_name(devops_node.name)
 
+        raise LookupError("Can not find node {} in nailgun database!".format(
+            devops_node.name
+        ))
+
     @logwrap
     def get_nailgun_node_by_fqdn(self, fqdn):
         """Return nailgun node with fqdn
