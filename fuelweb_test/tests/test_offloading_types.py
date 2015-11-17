@@ -21,6 +21,7 @@ from fuelweb_test.helpers.checkers import check_offload
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test.settings import PREDICTABLE_INTERFACE_NAMES
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -82,6 +83,30 @@ class TestOffloading(TestBasic):
                 'state': 'false',
                 'name': 'large-receive-offload',
                 'sub': []}]}]
+
+        if PREDICTABLE_INTERFACE_NAMES:
+            interfaces = {
+                'enp0s3': ['fuelweb_admin'],
+                'enp0s4': ['public'],
+                'enp0s5': ['management'],
+                'enp0s6': ['private'],
+                'enp0s7': ['storage'],
+            }
+
+            offloading_modes = [{
+                'name': 'enp0s4',
+                'offloading_modes': [{
+                    'state': 'true',
+                    'name': 'rx-vlan-offload',
+                    'sub': []}, {
+                    'state': 'true',
+                    'name': 'tx-vlan-offload',
+                    'sub': []}]}, {
+                'name': 'enp0s5',
+                'offloading_modes': [{
+                    'state': 'false',
+                    'name': 'large-receive-offload',
+                    'sub': []}]}]
 
         self.show_step(2)
         self.show_step(3)
@@ -189,6 +214,30 @@ class TestOffloading(TestBasic):
                 'state': 'false',
                 'name': 'large-receive-offload',
                 'sub': []}]}]
+
+        if PREDICTABLE_INTERFACE_NAMES:
+            interfaces = {
+                'enp0s3': ['fuelweb_admin'],
+                'enp0s4': ['public'],
+                'enp0s5': ['management'],
+                'enp0s6': ['private'],
+                'enp0s7': ['storage'],
+            }
+
+            offloading_modes = [{
+                'name': 'enp0s4',
+                'offloading_modes': [{
+                    'state': 'true',
+                    'name': 'rx-vlan-offload',
+                    'sub': []}, {
+                    'state': 'true',
+                    'name': 'tx-vlan-offload',
+                    'sub': []}]}, {
+                'name': 'enp0s5',
+                'offloading_modes': [{
+                    'state': 'false',
+                    'name': 'large-receive-offload',
+                    'sub': []}]}]
 
         self.show_step(2)
         self.show_step(3)
