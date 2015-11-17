@@ -64,11 +64,11 @@ class VcenterDeploy(TestBasic):
         # because Nova will use the same vSwitch for PortGroups creating
         # as a ESXi management interface is located in.
         interfaces = {
-            'eth0': ["fuelweb_admin"],
-            'eth1': ["public", "fixed"],
-            'eth2': ["management", ],
-            'eth3': [],
-            'eth4': ["storage"]
+            'enp0s3': ["fuelweb_admin"],
+            'enp0s4': ["public", "fixed"],
+            'enp0s5': ["management", ],
+            'enp0s6': [],
+            'enp0s7': ["storage"]
         }
 
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
@@ -962,11 +962,11 @@ class VcenterDeploy(TestBasic):
         # because Nova will use the same vSwitch for PortGroups creating
         # as a ESXi management interface is located in.
         interfaces = {
-            'eth0': ["fuelweb_admin"],
-            'eth1': ["public", "fixed"],
-            'eth2': ["management", ],
-            'eth3': [],
-            'eth4': ["storage"]
+            'enp0s3': ["fuelweb_admin"],
+            'enp0s4': ["public", "fixed"],
+            'enp0s5': ["management", ],
+            'enp0s6': [],
+            'enp0s7': ["storage"]
         }
         self.configure_nova_vlan(cluster_id)
         # Configure VMWare vCenter

@@ -41,8 +41,8 @@ class BondingTest(TestBasic):
                 'mode': 'active-backup',
                 'name': 'bond1',
                 'slaves': [
-                    {'name': 'eth1'},
-                    {'name': 'eth0'}
+                    {'name': 'enp0s4'},
+                    {'name': 'enp0s3'}
                 ],
                 'state': None,
                 'type': 'bond',

@@ -240,11 +240,11 @@ class TestJumboFrames(base_test_case.TestBasic):
         )
 
         interfaces = {
-            'eth0': ['fuelweb_admin'],
-            'eth1': ['public'],
-            'eth2': ['management'],
-            'eth3': ['private'],
-            'eth4': ['storage'],
+            'enp0s3': ['fuelweb_admin'],
+            'enp0s4': ['public'],
+            'enp0s5': ['management'],
+            'enp0s6': ['private'],
+            'enp0s7': ['storage'],
         }
 
         interfaces_update = [{
@@ -321,11 +321,11 @@ class TestJumboFrames(base_test_case.TestBasic):
         )
 
         interfaces = {
-            'eth0': ['fuelweb_admin'],
-            'eth1': ['public'],
-            'eth2': ['management'],
-            'eth3': ['private'],
-            'eth4': ['storage'],
+            'enp0s3': ['fuelweb_admin'],
+            'enp0s4': ['public'],
+            'enp0s5': ['management'],
+            'enp0s6': ['private'],
+            'enp0s7': ['storage'],
         }
 
         interfaces_update = [{
