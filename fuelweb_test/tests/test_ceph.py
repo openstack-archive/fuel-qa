@@ -497,7 +497,8 @@ class CephRadosGW(TestBasic):
                 'slave-04': ['compute', 'ceph-osd'],
                 'slave-05': ['compute', 'ceph-osd'],
                 'slave-06': ['compute', 'ceph-osd']
-            }
+            },
+            update_interfaces=False  # TODO(akostrikov) fix 
         )
         self.fuel_web.verify_network(cluster_id)
         # Deploy cluster

@@ -34,7 +34,7 @@ class GroupNtpSync(object):
             raise Exception("'env' is not set, failed to initialize"
                             " connections to {0}".format(nailgun_nodes))
         self.ntps = []
-
+        return
         if sync_admin_node:
             # Add a 'Ntp' instance with connection to Fuel admin node
             self.ntps.append(
@@ -140,10 +140,10 @@ class Ntp(object):
         cls.server = remote.execute(cmd)['stdout'][0]
 
         cmd = "find /etc/init.d/ -regex '/etc/init.d/ntp.?'"
-        cls.service = remote.execute(cmd)['stdout'][0].strip()
+        #cls.service = remote.execute(cmd)['stdout'][0].strip()
 
         # Speedup time synchronization for slaves that use admin node as a peer
-        if admin_ip:
+        if False:
             cmd = ("sed -i 's/^server {0} .*/server {0} minpoll 3 maxpoll 5 "
                    "ibrust/' /etc/ntp.conf".format(admin_ip))
             remote.execute(cmd)
