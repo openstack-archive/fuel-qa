@@ -488,11 +488,6 @@ class EnvironmentModel(object):
             with GroupNtpSync(self, nailgun_nodes=other_nodes) as g_ntp:
                 g_ntp.do_sync_time()
 
-    def verify_network_configuration(self, node_name):
-        node = self.fuel_web.get_nailgun_node_by_name(node_name)
-        with self.fuel_web.get_ssh_for_node(node_name) as ssh:
-            checkers.verify_network_configuration(node=node, remote=ssh)
-
     def wait_bootstrap(self):
         logger.info("Waiting while bootstrapping is in progress")
         log_path = "/var/log/puppet/bootstrap_admin_node.log"
