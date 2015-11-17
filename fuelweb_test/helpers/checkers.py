@@ -338,7 +338,7 @@ def enable_advanced_mode(remote, path):
 
 @logwrap
 def restart_nailgun(remote):
-    cmd = 'dockerctl shell nailgun supervisorctl restart nailgun'
+    cmd = 'dockerctl shell nailgun systemctl restart nailgun'
     result = remote.execute(cmd)
     assert_equal(0, result['exit_code'], result['stderr'])
 

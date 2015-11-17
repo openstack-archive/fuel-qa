@@ -730,9 +730,9 @@ class ContrailPlugin(TestBasic):
         }, ]
 
         interfaces = {
-            'eth0': ['fuelweb_admin'],
-            'eth1': ['public'],
-            'eth3': ['private'],
+            'enp0s3': ['fuelweb_admin'],
+            'enp0s4': ['public'],
+            'enp0s5': ['private'],
             'bond0': [
                 'management',
                 'storage',

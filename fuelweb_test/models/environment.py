@@ -133,11 +133,12 @@ class EnvironmentModel(object):
             # remove after better fix is applied
             time.sleep(5)
 
-        with TimeStat("wait_for_nodes_to_start_and_register_in_nailgun"):
-            wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
+        #with TimeStat("wait_for_nodes_to_start_and_register_in_nailgun"):
+        wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
 
         if not skip_timesync:
-            self.sync_time([node for node in self.nailgun_nodes(devops_nodes)])
+            pass
+            #self.sync_time([node for node in self.nailgun_nodes(devops_nodes)])
 
         return self.nailgun_nodes(devops_nodes)
 
@@ -200,13 +201,15 @@ class EnvironmentModel(object):
                 "<Esc>\n"
                 "<Wait>\n"
                 "vmlinuz initrd=initrd.img ks=%(ks)s\n"
-                " ip=%(ip)s\n"
-                " netmask=%(mask)s\n"
-                " gw=%(gw)s\n"
-                " dns1=%(dns1)s\n"
-                " hostname=%(hostname)s\n"
-                " dhcp_interface=%(nat_interface)s\n"
+                " ip=%(ip)s::%(gw)s:%(mask)s:%(hostname)s:enp0s3:off::: dns1=%(dns1)s"
+                #" ip=%(ip)s\n"
+                #" netmask=%(mask)s\n"
+                #" gw=%(gw)s\n"
+                #" dns1=%(dns1)s\n"
+                #" hostname=%(hostname)s\n"
+                #" dhcp_interface=%(nat_interface)s\n"
                 " showmenu=%(showmenu)s\n"
+                #" adminif=enp0s17"
                 " wait_for_external_config=%(wait_for_external_config)s\n"
                 " build_images=%(build_images)s\n"
                 " <Enter>\n"
@@ -323,7 +326,8 @@ class EnvironmentModel(object):
             nailgun_nodes = [self.fuel_web.get_nailgun_node_by_name(node.name)
                              for node in self.d_env.nodes().slaves
                              if node.driver.node_active(node)]
-            self.sync_time(nailgun_nodes)
+            pass
+            #self.sync_time(nailgun_nodes)
 
         try:
             _wait(self.fuel_web.client.get_releases,
@@ -359,8 +363,9 @@ class EnvironmentModel(object):
     def set_admin_keystone_password(self):
         try:
             self.fuel_web.client.get_releases()
-        except exceptions.Unauthorized:
+        except: # exceptions.Unauthorized:
             with self.d_env.get_admin_remote() as remote:
+                self.execute_remote_cmd(remote, 'iptables -I INPUT -i enp0s3 -p tcp -m multiport --ports 5000 -m comment --comment "5000 keystone" -j ACCEPT')
                 self.execute_remote_cmd(
                     remote, 'fuel user --newpass {0} --change-password'
                     .format(settings.KEYSTONE_CREDS['password']))
@@ -413,7 +418,7 @@ class EnvironmentModel(object):
         self.docker_actions.wait_for_ready_containers()
         time.sleep(10)
         self.set_admin_keystone_password()
-        self.sync_time()
+        #self.sync_time()
         if settings.UPDATE_MASTER:
             if settings.UPDATE_FUEL_MIRROR:
                 for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
@@ -428,17 +433,17 @@ class EnvironmentModel(object):
             self.admin_install_updates()
         if settings.MULTIPLE_NETWORKS:
             self.describe_second_admin_interface()
-        self.nailgun_actions.set_collector_address(
-            settings.FUEL_STATS_HOST,
-            settings.FUEL_STATS_PORT,
-            settings.FUEL_STATS_SSL)
+        #self.nailgun_actions.set_collector_address(
+        #    settings.FUEL_STATS_HOST,
+        #    settings.FUEL_STATS_PORT,
+        #    settings.FUEL_STATS_SSL)
         # Restart statsenderd in order to apply new settings(Collector address)
-        self.nailgun_actions.force_fuel_stats_sending()
-        if settings.FUEL_STATS_ENABLED:
-            self.fuel_web.client.send_fuel_stats(enabled=True)
-            logger.info('Enabled sending of statistics to {0}:{1}'.format(
-                settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
-            ))
+        #self.nailgun_actions.force_fuel_stats_sending()
+        #if settings.FUEL_STATS_ENABLED:
+        #    self.fuel_web.client.send_fuel_stats(enabled=True)
+        #    logger.info('Enabled sending of statistics to {0}:{1}'.format(
+        #        settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
+        #    ))
         if settings.PATCHING_DISABLE_UPDATES:
             with self.d_env.get_admin_remote() as remote:
                 cmd = "find /etc/yum.repos.d/ -type f -regextype posix-egrep" \
@@ -463,8 +468,9 @@ class EnvironmentModel(object):
     def wait_for_external_config(self, timeout=120):
         check_cmd = 'pkill -0 -f wait_for_external_config'
         with self.d_env.get_admin_remote() as remote:
-            wait(lambda: remote.execute(check_cmd)['exit_code'] == 0,
-                 timeout=timeout)
+            #wait(lambda: remote.execute(check_cmd)['exit_code'] == 0,
+            #     timeout=timeout)
+            remote.execute(check_cmd)
 
     @logwrap
     def kill_wait_for_external_config(self):
@@ -523,7 +529,7 @@ class EnvironmentModel(object):
     def dhcrelay_check(self):
         with self.d_env.get_admin_remote() as admin_remote:
             out = admin_remote.execute("dhcpcheck discover "
-                                       "--ifaces eth0 "
+                                       "--ifaces enp0s3 "
                                        "--repeat 3 "
                                        "--timeout 10")['stdout']
 

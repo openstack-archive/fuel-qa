@@ -682,9 +682,9 @@ class FuelWebClient(object):
         attributes = self.client.get_cluster_attributes(cluster_id)
         return attributes['editable']['repo_setup']['repos']
 
+    #@duration
     @download_packages_json
     @download_astute_yaml
-    @duration
     @check_repos_management
     @custom_repo
     def deploy_cluster_wait(self, cluster_id, is_feature=False,
@@ -1163,10 +1163,10 @@ class FuelWebClient(object):
             return ifaces
 
         # fuelweb_admin is always on eth0 unless the interface is not bonded
-        if 'eth0' not in get_bond_ifaces():
-            interfaces_dict['eth0'] = interfaces_dict.get('eth0', [])
-            if 'fuelweb_admin' not in interfaces_dict['eth0']:
-                interfaces_dict['eth0'].append('fuelweb_admin')
+        if 'enp0s3' not in get_bond_ifaces():
+            interfaces_dict['enp0s3'] = interfaces_dict.get('enp0s3', [])
+            if 'fuelweb_admin' not in interfaces_dict['enp0s3']:
+                interfaces_dict['enp0s3'].append('fuelweb_admin')
 
         def get_iface_by_name(ifaces, name):
             iface = filter(lambda iface: iface['name'] == name, ifaces)
@@ -1288,22 +1288,26 @@ class FuelWebClient(object):
         net_provider = self.client.get_cluster(cluster_id)['net_provider']
         if NEUTRON == net_provider:
             assigned_networks = {
-                'eth1': ['public'],
-                'eth2': ['management'],
-                'eth3': ['private'],
-                'eth4': ['storage'],
+                'enp0s3': ['fuelweb_admin'],
+                'enp0s4': ['public'],
+                'enp0s5': ['management'],
+                'enp0s6': ['private'],
+                'enp0s7': ['storage'],
             }
         else:
             assigned_networks = {
-                'eth1': ['public'],
-                'eth2': ['management'],
-                'eth3': ['fixed'],
-                'eth4': ['storage'],
+                'enp0s3': ['fuelweb_admin'],
+                'enp0s4': ['public'],
+                'enp0s5': ['management'],
+                'enp0s6': ['fixed'],
+                'enp0s7': ['storage'],
             }
 
         if self.get_cluster_additional_components(cluster_id).get(
                 'ironic', False):
-            assigned_networks['eth5'] = ['baremetal']
+            assigned_networks['enp0s8'] = ['baremetal']
+
+        logger.info(str(assigned_networks))
 
         if not nailgun_nodes:
             nailgun_nodes = self.client.list_cluster_nodes(cluster_id)
@@ -1392,7 +1396,7 @@ class FuelWebClient(object):
 
                 devops_env = self.environment.d_env
 
-                if 'baremetal' in networks and devops_env.get_networks(
+                if False and 'baremetal' in networks and devops_env.get_networks(  # ?
                         name='ironic'):
                     ironic_net = self.environment.d_env.get_network(
                         name='ironic').ip

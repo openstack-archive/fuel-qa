@@ -325,7 +325,7 @@ def update_ostf(func):
                                    'bash -c "cd /var/www/nailgun/fuel-ostf; '
                                    'python setup.py develop"')
                     remote.execute('dockerctl shell ostf '
-                                   'bash -c "supervisorctl restart ostf"')
+                                   'bash -c "systemctl restart ostf"')
                     helpers.wait(
                         lambda: "0" in
                         remote.execute('dockerctl shell ostf '
