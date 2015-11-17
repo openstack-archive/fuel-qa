@@ -131,7 +131,8 @@ class EnvironmentModel(object):
             wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
 
         if not skip_timesync:
-            self.sync_time([node for node in self.nailgun_nodes(devops_nodes)])
+            pass
+            #self.sync_time([node for node in self.nailgun_nodes(devops_nodes)])
 
         return self.nailgun_nodes(devops_nodes)
 
@@ -308,7 +309,8 @@ class EnvironmentModel(object):
             nailgun_nodes = [self.fuel_web.get_nailgun_node_by_name(node.name)
                              for node in self.d_env.nodes().slaves
                              if node.driver.node_active(node)]
-            self.sync_time(nailgun_nodes)
+            pass
+            #self.sync_time(nailgun_nodes)
 
         try:
             _wait(self.fuel_web.client.get_releases,
@@ -398,7 +400,7 @@ class EnvironmentModel(object):
         self.docker_actions.wait_for_ready_containers()
         time.sleep(10)
         self.set_admin_keystone_password()
-        self.sync_time()
+        #self.sync_time()
         if settings.UPDATE_MASTER:
             if settings.UPDATE_FUEL_MIRROR:
                 for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
@@ -413,17 +415,17 @@ class EnvironmentModel(object):
             self.admin_install_updates()
         if settings.MULTIPLE_NETWORKS:
             self.describe_second_admin_interface()
-        self.nailgun_actions.set_collector_address(
-            settings.FUEL_STATS_HOST,
-            settings.FUEL_STATS_PORT,
-            settings.FUEL_STATS_SSL)
+        #self.nailgun_actions.set_collector_address(
+        #    settings.FUEL_STATS_HOST,
+        #    settings.FUEL_STATS_PORT,
+        #    settings.FUEL_STATS_SSL)
         # Restart statsenderd in order to apply new settings(Collector address)
-        self.nailgun_actions.force_fuel_stats_sending()
-        if settings.FUEL_STATS_ENABLED:
-            self.fuel_web.client.send_fuel_stats(enabled=True)
-            logger.info('Enabled sending of statistics to {0}:{1}'.format(
-                settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
-            ))
+        #self.nailgun_actions.force_fuel_stats_sending()
+        #if settings.FUEL_STATS_ENABLED:
+        #    self.fuel_web.client.send_fuel_stats(enabled=True)
+        #    logger.info('Enabled sending of statistics to {0}:{1}'.format(
+        #        settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
+        #    ))
         if settings.PATCHING_DISABLE_UPDATES:
             with self.d_env.get_admin_remote() as remote:
                 cmd = "find /etc/yum.repos.d/ -type f -regextype posix-egrep" \

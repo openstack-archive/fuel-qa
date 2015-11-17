@@ -108,7 +108,7 @@ class TestBasic(object):
 @test
 class SetupEnvironment(TestBasic):
     @test(groups=["setup"])
-    @log_snapshot_after_test
+    #@log_snapshot_after_test
     def setup_master(self):
         """Create environment and set up master node
 
@@ -121,7 +121,7 @@ class SetupEnvironment(TestBasic):
         self.env.make_snapshot("empty", is_make=True)
 
     @test(groups=["setup_master_custom_manifests"])
-    @log_snapshot_after_test
+    #@log_snapshot_after_test
     def setup_with_custom_manifests(self):
         """Setup master node with custom manifests
         Scenario:
@@ -140,7 +140,7 @@ class SetupEnvironment(TestBasic):
         self.env.make_snapshot("empty_custom_manifests", is_make=True)
 
     @test(depends_on=[setup_master], groups=["prepare_release"])
-    @log_snapshot_after_test
+    #@log_snapshot_after_test
     def prepare_release(self):
         """Prepare master node
 
@@ -162,7 +162,7 @@ class SetupEnvironment(TestBasic):
 
     @test(depends_on=[prepare_release],
           groups=["prepare_slaves_1"])
-    @log_snapshot_after_test
+    #@log_snapshot_after_test
     def prepare_slaves_1(self):
         """Bootstrap 1 slave nodes
 
@@ -181,7 +181,7 @@ class SetupEnvironment(TestBasic):
 
     @test(depends_on=[prepare_release],
           groups=["prepare_slaves_3"])
-    @log_snapshot_after_test
+    #@log_snapshot_after_test
     def prepare_slaves_3(self):
         """Bootstrap 3 slave nodes
 
@@ -200,7 +200,7 @@ class SetupEnvironment(TestBasic):
 
     @test(depends_on=[prepare_release],
           groups=["prepare_slaves_5"])
-    @log_snapshot_after_test
+    #@log_snapshot_after_test
     def prepare_slaves_5(self):
         """Bootstrap 5 slave nodes
 
@@ -219,7 +219,7 @@ class SetupEnvironment(TestBasic):
 
     @test(depends_on=[prepare_release],
           groups=["prepare_slaves_9"])
-    @log_snapshot_after_test
+    #@log_snapshot_after_test
     def prepare_slaves_9(self):
         """Bootstrap 9 slave nodes
 
