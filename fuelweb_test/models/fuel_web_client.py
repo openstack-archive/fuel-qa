@@ -826,6 +826,10 @@ class FuelWebClient(object):
             if base_node_name in node['name']:
                 return node
 
+        raise LookupError("Can not find node {} in nailgun database!".format(
+            base_node_name
+        ))
+
     @logwrap
     def get_nailgun_node_by_devops_node(self, devops_node):
         """Return slave node description.
@@ -860,6 +864,10 @@ class FuelWebClient(object):
         # are changes and don't match addresses associated with devops node
         if help_data.BONDING:
             return self.get_nailgun_node_by_base_name(devops_node.name)
+
+        raise LookupError("Can not find node {} in nailgun database!".format(
+            devops_node.name
+        ))
 
     @logwrap
     def get_nailgun_node_by_fqdn(self, fqdn):
