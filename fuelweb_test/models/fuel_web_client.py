@@ -826,6 +826,13 @@ class FuelWebClient(object):
             if base_node_name in node['name']:
                 return node
 
+        raise LookupError(
+            "Can not find node '{}' in nailgun! Nodes from the "
+            "response: '{}'".format(
+                base_node_name,
+                "','".join([node['name'] for node in nodes])
+            ))
+
     @logwrap
     def get_nailgun_node_by_devops_node(self, devops_node):
         """Return slave node description.
@@ -860,6 +867,21 @@ class FuelWebClient(object):
         # are changes and don't match addresses associated with devops node
         if help_data.BONDING:
             return self.get_nailgun_node_by_base_name(devops_node.name)
+
+        log_response = ''
+        for node in nodes:
+            log_response += node['name'] + '|'
+            log_response += '|'.join(
+                [i['mac'] for i in node['meta']['interfaces']])
+            log_response += "\n"
+        raise LookupError(
+            "Can not find node '{d_name}' with macs '{d_macs}' in "
+            "nailgun! Nodes with macs from the response: \n"
+            "'{log_response}'".format(
+                d_name=devops_node.name,
+                d_macs=d_macs,
+                log_response=log_response
+            ))
 
     @logwrap
     def get_nailgun_node_by_fqdn(self, fqdn):
