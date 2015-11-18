@@ -115,15 +115,20 @@ class Build(object):
         logger.debug("Request build data from {}".format(build_url))
         return json.load(urllib2.urlopen(build_url))
 
-    def get_test_data(self, url):
-        test_url = "/".join([url.rstrip("/"), 'testReport', 'api/json'])
+    def get_test_data(self, url, result_path=None):
+        if result_path:
+            test_url = "/".join(
+                [url.rstrip("/"), 'testReport'] + result_path + ['api/json'])
+        else:
+            test_url = "/".join([url.rstrip("/"), 'testReport', 'api/json'])
+
         logger.debug("Request test data from {}".format(test_url))
         response = urllib2.urlopen(test_url)
         return json.load(response)
 
-    def test_data(self):
+    def test_data(self, result_path=None):
         try:
-            data = self.get_test_data(self.url)
+            data = self.get_test_data(self.url, result_path)
         except Exception as e:
             logger.warning("No test data for {0}: {1}".format(
                 self.url,
