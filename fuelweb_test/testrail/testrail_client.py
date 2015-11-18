@@ -365,6 +365,8 @@ class TestRailProject(object):
             'elapsed': test_results.duration,
             'version': test_results.version
         }
+        if test_results.steps:
+            new_results['custom_step_results'] = test_results.steps
         return self.client.send_post(add_results_test_uri, new_results)
 
     def add_results_for_cases(self, run_id, suite_id, tests_results):
@@ -373,10 +375,12 @@ class TestRailProject(object):
         new_results = {'results': []}
         tests_cases = self.get_cases(suite_id)
         for results in tests_results:
+            case = self.get_case_by_group(suite_id=suite_id,
+                                          group=results.group,
+                                          cases=tests_cases)
+            case_id = case['id']
             new_result = {
-                'case_id': self.get_case_by_group(suite_id=suite_id,
-                                                  group=results.group,
-                                                  cases=tests_cases)['id'],
+                'case_id': case_id,
                 'status_id': self.get_status(results.status)['id'],
                 'comment': '\n'.join(filter(lambda x: x is not None,
                                             [results.description,
@@ -386,6 +390,28 @@ class TestRailProject(object):
                 'version': results.version,
                 'custom_launchpad_bug': results.launchpad_bug
             }
+            if results.steps:
+                custom_step_results = []
+                steps = case.get('custom_test_case_steps', None)
+                if steps and len(steps) == len(results.steps):
+                    steps = zip(steps, results.steps)
+                    for s in steps:
+                        custom_step_results.append({
+                            "content": s[0]["content"],
+                            "expected": s[0]["expected"],
+                            "actual": s[1]['actual'],
+                            "status_id": self.get_status(s[1]['status'])['id']
+                        })
+                else:
+                    for s in results.steps:
+                        custom_step_results.append({
+                            "content": s['name'],
+                            "expected": 'pass',
+                            "actual": s['actual'],
+                            "status_id": self.get_status(s['status'])['id']
+                        })
+                new_result['custom_test_case_steps_results'] = \
+                    custom_step_results
             new_results['results'].append(new_result)
         return self.client.send_post(add_results_test_uri, new_results)
 
