@@ -315,27 +315,45 @@ def update_ostf(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
         try:
-            if settings.UPLOAD_PATCHSET:
-                if not settings.GERRIT_REFSPEC:
-                    raise ValueError('REFSPEC should be set for CI tests.')
-                logger.info("Uploading new patchset from {0}"
-                            .format(settings.GERRIT_REFSPEC))
+            if settings.UPDATE_OSTF:
+                logger.info("Uploading new package from {0}"
+                            .format(settings.UPDATE_OSTF_PATH))
+                pack_path = '/var/www/nailgun/fuel-ostf/'
+                container = 'ostf'
+                environment = get_current_env(args)
                 with args[0].environment.d_env.get_admin_remote() as remote:
-                    remote.upload(settings.PATCH_PATH.rstrip('/'),
-                                  '/var/www/nailgun/fuel-ostf')
-                    remote.execute('dockerctl shell ostf '
-                                   'bash -c "cd /var/www/nailgun/fuel-ostf; '
-                                   'python setup.py develop"')
-                    remote.execute('dockerctl shell ostf '
-                                   'bash -c "supervisorctl restart ostf"')
-                    helpers.wait(
-                        lambda: "0" in
-                        remote.execute('dockerctl shell ostf '
-                                       'bash -c "pgrep [o]stf; echo $?"')
-                        ['stdout'][1], timeout=60)
+                    remote.upload(settings.UPDATE_OSTF_PATH.rstrip('/'),
+                                  pack_path)
+                cmd = "rpm -e fuel-ostf"
+                environment.base_actions.execute_in_container(
+                    cmd, container, exit_code=0)
+                cmd = "yum localinstall -y {0}fuel-ostf*.rpm".format(
+                    pack_path)
+                environment.base_actions.execute_in_container(
+                    cmd, container, exit_code=0)
+                cmd = "rpm -q fuel-ostf"
+                installed_package = \
+                    environment.base_actions.execute_in_container(
+                        cmd, container)
+                cmd = "ls -1 {0}".format(pack_path)
+                new_package = \
+                    environment.base_actions.execute_in_container(
+                        cmd, container).rstrip('.rpm')
+                assert_equal(installed_package, new_package,
+                             "The new package {0} was not installed".
+                             format(new_package))
+                cmd = "supervisorctl restart ostf"
+                environment.base_actions.execute_in_container(
+                    cmd, container)
+                cmd = "supervisorctl status"
+                helpers.wait(
+                    lambda: "RUNNING" in
+                    environment.base_actions.execute_in_container(
+                        cmd, container, exit_code=0).split()[1],
+                    timeout=60)
                 logger.info("OSTF status: RUNNING")
         except Exception as e:
-            logger.error("Could not upload patch set {e}".format(e=e))
+            logger.error("Could not upload package {e}".format(e=e))
             raise
         return result
     return wrapper
