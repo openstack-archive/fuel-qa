@@ -15,6 +15,7 @@
 
 from proboscis.asserts import assert_equal
 
+from devops.helpers import helpers
 from fuelweb_test.helpers import checkers
 
 from fuelweb_test import logger
@@ -107,6 +108,58 @@ def replace_bootstrap(environment):
         container = "cobbler"
         environment.base_actions.execute_in_container(
             cmd, container, exit_code=0)
+    except Exception as e:
+        logger.error("Could not upload package {e}".format(e=e))
+        raise
+
+
+def update_ostf(environment):
+    try:
+        if settings.UPDATE_FUEL:
+            logger.info("Uploading new package from {0}"
+                        .format(settings.UPDATE_FUEL_PATH))
+            pack_path = '/var/www/nailgun/fuel-ostf/'
+            container = 'ostf'
+            with environment.d_env.get_admin_remote() as remote:
+                remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
+                              pack_path)
+            cmd = "supervisorctl stop ostf"
+            environment.base_actions.execute_in_container(
+                cmd, container)
+            helpers.wait(
+                lambda: "STOPPED" in
+                environment.base_actions.execute_in_container(
+                    cmd, container, exit_code=0).split()[1],
+                timeout=60)
+            logger.info("OSTF status: STOPPED")
+            cmd = "rpm -e fuel-ostf"
+            environment.base_actions.execute_in_container(
+                cmd, container, exit_code=0)
+            cmd = "yum localinstall -y {0}fuel-ostf*.rpm".format(
+                pack_path)
+            environment.base_actions.execute_in_container(
+                cmd, container, exit_code=0)
+            cmd = "rpm -q fuel-ostf"
+            installed_package = \
+                environment.base_actions.execute_in_container(
+                    cmd, container)
+            cmd = "ls -1 {0}".format(pack_path)
+            new_package = \
+                environment.base_actions.execute_in_container(
+                    cmd, container).rstrip('.rpm')
+            assert_equal(installed_package, new_package,
+                         "The new package {0} was not installed".
+                         format(new_package))
+            cmd = "supervisorctl start ostf"
+            environment.base_actions.execute_in_container(
+                cmd, container)
+            cmd = "supervisorctl status"
+            helpers.wait(
+                lambda: "RUNNING" in
+                environment.base_actions.execute_in_container(
+                    cmd, container, exit_code=0).split()[1],
+                timeout=60)
+            logger.info("OSTF status: RUNNING")
     except Exception as e:
         logger.error("Could not upload package {e}".format(e=e))
         raise
