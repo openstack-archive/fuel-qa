@@ -24,7 +24,7 @@ class BondingTest(TestBasic):
         self.BOND_CONFIG = [
             {
                 'mac': None,
-                'mode': 'active-backup',
+                'mode': 'balance-rr',
                 'name': 'bond0',
                 'slaves': [
                     {'name': 'eth5'},
@@ -38,7 +38,7 @@ class BondingTest(TestBasic):
             },
             {
                 'mac': None,
-                'mode': 'active-backup',
+                'mode': 'balance-rr',
                 'name': 'bond1',
                 'slaves': [
                     {'name': 'eth1'},
