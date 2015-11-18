@@ -39,8 +39,9 @@ from testrail_client import TestRailProject
 class TestResult(object):
     """TestResult."""  # TODO documentation
 
-    def __init__(self, name, group, status, duration, url=None, version=None,
-                 description=None, comments=None, launchpad_bug=None):
+    def __init__(self, name, group, status, duration, url=None,
+                 version=None, description=None, comments=None,
+                 launchpad_bug=None, steps=None):
         self.name = name
         self.group = group
         self._status = status
@@ -60,6 +61,7 @@ class TestResult(object):
             'blocked': ['blocked'],
             'custom_status2': ['in_progress']
         }
+        self._steps = steps
 
     @property
     def version(self):
@@ -83,6 +85,10 @@ class TestResult(object):
     @status.setter
     def status(self, value):
         self._status = value
+
+    @property
+    def steps(self):
+        return self._steps
 
     def __str__(self):
         result_dict = {
@@ -229,26 +235,97 @@ def check_untested(test):
 def get_tests_results(systest_build, os):
     tests_results = []
     test_build = Build(systest_build['name'], systest_build['number'])
-    for test in test_build.test_data()['suites'][0]['cases']:
-        if check_untested(test):
-            continue
-        check_blocked(test)
-        test_result = TestResult(
-            name=test['name'],
-            group=expand_test_group(test['className'],
-                                    systest_build['name'],
-                                    os),
-            status=test['status'].lower(),
-            duration='{0}s'.format(int(test['duration']) + 1),
-            url='{0}testReport/(root)/{1}/'.format(test_build.url,
-                                                   test['name']),
-            version='_'.join([test_build.build_data["id"]] +
-                             (test_build.build_data["description"]
-                              or test['name']).split()),
-            description=test_build.build_data["description"] or
-                test['name'],
-            comments=test['skippedMessage']
-        )
+    run_test_data = test_build.test_data()
+    test_classes = {}
+    for one in run_test_data['suites'][0]['cases']:
+        className = one['className']
+        if className not in test_classes:
+            test_classes[className] = {}
+            test_classes[className]['child'] = []
+            test_classes[className]['duration'] = 0
+            test_classes[className]["failCount"] = 0
+            test_classes[className]["passCount"] = 0
+            test_classes[className]["skipCount"] = 0
+
+        test_class = test_classes[className]
+        test_class['child'].append(one)
+        test_class['duration'] += float(one['duration'])
+        if one['status'].lower() in ('failed', 'error'):
+            test_class["failCount"] += 1
+        if one['status'].lower() in ('passed'):
+            test_class["passCount"] += 1
+        if one['skipped'] is True:
+            test_class["skipCount"] += 1
+
+    for klass in test_classes:
+        klass_result = test_classes[klass]
+        if len(klass_result['child']) == 1:
+            test = klass_result['child'][0]
+            if check_untested(test):
+                continue
+            check_blocked(test)
+            test_result = TestResult(
+                name=test['name'],
+                group=expand_test_group(test['className'],
+                                        systest_build['name'],
+                                        os),
+                status=test['status'].lower(),
+                duration='{0}s'.format(int(test['duration']) + 1),
+                url='{0}testReport/(root)/{1}/'.format(test_build.url,
+                                                       test['name']),
+                version='_'.join([test_build.build_data["id"]] +
+                                 (test_build.build_data["description"]
+                                  or test['name']).split()),
+                description=test_build.build_data["description"] or
+                    test['name'],
+                comments=test['skippedMessage']
+            )
+        else:
+            case_steps = []
+            test_duration = sum(
+                [float(c['duration']) for c in klass_result['child']])
+            steps = [c for c in klass_result['child']
+                     if c['name'].startswith('Step')]
+            steps = sorted(steps, key=lambda k: k['name'])
+            test_name = steps[0]['className']
+            test_group = steps[0]['className']
+            test_comments = None
+            is_test_failed = any([s['status'].lower() in ('failed', 'error')
+                                  for s in steps])
+
+            for step in steps:
+                if step['status'].lower() in ('failed', 'error'):
+                    case_steps.append({
+                        "content": step['name'],
+                        "actual": step['errorStackTrace'] or
+                        step['errorDetails'],
+                        "status": step['status'].lower()})
+                    test_comments = "{err}\n\n\n{details}".format(
+                        err=step['errorDetails'],
+                        stack=step['errorStackTrace'])
+                else:
+                    case_steps.append({
+                        "content": step['name'],
+                        "actual": "pass",
+                        "status": step['status'].lower()
+                    })
+            test_result = TestResult(
+                name=test_name,
+                group=expand_test_group(test_group,
+                                        systest_build['name'],
+                                        os),
+                status='failed' if is_test_failed else 'passed',
+                duration='{0}s'.format(int(test_duration) + 1),
+                url='{0}testReport/(root)/{1}/'.format(test_build.url,
+                                                       test_name),
+                version='_'.join([test_build.build_data["id"]] +
+                                 (test_build.build_data["description"]
+                                  or test_name).split()),
+                description=test_build.build_data["description"] or
+                    test_name,
+                comments=test_comments,
+                steps=case_steps,
+            )
         tests_results.append(test_result)
     return tests_results
 
