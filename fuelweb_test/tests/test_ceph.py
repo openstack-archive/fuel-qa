@@ -26,6 +26,7 @@ from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers.decorators import update_ostf
 from fuelweb_test.helpers.ovs import ovs_get_tag_by_port
 from fuelweb_test import ostf_test_mapping as map_ostf
 from fuelweb_test import settings
@@ -242,10 +243,8 @@ class CephHA(TestBasic):
         Snapshot ceph_ha
 
         """
-        try:
-            self.check_run('ceph_ha')
-        except SkipTest:
-            return
+        if self.env.d_env.has_snapshot('ceph_ha'):
+            raise SkipTest("Test 'ceph_ha' already ran")
 
         self.env.revert_snapshot("ready")
         self.env.bootstrap_nodes(
@@ -919,3 +918,38 @@ class CheckCephPartitionsAfterReboot(TestBasic):
             self.show_step(13, node)
             logger.info("Check Ceph health is ok after reboot")
             self.fuel_web.check_ceph_status(cluster_id)
+
+
+@test(groups=["ostf_gate"])
+class Gate(TestBasic):
+    """Gate"""  # TODO documentation
+
+    @update_ostf
+    def get_cluster_id(self):
+        return self.fuel_web.get_last_created_cluster()
+
+    @test(depends_on=[CephHA.ceph_ha],
+          groups=["gate_ostf_update"])
+    @log_snapshot_after_test
+    def gate_ostf_update(self):
+        """ Update ostf start on deployed cluster
+
+        Scenario:
+            1. Revert snapshot "ceph_ha"
+            2. Update ostf
+            3. Run ostf
+
+        Duration 35m
+
+        """
+        if settings.UPDATE_OSTF:
+            self.env.revert_snapshot("ceph_ha")
+            self.show_step(1)
+            self.show_step(2)
+            cluster_id = self.get_cluster_id()
+            self.show_step(3)
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha', 'smoke', 'sanity'])
+        else:
+            raise SkipTest()

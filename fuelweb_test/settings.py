@@ -245,7 +245,6 @@ UPLOAD_MANIFESTS_PATH = os.environ.get(
 SITEPP_FOR_UPLOAD = os.environ.get(
     'SITEPP_PATH', '/etc/puppet/modules/osnailyfacter/examples/site.pp')
 
-UPLOAD_PATCHSET = get_var_as_bool('UPLOAD_PATCHSET', False)
 GERRIT_REFSPEC = os.environ.get('GERRIT_REFSPEC')
 PATCH_PATH = os.environ.get(
     'PATCH_PATH', '/tmp/fuel-ostf')
@@ -482,6 +481,8 @@ DOWNLOAD_LINK = os.environ.get(
 UPDATE_FUEL = get_var_as_bool('UPDATE_FUEL', False)
 UPDATE_FUEL_PATH = os.environ.get('UPDATE_FUEL_PATH', '~/fuel/pkgs/')
 UPDATE_FUEL_MIRROR = os.environ.get("UPDATE_FUEL_MIRROR", '').split()
+
+UPDATE_OSTF = get_var_as_bool('UPDATE_OSTF', False)
 
 UPDATE_MASTER = get_var_as_bool('UPDATE_MASTER', False)
 
