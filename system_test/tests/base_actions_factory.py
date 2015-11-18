@@ -47,6 +47,7 @@ class BaseActionsFactory(base_test_case.TestBasic):
         #  Generate human readeble class_name, if was method docstring not
         #  described, use generated name
         class_name = "Case_{}_{}".format(cls.__name__, case_group)
+        # class_name = "Case_{}__Config_{}".format(cls.__name__, case_group)
 
         #  Make methods for new testcase class, folowing by order
         scenario.append("    Scenario:")
@@ -108,8 +109,10 @@ class BaseActionsFactory(base_test_case.TestBasic):
         groups = cls.base_group + groups
 
         # Generate test case docstring
-        test_steps["__doc__"] = "{}\n{}".format(cls.__doc__.splitlines()[0],
-                                                '\n'.join(scenario))
+        test_steps["__doc__"] = "{}\n\n{}\n\nDuration {}".format(
+            cls.__doc__.splitlines()[0],
+            '\n'.join(scenario),
+            getattr(cls, 'est_duration', '180m') or '180m')
         ret = test(
             type(class_name, (cls,), test_steps),
             groups=groups)

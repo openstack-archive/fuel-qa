@@ -143,6 +143,7 @@ class ActionsBase(PrepareBase):
         stop_deploy - stop deploying of environment (NotImplemented)
     """
 
+    est_duration = None
     base_group = None
     actions_order = None
 

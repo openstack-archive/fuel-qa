@@ -28,6 +28,7 @@ from testrail_client import TestRailProject
 
 def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
                            default_test_priority):
+    from system_test.tests.actions_base import ActionsBase
     import_tests()
 
     tests = []
@@ -37,22 +38,40 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
         for case in TestProgram(groups=[group]).cases:
             if not case.entry.info.enabled:
                 continue
+            home = case.entry.home
+            parent_home = case.entry.parent.home
+            case_state = case.state
+            if issubclass(parent_home, ActionsBase):
+                case_name = parent_home.__name__
+                test_group = parent_home.__name__
+                if any([x['custom_test_group'] == test_group for x in tests]):
+                    continue
+            else:
+                case_name = home.func_name
+                test_group = case.entry.home.func_name
             if tests_include:
-                if tests_include not in case.entry.home.func_name:
+                if tests_include not in case_name:
                     logger.debug("Skipping '{0}' test because it doesn't "
                                  "contain '{1}' in method name"
-                                 .format(case.entry.home.func_name,
+                                 .format(case_name,
                                          tests_include))
                     continue
             if tests_exclude:
-                if tests_exclude in case.entry.home.func_name:
+                if tests_exclude in case_name:
                     logger.debug("Skipping '{0}' test because it contains"
                                  " '{1}' in method name"
-                                 .format(case.entry.home.func_name,
+                                 .format(case_name,
                                          tests_exclude))
                     continue
 
-            docstring = case.entry.home.func_doc or ''
+            if issubclass(parent_home, ActionsBase):
+                docstring = parent_home.__doc__.split('\n')
+                configuration = case_state.instance.config_name
+                docstring[0] = "{0} on {1}".format(docstring[0], configuration)
+                docstring = '\n'.join(docstring)
+            else:
+                docstring = home.func_doc or ''
+                configuration = None
             docstring = '\n'.join([s.strip() for s in docstring.split('\n')])
 
             steps = [{"content": s, "expected": "pass"} for s in
@@ -60,7 +79,6 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
 
             test_duration = re.search(r'Duration\s+(\d+[s,m])\b', docstring)
             title = docstring.split('\n')[0] or case.entry.home.func_name
-            test_group = case.entry.home.func_name
 
             if case.entry.home.func_name in GROUPS_TO_EXPAND:
                 """Expand specified test names with the group names that are
