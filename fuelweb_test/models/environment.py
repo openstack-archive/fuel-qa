@@ -107,6 +107,10 @@ class EnvironmentModel(object):
         return DockerActions(self.d_env.get_admin_remote())
 
     @property
+    def base_actions(self):
+        return BaseActions(self.d_env.get_admin_remote())
+
+    @property
     def admin_node_ip(self):
         return self.fuel_web.admin_node_ip
 
