@@ -200,6 +200,12 @@ Test Fuel agent
 .. automodule:: gates_tests.tests.test_review_in_fuel_agent
   :members:
 
+Test Fuel cli
+-------------
+.. automodule:: gates_tests.test_review_in_fuel_client
+:members:
+
+
 Fuel mirror verification
 ========================
 
