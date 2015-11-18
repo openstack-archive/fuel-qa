@@ -26,7 +26,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import settings
 
 
-@test(groups=["review_fuel_agent"])
+@test(groups=["review_fuel"])
 class Gate(TestBasic):
     """Using in fuel-agent CI-gates
     Update fuel-agent in MCollective, bootstrap from review,
