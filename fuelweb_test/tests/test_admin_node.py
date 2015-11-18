@@ -393,7 +393,7 @@ class TestLogrotateBase(TestBasic):
             free_inodes, i_suff = self.check_free_inodes(remote)
             logger.debug('Free inodes before file '
                          'creation: {0}{1}'.format(free_inodes, i_suff))
-            # create 1 week old emty file
+            # create 1 week old empty file
 
             self.create_old_file(remote, name='/var/log/messages')
 

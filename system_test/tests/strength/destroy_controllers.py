@@ -68,7 +68,7 @@ class StrenghtDestroyFirstContorller(strength_base.StrenghtBaseActions):
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def destory_first_controller(self):
-        """Destory first controller"""
+        """Destroy first controller"""
         self._destory_controller('slave-01')
 
 
@@ -119,7 +119,7 @@ class StrenghtDestroySecondContorller(strength_base.StrenghtBaseActions):
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def destory_second_controller(self):
-        """Destory second controller"""
+        """Destroy second controller"""
         self._destory_controller('slave-02')
 
 

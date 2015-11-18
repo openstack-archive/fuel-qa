@@ -216,7 +216,7 @@ class SeparateDbFailover(TestBasic):
 
         Scenario:
             1. Revert snapshot separate_db_service
-            2. Add one databse node and re-deploy cluster
+            2. Add one database node and re-deploy cluster
             3. Run network verification
             4. Run OSTF
             5. Check hiera hosts are the same for
