@@ -23,7 +23,6 @@ import time
 import traceback
 from urlparse import urlparse
 
-from devops.helpers import helpers
 from fuelweb_test.helpers.checkers import check_action_logs
 from fuelweb_test.helpers.checkers import check_repo_managment
 from fuelweb_test.helpers.checkers import check_stats_on_collector
@@ -306,37 +305,6 @@ def revert_info(snapshot_name, master_ip, description=""):
                 .format(command=command))
 
     logger.info("<" * 5 + "*" * 100 + ">" * 5)
-
-
-def update_ostf(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        result = func(*args, **kwargs)
-        try:
-            if settings.UPLOAD_PATCHSET:
-                if not settings.GERRIT_REFSPEC:
-                    raise ValueError('REFSPEC should be set for CI tests.')
-                logger.info("Uploading new patchset from {0}"
-                            .format(settings.GERRIT_REFSPEC))
-                with args[0].environment.d_env.get_admin_remote() as remote:
-                    remote.upload(settings.PATCH_PATH.rstrip('/'),
-                                  '/var/www/nailgun/fuel-ostf')
-                    remote.execute('dockerctl shell ostf '
-                                   'bash -c "cd /var/www/nailgun/fuel-ostf; '
-                                   'python setup.py develop"')
-                    remote.execute('dockerctl shell ostf '
-                                   'bash -c "supervisorctl restart ostf"')
-                    helpers.wait(
-                        lambda: "0" in
-                        remote.execute('dockerctl shell ostf '
-                                       'bash -c "pgrep [o]stf; echo $?"')
-                        ['stdout'][1], timeout=60)
-                logger.info("OSTF status: RUNNING")
-        except Exception as e:
-            logger.error("Could not upload patch set {e}".format(e=e))
-            raise
-        return result
-    return wrapper
 
 
 def create_diagnostic_snapshot(env, status, name=""):
