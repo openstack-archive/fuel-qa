@@ -293,6 +293,19 @@ Test Neutron Vlan Ceph Mongo
 .. automodule:: fuelweb_test.tests.gd_based_tests.test_neutron_vlan_ceph_mongo
    :members:
 
+Gating tests
+============
+
+Test Fuel cli
+-------------
+.. automodule:: fuelweb_test.tests.gate_tests.test_review_in_fuel_client
+   :members:
+
+Test Neutron Vlan Ceph Mongo
+----------------------------
+.. automodule:: fuelweb_test.tests.gd_based_tests.test_neutron_vlan_ceph_mongo
+   :members:
+
 
 Plugins tests
 =============
