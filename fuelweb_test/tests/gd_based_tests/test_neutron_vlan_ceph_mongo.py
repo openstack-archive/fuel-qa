@@ -211,7 +211,7 @@ class NeutronVlanCephMongo(TestBasic):
                         remote=remote,
                         path=self.get_post_test(tasks, 'globals')[0]['cmd'])
 
-        # check netcondfig
+        # check netconfig
 
         if self.get_post_test(tasks, 'netconfig'):
             for node in nodes:

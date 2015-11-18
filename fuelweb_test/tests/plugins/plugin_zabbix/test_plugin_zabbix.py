@@ -459,7 +459,7 @@ class ZabbixPlugin(TestBasic):
             7. Deploy the cluster
             8. Run network verification
             9. Run OSTF
-            10. Check Extreme Swich trigger with test SNMP message
+            10. Check Extreme Switch trigger with test SNMP message
 
         Duration 70m
         Snapshot deploy_zabbix_snmp_extreme_ha

@@ -103,7 +103,7 @@ class TestElasticsearchPlugin(TestBasic):
         assert_is_not_none(es_server_ip,
                            "Failed to get the IP of Elasticsearch server")
 
-        logger.debug("Check that Elasticseach is ready")
+        logger.debug("Check that Elasticsearch is ready")
 
         r = requests.get("http://{}:9200/".format(es_server_ip))
         msg = "Elasticsearch responded with {}".format(r.status_code)

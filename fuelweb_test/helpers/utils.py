@@ -557,7 +557,7 @@ def get_node_hiera_roles(remote):
     """
     cmd = 'hiera roles'
     roles = ''.join(run_on_remote(remote, cmd)).strip()
-    # Contert string with roles like a ["ceph-osd", "controller"] to list
+    # Content string with roles like a ["ceph-osd", "controller"] to list
     roles = map(lambda s: s.strip('" '), roles.strip("[]").split(','))
     return roles
 

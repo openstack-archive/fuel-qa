@@ -40,7 +40,6 @@ def replace_ubuntu_repo_url(repo_url, upstream_host):
 
 def replace_ubuntu_repos(repos_attr, upstream_host):
     # Walk thru repos_attr and replace/add extra Ubuntu mirrors
-    repos = []
     if help_data.MIRROR_UBUNTU:
         logger.debug("Adding new mirrors: '{0}'"
                      .format(help_data.MIRROR_UBUNTU))
@@ -96,7 +95,7 @@ def replace_centos_repos(repos_attr, upstream_host):
 
 
 def report_repos(repos_attr, release=help_data.OPENSTACK_RELEASE):
-    """Show list of reposifories for specified cluster"""
+    """Show list of repositories for specified cluster"""
     if help_data.OPENSTACK_RELEASE_UBUNTU in release:
         report_ubuntu_repos(repos_attr['value'])
     else:
