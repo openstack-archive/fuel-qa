@@ -1248,60 +1248,63 @@ class TestHaFailoverBase(TestBasic):
                 remote.clear()
 
     def change_pacemaker_parameter_not_break_rabbitmq(self):
-        err_msg = 'Cannot execute command {}. Timeout exceeded'
+        error = 'Cannot execute command {}. Timeout exceeded'
+
         self.env.revert_snapshot(self.snapshot_name)
-
         cluster_id = self.env.fuel_web.get_last_created_cluster()
-
         n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])
         d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
+        rabbit_master = self.fuel_web.get_rabbit_master_node(d_ctrls[0].name)
+        rabbit_slaves = self.fuel_web.get_rabbit_slaves_node(d_ctrls[0].name)
 
-        def count_run_rabbit(node, negative=False):
+        def count_run_rabbit(node, all_up=False):
             with self.fuel_web.get_ssh_for_node(node.name) as remote:
                 cmd = 'rabbitmqctl cluster_status'
-                exit_code = [2, 0] if negative else [0]
-                with RunLimit(seconds=60,
-                              error_message=err_msg.format(cmd)):
-                    out = run_on_remote(remote, cmd=cmd,
-                                        assert_ec_equal=exit_code)
-
+                with RunLimit(seconds=60, error_message=error.format(cmd)):
+                    out = run_on_remote(remote, cmd=cmd, raise_on_assert=False)
             run_nodes = [el for el in out if 'running_nodes' in el]
             run_nodes = run_nodes[0] if run_nodes else ''
-            logger.debug('### Status for {} \n {}'.format(
-                str(node.name), run_nodes))
-
-            return run_nodes.count('rabbit@')
+            logger.debug('### Status for {} \n {}'.format(str(node.name),
+                                                          run_nodes))
+            expected_up = len(n_ctrls) if all_up else 1
+            return run_nodes.count('rabbit@') == expected_up
 
         for n in xrange(1, 4):
             logger.info('Checking {} time'.format(n))
-            with self.fuel_web.get_ssh_for_node(d_ctrls[0].name) as remote:
-                cmd = 'crm_resource --resource p_rabbitmq-server ' \
-                      '--set-parameter max_rabbitmqctl_timeouts ' \
-                      '--parameter-value {}'.format(3 + n)
-                run_on_remote(remote, cmd)
-            logger.info('Command "{}" was executed on controller'.format(cmd))
+            cmd = 'crm_resource -r p_rabbitmq-server ' \
+                  '-p max_rabbitmqctl_timeouts -v {}'
+            with self.fuel_web.get_ssh_for_node(rabbit_master.name) as remote:
+                run_on_remote(remote, cmd.format(3 + n))
+            logger.info('Command {} was executed on controller'.format(cmd))
 
             logger.info('Check nodes left RabbitMQ cluster')
-            for node in d_ctrls:
-                logger.info('Check for {}'.format(node.name))
-                wait(lambda: (count_run_rabbit(node, True) != len(n_ctrls)),
-                     timeout=60,
-                     timeout_msg='All nodes are staying in the cluster')
+            wait(lambda: count_run_rabbit(rabbit_master), timeout=60,
+                 timeout_msg='All nodes are staying in the cluster')
 
-            logger.info('Check nodes back to RabbitMQ cluster')
-            for node in d_ctrls:
-                logger.info('Check for {}'.format(node.name))
-                wait(lambda: count_run_rabbit(node) == len(n_ctrls),
-                     timeout=60 * 10,
+            logger.info('Check parameter was changed')
+            for node in rabbit_slaves:
+                with self.fuel_web.get_ssh_for_node(node.name) as remote:
+                    cmd = 'crm_resource -r p_rabbitmq-server' \
+                          ' -g max_rabbitmqctl_timeouts'
+                    with RunLimit(seconds=30,
+                                  error_message=error.format(cmd)):
+                        out = int(run_on_remote(remote, cmd=cmd)[0])
+                    assert_equal(out, 3 + n)
+
+            logger.info('Wait and check nodes back to the RabbitMQ cluster')
+            wait(lambda: count_run_rabbit(rabbit_master, all_up=True),
+                 timeout=600, interval=20)
+            for node in rabbit_slaves:
+                wait(lambda: count_run_rabbit(node, all_up=True), timeout=60,
+                     interval=10,
                      timeout_msg='Some nodes did not back to the cluster after'
-                                 ' 10 minutes wait.')
+                                 '10 minutes wait.')
 
             for node in d_ctrls:
                 with self.fuel_web.get_ssh_for_node(node.name) as remote:
                     cmd = 'rabbitmqctl list_queues'
-                    with RunLimit(seconds=30,
-                                  error_message=err_msg.format(cmd)):
+                    with RunLimit(seconds=30, error_message=error.format(cmd)):
                         run_on_remote(remote, cmd)
 
             self.env.fuel_web.run_ostf(cluster_id, ['ha', 'smoke', 'sanity'])
