@@ -1164,3 +1164,12 @@ def check_client_smoke(remote):
         'fuel2 env list')['stdout'][3].split('|')[3].strip()
     assert_equal(fuel_output, fuel_2_output,
                  "The fuel: {0} and fuel2: {1} outputs are not equal")
+
+def check_offload(self, node, interface, offload_type):
+    command = "ethtool --show-offload %s | awk '/%s/ {print $2}'"
+    offload_status = node.execute(command % (interface, offload_type))
+    assert_equal(offload_status['exit_code'], 0,
+                 "Failed to get Offload {0} "
+                 "on node {1}".format(offload_type, node))
+    return ''.join(node.execute(
+        command % (interface, offload_type))['stdout']).rstrip()
