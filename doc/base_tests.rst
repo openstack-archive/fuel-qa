@@ -31,6 +31,11 @@ Test Bonding
 .. automodule:: fuelweb_test.tests.test_bonding
    :members:
 
+Test Bond offloading types
+--------------------------
+.. automodule:: fuelweb_test.tests.test_bond_offloading
+   :members:
+
 Test By Tempest
 ---------------
 .. automodule:: fuelweb_test.tests.test_by_tempest
