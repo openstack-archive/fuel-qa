@@ -167,6 +167,11 @@ Test Ironic
 .. automodule:: fuelweb_test.tests.test_ironic_base
   :members:
 
+Test Reconfigration OS
+-----------
+.. automodule:: fuelweb_test.tests.test_os_reconfiguration
+  :members:
+
 
 GD based tests
 ==============

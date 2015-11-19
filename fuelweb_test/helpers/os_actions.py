@@ -504,3 +504,8 @@ class OpenStackActions(common.Common):
         res = ''.join(remote.execute('virsh dumpxml {0} | grep "mac address="'
                       .format(self.get_srv_instance_name(srv)))['stdout'])
         return res.split('\'')[1]
+
+    def create_network(self, tenant_id, network_name):
+        body = {'network': {'tenant_id': tenant_id,
+                            'name': network_name}}
+        return self.neutron.create_network(body)
