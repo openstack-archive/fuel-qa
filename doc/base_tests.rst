@@ -172,6 +172,11 @@ Test Ironic
 .. automodule:: fuelweb_test.tests.test_ironic_base
   :members:
 
+Test Reconfiguration OS
+-----------------------
+.. automodule:: fuelweb_test.tests.test_os_reconfiguration
+  :members:
+
 
 Fuel mirror verification
 ========================
