@@ -2160,7 +2160,7 @@ class FuelWebClient(object):
     def get_nodegroup(self, cluster_id, name='default', group_id=None):
         ngroups = self.client.get_nodegroups()
         for group in ngroups:
-            if group['cluster'] == cluster_id and group['name'] == name:
+            if group['cluster_id'] == cluster_id and group['name'] == name:
                 if group_id and group['id'] != group_id:
                     continue
                 return group
