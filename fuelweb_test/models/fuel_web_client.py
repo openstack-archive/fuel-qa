@@ -1309,6 +1309,24 @@ class FuelWebClient(object):
         for node in nailgun_nodes:
             self.update_node_networks(node['id'], assigned_networks)
 
+    @logwrap
+    def update_offloads(self, node_id, update_values, interface_to_update):
+        interfaces = self.client.get_node_interfaces(node_id)
+
+        for i in interfaces:
+            if i['name'] == interface_to_update:
+                for new_mode in update_values['offloading_modes']:
+                    is_mode_exist = False
+                    for mode in i['offloading_modes']:
+                        if mode['name'] == new_mode['name']:
+                            is_mode_exist = True
+                            mode.update(new_mode)
+                            break
+                    if not is_mode_exist:
+                        i['offloading_modes'].append(new_mode)
+        self.client.put_node_interfaces(
+            [{'id': node_id, 'interfaces': interfaces}])
+
     def change_default_network_settings(self):
         api_version = self.client.get_api_version()
         if int(api_version["release"][0]) < 6:
