@@ -11,9 +11,13 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
+from copy import deepcopy
+
 from proboscis.asserts import assert_equal
 from proboscis import test
 
+from fuelweb_test.helpers.checkers import check_offload
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE
@@ -24,44 +28,11 @@ from fuelweb_test.tests.base_test_case import TestBasic
 @test(groups=["offloading"])
 class TestOffloading(TestBasic):
 
-    def update_offloads(self, node_id, update_values, interface_to_update):
-        interfaces = self.fuel_web.client.get_node_interfaces(node_id)
-        modes = None
-        updated_offloads = None
-        for i in interfaces:
-            if i['name'] == interface_to_update:
-                modes = i['offloading_modes']
-
-        for k in update_values:
-            if k['name'] == interface_to_update:
-                updated_offloads = k['offloading_modes']
-
-        for types_old in modes:
-            for types_new in updated_offloads:
-                if types_old['name'] == types_new['name']:
-                    types_old.update(types_new)
-
-        for interface in interfaces:
-            interface.update(modes[0])
-
-        self.fuel_web.client.put_node_interfaces(
-            [{'id': node_id, 'interfaces': interfaces}])
-
-    def check_offload(self, node, eth, offload_type):
-        command = "ethtool --show-offload %s | awk '/%s/ {print $2}'"
-
-        offload_status = node.execute(command % (eth, offload_type))
-        assert_equal(offload_status['exit_code'], 0,
-                     "Failed to get Offload {0} "
-                     "on node {1}".format(offload_type, node))
-        return ''.join(node.execute(command % (eth,
-                                    offload_type))['stdout']).rstrip()
-
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["offloading_neutron_vlan", "offloading"])
     @log_snapshot_after_test
     def offloading_neutron_vlan(self):
-        """Deploy cluster with new offload modes and neutron VLAN
+        """Deploy cluster with specific offload modes and neutron VLAN
 
         Scenario:
             1. Create cluster with neutron VLAN
@@ -71,8 +42,8 @@ class TestOffloading(TestBasic):
             5. Run network verification
             6. Deploy the cluster
             7. Run network verification
-            8. Run OSTF
-            9. Verify offloading modes on nodes
+            8. Verify offloading modes on nodes
+            9. Run OSTF
 
         Duration 30m
         Snapshot offloading_neutron_vlan
@@ -80,6 +51,7 @@ class TestOffloading(TestBasic):
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
+        self.show_step(1)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -111,6 +83,8 @@ class TestOffloading(TestBasic):
                 'name': 'large-receive-offload',
                 'sub': []}]}]
 
+        self.show_step(2)
+        self.show_step(3)
         self.fuel_web.update_nodes(
             cluster_id, {
                 'slave-01': ['controller'],
@@ -120,37 +94,44 @@ class TestOffloading(TestBasic):
         )
 
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        self.show_step(4)
         for node in slave_nodes:
-            self.fuel_web.update_node_networks(node['id'], interfaces)
-            for eth in offloading_modes:
-                self.update_offloads(node['id'], offloading_modes, eth['name'])
+            self.fuel_web.update_node_networks(node['id'],
+                                               deepcopy(interfaces))
+            for offloading in offloading_modes:
+                self.fuel_web.update_offloads(
+                    node['id'], deepcopy(offloading), offloading['name'])
+        self.show_step(5)
         self.fuel_web.verify_network(cluster_id)
+        self.show_step(6)
         self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.show_step(7)
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
+        self.show_step(8)
         nodes = [self.fuel_web.get_nailgun_node_by_name(node)
                  for node in ['slave-01', 'slave-02', 'slave-03']]
-
         for node in nodes:
             with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
                 logger.info("Verify Offload types")
 
-                result = self.check_offload(remote, 'eth1', 'rx-vlan-offload')
+                result = check_offload(remote, 'eth1', 'rx-vlan-offload')
                 assert_equal(result, "on",
                              "Offload type {0} is {1} on remote host"
                              .format('rx-vlan-offload', result))
 
-                result = self.check_offload(remote, 'eth1', 'tx-vlan-offload')
+                result = check_offload(remote, 'eth1', 'tx-vlan-offload')
                 assert_equal(result, "on",
                              "Offload type {0} is {1} on remote host"
                              .format('tx-vlan-offload', result))
 
-                result = self.check_offload(remote, 'eth2',
-                                            'large-receive-offload')
+                result = check_offload(remote, 'eth2', 'large-receive-offload')
                 assert_equal(result, "off",
                              "Offload type {0} is {1} on remote host"
                              .format('large-receive-offload', result))
+
+        self.show_step(9)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("offloading_neutron_vlan")
 
@@ -158,7 +139,7 @@ class TestOffloading(TestBasic):
           groups=["offloading_neutron_vxlan", "offloading"])
     @log_snapshot_after_test
     def offloading_neutron_vxlan(self):
-        """Deploy cluster with new offload modes and neutron VXLAN
+        """Deploy cluster with specific offload modes and neutron VXLAN
 
         Scenario:
             1. Create cluster with neutron VXLAN
@@ -177,12 +158,13 @@ class TestOffloading(TestBasic):
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
+        self.show_step(1)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": 'gre',
+                "net_segment_type": 'tun',
             }
         )
 
@@ -208,6 +190,8 @@ class TestOffloading(TestBasic):
                 'name': 'large-receive-offload',
                 'sub': []}]}]
 
+        self.show_step(2)
+        self.show_step(3)
         self.fuel_web.update_nodes(
             cluster_id, {
                 'slave-01': ['controller'],
@@ -217,36 +201,43 @@ class TestOffloading(TestBasic):
         )
 
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        self.show_step(4)
         for node in slave_nodes:
-            self.fuel_web.update_node_networks(node['id'], interfaces)
-            for eth in offloading_modes:
-                self.update_offloads(node['id'], offloading_modes, eth['name'])
+            self.fuel_web.update_node_networks(node['id'],
+                                               deepcopy(interfaces))
+            for offloading in offloading_modes:
+                self.fuel_web.update_offloads(
+                    node['id'], deepcopy(offloading), offloading['name'])
+        self.show_step(5)
         self.fuel_web.verify_network(cluster_id)
+        self.show_step(6)
         self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.show_step(7)
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
+        self.show_step(8)
         nodes = [self.fuel_web.get_nailgun_node_by_name(node)
                  for node in ['slave-01', 'slave-02', 'slave-03']]
-
         for node in nodes:
             with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
                 logger.info("Verify Offload types")
 
-                result = self.check_offload(remote, 'eth1', 'rx-vlan-offload')
+                result = check_offload(remote, 'eth1', 'rx-vlan-offload')
                 assert_equal(result, "on",
                              "Offload type {0} is {1} on remote host"
                              .format('rx-vlan-offload', result))
 
-                result = self.check_offload(remote, 'eth1', 'tx-vlan-offload')
+                result = check_offload(remote, 'eth1', 'tx-vlan-offload')
                 assert_equal(result, "on",
                              "Offload type {0} is {1} on remote host"
                              .format('tx-vlan-offload', result))
 
-                result = self.check_offload(remote, 'eth2',
-                                            'large-receive-offload')
+                result = check_offload(remote, 'eth2', 'large-receive-offload')
                 assert_equal(result, "off",
                              "Offload type {0} is {1} on remote host"
                              .format('large-receive-offload', result))
+
+        self.show_step(9)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("offloading_neutron_vxlan")

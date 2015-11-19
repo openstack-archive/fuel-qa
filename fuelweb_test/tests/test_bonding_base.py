@@ -61,6 +61,16 @@ class BondingTest(TestBasic):
         }
         super(BondingTest, self).__init__()
 
+    @staticmethod
+    def get_bond_interfaces(bond_config, bond_name):
+        bond_slaves = []
+        for bond in [bond for bond in bond_config]:
+            if bond['name'] == bond_name:
+                for slave in bond['slaves']:
+                    bond_slaves.append(slave['name'])
+        bond_slaves.append(bond_name)
+        return bond_slaves
+
     def check_interfaces_config_after_reboot(self, cluster_id):
         network_settings = dict()
         skip_interfaces = {
