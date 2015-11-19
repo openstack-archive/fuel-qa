@@ -148,7 +148,7 @@ class GlusterfsPlugin(TestBasic):
             14. Run ostf
 
         Duration 50m
-        Snapshot deploy_glasterfs_ha
+        Snapshot deploy_glusterfs_ha
 
         """
         self.env.revert_snapshot("ready_with_5_slaves")

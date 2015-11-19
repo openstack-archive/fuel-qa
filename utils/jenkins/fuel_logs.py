@@ -288,7 +288,7 @@ class AbstractLog(object):
 
     def each_record(self):
         """
-        Abstract record iterator that interates
+        Abstract record iterator that iterates
         through the content lines
         :return: iter
         """

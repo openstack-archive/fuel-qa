@@ -1789,9 +1789,9 @@ class FuelWebClient(object):
         res = []
         passed_count = []
         failed_count = []
-        test_nama_to_ran = test_name or OSTF_TEST_NAME
+        test_name_to_run = test_name or OSTF_TEST_NAME
         retr = test_retries or OSTF_TEST_RETRIES_COUNT
-        test_path = map_ostf.OSTF_TEST_MAPPING.get(test_nama_to_ran)
+        test_path = map_ostf.OSTF_TEST_MAPPING.get(test_name_to_run)
         logger.info('Test path is {0}'.format(test_path))
 
         for i in range(0, retr):
@@ -1850,7 +1850,7 @@ class FuelWebClient(object):
             if ceph.is_clock_skew(remote):
                 skewed = ceph.get_node_fqdns_w_clock_skew(remote)
                 logger.warning("Time on nodes {0} are to be "
-                               "re-syncronized".format(skewed))
+                               "re-synchronized".format(skewed))
                 nodes_to_sync = [
                     n for n in online_ceph_nodes
                     if n['fqdn'].split('.')[0] in skewed]

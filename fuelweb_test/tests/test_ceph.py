@@ -283,7 +283,7 @@ class CephHA(TestBasic):
                 'slave-06': ['ceph-osd']
             }
         )
-        # Depoy cluster
+        # Deploy cluster
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.env.make_snapshot("ceph_ha", is_make=True)
@@ -457,7 +457,7 @@ class CephRadosGW(TestBasic):
             4. Deploy the cluster
             5. Check ceph status
             6. Run OSTF tests
-            7. Check the radosqw daemon is started
+            7. Check the radosgw daemon is started
 
         Duration 90m
         Snapshot ceph_rados_gw
@@ -526,7 +526,7 @@ class CephRadosGW(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['ha', 'smoke', 'sanity'])
 
-        # Check the radosqw daemon is started
+        # Check the radosgw daemon is started
         with self.fuel_web.get_ssh_for_node('slave-01') as remote:
             assert_true(radosgw_started(remote), 'radosgw daemon started')
 
@@ -684,7 +684,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
             md5after in md5before,
             "Md5 checksums don`t match."
             "Before migration md5 was equal to: {bef}"
-            "Now it eqals: {aft}".format(bef=md5before, aft=md5after))
+            "Now it equals: {aft}".format(bef=md5before, aft=md5after))
 
         self.show_step(9)
 
@@ -781,7 +781,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
                 remote,
                 floating_ip.ip, "sudo ls /mnt", creds)
         assert_true("file-on-volume" in out['stdout'],
-                    "File is abscent in /mnt")
+                    "File is absent in /mnt")
 
         self.show_step(17)
         logger.info("Check Ceph health is ok after migration")

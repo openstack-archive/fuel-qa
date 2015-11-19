@@ -451,7 +451,7 @@ class MultiroleMultipleServices(TestBasic):
             3. Run 'fuel-createmirror' to replace default repositories
                with local mirrors
             4. Create cluster with many components to check as many
-               packages in local mirrors have correct dependences
+               packages in local mirrors have correct dependencies
             5. Deploy cluster
 
         Duration 50m

@@ -1398,7 +1398,7 @@ class TestHaFailoverBase(TestBasic):
             logger.info('Destroy master rabbit node {0} on count {1}'.format(
                 master_rabbit_2.name, count))
 
-            # detroy devops node with rabbit master
+            # destroy devops node with rabbit master
             master_rabbit_2.destroy()
 
             # Wait until Nailgun marked suspended controller as offline
