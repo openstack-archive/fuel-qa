@@ -318,12 +318,8 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
         self.env.revert_snapshot("deploy_ha_one_controller_neutron")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
-        self.fuel_web.client.delete_cluster(cluster_id)
-        nailgun_nodes = self.fuel_web.client.list_nodes()
-        nodes = filter(lambda x: x["pending_deletion"] is True, nailgun_nodes)
-        assert_true(
-            len(nodes) == 2, "Verify 2 node has pending deletion status"
-        )
+        self.fuel_web.delete_env_wait(cluster_id, timeout=10 * 60)
+        nodes = self.env.d_env.nodes().slaves[0:2]
         wait(
             lambda:
             self.fuel_web.is_node_discovered(nodes[0]) and
