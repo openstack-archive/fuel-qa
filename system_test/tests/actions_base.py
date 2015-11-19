@@ -18,7 +18,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
 from fuelweb_test.helpers import checkers
-from fuelweb_test.helpers.utils import timestat
+from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test import settings as test_settings
 
 from system_test import logger
@@ -76,7 +76,7 @@ class PrepareBase(base_actions_factory.BaseActionsFactory):
     def setup_master(self):
         """Setup master node"""
         self.check_run("empty")
-        with timestat("setup_environment", is_uniq=True):
+        with TimeStat("setup_environment", is_uniq=True):
             self.env.setup_environment()
 
         self.env.make_snapshot("empty", is_make=True)
