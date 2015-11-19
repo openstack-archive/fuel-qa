@@ -17,6 +17,7 @@ import time
 import traceback
 import ipaddr
 from netaddr import EUI
+from urllib2 import HTTPError
 
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
@@ -30,6 +31,7 @@ from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_true
+from proboscis.asserts import assert_raises
 import yaml
 
 from fuelweb_test.helpers import ceph
@@ -1702,6 +1704,26 @@ class FuelWebClient(object):
         logger.info('Reset cluster #%s', cluster_id)
         task = self.client.reset_environment(cluster_id)
         self.assert_task_success(task, timeout=50 * 60, interval=30)
+
+    @logwrap
+    def delete_env_wait(self, cluster_id, timeout=10 * 60):
+        logger.info('Removing cluster with id={0}'.format(cluster_id))
+        self.fuel_web.client.delete_cluster(cluster_id)
+        tasks = self.fuel_web.client.get_tasks()
+        deploy_tasks = [t for t in tasks if t['status']
+                        in ('pending', 'running') and
+                        t['name'] == 'cluster_deletion' and
+                        t['cluster'] == cluster_id]
+        for task in deploy_tasks:
+            logger.info('Tasks found: {}'.format(task))
+        task = deploy_tasks[0]
+        logger.info('Selected task: {}'.format(task))
+        assert_is_not_none(task,
+                           'Got empty result after running tasks!')
+
+        # Task will be removed with the cluster, so we will get 404 error
+        assert_raises(HTTPError,
+                      self.fuel_web.assert_task_success, task, timeout)
 
     @logwrap
     def wait_nodes_get_online_state(self, nodes, timeout=4 * 60):
