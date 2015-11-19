@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import ConfigParser
+import cStringIO
 import inspect
 import json
 import time
@@ -628,3 +630,32 @@ def pretty_log(src, indent=0, invert=False):
                                           value=str(el))
             result += res[:indent + 2] + '-' + res[indent + 3:]
     return result
+
+
+@logwrap
+def get_config_template(template_name):
+    templates_path = ('{0}/fuelweb_test/config_templates/'.format(
+        os.environ.get("WORKSPACE", "./")))
+    template = os.path.join(templates_path, '{}.yaml'.format(template_name))
+    if os.path.exists(template):
+        with open(template) as template_file:
+            return yaml.load(template_file)
+
+
+@logwrap
+def get_ini_config(data):
+    configfile = cStringIO.StringIO(data)
+    config = ConfigParser.ConfigParser()
+    config.readfp(configfile)
+    return config
+
+
+@logwrap
+def check_config(conf, section, option, value):
+    if value is None:
+        try:
+            conf.get(section, option)
+        except ConfigParser.NoOptionError:
+            pass
+    else:
+        asserts.assert_equal(conf.get(section, option), value)
