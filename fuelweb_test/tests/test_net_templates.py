@@ -378,3 +378,107 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
         self.check_services_networks(cluster_id, network_template)
 
         self.env.make_snapshot('two_nodegroups_network_templates')
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["network_config_consistency_on_reboot"])
+    @log_snapshot_after_test
+    def network_config_consistency_on_reboot(self):
+        """Deploy HA environment with Cinder, Neutron and network template
+
+        Scenario:
+            1. Revert snapshot with 5 slaves
+            2. Create cluster (HA) with Neutron VLAN
+            3. Add 3 controller and 1 compute + cinder nodes
+            4. Upload 'default_ovs' network template
+            5. Create custom network groups basing
+               on template endpoints assignments
+            6. Run network verification
+            7. Deploy cluster and run basic health checks
+            8. Run network verification
+            9. Check L3 network configuration on slaves
+            10. Check that services are listening on their networks only
+            11. Reboot a node
+            12. Run network verification
+            13. Check L3 network configuration on slaves
+            14. Check that services are listening on their networks only
+            15. Run OSTF
+
+        Duration 180m
+        Snapshot deploy_cinder_net_tmpl
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        self.show_step(2)
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE_HA,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT[NEUTRON_SEGMENT_TYPE],
+                'tenant': 'netTemplate',
+                'user': 'netTemplate',
+                'password': 'netTemplate',
+            }
+        )
+
+        self.show_step(3)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute', 'cinder'],
+            },
+            update_interfaces=False
+        )
+
+        self.show_step(4)
+        network_template = get_network_template('default_ovs')
+        self.fuel_web.client.upload_network_template(
+            cluster_id=cluster_id, network_template=network_template)
+
+        self.show_step(5)
+        networks = self.generate_networks_for_template(
+            template=network_template,
+            ip_nets={'default': '10.200.0.0/16'},
+            ip_prefixlen='24')
+        existing_networks = self.fuel_web.client.get_network_groups()
+        networks = self.create_custom_networks(networks, existing_networks)
+
+        logger.debug('Networks: {0}'.format(
+            self.fuel_web.client.get_network_groups()))
+
+        self.show_step(6)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(7)
+        self.fuel_web.deploy_cluster_wait(cluster_id, timeout=180 * 60)
+        self.show_step(8)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(9)
+        self.check_ipconfig_for_template(
+            cluster_id, network_template, networks)
+        self.show_step(10)
+        self.check_services_networks(cluster_id, network_template)
+
+        self.show_step(11)
+        self.fuel_web.warm_restart_nodes([self.env.d_env.nodes().slaves[0]])
+
+        self.show_step(12)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(13)
+        self.check_ipconfig_for_template(
+            cluster_id, network_template, networks)
+        self.show_step(14)
+        self.check_services_networks(cluster_id, network_template)
+
+        self.show_step(15)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['smoke', 'sanity', 'ha'])
+
+        self.env.make_snapshot("network_config_consistency_on_reboot",
+                               is_make=self.is_make_snapshot())
