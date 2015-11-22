@@ -320,7 +320,8 @@ def update_ostf(func):
                     raise ValueError('REFSPEC should be set for CI tests.')
                 logger.info("Uploading new patchset from {0}"
                             .format(settings.GERRIT_REFSPEC))
-                with args[0].environment.d_env.get_admin_remote() as remote:
+                environment = get_current_env(args)
+                with environment.d_env.get_admin_remote() as remote:
                     remote.upload(settings.PATCH_PATH.rstrip('/'),
                                   '/var/www/nailgun/fuel-ostf')
                     remote.execute('dockerctl shell ostf '
