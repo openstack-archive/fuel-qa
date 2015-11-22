@@ -25,6 +25,7 @@ from devops.helpers.helpers import wait
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers.decorators import update_ostf
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.ovs import ovs_get_tag_by_port
 from fuelweb_test import ostf_test_mapping as map_ostf
@@ -245,7 +246,8 @@ class CephHA(TestBasic):
         try:
             self.check_run('ceph_ha')
         except SkipTest:
-            return
+            logger.info('Already have the snapshot')
+        raise SkipTest
 
         self.env.revert_snapshot("ready")
         self.env.bootstrap_nodes(
@@ -443,7 +445,6 @@ class CephHA(TestBasic):
 @test(groups=["ha_neutron_tun", "ceph"])
 class CephRadosGW(TestBasic):
     """CephRadosGW."""  # TODO documentation
-
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["ceph_rados_gw", "bvt_2", "ceph", "neutron", "deployment"])
     @log_snapshot_after_test
@@ -919,3 +920,31 @@ class CheckCephPartitionsAfterReboot(TestBasic):
             self.show_step(13, node)
             logger.info("Check Ceph health is ok after reboot")
             self.fuel_web.check_ceph_status(cluster_id)
+
+
+@test(groups=["ostf_gate"])
+class Gate(TestBasic):
+    """Gate"""  # TODO documentation
+
+    @update_ostf
+    def get_cluster_id(self):
+        return self.fuel_web.get_last_created_cluster()
+
+    @test(depends_on=[CephHA.ceph_ha],
+          groups=["gate_ostf_update"])
+    @log_snapshot_after_test
+    def gate_ostf_update(self):
+        """ Update ostf start on deployed cluster
+
+    Scenario:
+        1. Revert snapshot "ceph_ha"
+        2. Update ostf
+        3. Run ostf
+
+        """
+        if settings.UPLOAD_PATCHSET:
+            self.env.revert_snapshot("ceph_ha")
+            cluster_id = self.get_cluster_id()
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha', 'smoke', 'sanity'])
