@@ -277,6 +277,60 @@ SERVTEST_SAHARA_VANILLA_2_IMAGE_META = {'_sahara_tag_2.7.1': 'True',
                                         '_sahara_tag_vanilla': 'True',
                                         '_sahara_username': 'ubuntu'}
 
+SAHARA_SCENARIO_IMAGES = [
+    {
+        'image': 'sahara-liberty-ambari-2.2-centos-6.6.qcow2',
+        'md5_sum': '445086de3e9a9562201ff30276af5496',
+        'tags':
+        {
+            '_sahara_tag_2.2': 'True',
+            '_sahara_tag_2.3': 'True',
+            '_sahara_tag_ambari': 'True',
+            '_sahara_username': 'cloud-user'
+        }
+    },
+    {
+        'image': 'sahara-liberty-vanilla-2.7.1-ubuntu-14.04.qcow2',
+        'md5_sum': '3da49911332fc46db0c5fb7c197e3a77',
+        'tags':
+        {
+            '_sahara_tag_2.7.1': 'True',
+            '_sahara_tag_vanilla': 'True',
+            '_sahara_username': 'ubuntu'
+        }
+    },
+    {
+        'image': 'sahara-liberty-cdh-5.4.0-ubuntu-14.04.qcow2',
+        'md5_sum': 'f5c833d2d34a41ea9b52a6c1f95054be',
+        'tags':
+        {
+            '_sahara_tag_5.4.0': 'True',
+            '_sahara_tag_cdh': 'True',
+            '_sahara_username': 'ubuntu'
+        }
+    },
+    {
+        'image': 'sahara-liberty-mapr-5.0.0-ubuntu-14.04.qcow2',
+        'md5_sum': '77d16c462311a7c5db9144e1e8ab30a8',
+        'tags':
+        {
+            '_sahara_tag_5.0.0': 'True',
+            '_sahara_tag_mapr': 'True',
+            '_sahara_username': 'ubuntu'
+        }
+    },
+    {
+        'image': 'sahara-liberty-spark-1.3.1-ubuntu-14.04.qcow2',
+        'md5_sum': '19640faead38e82528af6d85cd9894c5',
+        'tags':
+        {
+            '_sahara_tag_1.3.1': 'True',
+            '_sahara_tag_spark': 'True',
+            '_sahara_username': 'ubuntu'
+        }
+    }
+]
+
 SERVTEST_MURANO_IMAGE = "ubuntu_14_04-murano-agent_stable_juno_26_02_15.qcow2"
 SERVTEST_MURANO_IMAGE_MD5 = '3da5ec5984d6d19c1b88d0062c885a89'
 SERVTEST_MURANO_IMAGE_NAME = 'murano'
