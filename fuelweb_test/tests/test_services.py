@@ -132,6 +132,139 @@ class SaharaHAOneController(TestBasic):
         self.env.make_snapshot("deploy_sahara_ha_one_controller_tun")
 
 
+@test(groups=["services_external", "services_external.sahara",
+              "services_ha_one_controller_external"])
+class SaharaHAOneControllerExternal(TestBasic):
+    """Sahara ha with 1 controller tests.
+    Put Sahara image before start
+    """
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["deploy_sahara_ha_one_controller_tun"])
+    @log_snapshot_after_test
+    def deploy_sahara_ha_one_controller_tun_external(self):
+        """Deploy cluster in ha mode with 1 controller Sahara and Neutron VXLAN
+
+        Scenario:
+            1. Create a Fuel cluster. Set the option for Sahara installation
+            2. Add 1 node with "controller" role
+            3. Add 1 node with "compute" role
+            4. Deploy the Fuel cluster
+            5. Verify Sahara service on controller
+            6. Run all sanity and smoke tests
+            7. Register images for Sahara
+            8. Run scenario tests for Sahara
+
+        Duration 360m
+        Snapshot: deploy_sahara_ha_one_controller_tun_external
+        """
+        LOGGER.debug('Check MD5 sums of Sahara images')
+        for image in settings.SAHARA_SCENARIO_IMAGES:
+
+            check_image = checkers.check_image(
+                image['image'], image['md5_sum'],
+                settings.SERVTEST_LOCAL_PATH)
+            asserts.assert_true(check_image)
+
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        LOGGER.debug('Create Fuel cluster for Sahara tests')
+        data = {
+            'sahara': True,
+            'net_provider': 'neutron',
+            'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
+            'tenant': 'saharaSimple',
+            'user': 'saharaSimple',
+            'password': 'saharaSimple'
+        }
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings=data
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['compute']
+            }
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id),
+            data['user'], data['password'], data['tenant'])
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
+
+        LOGGER.debug('Verify Sahara service on controller')
+        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            checkers.verify_service(
+                remote,
+                service_name='sahara-api')
+            checkers.verify_service(
+                remote,
+                service_name='sahara-engine')
+
+        LOGGER.debug('Run all sanity and smoke tests')
+        path_to_tests = 'fuel_health.tests.sanity.test_sanity_sahara.'
+        test_names = ['VanillaTwoTemplatesTest.test_vanilla_two_templates',
+                      'HDPTwoTemplatesTest.test_hdp_two_templates']
+        self.fuel_web.run_ostf(
+            cluster_id=self.fuel_web.get_last_created_cluster(),
+            tests_must_be_passed=[path_to_tests + test_name
+                                  for test_name in test_names]
+        )
+
+        LOGGER.debug('Import images for Sahara')
+
+        for image in settings.SAHARA_SCENARIO_IMAGES:
+            with open('{0}/{1}'.format(settings.SERVTEST_LOCAL_PATH,
+                                       image['image'])) as data:
+                os_conn.create_image(
+                    name=image['image'][:-6],
+                    properties=image['tags'],
+                    data=data,
+                    is_public=True,
+                    disk_format='qcow2',
+                    container_format='bare')
+
+        LOGGER.debug('Starting scenario tests for Sahara')
+
+        cmd = (
+            "sudo apt-get install -y git python-pip python-tox libpq-dev && "
+            "rm -rf sahara && "
+            "git clone https://github.com/openstack/sahara && "
+            "mkdir sahara/etc/scenario/8.0 && "
+            "cp sahara/etc/scenario/sahara-ci/{credentials.yaml.mako,"
+            "edp.yaml.mako,vanilla-2.7.1.yaml.mako,ambari-2.3.yaml.mako,"
+            "cdh-5.4.0.yaml.mako,mapr-5.0.0.mrv2.yaml.mako,"
+            "spark-1.3.1.yaml.mako,transient.yaml.mako} "
+            "sahara/etc/scenario/8.0 && "
+            "echo '[DEFAULT]\n"
+            "OS_USERNAME: saharaHA\n"
+            "OS_PASSWORD: saharaHA\n"
+            "OS_TENANT_NAME: saharaHA\n"
+            "OS_AUTH_URL: http://%s:5000/v2.0\n"
+            "network_type: neutron\n"
+            "network_private_name: net04\n"
+            "network_public_name: net04_ext\n"
+            "cluster_name: test-cluster\n"
+            "ci_flavor_id: m1.small\n"
+            "medium_flavor_id: m1.medium\n"
+            "large_flavor_id: m1.large\n' > templatesvar.ini && "
+            "cd sahara && "
+            "echo 'concurrency: 2' >> "
+            "etc/scenario/8.0/credentials.yaml.mako && "
+            "tox -e scenario -- -V ~/templatesvar.ini etc/scenario/8.0" % (
+                self.fuel_web.get_public_vip(cluster_id)))
+
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            result = remote.execute(cmd)
+
+        LOGGER.debug(result)
+
+        self.env.make_snapshot("deploy_sahara_ha_one_controller_tun_external")
+
+
 @test(groups=["services", "services.sahara", "services_ha"])
 class SaharaHA(TestBasic):
     """Sahara HA tests.
@@ -239,6 +372,143 @@ class SaharaHA(TestBasic):
                 test_name=path_to_tests + test_name, timeout=60 * 200)
 
         self.env.make_snapshot("deploy_sahara_ha_tun")
+
+
+@test(groups=["services_external", "services_external.sahara",
+              "services_external_ha"])
+class SaharaHAExternal(TestBasic):
+    """Sahara HA tests.
+    Put Sahara images before start
+    """
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["deploy_sahara_ha_tun_external"])
+    @log_snapshot_after_test
+    def deploy_sahara_ha_tun_external(self):
+        """Deploy cluster in HA mode with Sahara and Neutron VXLAN
+
+        Scenario:
+            1. Create a Fuel cluster. Set the option for Sahara installation
+            2. Add 3 node with "controller" role
+            3. Add 1 node with "compute" role
+            4. Deploy the Fuel cluster
+            5. Verify Sahara service on all controllers
+            6. Run all sanity and smoke tests
+            7. Register images for Sahara
+            8. Run scenario tests for Sahara
+
+        Duration 360m
+        Snapshot: deploy_sahara_ha_tun_external
+
+        """
+        LOGGER.debug('Check MD5 sums of Sahara images')
+        for image in settings.SAHARA_SCENARIO_IMAGES:
+
+            check_image = checkers.check_image(
+                image['image'], image['md5_sum'],
+                settings.SERVTEST_LOCAL_PATH)
+            asserts.assert_true(check_image)
+
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        LOGGER.debug('Create Fuel cluster for Sahara tests')
+        data = {
+            'sahara': True,
+            'net_provider': 'neutron',
+            'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
+            'tenant': 'saharaHA',
+            'user': 'saharaHA',
+            'password': 'saharaHA'
+        }
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings=data
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute']
+            }
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        cluster_vip = self.fuel_web.get_public_vip(cluster_id)
+        os_conn = os_actions.OpenStackActions(
+            cluster_vip, data['user'], data['password'], data['tenant'])
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)
+
+        LOGGER.debug('Verify Sahara service on all controllers')
+        for slave in ["slave-01", "slave-02", "slave-03"]:
+            _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
+            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+                checkers.verify_service(
+                    remote,
+                    service_name='sahara-api')
+                checkers.verify_service(
+                    remote,
+                    service_name='sahara-engine')
+
+        LOGGER.debug('Run all sanity and smoke tests')
+        path_to_tests = 'fuel_health.tests.sanity.test_sanity_sahara.'
+        test_names = ['VanillaTwoTemplatesTest.test_vanilla_two_templates',
+                      'HDPTwoTemplatesTest.test_hdp_two_templates']
+        self.fuel_web.run_ostf(
+            cluster_id=self.fuel_web.get_last_created_cluster(),
+            tests_must_be_passed=[path_to_tests + test_name
+                                  for test_name in test_names]
+        )
+
+        LOGGER.debug('Import images for Sahara')
+
+        for image in settings.SAHARA_SCENARIO_IMAGES:
+            with open('{0}/{1}'.format(settings.SERVTEST_LOCAL_PATH,
+                                       image['image'])) as data:
+                os_conn.create_image(
+                    name=image['image'][:-6],
+                    properties=image['tags'],
+                    data=data,
+                    is_public=True,
+                    disk_format='qcow2',
+                    container_format='bare')
+
+        LOGGER.debug('Starting scenario tests for Sahara')
+
+        cmd = (
+            "sudo apt-get install -y git python-pip python-tox libpq-dev && "
+            "rm -rf sahara && "
+            "git clone https://github.com/openstack/sahara && "
+            "mkdir sahara/etc/scenario/8.0 && "
+            "cp sahara/etc/scenario/sahara-ci/{credentials.yaml.mako,"
+            "edp.yaml.mako,vanilla-2.7.1.yaml.mako,ambari-2.3.yaml.mako,"
+            "cdh-5.4.0.yaml.mako,mapr-5.0.0.mrv2.yaml.mako,"
+            "spark-1.3.1.yaml.mako,transient.yaml.mako} "
+            "sahara/etc/scenario/8.0 && "
+            "echo '[DEFAULT]\n"
+            "OS_USERNAME: saharaSimple\n"
+            "OS_PASSWORD: saharaSimple\n"
+            "OS_TENANT_NAME: saharaSimple\n"
+            "OS_AUTH_URL: http://%s:5000/v2.0\n"
+            "network_type: neutron\n"
+            "network_private_name: net04\n"
+            "network_public_name: net04_ext\n"
+            "cluster_name: test-cluster\n"
+            "ci_flavor_id: m1.small\n"
+            "medium_flavor_id: m1.medium\n"
+            "large_flavor_id: m1.large\n' > templatesvar.ini && "
+            "cd sahara && "
+            "echo 'concurrency: 2' >> "
+            "etc/scenario/8.0/credentials.yaml.mako && "
+            "tox -e scenario -- -V ~/templatesvar.ini etc/scenario/8.0" % (
+                self.fuel_web.get_public_vip(cluster_id)))
+
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            result = remote.execute(cmd)
+
+        LOGGER.debug(result)
+
+        self.env.make_snapshot("deploy_sahara_ha_tun_external")
 
 
 @test(groups=["services", "services.murano", "services_ha_one_controller"])
