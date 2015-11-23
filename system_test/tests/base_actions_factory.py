@@ -29,20 +29,33 @@ class BaseActionsFactory(base_test_case.TestBasic):
         """Return all action methods"""
         return {m: getattr(cls, m) for m in
                 dir(cls) if m.startswith('_action_') or
-                getattr(getattr(cls, m), '_action_method_', False)}
+                getattr(getattr(cls, m), '_action_method_', False) or
+                getattr(getattr(cls, m), '_nested_action_method_', False)}
 
     @classmethod
     def get_actions_order(cls):
         """Get order of actions"""
-        if cls.actions_order is None:
-            raise LookupError
-        return cls.actions_order
+        if getattr(cls, 'actions_order', None) is None:
+            raise LookupError("Actions order doesn't exist")
+
+        actions_method = cls.get_actions()
+        linear_order = []
+        for action in cls.actions_order:
+            if getattr(actions_method[action],
+                       '_nested_action_method_', None):
+                linear_order.extend(actions_method[action]())
+            else:
+                linear_order.append(action)
+
+        steps = [{"action": step, "method": actions_method[step]} for
+                 step in linear_order]
+
+        return steps
 
     @classmethod
     def caseclass_factory(cls, case_group):
         """Create new cloned cls class contains only action methods"""
         test_steps, scenario = {}, []
-        actions_method = cls.get_actions()
 
         #  Generate human readable class_name, if was method docstring not
         #  described, use generated name
@@ -51,14 +64,15 @@ class BaseActionsFactory(base_test_case.TestBasic):
         #  Make methods for new testcase class, following by order
         scenario.append("    Scenario:")
         for step, action in enumerate(cls.get_actions_order()):
-            n_action = action.replace("_action_", "")
+            n_action = action['action'].replace("_action_", "")
             #  Generate human readable method name, if was method docstring not
             #  described, use generated name. Used when method failed
             step_method_name = "{}.Step{:03d}_{}".format(class_name,
                                                          step,
                                                          n_action)
-            method = utils.copy_func(actions_method[action], step_method_name)
-            _step_name = getattr(actions_method[action],
+
+            method = utils.copy_func(action['method'], step_method_name)
+            _step_name = getattr(action['method'],
                                  "__doc__").splitlines()[0]
             setattr(method, "_step_name", "Step {:03d}. {}".format(step,
                                                                    _step_name))
@@ -78,7 +92,8 @@ class BaseActionsFactory(base_test_case.TestBasic):
                 prev_step_name = "{}.Step{:03d}_{}".format(
                     class_name,
                     step - 1,
-                    cls.get_actions_order()[step - 1].replace("_action_", ""))
+                    cls.get_actions_order()[step - 1]['action'].replace(
+                        "_action_", ""))
                 depends = [test_steps[prev_step_name]]
             else:
                 depends = None
