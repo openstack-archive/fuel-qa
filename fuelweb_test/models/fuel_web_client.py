@@ -2017,8 +2017,8 @@ class FuelWebClient(object):
     def restore_check_nailgun_api(self, remote):
         logger.info("Restore check nailgun api")
         info = self.client.get_api_version()
-        build_number = info["build_number"]
-        assert_true(build_number, 'api version returned empty data')
+        os_version = info["openstack_version"]
+        assert_true(os_version, 'api version returned empty data')
 
     @logwrap
     def get_nailgun_cidr_nova(self, cluster_id):
