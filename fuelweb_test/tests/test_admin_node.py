@@ -450,7 +450,8 @@ class TestLogrotateBase(TestBasic):
 class FuelMasterMigrate(TestBasic):
     """FuelMasterMigrate."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["fuel_migration"])
     @log_snapshot_after_test
     def fuel_migration(self):
