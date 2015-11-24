@@ -248,18 +248,9 @@ class AdminActions(BaseActions):
     def modify_configs(self, router):
         # Slave nodes should use the gateway of 'admin' network as the default
         # gateway during provisioning and as an additional DNS server.
-        # resolv.conf should contains nameserver that resolve intranet URLs.
-        config = '/etc/fuel/astute.yaml'
-        resolv = '/etc/resolv.conf'
-
-        cmd = ("sed -i 's/\"dhcp_gateway\":.*/\"dhcp_gateway\": \"{0}\"/' {1} "
-               "&& sed -i 's/\\(\"DNS_UPSTREAM\":\\).*/\\1 \"{0}\"/' {1} &&"
-               "sed -i 's/\\(nameserver\\) \\(.*\\)/\\1 {0} \\2/' {2}"
-               .format(router, config, resolv))
-        result = self.admin_remote.execute(cmd)
-        assert_equal(0, result['exit_code'],
-                     "Command [{cmd}] failed with the following result: {res}"
-                     .format(cmd=cmd, res=result))
+        fuel_settings = self.get_fuel_settings()
+        fuel_settings['DNS_UPSTREAM'] = router
+        fuel_settings['ADMIN_NETWORK']['dhcp_gateway'] = router
 
         if FUEL_USE_LOCAL_NTPD:
             # Try to use only ntpd on the host as the time source
@@ -269,23 +260,22 @@ class AdminActions(BaseActions):
             if not self.admin_remote.execute(cmd)['exit_code']:
                 # Local ntpd on the host is alive, so
                 # remove all NTP sources and add the host instead.
-                cmd = ("sed -i '/^\"NTP/d' {0} && echo '\"NTP1\": \"{1}\"' "
-                       ">> {0}".format(config, router))
                 logger.info("Switching NTPD on the Fuel admin node to use "
                             "{0} as the time source.".format(router))
-                result = self.admin_remote.execute(cmd)
-                assert_equal(0, result['exit_code'],
-                             "Command [{cmd}] failed with the following "
-                             "result: {res}".format(cmd=cmd, res=result))
+                ntp_keys = [k for k in fuel_settings.keys()
+                            if re.match(r'^NTP', k)]
+                for key in ntp_keys:
+                    fuel_settings.pop(key)
+                fuel_settings['NTP1'] = router
+
         if MIRROR_UBUNTU:
-            logger.info("Replace Ubuntu mirror for bootstrap image in {0}"
-                        .format(config))
-            repo_url = self.get_value_from_yaml(config, ['BOOTSTRAP',
-                                                         'MIRROR_DISTRO'])
-            new_repo_url = replace_repos.replace_ubuntu_repo_url(
-                repo_url, upstream_host='archive.ubuntu.com')
-            self.put_value_to_yaml(config, ['BOOTSTRAP', 'MIRROR_DISTRO'],
-                                   new_repo_url)
+            fuel_settings['BOOTSTRAP']['MIRROR_DISTRO'] = \
+                replace_repos.replace_ubuntu_repo_url(
+                    fuel_settings['BOOTSTRAP']['MIRROR_DISTRO'],
+                    upstream_host='archive.ubuntu.com')
+            logger.info("Replace default Ubuntu mirror URL for "
+                        "bootstrap image in Fuel settings")
+        self.save_fuel_settings(fuel_settings)
 
     @logwrap
     def upload_packages(self, local_packages_dir, centos_repo_path,
@@ -383,6 +373,15 @@ class AdminActions(BaseActions):
                             format(cfg_file=hlp_data.FUEL_SETTINGS_YAML,
                                    error=result['stderr']))
         return fuel_settings
+
+    def save_fuel_settings(self, settings):
+        cmd = 'echo \'{0}\' > {1}'.format(yaml.dump(settings,
+                                                    default_style='"',
+                                                    default_flow_style=False),
+                                          hlp_data.FUEL_SETTINGS_YAML)
+        result = self.admin_remote.execute(cmd)
+        assert_equal(result['exit_code'], 0,
+                     "Saving Fuel settings failed: {0}!".format(result))
 
 
 class NailgunActions(BaseActions):
