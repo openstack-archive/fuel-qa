@@ -1,5 +1,5 @@
 ---
 storages:
- !include storages/cinder_only.yaml
+ !include cluster_configs/settings/storages/cinder_only.yaml
 components:
- !include components/wo_components.yaml
+ !include cluster_configs/settings/components/wo_components.yaml

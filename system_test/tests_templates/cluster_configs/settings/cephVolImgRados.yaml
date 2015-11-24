@@ -1,5 +1,5 @@
 ---
 storages:
- !include storages/cephImgVolRados.yaml
+ !include cluster_configs/settings/storages/cephImgVolRados.yaml
 components:
- !include components/wo_components.yaml
+ !include cluster_configs/settings/components/wo_components.yaml

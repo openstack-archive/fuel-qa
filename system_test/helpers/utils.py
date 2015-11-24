@@ -33,37 +33,103 @@ def copy_func(f, name=None):
     return fn
 
 
-def load_yaml_files(path):
+def get_list_confignames(filelist):
+    """Get list of config name from file list"""
+    return map(get_configname, filelist)
+
+
+def get_configname(path):
+    """Get config name from path to yaml file"""
+    return os.path.splitext(os.path.basename(path))[0]
+
+
+def get_path_to_config():
+    """Find path to directory with config files"""
+    import system_test
+    return os.path.join(os.path.dirname(system_test.__file__),
+                        'tests_templates/tests_configs')
+
+
+def get_path_to_template():
+    """Find path to directory with templates files"""
+    import system_test
+    return os.path.join(os.path.dirname(system_test.__file__),
+                        'tests_templates')
+
+
+def collect_yamls(path):
+    """Walk through config directory and find all yaml files"""
+    ret = []
+    for r, d, f in os.walk(path):
+        for one in f:
+            if os.path.splitext(one)[1] in ('.yaml', '.yml'):
+                    ret.append(os.path.join(r, one))
+    return ret
+
+
+def load_yaml(path):
+    """Load yaml file from path"""
     def yaml_include(loader, node):
-        file_name = os.path.join(os.path.dirname(loader.name), node.value)
-        with file(file_name) as inputfile:
-            return yaml.load(inputfile)
+        file_name = os.path.join(get_path_to_template(), node.value)
+        if not os.path.isfile(file_name):
+            raise ValueError(
+                "Cannot load the template {0} : include file {1} "
+                "doesn't exist.".format(path, file_name))
+        return yaml.load(open(file_name))
 
-    def collect_yamls(path):
-        ret = []
-        for n in os.listdir(path):
-            n = "{}/{}".format(path, n)
-            if os.path.isdir(n):
-                ret.extend(collect_yamls(n))
-            else:
-                ret.append(n)
-        return ret
+    def yaml_get_env_variable(loader, node):
+        if not node.value.strip():
+            raise ValueError("Environment variable is required after {tag} in "
+                             "{filename}".format(tag=node.tag,
+                                                 filename=loader.name))
+        node_value = node.value.split(',', 1)
+        # Get the name of environment variable
+        env_variable = node_value[0].strip()
 
-    yamls = collect_yamls(path)
+        # Get the default value for environment variable if it exists in config
+        if len(node_value) > 1:
+            default_val = node_value[1].strip()
+        else:
+            default_val = None
+
+        value = os.environ.get(env_variable, default_val)
+        if value is None:
+            raise ValueError("Environment variable {var} is not set from shell"
+                             " environment! No default value provided in file "
+                             "{filename}".format(var=env_variable,
+                                                 filename=loader.name))
+
+        return yaml.load(value)
+
     yaml.add_constructor("!include", yaml_include)
-    return [yaml.load(open(y)) for y in yamls]
+    yaml.add_constructor("!os_env", yaml_get_env_variable)
+
+    return yaml.load(open(path))
+
+
+def find_duplicates(yamls):
+    dup = {}
+    for one in yamls:
+        name = os.path.basename(one)
+        if name in dup:
+            dup[name].append(one)
+        else:
+            dup[name] = [one]
+    return {k: v for k, v in dup.iteritems() if len(v) > 1}
 
 
 def get_configs():
     """Return list of dict environment configurations"""
-    import system_test
-    path = os.path.join(os.path.dirname(system_test.__file__),
-                        'tests_templates/tests_configs')
-    return load_yaml_files(path)
+    yamls = collect_yamls(get_path_to_config())
+    dup = find_duplicates(yamls)
+    if dup:
+        raise NameError(
+            "Found duplicate files in templates. "
+            "Name of template should be unique. Errors: {}".format(dup))
+    return {get_configname(y): y for y in yamls}
 
 
 def case_factory(baseclass):
     """Return list of instance """
     configs = get_configs()
-    return [baseclass.caseclass_factory(
-        c['template']['group-name'])(c) for c in configs]
+    return [baseclass.caseclass_factory(g)(c) for g, c in configs.iteritems()]
