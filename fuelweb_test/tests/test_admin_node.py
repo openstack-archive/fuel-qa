@@ -446,11 +446,13 @@ class TestLogrotateBase(TestBasic):
         self.env.make_snapshot("test_logrotate_one_week_11MB")
 
 
-@test(groups=["fuel_master_migrate"])
+@test(enabled=False,
+      groups=["fuel_master_migrate"])
 class FuelMasterMigrate(TestBasic):
     """FuelMasterMigrate."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["fuel_migration"])
     @log_snapshot_after_test
     def fuel_migration(self):
