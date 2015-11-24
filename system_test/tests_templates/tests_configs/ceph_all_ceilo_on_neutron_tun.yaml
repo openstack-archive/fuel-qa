@@ -1,9 +1,8 @@
 ---
 template:
  name: 3 Controller and mongo, 3 Compute & Ceph on Neutron/TUN with Ceilometer
- group-name: 3ctrl_mongo_3comp_ceph_neutronTUN_ceilo
  slaves: 6
- cluster-template:
+ cluster_template:
   name: CephImgVolRados
   release: ubuntu
   network:
