@@ -1,9 +1,8 @@
 ---
 template:
  name: 3 Controller, 2 Compute, 1 Cinder Neutron/VLAN
- group-name: 3ctrl_2comp_1cndr_neutronVLAN
  slaves: 6
- cluster-template:
+ cluster_template:
   name: HAwithCinderNeutronVLAN
   release: ubuntu
   network:
