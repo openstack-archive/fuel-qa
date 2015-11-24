@@ -325,7 +325,6 @@ class BackupRestoreHA(NeutronTunHaBase):
         cl = CommandLine()
         release_id = self.fuel_web.get_releases_list_for_os(
             release_name=OPENSTACK_RELEASE)[0]
-        net = 'neutron --nst={nst}'.format(nst=NEUTRON_SEGMENT_TYPE)
         node_ids = [self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.nodes().slaves[slave_id])['id']
             for slave_id in range(3)]
@@ -333,8 +332,8 @@ class BackupRestoreHA(NeutronTunHaBase):
         with self.env.d_env.get_admin_remote() as remote:
             # Create an environment
             cmd = ('fuel env create --name={0} --release={1} '
-                   '--net={2} --json'.format(self.__class__.__name__,
-                                             release_id, net))
+                   '--nst={2} --json'.format(self.__class__.__name__,
+                                             release_id, NEUTRON_SEGMENT_TYPE))
             env_result = run_on_remote(remote, cmd, jsonify=True)
             cluster_id = env_result['id']
 
