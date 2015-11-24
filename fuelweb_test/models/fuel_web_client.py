@@ -2017,7 +2017,7 @@ class FuelWebClient(object):
     def restore_check_nailgun_api(self, remote):
         logger.info("Restore check nailgun api")
         info = self.client.get_api_version()
-        build_number = info["build_number"]
+        build_number = info["openstack_version"]
         assert_true(build_number, 'api version returned empty data')
 
     @logwrap
