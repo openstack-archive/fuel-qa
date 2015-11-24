@@ -27,21 +27,36 @@ from system_test.helpers.decorators import make_snapshot_if_step_fail
 from system_test.helpers.decorators import deferred_decorator
 from system_test.helpers.decorators import action
 from system_test.helpers.decorators import nested_action
+from system_test.helpers.utils import load_yaml
 
 
 class PrepareBase(base_actions_factory.BaseActionsFactory):
     """Base class with prepare actions
 
-    _action_setup_master - setup master node in environment
-    _action_config_release - preconfig releases if it needs
-    _action_make_slaves - boot slaves and snapshot environment with
-    bootstrapped slaves
-    _action_revert_slaves - revert environment with bootstrapped slaves
+    _start_case - runned before test case start
+    _finish_case - runned after test case finish
+    setup_master - setup master node in environment
+    config_release - preconfig releases if it needs
+    make_slaves - boot slaves and snapshot environment with bootstrapped slaves
+    revert_slaves - revert environment with bootstrapped slaves
 
     """
 
+    def _load_config(self):
+        config = load_yaml(self.config_file)
+        self.full_config = config
+        self.env_config = config[
+            'template']['cluster_template']
+        self.env_settings = config[
+            'template']['cluster_template']['settings']
+        self.config_name = config['template']['name']
+
+        if 'devops_settings' in config['template']:
+            self.env._config = config
+
     def _start_case(self):
         """Start test case"""
+        self._load_config()
         class_doc = getattr(self, "__doc__", self.__class__.__name__)
         name = class_doc.splitlines()[0]
         class_scenario = class_doc.splitlines()[1:]
@@ -158,12 +173,9 @@ class ActionsBase(PrepareBase):
     base_group = None
     actions_order = None
 
-    def __init__(self, config=None):
+    def __init__(self, config_file=None):
         super(ActionsBase, self).__init__()
-        self.full_config = config
-        self.env_config = config['template']['cluster-template']
-        self.env_settings = config['template']['cluster-template']['settings']
-        self.config_name = config['template']['name']
+        self.config_file = config_file
         self.cluster_id = None
 
     @deferred_decorator([make_snapshot_if_step_fail])

@@ -7,8 +7,8 @@ template:
   name: SimpleNeutronTUN
   release: ubuntu
   network:
-   !include ../../../cluster_configs/networks/neutron_tun.yaml
+   !include cluster_configs/networks/neutron_tun.yaml
   settings:
-   !include ../../../cluster_configs/settings/cinder_wo_componets.yaml
+   !include cluster_configs/settings/cinder_wo_componets.yaml
   nodes:
-   !include ../../../cluster_configs/nodes/single/1ctrl_1comp.yaml
+   !include cluster_configs/nodes/single/1ctrl_1comp.yaml

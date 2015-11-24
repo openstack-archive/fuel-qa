@@ -1,9 +1,7 @@
 ---
 - roles:
    - controller
-  iface: !include ../_default_ifaces.yaml
   count: 1
 - roles:
    - compute
-  iface: !include ../_default_ifaces.yaml
   count: 1
