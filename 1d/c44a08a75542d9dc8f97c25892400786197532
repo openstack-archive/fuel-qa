@@ -1,0 +1,13 @@
+Verified+2: Jenkins
+Code-Review+2: tatyana-leontovich <tleontovich@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+2: Andrey Sledzinskiy <asledzinskiy@mirantis.com>
+Workflow+1: Andrey Sledzinskiy <asledzinskiy@mirantis.com>
+Code-Review+1: Veronica Krayneva <vkrayneva@mirantis.com>
+Code-Review+1: Dennis Dmitriev <ddmitriev@mirantis.com>
+Code-Review+1: Alexey Stepanov <astepanov@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Tue, 24 Nov 2015 13:19:29 +0000
+Reviewed-on: https://review.openstack.org/240819
+Project: openstack/fuel-qa
+Branch: refs/heads/master
