@@ -597,6 +597,121 @@ class MuranoHAOneController(TestBasic):
         self.env.make_snapshot("deploy_murano_ha_one_controller_tun")
 
 
+@test(groups=["services_external", "services_external.murano",
+              "services_ha_one_controller_external",
+              "services_ha_one_controller_external.murano"])
+class MuranoHAOneControllerExternal(TestBasic):
+    """Murano HA with 1 controller external tests.
+    Don't recommend to start tests without kvm.
+    """
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["deploy_murano_ha_one_controller_tun_external"])
+    @log_snapshot_after_test
+    def deploy_murano_ha_one_controller_tun_external(self):
+        """Deploy cluster in HA mode with Murano and Neutron VXLAN
+
+        Scenario:
+            1. Create cluster. Set install Murano option
+            2. Add 1 node with controller role
+            3. Add 1 nodes with compute role
+            4. Deploy the cluster
+            5. Verify Murano services
+            6. Run OSTF
+            7. Run OSTF Murano platform tests
+            8. Run external deployment Murano test suite,
+
+        Duration 8h
+        Snapshot: deploy_murano_ha_one_controller_tun_external
+        """
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        data = {
+            'murano': True,
+            'net_provider': 'neutron',
+            'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
+            'tenant': 'muranoExt',
+            'user': 'muranoExt',
+            'password': 'muranoExt'
+        }
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings=data)
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['compute']
+            }
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id),
+            data['user'], data['password'], data['tenant'])
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
+        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            checkers.verify_service(
+                remote,
+                service_name='murano-api')
+
+        LOGGER.debug('Run sanity and functional Murano OSTF tests')
+        self.fuel_web.run_single_ostf_test(
+            cluster_id=self.fuel_web.get_last_created_cluster(),
+            test_sets=['sanity'],
+            test_name=('fuel_health.tests.sanity.test_sanity_murano.'
+                       'MuranoSanityTests.test_create_and_delete_service')
+        )
+
+        LOGGER.debug('Run OSTF platform tests')
+
+        test_class_main = ('fuel_health.tests.tests_platform'
+                           '.test_murano_linux.MuranoDeployLinuxServicesTests')
+        tests_names = ['test_deploy_dummy_app', ]
+
+        test_classes = []
+
+        for test_name in tests_names:
+            test_classes.append('{0}.{1}'.format(test_class_main,
+                                                 test_name))
+
+        for test_name in test_classes:
+            self.fuel_web.run_single_ostf_test(
+                cluster_id=cluster_id, test_sets=['tests_platform'],
+                test_name=test_name, timeout=60 * 20)
+
+        LOGGER.debug('Running Murano external deployment test suite')
+
+        cmd = (
+            "yum install git -y && "
+            "rm -rf murano-tests && "
+            "git clone https://github.com/Mirantis/murano-tests && "
+            "echo 'export OS_USERNAME={0}\n"
+            "export OS_PASSWORD={1}\n"
+            "export OS_TENANT_NAME={2}\n"
+            "export OS_AUTH_URL=http://{3}:5000/v2.0\n"
+            "export OS_ENDPOINT_TYPE=publicURL\n"
+            "export MURANO_REPO_URL='http://storage.apps.openstack.org/'\n'"
+            " > murano-tests/openrc && "
+            "cd murano-tests && "
+            "./run_tests.sh full".format(
+                data['user'],
+                data['password'],
+                data['tenant'],
+                self.fuel_web.get_public_vip(cluster_id)))
+
+        with self.env.d_env.get_ssh_to_remote(self.env.admin_node_ip()) as \
+                remote:
+            result = remote.execute(cmd)
+
+        LOGGER.debug(result)
+
+        self.env.make_snapshot("deploy_murano_ha_one_controller_tun_external")
+
+
 @test(groups=["services", "services.murano", "services_ha"])
 class MuranoHA(TestBasic):
     """Murano HA tests.
@@ -684,6 +799,124 @@ class MuranoHA(TestBasic):
                 test_name=test_name, timeout=60 * 20)
 
         self.env.make_snapshot("deploy_murano_ha_with_tun")
+
+
+@test(groups=["services_external", "services_external.murano",
+              "services_ha_external",
+              "services_ha_external.murano"])
+class MuranoHAExternal(TestBasic):
+    """Murano HA external tests.
+    Don't recommend to start tests without kvm.
+    """
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["deploy_murano_ha_tun_external"])
+    @log_snapshot_after_test
+    def deploy_murano_ha_tun_external(self):
+        """Deploy cluster in HA mode with Murano and Neutron VXLAN
+
+        Scenario:
+            1. Create cluster. Set install Murano option
+            2. Add 3 node with controller role
+            3. Add 1 nodes with compute role
+            4. Deploy the cluster
+            5. Verify Murano services
+            6. Run OSTF
+            7. Run OSTF Murano platform tests
+            8. Run external deployment Murano test suite,
+
+        Duration 8h
+        Snapshot: deploy_murano_ha_one_controller_tun_external
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        data = {
+            'murano': True,
+            'net_provider': 'neutron',
+            'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
+            'tenant': 'muranoExt',
+            'user': 'muranoExt',
+            'password': 'muranoExt'
+        }
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings=data)
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute']
+            }
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id),
+            data['user'], data['password'], data['tenant'])
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)
+        for slave in ["slave-01", "slave-02", "slave-03"]:
+            _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
+            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+                checkers.verify_service(
+                    remote,
+                    service_name='murano-api')
+
+        LOGGER.debug('Run sanity and functional Murano OSTF tests')
+        self.fuel_web.run_single_ostf_test(
+            cluster_id=self.fuel_web.get_last_created_cluster(),
+            test_sets=['sanity'],
+            test_name=('fuel_health.tests.sanity.test_sanity_murano.'
+                       'MuranoSanityTests.test_create_and_delete_service')
+        )
+
+        LOGGER.debug('Run OSTF platform tests')
+
+        test_class_main = ('fuel_health.tests.tests_platform'
+                           '.test_murano_linux.MuranoDeployLinuxServicesTests')
+        tests_names = ['test_deploy_dummy_app', ]
+
+        test_classes = []
+
+        for test_name in tests_names:
+            test_classes.append('{0}.{1}'.format(test_class_main,
+                                                 test_name))
+
+        for test_name in test_classes:
+            self.fuel_web.run_single_ostf_test(
+                cluster_id=cluster_id, test_sets=['tests_platform'],
+                test_name=test_name, timeout=60 * 20)
+
+        LOGGER.debug('Running Murano external deployment test suite')
+
+        cmd = (
+            "yum install git -y && "
+            "rm -rf murano-tests && "
+            "git clone https://github.com/Mirantis/murano-tests && "
+            "echo 'export OS_USERNAME={0}\n"
+            "export OS_PASSWORD={1}\n"
+            "export OS_TENANT_NAME={2}\n"
+            "export OS_AUTH_URL=http://{3}:5000/v2.0\n"
+            "export OS_ENDPOINT_TYPE=publicURL\n"
+            "export MURANO_REPO_URL='http://storage.apps.openstack.org/'\n'"
+            " > murano-tests/openrc && "
+            "cd murano-tests && "
+            "./run_tests.sh full".format(
+                data['user'],
+                data['password'],
+                data['tenant'],
+                self.fuel_web.get_public_vip(cluster_id)))
+
+        with self.env.d_env.get_ssh_to_remote(self.env.admin_node_ip()) as \
+                remote:
+            result = remote.execute(cmd)
+
+        LOGGER.debug(result)
+
+        self.env.make_snapshot("deploy_murano_ha_tun_external")
 
 
 class OSTFCeilometerHelper(TestBasic):
