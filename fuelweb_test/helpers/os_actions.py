@@ -21,6 +21,8 @@ from devops.error import TimeoutError
 from devops.helpers import helpers
 from fuelweb_test.helpers import common
 from fuelweb_test import logger
+from neutronclient.common.exceptions import NeutronClientException
+from novaclient.exceptions import ClientException as NovaClientException
 
 
 class OpenStackActions(common.Common):
@@ -504,3 +506,98 @@ class OpenStackActions(common.Common):
         res = ''.join(remote.execute('virsh dumpxml {0} | grep "mac address="'
                       .format(self.get_srv_instance_name(srv)))['stdout'])
         return res.split('\'')[1]
+
+    def network_cleanup(self, networks_to_skip=[]):
+        """ Clean up the neutron networks
+        The networks that should be kept are passed as list of names
+        """
+
+        # net ids with the names from networks_to_skip are filtered out
+        networks = [x['id'] for x in self.neutron.list_networks()['networks']
+                    if x['name'] not in networks_to_skip]
+        # Subnets and ports are simply filtered by network ids
+        subnets = [x['id'] for x in self.neutron.list_subnets()['subnets']
+                   if x['network_id'] in networks]
+        ports = [x for x in self.neutron.list_ports()['ports']
+                 if x['network_id'] in networks]
+        # Did not find the better way to detect the fuel router
+        # Looks like it just always has fixed name router04
+        routers = [x['id'] for x in self.neutron.list_routers()['routers']
+                   if x['name'] != 'router04']
+
+        for server in self.nova.servers.list():
+            try:
+                logger.debug(self.nova.servers.delete(server))
+            except NovaClientException:
+                logger.debug('nova server {} is not deletable'.format(server))
+
+        for sg in self.nova.security_groups.list():
+            if sg.description != 'Default security group':
+                try:
+                    logger.debug(self.nova.security_groups.delete(sg))
+                except NovaClientException:
+                    logger.debug('The Security Group {} is not deletable'
+                                 .format(sg))
+
+        # After some experiments the followin sequence for deleteion was found
+        # roter_interface and ports -> subnets -> routers -> nets
+        # Delete router interafce and ports
+        for port in ports:
+            try:
+                # TBD Looks like the port migh be used either by router or
+                # l3 agent
+                # in case of router this condition is true
+                # port['network'] == 'router_interface'
+                # dunno what will happen in case of the l3 agent
+                for fixed_ip in port['fixed_ips']:
+                    logger.debug(
+                        self.neutron.remove_interface_router(
+                            port['device_id'],
+                            {
+                                'router_id': port['device_id'],
+                                'subnet_id': fixed_ip['subnet_id'],
+                            }
+                        )
+                    )
+                logger.debug(
+                    self.neutron.delete_port(port['id'])
+                )
+            except NeutronClientException:
+                logger.info('the port {} is not deletable'
+                            .format(port['id']))
+
+        # Delete subnets
+        for subnet in subnets:
+            try:
+                logger.debug(
+                    self.neutron.delete_subnet(subnet)
+                )
+            except NeutronClientException:
+                logger.info('the subnet {} is not deletable'
+                            .format(subnet))
+
+        # Delete routers
+        for router in routers:
+            try:
+                logger.debug(
+                    self.neutron.delete_router(router)
+                )
+            except NeutronClientException:
+                logger.info('the router {} is not deletable'
+                            .format(router))
+
+        # Delete nets
+        for net in networks:
+            try:
+                logger.debug(
+                    self.neutron.delete_network(net)
+                )
+            except NeutronClientException:
+                logger.info('the net {} is not deletable'
+                            .format(net))
+
+    def is_nova_servers_active(self):
+        for server in self.nova.servers.list():
+            if server.status != 'ACTIVE':
+                return False
+        return True

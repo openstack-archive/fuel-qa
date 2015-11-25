@@ -97,6 +97,11 @@ Test network templates
 .. automodule:: fuelweb_test.tests.test_net_templates
    :members:
 
+Test Networking 
+---------------
+.. automodule:: fuelweb_test.tests.mos_integration.test_networking
+   :members:
+
 Test Neutron
 ------------
 .. automodule:: fuelweb_test.tests.test_neutron
