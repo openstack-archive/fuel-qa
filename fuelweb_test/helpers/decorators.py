@@ -293,6 +293,106 @@ def update_fuel(func):
     return wrapper
 
 
+def patch_fuel_agent(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        try:
+            if settings.UPLOAD_PATCHSET:
+                if not settings.GERRIT_REFSPEC:
+                    raise ValueError('REFSPEC should be set for CI tests.')
+                logger.info("Uploading new patchset from {0}"
+                            .format(settings.GERRIT_REFSPEC))
+                environment = get_current_env(args)
+                pack_path = '/var/www/nailgun/fuel-agent/'
+                container = 'mcollective'
+                with environment.d_env.get_admin_remote() as remote:
+                    remote.upload(settings.PATCH_PATH.rstrip('/'),
+                                  pack_path)
+
+                # Update fuel-agent in MCollective
+                cmd = "rpm -e fuel-agent"
+                environment.base_actions.execute_in_container(
+                    cmd, container, exit_code=0)
+                cmd = "yum localinstall -y {0}fuel-agent*.rpm".format(
+                    pack_path)
+                environment.base_actions.execute_in_container(
+                    cmd, container, exit_code=0)
+                cmd = "rpm -q fuel-agent"
+                installed_package = \
+                    environment.base_actions.execute_in_container(
+                        cmd, container, exit_code=0)
+                cmd = "ls -1 {0}|grep 'fuel-agent'".format(pack_path)
+                new_package = \
+                    environment.base_actions.execute_in_container(
+                        cmd, container).rstrip('.rpm')
+                assert_equal(installed_package, new_package,
+                             "The new package {0} was not installed".
+                             format(new_package))
+
+                # renew code in bootstrap
+
+                # Step 1 - unpack bootstrap
+                bootstrap_var = "/var/initramfs"
+                bootstrap = "/var/www/nailgun/bootstrap"
+                cmd = ("mkdir {0};"
+                       "cp /{1}/initramfs.img {0}/;"
+                       "cd {0};"
+                       "cat initramfs.img | gunzip | cpio -imudv;").format(
+                    bootstrap_var,
+                    bootstrap
+                )
+                with environment.d_env.get_admin_remote() as remote:
+                    result = remote.execute(cmd)
+                    assert_equal(result['exit_code'], 0,
+                                 ('Failed to add unpack bootstrap {}'
+                                  ).format(result))
+
+                # Step 2 - replace fuel-agent code in bootsrap
+                agent_path = "/usr/lib/python2.6/site-packages/fuel_agent"
+                image_rebuild = "{} | {} | {}".format(
+                    "find . -xdev",
+                    "cpio --create --format='newc'",
+                    "gzip -9 > /var/initramfs/initramfs.img.updated")
+
+                cmd = ("rm -rf {0}/{1}*;"
+                       "rm -rf {0}/initramfs.img"
+                       "cp -r /{2}/fuel_agent/* {0}/{1}/;"
+                       "cd {0}/;"
+                       "{3};"
+                       ).format(
+                    bootstrap_var,
+                    agent_path,
+                    pack_path,
+                    image_rebuild)
+
+                with environment.d_env.get_admin_remote() as remote:
+                    result = remote.execute(cmd)
+                    assert_equal(result['exit_code'], 0,
+                                 ('Failed to add unpack bootstrap {}'
+                                  ).format(result))
+
+                # Step 3 - Assign new bootstrap
+                cmd = ("rm {0}/initramfs.img;"
+                       "cp {1}/initramfs.img.updated {0}/initramfs.img;"
+                       "chmod +r {0}/initramfs.img;"
+                       ).format(bootstrap, bootstrap_var)
+                with environment.d_env.get_admin_remote() as remote:
+                    result = remote.execute(cmd)
+                    assert_equal(result['exit_code'], 0,
+                                 ('Failed to add unpack bootstrap {}'
+                                  ).format(result))
+                cmd = "cobbler sync"
+                container = "cobbler"
+                environment.base_actions.execute_in_container(
+                    cmd, container, exit_code=0)
+        except Exception as e:
+            logger.error("Could not upload package {e}".format(e=e))
+            raise
+        return result
+    return wrapper
+
+
 def revert_info(snapshot_name, master_ip, description=""):
     logger.info("<" * 5 + "*" * 100 + ">" * 5)
     logger.info("{} Make snapshot: {}".format(description, snapshot_name))

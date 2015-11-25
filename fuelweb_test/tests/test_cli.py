@@ -22,6 +22,7 @@ from devops.helpers.helpers import wait
 from fuelweb_test.helpers.checkers import check_cluster_presence
 from fuelweb_test.helpers.checkers import check_cobbler_node_exists
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers.decorators import patch_fuel_agent
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
@@ -30,6 +31,7 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.tests import test_cli_base
 from fuelweb_test import logger
+from fuelweb_test import settings
 
 
 @test(groups=["command_line_minimal"])
@@ -284,3 +286,63 @@ class CommandLineTest(test_cli_base.CommandLine):
         assert_false(
             check_cluster_presence(cluster_id, self.env.postgres_actions),
             "cluster {0} is found".format(cluster_id))
+
+
+@test(groups=["fuel_agent_gate"])
+
+class Gate(TestBasic):
+    """Gate"""  # TODO documentation
+
+    @patch_fuel_agent
+    def patch_fuel_agent(self):
+        logger.info("Patching fuel-agent")
+
+    @test(depends_on_groups=['ready'],
+          groups=["gate_patch_fuel_agent"])
+    @log_snapshot_after_test
+    def gate_patch_fuel_agent(self):
+        """ Update ostf start on deployed cluster
+
+    Scenario:
+        1. Revert snapshot "ceph_ha"
+        2. Update ostf
+        3. Run ostf
+
+        """
+        if settings.UPLOAD_PATCHSET:
+            self.env.revert_snapshot("ready")
+            self.patch_fuel_agent()
+            self.env.bootstrap_nodes(
+                self.env.d_env.nodes().slaves[:1])
+
+            slave_id = self.fuel_web.get_nailgun_node_by_devops_node(
+                self.env.d_env.nodes().slaves[0])
+
+            release_id = self.fuel_web.get_releases_list_for_os(
+                release_name=OPENSTACK_RELEASE)[0]
+
+            with self.env.d_env.get_admin_remote() as remote:
+
+                # Create an environment
+                cmd = ('fuel env create --name={0} --release={1} '
+                       '--nst={2} --json'.format(self.__class__.__name__,
+                                                 release_id, NEUTRON_SEGMENT_TYPE))
+                env_result = run_on_remote(remote, cmd, jsonify=True)
+                cluster_id = env_result['id']
+
+                # Update network parameters
+                self.update_cli_network_configuration(cluster_id, remote)
+
+                # Update SSL configuration
+                self.update_ssl_configuration(cluster_id, remote)
+
+                # Add and provision a controller node
+                logger.info("Add to the cluster and start provisioning "
+                            "a controller node [{0}]".format(slave_id))
+                cmd = ('fuel --env-id={0} node set --node {1} --role=controller'
+                       .format(cluster_id, slave_id))
+                remote.execute(cmd)
+                cmd = ('fuel --env-id={0} node --provision --node={1} --json'
+                       .format(cluster_id, slave_id))
+                task = run_on_remote(remote, cmd, jsonify=True)
+                self.assert_cli_task_success(task, remote, timeout=30 * 60)
