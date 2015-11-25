@@ -1399,11 +1399,13 @@ class FuelWebClient(object):
                         name='ironic').ip
                     subnet1, subnet2 = ironic_net.subnet()
                     networks['baremetal']['cidr'] = str(ironic_net)
-                    networks['baremetal']['gateway'] = str(ironic_net[-2])
+                    net_settings[net_provider]['config'][
+                        'baremetal_gateway'] = str(ironic_net[-2])
                     networks['baremetal']['ip_range'] = [
                         str(subnet1[2]), str(subnet2[0])]
-                    net_settings[net_provider]['config']['baremetal_ranges'] =\
+                    net_settings[net_provider]['config']['baremetal_range'] =\
                         [[str(subnet2[1]), str(subnet2[-3])]]
+                    networks['baremetal']['vlan_start'] = None
 
                 if BONDING:
                     # leave defaults for mgmt, storage and private if
