@@ -110,8 +110,8 @@ class UpgradeFuelChains(base_test_data.TestBasic):
 
         available_releases_after = self.fuel_web.get_releases_list_for_os(
             release_name=hlp_data.OPENSTACK_RELEASE)
-        added_release = [id for id in available_releases_after
-                         if id not in available_releases_before]
+        added_release = [release_id for release_id in available_releases_after
+                         if release_id not in available_releases_before]
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[3:6])
         data = {

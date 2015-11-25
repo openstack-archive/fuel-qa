@@ -491,12 +491,12 @@ class BondingHA(BondingTest):
         admin_bond_ifaces_latest = ifaces_data_latest[-1]['slaves']
         assert_equal(len(admin_bond_ifaces), len(admin_bond_ifaces_latest),
                      "Admin interface bond config is inconsistent; "
-                     "interface(s) have dissapeared from the bond")
+                     "interface(s) have disappeared from the bond")
         others_bond_ifaces = ifaces_data[-2]['slaves']
         others_bond_ifaces_latest = ifaces_data_latest[-2]['slaves']
         assert_equal(len(others_bond_ifaces), len(others_bond_ifaces_latest),
                      "Other network interfaces bond config is inconsistent; "
-                     "interface(s) have dissapeared from the bond")
+                     "interface(s) have disappeared from the bond")
 
         self.show_step(9)
         with self.env.d_env.get_admin_remote() as admin_node:

@@ -129,8 +129,9 @@ class OpenStackActions(common.Common):
             #   Find external net id for tenant
             nets = self.neutron.list_networks()['networks']
             err_msg = "Active external network not found in nets:{}"
-            ext_net_ids = [net['id'] for net in nets if net['router:external']
-                           and net['status'] == "ACTIVE"]
+            ext_net_ids = [
+                net['id'] for net in nets
+                if net['router:external'] and net['status'] == "ACTIVE"]
             asserts.assert_true(ext_net_ids, err_msg.format(nets))
             net_id = ext_net_ids[0]
             #   Find instance port
@@ -262,14 +263,13 @@ class OpenStackActions(common.Common):
 
     def execute_through_host(self, ssh, vm_host, cmd, creds=()):
         logger.debug("Making intermediate transport")
-        interm_transp = ssh._ssh.get_transport()
+        intermediate_transport = ssh._ssh.get_transport()
 
         logger.debug("Opening channel to VM")
-        interm_chan = interm_transp.open_channel('direct-tcpip',
-                                                 (vm_host, 22),
-                                                 (ssh.host, 0))
+        intermediate_channel = intermediate_transport.open_channel(
+            'direct-tcpip', (vm_host, 22), (ssh.host, 0))
         logger.debug("Opening paramiko transport")
-        transport = paramiko.Transport(interm_chan)
+        transport = paramiko.Transport(intermediate_channel)
         logger.debug("Starting client")
         transport.start_client()
         logger.info("Passing authentication to VM: {}".format(creds))
@@ -453,8 +453,8 @@ class OpenStackActions(common.Common):
     def get_neutron_dhcp_ports(self, net_id):
         ports = self.neutron.list_ports()['ports']
         network_ports = [x for x in ports
-                         if x['device_owner'] == 'network:dhcp'
-                         and x['network_id'] == net_id]
+                         if x['device_owner'] == 'network:dhcp' and
+                         x['network_id'] == net_id]
         return network_ports
 
     def create_pool(self, pool_name):
