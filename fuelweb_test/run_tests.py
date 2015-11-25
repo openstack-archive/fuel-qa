@@ -75,6 +75,7 @@ def import_tests():
     from tests import test_ha_one_controller  # noqa
     from tests import test_vcenter  # noqa
     from tests import test_reduced_footprint  # noqa
+    from tests.mos_integration import test_networking  # noqa
     from tests.tests_security import test_run_nessus  # noqa
     from tests.tests_separate_services import test_separate_db  # noqa
     from tests.tests_separate_services import test_separate_horizon  # noqa
