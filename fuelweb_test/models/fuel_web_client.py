@@ -17,6 +17,7 @@ import time
 import traceback
 import ipaddr
 from netaddr import EUI
+from urllib2 import HTTPError
 
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
@@ -30,6 +31,7 @@ from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_true
+from proboscis.asserts import assert_raises
 import yaml
 
 from fuelweb_test.helpers import ceph
@@ -1623,35 +1625,38 @@ class FuelWebClient(object):
         self.warm_shutdown_nodes(devops_nodes)
         self.warm_start_nodes(devops_nodes)
 
-    def cold_restart_nodes(self, devops_nodes):
+    def cold_restart_nodes(self, devops_nodes,
+                           wait_offline=True, wait_online=True):
         logger.info('Cold restart nodes %s',
                     [n.name for n in devops_nodes])
         for node in devops_nodes:
             logger.info('Destroy node %s', node.name)
             node.destroy()
         for node in devops_nodes:
-            logger.info('Wait a %s node offline status', node.name)
-            try:
-                wait(lambda: not self.get_nailgun_node_by_devops_node(
-                     node)['online'], timeout=60 * 10)
-            except TimeoutError:
-                assert_false(
-                    self.get_nailgun_node_by_devops_node(node)['online'],
-                    'Node {0} has not become offline after '
-                    'cold restart'.format(node.name))
+            if wait_offline:
+                logger.info('Wait a %s node offline status', node.name)
+                try:
+                    wait(lambda: not self.get_nailgun_node_by_devops_node(
+                         node)['online'], timeout=60 * 10)
+                except TimeoutError:
+                    assert_false(
+                        self.get_nailgun_node_by_devops_node(node)['online'],
+                        'Node {0} has not become offline after '
+                        'cold restart'.format(node.name))
             logger.info('Start %s node', node.name)
             node.create()
-        for node in devops_nodes:
-            try:
-                wait(
-                    lambda: self.get_nailgun_node_by_devops_node(
-                        node)['online'], timeout=60 * 10)
-            except TimeoutError:
-                assert_true(
-                    self.get_nailgun_node_by_devops_node(node)['online'],
-                    'Node {0} has not become online'
-                    ' after cold start'.format(node.name))
-        self.environment.sync_time()
+        if wait_online:
+            for node in devops_nodes:
+                try:
+                    wait(
+                        lambda: self.get_nailgun_node_by_devops_node(
+                            node)['online'], timeout=60 * 10)
+                except TimeoutError:
+                    assert_true(
+                        self.get_nailgun_node_by_devops_node(node)['online'],
+                        'Node {0} has not become online'
+                        ' after cold start'.format(node.name))
+            self.environment.sync_time()
 
     @logwrap
     def ip_address_show(self, node_name, interface, namespace=None):
@@ -1720,6 +1725,27 @@ class FuelWebClient(object):
         logger.info('Reset cluster #%s', cluster_id)
         task = self.client.reset_environment(cluster_id)
         self.assert_task_success(task, timeout=50 * 60, interval=30)
+
+    @logwrap
+    def delete_env_wait(self, cluster_id, timeout=10 * 60):
+        logger.info('Removing cluster with id={0}'.format(cluster_id))
+        self.client.delete_cluster(cluster_id)
+        tasks = self.client.get_tasks()
+        delete_tasks = [t for t in tasks if t['status']
+                        in ('pending', 'running') and
+                        t['name'] == 'cluster_deletion' and
+                        t['cluster'] == cluster_id]
+        if delete_tasks:
+            for task in delete_tasks:
+                logger.info('Task found: {}'.format(task))
+            task = delete_tasks[0]
+            logger.info('Selected task: {}'.format(task))
+
+            # Task will be removed with the cluster, so we will get 404 error
+            assert_raises(HTTPError,
+                          self.assert_task_success, task, timeout)
+        else:
+            assert 'No cluster_deletion task found!'
 
     @logwrap
     def wait_nodes_get_online_state(self, nodes, timeout=4 * 60):
