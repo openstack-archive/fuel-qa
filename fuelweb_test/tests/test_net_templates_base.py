@@ -91,11 +91,11 @@ class TestNetworkTemplatesBase(TestBasic):
         network_types = tmpl['templates_for_node_role'][role]
         for network_type in network_types:
             endpoints.update(tmpl['network_scheme'][network_type]['endpoints'])
-        for type in tmpl['network_scheme']:
-            for net_role in tmpl['network_scheme'][type]['roles']:
+        for scheme_type in tmpl['network_scheme']:
+            for net_role in tmpl['network_scheme'][scheme_type]['roles']:
                 if net_role in skip_net_roles:
                     endpoints.discard(
-                        tmpl['network_scheme'][type]['roles'][net_role])
+                        tmpl['network_scheme'][scheme_type]['roles'][net_role])
         for net in tmpl['network_assignments']:
             if tmpl['network_assignments'][net]['ep'] in endpoints:
                 networks.add(net)

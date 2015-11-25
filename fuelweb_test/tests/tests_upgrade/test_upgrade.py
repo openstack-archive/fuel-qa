@@ -191,8 +191,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 
         available_releases_after = self.fuel_web.get_releases_list_for_os(
             release_name=hlp_data.OPENSTACK_RELEASE)
-        added_release = [id for id in available_releases_after
-                         if id not in available_releases_before]
+        added_release = [release_id for release_id in available_releases_after
+                         if release_id not in available_releases_before]
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[5:7])
         cluster_id = self.fuel_web.create_cluster(
@@ -297,8 +297,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         # Deploy new cluster
         available_releases_after = self.fuel_web.get_releases_list_for_os(
             release_name=hlp_data.OPENSTACK_RELEASE)
-        added_release = [id for id in available_releases_after
-                         if id not in available_releases_before]
+        added_release = [release_id for release_id in available_releases_after
+                         if release_id not in available_releases_before]
 
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[5:7])
@@ -361,8 +361,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.fuel_web.assert_nailgun_upgrade_migration()
         available_releases_after = self.fuel_web.get_releases_list_for_os(
             release_name=hlp_data.OPENSTACK_RELEASE)
-        added_release = [id for id in available_releases_after
-                         if id not in available_releases_before]
+        added_release = [release_id for release_id in available_releases_after
+                         if release_id not in available_releases_before]
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['ha', 'smoke', 'sanity'])
@@ -454,8 +454,8 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         # Deploy new cluster
         available_releases_after = self.fuel_web.get_releases_list_for_os(
             release_name=hlp_data.OPENSTACK_RELEASE)
-        added_release = [id for id in available_releases_after
-                         if id not in available_releases_before]
+        added_release = [release_id for release_id in available_releases_after
+                         if release_id not in available_releases_before]
 
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[3:6])

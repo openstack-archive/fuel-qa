@@ -21,10 +21,10 @@ from fuelweb_test.settings import PATH_TO_CERT
 
 
 from cinderclient import client as cinderclient
-from glanceclient.v1 import Client as glanceclient
-from keystoneclient.v2_0 import Client as keystoneclient
+from glanceclient.v1 import Client as GlanceClient
+from keystoneclient.v2_0 import Client as KeystoneClient
 from keystoneclient.exceptions import ClientException
-from novaclient.v1_1 import Client as novaclient
+from novaclient.v1_1 import Client as NovaClient
 import neutronclient.v2_0.client as neutronclient
 from proboscis.asserts import assert_equal
 
@@ -43,7 +43,7 @@ class Common(object):
             path_to_cert = PATH_TO_CERT
 
         LOGGER.debug('Auth URL is {0}'.format(auth_url))
-        self.nova = novaclient(username=user,
+        self.nova = NovaClient(username=user,
                                api_key=password,
                                project_id=tenant,
                                auth_url=auth_url,
@@ -69,9 +69,9 @@ class Common(object):
         LOGGER.debug('Token is {0}'.format(token))
         glance_endpoint = self.keystone.service_catalog.url_for(
             service_type='image', endpoint_type='publicURL')
-        LOGGER.debug('Glance endpoind is {0}'.format(glance_endpoint))
+        LOGGER.debug('Glance endpoint is {0}'.format(glance_endpoint))
 
-        self.glance = glanceclient(endpoint=glance_endpoint,
+        self.glance = GlanceClient(endpoint=glance_endpoint,
                                    token=token,
                                    cacert=path_to_cert)
 
@@ -171,14 +171,14 @@ class Common(object):
         for i in range(retries):
             try:
                 if ca_cert:
-                    keystone = keystoneclient(username=username,
+                    keystone = KeystoneClient(username=username,
                                               password=password,
                                               tenant_name=tenant_name,
                                               auth_url=auth_url,
                                               cacert=ca_cert)
 
                 else:
-                    keystone = keystoneclient(username=username,
+                    keystone = KeystoneClient(username=username,
                                               password=password,
                                               tenant_name=tenant_name,
                                               auth_url=auth_url)

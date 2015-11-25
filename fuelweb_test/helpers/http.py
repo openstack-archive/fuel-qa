@@ -16,7 +16,7 @@ import json
 import traceback
 import urllib2
 
-from keystoneclient.v2_0 import Client as keystoneclient
+from keystoneclient.v2_0 import Client as KeystoneClient
 from keystoneclient import exceptions
 from fuelweb_test import logger
 
@@ -36,7 +36,7 @@ class HTTPClient(object):
         try:
             logger.info('Initialize keystoneclient with url %s',
                         self.keystone_url)
-            self.keystone = keystoneclient(
+            self.keystone = KeystoneClient(
                 auth_url=self.keystone_url, **self.creds)
             # it depends on keystone version, some versions doing auth
             # explicitly some don't, but we are making it explicitly always
