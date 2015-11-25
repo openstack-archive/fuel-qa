@@ -86,8 +86,7 @@ def log_snapshot_after_test(func):
             description = "Failed in method '%s'." % func.__name__
             if args[0].env is not None:
                 try:
-                    create_diagnostic_snapshot(args[0].env,
-                                               "fail", name)
+                    create_diagnostic_snapshot(args[0].env, "fail", name)
                 except:
                     logger.error("Fetching of diagnostic snapshot failed: {0}".
                                  format(traceback.format_exc()))
@@ -342,9 +341,7 @@ def update_ostf(func):
 
 def create_diagnostic_snapshot(env, status, name=""):
     task = env.fuel_web.task_wait(env.fuel_web.client.generate_logs(), 60 * 10)
-    url = "http://{}:8000{}".format(
-        env.get_admin_node_ip(), task['message']
-    )
+    url = "http://{}:8000{}".format(env.get_admin_node_ip(), task['message'])
     log_file_name = '{status}_{name}-{basename}'.format(
         status=status,
         name=name,

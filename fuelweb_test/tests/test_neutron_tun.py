@@ -278,7 +278,7 @@ class TestHaNeutronScalability(TestBasic):
                 else:
                     checkers.check_swift_ring(remote)
 
-        def _check_pacemarker(devops_nodes):
+        def _check_pacemaker(devops_nodes):
             for devops_node in devops_nodes:
                 with QuietLogger():
                     self.fuel_web.assert_pacemaker(
@@ -333,7 +333,7 @@ class TestHaNeutronScalability(TestBasic):
 
         logger.info("STEP6: Deploy 3 ctrl node cluster has finished")
         controllers = ['slave-01', 'slave-02', 'slave-03']
-        _check_pacemarker(self.env.d_env.get_nodes(name__in=controllers))
+        _check_pacemaker(self.env.d_env.get_nodes(name__in=controllers))
 
         primary_node_s3 = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
@@ -364,7 +364,7 @@ class TestHaNeutronScalability(TestBasic):
         logger.info("STEP10: Deploy 5 ctrl node cluster has finished")
         controllers = ['slave-01', 'slave-02', 'slave-03', 'slave-04',
                        'slave-05']
-        _check_pacemarker(self.env.d_env.get_nodes(name__in=controllers))
+        _check_pacemaker(self.env.d_env.get_nodes(name__in=controllers))
 
         primary_node_s9 = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
@@ -401,7 +401,7 @@ class TestHaNeutronScalability(TestBasic):
             cluster_id, ['controller'])
         devops_nodes = [self.fuel_web.get_devops_node_by_nailgun_node(node)
                         for node in nodes]
-        _check_pacemarker(devops_nodes)
+        _check_pacemaker(devops_nodes)
 
         logger.info("STEP13-14: Scale down happened. "
                     "3 controller should be now")
