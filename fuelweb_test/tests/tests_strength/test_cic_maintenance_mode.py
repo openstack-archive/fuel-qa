@@ -52,7 +52,6 @@ class CICMaintenanceMode(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
         data = {
-            'ceilometer': True,
             'net_provider': 'neutron',
             'net_segment_type': settings.NEUTRON_SEGMENT_TYPE
         }
@@ -65,9 +64,9 @@ class CICMaintenanceMode(TestBasic):
         self.fuel_web.update_nodes(
             cluster_id,
             {
-                'slave-01': ['controller', 'mongo'],
-                'slave-02': ['controller', 'mongo'],
-                'slave-03': ['controller', 'mongo'],
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
                 'slave-04': ['compute', 'cinder'],
                 'slave-05': ['compute', 'cinder']
             }
