@@ -254,7 +254,7 @@ def get_tests_results(systest_build, os):
             test_class["failCount"] += 1
         if one['status'].lower() in ('passed'):
             test_class["passCount"] += 1
-        if one['skipped'] is True:
+        if one['status'].lower() in ('skipped'):
             test_class["skipCount"] += 1
 
     for klass in test_classes:
