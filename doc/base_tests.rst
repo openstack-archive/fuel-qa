@@ -1,6 +1,6 @@
 .. index:: Base tests
 
-General Openstack/Fuel Tests
+General OpenStack/Fuel Tests
 ****************************
 
 General tests
@@ -342,7 +342,7 @@ Test Upgrade Chains
 OS upgrade tests
 ================
 
-Test Openstack Upgrades
+Test OpenStack Upgrades
 -----------------------
 .. automodule:: fuelweb_test.tests.test_os_upgrade
    :members:
