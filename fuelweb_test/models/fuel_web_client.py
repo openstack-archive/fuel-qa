@@ -403,7 +403,6 @@ class FuelWebClient(object):
                        settings=None,
                        release_name=help_data.OPENSTACK_RELEASE,
                        mode=DEPLOYMENT_MODE_HA,
-                       port=514,
                        release_id=None,
                        configure_ssl=True, ):
         """Creates a cluster
