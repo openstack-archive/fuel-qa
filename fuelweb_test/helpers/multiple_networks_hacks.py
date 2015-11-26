@@ -56,7 +56,8 @@ def configure_admin_firewall(remote, network, netmask, interface,
                                                             network, netmask,
                                                             master_ip),
         ("-t nat -I POSTROUTING -d {0}/{1} -p tcp --dport 8888 -j SNAT "
-         "--to-source {2}").format(network, netmask, master_ip)
+         "--to-source {2}").format(network, netmask, master_ip),
+        ('-I FORWARD -i {0} -j ACCEPT').format(interface)
     ]
 
     for rule in rules:
