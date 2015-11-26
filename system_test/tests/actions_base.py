@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import time
+import json
 
 from proboscis import SkipTest
 from proboscis.asserts import assert_equal
@@ -49,6 +50,8 @@ class PrepareBase(base_actions_factory.BaseActionsFactory):
         self.full_config = config
         self.env_config = config[
             'template']['cluster_template']
+        self.devops_config = config[
+            'template']['devops_settings']
         self.env_settings = config[
             'template']['cluster_template']['settings']
         self.config_name = config['template']['name']
@@ -126,10 +129,26 @@ class PrepareBase(base_actions_factory.BaseActionsFactory):
         snapshot_name = "ready_with_{}_slaves".format(slaves)
         self.check_run(snapshot_name)
         self.env.revert_snapshot("ready", skip_timesync=True)
+
+        self.make_slaves_base()
+
+        self.env.make_snapshot(snapshot_name, is_make=True)
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def make_slaves_multirack(self):
+        """
+        todo
+        """
+
+        self.make_slaves_base()
+
+    def make_slaves_base(self):
+        slaves = int(self.full_config['template']['slaves'])
+
         logger.info("Bootstrap {} nodes".format(slaves))
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:slaves],
                                  skip_timesync=True)
-        self.env.make_snapshot(snapshot_name, is_make=True)
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
@@ -210,7 +229,20 @@ class ActionsBase(PrepareBase, HealthCheckActions, PluginsActions):
         Skip action if we have snapshot with Environment name
         """
         self.check_run(self.env_config['name'])
+        self.create_env_base()
 
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def create_env_multirack(self):
+        """
+        todo
+        """
+
+        self.check_run(self.env_config['name'])
+        self.env.revert_snapshot('ready')
+        self.create_env_base()
+
+    def create_env_base(self):
         logger.info("Create env {}".format(
             self.env_config['name']))
         settings = {
@@ -241,14 +273,15 @@ class ActionsBase(PrepareBase, HealthCheckActions, PluginsActions):
                 'pubip-to-all',
                 False)
         }
+
         self.cluster_id = self.fuel_web.create_cluster(
             name=self.env_config['name'],
             mode=test_settings.DEPLOYMENT_MODE,
             release_name=self.env_config['release'],
-            settings=settings)
+            settings=settings,
+            nodegroups_settings=self.devops_config['groups'])
 
         logger.info("Cluster created with ID:{}".format(self.cluster_id))
-
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def add_nodes(self):
