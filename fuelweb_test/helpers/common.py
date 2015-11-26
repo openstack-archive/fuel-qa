@@ -21,6 +21,7 @@ from fuelweb_test.settings import PATH_TO_CERT
 
 
 from cinderclient import client as cinderclient
+from ceilometerclient import client as ceilometerclient
 from glanceclient.v1 import Client as GlanceClient
 from keystoneclient.v2_0 import Client as KeystoneClient
 from keystoneclient.exceptions import ClientException
@@ -74,6 +75,13 @@ class Common(object):
         self.glance = GlanceClient(endpoint=glance_endpoint,
                                    token=token,
                                    cacert=path_to_cert)
+
+        ceilometer_endpoint = self.keystone.service_catalog.url_for(
+            service_type='metering', endpoint_type='publicURL')
+        LOGGER.debug('Ceilometer endpoint is {0}'.format(ceilometer_endpoint))
+
+        self.ceilometer = ceilometerclient.Client(
+            2, endpoint=ceilometer_endpoint, token=token, cacert=path_to_cert)
 
     def goodbye_security(self):
         secgroup_list = self.nova.security_groups.list()
