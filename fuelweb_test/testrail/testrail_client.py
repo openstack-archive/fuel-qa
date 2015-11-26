@@ -204,6 +204,21 @@ class TestRailProject(object):
         }
         return self.client.send_post(add_plan_uri, new_plan)
 
+    def update_plan(self, plan_id, name='', description='',
+                    milestone_id=None, entries=[]):
+        update_plan_uri = 'update_plan/{plan_id}'.format(
+            plan_id=plan_id)
+        updated_plan = {}
+        if name:
+            updated_plan['name'] = name
+        if description:
+            updated_plan['description'] = description
+        if milestone_id:
+            updated_plan['milestone_id'] = milestone_id
+        if entries:
+            updated_plan['entries'] = entries
+        return self.client.send_post(update_plan_uri, updated_plan)
+
     def add_plan_entry(self, plan_id, suite_id, config_ids, runs, name=None):
         add_plan_entry_uri = 'add_plan_entry/{plan_id}'.format(plan_id=plan_id)
         new_entry = {
