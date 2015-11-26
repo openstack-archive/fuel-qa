@@ -65,7 +65,7 @@ class TestAdminNodeBackupRestore(TestBasic):
                     error_message="'dockerctl restore' "
                                   "run longer then 600 sec"):
                 self.fuel_web.restore_master(remote)
-            self.fuel_web.restore_check_nailgun_api(remote)
+            self.fuel_web.restore_check_nailgun_api()
             checkers.restore_check_sum(remote)
             checkers.iptables_check(remote)
 
@@ -145,7 +145,7 @@ class BackupRestoreHAOneController(HAOneControllerNeutronBase):
                                   "run longer then 600 sec"):
                 self.fuel_web.restore_master(remote)
             checkers.restore_check_sum(remote)
-            self.fuel_web.restore_check_nailgun_api(remote)
+            self.fuel_web.restore_check_nailgun_api()
             checkers.iptables_check(remote)
 
         assert_equal(
