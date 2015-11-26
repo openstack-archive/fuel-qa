@@ -1,0 +1,405 @@
+---
+aliases:
+
+  dynamic_address_pool:
+   - &pool_default !os_env POOL_DEFAULT, 10.109.0.0/16:24
+
+  default-slave-interfaces: &default-slave-interfaces
+   - label: eth0
+     l2_network_device: admin      # Libvirt bridge name. It is *NOT* Nailgun networks
+   - label: eth1
+     l2_network_device: public
+   - label: eth2
+     l2_network_device: storage
+   - label: eth3
+     l2_network_device: management
+   - label: eth4
+     l2_network_device: private
+
+  rack-02-slave-interfaces: &rack-02-slave-interfaces
+   - label: eth0
+     l2_network_device: admin2      # Libvirt bridge name. It is *NOT* Nailgun networks
+   - label: eth1
+     l2_network_device: public2
+   - label: eth2
+     l2_network_device: storage2
+   - label: eth3
+     l2_network_device: management2
+   - label: eth4
+     l2_network_device: private2
+
+  rack-03-slave-interfaces: &rack-03-slave-interfaces
+   - label: eth0
+     l2_network_device: admin3      # Libvirt bridge name. It is *NOT* Nailgun networks
+   - label: eth1
+     l2_network_device: public3
+   - label: eth2
+     l2_network_device: storage3
+   - label: eth3
+     l2_network_device: management3
+   - label: eth4
+     l2_network_device: private3
+
+  default-slave-network_config: &default-slave-network_config
+    eth0:
+      networks:
+       - fuelweb_admin
+    eth1:
+      networks:
+       - public
+    eth2:
+      networks:
+       - storage
+    eth3:
+      networks:
+       - management
+    eth4:
+      networks:
+       - private
+
+  rack-02-slave-network_config: &rack-02-slave-network_config
+    eth0:
+      networks:
+       - fuelweb_admin2
+    eth1:
+      networks:
+       - public2
+    eth2:
+      networks:
+       - storage2
+    eth3:
+      networks:
+       - management2
+    eth4:
+      networks:
+       - private2
+
+  rack-03-slave-network_config: &rack-03-slave-network_config
+    eth0:
+      networks:
+       - fuelweb_admin3
+    eth1:
+      networks:
+       - public3
+    eth2:
+      networks:
+       - storage3
+    eth3:
+      networks:
+       - management3
+    eth4:
+      networks:
+       - private3
+
+  default-slave-node-params: &default-slave-node-params
+    vcpu: !os_env SLAVE_NODE_CPU, 2
+    memory: !os_env SLAVE_NODE_MEMORY, 3072
+    boot:
+      - network
+      - hd
+    volumes:
+     - name: system
+       capacity: !os_env NODE_VOLUME_SIZE, 55
+       format: qcow2
+     - name: cinder
+       capacity: !os_env NODE_VOLUME_SIZE, 55
+       format: qcow2
+     - name: swift
+       capacity: !os_env NODE_VOLUME_SIZE, 55
+       format: qcow2
+    interfaces: *default-slave-interfaces
+    network_config: *default-slave-network_config
+
+  rack-02-slave-node-params: &rack-02-slave-node-params
+    vcpu: !os_env SLAVE_NODE_CPU, 2
+    memory: !os_env SLAVE_NODE_MEMORY, 3072
+    boot:
+      - network
+      - hd
+    volumes:
+     - name: system
+       capacity: !os_env NODE_VOLUME_SIZE, 55
+       format: qcow2
+     - name: cinder
+       capacity: !os_env NODE_VOLUME_SIZE, 55
+       format: qcow2
+     - name: swift
+       capacity: !os_env NODE_VOLUME_SIZE, 55
+       format: qcow2
+    interfaces: *rack-02-slave-interfaces
+    network_config: *rack-02-slave-network_config
+
+  rack-03-slave-node-params: &rack-03-slave-node-params
+    vcpu: !os_env SLAVE_NODE_CPU, 2
+    memory: !os_env SLAVE_NODE_MEMORY, 3072
+    boot:
+      - network
+      - hd
+    volumes:
+     - name: system
+       capacity: !os_env NODE_VOLUME_SIZE, 55
+       format: qcow2
+     - name: cinder
+       capacity: !os_env NODE_VOLUME_SIZE, 55
+       format: qcow2
+     - name: swift
+       capacity: !os_env NODE_VOLUME_SIZE, 55
+       format: qcow2
+    interfaces: *rack-03-slave-interfaces
+    network_config: *rack-03-slave-network_config
+
+env_name: !os_env ENV_NAME
+
+address_pools:
+# Network pools used by the environment
+  fuelweb_admin-pool01:
+    net: *pool_default
+    params:
+      tag: 0
+  public-pool01:
+    net: *pool_default
+    params:
+      tag: 0
+  storage-pool01:
+    net: *pool_default
+    params:
+      tag: 101
+  management-pool01:
+    net: *pool_default
+    params:
+      tag: 102
+  private-pool01:
+    net: *pool_default
+    params:
+      tag: 103
+
+  fuelweb_admin-pool02:
+    net: *pool_default
+    params:
+      tag: 0
+  public-pool02:
+    net: *pool_default
+    params:
+      tag: 0
+  storage-pool02:
+    net: *pool_default
+    params:
+      tag: 101
+  management-pool02:
+    net: *pool_default
+    params:
+      tag: 102
+  private-pool02:
+    net: *pool_default
+    params:
+      tag: 103
+
+  fuelweb_admin-pool03:
+    net: *pool_default
+    params:
+      tag: 0
+  public-pool03:
+    net: *pool_default
+    params:
+      tag: 0
+  storage-pool03:
+    net: *pool_default
+    params:
+      tag: 101
+  management-pool03:
+    net: *pool_default
+    params:
+      tag: 102
+  private-pool03:
+    net: *pool_default
+    params:
+      tag: 103
+
+groups:
+ - name: default
+   driver:
+     name: devops.driver.libvirt.libvirt_driver
+     params:
+       connection_string: !os_env CONNECTION_STRING, qemu:///system
+       storage_pool_name: !os_env STORAGE_POOL_NAME, default
+       stp: True
+       hpet: False
+       use_host_cpu: !os_env DRIVER_USE_HOST_CPU, true
+
+   network_pools:  # Address pools for OpenStack networks.
+     # Actual names should be used for keys
+     # (the same as in Nailgun, for example)
+
+     fuelweb_admin: fuelweb_admin-pool01
+     public: public-pool01
+     storage: storage-pool01
+     management: management-pool01
+     private: private-pool01
+
+   l2_network_devices:  # Libvirt bridges. It is *NOT* Nailgun networks
+     admin:
+       address_pool: fuelweb_admin-pool01
+       dhcp: false
+       forward:
+         mode: nat
+
+     public:
+       address_pool: public-pool01
+       dhcp: false
+       forward:
+         mode: nat
+
+     storage:
+       address_pool: storage-pool01
+       dhcp: false
+
+     management:
+       address_pool: management-pool01
+       dhcp: false
+
+     private:
+       address_pool: private-pool01
+       dhcp: false
+
+   nodes:
+    - name: admin        # Custom name of VM for Fuel admin node
+      role: fuel_master  # Fixed role for Fuel master node properties
+      params:
+        vcpu: !os_env ADMIN_NODE_CPU, 2
+        memory: !os_env ADMIN_NODE_MEMORY, 3072
+        boot:
+          - hd
+          - cdrom  # for boot from usb - without 'cdrom'
+        volumes:
+         - name: system
+           capacity: !os_env ADMIN_NODE_VOLUME_SIZE, 80
+           format: qcow2
+         - name: iso
+           source_image: !os_env ISO_PATH    # if 'source_image' set, then volume capacity is calculated from it's size
+           format: raw
+           device: cdrom   # for boot from usb - 'disk'
+           bus: ide        # for boot from usb - 'usb'
+        interfaces:
+         - label: eth0
+           l2_network_device: admin    # Libvirt bridge name. It is *NOT* a Nailgun network
+         - label: eth1
+           l2_network_device: admin2
+         - label: eth2
+           l2_network_device: admin3
+        network_config:
+          eth0:
+            networks:
+             - fuelweb_admin
+
+    - name: slave-01
+      role: fuel_slave
+      params: *default-slave-node-params
+    - name: slave-02
+      role: fuel_slave
+      params: *default-slave-node-params
+    - name: slave-03
+      role: fuel_slave
+      params: *default-slave-node-params
+
+ - name: rack-02
+   driver:
+     name: devops.driver.libvirt.libvirt_driver
+     params:
+       connection_string: !os_env CONNECTION_STRING, qemu:///system
+       storage_pool_name: !os_env STORAGE_POOL_NAME, default
+       stp: True
+       hpet: False
+       use_host_cpu: !os_env DRIVER_USE_HOST_CPU, true
+
+   network_pools:  # Address pools for OpenStack networks.
+     # Actual names should be used for keys
+     # (the same as in Nailgun, for example)
+
+     fuelweb_admin: fuelweb_admin-pool02
+     public: public-pool02
+     storage: storage-pool02
+     management: management-pool02
+     private: private-pool02
+
+   l2_network_devices:  # Libvirt bridges. It is *NOT* Nailgun networks
+     admin2:
+       address_pool: fuelweb_admin-pool02
+       dhcp: false
+       # forward:
+       #  mode: nat
+
+     public2:
+       address_pool: public-pool02
+       dhcp: false
+       # forward:
+       #  mode: nat
+
+     storage2:
+       address_pool: storage-pool02
+       dhcp: false
+
+     management2:
+       address_pool: management-pool02
+       dhcp: false
+
+     private2:
+       address_pool: private-pool02
+       dhcp: false
+
+   nodes:
+    - name: slave-04
+      role: fuel_slave
+      params: *rack-02-slave-node-params
+
+ - name: rack-03
+   driver:
+     name: devops.driver.libvirt.libvirt_driver
+     params:
+       connection_string: !os_env CONNECTION_STRING, qemu:///system
+       storage_pool_name: !os_env STORAGE_POOL_NAME, default
+       stp: True
+       hpet: False
+       use_host_cpu: !os_env DRIVER_USE_HOST_CPU, true
+
+   network_pools:  # Address pools for OpenStack networks.
+     # Actual names should be used for keys
+     # (the same as in Nailgun, for example)
+
+     fuelweb_admin: fuelweb_admin-pool03
+     public: public-pool03
+     storage: storage-pool03
+     management: management-pool03
+     private: private-pool03
+
+   l2_network_devices:  # Libvirt bridges. It is *NOT* Nailgun networks
+     admin3:
+       address_pool: fuelweb_admin-pool03
+       dhcp: false
+       # forward:
+       #  mode: nat
+
+     public3:
+       address_pool: public-pool03
+       dhcp: false
+       # forward:
+       #  mode: nat
+
+     storage3:
+       address_pool: storage-pool03
+       dhcp: false
+
+     management3:
+       address_pool: management-pool03
+       dhcp: false
+
+     private3:
+       address_pool: private-pool03
+       dhcp: false
+
+   nodes:
+    - name: slave-05
+      role: fuel_slave
+      params: *rack-03-slave-node-params
+    - name: slave-06
+      role: fuel_slave
+      params: *rack-03-slave-node-params
