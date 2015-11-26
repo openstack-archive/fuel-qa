@@ -404,7 +404,8 @@ class FuelWebClient(object):
                        mode=DEPLOYMENT_MODE_HA,
                        port=514,
                        release_id=None,
-                       configure_ssl=True, ):
+                       configure_ssl=True,
+                       nodegroups_settings=None):
         """Creates a cluster
         :param name:
         :param release_name:
@@ -513,9 +514,27 @@ class FuelWebClient(object):
             self.client.update_cluster_attributes(cluster_id, attributes)
 
             if MULTIPLE_NETWORKS:
-                node_groups = {n['name']: [] for n in NODEGROUPS}
-                self.update_nodegroups(cluster_id, node_groups)
-                self.update_nodegroups_network_configuration(cluster_id)
+                node_groups = {}
+
+                if nodegroups_settings:
+                    for rack in nodegroups_settings:
+                        node_groups[rack['name']] = []
+                else:
+                    node_groups = {n['name']: [] for n in NODEGROUPS}
+
+                self.update_nodegroups(cluster_id,
+                                       node_groups)
+
+                if nodegroups_settings:
+                    node_groups = ()
+                    for rack in nodegroups_settings:
+                        node_groups += ({'name': rack['name'],
+                                         'pools': [n for n in rack['l2_network_devices']]},)
+
+                else:
+                    node_groups = NODEGROUPS
+                self.update_nodegroups_network_configuration(cluster_id,
+                                                             node_groups)
 
             logger.debug("Try to update cluster "
                          "with next attributes {0}".format(attributes))
@@ -1437,10 +1456,11 @@ class FuelWebClient(object):
                 _release['id'], net_settings)
 
     @logwrap
-    def update_nodegroups_network_configuration(self, cluster_id):
+    def update_nodegroups_network_configuration(self, cluster_id, nodegroups=None):
         net_config = self.client.get_networks(cluster_id)
         new_settings = net_config
-        for nodegroup in NODEGROUPS:
+
+        for nodegroup in nodegroups:
             logger.info('Update network settings of cluster %s, '
                         'nodegroup %s', cluster_id, nodegroup['name'])
             new_settings = self.update_nodegroup_net_settings(new_settings,
