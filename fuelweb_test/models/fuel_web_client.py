@@ -2058,7 +2058,7 @@ class FuelWebClient(object):
         logger.info("Restore of the master node is complete.")
 
     @logwrap
-    def restore_check_nailgun_api(self, remote):
+    def restore_check_nailgun_api(self):
         logger.info("Restore check nailgun api")
         info = self.client.get_api_version()
         os_version = info["openstack_version"]
@@ -2104,7 +2104,7 @@ class FuelWebClient(object):
                          ' to cidr by default')
 
     @logwrap
-    def check_fixed_nova_splited_cidr(self, os_conn, nailgun_cidr, remote):
+    def check_fixed_nova_splited_cidr(self, os_conn, nailgun_cidr):
         logger.debug('Nailgun cidr for nova: {0}'.format(nailgun_cidr))
 
         subnets_list = [net.cidr for net in os_conn.get_nova_network_list()]
