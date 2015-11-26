@@ -17,6 +17,7 @@ from __future__ import division
 from proboscis import asserts
 from proboscis import test
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_not_equal
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -752,6 +753,55 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
         self.run_tests(cluster_id)
 
         self.env.make_snapshot("ceilometer_ha_multirole_add_mongo")
+
+    @test(depends_on=[deploy_ceilometer_ha_multirole],
+          groups=["ceilometer_regular_expressions"])
+    @log_snapshot_after_test
+    def ceilometer_regular_expressions(self):
+        """Test feature with regular expressions in complex queries.
+
+        Scenario:
+            1. Revert snapshot deploy_ceilometer_ha_multirole
+            2. Create an alarm
+            3. Check query_alarms and query_alarm_history commands
+            4. Create an instance
+            5. Check query_samples command
+
+        Duration 10m
+        Snapshot: ceilometer_regular_expressions
+
+        """
+        self.env.revert_snapshot("deploy_ceilometer_ha_multirole")
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+        alarm_body = {'meter_name': 'image', 'threshold': '0.9',
+                      'name': 'reg_expr', 'period': '10', 'statistic': 'avg',
+                      'comparison_operator': 'lt'}
+        alarm = os_conn.ceilometer.alarms.create(**alarm_body)
+        LOGGER.debug('Created alarm {}'.format(alarm.alarm_id))
+        query = "{\"=~\": {\"alarm_id\": \"{value}\"}}".replace(
+            "{value}", alarm.alarm_id.split("-")[1])
+        alarm_list = os_conn.ceilometer.query_alarms.query(query)
+        assert_not_equal(len(alarm_list), 0)
+
+        alarm_history_list = os_conn.ceilometer.query_alarm_history.query(
+            query)
+        assert_not_equal(len(alarm_history_list), 0)
+        os_conn.ceilometer.alarms.delete(alarm.alarm_id)
+
+        net_name = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+        server = os_conn.create_instance(label=net_name)
+        query = "{\"=~\": {\"resource_id\": \"{value}\"}}".replace(
+            "{value}", server.id.split("-")[1])
+        samples_list = os_conn.ceilometer.query_samples.query(query)
+        assert_not_equal(len(samples_list), 0)
+
+        os_conn.delete_instance(server)
+        os_conn.verify_srv_deleted(server)
+        self.env.make_snapshot("ceilometer_regular_expressions")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ceilometer_ha_with_external_mongo"])
