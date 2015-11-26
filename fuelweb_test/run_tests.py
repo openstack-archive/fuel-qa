@@ -141,6 +141,7 @@ def import_tests():
     from gates_tests.tests import test_review_in_fuel_agent  # noqa
     from tests.tests_strength import test_load  # noqa
     from gates_tests.tests import test_review_in_ostf  # noqa
+    from system_test.tests import test_deploy_with_shared_networks # noqa
 
 
 def run_tests():
