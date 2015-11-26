@@ -15,7 +15,6 @@
 #    under the License.
 
 import functools
-from os import path as os_path
 import re
 import time
 import yaml
@@ -30,7 +29,6 @@ from launchpad_client import LaunchpadBug
 from settings import JENKINS
 from settings import GROUPS_TO_EXPAND
 from settings import LaunchpadSettings
-from settings import LOGS_DIR
 from settings import logger
 from settings import TestRailSettings
 from testrail_client import TestRailProject
@@ -397,11 +395,29 @@ def publish_results(project, milestone_id, test_plan,
     return results_to_publish
 
 
-def make_bug_statistics(tests_results, operation_systems):
+def make_bug_statistics(test_results, test_plan, tests_suite,
+                        project, operation_systems):
     bugs = {}
+    cases = project.get_cases(suite_id=tests_suite['id'])
+
     for os in operation_systems:
-        for result in tests_results[os['distro']]:
-            bug = result.launchpad_bug
+        test_run_ids = [run['id'] for entry in test_plan['entries']
+                        for run in entry['runs']
+                        if tests_suite['id'] == run['suite_id']
+                        and os['id'] in run['config_ids']]
+
+        for result in test_results[os['distro']]:
+            try:
+                case_id = project.get_case_by_group(suite_id=tests_suite['id'],
+                                                    group=result.group,
+                                                    cases=cases)['id']
+            except:
+                logger.info("group {} has no test".format(result.group))
+                continue
+            case_result = project.get_all_results_for_case(
+                run_ids=test_run_ids, case_id=case_id)
+            lp_bug = get_existing_bug_link(case_result)
+            bug = lp_bug['bug_link'] if lp_bug else None
             if not bug:
                 continue    # Bug is not linked to the test case result.
             distro = os['distro']
@@ -409,9 +425,9 @@ def make_bug_statistics(tests_results, operation_systems):
                 bugs[bug] = {}
                 bugs[bug]['distro'] = {}
                 bugs[bug]['count'] = 0
-                bugs[bug]['status'] = result.launchpad_bug_status
-                bugs[bug]['importance'] = result.launchpad_bug_importance
-                bugs[bug]['title'] = result.launchpad_bug_title
+                bugs[bug]['status'] = lp_bug['status']
+                bugs[bug]['importance'] = lp_bug['importance']
+                bugs[bug]['title'] = lp_bug['title']
             if distro not in bugs[bug]['distro']:
                 bugs[bug]['distro'][distro] = {}
             bugs[bug]['count'] += 1
@@ -423,34 +439,29 @@ def make_bug_statistics(tests_results, operation_systems):
                          reverse=True)
 
     if bugs_sorted:
-        bugs_link_file = os_path.join(LOGS_DIR, 'bugs_link_stat.html')
-        with open(bugs_link_file, 'w') as fout:
-            fout.write("<b>Summary of bugs in TestRail at {0}</b><br>"
-                       .format(time.strftime("%c")))
-            for bug in bugs_sorted:
-                jresults = ""
-                for distro in bugs[bug]['distro'].keys():
-                    jresults += " {0}: ".format(distro)
-                    num = 1
-                    bugs_distro = bugs[bug]['distro'][distro]
-                    for res in bugs_distro:
-                        jresults += (
-                            '<a href={res} title="{hint}">{num}</a> '
-                            .format(res=res,
-                                    hint=bugs_distro[res]['group'],
-                                    num=num))
-                        num += 1
-                line = ('[{affected} test case(s)] [{importance}] [{status}] '
-                        '<a href="{link}">{title}</a> [{jresults}]<br>\n'
-                        .format(affected=bugs[bug]['count'],
-                                importance=bugs[bug]['importance'],
-                                status=bugs[bug]['status'],
-                                link=bug,
-                                title=bugs[bug]['title'],
-                                jresults=jresults))
-                fout.write(line)
-
-        logger.info("Bug statistics saved to: {0}".format(bugs_link_file))
+        bugs_string = ''
+        bugs_string += "Summary of bugs in TestRail at" \
+                       " {0}\n".format(time.strftime("%c"))
+        for bug in bugs_sorted:
+            jresults = ""
+            for distro in bugs[bug]['distro'].keys():
+                jresults += " {0}: ".format(distro)
+                bugs_distro = bugs[bug]['distro'][distro]
+                for res in bugs_distro:
+                    jresults += (
+                        '[{hint}]({res}) '
+                        .format(res=res,
+                                hint=bugs_distro[res]['group']))
+            line = ('[{affected} TC(s)] [{importance}] [{status}] '
+                    '[{title}]({link}) [{jresults}]\n'
+                    .format(affected=bugs[bug]['count'],
+                            importance=bugs[bug]['importance'],
+                            status=bugs[bug]['status'],
+                            link=bug,
+                            title=bugs[bug]['title'],
+                            jresults=jresults))
+            bugs_string += line
+        return bugs_string
     else:
         logger.info("No linked to test cases bugs found")
 
@@ -598,14 +609,13 @@ def main():
     test_plan_name = ' '.join(
         filter(lambda x: bool(x),
                (milestone['name'], prefix, 'iso', '#' + str(iso_number))))
+
     test_plan = project.get_plan_by_name(test_plan_name)
+    iso_link = '/'.join([JENKINS['url'], 'job',
+                         '{0}.all'.format(milestone['name']), str(iso_number)])
     if not test_plan:
         test_plan = project.add_plan(test_plan_name,
-                                     description='/'.join([
-                                         JENKINS['url'],
-                                         'job',
-                                         '{0}.all'.format(milestone['name']),
-                                         str(iso_number)]),
+                                     description=iso_link,
                                      milestone_id=milestone['id'],
                                      entries=[]
                                      )
@@ -675,8 +685,12 @@ def main():
                         "Skipping bug statistics report, please try later.")
         else:
             logger.info("Generating a bug statistics report...")
-            make_bug_statistics(tests_results, operation_systems)
-
+            bug_results = make_bug_statistics(tests_results, test_plan,
+                                              tests_suite, project,
+                                              operation_systems)
+            project.update_plan(plan_id=test_plan['id'],
+                                description=test_plan['description'] + '\n' +
+                                bug_results)
 
 if __name__ == "__main__":
     main()
