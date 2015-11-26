@@ -630,9 +630,8 @@ class FuelWebClient(object):
         replace_repos.report_ubuntu_repos(repos_attr['value'])
         self.client.update_cluster_attributes(cluster_id, attributes)
 
-    def add_local_centos_mirror(self, cluster_id, name='Auxiliary',
+    def add_local_centos_mirror(self, cluster_id, repo_name='auxiliary',
                                 path=help_data.LOCAL_MIRROR_CENTOS,
-                                repo_name='auxiliary',
                                 priority=help_data.EXTRA_RPM_REPOS_PRIORITY):
         # Append new mirror to attributes of currently creating CentOS cluster
         mirror_url = path.replace('/var/www/nailgun',

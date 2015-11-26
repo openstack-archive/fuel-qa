@@ -269,8 +269,7 @@ def update_fuel(func):
                 if settings.OPENSTACK_RELEASE_UBUNTU not in \
                         settings.OPENSTACK_RELEASE:
                     environment.fuel_web.add_local_centos_mirror(
-                        cluster_id, name="Auxiliary",
-                        path=settings.LOCAL_MIRROR_CENTOS,
+                        cluster_id, path=settings.LOCAL_MIRROR_CENTOS,
                         priority=settings.AUX_RPM_REPO_PRIORITY)
 
             if ubuntu_files_count > 0:
