@@ -126,8 +126,8 @@ def get_node_packages(remote, func_name, node_role,
     logger.debug("node packages are {0}".format(node_packages))
     packages_dict[func_name][node_role] = node_packages\
         if node_role not in packages_dict[func_name].keys()\
-        else list(set(packages_dict[func_name][node_role])
-                  | set(node_packages))
+        else list(set(packages_dict[func_name][node_role]) |
+                  set(node_packages))
     return packages_dict
 
 
@@ -237,7 +237,7 @@ class TimeStat(object):
         self.begin_time = time.time()
         return self
 
-    def __exit__(self, exp_type, exp_value, trcback):
+    def __exit__(self, exc_type, exc_value, exc_tb):
         self.end_time = time.time()
         self.total_time = self.end_time - self.begin_time
 
@@ -395,7 +395,7 @@ def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
 
 def json_deserialize(json_string):
     """
-    Deserealize json_string and return object
+    Deserialize json_string and return object
 
     :param json_string: string or list with json
     :return: obj
@@ -574,7 +574,7 @@ class RunLimit(object):
         signal.signal(signal.SIGALRM, self.handle_timeout)
         signal.alarm(self.seconds)
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exc_type, value, traceback):
         signal.alarm(0)
 
 

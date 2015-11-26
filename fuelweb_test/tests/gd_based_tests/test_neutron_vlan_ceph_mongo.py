@@ -309,8 +309,8 @@ class NeutronVlanCephMongo(TestBasic):
                 with self.fuel_web.get_ssh_for_node(node) as remote:
                     gd.run_check_from_task(
                         remote=remote,
-                        path=self.get_post_test(tasks,
-                                                'tope-role-mongo')[0]['cmd'])
+                        path=self.get_post_test(
+                            tasks, 'top-role-mongo')[0]['cmd'])
 
         self.env.make_snapshot('step_3_run_top_role_mongo_single')
 
@@ -1439,13 +1439,13 @@ class NeutronVlanCephMongo(TestBasic):
             cluster_id=cluster_id,
             node_ids=nodes_ids)
 
-        contr_ids = [n['id'] for n in
-                     self.fuel_web.client.list_cluster_nodes(cluster_id)
-                     if 'controller' in n['roles']]
+        controller_ids = [n['id'] for n in
+                          self.fuel_web.client.list_cluster_nodes(cluster_id)
+                          if 'controller' in n['roles']]
 
         res = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id, data=data,
-            node_id=str(contr_ids).strip('[]'))
+            node_id=str(controller_ids).strip('[]'))
         logger.debug('res info is {0}'.format(res))
 
         self.fuel_web.assert_task_success(task=res)
