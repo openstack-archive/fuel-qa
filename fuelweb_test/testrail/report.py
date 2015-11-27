@@ -405,8 +405,8 @@ def make_bug_statistics(test_results, test_plan, tests_suite,
     for os in operation_systems:
         test_run_ids = [run['id'] for entry in test_plan['entries']
                         for run in entry['runs']
-                        if tests_suite['id'] == run['suite_id']
-                        and os['id'] in run['config_ids']]
+                        if tests_suite['id'] == run['suite_id'] and
+                        os['id'] in run['config_ids']]
 
         for result in test_results[os['distro']]:
             try:

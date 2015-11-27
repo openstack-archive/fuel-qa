@@ -27,7 +27,7 @@ class FillRootPrimaryController(
     Scenario:
         1. Setup master node
         2. Config default repositories for release
-        3. Bootstap slaves and make snapshot ready
+        3. Bootstrap slaves and make snapshot ready
         4. Revert snapshot ready
         5. Create Environment
         6. Add nodes to Environment
@@ -83,4 +83,4 @@ class FillRootPrimaryController(
 
 @factory
 def cases():
-    return (case_factory(FillRootPrimaryController))
+    return case_factory(FillRootPrimaryController)

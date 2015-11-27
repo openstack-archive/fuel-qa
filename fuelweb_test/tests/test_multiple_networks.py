@@ -53,9 +53,7 @@ class TestMultipleClusterNets(TestBasic):
                                in default_admin_network[0]["ip_ranges"][0]]
         new_admin_range = [default_admin_range[0] + number_excluded_ips,
                            default_admin_range[1]]
-        default_admin_network[0]["ip_ranges"][0] = [str(ip)
-                                                    for ip in new_admin_range]
-        return default_admin_network[0]["ip_ranges"][0]
+        return [str(ip) for ip in new_admin_range]
 
     @staticmethod
     def is_ip_in_range(ip_addr, ip_range_start, ip_range_end):
