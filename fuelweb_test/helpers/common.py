@@ -167,26 +167,24 @@ class Common(object):
 
     def _get_keystoneclient(self, username, password, tenant_name, auth_url,
                             retries=3, ca_cert=None):
-        keystone = None
-        for i in range(retries):
+        for iteration in range(retries):
             try:
                 if ca_cert:
-                    keystone = KeystoneClient(username=username,
-                                              password=password,
-                                              tenant_name=tenant_name,
-                                              auth_url=auth_url,
-                                              cacert=ca_cert)
+                    return KeystoneClient(username=username,
+                                          password=password,
+                                          tenant_name=tenant_name,
+                                          auth_url=auth_url,
+                                          cacert=ca_cert)
 
                 else:
-                    keystone = KeystoneClient(username=username,
-                                              password=password,
-                                              tenant_name=tenant_name,
-                                              auth_url=auth_url)
-                break
-            except ClientException as e:
+                    return KeystoneClient(username=username,
+                                          password=password,
+                                          tenant_name=tenant_name,
+                                          auth_url=auth_url)
+            except ClientException as exception:
                 err = "Try nr {0}. Could not get keystone client, error: {1}"
-                LOGGER.warning(err.format(i + 1, e))
+                if iteration + 1 == retries:
+                    LOGGER.error(err.format(iteration + 1, exception))
+                    raise
+                LOGGER.warning(err.format(iteration + 1, exception))
                 time.sleep(5)
-        if not keystone:
-            raise
-        return keystone
