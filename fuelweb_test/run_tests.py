@@ -34,7 +34,7 @@ def define_custom_groups():
              "first.3ctrl_2comp_1cndr_neutronVLAN",
              "system_test.failover.destroy_controllers."
              "second.1ctrl_ceph_2ctrl_1comp_1comp_ceph_neutronVLAN"]},
-        {"groups": ["system_test.fuel_master_migrate"],
+        {"groups": ["fuel_master_migrate"],
          "depends": [
              "system_test.fuel_migration.1ctrl_1comp_neutronVLAN",
              "system_test.fuel_migration.1ctrl_1comp_neutronTUN"]}

@@ -15,18 +15,14 @@
 import datetime
 import xmlrpclib
 
-from devops.helpers.helpers import _wait
 from devops.helpers.helpers import http
-from devops.helpers.helpers import icmp_ping
 from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import test
 
-from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import logger
-from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -444,121 +440,3 @@ class TestLogrotateBase(TestBasic):
                 ' after logrotation: {2}{3}'.format(
                     free_inodes, i_suff, free_inodes4, i_suff4))
         self.env.make_snapshot("test_logrotate_one_week_11MB")
-
-
-@test(enabled=False,
-      groups=["fuel_master_migrate"])
-class FuelMasterMigrate(TestBasic):
-    """FuelMasterMigrate."""  # TODO documentation
-
-    @test(enabled=False,
-          depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["fuel_migration"])
-    @log_snapshot_after_test
-    def fuel_migration(self):
-        """Fuel master migration to VM
-
-        Scenario:
-
-            1. Create cluster
-            2. Run OSTF tests
-            3. Run Network check
-            4. Migrate fuel-master to VM
-            5. Run OSTF tests
-            6. Run Network check
-            7. Check statuses for master services
-
-        Duration 210m
-        """
-        self.env.revert_snapshot("ready_with_3_slaves")
-        data = {
-            'net_provider': 'neutron',
-            'net_segment_type': settings.NEUTRON_SEGMENT_TYPE
-        }
-
-        cluster_id = self.fuel_web.create_cluster(
-            name=self.__class__.__name__,
-            mode=settings.DEPLOYMENT_MODE_HA,
-            settings=data)
-
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {
-                'slave-01': ['controller'],
-                'slave-02': ['compute']
-            }
-        )
-
-        # Check network
-        self.fuel_web.verify_network(cluster_id)
-
-        # Cluster deploy
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-
-        # Check network
-        self.fuel_web.verify_network(cluster_id)
-
-        # Fuel migration
-        remote = self.env.d_env.get_admin_remote()
-        logger.info('Fuel migration on compute slave-02')
-
-        result = remote.execute('fuel-migrate ' + self.fuel_web.
-                                get_nailgun_node_by_name('slave-02')['ip'] +
-                                ' >/dev/null &')
-        assert_equal(result['exit_code'], 0,
-                     'Failed to execute "{0}" on remote host: {1}'.
-                     format('fuel-migrate' + self.env.d_env.nodes().slaves[0].
-                            name, result))
-        checkers.wait_phrase_in_log(remote, 60 * 60, interval=0.2,
-                                    phrase='Rebooting to begin '
-                                           'the data sync process',
-                                    log_path='/var/log/fuel-migrate.log')
-        remote.clear()
-        logger.info('Rebooting to begin the data sync process for fuel '
-                    'migrate')
-
-        wait(lambda: not icmp_ping(self.env.get_admin_node_ip()),
-             timeout=60 * 15, timeout_msg='Master node has not become offline '
-                                          'after rebooting')
-        wait(lambda: icmp_ping(self.env.get_admin_node_ip()),
-             timeout=60 * 15, timeout_msg='Master node has not become online '
-                                          'after rebooting')
-        self.env.d_env.nodes().admin.await(
-            network_name=self.env.d_env.admin_net,
-            timeout=60 * 15)
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.wait_phrase_in_log(remote,
-                                        60 * 90, interval=0.1,
-                                        phrase='Stop network and up with '
-                                               'new settings',
-                                        log_path='/var/log/fuel-migrate.log')
-        logger.info('Shutting down network')
-
-        wait(lambda: not icmp_ping(self.env.get_admin_node_ip()),
-             timeout=60 * 15, interval=0.1,
-             timeout_msg='Master node has not become offline shutting network')
-        wait(lambda: icmp_ping(self.env.get_admin_node_ip()),
-             timeout=60 * 15,
-             timeout_msg='Master node has not become online shutting network')
-
-        self.env.d_env.nodes().admin.await(
-            network_name=self.env.d_env.admin_net,
-            timeout=60 * 10)
-
-        logger.info("Check containers")
-        self.env.docker_actions.wait_for_ready_containers(timeout=60 * 30)
-
-        logger.info("Check services")
-        cluster_id = self.fuel_web.get_last_created_cluster()
-        self.fuel_web.assert_ha_services_ready(cluster_id)
-        self.fuel_web.assert_os_services_ready(cluster_id)
-
-        # Check network
-        self.fuel_web.verify_network(cluster_id)
-
-        # Run ostf
-        _wait(lambda:
-              self.fuel_web.run_ostf(cluster_id,
-                                     test_sets=['smoke', 'sanity']),
-              timeout=1500)
-        logger.debug("OSTF tests are pass now")
