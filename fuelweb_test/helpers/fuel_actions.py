@@ -54,6 +54,9 @@ class BaseActions(object):
             obj_id=obj_id,
             container=container)
 
+    def __del__(self):
+        self.admin_remote.clear()
+
     def execute_in_container(self, command, container=None, exit_code=None,
                              stdin=None):
         if not container:
