@@ -145,7 +145,9 @@ class OpenStackActions(common.Common):
             flip = self.neutron.create_floatingip(body)
             #   Wait active state for port
             port_id = flip['floatingip']['port_id']
-            state = lambda: self.neutron.show_port(port_id)['port']['status']
+
+            def state():
+                return self.neutron.show_port(port_id)['port']['status']
             helpers.wait(lambda: state() == "ACTIVE")
             return flip['floatingip']
 
