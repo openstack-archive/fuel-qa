@@ -80,7 +80,7 @@ class EMCPlugin(TestBasic):
             remote=remote,
             name='naviseccli',
             os_type=CONF.OPENSTACK_RELEASE)
-        return any([out != '' for out in navicli, naviseccli])
+        return any([out != '' for out in navicli + naviseccli])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_emc_ha"])
