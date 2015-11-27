@@ -1,14 +1,13 @@
 ---
 template:
  name: 1 Controller, 1 Compute, 1 Cinder on Neutron/TUN with Sahara
- group-name: 1ctrl_1comp_1cndr_neutronTUN_sahara
  slaves: 3
- cluster-template:
+ cluster_template:
   name: SimpleSaharaNeutronTUN
   release: ubuntu
   network:
-   !include ../../../cluster_configs/networks/neutron_tun.yaml
+   !include cluster_configs/networks/neutron_tun.yaml
   settings:
-   !include ../../../cluster_configs/settings/cinder_sahara.yaml
+   !include cluster_configs/settings/cinder_sahara.yaml
   nodes:
-   !include ../../../cluster_configs/nodes/single/1ctrl_1comp_1cndr.yaml
+   !include cluster_configs/nodes/single/1ctrl_1comp_1cndr.yaml

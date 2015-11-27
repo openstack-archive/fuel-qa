@@ -39,8 +39,7 @@ class DeployCheckRadosGW(actions_base.ActionsBase):
     """
 
     base_group = ['system_test',
-                  'system_test.deploy_and_check_radosgw',
-                  'system_test.bvt_2']
+                  'system_test.deploy_and_check_radosgw']
     actions_order = [
         'setup_master',
         'config_release',

@@ -1,5 +1,5 @@
 ---
 storages:
- !include storages/cephImgVol.yaml
+ !include cluster_configs/settings/storages/cephImgVol.yaml
 components:
- !include components/ceilometer.yaml
+ !include cluster_configs/settings/components/ceilometer.yaml

@@ -58,10 +58,12 @@ class EnvironmentModel(object):
         return cls._instance
 
     def __init__(self):
-        if not hasattr(self, "_virtual_environment"):
-            self._virtual_environment = None
+        if not hasattr(self, "_virt_env"):
+            self._virt_env = None
         if not hasattr(self, "_fuel_web"):
             self._fuel_web = None
+        if not hasattr(self, "_config"):
+            self._config = None
 
     @property
     def fuel_web(self):
@@ -215,14 +217,23 @@ class EnvironmentModel(object):
 
     @property
     def d_env(self):
-        if self._virtual_environment is None:
-            try:
-                return Environment.get(name=settings.ENV_NAME)
-            except Exception:
-                self._virtual_environment = Environment.describe_environment(
-                    boot_from=settings.ADMIN_BOOT_DEVICE)
-                self._virtual_environment.define()
-        return self._virtual_environment
+        if self._virt_env is None:
+            if not self._config:
+                try:
+                    return Environment.get(name=settings.ENV_NAME)
+                except Exception:
+                    self._virt_env = Environment.describe_environment(
+                        boot_from=settings.ADMIN_BOOT_DEVICE)
+                    self._virt_env.define()
+            else:
+                try:
+                    return Environment.get(name=self._config[
+                        'template']['devops_settings']['env_name'])
+                except Exception:
+                    self._virt_env = Environment.create_environment(
+                        full_config=self._config)
+                    self._virt_env.define()
+        return self._virt_env
 
     def resume_environment(self):
         self.d_env.resume()
