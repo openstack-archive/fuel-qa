@@ -1012,7 +1012,7 @@ def is_ntpd_active(remote, ntpd_ip):
     return not remote.execute(cmd)['exit_code']
 
 
-def check_repo_managment(remote):
+def check_repo_management(remote):
     """Check repo management
 
     run 'yum -y clean all && yum check-update' or
