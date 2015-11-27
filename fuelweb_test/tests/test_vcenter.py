@@ -1098,7 +1098,7 @@ class VcenterDeploy(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["vcenter_delete_controler"])
     @log_snapshot_after_test
-    def vcenter_delete_controler(self):
+    def vcenter_delete_controller(self):
         """Deploy environment of vcenter+qemu nova vlan, default backend for
            glance and deletion one node with controller role
 

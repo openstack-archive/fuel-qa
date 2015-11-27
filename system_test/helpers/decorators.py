@@ -52,9 +52,9 @@ def step_start_stop(func):
             header = "<<< {:-^142} >>>".format(start_step)
             logger.info("\n{header}\n".format(header=header))
             result = func(*args, **kwargs)
-            spend_time = timer.spended_time
-            minutes = int(round(spend_time)) / 60
-            seconds = int(round(spend_time)) % 60
+            spent_time = timer.spent_time
+            minutes = int(round(spent_time)) / 60
+            seconds = int(round(spent_time)) % 60
             finish_step = "[ FINISH {} STEP TOOK {} min {} sec ]".format(
                 step_name, minutes, seconds)
             footer = "<<< {:-^142} >>>".format(finish_step)

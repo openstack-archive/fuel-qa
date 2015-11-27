@@ -67,7 +67,6 @@ def replace_ubuntu_repos(repos_attr, upstream_host):
 
 def replace_centos_repos(repos_attr, upstream_host):
     # Walk thru repos_attr and replace/add extra Centos mirrors
-    repos = []
     if help_data.MIRROR_CENTOS:
         logger.debug("Adding new mirrors: '{0}'"
                      .format(help_data.MIRROR_CENTOS))

@@ -165,7 +165,6 @@ class EnvironmentModel(object):
             'wait_for_external_config': 'yes',
             'build_images': '1' if build_images else '0'
         }
-        keys = ''
         if iso_connect_as == 'usb':
             keys = (
                 "<Wait>\n"  # USB boot uses boot_menu=yes for master node

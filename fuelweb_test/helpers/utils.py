@@ -263,7 +263,7 @@ class TimeStat(object):
             raise
 
     @property
-    def spended_time(self):
+    def spent_time(self):
         return time.time() - self.begin_time
 
 
