@@ -466,6 +466,7 @@ def make_bug_statistics(test_results, test_plan, tests_suite,
         return bugs_string
     else:
         logger.info("No linked to test cases bugs found")
+        return ''
 
 
 @retry(count=3)
