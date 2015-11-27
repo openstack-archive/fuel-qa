@@ -119,6 +119,6 @@ def make_snapshot_if_step_fail(func):
                     except:
                         logger.error("Error making the environment snapshot:"
                                      " {0}".format(traceback.format_exc()))
-            raise test_exception, None, exc_trace
+            raise test_exception
         return result
     return wrapper
