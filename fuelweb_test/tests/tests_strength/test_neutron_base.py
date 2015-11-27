@@ -51,7 +51,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
 
     @staticmethod
     @logwrap
-    def reshedule_router_manually(os_conn, router_id):
+    def reschedule_router_manually(os_conn, router_id):
         router_l3_agents = os_conn.get_l3_agent_ids(router_id)
         if not router_l3_agents:
             raise NotFound("l3 agent hosting router with id:{}"
@@ -207,7 +207,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         logger.debug('instance internal ip is {0}'.format(instance_ip))
 
         # Reschedule router for net for created instance to new controller
-        self.reshedule_router_manually(os_conn, router_id)
+        self.reschedule_router_manually(os_conn, router_id)
 
         # Get remote to the controller with running DHCP agent
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
@@ -272,7 +272,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         logger.debug('instance internal ip is {0}'.format(instance_ip))
 
         #   Reschedule router for net for created instance to new controller
-        self.reshedule_router_manually(os_conn, router_id)
+        self.reschedule_router_manually(os_conn, router_id)
 
         #   Get remote to the controller with running DHCP agent
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
@@ -354,7 +354,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         logger.debug('instance internal ip is {0}'.format(instance_ip))
 
         #   Reschedule router for net for created instance to new controller
-        self.reshedule_router_manually(os_conn, router_id)
+        self.reschedule_router_manually(os_conn, router_id)
 
         #   Get remote to the controller with running DHCP agent
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:

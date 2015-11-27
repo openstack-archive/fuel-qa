@@ -55,7 +55,7 @@ class LbaasPlugin(TestBasic):
             'There is not LbaaS agent in neutron agent list output')
 
     @classmethod
-    def check_lbass_work(cls, os_conn):
+    def check_lbaas_work(cls, os_conn):
         # create pool
         pool = os_conn.create_pool(pool_name='lbaas_pool')
 
@@ -162,7 +162,7 @@ class LbaasPlugin(TestBasic):
 
         self.check_neutron_agents_statuses(os_conn)
 
-        self.check_lbass_work(os_conn)
+        self.check_lbaas_work(os_conn)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
@@ -245,7 +245,7 @@ class LbaasPlugin(TestBasic):
 
         self.check_neutron_agents_statuses(os_conn)
 
-        self.check_lbass_work(os_conn)
+        self.check_lbaas_work(os_conn)
 
         self.fuel_web.stop_reset_env_wait(cluster_id)
 
@@ -263,7 +263,7 @@ class LbaasPlugin(TestBasic):
 
         self.check_neutron_agents_statuses(os_conn)
 
-        self.check_lbass_work(os_conn)
+        self.check_lbaas_work(os_conn)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
