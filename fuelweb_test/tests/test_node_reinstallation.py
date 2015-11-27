@@ -429,9 +429,11 @@ class ErrorNodeReinstallation(TestBasic):
 class PartitionPreservation(TestBasic):
     """PartitionPreservation."""  # TODO documentation
 
-    def _preserve_partition(self, node_id, partition):
+    @staticmethod
+    def _preserve_partition(remote, node_id, partition):
+
         # Retrieve disks config for the given node
-        with self.env.d_env.get_admin_remote() as admin_remote:
+        with remote as admin_remote:
             res = admin_remote.execute(
                 "fuel node --node-id {0} "
                 "--disk --download".format(str(node_id)))
@@ -477,7 +479,6 @@ class PartitionPreservation(TestBasic):
             7. Run OSTF
             8. Verify that the volume is present and has 'available' status
                after the node reinstallation
-               the created VM
             9. Verify that the VM is available and pingable
                after the node reinstallation
 
@@ -495,9 +496,6 @@ class PartitionPreservation(TestBasic):
         volume = os_conn.create_volume()
 
         # Create an OS instance
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id))
-
         cmp_host = os_conn.get_hypervisors()[0]
 
         net_label = self.fuel_web.get_cluster_predefined_networks_name(
@@ -515,10 +513,12 @@ class PartitionPreservation(TestBasic):
         cmp_nailgun = self.fuel_web.get_nailgun_node_by_fqdn(
             cmp_host.hypervisor_hostname)
         # Mark 'cinder' partition to be preserved
-        self._preserve_partition(cmp_nailgun['id'], "cinder")
+        PartitionPreservation._preserve_partition(
+            self.env.d_env.get_admin_remote(), cmp_nailgun['id'], "cinder")
 
         # Mark 'vm' partition to be preserved
-        self._preserve_partition(cmp_nailgun['id'], "vm")
+        PartitionPreservation._preserve_partition(
+            self.env.d_env.get_admin_remote(), cmp_nailgun['id'], "vm")
 
         NodeReinstallationEnv._reinstall_nodes(
             self.fuel_web, cluster_id, [str(cmp_nailgun['id'])])
@@ -549,7 +549,7 @@ class PartitionPreservation(TestBasic):
             raise AssertionError(
                 "{0} VM is not available after its {1} hosting node "
                 "reinstallation".format(vm.name,
-                                        cmp_nailgun.hypervisor_hostname))
+                                        cmp_host.hypervisor_hostname))
         assert_true(devops_helpers.tcp_ping(vm_floating_ip.ip, 22),
                     "{0} VM is not accessible via its {1} floating "
                     "ip".format(vm.name, vm_floating_ip))
@@ -596,10 +596,12 @@ class PartitionPreservation(TestBasic):
         # Mark 'mongo' partition to be preserved on all controllers
         mongo_nailgun = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['mongo'])[0]
-        self._preserve_partition(mongo_nailgun['id'], "mongo")
+        PartitionPreservation._preserve_partition(
+            self.env.d_env.get_admin_remote(), mongo_nailgun['id'], "mongo")
 
         # Mark 'mysql' partition to be preserved
-        self._preserve_partition(mongo_nailgun['id'], "mysql")
+        PartitionPreservation._preserve_partition(
+            self.env.d_env.get_admin_remote(), mongo_nailgun['id'], "mysql")
 
         NodeReinstallationEnv._reinstall_nodes(
             self.fuel_web, cluster_id, [str(mongo_nailgun['id'])])
@@ -620,6 +622,166 @@ class PartitionPreservation(TestBasic):
         assert_true('OK' in output['stdout'][0],
                     "IST was not received after the {0} node "
                     "reinstallation.".format(mongo_nailgun['hostname']))
+
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+
+
+@test(groups=["stop_reinstallation", "partition_preservation"])
+class StopReinstallation(TestBasic):
+    """StopReinstallation."""  # TODO documentation
+
+    @staticmethod
+    def _stop_reinstallation(fuel_web_client, cluster_id, node, slave_nodes):
+
+        logger.info('Start reinstall')
+
+        task = fuel_web_client.client.provision_nodes(cluster_id, node)
+        fuel_web_client.assert_task_success(task)
+        task = fuel_web_client.client.deploy_nodes(cluster_id, node)
+        fuel_web_client.assert_task_success(task, progress=60)
+
+        logger.info('Stop reinstall')
+        fuel_web_client.stop_deployment_wait(cluster_id)
+        fuel_web_client.wait_nodes_get_online_state(
+            slave_nodes,
+            timeout=8 * 60)
+
+    @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
+          groups=["compute_stop_reinstallation"])
+    @log_snapshot_after_test
+    def compute_stop_reinstallation(self):
+        """Verify stop reinstallation of compute.
+
+        Scenario:
+            1. Revert the snapshot
+            2. Create an OS volume and OS instance
+            3. Mark 'cinder' and 'vm' partitions to be preserved
+            4. Stop reinstallation process of compute
+            5. Start the reinstallation process again
+            6. Run network verification
+            7. Run OSTF
+            8. Verify that the volume is present and has 'available' status
+               after the node reinstallation
+            9. Verify that the VM is available and pingable
+               after the node reinstallation
+
+        Duration: 115m
+
+        """
+        self.env.revert_snapshot("node_reinstallation_env")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        # Create an OS volume
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+
+        volume = os_conn.create_volume()
+
+        # Create an OS instance
+        cmp_host = os_conn.get_hypervisors()[0]
+
+        net_label = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+
+        vm = os_conn.create_server_for_migration(
+            neutron=True,
+            availability_zone="nova:{0}".format(
+                cmp_host.hypervisor_hostname), label=net_label)
+        vm_floating_ip = os_conn.assign_floating_ip(vm)
+        devops_helpers.wait(
+            lambda: devops_helpers.tcp_ping(vm_floating_ip.ip, 22),
+            timeout=120)
+
+        cmp_nailgun = self.fuel_web.get_nailgun_node_by_fqdn(
+            cmp_host.hypervisor_hostname)
+        # Mark 'cinder' partition to be preserved
+        PartitionPreservation._preserve_partition(
+            self.env.d_env.get_admin_remote(), cmp_nailgun['id'], "cinder")
+
+        # Mark 'vm' partition to be preserved
+        PartitionPreservation._preserve_partition(
+            self.env.d_env.get_admin_remote(), cmp_nailgun['id'], "vm")
+
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        devops_nodes = self.fuel_web.get_devops_nodes_by_nailgun_nodes(
+            slave_nodes)
+
+        logger.info('Stop reinstallation process')
+        self._abort_reinstallation(self.fuel_web, cluster_id,
+                                   [str(cmp_nailgun['id'])], devops_nodes)
+
+        self.fuel_web.run_network_verify(cluster_id)
+        logger.info('Start the reinstallation process again')
+        NodeReinstallationEnv._reinstall_nodes(
+            self.fuel_web, cluster_id, [str(cmp_nailgun['id'])])
+
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+
+        # Verify that the created volume is still available
+        try:
+            volume = os_conn.cinder.volumes.get(volume.id)
+        except NotFound:
+            raise AssertionError(
+                "{0} volume is not available after its {1} hosting node "
+                "reinstallation".format(volume.id, cmp_nailgun['fqdn']))
+        expected_status = "available"
+        assert_equal(
+            expected_status,
+            volume.status,
+            "{0} volume status is {1} after its {2} hosting node "
+            "reinstallation. Expected status is {3}.".format(
+                volume.id, volume.status, cmp_nailgun['fqdn'], expected_status)
+        )
+
+        # Verify that the VM is still available
+        try:
+            os_conn.verify_instance_status(vm, 'ACTIVE')
+        except AssertionError:
+            raise AssertionError(
+                "{0} VM is not available after its {1} hosting node "
+                "reinstallation".format(vm.name,
+                                        cmp_host.hypervisor_hostname))
+        assert_true(devops_helpers.tcp_ping(vm_floating_ip.ip, 22),
+                    "{0} VM is not accessible via its {1} floating "
+                    "ip".format(vm.name, vm_floating_ip))
+
+    @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
+          groups=["node_stop_reinstallation"])
+    @log_snapshot_after_test
+    def node_stop_reinstallation(self):
+        """Verify stop reinstallation of node.
+
+        Scenario:
+            1. Revert the snapshot
+            2. Stop reinstallation process of node
+            3. Start the reinstallation process again
+            4. Run network verification
+            5. Run OSTF
+
+        Duration: 115m
+
+        """
+        self.env.revert_snapshot("node_reinstallation_env")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        # Select a node
+        ctrl_nailgun = self.fuel_web.get_nailgun_node_by_name('slave-01')
+
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        devops_nodes = self.fuel_web.get_devops_nodes_by_nailgun_nodes(
+            slave_nodes)
+
+        logger.info('Stop reinstallation process of node')
+        self._stop_reinstallation(self.fuel_web, cluster_id,
+                                  [str(ctrl_nailgun['id'])], devops_nodes)
+
+        logger.info('Start the reinstallation process again')
+        NodeReinstallationEnv._reinstall_nodes(
+            self.fuel_web, cluster_id, [str(ctrl_nailgun['id'])])
 
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
