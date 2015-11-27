@@ -59,6 +59,10 @@ def change_cluster_ssl_config(attributes, CN):
         attributes['editable']['public_ssl']['horizon'][
             'value'] = False
     elif not DISABLE_SSL and is_ssl_available:
+        attributes['editable']['public_ssl']['services'][
+            'value'] = True
+        attributes['editable']['public_ssl']['horizon'][
+            'value'] = True
         attributes['editable']['public_ssl']['hostname'][
             'value'] = CN
         if USER_OWNED_CERT:
