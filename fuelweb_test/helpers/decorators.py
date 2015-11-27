@@ -13,18 +13,18 @@
 #    under the License.
 
 import functools
+import sys
 import inspect
 import json
 import os
 from subprocess import call
 import requests
-import sys
 import time
 import traceback
 from urlparse import urlparse
 
 from fuelweb_test.helpers.checkers import check_action_logs
-from fuelweb_test.helpers.checkers import check_repo_managment
+from fuelweb_test.helpers.checkers import check_repo_management
 from fuelweb_test.helpers.checkers import check_stats_on_collector
 from fuelweb_test.helpers.checkers import check_stats_private_info
 from fuelweb_test.helpers.checkers import count_stats_on_collector
@@ -83,7 +83,6 @@ def log_snapshot_after_test(func):
         except SkipTest:
             raise SkipTest()
         except Exception as test_exception:
-            exc_trace = sys.exc_traceback
             name = 'error_%s' % func.__name__
             description = "Failed in method '%s'." % func.__name__
             if args[0].env is not None:
@@ -108,7 +107,7 @@ def log_snapshot_after_test(func):
                     except:
                         logger.error("Error making the environment snapshot:"
                                      " {0}".format(traceback.format_exc()))
-            raise test_exception, None, exc_trace
+            raise test_exception
         else:
             if settings.ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT:
                 if args[0].env is None:
@@ -487,7 +486,7 @@ def check_repos_management(func):
                     logger.debug("Check repository management on {0}"
                                  .format(n['ip']))
                     with env.d_env.get_ssh_to_remote(n['ip']) as node_ssh:
-                        check_repo_managment(node_ssh)
+                        check_repo_management(node_ssh)
             except Exception:
                 logger.error("An error happened during check repositories "
                              "management on nodes. Please see the debug log.")

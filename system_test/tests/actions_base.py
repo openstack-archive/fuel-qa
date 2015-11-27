@@ -35,8 +35,8 @@ from system_test.helpers.utils import load_yaml
 class PrepareBase(base_actions_factory.BaseActionsFactory):
     """Base class with prepare actions
 
-    _start_case - runned before test case start
-    _finish_case - runned after test case finish
+    _start_case - ran before test case start
+    _finish_case - ran after test case finish
     setup_master - setup master node in environment
     config_release - preconfig releases if it needs
     make_slaves - boot slaves and snapshot environment with bootstrapped slaves

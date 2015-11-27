@@ -14,7 +14,6 @@
 
 import functools
 import traceback
-import sys
 import hashlib
 
 from proboscis import SkipTest
@@ -80,7 +79,6 @@ def make_snapshot_if_step_fail(func):
         except SkipTest:
             raise SkipTest()
         except Exception as test_exception:
-            exc_trace = sys.exc_traceback
             name = 'error_%s' % func.__name__
             case_name = getattr(func, '_base_class', None)
             step_num = getattr(func, '_step_num', None)
@@ -119,6 +117,6 @@ def make_snapshot_if_step_fail(func):
                     except:
                         logger.error("Error making the environment snapshot:"
                                      " {0}".format(traceback.format_exc()))
-            raise test_exception, None, exc_trace
+            raise test_exception
         return result
     return wrapper
