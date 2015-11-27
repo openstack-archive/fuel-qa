@@ -1,9 +1,8 @@
 ---
 template:
  name: 1 Controller, 1 Compute on Neutron/VLAN
- group-name: 1ctrl_1comp_neutronVLAN
  slaves: 2
- cluster-template:
+ cluster_template:
   name: SimpleNeutronVLAN
   release: ubuntu
   network:
