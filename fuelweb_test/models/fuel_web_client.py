@@ -1469,6 +1469,12 @@ class FuelWebClient(object):
                 if nodegroup['name'] == 'default' and \
                    net['name'] == 'fuelweb_admin':
                     continue
+                # For all admin/pxe networks except default use master
+                # node as router
+                # TODO(mstrukov): find way to get admin node networks only
+                for devops_network in self.environment.d_env.get_networks():
+                    if devops_network.ip_network == IPNetwork(net['cidr']):
+                        net['gateway'] = self.environment.d_env.nodes().admin.get_ip_address_by_network_name(devops_network.name)
                 self.set_network(net_config=net,
                                  net_name=net['name'],
                                  net_pools=nodegroup['pools'],
