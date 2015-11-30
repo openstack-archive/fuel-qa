@@ -22,6 +22,8 @@ from fuelweb_test.helpers.utils import get_test_method_name
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.models.environment import EnvironmentModel
+from fuelweb_test.settings import MULTIPLE_NETWORKS
+from fuelweb_test.settings import MULTIPLE_NETWORKS_TEMPLATE
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
 
@@ -151,7 +153,16 @@ class SetupEnvironment(TestBasic):
         Snapshot: empty
 
         """
+        # TODO: remove this code when fuel-devops will be ready to
+        # describe all required network parameters (gateway, CIDR, IP range)
+        # inside 'address_pool', so we can use 'network_pools' section
+        # for L3 configuration in tests for multi racks
+        if MULTIPLE_NETWORKS:
+            from system_test.helpers.utils import load_yaml
+            self._devops_config = load_yaml(MULTIPLE_NETWORKS_TEMPLATE)
+
         self.check_run("empty")
+
         with TimeStat("setup_environment", is_uniq=True):
             self.env.setup_environment()
         self.env.make_snapshot("empty", is_make=True)
