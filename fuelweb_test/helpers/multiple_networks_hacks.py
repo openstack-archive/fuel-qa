@@ -25,31 +25,31 @@ from fuelweb_test import logwrap
 
 
 @logwrap
-def configure_second_admin_dhcp(remote, interface):
+def configure_admin_dhcp(remote, interface):
     dhcp_conf_file = '/etc/cobbler/dnsmasq.template'
     docker_start_file = '/usr/local/bin/start.sh'
-    cmd = ("dockerctl shell cobbler sed '/^interface/a interface={0}' -i {1};"
+    cmd = ("dockerctl shell cobbler sed "
+           "'0,/^interface.*/s//\0\ninterface={0}/' -i {1};"
            "dockerctl shell cobbler sed \"/^puppet apply/a "
-           "sed '/^interface/a interface={0}' -i {1}\" -i {2};"
-           "dockerctl shell cobbler cobbler sync").format(interface,
-                                                          dhcp_conf_file,
-                                                          docker_start_file)
+           "sed '0,/^interface.*/s//\0\ninterface={0}/' -i {1}\" -i {2};"
+           .format(interface, dhcp_conf_file, docker_start_file))
     result = remote.execute(cmd)
-    assert_equal(result['exit_code'], 0, ('Failed to add second admin '
-                 'network to DHCP server: {0}').format(result))
+    assert_equal(result['exit_code'],
+                 0,
+                 ('Failed to add admin network '
+                  'to DHCP server: {0}').format(result))
 
 
 @logwrap
-def configure_second_admin_firewall(remote, network, netmask, interface,
-                                    master_ip):
-    # Allow input/forwarding for nodes from the second admin network and
-    # enable source NAT for UDP (tftp) and HTTP (proxy server) traffic
-    # on master node
+def configure_admin_firewall(remote, network, netmask, interface,
+                             master_ip):
+    # Allow input/forwarding for nodes from the admin network and enable
+    # source NAT for UDP (tftp) and HTTP (proxy server) traffic on master node
     rules = [
-        ('-I INPUT -i {0} -m comment --comment "input from 2nd admin network" '
+        ('-I INPUT -i {0} -m comment --comment "input from admin network" '
          '-j ACCEPT').format(interface),
         ('-t nat -I POSTROUTING -s {0}/{1} -o eth+ -m comment --comment '
-         '"004 forward_admin_net2" -j MASQUERADE').
+         '"forward_admin_netX" -j MASQUERADE').
         format(network, netmask),
         ("-t nat -I POSTROUTING -o {0} -d {1}/{2} -p udp -m addrtype "
          "--src-type LOCAL -j SNAT --to-source {3}").format(interface,
@@ -63,8 +63,8 @@ def configure_second_admin_firewall(remote, network, netmask, interface,
         cmd = 'iptables {0}'.format(rule)
         result = remote.execute(cmd)
         assert_equal(result['exit_code'], 0,
-                     ('Failed to add firewall rule for second admin net '
-                      'on master node: {0}, {1}').format(rule, result))
+                     ('Failed to add firewall rule for admin net on'
+                      ' master node: {0}, {1}').format(rule, result))
 
     # Save new firewall configuration
     cmd = 'service iptables save'
