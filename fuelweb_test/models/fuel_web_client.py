@@ -1482,6 +1482,17 @@ class FuelWebClient(object):
                                  net_name=net['name'],
                                  net_pools=nodegroup['pools'],
                                  seg_type=seg_type)
+                # For all admin/pxe networks except default use master
+                # node as router
+                # TODO(mstrukov): find way to get admin node networks only
+                if net['name'] == 'fuelweb_admin':
+                    for devops_network in self.environment.d_env.get_networks():
+                        if str(devops_network.ip_network) == net['cidr']:
+                            net['gateway'] = self.environment.d_env.nodes().admin.get_ip_address_by_network_name(devops_network.name)
+                            logger.info('Set master node ({0}) as '
+                                        'router for admin network '
+                                        'in nodegroup {1}.'.format(
+                                            net['gateway'], nodegroup_id))
         return network_configuration
 
     def set_network(self, net_config, net_name, net_pools=None, seg_type=None):
