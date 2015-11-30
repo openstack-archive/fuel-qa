@@ -64,11 +64,8 @@ class OpenStackActions(common.Common):
         if servers:
             return servers
 
-    def create_server_for_migration(self, neutron=True, scenario='',
-                                    timeout=100, file=None, key_name=None,
-                                    label=None, **kwargs):
-        name = "test-serv" + str(random.randint(1, 0x7fffffff))
-        security_group = {}
+    def create_server(self, name, image_id=None, flavor=1, scenario='',
+                      files=None, key_name=None, timeout=100, **kwargs):
         try:
             if scenario:
                 with open(scenario, "r+") as f:
@@ -76,7 +73,34 @@ class OpenStackActions(common.Common):
         except Exception as exc:
             logger.info("Error opening file: %s" % exc)
             raise Exception()
-        image_id = self._get_cirros_image().id
+
+        if image_id is None:
+            image_id = self._get_cirros_image().id
+        srv = self.nova.servers.create(name=name,
+                                       image=image_id,
+                                       flavor=1,
+                                       userdata=scenario,
+                                       files=files,
+                                       key_name=key_name,
+                                       **kwargs)
+        try:
+            helpers.wait(
+                lambda: self.get_instance_detail(srv).status == "ACTIVE",
+                timeout=timeout)
+            return self.get_instance_detail(srv.id)
+        except TimeoutError:
+            logger.debug("Create server failed by timeout")
+            asserts.assert_equal(
+                self.get_instance_detail(srv).status,
+                "ACTIVE",
+                "Instance do not reach active state, current state"
+                " is {0}".format(self.get_instance_detail(srv).status))
+
+    def create_server_for_migration(self, neutron=True, scenario='',
+                                    timeout=100, file=None, key_name=None,
+                                    label=None, **kwargs):
+        name = "test-serv" + str(random.randint(1, 0x7fffffff))
+        security_group = {}
         security_group[self.keystone.tenant_id] =\
             self.create_sec_group_for_ssh()
         security_group = [security_group[
@@ -92,25 +116,12 @@ class OpenStackActions(common.Common):
         else:
             kwargs.update({'security_groups': security_group})
 
-        srv = self.nova.servers.create(name=name,
-                                       image=image_id,
-                                       flavor=1,
-                                       userdata=scenario,
-                                       files=file,
-                                       key_name=key_name,
-                                       **kwargs)
-        try:
-            helpers.wait(
-                lambda: self.get_instance_detail(srv).status == "ACTIVE",
-                timeout=timeout)
-            return self.get_instance_detail(srv.id)
-        except TimeoutError:
-            logger.debug("Create server for migration failed by timeout")
-            asserts.assert_equal(
-                self.get_instance_detail(srv).status,
-                "ACTIVE",
-                "Instance do not reach active state, current state"
-                " is {0}".format(self.get_instance_detail(srv).status))
+        return self.create_server(name=name,
+                                  scenario=scenario,
+                                  files=file,
+                                  key_name=key_name,
+                                  timeout=timeout,
+                                  **kwargs)
 
     def verify_srv_deleted(self, srv):
         try:
@@ -376,6 +387,24 @@ class OpenStackActions(common.Common):
                 return router
         return None
 
+    def create_router(self, name, tenant_id=None):
+        router = {'name': name}
+        if tenant_id is not None:
+            router['tenant_id'] = tenant_id
+        return self.neutron.create_router({'router': router})
+
+    def router_interface_add(self, router_id, subnet_id):
+        subnet = {
+            'subnet_id': subnet_id
+        }
+        self.neutron.add_interface_router(router_id, subnet)
+
+    def router_gateway_add(self, router_id, network_id):
+        network = {
+            'network_id': network_id
+        }
+        self.neutron.add_gateway_router(router_id, network)
+
     def create_image(self, **kwargs):
         image = self.glance.images.create(**kwargs)
         logger.info("Created image: '{0}'".format(image.id))
@@ -486,6 +515,22 @@ class OpenStackActions(common.Common):
 
     def get_vip(self, vip):
         return self.neutron.show_vip(vip)
+
+    def list_networks(self):
+        return self.neutron.list_networks()
+
+    def create_network(self, name):
+        network = {'name': name, 'admin_state_up': True}
+        return self.neutron.create_network({'network': network})
+
+    def create_subnet(self, network_id, name, cidr):
+        subnet = {
+            "network_id": network_id,
+            "ip_version": 4,
+            "cidr": cidr,
+            "name": name
+        }
+        return self.neutron.create_subnet({'subnet': subnet})
 
     def get_nova_instance_ip(self, srv, net_name='novanetwork', type='fixed'):
         for network_label, address_list in srv.addresses.items():
