@@ -753,6 +753,173 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
 
         self.env.make_snapshot("ceilometer_ha_multirole_add_mongo")
 
+    @test(depends_on=[deploy_ceilometer_ha_multirole],
+          groups=["ceilometer_test_cli"])
+    @log_snapshot_after_test
+    def ceilometer_test_cli(self):
+        """Test Ceilometer cli commands
+
+        Scenario:
+            1. Revert snapshot deploy_ceilometer_ha_multirole
+            2. Connect to controller with ssh
+            3. Check Ceilometer CLI commands
+
+        Duration 10m
+        Snapshot: ceilometer_test_cli
+
+        """
+        self.env.revert_snapshot("deploy_ceilometer_ha_multirole")
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            err_msg = 'Command "{0}" failed. Message: {1}'
+
+            cmd = 'ceilometer resource-list'
+            result = remote.execute(cmd)
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
+            cmd = 'ceilometer resource-show $(ceilometer resource-list | ' \
+                  'awk \'(NR == 4) {print $2}\')'
+            result = remote.execute(cmd)
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
+            cmd = 'ceilometer meter-list'
+            result = remote.execute(cmd)
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
+            cmd = ('ceilometer sample-list --limit 5 -m '
+                   '$(ceilometer meter-list | awk \' (NR == 4) {print $2}\'')
+            result = remote.execute(cmd)
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
+            cmd = ('ceilometer query-samples -f "{\"and\": [{\"=\":'
+                   '{\"counter_name\": \"$(ceilometer meter-list | '
+                   'awk \'(NR == 4) {print $2}\')\"}}, '
+                   '{\">\":{\"counter_volume\":0}}]}" -l 5')
+            result = remote.execute(cmd)
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
+            cmd = ('ceilometer sample-list -m $(ceilometer meter-list | '
+                   'awk \'(NR == 4) {print $2}\') | awk \'(NR == 4)\') && '
+                   'ceilometer sample-create -m $(echo $sample | '
+                   'awk \'{print $4}\') -r 111111 --meter-type '
+                   '$(echo $sample | awk \'{print $6}\') '
+                   '--meter-unit $(echo $sample | awk \'{print $10}\') '
+                   '--sample-volume $(echo $sample | awk \'{print $8}\') '
+                   '1>/dev/null')
+            result = remote.execute(cmd)
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
+            cmd = ("""ceilometer statistics -m $(ceilometer meter-list |
+                    'awk \'(NR == 4) {print $2}\'""")
+            result = remote.execute(cmd)
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
+            cmd = ('ceilometer alarm-threshold-create --name alarm_test_plan_1 '
+                   '-m image --period 10 --statistic avg --comparison-operator '
+                   'lt --threshold 0.9 1>/dev/null && ceilometer '
+                   'alarm-threshold-create --name alarm_test_plan_2 -m image '
+                   '--period 10 --statistic avg --comparison-operator lt '
+                   '--threshold 1.1 1>/dev/null\'')
+            result = remote.execute(cmd)
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
+            cmd = ('ceilometer alarm-combination-create '
+                   '--name alarm_comb_test_plan --alarm_ids '
+                   '$(ceilometer alarm-list | '
+                   'awk \'/alarm_test_plan_1/{print $2}\') '
+                   '--alarm_ids $(ceilometer alarm-list | '
+                   'awk \'/alarm_test_plan_2/{print $2}\') 1>/dev/null')
+            result = remote.execute(cmd)
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
+            cmd = 'ceilometer alarm-list'
+            result = remote.execute(cmd)
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
+            cmd = '(ceilometer alarm-show $(ceilometer alarm-list | ' \
+                  'awk \'/alarm_test_plan_2/{print $2}\'))'
+            result = remote.execute(cmd)
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
+            cmd = ('ceilometer alarm-threshold-update $(ceilometer alarm-list '
+                   '| awk \'/alarm_test_plan_2/{print $2}\') '
+                   '--name update_alarm_test_plan_2 --period 20 '
+                   '--threshold 2 1>/dev/null')
+            result = remote.execute(cmd)
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
+            cmd = ('ceilometer alarm-combination-update '
+                   '$(ceilometer alarm-list | '
+                   'awk \'/alarm_comb_test_plan/{print $2}\') '
+                   '--severity moderate 1>/dev/null')
+            result = remote.execute(cmd)
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
+            cmd = ('ceilometer alarm-state-get $(ceilometer alarm-list |'
+                   ' awk \'/alarm_test_plan_2/{print $2}\') 1>/dev/null')
+
+            result = remote.execute(cmd)
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
+            cmd = ('ceilometer alarm-state-set $(ceilometer alarm-list |'
+                   ' awk \'/alarm_test_plan_2/{print $2}\')'
+                   ' --state \'insufficient data\' 1>/dev/null'
+                   ' && ceilometer alarm-state-get $(ceilometer alarm-list '
+                   '| awk \'/alarm_test_plan_2/{print $2} | '
+                   'grep \'insufficient data\'')
+            result = remote.execute(cmd)
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
+            cmd = ('ceilometer alarm-history $(ceilometer alarm-list | '
+                   'awk \'/alarm_test_plan_2/{print $2}\'')
+            result = remote.execute(cmd)
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
+            cmd = ('ceilometer query-alarm-history -f \'{\"and\":[{\"<\":'
+                   '{\"timestamp\":\"$(date +%Y-%m-%dT%H:%M:%S)\"}},'
+                   '{\">\":{\"timestamp\":\"2000-01-01T01:01:01\"}},'
+                   '{\"=\":{\"type\":\"state transition\"}},'
+                   '{\"=\":{\"alarm_id\":\"$(ceilometer alarm-list | '
+                   'awk \'/alarm_test_plan_2/{print $2}\')\"}}]}\'')
+            result = remote.execute(cmd)
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
+            cmd = ('ceilometer query-alarms -f "{\"or\":[{\"=\":'
+                   '{\"state\": \"alarm\"}},{\"=\":{\"state\":\"ok\"}}]}')
+            result = remote.execute(cmd)
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
+            cmd = ('ceilometer alarm-delete $(ceilometer alarm-list | '
+                   'awk \'/alarm_test_plan_2/{print $2}\') 1>/dev/null '
+                   '&& ceilometer alarm-delete $(ceilometer alarm-list | '
+                   'awk \'/alarm_test_plan/{print $2}\') && '
+                   'ceilometer alarm-delete $(ceilometer alarm-list | '
+                   'awk \'/alarm_comb_test_plan/{print $2}\') 1>/dev/null')
+            result = remote.execute(cmd)
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
+        self.env.make_snapshot("ceilometer_test_cli")
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ceilometer_ha_with_external_mongo"])
     @log_snapshot_after_test
