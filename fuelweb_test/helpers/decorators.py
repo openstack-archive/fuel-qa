@@ -339,6 +339,65 @@ def update_ostf(func):
     return wrapper
 
 
+def update_fuel_agent(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        try:
+            if settings.UPLOAD_PATCHSET:
+                if not settings.GERRIT_REFSPEC:
+                    raise ValueError('REFSPEC should be set for CI tests.')
+                logger.info("Uploading new patchset from {0}"
+                            .format(settings.GERRIT_REFSPEC))
+                environment = get_current_env(args)
+                pack_path = '/var/www/nailgun/fuel-agent/'
+                container = 'mcollective'
+                with environment.d_env.get_admin_remote() as remote:
+                    remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
+                                  pack_path)
+
+                # Update fuel-agent in MCollective
+                cmd = "rpm -e fuel-agent"
+                environment.base_actions.execute_in_container(
+                    cmd, container, exit_code=0)
+                cmd = "yum localinstall -y {0}fuel-agent*.rpm".format(
+                    pack_path)
+                environment.base_actions.execute_in_container(
+                    cmd, container, exit_code=0)
+                cmd = "rpm -q fuel-agent"
+                installed_package = \
+                    environment.base_actions.execute_in_container(
+                        cmd, container, exit_code=0)
+                cmd = "ls -1 {0}|grep 'fuel-agent'".format(pack_path)
+                new_package = \
+                    environment.base_actions.execute_in_container(
+                        cmd, container).rstrip('.rpm')
+                assert_equal(installed_package, new_package,
+                             "The new package {0} was not installed".
+                             format(new_package))
+
+                # Assign new bootstrap
+                bootstrap = "/var/www/nailgun/bootstrap"
+                cmd = ("rm {0}/initramfs.img;"
+                       "cp {1}/initramfs.img {0}/initramfs.img;"
+                       "chmod +r {0}/initramfs.img;"
+                       ).format(bootstrap, pack_path)
+                with environment.d_env.get_admin_remote() as remote:
+                    result = remote.execute(cmd)
+                    assert_equal(result['exit_code'], 0,
+                                 ('Failed to assign bootstrap {}'
+                                  ).format(result))
+                cmd = "cobbler sync"
+                container = "cobbler"
+                environment.base_actions.execute_in_container(
+                    cmd, container, exit_code=0)
+        except Exception as e:
+            logger.error("Could not upload package {e}".format(e=e))
+            raise
+        return result
+    return wrapper
+
+
 def create_diagnostic_snapshot(env, status, name=""):
     task = env.fuel_web.task_wait(env.fuel_web.client.generate_logs(), 60 * 10)
     url = "http://{}:8000{}".format(env.get_admin_node_ip(), task['message'])
