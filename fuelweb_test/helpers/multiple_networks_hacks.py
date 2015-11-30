@@ -30,10 +30,8 @@ def configure_second_admin_dhcp(remote, interface):
     docker_start_file = '/usr/local/bin/start.sh'
     cmd = ("dockerctl shell cobbler sed '/^interface/a interface={0}' -i {1};"
            "dockerctl shell cobbler sed \"/^puppet apply/a "
-           "sed '/^interface/a interface={0}' -i {1}\" -i {2};"
-           "dockerctl shell cobbler cobbler sync").format(interface,
-                                                          dhcp_conf_file,
-                                                          docker_start_file)
+           "sed '0,/^interface.*/s//\0\ninterface={0}/' -i {1}\" -i {2};"
+           .format(interface, dhcp_conf_file, docker_start_file))
     result = remote.execute(cmd)
     assert_equal(result['exit_code'], 0, ('Failed to add second admin '
                  'network to DHCP server: {0}').format(result))
