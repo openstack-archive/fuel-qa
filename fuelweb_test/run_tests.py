@@ -145,6 +145,7 @@ def import_tests():
     from tests.tests_strength import test_failover_group_1  # noqa
     from tests.tests_strength import test_failover_mongo  # noqa
     from tests.tests_strength import test_failover_group_2  # noqa
+    from system_test.tests import test_deploy_with_shared_networks  # noqa
 
 
 def run_tests():
