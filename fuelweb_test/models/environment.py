@@ -14,11 +14,16 @@
 
 import re
 import time
+from paramiko import RSAKey
+from StringIO import StringIO
+import paramiko
+
 from devops.error import TimeoutError
 
 from devops.helpers.helpers import _tcp_ping
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
+from devops.helpers.helpers import SSHClient as SSHClientBase
 from devops.models import Environment
 from keystoneclient import exceptions
 from proboscis.asserts import assert_equal
@@ -44,6 +49,20 @@ from fuelweb_test.models.collector_client import CollectorClient
 from fuelweb_test import settings
 from fuelweb_test import logwrap
 from fuelweb_test import logger
+
+
+class SSHOnlyClient(SSHClientBase):
+
+    def clear(self):
+        try:
+            self._ssh.close()
+        except Exception:
+            logger.exception("Could not close ssh connection")
+
+    def reconnect(self):
+        self._ssh = paramiko.SSHClient()
+        self._ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self.connect()
 
 
 class EnvironmentModel(object):
@@ -666,3 +685,17 @@ class EnvironmentModel(object):
         return self.postgres_actions.run_query(
             db='nailgun',
             query="select master_node_uid from master_node_settings limit 1;")
+
+    @logwrap
+    @retry(count=2, delay=10)
+    def get_ssh_for_nova_node(self, ip, port=22, username=None, password=None,
+                              keypair=None):
+        keys = []
+        if username is None:
+            username = settings.SSH_CREDENTIALS['login']
+        if password is None:
+            password = settings.SSH_CREDENTIALS['password']
+        if keypair is not None:
+            private_key = StringIO(keypair.private_key)
+            keys = [RSAKey.from_private_key(private_key)]
+        return SSHOnlyClient(ip, port, username, password, private_keys=keys)
