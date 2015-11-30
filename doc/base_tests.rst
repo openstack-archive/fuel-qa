@@ -172,6 +172,11 @@ Test Ironic
 .. automodule:: fuelweb_test.tests.test_ironic_base
   :members:
 
+Test l3 agent ban
+-----------------
+.. automodule:: fuelweb_test.tests.cloud_testing.neutron.test_ban_l3_agent
+  :members:
+
 
 Fuel mirror verification
 ========================
