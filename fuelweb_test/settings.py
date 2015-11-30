@@ -95,18 +95,42 @@ NODE_VOLUME_SIZE = int(os.environ.get('NODE_VOLUME_SIZE', 50))
 NODES_COUNT = os.environ.get('NODES_COUNT', 10)
 
 MULTIPLE_NETWORKS = get_var_as_bool('MULTIPLE_NETWORKS', False)
+MULTIPLE_NETWORKS_TEMPLATE = os.environ.get(
+    'MULTIPLE_NETWORKS_TEMPLATE',
+    os.path.join(os.getcwd(),
+                 'system_test/tests_templates/tests_configs/multirack.yaml'))
 
 if MULTIPLE_NETWORKS:
     NODEGROUPS = (
         {
             'name': 'default',
-            'pools': ['admin', 'public', 'management', 'private',
-                      'storage']
+            'networks': {
+                'fuelweb_admin': 'admin',
+                'public': 'public',
+                'management': 'management',
+                'storage': 'storage',
+                'private': 'private'
+            }
         },
         {
             'name': 'group-custom-1',
-            'pools': ['admin2', 'public2', 'management2', 'private2',
-                      'storage2']
+            'networks': {
+                'fuelweb_admin': 'admin2',
+                'public': 'public2',
+                'management': 'management2',
+                'storage': 'storage',
+                'private': 'private2'
+            }
+        },
+        {
+            'name': 'group-custom-2',
+            'networks': {
+                'fuelweb_admin': 'admin3',
+                'public': 'public3',
+                'management': 'management3',
+                'storage': 'storage',
+                'private': 'private3'
+            }
         }
     )
     FORWARD_DEFAULT = os.environ.get('FORWARD_DEFAULT', 'route')
