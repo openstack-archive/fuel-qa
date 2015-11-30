@@ -421,8 +421,7 @@ class EnvironmentModel(object):
                     with self.d_env.get_admin_remote() as remote:
                         remote.execute(cmd)
             self.admin_install_updates()
-        if settings.MULTIPLE_NETWORKS:
-            self.describe_second_admin_interface()
+        self.describe_other_admin_interfaces(admin)
         self.nailgun_actions.set_collector_address(
             settings.FUEL_STATS_HOST,
             settings.FUEL_STATS_PORT,
@@ -631,13 +630,24 @@ class EnvironmentModel(object):
         return result['stdout']
 
     @logwrap
-    def describe_second_admin_interface(self):
-        admin_net2_object = self.d_env.get_network(name=self.d_env.admin_net2)
+    def describe_other_admin_interfaces(self, admin):
+        admin_networks = [iface.network.name for iface in admin.interfaces]
+        for i, network_name in enumerate(admin_networks):
+            if 'admin' in network_name and 'admin' != network_name:
+                # This will be replaced with actual interface labels
+                # form fuel-devops
+                iface_name = 'eth' + str(i)
+                logger.info("Describe Fuel admin node interface {0} for "
+                            "network {1}".format(iface_name, network_name))
+                self.describe_admin_interface(iface_name, network_name)
+
+    @logwrap
+    def describe_admin_interface(self, second_admin_if, network_name):
+        admin_net2_object = self.d_env.get_network(name=network_name)
         second_admin_network = admin_net2_object.ip.network
         second_admin_netmask = admin_net2_object.ip.netmask
-        second_admin_if = settings.INTERFACES.get(self.d_env.admin_net2)
         second_admin_ip = str(self.d_env.nodes(
-        ).admin.get_ip_address_by_network_name(self.d_env.admin_net2))
+        ).admin.get_ip_address_by_network_name(network_name))
         logger.info(('Parameters for second admin interface configuration: '
                      'Network - {0}, Netmask - {1}, Interface - {2}, '
                      'IP Address - {3}').format(second_admin_network,
