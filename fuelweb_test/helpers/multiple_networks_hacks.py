@@ -29,7 +29,8 @@ from fuelweb_test.helpers.ssh_manager import SSHManager
 def configure_second_admin_dhcp(ip, interface):
     dhcp_conf_file = '/etc/cobbler/dnsmasq.template'
     docker_start_file = '/usr/local/bin/start.sh'
-    cmd = ("dockerctl shell cobbler sed '/^interface/a interface={0}' -i {1};"
+    cmd = ("dockerctl shell cobbler sed "
+           "'0,/^interface.*/s//\\0\\ninterface={0}/' -i {1};"
            "dockerctl shell cobbler sed \"/^puppet apply/a "
            "sed '/^interface/a interface={0}' -i {1}\" -i {2};"
            "dockerctl shell cobbler cobbler sync").format(interface,
@@ -50,7 +51,7 @@ def configure_second_admin_firewall(ip, network, netmask, interface,
     # enable source NAT for UDP (tftp) and HTTP (proxy server) traffic
     # on master node
     rules = [
-        ('-I INPUT -i {0} -m comment --comment "input from 2nd admin network" '
+        ('-I INPUT -i {0} -m comment --comment "input from admin network" '
          '-j ACCEPT').format(interface),
         ('-t nat -I POSTROUTING -s {0}/{1} -o e+ -m comment --comment '
          '"004 forward_admin_net2" -j MASQUERADE').
@@ -72,8 +73,8 @@ def configure_second_admin_firewall(ip, network, netmask, interface,
             cmd=cmd
         )
         assert_equal(result['exit_code'], 0,
-                     ('Failed to add firewall rule for second admin net '
-                      'on master node: {0}, {1}').format(rule, result))
+                     ('Failed to add firewall rule for admin net on'
+                      ' master node: {0}, {1}').format(rule, result))
 
     # Save new firewall configuration
     cmd = 'service iptables save'
