@@ -28,7 +28,7 @@ def define_custom_groups():
          "depends": [
              "system_test.deploy_and_check_radosgw."
              "3ctrl_3comp_ceph_neutronVLAN"]},
-        {"groups": ["system_test.filling_root"],
+        {"groups": ["filling_root"],
          "depends": [
              "system_test.failover.filling_root."
              "3ctrl_2comp_1cndr_neutronVLAN"]},
