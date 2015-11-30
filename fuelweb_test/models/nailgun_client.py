@@ -542,3 +542,89 @@ class NailgunClient(object):
     def spawn_vms(self, cluster_id):
         url = '/api/clusters/{0}/spawn_vms/'.format(cluster_id)
         return self.client.put(url)
+
+    @logwrap
+    @json_parse
+    def spawn_vms(self, cluster_id):
+        url = '/api/clusters/{0}/spawn_vms/'.format(cluster_id)
+        return self.client.put(url)
+
+    @logwrap
+    @json_parse
+    def upload_configuration(self, config, cluster_id, role=None,
+                             node_id=None):
+        """Upload configuration.
+
+        Args:
+        config: a dictionary of configuration to upload.
+        cluster_id: An integer number of cluster id.
+        role: a string of role name.
+        node_id: An integer number of node id.
+        """
+        data = {'cluster_id': cluster_id, 'configuration': config}
+        if role is not None:
+            data['node_role'] = role
+        if node_id is not None:
+            data['node_id'] = node_id
+        url = '/api/openstack-config/'
+        return self.client.post(url, data=data)
+
+    @logwrap
+    @json_parse
+    def get_configuration(self, configuration_id):
+        """Get uploaded configuration by id.
+
+        Args:
+        configuration_id: An integer number of configuration id.
+        Returns:
+        a decoded JSON response.
+        """
+        url = '/api/openstack-config/{0}'.format(configuration_id)
+        return self.client.get(url)
+
+    @logwrap
+    @json_parse
+    def list_configuration(self, cluster_id, role=None, node_id=None):
+        """Get filtered list of configurations.
+
+        Args:
+        cluster_id: An integer number of cluster id.
+        role: a string of role name.
+        nodes: A list of node ids.
+        Returns:
+        a decoded JSON response.
+        """
+        url = '/api/openstack-config/?cluster_id={0}/'.format(cluster_id)
+        if role is not None:
+            url += '&node_role={0}'.format(role)
+        if node_id is not None:
+            url += '&node_id={0}'.format(node_id)
+        return self.client.get(url)
+
+    @logwrap
+    def delete_configuration(self, configuration_id):
+        """Delete configuration by id.
+
+        Args:
+        configuration_id: An integer number of configuration id.
+        """
+        url = '/api/openstack-config/{0}'.format(configuration_id)
+        return self.client.delete(url)
+
+    @logwrap
+    @json_parse
+    def apply_configuration(self, cluster_id, role=None, node_id=None):
+        """Apply configuration.
+
+        Args:
+        cluster_id: An integer number of cluster id.
+        role: a string of role name.
+        node_id: An integer number of node id.
+        """
+        data = {'cluster_id': cluster_id}
+        if role is not None:
+            data['node_role'] = role
+        if node_id is not None:
+            data['node_id'] = node_id
+        url = '/api/openstack-config/execute/'
+        return self.client.put(url, data=data)
