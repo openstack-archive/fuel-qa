@@ -20,6 +20,7 @@ from proboscis import TestProgram
 
 from builds import Build
 from fuelweb_test.run_tests import import_tests
+from fuelweb_test.run_tests import define_custom_groups
 from settings import GROUPS_TO_EXPAND
 from settings import logger
 from settings import TestRailSettings
@@ -30,6 +31,7 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
                            default_test_priority):
     from system_test.tests.actions_base import ActionsBase
     import_tests()
+    define_custom_groups()
 
     tests = []
 
