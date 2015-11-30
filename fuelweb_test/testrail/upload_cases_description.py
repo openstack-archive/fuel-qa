@@ -20,6 +20,7 @@ from proboscis import TestProgram
 
 from builds import Build
 from fuelweb_test.run_tests import import_tests
+from fuelweb_test.run_tests import define_custom_groups
 from settings import GROUPS_TO_EXPAND
 from settings import logger
 from settings import TestRailSettings
@@ -30,6 +31,7 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
                            default_test_priority):
     from system_test.tests.actions_base import ActionsBase
     import_tests()
+    define_custom_groups()
 
     tests = []
 
@@ -39,6 +41,9 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
             if not case.entry.info.enabled:
                 continue
             home = case.entry.home
+            if not hasattr(case.entry, 'parent'):
+                # Not a real case, some stuff needed by template based tests
+                continue
             parent_home = case.entry.parent.home
             case_state = case.state
             if issubclass(parent_home, ActionsBase):
@@ -66,6 +71,7 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
 
             if issubclass(parent_home, ActionsBase):
                 docstring = parent_home.__doc__.split('\n')
+                case_state.instance._load_config()
                 configuration = case_state.instance.config_name
                 docstring[0] = "{0} on {1}".format(docstring[0], configuration)
                 docstring = '\n'.join(docstring)
