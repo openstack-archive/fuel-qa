@@ -477,6 +477,14 @@ class OSTFCeilometerHelper(TestBasic):
                         cluster_id=cluster_id, test_sets=['tests_platform'],
                         test_name=test_id, timeout=60 * 20)
 
+    @staticmethod
+    def check_command(remote, cmd):
+            err_msg = 'Command "{0}" failed. Message: {1}'
+            LOGGER.debug('Test command: {}'.format(cmd))
+            result = remote.execute('source ~/openrc; {}'.format(cmd))
+            message = (result['stdout'] + result['stderr'])
+            assert_equal(result['exit_code'], 0, err_msg.format(cmd, message))
+
 
 @test(groups=["services", "services.ceilometer", "services_ha_one_controller"])
 class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
@@ -752,6 +760,129 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
         self.run_tests(cluster_id)
 
         self.env.make_snapshot("ceilometer_ha_multirole_add_mongo")
+
+    @test(depends_on=[deploy_ceilometer_ha_multirole],
+          groups=["ceilometer_test_cli"])
+    @log_snapshot_after_test
+    def ceilometer_test_cli(self):
+        """Test Ceilometer cli commands
+
+        Scenario:
+            1. Revert snapshot deploy_ceilometer_ha_multirole
+            2. Connect to controller node with ssh
+            3. Check Ceilometer CLI commands
+
+        Duration 10m
+        Snapshot: ceilometer_test_cli
+
+        """
+        self.env.revert_snapshot("deploy_ceilometer_ha_multirole")
+        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            cmd = 'ceilometer resource-list'
+            self.check_command(remote, cmd)
+
+            cmd = ('ceilometer resource-show $(ceilometer resource-list | '
+                   'awk \'(NR == 4) {print $2}\')')
+            self.check_command(remote, cmd)
+
+            cmd = 'ceilometer meter-list'
+            self.check_command(remote, cmd)
+
+            cmd = ('ceilometer sample-list --limit 5 -m '
+                   '$(ceilometer meter-list | awk \' (NR == 4) {print $2}\')')
+            self.check_command(remote, cmd)
+
+            cmd = ('ceilometer query-samples -f \'{\"and\": '
+                   '[{\"=\": {\"counter_name\": \"cpu\"}}, '
+                   '{\">\":{\"counter_volume\":0}}]}\' -l 5')
+            self.check_command(remote, cmd)
+
+            cmd = ('sample=$(ceilometer sample-list -m $(ceilometer '
+                   'meter-list | awk \'(NR == 4) {print $2}\') | '
+                   'awk \'(NR == 4)\') && ceilometer sample-create '
+                   '-m $(echo $sample | awk \'{print $4}\') -r 111111 '
+                   '--meter-type $(echo $sample | awk \'{print $6}\') '
+                   '--meter-unit $(echo $sample | awk \'{print $10}\') '
+                   '--sample-volume $(echo $sample | awk \'{print $8}\')')
+            self.check_command(remote, cmd)
+
+            cmd = ('ceilometer statistics -m $('
+                   'ceilometer meter-list | awk \'(NR == 4) {print $2}\')')
+            self.check_command(remote, cmd)
+
+            cmd = ('source ~/openrc; ceilometer alarm-threshold-create '
+                   '--name alarm_test_plan_1 -m image --period 10 '
+                   '--statistic avg --comparison-operator lt '
+                   '--threshold 0.9 && ceilometer '
+                   'alarm-threshold-create --name alarm_test_plan_2 -m image '
+                   '--period 10 --statistic avg --comparison-operator lt '
+                   '--threshold 1.1')
+            self.check_command(remote, cmd)
+
+            cmd = ('source ~/openrc; ceilometer alarm-combination-create '
+                   '--name alarm_comb_test_plan --alarm_ids '
+                   '$(ceilometer alarm-list | '
+                   'awk \'/alarm_test_plan_1/{print $2}\') '
+                   '--alarm_ids $(ceilometer alarm-list | '
+                   'awk \'/alarm_test_plan_2/{print $2}\')')
+            self.check_command(remote, cmd)
+
+            cmd = 'ceilometer alarm-list'
+            self.check_command(remote, cmd)
+
+            cmd = ('ceilometer alarm-show '
+                   '$(ceilometer alarm-list | '
+                   'awk \'/alarm_test_plan_2/{print $2}\')')
+            self.check_command(remote, cmd)
+
+            cmd = ('ceilometer alarm-threshold-update '
+                   '$(ceilometer alarm-list '
+                   '| awk \'/alarm_test_plan_2/{print $2}\') '
+                   '--name update_alarm_test_plan_2 --period 20 '
+                   '--threshold 2')
+            self.check_command(remote, cmd)
+
+            cmd = ('ceilometer alarm-combination-update '
+                   '$(ceilometer alarm-list | '
+                   'awk \'/alarm_comb_test_plan/{print $2}\') '
+                   '--severity moderate')
+            self.check_command(remote, cmd)
+
+            cmd = ('ceilometer alarm-state-get $(ceilometer alarm-list |'
+                   ' awk \'/alarm_test_plan_2/{print $2}\')')
+            self.check_command(remote, cmd)
+
+            cmd = ('ceilometer alarm-state-set $(ceilometer alarm-list |'
+                   ' awk \'/alarm_test_plan_2/{print $2}\')'
+                   ' --state \'insufficient data\' 1>/dev/null'
+                   ' && ceilometer alarm-state-get $(ceilometer alarm-list '
+                   '| awk \'/alarm_test_plan_2/{print $2}\') | '
+                   'grep \'insufficient data\'')
+            self.check_command(remote, cmd)
+
+            cmd = ('ceilometer alarm-history $(ceilometer alarm-list | '
+                   'awk \'/alarm_test_plan_2/{print $2}\')')
+            self.check_command(remote, cmd)
+
+            cmd = (r'ceilometer query-alarm-history -f 'r'"{\"and\":[{\"=\": '
+                   r'{\"type\": \"state transition\"}},'r'{\"<\":'
+                   r'{\"timestamp\":'r'\"$(date +%Y-%m-%dT%H:%M:%S)\"}}]}"')
+            self.check_command(remote, cmd)
+
+            cmd = ('ceilometer query-alarms -f \'{\"or\":[{\"=\":'
+                   '{\"state\": \"alarm\"}},{\"=\":{\"state\":\"ok\"}}]}\'')
+            self.check_command(remote, cmd)
+
+            cmd = ('ceilometer alarm-delete $(ceilometer alarm-list | '
+                   'awk \'/alarm_test_plan_2/{print $2}\') 1>/dev/null '
+                   '&& ceilometer alarm-delete $(ceilometer alarm-list | '
+                   'awk \'/alarm_test_plan/{print $2}\') && '
+                   'ceilometer alarm-delete $(ceilometer alarm-list | '
+                   'awk \'/alarm_comb_test_plan/{print $2}\')')
+            self.check_command(remote, cmd)
+
+        self.env.make_snapshot("ceilometer_test_cli")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ceilometer_ha_with_external_mongo"])
