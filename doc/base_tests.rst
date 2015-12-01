@@ -192,6 +192,11 @@ Test Services
 .. automodule:: fuelweb_test.tests.test_services
    :members:
 
+Test CentOS bootstrap
+---------------------
+.. automodule:: fuelweb_test.tests.test_centos_bootstrap
+   :members:
+
 Test Ubuntu bootstrap
 ---------------------
 .. automodule:: fuelweb_test.tests.test_ubuntu_bootstrap
