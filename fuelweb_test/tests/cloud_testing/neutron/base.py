@@ -93,8 +93,12 @@ class TestNeutronBase(test_neutron_base.TestNeutronFailoverBase):
              router['id'])[0], timeout=60 * 3,
              timeout_msg=err_msg.format(node_with_l3))
 
-    def test_ban_one_l3_agent(self):
-        """Check L3 agent migration after ban"""
+    def test_ban_l3_agent(self, ban_count=1):
+        """Check L3 agent migration after ban
+
+        :param ban_count: count of ban l3 agent
+        """
+
         # init variables
         exist_networks = self.os_conn.list_networks()['networks']
         ext_network = [x for x in exist_networks
@@ -138,7 +142,9 @@ class TestNeutronBase(test_neutron_base.TestNeutronFailoverBase):
             servers=self.os_conn.get_servers(),
             keypair=instance_keypair
         )
-        self.ban_l3_agent(router_name="router01", _ip=_ip)
+
+        for _ in range(ban_count):
+            self.ban_l3_agent(router_name="router01", _ip=_ip)
 
         # check ping
         self.check_ping_between_nodes(
