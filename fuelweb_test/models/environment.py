@@ -30,6 +30,7 @@ from fuelweb_test.helpers.decorators import update_rpm_packages
 from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers.eb_tables import Ebtables
 from fuelweb_test.helpers.fuel_actions import AdminActions
+from fuelweb_test.helpers.fuel_actions import BaseActions
 from fuelweb_test.helpers.fuel_actions import CobblerActions
 from fuelweb_test.helpers.fuel_actions import DockerActions
 from fuelweb_test.helpers.fuel_actions import NailgunActions
@@ -84,6 +85,10 @@ class EnvironmentModel(object):
     @property
     def admin_actions(self):
         return AdminActions(self.d_env.get_admin_remote())
+
+    @property
+    def base_actions(self):
+        return BaseActions(self.d_env.get_admin_remote())
 
     @property
     def nailgun_actions(self):
