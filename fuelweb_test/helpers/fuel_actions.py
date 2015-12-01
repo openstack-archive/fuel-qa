@@ -660,3 +660,55 @@ class NessusActions(object):
         DiskDevice.node_attach_volume(node=node, volume=volume)
         node.define()
         node.start()
+
+
+class FuelBootstrapActions(BaseActions):
+    def parse_uuid(self, message):
+        uuid_regex = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-"
+                                r"[0-9a-f]{4}-[0-9a-f]{12}")
+        uuids = uuid_regex.findall(message)
+
+        if not uuids:
+            raise Exception("Could not find uuid in fuel-bootstrap "
+                            "output: {0}".format(message))
+        return uuids
+
+    def build_bootstrap_image(self, **kwargs):
+        simple_fields = ("ubuntu-release", "ubuntu-repo", "mos-repo",
+                         "http-proxy", "https-proxy", "direct-repo-addr",
+                         "script", "include-kernel-module",
+                         "blacklist-kernel-module", "package-list-file",
+                         "label", "inject-files-from", "extend-kopts",
+                         "kernel-flavor", "output-dir")
+        list_fields = ("repo", "package", "ssh-keys")
+        command = "fuel-bootstrap build "
+
+        for field in simple_fields:
+            if kwargs.get(field) is not None:
+                command += "--{0} {1} ".format(field, kwargs.get(field))
+
+        for field in list_fields:
+            if kwargs.get(field) is not None:
+                for value in kwargs.get(field):
+                    command += "--{0} {1} ".format(field, value)
+
+        result = ''.join(self.admin_remote.execute(command)['stdout'])
+        return result
+
+    def import_bootstrap_image(self, filename):
+        command = "fuel-bootstrap import {0}".format(filename)
+        result = ''.join(self.admin_remote.execute(command)['stdout'])
+        return self.parse_uuid(result)[0]
+
+    def list_bootstrap_images(self):
+        command = "fuel-bootstrap list"
+        result = ''.join(self.admin_remote.execute(command)['stdout'])
+        return result
+
+    def list_bootstrap_images_uuids(self):
+        return self.parse_uuid(self.list_bootstrap_images())
+
+    def delete_bootstrap_image(self, uuid):
+        command = "fuel-bootstrap delete {0}".format(uuid)
+        result = ''.join(self.admin_remote.execute(command)['stdout'])
+        return self.parse_uuid(result)[0]
