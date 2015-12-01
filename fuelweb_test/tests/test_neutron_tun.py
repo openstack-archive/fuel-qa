@@ -405,9 +405,9 @@ class TestHaNeutronScalability(TestBasic):
 
         logger.info("STEP13-14: Scale down happened. "
                     "3 controller should be now")
-
+        logger.info('devops node name is {}'.format(devops_nodes[0].name))
         primary_node_s14 = self.fuel_web.get_nailgun_primary_node(
-            self.env.d_env.get_node(devops_nodes[0].name))
+            self.env.d_env.get_node(name=devops_nodes[0].name))
 
         logger.info("Primary controller after STEP15 is {0}".format(
             primary_node_s14.name))
