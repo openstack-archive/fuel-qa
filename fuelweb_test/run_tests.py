@@ -136,6 +136,7 @@ def import_tests():
     from system_test.tests.strength import destroy_controllers  # noqa
     from system_test.tests.strength import filling_root  # noqa
     from system_test.tests import test_fuel_migration  # noqa
+    from tests.gate_tests import test_review_in_fuel_agent  # noqa
 
 
 def run_tests():
