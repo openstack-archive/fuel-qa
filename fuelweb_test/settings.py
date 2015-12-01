@@ -538,3 +538,25 @@ REPEAT_COUNT = os.environ.get("REPEAT_COUNT", 2)
 
 # TODO: remove this after LP#1528491 is fixed
 TESTRAIL_REPORTING = get_var_as_bool('TESTRAIL_REPORTING', False)
+
+# RHEL-related variables
+# Need to update these variables, when image with RHEL for
+# MOS will be available.
+RHEL_IMAGE = os.environ.get("RHEL_IMAGE")
+RHEL_IMAGE_PATH = os.environ.get("RHEL_IMAGE_PATH")
+RHEL_IMAGE_MD5 = os.environ.get("RHEL_IMAGE_MD5")
+COMPUTE_BOOT_STRATEGY = os.environ.get("COMPUTE_BOOT_STRATEGY", "system")
+RHEL_IMAGE_USER = os.environ.get("RHEL_IMAGE_USER", "root")
+RHEL_IMAGE_PASSWORD = os.environ.get("RHEL_IMAGE_PASSWORD", "r00tme")
+RHEL_LICENSE_USERNAME = os.environ.get("RHEL_LICENSE_USERNAME")
+RHEL_LICENSE_PASSWORD = os.environ.get("RHEL_LICENSE_PASSWORD")
+RHEL_SERVER_URL = os.environ.get("RHEL_SERVER_URL",
+                                 "subscription.rhn.redhat.com")
+RHEL_REGISTERED_ORG_NAME = os.environ.get("RHEL_REGISTERED_ORG_NAME")
+RHEL_ACTIVATION_KEY = os.environ.get("RHEL_ACTIVATION_KEY", None)
+RHEL_RELEASE = os.environ.get("RHEL_RELEASE", "7.0")
+RHEL_MAJOR_RELEASE = os.environ.get("RHEL_MAJOR_RELEASE", "7")
+CENTOS_DUMMY_DEPLOY = get_var_as_bool("CENTOS_DUMMY_DEPLOY", False)
+PERESTROIKA_REPO = os.environ.get(
+    "PERESTROIKA_REPO", "http://perestroika-repo-tst.infra.mirantis.net/"
+                        "mos-repos/centos/mos8.0-centos7-fuel/os/x86_64/")
