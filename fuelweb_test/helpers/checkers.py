@@ -20,6 +20,7 @@ import traceback
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
+import yaml
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
@@ -815,6 +816,32 @@ def external_dns_check(remote_slave):
                  "Can't resolve hostname")
 
 
+def verify_bootstrap_on_node(remote, os_type, uuid=None):
+    os_type = os_type.lower()
+    if os_type not in ['ubuntu', 'centos']:
+        raise Exception("Only Ubuntu and CentOS are supported, "
+                        "you have chosen {0}".format(os_type))
+
+    logger.info("Verify bootstrap on slave {0}".format(remote.host))
+
+    cmd = 'cat /etc/*release'
+    output = run_on_remote_get_results(remote, cmd)['stdout_str'].lower()
+    assert_true(os_type in output,
+                "Slave {0} doesn't use {1} image for bootstrap "
+                "after {1} images were enabled, /etc/release "
+                "content: {2}".format(remote.host, os_type, output))
+
+    if os_type == 'centos' or uuid is None:
+        return
+
+    cmd = "cat /etc/nailgun-agent/config.yaml"
+    output = yaml.load(run_on_remote_get_results(remote, cmd)['stdout_str'])
+    actual_uuid = output.get("runtime_uuid")
+    assert_equal(actual_uuid, uuid,
+                 "Actual uuid {0} is not the same as expected {1}"
+                 .format(actual_uuid, uuid))
+
+
 @logwrap
 def external_ntp_check(remote_slave, vrouter_vip):
     logger.info("External ntp check")
@@ -940,6 +967,17 @@ def check_oswl_stat(postgres_actions, remote_collector, master_uid,
 
 @logwrap
 def get_file_size(remote, file_name, file_path):
+    file_size = remote.execute(
+        'stat -c "%s" {0}/{1}'.format(file_path, file_name))
+    assert_equal(
+        int(file_size['exit_code']), 0, "Failed to get '{0}/{1}' file stats on"
+                                        " remote node".format(file_path,
+                                                              file_name))
+    return int(file_size['stdout'][0].rstrip())
+
+
+@logwrap
+def put_file(remote, file_obj, file_path):
     file_size = remote.execute(
         'stat -c "%s" {0}/{1}'.format(file_path, file_name))
     assert_equal(
