@@ -172,6 +172,11 @@ Test Ironic
 .. automodule:: fuelweb_test.tests.test_ironic_base
   :members:
 
+Test RHEL-based computes
+------------------------
+.. automodule:: fuelweb_test.tests.test_rhel_compute
+  :members:
+
 Gating tests
 ============
 
