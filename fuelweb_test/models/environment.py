@@ -36,6 +36,7 @@ from fuelweb_test.helpers.fuel_actions import DockerActions
 from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.fuel_actions import PostgresActions
 from fuelweb_test.helpers.fuel_actions import NessusActions
+from fuelweb_test.helpers.fuel_actions import FuelBootstrapCliActions
 from fuelweb_test.helpers.ntp import GroupNtpSync
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers.utils import TimeStat
@@ -106,6 +107,10 @@ class EnvironmentModel(object):
     @property
     def docker_actions(self):
         return DockerActions(self.d_env.get_admin_remote())
+
+    @property
+    def fuel_bootstrap_actions(self):
+        return FuelBootstrapCliActions(self.d_env.get_admin_remote())
 
     @property
     def admin_node_ip(self):
