@@ -59,7 +59,42 @@ class TestL3AgentVlan(base.TestNeutronBase):
 
         """
         self.env.revert_snapshot("deploy_ha_neutron_vlan")
-        self.check_ban_one_l3_agent()
+        self.check_ban_l3_agent(ban_count=1)
+
+    @test(
+        depends_on=[
+            test_neutron.TestNeutronFailoverVlan.deploy_ha_neutron_vlan],
+        groups=["test_ban_some_l3_agent_vlan", "test_ban_some_l3_agent"])
+    @log_snapshot_after_test
+    def test_ban_some_l3_agent_vlan(self):
+        """Check l3-agent rescheduling after l3-agent dies on vlan
+
+        Scenario:
+            1. Revert snapshot with neutron cluster
+            2. Create network1, network2
+            3. Create router1 and connect it with network1, network2 and
+               external net
+            4. Boot vm1 in network1 and associate floating ip
+            5. Boot vm2 in network2
+            6. Add rules for ping
+            7. ping 8.8.8.8, vm1 (both ip) and vm2 (fixed ip) from each other
+            8. get node with l3 agent on what is router1
+            9. ban this l3 agent on the node with pcs
+                (e.g. pcs resource ban p_neutron-l3-agent
+                node-3.test.domain.local)
+            10. wait some time (about 20-30) while pcs resource and
+                neutron agent-list will show that it is dead
+            11. Check that router1 was rescheduled
+            12. repeat steps 8-11
+            13. Boot vm3 in network1
+            14. ping 8.8.8.8, vm1 (both ip), vm2 (fixed ip) and vm3 (fixed ip)
+                from each other
+
+        Duration 30m
+
+        """
+        self.env.revert_snapshot("deploy_ha_neutron_vlan")
+        self.check_ban_l3_agent(ban_count=2)
 
 
 @test(groups=['networking', 'networking_gre'])
@@ -70,10 +105,10 @@ class TestL3AgentGRE(base.TestNeutronBase):
 
     @test(
         depends_on=[
-            test_neutron.TestNeutronFailoverVxlan.deploy_ha_neutron_vxlan],
-        groups=['test_ban_one_l3_agent_vxlan', 'test_ban_one_l3_agent'])
+            test_neutron.TestNeutronFailoverGRE.deploy_ha_neutron_gre],
+        groups=['test_ban_one_l3_agent_gre', 'test_ban_one_l3_agent'])
     @log_snapshot_after_test
-    def test_ban_one_l3_agent_vxlan(self):
+    def test_ban_one_l3_agent_gre(self):
         """Check l3-agent rescheduling after l3-agent dies on gre
 
         Scenario:
@@ -100,7 +135,42 @@ class TestL3AgentGRE(base.TestNeutronBase):
 
         """
         self.env.revert_snapshot("deploy_ha_neutron_gre")
-        self.check_ban_one_l3_agent()
+        self.check_ban_l3_agent(ban_count=1)
+
+    @test(
+        depends_on=[
+            test_neutron.TestNeutronFailoverGRE.deploy_ha_neutron_gre],
+        groups=["test_ban_some_l3_agent_gre", "test_ban_some_l3_agent"])
+    @log_snapshot_after_test
+    def test_ban_some_l3_agent_gre(self):
+        """Check l3-agent rescheduling after l3-agent dies on gre
+
+        Scenario:
+            1. Revert snapshot with neutron cluster
+            2. Create network1, network2
+            3. Create router1 and connect it with network1, network2 and
+               external net
+            4. Boot vm1 in network1 and associate floating ip
+            5. Boot vm2 in network2
+            6. Add rules for ping
+            7. ping 8.8.8.8, vm1 (both ip) and vm2 (fixed ip) from each other
+            8. get node with l3 agent on what is router1
+            9. ban this l3 agent on the node with pcs
+                (e.g. pcs resource ban p_neutron-l3-agent
+                node-3.test.domain.local)
+            10. wait some time (about 20-30) while pcs resource and
+                neutron agent-list will show that it is dead
+            11. Check that router1 was rescheduled
+            12. repeat steps 8-11
+            13. Boot vm3 in network1
+            14. ping 8.8.8.8, vm1 (both ip), vm2 (fixed ip) and vm3 (fixed ip)
+                from each other
+
+        Duration 30m
+
+        """
+        self.env.revert_snapshot("deploy_ha_neutron_gre")
+        self.check_ban_l3_agent(ban_count=2)
 
 
 @test(groups=['networking', 'networking_vxlan'])
@@ -141,4 +211,39 @@ class TestL3AgentVxlan(base.TestNeutronBase):
 
         """
         self.env.revert_snapshot("deploy_ha_neutron_tun")
-        self.check_ban_one_l3_agent()
+        self.check_ban_l3_agent(ban_count=1)
+
+    @test(
+        depends_on=[
+            test_neutron.TestNeutronFailoverVxlan.deploy_ha_neutron_vxlan],
+        groups=["test_ban_some_l3_agent_vxlan", "test_ban_some_l3_agent"])
+    @log_snapshot_after_test
+    def test_ban_some_l3_agent_vxlan(self):
+        """Check l3-agent rescheduling after l3-agent dies on vxlan
+
+        Scenario:
+            1. Revert snapshot with neutron cluster
+            2. Create network1, network2
+            3. Create router1 and connect it with network1, network2 and
+               external net
+            4. Boot vm1 in network1 and associate floating ip
+            5. Boot vm2 in network2
+            6. Add rules for ping
+            7. ping 8.8.8.8, vm1 (both ip) and vm2 (fixed ip) from each other
+            8. get node with l3 agent on what is router1
+            9. ban this l3 agent on the node with pcs
+                (e.g. pcs resource ban p_neutron-l3-agent
+                node-3.test.domain.local)
+            10. wait some time (about 20-30) while pcs resource and
+                neutron agent-list will show that it is dead
+            11. Check that router1 was rescheduled
+            12. repeat steps 8-11
+            13. Boot vm3 in network1
+            14. ping 8.8.8.8, vm1 (both ip), vm2 (fixed ip) and vm3 (fixed ip)
+                from each other
+
+        Duration 30m
+
+        """
+        self.env.revert_snapshot("deploy_ha_neutron_tun")
+        self.check_ban_l3_agent(ban_count=2)
