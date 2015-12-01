@@ -36,6 +36,7 @@ from fuelweb_test.helpers.fuel_actions import DockerActions
 from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.fuel_actions import PostgresActions
 from fuelweb_test.helpers.fuel_actions import NessusActions
+from fuelweb_test.helpers.fuel_actions import FuelBootstrapCliActions
 from fuelweb_test.helpers.ntp import GroupNtpSync
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import run_on_remote
@@ -79,6 +80,7 @@ class EnvironmentModel(object):
         self.docker_actions = DockerActions()
         self.nailgun_actions = NailgunActions()
         self.postgres_actions = PostgresActions()
+        self.fuel_bootstrap_actions = FuelBootstrapCliActions()
 
     @property
     def fuel_web(self):
