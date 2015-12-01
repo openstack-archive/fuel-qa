@@ -533,6 +533,16 @@ class OpenStackActions(common.Common):
         return self.neutron.create_subnet({'subnet': subnet})
 
     def get_nova_instance_ips(self, srv):
+        """Return all nova instance ip addresses as dict
+
+        Example return:
+        {'floating': '10.109.2.2',
+        'fixed': '192.168.1.2'}
+
+        :param srv: nova instance
+        :rtype: dict
+        :return: Dict with server ips
+        """
         return {x['OS-EXT-IPS:type']: x['addr']
                 for y in srv.addresses.values()
                 for x in y}

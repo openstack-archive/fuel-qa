@@ -112,8 +112,12 @@ class TestNeutronBase(test_neutron_base.TestNeutronFailoverBase):
              router['id'])[0], timeout=60 * 3,
              timeout_msg=err_msg.format(node_with_l3))
 
-    def check_ban_one_l3_agent(self):
-        """Check L3 agent migration after ban"""
+    def check_ban_l3_agent(self, ban_count=1):
+        """Check L3 agent migration after ban
+
+        :param ban_count: count of ban l3 agent
+        """
+
         # init variables
         exist_networks = self.os_conn.list_networks()['networks']
         ext_network = [x for x in exist_networks
@@ -167,7 +171,8 @@ class TestNeutronBase(test_neutron_base.TestNeutronFailoverBase):
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
 
         # ban l3 agent
-        self.ban_l3_agent(router_name="router01", _ip=_ip)
+        for _ in range(ban_count):
+            self.ban_l3_agent(router_name="router01", _ip=_ip)
 
         # create another server on net01
         net01 = self.os_conn.nova.networks.find(label="net01")
