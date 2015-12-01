@@ -956,6 +956,17 @@ def get_file_size(remote, file_name, file_path):
 
 
 @logwrap
+def put_file(remote, file_obj, file_path):
+    file_size = remote.execute(
+        'stat -c "%s" {0}/{1}'.format(file_path, file_name))
+    assert_equal(
+        int(file_size['exit_code']), 0, "Failed to get '{0}/{1}' file stats on"
+                                        " remote node".format(file_path,
+                                                              file_name))
+    return int(file_size['stdout'][0].rstrip())
+
+
+@logwrap
 def check_ping(remote, host, deadline=10, size=56, timeout=1, interval=1):
     """Check network connectivity from remote to host using ICMP (ping)
     :param remote: SSHClient
