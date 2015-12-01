@@ -102,9 +102,9 @@ class Common(object):
         LOGGER.debug('Try to create key {0}'.format(key_name))
         return self.nova.keypairs.create(key_name)
 
-    def create_instance(self, flavor_name='test_flavor', ram=64, vcpus=1,
-                        disk=1, server_name='test_instance', image_name=None,
-                        neutron_network=True, label=None):
+    def create_instance(self, flavor_id=None, flavor_name='test_flavor',
+                        ram=64, vcpus=1, disk=1, server_name='test_instance',
+                        image_name=None, neutron_network=True, label=None):
         LOGGER.debug('Try to create instance')
 
         start_time = time.time()
@@ -116,7 +116,7 @@ class Common(object):
                 else:
                     image = [i.id for i in self.nova.images.list()]
                 break
-            except:
+            except Exception:
                 pass
         else:
             raise Exception('Can not get image')
@@ -128,8 +128,11 @@ class Common(object):
             kwargs['nics'] = [{'net-id': network.id, 'v4-fixed-ip': ''}]
 
         LOGGER.info('image uuid is {0}'.format(image))
-        flavor = self.nova.flavors.create(
-            name=flavor_name, ram=ram, vcpus=vcpus, disk=disk)
+        if not flavor_id:
+            flavor = self.create_flavor(
+                name=flavor_name, ram=ram, vcpus=vcpus, disk=disk)
+        else:
+            flavor = self.nova.flavors.get(flavor_id)
         LOGGER.info('flavor is {0}'.format(flavor.name))
         server = self.nova.servers.create(
             name=server_name, image=image[0], flavor=flavor, **kwargs)
@@ -164,6 +167,9 @@ class Common(object):
 
     def delete_flavor(self, flavor):
         return self.nova.flavors.delete(flavor)
+
+    def list_flavors(self, detailed=True, is_public=True):
+        return self.nova.flavors.list(detailed, is_public)
 
     def _get_keystoneclient(self, username, password, tenant_name, auth_url,
                             retries=3, ca_cert=None):

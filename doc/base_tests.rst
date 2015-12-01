@@ -21,6 +21,11 @@ Test Admin Node Backup-Restore
 .. automodule:: fuelweb_test.tests.test_backup_restore
    :members:
 
+Test Basic Nova Verification
+----------------------------
+.. automodule:: fuelweb_test.tests.cloud_testing.nova.test_nova_basic
+   :members:
+
 Test Bonding base
 -----------------
 .. automodule:: fuelweb_test.tests.test_bonding_base
