@@ -299,7 +299,7 @@ def get_tests_results(systest_build, os):
                         "actual": step['errorStackTrace'] or
                         step['errorDetails'],
                         "status": step['status'].lower()})
-                    test_comments = "{err}\n\n\n{details}".format(
+                    test_comments = "{err}\n\n\n{stack}".format(
                         err=step['errorDetails'],
                         stack=step['errorStackTrace'])
                 else:
