@@ -1147,6 +1147,12 @@ class FuelWebClient(object):
         return nailgun_nodes
 
     @logwrap
+    def delete_node(self, node_id, interval=30, timeout=600):
+        task = self.client.delete_node(node_id)
+        logger.debug("task info is {}".format(task))
+        self.assert_task_success(task, interval=interval, timeout=timeout)
+
+    @logwrap
     def update_node_networks(self, node_id, interfaces_dict,
                              raw_data=None,
                              override_ifaces_params=None):
