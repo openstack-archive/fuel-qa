@@ -728,3 +728,102 @@ class NessusActions(object):
         DiskDevice.node_attach_volume(node=node, volume=volume)
         node.define()
         node.start()
+
+
+class FuelBootstrapCliActions(AdminActions):
+    def get_bootstrap_default_config(self):
+        fuel_settings = self.get_fuel_settings()
+        return fuel_settings["BOOTSTRAP"]
+
+    def parse_uuid(self, message):
+        uuid_regex = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-"
+                                r"[0-9a-f]{4}-[0-9a-f]{12}")
+        uuids = uuid_regex.findall(message)
+
+        if not uuids:
+            raise Exception("Could not find uuid in fuel-bootstrap "
+                            "output: {0}".format(message))
+        return uuids
+
+    def activate_bootstrap_image(self, uuid):
+        command = ("fuel-bootstrap activate {0}".format(uuid))
+        result = ''.join(self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd=command))
+        return self.parse_uuid(result)[0]
+
+    def build_bootstrap_image(self, **kwargs):
+        simple_fields = \
+            ("ubuntu-release", "ubuntu-repo", "mos-repo", "http-proxy",
+             "https-proxy", "script", "label", "extend-kopts",
+             "kernel-flavor", "root-ssh-authorized-file", "output-dir",
+             "image-build-dir")
+        list_fields = ("repo", "direct-repo-addr", "package", "extra-dir")
+        flag_fields = ("activate", )
+        command = "fuel-bootstrap build "
+
+        for field in simple_fields:
+            if kwargs.get(field) is not None:
+                command += "--{0} {1} ".format(field, kwargs.get(field))
+
+        for field in list_fields:
+            if kwargs.get(field) is not None:
+                for value in kwargs.get(field):
+                    command += "--{0} {1} ".format(field, value)
+
+        for field in flag_fields:
+            if kwargs.get(field) is not None:
+                command += "--{0} ".format(field)
+
+        logger.info("Building bootstrap image: {0}".format(command))
+        result = ''.join(self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd=command))
+        logger.info("Bootstrap image has been built: {0}".format(result))
+        uuid = self.parse_uuid(result)[0]
+        path = os.path.join(kwargs.get("output-dir", "/tmp"),
+                            "{0}.tar.gz".format(uuid))
+        return uuid, path
+
+    def import_bootstrap_image(self, filename,
+                               activate=False):
+        command = ("fuel-bootstrap import {0} {1} {2}"
+                   .format(filename,
+                           "--activate" if activate else ""))
+
+        result = ''.join(self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd=command))
+        return self.parse_uuid(result)[0]
+
+    def list_bootstrap_images(self):
+        command = "fuel-bootstrap list"
+        result = ''.join(self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd=command))
+        return result
+
+    def list_bootstrap_images_uuids(self):
+        return self.parse_uuid(self.list_bootstrap_images())
+
+    def get_active_bootstrap_uuid(self):
+        command = "fuel-bootstrap list"
+        bootstrap_images = \
+            self.ssh_manager.execute_on_remote(
+                ip=self.admin_ip,
+                cmd=command)
+
+        for line in bootstrap_images:
+            if "active" in line:
+                return self.parse_uuid(line)[0]
+
+        logger.warning("No active bootstrap. Possibly centos is active or "
+                       "something went wrong. fuel-bootstap list:\n{0}"
+                       .format("".join(bootstrap_images)))
+
+    def delete_bootstrap_image(self, uuid):
+        command = "fuel-bootstrap delete {0}".format(uuid)
+        result = ''.join(self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd=command))
+        return self.parse_uuid(result)[0]
