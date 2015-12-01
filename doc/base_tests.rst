@@ -190,6 +190,10 @@ Test Ironic
 Test Services reconfiguration
 -----------------------------
 .. automodule:: fuelweb_test.tests.test_services_reconfiguration
+
+Test RHEL-based computes
+------------------------
+.. automodule:: fuelweb_test.tests.test_rhel_compute
   :members:
 
 Gating tests
