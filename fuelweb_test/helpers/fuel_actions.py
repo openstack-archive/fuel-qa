@@ -660,3 +660,80 @@ class NessusActions(object):
         DiskDevice.node_attach_volume(node=node, volume=volume)
         node.define()
         node.start()
+
+
+class FuelBootstrapCliActions(AdminActions):
+    def get_bootstrap_default_config(self):
+        fuel_settings = self.get_fuel_settings()
+        return fuel_settings["BOOTSTRAP"]
+
+    def parse_uuid(self, message):
+        uuid_regex = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-"
+                                r"[0-9a-f]{4}-[0-9a-f]{12}")
+        uuids = uuid_regex.findall(message)
+
+        if not uuids:
+            raise Exception("Could not find uuid in fuel-bootstrap "
+                            "output: {0}".format(message))
+        return uuids
+
+    def activate_bootstrap_image(self, uuid, notify_webui=False):
+        command = ("fuel-bootstrap activate {0} {1}"
+                   .format(uuid, "--notify-webui" if notify_webui else ""))
+        result = ''.join(
+            self.admin_remote.check_call(command, verbose=True)['stdout'])
+        return self.parse_uuid(result)[0]
+
+    def build_bootstrap_image(self, **kwargs):
+        simple_fields = \
+            ("ubuntu-release", "ubuntu-repo", "mos-repo", "http-proxy",
+             "https-proxy", "script", "include-kernel-module",
+             "blacklist-kernel-module", "label", "extend-kopts",
+             "kernel-flavor", "root-ssh-authorized-file", "output-dir",
+             "image-build-dir")
+        list_fields = ("repo", "direct-repo-addr", "package", "extra-dir")
+        flag_fields = ("activate", "notify-webui")
+        command = "fuel-bootstrap build "
+
+        for field in simple_fields:
+            if kwargs.get(field) is not None:
+                command += "--{0} {1} ".format(field, kwargs.get(field))
+
+        for field in list_fields:
+            if kwargs.get(field) is not None:
+                for value in kwargs.get(field):
+                    command += "--{0} {1} ".format(field, value)
+
+        result = ''.join(
+            self.admin_remote.check_call(command, verbose=True)['stdout'])
+        uuid = self.parse_uuid(result)[0]
+        path = os.path.join(kwargs.get("output-dir", "/tmp"),
+                            "{0}.tar.gz".format(uuid))
+        return uuid, path
+
+    def import_bootstrap_image(self, filename,
+                               activate=False,
+                               notify_webui=False):
+        command = ("fuel-bootstrap import {0} {1} {2}"
+                   .format(filename,
+                           "--activate" if activate else "",
+                           "--notify-webui" if notify_webui else ""))
+
+        result = ''.join(
+            self.admin_remote.check_call(command, verbose=True)['stdout'])
+        return self.parse_uuid(result)[0]
+
+    def list_bootstrap_images(self):
+        command = "fuel-bootstrap list"
+        result = ''.join(
+            self.admin_remote.check_call(command, verbose=True)['stdout'])
+        return result
+
+    def list_bootstrap_images_uuids(self):
+        return self.parse_uuid(self.list_bootstrap_images())
+
+    def delete_bootstrap_image(self, uuid):
+        command = "fuel-bootstrap delete {0}".format(uuid)
+        result = ''.join(
+            self.admin_remote.check_call(command, verbose=True)['stdout'])
+        return self.parse_uuid(result)[0]
