@@ -172,6 +172,13 @@ Test Ironic
 .. automodule:: fuelweb_test.tests.test_ironic_base
   :members:
 
+Gating tests
+============
+
+Test Fuel agent
+---------------
+.. automodule:: fuelweb_test.tests.gate_tests.test_review_in_fuel_agent
+  :members:
 
 Fuel mirror verification
 ========================
