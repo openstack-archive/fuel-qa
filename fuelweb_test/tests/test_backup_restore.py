@@ -236,7 +236,7 @@ class BackupRestoreHA(NeutronTunHaBase):
                 self.fuel_web.restore_master(remote)
             checkers.restore_check_sum(remote)
 
-            self.fuel_web.restore_check_nailgun_api(remote)
+            self.fuel_web.restore_check_nailgun_api()
             checkers.iptables_check(remote)
 
         assert_equal(
