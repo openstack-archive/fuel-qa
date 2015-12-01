@@ -94,10 +94,10 @@ class CephRestart(TestBasic):
             2. Waiting up galera and cinder
             3. Check ceph status
             4. Run OSTF
-            5. Destroy osd-node
+            5. Destroy and remove osd-node
             6. Check ceph status
             7. Run OSTF
-            8. Destroy one compute node
+            8. Destroy and remove one compute node
             9. Check ceph status
             10. Run OSTF
             11. Cold restart
@@ -124,31 +124,36 @@ class CephRestart(TestBasic):
         # Run ostf
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        # Destroy osd-node
-        logger.info("Destroy slave-06")
+        # Destroy and remove osd-node
+        logger.info("Destroy and remove slave-06")
+        with self.fuel_web.get_ssh_for_node('slave-06') as remote_ceph:
+            self.fuel_web.prepare_ceph_to_delete(remote_ceph)
         slave_06 = self.env.d_env.get_node(name='slave-06')
         slave_06.destroy()
 
         wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
             slave_06)['online'], timeout=30 * 8)
-        offline_nodes = [self.fuel_web.get_nailgun_node_by_devops_node(
-            slave_06)['id']]
-        self.fuel_web.run_ceph_task(cluster_id, offline_nodes)
-        self.fuel_web.check_ceph_status(cluster_id, offline_nodes)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
-
-        # Destroy compute node
-        logger.info("Destroy slave-05")
+        self.fuel_web.update_nodes(
+            cluster_id, {'slave-06': ['ceph-osd']}, False, True)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.check_ceph_status(cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['sanity', 'smoke', 'ha'],
+                               should_fail=1)
+        # Destroy and remove compute node
+        logger.info("Destroy and remove slave-05")
+        with self.fuel_web.get_ssh_for_node('slave-05') as remote_ceph:
+            self.fuel_web.prepare_ceph_to_delete(remote_ceph)
         slave_05 = self.env.d_env.get_node(name='slave-05')
         slave_05.destroy()
 
         wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
             slave_05)['online'], timeout=30 * 8)
 
-        offline_nodes.append(self.fuel_web.get_nailgun_node_by_devops_node(
-            slave_05)['id'])
-        self.fuel_web.run_ceph_task(cluster_id, offline_nodes)
-        self.fuel_web.check_ceph_status(cluster_id, offline_nodes)
+        self.fuel_web.update_nodes(
+            cluster_id, {'slave-05': ['compute', 'ceph-osd']}, False, True)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.check_ceph_status(cluster_id)
 
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
 
@@ -168,8 +173,8 @@ class CephRestart(TestBasic):
         # expect fail a test - 'Check openstack services are running'
         self.fuel_web.assert_os_services_ready(cluster_id, should_fail=1)
 
-        self.fuel_web.run_ceph_task(cluster_id, offline_nodes)
-        self.fuel_web.check_ceph_status(cluster_id, offline_nodes)
+        self.fuel_web.run_ceph_task(cluster_id)
+        self.fuel_web.check_ceph_status(cluster_id)
 
         # Wait until MySQL Galera is UP on some controller
         self.fuel_web.wait_mysql_galera_is_up(['slave-01'])
