@@ -137,6 +137,7 @@ def import_tests():
     from tests import test_custom_hostname  # noqa
     from tests import test_jumbo_frames  # noqa
     from tests import test_node_reinstallation  # noqa
+    from tests import test_centos_bootstrap  # noqa
     from tests import test_ubuntu_bootstrap  # noqa
     from tests import test_net_templates  # noqa
     from tests.tests_mirrors import test_create_mirror  # noqa
