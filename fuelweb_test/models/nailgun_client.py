@@ -413,6 +413,11 @@ class NailgunClient(object):
 
     @logwrap
     @json_parse
+    def delete_nodegroup(self, group_id):
+        return self.client.delete("/api/nodegroups/{0}/".format(group_id))
+
+    @logwrap
+    @json_parse
     def update_settings(self, data=None):
         return self.client.put("/api/settings", data=data)
 
