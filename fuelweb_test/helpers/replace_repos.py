@@ -18,26 +18,6 @@ from fuelweb_test import logger
 import fuelweb_test.settings as help_data
 
 
-def replace_ubuntu_repo_url(repo_url, upstream_host):
-    repos_attr = {
-        "value": [
-            {
-                "name": "ubuntu-bootstrap",
-                "uri": repo_url,
-                "type": "deb",
-                "section": None,
-                "suite": None
-            }
-        ]
-    }
-    repos = replace_ubuntu_repos(repos_attr, upstream_host)
-    new_repo_url = repos[0]['uri']
-    if new_repo_url != repo_url:
-        logger.debug("Ubuntu repository url changed from '{0}' to '{1}'"
-                     .format(repo_url, new_repo_url))
-    return new_repo_url
-
-
 def replace_ubuntu_repos(repos_attr, upstream_host):
     # Walk thru repos_attr and replace/add extra Ubuntu mirrors
     if help_data.MIRROR_UBUNTU:
