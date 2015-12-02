@@ -27,15 +27,15 @@ def define_custom_groups():
         {"groups": ["system_test.ceph_ha"],
          "depends": [
              "system_test.deploy_and_check_radosgw."
-             "3ctrl_3comp_ceph_neutronVLAN"]},
+             "ceph_all_on_neutron_vlan"]},
         {"groups": ["filling_root"],
          "depends": [
              "system_test.failover.filling_root."
-             "3ctrl_2comp_1cndr_neutronVLAN"]},
+             "ceph_all_on_neutron_vlan"]},
         {"groups": ["system_test.strength"],
          "depends": [
              "system_test.failover.destroy_controllers."
-             "first.3ctrl_2comp_1cndr_neutronVLAN",
+             "first.ceph_all_on_neutron_vlan",
              "system_test.failover.destroy_controllers."
              "second.1ctrl_ceph_2ctrl_1comp_1comp_ceph_neutronVLAN"]},
         {"groups": ["fuel_master_migrate"],
