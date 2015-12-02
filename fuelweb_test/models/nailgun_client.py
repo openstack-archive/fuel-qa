@@ -595,7 +595,7 @@ class NailgunClient(object):
         :param node_id: An integer number of node id.
         :return: a decoded JSON response.
         """
-        url = '/api/openstack-config/?cluster_id={0}/'.format(cluster_id)
+        url = '/api/openstack-config/?cluster_id={0}'.format(cluster_id)
         if role is not None:
             url += '&node_role={0}'.format(role)
         if node_id is not None:
