@@ -309,6 +309,7 @@ class CephHA(TestBasic):
         self.fuel_web.check_ceph_status(cluster_id)
 
         versions = []
+        ceph_version = '0.94.5'
         for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
             role = '_'.join(node['roles'])
             logger.debug('{} has role {}'.format(node['fqdn'], role))
@@ -319,15 +320,14 @@ class CephHA(TestBasic):
             versions.append({'name': node['fqdn'], 'ceph_version': version})
 
         def check_ver(v):
-            # Check version. True if version bigger or equal 0.81
-            # FIXME: should bigger then 0.93 after upgrade to hammer
+            # Check version. True if version bigger or equal @ceph_version
             return not (parse_version(v['ceph_version']) <
-                        parse_version('0.81'))
+                        parse_version(ceph_version))
 
         bad_nodes = filter(check_ver, versions)
         assert_true(len(bad_nodes) == 0,
                     message="Nodes should have Ceph version less "
-                            "then 0.81 {}".format(bad_nodes))
+                            "then {0} {1}".format(ceph_version, bad_nodes))
         # Run ostf
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
