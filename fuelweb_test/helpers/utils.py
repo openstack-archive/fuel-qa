@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import ConfigParser
+import cStringIO
 import inspect
 import json
 import time
@@ -628,3 +630,69 @@ def pretty_log(src, indent=0, invert=False):
                                           value=str(el))
             result += res[:indent + 2] + '-' + res[indent + 3:]
     return result
+
+
+@logwrap
+def get_config_template(template_name):
+    """Get content of yaml file as dictionary.
+
+    :param template_name: a string of name yaml file
+    :return: a dictionary with configuration data
+    """
+    templates_path = ('{0}/fuelweb_test/config_templates/'.format(
+        os.environ.get("WORKSPACE", "./")))
+    template = os.path.join(templates_path, '{}.yaml'.format(template_name))
+    if os.path.exists(template):
+        with open(template) as template_file:
+            return yaml.load(template_file)
+
+
+@logwrap
+def get_ini_config(data):
+    """Get a data of configuration file.
+
+    :param data: a string of file content
+    :return: a file object
+    """
+    configfile = cStringIO.StringIO(data)
+    config = ConfigParser.ConfigParser()
+    config.readfp(configfile)
+    return config
+
+
+@logwrap
+def check_config(conf, section, option, value):
+    """Check param and their value in configuration file.
+
+    :param conf: a file object
+    :param section: a string of section name in configuration file
+    :param option: a string of option name in configuration file
+    :param value: a string of value in configuration file
+    """
+    if value is None:
+        try:
+            conf.get(section, option)
+        except ConfigParser.NoOptionError:
+            pass
+    else:
+        asserts.assert_equal(conf.get(section, option), value)
+
+
+@logwrap
+def get_process_uptime(remote, process_name):
+    """Get process uptime.
+
+    :param remote: SSHClient to node
+    :param process_name: a string of process name
+    :return: a int value of process uptime in seconds
+    """
+    cmd = ("ps -eo comm,etime | grep {0}"
+           " | awk '{print $3}'".format(process_name))
+    ps_output = remote.execute(cmd)['stdout'][0]
+    ps_output = ps_output.split(':')
+    uptime = 0
+    time_factor = 1
+    for i in xrange(1, len(ps_output) + 1):
+        uptime += int(ps_output[-i])*time_factor
+        time_factor *= 60
+    return uptime
