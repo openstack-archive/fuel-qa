@@ -364,7 +364,8 @@ class TestMultipleClusterNets(TestBasic):
         self.show_step(11)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_controllers_from_custom_nodegroup")
+        self.env.make_snapshot("deploy_controllers_from_custom_nodegroup",
+                               is_make=True)
 
     @test(depends_on=[deploy_controllers_from_custom_nodegroup],
           groups=["delete_cluster_with_custom_nodegroup", "thread_7",
@@ -428,3 +429,95 @@ class TestMultipleClusterNets(TestBasic):
             logger.info('Nodes are offline')
 
         self.env.make_snapshot("delete_cluster_with_custom_nodegroup")
+
+    @test(depends_on=[deploy_controllers_from_custom_nodegroup],
+          groups=["delete_custom_nodegroup", "thread_7",
+                  "multiple_cluster_networks"])
+    @log_snapshot_after_test
+    def delete_custom_nodegroup(self):
+        """Delete nodegroup, check its nodes are marked as 'error'
+
+        Scenario:
+        1. Revert snapshot with cluster with nodes in custom nodegroup
+        2. Save cluster network configuration
+        3. Reset cluster
+        4. Remove custom nodegroup
+        5. Check nodes from custom nodegroup have 'error' status
+        6. Re-create custom nodegroup and upload saved network configuration
+        7. Assign 'error' nodes to new nodegroup
+        8. Check nodes from custom nodegroup are in 'discover' state
+
+        Duration 30m
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot('deploy_controllers_from_custom_nodegroup')
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        self.fuel_web.assert_nodes_in_ready_state(cluster_id)
+
+        self.show_step(2)
+        network_config = self.fuel_web.client.get_networks(cluster_id)
+
+        self.show_step(3)
+        custom_nodes = self.env.d_env.nodes().slaves[1:6:2]
+        self.fuel_web.stop_reset_env_wait(cluster_id)
+        logger.info('Waiting for all nodes online for 900 seconds...')
+        wait(lambda: all(n['online'] for n in
+                         self.fuel_web.client.list_cluster_nodes(cluster_id)),
+             timeout=15 * 60)
+
+        self.show_step(4)
+        custom_nodegroup = [ng for ng in self.fuel_web.client.get_nodegroups()
+                            if ng['name'] == NODEGROUPS[1]['name']][0]
+        self.fuel_web.client.delete_nodegroup(custom_nodegroup['id'])
+
+        self.show_step(5)
+        logger.info('Wait all nodes from custom nodegroup become '
+                    'in error state..')
+        for slave in custom_nodes:
+            try:
+                wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+                    slave)['status'] == 'error', timeout=60)
+                logger.info('Node {} is in "error" state'.format(slave.name))
+            except TimeoutError:
+                raise TimeoutError('Node {} status wasn\'t changed '
+                                   'to "error"!'.format(slave.name))
+
+        self.show_step(6)
+        new_nodegroup = self.fuel_web.client.create_nodegroup(
+            cluster_id, NODEGROUPS[1]['name'])
+        logger.debug('Updating custom nodegroup ID in network configuration..')
+        network_config_new = self.fuel_web.client.get_networks(cluster_id)
+        for network in network_config['networks']:
+            if network['group_id'] == custom_nodegroup['id']:
+                network['group_id'] = new_nodegroup['id']
+                for new_network in network_config_new['networks']:
+                    if new_network['name'] == network['name'] and \
+                       new_network['group_id'] == network['group_id']:
+                        network['id'] = new_network['id']
+
+        self.fuel_web.client.update_network(
+            cluster_id,
+            network_config['networking_parameters'],
+            network_config['networks'])
+
+        self.show_step(7)
+        self.fuel_web.client.assign_nodegroup(
+            new_nodegroup['id'],
+            [self.fuel_web.get_nailgun_node_by_devops_node(node)
+             for node in custom_nodes])
+
+        self.show_step(8)
+        logger.info('Wait all nodes from custom nodegroup become '
+                    'in discover state..')
+        for slave in custom_nodes:
+            try:
+                wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+                    slave)['status'] == 'discover', timeout=60)
+                logger.info('Node {} is in "discover" state'.format(
+                    slave.name))
+            except TimeoutError:
+                raise TimeoutError('Node {} status wasn\'t changed '
+                                   'to "discover"!'.format(slave.name))
+
+        self.env.make_snapshot("delete_custom_nodegroup")
