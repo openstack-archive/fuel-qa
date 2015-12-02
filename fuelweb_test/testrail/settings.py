@@ -24,6 +24,9 @@ logger.setLevel(logging.INFO)
 
 LOGS_DIR = os.environ.get('LOGS_DIR', os.getcwd())
 
+os.environ["ENV_NAME"] = "some_environment"
+os.environ["ISO_PATH"] = "./fuel.iso"
+
 JENKINS = {
     'url': os.environ.get('JENKINS_URL', 'http://localhost/'),
     'version_artifact': os.environ.get('JENKINS_VERSION_ARTIFACT',
