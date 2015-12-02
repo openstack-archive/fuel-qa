@@ -408,8 +408,12 @@ class NailgunClient(object):
     @logwrap
     @json_parse
     def assign_nodegroup(self, group_id, nodes):
-        return self.client.post("/api/nodegroups/{0}/".format(group_id),
-                                data=nodes)
+        data = [{"group_id": group_id, "id": n["id"]} for n in nodes]
+        return self.client.put("/api/nodes/", data)
+
+    @logwrap
+    def delete_nodegroup(self, group_id):
+        return self.client.delete("/api/nodegroups/{0}/".format(group_id))
 
     @logwrap
     @json_parse
