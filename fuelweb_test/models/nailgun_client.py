@@ -142,6 +142,13 @@ class NailgunClient(object):
 
     @logwrap
     @json_parse
+    def delete_node(self, node_id):
+        return self.client.delete(
+            "/api/nodes/{}/".format(node_id)
+        )
+
+    @logwrap
+    @json_parse
     def deploy_cluster_changes(self, cluster_id):
         return self.client.put(
             "/api/clusters/{}/changes/".format(cluster_id)
