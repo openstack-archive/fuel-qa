@@ -117,3 +117,8 @@ Utils
 -----
 .. automodule:: fuelweb_test.helpers.utils
    :members:
+
+SSH Manager
+-----------
+.. automodule:: fuelweb_test.helpers.ssh_manager
+   :members:
