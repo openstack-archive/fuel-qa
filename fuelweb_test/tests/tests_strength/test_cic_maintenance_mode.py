@@ -136,6 +136,9 @@ class CICMaintenanceMode(TestBasic):
             logger.info('Check that %s node in maintenance mode after '
                         'switching', devops_node.name)
 
+            _ip = self.fuel_web.get_nailgun_node_by_name(
+                devops_node.name)['ip']
+            _wait(lambda: _tcp_ping(_ip, 22), timeout=60 * 10)
             with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
                 assert_true('True' in check_auto_mode(remote),
                             "Maintenance mode is not switch")
@@ -253,6 +256,9 @@ class CICMaintenanceMode(TestBasic):
             logger.info('Check that %s node in maintenance mode after'
                         ' unexpected reboot', devops_node.name)
 
+            _ip = self.fuel_web.get_nailgun_node_by_name(
+                devops_node.name)['ip']
+            _wait(lambda: _tcp_ping(_ip, 22), timeout=60 * 10)
             with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
                 assert_true('True' in check_auto_mode(remote),
                             "Maintenance mode is not switch")
@@ -443,7 +449,7 @@ class CICMaintenanceMode(TestBasic):
 
             _ip = self.fuel_web.get_nailgun_node_by_name(
                 devops_node.name)['ip']
-            _wait(lambda: _tcp_ping(_ip, 22), timeout=120)
+            _wait(lambda: _tcp_ping(_ip, 22), timeout=60 * 10)
 
             logger.info('Wait a %s node online status after unexpected '
                         'reboot', devops_node.name)
