@@ -375,23 +375,22 @@ def retry(count=3, delay=30):
 def custom_repo(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        with args[0].environment.d_env.get_admin_remote() as remote:
-            custom_pkgs = CustomRepo(remote)
-            try:
-                if settings.CUSTOM_PKGS_MIRROR:
-                    custom_pkgs.prepare_repository()
+        custom_pkgs = CustomRepo()
+        try:
+            if settings.CUSTOM_PKGS_MIRROR:
+                custom_pkgs.prepare_repository()
 
-            except Exception:
-                logger.error("Unable to get custom packages from {0}\n{1}"
-                             .format(settings.CUSTOM_PKGS_MIRROR,
-                                     traceback.format_exc()))
-                raise
+        except Exception:
+            logger.error("Unable to get custom packages from {0}\n{1}"
+                         .format(settings.CUSTOM_PKGS_MIRROR,
+                                 traceback.format_exc()))
+            raise
 
-            try:
-                return func(*args, **kwargs)
-            except Exception:
-                custom_pkgs.check_puppet_logs()
-                raise
+        try:
+            return func(*args, **kwargs)
+        except Exception:
+            custom_pkgs.check_puppet_logs()
+            raise
     return wrapper
 
 
