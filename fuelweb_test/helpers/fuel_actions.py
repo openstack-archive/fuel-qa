@@ -42,8 +42,8 @@ from fuelweb_test.settings import NESSUS_IMAGE_PATH
 class BaseActions(object):
     """BaseActions."""  # TODO documentation
 
-    def __init__(self, admin_remote):
-        self.admin_remote = admin_remote
+    def __init__(self, ssh_manager):
+        self.admin_remote = ssh_manager.admin_remote
         self.container = None
 
     def __repr__(self):
@@ -241,8 +241,8 @@ class BaseActions(object):
 class AdminActions(BaseActions):
     """ All actions relating to the admin node."""
 
-    def __init__(self, admin_remote):
-        super(AdminActions, self).__init__(admin_remote)
+    def __init__(self, ssh_manager):
+        super(AdminActions, self).__init__(ssh_manager)
 
     @logwrap
     def modify_configs(self, router):
@@ -387,8 +387,8 @@ class AdminActions(BaseActions):
 class NailgunActions(BaseActions):
     """NailgunActions."""  # TODO documentation
 
-    def __init__(self, admin_remote):
-        super(NailgunActions, self).__init__(admin_remote)
+    def __init__(self, ssh_manager):
+        super(NailgunActions, self).__init__(ssh_manager)
         self.container = 'nailgun'
 
     def update_nailgun_settings_once(self, settings):
@@ -453,8 +453,8 @@ class NailgunActions(BaseActions):
 class PostgresActions(BaseActions):
     """PostgresActions."""  # TODO documentation
 
-    def __init__(self, admin_remote):
-        super(PostgresActions, self).__init__(admin_remote)
+    def __init__(self, ssh_manager):
+        super(PostgresActions, self).__init__(ssh_manager)
         self.container = 'postgres'
 
     def run_query(self, db, query):
@@ -485,8 +485,8 @@ class FuelPluginBuilder(BaseActions):
 
     Initializes BaseActions.
     """
-    def __init__(self, admin_remote):
-        super(FuelPluginBuilder, self).__init__(admin_remote)
+    def __init__(self, ssh_manager):
+        super(FuelPluginBuilder, self).__init__(ssh_manager)
         self.container = 'nailgun'
 
     def fpb_install(self):
@@ -586,8 +586,8 @@ class FuelPluginBuilder(BaseActions):
 class CobblerActions(BaseActions):
     """CobblerActions."""  # TODO documentation
 
-    def __init__(self, admin_remote):
-        super(CobblerActions, self).__init__(admin_remote)
+    def __init__(self, ssh_manager):
+        super(CobblerActions, self).__init__(ssh_manager)
         self.container = 'cobbler'
 
     def add_dns_upstream_server(self, dns_server_ip):
@@ -605,8 +605,8 @@ class CobblerActions(BaseActions):
 class DockerActions(object):
     """DockerActions."""  # TODO documentation
 
-    def __init__(self, admin_remote):
-        self.admin_remote = admin_remote
+    def __init__(self, ssh_manager):
+        self.admin_remote = ssh_manager.admin_remote
 
     def list_containers(self):
         return self.admin_remote.execute('dockerctl list')['stdout']
