@@ -85,9 +85,10 @@ from fuelweb_test.settings import VCENTER_USERNAME
 class FuelWebClient(object):
     """FuelWebClient."""  # TODO documentation
 
-    def __init__(self, admin_node_ip, environment):
-        self.admin_node_ip = admin_node_ip
-        self.client = NailgunClient(admin_node_ip)
+    def __init__(self, ssh_manager, environment):
+        self.ssh_manager = ssh_manager
+        self.admin_node_ip = ssh_manager.admin_ip
+        self.client = NailgunClient(ssh_manager.admin_ip)
         self._environment = environment
         self.security = SecurityChecks(self.client, self._environment)
         super(FuelWebClient, self).__init__()
