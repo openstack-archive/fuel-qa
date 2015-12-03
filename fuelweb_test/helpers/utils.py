@@ -297,6 +297,32 @@ def install_pkg(remote, pkg_name):
     return remote_status['exit_code']
 
 
+def install_pkg_2(ssh_manager, ip, pkg_name, port=22):
+    """Install a package <pkg_name> on node
+    :param remote: SSHClient to remote node
+    :param pkg_name: name of a package
+    :return: exit code of installation
+    """
+    remote_status = ssh_manager.execute_on_remote(
+        ip=ip,
+        port=port,
+        cmd="rpm -q '{0}'".format(pkg_name)
+    )
+    if remote_status['exit_code'] == 0:
+        logger.info("Package '{0}' already installed.".format(pkg_name))
+    else:
+        logger.info("Installing package '{0}' ...".format(pkg_name))
+        remote_status = ssh_manager.execute_on_remote(
+                ip=ip,
+                port=port,
+                cmd="yum -y install {0}".format(pkg_name)
+                )
+        logger.info("Installation of the package '{0}' has been"
+                    " completed with exit code {1}"
+                    .format(pkg_name, remote_status['exit_code']))
+    return remote_status['exit_code']
+
+
 def cond_upload(remote, source, target, condition=''):
     # Upload files only if condition in regexp matches filenames
     if remote.isdir(target):

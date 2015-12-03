@@ -20,6 +20,7 @@ from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import get_test_method_name
 from fuelweb_test.helpers.utils import TimeStat
+from fuelweb_test.models.connect_manager import SSHManager
 from fuelweb_test.models.environment import EnvironmentModel
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
@@ -32,7 +33,8 @@ class TestBasic(object):
 
     """
     def __init__(self):
-        self.env = EnvironmentModel()
+        self.ssh_manager = SSHManager()
+        self.env = EnvironmentModel(self.ssh_manager)
 
     @property
     def test_program(self):

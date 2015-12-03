@@ -58,18 +58,24 @@ class EnvironmentModel(object):
                 cls, *args, **kwargs)
         return cls._instance
 
-    def __init__(self):
+    def __init__(self, ssh_manager):
         if not hasattr(self, "_virt_env"):
             self._virt_env = None
         if not hasattr(self, "_fuel_web"):
             self._fuel_web = None
         if not hasattr(self, "_config"):
             self._config = None
+        self.ssh_manager = ssh_manager
+        self.ssh_manager.initialize(
+            self.get_admin_node_ip(),
+            login=settings.SSH_CREDENTIALS['login'],
+            password=settings.SSH_CREDENTIALS['password']
+        )
 
     @property
     def fuel_web(self):
         if self._fuel_web is None:
-            self._fuel_web = FuelWebClient(self.get_admin_node_ip(), self)
+            self._fuel_web = FuelWebClient(self.ssh_manager, self)
         return self._fuel_web
 
     def __repr__(self):
@@ -84,27 +90,27 @@ class EnvironmentModel(object):
 
     @property
     def admin_actions(self):
-        return AdminActions(self.d_env.get_admin_remote())
+        return AdminActions(self.ssh_manager)
 
     @property
     def base_actions(self):
-        return BaseActions(self.d_env.get_admin_remote())
+        return BaseActions(self.ssh_manager)
 
     @property
     def nailgun_actions(self):
-        return NailgunActions(self.d_env.get_admin_remote())
+        return NailgunActions(self.ssh_manager)
 
     @property
     def postgres_actions(self):
-        return PostgresActions(self.d_env.get_admin_remote())
+        return PostgresActions(self.ssh_manager)
 
     @property
     def cobbler_actions(self):
-        return CobblerActions(self.d_env.get_admin_remote())
+        return CobblerActions(self.ssh_manager)
 
     @property
     def docker_actions(self):
-        return DockerActions(self.d_env.get_admin_remote())
+        return DockerActions(self.ssh_manager)
 
     @property
     def admin_node_ip(self):
