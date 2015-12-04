@@ -91,7 +91,8 @@ class TestNeutronBase(test_neutron_base.TestNeutronFailoverBase):
                                                      res['stdout'],
                                                      res['stderr']))
 
-    def ban_l3_agent(self, _ip, router_name, wait_for_migrate=True):
+    def ban_l3_agent(self, _ip, router_name, wait_for_migrate=True,
+                     wait_for_die=True):
         """Ban L3 agent and wait until router rescheduling
 
         Ban L3 agent on same node as router placed and wait until router
@@ -100,6 +101,7 @@ class TestNeutronBase(test_neutron_base.TestNeutronFailoverBase):
         :param _ip: ip of server to to execute ban command
         :param router_name: name of router to determine node with L3 agent
         :param wait_for_migrate: wait until router migrate to new controller
+        :param wait_for_die: wait for l3 agent died
         :returns: str -- name of banned node
         """
         router = self.os_conn.neutron.list_routers(
@@ -114,11 +116,12 @@ class TestNeutronBase(test_neutron_base.TestNeutronFailoverBase):
         logger.info("Ban L3 agent on node {0}".format(node_with_l3))
 
         # wait for l3 agent died
-        wait(
-            lambda: self.os_conn.get_l3_for_router(
-                router['id'])['agents'][0]['alive'] is False,
-            timeout=60 * 3, timeout_msg="L3 agent is alive"
-        )
+        if wait_for_die:
+            wait(
+                lambda: self.os_conn.get_l3_for_router(
+                    router['id'])['agents'][0]['alive'] is False,
+                timeout=60 * 3, timeout_msg="L3 agent is alive"
+            )
 
         # Wait to migrate l3 agent on new controller
         if wait_for_migrate:
@@ -246,7 +249,9 @@ class TestNeutronBase(test_neutron_base.TestNeutronFailoverBase):
                 ):
                     self.check_ping_from_vm(server1, instance_keypair, ip)
 
-    def check_ban_l3_agents_and_clear_one(self):
+    def check_ban_l3_agents_and_clear_last(self):
+        """Ban all l3-agents, clear last of them and check health of l3-agent
+        """
         # init variables
         exist_networks = self.os_conn.list_networks()['networks']
         ext_network = [x for x in exist_networks
@@ -310,6 +315,101 @@ class TestNeutronBase(test_neutron_base.TestNeutronFailoverBase):
                 router['router']['id'])['agents'][0]['alive'] is True,
             timeout=60 * 3, timeout_msg="Last L3 agent is not alive"
         )
+
+        # create another server on net01
+        net01 = self.os_conn.nova.networks.find(label="net01")
+        self.os_conn.create_server(
+            name='server03',
+            availability_zone='{}:{}'.format(zone.zoneName, hosts[0]),
+            key_name=instance_keypair.name,
+            nics=[{'net-id': net01.id}],
+            security_groups=[security_group.id])
+
+        # check pings
+        servers = self.os_conn.get_servers()
+        for server1 in servers:
+            for server2 in servers:
+                if server1 == server2:
+                    continue
+                for ip in (
+                    self.os_conn.get_nova_instance_ips(server2).values() +
+                    [settings.PUBLIC_TEST_IP]
+                ):
+                    self.check_ping_from_vm(server1, instance_keypair, ip)
+
+    def check_ban_l3_agents_and_clear_first(self):
+        """Ban all l3-agents, clear first of them and check health of l3-agent
+        """
+        # init variables
+        exist_networks = self.os_conn.list_networks()['networks']
+        ext_network = [x for x in exist_networks
+                       if x.get('router:external')][0]
+        zone = self.os_conn.nova.availability_zones.find(zoneName="nova")
+        security_group = self.os_conn.create_sec_group_for_ssh()
+        hosts = zone.hosts.keys()[:2]
+        instance_keypair = self.os_conn.create_key(key_name='instancekey')
+
+        # create router
+        router = self.os_conn.create_router(name="router01")
+        self.os_conn.router_gateway_add(router_id=router['router']['id'],
+                                        network_id=ext_network['id'])
+
+        # create 2 networks and 2 instances
+        for i, hostname in enumerate(hosts, 1):
+            self.create_network_and_vm(
+                hostname=hostname,
+                suffix=i,
+                zone=zone,
+                instance_keypair=instance_keypair,
+                security_group=security_group,
+                router=router)
+
+        # add floating ip to first server
+        server1 = self.os_conn.nova.servers.find(name="server01")
+        self.os_conn.assign_floating_ip(server1)
+
+        # check pings
+        servers = self.os_conn.get_servers()
+        for server1 in servers:
+            for server2 in servers:
+                if server1 == server2:
+                    continue
+                for ip in (
+                    self.os_conn.get_nova_instance_ips(server2).values() +
+                    [settings.PUBLIC_TEST_IP]
+                ):
+                    self.check_ping_from_vm(server1, instance_keypair, ip)
+
+        net_id = self.os_conn.neutron.list_networks(
+            name="net01")['networks'][0]['id']
+        devops_node = self.get_node_with_dhcp(self.os_conn, net_id)
+        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
+
+        # ban l3 agents
+        first_banned_node = self.ban_l3_agent(router_name="router01", _ip=_ip)
+        self.ban_l3_agent(router_name="router01", _ip=_ip)
+        self.ban_l3_agent(router_name="router01",
+                          _ip=_ip,
+                          wait_for_migrate=False,
+                          wait_for_die=False)
+
+        # clear last banned l3 agent
+        self.clear_l3_agent(_ip=_ip,
+                            router_name="router01",
+                            node=first_banned_node)
+
+        # wait for router alive
+        wait(
+            lambda: self.os_conn.get_l3_for_router(
+                router['router']['id'])['agents'][0]['alive'] is True,
+            timeout=60 * 3, timeout_msg="Last L3 agent is not alive"
+        )
+
+        # wait for router migrate to clearend node
+        err_msg = "l3 agent wasn't migrate to {0}"
+        wait(lambda: first_banned_node == self.os_conn.get_l3_agent_hosts(
+             router['router']['id'])[0], timeout=60 * 3,
+             timeout_msg=err_msg.format(first_banned_node))
 
         # create another server on net01
         net01 = self.os_conn.nova.networks.find(label="net01")
