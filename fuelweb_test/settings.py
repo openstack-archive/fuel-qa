@@ -30,9 +30,9 @@ TIME_ZONE = 'UTC'
 ENV_NAME = os.environ.get("ENV_NAME", "fuel_system_test")
 VIRTUAL_ENV = os.environ.get("VIRTUAL_ENV", "")
 
-MASTER_IS_CENTOS7 = get_var_as_bool('MASTER_IS_CENTOS7', False)
+MASTER_IS_CENTOS7 = get_var_as_bool('MASTER_IS_CENTOS7', True)
 PREDICTABLE_INTERFACE_NAMES = get_var_as_bool('PREDICTABLE_INTERFACE_NAMES',
-                                              False)
+                                              True)
 
 ISO_PATH = os.environ.get('ISO_PATH')
 LOGS_DIR = os.environ.get('LOGS_DIR', os.getcwd())
