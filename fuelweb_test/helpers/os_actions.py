@@ -355,12 +355,34 @@ class OpenStackActions(common.Common):
                 return net
         return None
 
+    def create_network(self, network_name):
+        body = {
+            "network": {
+                "name": network_name,
+                "admin_state_up": "true"
+            }
+        }
+        response = self.neutron.create_network(body)
+        return response['network']
+
     def get_subnet(self, subnet_name):
         subnet_list = self.neutron.list_subnets()
         for subnet in subnet_list['subnets']:
             if subnet['name'] == subnet_name:
                 return subnet
         return None
+
+    def create_subnet(self, subnet_name, network_id, cidr, ip_version=4):
+        body = {
+            "subnet": {
+                "name": subnet_name,
+                "network_id": network_id,
+                "ip_version": ip_version,
+                "cidr": cidr
+            }
+        }
+        response = self.neutron.create_subnet(body)
+        return response['subnet']
 
     def nova_get_net(self, net_name):
         for net in self.nova.networks.list():
@@ -374,6 +396,23 @@ class OpenStackActions(common.Common):
             network_id = router['external_gateway_info'].get('network_id')
             if network_id == network['id']:
                 return router
+        return None
+
+    def get_router_by_name(self, router_name):
+        router_list = self.neutron.list_routers()
+        for router in router_list['routers']:
+            if router['name'] == router_name:
+                return router
+        return None
+
+    def add_router_interface(self, router_id, subnet_id, port_id=None):
+        body = {
+            "router_id": router_id,
+            "subnet_id": subnet_id
+        }
+        if port_id:
+            body["port_id"] = port_id
+        self.neutron.add_interface_router(router_id, body)
         return None
 
     def create_image(self, **kwargs):
