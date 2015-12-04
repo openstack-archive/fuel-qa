@@ -547,7 +547,9 @@ class TestMultipleClusterNets(TestBasic):
 
     @test(depends_on=[deploy_controllers_from_custom_nodegroup],
           groups=["delete_cluster_with_custom_nodegroup", "thread_7",
-                  "multiple_cluster_networks"])
+                  "multiple_cluster_networks"],
+          # TODO: enable this test when bug #1521682 is fixed
+          enabled=False)
     @log_snapshot_after_test
     def delete_cluster_with_custom_nodegroup(self):
         """Delete env, check nodes from custom nodegroup can't bootstrap
