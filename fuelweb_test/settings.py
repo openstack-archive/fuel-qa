@@ -193,7 +193,10 @@ if MULTIPLE_NETWORKS:
     DHCP['private2'] = False
     DHCP['storage2'] = False
 
-    INTERFACES['admin2'] = 'eth5'
+    if PREDICTABLE_INTERFACE_NAMES:
+        INTERFACES['admin2'] = 'enp0s8'
+    else:
+        INTERFACES['admin2'] = 'eth5'
 
     POOL_DEFAULT2 = os.environ.get('POOL_DEFAULT2', '10.108.0.0/16:24')
     POOL_ADMIN2 = os.environ.get('POOL_ADMIN2', POOL_DEFAULT2)
