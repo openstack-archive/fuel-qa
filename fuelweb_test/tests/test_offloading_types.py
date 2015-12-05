@@ -140,20 +140,46 @@ class TestOffloading(TestBasic):
             with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
                 logger.info("Verify Offload types")
 
-                result = check_offload(remote, 'eth1', 'rx-vlan-offload')
-                assert_equal(result, "on",
-                             "Offload type {0} is {1} on remote host"
-                             .format('rx-vlan-offload', result))
+                if PREDICTABLE_INTERFACE_NAMES:
+                    result = check_offload(remote,
+                                           'eth1',
+                                           'rx-vlan-offload')
+                    assert_equal(result, "on",
+                                 "Offload type {0} is {1} on remote host"
+                                 .format('rx-vlan-offload', result))
 
-                result = check_offload(remote, 'eth1', 'tx-vlan-offload')
-                assert_equal(result, "on",
-                             "Offload type {0} is {1} on remote host"
-                             .format('tx-vlan-offload', result))
+                    result = check_offload(remote,
+                                           'enp0s4',
+                                           'tx-vlan-offload')
+                    assert_equal(result, "on",
+                                 "Offload type {0} is {1} on remote host"
+                                 .format('tx-vlan-offload', result))
 
-                result = check_offload(remote, 'eth2', 'large-receive-offload')
-                assert_equal(result, "off",
-                             "Offload type {0} is {1} on remote host"
-                             .format('large-receive-offload', result))
+                    result = check_offload(remote,
+                                           'enp0s5',
+                                           'large-receive-offload')
+                    assert_equal(result, "off",
+                                 "Offload type {0} is {1} on remote host"
+                                 .format('large-receive-offload', result))
+                else:
+                    result = check_offload(remote,
+                                           'eth1',
+                                           'rx-vlan-offload')
+                    assert_equal(result, "on",
+                                 "Offload type {0} is {1} on remote host"
+                                 .format('rx-vlan-offload', result))
+
+                    result = check_offload(remote,
+                                           'eth1',
+                                           'tx-vlan-offload')
+                    assert_equal(result, "on",
+                                 "Offload type {0} is {1} on remote host"
+                                 .format('tx-vlan-offload', result))
+
+                    result = check_offload(remote, 'eth2', 'large-receive-offload')
+                    assert_equal(result, "off",
+                                 "Offload type {0} is {1} on remote host"
+                                 .format('large-receive-offload', result))
 
         self.show_step(9)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
@@ -271,20 +297,44 @@ class TestOffloading(TestBasic):
             with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
                 logger.info("Verify Offload types")
 
-                result = check_offload(remote, 'eth1', 'rx-vlan-offload')
-                assert_equal(result, "on",
-                             "Offload type {0} is {1} on remote host"
-                             .format('rx-vlan-offload', result))
+                if PREDICTABLE_INTERFACE_NAMES:
+                    result = check_offload(remote, 'eth1', 'rx-vlan-offload')
+                    assert_equal(result, "on",
+                                 "Offload type {0} is {1} on remote host"
+                                 .format('rx-vlan-offload', result))
 
-                result = check_offload(remote, 'eth1', 'tx-vlan-offload')
-                assert_equal(result, "on",
-                             "Offload type {0} is {1} on remote host"
-                             .format('tx-vlan-offload', result))
+                    result = check_offload(remote, 'enp0s4', 'tx-vlan-offload')
+                    assert_equal(result, "on",
+                                 "Offload type {0} is {1} on remote host"
+                                 .format('tx-vlan-offload', result))
 
-                result = check_offload(remote, 'eth2', 'large-receive-offload')
-                assert_equal(result, "off",
-                             "Offload type {0} is {1} on remote host"
-                             .format('large-receive-offload', result))
+                    result = check_offload(remote,
+                                           'enp0s5',
+                                           'large-receive-offload')
+                    assert_equal(result, "off",
+                                 "Offload type {0} is {1} on remote host"
+                                 .format('large-receive-offload', result))
+                else:
+                    result = check_offload(remote,
+                                           'eth1',
+                                           'rx-vlan-offload')
+                    assert_equal(result, "on",
+                                 "Offload type {0} is {1} on remote host"
+                                 .format('rx-vlan-offload', result))
+
+                    result = check_offload(remote,
+                                           'eth1',
+                                           'tx-vlan-offload')
+                    assert_equal(result, "on",
+                                 "Offload type {0} is {1} on remote host"
+                                 .format('tx-vlan-offload', result))
+
+                    result = check_offload(remote,
+                                           'eth2',
+                                           'large-receive-offload')
+                    assert_equal(result, "off",
+                                 "Offload type {0} is {1} on remote host"
+                                 .format('large-receive-offload', result))
 
         self.show_step(9)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
