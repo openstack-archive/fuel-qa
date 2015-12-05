@@ -1332,9 +1332,9 @@ class FuelWebClient(object):
                 }
 
         if PREDICTABLE_INTERFACE_NAMES:
-            baremetal_iface = 'eth5'
-        else:
             baremetal_iface = 'enp0s8'
+        else:
+            baremetal_iface = 'eth5'
         if self.get_cluster_additional_components(cluster_id).get(
                 'ironic', False):
             assigned_networks[baremetal_iface] = ['baremetal']
