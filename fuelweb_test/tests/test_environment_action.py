@@ -28,6 +28,72 @@ from fuelweb_test.tests import base_test_case
 class EnvironmentAction(base_test_case.TestBasic):
     """EnvironmentAction."""  # TODO documentation
 
+    @test(groups=["no_snapshot"])
+    def deploy_neutron_stop_on_deploying(self):
+        """Stop reset cluster in HA mode with neutron
+
+        Scenario:
+            1. Create cluster in HA mode with 1 controller
+            2. Add 1 node with controller role
+            3. Add 1 node with compute role
+            4. Run provisioning task
+            5. Run deployment task
+            6. Stop deployment
+            7. Add 1 node with cinder role
+            8. Re-deploy cluster
+            9. Run OSTF
+
+        Duration 50m
+        Snapshot: deploy_neutron_stop_reset_on_deploying
+
+        """
+        self.env.setup_environment()
+        self.fuel_web.get_nailgun_version()
+        self.fuel_web.change_default_network_settings()
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:3],
+                                 skip_timesync=True)
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=hlp_data.DEPLOYMENT_MODE,
+            settings={
+                'tenant': 'stop_deploy',
+                'user': 'stop_deploy',
+                'password': 'stop_deploy',
+                "net_provider": 'neutron',
+                "net_segment_type": hlp_data.NEUTRON_SEGMENT_TYPE
+            }
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['compute']
+            }
+        )
+
+        self.fuel_web.provisioning_cluster_wait(cluster_id)
+        self.fuel_web.deploy_task_wait(cluster_id=cluster_id, progress=10)
+        self.fuel_web.stop_deployment_wait(cluster_id)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:2], timeout=10 * 60)
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-03': ['cinder']
+            }
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        asserts.assert_equal(
+            3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id)
+
+
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_neutron_stop_reset_on_deploying",
                   "classic_provisioning"])
