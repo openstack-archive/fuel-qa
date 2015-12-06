@@ -172,6 +172,12 @@ Test Ironic
 .. automodule:: fuelweb_test.tests.test_ironic_base
   :members:
 
+Test Services reconfiguration
+-----------------------------
+.. automodule:: fuelweb_test.tests.test_services_reconfiguration
+  :members:
+
+
 Gating tests
 ============
 
@@ -386,11 +392,6 @@ Huge environments tests
 Image based tests
 -----------------
 .. automodule:: fuelweb_test.tests.tests_strength.test_image_based
-   :members:
-
-Load tests
-----------
-.. automodule:: fuelweb_test.tests.tests_strength.test_load
    :members:
 
 Master node failover tests

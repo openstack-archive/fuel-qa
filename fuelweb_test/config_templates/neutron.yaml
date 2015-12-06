@@ -1,0 +1,11 @@
+---
+configuration:
+  neutron_plugin_ml2:
+    ml2/network_vlan_ranges:
+      value: "physnet1:1000:1000,physnet2"
+  neutron_config:
+    quotas/default_quota:
+      ensure: "absent"
+    DEFAULT/debug:
+      value: "True"
+
