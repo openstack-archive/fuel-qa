@@ -165,6 +165,38 @@ class TestL3AgentVlan(test_l3_agent_base.TestL3AgentBase):
         self.env.revert_snapshot("deploy_ha_neutron_vlan")
         self.check_ban_l3_agents_and_clear_first()
 
+    @test(
+        depends_on=[
+            test_neutron.TestNeutronFailoverVlan.deploy_ha_neutron_vlan],
+        groups=["l3_agent_after_drop_rabbit_port_vlan",
+                "l3_agent_after_drop_rabbit_port"])
+    @log_snapshot_after_test
+    def test_l3_agent_after_drop_rabbit_port_vlan(self):
+        """Drop rabbit port and check l3-agent work
+
+        Scenario:
+            1. Revert snapshot with neutron cluster
+            2. Create network1, network2
+            3. Create router1 and connect it with network1, network2 and
+               external net
+            4. Boot vm1 in network1 and associate floating ip
+            5. Boot vm2 in network2
+            6. Add rules for ping
+            7. ping 8.8.8.8, vm1 (both ip) and vm2 (fixed ip) from each other
+            8. with iptables in CLI drop rabbit's port #5673 on what router1 is
+            9. Wait for route rescheduling
+            10. Check that router moved to the health l3-agent
+            11. Boot one more VM (VM3) in network1
+            12. Boot vm3 in network1
+            13. ping 8.8.8.8, vm1 (both ip), vm2 (fixed ip) and vm3 (fixed ip)
+                from each other
+
+        Duration 30m
+
+        """
+        self.env.revert_snapshot("deploy_ha_neutron_vlan")
+        self.check_l3_agent_after_drop_rabbit_port()
+
 
 @test(groups=['networking', 'networking_gre'])
 class TestL3AgentGRE(test_l3_agent_base.TestL3AgentBase):
@@ -310,6 +342,38 @@ class TestL3AgentGRE(test_l3_agent_base.TestL3AgentBase):
         self.env.revert_snapshot("deploy_ha_neutron_gre")
         self.check_ban_l3_agents_and_clear_first()
 
+    @test(
+        depends_on=[
+            test_neutron.TestNeutronFailoverGRE.deploy_ha_neutron_gre],
+        groups=["l3_agent_after_drop_rabbit_port_gre",
+                "l3_agent_after_drop_rabbit_port"])
+    @log_snapshot_after_test
+    def test_l3_agent_after_drop_rabbit_port_gre(self):
+        """Drop rabbit port and check l3-agent work
+
+        Scenario:
+            1. Revert snapshot with neutron cluster
+            2. Create network1, network2
+            3. Create router1 and connect it with network1, network2 and
+               external net
+            4. Boot vm1 in network1 and associate floating ip
+            5. Boot vm2 in network2
+            6. Add rules for ping
+            7. ping 8.8.8.8, vm1 (both ip) and vm2 (fixed ip) from each other
+            8. with iptables in CLI drop rabbit's port #5673 on what router1 is
+            9. Wait for route rescheduling
+            10. Check that router moved to the health l3-agent
+            11. Boot one more VM (VM3) in network1
+            12. Boot vm3 in network1
+            13. ping 8.8.8.8, vm1 (both ip), vm2 (fixed ip) and vm3 (fixed ip)
+                from each other
+
+        Duration 30m
+
+        """
+        self.env.revert_snapshot("deploy_ha_neutron_gre")
+        self.check_l3_agent_after_drop_rabbit_port()
+
 
 @test(groups=['networking', 'networking_vxlan'])
 class TestL3AgentVxlan(test_l3_agent_base.TestL3AgentBase):
@@ -454,3 +518,35 @@ class TestL3AgentVxlan(test_l3_agent_base.TestL3AgentBase):
         """
         self.env.revert_snapshot("deploy_ha_neutron_tun")
         self.check_ban_l3_agents_and_clear_first()
+
+    @test(
+        depends_on=[
+            test_neutron.TestNeutronFailoverVxlan.deploy_ha_neutron_vxlan],
+        groups=["l3_agent_after_drop_rabbit_port_vxlan",
+                "l3_agent_after_drop_rabbit_port"])
+    @log_snapshot_after_test
+    def test_l3_agent_after_drop_rabbit_port_vxlan(self):
+        """Drop rabbit port and check l3-agent work
+
+        Scenario:
+            1. Revert snapshot with neutron cluster
+            2. Create network1, network2
+            3. Create router1 and connect it with network1, network2 and
+               external net
+            4. Boot vm1 in network1 and associate floating ip
+            5. Boot vm2 in network2
+            6. Add rules for ping
+            7. ping 8.8.8.8, vm1 (both ip) and vm2 (fixed ip) from each other
+            8. with iptables in CLI drop rabbit's port #5673 on what router1 is
+            9. Wait for route rescheduling
+            10. Check that router moved to the health l3-agent
+            11. Boot one more VM (VM3) in network1
+            12. Boot vm3 in network1
+            13. ping 8.8.8.8, vm1 (both ip), vm2 (fixed ip) and vm3 (fixed ip)
+                from each other
+
+        Duration 30m
+
+        """
+        self.env.revert_snapshot("deploy_ha_neutron_tun")
+        self.check_l3_agent_after_drop_rabbit_port()

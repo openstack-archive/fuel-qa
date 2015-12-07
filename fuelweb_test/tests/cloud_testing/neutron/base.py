@@ -147,6 +147,41 @@ class TestNeutronBase(test_neutron_base.TestNeutronFailoverBase):
 
         logger.info("Clear L3 agent on node {0}".format(node))
 
+    def drop_rabbit_port(self, router_name):
+        """Drop rabbit port and wait until router rescheduling
+
+        Drop rabbit port on same node as router placed and wait until router
+        rescheduling
+
+        :param router_name: name of router to determine node with L3 agent
+        """
+        router = self.os_conn.neutron.list_routers(
+            name=router_name)['routers'][0]
+        node_with_l3 = self.os_conn.get_l3_agent_hosts(router['id'])[0]
+
+        devops_node = self.get_node_with_l3(node_with_l3)
+        ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
+
+        # ban l3 agent on this node
+        with self.env.d_env.get_ssh_to_remote(ip) as remote:
+            remote.execute(
+                "iptables -I OUTPUT 1 -p tcp --dport 5673 -j DROP")
+
+        logger.info("Drop rabbit port on node {}".format(node_with_l3))
+
+        # wait for l3 agent died
+        wait(
+            lambda: self.os_conn.get_l3_for_router(
+                router['id'])['agents'][0]['alive'] is False,
+            timeout=60 * 3, timeout_msg="L3 agent is still alive"
+        )
+
+        # Wait to migrate l3 agent on new controller
+        err_msg = "l3 agent wasn't migrated, it is still on {0}"
+        wait(lambda: not node_with_l3 == self.os_conn.get_l3_agent_hosts(
+             router['id'])[0], timeout=60 * 3,
+             timeout_msg=err_msg.format(node_with_l3))
+
     def create_network_and_vm(self, hostname, suffix, zone, instance_keypair,
                               security_group, router):
         """Create network, subnet, router, boot vm and assign floating ip
