@@ -2,11 +2,11 @@ adv_net_template:
   default:
     nic_mapping:
       default:
-        if11: eth0       # admin
-        if12: eth1       # public
-        if13: eth2       # management
-        if14: eth3       # private
-        if15: eth4       # storage
+        if1: enp0s3       # admin
+        if2: enp0s4       # public
+        if3: enp0s5       # management
+        if4: enp0s6       # private
+        if5: enp0s7       # storage
     templates_for_node_role:
         controller:
           - admin

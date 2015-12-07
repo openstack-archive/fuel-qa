@@ -2,17 +2,17 @@ adv_net_template:
   default:
     nic_mapping:
       default:
-        if1: eth0       # admin
-        if2: eth1       # public
-        if3: eth3       # management (vlan 101) storage (vlan 102) & private (vlan 103)
-        if4: eth4       # other networks (vlan 201-299)
-        if5: eth2       # fake bond
+        if1: enp0s3       # admin
+        if2: enp0s4       # public
+        if3: enp0s5       # management (vlan 101) storage (vlan 102) & private (vlan 103)
+        if4: enp0s6       # other networks (vlan 201-299)
+        if5: enp0s7       # fake bond
       node-4:
-        if1: eth0       # admin
-        if2: eth2       # public
-        if3: eth4       # management (vlan 101) storage (vlan 102) & private (vlan 103)
-        if4: eth3       # other networks (vlan 201-299)
-        if5: eth1       # fake bond
+        if1: enp0s3       # admin
+        if2: enp0s5       # public
+        if3: enp0s7       # management (vlan 101) storage (vlan 102) & private (vlan 103)
+        if4: enp0s6       # other networks (vlan 201-299)
+        if5: enp0s4       # fake bond
     templates_for_node_role:
         controller:
           - public
