@@ -207,3 +207,13 @@ class TestL3AgentBase(base.TestNeutronBase):
 
         # check pings
         self.check_vm_connectivity()
+
+    def check_l3_agent_after_drop_rabbit_port(self):
+        """Drop rabbit port and check l3-agent work"""
+        self.prepare_openstack()
+
+        # drop rabbit port
+        self.drop_rabbit_port(router_name="router01")
+
+        # check pings
+        self.check_vm_connectivity()
