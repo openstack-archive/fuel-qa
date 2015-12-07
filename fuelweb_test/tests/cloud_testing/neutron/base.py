@@ -189,3 +189,115 @@ class TestNeutronBase(test_neutron_base.TestNeutronFailoverBase):
                     [settings.PUBLIC_TEST_IP]
                 ):
                     self.check_ping_from_vm(server1, instance_keypair, ip)
+
+    def create_networks(self, security_group, instance_keypair):
+        """Create the network for the tests
+           And check the instancies are visible for each other
+        """
+        # init variables
+        zone = self.os_conn.nova.availability_zones.find(zoneName="nova")
+        hosts = zone.hosts.keys()[:2]
+        exist_networks = self.os_conn.list_networks()['networks']
+        ext_network = [x for x in exist_networks
+                       if x.get('router:external')][0]
+
+        # create router
+        router = self.os_conn.create_router(name="router01")
+        self.os_conn.router_gateway_add(router_id=router['router']['id'],
+                                        network_id=ext_network['id'])
+
+        # create 2 networks and 2 instances
+        for i, hostname in enumerate(hosts, 1):
+            network = self.os_conn.create_network(name='net%02d' % i)
+            subnet = self.os_conn.create_subnet(
+                network_id=network['network']['id'],
+                name='net%02d__subnet' % i,
+                cidr="192.168.%d.0/24" % i)
+            self.os_conn.router_interface_add(
+                router_id=router['router']['id'],
+                subnet_id=subnet['subnet']['id'])
+            self.os_conn.create_server(
+                name='server%02d' % i,
+                availability_zone='{}:{}'.format(zone.zoneName, hostname),
+                key_name=instance_keypair.name,
+                nics=[{'net-id': network['network']['id']}],
+                security_groups=[security_group.id])
+
+        # add floating ip to first server
+        server1 = self.os_conn.nova.servers.find(name="server01")
+        self.os_conn.assign_floating_ip(server1)
+
+    def create_third_server(self, security_group, instance_keypair):
+        """Create the third server and
+           And check that all  instancies are visible for each other
+        """
+        # create another server on net01
+        zone = self.os_conn.nova.availability_zones.find(zoneName="nova")
+        hosts = zone.hosts.keys()[:2]
+        net01 = self.os_conn.nova.networks.find(label="net01")
+        self.os_conn.create_server(
+            name='server03',
+            availability_zone='{}:{}'.format(zone.zoneName,
+                                             hosts[0]),
+            key_name=instance_keypair.name,
+            nics=[{'net-id': net01.id}],
+            security_groups=[security_group.id])
+
+    def check_pings(self, instance_keypair):
+        # check pings
+        servers = self.os_conn.get_servers()
+        for server1 in servers:
+            for server2 in servers:
+                if server1 == server2:
+                    continue
+                for ip in (
+                    self.os_conn.get_nova_instance_ips(server2).values() +
+                    [settings.PUBLIC_TEST_IP]
+                ):
+                    self.check_ping_from_vm(server1, instance_keypair, ip)
+
+    def check_prime_controller_restart(self):
+
+        security_group = self.os_conn.create_sec_group_for_ssh()
+        instance_keypair = self.os_conn.create_key(key_name='instancekey')
+        self.create_networks(security_group, instance_keypair)
+        self.check_pings(instance_keypair)
+
+        prime_controller =\
+            self.fuel_web.get_nailgun_primary_node(
+                self.env.d_env.nodes().slaves[0])
+        logger.info('Going to reboot the prime controller')
+        self.fuel_web.warm_restart_nodes([prime_controller])
+
+        router_id =\
+            self.os_conn.neutron.list_routers(
+                name='router01')['routers'][0]['id']
+
+        self.reschedule_router_manually(self.os_conn, router_id)
+
+        self.create_third_server(security_group, instance_keypair)
+
+        self.check_pings(instance_keypair)
+
+    def check_prime_controller_shutdown(self):
+
+        security_group = self.os_conn.create_sec_group_for_ssh()
+        instance_keypair = self.os_conn.create_key(key_name='instancekey')
+        self.create_networks(security_group, instance_keypair)
+        self.check_pings(instance_keypair)
+
+        prime_controller =\
+            self.fuel_web.get_nailgun_primary_node(
+                self.env.d_env.nodes().slaves[0])
+        logger.info('Going to reboot the prime controller')
+        self.fuel_web.warm_shutdown_nodes([prime_controller])
+
+        router_id =\
+            self.os_conn.neutron.list_routers(
+                name='router01')['routers'][0]['id']
+
+        self.reschedule_router_manually(self.os_conn, router_id)
+
+        self.create_third_server(security_group, instance_keypair)
+
+        self.check_pings(instance_keypair)
