@@ -1250,3 +1250,73 @@ class HeatHA(TestBasic):
                 test_name=test_name, timeout=60 * 60)
 
         self.env.make_snapshot("deploy_heat_ha")
+
+
+@test(groups=["services_external", "services_external.mos_integration_tests"])
+class IntegrationMOSTests(TestBasic):
+    """MOS integration tests for different OpenStack services.
+    We need to run different integration tests for MOS testing on CI.
+    This class allows to run all non-Tempest-based integration tests
+    for OpenStack verification in SWARM test suite.
+    Non-Tempest-based tests include tests for OpenStack CLI clients and
+    some integration tests which requre execution of bash commands on
+    controller and compute nodes in OpenStack cluster.
+    """
+    @test(depends_on=[SetupEnvironment.ready_with_5_slaves],
+          groups=["services_external.mos_integration_tests"])
+    @log_snapshot_after_test
+    def deploy_sahara_ha_one_controller_tun_external(self):
+        """Run MOS integration tests (1 controller Neutron VXLAN)
+
+        Scenario:
+            1. Revert snapshot with env on one controller
+            2. Run all MOS integration tests
+
+        Duration 30m
+        Snapshot: deploy_mos_integration_tests_external
+        """
+
+        self.env.revert_snapshot("ready_with_5_slaves")
+        data = {
+            'ceilometer': True,
+            'murano': True,
+            'sahara': True,
+            'net_provider': 'neutron',
+            'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
+        }
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings=data)
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller', 'mongo'],
+                'slave-02': ['controller', 'mongo'],
+                'slave-03': ['controller', 'mongo'],
+                'slave-04': ['compute'],
+                'slave-05': ['compute'],
+            }
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        cluster_vip = self.fuel_web.get_public_vip(cluster_id)
+        os_conn = os_actions.OpenStackActions(
+            cluster_vip, data['user'], data['password'], data['tenant'])
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)
+
+        with self.env.d_env.get_admin_remote() as remote:
+            test_suite = "[8.0][MOSQA] Automated Cloud Testing"
+            mos_repository = "https://github.com/Mirantis/"
+            tests_folder = "mos-integration-tests"
+            cmd = ("export TESTRAIL_SUITE='{0}' &&"
+                   "yum install git -y && git clone {1}{2} &&"
+                   "cd {2} && ./run_tests.sh"
+                   .format(test_suite, mos_repository, tests_folder)
+            result = run_on_remote(remote, cmd)
+            LOGGER.debug(result)
+
+        self.env.make_snapshot("deploy_mos_integration_tests_external")
+
