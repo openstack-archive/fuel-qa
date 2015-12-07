@@ -172,14 +172,19 @@ Test Ironic
 .. automodule:: fuelweb_test.tests.test_ironic_base
   :members:
 
-Base l3 agent tests
--------------------
+Base networking tests
+---------------------
 .. automodule:: fuelweb_test.tests.cloud_testing.neutron.base
   :members:
 
-Test l3 agent ban
------------------
-.. automodule:: fuelweb_test.tests.cloud_testing.neutron.test_ban_l3_agent
+Base l3 agent tests
+-------------------
+.. automodule:: fuelweb_test.tests.cloud_testing.neutron.test_l3_agent_base
+  :members:
+
+L3 agent tests
+--------------
+.. automodule:: fuelweb_test.tests.cloud_testing.neutron.test_l3_agent
   :members:
 
 Gating tests

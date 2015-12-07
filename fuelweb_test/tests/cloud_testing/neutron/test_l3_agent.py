@@ -18,11 +18,11 @@ from fuelweb_test import settings
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.tests_strength import test_neutron
 
-from fuelweb_test.tests.cloud_testing.neutron import base
+from fuelweb_test.tests.cloud_testing.neutron import test_l3_agent_base
 
 
 @test(groups=['networking', 'networking_vlan'])
-class TestL3AgentVlan(base.TestNeutronBase):
+class TestL3AgentVlan(test_l3_agent_base.TestL3AgentBase):
     """Test L3 agent migration on failure"""
 
     segment_type = settings.NEUTRON_SEGMENT['vlan']
@@ -167,7 +167,7 @@ class TestL3AgentVlan(base.TestNeutronBase):
 
 
 @test(groups=['networking', 'networking_gre'])
-class TestL3AgentGRE(base.TestNeutronBase):
+class TestL3AgentGRE(test_l3_agent_base.TestL3AgentBase):
     """Test L3 agent migration on failure"""
 
     segment_type = settings.NEUTRON_SEGMENT['gre']
@@ -312,7 +312,7 @@ class TestL3AgentGRE(base.TestNeutronBase):
 
 
 @test(groups=['networking', 'networking_vxlan'])
-class TestL3AgentVxlan(base.TestNeutronBase):
+class TestL3AgentVxlan(test_l3_agent_base.TestL3AgentBase):
     """Test L3 agent migration on failure"""
 
     segment_type = settings.NEUTRON_SEGMENT['tun']
