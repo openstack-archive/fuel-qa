@@ -68,7 +68,8 @@ class RepeatableImageBased(TestBasic):
         # wait for nodes to appear after bootstrap
         wait(lambda: len(self.fuel_web.client.list_nodes()) == 5,
              timeout=10 * 60)
-        self.fuel_web.warm_shutdown_nodes(self.env.d_env.nodes().slaves[:5])
+        for slave in self.env.d_env.nodes().slaves[:5]:
+            slave.destroy()
 
         self.env.make_snapshot("deploy_after_delete", is_make=True)
 
