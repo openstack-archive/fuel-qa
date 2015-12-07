@@ -1451,6 +1451,8 @@ class FuelWebClient(object):
 
                 networks['management']['cidr'] = str(manage_net)
                 networks['storage']['cidr'] = str(storage_net)
+                networks['management']['vlan_start'] = None
+                networks['storage']['vlan_start'] = None
 
                 if net_provider == 'neutron':
                     networks['private_tun']['cidr'] = str(private_net)
