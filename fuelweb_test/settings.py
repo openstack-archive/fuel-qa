@@ -31,8 +31,11 @@ ENV_NAME = os.environ.get("ENV_NAME", "fuel_system_test")
 VIRTUAL_ENV = os.environ.get("VIRTUAL_ENV", "")
 
 MASTER_IS_CENTOS7 = get_var_as_bool('MASTER_IS_CENTOS7', True)
+MASTER_PREDICTABLE_INTERFACE_NAMES = get_var_as_bool(
+    'MASTER_PREDICTABLE_INTERFACE_NAMES',
+    True)
 PREDICTABLE_INTERFACE_NAMES = get_var_as_bool('PREDICTABLE_INTERFACE_NAMES',
-                                              True)
+                                              False)
 
 ISO_PATH = os.environ.get('ISO_PATH')
 LOGS_DIR = os.environ.get('LOGS_DIR', os.getcwd())
