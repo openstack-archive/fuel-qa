@@ -242,8 +242,10 @@ class CephHA(TestBasic):
         Snapshot ceph_ha
 
         """
-        if self.env.d_env.has_snapshot('ceph_ha'):
-            raise SkipTest("Test 'ceph_ha' has already ran")
+        try:
+            self.check_run('ceph_ha')
+        except SkipTest:
+            return
 
         self.env.revert_snapshot("ready")
         self.env.bootstrap_nodes(
