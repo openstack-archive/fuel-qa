@@ -23,6 +23,7 @@ from fuelweb_test.helpers.checkers import check_cluster_presence
 from fuelweb_test.helpers.checkers import check_cobbler_node_exists
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import run_on_remote
+from fuelweb_test.helpers.utils import generate_floating_ranges
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
@@ -98,12 +99,14 @@ class CommandLineTest(test_cli_base.CommandLine):
         Scenario:
             1. Revert snapshot "ready_with_3_slaves"
             2. Create a cluster using Fuel CLI
-            3. Provision a controller node using Fuel CLI
-            4. Provision two compute+cinder nodes using Fuel CLI
-            5. Deploy the controller node using Fuel CLI
-            6. Deploy the compute+cinder nodes using Fuel CLI
-            7. Run OSTF
-            8. Make snapshot "cli_selected_nodes_deploy"
+            3. Add floating ranges for public network
+            4. Provision a controller node using Fuel CLI
+            5. Provision two compute+cinder nodes using Fuel CLI
+            6. Deploy the controller node using Fuel CLI
+            7. Deploy the compute+cinder nodes using Fuel CLI
+            8. Compare floating ranges
+            9. Run OSTF
+            10. Make snapshot "cli_selected_nodes_deploy"
 
         Duration 50m
         """
@@ -129,7 +132,25 @@ class CommandLineTest(test_cli_base.CommandLine):
 
             # Update network parameters
             self.update_cli_network_configuration(cluster_id, remote)
-
+            # Change floating ranges
+            current_floating_range =\
+                self.get_floating_ranges(cluster_id, remote)
+            logger.info(
+                "Current floating ranges: {0}".format(
+                    current_floating_range))
+            first_floating_address = current_floating_range[0][0]
+            logger.info(
+                "First floating address: {0}".format(
+                    first_floating_address))
+            last_floating_address = current_floating_range[0][1]
+            logger.info(
+                "Last floating address: {0}".format(
+                    last_floating_address))
+            new_floating_range = generate_floating_ranges(
+                first_floating_address,
+                last_floating_address, 10)
+            logger.info("New floating range: {0}".format(new_floating_range))
+            self.change_floating_ranges(cluster_id, remote, new_floating_range)
             # Update SSL configuration
             self.update_ssl_configuration(cluster_id, remote)
 
@@ -162,18 +183,28 @@ class CommandLineTest(test_cli_base.CommandLine):
                    .format(cluster_id, node_ids[0]))
             task = run_on_remote(remote, cmd, jsonify=True)
             self.assert_cli_task_success(task, remote, timeout=60 * 60)
-
             # Deploy the compute nodes
             cmd = ('fuel --env-id={0} node --deploy --node {1},{2} --json'
                    .format(cluster_id, node_ids[1], node_ids[2]))
             task = run_on_remote(remote, cmd, jsonify=True)
             self.assert_cli_task_success(task, remote, timeout=30 * 60)
-
-            self.fuel_web.run_ostf(
-                cluster_id=cluster_id,
-                test_sets=['ha', 'smoke', 'sanity'])
-
-            self.env.make_snapshot("cli_selected_nodes_deploy", is_make=True)
+            # Verify networks
+            self.fuel_web.verify_network(cluster_id)
+        # Get hiera floating ranges after deploying cluster
+        controller_nodes = \
+            self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+                cluster_id, ['controller'])
+        controller_node = controller_nodes[0]['ip']
+        actual_floating_ranges = self.hiera_floating_ranges(controller_node)
+        logger.info(
+            "Current floating ranges: {0}".format(actual_floating_ranges))
+        assert_equal(actual_floating_ranges, new_floating_range,
+                     message="Floating ranges are not equal")
+        # Run OSTF
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['ha', 'smoke', 'sanity'])
+        self.env.make_snapshot("cli_selected_nodes_deploy", is_make=True)
 
     @test(depends_on_groups=['cli_selected_nodes_deploy'],
           groups=["cli_node_deletion_check"])
