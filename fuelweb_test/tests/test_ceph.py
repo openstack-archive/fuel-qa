@@ -320,8 +320,8 @@ class CephHA(TestBasic):
             versions.append({'name': node['fqdn'], 'ceph_version': version})
 
         def check_ver(v):
-            # Check version. True if version bigger or equal @ceph_version
-            return not (parse_version(v['ceph_version']) <
+            # Check version. True if version equal @ceph_version
+            return (parse_version(v['ceph_version']) ==
                         parse_version(ceph_version))
 
         bad_nodes = filter(check_ver, versions)
