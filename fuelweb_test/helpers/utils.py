@@ -599,6 +599,19 @@ def node_freemem(remote, unit='MB'):
     return ret
 
 
+def hiera_json_out(node_ip, parameter):
+    hiera_cmd = "ruby -rhiera -rjson -e \"h = Hiera.new(); " \
+                "Hiera.logger = 'noop'; " \
+                "puts JSON.dump(h.lookup(\'{0}\', " \
+                "[], {{}}, nil, nil))\"".format(parameter)
+    ssh_manager = SSHManager()
+    remote_command = ssh_manager.execute(
+        ip=node_ip,
+        cmd=hiera_cmd)['stdout']
+    config = json.loads(remote_command[0])
+    return(config)
+
+
 def get_node_hiera_roles(remote):
     """Get hiera roles assigned to host
 
