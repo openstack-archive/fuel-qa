@@ -505,7 +505,8 @@ class OpenStackActions(common.Common):
                       .format(self.get_srv_instance_name(srv)))['stdout'])
         return res.split('\'')[1]
 
-    def create_network(self, tenant_id, network_name):
-        body = {'network': {'tenant_id': tenant_id,
-                            'name': network_name}}
+    def create_network(self, network_name, **kwargs):
+        body = {'network': {'name': network_name}}
+        if kwargs:
+            body['network'].update(kwargs)
         return self.neutron.create_network(body)
