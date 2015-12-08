@@ -220,10 +220,10 @@ class EnvironmentModel(object):
                 " <Enter>\n"
             ) % params
         if MASTER_IS_CENTOS7:
-            if PREDICTABLE_INTERFACE_NAMES:
-                iface = 'enp0s3'
-            else:
-                iface = 'eth0'
+            #if PREDICTABLE_INTERFACE_NAMES:
+            iface = 'enp0s3'
+            #else:
+            #    iface = 'eth0'
             if iso_connect_as == 'usb':
                 keys = (
                     "<Wait>\n"  # USB boot uses boot_menu=yes for master node
@@ -572,10 +572,10 @@ class EnvironmentModel(object):
             raise Exception('Fuel node deployment failed.')
 
     def dhcrelay_check(self):
-        if PREDICTABLE_INTERFACE_NAMES:
-            iface = 'enp0s3'
-        else:
-            iface = 'eth0'
+        #if PREDICTABLE_INTERFACE_NAMES:
+        iface = 'enp0s3'
+        #else:
+        #    iface = 'eth0'
         command = "dhcpcheck discover " \
                   "--ifaces {iface} " \
                   "--repeat 3 " \
