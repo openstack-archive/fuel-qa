@@ -87,6 +87,65 @@ class CommandLine(TestBasic):
         )
 
     @logwrap
+    def get_floating_ranges(self, controller_node_name):
+        """
+        1. SSH to controller node
+        2. Get network settings from controller  node to variable
+        hiera_config
+        3. Convert to json network settings in variable config_json
+        4. Get new list of floating ranges in variable
+        floating_ranges
+        5. Convert to sublist ([['10.109.1.128', '10.109.1.138'],
+         ['10.109.1.139', '10.109.1.149']] floating ranges
+        in variable floating_ranges_json
+        """
+        logger.info('Get floating ranges from astute.yaml file at %s node',
+                    controller_node_name)
+        with self.env.fuel_web.get_ssh_for_node(controller_node_name)\
+                as node_remote:
+            hiera_config = node_remote.execute(
+                'ruby -rhiera -rjson -e '
+                '"h = Hiera.new();'
+                ' ' 'Hiera.logger = \'noop\';'
+                ' ''puts JSON.dump'
+                ' (h.lookup(\'quantum_settings\','
+                ' ''[], {}, nil, nil))"')['stdout']
+            config_json = json.loads(hiera_config[0])
+            floating_ranges = config_json[
+                "predefined_networks"]["admin_floating_net"]["L3"]["floating"]
+            floating_ranges_json =\
+                [[x[0], x[1]] for x in (x.split(':') for x in floating_ranges)]
+            logger.info(floating_ranges_json)
+            return floating_ranges_json
+
+    @logwrap
+    def change_floating_ranges(self, cluster_id, remote):
+        """
+        1. Get current network configuration file
+        2. Get first float address
+        3. Parse float address by octets
+        4. Generate new list of floating ranges
+        5. Write new floating range to network configuration file
+        """
+        net_config = self.get_networks(cluster_id, remote)
+        floating_ranges =\
+            net_config[u'networking_parameters'][u'floating_ranges']
+        first_floating_address = floating_ranges[0][0]
+        octets = first_floating_address.split('.')
+        new_floating_range = \
+            [[i, i+10] for i in range(int(octets[3]), 244, 11)]
+        new_ranges_list = \
+            [['{main!s}.{last!s}'.format(
+                main=floating_ranges[0][0][:floating_ranges[0][0].rindex('.')],
+                last=last) for last in sublist]
+             for sublist in new_floating_range]
+        net_config[u'networking_parameters'][u'floating_ranges'] = \
+            new_ranges_list
+        new_settings = net_config
+        self.update_network(cluster_id, remote, new_settings)
+        return new_ranges_list
+
+    @logwrap
     def update_cli_network_configuration(self, cluster_id, remote):
         """Update cluster network settings with custom configuration.
         Place here an additional config changes if needed (e.g. nodegroups'
