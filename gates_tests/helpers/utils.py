@@ -74,9 +74,69 @@ def replace_fuel_agent_rpm(environment):
         raise
 
 
-def replace_bootstrap(environment):
+def patch_bootstrap(environment):
     """Replaced initramfs.img in /var/www/nailgun/
     with newly_builded from review
+    environment - Environment Model object - self.env
+    """
+    logger.info("Update fuel-agent code and assemble new bootstrap")
+    if not settings.UPDATE_FUEL:
+        raise Exception("{} variable don't exist"
+                        .format(settings.UPDATE_FUEL))
+    try:
+        pack_path = '/var/www/nailgun/fuel-agent-review/'
+        with environment.d_env.get_admin_remote() as remote:
+            remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
+                          pack_path)
+            # renew code in bootstrap
+
+            # Step 1 - unpack bootstrap
+            bootstrap_var = "/var/initramfs"
+            bootstrap = "/var/www/nailgun/bootstrap"
+            cmd = ("mkdir {0};"
+                   "cp /{1}/initramfs.img {0}/;"
+                   "cd {0};"
+                   "cat initramfs.img | gunzip | cpio -imudv;").format(
+                bootstrap_var,
+                bootstrap
+            )
+            with environment.d_env.get_admin_remote() as remote:
+                result = remote.execute(cmd)
+                assert_equal(result['exit_code'], 0,
+                             ('Failed to add unpack bootstrap {}'
+                              ).format(result))
+
+            # Step 2 - replace fuel-agent code in unpacked bootstrap
+            agent_path = "/usr/lib/python2.6/site-packages/fuel_agent"
+            image_rebuild = "{} | {} | {}".format(
+                "find . -xdev",
+                "cpio --create --format='newc'",
+                "gzip -9 > /var/initramfs/initramfs.img.updated")
+
+            cmd = ("rm -rf {0}{1}/*;"
+                   "rm -rf {0}/initramfs.img"
+                   "cp -r {2}fuel-agent/fuel_agent/* {0}{1}/;"
+                   "cd {0}/;"
+                   "{3};"
+                   ).format(
+                bootstrap_var,
+                agent_path,
+                pack_path,
+                image_rebuild)
+
+            with environment.d_env.get_admin_remote() as remote:
+                result = remote.execute(cmd)
+                assert_equal(result['exit_code'], 0,
+                             ('Failed to add rebuild bootstrap {}'
+                              ).format(result))
+    except Exception as e:
+        logger.error("Could not upload package {e}".format(e=e))
+        raise
+
+
+def replace_bootstrap(environment):
+    """Replaced initramfs.img in /var/www/nailgun/
+    with re-builded with review code
     environment - Environment Model object - self.env
     """
     logger.info("Updating bootstrap")
@@ -84,21 +144,18 @@ def replace_bootstrap(environment):
         raise Exception("{} variable don't exist"
                         .format(settings.UPDATE_FUEL))
     try:
-        pack_path = '/var/www/nailgun/fuel-agent/'
-        with environment.d_env.get_admin_remote() as remote:
-            remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
-                          pack_path)
+        rebuilded_bootstrap = '/var/initramfs/'
         logger.info("Assigning new bootstrap from {}"
-                    .format(pack_path))
+                    .format(rebuilded_bootstrap))
         bootstrap = "/var/www/nailgun/bootstrap"
         cmd = ("rm {0}/initramfs.img;"
                "cp {1}/initramfs.img.updated {0}/initramfs.img;"
                "chmod +r {0}/initramfs.img;"
-               ).format(bootstrap, pack_path)
+               ).format(bootstrap, rebuilded_bootstrap)
         with environment.d_env.get_admin_remote() as remote:
             checkers.check_file_exists(
                 remote,
-                '{0}initramfs.img.updated'.format(pack_path))
+                '{0}initramfs.img.updated'.format(rebuilded_bootstrap))
             result = remote.execute(cmd)
             assert_equal(result['exit_code'], 0,
                          ('Failed to assign bootstrap {}'

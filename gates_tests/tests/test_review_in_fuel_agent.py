@@ -14,6 +14,7 @@
 
 from proboscis import test
 
+from gates_tests.helpers.utils import patch_bootstrap
 from gates_tests.helpers.utils import replace_bootstrap
 from gates_tests.helpers.utils import replace_fuel_agent_rpm
 
@@ -59,6 +60,7 @@ class Gate(TestBasic):
         replace_fuel_agent_rpm(self.env)
 
         self.show_step(3)
+        patch_bootstrap(self.env)
         replace_bootstrap(self.env)
 
         self.show_step(4)
