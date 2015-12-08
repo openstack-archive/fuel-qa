@@ -133,16 +133,8 @@ class TestL3AgentBase(base.TestNeutronBase):
         # clear last banned l3 agent
         self.clear_l3_agent(_ip=_ip,
                             router_name="router01",
-                            node=last_banned_node)
-
-        # wait for router alive
-        router = self.os_conn.neutron.list_routers(
-            name='router01')['routers'][0]
-        wait(
-            lambda: self.os_conn.get_l3_for_router(
-                router['id'])['agents'][0]['alive'] is True,
-            timeout=60 * 3, timeout_msg="Last L3 agent is not alive"
-        )
+                            node=last_banned_node,
+                            wait_for_alive=True)
 
         # create another server on net01
         net01 = self.os_conn.nova.networks.find(label="net01")
@@ -178,18 +170,12 @@ class TestL3AgentBase(base.TestNeutronBase):
         # clear last banned l3 agent
         self.clear_l3_agent(_ip=_ip,
                             router_name="router01",
-                            node=first_banned_node)
-
-        # wait for router alive
-        router = self.os_conn.neutron.list_routers(
-            name='router01')['routers'][0]
-        wait(
-            lambda: self.os_conn.get_l3_for_router(
-                router['id'])['agents'][0]['alive'] is True,
-            timeout=60 * 3, timeout_msg="Last L3 agent is not alive"
-        )
+                            node=first_banned_node,
+                            wait_for_alive=True)
 
         # wait for router migrate to clearend node
+        router = self.os_conn.neutron.list_routers(
+            name='router01')['routers'][0]
         err_msg = "l3 agent wasn't migrate to {0}"
         wait(lambda: first_banned_node == self.os_conn.get_l3_agent_hosts(
              router['id'])[0], timeout=60 * 3,
@@ -214,6 +200,34 @@ class TestL3AgentBase(base.TestNeutronBase):
 
         # drop rabbit port
         self.drop_rabbit_port(router_name="router01")
+
+        # check pings
+        self.check_vm_connectivity()
+
+    def check_ban_l3_agents_many_times(self):
+        """Ban l3-agent many times and check health of l3-agent"""
+        self.prepare_openstack()
+
+        net_id = self.os_conn.neutron.list_networks(
+            name="net01")['networks'][0]['id']
+        devops_node = self.get_node_with_dhcp(self.os_conn, net_id)
+        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
+
+        # ban 2 l3 agents
+        for _ in range(2):
+            self.ban_l3_agent(router_name="router01", _ip=_ip)
+
+        for _ in range(40):
+            # ban l3 agent
+            last_banned_node = self.ban_l3_agent(router_name="router01",
+                                                 _ip=_ip,
+                                                 wait_for_migrate=False,
+                                                 wait_for_die=True)
+            # clear last banned l3 agent
+            self.clear_l3_agent(_ip=_ip,
+                                router_name="router01",
+                                node=last_banned_node,
+                                wait_for_alive=True)
 
         # check pings
         self.check_vm_connectivity()

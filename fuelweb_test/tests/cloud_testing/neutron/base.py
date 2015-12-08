@@ -131,7 +131,7 @@ class TestNeutronBase(test_neutron_base.TestNeutronFailoverBase):
                  timeout_msg=err_msg.format(node_with_l3))
         return node_with_l3
 
-    def clear_l3_agent(self, _ip, router_name, node):
+    def clear_l3_agent(self, _ip, router_name, node, wait_for_alive=False):
         """Clear L3 agent ban and wait until router moved to this node
 
         Clear previously banned L3 agent on node wait until ruter moved to this
@@ -141,11 +141,21 @@ class TestNeutronBase(test_neutron_base.TestNeutronFailoverBase):
         :param router_name: name of router to wait until it move to node
         :param node: name of node to clear
         """
+        router = self.os_conn.neutron.list_routers(
+            name=router_name)['routers'][0]
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
             remote.execute(
                 "pcs resource clear p_neutron-l3-agent {0}".format(node))
 
         logger.info("Clear L3 agent on node {0}".format(node))
+
+        # wait for l3 agent alive
+        if wait_for_alive:
+            wait(
+                lambda: self.os_conn.get_l3_for_router(
+                    router['id'])['agents'][0]['alive'] is True,
+                timeout=60 * 3, timeout_msg="L3 agent is dead yet"
+            )
 
     def drop_rabbit_port(self, router_name):
         """Drop rabbit port and wait until router rescheduling

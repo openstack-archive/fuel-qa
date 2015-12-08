@@ -197,6 +197,43 @@ class TestL3AgentVlan(test_l3_agent_base.TestL3AgentBase):
         self.env.revert_snapshot("deploy_ha_neutron_vlan")
         self.check_l3_agent_after_drop_rabbit_port()
 
+    @test(
+        depends_on=[
+            test_neutron.TestNeutronFailoverVlan.deploy_ha_neutron_vlan],
+        groups=["test_ban_l3_agents_many_times_vlan",
+                "test_ban_l3_agents_many_times"])
+    @log_snapshot_after_test
+    def test_ban_l3_agents_many_times_vlan(self):
+        """Ban l3-agent many times and check health of l3-agent
+
+        Scenario:
+            1. Revert snapshot with neutron cluster
+            2. Create network1, network2
+            3. Create router1 and connect it with network1, network2 and
+               external net
+            4. Boot vm1 in network1 and associate floating ip
+            5. Boot vm2 in network2
+            6. Add rules for ping
+            7. ping 8.8.8.8, vm1 (both ip) and vm2 (fixed ip) from each other
+            8. Ban l3-agent on what router1 is
+            9. Wait for route rescheduling
+            10. Repeat steps 7-8
+            11. Ban l3-agent on what router1 is
+            12. Wait for L3 agent dies
+            13. Clear last banned L3 agent
+            14. Wait for L3 agent alive
+            15. Repeat steps 11-14 40 times
+            16. Boot one more VM (VM3) in network1
+            17. Boot vm3 in network1
+            18. ping 8.8.8.8, vm1 (both ip), vm2 (fixed ip) and vm3 (fixed ip)
+                from each other vm
+
+        Duration 30m
+
+        """
+        self.env.revert_snapshot("deploy_ha_neutron_vlan")
+        self.check_ban_l3_agents_many_times()
+
 
 @test(groups=['networking', 'networking_gre'])
 class TestL3AgentGRE(test_l3_agent_base.TestL3AgentBase):
@@ -374,6 +411,43 @@ class TestL3AgentGRE(test_l3_agent_base.TestL3AgentBase):
         self.env.revert_snapshot("deploy_ha_neutron_gre")
         self.check_l3_agent_after_drop_rabbit_port()
 
+    @test(
+        depends_on=[
+            test_neutron.TestNeutronFailoverGRE.deploy_ha_neutron_gre],
+        groups=["test_ban_l3_agents_many_times_gre",
+                "test_ban_l3_agents_many_times"])
+    @log_snapshot_after_test
+    def test_ban_l3_agents_many_times_gre(self):
+        """Ban l3-agent many times and check health of l3-agent
+
+        Scenario:
+            1. Revert snapshot with neutron cluster
+            2. Create network1, network2
+            3. Create router1 and connect it with network1, network2 and
+               external net
+            4. Boot vm1 in network1 and associate floating ip
+            5. Boot vm2 in network2
+            6. Add rules for ping
+            7. ping 8.8.8.8, vm1 (both ip) and vm2 (fixed ip) from each other
+            8. Ban l3-agent on what router1 is
+            9. Wait for route rescheduling
+            10. Repeat steps 7-8
+            11. Ban l3-agent on what router1 is
+            12. Wait for L3 agent dies
+            13. Clear last banned L3 agent
+            14. Wait for L3 agent alive
+            15. Repeat steps 11-14 40 times
+            16. Boot one more VM (VM3) in network1
+            17. Boot vm3 in network1
+            18. ping 8.8.8.8, vm1 (both ip), vm2 (fixed ip) and vm3 (fixed ip)
+                from each other vm
+
+        Duration 30m
+
+        """
+        self.env.revert_snapshot("deploy_ha_neutron_gre")
+        self.check_ban_l3_agents_many_times()
+
 
 @test(groups=['networking', 'networking_vxlan'])
 class TestL3AgentVxlan(test_l3_agent_base.TestL3AgentBase):
@@ -550,3 +624,40 @@ class TestL3AgentVxlan(test_l3_agent_base.TestL3AgentBase):
         """
         self.env.revert_snapshot("deploy_ha_neutron_tun")
         self.check_l3_agent_after_drop_rabbit_port()
+
+    @test(
+        depends_on=[
+            test_neutron.TestNeutronFailoverVxlan.deploy_ha_neutron_vxlan],
+        groups=["test_ban_l3_agents_many_times_vxlan",
+                "test_ban_l3_agents_many_times"])
+    @log_snapshot_after_test
+    def test_ban_l3_agents_many_times_vxlan(self):
+        """Ban l3-agent many times and check health of l3-agent
+
+        Scenario:
+            1. Revert snapshot with neutron cluster
+            2. Create network1, network2
+            3. Create router1 and connect it with network1, network2 and
+               external net
+            4. Boot vm1 in network1 and associate floating ip
+            5. Boot vm2 in network2
+            6. Add rules for ping
+            7. ping 8.8.8.8, vm1 (both ip) and vm2 (fixed ip) from each other
+            8. Ban l3-agent on what router1 is
+            9. Wait for route rescheduling
+            10. Repeat steps 7-8
+            11. Ban l3-agent on what router1 is
+            12. Wait for L3 agent dies
+            13. Clear last banned L3 agent
+            14. Wait for L3 agent alive
+            15. Repeat steps 11-14 40 times
+            16. Boot one more VM (VM3) in network1
+            17. Boot vm3 in network1
+            18. ping 8.8.8.8, vm1 (both ip), vm2 (fixed ip) and vm3 (fixed ip)
+                from each other vm
+
+        Duration 30m
+
+        """
+        self.env.revert_snapshot("deploy_ha_neutron_tun")
+        self.check_ban_l3_agents_many_times()
