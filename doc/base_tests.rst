@@ -172,6 +172,11 @@ Test Ironic
 .. automodule:: fuelweb_test.tests.test_ironic_base
   :members:
 
+Test Services reconfiguration
+-----------------------------
+.. automodule:: fuelweb_test.tests.test_services_reconfiguration
+  :members:
+
 Gating tests
 ============
 
