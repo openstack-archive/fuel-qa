@@ -563,6 +563,19 @@ def node_freemem(remote, unit='MB'):
     return ret
 
 
+def hiera_json_out(node_remote, parameter):
+    hiera_config = node_remote.execute(
+        'ruby -rhiera -rjson -e '
+        '"h = Hiera.new();'
+        ' ' ' Hiera.logger = \'noop\';'
+        ' ''puts JSON.dump'
+        ' (h.lookup(\'{0}\','
+        ' ''[], {{}}, nil, nil))"'.format(parameter))['stdout']
+    logger.info(hiera_config)
+    config = json.loads(hiera_config[0])
+    return(config)
+
+
 def get_node_hiera_roles(remote):
     """Get hiera roles assigned to host
 
