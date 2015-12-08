@@ -557,7 +557,7 @@ class FloatingIPs(TestBasic):
             }
         )
 
-        floating_list = [self.fuel_web.get_floating_ranges()[0][0]]
+        floating_list = [self.fuel_web.hiera_floating_ranges()[0][0]]
         networking_parameters = {
             "floating_ranges": floating_list}
 
@@ -575,7 +575,7 @@ class FloatingIPs(TestBasic):
             tenant=csettings['tenant'])
 
         # assert ips
-        expected_ips = self.fuel_web.get_floating_ranges()[1][0]
+        expected_ips = self.fuel_web.hiera_floating_ranges()[1][0]
         self.fuel_web.assert_cluster_floating_list(
             os_conn, cluster_id, expected_ips)
 
