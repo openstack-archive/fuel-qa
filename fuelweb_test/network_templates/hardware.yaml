@@ -209,8 +209,8 @@ adv_net_template:
           name: <% if2 %>.361
     nic_mapping:
       default:
-        if1: eth0
-        if2: eth1
+        if1: enp0s1
+        if2: enp0s2
     templates_for_node_role:
       ceph-osd:
       - admin
