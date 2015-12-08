@@ -266,7 +266,6 @@ UPLOAD_MANIFESTS_PATH = os.environ.get(
 SITEPP_FOR_UPLOAD = os.environ.get(
     'SITEPP_PATH', '/etc/puppet/modules/osnailyfacter/examples/site.pp')
 
-UPLOAD_PATCHSET = get_var_as_bool('UPLOAD_PATCHSET', False)
 GERRIT_REFSPEC = os.environ.get('GERRIT_REFSPEC')
 PATCH_PATH = os.environ.get(
     'PATCH_PATH', '/tmp/fuel-ostf')
