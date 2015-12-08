@@ -35,7 +35,6 @@ from fuelweb_test import logger
 @test(groups=["command_line_minimal"])
 class CommandLineMinimal(TestBasic):
     """CommandLineMinimal."""  # TODO documentation
-
     @test(depends_on=[SetupEnvironment.setup_with_custom_manifests],
           groups=["hiera_deploy"])
     @log_snapshot_after_test
@@ -98,12 +97,14 @@ class CommandLineTest(test_cli_base.CommandLine):
         Scenario:
             1. Revert snapshot "ready_with_3_slaves"
             2. Create a cluster using Fuel CLI
-            3. Provision a controller node using Fuel CLI
-            4. Provision two compute+cinder nodes using Fuel CLI
-            5. Deploy the controller node using Fuel CLI
-            6. Deploy the compute+cinder nodes using Fuel CLI
-            7. Run OSTF
-            8. Make snapshot "cli_selected_nodes_deploy"
+            3. Add floating ranges for public network
+            4. Provision a controller node using Fuel CLI
+            5. Provision two compute+cinder nodes using Fuel CLI
+            6. Deploy the controller node using Fuel CLI
+            7. Deploy the compute+cinder nodes using Fuel CLI
+            8. Compare floating ranges
+            9. Run OSTF
+            10. Make snapshot "cli_selected_nodes_deploy"
 
         Duration 50m
         """
@@ -129,7 +130,11 @@ class CommandLineTest(test_cli_base.CommandLine):
 
             # Update network parameters
             self.update_cli_network_configuration(cluster_id, remote)
-
+            # Change floating ranges
+            logger.info("Floating ranges changes to:")
+            new_floating_ranges =\
+                self.change_floating_ranges(cluster_id, remote)
+            logger.info(new_floating_ranges)
             # Update SSL configuration
             self.update_ssl_configuration(cluster_id, remote)
 
@@ -161,19 +166,28 @@ class CommandLineTest(test_cli_base.CommandLine):
             cmd = ('fuel --env-id={0} node --deploy --node {1} --json'
                    .format(cluster_id, node_ids[0]))
             task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, remote, timeout=60 * 60)
-
+            self.assert_cli_task_success(task, remote, timeout=30 * 60)
             # Deploy the compute nodes
             cmd = ('fuel --env-id={0} node --deploy --node {1},{2} --json'
                    .format(cluster_id, node_ids[1], node_ids[2]))
             task = run_on_remote(remote, cmd, jsonify=True)
             self.assert_cli_task_success(task, remote, timeout=30 * 60)
-
-            self.fuel_web.run_ostf(
-                cluster_id=cluster_id,
-                test_sets=['ha', 'smoke', 'sanity'])
-
-            self.env.make_snapshot("cli_selected_nodes_deploy", is_make=True)
+            # Verify networks
+            self.fuel_web.verify_network(cluster_id)
+        # Get current floating ranges
+        logger.info("Current floating ranges:")
+        controller_nodes = \
+            self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+                cluster_id, ['controller'])
+        controller_node = controller_nodes[0]['ip']
+        actual_floating_ranges = self.get_floating_ranges(controller_node)
+        assert_equal(actual_floating_ranges, new_floating_ranges,
+                     message="Floating ranges are not equal")
+        # Run OSTF
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['ha', 'smoke', 'sanity'])
+        self.env.make_snapshot("cli_selected_nodes_deploy", is_make=True)
 
     @test(depends_on_groups=['cli_selected_nodes_deploy'],
           groups=["cli_node_deletion_check"])
