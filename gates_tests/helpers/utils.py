@@ -30,8 +30,7 @@ def replace_fuel_agent_rpm(environment):
     """
     logger.info("Patching fuel-agent")
     if not settings.UPDATE_FUEL:
-        raise Exception("{} variable don't exist"
-                        .format(settings.UPDATE_FUEL))
+        raise exceptions.FuelQAVariableNotSet('UPDATE_FUEL', 'True')
     try:
         pack_path = '/var/www/nailgun/fuel-agent/'
         container = 'mcollective'
@@ -302,4 +301,83 @@ def update_ostf(environment):
         logger.info("OSTF status: RUNNING")
     except Exception as e:
         logger.error("Could not update OSTF: {e}".format(e=e))
+        raise
+
+
+def replace_fuel_nailgun_rpm(environment):
+    """
+    Replace fuel_nailgun*.rpm from review
+    environment - Environment Model object - self.env
+    """
+    logger.info("Patching fuel-nailgun")
+    if not settings.UPDATE_FUEL:
+        raise exceptions.FuelQAVariableNotSet('UPDATE_FUEL', 'True')
+    try:
+        pack_path = '/var/www/nailgun/fuel-nailgun/'
+        container = 'nailgun'
+        with environment.d_env.get_admin_remote() as remote:
+            remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
+                          pack_path)
+        # stop services
+        service_list = ['assassind', 'receiverd',
+                        'nailgun', 'oswl_*', 'statsenderd']
+        [environment.base_actions.execute_in_container(
+            'systemctl stop {0}'.format(service),
+            container, exit_code=0) for service in service_list]
+
+        # Update fuel-nailgun in nailgun
+        cmd = "rpm -q fuel-nailgun"
+        try:
+            old_package = \
+                environment.base_actions.execute_in_container(
+                    cmd, container, exit_code=0)
+            logger.info("Delete package {0}"
+                        .format(old_package))
+        except AssertionError:
+            if 'fuel-nailgun is not installed' in AssertionError.message:
+                old_package = None
+            else:
+                raise AssertionError
+        # Drop nailgun db manage.py dropdb
+        cmd = 'manage.py dropdb'
+        environment.base_actions.execute_in_container(
+            cmd, container, exit_code=0)
+
+        cmd = "rpm -e fuel-nailgun"
+        environment.base_actions.execute_in_container(
+            cmd, container, exit_code=0)
+
+        cmd = "ls -1 {0}|grep 'fuel-nailgun'".format(pack_path)
+        new_package = \
+            environment.base_actions.execute_in_container(
+                cmd, container).rstrip('.rpm')
+        logger.info("Install package {0}"
+                    .format(new_package))
+
+        cmd = "yum localinstall -y {0}fuel-nailgun*.rpm".format(
+            pack_path)
+        environment.base_actions.execute_in_container(
+            cmd, container, exit_code=0)
+
+        cmd = "rpm -q fuel-nailgun"
+        installed_package = \
+            environment.base_actions.execute_in_container(
+                cmd, container, exit_code=0)
+        if old_package:
+            assert_equal(installed_package, new_package,
+                         "The new package {0} was not installed".
+                         format(new_package))
+
+        cmd = ('puppet apply --debug'
+               ' /etc/puppet/modules/nailgun/examples/nailgun-only.pp')
+        environment.base_actions.execute_in_container(
+            cmd, container, exit_code=0)
+        with environment.d_env.get_admin_remote() as remote:
+            res = remote.execute("fuel release --sync-deployment-tasks"
+                                 " --dir /etc/puppet/")
+            assert_equal(res['exit_code'], 0,
+                         'Failed to sync tasks with result {0}'.format(res))
+
+    except Exception as e:
+        logger.error("Could not upload package {e}".format(e=e))
         raise
