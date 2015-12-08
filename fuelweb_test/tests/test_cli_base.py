@@ -24,6 +24,7 @@ from fuelweb_test.helpers.ssl import change_cluster_ssl_config
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logwrap
 from fuelweb_test import logger
+from fuelweb_test.helpers.utils import hiera_json_out
 
 
 class CommandLine(TestBasic):
@@ -85,6 +86,54 @@ class CommandLine(TestBasic):
                 task['status'], 'ready', name=task["name"]
             )
         )
+
+    @logwrap
+    def get_floating_ranges(self, node_remote):
+        """
+
+        1. SSH to controller node
+        2. Get network settings from controller  node
+        3. Convert to json network settings in variable config_json
+        4. Get new list of floating ranges in variable
+        floating_ranges
+        5. Convert to sublist floating ranges in variable floating_ranges_json
+
+        """
+        with node_remote:
+            config_json = hiera_json_out(node_remote, 'quantum_settings')
+            floating_ranges = config_json[
+                "predefined_networks"]["admin_floating_net"]["L3"]["floating"]
+            floating_ranges_json =\
+                [[x[0], x[1]] for x in (x.split(':') for x in floating_ranges)]
+            logger.info(floating_ranges_json)
+            return floating_ranges_json
+
+    @logwrap
+    def change_floating_ranges(self, cluster_id, remote):
+        """
+        1. Get current network configuration file from master node
+        2. Get first float address
+        3. Parse float address by octets
+        4. Generate new list of floating ranges
+        5. Write new floating range to network configuration file
+        """
+        net_config = self.get_networks(cluster_id, remote)
+        floating_ranges =\
+            net_config[u'networking_parameters'][u'floating_ranges']
+        first_floating_address = floating_ranges[0][0]
+        octets = first_floating_address.split('.')
+        new_floating_range = \
+            [[i, i + 10] for i in range(int(octets[3]), 244, 11)]
+        new_ranges_list = \
+            [['{main!s}.{last!s}'.format(
+                main=floating_ranges[0][0][:floating_ranges[0][0].rindex('.')],
+                last=last) for last in sublist]
+             for sublist in new_floating_range]
+        net_config[u'networking_parameters'][u'floating_ranges'] = \
+            new_ranges_list
+        new_settings = net_config
+        self.update_network(cluster_id, remote, new_settings)
+        return new_ranges_list
 
     @logwrap
     def update_cli_network_configuration(self, cluster_id, remote):
