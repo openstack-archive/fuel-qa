@@ -1,0 +1,112 @@
+#    Copyright 2015 Mirantis, Inc.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+from proboscis import test
+
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test import settings
+from fuelweb_test.tests.base_test_case import SetupEnvironment
+from fuelweb_test.tests.base_test_case import TestBasic
+from gates_tests.helpers import exceptions
+from gates_tests.helpers.utils import update_ostf
+
+
+@test(groups=["gate_ostf"])
+class GateOstf(TestBasic):
+    """Update fuel-ostf in ostf container,
+    Check how it works on pre deployed cluster
+    Executes for each review in openstack/fuel-ostf"""
+
+    @test(depends_on=[SetupEnvironment.prepare_release],
+          groups=["gate_ostf_ceph_ha"])
+    @log_snapshot_after_test
+    def gate_ostf_ceph_ha(self):
+        """Deploy ceph with cinder in HA mode
+
+        Scenario:
+            1. Create cluster
+            2. Add 3 nodes with controller and ceph OSD roles
+            3. Add 1 node with ceph OSD roles
+            4. Add 2 nodes with compute and ceph OSD roles
+            5. Deploy the cluster
+
+        Duration 90m
+        Snapshot gate_ostf_ceph_ha
+
+        """
+        self.check_run('gate_ostf_ceph_ha')
+
+        self.env.revert_snapshot("ready")
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[:6])
+        csettings = {}
+        if settings.NEUTRON_ENABLE:
+            csettings = {
+                "net_provider": 'neutron',
+                "net_segment_type": settings.NEUTRON_SEGMENT['vlan']
+            }
+        csettings.update(
+            {
+                'volumes_ceph': True,
+                'images_ceph': True,
+                'volumes_lvm': False,
+                'osd_pool_size': "3"
+            }
+        )
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings=csettings
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller', 'ceph-osd'],
+                'slave-02': ['controller', 'ceph-osd'],
+                'slave-03': ['controller', 'ceph-osd'],
+                'slave-04': ['compute', 'ceph-osd'],
+                'slave-05': ['compute', 'ceph-osd'],
+                'slave-06': ['ceph-osd']
+            }
+        )
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.env.make_snapshot("gate_ostf_ceph_ha", is_make=True)
+
+    @test(depends_on=[gate_ostf_ceph_ha],
+          groups=["gate_ostf_update"])
+    @log_snapshot_after_test
+    def gate_ostf_update(self):
+        """ Update ostf start on deployed cluster
+
+        Scenario:
+            1. Revert snapshot "gate_ostf_ceph_ha"
+            2. Update ostf
+            3. Run ostf
+
+        Duration 35m
+
+        """
+        if not settings.UPDATE_FUEL:
+            raise exceptions.ConfigurationException(
+                'Variable "UPDATE_FUEL" was not set to true')
+        self.show_step(1)
+        self.env.revert_snapshot("gate_ostf_ceph_ha")
+        self.show_step(2)
+        update_ostf(self.env)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        self.show_step(3)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['ha', 'smoke', 'sanity'])
