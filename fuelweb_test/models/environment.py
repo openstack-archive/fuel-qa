@@ -44,7 +44,6 @@ from fuelweb_test.models.fuel_web_client import FuelWebClient
 from fuelweb_test.models.collector_client import CollectorClient
 from fuelweb_test import settings
 from fuelweb_test.settings import MASTER_IS_CENTOS7
-from fuelweb_test.settings import PREDICTABLE_INTERFACE_NAMES
 from fuelweb_test import logwrap
 from fuelweb_test import logger
 
@@ -220,10 +219,10 @@ class EnvironmentModel(object):
                 " <Enter>\n"
             ) % params
         if MASTER_IS_CENTOS7:
-            if PREDICTABLE_INTERFACE_NAMES:
-                iface = 'enp0s3'
-            else:
-                iface = 'eth0'
+            # CentOS 7 is pretty stable with admin iface.
+            # TODO(akostrikov) add tests for menu items/kernel parameters
+            # TODO(akostrikov) refactor it.
+            iface = 'enp0s3'
             if iso_connect_as == 'usb':
                 keys = (
                     "<Wait>\n"  # USB boot uses boot_menu=yes for master node
@@ -572,10 +571,9 @@ class EnvironmentModel(object):
             raise Exception('Fuel node deployment failed.')
 
     def dhcrelay_check(self):
-        if PREDICTABLE_INTERFACE_NAMES:
-            iface = 'enp0s3'
-        else:
-            iface = 'eth0'
+        # CentOS 7 is pretty stable with admin iface.
+        # TODO(akostrikov) refactor it.
+        iface = 'enp0s3'
         command = "dhcpcheck discover " \
                   "--ifaces {iface} " \
                   "--repeat 3 " \
