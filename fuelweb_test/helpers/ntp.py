@@ -20,7 +20,6 @@ from proboscis.asserts import assert_true
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
-from fuelweb_test.settings import MASTER_IS_CENTOS7
 
 
 class GroupNtpSync(object):
@@ -53,8 +52,7 @@ class GroupNtpSync(object):
         return self
 
     def __exit__(self, exp_type, exp_value, traceback):
-        if not MASTER_IS_CENTOS7:
-            [ntp.remote.clear() for ntp in self.ntps]
+        [ntp.remote.clear() for ntp in self.ntps]
 
     @property
     def is_synchronized(self):
@@ -129,7 +127,7 @@ class Ntp(object):
             cls = NtpPacemaker()
         else:
             # Pacemaker not found, using native ntpd
-            cls = NtpInitscript()
+            cls = NtpService()
 
         cls.is_synchronized = False
         cls.is_connected = False
@@ -141,12 +139,8 @@ class Ntp(object):
         cmd = "awk '/^server/ && $2 !~ /127.*/ {print $2}' /etc/ntp.conf"
         cls.server = remote.execute(cmd)['stdout'][0]
 
-        cmd = "find /etc/init.d/ -regex '/etc/init.d/ntp.?'"
-        if not MASTER_IS_CENTOS7:
-            cls.service = remote.execute(cmd)['stdout'][0].strip()
-
         # Speedup time synchronization for slaves that use admin node as a peer
-        if admin_ip and not MASTER_IS_CENTOS7:
+        if admin_ip:
             cmd = ("sed -i 's/^server {0} .*/server {0} minpoll 3 maxpoll 5 "
                    "ibrust/' /etc/ntp.conf".format(admin_ip))
             remote.execute(cmd)
@@ -185,13 +179,6 @@ class Ntp(object):
                 offset = float(p[8])
                 jitter = float(p[9])
 
-                # 0. If centos 7 and jitter & offset are less than 500, let it
-                # pass for now.
-                if MASTER_IS_CENTOS7:
-                    # if (abs(offset) < 500) and (abs(jitter) < 500):
-                    self.is_connected = True
-                    return self.is_connected
-
                 # 1. offset and jitter should not be higher than 500
                 # Otherwise, time should be re-set.
                 if (abs(offset) > 500) or (abs(jitter) > 500):
@@ -214,27 +201,25 @@ class Ntp(object):
         return self.remote.execute("date")['stdout']
 
 
-class NtpInitscript(Ntp):
-    """NtpInitscript."""  # TODO documentation
+class NtpService(Ntp):
+    """NtpService.
+
+    That class presents logic for system without pacemaker based
+    time synchronization.
+    """  # TODO documentation
 
     @logwrap
     def start(self):
         self.is_connected = False
-        if MASTER_IS_CENTOS7:
-            self.remote.execute("systemctl stop ntpd")
-            self.remote.execute("systemctl start ntpdate")
-            self.remote.execute("systemctl start ntpd")
-        else:
-            self.remote.execute("{0} start".format(self.service))
+        self.remote.execute('systemctl stop ntpd')
+        self.remote.execute('systemctl start ntpdate')
+        self.remote.execute('systemctl start ntpd')
 
     @logwrap
     def stop(self):
         self.is_connected = False
-        if MASTER_IS_CENTOS7:
-            self.remote.execute("systemctl stop ntpd")
-            self.remote.execute("systemctl start ntpdate")
-        else:
-            self.remote.execute("{0} stop".format(self.service))
+        self.remote.execute('systemctl stop ntpd')
+        self.remote.execute('systemctl start ntpdate')
 
     @logwrap
     def get_peers(self):
@@ -242,7 +227,12 @@ class NtpInitscript(Ntp):
 
 
 class NtpPacemaker(Ntp):
-    """NtpPacemaker."""  # TODO documentation
+    """NtpPacemaker
+
+    That class presents logic for system with pacemaker based
+    time synchronization.
+    """
+    # TODO(akostrikov) Check that after CentOS 7 switch.
 
     @logwrap
     def start(self):
