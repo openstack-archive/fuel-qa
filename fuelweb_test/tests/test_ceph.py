@@ -444,6 +444,93 @@ class CephHA(TestBasic):
 class CephRadosGW(TestBasic):
     """CephRadosGW."""  # TODO documentation
 
+    @test(groups=['fast_bvt_2'])
+    def fast_ceph_rados_gw(self):
+        """Deploy ceph HA with RadosGW for objects without snapshot usage.
+
+        Scenario:
+            1. Create cluster with Neutron
+            2. Add 3 nodes with controller role
+            3. Add 3 nodes with compute and ceph-osd role
+            4. Deploy the cluster
+            5. Check ceph status
+            6. Run OSTF tests
+            7. Check the radosgw daemon is started
+
+        Duration 90m
+        Snapshot ceph_rados_gw
+
+        """
+        def radosgw_started(remote):
+            return len(
+                remote.check_call(
+                    'ps aux | grep "/usr/bin/radosgw -n '
+                    'client.radosgw.gateway"')['stdout']) == 3
+        self.env.setup_environment()
+        self.fuel_web.get_nailgun_version()
+        self.fuel_web.change_default_network_settings()
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[:6],
+            skip_timesync=True
+        )
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings={
+                'volumes_lvm': False,
+                'volumes_ceph': True,
+                'images_ceph': True,
+                'objects_ceph': True,
+                'net_provider': 'neutron',
+                'net_segment_type': NEUTRON_SEGMENT_TYPE,
+                'tenant': 'rados',
+                'user': 'rados',
+                'password': 'rados'
+            }
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute', 'ceph-osd'],
+                'slave-05': ['compute', 'ceph-osd'],
+                'slave-06': ['compute', 'ceph-osd']
+            }
+        )
+        self.fuel_web.verify_network(cluster_id)
+        # Deploy cluster
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        # Network verification
+        self.fuel_web.verify_network(cluster_id)
+
+        # HAProxy backend checking
+        controller_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])
+
+        for node in controller_nodes:
+            remote = self.env.d_env.get_ssh_to_remote(node['ip'])
+            logger.info("Check all HAProxy backends on {}".format(
+                node['meta']['system']['fqdn']))
+            haproxy_status = checkers.check_haproxy_backend(remote)
+            remote.clear()
+            assert_equal(haproxy_status['exit_code'], 1,
+                         "HAProxy backends are DOWN. {0}".format(
+                             haproxy_status))
+
+        self.fuel_web.check_ceph_status(cluster_id)
+
+        # Run ostf
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
+
+        # Check the radosgw daemon is started
+        with self.fuel_web.get_ssh_for_node('slave-01') as remote:
+            assert_true(radosgw_started(remote), 'radosgw daemon started')
+
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["ceph_rados_gw", "bvt_2", "ceph", "neutron", "deployment"])
     @log_snapshot_after_test
