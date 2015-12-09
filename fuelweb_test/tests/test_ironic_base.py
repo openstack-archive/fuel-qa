@@ -37,12 +37,16 @@ class TestIronicBase(TestBasic):
                2. Add 1 controller node
                3. Add 1 compute node
                4. Add 1 ironic node
+               5. Deploy cluster
+               6. Verify network
+               7. Run OSTF
 
            Snapshot: test_ironic_base
         """
 
         self.env.revert_snapshot("ready_with_3_slaves")
 
+        self.show_step(1)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -53,6 +57,9 @@ class TestIronicBase(TestBasic):
             }
         )
 
+        self.show_step(2)
+        self.show_step(3)
+        self.show_step(4)
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -62,9 +69,13 @@ class TestIronicBase(TestBasic):
             }
         )
 
+        self.show_step(5)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
+        self.show_step(6)
         self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(7)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
