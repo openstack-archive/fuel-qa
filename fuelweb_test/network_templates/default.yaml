@@ -124,6 +124,7 @@ adv_net_template:
           nova/api: br-mgmt
           nova/migration: br-mgmt
           murano/api: br-mgmt
+          murano/cfapi: br-mgmt
           horizon: br-mgmt
           mgmt/api: br-mgmt
           mgmt/memcache: br-mgmt
@@ -133,4 +134,6 @@ adv_net_template:
           mgmt/vip: br-mgmt
           mgmt/api: br-mgmt
           ceph/public: br-mgmt
+          ironic/api: br-mgmt
+          ironic/baremetal: br-mgmt
 
