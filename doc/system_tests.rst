@@ -77,6 +77,14 @@ Example plugin v3
 .. automodule:: system_test.tests.plugins.plugin_example.test_plugin_example_v3
     :members:
 
+vCenter tests
+=============
+
+vCenter/DVS
+-----------
+.. automodule:: system_test.tests.vcenter.test_vcenter_dvs
+    :members:
+
 Helpers
 =======
 
