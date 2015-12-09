@@ -270,9 +270,11 @@ class AdminActions(BaseActions):
                 fuel_settings['NTP1'] = router
 
         if MIRROR_UBUNTU:
-            fuel_settings['BOOTSTRAP']['MIRROR_DISTRO'] = \
-                replace_repos.replace_ubuntu_repo_url(
-                    fuel_settings['BOOTSTRAP']['MIRROR_DISTRO'],
+            fuel_settings['BOOTSTRAP']['ubuntu_repos'] = \
+                replace_repos.replace_ubuntu_repos(
+                    {
+                        'value': fuel_settings['BOOTSTRAP']['ubuntu_repos']
+                    },
                     upstream_host='archive.ubuntu.com')
             logger.info("Replace default Ubuntu mirror URL for "
                         "bootstrap image in Fuel settings")
