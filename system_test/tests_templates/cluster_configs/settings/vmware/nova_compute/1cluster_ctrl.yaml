@@ -1,0 +1,9 @@
+---
+clusters:
+  - Cluster1
+srv_name:
+  - srv_cluster1
+datastore:
+  - .*
+target_node:
+  - controllers
