@@ -13,6 +13,7 @@
 #    under the License.
 
 import ConfigParser
+from distutils import version
 import inspect
 import json
 import time
@@ -29,6 +30,7 @@ from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test import settings
 from fuelweb_test.settings import MASTER_IS_CENTOS7
+from gates_tests.helpers import exceptions
 
 
 @logwrap
@@ -334,6 +336,11 @@ def cond_upload(remote, source, target, condition=''):
                 files_count += 1
                 logger.debug("File '{0}' uploaded to the remote folder '{1}'"
                              .format(source, target))
+                if 'deb' in entry:
+                    continue
+                entry_name = entry[0:entry.rfind('-', 0, entry.rfind('-'))]
+                asserts.assert_true(compare_packages_version(
+                    remote, entry_name, remote_path))
             else:
                 logger.debug("Pattern '{0}' doesn't match the file '{1}', "
                              "uploading skipped".format(condition, local_path))
@@ -717,3 +724,46 @@ def get_process_uptime(remote, process_name):
         uptime += int(ps_output[-i]) * time_factor
         time_factor *= 60
     return uptime
+
+
+def get_package_version(remote_admin, package, income=None):
+    if income:
+        cmd_version = ('rpm '
+                       '-qp {0} --queryformat '
+                       '"%{{VERSION}} %{{RELEASE}}" |sort'
+                       ' -n'.format(package))
+    else:
+        cmd_version = ('rpm '
+                       '-q {0} --queryformat '
+                       '"%{{VERSION}} %{{RELEASE}}" |sort'
+                       ' -n'.format(package))
+    result = remote_admin.execute(cmd_version)
+    logger.debug('Command {0} execution result {1}'.format(
+        cmd_version, result))
+    asserts.assert_equal(
+        0, result['exit_code'],
+        'Failed to get package version'
+        'with result {0}'.format(result))
+
+    if 'not installed' in ''.join(result['stdout']):
+        return None
+    return ''.join(result['stdout']).strip()
+
+
+def compare_packages_version(remote, package_name, income_package_name):
+    income_release, income_version = get_package_version(
+        remote, income_package_name, income=True).split(' ')
+    if not get_package_version(remote, package_name):
+        return True
+    installed_release, installed_version = get_package_version(
+        remote, package_name).split(' ')
+    if not version.LooseVersion(income_release) == version.LooseVersion(
+            installed_release):
+        raise exceptions.PackageVersionError(
+            package=income_package_name, version=income_release)
+    if version.LooseVersion(installed_version) >= version.LooseVersion(
+            income_version):
+        raise exceptions.PackageVersionError(
+            package=income_package_name, version=income_version)
+    else:
+        return True
