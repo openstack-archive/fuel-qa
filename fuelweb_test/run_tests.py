@@ -138,6 +138,7 @@ def import_tests():
     from system_test.tests import test_fuel_migration  # noqa
     from system_test.tests.plugins.plugin_example import test_plugin_example  # noqa
     from system_test.tests.plugins.plugin_example import test_plugin_example_v3  # noqa
+    from system_test.tests.vcenter import test_vcenter_dvs   # noqa
     from gates_tests.tests import test_review_in_fuel_agent  # noqa
     from tests.tests_strength import test_load  # noqa
     from tests import test_services_reconfiguration  # noqa
