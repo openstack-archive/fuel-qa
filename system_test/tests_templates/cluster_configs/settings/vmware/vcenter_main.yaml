@@ -1,0 +1,5 @@
+---
+az: vcenter
+host: 172.16.0.254
+user: administrator@vsphere.local
+pwd: Qwer!1234
