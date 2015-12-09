@@ -20,10 +20,10 @@ from devops.error import TimeoutError
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE
-from fuelweb_test.settings import PREDICTABLE_INTERFACE_NAMES
 from fuelweb_test.settings import SERVTEST_USERNAME
 from fuelweb_test.settings import SERVTEST_PASSWORD
 from fuelweb_test.settings import SERVTEST_TENANT
+from fuelweb_test.settings import iface_alias
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.helpers import os_actions
@@ -65,20 +65,12 @@ class VcenterDeploy(TestBasic):
         # because Nova will use the same vSwitch for PortGroups creating
         # as a ESXi management interface is located in.
         interfaces = {
-            'eth0': ["fuelweb_admin"],
-            'eth1': ["public", "fixed"],
-            'eth2': ["management", ],
-            'eth3': [],
-            'eth4': ["storage"]
+            iface_alias('eth0'): ["fuelweb_admin"],
+            iface_alias('eth1'): ["public", "fixed"],
+            iface_alias('eth2'): ["management", ],
+            iface_alias('eth3'): [],
+            iface_alias('eth4'): ["storage"]
         }
-        if PREDICTABLE_INTERFACE_NAMES:
-            interfaces = {
-                'enp0s3': ["fuelweb_admin"],
-                'enp0s4': ["public", "fixed"],
-                'enp0s5': ["management", ],
-                'enp0s6': [],
-                'enp0s7': ["storage"]
-            }
 
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in slave_nodes:
@@ -971,20 +963,13 @@ class VcenterDeploy(TestBasic):
         # because Nova will use the same vSwitch for PortGroups creating
         # as a ESXi management interface is located in.
         interfaces = {
-            'eth0': ["fuelweb_admin"],
-            'eth1': ["public", "fixed"],
-            'eth2': ["management", ],
-            'eth3': [],
-            'eth4': ["storage"]
+            iface_alias('eth0'): ["fuelweb_admin"],
+            iface_alias('eth1'): ["public", "fixed"],
+            iface_alias('eth2'): ["management", ],
+            iface_alias('eth3'): [],
+            iface_alias('eth4'): ["storage"]
         }
-        if PREDICTABLE_INTERFACE_NAMES:
-            interfaces = {
-                'enp0s3': ["fuelweb_admin"],
-                'enp0s4': ["public", "fixed"],
-                'enp0s5': ["management", ],
-                'enp0s6': [],
-                'enp0s7': ["storage"]
-            }
+
         self.configure_nova_vlan(cluster_id)
         # Configure VMWare vCenter
         self.fuel_web.vcenter_configure(cluster_id)

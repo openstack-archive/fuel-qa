@@ -31,8 +31,20 @@ ENV_NAME = os.environ.get("ENV_NAME", "fuel_system_test")
 VIRTUAL_ENV = os.environ.get("VIRTUAL_ENV", "")
 
 MASTER_IS_CENTOS7 = get_var_as_bool('MASTER_IS_CENTOS7', True)
-PREDICTABLE_INTERFACE_NAMES = get_var_as_bool('PREDICTABLE_INTERFACE_NAMES',
-                                              True)
+
+INTERFACES_DICT = {
+    'eth0': os.environ.get('IFACE_0', 'enp0s3'),
+    'eth1': os.environ.get('IFACE_1', 'enp0s4'),
+    'eth2': os.environ.get('IFACE_2', 'enp0s5'),
+    'eth3': os.environ.get('IFACE_3', 'enp0s6'),
+    'eth4': os.environ.get('IFACE_4', 'enp0s7'),
+    'eth5': os.environ.get('IFACE_5', 'enp0s8'),
+}
+
+# NOTE(akostrikov) The method is here to avoid problems with imports
+# Refactor when additional logic is needed like info from master node/devops.
+def iface_alias(interface_name):
+    return INTERFACES_DICT[interface_name]
 
 ISO_PATH = os.environ.get('ISO_PATH')
 LOGS_DIR = os.environ.get('LOGS_DIR', os.getcwd())
@@ -127,22 +139,12 @@ DHCP = {
 }
 
 INTERFACES = {
-    'admin': 'eth0',
-    'public': 'eth1',
-    'management': 'eth2',
-    'private': 'eth3',
-    'storage': 'eth4',
+    'admin': iface_alias('eth0'),
+    'public': iface_alias('eth1'),
+    'management': iface_alias('eth2'),
+    'private': iface_alias('eth3'),
+    'storage': iface_alias('eth4'),
 }
-PREDICTABLE_INTERFACES = {
-    'admin': 'enp0s3',
-    'public': 'enp0s4',
-    'management': 'enp0s5',
-    'private': 'enp0s6',
-    'storage': 'enp0s7',
-}
-if PREDICTABLE_INTERFACE_NAMES:
-    INTERFACES = PREDICTABLE_INTERFACES
-
 
 # May be one of virtio, e1000, pcnet, rtl8139
 INTERFACE_MODEL = os.environ.get('INTERFACE_MODEL', 'virtio')
@@ -193,7 +195,7 @@ if MULTIPLE_NETWORKS:
     DHCP['private2'] = False
     DHCP['storage2'] = False
 
-    INTERFACES['admin2'] = 'eth5'
+    INTERFACES['admin2'] = iface_alias('eth5')
 
     POOL_DEFAULT2 = os.environ.get('POOL_DEFAULT2', '10.108.0.0/16:24')
     POOL_ADMIN2 = os.environ.get('POOL_ADMIN2', POOL_DEFAULT2)
@@ -234,15 +236,14 @@ if MULTIPLE_NETWORKS:
 BONDING = get_var_as_bool("BONDING", False)
 
 BONDING_INTERFACES = {
-    'admin': ['eth0'],
-    'public': ['eth1', 'eth2', 'eth3', 'eth4']
+    'admin': [iface_alias('eth0')],
+    'public': [
+        iface_alias('eth1'),
+        iface_alias('eth2'),
+        iface_alias('eth3'),
+        iface_alias('eth4')
+    ]
 }
-PREDICTABLE_BONDING_INTERFACES = {
-    'admin': ['enp0s3'],
-    'public': ['enp0s4', 'enp0s5', 'enp0s6', 'enp0s7']
-}
-if PREDICTABLE_INTERFACE_NAMES:
-    BONDING_INTERFACES = PREDICTABLE_BONDING_INTERFACES
 
 NETWORK_MANAGERS = {
     'flat': 'FlatDHCPManager',
