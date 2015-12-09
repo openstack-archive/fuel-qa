@@ -12,6 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import fuelweb_test
 
-logger = fuelweb_test.logger
+class ConfigurationException(Exception):
+    pass
+
+
+class PackageVersionError(Exception):
+    def __init__(self, package, version):
+        self.package = package
+        self.version = version
+
+    def __repr__(self):
+        return 'Package {0} has wrong version {1}'.format(
+            self.package, self.version)
