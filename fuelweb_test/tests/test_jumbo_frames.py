@@ -21,7 +21,7 @@ from fuelweb_test.helpers import decorators
 from fuelweb_test.helpers import os_actions
 from fuelweb_test import logger
 from fuelweb_test import settings as CONF
-from fuelweb_test.settings import PREDICTABLE_INTERFACE_NAMES
+from fuelweb_test.settings import iface_alias
 from fuelweb_test.tests import base_test_case
 
 
@@ -241,36 +241,20 @@ class TestJumboFrames(base_test_case.TestBasic):
         )
 
         interfaces = {
-            'eth0': ['fuelweb_admin'],
-            'eth1': ['public'],
-            'eth2': ['management'],
-            'eth3': ['private'],
-            'eth4': ['storage'],
+            iface_alias('eth0'): ['fuelweb_admin'],
+            iface_alias('eth1'): ['public'],
+            iface_alias('eth2'): ['management'],
+            iface_alias('eth3'): ['private'],
+            iface_alias('eth4'): ['storage'],
         }
-        if PREDICTABLE_INTERFACE_NAMES:
-            interfaces = {
-                'enp0s3': ['fuelweb_admin'],
-                'enp0s4': ['public'],
-                'enp0s5': ['management'],
-                'enp0s6': ['private'],
-                'enp0s7': ['storage'],
-            }
 
         interfaces_update = [{
-            'name': 'eth3',
+            'name': iface_alias('eth3'),
             'interface_properties': {
                 'mtu': 9000,
                 'disable_offloading': False
             },
         }]
-        if PREDICTABLE_INTERFACE_NAMES:
-            interfaces_update = [{
-                'name': 'enp0s6',
-                'interface_properties': {
-                    'mtu': 9000,
-                    'disable_offloading': False
-                },
-            }]
 
         self.fuel_web.update_nodes(
             cluster_id,
@@ -297,18 +281,14 @@ class TestJumboFrames(base_test_case.TestBasic):
                           'slave-04', 'slave-05']:
             node = self.fuel_web.get_nailgun_node_by_name(node_name)
             with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
-                if PREDICTABLE_INTERFACE_NAMES:
-                    asserts.assert_true(
-                        self.check_node_iface_mtu(remote, 'enp0s6', 9000),
-                        "MTU on {0} is not 9000. Actual value: {1}"
-                            .format(remote.host,
-                                    self.get_node_iface(remote, "enp0s6")))
-                else:
-                    asserts.assert_true(
-                        self.check_node_iface_mtu(remote, 'eth3', 9000),
-                        "MTU on {0} is not 9000. Actual value: {1}"
-                            .format(remote.host,
-                                    self.get_node_iface(remote, "eth3")))
+                asserts.assert_true(
+                    self.check_node_iface_mtu(remote,
+                                              iface_alias('eth3'),
+                                              9000),
+                    "MTU on {0} is not 9000. Actual value: {1}"
+                        .format(remote.host,
+                                self.get_node_iface(remote,
+                                                    iface_alias('eth3'))))
 
         self.check_mtu_size_between_instances(mtu_offset=0)
         self.env.make_snapshot("ready_jumbo_frames_neutron_vlan")
@@ -345,36 +325,20 @@ class TestJumboFrames(base_test_case.TestBasic):
         )
 
         interfaces = {
-            'eth0': ['fuelweb_admin'],
-            'eth1': ['public'],
-            'eth2': ['management'],
-            'eth3': ['private'],
-            'eth4': ['storage'],
+            iface_alias('eth0'): ['fuelweb_admin'],
+            iface_alias('eth1'): ['public'],
+            iface_alias('eth2'): ['management'],
+            iface_alias('eth3'): ['private'],
+            iface_alias('eth4'): ['storage'],
         }
-        if PREDICTABLE_INTERFACE_NAMES:
-            interfaces = {
-                'enp0s3': ['fuelweb_admin'],
-                'enp0s4': ['public'],
-                'enp0s5': ['management'],
-                'enp0s6': ['private'],
-                'enp0s7': ['storage'],
-            }
 
         interfaces_update = [{
-            'name': 'eth3',
+            'name': iface_alias('eth3'),
             'interface_properties': {
                 'mtu': 9000,
                 'disable_offloading': False
             },
         }]
-        if PREDICTABLE_INTERFACE_NAMES:
-            interfaces_update = [{
-                'name': 'enp0s6',
-                'interface_properties': {
-                    'mtu': 9000,
-                    'disable_offloading': False
-                },
-            }]
 
         self.fuel_web.update_nodes(
             cluster_id,
@@ -401,18 +365,14 @@ class TestJumboFrames(base_test_case.TestBasic):
                           'slave-04', 'slave-05']:
             node = self.fuel_web.get_nailgun_node_by_name(node_name)
             with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
-                if PREDICTABLE_INTERFACE_NAMES:
-                    asserts.assert_true(
-                        self.check_node_iface_mtu(remote, 'enp0s6', 9000),
-                        "MTU on {0} is not 9000. Actual value: {1}"
-                            .format(remote.host,
-                                    self.get_node_iface(remote, "enp0s6")))
-                else:
-                    asserts.assert_true(
-                        self.check_node_iface_mtu(remote, 'eth3', 9000),
-                        "MTU on {0} is not 9000. Actual value: {1}"
-                            .format(remote.host,
-                                    self.get_node_iface(remote, "eth3")))
+                asserts.assert_true(
+                    self.check_node_iface_mtu(remote,
+                                              iface_alias('eth3'),
+                                              9000),
+                    "MTU on {0} is not 9000. Actual value: {1}"
+                        .format(remote.host,
+                                self.get_node_iface(remote,
+                                                    iface_alias('eth3'))))
 
         self.check_mtu_size_between_instances(mtu_offset=50)
         self.env.make_snapshot("ready_jumbo_frames_neutron_vxlan")

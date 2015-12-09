@@ -16,7 +16,7 @@ from proboscis.asserts import assert_false
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.utils import get_net_settings
-from fuelweb_test.settings import PREDICTABLE_INTERFACE_NAMES
+from fuelweb_test.settings import iface_alias
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
@@ -28,10 +28,10 @@ class BondingTest(TestBasic):
                 'mode': 'active-backup',
                 'name': 'bond0',
                 'slaves': [
-                    {'name': 'eth5'},
-                    {'name': 'eth4'},
-                    {'name': 'eth3'},
-                    {'name': 'eth2'}
+                    {'name': iface_alias('eth5')},
+                    {'name': iface_alias('eth4')},
+                    {'name': iface_alias('eth3')},
+                    {'name': iface_alias('eth2')}
                 ],
                 'state': None,
                 'type': 'bond',
@@ -42,43 +42,14 @@ class BondingTest(TestBasic):
                 'mode': 'active-backup',
                 'name': 'bond1',
                 'slaves': [
-                    {'name': 'eth1'},
-                    {'name': 'eth0'}
+                    {'name': iface_alias('eth1')},
+                    {'name': iface_alias('eth0')}
                 ],
                 'state': None,
                 'type': 'bond',
                 'assigned_networks': []
             }
         ]
-        if PREDICTABLE_INTERFACE_NAMES:
-            self.BOND_CONFIG = [
-                {
-                    'mac': None,
-                    'mode': 'active-backup',
-                    'name': 'bond0',
-                    'slaves': [
-                        {'name': 'enp0s8'},
-                        {'name': 'enp0s7'},
-                        {'name': 'enp0s6'},
-                        {'name': 'enp0s5'}
-                    ],
-                    'state': None,
-                    'type': 'bond',
-                    'assigned_networks': []
-                },
-                {
-                    'mac': None,
-                    'mode': 'active-backup',
-                    'name': 'bond1',
-                    'slaves': [
-                        {'name': 'enp0s4'},
-                        {'name': 'enp0s3'}
-                    ],
-                    'state': None,
-                    'type': 'bond',
-                    'assigned_networks': []
-                }
-            ]
 
         self.INTERFACES = {
             'bond0': [
