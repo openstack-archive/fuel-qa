@@ -41,6 +41,7 @@ from fuelweb_test.helpers.utils import pull_out_logs_via_ssh
 from fuelweb_test.helpers.utils import store_astute_yaml
 from fuelweb_test.helpers.utils import store_packages_json
 from fuelweb_test.helpers.utils import TimeStat
+from gates_tests.helpers.exceptions import ConfigurationException
 
 
 def save_logs(url, path, auth_token=None, chunk_size=1024):
@@ -247,7 +248,9 @@ def update_fuel(func):
                     local_packages_dir=settings.UPDATE_FUEL_PATH,
                     centos_repo_path=settings.LOCAL_MIRROR_CENTOS,
                     ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
-
+            if not centos_files_count and not ubuntu_files_count:
+                raise ConfigurationException('Nothing to update,'
+                                             ' packages to update values is 0')
             cluster_id = environment.fuel_web.get_last_created_cluster()
 
             if centos_files_count > 0:
