@@ -21,7 +21,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.helpers.utils import run_on_remote
 
 
-@test(groups=['fuel-mirror'])
+@test(groups=['fuel_mirror'])
 class TestCreateMirror(TestBasic):
     """Tests to check on CI that create mirror functionality is working.
 
@@ -45,7 +45,7 @@ class TestCreateMirror(TestBasic):
     Code should be maintainable for future versions (no hardcoded mirror paths)
     """
 
-    @test(groups=['fuel-mirror'],
+    @test(groups=['fuel_mirror'],
           depends_on=[SetupEnvironment.setup_master])
     def prepare_mirrors_environment(self):
         # TODO(akostrikov) Create the same Dockerfile for centos 6.5?
@@ -60,19 +60,19 @@ class TestCreateMirror(TestBasic):
         # TODO(akostrikov) add check that images are present.
         self.env.make_snapshot(snapshot_name, is_make=True)
 
-    @test(groups=['fuel-mirror', 'create-mirror'],
+    @test(groups=['fuel_mirror'],
           depends_on=[prepare_mirrors_environment])
     def no_dependencies_package_install(self):
         # TODO(akostrikov) Run in ubuntu docker image 'create mirror'
         # and try to apt-get update
         raise SkipTest('Not implemented yet')
 
-    @test(groups=['fuel-mirror', 'create-mirror'])
+    @test(groups=['fuel_mirror'])
     def check_download_with_network_issues(self):
         # TODO(akostrikov) Wait for https://review.openstack.org/#/c/242533/
         raise SkipTest('Not implemented yet')
 
-    @test(groups=['fuel-mirror', 'create-mirror'])
+    @test(groups=['fuel_mirror'])
     def check_download_with_proxy(self):
         # TODO(akostrikov) Wait for https://review.openstack.org/#/c/242533/
         raise SkipTest('Not implemented yet')
