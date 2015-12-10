@@ -69,39 +69,14 @@ class TestUseMirror(TestBasic):
             # FIXME(akostrikov) This should be removed with correct install.
             # All that above is a hack.
             self.show_step(1)
-            run_on_remote(remote,
-                          'yum install git python-lxml.x86_64 '
-                          'python-eventlet -y')
             self.show_step(2)
-            run_on_remote(remote,
-                          'cd /opt && rm -rf packetary && '
-                          'git clone https://github.com/bgaifullin/packetary')
             self.show_step(3)
-            run_on_remote(remote,
-                          'cd /opt/packetary && git checkout packetary3')
             self.show_step(4)
-            run_on_remote(remote, 'cd /opt/packetary && pip install -e .')
-            run_on_remote(remote,
-                          'cd /opt/packetary/contrib/fuel_mirror/ && '
-                          'pip install -e .')
+            run_on_remote(remote, 'fuel-mirror create -P ubuntu -G mos ubuntu')
+            run_on_remote(remote, 'fuel-mirror apply -P ubuntu -G mos ubuntu --default')
             self.show_step(5)
-            run_on_remote(remote, 'mkdir -p /etc/fuel-mirror/')
             self.show_step(6)
-            run_on_remote(remote,
-                          'cp /opt/packetary/contrib/fuel_mirror/'
-                          'etc/config.yaml /etc/fuel-mirror/config.yaml')
             self.show_step(7)
-            admin_ip = str(
-                self.env.d_env.nodes().admin.get_ip_address_by_network_name(
-                    'admin'))
-            cmd = "sed -r 's/{prev_ip}'/{admin_ip}/ -i'' {config_path}".format(
-                prev_ip='10.20.0.2',
-                admin_ip=admin_ip,
-                config_path='/etc/fuel-mirror/config.yaml'
-            )
-            run_on_remote(remote, cmd)
-            self.show_step(8)
-            run_on_remote(remote, 'fuel-mirror create --ubuntu')
 
         self.show_step(9)
 
