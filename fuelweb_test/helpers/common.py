@@ -149,13 +149,13 @@ class Common(object):
         try:
             _verify_instance_state()
         except AssertionError:
-            LOGGER.debug('Instance is not active, '
-                         'lets provide it the last chance and sleep 60 sec')
+            LOGGER.debug('Instance is not {0}, lets provide it the last '
+                         'chance and sleep 60 sec'.format(expected_state))
             time.sleep(60)
             _verify_instance_state()
 
     def delete_instance(self, server):
-        LOGGER.debug('Try to create instance')
+        LOGGER.debug('Try to delete instance')
         self.nova.servers.delete(server)
 
     def create_flavor(self, name, ram, vcpus, disk, flavorid="auto"):
