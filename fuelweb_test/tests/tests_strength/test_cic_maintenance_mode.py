@@ -449,7 +449,7 @@ class CICMaintenanceMode(TestBasic):
 
             _ip = self.fuel_web.get_nailgun_node_by_name(
                 devops_node.name)['ip']
-            _wait(lambda: _tcp_ping(_ip, 22), timeout=60 * 10)
+            _wait(lambda: _tcp_ping(_ip, 22), timeout=60 * 20)
 
             logger.info('Wait a %s node online status after unexpected '
                         'reboot', devops_node.name)
