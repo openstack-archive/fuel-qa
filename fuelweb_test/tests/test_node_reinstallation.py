@@ -708,7 +708,7 @@ class StopReinstallation(TestBasic):
             slave_nodes)
 
         logger.info('Stop reinstallation process')
-        self._abort_reinstallation(self.fuel_web, cluster_id,
+        self._stop_reinstallation(self.fuel_web, cluster_id,
                                    [str(cmp_nailgun['id'])], devops_nodes)
 
         self.fuel_web.run_network_verify(cluster_id)
