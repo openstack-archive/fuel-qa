@@ -18,6 +18,8 @@ from proboscis import test
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers import utils
+from fuelweb_test.settings import settings
+from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.tests.test_neutron import NeutronVlanHa
 
@@ -130,3 +132,115 @@ class ServicesReconfiguration(TestBasic):
             raise Exception("New configuration was not applied")
 
         self.env.make_snapshot("reconfigure_ml2_vlan_range", is_make=True)
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["reconfiguration", "reconfigure_overcommit_ratio"])
+    @log_snapshot_after_test
+    def reconfigure_overcommit_ratio(self):
+        """Tests for reconfiguration nova CPU overcommit ratio.
+
+        Scenario:
+            1. Create cluster
+            2. Add 1 node with compute role with 1 CPU ratio
+            3. Add 3 nodes with controller role with 1 CPU ratio
+            4. Deploy the cluster
+            5. Verify network
+            6. Run OSTF
+            7. Verify configuration file on each controller
+            8. Apply new CPU overcommit ratio for each controller
+            9. Verify deployment task is finished
+            10. Verify nova-scheduler services uptime
+            11. Boot SLAVE_NODE_CPU*2 instances
+            12. Boot extra instance and cath the error
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        self.show_step(1)
+        settings.HARDWARE['slave_node_memory'] = 1
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": settings.NEUTRON_SEGMENT_TYPE,
+            }
+        )
+        self.show_step(2)
+        self.show_step(3)
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['compute'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['controller']
+            })
+
+        self.show_step(4)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+
+        self.show_step(5)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(6)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(7)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        config = utils.get_config_template('neutron')
+        structured_config = get_structured_config_dict(config)
+        self.fuel_web.client.upload_configuration(config, cluster_id)
+
+        service_name = "nova-scheduler"
+
+        controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])
+        controllers = [x['ip'] for x in controllers]
+        uptimes = dict(zip(controllers, range(len(controllers))))
+        for controller in controllers:
+            with self.env.d_env.get_ssh_to_remote(controller) as remote:
+                uptimes[controller] = \
+                    utils.get_process_uptime(remote, service_name)
+        task = self.fuel_web.client.apply_configuration(cluster_id)
+
+        self.show_step(8)
+        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+
+        self.show_step(9)
+        self.show_step(10)
+
+        for controller in controllers:
+            with self.env.d_env.get_ssh_to_remote(controller) as remote:
+                uptime = utils.get_process_uptime(remote, service_name)
+                asserts.assert_true(uptime <= uptimes[controller],
+                                    "Service {0} was not restarted "
+                                    "on {1}".format(controller, service_name))
+                for configpath, params in structured_config.items():
+                    result = remote.open(configpath)
+                    conf_for_check = utils.get_ini_config(result)
+                    for param in params:
+                        utils.check_config(conf_for_check,
+                                           configpath,
+                                           param['section'],
+                                           param['option'],
+                                           param['value'])
+
+        self.show_step(11)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+
+        net_name = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+        server = os_conn.create_instance(neutron_network=True,
+                                         label=net_name,
+                                         server_name="Test_reconfig")
+        os_conn.verify_instance_status(server, 'ACTIVE')
+        self.show_step(12)
+        excessive_server = os_conn.create_instance(neutron_network=True,
+                                                   label=net_name,
+                                                   server_name="excessive_VM")
+        os_conn.verify_instance_status(excessive_server, 'ERROR')
+        os_conn.delete_instance(excessive_server)
+        self.env.make_snapshot("reconfigure_overcommit_ratio",
+                               is_make=True)
