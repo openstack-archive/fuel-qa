@@ -79,6 +79,8 @@ adv_net_template:
           management: br-mgmt
           mgmt/api: br-mgmt
           mgmt/vip: br-mgmt
+          ironic/api: br-mgmt
+          ironic/baremetal: br-mgmt
         transformations:
         - action: add-br
           name: br-mgmt
@@ -182,6 +184,7 @@ adv_net_template:
           ceilometer/api: br-services
           heat/api: br-services
           murano/api: br-services
+          murano/cfapi: br-services
           sahara/api: br-services
         transformations:
         - action: add-br

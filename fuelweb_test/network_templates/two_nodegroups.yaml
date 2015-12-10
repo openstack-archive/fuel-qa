@@ -99,6 +99,7 @@ adv_net_template:
           nova/api: br-mgmt
           nova/migration: br-mgmt
           murano/api: br-mgmt
+          murano/cfapi: br-mgmt
           horizon: br-mgmt
           mgmt/messaging: br-mgmt
           mgmt/corosync: br-mgmt
@@ -108,6 +109,8 @@ adv_net_template:
           swift/replication: br-mgmt
           ceph/replication: br-mgmt
           ceph/radosgw: br-mgmt
+          ironic/api: br-mgmt
+          ironic/baremetal: br-mgmt
       private:
         transformations:
           - action: add-br
@@ -250,6 +253,8 @@ adv_net_template:
           swift/replication: br-mgmt
           ceph/replication: br-mgmt
           ceph/radosgw: br-mgmt
+          ironic/api: br-mgmt
+          ironic/baremetal: br-mgmt
       private:
         transformations:
           - action: add-br

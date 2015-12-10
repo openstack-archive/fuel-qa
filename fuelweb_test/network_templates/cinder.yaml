@@ -163,6 +163,8 @@ adv_net_template:
           management: br-mgmt
           mgmt/vip: br-mgmt
           mgmt/api: br-mgmt
+          ironic/api: br-mgmt
+          ironic/baremetal: br-fake
       custom:
         transformations:
           - action: add-br
@@ -300,6 +302,7 @@ adv_net_template:
           nova/api: br-nova
           nova/migration: br-novamigr
           murano/api: br-murano
+          murano/cfapi: br-murano
           horizon: br-horizon
           mgmt/messaging: br-messaging
           mgmt/corosync: br-corosync
