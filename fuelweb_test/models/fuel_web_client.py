@@ -425,8 +425,8 @@ class FuelWebClient(object):
         if settings is None:
             settings = {}
 
-        if REPLACE_DEFAULT_REPOS and not REPLACE_DEFAULT_REPOS_ONLY_ONCE:
-            self.replace_default_repos()
+        # if REPLACE_DEFAULT_REPOS and not REPLACE_DEFAULT_REPOS_ONLY_ONCE:
+        #    self.replace_default_repos()
 
         cluster_id = self.client.get_cluster_id(name)
         if not cluster_id:
