@@ -174,6 +174,9 @@ class TestRailProject():
     def delete_case(self, case_id):
         return self.client.send_post('delete_case/' + str(case_id), None)
 
+    def get_case_fields(self):
+        return self.client.send_get('get_case_fields')
+
     def get_plans(self):
         plans_uri = 'get_plans/{project_id}'.format(
             project_id=self.project['id'])
