@@ -122,6 +122,21 @@ def upload_tests_descriptions(testrail_project, section_id,
     existing_cases = [case['custom_test_group'] for case in
                       testrail_project.get_cases(suite_id=tests_suite['id'],
                                                  section_id=check_section)]
+    custom_cases_fields = {}
+    for field in testrail_project.get_case_fields():
+        for config in field['configs']:
+            if (testrail_project.project['id'] in
+                    config['context']['project_ids'] and
+                    config['options']['is_required']):
+                try:
+                    custom_cases_fields[field['system_name']] = \
+                        int(config['options']['items'].split(',')[0])
+                except:
+                    logger.error("Couldn't find default value for required "
+                                 "field '{0}', setting '1' (index)!".format(
+                                     field['system_name']))
+                    custom_cases_fields[field['system_name']] = 1
+
     for test_case in tests:
         if test_case['custom_test_group'] in existing_cases:
             logger.debug('Skipping uploading "{0}" test case because it '
@@ -129,6 +144,10 @@ def upload_tests_descriptions(testrail_project, section_id,
                              test_case['custom_test_group'],
                              TestRailSettings.tests_suite))
             continue
+
+        for case_field, default_value in custom_cases_fields.items():
+            if case_field not in test_case:
+                test_case[case_field] = default_value
 
         logger.debug('Uploading test "{0}" to TestRail project "{1}", '
                      'suite "{2}", section "{3}"'.format(
