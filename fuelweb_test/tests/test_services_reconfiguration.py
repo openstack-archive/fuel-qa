@@ -249,3 +249,63 @@ class ServicesReconfiguration(TestBasic):
         os_conn.delete_instance(excessive_server)
         self.env.make_snapshot("reconfigure_overcommit_ratio",
                                is_make=True)
+
+    @test(depends_on=[NeutronVlanHa.deploy_neutron_vlan_ha],
+          groups=["services_reconfiguration",
+                  "reconfigure_keystone_to_use_ldap"])
+    @log_snapshot_after_test
+    def reconfigure_keystone_to_use_ldap(self):
+        """Reconfigure neutron ml2 VLAN range
+
+        Scenario:
+            1. Revert snapshot "deploy_neutron_vlan_ha"
+            2. Upload a new openstack configuration
+            3. Try to apply a new keystone configuration
+            4. Wait for failing of deployment task
+            5. Check that reason of failing is a impossibility of
+               the connection to LDAP server
+
+        Snapshot reconfigure_keystone_to_use_ldap
+
+        """
+        self.show_step(1)
+        self.env.revert_snapshot("deploy_neutron_vlan_ha")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])
+
+        ldap_controller = controllers[0]
+
+        self.show_step(2)
+        config = utils.get_config_template('keystone_ldap')
+        self.fuel_web.client.upload_configuration(
+            config,
+            cluster_id,
+            node_id=ldap_controller['id'])
+
+        self.show_step(3)
+        task = self.fuel_web.client.apply_configuration(
+            cluster_id,
+            node_id=ldap_controller['id'])
+
+        self.show_step(4)
+        try:
+            self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+        except AssertionError:
+            pass
+        else:
+            raise Exception("New configuration was not applied")
+
+        self.show_step(5)
+        with self.env.d_env.get_ssh_to_remote(ldap_controller) as remote:
+            log_path = '/var/log/puppet.log'
+            cmd = "grep 'Can't contact LDAP server' {0}".format(log_path)
+            result = remote.execute(cmd)
+            asserts.assert_equal(0,
+                                 result['exit_code'],
+                                 "Can not execute '{0}'. Please, "
+                                 "see details: {1}".format(cmd, result))
+
+        self.env.make_snapshot("reconfigure_keystone_to_use_ldap",
+                               is_make=True)
