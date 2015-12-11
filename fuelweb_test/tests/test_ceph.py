@@ -297,7 +297,7 @@ class CephHA(TestBasic):
         Scenario:
             1. Revert snapshot with ceph cluster in HA mode
             2. Check ceph status
-            3. Check ceph version, should less 0.81
+            3. Check ceph version, should be equal 0.94.5
 
         Duration 10m
         Snapshot check_ceph_ha
@@ -320,14 +320,14 @@ class CephHA(TestBasic):
             versions.append({'name': node['fqdn'], 'ceph_version': version})
 
         def check_ver(v):
-            # Check version. True if version equal @ceph_version
-            return (parse_version(v['ceph_version']) ==
+            # Check version. True if version is not equal @ceph_version
+            return (parse_version(v['ceph_version']) !=
                     parse_version(ceph_version))
 
         bad_nodes = filter(check_ver, versions)
         assert_true(len(bad_nodes) == 0,
-                    message="Nodes should have Ceph version less "
-                            "then {0} {1}".format(ceph_version, bad_nodes))
+                    message="Nodes should have Ceph version equal "
+                            "to {0}: {1}".format(ceph_version, bad_nodes))
         # Run ostf
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
