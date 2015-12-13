@@ -1366,14 +1366,12 @@ class FuelWebClient(object):
                     result['baremetal'] = net
             return result
 
-        public_net = self.environment.d_env.get_network(name="public").ip
-        if not BONDING:
-            manage_net = self.environment.d_env.get_network(
-                name="management").ip
-            storage_net = self.environment.d_env.get_network(
-                name="storage").ip
-            private_net = self.environment.d_env.get_network(
-                name="private").ip
+        default_networks = {}
+
+        for n in ('public', 'management', 'storage', 'private'):
+            if self.environment.d_env.get_network(name=n):
+                default_networks[n] = self.environment.d_env.get_network(
+                    name=n).ip
 
         logger.info("Applying default network settings")
         for _release in self.client.get_releases():
@@ -1390,17 +1388,18 @@ class FuelWebClient(object):
                 networks = fetch_networks(
                     net_settings[net_provider]['networks'])
 
-                networks['public']['cidr'] = str(public_net)
-                networks['public']['gateway'] = str(public_net.network + 1)
+                networks['public']['cidr'] = str(default_networks['public'])
+                networks['public']['gateway'] = str(
+                    default_networks['public'].network + 1)
+                networks['public']['notation'] = 'ip_ranges'
 
                 # use the first half of public network as static public range
-                static, floating = public_net.subnet()
-                networks['public']['ip_range'] = [
-                    str(static[2]), str(static[-1])]
+                networks['public']['ip_range'] = self.get_range(
+                    default_networks['public'], ip_range=-1)[0]
 
                 # use the second half of public network as floating range
                 net_settings[net_provider]['config']['floating_ranges'] = \
-                    [[str(floating[0]), str(floating[-2])]]
+                    self.get_range(default_networks['public'], ip_range=1)
 
                 devops_env = self.environment.d_env
 
@@ -1423,24 +1422,29 @@ class FuelWebClient(object):
                     # leave defaults for mgmt, storage and private if
                     # BONDING is enabled
                     continue
-
-                networks['management']['cidr'] = str(manage_net)
-                networks['storage']['cidr'] = str(storage_net)
-                networks['management']['vlan_start'] = None
-                networks['storage']['vlan_start'] = None
+                for net, cidr in default_networks.items():
+                    if net in ('public', 'private'):
+                        continue
+                    networks[net]['cidr'] = str(cidr)
+                    networks[net]['ip_range'] = self.get_range(cidr)[0]
+                    networks[net]['notation'] = 'ip_ranges'
+                    networks[net]['vlan_start'] = None
 
                 if net_provider == 'neutron':
-                    networks['private_tun']['cidr'] = str(private_net)
-                    networks['private_gre']['cidr'] = str(private_net)
+                    networks['private_tun']['cidr'] = str(
+                        default_networks['private'])
+                    networks['private_gre']['cidr'] = str(
+                        default_networks['private'])
 
                     net_settings[net_provider]['config']['internal_cidr'] = \
-                        str(private_net)
+                        str(default_networks['private'])
                     net_settings[net_provider]['config']['internal_gateway'] =\
-                        str(private_net[1])
+                        str(default_networks['private'][1])
 
                 elif net_provider == 'nova_network':
                     net_settings[net_provider]['config'][
-                        'fixed_networks_cidr'] = str(private_net)
+                        'fixed_networks_cidr'] = str(
+                        default_networks['private'])
 
             self.client.put_release_default_net_settings(
                 _release['id'], net_settings)
