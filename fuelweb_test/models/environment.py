@@ -434,6 +434,7 @@ class EnvironmentModel(object):
                                       build_images=build_images,
                                       iso_connect_as=iso_connect_as))
         self.wait_for_provisioning()
+        self.set_admin_ssh_password()
         self.wait_for_external_config()
         if custom:
             self.setup_customisation()
@@ -442,7 +443,6 @@ class EnvironmentModel(object):
             nessus_node.add_nessus_node()
         # wait while installation complete
 
-        self.set_admin_ssh_password()
         self.admin_actions.modify_configs(self.d_env.router())
         self.kill_wait_for_external_config()
         self.wait_bootstrap()
