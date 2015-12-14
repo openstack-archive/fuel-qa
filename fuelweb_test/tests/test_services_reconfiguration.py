@@ -305,3 +305,84 @@ class ServicesReconfiguration(TestBasic):
 
         self.env.make_snapshot("reconfigure_keystone_to_use_ldap",
                                is_make=True)
+
+    @test(depends_on_groups=['deploy_neutron_vlan_ha'],
+          groups=["reconfiguration", "reconfigure_nova_quota"])
+    @log_snapshot_after_test
+    def reconfigure_nova_quota(self):
+        """Tests for reconfiguration nova quota.
+
+        Scenario:
+            1. Revert snapshot "deploy_neutron_vlan_ha"
+            2. Upload a new openstack configuration
+            3. Get uptime of process "nova-compute" on each controller
+            4. Apply a new quota driver and quota_instances to all nodes
+            5. Wait for configuration applying
+            6. Verify nova config settings
+            7. Create new instance
+            8. Try to create one more, verify that it is impossible
+
+        Snapshot: reconfigure_nova_quota
+
+        """
+        self.show_step(1)
+        self.env.revert_snapshot("deploy_neutron_vlan_ha")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])
+        controllers = [x['ip'] for x in controllers]
+
+        self.show_step(2)
+        config = utils.get_config_template('nova_quota')
+        structured_config = get_structured_config_dict(config)
+        self.fuel_web.client.upload_configuration(config, cluster_id)
+
+        self.show_step(3)
+        uptimes = dict(zip(controllers, range(len(controllers))))
+        for controller in controllers:
+            with self.env.d_env.get_ssh_to_remote(controller) as remote:
+                uptimes[controller] = \
+                    utils.get_process_uptime(remote, 'nova-api')
+
+        self.show_step(4)
+        task = self.fuel_web.client.apply_configuration(cluster_id)
+
+        self.show_step(5)
+        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+
+        self.show_step(6)
+        for controller in controllers:
+            with self.env.d_env.get_ssh_to_remote(controller) as remote:
+                uptime = utils.get_process_uptime(remote, 'nova-api')
+                asserts.assert_true(uptime <= uptimes[controller],
+                                    'Service "nova-api" was not '
+                                    'restarted on {0}'.format(controller))
+                for configpath, params in structured_config.items():
+                    result = remote.open(configpath)
+                    conf_for_check = utils.get_ini_config(result)
+                    for param in params:
+                        utils.check_config(conf_for_check,
+                                           configpath,
+                                           param['section'],
+                                           param['option'],
+                                           param['value'])
+
+        self.show_step(7)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+
+        net_name = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+        server = os_conn.create_instance(neutron_network=True,
+                                         label=net_name,
+                                         server_name="Test_reconfig")
+        os_conn.verify_instance_status(server, 'ACTIVE')
+        self.show_step(8)
+        excessive_server = os_conn.create_instance(neutron_network=True,
+                                                   label=net_name,
+                                                   server_name="excessive_VM")
+        asserts.assert_equal(excessive_server['exit_code'], 1,
+                             'Quota_instances was not applied')
+        self.env.make_snapshot("reconfigure_nova_quota",
+                               is_make=True)
