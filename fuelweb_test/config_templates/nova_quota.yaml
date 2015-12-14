@@ -1,0 +1,6 @@
+---
+nova_config:
+  DEFAULT/quota_driver:
+    value: nova.quota.DbQuotaDriver
+  DEFAULT/quota_instances:
+    value: 1
