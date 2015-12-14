@@ -19,7 +19,7 @@ from proboscis import test
 
 from fuelweb_test.helpers.checkers import check_offload
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.settings import DEPLOYMENT_MODE_HA
+from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.test_bonding_base import BondingTest
 
@@ -67,10 +67,10 @@ class TestOffloading(BondingTest):
         self.show_step(1)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE_HA,
+            mode=settings.DEPLOYMENT_MODE_HA,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": 'vlan',
+                "net_segment_type": settings.NEUTRON_SEGMENT['vlan'],
             }
         )
 
@@ -163,10 +163,10 @@ class TestOffloading(BondingTest):
         self.show_step(1)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE_HA,
+            mode=settings.DEPLOYMENT_MODE_HA,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": 'vlan',
+                "net_segment_type": settings.NEUTRON_SEGMENT['tun'],
             }
         )
 
