@@ -166,7 +166,7 @@ class TestOffloading(BondingTest):
             mode=DEPLOYMENT_MODE_HA,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": 'vlan',
+                "net_segment_type": 'tun',
             }
         )
 

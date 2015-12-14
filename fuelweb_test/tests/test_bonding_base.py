@@ -69,7 +69,6 @@ class BondingTest(TestBasic):
             if bond['name'] == bond_name:
                 for slave in bond['slaves']:
                     bond_slaves.append(slave['name'])
-        bond_slaves.append(bond_name)
         return bond_slaves
 
     def check_interfaces_config_after_reboot(self, cluster_id):
