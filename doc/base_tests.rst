@@ -81,10 +81,19 @@ Test ha neutron vlan deployment group 2
 .. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_2
    :members:
 
+Test ha neutron vlan deployment group 5 (ceph for volumes/images/ephemeral/rados and cinder/ceph for images/ephemeral/rados)
+----------------------------------------------------------------------------------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_5
+   :members:
+
+Test ha neutron vlan deployment group 6 (no volumes and ceph for images/ephemeral/rados and ceph for volumes/images/ephemeral)
+------------------------------------------------------------------------------------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_6
+   :members:
+
 Test ha neutron vlan deployment group 7
 ---------------------------------------
 .. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_7
-   :members:
 
 Test High Availability on one controller
 ----------------------------------------

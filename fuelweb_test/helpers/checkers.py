@@ -182,8 +182,8 @@ def check_ceph_image_size(remote, expected_size, device='vdc'):
 @logwrap
 def check_cinder_image_size(remote, expected_size, device='vdc3'):
     ret = get_mongo_partitions(remote, device)[0].rstrip().rstrip('G')
-    cinder_size = int(ret) * 1024
-    assert_true(abs(float(cinder_size) / float(expected_size)
+    cinder_size = float(ret) * 1024
+    assert_true(abs(cinder_size / float(expected_size)
                     - 1) < 0.1,
                 "size {0} is not equal"
                 " to {1}".format(ret[0].rstrip(),
