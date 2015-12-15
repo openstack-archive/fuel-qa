@@ -91,6 +91,16 @@ Test ha neutron vlan deployment group 2 (cinder/ceph for ephemeral and cinder/ce
 .. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_2
    :members:
 
+Test ha neutron vlan deployment group 3(no volumes storage/ceph volumes, ephemeral)
+-----------------------------------------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_3
+   :members:
+
+Test ha neutron vlan deployment group 4(cinder volumes, ceph images and rados gw/ default storage)
+--------------------------------------------------------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_4
+   :members:
+
 Test ha neutron vlan deployment group 5 (ceph for volumes/images/ephemeral/rados and cinder/ceph for images/ephemeral/rados)
 ----------------------------------------------------------------------------------------------------------------------------
 .. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_5
