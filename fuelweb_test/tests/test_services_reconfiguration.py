@@ -21,7 +21,6 @@ from fuelweb_test.helpers import utils
 from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
-from fuelweb_test.tests.test_neutron import NeutronVlanHa
 
 
 def get_structured_config_dict(config):
@@ -55,7 +54,7 @@ def get_structured_config_dict(config):
 class ServicesReconfiguration(TestBasic):
     """ServicesReconfiguration."""
 
-    @test(depends_on=[NeutronVlanHa.deploy_neutron_vlan_ha],
+    @test(depends_on_groups=['deploy_neutron_vlan_ha'],
           groups=["services_reconfiguration", "reconfigure_ml2_vlan_range"])
     @log_snapshot_after_test
     def reconfigure_ml2_vlan_range(self):
