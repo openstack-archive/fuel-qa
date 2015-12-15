@@ -81,10 +81,19 @@ Test ha neutron vlan deployment group 2
 .. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_2
    :members:
 
+Test ha neutron vlan deployment group 5
+---------------------------------------
+.. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_5
+   :members:
+
+Test ha neutron vlan deployment group 6
+---------------------------------------
+.. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_6
+   :members:
+
 Test ha neutron vlan deployment group 7
 ---------------------------------------
 .. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_7
-   :members:
 
 Test High Availability on one controller
 ----------------------------------------
