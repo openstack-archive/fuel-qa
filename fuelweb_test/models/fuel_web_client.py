@@ -43,7 +43,6 @@ from fuelweb_test.helpers.decorators import download_packages_json
 from fuelweb_test.helpers.decorators import duration
 from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.decorators import update_fuel
-from fuelweb_test.helpers.decorators import update_ostf
 from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers import replace_repos
 from fuelweb_test.helpers.security import SecurityChecks
@@ -396,7 +395,6 @@ class FuelWebClient(object):
 
     @logwrap
     @upload_manifests
-    @update_ostf
     @update_fuel
     def create_cluster(self,
                        name,
@@ -2413,3 +2411,8 @@ class FuelWebClient(object):
             logger.info('Spawn VMs of a cluster %s', cluster_id)
             task = self.client.spawn_vms(cluster_id)
             self.assert_task_success(task, timeout=timeout, interval=interval)
+
+    @logwrap
+    def get_all_ostf_set_names(self, cluster_id):
+        sets = self.client.get_ostf_test_sets(cluster_id)
+        return [s['id'] for s in sets]
