@@ -81,6 +81,16 @@ Test ha neutron vlan deployment group 2
 .. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_2
    :members:
 
+Test ha neutron vlan deployment group 3
+---------------------------------------
+.. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_3
+   :members:
+
+Test ha neutron vlan deployment group 4
+---------------------------------------
+.. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_4
+   :members:
+
 Test ha neutron vlan deployment group 7
 ---------------------------------------
 .. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_7
