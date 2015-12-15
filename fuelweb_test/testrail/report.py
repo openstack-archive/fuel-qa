@@ -244,6 +244,11 @@ def get_tests_results(systest_build, os):
             test_classes[className]["failCount"] = 0
             test_classes[className]["passCount"] = 0
             test_classes[className]["skipCount"] = 0
+        else:
+            if one['className'] == one['name']:
+                logger.warning("Found duplicate test in run - {}".format(
+                    one['className']))
+                continue
 
         test_class = test_classes[className]
         test_class['child'].append(one)
