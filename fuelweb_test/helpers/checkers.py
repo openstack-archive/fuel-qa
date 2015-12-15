@@ -160,6 +160,37 @@ def get_mongo_partitions(remote, device):
 
 
 @logwrap
+def check_ceph_image_size(remote, expected_size, device='vdc'):
+    ret = remote.check_call("df -m /dev/{device}* | grep ceph |"
+                            " awk"
+                            " {size}".format(device=device,
+                                             size=re.escape('{print $2}')
+                                             ))['stdout']
+
+    if not ret:
+        logger.error("Partition not present! {}: ".format(
+                     remote.check_call("df -m")))
+        raise Exception
+    logger.debug("Partitions: {part}".format(part=ret))
+    assert_true(abs(float(ret[0].rstrip()) / float(expected_size)
+                    - 1) < 0.1,
+                "size {0} is not equal"
+                " to {1}".format(ret[0].rstrip(),
+                                 expected_size))
+
+
+@logwrap
+def check_cinder_image_size(remote, expected_size, device='vdc3'):
+    ret = get_mongo_partitions(remote, device)[0].rstrip().rstrip('G')
+    cinder_size = int(ret) * 1024
+    assert_true(abs(float(cinder_size) / float(expected_size)
+                    - 1) < 0.1,
+                "size {0} is not equal"
+                " to {1}".format(ret[0].rstrip(),
+                                 expected_size))
+
+
+@logwrap
 def check_unallocated_space(disks, contr_img_ceph=False):
     for disk in disks:
         # In case we have Ceph for images all space on controller

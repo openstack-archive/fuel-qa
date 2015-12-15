@@ -943,7 +943,8 @@ class FuelWebClient(object):
             self.get_nailgun_node_by_fqdn(fqdn))
 
     @logwrap
-    def get_nailgun_cluster_nodes_by_roles(self, cluster_id, roles):
+    def get_nailgun_cluster_nodes_by_roles(self, cluster_id, roles,
+                                           role_status='roles'):
         """Return list of nailgun nodes from cluster with cluster_id which have
         a roles
 
@@ -952,7 +953,7 @@ class FuelWebClient(object):
             :rtype: list
         """
         nodes = self.client.list_cluster_nodes(cluster_id=cluster_id)
-        return [n for n in nodes if set(roles) <= set(n['roles'])]
+        return [n for n in nodes if set(roles) <= set(n[role_status])]
 
     @logwrap
     def get_ssh_for_node(self, node_name):
@@ -1226,6 +1227,18 @@ class FuelWebClient(object):
                 for volume in disk['volumes']:
                     size += volume['size']
         return size
+
+    @logwrap
+    def update_node_partitioning(self, node, disk='vdc',
+                                 node_role='cinder', unallocated_size=11116):
+        node_size = self.get_node_disk_size(node['id'], disk)
+        disk_part = {
+            disk: {
+                node_role: node_size - unallocated_size
+            }
+        }
+        self.update_node_disk(node['id'], disk_part)
+        return node_size - unallocated_size
 
     @logwrap
     def update_vlan_network_fixed(
