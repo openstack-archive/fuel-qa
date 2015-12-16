@@ -11,7 +11,8 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
+from devops import error
+from devops.helpers import helpers
 from proboscis import asserts
 from proboscis import test
 
@@ -153,10 +154,15 @@ class ServicesReconfiguration(TestBasic):
             10. Verify nova-scheduler services uptime
             11. Boot instances with flavor that occupy all CPU
             12. Boot extra instance and catch the error
+            13. Apply old CPU overcommit ratio for each controller
+            14. Verify deployment task is finished
+            15. Verify nova-scheduler services uptime
 
         Snapshot: reconfigure_overcommit_ratio
 
         """
+        snapshot_name = 'reconfigure_overcommit_ratio'
+        self.check_run(snapshot_name)
         self.env.revert_snapshot("ready_with_5_slaves")
 
         self.show_step(1)
@@ -190,10 +196,11 @@ class ServicesReconfiguration(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.show_step(7)
-        cluster_id = self.fuel_web.get_last_created_cluster()
-        config = utils.get_config_template('nova_cpu')
-        structured_config = get_structured_config_dict(config)
-        self.fuel_web.client.upload_configuration(config, cluster_id)
+        config_new = utils.get_config_template('nova_cpu')
+        structured_config = get_structured_config_dict(config_new)
+        self.fuel_web.client.upload_configuration(config_new,
+                                                  cluster_id,
+                                                  role="controller")
 
         service_name = "nova-scheduler"
 
@@ -201,13 +208,14 @@ class ServicesReconfiguration(TestBasic):
             cluster_id, ['controller'])
         controllers = [x['ip'] for x in controllers]
         uptimes = dict(zip(controllers, range(len(controllers))))
+        self.show_step(8)
         for controller in controllers:
             with self.env.d_env.get_ssh_to_remote(controller) as remote:
                 uptimes[controller] = \
                     utils.get_process_uptime(remote, service_name)
-        task = self.fuel_web.client.apply_configuration(cluster_id)
+        task = self.fuel_web.client.apply_configuration(cluster_id,
+                                                        role="controller")
 
-        self.show_step(8)
         self.fuel_web.assert_task_success(task, timeout=300, interval=5)
 
         self.show_step(9)
@@ -247,6 +255,42 @@ class ServicesReconfiguration(TestBasic):
                                                    flavor_name="overcommit")
         os_conn.verify_instance_status(excessive_server, 'ERROR')
         os_conn.delete_instance(excessive_server)
+        os_conn.delete_instance(server)
+
+        self.show_step(13)
+        config_revert = utils.get_config_template('nova_cpu_old')
+        structured_config_revert = get_structured_config_dict(config_revert)
+        self.fuel_web.client.upload_configuration(config_revert,
+                                                  cluster_id,
+                                                  role="controller")
+        uptimes = dict(zip(controllers, range(len(controllers))))
+        for controller in controllers:
+            with self.env.d_env.get_ssh_to_remote(controller) as remote:
+                uptimes[controller] = \
+                    utils.get_process_uptime(remote, service_name)
+
+        task = self.fuel_web.client.apply_configuration(cluster_id,
+                                                        role="controller")
+
+        self.show_step(14)
+        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+
+        self.show_step(15)
+        for controller in controllers:
+            with self.env.d_env.get_ssh_to_remote(controller) as remote:
+                uptime = utils.get_process_uptime(remote, service_name)
+                asserts.assert_true(uptime <= uptimes[controller],
+                                    "Service {0} was not restarted "
+                                    "on {1}".format(controller, service_name))
+                for configpath, params in structured_config_revert.items():
+                    result = remote.open(configpath)
+                    conf_for_check = utils.get_ini_config(result)
+                    for param in params:
+                        utils.check_config(conf_for_check,
+                                           configpath,
+                                           param['section'],
+                                           param['option'],
+                                           param['value'])
         self.env.make_snapshot("reconfigure_overcommit_ratio",
                                is_make=True)
 
@@ -385,4 +429,115 @@ class ServicesReconfiguration(TestBasic):
         os_conn.verify_instance_status(excessive_server, 'ERROR')
         os_conn.delete_instance(excessive_server)
         self.env.make_snapshot("reconfigure_nova_quota",
+                               is_make=True)
+
+    @test(depends_on_groups=['reconfigure_overcommit_ratio'],
+          groups=["services_reconfiguration",
+                  "reconfigure_nova_ephemral_disk"])
+    @log_snapshot_after_test
+    def reconfigure_nova_ephemral_disk(self):
+        """Reconfigure nova ephemral disk format
+
+        Scenario:
+            1. Revert snapshot reconfigure_overcommit_ratio
+            2. Delete previous OpenStack config
+            3. Upload a new openstack configuration for nova on computes
+            4. Wait for configuration applying
+            5. Get uptime of process "nova-compute" on each compute
+            6. Verify nova-compute settings
+            7. Create flavor with ephemral disk
+            8. Boot instance on updated compute with ephemral disk
+            9. Assign floating ip
+            10. Check ping to the instance
+            11. SSH to VM and check ephemral disk format
+
+        Snapshot reconfigure_nova_ephemeral_disk"
+
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot("reconfigure_overcommit_ratio")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        compute = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute'])[0]
+        computes_ip = compute["ip"]
+
+        self.show_step(2)
+        existing_configs = self.fuel_web.client.list_configuration(
+            cluster_id)
+        for existing_config in existing_configs:
+            self.fuel_web.client.delete_configuration(existing_config["id"])
+
+        self.show_step(3)
+        config = utils.get_config_template('nova_disk')
+        structured_config = get_structured_config_dict(config)
+        self.fuel_web.client.upload_configuration(config,
+                                                  cluster_id,
+                                                  role='compute')
+
+        service_name = "nova-compute"
+
+        with self.env.d_env.get_ssh_to_remote(computes_ip) as remote:
+            uptime_before = utils.get_process_uptime(remote, service_name)
+
+        self.show_step(4)
+        task = self.fuel_web.client.apply_configuration(cluster_id,
+                                                        role='compute')
+        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+
+        self.show_step(5)
+        self.show_step(6)
+        with self.env.d_env.get_ssh_to_remote(computes_ip) as remote:
+            uptime_after = utils.get_process_uptime(remote, service_name)
+            asserts.assert_true(uptime_after <= uptime_before,
+                                "Service {0} was not restarted "
+                                "on {1}".format(compute, service_name))
+            for configpath, params in structured_config.items():
+                result = remote.open(configpath)
+                conf_for_check = utils.get_ini_config(result)
+                for param in params:
+                    utils.check_config(conf_for_check,
+                                       configpath,
+                                       param['section'],
+                                       param['option'],
+                                       param['value'])
+
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+        net_name = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+        self.show_step(7)
+        os_conn.create_flavor(name='ephemeral',
+                              ram=64,
+                              vcpus=1,
+                              disk=1,
+                              flavorid=6,
+                              ephemeral=1)
+        self.show_step(8)
+        instance = os_conn.create_server_for_migration(
+            neutron=True, label=net_name, flavor=6)
+
+        self.show_step(9)
+        floating_ip = os_conn.assign_floating_ip(instance)
+
+        self.show_step(10)
+        try:
+            helpers.wait(lambda: helpers.tcp_ping(floating_ip.ip, 22),
+                         timeout=120)
+        except error.TimeoutError:
+            raise error.TimeoutError('Can not ping instance by floating '
+                                     'ip {0}'.format(floating_ip.ip))
+
+        self.show_step(11)
+        creds = ("cirros", "cubswin:)")
+        with self.fuel_web.get_ssh_for_node("slave-02") as remote:
+            res = os_conn.execute_through_host(
+                remote, floating_ip.ip,
+                "mount | grep 'type ext4' "
+                " && echo 'OK' || echo 'FAIL'", creds)
+            asserts.assert_true('OK' in res['stdout'],
+                                "Ephemeral disk format was not "
+                                "changed on instance")
+        self.env.make_snapshot("reconfigure_nova_ephemeral_disk",
                                is_make=True)

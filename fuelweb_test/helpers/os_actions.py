@@ -66,7 +66,7 @@ class OpenStackActions(common.Common):
 
     def create_server_for_migration(self, neutron=True, scenario='',
                                     timeout=100, file=None, key_name=None,
-                                    label=None, **kwargs):
+                                    label=None, flavor=1, **kwargs):
         name = "test-serv" + str(random.randint(1, 0x7fffffff))
         security_group = {}
         try:
@@ -94,7 +94,7 @@ class OpenStackActions(common.Common):
 
         srv = self.nova.servers.create(name=name,
                                        image=image_id,
-                                       flavor=1,
+                                       flavor=flavor,
                                        userdata=scenario,
                                        files=file,
                                        key_name=key_name,
