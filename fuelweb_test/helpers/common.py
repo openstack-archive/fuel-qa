@@ -158,8 +158,10 @@ class Common(object):
         LOGGER.debug('Try to delete instance')
         self.nova.servers.delete(server)
 
-    def create_flavor(self, name, ram, vcpus, disk, flavorid="auto"):
-        flavor = self.nova.flavors.create(name, ram, vcpus, disk, flavorid)
+    def create_flavor(self, name, ram, vcpus, disk, flavorid="auto",
+                      ephemeral=0):
+        flavor = self.nova.flavors.create(name, ram, vcpus, disk, flavorid,
+                                          ephemeral=ephemeral)
         return flavor
 
     def delete_flavor(self, flavor):
