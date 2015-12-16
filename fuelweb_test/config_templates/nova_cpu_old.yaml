@@ -1,0 +1,4 @@
+---
+nova_config:
+  DEFAULT/cpu_allocation_ratio:
+    ensure: absent
