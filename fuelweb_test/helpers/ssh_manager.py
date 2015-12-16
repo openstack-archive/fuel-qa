@@ -170,11 +170,6 @@ class SSHManager(object):
 
         result = self.execute(ip=ip, port=port, cmd=cmd)
 
-        result['stdout_str'] = ''.join(result['stdout']).strip()
-        result['stdout_len'] = len(result['stdout'])
-        result['stderr_str'] = ''.join(result['stderr']).strip()
-        result['stderr_len'] = len(result['stderr'])
-
         details_log = (
             "Host:      {host}\n"
             "Command:   '{cmd}'\n"
