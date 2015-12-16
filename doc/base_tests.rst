@@ -115,6 +115,11 @@ Test Multiple Networks
 .. automodule:: fuelweb_test.tests.test_multiple_networks
    :members:
 
+Test multirole group 1 (controller+ceph/compute+cinder and controller+ceph+cinder/compute+ceph+cinder)
+------------------------------------------------------------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_multirole.test_multirole_group_1
+   :members:
+
 Test network templates base
 ---------------------------
 .. automodule:: fuelweb_test.tests.test_net_templates_base
