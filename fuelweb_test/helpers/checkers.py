@@ -468,7 +468,7 @@ def execute_query_on_collector(collector_remote, master_uuid, query,
     cmd = 'PGPASSWORD={0} psql -qt -h 127.0.0.1 -U {1} -d {2} -c "{3}"'.\
         format(collector_db_pass, collector_db_user, collector_db, query)
     logger.debug('query collector is {0}'.format(cmd))
-    return ''.join(collector_remote.execute(cmd)['stdout']).strip()
+    return collector_remote.execute(cmd)['stdout_str']
 
 
 def count_stats_on_collector(collector_remote, master_uuid):

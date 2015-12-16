@@ -483,9 +483,6 @@ def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
         assert_ec_equal = [0]
     result = remote.execute(cmd)
 
-    result['stdout_str'] = ''.join(result['stdout']).strip()
-    result['stderr_str'] = ''.join(result['stderr']).strip()
-
     details_log = (
         "Host:      {host}\n"
         "Command:   '{cmd}'\n"
