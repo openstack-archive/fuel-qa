@@ -489,10 +489,8 @@ class TestHaFailoverBase(TestBasic):
             self.env.d_env.nodes().slaves[0])
 
         with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
-            pid = ''.join(remote.execute('pgrep {0}'
-                                         .format(heat_name))['stdout'])
-            get_ocf_status = ''.join(
-                remote.execute(ocf_status)['stdout']).rstrip()
+            pid = remote.execute('pgrep {0}'.format(heat_name))['stdout_str']
+            get_ocf_status = remote.execute(ocf_status)['stdout_str']
         assert_true(ocf_success in get_ocf_status,
                     "heat engine is not succeeded, status is {0}".format(
                         get_ocf_status))
@@ -511,8 +509,7 @@ class TestHaFailoverBase(TestBasic):
                  timeout_msg='Failed to drop AMQP connections on node {}'
                              ''.format(p_d_ctrl.name))
 
-            get_ocf_status = ''.join(
-                remote.execute(ocf_status)['stdout']).rstrip()
+            get_ocf_status = remote.execute(ocf_status)['stdout_str']
         logger.info('ocf status after blocking is {0}'.format(
             get_ocf_status))
         assert_true(ocf_error in get_ocf_status,
@@ -523,13 +520,12 @@ class TestHaFailoverBase(TestBasic):
             remote.execute("iptables -D OUTPUT 1 -m owner --uid-owner heat -m"
                            " state --state NEW,ESTABLISHED,RELATED")
             # TODO(astudenov): add timeout_msg
-            wait_pass(lambda: assert_true(ocf_success in ''.join(
-                remote.execute(ocf_status)['stdout']).rstrip()), timeout=240)
-            newpid = ''.join(remote.execute('pgrep {0}'
-                                            .format(heat_name))['stdout'])
+            wait_pass(lambda: assert_true(ocf_success in (
+                remote.execute(ocf_status)['stdout_str'])), timeout=240)
+            newpid = remote.execute(
+                'pgrep {0}'.format(heat_name))['stdout_str']
             assert_true(pid != newpid, "heat pid is still the same")
-            get_ocf_status = ''.join(remote.execute(
-                ocf_status)['stdout']).rstrip()
+            get_ocf_status = remote.execute(ocf_status)['stdout_str']
 
         assert_true(ocf_success in get_ocf_status,
                     "heat engine is not succeeded, status is {0}".format(
@@ -845,8 +841,7 @@ class TestHaFailoverBase(TestBasic):
             self.env.d_env.nodes().slaves[0])
 
         with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
-            slave1_name = ''.join(
-                remote.execute('hostname')['stdout']).strip()
+            slave1_name = remote.execute('hostname')['stdout_str']
         logger.debug('slave1 name is {}'.format(slave1_name))
         for rabbit_node in rabbit_nodes:
             if rabbit_node in slave1_name:
@@ -925,8 +920,7 @@ class TestHaFailoverBase(TestBasic):
         logger.debug("rabbit nodes are {}".format(rabbit_nodes))
 
         with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
-            slave1_name = ''.join(
-                remote.execute('hostname')['stdout']).strip()
+            slave1_name = remote.execute('hostname')['stdout_str']
         logger.debug('slave1 name is {}'.format(slave1_name))
         for rabbit_node in rabbit_nodes:
             if rabbit_node in slave1_name:

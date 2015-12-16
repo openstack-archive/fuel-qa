@@ -431,8 +431,8 @@ class FuelWebClient(object):
     def get_pcm_nodes(self, ctrl_node, pure=False):
         nodes = {}
         with self.get_ssh_for_node(ctrl_node) as remote:
-            pcs_status = remote.execute('pcs status nodes')['stdout']
-        pcm_nodes = yaml.load(''.join(pcs_status).strip())
+            pcs_status = remote.execute('pcs status nodes')['stdout_str']
+        pcm_nodes = yaml.load(pcs_status)
         for status in ('Online', 'Offline', 'Standby'):
             list_nodes = (pcm_nodes['Pacemaker Nodes'][status] or '').split()
             if not pure:
@@ -1054,19 +1054,19 @@ class FuelWebClient(object):
         logger.info('Get %s node block devices (lsblk)', node_name)
         with self.get_ssh_for_node(node_name) as remote:
             ret = remote.check_call('/bin/lsblk')
-        return ''.join(ret['stdout'])
+        return ret['stdout_str']
 
     @logwrap
     def get_pacemaker_status(self, controller_node_name):
         logger.info('Get pacemaker status at %s node', controller_node_name)
         with self.get_ssh_for_node(controller_node_name) as remote:
-            return ''.join(remote.check_call('crm_mon -1')['stdout'])
+            return remote.check_call('crm_mon -1')['stdout_str']
 
     @logwrap
     def get_pacemaker_config(self, controller_node_name):
         logger.info('Get pacemaker config at %s node', controller_node_name)
         with self.get_ssh_for_node(controller_node_name) as remote:
-            return ''.join(remote.check_call('crm_resource --list')['stdout'])
+            return remote.check_call('crm_resource --list')['stdout_str']
 
     @logwrap
     def get_pacemaker_resource_location(self, controller_node_name,
@@ -2156,9 +2156,9 @@ class FuelWebClient(object):
                    " = 'wsrep_ready';\"")
             result = _remote.execute(cmd)
             if result['exit_code'] == 0:
-                return ''.join(result['stdout']).strip()
+                return result['stdout_str']
             else:
-                return ''.join(result['stderr']).strip()
+                return result['stderr_str']
 
         for node_name in node_names:
             with self.get_ssh_for_node(node_name) as remote:
@@ -2584,8 +2584,8 @@ class FuelWebClient(object):
     def get_nailgun_primary_node(self, slave, role='primary-controller'):
         # returns controller or mongo that is primary in nailgun
         with self.get_ssh_for_node(slave.name) as remote:
-            data = yaml.load(''.join(
-                remote.execute('cat /etc/astute.yaml')['stdout']))
+            data = yaml.load(
+                remote.execute('cat /etc/astute.yaml')['stdout_str'])
         nodes = data['network_metadata']['nodes']
         node_name = [node['fqdn'] for node in nodes.values()
                      if role in node['node_roles']][0]
@@ -2598,7 +2598,7 @@ class FuelWebClient(object):
     def get_rabbit_master_node(self, node, fqdn_needed=False):
         with self.get_ssh_for_node(node) as remote:
             cmd = 'crm resource status master_p_rabbitmq-server'
-            output = ''.join(remote.execute(cmd)['stdout'])
+            output = remote.execute(cmd)['stdout_str']
         master_node = re.search(
             'resource master_p_rabbitmq-server is running on: (.*) Master',
             output).group(1)
@@ -2687,8 +2687,8 @@ class FuelWebClient(object):
     @staticmethod
     @logwrap
     def prepare_ceph_to_delete(remote_ceph):
-        hostname = ''.join(remote_ceph.execute(
-            "hostname -s")['stdout']).strip()
+        hostname = remote_ceph.execute(
+            "hostname -s")['stdout_str']
         osd_tree = ceph.get_osd_tree(remote_ceph)
         logger.debug("osd tree is {0}".format(osd_tree))
         ids = []
@@ -2718,7 +2718,7 @@ class FuelWebClient(object):
     def get_rabbit_slaves_node(self, node, fqdn_needed=False):
         with self.get_ssh_for_node(node) as remote:
             cmd = 'crm resource status master_p_rabbitmq-server'
-            list_output = ''.join(remote.execute(cmd)['stdout']).split('\n')
+            list_output = remote.execute(cmd)['stdout_str'].split('\n')
         filtered_list = [el for el in list_output
                          if el and not el.endswith('Master')]
         slaves_nodes = []
