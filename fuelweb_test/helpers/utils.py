@@ -349,7 +349,7 @@ def cond_upload(remote, source, target, condition=''):
             return 0
 
     files_count = 0
-    for rootdir, subdirs, files in os.walk(source):
+    for rootdir, _, files in os.walk(source):
         targetdir = os.path.normpath(
             os.path.join(
                 target,
@@ -403,11 +403,6 @@ def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
     if assert_ec_equal is None:
         assert_ec_equal = [0]
     result = remote.execute(cmd)
-
-    result['stdout_str'] = ''.join(result['stdout']).strip()
-    result['stdout_len'] = len(result['stdout'])
-    result['stderr_str'] = ''.join(result['stderr']).strip()
-    result['stderr_len'] = len(result['stderr'])
 
     details_log = (
         "Host:      {host}\n"
@@ -495,7 +490,9 @@ def get_network_template(template_name):
 
 
 @logwrap
-def get_net_settings(remote, skip_interfaces=set()):
+def get_net_settings(remote, skip_interfaces=None):
+    if skip_interfaces is None:
+        skip_interfaces = set()
     net_settings = dict()
     interface_cmd = ('awk \'$1~/:/{split($1,iface,":"); print iface[1]}\''
                      ' /proc/net/dev')
@@ -615,8 +612,7 @@ def get_node_hiera_roles(remote):
     cmd = 'hiera roles'
     roles = ''.join(run_on_remote(remote, cmd)).strip()
     # Content string with roles like a ["ceph-osd", "controller"] to list
-    roles = map(lambda s: s.strip('" '), roles.strip("[]").split(','))
-    return roles
+    return [role.strip('" ') for role in roles.strip("[]").split(',')]
 
 
 class RunLimit(object):

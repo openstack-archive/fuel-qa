@@ -28,7 +28,7 @@ except ImportError:
     # pylint: disable=no-member
     DevopsObjNotFound = Node.DoesNotExist
     # pylint: enable=no-member
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.ssl import copy_cert_from_master
@@ -124,7 +124,9 @@ class FuelWebClient(object):
             lambda: all([run['status'] == 'finished'
                          for run in
                          self.client.get_ostf_test_run(cluster_id)]),
-            timeout=timeout)
+            timeout=timeout,
+            timeout_msg='OSTF tests run timeout '
+                        '(cluster_id={})'.format(cluster_id))
         return self.client.get_ostf_test_run(cluster_id)
 
     @logwrap
@@ -149,7 +151,8 @@ class FuelWebClient(object):
     def assert_cluster_ready(self, os_conn, smiles_count,
                              networks_count=2, timeout=300):
         logger.info('Assert cluster services are UP')
-        _wait(
+        # TODO(astudenov): add timeout_msg
+        wait_pass(
             lambda: self.get_cluster_status(
                 os_conn,
                 smiles_count=smiles_count,
@@ -165,10 +168,11 @@ class FuelWebClient(object):
             logger.info('Waiting {0} sec. for passed OSTF HA tests.'
                         .format(timeout))
             with QuietLogger():
-                _wait(lambda: self.run_ostf(cluster_id,
-                                            test_sets=['ha'],
-                                            should_fail=should_fail),
-                      interval=20, timeout=timeout)
+                # TODO(astudenov): add timeout_msg
+                wait_pass(lambda: self.run_ostf(cluster_id,
+                                                test_sets=['ha'],
+                                                should_fail=should_fail),
+                          interval=20, timeout=timeout)
             logger.info('OSTF HA tests passed successfully.')
         else:
             logger.debug('Cluster {0} is not in HA mode, OSTF HA tests '
@@ -182,10 +186,11 @@ class FuelWebClient(object):
         logger.info('Waiting {0} sec. for passed OSTF Sanity checks.'
                     .format(timeout))
         with QuietLogger():
-            _wait(lambda: self.run_ostf(cluster_id,
-                                        test_sets=['sanity'],
-                                        should_fail=should_fail),
-                  interval=10, timeout=timeout)
+            # TODO(astudenov): add timeout_msg
+            wait_pass(lambda: self.run_ostf(cluster_id,
+                                            test_sets=['sanity'],
+                                            should_fail=should_fail),
+                      interval=10, timeout=timeout)
         logger.info('OSTF Sanity checks passed successfully.')
 
     @logwrap
@@ -344,8 +349,8 @@ class FuelWebClient(object):
         task = self.task_wait(task, timeout, interval)
         assert_equal(
             'error', task['status'],
-            "Task '{name}' has incorrect status. {} != {}".format(
-                task['status'], 'error', name=task["name"]
+            "Task '{name}' has incorrect status. {status} != {exp}".format(
+                status=task['status'], exp='error', name=task["name"]
             )
         )
 
@@ -361,8 +366,8 @@ class FuelWebClient(object):
     def get_pcm_nodes(self, ctrl_node, pure=False):
         nodes = {}
         with self.get_ssh_for_node(ctrl_node) as remote:
-            pcs_status = remote.execute('pcs status nodes')['stdout']
-        pcm_nodes = yaml.load(''.join(pcs_status).strip())
+            pcs_status = remote.execute('pcs status nodes')['stdout_str']
+        pcm_nodes = yaml.load(pcs_status)
         for status in ('Online', 'Offline', 'Standby'):
             list_nodes = (pcm_nodes['Pacemaker Nodes'][status] or '').split()
             if not pure:
@@ -374,19 +379,32 @@ class FuelWebClient(object):
 
     @logwrap
     def get_rabbit_running_nodes(self, ctrl_node):
+        """
+
+        :param ctrl_node: str
+        :return: list
+        """
         ip = self.get_node_ip_by_devops_name(ctrl_node)
         cmd = 'rabbitmqctl cluster_status'
-        rabbit_status = ''.join(
-            self.ssh_manager.execute(ip, cmd)['stdout']
-        ).strip()
+        # If any rabbitmq nodes failed, we have return(70) from rabbitmqctl
+        # Acceptable list:
+        # 0  | EX_OK          | Self-explanatory
+        # 69 | EX_UNAVAILABLE | Failed to connect to node
+        # 70 | EX_SOFTWARE    | Any other error discovered when running command
+        #    |                | against live node
+        # 75 | EX_TEMPFAIL    | Temporary failure (e.g. something timed out)
+        rabbit_status = self.ssh_manager.execute_on_remote(
+            ip, cmd, raise_on_assert=False, assert_ec_equal=[0, 69, 70, 75]
+        )['stdout_str']
         rabbit_status = re.sub(r',\n\s*', ',', rabbit_status)
         rabbit_nodes = re.search(
             "\{running_nodes,\[([^\]]*)\]\}",
             rabbit_status).group(1).replace("'", "").split(',')
         logger.debug('rabbit nodes are {}'.format(rabbit_nodes))
         nodes = [node.replace('rabbit@', "") for node in rabbit_nodes]
-        hostname_prefix = ''.join(self.ssh_manager.execute(
-            ip, 'hiera node_name_prefix_for_messaging')['stdout']).strip()
+        hostname_prefix = self.ssh_manager.execute_on_remote(
+            ip, 'hiera node_name_prefix_for_messaging', raise_on_assert=False
+        )['stdout_str']
         if hostname_prefix not in ('', 'nil'):
             nodes = [n.replace(hostname_prefix, "") for n in nodes]
         return nodes
@@ -742,8 +760,7 @@ class FuelWebClient(object):
             with self.environment.d_env.get_admin_remote() as admin_remote:
                 copy_cert_from_master(admin_remote, cluster_id)
         n_nodes = self.client.list_cluster_nodes(cluster_id)
-        n_nodes = filter(lambda n: 'ready' in n['status'], n_nodes)
-        for n in n_nodes:
+        for n in filter(lambda n: 'ready' in n['status'], n_nodes):
             node = self.get_devops_node_by_nailgun_node(n)
             if node:
                 node_name = node.name
@@ -808,19 +825,19 @@ class FuelWebClient(object):
         logger.info('Get %s node block devices (lsblk)', node_name)
         with self.get_ssh_for_node(node_name) as remote:
             ret = remote.check_call('/bin/lsblk')
-        return ''.join(ret['stdout'])
+        return ret['stdout_str']
 
     @logwrap
     def get_pacemaker_status(self, controller_node_name):
         logger.info('Get pacemaker status at %s node', controller_node_name)
         with self.get_ssh_for_node(controller_node_name) as remote:
-            return ''.join(remote.check_call('crm_mon -1')['stdout'])
+            return remote.check_call('crm_mon -1')['stdout_str']
 
     @logwrap
     def get_pacemaker_config(self, controller_node_name):
         logger.info('Get pacemaker config at %s node', controller_node_name)
         with self.get_ssh_for_node(controller_node_name) as remote:
-            return ''.join(remote.check_call('crm_resource --list')['stdout'])
+            return remote.check_call('crm_resource --list')['stdout_str']
 
     @logwrap
     def get_pacemaker_resource_location(self, controller_node_name,
@@ -1186,7 +1203,7 @@ class FuelWebClient(object):
         self.client.update_nodes(nodes_data)
 
         nailgun_nodes = self.client.list_cluster_nodes(cluster_id)
-        cluster_node_ids = map(lambda _node: str(_node['id']), nailgun_nodes)
+        cluster_node_ids = [str(_node['id']) for _node in nailgun_nodes]
         assert_true(
             all([node_id in cluster_node_ids for node_id in node_ids]))
 
@@ -1229,7 +1246,7 @@ class FuelWebClient(object):
                 interfaces_dict[iface].append('fuelweb_admin')
 
         def get_iface_by_name(ifaces, name):
-            iface = filter(lambda iface: iface['name'] == name, ifaces)
+            iface = [_iface for _iface in ifaces if _iface['name'] == name]
             assert_true(len(iface) > 0,
                         "Interface with name {} is not present on "
                         "node. Please check override params.".format(name))
@@ -1550,7 +1567,8 @@ class FuelWebClient(object):
             networks=new_settings["networks"]
         )
 
-    def _get_true_net_name(self, name, net_pools):
+    @staticmethod
+    def _get_true_net_name(name, net_pools):
         """Find a devops network name in net_pools"""
         for net in net_pools:
             if name in net:
@@ -1668,7 +1686,8 @@ class FuelWebClient(object):
         else:
             net_config['ip_ranges'] = self.get_range(ip_network, -1)
 
-    def get_range(self, ip_network, ip_range=0):
+    @staticmethod
+    def get_range(ip_network, ip_range=0):
         net = list(netaddr.IPNetwork(str(ip_network)))
         half = len(net) / 2
         if ip_range == 0:
@@ -1792,7 +1811,7 @@ class FuelWebClient(object):
                 cmd = 'ip netns exec {0} ip -4 ' \
                       '-o address show {1}'.format(namespace, interface)
             else:
-                cmd = 'ip -4 -o address show {1}'.format(interface)
+                cmd = 'ip -4 -o address show {0}'.format(interface)
 
             with self.get_ssh_for_node(node_name) as remote:
                 ret = remote.check_call(cmd)
@@ -1801,12 +1820,12 @@ class FuelWebClient(object):
                 'inet (?P<ip>\d+\.\d+\.\d+.\d+/\d+).*scope .* '
                 '{0}'.format(interface), ' '.join(ret['stdout']))
             if ip_search is None:
-                    logger.debug("Ip show output does not match in regex. "
-                                 "Current value is None. On node {0} in netns "
-                                 "{1} for interface {2}".format(node_name,
-                                                                namespace,
-                                                                interface))
-                    return None
+                logger.debug("Ip show output does not match in regex. "
+                             "Current value is None. On node {0} in netns "
+                             "{1} for interface {2}".format(node_name,
+                                                            namespace,
+                                                            interface))
+                return None
             return ip_search.group('ip')
         except DevopsCalledProcessError as err:
             logger.error(err)
@@ -1891,9 +1910,9 @@ class FuelWebClient(object):
                    " = 'wsrep_ready';\"")
             result = _remote.execute(cmd)
             if result['exit_code'] == 0:
-                return ''.join(result['stdout']).strip()
+                return result['stdout_str']
             else:
-                return ''.join(result['stderr']).strip()
+                return result['stderr_str']
 
         for node_name in node_names:
             with self.get_ssh_for_node(node_name) as remote:
@@ -1936,7 +1955,7 @@ class FuelWebClient(object):
         test_path = map_ostf.OSTF_TEST_MAPPING.get(test_name_to_run)
         logger.info('Test path is {0}'.format(test_path))
 
-        for i in range(0, retries):
+        for _ in range(retries):
             result = self.run_single_ostf_test(
                 cluster_id=cluster_id, test_sets=['smoke', 'sanity'],
                 test_name=test_path,
@@ -2018,7 +2037,8 @@ class FuelWebClient(object):
                                      "on node %s", fqdn)
                         ceph.restart_monitor(remote_to_mon)
 
-                wait(lambda: not ceph.is_clock_skew(remote), timeout=120)
+                wait(lambda: not ceph.is_clock_skew(remote), timeout=120,
+                     timeout_msg='check ceph time skew timeout')
 
     @logwrap
     def check_ceph_status(self, cluster_id, offline_nodes=(),
@@ -2315,13 +2335,12 @@ class FuelWebClient(object):
             fqdn, self.environment.d_env.nodes().slaves)
         return devops_node
 
+    @staticmethod
     @logwrap
-    def get_fqdn_by_hostname(self, hostname):
-        if DNS_SUFFIX not in hostname:
-            hostname += DNS_SUFFIX
-            return hostname
-        else:
-            return hostname
+    def get_fqdn_by_hostname(hostname):
+        return (
+            hostname + DNS_SUFFIX if DNS_SUFFIX not in hostname else hostname
+        )
 
     def get_nodegroup(self, cluster_id, name='default', group_id=None):
         ngroups = self.client.get_nodegroups()
@@ -2345,8 +2364,8 @@ class FuelWebClient(object):
     def get_nailgun_primary_node(self, slave, role='primary-controller'):
         # returns controller or mongo that is primary in nailgun
         with self.get_ssh_for_node(slave.name) as remote:
-            data = yaml.load(''.join(
-                remote.execute('cat /etc/astute.yaml')['stdout']))
+            data = yaml.load(
+                remote.execute('cat /etc/astute.yaml')['stdout_str'])
         node_name = [node['fqdn'] for node in data['nodes']
                      if node['role'] == role][0]
         logger.debug("node name is {0}".format(node_name))
@@ -2358,7 +2377,7 @@ class FuelWebClient(object):
     def get_rabbit_master_node(self, node, fqdn_needed=False):
         with self.get_ssh_for_node(node) as remote:
             cmd = 'crm resource status master_p_rabbitmq-server'
-            output = ''.join(remote.execute(cmd)['stdout'])
+            output = remote.execute(cmd)['stdout_str']
         master_node = re.search(
             'resource master_p_rabbitmq-server is running on: (.*) Master',
             output).group(1)
@@ -2441,10 +2460,11 @@ class FuelWebClient(object):
             plugin_data[path[-1]] = value
         self.client.update_cluster_attributes(cluster_id, attr)
 
+    @staticmethod
     @logwrap
-    def prepare_ceph_to_delete(self, remote_ceph):
-        hostname = ''.join(remote_ceph.execute(
-            "hostname -s")['stdout']).strip()
+    def prepare_ceph_to_delete(remote_ceph):
+        hostname = remote_ceph.execute(
+            "hostname -s")['stdout_str']
         osd_tree = ceph.get_osd_tree(remote_ceph)
         logger.debug("osd tree is {0}".format(osd_tree))
         ids = []
@@ -2457,7 +2477,8 @@ class FuelWebClient(object):
         for osd_id in ids:
             remote_ceph.execute("ceph osd out {}".format(osd_id))
         wait(lambda: ceph.is_health_ok(remote_ceph),
-             interval=30, timeout=10 * 60)
+             interval=30, timeout=10 * 60,
+             timeout_msg='ceph helth ok timeout')
         for osd_id in ids:
             if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
                 remote_ceph.execute("stop ceph-osd id={}".format(osd_id))
@@ -2473,7 +2494,7 @@ class FuelWebClient(object):
     def get_rabbit_slaves_node(self, node, fqdn_needed=False):
         with self.get_ssh_for_node(node) as remote:
             cmd = 'crm resource status master_p_rabbitmq-server'
-            list_output = ''.join(remote.execute(cmd)['stdout']).split('\n')
+            list_output = remote.execute(cmd)['stdout_str'].split('\n')
         filtered_list = [el for el in list_output
                          if el and not el.endswith('Master')]
         slaves_nodes = []
@@ -2561,9 +2582,9 @@ class FuelWebClient(object):
 
     @logwrap
     def spawn_vms_wait(self, cluster_id, timeout=60 * 60, interval=30):
-            logger.info('Spawn VMs of a cluster %s', cluster_id)
-            task = self.client.spawn_vms(cluster_id)
-            self.assert_task_success(task, timeout=timeout, interval=interval)
+        logger.info('Spawn VMs of a cluster %s', cluster_id)
+        task = self.client.spawn_vms(cluster_id)
+        self.assert_task_success(task, timeout=timeout, interval=interval)
 
     @logwrap
     def get_all_ostf_set_names(self, cluster_id):

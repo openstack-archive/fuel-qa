@@ -14,10 +14,10 @@
 
 import re
 import time
-from devops.error import TimeoutError
 
-from devops.helpers.helpers import _tcp_ping
-from devops.helpers.helpers import _wait
+from devops.error import TimeoutError
+from devops.helpers.helpers import tcp_ping_
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 from devops.helpers.ntp import sync_time
 from devops.models import Environment
@@ -147,8 +147,7 @@ class EnvironmentModel(object):
                     .format(', '.join(sorted(nodes_names))))
         new_time = sync_time(self.d_env, nodes_names, skip_sync)
         for name in sorted(new_time):
-                logger.info("New time on '{0}' = {1}".format(name,
-                                                             new_time[name]))
+            logger.info("New time on '{0}' = {1}".format(name, new_time[name]))
 
     @logwrap
     def get_admin_node_ip(self):
@@ -258,7 +257,8 @@ class EnvironmentModel(object):
                 ) % params
         return keys
 
-    def get_target_devs(self, devops_nodes):
+    @staticmethod
+    def get_target_devs(devops_nodes):
         return [
             interface.target_dev for interface in [
                 val for var in map(lambda node: node.interfaces, devops_nodes)
@@ -348,15 +348,15 @@ class EnvironmentModel(object):
                      self.fuel_web.get_nailgun_node_by_devops_node(
                          node)['online'], timeout=60 * 6)
             except TimeoutError:
-                    raise TimeoutError(
-                        "Node {0} does not become online".format(node.name))
+                raise TimeoutError(
+                    "Node {0} does not become online".format(node.name))
         return True
 
     def revert_snapshot(self, name, skip_timesync=False):
         if not self.d_env.has_snapshot(name):
             return False
 
-        logger.info('We have snapshot with such name: %s' % name)
+        logger.info('We have snapshot with such name: {:s}'.format(name))
 
         logger.info("Reverting the snapshot '{0}' ....".format(name))
         self.d_env.revert(name)
@@ -367,13 +367,13 @@ class EnvironmentModel(object):
         if not skip_timesync:
             self.sync_time()
         try:
-            _wait(self.fuel_web.client.get_releases,
-                  expected=EnvironmentError, timeout=300)
+            wait_pass(self.fuel_web.client.get_releases,
+                      expected=EnvironmentError, timeout=300)
         except exceptions.Unauthorized:
             self.set_admin_keystone_password()
             self.fuel_web.get_nailgun_version()
 
-        _wait(lambda: self.check_slaves_are_ready(), timeout=60 * 6)
+        wait_pass(lambda: self.check_slaves_are_ready(), timeout=60 * 6)
         return True
 
     def set_admin_ssh_password(self):
@@ -455,7 +455,8 @@ class EnvironmentModel(object):
                 device='cdrom').volume.upload(settings.ISO_PATH)
         self.d_env.start([admin])
         logger.info("Waiting for admin node to start up")
-        wait(lambda: admin.driver.node_active(admin), 60)
+        wait(lambda: admin.driver.node_active(admin), 60,
+             timeout_msg='Admin node startup timeout')
         logger.info("Proceed with installation")
         # update network parameters at boot screen
         admin.send_keys(self.get_keys(admin, custom=custom,
@@ -523,16 +524,19 @@ class EnvironmentModel(object):
                 cmd=cmd
             )
 
+    # pylint: disable=no-self-use
     @update_rpm_packages
     @upload_manifests
     def setup_customisation(self):
         logger.info('Installing custom packages/manifests '
                     'before master node bootstrap...')
+    # pylint: enable=no-self-use
 
     @logwrap
     def wait_for_provisioning(self,
                               timeout=settings.WAIT_FOR_PROVISIONING_TIMEOUT):
-        _wait(lambda: _tcp_ping(
+        # TODO(astudenov): add timeout_msg
+        wait_pass(lambda: tcp_ping_(
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
             (self.d_env.admin_net), 22), timeout=timeout)
@@ -597,9 +601,9 @@ class EnvironmentModel(object):
         out = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
             cmd=command
-        )['stdout']
+        )['stdout_str']
 
-        assert_true(self.get_admin_node_ip() in "".join(out),
+        assert_true(self.get_admin_node_ip() in out,
                     "dhcpcheck doesn't discover master ip")
 
     def bootstrap_image_check(self):
@@ -671,16 +675,23 @@ class EnvironmentModel(object):
         logger.info('Searching for updates..')
         update_command = 'yum clean expire-cache; yum update -y'
 
-        update_result = self.ssh_manager.execute(
+        update_result = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd=update_command
+            cmd=update_command,
+            err_msg='Packages update failed, inspect logs for details'
         )
 
-        logger.info('Result of "{1}" command on master node: '
-                    '{0}'.format(update_result, update_command))
-        assert_equal(int(update_result['exit_code']), 0,
-                     'Packages update failed, '
-                     'inspect logs for details')
+        logger.info(
+            'Result of "{cmd}" command on master node: \n'
+            'Exit code: {code}\n'
+            'STDOUT:\n'
+            '{stdout}\n'
+            'STDERR:\n'
+            '{stderr}'.format(
+                stdout=update_result['stdout_str'],
+                stderr=update_result['stderr_str'],
+                code=update_result['exit_code'],
+                cmd=update_command))
 
         # Check if any packets were updated and update was successful
         for str_line in update_result['stdout']:
@@ -708,15 +719,22 @@ class EnvironmentModel(object):
              "".format(user=settings.KEYSTONE_CREDS['username'],
                        pwd=settings.KEYSTONE_CREDS['password'])])
 
-        result = self.ssh_manager.execute(
+        result = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd=cmd
+            cmd=cmd,
+            err_msg='bootstrap failed, inspect logs for details',
         )
-        logger.info('Result of "{1}" command on master node: '
-                    '{0}'.format(result, cmd))
-        assert_equal(int(result['exit_code']), 0,
-                     'bootstrap failed, '
-                     'inspect logs for details')
+        logger.info(
+            'Result of "{cmd}" command on master node: \n'
+            'Exit code: {code}\n'
+            'STDOUT:\n'
+            '{stdout}\n'
+            'STDERR:\n'
+            '{stderr}'.format(
+                stdout=result['stdout_str'],
+                stderr=result['stderr_str'],
+                code=result['exit_code'],
+                cmd=cmd))
 
     # Modifies a resolv.conf on the Fuel master node and returns
     # its original content.
@@ -749,8 +767,9 @@ class EnvironmentModel(object):
                      .format(echo_cmd, echo_result['stderr']))
         return resolv_conf['stdout']
 
+    @staticmethod
     @logwrap
-    def execute_remote_cmd(self, remote, cmd, exit_code=0):
+    def execute_remote_cmd(remote, cmd, exit_code=0):
         result = remote.execute(cmd)
         assert_equal(result['exit_code'], exit_code,
                      'Failed to execute "{0}" on remote host: {1}'.

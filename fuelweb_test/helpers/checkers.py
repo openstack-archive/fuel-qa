@@ -16,11 +16,16 @@ import json
 import os
 import re
 import traceback
+from time import sleep
 import urllib2
 
 from devops.error import TimeoutError
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
+from netaddr import IPAddress
+from netaddr import IPNetwork
+from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
 import yaml
 
 from fuelweb_test import logger
@@ -35,13 +40,6 @@ from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import POOLS
 from fuelweb_test.settings import PUBLIC_TEST_IP
 
-from netaddr import IPAddress
-from netaddr import IPNetwork
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_true
-
-from time import sleep
-
 
 @logwrap
 def check_cinder_status(remote):
@@ -52,7 +50,7 @@ def check_cinder_status(remote):
     """
     cmd = '. openrc; cinder service-list'
     result = remote.execute(cmd)
-    cinder_services = ''.join(result['stdout'])
+    cinder_services = result['stdout_str']
     logger.debug('>$ cinder service-list\n{}'.format(cinder_services))
     if result['exit_code'] == 0:
         return all(' up ' in x.split('enabled')[1]
@@ -282,7 +280,8 @@ def enable_feature_group(env, group):
         except (urllib2.HTTPError, urllib2.URLError):
             return False
 
-    wait(check_api_group_enabled, interval=10, timeout=60 * 20)
+    wait(check_api_group_enabled, interval=10, timeout=60 * 20,
+         timeout_msg='Failed to enable feature group - {!r}'.format(group))
 
 
 @logwrap
@@ -320,12 +319,12 @@ def restore_check_sum(remote):
     res = remote.execute("if [ -e /etc/fuel/data ]; "
                          "then echo Restored!!;"
                          " fi")
-    assert_true("Restored!!" in ''.join(res['stdout']).strip(),
+    assert_true("Restored!!" in res['stdout_str'],
                 'Test file /etc/fuel/data '
-                'was not restored!!! {0}'.format(res['stderr']))
+                'was not restored!!! {0}'.format(res['stderr_str']))
     logger.info("Restore check md5sum")
     md5sum_backup = remote.execute("cat /etc/fuel/sum")
-    assert_true(''.join(md5sum_backup['stdout']).strip(),
+    assert_true(md5sum_backup['stdout_str'],
                 'Command cat /etc/fuel/sum '
                 'failed with {0}'.format(md5sum_backup['stderr']))
     md5sum_restore = remote.execute("md5sum /etc/fuel/data | sed -n 1p "
@@ -357,22 +356,22 @@ def check_mysql(remote, node_name):
                         " information_schema.GLOBAL_STATUS"
                         " WHERE VARIABLE_NAME"
                         " = 'wsrep_local_state_comment';\"")
+    wait(lambda: remote.execute(check_cmd)['exit_code'] == 0,
+         timeout=10 * 60,
+         timeout_msg='MySQL daemon is down on {0}'.format(node_name))
+    logger.info('MySQL daemon is started on {0}'.format(node_name))
+
+    wait_pass(
+        lambda: assert_equal(
+            remote.execute(check_crm_cmd)['exit_code'], 0,
+            'MySQL resource is NOT running on {0}'.format(node_name)),
+        timeout=60)
     try:
-        wait(lambda: remote.execute(check_cmd)['exit_code'] == 0,
-             timeout=10 * 60)
-        logger.info('MySQL daemon is started on {0}'.format(node_name))
+        wait(lambda: remote.execute(
+            check_galera_cmd)['stdout_str'] == 'Synced', timeout=600)
     except TimeoutError:
-        logger.error('MySQL daemon is down on {0}'.format(node_name))
-        raise
-    _wait(lambda: assert_equal(remote.execute(check_crm_cmd)['exit_code'], 0,
-                               'MySQL resource is NOT running on {0}'.format(
-                                   node_name)), timeout=60)
-    try:
-        wait(lambda: ''.join(remote.execute(
-            check_galera_cmd)['stdout']).rstrip() == 'Synced', timeout=600)
-    except TimeoutError:
-        logger.error('galera status is {0}'.format(''.join(remote.execute(
-            check_galera_cmd)['stdout']).rstrip()))
+        logger.error('galera status is {0}'.format(remote.execute(
+            check_galera_cmd)['stdout_str']))
         raise
 
 
@@ -496,7 +495,7 @@ def execute_query_on_collector(collector_remote, master_uuid, query,
     cmd = 'PGPASSWORD={0} psql -qt -h 127.0.0.1 -U {1} -d {2} -c "{3}"'.\
         format(collector_db_pass, collector_db_user, collector_db, query)
     logger.debug('query collector is {0}'.format(cmd))
-    return ''.join(collector_remote.execute(cmd)['stdout']).strip()
+    return collector_remote.execute(cmd)['stdout_str']
 
 
 def count_stats_on_collector(collector_remote, master_uuid):
@@ -599,7 +598,7 @@ def check_stats_private_info(collector_remote, postgres_actions,
         _has_private_data = False
         # Check that stats doesn't contain private data (e.g.
         # specific passwords, settings, emails)
-        for _private in private_data.keys():
+        for _private in private_data:
             _regex = r'(?P<key>"\S+"): (?P<value>[^:]*"{0}"[^:]*)'.format(
                 private_data[_private])
             for _match in re.finditer(_regex, data):
@@ -615,7 +614,7 @@ def check_stats_private_info(collector_remote, postgres_actions,
                 _has_private_data = True
         # Check that stats doesn't contain private types of data (e.g. any kind
         # of passwords)
-        for _data_type in secret_data_types.keys():
+        for _data_type in secret_data_types:
             _regex = (r'(?P<secret>"[^"]*{0}[^"]*": (\{{[^\}}]+\}}|\[[^\]+]\]|'
                       r'"[^"]+"))').format(secret_data_types[_data_type])
 
@@ -731,18 +730,15 @@ def external_dns_check(remote_slave):
     logger.debug("provided to test dns is {}".format(provided_dns))
     cluster_dns = []
     for dns in provided_dns:
-        ext_dns_ip = ''.join(
-            remote_slave.execute("grep {0} /etc/resolv.dnsmasq.conf | "
-                                 "awk {{'print $2'}}".
-                                 format(dns))["stdout"]).rstrip()
+        ext_dns_ip = remote_slave.execute(
+            "grep {0} /etc/resolv.dnsmasq.conf | "
+            "awk {{'print $2'}}".format(dns))["stdout_str"]
         cluster_dns.append(ext_dns_ip)
     logger.debug("external dns in conf is {}".format(cluster_dns))
     assert_equal(set(provided_dns), set(cluster_dns),
                  "/etc/resolv.dnsmasq.conf does not contain external dns ip")
-    command_hostname = ''.join(
-        remote_slave.execute("host {0} | awk {{'print $5'}}"
-                             .format(PUBLIC_TEST_IP))
-        ["stdout"]).rstrip()
+    command_hostname = remote_slave.execute(
+        "host {0} | awk {{'print $5'}}".format(PUBLIC_TEST_IP))["stdout_str"]
     hostname = 'google-public-dns-a.google.com.'
     assert_equal(command_hostname, hostname,
                  "Can't resolve hostname")
@@ -781,10 +777,9 @@ def external_ntp_check(remote_slave, vrouter_vip):
     logger.debug("provided to test ntp is {}".format(provided_ntp))
     cluster_ntp = []
     for ntp in provided_ntp:
-        ext_ntp_ip = ''.join(
-            remote_slave.execute("awk '/^server +{0}/{{print $2}}' "
-                                 "/etc/ntp.conf".
-                                 format(ntp))["stdout"]).rstrip()
+        ext_ntp_ip = remote_slave.execute("awk '/^server +{0}/{{print $2}}' "
+                                          "/etc/ntp.conf".
+                                          format(ntp))["stdout_str"]
         cluster_ntp.append(ext_ntp_ip)
     logger.debug("external ntp in conf is {}".format(cluster_ntp))
     assert_equal(set(provided_ntp), set(cluster_ntp),
@@ -802,9 +797,9 @@ def external_ntp_check(remote_slave, vrouter_vip):
 
 def check_swift_ring(remote):
     for ring in ['object', 'account', 'container']:
-        res = ''.join(remote.execute(
+        res = remote.execute(
             "swift-ring-builder /etc/swift/{0}.builder".format(
-                ring))['stdout'])
+                ring))['stdout_str']
         logger.debug("swift ring builder information is {0}".format(res))
         balance = re.search('(\d+.\d+) balance', res).group(1)
         assert_true(float(balance) < 10,
@@ -851,13 +846,16 @@ def check_oswl_stat(postgres_actions, nailgun_actions,
         q = "select resource_data from oswl_stats where" \
             " resource_type = '\"'\"'{0}'\"'\"';".format(resource)
 
+        # pylint: disable=undefined-loop-variable
         def get_resource():
             result = postgres_actions.run_query('nailgun', q)
+            logger.debug("resource state is {}".format(result))
             if not result:
                 return False
             return (
                 len(json.loads(result)[operation]) >
                 expected_resource_count[operation][resource])
+        # pylint: enable=undefined-loop-variable
 
         wait(get_resource, timeout=10,
              timeout_msg="resource {} wasn't updated in db".format(resource))
@@ -1015,9 +1013,9 @@ def check_auto_mode(remote):
     command = ('umm status | grep umm &>/dev/null && echo "True" '
                '|| echo "False"')
     if remote.execute(command)['exit_code'] == 0:
-        return ''.join(remote.execute(command)['stdout']).strip()
+        return remote.execute(command)['stdout_str']
     else:
-        return ''.join(remote.execute(command)['stderr']).strip()
+        return remote.execute(command)['stderr_str']
 
 
 def is_ntpd_active(remote, ntpd_ip):
@@ -1185,8 +1183,8 @@ def check_offload(node, interface, offload_type):
     assert_equal(offload_status['exit_code'], 0,
                  "Failed to get Offload {0} "
                  "on node {1}".format(offload_type, node))
-    return ''.join(node.execute(
-        command % (interface, offload_type))['stdout']).rstrip()
+    return node.execute(
+        command % (interface, offload_type))['stdout_str']
 
 
 def check_get_network_data_over_cli(remote, cluster_id, path):

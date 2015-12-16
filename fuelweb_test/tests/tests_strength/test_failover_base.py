@@ -16,25 +16,29 @@ import re
 import time
 
 from devops.error import TimeoutError
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
-from fuelweb_test.helpers.utils import RunLimit
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 from proboscis import SkipTest
+# pylint: disable=redefined-builtin
+# noinspection PyUnresolvedReferences
+from six.moves import xrange
+# pylint: enable=redefined-builtin
 import yaml
 
+from fuelweb_test import logger
+from fuelweb_test import logwrap
+from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.checkers import check_mysql
 from fuelweb_test.helpers.checkers import check_ping
 from fuelweb_test.helpers.checkers import check_public_ping
 from fuelweb_test.helpers.checkers import get_file_size
-from fuelweb_test.helpers import os_actions
+from fuelweb_test.helpers.utils import RunLimit
 from fuelweb_test.helpers.utils import TimeStat
-from fuelweb_test import logger
-from fuelweb_test import logwrap
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import DNS
@@ -48,6 +52,12 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 class TestHaFailoverBase(TestBasic):
     """TestHaFailoverBase."""  # TODO documentation
+
+    @property
+    def snapshot_name(self):
+        raise ValueError(
+            'Property snapshot_name should be redefined in child classes '
+            'before use!')
 
     def deploy_ha(self):
 
@@ -122,7 +132,7 @@ class TestHaFailoverBase(TestBasic):
 
     def ha_destroy_controllers(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
-            raise SkipTest()
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot_name))
 
         def get_needed_controllers(cluster_id):
             n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
@@ -196,7 +206,7 @@ class TestHaFailoverBase(TestBasic):
 
     def ha_disconnect_controllers(self):
         if not self.env.revert_snapshot(self.snapshot_name):
-            raise SkipTest()
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot_name))
 
         cluster_id = self.fuel_web.client.get_cluster_id(
             self.__class__.__name__)
@@ -224,7 +234,7 @@ class TestHaFailoverBase(TestBasic):
 
     def ha_delete_vips(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
-            raise SkipTest()
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot_name))
 
         logger.debug('Start reverting of {0} snapshot'
                      .format(self.snapshot_name))
@@ -301,9 +311,9 @@ class TestHaFailoverBase(TestBasic):
                 logger.debug("Waiting while deleted ip restores ...")
                 try:
                     wait(check_restore, timeout=60)
-                except TimeoutError as e:
+                except TimeoutError:
                     logger.error("Resource has not been restored for a 60 sec")
-                    raise e
+                    raise
 
                 new_nodes = self.fuel_web.get_pacemaker_resource_location(
                     devops_controllers[0].name,
@@ -328,7 +338,7 @@ class TestHaFailoverBase(TestBasic):
 
     def ha_mysql_termination(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
-            raise SkipTest()
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot_name))
 
         self.env.revert_snapshot(self.snapshot_name)
         cluster_id = self.fuel_web.client.get_cluster_id(
@@ -362,7 +372,7 @@ class TestHaFailoverBase(TestBasic):
 
     def ha_haproxy_termination(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
-            raise SkipTest()
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot_name))
 
         self.env.revert_snapshot(self.snapshot_name)
 
@@ -409,7 +419,7 @@ class TestHaFailoverBase(TestBasic):
 
     def ha_pacemaker_configuration(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
-            raise SkipTest()
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot_name))
 
         self.env.revert_snapshot(self.snapshot_name)
 
@@ -453,7 +463,7 @@ class TestHaFailoverBase(TestBasic):
 
     def ha_pacemaker_restart_heat_engine(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
-            raise SkipTest()
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot_name))
 
         self.env.revert_snapshot(self.snapshot_name)
         ocf_success = "DEBUG: OpenStack Orchestration Engine" \
@@ -471,10 +481,8 @@ class TestHaFailoverBase(TestBasic):
             self.env.d_env.nodes().slaves[0])
 
         with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
-            pid = ''.join(remote.execute('pgrep {0}'
-                                         .format(heat_name))['stdout'])
-            get_ocf_status = ''.join(
-                remote.execute(ocf_status)['stdout']).rstrip()
+            pid = remote.execute('pgrep {0}'.format(heat_name))['stdout_str']
+            get_ocf_status = remote.execute(ocf_status)['stdout_str']
         assert_true(ocf_success in get_ocf_status,
                     "heat engine is not succeeded, status is {0}".format(
                         get_ocf_status))
@@ -491,8 +499,7 @@ class TestHaFailoverBase(TestBasic):
             cmd = "netstat -nap | grep {0} | grep :5673".format(pid)
             wait(lambda: len(remote.execute(cmd)['stdout']) == 0, timeout=300)
 
-            get_ocf_status = ''.join(
-                remote.execute(ocf_status)['stdout']).rstrip()
+            get_ocf_status = remote.execute(ocf_status)['stdout_str']
         logger.info('ocf status after blocking is {0}'.format(
             get_ocf_status))
         assert_true(ocf_error in get_ocf_status,
@@ -502,13 +509,12 @@ class TestHaFailoverBase(TestBasic):
         with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
             remote.execute("iptables -D OUTPUT 1 -m owner --uid-owner heat -m"
                            " state --state NEW,ESTABLISHED,RELATED")
-            _wait(lambda: assert_true(ocf_success in ''.join(
-                remote.execute(ocf_status)['stdout']).rstrip()), timeout=240)
-            newpid = ''.join(remote.execute('pgrep {0}'
-                                            .format(heat_name))['stdout'])
+            wait_pass(lambda: assert_true(ocf_success in (
+                remote.execute(ocf_status)['stdout_str'])), timeout=240)
+            newpid = remote.execute(
+                'pgrep {0}'.format(heat_name))['stdout_str']
             assert_true(pid != newpid, "heat pid is still the same")
-            get_ocf_status = ''.join(remote.execute(
-                ocf_status)['stdout']).rstrip()
+            get_ocf_status = remote.execute(ocf_status)['stdout_str']
 
         assert_true(ocf_success in get_ocf_status,
                     "heat engine is not succeeded, status is {0}".format(
@@ -524,7 +530,7 @@ class TestHaFailoverBase(TestBasic):
 
     def ha_check_monit(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
-            raise SkipTest()
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot_name))
 
         self.env.revert_snapshot(self.snapshot_name)
         cluster_id = self.fuel_web.client.get_cluster_id(
@@ -550,7 +556,7 @@ class TestHaFailoverBase(TestBasic):
 
     def check_firewall_vulnerability(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
-            raise SkipTest()
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot_name))
         self.env.revert_snapshot(self.snapshot_name)
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -558,7 +564,7 @@ class TestHaFailoverBase(TestBasic):
 
     def check_virtual_router(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
-            raise SkipTest()
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot_name))
 
         self.env.revert_snapshot(self.snapshot_name)
         cluster_id = self.fuel_web.get_last_created_cluster()
@@ -622,7 +628,7 @@ class TestHaFailoverBase(TestBasic):
 
     def ha_controller_loss_packages(self, dev='br-mgmt', loss_percent='0.05'):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
-            raise SkipTest()
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot_name))
 
         self.env.revert_snapshot(self.snapshot_name)
 
@@ -667,7 +673,7 @@ class TestHaFailoverBase(TestBasic):
 
     def ha_sequential_rabbit_master_failover(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
-            raise SkipTest()
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot_name))
 
         self.env.revert_snapshot(self.snapshot_name)
 
@@ -844,7 +850,7 @@ class TestHaFailoverBase(TestBasic):
     def check_alive_rabbit_node_not_kicked(self):
 
         if not self.env.d_env.has_snapshot(self.snapshot_name):
-            raise SkipTest()
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot_name))
 
         self.env.revert_snapshot(self.snapshot_name)
 
@@ -861,8 +867,7 @@ class TestHaFailoverBase(TestBasic):
             self.env.d_env.nodes().slaves[0])
 
         with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
-            slave1_name = ''.join(
-                remote.execute('hostname')['stdout']).strip()
+            slave1_name = remote.execute('hostname')['stdout_str']
         logger.debug('slave1 name is {}'.format(slave1_name))
         for rabbit_node in rabbit_nodes:
             if rabbit_node in slave1_name:
@@ -925,7 +930,7 @@ class TestHaFailoverBase(TestBasic):
 
     def check_dead_rabbit_node_kicked(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
-            raise SkipTest()
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot_name))
 
         self.env.revert_snapshot(self.snapshot_name)
 
@@ -941,8 +946,7 @@ class TestHaFailoverBase(TestBasic):
         logger.debug("rabbit nodes are {}".format(rabbit_nodes))
 
         with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
-            slave1_name = ''.join(
-                remote.execute('hostname')['stdout']).strip()
+            slave1_name = remote.execute('hostname')['stdout_str']
         logger.debug('slave1 name is {}'.format(slave1_name))
         for rabbit_node in rabbit_nodes:
             if rabbit_node in slave1_name:
@@ -1005,7 +1009,7 @@ class TestHaFailoverBase(TestBasic):
 
     def test_3_1_rabbit_failover(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
-            raise SkipTest()
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot_name))
         logger.info('Revert environment started...')
         self.env.revert_snapshot(self.snapshot_name)
 
@@ -1161,8 +1165,8 @@ class TestHaFailoverBase(TestBasic):
         @logwrap
         def _get_pcm_nodes(remote, pure=False):
             nodes = {}
-            pcs_status = remote.execute('pcs status nodes')['stdout']
-            pcm_nodes = yaml.load(''.join(pcs_status).strip())
+            pcs_status = remote.execute('pcs status nodes')['stdout_str']
+            pcm_nodes = yaml.load(pcs_status)
             for status in ('Online', 'Offline', 'Standby'):
                 list_nodes = (pcm_nodes['Pacemaker Nodes']
                               [status] or '').split()
@@ -1185,7 +1189,7 @@ class TestHaFailoverBase(TestBasic):
             return True
 
         if not self.env.d_env.has_snapshot(self.snapshot_name):
-            raise SkipTest()
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot_name))
         self.env.revert_snapshot(self.snapshot_name)
 
         p_d_ctrl = self.fuel_web.get_nailgun_primary_node(
@@ -1210,27 +1214,27 @@ class TestHaFailoverBase(TestBasic):
             for count in xrange(500):
                 logger.debug('Checking splitbrain in the loop, '
                              'count number: {0}'.format(count))
-                _wait(
+                wait_pass(
                     lambda: assert_equal(
                         remote_controller.execute(
                             'killall -TERM corosync')['exit_code'], 0,
                         'Corosync was not killed on controller, '
                         'see debug log, count-{0}'.format(count)), timeout=20)
-                _wait(
+                wait_pass(
                     lambda: assert_true(
                         _check_all_pcs_nodes_status(
                             live_remotes, [controller_node['fqdn']],
                             'Offline'),
                         'Caught splitbrain, see debug log, '
                         'count-{0}'.format(count)), timeout=20)
-                _wait(
+                wait_pass(
                     lambda: assert_equal(
                         remote_controller.execute(
                             'service corosync start && service pacemaker '
                             'restart')['exit_code'], 0,
                         'Corosync was not started, see debug log,'
                         ' count-{0}'.format(count)), timeout=20)
-                _wait(
+                wait_pass(
                     lambda: assert_true(
                         _check_all_pcs_nodes_status(
                             ctrl_remotes, pcs_nodes_online, 'Online'),
@@ -1301,7 +1305,7 @@ class TestHaFailoverBase(TestBasic):
 
     def ha_rabbitmq_stability_check(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
-            raise SkipTest()
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot_name))
         logger.info('Revert environment started...')
         self.show_step(1, initialize=True)
         self.env.revert_snapshot(self.snapshot_name)
