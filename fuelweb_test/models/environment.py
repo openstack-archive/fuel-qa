@@ -19,6 +19,7 @@ from devops.error import TimeoutError
 from devops.helpers.helpers import _tcp_ping
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
+from devops.helpers.ntp import sync_time
 from devops.models import Environment
 from keystoneclient import exceptions
 from proboscis.asserts import assert_equal
@@ -36,7 +37,6 @@ from fuelweb_test.helpers.fuel_actions import DockerActions
 from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.fuel_actions import PostgresActions
 from fuelweb_test.helpers.fuel_actions import NessusActions
-from fuelweb_test.helpers.ntp import GroupNtpSync
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.helpers import multiple_networks_hacks
@@ -144,7 +144,7 @@ class EnvironmentModel(object):
             wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
 
         if not skip_timesync:
-            self.sync_time([node for node in self.nailgun_nodes(devops_nodes)])
+            sync_time(self.d_env, devops_nodes)
 
         return self.nailgun_nodes(devops_nodes)
 
@@ -363,11 +363,12 @@ class EnvironmentModel(object):
         self.resume_environment()
 
         if not skip_timesync:
-            nailgun_nodes = [self.fuel_web.get_nailgun_node_by_name(node.name)
-                             for node in self.d_env.nodes().slaves
-                             if node.driver.node_active(node)]
-            self.sync_time(nailgun_nodes)
-
+            devops_nodes = [node.name for node in self.d_env.get_nodes()
+                            if node.driver.node_active(node)]
+            logger.info("Please wait while time on nodes will be synchronized")
+            new_time = sync_time(self.d_env, devops_nodes)
+            for name in sorted(new_time):
+                logger.info("New time on '{0}' = {1}".format(name, new_time[name]))
         try:
             _wait(self.fuel_web.client.get_releases,
                   expected=EnvironmentError, timeout=300)
@@ -457,8 +458,7 @@ class EnvironmentModel(object):
         self.docker_actions.wait_for_ready_containers()
         time.sleep(10)
         self.set_admin_keystone_password()
-        if not MASTER_IS_CENTOS7:
-            self.sync_time()
+        sync_time(self.d_env, ['admin'])
         if settings.UPDATE_MASTER:
             if settings.UPDATE_FUEL_MIRROR:
                 for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
@@ -523,34 +523,6 @@ class EnvironmentModel(object):
         with self.d_env.get_admin_remote() as remote:
             run_on_remote(remote, kill_cmd)
             run_on_remote(remote, check_cmd)
-
-    @retry(count=3, delay=60)
-    def sync_time(self, nailgun_nodes=None):
-        # with @retry, failure on any step of time synchronization causes
-        # restart the time synchronization starting from the admin node
-        if nailgun_nodes is None:
-            nailgun_nodes = []
-        controller_nodes = [
-            n for n in nailgun_nodes if "controller" in n['roles']]
-        other_nodes = [
-            n for n in nailgun_nodes if "controller" not in n['roles']]
-
-        # 1. The first time source for the environment: admin node
-        logger.info("Synchronizing time on Fuel admin node")
-        with GroupNtpSync(self, sync_admin_node=True) as g_ntp:
-            g_ntp.do_sync_time()
-
-        # 2. Controllers should be synchronized before providing time to others
-        if controller_nodes:
-            logger.info("Synchronizing time on all controllers")
-            with GroupNtpSync(self, nailgun_nodes=controller_nodes) as g_ntp:
-                g_ntp.do_sync_time()
-
-        # 3. Synchronize time on all the rest nodes
-        if other_nodes:
-            logger.info("Synchronizing time on other active nodes")
-            with GroupNtpSync(self, nailgun_nodes=other_nodes) as g_ntp:
-                g_ntp.do_sync_time()
 
     def wait_bootstrap(self):
         logger.info("Waiting while bootstrapping is in progress")
