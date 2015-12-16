@@ -618,8 +618,17 @@ class EnvironmentModel(object):
             err_msg='Packages update failed, inspect logs for details'
         )
 
-        logger.info('Result of "{1}" command on master node: '
-                    '{0}'.format(update_result, update_command))
+        logger.info(
+            'Result of "{cmd}" command on master node: \n'
+            'Exit code: {code}\n'
+            'STDOUT:\n'
+            '{stdout}\n'
+            'STDERR:\n'
+            '{stderr}'.format(
+                stdout=update_result['stdout_str'],
+                stderr=update_result['stderr_str'],
+                code=update_result['exit_code'],
+                cmd=update_command))
 
         # Check if any packets were updated and update was successful
         yum_output = update_result['stdout_str']
@@ -656,8 +665,17 @@ class EnvironmentModel(object):
             cmd=cmd,
             err_msg='bootstrap failed, inspect logs for details',
         )
-        logger.info('Result of "{1}" command on master node: '
-                    '{0}'.format(result, cmd))
+        logger.info(
+            'Result of "{cmd}" command on master node: \n'
+            'Exit code: {code}\n'
+            'STDOUT:\n'
+            '{stdout}\n'
+            'STDERR:\n'
+            '{stderr}'.format(
+                stdout=result['stdout_str'],
+                stderr=result['stderr_str'],
+                code=result['exit_code'],
+                cmd=cmd))
 
     # Modifies a resolv.conf on the Fuel master node and returns
     # its original content.
