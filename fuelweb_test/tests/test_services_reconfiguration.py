@@ -56,14 +56,67 @@ def get_structured_config_dict(config):
 class ServicesReconfiguration(TestBasic):
     """ServicesReconfiguration."""
 
-    @test(depends_on_groups=['deploy_neutron_vlan_ha'],
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["services_reconfiguration", "basic_env_for_reconfiguration"])
+    @log_snapshot_after_test
+    def basic_env_for_reconfiguration(self):
+        """Basic environment for reconfiguration
+
+        Scenario:
+            1. Create cluster
+            2. Add 1 node with compute role
+            3. Add 3 nodes with controller role
+            4. Deploy the cluster
+            5. Verify network
+            6. Run OSTF
+
+        Snapshot: basic_env_for_reconfiguration
+
+        """
+        snapshot_name = 'basic_env_for_reconfiguration'
+        self.check_run(snapshot_name)
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        self.show_step(1)
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": settings.NEUTRON_SEGMENT_TYPE,
+            }
+        )
+        self.show_step(2)
+        self.show_step(3)
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['compute'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['controller']
+            })
+
+        self.show_step(4)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+
+        self.show_step(5)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(6)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.env.make_snapshot("basic_env_for_reconfiguration", is_make=True)
+
+    @test(depends_on_groups=['basic_env_for_reconfiguration'],
           groups=["services_reconfiguration", "reconfigure_ml2_vlan_range"])
     @log_snapshot_after_test
     def reconfigure_ml2_vlan_range(self):
         """Reconfigure neutron ml2 VLAN range
 
         Scenario:
-            1. Revert snapshot "deploy_neutron_vlan_ha"
+            1. Revert snapshot "basic_env_for_reconfiguration"
             2. Upload a new openstack configuration
             3. Get uptime of process "neutron-server" on each controller
             4. Apply a new VLAN range(minimal range) to all nodes
@@ -76,7 +129,7 @@ class ServicesReconfiguration(TestBasic):
 
         """
         self.show_step(1)
-        self.env.revert_snapshot("deploy_neutron_vlan_ha")
+        self.env.revert_snapshot("basic_env_for_reconfiguration")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
@@ -136,67 +189,31 @@ class ServicesReconfiguration(TestBasic):
 
         self.env.make_snapshot("reconfigure_ml2_vlan_range", is_make=True)
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+    @test(depends_on_groups=["basic_env_for_reconfiguration"],
           groups=["services_reconfiguration", "reconfigure_overcommit_ratio"])
     @log_snapshot_after_test
     def reconfigure_overcommit_ratio(self):
         """Tests for reconfiguration nova CPU overcommit ratio.
 
         Scenario:
-            1. Create cluster
-            2. Add 1 node with compute role
-            3. Add 3 nodes with controller role
-            4. Deploy the cluster
-            5. Verify network
-            6. Run OSTF
-            7. Verify configuration file on each controller
-            8. Apply new CPU overcommit ratio for each controller
-            9. Verify deployment task is finished
-            10. Verify nova-scheduler services uptime
-            11. Boot instances with flavor that occupy all CPU
-            12. Boot extra instance and catch the error
-            13. Apply old CPU overcommit ratio for each controller
-            14. Verify deployment task is finished
-            15. Verify nova-scheduler services uptime
+            1. Revert snapshot "basic_env_for_reconfiguration"
+            2. Apply new CPU overcommit ratio for each controller
+            3. Verify deployment task is finished
+            4. Verify nova-scheduler services uptime
+            5. Boot instances with flavor that occupy all CPU
+            6. Boot extra instance and catch the error
+            7. Apply old CPU overcommit ratio for each controller
+            8. Verify deployment task is finished
+            9. Verify nova-scheduler services uptime
 
         Snapshot: reconfigure_overcommit_ratio
 
         """
-        snapshot_name = 'reconfigure_overcommit_ratio'
-        self.check_run(snapshot_name)
-        self.env.revert_snapshot("ready_with_5_slaves")
-
         self.show_step(1)
-        cluster_id = self.fuel_web.create_cluster(
-            name=self.__class__.__name__,
-            mode=settings.DEPLOYMENT_MODE,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": settings.NEUTRON_SEGMENT_TYPE,
-            }
-        )
+        self.env.revert_snapshot("basic_env_for_reconfiguration")
+
         self.show_step(2)
-        self.show_step(3)
-
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {
-                'slave-01': ['compute'],
-                'slave-02': ['controller'],
-                'slave-03': ['controller'],
-                'slave-04': ['controller']
-            })
-
-        self.show_step(4)
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
-
-        self.show_step(5)
-        self.fuel_web.verify_network(cluster_id)
-
-        self.show_step(6)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
-
-        self.show_step(7)
+        cluster_id = self.fuel_web.get_last_created_cluster()
         config_new = utils.get_config_template('nova_cpu')
         structured_config = get_structured_config_dict(config_new)
         self.fuel_web.client.upload_configuration(config_new,
@@ -214,13 +231,14 @@ class ServicesReconfiguration(TestBasic):
             with self.env.d_env.get_ssh_to_remote(controller) as remote:
                 uptimes[controller] = \
                     utils.get_process_uptime(remote, service_name)
+
         task = self.fuel_web.client.apply_configuration(cluster_id,
                                                         role="controller")
 
-        self.show_step(9)
+        self.show_step(3)
         self.fuel_web.assert_task_success(task, timeout=300, interval=5)
 
-        self.show_step(10)
+        self.show_step(4)
 
         for controller in controllers:
             with self.env.d_env.get_ssh_to_remote(controller) as remote:
@@ -238,7 +256,7 @@ class ServicesReconfiguration(TestBasic):
                                            param['option'],
                                            param['value'])
 
-        self.show_step(11)
+        self.show_step(5)
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
 
@@ -249,7 +267,7 @@ class ServicesReconfiguration(TestBasic):
                                          server_name="Test_reconfig",
                                          vcpus=2)
         os_conn.verify_instance_status(server, 'ACTIVE')
-        self.show_step(12)
+        self.show_step(6)
         excessive_server = os_conn.create_instance(neutron_network=True,
                                                    label=net_name,
                                                    server_name="excessive_VM",
@@ -258,13 +276,13 @@ class ServicesReconfiguration(TestBasic):
         os_conn.delete_instance(excessive_server)
         os_conn.delete_instance(server)
 
-        self.show_step(13)
+        self.show_step(7)
         config_revert = utils.get_config_template('nova_cpu_old')
         structured_config_revert = get_structured_config_dict(config_revert)
         self.fuel_web.client.upload_configuration(config_revert,
                                                   cluster_id,
                                                   role="controller")
-        uptimes = dict(zip(controllers, range(len(controllers))))
+
         for controller in controllers:
             with self.env.d_env.get_ssh_to_remote(controller) as remote:
                 uptimes[controller] = \
@@ -273,10 +291,10 @@ class ServicesReconfiguration(TestBasic):
         task = self.fuel_web.client.apply_configuration(cluster_id,
                                                         role="controller")
 
-        self.show_step(14)
+        self.show_step(8)
         self.fuel_web.assert_task_success(task, timeout=300, interval=5)
 
-        self.show_step(15)
+        self.show_step(9)
         for controller in controllers:
             with self.env.d_env.get_ssh_to_remote(controller) as remote:
                 uptime = utils.get_process_uptime(remote, service_name)
@@ -292,10 +310,11 @@ class ServicesReconfiguration(TestBasic):
                                            param['section'],
                                            param['option'],
                                            param['value'])
+
         self.env.make_snapshot("reconfigure_overcommit_ratio",
                                is_make=True)
 
-    @test(depends_on_groups=['deploy_neutron_vlan_ha'],
+    @test(depends_on_groups=['basic_env_for_reconfiguration'],
           groups=["services_reconfiguration",
                   "reconfigure_keystone_to_use_ldap"])
     @log_snapshot_after_test
@@ -303,7 +322,7 @@ class ServicesReconfiguration(TestBasic):
         """Reconfigure neutron ml2 VLAN range
 
         Scenario:
-            1. Revert snapshot "deploy_neutron_vlan_ha"
+            1. Revert snapshot "basic_env_for_reconfiguration"
             2. Upload a new openstack configuration
             3. Try to apply a new keystone configuration
             4. Wait for failing of deployment task
@@ -314,7 +333,7 @@ class ServicesReconfiguration(TestBasic):
 
         """
         self.show_step(1)
-        self.env.revert_snapshot("deploy_neutron_vlan_ha")
+        self.env.revert_snapshot("basic_env_for_reconfiguration")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
@@ -351,14 +370,14 @@ class ServicesReconfiguration(TestBasic):
         self.env.make_snapshot("reconfigure_keystone_to_use_ldap",
                                is_make=True)
 
-    @test(depends_on_groups=['deploy_neutron_vlan_ha'],
+    @test(depends_on_groups=['basic_env_for_reconfiguration'],
           groups=["reconfiguration", "reconfigure_nova_quota"])
     @log_snapshot_after_test
     def reconfigure_nova_quota(self):
         """Tests for reconfiguration nova quota.
 
         Scenario:
-            1. Revert snapshot "deploy_neutron_vlan_ha"
+            1. Revert snapshot "basic_env_for_reconfiguration"
             2. Upload a new openstack configuration
             3. Get uptime of process "nova-compute" on each controller
             4. Apply a new quota driver and quota_instances to all nodes
@@ -371,7 +390,7 @@ class ServicesReconfiguration(TestBasic):
 
         """
         self.show_step(1)
-        self.env.revert_snapshot("deploy_neutron_vlan_ha")
+        self.env.revert_snapshot("basic_env_for_reconfiguration")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
@@ -543,3 +562,104 @@ class ServicesReconfiguration(TestBasic):
                                 "changed on instance")
         self.env.make_snapshot("reconfigure_nova_ephemeral_disk",
                                is_make=True)
+
+    @test(depends_on_groups=['reconfigure_ml2_vlan_range'],
+          groups=["services_reconfiguration",
+                  "preservation_config_after_reset_and_preconfigured_deploy"])
+    @log_snapshot_after_test
+    def preservation_config_after_reset_and_preconfigured_deploy(self):
+        """Preservation config after reset of cluster and preconfigured deploy
+
+        Scenario:
+            1. Revert snapshot reconfigure_ml2_vlan_range
+            2. Reset cluster
+            3. Upload a new openstack configuration for nova on computes
+            4. Deploy changes
+            5. Run OSTF
+            6. Verify nova and neutron settings
+            7. Create new private network
+            8. Try to create one more, verify that it is impossible
+            9. Boot instances with flavor that occupy all CPU
+            10. Boot extra instance and catch the error
+
+        Snapshot "preservation_config_after_reset_and_preconfigured_deploy"
+
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot("reconfigure_ml2_vlan_range")
+
+        self.show_step(2)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        self.fuel_web.stop_reset_env_wait(cluster_id)
+
+        self.show_step(3)
+        config = utils.get_config_template('nova_cpu')
+        structured_config_nova = get_structured_config_dict(config)
+        self.fuel_web.client.upload_configuration(config,
+                                                  cluster_id,
+                                                  role='controller')
+        config = utils.get_config_template('neutron')
+        structured_config_neutron = get_structured_config_dict(config)
+
+        self.show_step(4)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:2], timeout=10 * 60)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(5)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id)
+
+        self.show_step(6)
+        controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])
+        structured_config = {}
+        structured_config.update(structured_config_neutron)
+        structured_config.update(structured_config_nova)
+        for controller in controllers:
+            with self.env.d_env.get_ssh_to_nailgun_node(controller) as remote:
+                for configpath, params in structured_config.items():
+                    result = remote.open(configpath)
+                    conf_for_check = utils.get_ini_config(result)
+                    for param in params:
+                        utils.check_config(conf_for_check,
+                                           configpath,
+                                           param['section'],
+                                           param['option'],
+                                           param['value'])
+
+        self.show_step(7)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+        tenant = os_conn.get_tenant('admin')
+        os_conn.create_network('net1', tenant_id=tenant.id)
+
+        self.show_step(8)
+        try:
+            os_conn.create_network('net2', tenant_id=tenant.id)
+        except Exception as e:
+            if 'No tenant network is available' not in e.message:
+                raise e
+            pass
+        else:
+            raise Exception("New configuration was not applied")
+
+        self.show_step(9)
+        net_name = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+        server = os_conn.create_instance(neutron_network=True,
+                                         label=net_name,
+                                         server_name="Test_reconfig",
+                                         vcpus=2)
+        os_conn.verify_instance_status(server, 'ACTIVE')
+        self.show_step(10)
+        excessive_server = os_conn.create_instance(neutron_network=True,
+                                                   label=net_name,
+                                                   server_name="excessive_VM",
+                                                   flavor_name="overcommit")
+        os_conn.verify_instance_status(excessive_server, 'ERROR')
+
+        snapshot = "preservation_config_after_reset_and_preconfigured_deploy"
+        self.env.make_snapshot(snapshot, is_make=True)
