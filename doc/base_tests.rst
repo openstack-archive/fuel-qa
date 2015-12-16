@@ -467,6 +467,11 @@ Test for separate keystone service
 .. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_keystone
    :members:
 
+Test for separate keystone service and ceph
+-------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_keystone_ceph
+   :members:
+
 Test for separate horizon service
 ---------------------------------
 .. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_horizon
@@ -477,6 +482,11 @@ Test for separate mysql service
 .. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_db
    :members:
 
+Test for separate mysql service and ceph
+----------------------------------------
+.. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_db_ceph
+   :members:
+
 Test for separate multiroles
 ----------------------------
 .. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_multiroles
@@ -485,6 +495,11 @@ Test for separate multiroles
 Test for separate rabbitmq service
 ----------------------------------
 .. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_rabbitmq
+   :members:
+
+Test for separate rabbitmq service and ceph
+-------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_rabbitmq_ceph
    :members:
 
 Template based tests
