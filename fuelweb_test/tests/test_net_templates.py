@@ -63,8 +63,6 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE_HA,
             settings={
-                "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT[NEUTRON_SEGMENT_TYPE],
                 'tenant': 'netTemplate',
                 'user': 'netTemplate',
                 'password': 'netTemplate',
@@ -151,8 +149,6 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
                 'volumes_lvm': False,
                 'ephemeral_ceph': True,
                 'objects_ceph': True,
-                'net_provider': 'neutron',
-                'net_segment_type': NEUTRON_SEGMENT[NEUTRON_SEGMENT_TYPE],
                 'tenant': 'netTemplate',
                 'user': 'netTemplate',
                 'password': 'netTemplate',
@@ -416,7 +412,7 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
             mode=DEPLOYMENT_MODE_HA,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT[NEUTRON_SEGMENT_TYPE],
+                "net_segment_type": NEUTRON_SEGMENT_TYPE,
                 'tenant': 'netTemplate',
                 'user': 'netTemplate',
                 'password': 'netTemplate',
