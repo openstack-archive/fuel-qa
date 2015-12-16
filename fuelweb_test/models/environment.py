@@ -21,6 +21,7 @@ from devops.error import TimeoutError
 from devops.helpers.helpers import _tcp_ping
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
+from devops.helpers.ntp import sync_time
 from devops.models import Environment
 from keystoneclient import exceptions
 from proboscis.asserts import assert_equal
@@ -28,7 +29,6 @@ from proboscis.asserts import assert_true
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import revert_info
-from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.decorators import update_rpm_packages
 from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers.eb_tables import Ebtables
@@ -38,7 +38,7 @@ from fuelweb_test.helpers.fuel_actions import DockerActions
 from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.fuel_actions import PostgresActions
 from fuelweb_test.helpers.fuel_actions import NessusActions
-from fuelweb_test.helpers.ntp import GroupNtpSync
+from fuelweb_test.helpers.fuel_actions import FuelBootstrapCliActions
 from fuelweb_test.helpers.utils import erase_data_from_hdd
 from fuelweb_test.helpers.utils import timestat
 from fuelweb_test.helpers import multiple_networks_hacks
@@ -117,9 +117,22 @@ class EnvironmentModel(object):
             wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
 
         if not skip_timesync:
-            self.sync_time([node for node in self.nailgun_nodes(devops_nodes)])
-
+            self.sync_time()
         return self.nailgun_nodes(devops_nodes)
+
+    def sync_time(self, nodes_names=None, skip_sync=False):
+        if nodes_names is None:
+            roles = ['fuel_master', 'fuel_slave']
+            nodes_names = [node.name for node in self.d_env.get_nodes()
+                           if node.role in roles and
+                           node.driver.node_active(node)]
+        logger.info("Please wait while time on nodes: {0} "
+                    "will be synchronized"
+                    .format(', '.join(sorted(nodes_names))))
+        new_time = sync_time(self.d_env, nodes_names, skip_sync)
+        for name in sorted(new_time):
+                logger.info("New time on '{0}' = {1}".format(name,
+                                                             new_time[name]))
 
     @logwrap
     def get_admin_node_ip(self):
@@ -288,11 +301,7 @@ class EnvironmentModel(object):
         self.resume_environment()
 
         if not skip_timesync:
-            nailgun_nodes = [self.fuel_web.get_nailgun_node_by_name(node.name)
-                             for node in self.d_env.nodes().slaves
-                             if node.driver.node_active(node)]
-            self.sync_time(nailgun_nodes)
-
+            self.sync_time()
         try:
             _wait(self.fuel_web.client.get_releases,
                   expected=EnvironmentError, timeout=300)
@@ -400,7 +409,7 @@ class EnvironmentModel(object):
         self.docker_actions.wait_for_ready_containers()
         time.sleep(10)
         self.set_admin_keystone_password()
-        self.sync_time()
+        self.sync_time(['admin'])
         if settings.UPDATE_MASTER:
             if settings.UPDATE_FUEL_MIRROR:
                 for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
@@ -451,40 +460,6 @@ class EnvironmentModel(object):
         except Exception:
             logger.error("Could not kill process of fuelmenu")
             raise
-
-    @retry(count=3, delay=60)
-    def sync_time(self, nailgun_nodes=[]):
-        # with @retry, failure on any step of time synchronization causes
-        # restart the time synchronization starting from the admin node
-
-        controller_nodes = [
-            n for n in nailgun_nodes if "controller" in n['roles']]
-        other_nodes = [
-            n for n in nailgun_nodes if "controller" not in n['roles']]
-
-        # 1. The first time source for the environment: admin node
-        logger.info("Synchronizing time on Fuel admin node")
-        with GroupNtpSync(self, sync_admin_node=True) as g_ntp:
-            g_ntp.do_sync_time()
-
-        # 2. Controllers should be synchronized before providing time to others
-        if controller_nodes:
-            logger.info("Synchronizing time on all controllers")
-            with GroupNtpSync(self, nailgun_nodes=controller_nodes) as g_ntp:
-                g_ntp.do_sync_time()
-
-        # 3. Synchronize time on all the rest nodes
-        if other_nodes:
-            logger.info("Synchronizing time on other active nodes")
-            with GroupNtpSync(self, nailgun_nodes=other_nodes) as g_ntp:
-                g_ntp.do_sync_time()
-
-    def verify_network_configuration(self, node_name):
-        node = self.fuel_web.get_nailgun_node_by_name(node_name)
-        checkers.verify_network_configuration(
-            node=node,
-            remote=self.d_env.get_ssh_to_remote(node['ip'])
-        )
 
     def wait_bootstrap(self):
         logger.info("Waiting while bootstrapping is in progress")
