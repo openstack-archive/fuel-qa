@@ -162,6 +162,16 @@ Test Reduced Footprint
 .. automodule:: fuelweb_test.tests.test_reduced_footprint
    :members:
 
+Test scale group 3
+------------------
+.. automodule:: fuelweb_test.tests.tests_scale.test_scale_group_3
+   :members:
+
+Test scale group 4
+------------------
+.. automodule:: fuelweb_test.tests.tests_scale.test_scale_group_4
+   :members:
+
 Test Services
 -------------
 .. automodule:: fuelweb_test.tests.test_services
