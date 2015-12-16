@@ -569,6 +569,7 @@ class EnvironmentModel(object):
             "complete' '%s'" % log_path)['exit_code']
         if result != 0:
             raise Exception('Fuel node deployment failed.')
+        self.bootstrap_image_check()
 
     def dhcrelay_check(self):
         # CentOS 7 is pretty stable with admin iface.
@@ -583,6 +584,20 @@ class EnvironmentModel(object):
 
         assert_true(self.get_admin_node_ip() in "".join(out),
                     "dhcpcheck doesn't discover master ip")
+
+    def bootstrap_image_check(self):
+        fuel_settings = self.admin_actions.get_fuel_settings()
+        if fuel_settings['BOOTSTRAP']['flavor'].lower() != 'ubuntu':
+            logger.warning('Default image for bootstrap '
+                           'is not based on Ubuntu!')
+            return
+        with self.d_env.get_admin_remote() as admin_remote:
+            cmd = 'fuel-bootstrap --quiet list'
+            bootstrap_images = run_on_remote(admin_remote, cmd)
+            assert_true(any('active' in line for line in bootstrap_images),
+                        'Ubuntu bootstrap image wasn\'t built and activated! '
+                        'See logs in /var/log/fuel-bootstrap-image-build.log '
+                        'for details.')
 
     def admin_install_pkg(self, pkg_name):
         """Install a package <pkg_name> on the admin node"""
