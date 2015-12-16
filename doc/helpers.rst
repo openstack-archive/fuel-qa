@@ -53,11 +53,6 @@ Multiple Networks Hacks
 .. automodule:: fuelweb_test.helpers.multiple_networks_hacks
    :members:
 
-Ntp
----
-.. automodule:: fuelweb_test.helpers.ntp
-   :members:
-
 Os Actions
 ----------
 .. automodule:: fuelweb_test.helpers.os_actions
