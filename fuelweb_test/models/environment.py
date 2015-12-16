@@ -16,8 +16,8 @@ import re
 import time
 
 from devops.error import TimeoutError
-from devops.helpers.helpers import _tcp_ping
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import tcp_ping_
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 from devops.helpers.ntp import sync_time
 from devops.models import Environment
@@ -117,7 +117,9 @@ class EnvironmentModel(object):
             time.sleep(5)
 
         with TimeStat("wait_for_nodes_to_start_and_register_in_nailgun"):
-            wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
+            wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout,
+                 timeout_msg='Bootstrap timeout for nodes: {}'
+                             ''.format([node.name for node in devops_nodes]))
 
         if not skip_timesync:
             self.sync_time()
@@ -309,14 +311,15 @@ class EnvironmentModel(object):
         if not skip_timesync:
             self.sync_time()
         try:
-            _wait(self.fuel_web.client.get_releases,
-                  expected=EnvironmentError, timeout=300)
+            wait_pass(self.fuel_web.client.get_releases,
+                      expected=EnvironmentError, timeout=300)
         except exceptions.Unauthorized:
             self.set_admin_keystone_password()
             self.fuel_web.get_nailgun_version()
 
         if not skip_slaves_check:
-            _wait(lambda: self.check_slaves_are_ready(), timeout=60 * 6)
+            # TODO(astudenov): add timeout_msg
+            wait_pass(lambda: self.check_slaves_are_ready(), timeout=60 * 6)
         return True
 
     def set_admin_ssh_password(self):
@@ -379,7 +382,8 @@ class EnvironmentModel(object):
         self.d_env.start([admin])
 
         logger.info("Waiting for admin node to start up")
-        wait(lambda: admin.driver.node_active(admin), 60)
+        wait(lambda: admin.driver.node_active(admin), 60,
+             timeout_msg='Admin node startup timeout')
         logger.info("Proceed with installation")
         # update network parameters at boot screen
         admin.send_keys(self.get_keys(admin, custom=custom,
@@ -424,7 +428,9 @@ class EnvironmentModel(object):
         wait(lambda: (
              self.ssh_manager.execute_on_remote(
                  admin_node_ip, cmd)['stdout'][0] != 'dead'), interval=10,
-             timeout=30)
+             timeout=30,
+             timeout_msg='Nginx service is dead after trying to enable '
+                         'it with the command: {}'.format(cmd))
 
     # pylint: disable=no-self-use
     @update_rpm_packages
@@ -437,7 +443,8 @@ class EnvironmentModel(object):
     @logwrap
     def wait_for_provisioning(self,
                               timeout=settings.WAIT_FOR_PROVISIONING_TIMEOUT):
-        _wait(lambda: _tcp_ping(
+        # TODO(astudenov): add timeout_msg
+        wait_pass(lambda: tcp_ping_(
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
             (self.d_env.admin_net), 22), timeout=timeout)
@@ -449,7 +456,7 @@ class EnvironmentModel(object):
         def check_ssh_connection():
             """Try to close fuelmenu and check ssh connection"""
             try:
-                _tcp_ping(
+                tcp_ping_(
                     self.d_env.nodes(
                     ).admin.get_ip_address_by_network_name
                     (self.d_env.admin_net), 22)
@@ -468,14 +475,19 @@ class EnvironmentModel(object):
         wait(lambda: self.ssh_manager.exists_on_remote(
             self.ssh_manager.admin_ip,
             '/var/lock/wait_for_external_config'),
-            timeout=600)
+            timeout=600,
+            timeout_msg='wait_for_external_config lock file timeout '
+                        'while bootstrapping the Fuel master node')
 
         check_cmd = 'pkill -0 -f wait_for_external_config'
 
         wait(
             lambda: self.ssh_manager.execute(
                 ip=self.ssh_manager.admin_ip,
-                cmd=check_cmd)['exit_code'] == 0, timeout=timeout)
+                cmd=check_cmd)['exit_code'] == 0,
+            timeout=timeout,
+            timeout_msg='wait_for_external_config process timeout '
+                        'while bootstrapping the Fuel master node')
 
     @logwrap
     def kill_wait_for_external_config(self):
@@ -501,7 +513,9 @@ class EnvironmentModel(object):
                     ip=self.ssh_manager.admin_ip,
                     cmd="grep 'Fuel node deployment' '{:s}'".format(log_path)
                 )['exit_code'] == 0,
-                timeout=(float(settings.ADMIN_NODE_BOOTSTRAP_TIMEOUT))
+                timeout=(float(settings.ADMIN_NODE_BOOTSTRAP_TIMEOUT)),
+                timeout_msg='Fuel master node bootstrap timeout, '
+                            'please check the log {}'.format(log_path)
             )
         result = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
@@ -523,9 +537,9 @@ class EnvironmentModel(object):
         out = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
             cmd=command
-        )['stdout']
+        )['stdout_str']
 
-        assert_true(self.get_admin_node_ip() in "".join(out),
+        assert_true(self.get_admin_node_ip() in out,
                     "dhcpcheck doesn't discover master ip")
 
     def bootstrap_image_check(self):
@@ -590,16 +604,23 @@ class EnvironmentModel(object):
         logger.info('Searching for updates..')
         update_command = 'yum clean expire-cache; yum update -y'
 
-        update_result = self.ssh_manager.execute(
+        update_result = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd=update_command
+            cmd=update_command,
+            err_msg='Packages update failed, inspect logs for details'
         )
 
-        logger.info('Result of "{1}" command on master node: '
-                    '{0}'.format(update_result, update_command))
-        assert_equal(int(update_result['exit_code']), 0,
-                     'Packages update failed, '
-                     'inspect logs for details')
+        logger.info(
+            'Result of "{cmd}" command on master node: \n'
+            'Exit code: {code}\n'
+            'STDOUT:\n'
+            '{stdout}\n'
+            'STDERR:\n'
+            '{stderr}'.format(
+                stdout=update_result['stdout_str'],
+                stderr=update_result['stderr_str'],
+                code=update_result['exit_code'],
+                cmd=update_command))
 
         # Check if any packets were updated and update was successful
         for str_line in update_result['stdout']:
@@ -619,15 +640,22 @@ class EnvironmentModel(object):
 
         cmd = 'bootstrap_admin_node.sh;'
 
-        result = self.ssh_manager.execute(
+        result = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd=cmd
+            cmd=cmd,
+            err_msg='bootstrap failed, inspect logs for details',
         )
-        logger.info('Result of "{1}" command on master node: '
-                    '{0}'.format(result, cmd))
-        assert_equal(int(result['exit_code']), 0,
-                     'bootstrap failed, '
-                     'inspect logs for details')
+        logger.info(
+            'Result of "{cmd}" command on master node: \n'
+            'Exit code: {code}\n'
+            'STDOUT:\n'
+            '{stdout}\n'
+            'STDERR:\n'
+            '{stderr}'.format(
+                stdout=result['stdout_str'],
+                stderr=result['stderr_str'],
+                code=result['exit_code'],
+                cmd=cmd))
 
     # Modifies a resolv.conf on the Fuel master node and returns
     # its original content.

@@ -21,7 +21,7 @@ import re
 from time import sleep
 
 from devops.error import TimeoutError
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 from netaddr import IPAddress
 from netaddr import IPNetwork
@@ -63,7 +63,7 @@ def check_cinder_status(ip):
         ip=ip,
         cmd=cmd
     )
-    cinder_services = ''.join(result['stdout'])
+    cinder_services = result['stdout_str']
     logger.debug('>$ cinder service-list\n{}'.format(cinder_services))
     if result['exit_code'] == 0:
         return all(' up ' in x.split('enabled')[1]
@@ -250,7 +250,8 @@ def enable_feature_group(env, group):
         except (HTTPError, URLError):
             return False
 
-    wait(check_api_group_enabled, interval=10, timeout=60 * 20)
+    wait(check_api_group_enabled, interval=10, timeout=60 * 20,
+         timeout_msg='Failed to enable feature group - {!r}'.format(group))
 
 
 def find_backup(ip):
@@ -282,12 +283,12 @@ def restore_check_sum(ip):
         ip=ip,
         cmd="if [ -e /etc/fuel/data ]; then echo Restored!!; fi"
     )
-    assert_true("Restored!!" in ''.join(res['stdout']).strip(),
+    assert_true("Restored!!" in res['stdout_str'],
                 'Test file /etc/fuel/data '
                 'was not restored!!! {0}'.format(res['stderr']))
     logger.info("Restore check md5sum")
     md5sum_backup = ssh_manager.execute(ip, "cat /etc/fuel/sum")
-    assert_true(''.join(md5sum_backup['stdout']).strip(),
+    assert_true(md5sum_backup['stdout_str'],
                 'Command cat /etc/fuel/sum '
                 'failed with {0}'.format(md5sum_backup['stderr']))
     md5sum_restore = ssh_manager.execute(
@@ -325,14 +326,14 @@ def check_mysql(ip, node_name):
                         " information_schema.GLOBAL_STATUS"
                         " WHERE VARIABLE_NAME"
                         " = 'wsrep_local_state_comment';\"")
-    try:
-        wait(lambda: ssh_manager.execute(ip, check_cmd)['exit_code'] == 0,
-             timeout=10 * 60)
-        logger.info('MySQL daemon is started on {0}'.format(node_name))
-    except TimeoutError:
-        logger.error('MySQL daemon is down on {0}'.format(node_name))
-        raise
-    _wait(
+
+    wait(lambda: ssh_manager.execute(ip, check_cmd)['exit_code'] == 0,
+         timeout=10 * 60,
+         timeout_msg='MySQL daemon is down on {0}'.format(node_name))
+    logger.info('MySQL daemon is started on {0}'.format(node_name))
+
+    # TODO(astudenov): add timeout_msg
+    wait_pass(
         lambda: assert_equal(
             ssh_manager.execute(
                 ip,
@@ -341,11 +342,13 @@ def check_mysql(ip, node_name):
             'MySQL resource is NOT running on {0}'.format(node_name)),
         timeout=120)
     try:
-        wait(lambda: ''.join(ssh_manager.execute(
-            ip, check_galera_cmd)['stdout']).rstrip() == 'Synced', timeout=600)
+        wait(lambda: ssh_manager.execute(
+            ip, check_galera_cmd)['stdout_str'] == 'Synced', timeout=600,
+            timeout_msg='galera status != "Synced" on node {!r} with ip {}'
+                        ''.format(node_name, ip))
     except TimeoutError:
-        logger.error('galera status is {0}'.format(''.join(ssh_manager.execute(
-            ip, check_galera_cmd)['stdout']).rstrip()))
+        logger.error('galera status is {0}'.format(ssh_manager.execute(
+            ip, check_galera_cmd)['stdout_str']))
         raise
 
 
@@ -458,7 +461,7 @@ def execute_query_on_collector(collector_remote, master_uuid, query,
     cmd = 'PGPASSWORD={0} psql -qt -h 127.0.0.1 -U {1} -d {2} -c "{3}"'.\
         format(collector_db_pass, collector_db_user, collector_db, query)
     logger.debug('query collector is {0}'.format(cmd))
-    return ''.join(collector_remote.execute(cmd)['stdout']).strip()
+    return collector_remote.execute(cmd)['stdout_str']
 
 
 def count_stats_on_collector(collector_remote, master_uuid):
@@ -695,21 +698,19 @@ def external_dns_check(ip):
     logger.debug("provided to test dns is {}".format(provided_dns))
     cluster_dns = []
     for dns in provided_dns:
-        ext_dns_ip = ''.join(
-            ssh_manager.execute(
-                ip=ip,
-                cmd="grep {0} /etc/resolv.dnsmasq.conf | "
-                    "awk {{'print $2'}}".format(dns)
-            )["stdout"]).rstrip()
+        ext_dns_ip = ssh_manager.execute(
+            ip=ip,
+            cmd="grep {0} /etc/resolv.dnsmasq.conf | "
+                "awk {{'print $2'}}".format(dns)
+        )["stdout_str"]
         cluster_dns.append(ext_dns_ip)
     logger.debug("external dns in conf is {}".format(cluster_dns))
     assert_equal(set(provided_dns), set(cluster_dns),
                  "/etc/resolv.dnsmasq.conf does not contain external dns ip")
-    command_hostname = ''.join(
-        ssh_manager.execute(ip,
-                            "host {0} | awk {{'print $5'}}"
-                            .format(PUBLIC_TEST_IP))
-        ["stdout"]).rstrip()
+    command_hostname = ssh_manager.execute(
+        ip,
+        "host {0} | awk {{'print $5'}}".format(PUBLIC_TEST_IP)
+    )["stdout_str"]
     hostname = 'google-public-dns-a.google.com.'
     assert_equal(command_hostname, hostname,
                  "Can't resolve hostname")
@@ -747,11 +748,10 @@ def external_ntp_check(ip, vrouter_vip):
     logger.debug("provided to test ntp is {}".format(provided_ntp))
     cluster_ntp = []
     for ntp in provided_ntp:
-        ext_ntp_ip = ''.join(
-            ssh_manager.execute(
-                ip=ip,
-                cmd="awk '/^server +{0}/{{print $2}}' "
-                    "/etc/ntp.conf".format(ntp))["stdout"]).rstrip()
+        ext_ntp_ip = ssh_manager.execute(
+            ip=ip,
+            cmd="awk '/^server +{0}/{{print $2}}' "
+                "/etc/ntp.conf".format(ntp))["stdout_str"]
         cluster_ntp.append(ext_ntp_ip)
     logger.debug("external ntp in conf is {}".format(cluster_ntp))
     assert_equal(set(provided_ntp), set(cluster_ntp),
@@ -769,9 +769,9 @@ def external_ntp_check(ip, vrouter_vip):
 
 def check_swift_ring(ip):
     for ring in ['object', 'account', 'container']:
-        res = ''.join(ssh_manager.execute(
+        res = ssh_manager.execute(
             ip, "swift-ring-builder /etc/swift/{0}.builder".format(
-                ring))['stdout'])
+                ring))['stdout_str']
         logger.debug("swift ring builder information is {0}".format(res))
         balance = re.search('(\d+.\d+) balance', res).group(1)
         assert_true(float(balance) < 10,
@@ -1125,8 +1125,8 @@ def check_hiera_hosts(nodes, cmd):
         result = ssh_manager.execute_on_remote(
             ip=node['ip'],
             cmd=cmd
-        )['stdout']
-        hosts = ''.join(result).strip().split(',')
+        )['stdout_str']
+        hosts = result.split(',')
         logger.debug("hosts on {0} are {1}".format(node['hostname'], hosts))
 
         if not hiera_hosts:
@@ -1161,7 +1161,7 @@ def check_offload(ip, interface, offload_type):
         err_msg="Failed to get Offload {0} "
                 "on node {1}".format(offload_type, ip)
     )
-    return ''.join(result['stdout']).rstrip()
+    return result['stdout_str']
 
 
 def check_get_network_data_over_cli(ip, cluster_id, path):
