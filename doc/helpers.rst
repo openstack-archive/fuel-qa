@@ -63,11 +63,6 @@ Nessus REST Client
 .. automodule:: fuelweb_test.helpers.nessus
    :members:
 
-Ntp
----
-.. automodule:: fuelweb_test.helpers.ntp
-   :members:
-
 Os Actions
 ----------
 .. automodule:: fuelweb_test.helpers.os_actions
