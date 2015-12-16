@@ -71,18 +71,18 @@ Test Environment Action
 .. automodule:: fuelweb_test.tests.test_environment_action
    :members:
 
-Test ha neutron vlan deployment group 1
----------------------------------------
+Test ha neutron vlan deployment group 1 (cinder/ceph for images and ceph for volumes/swift)
+-------------------------------------------------------------------------------------------
 .. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_1
    :members:
 
-Test ha neutron vlan deployment group 2
----------------------------------------
+Test ha neutron vlan deployment group 2 (cinder/ceph for ephemeral and cinder/ceph for images/ephemeral)
+--------------------------------------------------------------------------------------------------------
 .. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_2
    :members:
 
-Test ha neutron vlan deployment group 7
----------------------------------------
+Test ha neutron vlan deployment group 7 (no volumes/ceph for images and cinder/swift/base os)
+---------------------------------------------------------------------------------------------
 .. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_7
    :members:
 
@@ -160,6 +160,16 @@ Test Pull Requests
 Test Reduced Footprint
 ----------------------
 .. automodule:: fuelweb_test.tests.test_reduced_footprint
+   :members:
+
+Test scale group 3 (add/delete compute and add/delete cinder)
+-------------------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_scale.test_scale_group_3
+   :members:
+
+Test scale group 4 (add/delete ceph and add/delete cinder+ceph)
+---------------------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_scale.test_scale_group_4
    :members:
 
 Test Services
