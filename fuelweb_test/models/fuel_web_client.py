@@ -2433,3 +2433,35 @@ class FuelWebClient(object):
     def get_all_ostf_set_names(self, cluster_id):
         sets = self.client.get_ostf_test_sets(cluster_id)
         return [s['id'] for s in sets]
+
+    @logwrap
+    def update_network_cidr(self, cluster_id, network_name):
+        """Simple method for changing default network cidr
+        (just use its subnet with 2x smaller network mask)
+
+        :param cluster_id: int
+        :param network_name: str
+        :return: None
+        """
+        networks = self.client.get_networks(cluster_id)['networks']
+        params = self.client.get_networks(cluster_id)['networking_parameters']
+        for network in networks:
+            if network['name'] != network_name:
+                continue
+            old_cidr = IPNetwork(network['cidr'])
+            new_cidr = old_cidr.subnet(1)[0]
+            assert_not_equal(old_cidr, new_cidr,
+                             'Can\t create a subnet using default cidr {0} '
+                             'for {1} network!'.format(old_cidr, network_name))
+            network['cidr'] = str(new_cidr)
+            logger.debug('CIDR for {0} network was changed from {1} to '
+                         '{2}.'.format(network_name, old_cidr, new_cidr))
+            if network['meta']['notation'] != 'ip_ranges':
+                continue
+            if network['name'] == 'public':
+                network['ip_ranges'] = self.get_range(new_cidr, ip_range=-1)
+                params['floating_ranges'] = self.get_range(new_cidr,
+                                                           ip_range=1)
+            else:
+                network['ip_ranges'] = self.get_range(new_cidr, ip_range=0)
+        self.client.update_network(cluster_id, params, networks)
