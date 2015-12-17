@@ -585,3 +585,104 @@ class ServicesReconfiguration(TestBasic):
                                 "changed on instance")
         self.env.make_snapshot("reconfigure_nova_ephemeral_disk",
                                is_make=True)
+
+    @test(depends_on_groups=['reconfigure_ml2_vlan_range'],
+          groups=["services_reconfiguration",
+                  "preservation_config_after_reset_and_preconfigured_deploy"])
+    @log_snapshot_after_test
+    def preservation_config_after_reset_and_preconfigured_deploy(self):
+        """Preservation config after reset of cluster and preconfigured deploy
+
+        Scenario:
+            1. Revert snapshot reconfigure_ml2_vlan_range
+            2. Reset cluster
+            3. Upload a new openstack configuration for nova on computes
+            4. Deploy changes
+            5. Run OSTF
+            6. Verify nova and neutron settings
+            7. Create new private network
+            8. Try to create one more, verify that it is impossible
+            9. Boot instances with flavor that occupy all CPU
+            10. Boot extra instance and catch the error
+
+        Snapshot "preservation_config_after_reset_and_preconfigured_deploy"
+
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot("reconfigure_ml2_vlan_range")
+
+        self.show_step(2)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        self.fuel_web.stop_reset_env_wait(cluster_id)
+
+        self.show_step(3)
+        config = utils.get_config_template('nova_cpu')
+        structured_config_nova = get_structured_config_dict(config)
+        self.fuel_web.client.upload_configuration(config,
+                                                  cluster_id,
+                                                  role='controller')
+        config = utils.get_config_template('neutron')
+        structured_config_neutron = get_structured_config_dict(config)
+
+        self.show_step(4)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:2], timeout=10 * 60)
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(5)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id)
+
+        self.show_step(6)
+        controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])
+        structured_config = {}
+        structured_config.update(structured_config_neutron)
+        structured_config.update(structured_config_nova)
+        for controller in controllers:
+            with self.env.d_env.get_ssh_to_nailgun_node(controller) as remote:
+                for configpath, params in structured_config.items():
+                    result = remote.open(configpath)
+                    conf_for_check = utils.get_ini_config(result)
+                    for param in params:
+                        utils.check_config(conf_for_check,
+                                           configpath,
+                                           param['section'],
+                                           param['option'],
+                                           param['value'])
+
+        self.show_step(7)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+        tenant = os_conn.get_tenant('admin')
+        os_conn.create_network('net1', tenant_id=tenant.id)
+
+        self.show_step(8)
+        try:
+            os_conn.create_network('net2', tenant_id=tenant.id)
+        except Exception as e:
+            if 'No tenant network is available' not in e.message:
+                raise e
+            pass
+        else:
+            raise Exception("New configuration was not applied")
+
+        self.show_step(9)
+        net_name = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+        server = os_conn.create_instance(neutron_network=True,
+                                         label=net_name,
+                                         server_name="Test_reconfig",
+                                         vcpus=2)
+        os_conn.verify_instance_status(server, 'ACTIVE')
+        self.show_step(10)
+        excessive_server = os_conn.create_instance(neutron_network=True,
+                                                   label=net_name,
+                                                   server_name="excessive_VM",
+                                                   flavor_name="overcommit")
+        os_conn.verify_instance_status(excessive_server, 'ERROR')
+
+        snapshot = "preservation_config_after_reset_and_preconfigured_deploy"
+        self.env.make_snapshot(snapshot, is_make=True)
