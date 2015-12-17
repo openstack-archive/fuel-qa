@@ -52,12 +52,6 @@ class SaharaHAOneController(TestBasic):
         Duration 65m
         Snapshot: deploy_sahara_ha_one_controller_tun
         """
-        LOGGER.debug('Check MD5 sum of Vanilla2 image')
-        check_image = checkers.check_image(
-            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE,
-            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_MD5,
-            settings.SERVTEST_LOCAL_PATH)
-        asserts.assert_true(check_image)
 
         self.env.revert_snapshot("ready_with_3_slaves")
 
@@ -97,6 +91,13 @@ class SaharaHAOneController(TestBasic):
             checkers.verify_service(
                 remote,
                 service_name='sahara-engine')
+
+        LOGGER.debug('Check MD5 sum of Vanilla2 image')
+        check_image = checkers.check_image(
+            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE,
+            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_MD5,
+            settings.SERVTEST_LOCAL_PATH)
+        asserts.assert_true(check_image)
 
         LOGGER.debug('Run all sanity and smoke tests')
         path_to_tests = 'fuel_health.tests.sanity.test_sanity_sahara.'
@@ -158,12 +159,6 @@ class SaharaHA(TestBasic):
         Snapshot: deploy_sahara_ha_tun
 
         """
-        LOGGER.debug('Check MD5 sum of Vanilla2 image')
-        check_image = checkers.check_image(
-            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE,
-            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_MD5,
-            settings.SERVTEST_LOCAL_PATH)
-        asserts.assert_true(check_image)
 
         self.env.revert_snapshot("ready_with_5_slaves")
 
@@ -206,6 +201,13 @@ class SaharaHA(TestBasic):
                 checkers.verify_service(
                     remote,
                     service_name='sahara-engine')
+
+        LOGGER.debug('Check MD5 sum of Vanilla2 image')
+        check_image = checkers.check_image(
+            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE,
+            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_MD5,
+            settings.SERVTEST_LOCAL_PATH)
+        asserts.assert_true(check_image)
 
         LOGGER.debug('Run all sanity and smoke tests')
         path_to_tests = 'fuel_health.tests.sanity.test_sanity_sahara.'
