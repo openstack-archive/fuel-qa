@@ -34,8 +34,7 @@ class TestOffloading(BondingTest):
     bond1_offloading_types = ['tx-udp_tnl-segmentation']
 
     def prepare_offloading_modes(self, interfaces, offloading_types, state):
-        modes = [{'name': name, 'state': state, 'sub': []}
-                 for name in offloading_types]
+        modes = [{'name': name, 'state': state} for name in offloading_types]
         return [{'name': interface, 'offloading_modes': deepcopy(modes)}
                 for interface in interfaces]
 
