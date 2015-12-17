@@ -101,6 +101,16 @@ Test Mongo Multirole
 .. automodule:: fuelweb_test.tests.tests_multirole.test_mongo_multirole
    :members:
 
+Test scale neutron vlan deployment
+----------------------------------
+.. automodule:: fuelweb_test.tests.tests_scale.test_scale_group_5
+   :members:
+
+Test scale neutron tun deployment
+---------------------------------
+.. automodule:: fuelweb_test.tests.tests_scale.test_scale_group_6
+   :members:
+
 Test High Availability on one controller
 ----------------------------------------
 .. automodule:: fuelweb_test.tests.test_ha_one_controller

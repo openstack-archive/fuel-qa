@@ -93,6 +93,8 @@ def import_tests():
     from tests.tests_scale import test_scale_group_2  # noqa
     from tests.tests_scale import test_scale_group_3  # noqa
     from tests.tests_scale import test_scale_group_4  # noqa
+    from tests.tests_scale import test_scale_group_5  # noqa
+    from tests.tests_scale import test_scale_group_6  # noqa
     from tests.tests_multirole import test_mongo_multirole  # noqa
     from tests import test_rhel_compute  # noqa
     from tests.tests_security import test_run_nessus  # noqa
