@@ -31,11 +31,10 @@ class TestOffloading(BondingTest):
                               'generic-segmentation-offload',
                               'tcp-segmentation-offload']
 
-    bond1_offloading_types = ['tx-udp_tnl-segmentation']
+    bond1_offloading_types = ['rx-all']
 
     def prepare_offloading_modes(self, interfaces, offloading_types, state):
-        modes = [{'name': name, 'state': state, 'sub': []}
-                 for name in offloading_types]
+        modes = [{'name': name, 'state': state} for name in offloading_types]
         return [{'name': interface, 'offloading_modes': deepcopy(modes)}
                 for interface in interfaces]
 
@@ -87,10 +86,10 @@ class TestOffloading(BondingTest):
         self.show_step(4)
         bond0_interfaces = self.get_bond_interfaces(self.BOND_CONFIG, 'bond0')
         offloading_modes = self.prepare_offloading_modes(
-            bond0_interfaces, self.bond0_offloading_types, 'false')
+            ['bond0'], self.bond0_offloading_types, 'false')
         bond1_interfaces = self.get_bond_interfaces(self.BOND_CONFIG, 'bond1')
         offloading_modes += self.prepare_offloading_modes(
-            bond1_interfaces, self.bond1_offloading_types, 'true')
+            ['bond1'], self.bond1_offloading_types, 'true')
 
         nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         self.show_step(5)
@@ -183,10 +182,10 @@ class TestOffloading(BondingTest):
         self.show_step(4)
         bond0_interfaces = self.get_bond_interfaces(self.BOND_CONFIG, 'bond0')
         offloading_modes = self.prepare_offloading_modes(
-            bond0_interfaces, self.bond0_offloading_types, 'false')
+            ['bond0'], self.bond0_offloading_types, 'false')
         bond1_interfaces = self.get_bond_interfaces(self.BOND_CONFIG, 'bond1')
         offloading_modes += self.prepare_offloading_modes(
-            bond1_interfaces, self.bond1_offloading_types, 'true')
+            ['bond1'], self.bond1_offloading_types, 'true')
 
         nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         self.show_step(5)
