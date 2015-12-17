@@ -85,12 +85,16 @@ def import_tests():
     from tests import test_reduced_footprint  # noqa
     from tests.tests_deployments.tests_neutron_vlan import test_ha_vlan_group_1  # noqa
     from tests.tests_deployments.tests_neutron_vlan import test_ha_vlan_group_2  # noqa
+    from tests.tests_deployments.tests_neutron_vlan import test_ha_vlan_group_2  # noqa
     from tests.tests_security import test_run_nessus  # noqa
     from tests.tests_separate_services import test_separate_db  # noqa
     from tests.tests_separate_services import test_separate_horizon  # noqa
     from tests.tests_separate_services import test_separate_keystone  # noqa
     from tests.tests_separate_services import test_separate_multiroles  # noqa
     from tests.tests_separate_services import test_separate_rabbitmq  # noqa
+    from tests.tests_separate_services import test_separate_db_ceph  # noqa
+    from tests.tests_separate_services import test_separate_keystone_ceph  # noqa
+    from tests.tests_separate_services import test_separate_rabbitmq_ceph  # noqa
     from tests import test_clone_env  # noqa
     from tests import test_node_reassignment  # noqa
     from tests import test_os_upgrade  # noqa
