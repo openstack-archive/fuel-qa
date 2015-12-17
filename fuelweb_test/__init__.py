@@ -34,6 +34,9 @@ console.setFormatter(formatter)
 logger = logging.getLogger(__name__)
 logger.addHandler(console)
 
+logger2 = logging.getLogger('devops')
+logger2.addHandler(console)
+
 
 # suppress iso8601 and paramiko debug logging
 class NoDebugMessageFilter(logging.Filter):
