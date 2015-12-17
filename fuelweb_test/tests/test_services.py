@@ -52,12 +52,6 @@ class SaharaHAOneController(TestBasic):
         Duration 65m
         Snapshot: deploy_sahara_ha_one_controller_tun
         """
-        LOGGER.debug('Check MD5 sum of Vanilla2 image')
-        check_image = checkers.check_image(
-            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE,
-            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_MD5,
-            settings.SERVTEST_LOCAL_PATH)
-        asserts.assert_true(check_image)
 
         self.env.revert_snapshot("ready_with_3_slaves")
 
@@ -107,6 +101,13 @@ class SaharaHAOneController(TestBasic):
             tests_must_be_passed=[path_to_tests + test_name
                                   for test_name in test_names]
         )
+
+        LOGGER.debug('Check MD5 sum of Vanilla2 image')
+        check_image = checkers.check_image(
+            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE,
+            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_MD5,
+            settings.SERVTEST_LOCAL_PATH)
+        asserts.assert_true(check_image)
 
         LOGGER.debug('Import Vanilla2 image for Sahara')
 
@@ -158,12 +159,6 @@ class SaharaHA(TestBasic):
         Snapshot: deploy_sahara_ha_tun
 
         """
-        LOGGER.debug('Check MD5 sum of Vanilla2 image')
-        check_image = checkers.check_image(
-            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE,
-            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_MD5,
-            settings.SERVTEST_LOCAL_PATH)
-        asserts.assert_true(check_image)
 
         self.env.revert_snapshot("ready_with_5_slaves")
 
@@ -216,6 +211,13 @@ class SaharaHA(TestBasic):
             tests_must_be_passed=[path_to_tests + test_name
                                   for test_name in test_names]
         )
+
+        LOGGER.debug('Check MD5 sum of Vanilla2 image')
+        check_image = checkers.check_image(
+            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE,
+            settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_MD5,
+            settings.SERVTEST_LOCAL_PATH)
+        asserts.assert_true(check_image)
 
         LOGGER.debug('Import Vanilla2 image for Sahara')
 
