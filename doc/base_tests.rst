@@ -202,9 +202,14 @@ Test Vcenter
 .. automodule:: fuelweb_test.tests.test_vcenter
    :members:
 
+Test Ironic base
+----------------
+.. automodule:: fuelweb_test.tests.test_ironic_base
+   :members:
+
 Test Ironic
 -----------
-.. automodule:: fuelweb_test.tests.test_ironic_base
+.. automodule:: fuelweb_test.tests.test_ironic
   :members:
 
 Test Services reconfiguration
