@@ -619,7 +619,7 @@ def pretty_log(src, indent=0, invert=False):
                  "\n{indent}{item}:",
                  '\n{indent}{value}']
 
-    if isinstance(src, dict):
+    if src and isinstance(src, dict):
         max_len = len(max(src.values() if invert else src.keys(),
                           key=lambda x: len(str(x))))
         for key, value in src.iteritems():
@@ -633,7 +633,7 @@ def pretty_log(src, indent=0, invert=False):
                                               value=str(value),
                                               len=max_len + 5)
 
-    elif isinstance(src, list):
+    elif src and isinstance(src, list):
         for el in src:
             if (isinstance(el, dict) and el) or isinstance(el, list):
                 res = pretty_log(el, indent + 3)
