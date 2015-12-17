@@ -353,19 +353,21 @@ def get_package_versions_from_node(remote, name, os_type):
 
 
 @logwrap
-def check_enable_experimental_mode(remote, path):
-        cmd = "sed '/feature_groups:" \
-              "/a \ \ \ \ - experimental' -i {0}".format(path)
-        result = remote.execute(cmd)
-        assert_equal(0, result['exit_code'], result['stderr'])
+def enable_experimental_mode(remote, path):
+    cmd = "sed -r -e 's/({section}).*/\\1/' " \
+          "-e '/{section}/a\ \ - \"experimental\"' " \
+          "-i {path}".format(section="\"FEATURE_GROUPS\":", path=path)
+    result = remote.execute(cmd)
+    assert_equal(0, result['exit_code'], result['stderr'])
 
 
 @logwrap
 def enable_advanced_mode(remote, path):
-        cmd = "sed '/feature_groups:" \
-              "/a \ \ \ \ - advanced' -i {0}".format(path)
-        result = remote.execute(cmd)
-        assert_equal(0, result['exit_code'], result['stderr'])
+    cmd = "sed -r -e 's/({section}).*/\\1/' " \
+          "-e '/{section}/a\ \ - \"advanced\"' " \
+          "-i {path}".format(section="\"FEATURE_GROUPS\":", path=path)
+    result = remote.execute(cmd)
+    assert_equal(0, result['exit_code'], result['stderr'])
 
 
 @logwrap
