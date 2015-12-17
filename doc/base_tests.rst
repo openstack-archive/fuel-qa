@@ -96,6 +96,11 @@ Test ha neutron vlan deployment group 7 (no volumes/ceph for images and cinder/s
 .. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_7
    :members:
 
+Test Mongo Multirole
+--------------------
+.. automodule:: fuelweb_test.tests.tests_multirole.test_mongo_multirole
+   :members:
+
 Test High Availability on one controller
 ----------------------------------------
 .. automodule:: fuelweb_test.tests.test_ha_one_controller
