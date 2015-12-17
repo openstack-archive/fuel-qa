@@ -1360,7 +1360,10 @@ class FuelWebClient(object):
                             mode.update(new_mode)
                             break
                     if not is_mode_exist:
-                        i['offloading_modes'].append(new_mode)
+                        raise Exception("Offload type '{0}' is not applicable"
+                                        " for interface {1}".format(
+                                             new_mode['name'],
+                                             interface_to_update))
         self.client.put_node_interfaces(
             [{'id': node_id, 'interfaces': interfaces}])
 
