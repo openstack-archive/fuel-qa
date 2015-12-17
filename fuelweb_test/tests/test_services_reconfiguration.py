@@ -833,3 +833,148 @@ class ServicesReconfiguration(TestBasic):
         # TODO
 
         self.env.make_snapshot("reconfiguration_scalability", is_make=True)
+
+    @test(depends_on_groups=['reconfigurstion_scalability'],
+          groups=["services_reconfiguration",
+                  "multiple_apply_config"])
+    @log_snapshot_after_test
+    def multiple_apply_config(self):
+        """Multiple serial applying of configuration
+
+        Scenario:
+            1. Revert snapshot "reconfigurstion_scalability"
+            2. Upload a new openstack configuration for certain compute
+            3. Get uptime of process "nova-compute" on target compute
+            4. Wait for configuration applying
+            5. Get uptime of process "nova-compute" on target compute
+            6. Verify nova settings on each compute
+            7. Create flavor with ephemral disk
+            8. Boot instance on untarget compute with ephemral disk
+            9. Assign floating ip
+            10. Check ping to the instance
+            11. SSH to VM and check ephemeral disk format
+            13. Boot instance on target compute with ephemral disk
+            14. Assign floating ip
+            15. Check ping to the instance
+            16. SSH to VM and check ephemeral disk format
+
+        Snapshot "multiple_apply_config"
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot("reconfigurstion_scalability")
+
+        self.show_step(2)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        computes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute'])
+        target_compute = computes[0]
+        config = utils.get_config_template('nova_disk')
+        structured_config_old = get_structured_config_dict(config)
+
+        config['nova_config'][
+            'DEFAULT/default_ephemeral_format']['value'] = 'ext3'
+        structured_config_new = get_structured_config_dict(config)
+        self.fuel_web.client.upload_configuration(config,
+                                                  cluster_id,
+                                                  node_id=target_compute['id'])
+
+        self.show_step(3)
+        service_name = 'nova-compute'
+        with self.env.d_env.get_ssh_to_nailgun_node(target_compute) as remote:
+            uptime_before = utils.get_process_uptime(remote, service_name)
+
+        self.show_step(4)
+        task = self.fuel_web.client.apply_configuration(
+            cluster_id,
+            node_id=target_compute['id'])
+        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+
+        self.show_step(5)
+        with self.env.d_env.get_ssh_to_nailgun_node(target_compute) as remote:
+            uptime_after = utils.get_process_uptime(remote, service_name)
+            asserts.assert_true(uptime_after <= uptime_before,
+                                "Service {0} was not restarted "
+                                "on {1}".format(service_name,
+                                                target_compute['ip']))
+
+        self.show_step(6)
+        for compute in computes:
+            if compute == target_compute:
+                structured_config = structured_config_new
+            else:
+                structured_config = structured_config_old
+            with self.env.d_env.get_ssh_to_nailgun_node(compute) as remote:
+                for configpath, params in structured_config.items():
+                    result = remote.open(configpath)
+                    conf_for_check = utils.get_ini_config(result)
+                    for param in params:
+                        utils.check_config(conf_for_check,
+                                           configpath,
+                                           param['section'],
+                                           param['option'],
+                                           param['value'])
+
+        self.show_step(7)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+        net_name = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+
+        os_conn.create_flavor(name='ephemeral',
+                              ram=64,
+                              vcpus=1,
+                              disk=1,
+                              flavorid=6,
+                              ephemeral=1)
+        self.show_step(8)
+        # TODO(snovikov): add target compute where instance will be created
+        instance = os_conn.create_server_for_migration(
+            neutron=True, label=net_name, flavor=6)
+
+        self.show_step(9)
+        floating_ip = os_conn.assign_floating_ip(instance)
+
+        self.show_step(10)
+        helpers.wait(lambda: helpers.tcp_ping(floating_ip.ip, 22),
+                     timeout=120,
+                     timeout_msg="Can not ping instance by floating "
+                                 "ip {0}".format(floating_ip.ip))
+
+        self.show_step(11)
+        creds = ("cirros", "cubswin:)")
+        with self.fuel_web.get_ssh_for_node("slave-05") as remote:
+            res = os_conn.execute_through_host(
+                remote, floating_ip.ip,
+                "mount | grep 'type ext3' "
+                " && echo 'OK' || echo 'FAIL'", creds)
+            asserts.assert_true('OK' in res['stdout'],
+                                "Ephemeral disk format was not "
+                                "changed on instance")
+
+        self.show_step(8)
+        # TODO(snovikov): add target compute where instance will be created
+        instance = os_conn.create_server_for_migration(
+            neutron=True, label=net_name, flavor=6)
+
+        self.show_step(9)
+        floating_ip = os_conn.assign_floating_ip(instance)
+
+        self.show_step(10)
+        helpers.wait(lambda: helpers.tcp_ping(floating_ip.ip, 22),
+                     timeout=120,
+                     timeout_msg="Can not ping instance by floating "
+                                 "ip {0}".format(floating_ip.ip))
+
+        self.show_step(11)
+        creds = ("cirros", "cubswin:)")
+        with self.fuel_web.get_ssh_for_node("slave-05") as remote:
+            res = os_conn.execute_through_host(
+                remote, floating_ip.ip,
+                "mount | grep 'type ext4' "
+                " && echo 'OK' || echo 'FAIL'", creds)
+            asserts.assert_true('OK' in res['stdout'],
+                                "Ephemeral disk format was not "
+                                "changed on instance")
+
+        self.env.make_snapshot("multiple_apply_config", is_make=True)
