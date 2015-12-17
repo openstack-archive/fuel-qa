@@ -12,71 +12,49 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test import logwrap
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NEUTRON_SEGMENT
-from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
-from proboscis import test
 
-
-@test(groups=["ironic"])
 class TestIronicBase(TestBasic):
-    """TestIronicBase"""  # TODO documentation
+    """Base class to store all utility methods for ironic tests."""
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["ironic_base"])
-    @log_snapshot_after_test
-    def ironic_base(
-            self):
-        """Deploy cluster in HA mode with Ironic:
-
-           Scenario:
-               1. Create cluster
-               2. Add 1 controller node
-               3. Add 1 compute node
-               4. Add 1 ironic node
-               5. Deploy cluster
-               6. Verify network
-               7. Run OSTF
-
-           Snapshot: test_ironic_base
-        """
-
-        self.env.revert_snapshot("ready_with_3_slaves")
-
-        self.show_step(1)
-        cluster_id = self.fuel_web.create_cluster(
-            name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE,
-            settings={
+    @logwrap
+    def deploy_cluster_wih_ironic(self, nodes, settings=None, name=None):
+        if name is None:
+            name = self.__class__.__name__
+        if settings is None:
+            settings = {
                 "net_provider": 'neutron',
                 "net_segment_type": NEUTRON_SEGMENT['vlan'],
                 "ironic": True,
             }
-        )
 
-        self.show_step(2)
-        self.show_step(3)
-        self.show_step(4)
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {
-                'slave-01': ['controller'],
-                'slave-02': ['compute'],
-                'slave-03': ['ironic'],
-            }
+        cluster_id = self.fuel_web.create_cluster(
+            name=name,
+            mode=DEPLOYMENT_MODE,
+            settings=settings
         )
-
-        self.show_step(5)
+        self.fuel_web.update_nodes(cluster_id, nodes_dict=nodes)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        self.show_step(6)
-        self.fuel_web.verify_network(cluster_id)
+        return cluster_id
 
-        self.show_step(7)
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
+    @logwrap
+    def deploy_cluster_with_ironic_ceph(self, nodes, settings=None, name=None):
+        if settings is None:
+            settings = {
+                'net_provider': 'neutron',
+                'net_segment_type': NEUTRON_SEGMENT['vlan'],
+                'ironic': True,
+                'volumes_ceph': True,
+                'images_ceph': True,
+                'volumes_lvm': False,
+                'ephemeral_ceph': True,
+                'objects_ceph': True,
+                'osd_pool_size': '2'
+            }
 
-        self.env.make_snapshot("ironic_base")
+        return self.deploy_cluster_wih_ironic(nodes, settings, name)
