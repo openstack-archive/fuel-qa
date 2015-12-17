@@ -53,13 +53,8 @@ class HAOneControllerZabbix(TestBasic):
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        with self.env.d_env.get_admin_remote() as admin_remote:
-            # Turn on experimental mode
-            checkers.check_enable_experimental_mode(
-                admin_remote, '/etc/fuel/version.yaml')
-
-            # restart nailgun
-            checkers.restart_nailgun(admin_remote)
+        checkers.enable_feature_group(self.env, 'experimental')
+        self.env.docker_actions.restart_container("nailgun")
 
         # check if zabbix role appears
         self.fuel_web.assert_release_role_present(

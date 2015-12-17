@@ -353,19 +353,10 @@ def get_package_versions_from_node(remote, name, os_type):
 
 
 @logwrap
-def check_enable_experimental_mode(remote, path):
-        cmd = "sed '/feature_groups:" \
-              "/a \ \ \ \ - experimental' -i {0}".format(path)
-        result = remote.execute(cmd)
-        assert_equal(0, result['exit_code'], result['stderr'])
-
-
-@logwrap
-def enable_advanced_mode(remote, path):
-        cmd = "sed '/feature_groups:" \
-              "/a \ \ \ \ - advanced' -i {0}".format(path)
-        result = remote.execute(cmd)
-        assert_equal(0, result['exit_code'], result['stderr'])
+def enable_feature_group(env, group):
+    fuel_settings = env.admin_actions.get_fuel_settings()
+    fuel_settings["FEATURE_GROUPS"].append(group)
+    env.admin_actions.save_fuel_settings(fuel_settings)
 
 
 @logwrap
