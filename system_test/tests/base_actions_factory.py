@@ -119,10 +119,7 @@ class BaseActionsFactory(base_test_case.TestBasic):
             finish_method)
 
         # Generate test case groups
-        groups = ['{}.{}'.format(g, case_group) for g in cls.base_group]
-        groups += ['{}({})'.format(g, case_group) for g in cls.base_group]
-        groups += ['{}[{}]'.format(g, case_group) for g in cls.base_group]
-        groups += ['{}{{{}}}'.format(g, case_group) for g in cls.base_group]
+        groups = ['{}({})'.format(g, case_group) for g in cls.base_group]
         groups = cls.base_group + groups
 
         # Generate test case docstring
