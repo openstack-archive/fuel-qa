@@ -16,7 +16,9 @@ import re
 
 from logging import DEBUG
 from optparse import OptionParser
-from proboscis import TestProgram
+# from proboscis import TestProgram
+from proboscis import TestPlan
+from proboscis.decorators import DEFAULT_REGISTRY
 
 from builds import Build
 from fuelweb_test.run_tests import import_tests
@@ -32,12 +34,15 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
     from system_test.tests.actions_base import ActionsBase
     import_tests()
     define_custom_groups()
+    plan = TestPlan.create_from_registry(DEFAULT_REGISTRY)
+    all_plan_tests = plan.tests[:]
 
     tests = []
 
     for jenkins_suffix in groups:
         group = groups[jenkins_suffix]
-        for case in TestProgram(groups=[group]).cases:
+        plan.filter(group_names=[group])
+        for case in plan.tests:
             if not case.entry.info.enabled:
                 continue
             home = case.entry.home
@@ -111,6 +116,9 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
             else:
                 logger.warning("Testcase '{0}' run in multiple Jenkins jobs!"
                                .format(test_group))
+
+        plan.tests = all_plan_tests[:]
+
     return tests
 
 
