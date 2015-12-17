@@ -1,0 +1,4 @@
+---
+keystone_config:
+  token/expiration:
+    value: 300
