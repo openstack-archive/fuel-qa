@@ -51,9 +51,9 @@ class TestVirtRole(TestBasic):
 
         self.env.revert_snapshot("ready_with_1_slaves")
 
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.enable_advanced_mode(remote, '/etc/fuel/version.yaml')
-            checkers.restart_nailgun(remote)
+        checkers.enable_feature_group(self.env, 'advanced')
+        self.env.docker_actions.restart_container("nailgun")
+        self.env.docker_actions.restart_container("nailgun")
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -111,9 +111,8 @@ class TestVirtRole(TestBasic):
 
         self.env.revert_snapshot("ready_with_1_slaves")
 
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.enable_advanced_mode(remote, '/etc/fuel/version.yaml')
-            checkers.restart_nailgun(remote)
+        checkers.enable_feature_group(self.env, 'advanced')
+        self.env.docker_actions.restart_container("nailgun")
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -178,9 +177,8 @@ class TestVirtRole(TestBasic):
 
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.enable_advanced_mode(remote, '/etc/fuel/version.yaml')
-            checkers.restart_nailgun(remote)
+        checkers.enable_feature_group(self.env, 'advanced')
+        self.env.docker_actions.restart_container("nailgun")
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
