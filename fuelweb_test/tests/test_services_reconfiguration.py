@@ -686,3 +686,154 @@ class ServicesReconfiguration(TestBasic):
 
         snapshot = "preservation_config_after_reset_and_preconfigured_deploy"
         self.env.make_snapshot(snapshot, is_make=True)
+
+    @test(depends_on_groups=['reconfigure_overcommit_ratio'],
+          groups=["services_reconfiguration",
+                  "reconfigurstion_scalability"])
+    @log_snapshot_after_test
+    def reconfiguration_scalability(self):
+        """Check scalability of configured environment
+
+        Scenario:
+            1. Revert snapshot "reconfigure_nova_ephemeral_disk"
+            2. Upload a new openstack configuration for keystone
+            3. Wait for configuration applying
+            4. Get uptime of process "keystone" on each compute
+            5. Verify keystone settings
+            6. Keystone actions
+            7. Add 1 compute and 1 controller to cluster
+            8. Run network verification
+            9. Deploy changes
+            10. Run OSTF tests
+            11. Verify nova and keystone settings
+            12. Create flavor with ephemral disk
+            13. Boot instance on updated compute with ephemral disk
+            14. Assign floating ip
+            15. Check ping to the instance
+            16. SSH to VM and check ephemeral disk format
+            17. Keystone actions
+
+        Snapshot "reconfiguration_scalability"
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot("reconfigure_nova_ephemeral_disk")
+
+        self.show_step(2)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        config = utils.get_config_template('nova_disk')
+        structured_config_nova = get_structured_config_dict(config)
+        config = utils.get_config_template('keystone')
+        structured_config_keystone = get_structured_config_dict(config)
+        self.fuel_web.client.upload_configuration(config,
+                                                  cluster_id,
+                                                  role='controller')
+
+        self.show_step(3)
+        task = self.fuel_web.client.apply_configuration(cluster_id,
+                                                        role='controller')
+        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+
+        self.show_step(4)
+        nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(cluster_id)
+        controllers = filter(lambda x: x['role'] == 'controller', nodes)
+        uptimes = dict(zip(controllers, range(len(controllers))))
+        for controller in controllers:
+            with self.env.d_env.get_ssh_to_remote(controller) as remote:
+                uptimes[controller] = \
+                    utils.get_process_uptime(remote, 'apache2')
+
+        self.show_step(5)
+        for controller in controllers:
+            with self.env.d_env.get_ssh_to_nailgun_node(controller) as remote:
+                for configpath, params in structured_config_keystone.items():
+                    result = remote.open(configpath)
+                    conf_for_check = utils.get_ini_config(result)
+                    for param in params:
+                        utils.check_config(conf_for_check,
+                                           configpath,
+                                           param['section'],
+                                           param['option'],
+                                           param['value'])
+
+        self.show_step(6)
+        # TODO
+
+        self.show_step(7)
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[4:6])
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-05': ['compute']})
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-06': ['controller']})
+
+        self.show_step(8)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(9)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(10)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(11)
+        for node in nodes:
+            if node['role'] == 'controller':
+                structured_config = structured_config_keystone
+            elif node['role'] == 'compute':
+                structured_config = structured_config_nova
+            else:
+                continue
+            with self.env.d_env.get_ssh_to_nailgun_node(node) as remote:
+                for configpath, params in structured_config.items():
+                    result = remote.open(configpath)
+                    conf_for_check = utils.get_ini_config(result)
+                    for param in params:
+                        utils.check_config(conf_for_check,
+                                           configpath,
+                                           param['section'],
+                                           param['option'],
+                                           param['value'])
+
+        self.show_step(12)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+        net_name = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+
+        os_conn.create_flavor(name='ephemeral',
+                              ram=64,
+                              vcpus=1,
+                              disk=1,
+                              flavorid=6,
+                              ephemeral=1)
+        self.show_step(13)
+        instance = os_conn.create_server_for_migration(
+            neutron=True, label=net_name, flavor=6)
+
+        self.show_step(14)
+        floating_ip = os_conn.assign_floating_ip(instance)
+
+        self.show_step(15)
+        helpers.wait(lambda: helpers.tcp_ping(floating_ip.ip, 22),
+                     timeout=120,
+                     timeout_msg="Can not ping instance by floating "
+                                 "ip {0}".format(floating_ip.ip))
+
+        self.show_step(16)
+        creds = ("cirros", "cubswin:)")
+        with self.fuel_web.get_ssh_for_node("slave-05") as remote:
+            res = os_conn.execute_through_host(
+                remote, floating_ip.ip,
+                "mount | grep 'type ext4' "
+                " && echo 'OK' || echo 'FAIL'", creds)
+            asserts.assert_true('OK' in res['stdout'],
+                                "Ephemeral disk format was not "
+                                "changed on instance")
+
+        self.show_step(17)
+        # TODO
+
+        self.env.make_snapshot("reconfiguration_scalability", is_make=True)
