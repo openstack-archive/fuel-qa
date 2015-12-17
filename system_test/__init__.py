@@ -14,4 +14,60 @@
 
 import fuelweb_test
 
+from system_test.helpers.utils import get_configs
+
+from proboscis import register
+
 logger = fuelweb_test.logger
+
+
+def cached_add_group(yamls):
+
+    def add(group, systest_group, config_name,
+            validate_config=True):
+        """Add user friendly group
+
+        :type group_name: str
+        :type systest_group: str
+        :type config_name: str
+        """
+        # from proboscis.decorators import DEFAULT_REGISTRY
+        if validate_config and config_name not in yamls:
+            raise NameError("Config {} not found".format(config_name))
+
+        register(groups=[group],
+                 depends_on_groups=[
+                     "{systest_group}({config_name})".format(
+                         systest_group=systest_group,
+                         config_name=config_name)])
+    return add
+
+
+def define_custom_groups():
+    """Map user friendly group name to system test groups
+
+    groups - contained user friendly alias
+    depends - contained groups which should be runned
+    """
+    add_group = cached_add_group(get_configs())
+    add_group(group="system_test.ceph_ha",
+              systest_group="system_test.deploy_and_check_radosgw",
+              config_name="ceph_all_on_neutron_vlan")
+
+    add_group(group="filling_root",
+              systest_group="system_test.failover.filling_root",
+              config_name="ceph_all_on_neutron_vlan")
+
+    add_group(group="system_test.strength",
+              systest_group="system_test.failover.destroy_controllers.first",
+              config_name="ceph_all_on_neutron_vlan")
+    add_group(group="system_test.strength",
+              systest_group="system_test.failover.destroy_controllers.second",
+              config_name="1ctrl_ceph_2ctrl_1comp_1comp_ceph_neutronVLAN")
+
+    add_group(group="fuel_master_migrate",
+              systest_group="system_test.fuel_migration",
+              config_name="1ctrl_1comp_neutronVLAN")
+    add_group(group="fuel_master_migrate",
+              systest_group="system_test.fuel_migration",
+              config_name="1ctrl_1comp_neutronTUN")
