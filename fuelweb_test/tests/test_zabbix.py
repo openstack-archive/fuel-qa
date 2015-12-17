@@ -55,8 +55,8 @@ class HAOneControllerZabbix(TestBasic):
 
         with self.env.d_env.get_admin_remote() as admin_remote:
             # Turn on experimental mode
-            checkers.check_enable_experimental_mode(
-                admin_remote, '/etc/fuel/version.yaml')
+            checkers.enable_experimental_mode(
+                admin_remote, '/etc/fuel/astute.yaml')
 
             # restart nailgun
             checkers.restart_nailgun(admin_remote)
