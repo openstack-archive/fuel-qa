@@ -23,6 +23,7 @@ from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
+from devops.models.network import Network
 from fuelweb_test.helpers.ssl import copy_cert_from_master
 from fuelweb_test.helpers.ssl import change_cluster_ssl_config
 from ipaddr import IPNetwork
@@ -1393,9 +1394,12 @@ class FuelWebClient(object):
         default_networks = {}
 
         for n in ('public', 'management', 'storage', 'private'):
-            if self.environment.d_env.get_network(name=n):
+            try:
                 default_networks[n] = self.environment.d_env.get_network(
                     name=n).ip
+            except Network.DoesNotExist:
+                logger.debug('Devops network "{0}" doesn\'t exist!'.format(n))
+                continue
 
         logger.info("Applying default network settings")
         for _release in self.client.get_releases():
