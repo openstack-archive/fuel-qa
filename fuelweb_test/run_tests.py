@@ -12,10 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import sys
-
 import os
 import re
+import sys
+
 from nose.plugins import Plugin
 from paramiko.transport import _join_lingering_threads
 from proboscis import register
@@ -85,6 +85,8 @@ def import_tests():
     from tests import test_reduced_footprint  # noqa
     from tests.tests_deployments.tests_neutron_vlan import test_ha_vlan_group_1  # noqa
     from tests.tests_deployments.tests_neutron_vlan import test_ha_vlan_group_2  # noqa
+    from tests.tests_scale import test_scale_vlan_group_5  # noqa
+    from tests.tests_scale import test_scale_tun_group_5  # noqa
     from tests.tests_security import test_run_nessus  # noqa
     from tests.tests_separate_services import test_separate_db  # noqa
     from tests.tests_separate_services import test_separate_horizon  # noqa
