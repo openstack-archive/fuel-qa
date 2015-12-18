@@ -1393,7 +1393,7 @@ class FuelWebClient(object):
         default_networks = {}
 
         for n in ('public', 'management', 'storage', 'private'):
-            if self.environment.d_env.get_network(name=n):
+            if self.environment.d_env.get_networks(name=n):
                 default_networks[n] = self.environment.d_env.get_network(
                     name=n).ip
 
