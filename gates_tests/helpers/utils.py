@@ -15,13 +15,12 @@
 import os
 
 from proboscis.asserts import assert_equal
-
 from devops.helpers import helpers
-from fuelweb_test.helpers import checkers
-from gates_tests.helpers import exceptions
 
+from fuelweb_test.helpers import checkers
 from fuelweb_test import logger
 from fuelweb_test import settings
+from gates_tests.helpers import exceptions
 
 
 def replace_fuel_agent_rpm(environment):
