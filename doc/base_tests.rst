@@ -96,6 +96,16 @@ Test ha neutron vlan deployment group 7 (no volumes/ceph for images and cinder/s
 .. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_7
    :members:
 
+Test Sahara OS component with vlan and ceph
+-------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_sahara_os_component
+   :members:
+
+Test Murano OS component with vlan
+----------------------------------
+.. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_murano_os_component
+   :members:
+
 Test High Availability on one controller
 ----------------------------------------
 .. automodule:: fuelweb_test.tests.test_ha_one_controller
