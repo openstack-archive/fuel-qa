@@ -161,6 +161,7 @@ def import_tests():
     from gates_tests.tests import test_review_in_fuel_client  # noqa
     from tests.tests_os_components import test_murano_os_component  # noqa
     from tests.tests_os_components import test_sahara_os_component  # noqa
+    from tests.tests_os_components import test_mixed_os_components  # noqa
 
 
 def run_tests():
