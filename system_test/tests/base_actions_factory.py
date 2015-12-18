@@ -106,17 +106,38 @@ class BaseActionsFactory(base_test_case.TestBasic):
                 method,
                 depends_on=depends)
 
-        #  Create before and after case methods
+        #  Create before case methods, start case and setup
         start_method = utils.copy_func(
             getattr(cls, "_start_case"),
             "{}.StartCase".format(class_name))
         test_steps["{}.StartCase".format(class_name)] = before_class(
             start_method)
+
+        if hasattr(cls, 'case_setup'):
+            setup_method = utils.copy_func(
+                getattr(cls, "case_setup"),
+                "{}.CaseSetup".format(class_name))
+            setattr(setup_method, "_step_name", "CaseSetup")
+            test_steps["{}.CaseSetup".format(class_name)] = before_class(
+                step_start_stop(setup_method), runs_after=[start_method])
+
+        if hasattr(cls, 'case_teardown'):
+            teardown_method = utils.copy_func(
+                getattr(cls, "case_teardown"),
+                "{}.CaseTeardown".format(class_name))
+            setattr(teardown_method, "_step_name", "CaseTeardown")
+            test_steps["{}.CaseTeardown".format(class_name)] = after_class(
+                step_start_stop(teardown_method), always_run=True)
+        else:
+            teardown_method = None
+
+        #  Create case methods, teardown and finish case
         finish_method = utils.copy_func(
             getattr(cls, "_finish_case"),
             "{}.FinishCase".format(class_name))
         test_steps["{}.FinishCase".format(class_name)] = after_class(
-            finish_method)
+            finish_method, always_run=True,
+            runs_after=[teardown_method] if teardown_method else [])
 
         # Generate test case groups
         groups = ['{}.{}'.format(g, case_group) for g in cls.base_group]
