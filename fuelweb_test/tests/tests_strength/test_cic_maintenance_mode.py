@@ -14,8 +14,8 @@
 import time
 
 from devops.error import TimeoutError
-from devops.helpers.helpers import _tcp_ping
 from devops.helpers.helpers import _wait
+from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
@@ -136,7 +136,7 @@ class CICMaintenanceMode(TestBasic):
 
             _ip = self.fuel_web.get_nailgun_node_by_name(
                 devops_node.name)['ip']
-            _wait(lambda: _tcp_ping(_ip, 22), timeout=60 * 10)
+            wait(lambda: tcp_ping(_ip, 22), timeout=60 * 10)
             with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
                 assert_true('True' in check_auto_mode(remote),
                             "Maintenance mode is not switch")
@@ -217,6 +217,8 @@ class CICMaintenanceMode(TestBasic):
         d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
 
         for devops_node in d_ctrls:
+            _ip = self.fuel_web.get_nailgun_node_by_name(
+                devops_node.name)['ip']
             with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
                 assert_true('True' in check_available_mode(remote),
                             "Maintenance mode is not available")
@@ -236,6 +238,7 @@ class CICMaintenanceMode(TestBasic):
                 assert_equal(result['exit_code'], 0,
                              'Failed to execute "{0}" on remote host: {1}'.
                              format(command2, result))
+                wait(lambda: not tcp_ping(_ip, 22), timeout=60 * 10)
 
             logger.info('Wait a %s node offline status after unexpected '
                         'reboot', devops_node.name)
@@ -254,9 +257,7 @@ class CICMaintenanceMode(TestBasic):
             logger.info('Check that %s node in maintenance mode after'
                         ' unexpected reboot', devops_node.name)
 
-            _ip = self.fuel_web.get_nailgun_node_by_name(
-                devops_node.name)['ip']
-            _wait(lambda: _tcp_ping(_ip, 22), timeout=60 * 10)
+            wait(lambda: tcp_ping(_ip, 22), timeout=60 * 10)
             with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
                 assert_true('True' in check_auto_mode(remote),
                             "Maintenance mode is not switch")
@@ -413,6 +414,8 @@ class CICMaintenanceMode(TestBasic):
         d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
 
         for devops_node in d_ctrls:
+            _ip = self.fuel_web.get_nailgun_node_by_name(
+                devops_node.name)['ip']
             with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
                 assert_true('True' in check_available_mode(remote),
                             "Maintenance mode is not available")
@@ -440,14 +443,13 @@ class CICMaintenanceMode(TestBasic):
                 assert_equal(result['exit_code'], 0,
                              'Failed to execute "{0}" on remote host: {1}'.
                              format(command2, result))
+                wait(lambda: not tcp_ping(_ip, 22), timeout=60 * 10)
 
             # Node don't have enough time for set offline status
             # after reboot --force
             # Just waiting
 
-            _ip = self.fuel_web.get_nailgun_node_by_name(
-                devops_node.name)['ip']
-            _wait(lambda: _tcp_ping(_ip, 22), timeout=60 * 10)
+            wait(lambda: tcp_ping(_ip, 22), timeout=60 * 10)
 
             logger.info('Wait a %s node online status after unexpected '
                         'reboot', devops_node.name)
