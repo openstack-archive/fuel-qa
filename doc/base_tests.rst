@@ -177,11 +177,6 @@ Test Vcenter
 .. automodule:: fuelweb_test.tests.test_vcenter
    :members:
 
-Test Zabbix
------------
-.. automodule:: fuelweb_test.tests.test_zabbix
-   :members:
-
 Test Ironic
 -----------
 .. automodule:: fuelweb_test.tests.test_ironic_base
