@@ -23,6 +23,7 @@ from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
+from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.ssl import copy_cert_from_master
 from fuelweb_test.helpers.ssl import change_cluster_ssl_config
 from ipaddr import IPNetwork
@@ -86,9 +87,10 @@ from fuelweb_test.settings import iface_alias
 class FuelWebClient(object):
     """FuelWebClient."""  # TODO documentation
 
-    def __init__(self, admin_node_ip, environment):
-        self.admin_node_ip = admin_node_ip
-        self.client = NailgunClient(admin_node_ip)
+    def __init__(self, environment):
+        self.ssh_manager = SSHManager()
+        self.admin_node_ip = self.ssh_manager.admin_ip
+        self.client = NailgunClient(self.ssh_manager.admin_ip)
         self._environment = environment
         self.security = SecurityChecks(self.client, self._environment)
         super(FuelWebClient, self).__init__()
