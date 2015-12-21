@@ -1763,7 +1763,7 @@ class FuelWebClient(object):
     def stop_deployment_wait(self, cluster_id):
         logger.info('Stop cluster #%s deployment', cluster_id)
         task = self.client.stop_deployment(cluster_id)
-        self.assert_task_success(task, timeout=50 * 60, interval=30)
+        self.assert_task_success(task, timeout=1 * 60, interval=30)
 
     @logwrap
     def stop_reset_env_wait(self, cluster_id):

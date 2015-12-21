@@ -16,7 +16,7 @@ import traceback
 
 from proboscis import asserts
 from proboscis import test
-
+from devops.error import TimeoutError
 from fuelweb_test.helpers.decorators import check_fuel_statistics
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings as hlp_data
@@ -132,6 +132,8 @@ class EnvironmentAction(base_test_case.TestBasic):
             cluster_id=cluster_id, progress=20)
         try:
             self.fuel_web.stop_deployment_wait(cluster_id)
+        except TimeoutError:
+            raise
         except Exception:
             logger.debug(traceback.format_exc())
 
