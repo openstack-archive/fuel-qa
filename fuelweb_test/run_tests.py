@@ -26,22 +26,22 @@ def define_custom_groups():
     groups_list = [
         {"groups": ["system_test.ceph_ha"],
          "depends": [
-             "system_test.deploy_and_check_radosgw."
-             "ceph_all_on_neutron_vlan"]},
+             "system_test.deploy_and_check_radosgw("
+             "ceph_all_on_neutron_vlan)"]},
         {"groups": ["filling_root"],
          "depends": [
-             "system_test.failover.filling_root."
-             "ceph_all_on_neutron_vlan"]},
+             "system_test.failover.filling_root("
+             "ceph_all_on_neutron_vlan)"]},
         {"groups": ["system_test.strength"],
          "depends": [
-             "system_test.failover.destroy_controllers."
-             "first.ceph_all_on_neutron_vlan",
-             "system_test.failover.destroy_controllers."
-             "second.1ctrl_ceph_2ctrl_1comp_1comp_ceph_neutronVLAN"]},
+             "system_test.failover.destroy_controllers.first("
+             "ceph_all_on_neutron_vlan)",
+             "system_test.failover.destroy_controllers.second("
+             "1ctrl_ceph_2ctrl_1comp_1comp_ceph_neutronVLAN)"]},
         {"groups": ["fuel_master_migrate"],
          "depends": [
-             "system_test.fuel_migration.1ctrl_1comp_neutronVLAN",
-             "system_test.fuel_migration.1ctrl_1comp_neutronTUN"]}
+             "system_test.fuel_migration(1ctrl_1comp_neutronVLAN)",
+             "system_test.fuel_migration(1ctrl_1comp_neutronTUN)"]}
     ]
 
     for new_group in groups_list:
