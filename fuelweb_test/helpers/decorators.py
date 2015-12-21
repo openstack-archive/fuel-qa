@@ -77,7 +77,6 @@ def log_snapshot_after_test(func):
     def wrapper(*args, **kwargs):
         logger.info("\n" + "<" * 5 + "#" * 30 + "[ {} ]"
                     .format(func.__name__) + "#" * 30 + ">" * 5 + "\n{}"
-                    .format(''.join(func.__doc__)))
         try:
             result = func(*args, **kwargs)
         except SkipTest:
