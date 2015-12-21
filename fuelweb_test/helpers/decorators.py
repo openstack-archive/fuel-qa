@@ -75,8 +75,11 @@ def log_snapshot_after_test(func):
     """
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        logger.info("\n" + "<" * 5 + "#" * 30 + "[ {} ]"
-                    .format(func.__name__) + "#" * 30 + ">" * 5 + "\n{}"
+        pr1 = 5
+        l = 80 - len(func.__name__) - len("[  ]")
+        l = l/2 if l > 0 else 5
+        logger.info("\n" + "<" * pr1 + "#" * l + "[ {} ]"
+                    .format(func.__name__) + "#" * l + ">" * pr1 + "\n{}"
                     .format(''.join(func.__doc__)))
         try:
             result = func(*args, **kwargs)
