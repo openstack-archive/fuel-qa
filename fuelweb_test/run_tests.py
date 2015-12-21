@@ -155,6 +155,8 @@ def import_tests():
     from tests import test_services_reconfiguration  # noqa
     from gates_tests.tests import test_review_in_ostf  # noqa
     from gates_tests.tests import test_review_in_fuel_client  # noqa
+    from tests.tests_deployments.tests_neutron_tun import test_ha_tun_group_1 # noqa
+    from tests.tests_deployments.tests_neutron_tun import test_ha_tun_group_2 # noqa
 
 
 def run_tests():
