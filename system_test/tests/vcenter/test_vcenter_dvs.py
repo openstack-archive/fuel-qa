@@ -122,6 +122,39 @@ class VMwareActions(ActionsBase):
 
         logger.debug("Attributes of cluster have been updated")
 
+    def _del_node(self, nodes_list):
+        """Delete nodes from Environment"""
+        logger.info("Delete nodes from env {}".format(self.cluster_id))
+        nodes = {}
+
+        for node in nodes_list:
+            cluster_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+                self.cluster_id, node['roles'])
+            for i in xrange(node['count']):
+                dnode = self.fuel_web.get_devops_node_by_nailgun_node(
+                    cluster_nodes[i])
+                self.assigned_slaves.remove(dnode.name)
+
+                nodes[dnode.name] = node['roles']
+                logger.info("Delete node {} with role {}".format(
+                    dnode.name, node['roles']))
+
+        self.fuel_web.update_nodes(self.cluster_id, nodes, False, True)
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def scale_node(self):
+        """Scale node in cluster"""
+        step_config = sorted(self.env_config['scale_nodes'][self.scale_step],
+                             key=lambda k: k['action'])
+        for node in step_config:
+            if node['action']=='add':
+                self._add_node([node])
+            elif node['action']=='delete':
+                self._del_node([node])
+            else:
+                logger.error("Unknow scale action: {}".format(node['action']))
+        self.scale_step += 1
 
 class DeployWithVMware(VMwareActions):
     """Deploy cluster with vCenter and dvs plugin
