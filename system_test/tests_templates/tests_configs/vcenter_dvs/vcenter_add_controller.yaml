@@ -47,3 +47,4 @@ template:
     - roles:
       - controller
       count: 2
+      action: add
