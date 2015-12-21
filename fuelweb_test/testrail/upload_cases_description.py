@@ -79,8 +79,9 @@ def upload_tests_descriptions(testrail_project, section_id,
     custom_cases_fields = {}
     for field in testrail_project.get_case_fields():
         for config in field['configs']:
-            if (testrail_project.project['id'] in
-                    config['context']['project_ids'] and
+            if ((testrail_project.project['id'] in
+                    config['context']['project_ids'] or
+                    not config['context']['project_ids']) and
                     config['options']['is_required']):
                 try:
                     custom_cases_fields[field['system_name']] = \
