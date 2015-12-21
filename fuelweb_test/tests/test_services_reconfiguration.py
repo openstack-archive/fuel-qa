@@ -100,12 +100,13 @@ class ServicesReconfiguration(TestBasic):
             with self.env.d_env.get_ssh_to_remote(node) as remote:
                 uptime = utils.get_process_uptime(remote, service_name)
                 asserts.assert_true(uptime <= uptime_before[node],
-                                    'Service "neutron-servers" was not '
-                                    'restarted on {0}'.format(node))
+                                    'Service "{0}" was not '
+                                    'restarted on {1}'.format(service_name,
+                                                              node))
 
     def check_overcommit_ratio(self, os_conn, cluster_id):
         """
-        :param os_conn: a object of connection to openstack services
+        :param os_conn: an object of connection to openstack services
         :param cluster_id: an integer number of cluster id
         :return:
         """
@@ -124,9 +125,9 @@ class ServicesReconfiguration(TestBasic):
         os_conn.delete_instance(excessive_server)
         os_conn.delete_instance(server)
 
-    def check_nova_ephemral_disk(self, os_conn, cluster_id):
+    def check_nova_ephemeral_disk(self, os_conn, cluster_id):
         """
-        :param os_conn: a object of connection to openstack services
+        :param os_conn: an object of connection to openstack services
         :param cluster_id: an integer number of cluster id
         :return:
         """
@@ -163,7 +164,7 @@ class ServicesReconfiguration(TestBasic):
 
     def check_ml2_vlan_range(self, os_conn):
         """
-        :param os_conn: a object of connection to openstack services
+        :param os_conn: an object of connection to openstack services
         :return:
         """
         tenant = os_conn.get_tenant('admin')
@@ -180,7 +181,7 @@ class ServicesReconfiguration(TestBasic):
 
     def check_nova_quota(self, os_conn, cluster_id):
         """
-        :param os_conn: a object of connection to openstack services
+        :param os_conn: an object of connection to openstack services
         :param cluster_id: an integer number of cluster id
         :return:
         """
@@ -190,7 +191,6 @@ class ServicesReconfiguration(TestBasic):
                                          label=net_name,
                                          server_name="Test_reconfig")
         os_conn.verify_instance_status(server, 'ACTIVE')
-        self.show_step(9)
         try:
             os_conn.create_instance(neutron_network=True,
                                     label=net_name,
@@ -445,8 +445,7 @@ class ServicesReconfiguration(TestBasic):
             cmd = "grep \"Can't contact LDAP server\" {0}".format(log_path)
             utils.run_on_remote_get_results(remote, cmd)
 
-        self.env.make_snapshot("reconfigure_keystone_to_use_ldap",
-                               is_make=True)
+        self.env.make_snapshot("reconfigure_keystone_to_use_ldap")
 
     @test(depends_on_groups=['basic_env_for_reconfiguration'],
           groups=["services_reconfiguration", "reconfigure_nova_quota"])
@@ -498,11 +497,11 @@ class ServicesReconfiguration(TestBasic):
         self.fuel_web.assert_task_success(task, timeout=300, interval=5)
 
         self.show_step(7)
-        self.check_service_was_restarted(computes, uptimes_comp,
-                                         'nova-compute')
+        self.check_service_was_restarted(controllers, uptimes, 'nova-api')
 
         self.show_step(8)
-        self.check_service_was_restarted(controllers, uptimes, 'nova-api')
+        self.check_service_was_restarted(computes, uptimes_comp,
+                                         'nova-compute')
 
         self.show_step(9)
         self.check_config_on_remote(controllers, structured_config)
@@ -514,14 +513,13 @@ class ServicesReconfiguration(TestBasic):
 
         self.check_nova_quota(os_conn, cluster_id)
 
-        self.env.make_snapshot("reconfigure_nova_quota",
-                               is_make=True)
+        self.env.make_snapshot("reconfigure_nova_quota")
 
     @test(depends_on_groups=['reconfigure_overcommit_ratio'],
           groups=["services_reconfiguration",
                   "reconfigure_nova_ephemeral_disk"])
     @log_snapshot_after_test
-    def reconfigure_nova_ephemral_disk(self):
+    def reconfigure_nova_ephemeral_disk(self):
         """Reconfigure nova ephemeral disk format
 
         Scenario:
@@ -586,7 +584,7 @@ class ServicesReconfiguration(TestBasic):
         self.show_step(10)
         self.show_step(11)
         self.show_step(12)
-        self.check_nova_ephemral_disk(os_conn, cluster_id)
+        self.check_nova_ephemeral_disk(os_conn, cluster_id)
 
         self.env.make_snapshot("reconfigure_nova_ephemeral_disk",
                                is_make=True)
@@ -660,3 +658,105 @@ class ServicesReconfiguration(TestBasic):
 
         snapshot = "preservation_config_after_reset_and_preconfigured_deploy"
         self.env.make_snapshot(snapshot, is_make=True)
+
+    @test(depends_on_groups=['reconfigure_nova_ephemeral_disk'],
+          groups=["services_reconfiguration",
+                  "reconfigurstion_scalability"])
+    @log_snapshot_after_test
+    def reconfiguration_scalability(self):
+        """Check scalability of configured environment
+
+        Scenario:
+            1. Revert snapshot "reconfigure_nova_ephemeral_disk"
+            2. Upload a new openstack configuration for keystone
+            3. Wait for configuration applying
+            4. Get uptime of process "keystone" on each controller
+            5. Verify keystone settings
+            6. Keystone actions
+            7. Add 1 compute and 1 controller to cluster
+            8. Run network verification
+            9. Deploy changes
+            10. Run OSTF tests
+            11. Verify keystone settings
+            12. Verify nova settings
+            13. Create flavor with ephemral disk
+            14. Boot instance on updated compute with ephemral disk
+            15. Assign floating ip
+            16. Check ping to the instance
+            17. SSH to VM and check ephemeral disk format
+            18. Keystone actions
+
+        Snapshot "reconfiguration_scalability"
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot("reconfigure_nova_ephemeral_disk")
+
+        self.show_step(2)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        config = utils.get_config_template('nova_disk')
+        structured_config_nova = get_structured_config_dict(config)
+        config = utils.get_config_template('keystone')
+        structured_config_keystone = get_structured_config_dict(config)
+        self.fuel_web.client.upload_configuration(config,
+                                                  cluster_id,
+                                                  role='controller')
+        nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(cluster_id)
+        controllers = filter(lambda x: x['role'] == 'controller', nodes)
+        computes = filter(lambda x: x['role'] == 'compute', nodes)
+        uptimes = self.get_service_uptime(controllers, 'apache2')
+
+        self.show_step(3)
+        task = self.fuel_web.client.apply_configuration(cluster_id,
+                                                        role='controller')
+        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+
+        self.show_step(4)
+
+        self.check_service_was_restarted(controllers, uptimes, 'apache2')
+
+        self.show_step(5)
+        self.check_config_on_remote(controllers, structured_config_keystone)
+
+        self.show_step(6)
+        # TODO
+
+        self.show_step(7)
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[4:6])
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-05': ['compute']})
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-06': ['controller']})
+
+        self.show_step(8)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(9)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(10)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(11)
+        self.check_config_on_remote(controllers, structured_config_keystone)
+
+        self.show_step(12)
+        self.check_config_on_remote(computes, structured_config_nova)
+
+        self.show_step(13)
+        self.show_step(14)
+        self.show_step(15)
+        self.show_step(16)
+        self.show_step(17)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+
+        self.check_nova_ephemeral_disk(os_conn, cluster_id)
+
+        self.show_step(18)
+        # TODO
+
+        self.env.make_snapshot("reconfiguration_scalability", is_make=True)
