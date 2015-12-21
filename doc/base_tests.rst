@@ -81,6 +81,21 @@ Test Environment Action
 .. automodule:: fuelweb_test.tests.test_environment_action
    :members:
 
+Test ha NeutronTUN deployment group 1 (controller+baseos multirole and ceph for images/objects)
+-----------------------------------------------------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_tun.test_ha_tun_group_1
+   :members:
+
+Test ha NeutronTUN deployment group 2 (ceph for all, baseos node and ceph for all, untag networks and changed OS credentials)
+-----------------------------------------------------------------------------------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_tun.test_ha_tun_group_2
+   :members:
+
+Test ha NeutronTUN deployment group 3 (5 controllers, ceph for images/ephemeral and no volumes, ceph for images/ephemeral)
+--------------------------------------------------------------------------------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_tun.test_ha_tun_group_3
+   :members:
+
 Test ha neutron vlan deployment group 1 (cinder/ceph for images and ceph for volumes/swift)
 -------------------------------------------------------------------------------------------
 .. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_1
@@ -227,16 +242,6 @@ Test Reduced Footprint
 .. automodule:: fuelweb_test.tests.test_reduced_footprint
    :members:
 
-Test scale group 1 (add controllers with stop and add ceph nodes with stop)
----------------------------------------------------------------------------
-.. automodule:: fuelweb_test.tests.tests_scale.test_scale_group_1
-   :members:
-
-Test scale group 2 (replace primary controller and remove 2 controllers)
-------------------------------------------------------------------------
-.. automodule:: fuelweb_test.tests.tests_scale.test_scale_group_2
-   :members:
-
 Test scale group 3 (add/delete compute and add/delete cinder)
 -------------------------------------------------------------
 .. automodule:: fuelweb_test.tests.tests_scale.test_scale_group_3
@@ -270,10 +275,6 @@ Test Ironic
 Test Services reconfiguration
 -----------------------------
 .. automodule:: fuelweb_test.tests.test_services_reconfiguration
-
-Test RHEL-based computes
-------------------------
-.. automodule:: fuelweb_test.tests.test_rhel_compute
   :members:
 
 Gating tests
@@ -404,6 +405,11 @@ Emc tests
 Example tests
 -------------
 .. automodule:: fuelweb_test.tests.plugins.plugin_example.test_fuel_plugin_example
+   :members:
+
+Example tests for plugin installation after cluster create
+----------------------------------------------------------
+.. automodule:: fuelweb_test.tests.plugins.plugin_example.test_fuel_plugin_example_postdeploy
    :members:
 
 Glusterfs tests
