@@ -557,16 +557,17 @@ class EnvironmentModel(object):
         log_path = "/var/log/puppet/bootstrap_admin_node.log"
         logger.info("Puppet timeout set in {0}".format(
             float(settings.PUPPET_TIMEOUT)))
-        wait(
-            lambda: not
-            self.d_env.get_admin_remote().execute(
-                "grep 'Fuel node deployment' '%s'" % log_path
-            )['exit_code'],
-            timeout=(float(settings.PUPPET_TIMEOUT))
-        )
-        result = self.d_env.get_admin_remote().execute(
-            "grep 'Fuel node deployment "
-            "complete' '%s'" % log_path)['exit_code']
+        with self.d_env.get_admin_remote() as admin_remote:
+            wait(
+                lambda: not
+                admin_remote.execute(
+                    "grep 'Fuel node deployment' '%s'" % log_path
+                )['exit_code'],
+                timeout=(float(settings.PUPPET_TIMEOUT))
+            )
+            result = admin_remote.execute(
+                "grep 'Fuel node deployment "
+                "complete' '%s'" % log_path)['exit_code']
         if result != 0:
             raise Exception('Fuel node deployment failed.')
         self.bootstrap_image_check()
