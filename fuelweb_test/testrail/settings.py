@@ -26,6 +26,8 @@ LOGS_DIR = os.environ.get('LOGS_DIR', os.getcwd())
 
 os.environ["ENV_NAME"] = "some_environment"
 os.environ["ISO_PATH"] = "./fuel.iso"
+# TODO: remove this after LP#1528491 is fixed
+os.environ["TESTRAIL_REPORTING"] = "true"
 
 JENKINS = {
     'url': os.environ.get('JENKINS_URL', 'http://localhost/'),
