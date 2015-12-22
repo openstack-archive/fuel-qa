@@ -129,6 +129,20 @@ Test Murano OS component with vlan
 Test mixed OS components
 ------------------------
 .. automodule:: fuelweb_test.tests.tests_os_components.test_mixed_os_components
+=======
+Test failover group 1
+---------------------
+.. automodule:: fuelweb_test.tests.tests_strength.test_failover_group_1
+   :members:
+
+Test failover mongo
+-------------------
+.. automodule:: fuelweb_test.tests.tests_strength.test_failover_mongo
+   :members:
+
+Test failover reboot reset
+--------------------------
+.. automodule:: fuelweb_test.tests.tests_strength.test_failover_reboot_reset
    :members:
 
 Test Mongo Multirole
