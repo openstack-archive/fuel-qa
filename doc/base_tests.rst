@@ -101,6 +101,21 @@ Test ha neutron vlan deployment group 7 (no volumes/ceph for images and cinder/s
 .. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_7
    :members:
 
+Test failover group 1
+---------------------
+.. automodule:: fuelweb_test.tests.tests_stregth.test_failover_group_1
+   :members:
+
+Test failover mongo
+-------------------
+.. automodule:: fuelweb_test.tests.tests_stregth.test_failover_mongo
+   :members:
+
+Test failover reboot reset
+--------------------------
+.. automodule:: fuelweb_test.tests.tests_stregth.test_failover_reboot_reset
+   :members:
+
 Test Mongo Multirole
 --------------------
 .. automodule:: fuelweb_test.tests.tests_multirole.test_mongo_multirole
