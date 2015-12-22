@@ -122,6 +122,7 @@ def import_tests():
     from tests import test_net_templates  # noqa
     from tests.tests_mirrors import test_create_mirror  # noqa
     from tests.tests_mirrors import test_use_mirror  # noqa
+    '''
     from system_test.tests import test_create_deploy_ostf  # noqa
     from system_test.tests import test_deploy_check_rados  # noqa
     from system_test.tests.strength import destroy_controllers  # noqa
@@ -131,6 +132,7 @@ def import_tests():
     from system_test.tests.plugins.plugin_example import test_plugin_example_v3  # noqa
     from system_test.tests.vcenter import test_vcenter_dvs   # noqa
     from gates_tests.tests import test_review_in_fuel_agent  # noqa
+    '''
     from tests.tests_strength import test_load  # noqa
     from tests import test_services_reconfiguration  # noqa
     from gates_tests.tests import test_review_in_ostf  # noqa
@@ -138,6 +140,9 @@ def import_tests():
     from tests.tests_os_components import test_murano_os_component  # noqa
     from tests.tests_os_components import test_sahara_os_component  # noqa
     from tests.tests_os_components import test_mixed_os_components  # noqa
+    from tests.tests_strength import test_failover_group_1  # noqa
+    from tests.tests_strength import test_failover_mongo  # noqa
+    from tests.tests_strength import test_failover_reboot_reset  # noqa
 
 
 def run_tests():
