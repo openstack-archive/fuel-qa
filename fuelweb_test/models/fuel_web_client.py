@@ -23,6 +23,7 @@ from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
+from devops.models.node import Node
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.ssl import copy_cert_from_master
 from fuelweb_test.helpers.ssl import change_cluster_ssl_config
@@ -970,8 +971,11 @@ class FuelWebClient(object):
 
     @logwrap
     def get_ssh_for_node(self, node_name):
-        node = self.get_nailgun_node_by_devops_node(
-            self.environment.d_env.get_node(name=node_name))
+        try:
+            node = self.get_nailgun_node_by_devops_node(
+                self.environment.d_env.get_node(name=node_name))
+        except Node.DoesNotExist:
+            node = self.get_nailgun_node_by_fqdn(node_name)
         assert_true(node is not None,
                     'Node with name "{0}" not found!'.format(node_name))
         return self.environment.d_env.get_ssh_to_remote(node['ip'])
