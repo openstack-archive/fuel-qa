@@ -535,3 +535,6 @@ NESSUS_SSL_VERIFY = get_var_as_bool("NESSUS_SSL_VERIFY", False)
 # is using in stability rabbit test to get
 # possibility to change count of repeats failures
 REPEAT_COUNT = os.environ.get("REPEAT_COUNT", 2)
+
+# TODO: remove this after LP#1528491 is fixed
+TESTRAIL_REPORTING = get_var_as_bool('TESTRAIL_REPORTING', False)
