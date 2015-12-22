@@ -124,6 +124,11 @@ class FuelMasterMigrate(ActionsBase, FuelMasterActions):
             network_name=self.env.d_env.admin_net,
             timeout=60 * 10)
 
+        with self.env.d_env.get_admin_remote() as remote:
+            wait(lambda: not remote.exists("/notready"),
+                 timeout=900,
+                 timeout_msg=("File wasn't removed in 900 sec"))
+
 
 @factory
 def cases():
