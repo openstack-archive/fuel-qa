@@ -167,6 +167,9 @@ def import_tests():
     from tests.tests_os_components import test_murano_os_component  # noqa
     from tests.tests_os_components import test_sahara_os_component  # noqa
     from tests.tests_os_components import test_mixed_os_components  # noqa
+    from tests.tests_strength import test_failover_group_1  # noqa
+    from tests.tests_strength import test_failover_mongo  # noqa
+    from tests.tests_strength import test_failover_reboot_reset  # noqa
 
 
 def run_tests():
