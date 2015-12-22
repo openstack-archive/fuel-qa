@@ -331,9 +331,13 @@ class BackupRestoreHA(NeutronTunHaBase):
 
         with self.env.d_env.get_admin_remote() as remote:
             # Create an environment
+            if NEUTRON_SEGMENT_TYPE:
+                nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
+            else:
+                nst = ''
             cmd = ('fuel env create --name={0} --release={1} '
-                   '--nst={2} --json'.format(self.__class__.__name__,
-                                             release_id, NEUTRON_SEGMENT_TYPE))
+                   '{2} --json'.format(self.__class__.__name__,
+                                       release_id, nst))
             env_result = run_on_remote(remote, cmd, jsonify=True)
             cluster_id = env_result['id']
 
