@@ -89,6 +89,8 @@ def import_tests():
     from tests.tests_deployments.tests_neutron_vlan import test_ha_vlan_group_6  # noqa
     from tests.tests_deployments.tests_neutron_vlan import test_ha_vlan_group_7  # noqa
     from tests.tests_multirole import test_multirole_group_1  # noqa
+    from tests.tests_scale import test_scale_group_1  # noqa
+    from tests.tests_scale import test_scale_group_2  # noqa
     from tests.tests_scale import test_scale_group_3  # noqa
     from tests.tests_scale import test_scale_group_4  # noqa
     from tests.tests_security import test_run_nessus  # noqa
