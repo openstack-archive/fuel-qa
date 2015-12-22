@@ -311,7 +311,7 @@ def install_pkg_2(ip, pkg_name, port=22):
     :return: exit code of installation
     """
     ssh_manager = SSHManager()
-    remote_status = ssh_manager.execute_on_remote(
+    remote_status = ssh_manager.execute(
         ip=ip,
         port=port,
         cmd="rpm -q '{0}'".format(pkg_name)
@@ -320,7 +320,7 @@ def install_pkg_2(ip, pkg_name, port=22):
         logger.info("Package '{0}' already installed.".format(pkg_name))
     else:
         logger.info("Installing package '{0}' ...".format(pkg_name))
-        remote_status = ssh_manager.execute_on_remote(
+        remote_status = ssh_manager.execute(
             ip=ip,
             port=port,
             cmd="yum -y install {0}".format(pkg_name)
