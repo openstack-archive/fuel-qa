@@ -35,13 +35,20 @@ class TestBasic(object):
     def __init__(self):
         self._current_log_step = 0
         self.ssh_manager = SSHManager()
-        self.env = EnvironmentModel()
+        self._devops_config = None
+        self.__env = None
 
     @property
     def test_program(self):
         if not hasattr(self, '_test_program'):
             self._test_program = TestProgram()
         return self._test_program
+
+    @property
+    def env(self):
+        if self.__env is None:
+            self.__env = EnvironmentModel(self._devops_config)
+        return self.__env
 
     @property
     def fuel_web(self):
