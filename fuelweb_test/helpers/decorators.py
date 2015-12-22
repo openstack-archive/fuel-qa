@@ -108,6 +108,8 @@ def log_snapshot_after_test(func):
                     except:
                         logger.error("Error making the environment snapshot:"
                                      " {0}".format(traceback.format_exc()))
+            logger.error(traceback.format_exc())
+            logger.info("<" * 5 + "*" * 100 + ">" * 5)
             raise test_exception, None, exc_trace
         else:
             if settings.ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT:
