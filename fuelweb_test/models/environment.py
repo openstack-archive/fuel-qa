@@ -37,7 +37,6 @@ from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.fuel_actions import PostgresActions
 from fuelweb_test.helpers.fuel_actions import NessusActions
 from fuelweb_test.helpers.ntp import GroupNtpSync
-from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.helpers import multiple_networks_hacks
@@ -67,23 +66,11 @@ class EnvironmentModel(object):
             self._fuel_web = None
         if not hasattr(self, "_config"):
             self._config = None
-        self.ssh_manager = SSHManager()
-        self.ssh_manager.initialize(
-            self.get_admin_node_ip(),
-            login=settings.SSH_CREDENTIALS['login'],
-            password=settings.SSH_CREDENTIALS['password']
-        )
-        self.admin_actions = AdminActions()
-        self.base_actions = BaseActions()
-        self.cobbler_actions = CobblerActions()
-        self.docker_actions = DockerActions()
-        self.nailgun_actions = NailgunActions()
-        self.postgres_actions = PostgresActions()
 
     @property
     def fuel_web(self):
         if self._fuel_web is None:
-            self._fuel_web = FuelWebClient(self)
+            self._fuel_web = FuelWebClient(self.get_admin_node_ip(), self)
         return self._fuel_web
 
     def __repr__(self):
@@ -95,6 +82,30 @@ class EnvironmentModel(object):
         return "[{klass}({obj_id}), ip:{ip}]".format(klass=klass,
                                                      obj_id=obj_id,
                                                      ip=ip)
+
+    @property
+    def admin_actions(self):
+        return AdminActions(self.d_env.get_admin_remote())
+
+    @property
+    def base_actions(self):
+        return BaseActions(self.d_env.get_admin_remote())
+
+    @property
+    def nailgun_actions(self):
+        return NailgunActions(self.d_env.get_admin_remote())
+
+    @property
+    def postgres_actions(self):
+        return PostgresActions(self.d_env.get_admin_remote())
+
+    @property
+    def cobbler_actions(self):
+        return CobblerActions(self.d_env.get_admin_remote())
+
+    @property
+    def docker_actions(self):
+        return DockerActions(self.d_env.get_admin_remote())
 
     @property
     def admin_node_ip(self):

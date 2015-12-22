@@ -265,22 +265,21 @@ class CommandLineTest(test_cli_base.CommandLine):
                 'Some slaves do not become online after revert!!'
                 ' Expected {0} Actual {1}'.format(nodes, online_nodes))
 
-        res = self.ssh_manager.execute_on_remote(
-            ip=self.ssh_manager.admin_ip,
-            cmd='fuel --env {0} env delete'.format(cluster_id)
-        )
-        assert_true(res['exit_code'] == 0)
+        with self.env.d_env.get_admin_remote() as remote:
+            res = remote.execute('fuel --env {0} env delete'
+                                 .format(cluster_id))
+        assert_true(
+            res['exit_code'] == 0)
 
-        try:
-            wait(lambda:
-                 self.ssh_manager.execute_on_remote(
-                     ip=self.ssh_manager.admin_ip,
-                     cmd="fuel env |  awk '{print $1}' |  tail -n 1 | "
-                         "grep '^.$'"
-                 )['exit_code'] == 1, timeout=60 * 10)
-        except TimeoutError:
-            raise TimeoutError(
-                "cluster {0} was not deleted".format(cluster_id))
+        with self.env.d_env.get_admin_remote() as remote:
+            try:
+                wait(lambda:
+                     remote.execute("fuel env |  awk '{print $1}'"
+                                    " |  tail -n 1 | grep '^.$'")
+                     ['exit_code'] == 1, timeout=60 * 10)
+            except TimeoutError:
+                raise TimeoutError(
+                    "cluster {0} was not deleted".format(cluster_id))
 
         assert_false(
             check_cluster_presence(cluster_id, self.env.postgres_actions),

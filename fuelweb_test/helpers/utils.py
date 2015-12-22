@@ -28,7 +28,6 @@ from proboscis import asserts
 from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test import settings
-from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.settings import MASTER_IS_CENTOS7
 
 
@@ -295,34 +294,6 @@ def install_pkg(remote, pkg_name):
         logger.info("Installing package '{0}' ...".format(pkg_name))
         remote_status = remote.execute("yum -y install {0}"
                                        .format(pkg_name))
-        logger.info("Installation of the package '{0}' has been"
-                    " completed with exit code {1}"
-                    .format(pkg_name, remote_status['exit_code']))
-    return remote_status['exit_code']
-
-
-def install_pkg_2(ip, pkg_name, port=22):
-    """Install a package <pkg_name> on node
-    :param ip: ip of node
-    :param pkg_name: name of a package
-    :param port: ssh port
-    :return: exit code of installation
-    """
-    ssh_manager = SSHManager()
-    remote_status = ssh_manager.execute_on_remote(
-        ip=ip,
-        port=port,
-        cmd="rpm -q '{0}'".format(pkg_name)
-    )
-    if remote_status['exit_code'] == 0:
-        logger.info("Package '{0}' already installed.".format(pkg_name))
-    else:
-        logger.info("Installing package '{0}' ...".format(pkg_name))
-        remote_status = ssh_manager.execute_on_remote(
-            ip=ip,
-            port=port,
-            cmd="yum -y install {0}".format(pkg_name)
-        )
         logger.info("Installation of the package '{0}' has been"
                     " completed with exit code {1}"
                     .format(pkg_name, remote_status['exit_code']))

@@ -23,20 +23,19 @@ from xml.etree import ElementTree
 
 from fuelweb_test import logger
 from fuelweb_test import settings
-from fuelweb_test.helpers.utils import install_pkg_2
-from fuelweb_test.helpers.ssh_manager import SSHManager
+from fuelweb_test.helpers.utils import install_pkg
 
 
-def regenerate_ubuntu_repo(path):
+def regenerate_ubuntu_repo(remote, path):
     # Ubuntu
-    cr = CustomRepo()
+    cr = CustomRepo(remote)
     cr.install_tools(['dpkg', 'dpkg-devel', 'dpkg-dev'])
     cr.regenerate_repo('regenerate_ubuntu_repo', path)
 
 
-def regenerate_centos_repo(path):
+def regenerate_centos_repo(remote, path):
     # CentOS
-    cr = CustomRepo()
+    cr = CustomRepo(remote)
     cr.install_tools(['createrepo'])
     cr.regenerate_repo('regenerate_centos_repo', path)
 
@@ -44,9 +43,8 @@ def regenerate_centos_repo(path):
 class CustomRepo(object):
     """CustomRepo."""  # TODO documentation
 
-    def __init__(self):
-        self.ssh_manager = SSHManager()
-        self.ip = self.ssh_manager.admin_ip
+    def __init__(self, remote):
+        self.remote = remote
         self.path_scripts = ('{0}/fuelweb_test/helpers/'
                              .format(os.environ.get("WORKSPACE", "./")))
         self.remote_path_scripts = '/tmp/'
@@ -113,10 +111,7 @@ class CustomRepo(object):
         logger.info("Installing necessary tools for {0}"
                     .format(settings.OPENSTACK_RELEASE))
         for master_tool in master_tools:
-            exit_code = install_pkg_2(
-                ip=self.ip,
-                pkg_name=master_tool
-            )
+            exit_code = install_pkg(self.remote, master_tool)
             assert_equal(0, exit_code, 'Cannot install package {0} '
                          'on admin node.'.format(master_tool))
 
@@ -246,10 +241,7 @@ class CustomRepo(object):
                        .format(pkgs_local_path + path_suff,
                                self.custom_pkgs_mirror,
                                pkg["filename:"])
-            wget_result = self.ssh_manager.execute_on_remote(
-                ip=self.ip,
-                cmd=wget_cmd
-            )
+            wget_result = self.remote.execute(wget_cmd)
             assert_equal(0, wget_result['exit_code'],
                          self.assert_msg(wget_cmd, wget_result['stderr']))
 
@@ -258,16 +250,12 @@ class CustomRepo(object):
         # Uploading scripts that prepare local repositories:
         # 'regenerate_centos_repo' and 'regenerate_ubuntu_repo'
         try:
-            self.ssh_manager.upload_to_remote(
-                ip=self.ip,
-                source='{0}/{1}'.format(self.path_scripts, regenerate_script),
-                target=self.remote_path_scripts
-            )
-            self.ssh_manager.execute_on_remote(
-                ip=self.ip,
-                cmd='chmod 755 {0}/{1}'.format(self.remote_path_scripts,
-                                               regenerate_script)
-            )
+            self.remote.upload('{0}/{1}'.format(self.path_scripts,
+                                                regenerate_script),
+                               self.remote_path_scripts)
+            self.remote.execute('chmod 755 {0}/{1}'
+                                .format(self.remote_path_scripts,
+                                        regenerate_script))
         except Exception:
             logger.error('Could not upload scripts for updating repositories.'
                          '\n{0}'.format(traceback.format_exc()))
@@ -278,10 +266,7 @@ class CustomRepo(object):
                                               regenerate_script,
                                               local_mirror_path,
                                               self.ubuntu_release)
-        script_result = self.ssh_manager.execute_on_remote(
-            ip=self.ip,
-            cmd=script_cmd
-        )
+        script_result = self.remote.execute(script_cmd)
         assert_equal(0, script_result['exit_code'],
                      self.assert_msg(script_cmd, script_result['stderr']))
 
@@ -316,10 +301,7 @@ class CustomRepo(object):
         cmd = ('fgrep -h -e " Depends: " -e "{0}" -e "{1}" '
                '/var/log/docker-logs/remote/node-*/'
                'puppet*.log'.format(err_start, err_end))
-        result = self.ssh_manager.execute_on_remote(
-            ip=self.ip,
-            cmd=cmd
-        )['stdout']
+        result = self.remote.execute(cmd)['stdout']
 
         err_deps = {}
         err_deps_key = ''
@@ -356,10 +338,7 @@ class CustomRepo(object):
 
         cmd = ('fgrep -h -e "Error: Package: " -e " Requires: " /var/log/'
                'docker-logs/remote/node-*/puppet*.log')
-        result = self.ssh_manager.execute_on_remote(
-            ip=self.ip,
-            cmd=cmd
-        )['stdout']
+        result = self.remote.execute(cmd)['stdout']
 
         err_deps = {}
         err_deps_key = ''

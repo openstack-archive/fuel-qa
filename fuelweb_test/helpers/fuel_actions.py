@@ -31,7 +31,7 @@ from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
 from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
 from fuelweb_test.helpers import replace_repos
-from fuelweb_test.helpers.ssh_manager import SSHManager
+from fuelweb_test.helpers.utils import cond_upload
 from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
@@ -43,9 +43,8 @@ from fuelweb_test.settings import NESSUS_IMAGE_PATH
 class BaseActions(object):
     """BaseActions."""  # TODO documentation
 
-    def __init__(self):
-        self.ssh_manager = SSHManager()
-        self.admin_ip = self.ssh_manager.admin_ip
+    def __init__(self, admin_remote):
+        self.admin_remote = admin_remote
         self.container = None
 
     def __repr__(self):
@@ -63,11 +62,7 @@ class BaseActions(object):
         cmd = 'dockerctl shell {0} {1}'.format(container, command)
         if stdin is not None:
             cmd = 'echo "{0}" | {1}'.format(stdin, cmd)
-
-        result = self.ssh_manager.execute_on_remote(
-            ip=self.admin_ip,
-            cmd=cmd
-        )
+        result = self.admin_remote.execute(cmd)
         if exit_code is not None:
             assert_equal(exit_code,
                          result['exit_code'],
@@ -98,10 +93,7 @@ class BaseActions(object):
             Standard output from console
         """
         cmd = 'dockerctl copy {0} {1}'.format(copy_from, copy_to)
-        result = self.ssh_manager.execute_on_remote(
-            ip=self.admin_ip,
-            cmd=cmd
-        )
+        result = self.admin_remote.execute(cmd)
         assert_equal(0, result['exit_code'],
                      ('Command copy returned exit code "{e}", but '
                       'expected "0". Output: {out}; {err} ').format(
@@ -113,10 +105,8 @@ class BaseActions(object):
 
     @property
     def is_container_ready(self):
-        result = self.ssh_manager.execute_on_remote(
-            ip=self.admin_ip,
-            cmd="timeout 5 dockerctl check {0}".format(self.container)
-        )
+        result = self.admin_remote.execute("timeout 5 dockerctl check {0}"
+                                           .format(self.container))
         return result['exit_code'] == 0
 
     def wait_for_ready_container(self, timeout=300):
@@ -189,17 +179,9 @@ class BaseActions(object):
 
         self.copy_between_node_and_container(
             '{0}:{1}'.format(container, path_to_file), old_file)
-        self.ssh_manager.download_from_remote(
-            ip=self.admin_ip,
-            destination=old_file,
-            target=old_file
-        )
+        self.admin_remote.download(old_file, old_file)
         self.put_value_to_local_yaml(old_file, new_file, element, value)
-        self.ssh_manager.upload_to_remote(
-            ip=self.admin_ip,
-            source=new_file,
-            target=new_file
-        )
+        self.admin_remote.upload(new_file, new_file)
         self.copy_between_node_and_container(
             new_file, '{0}:{1}'.format(container, path_to_file))
         os.remove(old_file)
@@ -222,11 +204,8 @@ class BaseActions(object):
             admin_tmp_file = path_to_file
 
         host_tmp_file = '/tmp/temp_file_{0}.yaml'.format(str(os.getpid()))
-        self.ssh_manager.download_from_remote(
-            ip=self.admin_ip,
-            destination=admin_tmp_file,
-            target=host_tmp_file
-        )
+
+        self.admin_remote.download(admin_tmp_file, host_tmp_file)
         value = self.get_value_from_local_yaml(host_tmp_file, element)
         os.remove(host_tmp_file)
         return value
@@ -249,18 +228,11 @@ class BaseActions(object):
             admin_tmp_file = path_to_file
 
         host_tmp_file = '/tmp/temp_file_{0}.yaml'.format(str(os.getpid()))
-        self.ssh_manager.download_from_remote(
-            ip=self.admin_ip,
-            destination=admin_tmp_file,
-            target=host_tmp_file
-        )
+
+        self.admin_remote.download(admin_tmp_file, host_tmp_file)
         self.put_value_to_local_yaml(host_tmp_file, host_tmp_file,
                                      element, value)
-        self.ssh_manager.upload_to_remote(
-            ip=self.admin_ip,
-            source=host_tmp_file,
-            target=admin_tmp_file
-        )
+        self.admin_remote.upload(host_tmp_file, admin_tmp_file)
         if self.container:
             self.copy_between_node_and_container(
                 admin_tmp_file, '{0}:{1}'.format(self.container, path_to_file))
@@ -270,8 +242,8 @@ class BaseActions(object):
 class AdminActions(BaseActions):
     """ All actions relating to the admin node."""
 
-    def __init__(self):
-        super(AdminActions, self).__init__()
+    def __init__(self, admin_remote):
+        super(AdminActions, self).__init__(admin_remote)
 
     @logwrap
     def modify_configs(self, router):
@@ -286,8 +258,7 @@ class AdminActions(BaseActions):
             # for admin node
             cmd = 'ntpdate -p 4 -t 0.2 -ub {0}'.format(router)
 
-            if not self.ssh_manager.execute_on_remote(ip=self.admin_ip,
-                                                      cmd=cmd)['exit_code']:
+            if not self.admin_remote.execute(cmd)['exit_code']:
                 # Local ntpd on the host is alive, so
                 # remove all NTP sources and add the host instead.
                 logger.info("Switching NTPD on the Fuel admin node to use "
@@ -319,53 +290,43 @@ class AdminActions(BaseActions):
         ubuntu_files_count = 0
 
         if centos_repo_path:
-            centos_files_count = self.ssh_manager.cond_upload(
-                ip=self.admin_ip,
-                source=local_packages_dir,
-                target=os.path.join(centos_repo_path, 'Packages'),
-                condition="(?i).*\.rpm$"
-            )
+            centos_files_count = cond_upload(
+                self.admin_remote, local_packages_dir,
+                os.path.join(centos_repo_path, 'Packages'),
+                "(?i).*\.rpm$")
             if centos_files_count > 0:
-                regenerate_centos_repo(centos_repo_path)
+                regenerate_centos_repo(self.admin_remote, centos_repo_path)
 
         if ubuntu_repo_path:
-            ubuntu_files_count = self.ssh_manager.cond_upload(
-                ip=self.admin_ip,
-                source=local_packages_dir,
-                target=os.path.join(ubuntu_repo_path, 'pool/main'),
-                condition="(?i).*\.deb$"
-            )
+            ubuntu_files_count = cond_upload(
+                self.admin_remote, local_packages_dir,
+                os.path.join(ubuntu_repo_path, 'pool/main'),
+                "(?i).*\.deb$")
             if ubuntu_files_count > 0:
-                regenerate_ubuntu_repo(ubuntu_repo_path)
+                regenerate_ubuntu_repo(self.admin_remote, ubuntu_repo_path)
 
         return centos_files_count, ubuntu_files_count
 
     @logwrap
     def clean_generated_image(self, distro):
-        out = self.ssh_manager.execute_on_remote(
-            ip=self.admin_ip,
-            cmd="find /var/www/nailgun/targetimages/ -name "
-                "'env*{}*' -printf '%P\n'".format(distro.lower())
-        )
-        images = ''.join(out)
+        images = ''.join(
+            self.admin_remote.execute(
+                "find /var/www/nailgun/targetimages/ -name"
+                " 'env*{}*' -printf '%P\n'".format(distro.lower())))
 
         logger.debug("images are {}".format(images))
-        self.ssh_manager.execute_on_remote(
-            ip=self.admin_ip,
-            cmd="find /var/www/nailgun/targetimages/ -name 'env*{}*'"
-                " -delete".format(distro.lower())
-        )
+        self.admin_remote.execute(
+            "find /var/www/nailgun/targetimages/ -name 'env*{}*'"
+            " -delete".format(distro.lower()))
 
     @logwrap
     @retry(2)
-    def untar(self, node_ip, name, path):
+    def untar(self, node_ssh, name, path):
         logger.info('Unpacking file')
         filename, ext = os.path.splitext(name)
         cmd = "tar -xpvf" if ext.endswith("tar") else "lrzuntar"
-        result = self.ssh_manager.execute_on_remote(
-            ip=node_ip,
-            cmd='cd {0} && {2} {1}'.format(path, name, cmd)
-        )
+        result = node_ssh.execute(
+            'cd {0} && {2} {1}'.format(path, name, cmd))
         stdout, stderr = ''.join(result['stdout']), ''.join(result['stderr'])
         logger.debug('Result from tar command is {0}\n{1}'.format(stdout,
                                                                   stderr))
@@ -373,7 +334,6 @@ class AdminActions(BaseActions):
 
     def upgrade_master_node(self, rollback=False, file_upload=True):
         """This method upgrades master node with current state."""
-        # TODO: It will be remooved or changed
 
         master = self.admin_remote
         if file_upload:
@@ -407,10 +367,8 @@ class AdminActions(BaseActions):
 
     def get_fuel_settings(self):
         cmd = 'cat {cfg_file}'.format(cfg_file=hlp_data.FUEL_SETTINGS_YAML)
-        result = self.ssh_manager.execute_on_remote(
-            ip=self.admin_ip,
-            cmd=cmd
-        )
+        result = self.admin_remote.execute(cmd)
+
         if result['exit_code'] == 0:
             fuel_settings = yaml.load(''.join(result['stdout']))
         else:
@@ -424,10 +382,7 @@ class AdminActions(BaseActions):
                                                     default_style='"',
                                                     default_flow_style=False),
                                           hlp_data.FUEL_SETTINGS_YAML)
-        result = self.ssh_manager.execute_on_remote(
-            ip=self.admin_ip,
-            cmd=cmd
-        )
+        result = self.admin_remote.execute(cmd)
         assert_equal(result['exit_code'], 0,
                      "Saving Fuel settings failed: {0}!".format(result))
 
@@ -435,8 +390,8 @@ class AdminActions(BaseActions):
 class NailgunActions(BaseActions):
     """NailgunActions."""  # TODO documentation
 
-    def __init__(self):
-        super(NailgunActions, self).__init__()
+    def __init__(self, admin_remote):
+        super(NailgunActions, self).__init__(admin_remote)
         self.container = 'nailgun'
 
     def update_nailgun_settings_once(self, settings):
@@ -506,8 +461,8 @@ class NailgunActions(BaseActions):
 class PostgresActions(BaseActions):
     """PostgresActions."""  # TODO documentation
 
-    def __init__(self):
-        super(PostgresActions, self).__init__()
+    def __init__(self, admin_remote):
+        super(PostgresActions, self).__init__(admin_remote)
         self.container = 'postgres'
 
     def run_query(self, db, query):
@@ -538,8 +493,8 @@ class FuelPluginBuilder(BaseActions):
 
     Initializes BaseActions.
     """
-    def __init__(self):
-        super(FuelPluginBuilder, self).__init__()
+    def __init__(self, admin_remote):
+        super(FuelPluginBuilder, self).__init__(admin_remote)
         self.container = 'nailgun'
 
     def fpb_install(self):
@@ -607,11 +562,7 @@ class FuelPluginBuilder(BaseActions):
         """
         self.execute_in_container(
             "rm -rf {0}".format(remote_file), self.container)
-        self.ssh_manager.upload_to_remote(
-            ip=self.admin_ip,
-            source=local_file,
-            target="/tmp/temp.file"
-        )
+        self.admin_remote.upload(local_file, "/tmp/temp.file")
         self.copy_between_node_and_container(
             '/tmp/temp.file', '{0}:{1}'.format(self.container, remote_file))
 
@@ -643,8 +594,8 @@ class FuelPluginBuilder(BaseActions):
 class CobblerActions(BaseActions):
     """CobblerActions."""  # TODO documentation
 
-    def __init__(self):
-        super(CobblerActions, self).__init__()
+    def __init__(self, admin_remote):
+        super(CobblerActions, self).__init__(admin_remote)
         self.container = 'cobbler'
 
     def add_dns_upstream_server(self, dns_server_ip):
@@ -662,22 +613,18 @@ class CobblerActions(BaseActions):
 class DockerActions(object):
     """DockerActions."""  # TODO documentation
 
-    def __init__(self):
-        self.ssh_manager = SSHManager()
+    def __init__(self, admin_remote):
+        self.admin_remote = admin_remote
 
     def list_containers(self):
-        result = self.ssh_manager.execute_on_remote(
-            ip=self.ssh_manager.admin_ip,
-            cmd='dockerctl list'
-        )
-        return result['stdout']
+        return self.admin_remote.execute('dockerctl list')['stdout']
 
     def wait_for_ready_containers(self, timeout=300):
         if MASTER_IS_CENTOS7:
             return
         cont_actions = []
         for container in self.list_containers():
-            cont_action = BaseActions(self.ssh_manager)
+            cont_action = BaseActions(self.admin_remote)
             cont_action.container = container
             cont_actions.append(cont_action)
         try:
@@ -692,11 +639,8 @@ class DockerActions(object):
                 .format(failed_containers, timeout))
 
     def restart_container(self, container):
-        self.ssh_manager.execute_on_remote(
-            ip=self.ssh_manager.admin_ip,
-            cmd='dockerctl restart {0}'.format(container)
-        )
-        cont_action = BaseActions(self.ssh_manager)
+        self.admin_remote.execute('dockerctl restart {0}'.format(container))
+        cont_action = BaseActions(self.admin_remote)
         cont_action.container = container
         cont_action.wait_for_ready_container()
 
@@ -706,10 +650,8 @@ class DockerActions(object):
 
     def execute_in_containers(self, cmd):
         for container in self.list_containers():
-            self.ssh_manager.execute_on_remote(
-                ip=self.ssh_manager.admin_ip,
-                cmd="dockerctl shell {0} bash -c '{1}'".format(container, cmd)
-            )
+            self.admin_remote.execute(
+                "dockerctl shell {0} bash -c '{1}'".format(container, cmd))
 
 
 class NessusActions(object):
