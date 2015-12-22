@@ -22,10 +22,11 @@
 from proboscis.asserts import assert_equal
 
 from fuelweb_test import logwrap
+from fuelweb_test.helpers.ssh_manager import SSHManager
 
 
 @logwrap
-def configure_second_admin_dhcp(remote, interface):
+def configure_second_admin_dhcp(ip, interface):
     dhcp_conf_file = '/etc/cobbler/dnsmasq.template'
     docker_start_file = '/usr/local/bin/start.sh'
     cmd = ("dockerctl shell cobbler sed '/^interface/a interface={0}' -i {1};"
@@ -34,13 +35,16 @@ def configure_second_admin_dhcp(remote, interface):
            "dockerctl shell cobbler cobbler sync").format(interface,
                                                           dhcp_conf_file,
                                                           docker_start_file)
-    result = remote.execute(cmd)
+    result = SSHManager().execute(
+        ip=ip,
+        cmd=cmd
+    )
     assert_equal(result['exit_code'], 0, ('Failed to add second admin '
                  'network to DHCP server: {0}').format(result))
 
 
 @logwrap
-def configure_second_admin_firewall(remote, network, netmask, interface,
+def configure_second_admin_firewall(ip, network, netmask, interface,
                                     master_ip):
     # Allow input/forwarding for nodes from the second admin network and
     # enable source NAT for UDP (tftp) and HTTP (proxy server) traffic
@@ -61,15 +65,20 @@ def configure_second_admin_firewall(remote, network, netmask, interface,
 
     for rule in rules:
         cmd = 'iptables {0}'.format(rule)
-        result = remote.execute(cmd)
+        result = SSHManager().execute(
+            ip=ip,
+            cmd=cmd
+        )
         assert_equal(result['exit_code'], 0,
                      ('Failed to add firewall rule for second admin net '
                       'on master node: {0}, {1}').format(rule, result))
 
     # Save new firewall configuration
     cmd = 'service iptables save'
-    result = remote.execute(cmd)
-
+    result = SSHManager().execute(
+        ip=ip,
+        cmd=cmd
+    )
     assert_equal(result['exit_code'], 0,
                  ('Failed to save firewall configuration on master node:'
                   ' {0}').format(result))
