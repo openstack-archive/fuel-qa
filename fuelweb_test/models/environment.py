@@ -38,7 +38,6 @@ from fuelweb_test.helpers.fuel_actions import PostgresActions
 from fuelweb_test.helpers.fuel_actions import NessusActions
 from fuelweb_test.helpers.ntp import GroupNtpSync
 from fuelweb_test.helpers.ssh_manager import SSHManager
-from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.helpers import multiple_networks_hacks
 from fuelweb_test.models.fuel_web_client import FuelWebClient
@@ -372,35 +371,46 @@ class EnvironmentModel(object):
         return True
 
     def set_admin_ssh_password(self):
+        new_login = settings.SSH_CREDENTIALS['login']
+        new_password = settings.SSH_CREDENTIALS['password']
         try:
-            with self.d_env.get_admin_remote(
-                    login=settings.SSH_CREDENTIALS['login'],
-                    password=settings.SSH_CREDENTIALS['password']) as remote:
-                self.execute_remote_cmd(remote, 'date')
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd='date'
+            )
             logger.debug('Accessing admin node using SSH: SUCCESS')
         except Exception:
             logger.debug('Accessing admin node using SSH credentials:'
                          ' FAIL, trying to change password from default')
-            with self.d_env.get_admin_remote(
-                    login='root', password='r00tme') as remote:
-                self.execute_remote_cmd(
-                    remote, 'echo -e "{1}\\n{1}" | passwd {0}'
-                    .format(settings.SSH_CREDENTIALS['login'],
-                            settings.SSH_CREDENTIALS['password']))
+            self.ssh_manager.update_connection(
+                ip=self.ssh_manager.admin_ip,
+                login='root',
+                password='r00tme'
+            )
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd='echo -e "{1}\\n{1}" | passwd {0}'.format(new_login,
+                                                              new_password)
+            )
+            self.ssh_manager.update_connection(
+                ip=self.ssh_manager.admin_ip,
+                login=new_login,
+                password=new_password
+            )
             logger.debug("Admin node password has changed.")
         logger.info("Admin node login name: '{0}' , password: '{1}'".
-                    format(settings.SSH_CREDENTIALS['login'],
-                           settings.SSH_CREDENTIALS['password']))
+                    format(new_login, new_password))
 
     def set_admin_keystone_password(self):
         try:
             self.fuel_web.client.get_releases()
         # TODO(akostrikov) CENTOS7 except exceptions.Unauthorized:
         except:
-            with self.d_env.get_admin_remote() as remote:
-                self.execute_remote_cmd(
-                    remote, 'fuel user --newpass {0} --change-password'
-                    .format(settings.KEYSTONE_CREDS['password']))
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd='fuel user --newpass {0} --change-password'.format(
+                    settings.KEYSTONE_CREDS['password'])
+            )
             logger.info(
                 'New Fuel UI (keystone) username: "{0}", password: "{1}"'
                 .format(settings.KEYSTONE_CREDS['username'],
@@ -461,8 +471,11 @@ class EnvironmentModel(object):
                            "temporary-{0}\nbaseurl={1}/"
                            "\ngpgcheck=0\npriority="
                            "1' > {2}").format(i, url, conf_file)
-                    with self.d_env.get_admin_remote() as remote:
-                        remote.execute(cmd)
+
+                    self.ssh_manager.execute_on_remote(
+                        ip=self.ssh_manager.admin_ip,
+                        cmd=cmd
+                    )
             self.admin_install_updates()
         if settings.MULTIPLE_NETWORKS:
             self.describe_second_admin_interface()
@@ -479,11 +492,13 @@ class EnvironmentModel(object):
                 settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
             ))
         if settings.PATCHING_DISABLE_UPDATES:
-            with self.d_env.get_admin_remote() as remote:
-                cmd = "find /etc/yum.repos.d/ -type f -regextype posix-egrep" \
-                      " -regex '.*/mos[0-9,\.]+\-(updates|security).repo' | " \
-                      "xargs -n1 -i sed '$aenabled=0' -i {}"
-                self.execute_remote_cmd(remote, cmd)
+            cmd = "find /etc/yum.repos.d/ -type f -regextype posix-egrep" \
+                  " -regex '.*/mos[0-9,\.]+\-(updates|security).repo' | " \
+                  "xargs -n1 -i sed '$aenabled=0' -i {}"
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
 
     @update_rpm_packages
     @upload_manifests
@@ -501,21 +516,30 @@ class EnvironmentModel(object):
     @logwrap
     def wait_for_external_config(self, timeout=120):
         check_cmd = 'pkill -0 -f wait_for_external_config'
-        with self.d_env.get_admin_remote() as remote:
-            if MASTER_IS_CENTOS7:
-                remote.execute(check_cmd)
-            else:
-                wait(
-                    lambda: remote.execute(check_cmd)['exit_code'] == 0,
-                    timeout=timeout)
+
+        if MASTER_IS_CENTOS7:
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=check_cmd
+            )
+        else:
+            wait(
+                lambda: self.ssh_manager.execute_on_remote(
+                    ip=self.ssh_manager.admin_ip,
+                    cmd=check_cmd)['exit_code'] == 0, timeout=timeout)
 
     @logwrap
     def kill_wait_for_external_config(self):
         kill_cmd = 'pkill -f "^wait_for_external_config"'
         check_cmd = 'pkill -0 -f "^wait_for_external_config"; [[ $? -eq 1 ]]'
-        with self.d_env.get_admin_remote() as remote:
-            run_on_remote(remote, kill_cmd)
-            run_on_remote(remote, check_cmd)
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=kill_cmd
+        )
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=check_cmd
+        )
 
     @retry(count=3, delay=60)
     def sync_time(self, nailgun_nodes=None):
@@ -550,17 +574,19 @@ class EnvironmentModel(object):
         log_path = "/var/log/puppet/bootstrap_admin_node.log"
         logger.info("Puppet timeout set in {0}".format(
             float(settings.PUPPET_TIMEOUT)))
-        with self.d_env.get_admin_remote() as admin_remote:
-            wait(
-                lambda: not
-                admin_remote.execute(
-                    "grep 'Fuel node deployment' '%s'" % log_path
-                )['exit_code'],
-                timeout=(float(settings.PUPPET_TIMEOUT))
-            )
-            result = admin_remote.execute(
-                "grep 'Fuel node deployment "
-                "complete' '%s'" % log_path)['exit_code']
+
+        wait(
+            lambda: not
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd="grep 'Fuel node deployment' '%s'" % log_path
+            )['exit_code'],
+            timeout=(float(settings.PUPPET_TIMEOUT))
+        )
+        result = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd="grep 'Fuel node deployment complete'"
+                " '{0}'".format(log_path))['exit_code']
         if result != 0:
             raise Exception('Fuel node deployment failed.')
         self.bootstrap_image_check()
@@ -573,8 +599,11 @@ class EnvironmentModel(object):
                   "--ifaces {iface} " \
                   "--repeat 3 " \
                   "--timeout 10".format(iface=iface)
-        with self.d_env.get_admin_remote() as admin_remote:
-            out = admin_remote.execute(command)['stdout']
+
+        out = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=command
+        )['stdout']
 
         assert_true(self.get_admin_node_ip() in "".join(out),
                     "dhcpcheck doesn't discover master ip")
@@ -585,36 +614,46 @@ class EnvironmentModel(object):
             logger.warning('Default image for bootstrap '
                            'is not based on Ubuntu!')
             return
-        with self.d_env.get_admin_remote() as admin_remote:
-            cmd = 'fuel-bootstrap --quiet list'
-            bootstrap_images = run_on_remote(admin_remote, cmd)
-            assert_true(any('active' in line for line in bootstrap_images),
-                        'Ubuntu bootstrap image wasn\'t built and activated! '
-                        'See logs in /var/log/fuel-bootstrap-image-build.log '
-                        'for details.')
+
+        bootstrap_images = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='fuel-bootstrap --quiet list'
+        )
+        assert_true(any('active' in line for line in bootstrap_images),
+                    'Ubuntu bootstrap image wasn\'t built and activated! '
+                    'See logs in /var/log/fuel-bootstrap-image-build.log '
+                    'for details.')
 
     def admin_install_pkg(self, pkg_name):
         """Install a package <pkg_name> on the admin node"""
-        with self.d_env.get_admin_remote() as remote:
-            remote_status = remote.execute("rpm -q {0}'".format(pkg_name))
-            if remote_status['exit_code'] == 0:
-                logger.info("Package '{0}' already installed."
-                            .format(pkg_name))
-            else:
-                logger.info("Installing package '{0}' ...".format(pkg_name))
-                remote_status = remote.execute("yum -y install {0}"
-                                               .format(pkg_name))
-                logger.info("Installation of the package '{0}' has been"
-                            " completed with exit code {1}"
-                            .format(pkg_name, remote_status['exit_code']))
+        remote_status = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd="rpm -q {0}'".format(pkg_name)
+        )
+        if remote_status['exit_code'] == 0:
+            logger.info("Package '{0}' already installed.".format(pkg_name))
+        else:
+            logger.info("Installing package '{0}' ...".format(pkg_name))
+            remote_status = self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd="yum -y install {0}".format(pkg_name)
+            )
+            logger.info("Installation of the package '{0}' has been"
+                        " completed with exit code {1}"
+                        .format(pkg_name, remote_status['exit_code']))
         return remote_status['exit_code']
 
     def admin_run_service(self, service_name):
         """Start a service <service_name> on the admin node"""
-        with self.d_env.get_admin_remote() as admin_remote:
-            admin_remote.execute("service {0} start".format(service_name))
-            remote_status = admin_remote.execute("service {0} status"
-                                                 .format(service_name))
+
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd="service {0} start".format(service_name)
+        )
+        remote_status = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd="service {0} status".format(service_name)
+        )
         if any('running...' in status for status in remote_status['stdout']):
             logger.info("Service '{0}' is running".format(service_name))
         else:
@@ -630,8 +669,12 @@ class EnvironmentModel(object):
     def admin_install_updates(self):
         logger.info('Searching for updates..')
         update_command = 'yum clean expire-cache; yum update -y'
-        with self.d_env.get_admin_remote() as admin_remote:
-            update_result = admin_remote.execute(update_command)
+
+        update_result = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=update_command
+        )
+
         logger.info('Result of "{1}" command on master node: '
                     '{0}'.format(update_result, update_command))
         assert_equal(int(update_result['exit_code']), 0,
@@ -655,8 +698,11 @@ class EnvironmentModel(object):
         logger.info('{0} packet(s) were updated'.format(updates_count))
 
         cmd = 'dockerctl destroy all; bootstrap_admin_node.sh;'
-        with self.d_env.get_admin_remote() as admin_remote:
-            result = admin_remote.execute(cmd)
+
+        result = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd
+        )
         logger.info('Result of "{1}" command on master node: '
                     '{0}'.format(result, cmd))
         assert_equal(int(result['exit_code']), 0,
@@ -670,24 +716,28 @@ class EnvironmentModel(object):
     def modify_resolv_conf(self, nameservers=None, merge=True):
         if nameservers is None:
             nameservers = []
-        with self.d_env.get_admin_remote() as remote:
-            resolv_conf = remote.execute('cat /etc/resolv.conf')
-            assert_equal(0, resolv_conf['exit_code'], 'Executing "{0}" on the '
-                         'admin node has failed with: {1}'
-                         .format('cat /etc/resolv.conf',
-                                 resolv_conf['stderr']))
-            if merge:
-                nameservers.extend(resolv_conf['stdout'])
 
-            resolv_keys = ['search', 'domain', 'nameserver']
-            resolv_new = "".join('{0}\n'.format(ns) for ns in nameservers
-                                 if any(x in ns for x in resolv_keys))
-            logger.debug('echo "{0}" > /etc/resolv.conf'.format(resolv_new))
-            echo_cmd = 'echo "{0}" > /etc/resolv.conf'.format(resolv_new)
-            echo_result = remote.execute(echo_cmd)
-            assert_equal(0, echo_result['exit_code'], 'Executing "{0}" on the '
-                         'admin node has failed with: {1}'
-                         .format(echo_cmd, echo_result['stderr']))
+        resolv_conf = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='cat /etc/resolv.conf'
+        )
+        assert_equal(0, resolv_conf['exit_code'],
+                     'Executing "{0}" on the admin node has failed with: {1}'
+                     .format('cat /etc/resolv.conf', resolv_conf['stderr']))
+        if merge:
+            nameservers.extend(resolv_conf['stdout'])
+        resolv_keys = ['search', 'domain', 'nameserver']
+        resolv_new = "".join('{0}\n'.format(ns) for ns in nameservers
+                             if any(x in ns for x in resolv_keys))
+        logger.debug('echo "{0}" > /etc/resolv.conf'.format(resolv_new))
+        echo_cmd = 'echo "{0}" > /etc/resolv.conf'.format(resolv_new)
+        echo_result = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=echo_cmd
+        )
+        assert_equal(0, echo_result['exit_code'],
+                     'Executing "{0}" on the admin node has failed with: {1}'
+                     .format(echo_cmd, echo_result['stderr']))
         return resolv_conf['stdout']
 
     @logwrap
@@ -727,17 +777,27 @@ class EnvironmentModel(object):
             add_second_admin_ip, second_admin_if, second_admin_ip)
         logger.debug('Trying to assign {0} IP to the {1} on master node...'.
                      format(second_admin_ip, second_admin_if))
-        with self.d_env.get_admin_remote() as remote:
-            result = remote.execute(cmd)
+
+        result = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd
+        )
         assert_equal(result['exit_code'], 0, ('Failed to assign second admin '
                      'IP address on master node: {0}').format(result))
         logger.debug('Done: {0}'.format(result['stdout']))
-        with self.d_env.get_admin_remote() as remote:
-            multiple_networks_hacks.configure_second_admin_dhcp(
-                remote, second_admin_if)
-            multiple_networks_hacks.configure_second_admin_firewall(
-                remote, second_admin_network, second_admin_netmask,
-                second_admin_if, self.get_admin_node_ip())
+
+        # TODO for ssh manager
+        multiple_networks_hacks.configure_second_admin_dhcp(
+            self.ssh_manager.admin_ip,
+            second_admin_if
+        )
+        multiple_networks_hacks.configure_second_admin_firewall(
+            self.ssh_manager.admin_ip,
+            second_admin_network,
+            second_admin_netmask,
+            second_admin_if,
+            self.get_admin_node_ip()
+        )
 
     @logwrap
     def get_masternode_uuid(self):

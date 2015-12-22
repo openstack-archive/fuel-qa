@@ -30,7 +30,7 @@ from proboscis.asserts import assert_true
 
 from fuelweb_test import logger
 from fuelweb_test import settings
-
+from fuelweb_test.helpers.ssh_manager import SSHManager
 
 patching_validation_schema = {
     'type': {
@@ -304,9 +304,13 @@ def connect_slaves_to_repo(environment, nodes, repo_name):
         ]
 
     for slave in nodes:
-        with environment.d_env.get_ssh_to_remote(slave['ip']) as remote:
-            for cmd in cmds:
-                environment.execute_remote_cmd(remote, cmd, exit_code=0)
+        for cmd in cmds:
+            res_ec = SSHManager().execute_on_remote(
+                ip=slave['ip'],
+                cmd=cmd
+            )['exit_code']
+            assert_equal(res_ec, 0, 'Expected code 0  actual {ec} '
+                                    'for "{cmd}"'.format(ec=res_ec, cmd=cmd))
 
 
 def connect_admin_to_repo(environment, repo_name):
@@ -328,9 +332,13 @@ def connect_admin_to_repo(environment, repo_name):
         "yum check-update; [[ $? -eq 100 || $? -eq 0 ]]"
     ]
 
-    with environment.d_env.get_admin_remote() as remote:
-        for cmd in cmds:
-            environment.execute_remote_cmd(remote, cmd, exit_code=0)
+    for cmd in cmds:
+        res_ec = SSHManager().execute_on_remote(
+            ip=SSHManager().admin_ip,
+            cmd=cmd
+        )['exit_code']
+        assert_equal(res_ec, 0, 'Expected code 0  actual {ec} '
+                                'for "{cmd}"'.format(ec=res_ec, cmd=cmd))
 
 
 def update_packages(environment, remote, packages, exclude_packages=None):

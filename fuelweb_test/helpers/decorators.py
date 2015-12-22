@@ -33,6 +33,7 @@ from proboscis.asserts import assert_equal
 
 from fuelweb_test import logger
 from fuelweb_test import settings
+from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test.helpers.regenerate_repo import CustomRepo
 from fuelweb_test.helpers.utils import get_current_env
@@ -209,19 +210,35 @@ def update_rpm_packages(func):
             cmd = ("echo -e '[temporary]\nname=temporary\nbaseurl=file://{0}/"
                    "\ngpgcheck=0\npriority=1' > {1}").format(
                 settings.LOCAL_MIRROR_CENTOS, conf_file)
-            with environment.d_env.get_admin_remote() as remote:
-                environment.execute_remote_cmd(remote, cmd, exit_code=0)
-                update_command = 'yum clean expire-cache; yum update -y -d3'
-                result = remote.execute(update_command)
-                logger.debug('Result of "yum update" command on master node: '
-                             '{0}'.format(result))
-                assert_equal(int(result['exit_code']), 0,
-                             'Packages update failed, '
-                             'inspect logs for details')
-                environment.execute_remote_cmd(remote,
-                                               cmd='rm -f {0}'
-                                               .format(conf_file),
-                                               exit_code=0)
+
+            result_ec = SSHManager().execute_on_remote(
+                ip=SSHManager().admin_ip,
+                cmd=cmd
+            )['exit_code']
+            assert_equal(result_ec, 0,
+                         'Expected code 0  actual {ec} for "{cmd}"'.format(
+                             ec=result_ec, cmd=cmd
+                         ))
+            update_command = 'yum clean expire-cache; yum update -y -d3'
+            SSHManager().execute_on_remote(
+                ip=SSHManager().admin_ip,
+                cmd=update_command
+            )
+            logger.debug('Result of "yum update" command on master node: '
+                         '{0}'.format(result))
+            assert_equal(int(result['exit_code']), 0,
+                         'Packages update failed, '
+                         'inspect logs for details')
+
+            result_ec = SSHManager().execute_on_remote(
+                ip=SSHManager().admin_ip,
+                cmd='rm -f {0}'.format(conf_file)
+            )['exit_code']
+
+            assert_equal(result_ec, 0,
+                         'Expected code 0  actual {ec} for "{cmd}"'.format(
+                             ec=result_ec, cmd='rm -f {0}'.format(conf_file)
+                         ))
         except Exception:
             logger.error("Could not update packages")
             raise

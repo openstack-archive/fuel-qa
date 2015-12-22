@@ -104,6 +104,23 @@ class SSHManager(object):
         logger.debug('SSH_MANAGER: Connections {0}'.format(self.connections))
         return self._connect(self.connections[(ip, port)])
 
+    def update_connection(self, ip, login=None, password=None,
+                          keys=[], port=22):
+        if (ip, port) in self.connections:
+            logger.info('SSH_MANAGER:Close connection for {ip}:{port}'.format(
+                ip=ip, port=port))
+            self.connections[(ip, port)].clear()
+            logger.info('SSH_MANAGER:Create new connection for '
+                        '{ip}:{port}'.format(ip=ip, port=port))
+
+            self.connections[(ip, port)] = SSHClient(
+                host=ip,
+                port=port,
+                username=login,
+                password=password,
+                private_keys=keys
+            )
+
     def execute_on_remote(self, ip, cmd, port=22):
         remote = self._get_remote(ip=ip, port=port)
         return remote.execute(cmd)
