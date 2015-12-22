@@ -765,7 +765,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             1. Create cluster. Set install Ceilometer, external Mongo option
             2. Add 3 node with controller role
             3. Add 1 nodes with compute and ceph roles
-            4. Add 1 node with ceph role
+            4. Add 2 nodes with ceph role
             5. Deploy the cluster
             6. Verify ceilometer api is running
             7. Run OSTF
@@ -776,6 +776,8 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
         """
 
         self.env.revert_snapshot("ready_with_5_slaves")
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[5:6],
+                                 skip_timesync=True)
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -806,7 +808,8 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
                 'slave-02': ['controller'],
                 'slave-03': ['controller'],
                 'slave-04': ['compute', 'ceph-osd'],
-                'slave-05': ['ceph-osd']
+                'slave-05': ['ceph-osd'],
+                'slave-06': ['ceph-osd']
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)

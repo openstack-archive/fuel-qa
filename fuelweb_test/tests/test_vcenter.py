@@ -513,6 +513,7 @@ class VcenterDeploy(TestBasic):
                 compute
                 ceph-osd
                 ceph-osd
+                ceph-osd
             5. Assign vCenter cluster(s) to:
                 controller
             6. Deploy the cluster
@@ -543,6 +544,7 @@ class VcenterDeploy(TestBasic):
                 'slave-02': ['compute'],
                 'slave-03': ['ceph-osd'],
                 'slave-04': ['ceph-osd'],
+                'slave-05': ['ceph-osd'],
             }
         )
 
@@ -571,6 +573,7 @@ class VcenterDeploy(TestBasic):
                 compute-vmware
                 compute-vmware
                 compute
+                ceph-osd
                 ceph-osd
                 ceph-osd
             5. Assign vCenter cluster(s) to:
@@ -603,7 +606,8 @@ class VcenterDeploy(TestBasic):
                 'slave-03': ['compute-vmware'],
                 'slave-04': ['compute'],
                 'slave-05': ['ceph-osd'],
-                'slave-06': ['ceph-osd']
+                'slave-06': ['ceph-osd'],
+                'slave-07': ['ceph-osd'],
             }
         )
 
@@ -637,6 +641,7 @@ class VcenterDeploy(TestBasic):
             4. Add nodes with following roles:
                 controller + cinder-vmware + ceph-osd
                 compute + cinderVMDK + ceph-osd
+                compute + cinderVMDK + ceph-osd
             5. Assign vCenter cluster(s) to:
                 controller
             6. Deploy the cluster
@@ -661,8 +666,11 @@ class VcenterDeploy(TestBasic):
         # Assign roles to nodes
         self.fuel_web.update_nodes(
             cluster_id,
-            {'slave-01': ['controller', 'cinder-vmware', 'ceph-osd'],
-             'slave-02': ['compute', 'cinder-vmware', 'ceph-osd']})
+            {
+                'slave-01': ['controller', 'cinder-vmware', 'ceph-osd'],
+                'slave-02': ['compute', 'cinder-vmware', 'ceph-osd'],
+                'slave-03': ['compute', 'cinder-vmware', 'ceph-osd'],
+            })
 
         self.configure_nova_vlan(cluster_id)
 
@@ -1523,6 +1531,7 @@ class VcenterDeploy(TestBasic):
                 'slave-03': ['controller'],
                 'slave-04': ['ceph-osd'],
                 'slave-05': ['ceph-osd'],
+                'slave-08': ['ceph-osd'],
                 'slave-06': ['compute'],
                 'slave-07': ['compute-vmware']
             }
@@ -1557,6 +1566,7 @@ class VcenterDeploy(TestBasic):
                 controller
                 controller
                 ceph-osd + cinder
+                ceph-osd + cinder
                 ceph-osd + cinder-vmware
             5. Assign vCenter cluster(s) to:
                 controller
@@ -1588,6 +1598,7 @@ class VcenterDeploy(TestBasic):
                 'slave-02': ['controller'],
                 'slave-03': ['controller'],
                 'slave-04': ['ceph-osd', 'cinder'],
+                'slave-06': ['ceph-osd', 'cinder'],
                 'slave-05': ['ceph-osd', 'cinder-vmware']
             }
         )
@@ -1674,7 +1685,7 @@ class VcenterDeploy(TestBasic):
             3. Set Ceph as storage backend
             4. Add nodes with following roles:
                 controller
-                controller
+                controller + ceph-osd
                 controller + ceph-osd + cinder-vmware
                 compute + ceph-osd + cinder-vmware
                 compute-vmware
@@ -1706,7 +1717,7 @@ class VcenterDeploy(TestBasic):
             cluster_id,
             {
                 'slave-01': ['controller'],
-                'slave-02': ['controller'],
+                'slave-02': ['controller', 'ceph-osd'],
                 'slave-03': ['controller', 'ceph-osd', 'cinder-vmware'],
                 'slave-04': ['compute', 'ceph-osd', 'cinder-vmware'],
                 'slave-05': ['compute-vmware']

@@ -146,7 +146,7 @@ class CephCompact(TestBasic):
 class CephCompactWithCinder(TestBasic):
     """CephCompactWithCinder."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_release],
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["ceph_ha_one_controller_with_cinder"])
     @log_snapshot_after_test
     def ceph_ha_one_controller_with_cinder(self):
@@ -156,7 +156,7 @@ class CephCompactWithCinder(TestBasic):
             1. Create cluster
             2. Add 1 node with controller role
             3. Add 1 node with compute role
-            4. Add 2 nodes with cinder and ceph OSD roles
+            4. Add 3 nodes with cinder and ceph OSD roles
             5. Deploy the cluster
             6. Check ceph status
             7. Check partitions on controller node
@@ -169,9 +169,7 @@ class CephCompactWithCinder(TestBasic):
         except SkipTest:
             return
 
-        self.env.revert_snapshot("ready")
-        self.env.bootstrap_nodes(
-            self.env.d_env.nodes().slaves[:4])
+        self.env.revert_snapshot("ready_with_5_slaves")
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -191,7 +189,8 @@ class CephCompactWithCinder(TestBasic):
                 'slave-01': ['controller'],
                 'slave-02': ['compute'],
                 'slave-03': ['cinder', 'ceph-osd'],
-                'slave-04': ['cinder', 'ceph-osd']
+                'slave-04': ['cinder', 'ceph-osd'],
+                'slave-05': ['cinder', 'ceph-osd']
             }
         )
         # Cluster deploy
@@ -802,7 +801,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
             1. Create cluster in Ha mode with 1 controller
             2. Add 1 node with controller role
             3. Add 1 node with compute and Ceph OSD roles
-            4. Add 1 node with Ceph OSD role
+            4. Add 2 nodes with Ceph OSD role
             5. Deploy the cluster
             6. Check Ceph status
             7. Read current partitions
@@ -818,6 +817,8 @@ class CheckCephPartitionsAfterReboot(TestBasic):
 
         """
         self.env.revert_snapshot("ready_with_3_slaves")
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[3:4],
+                                 skip_timesync=True)
 
         self.show_step(1)
 
@@ -840,7 +841,8 @@ class CheckCephPartitionsAfterReboot(TestBasic):
             {
                 'slave-01': ['controller'],
                 'slave-02': ['compute', 'ceph-osd'],
-                'slave-03': ['ceph-osd']
+                'slave-03': ['ceph-osd'],
+                'slave-04': ['ceph-osd']
             }
         )
 
@@ -849,7 +851,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.show_step(6)
-        for node in ["slave-02", "slave-03"]:
+        for node in ["slave-02", "slave-03", "slave-04"]:
 
             self.show_step(7, node)
             logger.info("Get partitions for {node}".format(node=node))
