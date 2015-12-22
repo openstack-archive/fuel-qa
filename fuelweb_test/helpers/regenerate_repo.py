@@ -246,7 +246,7 @@ class CustomRepo(object):
                        .format(pkgs_local_path + path_suff,
                                self.custom_pkgs_mirror,
                                pkg["filename:"])
-            wget_result = self.ssh_manager.execute_on_remote(
+            wget_result = self.ssh_manager.execute(
                 ip=self.ip,
                 cmd=wget_cmd
             )
@@ -278,7 +278,7 @@ class CustomRepo(object):
                                               regenerate_script,
                                               local_mirror_path,
                                               self.ubuntu_release)
-        script_result = self.ssh_manager.execute_on_remote(
+        script_result = self.ssh_manager.execute(
             ip=self.ip,
             cmd=script_cmd
         )
@@ -316,7 +316,7 @@ class CustomRepo(object):
         cmd = ('fgrep -h -e " Depends: " -e "{0}" -e "{1}" '
                '/var/log/docker-logs/remote/node-*/'
                'puppet*.log'.format(err_start, err_end))
-        result = self.ssh_manager.execute_on_remote(
+        result = self.ssh_manager.execute(
             ip=self.ip,
             cmd=cmd
         )['stdout']
@@ -356,7 +356,7 @@ class CustomRepo(object):
 
         cmd = ('fgrep -h -e "Error: Package: " -e " Requires: " /var/log/'
                'docker-logs/remote/node-*/puppet*.log')
-        result = self.ssh_manager.execute_on_remote(
+        result = self.ssh_manager.execute(
             ip=self.ip,
             cmd=cmd
         )['stdout']
