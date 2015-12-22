@@ -54,7 +54,7 @@ class HaVlanGroup4(TestBasic):
 
         self.env.revert_snapshot("ready_with_9_slaves")
 
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.show_step(2)
 
         cluster_id = self.fuel_web.create_cluster(
@@ -145,7 +145,7 @@ class HaVlanGroup4(TestBasic):
             'password': 'hagroup4'
         }
 
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.show_step(2)
         self.show_step(3)
         self.show_step(4)

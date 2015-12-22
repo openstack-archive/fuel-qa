@@ -53,7 +53,7 @@ class HaVlanGroup3(TestBasic):
             'images_ceph': False
         }
 
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.show_step(2)
         self.show_step(3)
 
@@ -129,7 +129,7 @@ class HaVlanGroup3(TestBasic):
             'user': 'hagroup3'
         }
 
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.show_step(2)
         self.show_step(3)
         self.show_step(4)

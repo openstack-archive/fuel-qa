@@ -718,7 +718,7 @@ class ServicesReconfiguration(TestBasic):
         Snapshot "reconfiguration_scalability"
         """
 
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("reconfigure_nova_ephemeral_disk")
 
         self.show_step(2)

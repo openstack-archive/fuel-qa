@@ -54,7 +54,7 @@ class HaScaleGroup5(TestBasic):
 
         self.env.revert_snapshot('ready_with_9_slaves')
 
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         data = {
             'volumes_lvm': True,
             'volumes_ceph': False,
@@ -199,7 +199,7 @@ class HaScaleGroup5(TestBasic):
             "net_segment_type": settings.NEUTRON_SEGMENT['tun']
         }
 
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             settings=data
