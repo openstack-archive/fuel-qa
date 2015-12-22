@@ -15,6 +15,7 @@
 import os
 import posixpath
 import re
+import json
 
 from paramiko import RSAKey
 from devops.models.node import SSHClient
@@ -104,9 +105,111 @@ class SSHManager(object):
         logger.debug('SSH_MANAGER: Connections {0}'.format(self.connections))
         return self._connect(self.connections[(ip, port)])
 
-    def execute_on_remote(self, ip, cmd, port=22):
+    def update_connection(self, ip, login=None, password=None,
+                          keys=None, port=22):
+        """Update existed connection
+
+        :param ip: host ip string
+        :param login: login string
+        :param password: password string
+        :param keys: list of keys
+        :param port: ssh port int
+        :return: None
+        """
+        if (ip, port) in self.connections:
+            logger.info('SSH_MANAGER:Close connection for {ip}:{port}'.format(
+                ip=ip, port=port))
+            self.connections[(ip, port)].clear()
+            logger.info('SSH_MANAGER:Create new connection for '
+                        '{ip}:{port}'.format(ip=ip, port=port))
+
+            self.connections[(ip, port)] = SSHClient(
+                host=ip,
+                port=port,
+                username=login,
+                password=password,
+                private_keys=keys if keys is not None else []
+            )
+
+    def execute(self, ip, cmd, port=22):
         remote = self._get_remote(ip=ip, port=port)
         return remote.execute(cmd)
+
+    def check_call(self, ip, cmd, port=22, verbose=False):
+        remote = self._get_remote(ip=ip, port=port)
+        return remote.check_call(cmd, verbose)
+
+    def execute_on_remote(self, ip, cmd, port=22, err_msg=None,
+                          jsonify=False, assert_ec_equal=None,
+                          raise_on_assert=True):
+        """Execute ``cmd`` on ``remote`` and return result.
+
+        :param ip: ip of host
+        :param port: ssh port
+        :param cmd: command to execute on remote host
+        :param err_msg: custom error message
+        :param assert_ec_equal: list of expected exit_code
+        :param raise_on_assert: Boolean
+        :return: dict
+        :raise: Exception
+        """
+        if assert_ec_equal is None:
+            assert_ec_equal = [0]
+        result = self.execute(ip=ip, port=port, cmd=cmd)
+        if result['exit_code'] not in assert_ec_equal:
+            error_details = {
+                'command': cmd,
+                'host': ip,
+                'stdout': result['stdout'],
+                'stderr': result['stderr'],
+                'exit_code': result['exit_code']}
+
+            error_msg = (err_msg or "Unexpected exit_code returned:"
+                                    " actual {0}, expected {1}."
+                         .format(error_details['exit_code'],
+                                 ' '.join(map(str, assert_ec_equal))))
+            log_msg = ("{0}  Command: '{1}'  "
+                       "Details: {2}".format(error_msg, cmd, error_details))
+            logger.error(log_msg)
+            if raise_on_assert:
+                raise Exception(log_msg)
+
+        result['stdout_str'] = ''.join(result['stdout'])
+        result['stdout_len'] = len(result['stdout'])
+        result['stderr_str'] = ''.join(result['stderr'])
+        result['stderr_len'] = len(result['stderr'])
+
+        if jsonify:
+            try:
+                result['stdout_json'] = \
+                    self._json_deserialize(result['stdout_str'])
+            except Exception:
+                error_msg = (
+                    "Unable to deserialize output of command"
+                    " '{0}' on host {1}".format(cmd, ip))
+                logger.error(error_msg)
+                raise Exception(error_msg)
+
+        return result
+
+    def _json_deserialize(self, json_string):
+        """ Deserialize json_string and return object
+
+        :param json_string: string or list with json
+        :return: obj
+        :raise: Exception
+        """
+        if isinstance(json_string, list):
+            json_string = ''.join(json_string)
+
+        try:
+            obj = json.loads(json_string)
+        except Exception:
+            log_msg = "Unable to deserialize"
+            logger.error("{0}. Actual string:\n{1}".format(log_msg,
+                                                           json_string))
+            raise Exception(log_msg)
+        return obj
 
     def open_on_remote(self, ip, path, mode='r', port=22):
         remote = self._get_remote(ip=ip, port=port)
