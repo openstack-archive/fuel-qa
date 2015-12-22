@@ -510,3 +510,23 @@ class OpenStackActions(common.Common):
         if kwargs:
             body['network'].update(kwargs)
         return self.neutron.create_network(body)
+
+    def create_subnet(self, subnet_name, network_id, cidr, ip_version=4):
+        body = {"subnet": {"name": subnet_name, "network_id": network_id,
+                           "ip_version": ip_version, "cidr": cidr}}
+        subnet = self.neutron.create_subnet(body)
+        return subnet['subnet']
+
+    def get_router_by_name(self, router_name):
+        router_list = self.neutron.list_routers()
+        for router in router_list['routers']:
+            if router['name'] == router_name:
+                return router
+        return None
+
+    def add_router_interface(self, router_id, subnet_id, port_id=None):
+        body = {"router_id": router_id, "subnet_id": subnet_id}
+        if port_id:
+            body["port_id"] = port_id
+        self.neutron.add_interface_router(router_id, body)
+        return None
