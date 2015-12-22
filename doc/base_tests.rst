@@ -177,6 +177,16 @@ Test Reduced Footprint
 .. automodule:: fuelweb_test.tests.test_reduced_footprint
    :members:
 
+Test scale group 1 (add controllers with stop and add ceph nodes with stop)
+-------------------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_scale.test_scale_group_1
+   :members:
+
+Test scale group 2 (replace primary controller and remove 2 controllers)
+-------------------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_scale.test_scale_group_2
+   :members:
+
 Test scale group 3 (add/delete compute and add/delete cinder)
 -------------------------------------------------------------
 .. automodule:: fuelweb_test.tests.tests_scale.test_scale_group_3
