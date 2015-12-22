@@ -32,16 +32,23 @@ class TestBasic(object):
     Initializes EnvironmentModel and FuelWebModel.
 
     """
+    _env = None
+
     def __init__(self):
         self._current_log_step = 0
         self.ssh_manager = SSHManager()
-        self.env = EnvironmentModel()
 
     @property
     def test_program(self):
         if not hasattr(self, '_test_program'):
             self._test_program = TestProgram()
         return self._test_program
+
+    @property
+    def env(self):
+        if self._env is None:
+            self._env = EnvironmentModel()
+        return self._env
 
     @property
     def fuel_web(self):
