@@ -34,9 +34,9 @@ class TestBasic(object):
     """
     def __init__(self):
         self.ssh_manager = SSHManager()
-        self.env = EnvironmentModel()
+        self.__env = None
         self.__current_log_step = 0
-        self._test_program = None
+        self.__test_program = None
 
     @property
     def current_log_step(self):
@@ -48,9 +48,15 @@ class TestBasic(object):
 
     @property
     def test_program(self):
-        if self._test_program is None:
-            self._test_program = TestProgram()
-        return self._test_program
+        if self.__test_program is None:
+            self.__test_program = TestProgram()
+        return self.__test_program
+
+    @property
+    def env(self):
+        if self.__env is None:
+            self.__env = EnvironmentModel()
+        return self.__env
 
     @property
     def fuel_web(self):
