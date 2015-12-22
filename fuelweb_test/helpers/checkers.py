@@ -172,8 +172,7 @@ def check_ceph_image_size(remote, expected_size, device='vdc'):
                      remote.check_call("df -m")))
         raise Exception
     logger.debug("Partitions: {part}".format(part=ret))
-    assert_true(abs(float(ret[0].rstrip()) / float(expected_size)
-                    - 1) < 0.1,
+    assert_true(abs(float(ret[0].rstrip()) / float(expected_size) - 1) < 0.1,
                 "size {0} is not equal"
                 " to {1}".format(ret[0].rstrip(),
                                  expected_size))
@@ -183,8 +182,7 @@ def check_ceph_image_size(remote, expected_size, device='vdc'):
 def check_cinder_image_size(remote, expected_size, device='vdc3'):
     ret = get_mongo_partitions(remote, device)[0].rstrip().rstrip('G')
     cinder_size = float(ret) * 1024
-    assert_true(abs(cinder_size / float(expected_size)
-                    - 1) < 0.1,
+    assert_true(abs(cinder_size / float(expected_size) - 1) < 0.1,
                 "size {0} is not equal"
                 " to {1}".format(ret[0].rstrip(),
                                  expected_size))
