@@ -54,7 +54,7 @@ class PrepareBase(base_actions_factory.BaseActionsFactory):
         self.config_name = config['template']['name']
 
         if 'devops_settings' in config['template']:
-            self.env._config = config
+            self.devops_config = config
 
     def _start_case(self):
         """Start test case"""
