@@ -14,7 +14,9 @@
 
 from proboscis import test
 
-from gates_tests.helpers.utils import replace_bootstrap
+# from gates_tests.helpers.utils import patch_centos_bootstrap
+# from gates_tests.helpers.utils import replace_centos_bootstrap
+from gates_tests.helpers.utils import patch_and_assemble_ubuntu_bootstrap
 from gates_tests.helpers.utils import replace_fuel_agent_rpm
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -59,7 +61,12 @@ class Gate(TestBasic):
         replace_fuel_agent_rpm(self.env)
 
         self.show_step(3)
-        replace_bootstrap(self.env)
+        # Uncomment when use CentOS bootstrap by default
+        # patch_centos_bootstrap(self.env)
+        # replace_centos_bootstrap(self.env)
+
+        # Comment and disable when use CentOS bootstrap by default
+        patch_and_assemble_ubuntu_bootstrap(self.env)
 
         self.show_step(4)
         self.env.bootstrap_nodes(
