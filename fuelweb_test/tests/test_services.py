@@ -896,7 +896,8 @@ class HeatHAOneController(TestBasic):
                        'test_advanced_actions',
                        'test_autoscaling',
                        'test_rollback',
-                       'test_update']
+                       'test_update',
+                       'test_wait_condition']
 
         test_classes = []
 
