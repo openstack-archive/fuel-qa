@@ -1,9 +1,9 @@
 ---
 template:
- name: 3 controllers, 1 compute + cinder, 1 compute-vmware on Neutron/VLAN with DVS plugin
+ name: 3 controllers, 1 compute + cinder, 1 cinder-vmware, 1 compute-vmware on Neutron/VLAN with DVS plugin
  slaves: 6
  cluster_template:
-  name: vcenter_add_cindervmware
+  name: vcenter_delete_cindervmware
   release: ubuntu
   network:
     !include cluster_configs/networks/neutron_vlan.yaml
@@ -16,7 +16,7 @@ template:
       settings:
         !include cluster_configs/settings/vmware/vcenter_main.yaml
       nova-compute:
-        !include cluster_configs/settings/vmware/nova_compute/2clusters_ctrl_comp-vmware.yaml
+        !include cluster_configs/settings/vmware/nova_compute/1cluster_ctrl.yaml
       glance:
         enable: false
     vmware_dvs:
@@ -34,6 +34,11 @@ template:
       count: 1
 
     - roles:
+      - cinder-vmware
+      iface: !include cluster_configs/settings/vmware/vcenter_ifaces.yaml
+      count: 1
+
+    - roles:
       - compute-vmware
       iface: !include cluster_configs/settings/vmware/vcenter_ifaces.yaml
       count: 1
@@ -42,4 +47,4 @@ template:
   - - roles:
       - cinder-vmware
       count: 1
-      action: add
+      action: delete
