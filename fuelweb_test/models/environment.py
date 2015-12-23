@@ -492,7 +492,8 @@ class EnvironmentModel(object):
                     'before master node bootstrap...')
 
     @logwrap
-    def wait_for_provisioning(self, timeout=10 * 60):
+    def wait_for_provisioning(self,
+                              timeout=settings.WAIT_FOR_PROVISIONING_TIMEOUT):
         _wait(lambda: _tcp_ping(
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
