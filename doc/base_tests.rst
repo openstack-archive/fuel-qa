@@ -56,6 +56,11 @@ Test Cli Base
 .. automodule:: fuelweb_test.tests.test_cli_base
    :members:
 
+Test Cli role component (creade/update/delete role)
+---------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_cli.test_cli_role
+   :members:
+
 Test Clone Environment
 ----------------------
 .. automodule:: fuelweb_test.tests.test_clone_env
