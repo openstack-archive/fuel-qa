@@ -63,7 +63,7 @@ class VipReservation(TestBasic):
         self.env.revert_snapshot("ready_with_3_slaves")
         with self.env.d_env.get_admin_remote() as admin_remote:
             # initiate fuel plugin builder instance
-            fpb = FuelPluginBuilder(admin_remote)
+            fpb = FuelPluginBuilder()
             # install fuel_plugin_builder on master node
             fpb.fpb_install()
             # create plugin template on the master node
@@ -179,7 +179,7 @@ class VipReservation(TestBasic):
 
         with self.env.d_env.get_admin_remote() as admin_remote:
             # initiate fuel plugin builder instance
-            fpb = FuelPluginBuilder(admin_remote)
+            fpb = FuelPluginBuilder()
             # install fuel_plugin_builder on master node
             fpb.fpb_install()
             # create plugin template on the master node
@@ -301,7 +301,7 @@ class VipReservation(TestBasic):
 
         with self.env.d_env.get_admin_remote() as admin_remote:
             # initiate fuel plugin builder instance
-            fpb = FuelPluginBuilder(admin_remote)
+            fpb = FuelPluginBuilder()
             # install fuel_plugin_builder on master node
             fpb.fpb_install()
             # create plugin template on the master node

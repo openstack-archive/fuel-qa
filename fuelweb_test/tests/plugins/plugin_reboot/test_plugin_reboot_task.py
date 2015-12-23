@@ -61,7 +61,7 @@ class RebootPlugin(TestBasic):
 
         with self.env.d_env.get_admin_remote() as admin_remote:
             # initiate fuel plugin builder instance
-            fpb = FuelPluginBuilder(admin_remote)
+            fpb = FuelPluginBuilder()
             # install fuel_plugin_builder on master node
             fpb.fpb_install()
             # create plugin template on the master node
@@ -182,7 +182,7 @@ class RebootPlugin(TestBasic):
         # let's get ssh client for the master node
         with self.env.d_env.get_admin_remote() as admin_remote:
             # initiate fuel plugin builder instance
-            fpb = FuelPluginBuilder(admin_remote)
+            fpb = FuelPluginBuilder()
             # install fuel_plugin_builder on master node
             fpb.fpb_install()
             # change timeout to a new value '1'
