@@ -19,6 +19,7 @@ import re
 from paramiko import RSAKey
 from devops.models.node import SSHClient
 from fuelweb_test import logger
+from fuelweb_test import logwrap
 
 
 class SingletonMeta(type):
@@ -104,42 +105,64 @@ class SSHManager(object):
         logger.debug('SSH_MANAGER: Connections {0}'.format(self.connections))
         return self._connect(self.connections[(ip, port)])
 
+    @logwrap
     def execute_on_remote(self, ip, cmd, port=22):
         remote = self._get_remote(ip=ip, port=port)
         return remote.execute(cmd)
 
+    @logwrap
+    def execute_async_on_remote(self, ip, cmd, port=22):
+        remote = self._get_remote(ip=ip, port=port)
+        return remote.execute_async(cmd)
+
+    @logwrap
     def open_on_remote(self, ip, path, mode='r', port=22):
         remote = self._get_remote(ip=ip, port=port)
         return remote.open(path, mode)
 
+    @logwrap
     def upload_to_remote(self, ip, source, target, port=22):
         remote = self._get_remote(ip=ip, port=port)
         return remote.upload(source, target)
 
+    @logwrap
+    def upload_plugin_on_master(self, source):
+        ip = self.admin_ip
+        port = self.admin_port
+        return self.upload_to_remote(
+            ip=ip, source=source, target='/var', port=port)
+
+    @logwrap
     def download_from_remote(self, ip, destination, target, port=22):
         remote = self._get_remote(ip=ip, port=port)
         return remote.download(destination, target)
 
+    @logwrap
     def exist_on_remote(self, ip, path, port=22):
         remote = self._get_remote(ip=ip, port=port)
         return remote.exist(path)
 
+    @logwrap
     def isdir_on_remote(self, ip, path, port=22):
         remote = self._get_remote(ip=ip, port=port)
         return remote.isdir(path)
 
+    @logwrap
     def isfile_on_remote(self, ip, path, port=22):
         remote = self._get_remote(ip=ip, port=port)
         return remote.isfile(path)
 
+    @logwrap
     def mkdir_on_remote(self, ip, path, port=22):
         remote = self._get_remote(ip=ip, port=port)
         return remote.mkdir(path)
 
+    @logwrap
     def rm_rf_on_remote(self, ip, path, port=22):
         remote = self._get_remote(ip=ip, port=port)
         return remote.rm_rf(path)
 
+    @logwrap
     def cond_upload(self, ip, source, target, port=22, condition=''):
         """ Upload files only if condition in regexp matches filenames
 
