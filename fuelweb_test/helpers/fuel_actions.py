@@ -677,7 +677,7 @@ class DockerActions(object):
             return
         cont_actions = []
         for container in self.list_containers():
-            cont_action = BaseActions(self.ssh_manager)
+            cont_action = BaseActions()
             cont_action.container = container
             cont_actions.append(cont_action)
         try:
@@ -696,7 +696,7 @@ class DockerActions(object):
             ip=self.ssh_manager.admin_ip,
             cmd='dockerctl restart {0}'.format(container)
         )
-        cont_action = BaseActions(self.ssh_manager)
+        cont_action = BaseActions()
         cont_action.container = container
         cont_action.wait_for_ready_container()
 
