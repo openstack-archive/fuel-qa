@@ -1,0 +1,10 @@
+meta:
+  conflicts:
+    - controller
+    - compute
+  description: New role
+  name: Test role
+name: test-role
+volumes_roles_mapping:
+- allocate_size: min
+  id: os
