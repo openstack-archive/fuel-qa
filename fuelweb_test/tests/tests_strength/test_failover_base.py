@@ -1182,6 +1182,20 @@ class TestHaFailoverBase(TestBasic):
                     return False
             return True
 
+        def _start_corosync_on_controller(rc):
+            remote_status = rc.execute(
+                'service corosync start && service pacemaker '
+                'restart')
+            logger.debug(
+                "corosync start on node {0} command output: ".
+                format(node['name']))
+            logger.debug(
+                "stdout: {0}".format(remote_status['stdout']))
+            if remote_status['stderr']:
+                logger.debug(
+                    "stderr: {0}".format(remote_status['stderr']))
+            return remote_status['exit_code']
+
         if not self.env.d_env.has_snapshot(self.snapshot_name):
             raise SkipTest()
         self.env.revert_snapshot(self.snapshot_name)
@@ -1219,13 +1233,12 @@ class TestHaFailoverBase(TestBasic):
                         _check_all_pcs_nodes_status(
                             live_remotes, [controller_node['fqdn']],
                             'Offline'),
+                        ''
                         'Caught splitbrain, see debug log, '
                         'count-{0}'.format(count)), timeout=20)
                 _wait(
                     lambda: assert_equal(
-                        remote_controller.execute(
-                            'service corosync start && service pacemaker '
-                            'restart')['exit_code'], 0,
+                        _start_corosync_on_controller(remote_controller), 0,
                         'Corosync was not started, see debug log,'
                         ' count-{0}'.format(count)), timeout=20)
                 _wait(
