@@ -37,9 +37,8 @@ class RepeatableImageBased(TestBasic):
             2. Add 1 controller, 2 compute and 2 cinder nodes
             3. Deploy the cluster
             4. Delete cluster
-            5. Create another HA cluster
-            6. Create snapshot of environment
-            7. Revert snapshot and try provision cluster 10 times
+            5. Create snapshot of environment
+            6. Revert snapshot, create and try provision another HA cluster 10 times
 
         Duration 60m
 
