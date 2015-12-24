@@ -71,6 +71,7 @@ class SeparateRabbitCeph(TestBasic):
             'images_ceph': True,
             'ephemeral_ceph': True,
             'objects_ceph': True,
+            'osd_pool_size': '2',
             'tenant': 'separaterabbitceph',
             'user': 'separaterabbitceph',
             'password': 'separaterabbitceph',

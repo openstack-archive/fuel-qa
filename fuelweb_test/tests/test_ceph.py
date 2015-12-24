@@ -179,6 +179,7 @@ class CephCompactWithCinder(TestBasic):
             settings={
                 'volumes_ceph': False,
                 'images_ceph': True,
+                'osd_pool_size': '2',
                 'volumes_lvm': True,
                 'tenant': 'ceph2',
                 'user': 'ceph2',
@@ -827,6 +828,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
             settings={
                 'volumes_ceph': True,
                 'images_ceph': True,
+                'osd_pool_size': '2',
                 'ephemeral_ceph': True,
                 'volumes_lvm': False,
             }

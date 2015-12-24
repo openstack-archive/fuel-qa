@@ -114,6 +114,7 @@ class HugeEnvironments(base_test_case.TestBasic):
                 'volumes_ceph': True,
                 'images_ceph': False,
                 'volumes_lvm': False,
+                'osd_pool_size': '2',
                 'sahara': True,
                 'ceilometer': True
             }
@@ -267,6 +268,7 @@ class HugeHaNeutron(base_test_case.TestBasic):
             'images_ceph': True,
             'volumes_lvm': False,
             'objects_ceph': True,
+            'osd_pool_size': '2',
             'net_provider': 'neutron',
             'net_segment_type': settings.NEUTRON_SEGMENT['vlan'],
             'tenant': 'haVlanCephHugeScale',

@@ -72,6 +72,7 @@ class SeparateHorizon(TestBasic):
             'volumes_ceph': True,
             'images_ceph': True,
             'objects_ceph': True,
+            'osd_pool_size': '2',
             'tenant': 'separatehorizon',
             'user': 'separatehorizon',
             'password': 'separatehorizon',

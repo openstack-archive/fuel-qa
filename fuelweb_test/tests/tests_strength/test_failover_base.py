@@ -87,6 +87,7 @@ class TestHaFailoverBase(TestBasic):
         settings = {
             'volumes_ceph': True,
             'images_ceph': True,
+            'osd_pool_size': '2',
             'volumes_lvm': False,
         }
 

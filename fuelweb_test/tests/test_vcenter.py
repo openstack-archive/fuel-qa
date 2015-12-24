@@ -530,6 +530,7 @@ class VcenterDeploy(TestBasic):
             mode=DEPLOYMENT_MODE,
             settings={'images_ceph': True,
                       'volumes_ceph': True,
+                      'osd_pool_size': '2',
                       'objects_ceph': True,
                       'volumes_lvm': False})
 
@@ -590,6 +591,7 @@ class VcenterDeploy(TestBasic):
             mode=DEPLOYMENT_MODE,
             settings={'images_ceph': True,
                       'volumes_ceph': True,
+                      'osd_pool_size': '2',
                       'volumes_lvm': False})
 
         logger.info("cluster is {}".format(cluster_id))
@@ -653,6 +655,7 @@ class VcenterDeploy(TestBasic):
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
             settings={'volumes_ceph': True,
+                      'osd_pool_size': '2',
                       'volumes_lvm': False,
                       'ephemeral_ceph': True})
 
@@ -1509,6 +1512,7 @@ class VcenterDeploy(TestBasic):
             mode=DEPLOYMENT_MODE,
             settings={'images_ceph': True,
                       'volumes_ceph': True,
+                      'osd_pool_size': '2',
                       'objects_ceph': True,
                       'volumes_lvm': False})
 
@@ -1576,6 +1580,7 @@ class VcenterDeploy(TestBasic):
             settings={'images_ceph': True,
                       'volumes_ceph': False,
                       'objects_ceph': True,
+                      'osd_pool_size': '2',
                       'volumes_lvm': True})
 
         logger.info("cluster is {}".format(cluster_id))
@@ -1696,6 +1701,7 @@ class VcenterDeploy(TestBasic):
             mode=DEPLOYMENT_MODE,
             settings={'images_ceph': True,
                       'volumes_ceph': True,
+                      'osd_pool_size': '2',
                       'objects_ceph': True,
                       'volumes_lvm': False})
 
