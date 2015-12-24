@@ -572,10 +572,12 @@ class FuelPluginBuilder(BaseActions):
         """
         Builds plugin from path
         :param path: path to plugin. For ex.: /root/example_plugin
-        :return: nothing
+        :return: packet name
         """
-        self.execute_in_container("fpb --build {0}".format(
-            path), self.container, 0)
+        packet_name = self.execute_in_container(
+            "bash -c 'fpb --build {0} >> /dev/null && basename {0}/*.rpm'"
+            .format(path), self.container, 0)
+        return packet_name
 
     def fpb_validate_plugin(self, path):
         """
@@ -586,17 +588,18 @@ class FuelPluginBuilder(BaseActions):
         self.execute_in_container("fpb --check {0}".format(
             path), self.container, 0)
 
-    def fpb_copy_plugin_from_container(self, plugin_name, path_to):
+    def fpb_copy_plugin_from_container(
+            self, folder_name, packet_name, path_to):
         """
         Copies plugin with given name to path
         outside container on the master node
-        :param plugin_name: plugin to be copied
+        :param packet_name: plugin's packet to be copied
         :param path_to: path to copy to
         :return: nothing
         """
         self.copy_between_node_and_container(
-            '{0}:/root/{1}/*.rpm'.format(self.container, plugin_name),
-            '{0}/{1}.rpm'.format(path_to, plugin_name))
+            '{0}:/{1}/{2}'.format(self.container, folder_name, packet_name),
+            '{0}/{1}'.format(path_to, packet_name))
 
     def fpb_replace_plugin_content(self, local_file, remote_file):
         """
