@@ -91,9 +91,6 @@ class NeutronTun(TestBasic):
             cluster_id, os_conn)
 
         with self.env.d_env.get_admin_remote() as remote:
-            checkers.check_file_exists(
-                remote, '/usr/share/doc/python-fuelclient-8.0.0/'
-                        'fuel_client.yaml')
             checkers.check_client_smoke(remote)
 
         self.fuel_web.verify_network(cluster_id)
