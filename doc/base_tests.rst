@@ -287,6 +287,11 @@ Test Ubuntu bootstrap
 .. automodule:: fuelweb_test.tests.test_ubuntu_bootstrap
    :members:
 
+Test CentOS bootstrap
+---------------------
+.. automodule:: fuelweb_test.tests.test_centos_bootstrap
+   :members:
+
 Test Vcenter
 ------------
 .. automodule:: fuelweb_test.tests.test_vcenter
