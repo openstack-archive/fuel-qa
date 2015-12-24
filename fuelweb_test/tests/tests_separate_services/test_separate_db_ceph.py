@@ -71,6 +71,7 @@ class SeparateDbCeph(TestBasic):
             'volumes_ceph': True,
             'images_ceph': True,
             'ephemeral_ceph': True,
+            'osd_pool_size': '2',
             'objects_ceph': True,
             'tenant': 'separatedbceph',
             'user': 'separatedbceph',
