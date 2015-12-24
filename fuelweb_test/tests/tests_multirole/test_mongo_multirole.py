@@ -25,7 +25,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 class MongoMultirole(TestBasic):
     """MongoMultirole"""  # TODO documentation
 
-    @test(depends_on=SetupEnvironment.prepare_slaves_9,
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=['ha_ceilometer_untag_network'])
     @log_snapshot_after_test
     def ha_ceilometer_untag_network(self):
@@ -115,7 +115,7 @@ class MongoMultirole(TestBasic):
         self.fuel_web.run_ostf(cluster_id)
         self.env.make_snapshot('ha_ceilometer_untag_network')
 
-    @test(depends_on=SetupEnvironment.prepare_slaves_9,
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=['mongo_ceph_with_ceilometer'])
     @log_snapshot_after_test
     def mongo_ceph_with_ceilometer(self):
