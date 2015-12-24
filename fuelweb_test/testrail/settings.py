@@ -44,7 +44,7 @@ class LaunchpadSettings(object):
     """LaunchpadSettings."""  # TODO documentation
 
     project = os.environ.get('LAUNCHPAD_PROJECT', 'fuel')
-    milestone = os.environ.get('LAUNCHPAD_MILESTONE', '8.0')
+    milestone = os.environ.get('LAUNCHPAD_MILESTONE', '9.0')
     closed_statuses = [
         os.environ.get('LAUNCHPAD_RELEASED_STATUS', 'Fix Released'),
         os.environ.get('LAUNCHPAD_INVALID_STATUS', 'Invalid')
@@ -58,7 +58,7 @@ class TestRailSettings(object):
     user = os.environ.get('TESTRAIL_USER', 'user@example.com')
     password = os.environ.get('TESTRAIL_PASSWORD', 'password')
     project = os.environ.get('TESTRAIL_PROJECT', 'Mirantis OpenStack')
-    milestone = os.environ.get('TESTRAIL_MILESTONE', '8.0')
+    milestone = os.environ.get('TESTRAIL_MILESTONE', '9.0')
     tests_suite = os.environ.get('TESTRAIL_TEST_SUITE',
                                  '[{0}] Swarm'.format(milestone))
     tests_section = os.environ.get('TESTRAIL_TEST_SECTION', 'All')
