@@ -131,7 +131,7 @@ class TestMultipleClusterNets(TestBasic):
         if not MULTIPLE_NETWORKS:
             raise SkipTest()
 
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready")
 
         self.show_step(2)
@@ -352,7 +352,7 @@ class TestMultipleClusterNets(TestBasic):
         if not MULTIPLE_NETWORKS:
             raise SkipTest()
 
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready")
 
         self.show_step(2)
@@ -463,7 +463,7 @@ class TestMultipleClusterNets(TestBasic):
         if not MULTIPLE_NETWORKS:
             raise SkipTest()
 
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.check_run("deploy_controllers_from_custom_nodegroup")
         self.env.revert_snapshot("ready")
 
@@ -564,7 +564,7 @@ class TestMultipleClusterNets(TestBasic):
         Duration 15m
         """
 
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot('deploy_controllers_from_custom_nodegroup')
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
@@ -630,7 +630,7 @@ class TestMultipleClusterNets(TestBasic):
         Duration 30m
         """
 
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot('deploy_controllers_from_custom_nodegroup')
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)

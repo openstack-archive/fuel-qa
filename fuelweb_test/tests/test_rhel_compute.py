@@ -543,7 +543,7 @@ class RhelHA(TestBasic):
         Snapshot: deploy_rhel_compute_ha_tun
 
         """
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         LOGGER.debug('Check MD5 sum of RHEL 7 image')
         check_image = checkers.check_image(
             settings.RHEL_IMAGE,

@@ -403,7 +403,7 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
         Snapshot deploy_cinder_net_tmpl
         """
 
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_5_slaves")
 
         self.show_step(2)

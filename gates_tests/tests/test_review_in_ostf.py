@@ -107,7 +107,7 @@ class GateOstf(TestBasic):
         if not settings.UPDATE_FUEL:
             raise exceptions.ConfigurationException(
                 'Variable "UPDATE_FUEL" was not set to true')
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         if not self.env.revert_snapshot(
                 'gate_ostf_ceph_ha'):
             raise SkipTest()
