@@ -68,7 +68,7 @@ class TestUseMirror(TestBasic):
         with self.env.d_env.get_admin_remote() as remote:
             # FIXME(akostrikov) This should be removed with correct install.
             # All that above is a hack.
-            self.show_step(1)
+            self.show_step(1, initialize=True)
             run_on_remote(remote,
                           'yum install git python-lxml.x86_64 '
                           'python-eventlet -y')

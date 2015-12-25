@@ -117,7 +117,7 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
         """
         if not UPDATE_FUEL:
             raise exceptions.FuelQAVariableNotSet(UPDATE_FUEL, 'true')
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot('ready_with_1_slaves')
         target_path = '/var/www/nailgun/python-fuelclient/'
         package_name = 'python-fuelclient'
