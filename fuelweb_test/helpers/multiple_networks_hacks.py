@@ -48,7 +48,7 @@ def configure_second_admin_firewall(remote, network, netmask, interface,
     rules = [
         ('-I INPUT -i {0} -m comment --comment "input from 2nd admin network" '
          '-j ACCEPT').format(interface),
-        ('-t nat -I POSTROUTING -s {0}/{1} -o eth+ -m comment --comment '
+        ('-t nat -I POSTROUTING -s {0}/{1} -o e+ -m comment --comment '
          '"004 forward_admin_net2" -j MASQUERADE').
         format(network, netmask),
         ("-t nat -I POSTROUTING -o {0} -d {1}/{2} -p udp -m addrtype "
@@ -56,7 +56,9 @@ def configure_second_admin_firewall(remote, network, netmask, interface,
                                                             network, netmask,
                                                             master_ip),
         ("-t nat -I POSTROUTING -d {0}/{1} -p tcp --dport 8888 -j SNAT "
-         "--to-source {2}").format(network, netmask, master_ip)
+         "--to-source {2}").format(network, netmask, master_ip),
+        ('-I FORWARD -i {0} -m comment --comment '
+         '"forward custom admin net" -j ACCEPT').format(interface)
     ]
 
     for rule in rules:
