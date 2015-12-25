@@ -291,6 +291,9 @@ class EnvironmentModel(object):
             logger.info('Admin node started second time.')
             self.d_env.nodes().admin.await(self.d_env.admin_net)
             self.set_admin_ssh_password()
+            if MASTER_IS_CENTOS7:
+                logger.info("Disabling offloading on admin node")
+                self.disable_offloading_on_admin_node()
             self.docker_actions.wait_for_ready_containers(timeout=600)
 
             # set collector address in case of admin node destroy
@@ -306,6 +309,9 @@ class EnvironmentModel(object):
                     settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
                 ))
         self.set_admin_ssh_password()
+        if MASTER_IS_CENTOS7:
+            logger.info("Disabling offloading on admin node")
+            self.disable_offloading_on_admin_node()
         self.docker_actions.wait_for_ready_containers()
 
     def make_snapshot(self, snapshot_name, description="", is_make=False):
@@ -405,6 +411,11 @@ class EnvironmentModel(object):
                 .format(settings.KEYSTONE_CREDS['username'],
                         settings.KEYSTONE_CREDS['password']))
 
+    def disable_offloading_on_admin_node(self, iface='enp0s3'):
+        cmd = 'ethtool -K {0} gso off gro off tso off'.format(iface)
+        with self.d_env.get_admin_remote() as remote:
+            self.execute_remote_cmd(remote, cmd)
+
     def setup_environment(self, custom=settings.CUSTOM_ENV,
                           build_images=settings.BUILD_IMAGES,
                           iso_connect_as=settings.ADMIN_BOOT_DEVICE,
@@ -427,6 +438,9 @@ class EnvironmentModel(object):
                                       iso_connect_as=iso_connect_as))
         self.wait_for_provisioning()
         self.set_admin_ssh_password()
+        if MASTER_IS_CENTOS7:
+            logger.info("Disabling offloading on admin node")
+            self.disable_offloading_on_admin_node()
         self.wait_for_external_config()
         if custom:
             self.setup_customisation()
