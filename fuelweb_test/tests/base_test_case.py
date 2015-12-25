@@ -35,16 +35,28 @@ class TestBasic(object):
 
     """
     def __init__(self):
-        self._current_log_step = 0
-        self.ssh_manager = SSHManager()
         self._devops_config = None
         self.__env = None
+        self.__current_log_step = 0
+        self.__test_program = None
+
+    @property
+    def ssh_manager(self):
+        return SSHManager()
+
+    @property
+    def current_log_step(self):
+        return self.__current_log_step
+
+    @current_log_step.setter
+    def current_log_step(self, new_val):
+        self.__current_log_step = new_val
 
     @property
     def test_program(self):
-        if not hasattr(self, '_test_program'):
-            self._test_program = TestProgram()
-        return self._test_program
+        if self.__test_program is None:
+            self.__test_program = TestProgram()
+        return self.__test_program
 
     @property
     def env(self):
@@ -68,22 +80,25 @@ class TestBasic(object):
             if self.env.d_env.has_snapshot(snapshot_name):
                 raise SkipTest()
 
-    def show_step(self, step, details=''):
+    def show_step(self, step, details='', initialize=False):
         """Show a description of the step taken from docstring
            :param int/str step: step number to show
            :param str details: additional info for a step
         """
         test_func_name = get_test_method_name()
 
-        self._current_log_step += 1
-        if self._current_log_step != step:
-            error_message = 'The step {} should be {} at {}'
-            error_message = error_message.format(
-                step,
-                self._current_log_step,
-                test_func_name
-            )
-            logger.error(error_message)
+        if initialize:
+            self.current_log_step = step
+        else:
+            self.current_log_step += 1
+            if self.current_log_step != step:
+                error_message = 'The step {} should be {} at {}'
+                error_message = error_message.format(
+                    step,
+                    self.current_log_step,
+                    test_func_name
+                )
+                logger.error(error_message)
 
         test_func = getattr(self.__class__, test_func_name)
         docstring = test_func.__doc__
@@ -151,6 +166,7 @@ class SetupEnvironment(TestBasic):
         with TimeStat("setup_environment", is_uniq=True):
             self.env.setup_environment()
         self.env.make_snapshot("empty", is_make=True)
+        self.current_log_step = 0
 
     @test(groups=["setup_master_custom_manifests"])
     @log_snapshot_after_test
@@ -166,10 +182,14 @@ class SetupEnvironment(TestBasic):
         Duration 20m
         """
         self.check_run("empty_custom_manifests")
+        self.show_step(1, initialize=True)
+        self.show_step(2)
         self.env.setup_environment(custom=True, build_images=True)
+        self.show_step(3)
         if REPLACE_DEFAULT_REPOS and REPLACE_DEFAULT_REPOS_ONLY_ONCE:
             self.fuel_web.replace_default_repos()
         self.env.make_snapshot("empty_custom_manifests", is_make=True)
+        self.current_log_step = 0
 
     @test(depends_on=[setup_master], groups=["prepare_release"])
     @log_snapshot_after_test
@@ -184,13 +204,16 @@ class SetupEnvironment(TestBasic):
 
         """
         self.check_run("ready")
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("empty", skip_timesync=True)
 
         self.fuel_web.get_nailgun_version()
         self.fuel_web.change_default_network_settings()
+        self.show_step(2)
         if REPLACE_DEFAULT_REPOS and REPLACE_DEFAULT_REPOS_ONLY_ONCE:
             self.fuel_web.replace_default_repos()
         self.env.make_snapshot("ready", is_make=True)
+        self.current_log_step = 0
 
     @test(depends_on=[prepare_release],
           groups=["prepare_slaves_1"])
@@ -206,10 +229,13 @@ class SetupEnvironment(TestBasic):
 
         """
         self.check_run("ready_with_1_slaves")
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready", skip_timesync=True)
+        self.show_step(2)
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:1],
                                  skip_timesync=True)
         self.env.make_snapshot("ready_with_1_slaves", is_make=True)
+        self.current_log_step = 0
 
     @test(depends_on=[prepare_release],
           groups=["prepare_slaves_3"])
@@ -225,10 +251,13 @@ class SetupEnvironment(TestBasic):
 
         """
         self.check_run("ready_with_3_slaves")
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready", skip_timesync=True)
+        self.show_step(2)
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:3],
                                  skip_timesync=True)
         self.env.make_snapshot("ready_with_3_slaves", is_make=True)
+        self.current_log_step = 0
 
     @test(depends_on=[prepare_release],
           groups=["prepare_slaves_5"])
@@ -244,10 +273,13 @@ class SetupEnvironment(TestBasic):
 
         """
         self.check_run("ready_with_5_slaves")
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready", skip_timesync=True)
+        self.show_step(2)
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:5],
                                  skip_timesync=True)
         self.env.make_snapshot("ready_with_5_slaves", is_make=True)
+        self.current_log_step = 0
 
     @test(depends_on=[prepare_release],
           groups=["prepare_slaves_9"])
@@ -263,10 +295,13 @@ class SetupEnvironment(TestBasic):
 
         """
         self.check_run("ready_with_9_slaves")
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready", skip_timesync=True)
         # Bootstrap 9 slaves in two stages to get lower load on the host
+        self.show_step(2)
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:5],
                                  skip_timesync=True)
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[5:9],
                                  skip_timesync=True)
         self.env.make_snapshot("ready_with_9_slaves", is_make=True)
+        self.current_log_step = 0

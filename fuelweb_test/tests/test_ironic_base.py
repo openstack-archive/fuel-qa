@@ -46,7 +46,7 @@ class TestIronicBase(TestBasic):
 
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
