@@ -44,7 +44,7 @@ template:
       count: 1
 
   scale_nodes:
-    - roles:
+  - - roles:
       - controller
       count: 2
       action: add
