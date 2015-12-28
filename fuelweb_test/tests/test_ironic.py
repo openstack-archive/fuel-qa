@@ -12,11 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from fuelweb_test import logger
+from fuelweb_test.helpers import ironic_actions
+from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.test_ironic_base import TestIronicBase
 
 from proboscis import test
+from proboscis.asserts import assert_true
 
 
 @test(groups=["ironic"])
@@ -26,7 +30,7 @@ class TestIronic(TestIronicBase):
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ironic_base"])
     @log_snapshot_after_test
-    def deploy_simple_ironic_cluster(self):
+    def simple_ironic_cluster(self):
         """Deploy cluster in HA mode (1 controller) with Ironic:
 
            Scenario:
@@ -36,7 +40,7 @@ class TestIronic(TestIronicBase):
                4. Verify network
                5. Run OSTF
 
-           Snapshot: deploy_simple_ironic_cluster
+           Snapshot: simple_ironic_cluster
         """
 
         self.env.revert_snapshot("ready_with_3_slaves")
@@ -46,7 +50,7 @@ class TestIronic(TestIronicBase):
         self.show_step(3)
         cluster_id = self.deploy_cluster_wih_ironic(
             nodes={
-                'slave-01': ['controller'],
+                'slave-01': ['controller', 'ironic'],
                 'slave-02': ['compute'],
                 'slave-03': ['ironic'],
             },
@@ -59,7 +63,50 @@ class TestIronic(TestIronicBase):
         self.show_step(5)
         self.fuel_web.run_ostf(cluster_id)
 
-        self.env.make_snapshot("deploy_simple_ironic_cluster")
+        self.env.make_snapshot("simple_ironic_cluster")
+
+    @test(depends_on=[simple_ironic_cluster],
+          groups=["ironic"])
+    def boot_ironic_node_with_fuel_libvirt(self):
+        """Boot ironic node with fuel ssh agent
+
+        Scenario:
+            . Create baremetal flavor
+            . Import Ubuntu image
+            . Create ironic node
+            . Create ironic port for this node
+            . Verify that ironic instance can be booted successfully
+
+        Duration 35m
+        Snapshot boot_ironic_node_with_fuel_ssh_agent
+        """
+        self.env.revert_snapshot("simple_ironic_cluster")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        controller_ip = self.fuel_web.get_public_vip(cluster_id)
+        os_conn = os_actions.OpenStackActions(controller_ip)
+        ironic = ironic_actions.IronicActions(controller_ip)
+
+        # TODO describe assertion
+        assert_true(len(self.ironics) > 0)
+        ironic.create_ironic_nodes_wait([self.ironics[0]])
+
+        key, image, flavor = ironic.prepare_ironic_resources(
+            cpus=self.ironics[0]['cpus'],
+            memory_mb=self.ironics[0]['memory_mb'],
+            local_gb=self.ironics[0]['local_gb'])
+
+        logger.debug('Boot ironic VM')
+        srv = ironic.boot_ironic_instance(
+            image_id=image.id,
+            flavor_id=flavor.id,
+            timeout=600,
+            key_name=key.name,
+            userdata='#!/bin/bash\ntouch /home/ubuntu/success.txt'
+        )
+        floating_ip = os_conn.assign_floating_ip(srv)
+        self.check_userdata_executed(cluster_id, floating_ip.ip, key)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ironic_base_"])
