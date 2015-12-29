@@ -1201,6 +1201,13 @@ def check_offload(node, interface, offload_type):
         command % (interface, offload_type))['stdout']).rstrip()
 
 
+def check_is_offload_fixed(node, interface, offload_type):
+    command = ("ethtool -k %s | grep %s | grep fixed "
+               "&>/dev/null && echo 'True' || echo 'False'")
+    result = node.execute(command % (interface, offload_type))
+    return ''.join(result['stdout']).strip() == 'True'
+
+
 def check_get_network_data_over_cli(remote, cluster_id, path):
     logger.info("Download network data over cli")
     cmd = 'fuel --debug --env {0} network --dir {1} --json -d'.format(

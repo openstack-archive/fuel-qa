@@ -15,8 +15,10 @@
 from copy import deepcopy
 
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
 from proboscis import test
 
+from fuelweb_test.helpers.checkers import check_is_offload_fixed
 from fuelweb_test.helpers.checkers import check_offload
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import logger
@@ -28,6 +30,29 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 @test(groups=["offloading"])
 class TestOffloading(TestBasic):
+
+    interfaces = {
+        iface_alias('eth1'): ['public'],
+        iface_alias('eth2'): ['private'],
+        iface_alias('eth3'): ['management'],
+        iface_alias('eth4'): ['storage'],
+    }
+
+    offloadings_1 = ['generic-receive-offload',
+                     'generic-segmentation-offload',
+                     'tcp-segmentation-offload',
+                     'large-receive-offload']
+
+    offloadings_2 = ['rx-all',
+                     'rx-vlan-offload',
+                     'tx-vlan-offload']
+
+    def prepare_offloading_modes(self, interface, types, state):
+        return {
+            'name': interface,
+            'offloading_modes':
+                [{'name': name, 'state': state, 'sub': []} for name in types]
+        }
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["offloading_neutron_vlan", "offloading"])
@@ -62,28 +87,6 @@ class TestOffloading(TestBasic):
             }
         )
 
-        interfaces = {
-            iface_alias('eth1'): ['public'],
-            iface_alias('eth2'): ['private'],
-            iface_alias('eth3'): ['management'],
-            iface_alias('eth4'): ['storage'],
-        }
-
-        offloading_modes = [{
-            'name': iface_alias('eth1'),
-            'offloading_modes': [{
-                'state': 'true',
-                'name': 'rx-vlan-offload',
-                'sub': []}, {
-                'state': 'true',
-                'name': 'tx-vlan-offload',
-                'sub': []}]}, {
-            'name': iface_alias('eth2'),
-            'offloading_modes': [{
-                'state': 'false',
-                'name': 'large-receive-offload',
-                'sub': []}]}]
-
         self.show_step(2)
         self.show_step(3)
         self.fuel_web.update_nodes(
@@ -94,11 +97,36 @@ class TestOffloading(TestBasic):
             }
         )
 
+        iface1, iface2 = iface_alias('eth1'), iface_alias('eth2')
+
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+
         self.show_step(4)
         for node in slave_nodes:
+            with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
+                for offload_type in self.offloadings_1:
+                    if check_is_offload_fixed(remote, iface1, offload_type):
+                        if offload_type in self.offloadings_1:
+                            self.offloadings_1.remove(offload_type)
+                for offload_type in self.offloadings_2:
+                    if check_is_offload_fixed(remote, iface2, offload_type):
+                        if offload_type in self.offloadings_2:
+                            self.offloadings_2.remove(offload_type)
+
+        assert_true(len(self.offloadings_1) > 0,
+                    "No types for disable offloading")
+        assert_true(len(self.offloadings_2) > 0,
+                    "No types for enable offloading")
+
+        offloading_modes = []
+        offloading_modes.append(
+            self.prepare_offloading_modes(iface1, self.offloadings_1, 'false'))
+        offloading_modes.append(
+            self.prepare_offloading_modes(iface2, self.offloadings_2, 'true'))
+
+        for node in slave_nodes:
             self.fuel_web.update_node_networks(node['id'],
-                                               deepcopy(interfaces))
+                                               deepcopy(self.interfaces))
             for offloading in offloading_modes:
                 self.fuel_web.update_offloads(
                     node['id'], deepcopy(offloading), offloading['name'])
@@ -116,26 +144,17 @@ class TestOffloading(TestBasic):
             with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
                 logger.info("Verify Offload types")
 
-                result = check_offload(remote,
-                                       iface_alias('eth1'),
-                                       'rx-vlan-offload')
-                assert_equal(result, "on",
-                             "Offload type {0} is {1} on remote host"
-                             .format('rx-vlan-offload', result))
+                for offload_type in self.offloadings_1:
+                    result = check_offload(remote, iface1, offload_type)
+                    assert_equal(result, "off",
+                                 "Offload type {0} is {1} on {2}".format(
+                                         offload_type, result, node['name']))
 
-                result = check_offload(remote,
-                                       iface_alias('eth1'),
-                                       'tx-vlan-offload')
-                assert_equal(result, "on",
-                             "Offload type {0} is {1} on remote host"
-                             .format('tx-vlan-offload', result))
-
-                result = check_offload(remote,
-                                       iface_alias('eth2'),
-                                       'large-receive-offload')
-                assert_equal(result, "off",
-                             "Offload type {0} is {1} on remote host"
-                             .format('large-receive-offload', result))
+                for offload_type in self.offloadings_2:
+                    result = check_offload(remote, iface2, offload_type)
+                    assert_equal(result, "on",
+                                 "Offload type {0} is {1} on {2}".format(
+                                         offload_type, result, node['name']))
 
         self.show_step(9)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
@@ -175,28 +194,6 @@ class TestOffloading(TestBasic):
             }
         )
 
-        interfaces = {
-            iface_alias('eth1'): ['public'],
-            iface_alias('eth2'): ['private'],
-            iface_alias('eth3'): ['management'],
-            iface_alias('eth4'): ['storage'],
-        }
-
-        offloading_modes = [{
-            'name': iface_alias('eth1'),
-            'offloading_modes': [{
-                'state': 'true',
-                'name': 'rx-vlan-offload',
-                'sub': []}, {
-                'state': 'true',
-                'name': 'tx-vlan-offload',
-                'sub': []}]}, {
-            'name': iface_alias('eth2'),
-            'offloading_modes': [{
-                'state': 'false',
-                'name': 'large-receive-offload',
-                'sub': []}]}]
-
         self.show_step(2)
         self.show_step(3)
         self.fuel_web.update_nodes(
@@ -207,11 +204,35 @@ class TestOffloading(TestBasic):
             }
         )
 
+        iface1, iface2 = iface_alias('eth1'), iface_alias('eth2')
+
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+
         self.show_step(4)
         for node in slave_nodes:
+            with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
+                for offload_type in self.offloadings_1:
+                    if check_is_offload_fixed(remote, iface1, offload_type):
+                        if offload_type in self.offloadings_1:
+                            self.offloadings_1.remove(offload_type)
+                for offload_type in self.offloadings_2:
+                    if check_is_offload_fixed(remote, iface2, offload_type):
+                        if offload_type in self.offloadings_2:
+                            self.offloadings_2.remove(offload_type)
+
+        assert_true(len(self.offloadings_1) > 0,
+                    "No types for disable offloading")
+        assert_true(len(self.offloadings_2) > 0,
+                    "No types for enable offloading")
+        offloading_modes = []
+        offloading_modes.append(
+            self.prepare_offloading_modes(iface1, self.offloadings_1, 'false'))
+        offloading_modes.append(
+            self.prepare_offloading_modes(iface2, self.offloadings_2, 'true'))
+
+        for node in slave_nodes:
             self.fuel_web.update_node_networks(node['id'],
-                                               deepcopy(interfaces))
+                                               deepcopy(self.interfaces))
             for offloading in offloading_modes:
                 self.fuel_web.update_offloads(
                     node['id'], deepcopy(offloading), offloading['name'])
@@ -229,26 +250,17 @@ class TestOffloading(TestBasic):
             with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
                 logger.info("Verify Offload types")
 
-                result = check_offload(remote,
-                                       iface_alias('eth1'),
-                                       'rx-vlan-offload')
-                assert_equal(result, "on",
-                             "Offload type {0} is {1} on remote host"
-                             .format('rx-vlan-offload', result))
+                for offload_type in self.offloadings_1:
+                    result = check_offload(remote, iface1, offload_type)
+                    assert_equal(result, "off",
+                                 "Offload type {0} is {1} on {2}".format(
+                                         offload_type, result, node['name']))
 
-                result = check_offload(remote,
-                                       iface_alias('eth1'),
-                                       'tx-vlan-offload')
-                assert_equal(result, "on",
-                             "Offload type {0} is {1} on remote host"
-                             .format('tx-vlan-offload', result))
-
-                result = check_offload(remote,
-                                       iface_alias('eth2'),
-                                       'large-receive-offload')
-                assert_equal(result, "off",
-                             "Offload type {0} is {1} on remote host"
-                             .format('large-receive-offload', result))
+                for offload_type in self.offloadings_2:
+                    result = check_offload(remote, iface2, offload_type)
+                    assert_equal(result, "on",
+                                 "Offload type {0} is {1} on {2}".format(
+                                         offload_type, result, node['name']))
 
         self.show_step(9)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
