@@ -15,10 +15,12 @@
 from copy import deepcopy
 
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
 from proboscis import test
 
 from fuelweb_test.helpers.checkers import check_offload
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.test_bonding_base import BondingTest
@@ -27,11 +29,13 @@ from fuelweb_test.tests.test_bonding_base import BondingTest
 @test(groups=["bonding_ha_one_controller", "bonding"])
 class TestOffloading(BondingTest):
 
-    bond0_offloading_types = ['generic-receive-offload',
-                              'generic-segmentation-offload',
-                              'tcp-segmentation-offload']
+    offloadings_1 = ['generic-receive-offload',
+                     'generic-segmentation-offload',
+                     'tcp-segmentation-offload']
 
-    bond1_offloading_types = ['rx-all']
+    offloadings_2 = ['rx-all',
+                     'rx-vlan-offload',
+                     'tx-vlan-offload']
 
     def prepare_offloading_modes(self, interfaces, offloading_types, state):
         modes = [{'name': name, 'state': state} for name in offloading_types]
@@ -63,7 +67,7 @@ class TestOffloading(BondingTest):
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        self.show_step(1, initialize=True)
+        self.show_step(1)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE_HA,
@@ -83,22 +87,36 @@ class TestOffloading(BondingTest):
             }
         )
 
-        self.show_step(4)
-        bond0_interfaces = self.get_bond_interfaces(self.BOND_CONFIG, 'bond0')
-        offloading_modes = self.prepare_offloading_modes(
-            ['bond0'], self.bond0_offloading_types, 'false')
-        bond1_interfaces = self.get_bond_interfaces(self.BOND_CONFIG, 'bond1')
-        offloading_modes += self.prepare_offloading_modes(
-            ['bond1'], self.bond1_offloading_types, 'true')
-
         nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+
+        self.show_step(4)
+        bond0 = self.get_bond_interfaces(self.BOND_CONFIG, 'bond0')
+        bond1 = self.get_bond_interfaces(self.BOND_CONFIG, 'bond1')
+        offloadings_1 = self.offloadings_1
+        offloadings_2 = self.offloadings_2
+        for node in nodes:
+            modes = self.fuel_web.get_offloading_modes(node['id'], bond0)
+            for name in self.offloadings_1:
+                if name not in modes:
+                    offloadings_1.remove(name)
+            modes = self.fuel_web.get_offloading_modes(node['id'], bond1)
+            for name in self.offloadings_2:
+                if name not in modes:
+                    offloadings_2.remove(name)
+
+        assert_true(len(offloadings_1) > 0, "No types for disable offloading")
+        assert_true(len(offloadings_2) > 0, "No types for enable offloading")
+
+        modes = self.prepare_offloading_modes(['bond0'], offloadings_1, False)
+        modes += self.prepare_offloading_modes(['bond1'], offloadings_2, True)
+
         self.show_step(5)
         for node in nodes:
             self.fuel_web.update_node_networks(
                 node['id'],
                 interfaces_dict=deepcopy(self.INTERFACES),
                 raw_data=deepcopy(self.BOND_CONFIG))
-            for offloading in offloading_modes:
+            for offloading in modes:
                 self.fuel_web.update_offloads(
                     node['id'], deepcopy(offloading), offloading['name'])
 
@@ -112,16 +130,16 @@ class TestOffloading(BondingTest):
 
         self.show_step(9)
         for node in nodes:
-            for eth in bond0_interfaces:
-                for name in self.bond0_offloading_types:
+            for eth in bond0:
+                for name in offloadings_1:
                     with self.env.d_env.get_ssh_to_remote(node['ip']) as host:
                         result = check_offload(host, eth, name)
                         assert_equal(
                             result, 'off',
                             "Offload type '{0}': '{1}' - node-{2}, {3}".format(
                                 name, result, node['id'], eth))
-            for eth in bond1_interfaces:
-                for name in self.bond1_offloading_types:
+            for eth in bond1:
+                for name in offloadings_2:
                     with self.env.d_env.get_ssh_to_remote(node['ip']) as host:
                         result = check_offload(host, eth, name)
                         assert_equal(
@@ -159,7 +177,7 @@ class TestOffloading(BondingTest):
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        self.show_step(1, initialize=True)
+        self.show_step(1)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE_HA,
@@ -179,22 +197,37 @@ class TestOffloading(BondingTest):
             }
         )
 
-        self.show_step(4)
-        bond0_interfaces = self.get_bond_interfaces(self.BOND_CONFIG, 'bond0')
-        offloading_modes = self.prepare_offloading_modes(
-            ['bond0'], self.bond0_offloading_types, 'false')
-        bond1_interfaces = self.get_bond_interfaces(self.BOND_CONFIG, 'bond1')
-        offloading_modes += self.prepare_offloading_modes(
-            ['bond1'], self.bond1_offloading_types, 'true')
-
         nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+
+        self.show_step(4)
+        bond0 = self.get_bond_interfaces(self.BOND_CONFIG, 'bond0')
+        bond1 = self.get_bond_interfaces(self.BOND_CONFIG, 'bond1')
+
+        offloadings_1 = self.offloadings_1
+        offloadings_2 = self.offloadings_2
+        for node in nodes:
+            modes = self.fuel_web.get_offloading_modes(node['id'], bond0)
+            for name in self.offloadings_1:
+                if name not in modes:
+                    offloadings_1.remove(name)
+            modes = self.fuel_web.get_offloading_modes(node['id'], bond1)
+            for name in self.offloadings_2:
+                if name not in modes:
+                    offloadings_2.remove(name)
+
+        assert_true(len(offloadings_1) > 0, "No types for disable offloading")
+        assert_true(len(offloadings_2) > 0, "No types for enable offloading")
+
+        modes = self.prepare_offloading_modes(['bond0'], offloadings_1, False)
+        modes += self.prepare_offloading_modes(['bond1'], offloadings_2, True)
+
         self.show_step(5)
         for node in nodes:
             self.fuel_web.update_node_networks(
                 node['id'],
                 interfaces_dict=deepcopy(self.INTERFACES),
                 raw_data=deepcopy(self.BOND_CONFIG))
-            for offloading in offloading_modes:
+            for offloading in modes:
                 self.fuel_web.update_offloads(
                     node['id'], deepcopy(offloading), offloading['name'])
 
@@ -208,18 +241,23 @@ class TestOffloading(BondingTest):
 
         self.show_step(9)
         for node in nodes:
-            for eth in bond0_interfaces:
-                for name in self.bond0_offloading_types:
+            logger.info("node-{}".format(node['id']))
+            for eth in bond0:
+                logger.info("{}".format(eth))
+                for name in offloadings_1:
                     with self.env.d_env.get_ssh_to_remote(node['ip']) as host:
                         result = check_offload(host, eth, name)
+                        logger.info("{0}: {1}".format(name, result))
                         assert_equal(
                             result, 'off',
                             "Offload type '{0}': '{1}' - node-{2}, {3}".format(
                                 name, result, node['id'], eth))
-            for eth in bond1_interfaces:
-                for name in self.bond1_offloading_types:
+            for eth in bond1:
+                logger.info("{}".format(eth))
+                for name in offloadings_2:
                     with self.env.d_env.get_ssh_to_remote(node['ip']) as host:
                         result = check_offload(host, eth, name)
+                        logger.info("{0}: {1}".format(name, result))
                         assert_equal(
                             result, 'on',
                             "Offload type '{0}': '{1}' - node-{2}, {3}".format(
