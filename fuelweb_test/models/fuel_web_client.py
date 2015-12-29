@@ -1354,6 +1354,16 @@ class FuelWebClient(object):
             self.update_node_networks(node['id'], assigned_networks)
 
     @logwrap
+    def get_offloading_modes(self, node_id, interfaces):
+        offloading_types = []
+        for i in self.client.get_node_interfaces(node_id):
+            for interface in interfaces:
+                if i['name'] == interface:
+                    for offloading_type in i['offloading_modes']:
+                        offloading_types.append(offloading_type['name'])
+        return offloading_types
+
+    @logwrap
     def update_offloads(self, node_id, update_values, interface_to_update):
         interfaces = self.client.get_node_interfaces(node_id)
 
