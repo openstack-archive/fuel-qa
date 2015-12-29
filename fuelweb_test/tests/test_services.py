@@ -551,9 +551,8 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
-            checkers.verify_service(
-                remote,
-                service_name='ceilometer-api')
+            checkers.verify_service(remote,
+                                    service_name='ceilometer-api', count=4)
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-03")['ip']
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
@@ -608,9 +607,8 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
-            checkers.verify_service(
-                remote,
-                service_name='ceilometer-api')
+            checkers.verify_service(remote,
+                                    service_name='ceilometer-api', count=4)
 
         self.run_tests(cluster_id)
         self.env.make_snapshot("deploy_ceilometer_ha_one_controller_multirole")
@@ -666,9 +664,8 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
-            checkers.verify_service(
-                remote,
-                service_name='ceilometer-api')
+            checkers.verify_service(remote,
+                                    service_name='ceilometer-api', count=4)
 
         self.run_tests(cluster_id,
                        skip_tests=['test_check_volume_notifications'])
@@ -718,9 +715,8 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
-            checkers.verify_service(
-                remote,
-                service_name='ceilometer-api')
+            checkers.verify_service(remote,
+                                    service_name='ceilometer-api', count=4)
 
         self.run_tests(cluster_id)
         self.env.make_snapshot("deploy_ceilometer_ha_multirole", is_make=True)
@@ -813,9 +809,8 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
-            checkers.verify_service(
-                remote,
-                service_name='ceilometer-api')
+            checkers.verify_service(remote,
+                                    service_name='ceilometer-api', count=4)
 
         self.run_tests(cluster_id)
         self.env.make_snapshot("deploy_ceilometer_ha_with_external_mongo")
@@ -883,9 +878,8 @@ class HeatHAOneController(TestBasic):
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
-            checkers.verify_service(
-                remote,
-                service_name='ceilometer-api')
+            checkers.verify_service(remote,
+                                    service_name='ceilometer-api', count=4)
 
         LOGGER.debug('Run Heat OSTF platform tests')
 
@@ -975,9 +969,8 @@ class HeatHA(TestBasic):
                 checkers.verify_service(
                     remote,
                     service_name='heat-api', count=3)
-                checkers.verify_service(
-                    remote,
-                    service_name='ceilometer-api')
+                checkers.verify_service(remote,
+                                        service_name='ceilometer-api', count=4)
 
         LOGGER.debug('Run Heat OSTF platform tests')
 
