@@ -93,6 +93,15 @@ def verify_service(remote, service_name, count=1):
 
 
 @logwrap
+def verify_ceilometer_api(remote):
+    ps_output = remote.execute('ps ax')['stdout']
+    api = filter(lambda x: 'ceilometer-api' in x, ps_output)
+    logger.debug("{} \\n: {}".format('ceilometer-api', str(api)))
+    assert_true(len(api) >= 1,
+                "ceilometer-api count {} is not greater 1".format(len(api)))
+
+
+@logwrap
 def verify_service_list_api(os_conn, service_count):
     def _verify():
         ret = os_conn.get_nova_service_list()
