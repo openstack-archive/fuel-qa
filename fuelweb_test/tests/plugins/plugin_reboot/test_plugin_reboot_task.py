@@ -69,16 +69,19 @@ class RebootPlugin(TestBasic):
             # replace plugin tasks with our file
             fpb.fpb_replace_plugin_content(
                 os.path.join(tasks_path, tasks_file),
-                os.path.join('/root/', plugin_name, 'tasks.yaml'))
+                os.path.join(container_plugin_path, 'tasks.yaml'))
             # build plugin
-            fpb.fpb_build_plugin(container_plugin_path)
+            packet_name = fpb.fpb_build_plugin(container_plugin_path)
             # copy plugin archive file from nailgun container
             # to the /var directory on the master node
-            fpb.fpb_copy_plugin_from_container(plugin_name, plugin_path)
+            fpb.fpb_copy_plugin_from_container(
+                container_plugin_path,
+                packet_name,
+                plugin_path)
             # let's install plugin
             checkers.install_plugin_check_code(
                 admin_remote,
-                plugin=os.path.join(plugin_path, '{}.rpm'.format(plugin_name)))
+                plugin=os.path.join(plugin_path, packet_name))
 
         # create cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -194,18 +197,20 @@ class RebootPlugin(TestBasic):
             fpb.fpb_create_plugin(container_plugin_path)
             # replace plugin tasks with our file
             fpb.fpb_replace_plugin_content(
-                os.path.join('/tmp/', tasks_file),
-                os.path.join(container_plugin_path, 'tasks.yaml')
-            )
+                os.path.join(tasks_path, tasks_file),
+                os.path.join(container_plugin_path, 'tasks.yaml'))
             # build plugin
-            fpb.fpb_build_plugin(container_plugin_path)
+            packet_name = fpb.fpb_build_plugin(container_plugin_path)
             # copy plugin archive file from nailgun container
             # to the /var directory on the master node
-            fpb.fpb_copy_plugin_from_container(plugin_name, plugin_path)
+            fpb.fpb_copy_plugin_from_container(
+                container_plugin_path,
+                packet_name,
+                plugin_path)
             # let's install plugin
             checkers.install_plugin_check_code(
                 admin_remote,
-                plugin=os.path.join(plugin_path, '{}.rpm'.format(plugin_name)))
+                plugin=os.path.join(plugin_path, packet_name))
         # create cluster
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,

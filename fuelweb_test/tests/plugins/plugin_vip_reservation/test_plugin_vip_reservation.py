@@ -79,14 +79,17 @@ class VipReservation(TestBasic):
                 os.path.join(dir_path, metadata_file),
                 os.path.join(container_plugin_path, metadata_file))
             # build plugin
-            fpb.fpb_build_plugin(container_plugin_path)
+            packet_name = fpb.fpb_build_plugin(container_plugin_path)
             # copy plugin archive file from nailgun container
             # to the /var directory on the master node
-            fpb.fpb_copy_plugin_from_container(plugin_name, plugin_path)
+            fpb.fpb_copy_plugin_from_container(
+                container_plugin_path,
+                packet_name,
+                plugin_path)
             # let's install plugin
             checkers.install_plugin_check_code(
                 admin_remote,
-                plugin=os.path.join(plugin_path, '{}.rpm'.format(plugin_name)))
+                plugin=os.path.join(plugin_path, packet_name))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -204,14 +207,17 @@ class VipReservation(TestBasic):
                 [1, 'properties', 'vip', 0, 'namespace'],
                 namespace)
             # build plugin
-            fpb.fpb_build_plugin(container_plugin_path)
+            packet_name = fpb.fpb_build_plugin(container_plugin_path)
             # copy plugin archive file from nailgun container
             # to the /var directory on the master node
-            fpb.fpb_copy_plugin_from_container(plugin_name, plugin_path)
+            fpb.fpb_copy_plugin_from_container(
+                container_plugin_path,
+                packet_name,
+                plugin_path)
             # let's install plugin
             checkers.install_plugin_check_code(
                 admin_remote,
-                plugin=os.path.join(plugin_path, '{}.rpm'.format(plugin_name)))
+                plugin=os.path.join(plugin_path, packet_name))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -326,14 +332,17 @@ class VipReservation(TestBasic):
                 [1, 'properties', 'vip', 0, 'namespace'],
                 namespace)
             # build plugin
-            fpb.fpb_build_plugin(container_plugin_path)
+            packet_name = fpb.fpb_build_plugin(container_plugin_path)
             # copy plugin archive file from nailgun container
             # to the /var directory on the master node
-            fpb.fpb_copy_plugin_from_container(plugin_name, plugin_path)
+            fpb.fpb_copy_plugin_from_container(
+                container_plugin_path,
+                packet_name,
+                plugin_path)
             # let's install plugin
             checkers.install_plugin_check_code(
                 admin_remote,
-                plugin=os.path.join(plugin_path, '{}.rpm'.format(plugin_name)))
+                plugin=os.path.join(plugin_path, packet_name))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
