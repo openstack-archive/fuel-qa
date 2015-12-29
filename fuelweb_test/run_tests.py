@@ -179,6 +179,8 @@ def run_tests():
 if __name__ == '__main__':
     import_tests()
     define_custom_groups()
+    from gates_tests.helpers import puppet_modules_mapping
+    puppet_modules_mapping(modules)
     from fuelweb_test.helpers.patching import map_test
     if any(re.search(r'--group=patching_master_tests', arg)
            for arg in sys.argv):

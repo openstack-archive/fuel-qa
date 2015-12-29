@@ -1,0 +1,90 @@
+---
+
+bvt_2:
+ - apache
+ - apt
+ - ceph
+ - cluster
+ - cobbler
+ - concat
+ - datacat
+ - filemapper
+ - inifile
+ - keystone
+ - l23network
+ - mcollective
+ - memcached
+ - monit
+ - nailgun
+ - neutron
+ - nova
+ - postgresql
+ - rsync
+ - rsyslog
+ - ssh
+ - ssh
+ - staging
+ - stdlib
+ - sysctl
+ - sysfs
+ - tftp
+ - tweaks
+ - umm
+ - vcsrepo
+ - xinetd
+ - docker
+ - glance
+
+deploy_heat_ha:
+ - ceilometer_ha
+ - heat_ha
+ - ceilometer
+ - heat
+ - mongodb
+
+ha_neutron:
+ - cinder
+
+ha_neutron_destructive:
+ - corosync
+ - haproxy
+ - pacemaker
+ - pacemaker_wrappers
+ - rabbitmq
+
+ha_neutron_firewall:
+ - firewall
+
+separate_db_service_restart:
+ - galera
+ - mysql
+
+separate_horizon_service:
+ - horizon
+
+#Need to add ironic_ha_test with 3 controllers
+ironic:
+ - ironic
+
+deploy_murano_ha_with_tun:
+ - murano
+
+deploy_ha_dns_ntp:
+ - ntp
+
+deploy_sahara_ha_tun:
+ - sahara
+
+neutron_vlan_ha:
+ - swift
+
+#TO DO
+#mellanox_openstack
+#openssl
+#openstacklib
+#sahara_templates
+#osnailyfactor/modular
+
+
+
+
