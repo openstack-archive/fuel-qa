@@ -716,7 +716,7 @@ class ServicesReconfiguration(TestBasic):
 
         Snapshot "reconfiguration_scalability"
         """
-
+        self.check_run('reconfiguration_scalability')
         self.show_step(1)
         self.env.revert_snapshot("reconfigure_nova_ephemeral_disk")
 
@@ -798,3 +798,91 @@ class ServicesReconfiguration(TestBasic):
         self.check_token_expiration(os_conn, time_expiration)
 
         self.env.make_snapshot("reconfiguration_scalability", is_make=True)
+
+    @test(depends_on_groups=['reconfigurstion_scalability'],
+          groups=["services_reconfiguration",
+                  "multiple_apply_config"])
+    @log_snapshot_after_test
+    def multiple_apply_config(self):
+        """Multiple serial applying of configuration
+
+        Scenario:
+            1. Revert snapshot "reconfigurstion_scalability"
+            2. Upload a new openstack configuration for certain compute
+            3. Get uptime of process "nova-compute" on target compute
+            4. Wait for configuration applying
+            5. Get uptime of process "nova-compute" on target compute
+            6. Verify nova settings on each compute
+            7. Create flavor with ephemral disk
+            8. Boot instance on untarget compute with ephemral disk
+            9. Assign floating ip
+            10. Check ping to the instance
+            11. SSH to VM and check ephemeral disk format
+            13. Boot instance on target compute with ephemral disk
+            14. Assign floating ip
+            15. Check ping to the instance
+            16. SSH to VM and check ephemeral disk format
+
+        Snapshot "multiple_apply_config"
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot("reconfiguration_scalability")
+
+        self.show_step(2)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        computes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute'])
+        target_compute = computes[0]
+        config = utils.get_config_template('nova_disk')
+        structured_config_old = get_structured_config_dict(config)
+
+        config['nova_config'][
+            'DEFAULT/default_ephemeral_format']['value'] = 'ext3'
+        structured_config_new = get_structured_config_dict(config)
+        self.fuel_web.client.upload_configuration(config,
+                                                  cluster_id,
+                                                  node_id=target_compute['id'])
+
+        self.show_step(3)
+        service_name = 'nova-compute'
+        uptimes = self.get_service_uptime([target_compute], service_name)
+
+        self.show_step(4)
+        task = self.fuel_web.client.apply_configuration(
+            cluster_id,
+            node_id=target_compute['id'])
+        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+
+        self.show_step(5)
+        self.check_service_was_restarted([target_compute],
+                                         uptimes, service_name)
+
+        self.show_step(6)
+        for compute in computes:
+            if compute == target_compute:
+                self.check_config_on_remote([compute], structured_config_new)
+                taget_hypervisor_name = compute['fqdn']
+            else:
+                hypervisor_name = compute['fqdn']
+                self.check_config_on_remote([compute], structured_config_old)
+
+        self.show_step(7)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+
+        self.show_step(8)
+        self.show_step(9)
+        self.show_step(10)
+        self.show_step(11)
+        self.check_nova_ephemeral_disk(os_conn, cluster_id,
+                                       hypervisor_name=taget_hypervisor_name,
+                                       fs_type='ext3')
+        self.show_step(12)
+        self.show_step(13)
+        self.show_step(14)
+        self.show_step(15)
+        self.check_nova_ephemeral_disk(os_conn, cluster_id,
+                                       hypervisor_name=hypervisor_name)
+
+        self.env.make_snapshot("multiple_apply_config")
