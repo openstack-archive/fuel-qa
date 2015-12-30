@@ -61,13 +61,12 @@ class EnvironmentModel(object):
                 cls, *args, **kwargs)
         return cls._instance
 
-    def __init__(self):
+    def __init__(self, config=None):
         if not hasattr(self, "_virt_env"):
             self._virt_env = None
         if not hasattr(self, "_fuel_web"):
             self._fuel_web = None
-        if not hasattr(self, "_config"):
-            self._config = None
+        self._config = config
         self.ssh_manager = SSHManager()
 
         # TODO: remove this ugly hack for TestRail
