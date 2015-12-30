@@ -44,7 +44,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
 
         Duration 20m
         """
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_3_slaves")
         node_ids = [self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.nodes().slaves[slave_id])['id']
@@ -107,7 +107,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
 
         Duration 20m
         """
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_3_slaves")
         node_ids = [self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.nodes().slaves[slave_id])['id']

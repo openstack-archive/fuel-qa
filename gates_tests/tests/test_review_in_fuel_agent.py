@@ -54,7 +54,7 @@ class Gate(TestBasic):
         if not settings.UPDATE_FUEL:
                 raise Exception("{} variable don't exist"
                                 .format(settings.UPDATE_FUEL))
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready")
 
         self.show_step(2)
