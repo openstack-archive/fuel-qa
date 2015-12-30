@@ -11,17 +11,20 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import os
+import traceback
 
 from devops.error import TimeoutError
 from devops.helpers.helpers import wait
 from proboscis import test
 from proboscis import asserts
-import traceback
+
 
 from gates_tests.helpers import exceptions
 from fuelweb_test.helpers.checkers import check_cluster_presence
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import run_on_remote
+from fuelweb_test.helpers.utils import get_package_version
 from fuelweb_test.settings import UPDATE_FUEL
 from fuelweb_test.settings import UPDATE_FUEL_PATH
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -53,16 +56,6 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
             'Command {0} failed with {1}'.format(cmd, result))
 
     @staticmethod
-    def get_current_rmp_version(remote, package_name):
-        cmd = 'rpm -q {0}'.format(package_name)
-        result = remote.execute(cmd)
-        asserts.assert_equal(
-            0, result['exit_code'],
-            'Can not get current version for package {0}. '
-            'Command {1} failed with {2}'.format(package_name, cmd, result))
-        return ''.join(result['stdout']).strip()
-
-    @staticmethod
     def replace_package(remote, package_name, package_path):
         cmd = "ls -all {0} | grep {1}| awk '{{print $9}}' ".format(
             package_path, package_name)
@@ -72,26 +65,35 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
             'Failed to run command {0} with {1} '
             'on replace package stage'.format(cmd, result))
         package_from_review = ''.join(result['stdout']).strip().rstrip('.rpm')
+        income_version = get_package_version(
+            remote, os.path.join(package_path, package_name), income=True)
+        logger.info('Version of package from review'.format(income_version))
 
-        logger.info('Try to install package {0}'.format(package_from_review))
+        installed_rpm = get_package_version(
+            remote, package_name, income=True)
+        logger.info('Version of installed package'.format(installed_rpm))
 
-        cmd = 'rpm -Uvh --oldpackage {0}{1}*.rpm'.format(package_path,
-                                                         package_name)
-        install_result = remote.execute(cmd)
-        asserts.assert_equal(
-            0,
-            install_result['exit_code'],
-            'Failed to run command {0} with '
-            'result {1} on install package from review stage'.format(
-                cmd, install_result))
+        if installed_rpm != income_version:
+            logger.info('Try to install package {0}'.format(
+                package_from_review))
 
-        installed_rpm = CreateDeployEnvironmentCli.get_current_rmp_version(
-            remote, 'python-fuelclient')
-        asserts.assert_equal(
-            installed_rpm, package_from_review,
-            'Package {0} from review '
-            'installation fails. Current installed package is {1}'.format(
-                package_from_review, installed_rpm))
+            cmd = 'rpm -Uvh --oldpackage {0}{1}*.rpm'.format(
+                package_path, package_name)
+            install_result = remote.execute(cmd)
+            asserts.assert_equal(
+                0,
+                install_result['exit_code'],
+                'Failed to run command {0} with '
+                'result {1} on install package from review stage'.format(
+                    cmd, install_result))
+            installed_rpm = get_package_version(
+                remote, package_name, income=True)
+
+            asserts.assert_equal(
+                installed_rpm, package_from_review,
+                'Package {0} from review '
+                'installation fails. Current installed '
+                'package is {1}'.format(package_from_review, installed_rpm))
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["review_fuel_client"])
