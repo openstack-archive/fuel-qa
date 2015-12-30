@@ -76,7 +76,13 @@ class TestIronicBase(TestBasic):
         self.fuel_web.verify_network(cluster_id)
 
         self.show_step(7)
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
+
+        # Do not lauch test simulteniously, it land to rase condition
+        # https://bugs.launchpad.net/mos/+bug/1529886
+        run_tests = ('sanity', 'smoke')
+        for test in run_tests:
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=[test])
 
         self.env.make_snapshot("ironic_base")
