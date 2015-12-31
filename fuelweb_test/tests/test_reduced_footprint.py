@@ -51,8 +51,7 @@ class TestVirtRole(TestBasic):
 
         self.env.revert_snapshot("ready_with_1_slaves")
 
-        checkers.enable_feature_group(self.env, 'advanced')
-        self.env.docker_actions.restart_container("nailgun")
+        checkers.enable_feature_group(self.env, "advanced")
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -110,8 +109,7 @@ class TestVirtRole(TestBasic):
 
         self.env.revert_snapshot("ready_with_1_slaves")
 
-        checkers.enable_feature_group(self.env, 'advanced')
-        self.env.docker_actions.restart_container("nailgun")
+        checkers.enable_feature_group(self.env, "advanced")
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -176,8 +174,7 @@ class TestVirtRole(TestBasic):
 
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        checkers.enable_feature_group(self.env, 'advanced')
-        self.env.docker_actions.restart_container("nailgun")
+        checkers.enable_feature_group(self.env, "advanced")
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -214,7 +211,7 @@ class TestVirtRole(TestBasic):
 
         self.fuel_web.spawn_vms_wait(cluster_id)
         wait(lambda: len(self.fuel_web.client.list_nodes()) == 6,
-             timeout=60 * 60,
+             timeout=60 * 120,
              timeout_msg=("Timeout waiting 6 available nodes, "
                           "current nodes: \n{0}" + '\n'.join(
                               ['Name: {0}, status: {1}, online: {2}'.
