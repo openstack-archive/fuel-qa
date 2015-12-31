@@ -111,6 +111,11 @@ Test Murano OS component with vlan
 .. automodule:: fuelweb_test.tests.tests_os_components.test_murano_os_component
    :members:
 
+Test mixed OS components
+------------------------
+.. automodule:: fuelweb_test.tests.tests_os_components.test_mixed_os_components
+   :members:
+
 Test Mongo Multirole
 --------------------
 .. automodule:: fuelweb_test.tests.tests_multirole.test_mongo_multirole
