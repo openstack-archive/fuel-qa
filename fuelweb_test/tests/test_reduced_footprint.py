@@ -11,6 +11,8 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import urllib2
+
 from devops.helpers.helpers import wait
 from proboscis import asserts
 from proboscis import test
@@ -33,6 +35,24 @@ class TestVirtRole(TestBasic):
     as standard bare metal servers.
     """
 
+    def wait_for_advanced_group_enabled(self):
+        def check_api_available():
+            try:
+                self.fuel_web.client.get_api_version()
+            except (urllib2.HTTPError, urllib2.URLError):
+                return False
+            return True
+
+        wait(check_api_available, interval=10, timeout=60 * 15)
+        wait(lambda: "advanced" in
+                     self.fuel_web.client.get_api_version()["feature_groups"],
+             interval=10, timeout=60 * 5)
+
+    def enable_advanced_feature_group(self):
+        checkers.enable_feature_group(self.env, "advanced")
+        self.env.docker_actions.restart_container("nailgun")
+        self.wait_for_advanced_group_enabled()
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["spawn_one_vm_on_one_virt_node"])
     @log_snapshot_after_test
@@ -51,8 +71,7 @@ class TestVirtRole(TestBasic):
 
         self.env.revert_snapshot("ready_with_1_slaves")
 
-        checkers.enable_feature_group(self.env, 'advanced')
-        self.env.docker_actions.restart_container("nailgun")
+        self.enable_advanced_feature_group()
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -110,8 +129,7 @@ class TestVirtRole(TestBasic):
 
         self.env.revert_snapshot("ready_with_1_slaves")
 
-        checkers.enable_feature_group(self.env, 'advanced')
-        self.env.docker_actions.restart_container("nailgun")
+        self.enable_advanced_feature_group()
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -176,8 +194,7 @@ class TestVirtRole(TestBasic):
 
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        checkers.enable_feature_group(self.env, 'advanced')
-        self.env.docker_actions.restart_container("nailgun")
+        self.enable_advanced_feature_group()
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -214,7 +231,7 @@ class TestVirtRole(TestBasic):
 
         self.fuel_web.spawn_vms_wait(cluster_id)
         wait(lambda: len(self.fuel_web.client.list_nodes()) == 6,
-             timeout=60 * 60,
+             timeout=60 * 120,
              timeout_msg=("Timeout waiting 6 available nodes, "
                           "current nodes: \n{0}" + '\n'.join(
                               ['Name: {0}, status: {1}, online: {2}'.
