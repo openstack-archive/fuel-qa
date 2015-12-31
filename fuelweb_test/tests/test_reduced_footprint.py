@@ -54,6 +54,13 @@ class TestVirtRole(TestBasic):
         checkers.enable_feature_group(self.env, 'advanced')
         self.env.docker_actions.restart_container("nailgun")
 
+        check_group_enabled = \
+            lambda: "advanced" in self.fuel_web.client.get_api_version()\
+                .get("feature_groups", [])
+        wait(check_group_enabled,
+             interval=10,
+             timeout=300)
+
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE_HA,
