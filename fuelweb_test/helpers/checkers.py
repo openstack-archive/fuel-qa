@@ -16,6 +16,7 @@ import json
 import os
 import re
 import traceback
+import urllib2
 
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
@@ -360,6 +361,19 @@ def enable_feature_group(env, group):
     fuel_settings = env.admin_actions.get_fuel_settings()
     fuel_settings["FEATURE_GROUPS"].append(group)
     env.admin_actions.save_fuel_settings(fuel_settings)
+    env.docker_actions.restart_container("nailgun")
+
+    def check_api_available():
+        try:
+            env.fuel_web.client.get_api_version()
+        except (urllib2.HTTPError, urllib2.URLError):
+            return False
+        return True
+
+    wait(check_api_available, interval=10, timeout=60 * 15)
+    wait(lambda: group in
+         env.fuel_web.client.get_api_version()["feature_groups"],
+         interval=10, timeout=60 * 5)
 
 
 @logwrap
