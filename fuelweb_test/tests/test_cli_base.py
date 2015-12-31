@@ -125,3 +125,9 @@ class CommandLine(TestBasic):
         cn = self.get_public_vip(cluster_id, remote)
         change_cluster_ssl_config(settings, cn)
         self.upload_settings(cluster_id, remote, settings)
+
+    def add_nodes_to_cluster(
+            self, remote, cluster_id, node_ids, roles):
+        cmd = ('fuel --env-id={0} node set --node {1} --role={2}'.format(
+            cluster_id, node_ids, ','.join(roles)))
+        run_on_remote(remote, cmd)
