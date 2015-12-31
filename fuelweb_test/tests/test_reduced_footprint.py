@@ -14,6 +14,7 @@
 from devops.helpers.helpers import wait
 from proboscis import asserts
 from proboscis import test
+from urllib2 import HTTPError
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -53,6 +54,19 @@ class TestVirtRole(TestBasic):
 
         checkers.enable_feature_group(self.env, 'advanced')
         self.env.docker_actions.restart_container("nailgun")
+
+        check_group_enabled = \
+            lambda: "advanced" in self.fuel_web.client.get_api_version()["feature_groups"]
+
+        def check_api_available():
+            try:
+                self.fuel_web.client.get_api_version()
+            except HTTPError:
+                return False
+            return True
+
+        wait(check_api_available, interval=10, timeout=200)
+        wait(check_group_enabled, interval=10, timeout=300)
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
