@@ -65,7 +65,7 @@ class BaseActions(object):
         if stdin is not None:
             cmd = 'echo "{0}" | {1}'.format(stdin, cmd)
 
-        result = self.ssh_manager.execute_on_remote(
+        result = self.ssh_manager.execute(
             ip=self.admin_ip,
             cmd=cmd
         )
@@ -99,7 +99,7 @@ class BaseActions(object):
             Standard output from console
         """
         cmd = 'dockerctl copy {0} {1}'.format(copy_from, copy_to)
-        result = self.ssh_manager.execute_on_remote(
+        result = self.ssh_manager.execute(
             ip=self.admin_ip,
             cmd=cmd
         )
@@ -114,7 +114,7 @@ class BaseActions(object):
 
     @property
     def is_container_ready(self):
-        result = self.ssh_manager.execute_on_remote(
+        result = self.ssh_manager.execute(
             ip=self.admin_ip,
             cmd="timeout 5 dockerctl check {0}".format(self.container)
         )
@@ -287,8 +287,8 @@ class AdminActions(BaseActions):
             # for admin node
             cmd = 'ntpdate -p 4 -t 0.2 -ub {0}'.format(router)
 
-            if not self.ssh_manager.execute_on_remote(ip=self.admin_ip,
-                                                      cmd=cmd)['exit_code']:
+            if not self.ssh_manager.execute(ip=self.admin_ip,
+                                            cmd=cmd)['exit_code']:
                 # Local ntpd on the host is alive, so
                 # remove all NTP sources and add the host instead.
                 logger.info("Switching NTPD on the Fuel admin node to use "
@@ -343,7 +343,7 @@ class AdminActions(BaseActions):
 
     @logwrap
     def clean_generated_image(self, distro):
-        out = self.ssh_manager.execute_on_remote(
+        out = self.ssh_manager.execute(
             ip=self.admin_ip,
             cmd="find /var/www/nailgun/targetimages/ -name "
                 "'env*{}*' -printf '%P\n'".format(distro.lower())
@@ -351,7 +351,7 @@ class AdminActions(BaseActions):
         images = ''.join(out)
 
         logger.debug("images are {}".format(images))
-        self.ssh_manager.execute_on_remote(
+        self.ssh_manager.execute(
             ip=self.admin_ip,
             cmd="find /var/www/nailgun/targetimages/ -name 'env*{}*'"
                 " -delete".format(distro.lower())
@@ -363,7 +363,7 @@ class AdminActions(BaseActions):
         logger.info('Unpacking file')
         filename, ext = os.path.splitext(name)
         cmd = "tar -xpvf" if ext.endswith("tar") else "lrzuntar"
-        result = self.ssh_manager.execute_on_remote(
+        result = self.ssh_manager.execute(
             ip=node_ip,
             cmd='cd {0} && {2} {1}'.format(path, name, cmd)
         )
@@ -408,7 +408,7 @@ class AdminActions(BaseActions):
 
     def get_fuel_settings(self):
         cmd = 'cat {cfg_file}'.format(cfg_file=hlp_data.FUEL_SETTINGS_YAML)
-        result = self.ssh_manager.execute_on_remote(
+        result = self.ssh_manager.execute(
             ip=self.admin_ip,
             cmd=cmd
         )
@@ -425,7 +425,7 @@ class AdminActions(BaseActions):
                                                     default_style='"',
                                                     default_flow_style=False),
                                           hlp_data.FUEL_SETTINGS_YAML)
-        result = self.ssh_manager.execute_on_remote(
+        result = self.ssh_manager.execute(
             ip=self.admin_ip,
             cmd=cmd
         )
@@ -670,7 +670,7 @@ class DockerActions(object):
         self.ssh_manager = SSHManager()
 
     def list_containers(self):
-        result = self.ssh_manager.execute_on_remote(
+        result = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
             cmd='dockerctl list'
         )
@@ -696,7 +696,7 @@ class DockerActions(object):
                 .format(failed_containers, timeout))
 
     def restart_container(self, container):
-        self.ssh_manager.execute_on_remote(
+        self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
             cmd='dockerctl restart {0}'.format(container)
         )
@@ -710,7 +710,7 @@ class DockerActions(object):
 
     def execute_in_containers(self, cmd):
         for container in self.list_containers():
-            self.ssh_manager.execute_on_remote(
+            self.ssh_manager.execute(
                 ip=self.ssh_manager.admin_ip,
                 cmd="dockerctl shell {0} bash -c '{1}'".format(container, cmd)
             )
