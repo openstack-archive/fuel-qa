@@ -239,8 +239,15 @@ class ActionsBase(PrepareBase, HealthCheckActions, PluginsActions):
                                                                'vlan'),
             "assign_to_all_nodes": self.env_config['network'].get(
                 'pubip-to-all',
-                False)
+                False),
+            "neutron_l3_ha": self.env_config['network'].get(
+                'neutron-l3-ha', False),
+            "neutron_dvr": self.env_config['network'].get(
+                'neutron-dvr', False),
+            "neutron_l2_pop": self.env_config['network'].get(
+                'neutron-l2-pop', False)
         }
+
         self.cluster_id = self.fuel_web.create_cluster(
             name=self.env_config['name'],
             mode=test_settings.DEPLOYMENT_MODE,
