@@ -239,8 +239,24 @@ class ActionsBase(PrepareBase, HealthCheckActions, PluginsActions):
                                                                'vlan'),
             "assign_to_all_nodes": self.env_config['network'].get(
                 'pubip-to-all',
-                False)
+                False),
+            "neutron_l3_ha": self.env_config['network'].get(
+                'neutron-l3-ha', False),
+            "neutron_dvr": self.env_config['network'].get(
+                'neutron-dvr', False),
+            "neutron_l2_pop": self.env_config['network'].get(
+                'neutron-l2-pop', False)
         }
+
+        if settings['neutron_dvr']:
+            if settings['neutron_l3_ha']:
+                raise ValueError("Neutron DVR and Neutron L3 HA can't be "
+                                 "used simultaneously.")
+            if settings['net_segment_type'] == 'tun':
+                logger.info("neutron_l2_pop was enabled as it was required "
+                            "for VxLAN DVR network configuration.")
+                settings['neutron_l2_pop'] = True
+
         self.cluster_id = self.fuel_web.create_cluster(
             name=self.env_config['name'],
             mode=test_settings.DEPLOYMENT_MODE,
