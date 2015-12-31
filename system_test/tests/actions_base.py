@@ -348,6 +348,18 @@ class ActionsBase(PrepareBase, HealthCheckActions, PluginsActions):
         """Deploy environment"""
         raise NotImplementedError
 
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def sync_time(self):
+        """Run time sync on the environment
+
+        Skip action if cluster doesn't exist
+        """
+        if self.cluster_id is None:
+            raise SkipTest()
+
+        self.env.sync_time()
+
 
 class FuelMasterActions(base_actions_factory.BaseActionsFactory):
     """Actions specific only to Fuel Master node

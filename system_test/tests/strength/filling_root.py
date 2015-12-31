@@ -40,15 +40,17 @@ class FillRootPrimaryController(
         13. Fill root filesystem on primary controller
             above rabbit_disk_free_limit of 5Mb
         14. Check for stopping pacemaker resources
-        15. Run OSTF Sanity and Smoke tests
-        16. Fill root filesystem on primary controller
+        15. Run a time sync on the cluster
+        16. Run OSTF Sanity and Smoke tests
+        17. Fill root filesystem on primary controller
             below rabbit_disk_free_limit of 5Mb
-        17. Check for stopped pacemaker resources
-        18. Run OSTF Sanity and Smoke tests
-        19. Clean up space on root filesystem on
+        18. Check for stopped pacemaker resources
+        19. Run a time sync on the cluster
+        20. Run OSTF Sanity and Smoke tests
+        21. Clean up space on root filesystem on
             primary controller
-        20. Check for started pacemaker resources
-        21. Run OSTF Sanity, Smoke, HA
+        22. Check for started pacemaker resources
+        23. Run OSTF Sanity, Smoke, HA
     """
 
     base_group = ['system_test',
@@ -71,9 +73,11 @@ class FillRootPrimaryController(
         'get_pcs_initial_state',
         'fill_root_above_rabbit_disk_free_limit',
         'check_stopping_resources',
+        'sync_time',
         'health_check',
         'fill_root_below_rabbit_disk_free_limit',
         'check_stopping_resources',
+        'sync_time',
         'health_check',
         'clean_up_space_on_root',
         'check_starting_resources',
