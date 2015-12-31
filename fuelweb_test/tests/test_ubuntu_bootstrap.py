@@ -29,7 +29,7 @@ from fuelweb_test import settings
 from fuelweb_test.tests import base_test_case
 
 
-@test(groups=["bvt_ubuntu_bootstrap"])
+@test(groups=["ubuntu_bootstrap_builder", "bvt_ubuntu_bootstrap"])
 class UbuntuBootstrapBuild(base_test_case.TestBasic):
     def _get_main_repo(self, repos, repo_name, suite_type):
         for repo in repos:
@@ -305,7 +305,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
             uuid)
 
 
-@test(groups=["bvt_ubuntu_bootstrap_deploy"])
+@test(groups=["ubuntu_bootstrap_deploy", "bvt_ubuntu_bootstrap"])
 class UbuntuBootstrap(base_test_case.TestBasic):
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
           groups=["deploy_with_two_ubuntu_bootstraps"])
