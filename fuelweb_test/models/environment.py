@@ -68,15 +68,11 @@ class EnvironmentModel(object):
         if not hasattr(self, "_config"):
             self._config = None
         self.ssh_manager = SSHManager()
-
-        # TODO: remove this ugly hack for TestRail
-        # reporter after LP#1528491 is fixed
-        if not settings.TESTRAIL_REPORTING:
-            self.ssh_manager.initialize(
-                self.get_admin_node_ip(),
-                login=settings.SSH_CREDENTIALS['login'],
-                password=settings.SSH_CREDENTIALS['password']
-            )
+        self.ssh_manager.initialize(
+            self.get_admin_node_ip(),
+            login=settings.SSH_CREDENTIALS['login'],
+            password=settings.SSH_CREDENTIALS['password']
+        )
         self.admin_actions = AdminActions()
         self.base_actions = BaseActions()
         self.cobbler_actions = CobblerActions()
