@@ -21,7 +21,7 @@ from proboscis.decorators import DEFAULT_REGISTRY
 
 from builds import Build
 from fuelweb_test.run_tests import import_tests
-from fuelweb_test.run_tests import define_custom_groups
+from system_test import define_custom_groups
 from settings import GROUPS_TO_EXPAND
 from settings import logger
 from settings import TestRailSettings
