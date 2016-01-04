@@ -30,6 +30,7 @@ from fuelweb_test.helpers.checkers import check_stats_private_info
 from fuelweb_test.helpers.checkers import count_stats_on_collector
 from proboscis import SkipTest
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
 
 from fuelweb_test import logger
 from fuelweb_test import settings
@@ -321,6 +322,8 @@ def revert_info(snapshot_name, master_ip, description=""):
 
 def create_diagnostic_snapshot(env, status, name=""):
     task = env.fuel_web.task_wait(env.fuel_web.client.generate_logs(), 60 * 10)
+    assert_true(task['status'] == 'ready',
+                "Generation of diagnostic snapshot failed: {}".format(task))
     url = "http://{}:8000{}".format(env.get_admin_node_ip(), task['message'])
     log_file_name = '{status}_{name}-{basename}'.format(
         status=status,
