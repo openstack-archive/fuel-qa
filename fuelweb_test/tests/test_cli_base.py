@@ -129,5 +129,5 @@ class CommandLine(TestBasic):
     def add_nodes_to_cluster(
             self, remote, cluster_id, node_ids, roles):
         cmd = ('fuel --env-id={0} node set --node {1} --role={2}'.format(
-            cluster_id, node_ids, ','.join(roles)))
+            cluster_id, ','.join(str(n) for n in node_ids), ','.join(roles)))
         run_on_remote(remote, cmd)
