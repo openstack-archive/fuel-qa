@@ -81,6 +81,21 @@ Test Environment Action
 .. automodule:: fuelweb_test.tests.test_environment_action
    :members:
 
+Test ha NeutronTUN deployment group 1 (controller+baseos multirole and ceph for images/objects)
+-----------------------------------------------------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_tun.test_ha_tun_group_1
+   :members:
+
+Test ha NeutronTUN deployment group 2 (ceph for all, baseos node and ceph for all, untag networks and changed OS credentials)
+-----------------------------------------------------------------------------------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_tun.test_ha_tun_group_2
+   :members:
+
+Test ha NeutronTUN deployment group 3 (5 controllers, ceph for images/ephemeral and no volumes, ceph for images/ephemeral)
+--------------------------------------------------------------------------------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_tun.test_ha_tun_group_3
+   :members:
+
 Test ha neutron vlan deployment group 1 (cinder/ceph for images and ceph for volumes/swift)
 -------------------------------------------------------------------------------------------
 .. automodule:: fuelweb_test.tests.tests_deployments.tests_neutron_vlan.test_ha_vlan_group_1
@@ -285,6 +300,7 @@ Test Ironic
 Test Services reconfiguration
 -----------------------------
 .. automodule:: fuelweb_test.tests.test_services_reconfiguration
+  :members:
 
 Test RHEL-based computes
 ------------------------
@@ -419,6 +435,11 @@ Emc tests
 Example tests
 -------------
 .. automodule:: fuelweb_test.tests.plugins.plugin_example.test_fuel_plugin_example
+   :members:
+
+Example tests for plugin installation after cluster create
+----------------------------------------------------------
+.. automodule:: fuelweb_test.tests.plugins.plugin_example.test_fuel_plugin_example_postdeploy
    :members:
 
 Glusterfs tests
