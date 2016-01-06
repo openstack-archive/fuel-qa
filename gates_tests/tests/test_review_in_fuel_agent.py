@@ -14,14 +14,11 @@
 
 from proboscis import test
 
-# from gates_tests.helpers.utils import patch_centos_bootstrap
-# from gates_tests.helpers.utils import replace_centos_bootstrap
 from gates_tests.helpers.utils import patch_and_assemble_ubuntu_bootstrap
 from gates_tests.helpers.utils import replace_fuel_agent_rpm
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import run_on_remote
-from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -61,11 +58,6 @@ class Gate(TestBasic):
         replace_fuel_agent_rpm(self.env)
 
         self.show_step(3)
-        # Uncomment when use CentOS bootstrap by default
-        # patch_centos_bootstrap(self.env)
-        # replace_centos_bootstrap(self.env)
-
-        # Comment and disable when use CentOS bootstrap by default
         patch_and_assemble_ubuntu_bootstrap(self.env)
 
         self.show_step(4)
@@ -78,9 +70,8 @@ class Gate(TestBasic):
         self.show_step(5)
         with self.env.d_env.get_admin_remote() as remote:
             cmd = ('fuel env create --name={0} --release={1} '
-                   '--nst={2} --json'.format(self.__class__.__name__,
-                                             release_id,
-                                             NEUTRON_SEGMENT_TYPE))
+                   '--nst=tun --json'.format(self.__class__.__name__,
+                                             release_id))
             env_result = run_on_remote(remote, cmd, jsonify=True)
             cluster_id = env_result['id']
 

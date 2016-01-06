@@ -33,6 +33,7 @@ def replace_fuel_agent_rpm(environment):
         raise exceptions.FuelQAVariableNotSet('UPDATE_FUEL', 'True')
     try:
         pack_path = '/var/www/nailgun/fuel-agent/'
+        full_pack_path = os.path.join(pack_path, '*.rpm')
         container = 'mcollective'
         with environment.d_env.get_admin_remote() as remote:
             remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
@@ -43,15 +44,14 @@ def replace_fuel_agent_rpm(environment):
         old_package = \
             environment.base_actions.execute_in_container(
                 cmd, container, exit_code=0)
-        cmd = "ls -1 {0}|grep 'fuel-agent'".format(pack_path)
+        cmd = "rpm -qp {0}".format(full_pack_path)
         new_package = \
             environment.base_actions.execute_in_container(
-                cmd, container).rstrip('.rpm')
+                cmd, container)
         logger.info("Updating package {0} with {1}"
                     .format(old_package, new_package))
 
-        cmd = "rpm -Uvh --oldpackage {0}fuel-agent*.rpm".format(
-            pack_path)
+        cmd = "rpm -Uvh --oldpackage {0}".format(full_pack_path)
         environment.base_actions.execute_in_container(
             cmd, container, exit_code=0)
 
@@ -65,9 +65,10 @@ def replace_fuel_agent_rpm(environment):
                      format(new_package))
 
         # Update fuel-agent on master node
-        cmd = "rpm -Uvh --oldpackage {0}fuel-agent*.rpm".format(
-            pack_path)
-        result = remote.execute(cmd)
+        with environment.d_env.get_admin_remote() as remote:
+            cmd = "rpm -Uvh --oldpackage {0}".format(
+                full_pack_path)
+            result = remote.execute(cmd)
         assert_equal(result['exit_code'], 0,
                      ('Failed to update package {}').format(result))
 
