@@ -51,7 +51,7 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
             release_name=OPENSTACK_RELEASE)[0]
 
         with self.env.d_env.get_admin_remote() as remote:
-            self.show_step(1)
+            self.show_step(1, initialize=True)
             cmd = ('fuel env create --name={0} --release={1} '
                    '--nst=tun --json'.format(self.__class__.__name__,
                                              release_id))

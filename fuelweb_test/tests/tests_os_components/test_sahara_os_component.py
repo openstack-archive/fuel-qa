@@ -64,7 +64,7 @@ class SaharaOSComponent(TestBasic):
             "net_segment_type": settings.NEUTRON_SEGMENT['vlan'],
         }
 
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.show_step(2)
         self.show_step(3)
         self.show_step(4)
