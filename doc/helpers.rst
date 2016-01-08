@@ -122,3 +122,8 @@ SSH Manager
 -----------
 .. automodule:: fuelweb_test.helpers.ssh_manager
    :members:
+
+Ironic Actions
+----------
+.. automodule:: fuelweb_test.helpers.ironic_actions
+   :members:
