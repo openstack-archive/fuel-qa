@@ -27,6 +27,7 @@ from keystoneclient.exceptions import ClientException
 from novaclient.v2 import Client as NovaClient
 import neutronclient.v2_0.client as neutronclient
 from proboscis.asserts import assert_equal
+import ironicclient.client as ironicclient
 
 
 class Common(object):
@@ -74,6 +75,14 @@ class Common(object):
         self.glance = GlanceClient(endpoint=glance_endpoint,
                                    token=token,
                                    cacert=path_to_cert)
+
+        ironic_endpoint = self.keystone.service_catalog.url_for(
+            service_type='baremetal',
+            endpoint_type='publicURL')
+        self.ironic = ironicclient.get_client(
+            api_version=1,
+            os_auth_token=token,
+            ironic_url=ironic_endpoint, insecure=True)
 
     def goodbye_security(self):
         secgroup_list = self.nova.security_groups.list()
