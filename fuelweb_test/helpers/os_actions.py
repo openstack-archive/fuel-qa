@@ -530,3 +530,9 @@ class OpenStackActions(common.Common):
             body["port_id"] = port_id
         self.neutron.add_interface_router(router_id, body)
         return None
+
+    def create_ironic_node(self, **kwargs):
+        return self.ironic.node.create(**kwargs)
+
+    def create_ironic_port(self, **kwargs):
+        return self.ironic.port.create(**kwargs)
