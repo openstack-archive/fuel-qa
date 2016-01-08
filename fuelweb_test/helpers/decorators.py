@@ -219,13 +219,11 @@ def update_rpm_packages(func):
                 cmd=cmd
             )
             update_command = 'yum clean expire-cache; yum update -y -d3'
-            SSHManager().execute(
-                ip=SSHManager().admin_ip,
-                cmd=update_command
-            )
+            cmd_result = SSHManager().execute(ip=SSHManager().admin_ip,
+                                              cmd=update_command)
             logger.debug('Result of "yum update" command on master node: '
-                         '{0}'.format(result))
-            assert_equal(int(result['exit_code']), 0,
+                         '{0}'.format(cmd_result))
+            assert_equal(int(cmd_result['exit_code']), 0,
                          'Packages update failed, '
                          'inspect logs for details')
 
