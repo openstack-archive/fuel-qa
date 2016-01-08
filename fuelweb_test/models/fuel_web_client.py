@@ -1327,6 +1327,7 @@ class FuelWebClient(object):
         net_provider = self.client.get_cluster(cluster_id)['net_provider']
         if NEUTRON == net_provider:
             assigned_networks = {
+                iface_alias('eth0'): ['fuelweb_admin'],
                 iface_alias('eth1'): ['public'],
                 iface_alias('eth2'): ['management'],
                 iface_alias('eth3'): ['private'],
