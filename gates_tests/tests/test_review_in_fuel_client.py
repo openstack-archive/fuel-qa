@@ -66,12 +66,15 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
             'on replace package stage'.format(cmd, result))
         package_from_review = ''.join(result['stdout']).strip().rstrip('.rpm')
         income_version = get_package_version(
-            remote, os.path.join(package_path, package_name), income=True)
-        logger.info('Version of package from review'.format(income_version))
+            remote, os.path.join(package_path, '{0}*'.format(
+                package_from_review)),
+            income=True)
+        logger.info('Version of package from review {0}'.format(
+            income_version))
 
         installed_rpm = get_package_version(
-            remote, package_name, income=True)
-        logger.info('Version of installed package'.format(installed_rpm))
+            remote, package_name)
+        logger.info('Version of installed package{0}'.format(installed_rpm))
 
         if installed_rpm != income_version:
             logger.info('Try to install package {0}'.format(
@@ -80,20 +83,15 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
             cmd = 'rpm -Uvh --oldpackage {0}{1}*.rpm'.format(
                 package_path, package_name)
             install_result = remote.execute(cmd)
-            asserts.assert_equal(
-                0,
-                install_result['exit_code'],
-                'Failed to run command {0} with '
-                'result {1} on install package from review stage'.format(
-                    cmd, install_result))
+            logger.debug('Install package result {0}'.format(install_result))
             installed_rpm = get_package_version(
-                remote, package_name, income=True)
+                remote, package_name)
 
             asserts.assert_equal(
-                installed_rpm, package_from_review,
+                installed_rpm, income_version,
                 'Package {0} from review '
                 'installation fails. Current installed '
-                'package is {1}'.format(package_from_review, installed_rpm))
+                'package is {1}'.format(income_version, installed_rpm))
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["review_fuel_client"])
