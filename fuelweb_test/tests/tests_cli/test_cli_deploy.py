@@ -84,3 +84,59 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'],
                 should_fail=1)
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["cli_deploy_tasks"])
+    @log_snapshot_after_test
+    def cli_deploy_tasks(self):
+        """Deploy neutron_tun cluster using Fuel CLI
+
+        Scenario:
+            1. Create new environment
+            2. Add 3 nodes with controller role
+            3. Provision 3 controllers
+            4. Start netconfig on second controller
+            5. Deploy the cluster
+            6. Run network verification
+            7. Run OSTF
+
+        Duration 50m
+        """
+        self.env.revert_snapshot("ready_with_3_slaves")
+        node_ids = [self.fuel_web.get_nailgun_node_by_devops_node(
+            self.env.d_env.nodes().slaves[slave_id])['id']
+            for slave_id in range(3)]
+
+        release_id = self.fuel_web.get_releases_list_for_os(
+            release_name=OPENSTACK_RELEASE)[0]
+
+        with self.env.d_env.get_admin_remote() as remote:
+            self.show_step(1)
+            cmd = ('fuel env create --name={0} --release={1} '
+                   '--nst=vlan --json'.format(self.__class__.__name__,
+                                              release_id))
+            env_result = run_on_remote(remote, cmd, jsonify=True)
+            cluster_id = env_result['id']
+            self.show_step(2)
+            self.add_nodes_to_cluster(remote, cluster_id, node_ids[0:3],
+                                      ['controller'])
+            self.show_step(3)
+            cmd = ('fuel node --node-id {0} --provision --env {1} --json'.
+                   format(','.join(str(n) for n in node_ids), cluster_id))
+            task = run_on_remote(remote, cmd, jsonify=True)
+            self.assert_cli_task_success(task, remote, timeout=20 * 60)
+            self.show_step(4)
+            cmd = ('fuel node --node {0} --end netconfig --env {1} --json'.
+                   format(node_ids[1], release_id))
+            task = run_on_remote(remote, cmd, jsonify=True)
+            self.assert_cli_task_success(task, remote, timeout=30 * 60)
+            self.show_step(5)
+            cmd = 'fuel --env-id={0} deploy-changes --json'.format(cluster_id)
+            task = run_on_remote(remote, cmd, jsonify=True)
+            self.assert_cli_task_success(task, remote, timeout=130 * 60)
+            self.show_step(6)
+            self.fuel_web.verify_network(cluster_id)
+            self.show_step(7)
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'],
+                should_fail=1)
