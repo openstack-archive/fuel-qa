@@ -128,6 +128,55 @@ class CommandLine(TestBasic):
 
     def add_nodes_to_cluster(
             self, remote, cluster_id, node_ids, roles):
+        if isinstance(node_ids, int):
+            node_ids_str = str(node_ids)
+        else:
+            node_ids_str = ','.join(str(n) for n in node_ids)
         cmd = ('fuel --env-id={0} node set --node {1} --role={2}'.format(
-            cluster_id, node_ids, ','.join(roles)))
+            cluster_id, node_ids_str, ','.join(roles)))
         run_on_remote(remote, cmd)
+
+    @logwrap
+    def use_ceph_for_volumes(self, cluster_id, remote):
+        settings = self.download_settings(cluster_id, remote)
+        settings['editable']['storage']['volumes_lvm'][
+            'value'] = False
+        settings['editable']['storage']['volumes_ceph'][
+            'value'] = True
+        self.upload_settings(cluster_id, remote, settings)
+
+    @logwrap
+    def use_ceph_for_images(self, cluster_id, remote):
+        settings = self.download_settings(cluster_id, remote)
+        settings['editable']['storage']['images_ceph'][
+            'value'] = True
+        self.upload_settings(cluster_id, remote, settings)
+
+    @logwrap
+    def use_ceph_for_ephemeral(self, cluster_id, remote):
+        settings = self.download_settings(cluster_id, remote)
+        settings['editable']['storage']['ephemeral_ceph'][
+            'value'] = True
+        self.upload_settings(cluster_id, remote, settings)
+
+    @logwrap
+    def change_osd_pool_size(self, cluster_id, remote, replication_factor):
+        settings = self.download_settings(cluster_id, remote)
+        settings['editable']['storage']['osd_pool_size'][
+            'value'] = replication_factor
+        self.upload_settings(cluster_id, remote, settings)
+
+    @logwrap
+    def use_radosgw_for_objects(self, cluster_id, remote):
+        settings = self.download_settings(cluster_id, remote)
+        ceph_for_images = settings['editable']['storage']['images_ceph'][
+            'value']
+        if ceph_for_images:
+            settings['editable']['storage']['objects_ceph'][
+                'value'] = True
+        else:
+            settings['editable']['storage']['images_ceph'][
+                'value'] = True
+            settings['editable']['storage']['objects_ceph'][
+                'value'] = True
+        self.upload_settings(cluster_id, remote, settings)
