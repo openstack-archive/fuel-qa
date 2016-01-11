@@ -89,7 +89,7 @@ def patch_centos_bootstrap(environment):
     try:
         pack_path = '/var/www/nailgun/fuel-agent-review/'
         with environment.d_env.get_admin_remote() as remote:
-            remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
+            remote.upload(settings.FUEL_AGENT_REPO_PATH.rstrip('/'),
                           pack_path)
             # renew code in bootstrap
 
@@ -116,7 +116,7 @@ def patch_centos_bootstrap(environment):
                 "gzip -9 > /var/initramfs.img.updated")
 
             cmd = ("rm -rf {0}/initramfs.img;"
-                   "rsync -r {2}fuel-agent/fuel_agent/* {0}{1}/;"
+                   "rsync -r {2}fuel_agent/* {0}{1}/;"
                    "cd {0}/;"
                    "{3};"
                    ).format(
@@ -145,7 +145,7 @@ def patch_and_assemble_ubuntu_bootstrap(environment):
     try:
         pack_path = '/var/www/nailgun/fuel-agent-review/'
         with environment.d_env.get_admin_remote() as remote:
-            remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
+            remote.upload(settings.FUEL_AGENT_REPO_PATH.rstrip('/'),
                           pack_path)
             # renew code in bootstrap
 
@@ -170,7 +170,7 @@ def patch_and_assemble_ubuntu_bootstrap(environment):
             # Step 3 - replace fuel-agent code in unpacked bootstrap
             agent_path = "/usr/lib/python2.7/dist-packages/fuel_agent"
             bootstrap_file = bootstrap + "/root.squashfs"
-            cmd = ("rsync -r {2}fuel-agent/fuel_agent/* {0}{1}/;"
+            cmd = ("rsync -r {2}fuel_agent/* {0}{1}/;"
                    "mv {3} /var/root.squashfs.old;"
                    ).format(
                 bootstrap_var,
