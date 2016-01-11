@@ -27,9 +27,9 @@ description:
 maintainers:
 
   - ./:
-      - name:   Artem Panchenko
-        email:  apanchenko@mirantis.com
-        IRC:    artem_panchenko
+      - name:   Vladimir Khlyunev
+        email:  vkhlyunev@mirantis.com
+        IRC:    vkhlyunev
 
       - name:   Dmytro Tyzhnenko
         email:  dtyzhnenko@mirantis.com
