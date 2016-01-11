@@ -127,6 +127,9 @@ def import_tests():
     from tests.tests_mirrors import test_use_mirror  # noqa
     from system_test.tests import test_create_deploy_ostf  # noqa
     from system_test.tests import test_deploy_check_rados  # noqa
+    from system_test.tests import test_redeploy_after_stop  # noqa
+    from system_test.tests import test_redeploy_after_reset # noqa
+    from system_test.tests import test_delete_after_deploy # noqa
     from system_test.tests.strength import destroy_controllers  # noqa
     from system_test.tests.strength import filling_root  # noqa
     from system_test.tests import test_fuel_migration  # noqa
