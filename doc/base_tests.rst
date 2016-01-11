@@ -66,6 +66,11 @@ Test Cli deploy (deploy neutron tun)
 .. automodule:: fuelweb_test.tests.tests_cli.test_cli_deploy
    :members:
 
+Test Cli deploy ceph neutron tun
+--------------------------------
+.. automodule:: fuelweb_test.tests.tests_cli.test_cli_deploy_ceph
+   :members:
+
 Test Clone Environment
 ----------------------
 .. automodule:: fuelweb_test.tests.test_clone_env
