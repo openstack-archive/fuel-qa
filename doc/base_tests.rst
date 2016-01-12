@@ -320,6 +320,11 @@ Test Fuel cli
 .. automodule:: gates_tests.test_review_in_fuel_client
   :members:
 
+Test Fuel astute
+-------------
+.. automodule:: gates_tests.test_review_in_astute
+  :members:
+
 Fuel mirror verification
 ========================
 

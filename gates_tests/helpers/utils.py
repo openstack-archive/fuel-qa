@@ -382,3 +382,46 @@ def replace_fuel_nailgun_rpm(environment):
     except Exception as e:
         logger.error("Could not upload package {e}".format(e=e))
         raise
+
+
+def update_rpm_in_container(env, container, path,
+                            rpm_cmd='/bin/rpm -Uvh --force'):
+    cmd = '{rpm_cmd} {rpm_path}'\
+        .format(rpm_cmd=rpm_cmd, rpm_path=path)
+    try:
+        env.base_actions.execute_in_container(
+            cmd, container=container, exit_code=0)
+    except Exception as ex:
+        logger.error('Could not update rpm: {}'.format(ex))
+        raise
+
+
+def restart_service(env, container, service_name, timeout=30):
+    restart_cmd = 'service {} restart'.format(service_name)
+    get_status_cmd = 'service {} status'.format(service_name)
+    try:
+        env.base_actions.execute_in_container(restart_cmd, container=container)
+        helpers.wait(
+            lambda: 'running' in
+            env.base_actions.execute_in_container(
+                get_status_cmd, container=container, exit_code=0),
+            timeout=timeout)
+    except Exception as ex:
+        logger.error('Could not restart service'.format(ex))
+        raise
+
+
+def does_new_pkg_equal_to_installed_pkg(env, container, installed_package,
+                                        new_package):
+    rpm_query_cmd = '/bin/rpm -q'
+    current_version_cmd = '{rpm} {package}'\
+        .format(rpm=rpm_query_cmd, package=installed_package)
+    urlfile_version_cmd = '{rpm} --package {package}'\
+        .format(rpm=rpm_query_cmd, package=new_package)
+
+    current_version = env.base_actions.execute_in_container(
+        current_version_cmd, container=container, exit_code=0)
+    candidate_version = env.base_actions.execute_in_container(
+        urlfile_version_cmd, container=container, exit_code=0)
+
+    return current_version == candidate_version
