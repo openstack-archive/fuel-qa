@@ -2313,6 +2313,41 @@ class FuelWebClient(object):
             plugin_data[path[-1]] = value
         self.client.update_cluster_attributes(cluster_id, attr)
 
+    def get_plugin_data(self, cluster_id, plugin_name, version):
+        """Return data (settings) for specified version of plugin
+
+        :param cluster_id: int
+        :param plugin_name: string
+        :param version: string
+        :return: dict
+        """
+        attr = self.client.get_cluster_attributes(cluster_id)
+        plugin_data = attr['editable'][plugin_name]
+        plugin_versions = plugin_data['metadata']['versions']
+        for p in plugin_versions:
+            if p['metadata']['plugin_version'] == version:
+                return p
+        raise AssertionError("Plugin {0} version {1} is not "
+                             "found".format(plugin_name, version))
+
+    def update_plugin_settings(self, cluster_id, plugin_name, version, data):
+        """Update settings for specified version of plugin
+
+        :param plugin_name: string
+        :param version: string
+        :param data: dict - settings for the plugin
+        :return: None
+        """
+        attr = self.client.get_cluster_attributes(cluster_id)
+        plugin_data = attr['editable'][plugin_name]
+        prefix = self.get_plugin_data(cluster_id, plugin_name, version)
+        for option, value in data.items():
+            path = option.split("/")
+            for p in path[:-1]:
+                plugin_data = prefix[p]
+            plugin_data[path[-1]] = value
+        self.client.update_cluster_attributes(cluster_id, attr)
+
     @logwrap
     def prepare_ceph_to_delete(self, remote_ceph):
         hostname = ''.join(remote_ceph.execute(
