@@ -22,10 +22,34 @@ from system_test.helpers.decorators import action
 from system_test.helpers.utils import case_factory
 from system_test.tests.actions_base import ActionsBase
 from fuelweb_test.settings import DVS_PLUGIN_PATH
+from fuelweb_test.settings import DVS_PLUGIN_VERSION
 
 
 class VMwareActions(ActionsBase):
     """VMware vCenter/DVS related actions"""
+
+    plugin_version = None
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def enable_plugin(self):
+        """Enable plugin for Fuel"""
+        assert_true(self.plugin_name, "plugin_name is not specified")
+
+        msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
+        assert_true(
+            self.fuel_web.check_plugin_exists(
+                self.cluster_id,
+                self.plugin_name),
+            msg)
+
+        plugin_id = self.fuel_web.get_plugin_id(self.cluster_id,
+                                                self.plugin_name,
+                                                self.plugin_version)
+
+        options = {'metadata/enabled': True, 'metadata/chosen_id': plugin_id}
+        self.fuel_web.update_plugin_data(self.cluster_id,
+                                         self.plugin_name, options)
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
@@ -39,12 +63,11 @@ class VMwareActions(ActionsBase):
                 self.plugin_name),
             msg)
 
-        options = {'#1_vmware_dvs_net_maps/value': self.full_config[
+        options = {'vmware_dvs_net_maps/value': self.full_config[
             'template']['cluster_template']['settings']['vmware_dvs'][
             'dvswitch_name']}
-        self.fuel_web.update_plugin_data(
-            self.cluster_id,
-            self.plugin_name, options)
+        self.fuel_web.update_plugin_settings(
+            self.cluster_id, self.plugin_name, self.plugin_version, options)
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
@@ -179,6 +202,7 @@ class DeployWithVMware(VMwareActions):
 
     plugin_name = "fuel-plugin-vmware-dvs"
     plugin_path = DVS_PLUGIN_PATH
+    plugin_version = DVS_PLUGIN_VERSION
 
     actions_order = [
         'prepare_env_with_plugin',
@@ -218,6 +242,7 @@ class ScaleWithVMware(VMwareActions):
 
     plugin_name = "fuel-plugin-vmware-dvs"
     plugin_path = DVS_PLUGIN_PATH
+    plugin_version = DVS_PLUGIN_VERSION
 
     actions_order = [
         'prepare_env_with_plugin',
