@@ -382,3 +382,54 @@ def replace_fuel_nailgun_rpm(environment):
     except Exception as e:
         logger.error("Could not upload package {e}".format(e=e))
         raise
+
+
+def update_rpm(env, package_path, package_name, container, service_name,
+               rpm_cmd='/bin/rpm -Uvh --force', restart_timeout=30):
+    """ Generic procedure that updates given rpm inside a container.
+
+    :param env: Environment to be used
+    :param package_path: Path where rpm package can be found in the container
+    :param package_name: Rpm package name without .rpm extension (information
+                after package name such as version, arch, etc. can be omitted)
+    :param container: Container name where rpm to updated
+    :param service_name: Service name to be restarted after rpm update
+    :param rpm_cmd: Rpm cmd to be used without package path
+                    (like 'rpm -Uvh --oldpackage --replacepkgs')
+    :param restart_timeout: Amount of time required for service to be restarted
+    :return: None
+    """
+    full_package_path = os.path.join(package_path, package_name)
+    _upload_package(env, package_path)
+    _update_rpm(env, container, full_package_path, rpm_cmd)
+    _restart_service(env, container, service_name, restart_timeout)
+
+
+def _upload_package(env, package_path):
+    with env.d_env.get_admin_remote() as remote:
+        remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'), package_path)
+
+
+def _update_rpm(env, container, path, rpm_cmd):
+    cmd = '{rpm_cmd} {rpm_path}*.rpm'.format(rpm_cmd=rpm_cmd, rpm_path=path)
+    try:
+        env.base_actions.execute_in_container(
+            cmd, container=container, exit_code=0)
+    except Exception as ex:
+        logger.error('Could not update rpm: {}'.format(ex))
+        raise
+
+
+def _restart_service(env, container, service_name, timeout):
+    restart_cmd = 'service {} restart'.format(service_name)
+    get_status_cmd = 'service {} status'.format(service_name)
+    try:
+        env.base_actions.execute_in_container(restart_cmd, container=container)
+        helpers.wait(
+            lambda: 'running' in
+            env.base_actions.execute_in_container(
+                get_status_cmd, container=container, exit_code=0),
+            timeout=timeout)
+    except Exception as ex:
+        logger.error('Could not restart service'.format(ex))
+        raise
