@@ -31,7 +31,7 @@ class Gate(TestBasic):
     Update fuel-agent in MCollective, bootstrap from review,
     build environment images and provision one node"""
 
-    @test(depends_on_groups=['ready'],
+    @test(depends_on_groups=['prepare_release'],
           groups=["review_fuel_agent_one_node_provision"])
     @log_snapshot_after_test
     def gate_patch_fuel_agent(self):
