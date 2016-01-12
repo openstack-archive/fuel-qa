@@ -1,4 +1,4 @@
-#    Copyright 2015 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -16,36 +16,32 @@ import os
 import posixpath
 import re
 import json
+import traceback
 
 from paramiko import RSAKey
 from devops.models.node import SSHClient
 from fuelweb_test import logger
-
-
-class SingletonMeta(type):
-    def __init__(cls, name, bases, dict):
-        super(SingletonMeta, cls).__init__(name, bases, dict)
-        cls.instance = None
-
-    def __call__(self, *args, **kw):
-        if self.instance is None:
-            self.instance = super(SingletonMeta, self).__call__(*args, **kw)
-        return self.instance
-
-    def __getattr__(cls, name):
-        return getattr(cls(), name)
+from fuelweb_test.helpers import metaclasses
 
 
 class SSHManager(object):
-    __metaclass__ = SingletonMeta
+    __metaclass__ = metaclasses.SingletonMeta
+    # Slots is used to prevent uncontrolled attributes set or remove.
+    __slots__ = [
+        '__connections', 'admin_ip', 'admin_port', 'login', '__password'
+    ]
 
     def __init__(self):
         logger.debug('SSH_MANAGER: Run constructor SSHManager')
-        self.connections = {}
+        self.__connections = {}  # Disallow direct type change and deletion
         self.admin_ip = None
         self.admin_port = None
         self.login = None
-        self.password = None
+        self.__password = None
+
+    @property
+    def connections(self):
+        return self.__connections
 
     def initialize(self, admin_ip, login, password):
         """ It will be moved to __init__
@@ -58,7 +54,7 @@ class SSHManager(object):
         self.admin_ip = admin_ip
         self.admin_port = 22
         self.login = login
-        self.password = password
+        self.__password = password
 
     def _connect(self, remote):
         """ Check if connection is stable and return this one
@@ -97,7 +93,7 @@ class SSHManager(object):
                 host=ip,
                 port=port,
                 username=self.login,
-                password=self.password,
+                password=self.__password,
                 private_keys=keys
             )
         logger.debug('SSH_MANAGER:Return existed connection for '
@@ -191,6 +187,10 @@ class SSHManager(object):
                 raise Exception(error_msg)
 
         return result
+
+    def execute_async_on_remote(self, ip, cmd, port=22):
+        remote = self._get_remote(ip=ip, port=port)
+        return remote.execute_async(cmd)
 
     def _json_deserialize(self, json_string):
         """ Deserialize json_string and return object
