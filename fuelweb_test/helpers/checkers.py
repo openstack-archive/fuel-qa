@@ -85,12 +85,16 @@ def check_image(image, md5, path):
 
 
 @logwrap
-def verify_service(remote, service_name, count=1):
+def verify_service(remote, service_name, count=1,
+                   ignore_count_of_proccesses=False):
     ps_output = remote.execute('ps ax')['stdout']
     api = filter(lambda x: service_name in x, ps_output)
     logger.debug("{} \\n: {}".format(service_name, str(api)))
-    assert_equal(len(api), count,
-                 "{0} count not equal to {1}".format(service_name, count))
+    if not ignore_count_of_proccesses:
+        assert_equal(len(api), count,
+                     "{0} count not equal to {1}".format(service_name, count))
+    else:
+        assert_true(len(api), "Service '{0}' not found!".format(service_name))
 
 
 @logwrap
