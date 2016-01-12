@@ -145,6 +145,7 @@ def import_tests():
     from tests.tests_strength import test_failover_group_1  # noqa
     from tests.tests_strength import test_failover_mongo  # noqa
     from tests.tests_strength import test_failover_group_2  # noqa
+    from gates_tests.tests import test_review_in_astute #noqa
 
 
 def run_tests():
