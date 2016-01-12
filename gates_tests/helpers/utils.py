@@ -382,3 +382,64 @@ def replace_fuel_nailgun_rpm(environment):
     except Exception as e:
         logger.error("Could not upload package {e}".format(e=e))
         raise
+
+
+def update_rpm_in_container(env, container, path,
+                            rpm_cmd='/bin/rpm -Uvh --force'):
+    cmd = '{rpm_cmd} {rpm_path}'\
+        .format(rpm_cmd=rpm_cmd, rpm_path=path)
+    logger.info("Updating rpm '{0}' in the '{1}' container"
+                .format(path, container))
+    try:
+        env.base_actions.execute_in_container(
+            cmd, container=container, exit_code=0)
+        logger.info("Rpm '{0}' has been updated successfully "
+                    "in the '{1}' container".format(path, container))
+    except Exception as ex:
+        logger.error("Could not update rpm '{0}' in the '{1}' container: {2}"
+                     .format(path, container, ex))
+        raise
+
+
+def restart_service(env, container, service_name, timeout=30):
+    restart_cmd = 'service {} restart'.format(service_name)
+    get_status_cmd = 'service {} status'.format(service_name)
+    logger.info("Restarting service '{0}' in the '{1}' container"
+                .format(service_name, container))
+    try:
+        env.base_actions.execute_in_container(restart_cmd, container=container)
+        helpers.wait(
+            lambda: 'running' in
+            env.base_actions.execute_in_container(
+                get_status_cmd, container=container, exit_code=0),
+            timeout=timeout)
+        logger.info("Service '{0}' has been restarted successfully "
+                    "in the '{1}' container".format(service_name, container))
+    except Exception as ex:
+        logger.error("Could not restart '{0}' service "
+                     "in the '{1}' container: {2}"
+                     .format(service_name, container, ex))
+        raise
+
+
+def does_new_pkg_equal_to_installed_pkg(env, container, installed_package,
+                                        new_package):
+    rpm_query_cmd = '/bin/rpm -q'
+    current_version_cmd = '{rpm} {package}'\
+        .format(rpm=rpm_query_cmd, package=installed_package)
+    urlfile_version_cmd = '{rpm} --package {package}'\
+        .format(rpm=rpm_query_cmd, package=new_package)
+
+    logger.info("Comparing installed package version against "
+                "the package version to be installed in the '{}' container"
+                .format(container))
+
+    current_version = env.base_actions.execute_in_container(
+        current_version_cmd, container=container, exit_code=0)
+    candidate_version = env.base_actions.execute_in_container(
+        urlfile_version_cmd, container=container, exit_code=0)
+
+    logger.info("Installed package version {}".format(current_version))
+    logger.info("Package version to be installed {}".format(candidate_version))
+
+    return current_version == candidate_version
