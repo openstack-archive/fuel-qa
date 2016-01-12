@@ -477,6 +477,9 @@ FUEL_USE_LOCAL_NTPD = get_var_as_bool('FUEL_USE_LOCAL_NTPD', True)
 # Set gateway of 'public' network as DNS server for new OS clusters
 FUEL_USE_LOCAL_DNS = get_var_as_bool('FUEL_USE_LOCAL_DNS', True)
 
+# Path to fuel-agent review repository. Used in ci-gates for fuel-agent
+FUEL_AGENT_REPO_PATH = os.environ.get('FUEL_AGENT_REPO_PATH', '')
+
 # Default 'KEYSTONE_PASSWORD' can be changed for keystone on Fuel master node
 KEYSTONE_CREDS = {'username': os.environ.get('KEYSTONE_USERNAME', 'admin'),
                   'password': os.environ.get('KEYSTONE_PASSWORD', 'admin'),
