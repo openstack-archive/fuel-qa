@@ -21,6 +21,7 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.tests.base_test_case import TestBasic
+from fuelweb_test.tests.base_test_case import SetupEnvironment
 
 from fuelweb_test import settings
 
@@ -31,7 +32,7 @@ class Gate(TestBasic):
     Update fuel-agent in MCollective, bootstrap from review,
     build environment images and provision one node"""
 
-    @test(depends_on_groups=['ready'],
+    @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["review_fuel_agent_one_node_provision"])
     @log_snapshot_after_test
     def gate_patch_fuel_agent(self):
