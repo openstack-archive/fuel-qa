@@ -28,6 +28,7 @@ from proboscis.asserts import assert_true
 from fuelweb_test.helpers.decorators import revert_info
 from fuelweb_test.helpers.decorators import update_rpm_packages
 from fuelweb_test.helpers.decorators import upload_manifests
+from fuelweb_test.helpers.metaclasses import SingletonMeta
 from fuelweb_test.helpers.eb_tables import Ebtables
 from fuelweb_test.helpers.fuel_actions import AdminActions
 from fuelweb_test.helpers.fuel_actions import BaseActions
@@ -51,13 +52,7 @@ from fuelweb_test import logger
 class EnvironmentModel(object):
     """EnvironmentModel."""  # TODO documentation
 
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if not cls._instance:
-            cls._instance = super(EnvironmentModel, cls).__new__(
-                cls, *args, **kwargs)
-        return cls._instance
+    __metaclass__ = SingletonMeta
 
     def __init__(self, config=None):
         if not hasattr(self, "_virt_env"):

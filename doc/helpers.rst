@@ -28,6 +28,11 @@ Decorators
 .. automodule:: fuelweb_test.helpers.decorators
    :members:
 
+Metaclasses
+-----------
+.. automodule:: fuelweb_test.helpers.metaclasses
+   :members:
+
 Eb tables
 ---------
 .. automodule:: fuelweb_test.helpers.eb_tables
