@@ -22,7 +22,7 @@ from cinderclient import client as cinderclient
 from glanceclient.v1 import Client as glanceclient
 from keystoneclient.v2_0 import Client as keystoneclient
 from keystoneclient.exceptions import ClientException
-from novaclient.v1_1 import Client as novaclient
+from novaclient.v2 import Client as novaclient
 import neutronclient.v2_0.client as neutronclient
 from proboscis.asserts import assert_equal
 
