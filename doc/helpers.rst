@@ -28,6 +28,11 @@ Decorators
 .. automodule:: fuelweb_test.helpers.decorators
    :members:
 
+Metaclasses
+-----------
+.. automodule:: fuelweb_test.helpers.metaclasses
+   :members:
+
 Eb tables
 ---------
 .. automodule:: fuelweb_test.helpers.eb_tables
@@ -116,4 +121,9 @@ Utils
 SSH Manager
 -----------
 .. automodule:: fuelweb_test.helpers.ssh_manager
+   :members:
+
+SSH Manager helpers
+-------------------
+.. automodule:: fuelweb_test.helpers.ssh_manager_helpers.plugin_helpers
    :members:
