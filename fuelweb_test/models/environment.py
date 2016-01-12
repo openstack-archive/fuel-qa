@@ -394,6 +394,11 @@ class EnvironmentModel(object):
                 login=new_login,
                 password=new_password
             )
+            self.ssh_manager.update_connection(
+                ip=self.ssh_manager.admin_ip,
+                login=new_login,
+                password=new_password
+            )
             logger.debug("Admin node password has changed.")
         logger.info("Admin node login name: '{0}' , password: '{1}'".
                     format(new_login, new_password))
