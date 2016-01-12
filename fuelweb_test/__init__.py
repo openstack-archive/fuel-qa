@@ -13,6 +13,7 @@
 #    under the License.
 import functools
 import logging
+import traceback
 import os
 from fuelweb_test.settings import LOGS_DIR
 
@@ -54,9 +55,17 @@ def debug(logger):
                     func.__name__, args, kwargs
                 )
             )
-            result = func(*args, **kwargs)
-            logger.debug(
-                "Done: {} with result: {}".format(func.__name__, result))
+            try:
+                result = func(*args, **kwargs)
+                logger.debug(
+                    "Done: {} with result: {}".format(func.__name__, result))
+            except BaseException as e:
+                tb = traceback.format_exc()
+                logger.error(
+                    '{func} raised: {exc!r}\n'
+                    'Traceback: {tb!s}'.format(
+                        func=func.__name__, exc=e, tb=tb))
+                raise
             return result
         return wrapped
     return wrapper
