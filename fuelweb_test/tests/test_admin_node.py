@@ -23,6 +23,7 @@ from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import logger
+from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -440,3 +441,44 @@ class TestLogrotateBase(TestBasic):
                 ' after logrotation: {2}{3}'.format(
                     free_inodes, i_suff, free_inodes4, i_suff4))
         self.env.make_snapshot("test_logrotate_one_week_11MB")
+
+
+@test(groups=["test_gpg_singing_check"])
+class GpgSigningCheck(TestBasic):
+
+    @test(depends_on=[SetupEnvironment.setup_master],
+          groups=['test_check_rpm_packages_signed'])
+    @log_snapshot_after_test
+    def check_rpm_packages_signed(self):
+        """ Check that local rpm packages are signed
+
+        Scenario:
+        1. Revert snapshot with installed master
+        2. Import publick mirantis GPG key
+        3. Check all local rpm packet and verify it
+
+        Duration: 15 min
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot('empty')
+
+        path_to_repos = '/var/www/nailgun/mos-centos/x86_64/Packages/'
+        gpg_name = settings.GPG_CENTOS_KEY.split('/')[-1]
+
+        self.show_step(2)
+        cmds = [
+            'wget {link}'.format(link=settings.GPG_CENTOS_KEY),
+            'rpm --import {gpg_pub_key}'.format(gpg_pub_key=gpg_name)
+        ]
+        for cmd in cmds:
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
+
+        self.show_step(3)
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='rpm -K {repos}*rpm'.format(repo=path_to_repos)
+        )

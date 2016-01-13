@@ -357,6 +357,11 @@ SNAPSHOT = os.environ.get('SNAPSHOT', '')
 # For 5.1.1 we have 2 releases in tarball and should specify what we need
 RELEASE_VERSION = os.environ.get('RELEASE_VERSION', "2016.1.0-9.0")
 
+# GPG publick keys for signing rpm/deb
+GPG_CENTOS_KEY = os.environ.get('GPG_CENTOS_KEY',
+                                'http://mirror.fuel-infra.org/mos-repos/'
+                                'centos/mos8.0-centos7-fuel/'
+                                'os/RPM-GPG-KEY-mos8.0')
 
 # Release name of local Ubuntu mirror on Fuel master node.
 UBUNTU_RELEASE = os.environ.get('UBUNTU_RELEASE', 'precise')
