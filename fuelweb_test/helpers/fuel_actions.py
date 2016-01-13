@@ -736,8 +736,7 @@ class NessusActions(object):
 
 class FuelBootstrapCliActions(AdminActions):
     def _execute_check_retcode(self, command):
-        result = self.ssh_manager.execute_on_remote(ip=self.admin_ip,
-                                                    cmd=command)
+        result = self.ssh_manager.execute(ip=self.admin_ip, cmd=command)
         if result['exit_code'] != 0:
             raise DevopsCalledProcessError(command=command,
                                            returncode=result['exit_code'],
@@ -750,9 +749,18 @@ class FuelBootstrapCliActions(AdminActions):
         return fuel_settings["BOOTSTRAP"]
 
     def parse_uuid(self, message):
-        uuid_regex = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-"
-                                r"[0-9a-f]{4}-[0-9a-f]{12}")
-        uuids = uuid_regex.findall(message)
+        uuid_regex = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-" \
+                     r"[0-9a-f]{4}-[0-9a-f]{12}"
+
+        # NOTE: Splitting for matching only first uuid in case of parsing
+        # images list, because image label could contain matching strings
+        message_lines = message.splitlines()
+        uuids = []
+
+        for line in message_lines:
+            match = re.search(uuid_regex, line)
+            if match is not None:
+                uuids.append(match.group())
 
         if not uuids:
             raise Exception("Could not find uuid in fuel-bootstrap "
