@@ -379,8 +379,8 @@ class EnvironmentModel(object):
         except Exception:
             logger.debug('Accessing admin node using SSH credentials:'
                          ' FAIL, trying to change password from default')
-            self.ssh_manager.update_connection(
-                ip=self.ssh_manager.admin_ip,
+            self.ssh_manager.initialize(
+                admin_ip=self.ssh_manager.admin_ip,
                 login='root',
                 password='r00tme'
             )
@@ -389,8 +389,8 @@ class EnvironmentModel(object):
                 cmd='echo -e "{1}\\n{1}" | passwd {0}'.format(new_login,
                                                               new_password)
             )
-            self.ssh_manager.update_connection(
-                ip=self.ssh_manager.admin_ip,
+            self.ssh_manager.initialize(
+                admin_ip=self.ssh_manager.admin_ip,
                 login=new_login,
                 password=new_password
             )
