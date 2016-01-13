@@ -57,7 +57,7 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
 
     @staticmethod
     def replace_package(remote, package_name, package_path):
-        cmd = "ls -all {0} | grep {1}| awk '{{print $9}}' ".format(
+        cmd = "ls -all {0} | grep {1}*.rpm| awk '{{print $9}}' ".format(
             package_path, package_name)
         result = remote.execute(cmd)
         asserts.assert_equal(
@@ -66,7 +66,7 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
             'on replace package stage'.format(cmd, result))
         package_from_review = ''.join(result['stdout']).strip().rstrip('.rpm')
         income_version = get_package_version(
-            remote, os.path.join(package_path, '{0}*'.format(
+            remote, os.path.join(package_path, '{0}*.rpm'.format(
                 package_from_review)),
             income=True)
         logger.info('Version of package from review {0}'.format(
