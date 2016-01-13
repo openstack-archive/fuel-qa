@@ -149,9 +149,9 @@ class TestHaFailoverBase(TestBasic):
             # STEP: Destroy first/second controller
             devops_node = controllers[num]
             # if num==0: show_step(2); if num==1: show_step(6)
-            self.show_step([2, 6][num], details="Suspending node: "
+            self.show_step([2, 6][num], details="Destroying node: "
                            "{0}".format(devops_node.name))
-            devops_node.suspend(False)
+            devops_node.destroy(False)
 
             # STEP: Check pacemaker status
             self.show_step([3, 7][num])
@@ -717,10 +717,10 @@ class TestHaFailoverBase(TestBasic):
         # get master rabbit controller
         master_rabbit = self.fuel_web.get_rabbit_master_node(p_d_ctrl.name)
 
-        # suspend devops node with master rabbit
-        master_rabbit.suspend(False)
+        # destroy devops node with master rabbit
+        master_rabbit.destroy(False)
 
-        # Wait until Nailgun marked suspended controller as offline
+        # Wait until Nailgun marked destroyed controller as offline
         try:
             wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
                 master_rabbit)['online'], timeout=60 * 5)
@@ -757,10 +757,10 @@ class TestHaFailoverBase(TestBasic):
         second_master_rabbit = self.fuel_web.get_rabbit_master_node(
             active_slaves[0].name)
 
-        # suspend devops node with master rabbit
-        second_master_rabbit.suspend(False)
+        # destroy devops node with master rabbit
+        second_master_rabbit.destroy(False)
 
-        # Wait until Nailgun marked suspended controller as offline
+        # Wait until Nailgun marked destroyed controller as offline
         try:
             wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
                 second_master_rabbit)['online'], timeout=60 * 5)
@@ -771,12 +771,12 @@ class TestHaFailoverBase(TestBasic):
 
         # turn on 1-st master
 
-        master_rabbit.resume(False)
+        master_rabbit.start(False)
 
-        # Wait until Nailgun marked suspended controller as online
+        # Wait until Nailgun marked destroyed controller as online
         try:
             wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
-                master_rabbit)['online'], timeout=60 * 5)
+                master_rabbit)['online'], timeout=60 * 10)
         except TimeoutError:
             raise TimeoutError('Node {0} does'
                                ' not become online '
@@ -799,12 +799,12 @@ class TestHaFailoverBase(TestBasic):
 
         # turn on second master
 
-        second_master_rabbit.resume(False)
+        second_master_rabbit.start(False)
 
-        # Wait until Nailgun marked suspended controller as online
+        # Wait until Nailgun marked destroyed controller as online
         try:
             wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
-                second_master_rabbit)['online'], timeout=60 * 5)
+                second_master_rabbit)['online'], timeout=60 * 10)
         except TimeoutError:
             raise TimeoutError('Node {0} does'
                                ' not become online'
