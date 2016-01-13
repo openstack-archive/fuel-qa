@@ -57,17 +57,16 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
 
     @staticmethod
     def replace_package(remote, package_name, package_path):
-        cmd = "ls -all {0} | grep {1}*.rpm| awk '{{print $9}}' ".format(
-            package_path, package_name)
+        cmd = "ls -all {0} | grep noarch.rpm| awk '{{print $9}}' ".format(
+            package_path)
         result = remote.execute(cmd)
         asserts.assert_equal(
             0, result['exit_code'],
             'Failed to run command {0} with {1} '
             'on replace package stage'.format(cmd, result))
-        package_from_review = ''.join(result['stdout']).strip().rstrip('.rpm')
+        package_from_review = ''.join(result['stdout']).strip()
         income_version = get_package_version(
-            remote, os.path.join(package_path, '{0}*.rpm'.format(
-                package_from_review)),
+            remote, os.path.join(package_path,package_from_review),
             income=True)
         logger.info('Version of package from review {0}'.format(
             income_version))
@@ -80,7 +79,7 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
             logger.info('Try to install package {0}'.format(
                 package_from_review))
 
-            cmd = 'rpm -Uvh --oldpackage {0}{1}*.rpm'.format(
+            cmd = 'rpm -Uvh --oldpackage {0}{1}*.noarch.rpm'.format(
                 package_path, package_name)
             install_result = remote.execute(cmd)
             logger.debug('Install package result {0}'.format(install_result))
