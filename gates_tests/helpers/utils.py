@@ -51,26 +51,32 @@ def replace_fuel_agent_rpm(environment):
         logger.info("Updating package {0} with {1}"
                     .format(old_package, new_package))
 
-        cmd = "rpm -Uvh --oldpackage {0}".format(full_pack_path)
-        environment.base_actions.execute_in_container(
-            cmd, container, exit_code=0)
-
-        cmd = "rpm -q fuel-agent"
-        installed_package = \
+        if old_package != new_package:
+            logger.info('Try to install package {0}'.format(
+                new_package))
+            cmd = "rpm -Uvh --oldpackage {0}".format(full_pack_path)
             environment.base_actions.execute_in_container(
                 cmd, container, exit_code=0)
 
-        assert_equal(installed_package, new_package,
-                     "The new package {0} was not installed".
-                     format(new_package))
+            cmd = "rpm -q fuel-agent"
+            installed_package = \
+                environment.base_actions.execute_in_container(
+                    cmd, container, exit_code=0)
 
-        # Update fuel-agent on master node
-        with environment.d_env.get_admin_remote() as remote:
-            cmd = "rpm -Uvh --oldpackage {0}".format(
-                full_pack_path)
-            result = remote.execute(cmd)
-        assert_equal(result['exit_code'], 0,
-                     ('Failed to update package {}').format(result))
+            assert_equal(installed_package, new_package,
+                         "The new package {0} was not installed".
+                         format(new_package))
+
+            # Update fuel-agent on master node
+            with environment.d_env.get_admin_remote() as remote:
+                cmd = "rpm -q fuel-agent"
+                old_package = ''.join(remote.execute(cmd)['stdout'])
+                if old_package != new_package:
+                    cmd = "rpm -Uvh --oldpackage {0}".format(
+                        full_pack_path)
+                    result = remote.execute(cmd)
+            assert_equal(result['exit_code'], 0,
+                         ('Failed to update package {}').format(result))
 
     except Exception as e:
         logger.error("Could not upload package {e}".format(e=e))
