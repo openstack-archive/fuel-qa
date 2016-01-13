@@ -13,6 +13,9 @@
 #    under the License.
 
 import datetime
+import random
+import re
+import urllib2
 import xmlrpclib
 
 from devops.helpers.helpers import http
@@ -23,6 +26,7 @@ from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import logger
+from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -440,3 +444,105 @@ class TestLogrotateBase(TestBasic):
                 ' after logrotation: {2}{3}'.format(
                     free_inodes, i_suff, free_inodes4, i_suff4))
         self.env.make_snapshot("test_logrotate_one_week_11MB")
+
+
+@test(groups=["tests_gpg_singing_check"])
+class GPGSigningCheck(TestBasic):
+    """ Tests for checking GPG signing """
+
+    @test(depends_on=[SetupEnvironment.setup_master],
+          groups=['test_check_rpm_packages_signed'])
+    @log_snapshot_after_test
+    def check_rpm_packages_signed(self):
+        """ Check that local rpm packages are signed
+
+        Scenario:
+            1. Revert snapshot with installed master
+            2. Import publick mirantis GPG key
+            3. Check all local rpm packet and verify it
+
+        Duration: 15 min
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot('empty')
+
+        path_to_repos = '/var/www/nailgun/mos-centos/x86_64/Packages/'
+        gpg_name = settings.GPG_CENTOS_KEY.split('/')[-1]
+
+        self.show_step(2)
+        cmds = [
+            'wget {link}'.format(link=settings.GPG_CENTOS_KEY),
+            'rpm --import {gpg_pub_key}'.format(gpg_pub_key=gpg_name)
+        ]
+        for cmd in cmds:
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
+
+        self.show_step(3)
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='rpm -K {repos}*rpm'.format(repos=path_to_repos)
+        )
+
+    @test(depends_on=[SetupEnvironment.setup_master],
+          groups=['test_remote_packages_and_mos_repositories_signed'])
+    @log_snapshot_after_test
+    def check_remote_packages_and_mos_repositories_signed(self):
+        """ Check that remote packages and MOS repositories are signed
+
+        Scenario:
+            1. Revert snapshot with installed master
+            2. Import mirantis publick GPG key for rpm
+            3. Download repomd.xml.asc and repomd.xml and verify they
+            4. Download Release and Releasee.gpg and verify they
+            5. Download randomly choosed .rpm file and verify it
+
+        Duration: 15 min
+        """
+
+        self.env.revert_snapshot('empty')
+
+        gpg_name = settings.GPG_CENTOS_KEY.split('/')[-1]
+
+        self.show_step(2)
+        self.show_step(3)
+        self.show_step(4)
+        cmds = [
+            'wget {link}'.format(link=settings.GPG_CENTOS_KEY),
+            'rpm --import {gpg_pub_key}'.format(gpg_pub_key=gpg_name),
+            'wget {}os/x86_64/repodata/repomd.xml.asc'.format(
+                    settings.CENTOS_REPO_PATH),
+            'wget {}os/x86_64/repodata/repomd.xml'.format(
+                    settings.CENTOS_REPO_PATH),
+            'gpg --verify repomd.xml.asc repomd.xml',
+            'wget {}dists/mos8.0/Release'.format(settings.UBUNTU_REPO_PATH),
+            'wget {}dists/mos8.0/Release.gpg'.format(
+                    settings.UBUNTU_REPO_PATH),
+            'gpg --verify Release.gpg Release'
+        ]
+        for cmd in cmds:
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
+
+        self.show_step(5)
+        response = urllib2.urlopen('{}/os/x86_64/Packages/'.format(
+                settings.CENTOS_REPO_PATH))
+        source = response.read()
+        rpms = re.findall(r'href="(.*.rpm)"', source)
+        rpm = random.choice(rpms)
+
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='wget {}os/x86_64/Packages/{}'.format(
+                    settings.CENTOS_REPO_PATH, rpm)
+        )
+
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='rpm -K {}'.format(rpm)
+        )
