@@ -12,8 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import time
+from ipaddr import IPAddress
 import random
+import time
 
 from devops.helpers import helpers
 from proboscis import asserts
@@ -57,6 +58,32 @@ def get_structured_config_dict(config):
 @test(groups=["services_reconfiguration"])
 class ServicesReconfiguration(TestBasic):
     """ServicesReconfiguration."""
+
+    def change_default_range(self, networks, number_excluded_ips,
+                             cut_from_start=True):
+        """
+        Change IP range for public, management, storage network
+        by excluding N of first addresses from default range
+        :param networks: a list of environment networks configuration
+        :param number_excluded_ips: an integer number of IPs
+        :param cut_from_start: a boolean flag that select first part of
+        the default range if True and last one if False
+        :return:
+        """
+        for default_network in filter(
+                lambda x: ((x['name'] != 'fuelweb_admin')
+                           and (x['name'] != 'private')),
+                networks):
+            default_range = [IPAddress(ip) for ip
+                             in default_network["ip_ranges"][0]]
+            if cut_from_start:
+                new_range = [default_range[0],
+                             default_range[0] + number_excluded_ips]
+            else:
+                new_range = [default_range[0] + number_excluded_ips + 1,
+                             default_range[1]]
+            default_network["ip_ranges"][0] = [str(ip)
+                                               for ip in new_range]
 
     def get_service_uptime(self, nodes, service_name):
         """
@@ -888,3 +915,170 @@ class ServicesReconfiguration(TestBasic):
                                        hypervisor_name=hypervisor_name)
 
         self.env.make_snapshot("multiple_apply_config")
+
+    @test(depends_on_groups=['SetupEnvironment.prepare_slaves_5'],
+          groups=["services_reconfiguration",
+                  "two_clusters_reconfiguration"])
+    @log_snapshot_after_test
+    def two_clusters_reconfiguration(self):
+        """Deploy two clusters with different configs
+
+         Scenario:
+         1. Revert snapshot "ready_with_5_slaves"
+         2. Divided the IP ranges into two parts
+         3. Verify network of the first environment
+         4. Verify network of the second environment
+         5. Deploy environment with first ranges
+         6. Run OSTF on the first environment
+         7. Deploy environment with second ranges
+         8. Run OSTF on the second environment
+         9. Apply new CPU overcommit ratio for first environment
+         10. Verify deployment task is finished
+         11. Verify nova-scheduler services uptime
+         12. Verify configuration file on controller
+         13. Boot instances with flavor that occupy all CPU,
+              boot extra instance and catch the error
+         14. Apply old CPU overcommit ratio for each controller
+         15. Verify deployment task is finished
+         16. Verify nova-scheduler services uptime
+         17. Verify configuration file on each controller
+
+        Snapshot "two_clusters_reconfiguration"
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        self.show_step(2)
+        cluster_id_1 = self.fuel_web.create_cluster(
+            name="env1",
+            mode=settings.DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": settings.NEUTRON_SEGMENT_TYPE,
+            }
+        )
+        cluster_id_2 = self.fuel_web.create_cluster(
+            name="env2",
+            mode=settings.DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": settings.NEUTRON_SEGMENT_TYPE,
+            }
+        )
+
+        self.fuel_web.update_nodes(
+            cluster_id_1,
+            {
+                'slave-01': ['compute'],
+                'slave-02': ['controller']
+            })
+
+        self.fuel_web.update_nodes(
+            cluster_id_2,
+            {
+                'slave-03': ['compute'],
+                'slave-04': ['controller']
+            })
+
+        networks_1 = self.fuel_web.client.get_networks(
+            cluster_id_1)["networks"]
+        self.change_default_range(networks_1,
+                                  number_excluded_ips=30,
+                                  cut_from_start=True)
+        helpers.wait(lambda: not self.is_update_dnsmasq_running(
+            self.fuel_web.client.get_tasks()), timeout=60,
+            timeout_msg="Timeout exceeded while waiting for task "
+                        "'update_dnsmasq' is finished!")
+        floating_list = [self.fuel_web.get_floating_ranges()[0][0]]
+        networking_parameters = {
+            "floating_ranges": floating_list}
+        self.fuel_web.client.update_network(
+            cluster_id_1,
+            networks=networks_1,
+            networking_parameters=networking_parameters
+        )
+
+        networks_2 = self.fuel_web.client.get_networks(
+            cluster_id_2)["networks"]
+        self.change_default_range(networks_2,
+                                  number_excluded_ips=30,
+                                  cut_from_start=False)
+        helpers.wait(lambda: not self.is_update_dnsmasq_running(
+            self.fuel_web.client.get_tasks()), timeout=60,
+            timeout_msg="Timeout exceeded while waiting for task "
+                        "'update_dnsmasq' is finished!")
+        floating_list = [self.fuel_web.get_floating_ranges()[0][1]]
+        networking_parameters = {
+            "floating_ranges": floating_list}
+        self.fuel_web.client.update_network(
+            cluster_id_2,
+            networks=networks_2,
+            networking_parameters=networking_parameters
+        )
+        self.show_step(3)
+        self.fuel_web.verify_network(cluster_id_1)
+        self.show_step(4)
+        self.fuel_web.verify_network(cluster_id_2)
+        self.show_step(5)
+        self.fuel_web.deploy_cluster_wait(cluster_id_1, check_services=False)
+        self.show_step(6)
+        self.fuel_web.run_ostf(cluster_id=cluster_id_1)
+        self.show_step(7)
+        self.fuel_web.deploy_cluster_wait(cluster_id_2, check_services=False)
+        self.show_step(8)
+        self.fuel_web.run_ostf(cluster_id=cluster_id_2)
+
+        self.show_step(9)
+        config_new = utils.get_config_template('nova_cpu')
+        structured_config = get_structured_config_dict(config_new)
+        self.fuel_web.client.upload_configuration(config_new,
+                                                  cluster_id_1)
+
+        service_name = "nova-scheduler"
+
+        controller_env_1 = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id_1, ['controller'])
+        controller_env_2 = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id_2, ['controller'])
+        uptimes = self.get_service_uptime(controller_env_1, service_name)
+        task = self.fuel_web.client.apply_configuration(cluster_id_1)
+
+        self.show_step(10)
+        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+
+        self.show_step(11)
+        self.check_service_was_restarted(controller_env_1,
+                                         uptimes,
+                                         service_name)
+
+        self.show_step(12)
+        self.check_config_on_remote(controller_env_1, structured_config)
+
+        self.show_step(13)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id_1))
+
+        self.check_overcommit_ratio(os_conn, cluster_id_1)
+
+        self.show_step(14)
+        config_revert = utils.get_config_template('nova_cpu_old')
+        structured_config_revert = get_structured_config_dict(config_revert)
+        self.fuel_web.client.upload_configuration(config_revert,
+                                                  cluster_id_2)
+        uptimes = self.get_service_uptime(controller_env_2, service_name)
+        task = self.fuel_web.client.apply_configuration(cluster_id_2)
+        self.show_step(15)
+        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+
+        self.show_step(16)
+        self.check_service_was_restarted(controller_env_2,
+                                         uptimes,
+                                         service_name)
+
+        self.show_step(17)
+        self.check_config_on_remote(controller_env_2,
+                                    structured_config_revert)
+
+        self.env.make_snapshot("two_clusters_reconfiguration",
+                               is_make=True)
