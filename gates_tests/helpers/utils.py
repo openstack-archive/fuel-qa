@@ -33,7 +33,7 @@ def replace_fuel_agent_rpm(environment):
         raise exceptions.FuelQAVariableNotSet('UPDATE_FUEL', 'True')
     try:
         pack_path = '/var/www/nailgun/fuel-agent/'
-        full_pack_path = os.path.join(pack_path, '*.rpm')
+        full_pack_path = os.path.join(pack_path, 'fuel-agent*.noarch.rpm')
         container = 'mcollective'
         with environment.d_env.get_admin_remote() as remote:
             remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
