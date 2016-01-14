@@ -632,6 +632,7 @@ def main():
         logger.info('Found existing TestPlan "{0}".'.format(test_plan_name))
 
     if options.create_plan_only:
+        logger.info('TestPlan ID is {0}.'.format(test_plan['id']))
         return
 
     plan_entries = []
