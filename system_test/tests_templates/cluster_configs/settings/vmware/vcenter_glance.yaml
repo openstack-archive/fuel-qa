@@ -1,7 +1,7 @@
 ---
 enable: true
-host: 172.16.0.254
-user: administrator@vsphere.local
-pwd: Qwer!1234
-datacenter: Datacenter
-datastore: nfs
+host: !os_env VCENTER_GLANCE_IP, 172.16.0.254
+user: !os_env VCENTER_GLANCE_USERNAME, administrator@vsphere.local
+pwd: !os_env VCENTER_GLANCE_PASSWORD, Qwer!1234
+datacenter: !os_env VCENTER_DATACENTER, Datacenter
+datastore: !os_env VCENTER_DATASTORE, nfs
