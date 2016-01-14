@@ -1,5 +1,5 @@
 ---
 az: vcenter
-host: 172.16.0.254
-user: administrator@vsphere.local
-pwd: Qwer!1234
+host: !os_env VCENTER_IP, 172.16.0.254
+user: !os_env VCENTER_USERNAME, administrator@vsphere.local
+pwd: !os_env VCENTER_PASSWORD, Qwer!1234
