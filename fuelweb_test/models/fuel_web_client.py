@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import re
 import time
 import traceback
@@ -2011,6 +2012,20 @@ class FuelWebClient(object):
             ceph.check_disks(remote, [n['id'] for n in online_ceph_nodes])
 
         logger.info('Ceph cluster status is OK')
+
+    @logwrap
+    def fill_ceph_partitions_on_all_nodes(self, nodes_count, gb):
+        for node in ['slave-0{0}'.format(slave) for slave
+                     in xrange(1, nodes_count)]:
+            with self.fuel_web.get_ssh_for_node(node) as remote:
+                file_name = "test_data"
+                file_dir = remote.execute(
+                    'mount | grep -m 1 ceph')['stdout'][0].split()[2]
+                file_path = os.path.join(file_dir, file_name)
+                result = remote.execute(
+                    'fallocate -l {0}G {1}'.format(gb, file_path))['exit_code']
+                assert_equal(result, 0, "The file {0} was not "
+                                        "allocated".format(file_name))
 
     @logwrap
     def get_releases_list_for_os(self, release_name, release_version=None):
