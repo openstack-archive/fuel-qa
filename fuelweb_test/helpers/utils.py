@@ -792,3 +792,20 @@ def compare_packages_version(remote, package_name, income_package_name):
             package=income_package_name, version=income_version)
     else:
         return True
+
+
+@logwrap
+def fill_partition(ip, file_dir, size):
+    """Fill partition on node
+
+    :param ip: the ip of the node
+    :param file_dir: the file directory
+    :param size: the amount of space in Gb
+    """
+    ssh_manager = SSHManager()
+    file_name = "test_data"
+    file_path = os.path.join(file_dir, file_name)
+    ssh_manager.execute_on_remote(
+        ip=ip,
+        cmd='fallocate -l {0}G {1}'.format(size, file_path),
+        err_msg="The file {0} was not allocated".format(file_name))
