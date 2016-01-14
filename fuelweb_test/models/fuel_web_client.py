@@ -1826,7 +1826,7 @@ class FuelWebClient(object):
                         'Node {0} is online'.format(node['mac']))
 
     @logwrap
-    def wait_mysql_galera_is_up(self, node_names, timeout=60 * 4):
+    def wait_mysql_galera_is_up(self, node_names, timeout=60 * 60):
         def _get_galera_status(_remote):
             cmd = ("mysql --connect_timeout=5 -sse \"SELECT VARIABLE_VALUE "
                    "FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME"
