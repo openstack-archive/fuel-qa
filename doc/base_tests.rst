@@ -533,6 +533,11 @@ Image based tests
 .. automodule:: fuelweb_test.tests.tests_strength.test_image_based
    :members:
 
+Base load tests
+---------------
+.. automodule:: fuelweb_test.tests.tests_strength.test_load_base
+   :members:
+
 Load tests
 ----------
 .. automodule:: fuelweb_test.tests.tests_strength.test_load
@@ -556,6 +561,11 @@ Base Neutron tests
 OSTF repeatable tests
 ---------------------
 .. automodule:: fuelweb_test.tests.tests_strength.test_ostf_repeatable_tests
+   :members:
+
+Repetitive restart tests
+------------------------
+.. automodule:: fuelweb_test.tests.tests_strength.test_repetitive_restart
    :members:
 
 Restart tests
