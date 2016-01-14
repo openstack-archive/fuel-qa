@@ -792,3 +792,23 @@ def compare_packages_version(remote, package_name, income_package_name):
             package=income_package_name, version=income_version)
     else:
         return True
+
+
+@logwrap
+def fill_partitions(nodes, size):
+    """Fill partitions on nodes
+
+    :param nodes: the list of nodes
+    :param size: the amount of space in Gb
+    """
+    ssh_manager = SSHManager()
+    for node in nodes:
+        file_name = "test_data"
+        file_dir = ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd="mount | grep -m 1 ceph | awk '{print($3)}'")['stdout']
+        file_path = os.path.join(file_dir, file_name)
+        ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd='fallocate -l {0}G {1}'.format(size, file_path),
+            err_msg="The file {0} was not allocated".format(file_name))
