@@ -558,6 +558,11 @@ OSTF repeatable tests
 .. automodule:: fuelweb_test.tests.tests_strength.test_ostf_repeatable_tests
    :members:
 
+Repetitive restart tests
+-------------
+.. automodule:: fuelweb_test.tests.tests_strength.test_repetitive_restart
+   :members:
+
 Restart tests
 -------------
 .. automodule:: fuelweb_test.tests.tests_strength.test_restart
