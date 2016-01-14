@@ -888,3 +888,21 @@ def erase_data_from_hdd(remote,
 
     for cmd in commands:
         run_on_remote(remote, cmd)
+
+
+@logwrap
+def fill_space(ip, file_dir, size):
+    """Allocates space to some file in the specified directory
+     on the specified node
+
+    :param ip: the ip of the node
+    :param file_dir: the specified directory
+    :param size: the amount of space in Gb
+    """
+    ssh_manager = SSHManager()
+    file_name = "test_data"
+    file_path = os.path.join(file_dir, file_name)
+    ssh_manager.execute_on_remote(
+        ip=ip,
+        cmd='fallocate -l {0}G {1}'.format(size, file_path),
+        err_msg="The file {0} was not allocated".format(file_name))
