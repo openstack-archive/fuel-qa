@@ -86,6 +86,9 @@ class FuelMasterMigrate(ActionsBase, FuelMasterActions):
     def check_migration_status(self):
         """Check periodically the status of Fuel Master migration process"""
 
+        wait(lambda: icmp_ping(self.env.get_admin_node_ip()),
+             timeout=60 * 15, timeout_msg='SSH session not active')
+
         with self.env.d_env.get_admin_remote() as remote:
             checkers.wait_phrase_in_log(
                 remote, 60 * 60, interval=0.2,
