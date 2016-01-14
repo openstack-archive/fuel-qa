@@ -346,14 +346,30 @@ class TestRailProject(object):
 
     def get_results_for_test(self, test_id, run_results=None):
         if run_results:
-            for results in run_results:
-                if results['test_id'] == test_id:
-                    return results
+            test_results = []
+            for result in run_results:
+                if result['test_id'] == test_id:
+                    test_results.append(result)
+            return test_results
         results_uri = 'get_results/{test_id}'.format(test_id=test_id)
         return self.client.send_get(results_uri)
 
-    def get_results_for_run(self, run_id):
+    def get_results_for_run(self, run_id, created_after=None,
+                            created_before=None, created_by=None, limit=None,
+                            offset=None, status_id=None):
         results_run_uri = 'get_results_for_run/{run_id}'.format(run_id=run_id)
+        if created_after:
+            results_run_uri += '&created_after={}'.format(created_after)
+        if created_before:
+            results_run_uri += '&created_before={}'.format(created_before)
+        if created_by:
+            results_run_uri += '&created_by={}'.format(created_by)
+        if limit:
+            results_run_uri += '&limit={}'.format(limit)
+        if offset:
+            results_run_uri += '&offset={}'.format(offset)
+        if status_id:
+            results_run_uri += '&status_id={}'.format(status_id)
         return self.client.send_get(results_run_uri)
 
     def get_results_for_case(self, run_id, case_id):
@@ -375,7 +391,6 @@ class TestRailProject(object):
         return all_results
 
     def add_results_for_test(self, test_id, test_results):
-        add_results_test_uri = 'add_result/{test_id}'.format(test_id=test_id)
         new_results = {
             'status_id': self.get_status(test_results.status)['id'],
             'comment': '\n'.join(filter(lambda x: x is not None,
@@ -387,7 +402,11 @@ class TestRailProject(object):
         }
         if test_results.steps:
             new_results['custom_step_results'] = test_results.steps
-        return self.client.send_post(add_results_test_uri, new_results)
+        return self.add_raw_results_for_test(test_id, new_results)
+
+    def add_raw_results_for_test(self, test_id, test_raw_results):
+        add_results_test_uri = 'add_result/{test_id}'.format(test_id=test_id)
+        return self.client.send_post(add_results_test_uri, test_raw_results)
 
     def add_results_for_cases(self, run_id, suite_id, tests_results):
         add_results_test_uri = 'add_results_for_cases/{run_id}'.format(
