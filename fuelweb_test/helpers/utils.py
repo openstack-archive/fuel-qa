@@ -842,3 +842,23 @@ def erase_data_from_hdd(remote, device=None, source="/dev/zero",
 
     for cmd in commands:
         run_on_remote(remote, cmd)
+
+
+@logwrap
+def fill_ceph_partitions(ceph_nodes, gb):
+    """Fill ceph partitions on all nodes
+
+    :param ceph_nodes: the list of nodes with 'ceph-osd' role
+    :param gb: the amount of space in Gb
+    """
+    ssh_manager = SSHManager()
+    for node in ceph_nodes:
+        file_name = "test_data"
+        file_dir = ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd="mount | grep -m 1 ceph | awk '{print($3)}'")['stdout']
+        file_path = os.path.join(file_dir, file_name)
+        ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd='fallocate -l {0}G {1}'.format(gb, file_path),
+            err_msg="The file {0} was not allocated".format(file_name))

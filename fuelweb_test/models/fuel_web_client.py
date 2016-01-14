@@ -15,29 +15,31 @@
 import re
 import time
 import traceback
-import ipaddr
-from netaddr import EUI
 from urllib2 import HTTPError
+import yaml
 
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
 from devops.models.node import Node
-from fuelweb_test.helpers.ssh_manager import SSHManager
-from fuelweb_test.helpers.ssl import copy_cert_from_master
-from fuelweb_test.helpers.ssl import change_cluster_ssl_config
+import ipaddr
 from ipaddr import IPNetwork
+from netaddr import EUI
 from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_is_not_none
-from proboscis.asserts import assert_true
+from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
-import yaml
+from proboscis.asserts import assert_true
 
+from fuelweb_test import logger
+from fuelweb_test import logwrap
+from fuelweb_test import ostf_test_mapping as map_ostf
+from fuelweb_test import QuietLogger
 from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import replace_repos
 from fuelweb_test.helpers.decorators import check_repos_management
 from fuelweb_test.helpers.decorators import custom_repo
 from fuelweb_test.helpers.decorators import download_astute_yaml
@@ -46,23 +48,22 @@ from fuelweb_test.helpers.decorators import duration
 from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.decorators import update_fuel
 from fuelweb_test.helpers.decorators import upload_manifests
-from fuelweb_test.helpers import replace_repos
 from fuelweb_test.helpers.security import SecurityChecks
-from fuelweb_test.helpers.utils import run_on_remote
-from fuelweb_test.helpers.utils import node_freemem
+from fuelweb_test.helpers.ssh_manager import SSHManager
+from fuelweb_test.helpers.ssl import change_cluster_ssl_config
+from fuelweb_test.helpers.ssl import copy_cert_from_master
 from fuelweb_test.helpers.utils import get_node_hiera_roles
+from fuelweb_test.helpers.utils import node_freemem
 from fuelweb_test.helpers.utils import pretty_log
-from fuelweb_test import logger
-from fuelweb_test import logwrap
+from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.models.nailgun_client import NailgunClient
-from fuelweb_test import ostf_test_mapping as map_ostf
-from fuelweb_test import QuietLogger
 import fuelweb_test.settings as help_data
 from fuelweb_test.settings import ATTEMPTS
 from fuelweb_test.settings import BONDING
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
 from fuelweb_test.settings import DISABLE_SSL
 from fuelweb_test.settings import DNS_SUFFIX
+from fuelweb_test.settings import iface_alias
 from fuelweb_test.settings import KVM_USE
 from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import NEUTRON
@@ -76,13 +77,12 @@ from fuelweb_test.settings import OSTF_TEST_RETRIES_COUNT
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
 from fuelweb_test.settings import TIMEOUT
+from fuelweb_test.settings import USER_OWNED_CERT
 from fuelweb_test.settings import VCENTER_DATACENTER
 from fuelweb_test.settings import VCENTER_DATASTORE
-from fuelweb_test.settings import USER_OWNED_CERT
 from fuelweb_test.settings import VCENTER_IP
 from fuelweb_test.settings import VCENTER_PASSWORD
 from fuelweb_test.settings import VCENTER_USERNAME
-from fuelweb_test.settings import iface_alias
 
 
 class FuelWebClient(object):
