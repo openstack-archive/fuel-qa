@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
 import time
 
 from fuelweb_test.helpers.rally import RallyBenchmarkTest
@@ -22,7 +21,6 @@ from fuelweb_test import ostf_test_mapping as map_ostf
 from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
-from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import test
 
@@ -118,16 +116,7 @@ class Load(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.show_step(5)
-        for node in ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]:
-            with self.fuel_web.get_ssh_for_node(node) as remote:
-                file_name = "test_data"
-                file_dir = remote.execute(
-                    'mount | grep -m 1 ceph')['stdout'][0].split()[2]
-                file_path = os.path.join(file_dir, file_name)
-                result = remote.execute(
-                    'fallocate -l 30G {0}'.format(file_path))['exit_code']
-                assert_equal(result, 0, "The file {0} was not "
-                                        "allocated".format(file_name))
+        self.fuel_web.fill_ceph_partitions_on_all_nodes(nodes_count=4, gb=30)
 
         self.show_step(6)
         self.fuel_web.check_ceph_status(cluster_id)
