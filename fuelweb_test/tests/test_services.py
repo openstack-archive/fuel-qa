@@ -437,7 +437,7 @@ class OSTFCeilometerHelper(TestBasic):
                            'CeilometerApiPlatformTests')
         tests_names = ['test_check_alarm_state',
                        'test_create_sample',
-                       'test_check_volume_notifications',
+                       'test_check_volume_events',
                        'test_check_glance_notifications',
                        'test_check_keystone_notifications',
                        'test_check_neutron_notifications',
@@ -671,7 +671,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
                                     ignore_count_of_proccesses=True)
 
         self.run_tests(cluster_id,
-                       skip_tests=['test_check_volume_notifications'])
+                       skip_tests=['test_check_volume_events'])
         self.env.make_snapshot("deploy_ceilometer_ha_with_mongo")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
