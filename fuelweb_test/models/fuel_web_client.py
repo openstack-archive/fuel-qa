@@ -970,7 +970,12 @@ class FuelWebClient(object):
         return [n for n in nodes if set(roles) <= set(n[role_status])]
 
     @logwrap
-    def get_ssh_for_node(self, node_name):
+    def get_node_ip_by_devops_name(self, node_name):
+        """Get node ip by it's devops name (like "slave-01" and etc)
+
+        :param node_name: str
+        :return: str
+        """
         try:
             node = self.get_nailgun_node_by_devops_node(
                 self.environment.d_env.get_node(name=node_name))
@@ -978,7 +983,12 @@ class FuelWebClient(object):
             node = self.get_nailgun_node_by_fqdn(node_name)
         assert_true(node is not None,
                     'Node with name "{0}" not found!'.format(node_name))
-        return self.environment.d_env.get_ssh_to_remote(node['ip'])
+        return node['ip']
+
+    @logwrap
+    def get_ssh_for_node(self, node_name):
+        return self.environment.d_env.get_ssh_to_remote(
+            self.get_node_ip_by_devops_name(node_name))
 
     @logwrap
     def get_ssh_for_role(self, nodes_dict, role):
