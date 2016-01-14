@@ -452,6 +452,11 @@ Example tests
 .. automodule:: fuelweb_test.tests.plugins.plugin_example.test_fuel_plugin_example
    :members:
 
+Example post deploy plugin install
+----------------------------------
+.. automodule:: fuelweb_test.tests.plugins.plugin_example.test_fuel_plugin_example_postdeploy
+   :members:
+
 Example tests for plugin installation after cluster create
 ----------------------------------------------------------
 .. automodule:: fuelweb_test.tests.plugins.plugin_example.test_fuel_plugin_example_postdeploy
