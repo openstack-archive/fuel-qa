@@ -146,13 +146,13 @@ def get_job_parameter(jenkins_build_data, parameter):
 def get_version_from_parameters(jenkins_build_data):
     iso_link = get_job_parameter(jenkins_build_data, 'magnet_link')
     if iso_link:
-        match = re.search(r'.*\bfuel-(?P<prefix>\w*)-?(?P<version>\d+'
-                          '(?P<version2>\.\d+)+)-(?P<buildnum>\d+)-.*',
-                          iso_link)
+        match = re.search(r'.*\bfuel-(?P<prefix1>[a-zA-Z]*)-?(?P<version>\d+'
+                          r'(?P<version2>\.\d+)+)-(?P<prefix2>[a-zA-Z]*)-?'
+                          r'(?P<buildnum>\d+)-.*', iso_link)
         if match:
             return (match.group('version'),
                     int(match.group('buildnum')),
-                    match.group('prefix'))
+                    match.group('prefix1') or match.group('prefix2'))
 
     upstream_job = get_job_parameter(jenkins_build_data, 'UPSTREAM_JOB_URL')
     if upstream_job:
