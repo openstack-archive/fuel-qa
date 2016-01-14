@@ -161,7 +161,7 @@ class CICMaintenanceMode(TestBasic):
 
             # Wait until MySQL Galera is UP on some controller
             self.fuel_web.wait_mysql_galera_is_up(
-                [n.name for n in d_ctrls])
+                [n.name for n in d_ctrls], timeout=1800)
 
             # Wait until Cinder services UP on a controller
             self.fuel_web.wait_cinder_is_up(
@@ -290,7 +290,7 @@ class CICMaintenanceMode(TestBasic):
 
             # Wait until MySQL Galera is UP on some controller
             self.fuel_web.wait_mysql_galera_is_up(
-                [n.name for n in d_ctrls])
+                [n.name for n in d_ctrls], timeout=1800)
 
             # Wait until Cinder services UP on a controller
             self.fuel_web.wait_cinder_is_up(
@@ -464,7 +464,7 @@ class CICMaintenanceMode(TestBasic):
 
             # Wait until MySQL Galera is UP on some controller
             self.fuel_web.wait_mysql_galera_is_up(
-                [n.name for n in d_ctrls])
+                [n.name for n in d_ctrls], timeout=1800)
 
             # Wait until Cinder services UP on a controller
             self.fuel_web.wait_cinder_is_up(
