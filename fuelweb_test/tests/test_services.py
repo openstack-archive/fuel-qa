@@ -437,7 +437,7 @@ class OSTFCeilometerHelper(TestBasic):
                            'CeilometerApiPlatformTests')
         tests_names = ['test_check_alarm_state',
                        'test_create_sample',
-                       'test_check_volume_notifications',
+                       'test_check_volume_events',
                        'test_check_glance_notifications',
                        'test_check_keystone_notifications',
                        'test_check_neutron_notifications',
