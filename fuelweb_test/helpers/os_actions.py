@@ -64,6 +64,49 @@ class OpenStackActions(common.Common):
         if servers:
             return servers
 
+    def create_server(
+            self,
+            name=None,
+            security_groups=None,
+            flavor_id=None,
+            net_id=None,
+            timeout=100
+    ):
+
+        def find_micro_flavor():
+            return [
+                flavor for flavor in self.nova.flavors.list()
+                if flavor.name == 'm1.micro'].pop()
+
+        if not name:
+            name = "test-serv" + str(random.randint(1, 0x7fffffff))
+        if not security_groups:
+            security_groups = [self.create_sec_group_for_ssh()]
+        if not flavor_id:
+            flavor_id = find_micro_flavor().id
+
+        nics = [{'net-id': net_id}] if net_id else None
+
+        srv = self.nova.servers.create(
+            name=name,
+            image=self._get_cirros_image().id,
+            flavor=flavor_id,
+            security_groups=[sec_group.name for sec_group in security_groups],
+            nics=nics)
+
+        try:
+            helpers.wait(
+                lambda: self.get_instance_detail(srv).status == "ACTIVE",
+                timeout=timeout)
+            return self.get_instance_detail(srv.id)
+        except TimeoutError:
+            logger.debug("Create server failed by timeout")
+            asserts.assert_equal(
+                self.get_instance_detail(srv).status,
+                "ACTIVE",
+                "Instance do not reach active state, current state"
+                " is {0}".format(self.get_instance_detail(srv).status))
+
     def create_server_for_migration(self, neutron=True, scenario='',
                                     timeout=100, file=None, key_name=None,
                                     label=None, flavor=1, **kwargs):
@@ -79,8 +122,7 @@ class OpenStackActions(common.Common):
         image_id = self._get_cirros_image().id
         security_group[self.keystone.tenant_id] =\
             self.create_sec_group_for_ssh()
-        security_group = [security_group[
-            self.keystone.tenant_id].name]
+        security_group = [security_group[self.keystone.tenant_id].name]
 
         if neutron:
             net_label = label if label else 'net04'
@@ -175,6 +217,13 @@ class OpenStackActions(common.Common):
                 'from_port': -1,
                 'to_port': -1,
                 'cidr': '0.0.0.0/0',
+            },
+            {
+                # ping6
+                'ip_protocol': 'icmp',
+                'from_port': -1,
+                'to_port': -1,
+                'cidr': '::/0',
             }
         ]
 
@@ -335,7 +384,9 @@ class OpenStackActions(common.Common):
         if user:
             return user
         return self.keystone.users.create(
-            name=username, password=passw, tenant_id=tenant.id)
+            name=username,
+            password=passw,
+            tenant_id=tenant.id)
 
     def update_user_enabled(self, user, enabled=True):
         self.keystone.users.update_enabled(user, enabled)
@@ -511,9 +562,12 @@ class OpenStackActions(common.Common):
             body['network'].update(kwargs)
         return self.neutron.create_network(body)
 
-    def create_subnet(self, subnet_name, network_id, cidr, ip_version=4):
+    def create_subnet(
+            self, subnet_name, network_id, cidr, ip_version=4, **kwargs):
         body = {"subnet": {"name": subnet_name, "network_id": network_id,
                            "ip_version": ip_version, "cidr": cidr}}
+        if kwargs:
+            body['subnet'].update(kwargs)
         subnet = self.neutron.create_subnet(body)
         return subnet['subnet']
 
@@ -530,3 +584,26 @@ class OpenStackActions(common.Common):
             body["port_id"] = port_id
         self.neutron.add_interface_router(router_id, body)
         return None
+
+    def create_router(self, name, tenant):
+        external_network = None
+        for network in self.neutron.list_networks()["networks"]:
+            if network.get("router:external"):
+                external_network = network
+
+        if not external_network:
+            raise RuntimeError('Cannot find the external network.')
+
+        gw_info = {
+            "network_id": external_network["id"],
+            "enable_snat": True
+        }
+
+        router_info = {
+            "router": {
+                "name": name,
+                "external_gateway_info": gw_info,
+                "tenant_id": tenant.id
+            }
+        }
+        return self.neutron.create_router(router_info)['router']
