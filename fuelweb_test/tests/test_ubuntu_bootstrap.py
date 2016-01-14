@@ -249,7 +249,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
                                 "No {0} option in cmdline: {1}"
                                 .format(kernel_opt, actual_kernel_cmdline))
 
-    @test(depends_on_groups=["prepare_default_ubuntu_bootstrap"],
+    @test(depends_on_groups=["build_default_bootstrap"],
           groups=["create_list_import_delete_bootstrap_image"])
     @log_snapshot_after_test
     def create_list_import_delete_bootstrap_image(self):
