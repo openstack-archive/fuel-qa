@@ -602,6 +602,11 @@ Test for separate keystone service and ceph
 .. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_keystone_ceph
    :members:
 
+Test for separate keystone service for multiple networks
+--------------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_keystone_multinet
+   :members:
+
 Test for separate horizon service
 ---------------------------------
 .. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_horizon
