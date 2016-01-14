@@ -346,9 +346,12 @@ class TestRailProject(object):
 
     def get_results_for_test(self, test_id, run_results=None):
         if run_results:
-            for results in run_results:
-                if results['test_id'] == test_id:
-                    return results
+            test_results = []
+            for result in run_results:
+                if result['test_id'] == test_id:
+                    test_results.append(result)
+            if test_results:
+                return test_results
         results_uri = 'get_results/{test_id}'.format(test_id=test_id)
         return self.client.send_get(results_uri)
 
@@ -375,7 +378,6 @@ class TestRailProject(object):
         return all_results
 
     def add_results_for_test(self, test_id, test_results):
-        add_results_test_uri = 'add_result/{test_id}'.format(test_id=test_id)
         new_results = {
             'status_id': self.get_status(test_results.status)['id'],
             'comment': '\n'.join(filter(lambda x: x is not None,
@@ -387,7 +389,11 @@ class TestRailProject(object):
         }
         if test_results.steps:
             new_results['custom_step_results'] = test_results.steps
-        return self.client.send_post(add_results_test_uri, new_results)
+        return self.add_raw_results_for_test(test_id, new_results)
+
+    def add_raw_results_for_test(self, test_id, test_raw_results):
+        add_results_test_uri = 'add_result/{test_id}'.format(test_id=test_id)
+        return self.client.send_post(add_results_test_uri, test_raw_results)
 
     def add_results_for_cases(self, run_id, suite_id, tests_results):
         add_results_test_uri = 'add_results_for_cases/{run_id}'.format(
