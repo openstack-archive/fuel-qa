@@ -143,6 +143,7 @@ def import_tests():
     from gates_tests.tests import test_review_in_fuel_agent  # noqa
     from gates_tests.tests import test_review_fuel_web  # noqa
     from tests.tests_strength import test_load  # noqa
+    from tests.tests_strength import test_repetitive_restart  # noqa
     from tests import test_services_reconfiguration  # noqa
     from gates_tests.tests import test_review_in_ostf  # noqa
     from gates_tests.tests import test_review_in_fuel_client  # noqa
