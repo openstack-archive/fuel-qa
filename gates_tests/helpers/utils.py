@@ -311,6 +311,15 @@ def update_ostf(environment):
         raise
 
 
+def get_oswl_services_names(remote):
+    cmd = "systemctl list-units| grep oswl_ | awk '{print $1}'"
+    result = remote.base_actions.execute_in_container(
+        cmd, 'nailgun', exit_code=0)
+    logger.info('list of statistic services inside nailgun {0}'.format(
+        result.split(' ')))
+    return result.split(' ')
+
+
 def replace_fuel_nailgun_rpm(environment):
     """
     Replace fuel_nailgun*.rpm from review
@@ -327,10 +336,16 @@ def replace_fuel_nailgun_rpm(environment):
                           pack_path)
         # stop services
         service_list = ['assassind', 'receiverd',
-                        'nailgun', 'oswl_*', 'statsenderd']
+                        'nailgun', 'statsenderd']
         [environment.base_actions.execute_in_container(
             'systemctl stop {0}'.format(service),
             container, exit_code=0) for service in service_list]
+
+        # stop statistic services
+        [environment.base_actions.execute_in_container(
+            'systemctl stop {0}'.format(service),
+            container, exit_code=0) for service in
+         get_oswl_services_names(environment)]
 
         # Update fuel-nailgun in nailgun
         cmd = "rpm -q fuel-nailgun"
