@@ -237,6 +237,11 @@ Test Neutron VXLAN base
 .. automodule:: fuelweb_test.tests.test_neutron_tun_base
    :members:
 
+Test Neutron IPv6 base functionality
+------------------------------------
+.. automodule:: fuelweb_test.tests.test_neutron_ipv6
+   :members:
+
 Test Node reinstallation
 ------------------------
 .. automodule:: fuelweb_test.tests.test_node_reinstallation
