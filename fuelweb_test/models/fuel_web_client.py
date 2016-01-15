@@ -480,6 +480,9 @@ class FuelWebClient(object):
                     section = 'access'
                 if option == 'assign_to_all_nodes':
                     section = 'public_network_assignment'
+                if option in ('neutron_l3_ha', 'neutron_dvr',
+                              'neutron_l2_pop'):
+                    section = 'neutron_advanced_configuration'
                 if option in 'dns_list':
                     section = 'external_dns'
                 if option in 'ntp_list':
@@ -487,6 +490,26 @@ class FuelWebClient(object):
                 if section:
                     attributes['editable'][section][option]['value'] =\
                         settings[option]
+
+            # we should check DVR limitations
+            section = 'neutron_advanced_configuration'
+            if attributes['editable'][section]['neutron_dvr']['value']:
+                if attributes['editable'][section]['neutron_l3_ha']['value']:
+                    raise Exception("Neutron DVR and Neutron L3 HA can't be"
+                                    " used simultaneously.")
+
+                if 'net_segment_type' in settings:
+                    net_segment_type = settings['net_segment_type']
+                elif NEUTRON_SEGMENT_TYPE:
+                    net_segment_type = NEUTRON_SEGMENT[NEUTRON_SEGMENT_TYPE]
+                else:
+                    net_segment_type = None
+
+                if not attributes['editable'][section]['neutron_l2_pop'][
+                        'value'] and net_segment_type == 'tun':
+                    raise Exception("neutron_l2_pop is not enabled but "
+                                    "it is required for VxLAN DVR "
+                                    "network configuration.")
 
             public_gw = self.environment.d_env.router(router_name="public")
 
