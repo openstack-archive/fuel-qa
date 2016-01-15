@@ -357,6 +357,15 @@ SNAPSHOT = os.environ.get('SNAPSHOT', '')
 # For 5.1.1 we have 2 releases in tarball and should specify what we need
 RELEASE_VERSION = os.environ.get('RELEASE_VERSION', "2015.1.0-8.0")
 
+# Repos paths and files
+MOS_REPOS = os.environ.get('MOS_REPOS',
+                           'http://mirror.fuel-infra.org/mos-repos/')
+CENTOS_REPO_PATH = os.environ.get('CENTOS_REPO_PATH',
+                                  MOS_REPOS + 'centos/mos8.0-centos7-fuel/')
+UBUNTU_REPO_PATH = os.environ.get('UBUNTU_REPO_PATH',
+                                  MOS_REPOS + 'ubuntu/8.0/')
+GPG_CENTOS_KEY = os.environ.get('GPG_CENTOS_KEY',
+                                CENTOS_REPO_PATH + 'os/RPM-GPG-KEY-mos8.0')
 
 # Release name of local Ubuntu mirror on Fuel master node.
 UBUNTU_RELEASE = os.environ.get('UBUNTU_RELEASE', 'precise')
