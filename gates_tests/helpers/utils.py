@@ -133,7 +133,7 @@ def patch_centos_bootstrap(environment):
 
             result = remote.execute(cmd)
             assert_equal(result['exit_code'], 0,
-                         ('Failed to rebuild bootstrap {}').format(result))
+                         'Failed to rebuild bootstrap {}'.format(result))
     except Exception as e:
         logger.error("Could not upload package {e}".format(e=e))
         raise
@@ -311,6 +311,15 @@ def update_ostf(environment):
         raise
 
 
+def get_oswl_services_names(remote):
+    cmd = "systemctl list-units| grep oswl_ | awk '{print $1}'"
+    result = remote.base_actions.execute_in_container(
+        cmd, 'nailgun', exit_code=0)
+    logger.info('list of statistic services inside nailgun {0}'.format(
+        result.split('\n')))
+    return result.split('\n')
+
+
 def replace_fuel_nailgun_rpm(environment):
     """
     Replace fuel_nailgun*.rpm from review
@@ -322,15 +331,23 @@ def replace_fuel_nailgun_rpm(environment):
     try:
         pack_path = '/var/www/nailgun/fuel-nailgun/'
         container = 'nailgun'
+        full_pack_path = os.path.join(pack_path, 'naigun*.noarch.rpm')
+        logger.info('Package path {0}'.format(full_pack_path))
         with environment.d_env.get_admin_remote() as remote:
             remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
                           pack_path)
         # stop services
         service_list = ['assassind', 'receiverd',
-                        'nailgun', 'oswl_*', 'statsenderd']
+                        'nailgun', 'statsenderd']
         [environment.base_actions.execute_in_container(
             'systemctl stop {0}'.format(service),
             container, exit_code=0) for service in service_list]
+
+        # stop statistic services
+        [environment.base_actions.execute_in_container(
+            'systemctl stop {0}'.format(service),
+            container, exit_code=0) for service in
+         get_oswl_services_names(environment)]
 
         # Update fuel-nailgun in nailgun
         cmd = "rpm -q fuel-nailgun"
@@ -354,15 +371,14 @@ def replace_fuel_nailgun_rpm(environment):
         environment.base_actions.execute_in_container(
             cmd, container, exit_code=0)
 
-        cmd = "ls -1 {0}|grep 'fuel-nailgun'".format(pack_path)
+        cmd = "ls -1 {0}".format(full_pack_path)
         new_package = \
             environment.base_actions.execute_in_container(
                 cmd, container).rstrip('.rpm')
         logger.info("Install package {0}"
                     .format(new_package))
 
-        cmd = "yum localinstall -y {0}fuel-nailgun*.rpm".format(
-            pack_path)
+        cmd = "yum localinstall -y {0}".format(full_pack_path)
         environment.base_actions.execute_in_container(
             cmd, container, exit_code=0)
 
