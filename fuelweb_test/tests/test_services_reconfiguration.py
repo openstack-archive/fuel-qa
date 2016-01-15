@@ -499,33 +499,36 @@ class ServicesReconfiguration(TestBasic):
         controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])
 
-        ldap_cntrllr = controllers[0]
-
         self.show_step(2)
         config = utils.get_config_template('keystone_ldap')
         self.fuel_web.client.upload_configuration(
             config,
-            cluster_id,
-            node_id=ldap_cntrllr['id'])
+            cluster_id)
 
         self.show_step(3)
         task = self.fuel_web.client.apply_configuration(
-            cluster_id,
-            node_id=ldap_cntrllr['id'])
+            cluster_id)
 
         self.show_step(4)
         try:
-            self.fuel_web.assert_task_success(task, timeout=1800, interval=30)
+            self.fuel_web.assert_task_success(task, timeout=3600, interval=30)
         except AssertionError:
             pass
         else:
             raise Exception("New configuration was not applied")
 
         self.show_step(5)
-        with self.env.d_env.get_ssh_to_remote(ldap_cntrllr['ip']) as remote:
-            log_path = '/var/log/puppet.log'
-            cmd = "grep \"Can't contact LDAP server\" {0}".format(log_path)
-            utils.run_on_remote_get_results(remote, cmd)
+        flag = False
+        for cntrllr in controllers:
+            with self.env.d_env.get_ssh_to_remote(cntrllr['ip']) as remote:
+                log_path = '/var/log/puppet.log'
+                cmd = "grep \"Can't contact LDAP server\" {0}".format(log_path)
+                result = remote.execute(cmd)
+                if result['exit_code'] == 0:
+                    flag = True
+                    break
+
+        asserts.assert_true(flag, 'A configuration was not applied')
 
         self.env.make_snapshot("reconfigure_keystone_to_use_ldap")
 
