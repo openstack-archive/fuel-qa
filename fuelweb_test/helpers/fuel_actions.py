@@ -793,6 +793,8 @@ class FuelBootstrapCliActions(AdminActions):
     def activate_bootstrap_image(self, uuid):
         command = "fuel-bootstrap activate {0}".format(uuid)
         result = self._execute_check_retcode(command)
+        if "centos" in uuid:
+            return "centos"
         return self.parse_uuid(result)[0]
 
     def build_bootstrap_image(self, **kwargs):
