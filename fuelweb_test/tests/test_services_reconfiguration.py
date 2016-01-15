@@ -59,6 +59,24 @@ def get_structured_config_dict(config):
 class ServicesReconfiguration(TestBasic):
     """ServicesReconfiguration."""
 
+    def wait_for_node_status(self, devops_node, status, timeout=1200):
+        helpers.wait(
+            lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+                devops_node)['status'] == status, timeout=timeout,
+            timeout_msg="Timeout exceeded while waiting for "
+                        "node status: {0}".format(status))
+
+    def check_response_code(self, expected_code, err_msg,
+                            func, *args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except Exception as e:
+            if e.code != expected_code:
+                raise e
+            pass
+        else:
+            raise Exception(err_msg)
+
     def change_default_range(self, networks, number_excluded_ips,
                              cut_from_start=True):
         """
@@ -756,7 +774,7 @@ class ServicesReconfiguration(TestBasic):
         """
 
         self.check_run('reconfiguration_scalability')
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("reconfigure_nova_ephemeral_disk")
 
         self.show_step(2)
@@ -865,7 +883,7 @@ class ServicesReconfiguration(TestBasic):
         Snapshot "multiple_apply_config"
         """
 
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("reconfiguration_scalability")
 
         self.show_step(2)
@@ -957,7 +975,7 @@ class ServicesReconfiguration(TestBasic):
 
         """
 
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_5_slaves")
 
         self.show_step(2)
@@ -1092,3 +1110,115 @@ class ServicesReconfiguration(TestBasic):
                                     structured_config_revert)
 
         self.env.make_snapshot("two_clusters_reconfiguration")
+
+    @test(depends_on_groups=['basic_env_for_reconfiguration'],
+          groups=["services_reconfiguration", "check_wrong_config"])
+    @log_snapshot_after_test
+    def check_wrong_config(self):
+        """Check wrong config
+
+        Scenario:
+            1. Revert snapshot "basic_env_for_reconfiguration"
+            2. Upload a wrong openstack configuration
+            3. Check Nailgun response
+
+        Snapshot: check_wrong_config
+
+        """
+
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot("basic_env_for_reconfiguration")
+
+        self.show_step(2)
+        self.show_step(3)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        config = {'cinder_config': {'foo': {'value': 'bar'}}}
+        err_msg = 'A wrong configuration was applied'
+        expected_code = 400
+        self.check_response_code(expected_code, err_msg,
+                                 self.fuel_web.client.upload_configuration,
+                                 config, cluster_id)
+
+        self.env.make_snapshot("check_wrong_config")
+
+    @test(depends_on_groups=['basic_env_for_reconfiguration'],
+          groups=["services_reconfiguration",
+                  "upload_config_for_node_and_env_in_transitional_state"])
+    @log_snapshot_after_test
+    def upload_config_for_node_and_env_in_transitional_state(self):
+        """Upload config for node and env in transitional state
+
+        Scenario:
+            1. Revert snapshot "basic_env_for_reconfiguration"
+            2. Add 1 compute
+            3. Deploy changes
+            4. Upload a new openstack configuration for env
+            5. Check nailgun response
+            6. Wait for added node in provisioning state
+            7. Upload a new openstack configuration for node
+            8. Check Nailgun response
+            9. Wait for added node in deploying state
+            10. Upload a new openstack configuration for node
+            11. Check Nailgun response
+            12. Wait for finishing of deployment
+
+        Snapshot: upload_config_for_node_and_env_in_transitional_state
+
+        """
+
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot("basic_env_for_reconfiguration")
+
+        self.show_step(2)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        bs_node = filter(lambda x: x.name == 'slave-05',
+                         self.env.d_env.get_nodes())
+        self.env.bootstrap_nodes(bs_node)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-05': ['compute']})
+        target_node = bs_node[0]
+        target_node_id = self.fuel_web.get_nailgun_node_by_devops_node(
+            target_node)['id']
+
+        config = {'nova_config': {'foo': {'value': 'bar'}}}
+
+        self.show_step(3)
+        task = self.fuel_web.deploy_cluster(cluster_id)
+
+        self.show_step(4)
+        self.show_step(5)
+        expected_code = 403
+        err_msg = 'A configuration was applied for env in deploying state'
+        self.check_response_code(
+            expected_code, err_msg,
+            self.fuel_web.client.upload_configuration,
+            config, cluster_id)
+
+        self.show_step(6)
+        self.wait_for_node_status(target_node, 'provisioning')
+
+        self.show_step(7)
+        self.show_step(8)
+        err_msg = 'A configuration was applied for node in provisioning state'
+        self.check_response_code(
+            expected_code, err_msg,
+            self.fuel_web.client.upload_configuration,
+            config, cluster_id, node_id=target_node_id)
+
+        self.show_step(9)
+        self.wait_for_node_status(target_node, 'deploying')
+
+        self.show_step(10)
+        self.show_step(11)
+        err_msg = 'A configuration was applied for node in deploying state'
+        self.check_response_code(
+            expected_code, err_msg,
+            self.fuel_web.client.upload_configuration,
+            config, cluster_id, node_id=target_node_id)
+
+        self.show_step(12)
+        self.fuel_web.assert_task_success(task, timeout=7800, interval=30)
+
+        snapshot_name = "upload_config_for_node_and_env_in_transitional_state"
+        self.env.make_snapshot(snapshot_name)
