@@ -275,6 +275,29 @@ class AdminActions(BaseActions):
         super(AdminActions, self).__init__()
 
     @logwrap
+    def upload_plugin(self, plugin):
+        """ Upload plugin on master node.
+        """
+        logger.info("Upload fuel's plugin from path {}.".format(plugin))
+        return self.ssh_manager.upload_to_remote(
+            ip=self.ssh_manager.admin_ip,
+            source=plugin,
+            target='/var',
+            port=self.ssh_manager.admin_port)
+
+    @logwrap
+    def install_plugin(self, plugin_file_name):
+        """ Install plugin on master node.
+        """
+        return self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd="cd /var && fuel plugins --install "
+                "{plugin!s} ".format(plugin=plugin_file_name),
+            port=self.ssh_manager.admin_port,
+            err_msg='Install script failed'
+        )
+
+    @logwrap
     def modify_configs(self, router):
         # Slave nodes should use the gateway of 'admin' network as the default
         # gateway during provisioning and as an additional DNS server.
