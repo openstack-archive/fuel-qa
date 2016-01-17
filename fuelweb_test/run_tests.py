@@ -57,6 +57,7 @@ def import_tests():
     from tests import test_reduced_footprint  # noqa
     from tests.tests_cli import test_cli_role  # noqa
     from tests.tests_cli import test_cli_deploy  # noqa
+    from tests.tests_cli import test_cli_deploy_ceph  # noqa
     from tests.tests_deployments.tests_neutron_vlan import test_ha_vlan_group_1  # noqa
     from tests.tests_deployments.tests_neutron_vlan import test_ha_vlan_group_2  # noqa
     from tests.tests_deployments.tests_neutron_vlan import test_ha_vlan_group_3  # noqa
