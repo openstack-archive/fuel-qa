@@ -86,7 +86,7 @@ class HaVlanGroup4(TestBasic):
         )
 
         for node in n_cinders:
-            cinder_image_size = self.fuel_web.update_node_partioning(node)
+            cinder_image_size = self.fuel_web.update_node_partitioning(node)
 
         d_cinders = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_cinders)
 
