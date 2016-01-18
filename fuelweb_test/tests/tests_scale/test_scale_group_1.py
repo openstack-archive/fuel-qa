@@ -128,6 +128,7 @@ class HaScaleGroup1(TestBasic):
                 'volumes_lvm': False,
                 'volumes_ceph': True,
                 'images_ceph': True,
+                'osd_pool_size': "2",
                 "net_provider": 'neutron',
                 "net_segment_type": NEUTRON_SEGMENT['tun']
             }
