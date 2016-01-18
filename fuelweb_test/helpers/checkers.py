@@ -993,9 +993,9 @@ def get_file_size(remote, file_name, file_path):
 
 
 @logwrap
-def check_ping(remote, host, deadline=10, size=56, timeout=1, interval=1):
+def check_ping(self, ip, host, deadline=10, size=56, timeout=1, interval=1):
     """Check network connectivity from remote to host using ICMP (ping)
-    :param remote: SSHClient
+    :param ip: remote ip
     :param host: string IP address or host/domain name
     :param deadline: time in seconds before ping exits
     :param size: size of data to be sent
@@ -1009,7 +1009,8 @@ def check_ping(remote, host, deadline=10, size=56, timeout=1, interval=1):
                            timeout=timeout,
                            interval=interval,
                            deadline=deadline))
-    return int(remote.execute(cmd)['exit_code']) == 0
+    res = self.ssh_manager.execute(ip, cmd)
+    return int(res['exit_code']) == 0
 
 
 @logwrap
