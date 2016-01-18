@@ -26,6 +26,21 @@ Deploy cluster and check RadosGW
 .. automodule:: system_test.tests.test_deploy_check_rados
    :members:
 
+Delete cluster after deploy
+--------------------------------
+.. automodule:: system_test.tests.test_delete_after_deploy
+   :members:
+
+Redeploy cluster after stop
+--------------------------------
+.. automodule:: system_test.tests.test_redeploy_after_stop
+   :members:
+
+Redeploy cluster after reset
+--------------------------------
+.. automodule:: system_test.tests.test_redeploy_after_reset
+   :members:
+
 Fuel master migration
 ---------------------
 .. automodule:: system_test.tests.test_fuel_migration

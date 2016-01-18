@@ -284,6 +284,20 @@ class ActionsBase(PrepareBase, HealthCheckActions, PluginsActions):
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
+    def stop_on_deploy(self):
+        """Stop environment deploying and wait while slave bacame online"""
+        if self.cluster_id is None:
+            raise SkipTest()
+
+        cluster_id = self.cluster_id
+        self.fuel_web.deploy_cluster_wait_progress(cluster_id, progress=60)
+        self.fuel_web.stop_deployment_wait(cluster_id)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.get_nodes(name__in=list(self.assigned_slaves)),
+            timeout=10 * 60)
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
     def network_check(self):
         """Run network checker
 
@@ -342,19 +356,15 @@ class ActionsBase(PrepareBase, HealthCheckActions, PluginsActions):
     @action
     def reset_cluster(self):
         """Reset environment"""
-        raise NotImplementedError
+        cluster_id = self.cluster_id
+        self.fuel_web.stop_reset_env_wait(cluster_id)
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def delete_cluster(self):
         """Delete environment"""
-        raise NotImplementedError
-
-    @deferred_decorator([make_snapshot_if_step_fail])
-    @action
-    def stop_deploy(self):
-        """Deploy environment"""
-        raise NotImplementedError
+        cluster_id = self.cluster_id
+        self.fuel_web.delete_env_wait(cluster_id)
 
 
 class FuelMasterActions(base_actions_factory.BaseActionsFactory):
