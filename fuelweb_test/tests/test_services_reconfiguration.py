@@ -288,7 +288,7 @@ class ServicesReconfiguration(TestBasic):
         self.check_run(snapshot_name)
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE,
@@ -341,7 +341,7 @@ class ServicesReconfiguration(TestBasic):
 
         """
         self.check_run('reconfigure_ml2_vlan_range')
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("basic_env_for_reconfiguration")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
@@ -400,7 +400,7 @@ class ServicesReconfiguration(TestBasic):
 
         """
         self.check_run('reconfigure_overcommit_ratio')
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("basic_env_for_reconfiguration")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
@@ -474,7 +474,7 @@ class ServicesReconfiguration(TestBasic):
         Snapshot: reconfigure_keystone_to_use_ldap
 
         """
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("basic_env_for_reconfiguration")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
@@ -533,7 +533,7 @@ class ServicesReconfiguration(TestBasic):
         Snapshot: reconfigure_nova_quota
 
         """
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("basic_env_for_reconfiguration")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
@@ -604,7 +604,7 @@ class ServicesReconfiguration(TestBasic):
 
         """
         self.check_run('reconfigure_nova_ephemeral_disk')
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("reconfigure_overcommit_ratio")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
@@ -676,7 +676,7 @@ class ServicesReconfiguration(TestBasic):
 
         """
 
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("reconfigure_ml2_vlan_range")
 
         self.show_step(2)

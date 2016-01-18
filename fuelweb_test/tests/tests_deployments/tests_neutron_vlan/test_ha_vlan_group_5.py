@@ -58,7 +58,7 @@ class HaVlanGroup5(TestBasic):
             'user': 'cephvolumesimagesephemeralrados',
             'password': 'cephvolumesimagesephemeralrados'
         }
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             settings=data
@@ -135,7 +135,7 @@ class HaVlanGroup5(TestBasic):
             'ntp_list': settings.EXTERNAL_NTP,
             'dns_list': settings.EXTERNAL_DNS
         }
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             settings=data

@@ -262,7 +262,7 @@ class TestJumboFrames(base_test_case.TestBasic):
         Snapshot ready_jumbo_frames_neutron_vlan
 
         """
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_5_slaves_jumbo_frames")
 
         self.show_step(2)
@@ -341,7 +341,7 @@ class TestJumboFrames(base_test_case.TestBasic):
         Snapshot ready_jumbo_frames_neutron_vxlan
 
         """
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_5_slaves_jumbo_frames")
 
         self.show_step(2)
@@ -423,7 +423,7 @@ class TestJumboFrames(base_test_case.TestBasic):
         Snapshot jumbo_frames_neutron_diff_bond_vlan
 
         """
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_5_slaves_jumbo_frames")
 
         self.show_step(2)
@@ -506,7 +506,7 @@ class TestJumboFrames(base_test_case.TestBasic):
         Snapshot jumbo_frames_neutron_diff_bond_vxlan
 
         """
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_5_slaves_jumbo_frames")
 
         self.show_step(2)

@@ -59,7 +59,7 @@ class MultiroleGroup1(TestBasic):
             "net_provider": 'neutron',
             "net_segment_type": settings.NEUTRON_SEGMENT['tun'],
         }
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.show_step(2)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -137,7 +137,7 @@ class MultiroleGroup1(TestBasic):
             'user': 'controllercephcinder',
             'password': 'controllercephcinder'
         }
-        self.show_step(1)
+        self.show_step(1, initialize=True)
         self.show_step(2)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
