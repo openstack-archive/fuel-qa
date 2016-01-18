@@ -33,9 +33,8 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["rh", "rh.ha", "rh.basic"])
-class RhHA(TestBasic):
-    """RH-based compute tests"""
+class RhBase(TestBasic):
+    """RH-based compute tests base"""
 
     @staticmethod
     def wait_for_slave_provision(node_ip, timeout=10 * 60):
@@ -67,9 +66,9 @@ class RhHA(TestBasic):
         logger.info('Shutting down (warm) nodes '
                     '{0}'.format([n.name for n in devops_nodes]))
         for node in devops_nodes:
+            ip = self.fuel_web.get_node_ip_by_devops_name(node.name)
             logger.debug('Shutdown node {0}'.format(node.name))
-            with self.fuel_web.get_ssh_for_node(node.name) as remote:
-                remote.execute('/sbin/shutdown -Ph now & exit')
+            self.ssh_manager.execute(ip, '/sbin/shutdown -Ph now & exit')
 
         for node in devops_nodes:
             ip = self.fuel_web.get_node_ip_by_devops_name(node.name)
@@ -124,22 +123,19 @@ class RhHA(TestBasic):
         logger.debug("Volume path: {0}".format(vol_path))
         logger.debug("Image path: {0}".format(path))
 
-    @staticmethod
-    def verify_image_connected(remote):
+    def verify_image_connected(self, ip):
         """Check that correct image connected to a target node system volume.
 
-        :param remote: Remote node to proceed.
+        :param ip: Remote node ip to proceed.
         """
         cmd = "cat /etc/redhat-release"
-        result = remote.execute(cmd)
-        logger.debug(result)
-        asserts.assert_equal(result['exit_code'], 0, "Image doesn't connected")
+        self.ssh_manager.execute_on_remote(
+            ip, cmd, err_msg="Image doesn't connected")
 
-    @staticmethod
-    def register_rh_subscription(remote):
+    def register_rh_subscription(self, ip):
         """Register RH subscription.
 
-        :param remote: Remote node to proceed.
+        :param ip: Remote node ip to proceed.
         """
         reg_command = (
             "/usr/sbin/subscription-manager register "
@@ -165,146 +161,127 @@ class RhHA(TestBasic):
                 settings.RH_ACTIVATION_KEY)
 
         if settings.RH_POOL_HASH:
-            result = remote.execute(reg_command)
-            logger.debug(result)
-            asserts.assert_equal(result['exit_code'], 0,
-                                 'RH registration failed')
+            self.ssh_manager.execute_on_remote(
+                ip, reg_command, err_msg='RH registration failed')
             reg_pool_cmd = ("/usr/sbin/subscription-manager "
                             "attach --pool={0}".format(settings.RH_POOL_HASH))
-            result = remote.execute(reg_pool_cmd)
-            logger.debug(result)
-            asserts.assert_equal(result['exit_code'], 0,
-                                 'Can not attach node to subscription pool')
+            self.ssh_manager.execute_on_remote(
+                ip, reg_pool_cmd,
+                err_msg='Can not attach node to subscription pool')
         else:
             cmd = reg_command + " --auto-attach"
-            result = remote.execute(cmd)
-            logger.debug(result)
-            asserts.assert_equal(result['exit_code'], 0,
-                                 'RH registration with auto-attaching failed')
+            self.ssh_manager.execute_on_remote(
+                ip, cmd, err_msg='RH registration with auto-attaching failed')
 
-    @staticmethod
-    def enable_rh_repos(remote):
+    def enable_rh_repos(self, ip):
         """Enable Red Hat mirrors on a target node.
 
-        :param remote: Remote node for proceed.
+        :param ip: Remote node ip for proceed.
         """
         cmd = ("yum-config-manager --enable rhel-{0}-server-optional-rpms && "
                "yum-config-manager --enable rhel-{0}-server-extras-rpms &&"
                "yum-config-manager --enable rhel-{0}-server-rh-common-rpms"
                .format(settings.RH_MAJOR_RELEASE))
 
-        result = remote.execute(cmd)
-        logger.debug(result)
-        asserts.assert_equal(result['exit_code'], 0,
-                             'Enabling RH repos failed')
+        self.ssh_manager.execute_on_remote(
+            ip, cmd, err_msg='Enabling RH repos failed')
 
-    @staticmethod
-    def set_hostname(remote, host_number=1):
+    def set_hostname(self, ip, host_number=1):
         """Set hostname with domain for a target node.
 
         :param host_number: Node index nubmer (1 by default).
-        :param remote: Remote node for proceed.
+        :param ip: Remote node ip for proceed.
         """
         hostname = "rh-{0}.test.domain.local".format(host_number)
         cmd = ("sysctl kernel.hostname={0} && "
                "echo '{0}' > /etc/hostname".format(hostname))
 
-        result = remote.execute(cmd)
-        logger.debug(result)
-        asserts.assert_equal(result['exit_code'], 0,
-                             'Setting up hostname for node failed')
+        self.ssh_manager.execute_on_remote(
+            ip, cmd, err_msg='Setting up hostname for node failed')
 
-    @staticmethod
-    def puppet_apply(puppets, remote):
+    def puppet_apply(self, puppets, ip):
         """Apply list of puppets on a target node.
 
         :param puppets: <list> of puppets.
-        :param remote: Remote node for proceed.
+        :param ip: Remote node ip for proceed.
         """
         logger.debug("Applying puppets...")
         for puppet in puppets:
             logger.debug('Applying: {0}'.format(puppet))
-            result = remote.execute(
-                'puppet apply -vd -l /var/log/puppet.log {0}'.format(puppet))
-            if result['exit_code'] != 0:
-                logger.debug("Failed on task: {0}".format(puppet))
-                logger.debug("STDERR:\n {0}".format(result['stderr']))
-                logger.debug("STDOUT:\n {0}".format(result['stdout']))
-            asserts.assert_equal(
-                result['exit_code'], 0, 'Puppet run failed. '
-                                        'Task: {0}'.format(puppet))
+            self.ssh_manager.execute_on_remote(
+                ip,
+                'puppet apply -vd -l /var/log/puppet.log {0}'.format(puppet),
+                err_msg='Puppet run failed. Task: {0}'.format(puppet))
 
-    def apply_first_part_puppet(self, remote):
-        """Apply first part of puppet modular tasks on terget node.
+    def apply_first_part_puppet(self, ip):
+        """Apply first part of puppet modular tasks on target node.
 
-        :param remote: Remote node for proceed.
+        :param ip: Remote node ip for proceed.
         """
         first_puppet_run = [
             "/etc/puppet/modules/osnailyfacter/modular/hiera/hiera.pp",
+            "/etc/puppet/modules/osnailyfacter/modular/"
+            "hiera/override_configuration.pp",
+            "/etc/puppet/modules/osnailyfacter/modular/"
+            "netconfig/reserved_ports.pp",
+            "/etc/puppet/modules/osnailyfacter/modular/fuel_pkgs/fuel_pkgs.pp",
             "/etc/puppet/modules/osnailyfacter/modular/globals/globals.pp",
-            "/etc/puppet/modules/osnailyfacter/modular/firewall/firewall.pp",
             "/etc/puppet/modules/osnailyfacter/modular/tools/tools.pp"
         ]
 
-        self.puppet_apply(first_puppet_run, remote)
+        self.puppet_apply(first_puppet_run, ip)
 
-    @staticmethod
-    def apply_networking_puppet(remote):
+    def apply_networking_puppet(self, ip):
         """Apply networking puppet on a target node.
 
         Puppet task will executed in screen to prevent disconnections while
         interfaces configuring.
 
-        :param remote: Remote node for proceed.
+        :param ip: Remote node ip for proceed.
         """
         iface_check = "test -f /etc/sysconfig/network-scripts/ifcfg-eth0"
-        result = remote.execute(iface_check)
+        result = self.ssh_manager.execute(ip, iface_check)
         if result['exit_code'] == 0:
             remove_iface = "rm -f /etc/sysconfig/network-scripts/ifcfg-eth0"
-            result = remote.execute(remove_iface)
-            logger.debug(result)
+            self.ssh_manager.execute_on_remote(ip, remove_iface)
         prep = "screen -dmS netconf"
-        result = remote.execute(prep)
-        logger.debug(result)
-        asserts.assert_equal(result['exit_code'], 0, 'Can not create screen')
+        self.ssh_manager.execute_on_remote(ip, prep,
+                                           err_msg='Can not create screen')
+
         net_puppet = ('screen -r netconf -p 0 -X stuff '
                       '$"puppet apply -vd -l /var/log/puppet.log '
                       '/etc/puppet/modules/osnailyfacter/modular/'
                       'netconfig/netconfig.pp && touch ~/success ^M"')
-        result = remote.execute(net_puppet)
+        self.ssh_manager.execute_on_remote(
+            ip, net_puppet,
+            err_msg='Can not create screen with netconfig task')
 
-        if result['exit_code'] != 0:
-            logger.debug("STDERR:\n {0}".format(result['stderr']))
-            logger.debug("STDOUT:\n {0}".format(result['stdout']))
-        asserts.assert_equal(
-            result['exit_code'], 0, 'Can not create screen with '
-                                    'netconfig task')
-
-    @staticmethod
-    def check_netconfig_success(remote, timeout=10 * 20):
+    def check_netconfig_success(self, ip, timeout=10 * 20):
         """Check that netconfig.pp modular task is succeeded.
 
-        :param remote: Remote node for proceed.
+        :param ip: Remote node ip for proceed.
         :param timeout: Timeout for wait function.
         """
 
-        def file_checker(connection):
+        def file_checker(target_ip):
             cmd = "test -f ~/success"
-            result = connection.execute(cmd)
+            result = self.ssh_manager.execute(target_ip, cmd)
             logger.debug(result)
             if result['exit_code'] != 0:
                 return False
             else:
                 return True
-        wait(lambda: file_checker(remote), timeout=timeout,
+        wait(lambda: file_checker(ip), timeout=timeout,
              timeout_msg='Netconfig puppet task unsuccessful')
 
-    def apply_last_part_puppet(self, remote):
+    def apply_last_part_puppet(self, ip):
         """Apply final part of puppet modular tasks on a target node.
 
-        :param remote: Remote node for proceed.
+        :param ip: Remote node ip for proceed.
         """
         last_puppet_run = [
+            "/etc/puppet/modules/osnailyfacter/modular/firewall/firewall.pp",
+            "/etc/puppet/modules/osnailyfacter/modular/hosts/hosts.pp",
             "/etc/puppet/modules/osnailyfacter/modular/roles/compute.pp",
             "/etc/puppet/modules/osnailyfacter/modular/"
             "openstack-network/common-config.pp",
@@ -317,28 +294,28 @@ class RhHA(TestBasic):
             "/etc/puppet/modules/osnailyfacter/modular/"
             "openstack-network/compute-nova.pp",
             "/etc/puppet/modules/osnailyfacter/modular/"
-            "astute/enable_compute.pp"
+            "roles/enable_compute.pp",
+            "/etc/puppet/modules/osnailyfacter/modular/dns/dns-client.pp",
+            "/etc/puppet/modules/osnailyfacter/modular/netconfig/"
+            "configure_default_route.pp",
+            "/etc/puppet/modules/osnailyfacter/modular/ntp/ntp-client.pp"
         ]
 
-        self.puppet_apply(last_puppet_run, remote)
+        self.puppet_apply(last_puppet_run, ip)
 
-    @staticmethod
-    def backup_required_information(remote, ip):
+    def backup_required_information(self, ip, target_ip):
         """Back up required information for compute from target node.
 
-        :param remote: Remote Fuel master node.
-        :param ip: Target node ip to back up from.
+        :param ip: Remote Fuel master node ip.
+        :param target_ip: Target node ip to back up from.
         """
-        logger.debug('Target node ip: {0}'.format(ip))
+        logger.debug('Target node ip: {0}'.format(target_ip))
         cmd = ("cd ~/ && mkdir rh_backup; "
                "scp -r {0}:/root/.ssh rh_backup/. ; "
                "scp {0}:/etc/astute.yaml rh_backup/ ; "
-               "scp -r {0}:/var/lib/astute/nova rh_backup/").format(ip)
-        result = remote.execute(cmd)
-        logger.debug(result['stdout'])
-        logger.debug(result['stderr'])
-        asserts.assert_equal(result['exit_code'], 0,
-                             'Can not back up required information from node')
+               "scp -r {0}:/var/lib/astute/nova rh_backup/").format(target_ip)
+        self.ssh_manager.execute_on_remote(
+            ip, cmd, err_msg='Can not back up required information from node')
         logger.debug("Backed up ssh-keys and astute.yaml")
 
     @staticmethod
@@ -358,78 +335,62 @@ class RhHA(TestBasic):
         res = res.strip('/\\n')
         return res
 
-    def restore_information(self, ip, remote_admin, remote_slave):
+    def restore_information(self, ip, remote_admin_ip):
         """Restore information on a target node.
 
         :param ip: Remote node ip.
-        :param remote_admin: Remote admin node for proceed.
-        :param remote_slave: Remote slave node for proceed.
+        :param remote_admin_ip: Remote admin node for proceed.
         """
         cmd = "cat ~/rh_backup/.ssh/authorized_keys"
-        result = remote_admin.execute(cmd)
+        result = self.ssh_manager.execute_on_remote(
+            remote_admin_ip, cmd,
+            err_msg='Can not get backed up ssh key.')
         key = result['stdout']
-        logger.debug(result)
-        asserts.assert_equal(result['exit_code'], 0,
-                             'Can not get backed up ssh key.')
 
         key = self.clean_string(key)
 
         cmd = "mkdir ~/.ssh; echo '{0}' >> ~/.ssh/authorized_keys".format(key)
-        result = remote_slave.execute(cmd)
-        logger.debug(result['stdout'])
-        logger.debug(result['stderr'])
-        asserts.assert_equal(result['exit_code'], 0,
-                             'Can not recover ssh key for node')
+        self.ssh_manager.execute_on_remote(
+            ip, cmd, err_msg='Can not recover ssh key for node')
 
         cmd = "cd ~/rh_backup && scp astute.yaml {0}@{1}:/etc/.".format(
             settings.RH_IMAGE_USER, ip)
         logger.debug("Restoring astute.yaml for node with ip {0}".format(ip))
-        result = remote_admin.execute(cmd)
-        logger.debug(result)
-        asserts.assert_equal(result['exit_code'], 0,
-                             'Can not restore astute.yaml')
+        self.ssh_manager.execute_on_remote(
+            remote_admin_ip, cmd, err_msg='Can not restore astute.yaml')
 
         cmd = "mkdir -p /var/lib/astute"
         logger.debug("Prepare node for restoring nova ssh-keys")
-        result = remote_slave.execute(cmd)
-        logger.debug(result)
-        asserts.assert_equal(result['exit_code'], 0, 'Preparation failed')
+        self.ssh_manager.execute_on_remote(ip, cmd,
+                                           err_msg='Preparation failed')
 
         cmd = (
             "cd ~/rh_backup && scp -r nova {0}@{1}:/var/lib/astute/.".format(
                 settings.RH_IMAGE_USER, ip)
         )
         logger.debug("Restoring nova ssh-keys")
-        result = remote_admin.execute(cmd)
-        logger.debug(result)
-        asserts.assert_equal(result['exit_code'], 0,
-                             'Can not restore ssh-keys for nova')
+        self.ssh_manager.execute_on_remote(
+            remote_admin_ip, cmd, err_msg='Can not restore ssh-keys for nova')
 
-    @staticmethod
-    def install_yum_components(remote):
+    def install_yum_components(self, ip):
         """Install required yum components on a target node.
 
-        :param remote: Remote node for proceed.
+        :param ip: Remote node ip for proceed.
         """
         cmd = "yum install yum-utils yum-priorities -y"
-        result = remote.execute(cmd)
-        logger.debug(result)
-        asserts.assert_equal(result['exit_code'], 0, 'Can not install required'
-                                                     'yum components.')
+        self.ssh_manager.execute_on_remote(
+            ip, cmd, err_msg='Can not install required yum components.')
 
-    @staticmethod
-    def set_repo_for_perestroika(remote):
+    def set_repo_for_perestroika(self, ip):
         """Set Perestroika repos.
 
-        :param remote: Remote node for proceed.
+        :param ip: Remote node ip for proceed.
         """
         repo = settings.PERESTROIKA_REPO
         cmd = ("curl {0}".format(repo))
 
-        result = remote.execute(cmd)
-        logger.debug(result)
-        asserts.assert_equal(result['exit_code'], 0,
-                             'Perestroika repos unavailable from node.')
+        self.ssh_manager.execute_on_remote(
+            ip, cmd, err_msg='Perestroika repos unavailable from node.')
 
         cmd = ("echo '[mos]\n"
                "name=mos\n"
@@ -440,125 +401,113 @@ class RhHA(TestBasic):
                "priority=5' >"
                "/etc/yum.repos.d/mos.repo && "
                "yum clean all".format(repo))
-        result = remote.execute(cmd)
-        logger.debug(result)
-        asserts.assert_equal(result['exit_code'], 0,
-                             'Can not create config file for repo')
+        self.ssh_manager.execute_on_remote(
+            ip, cmd, err_msg='Can not create config file for repo')
 
-    @staticmethod
-    def check_hiera_installation(remote):
+    def check_hiera_installation(self, ip):
         """Check hiera installation on node.
 
-        :param remote: Remote node for proceed.
+        :param ip: Remote node ip for proceed.
         """
         cmd = "yum list installed | grep hiera"
         logger.debug('Checking hiera installation...')
-        result = remote.execute(cmd)
+        result = self.ssh_manager.execute(ip, cmd)
         if result['exit_code'] == 0:
             cmd = "yum remove hiera -y"
             logger.debug('Found existing installation of hiera. Removing...')
-            result = remote.execute(cmd)
+            result = self.ssh_manager.execute(ip, cmd)
             asserts.assert_equal(result['exit_code'], 0, 'Can not remove '
                                                          'hiera')
             cmd = "ls /etc/hiera"
             logger.debug('Checking hiera files for removal...')
-            result = remote.execute(cmd)
+            result = self.ssh_manager.execute(ip, cmd)
             if result['exit_code'] == 0:
                 logger.debug('Found redundant hiera files. Removing...')
                 cmd = "rm -rf /etc/hiera"
-                result = remote.execute(cmd)
-                asserts.assert_equal(result['exit_code'], 0,
-                                     'Can not remove hiera files')
+                self.ssh_manager.execute_on_remote(
+                    ip, cmd, err_msg='Can not remove hiera files')
 
-    @staticmethod
-    def check_rsync_installation(remote):
+    def check_rsync_installation(self, ip):
         """Check rsync installation on node.
 
-        :param remote: Remote node for proceed.
+        :param ip: Remote node ip for proceed.
         """
         cmd = "yum list installed | grep rsync"
         logger.debug("Checking rsync installation...")
-        result = remote.execute(cmd)
+        result = self.ssh_manager.execute(ip, cmd)
         if result['exit_code'] != 0:
             logger.debug("Rsync is not found. Installing rsync...")
             cmd = "yum clean all && yum install rsync -y"
-            result = remote.execute(cmd)
-            logger.debug(result)
-            asserts.assert_equal(result['exit_code'], 0, 'Can not install '
-                                                         'rsync on node.')
+            self.ssh_manager.execute_on_remote(
+                ip, cmd, err_msg='Can not install rsync on node.')
 
-    @staticmethod
-    def remove_old_compute_services(remote, hostname):
+    def remove_old_compute_services(self, ip, hostname):
         """Remove old redundant services which was removed from services base.
 
-        :param remote: Remote node for proceed.
+        :param ip: Remote node ip for proceed.
         :param hostname: Old compute hostname.
         """
         cmd = ("source ~/openrc && for i in $(nova service-list | "
                "awk '/{:s}/{{print $2}}'); do nova service-delete $i; "
                "done".format(hostname))
-        result = remote.execute(cmd)
-        logger.debug(result)
-        asserts.assert_equal(result['exit_code'], 0, 'Can not remove '
-                                                     'old nova computes')
+        self.ssh_manager.execute_on_remote(
+            ip, cmd, err_msg='Can not remove old nova computes')
 
         cmd = ("source ~/openrc && for i in $(neutron agent-list | "
                "awk '/{:s}/{{print $2}}'); do neutron agent-delete $i; "
                "done".format(hostname))
-        result = remote.execute(cmd)
-        logger.debug(result)
-        asserts.assert_equal(result['exit_code'], 0, 'Can not remove '
-                                                     'old neutron agents')
+        self.ssh_manager.execute_on_remote(
+            ip, cmd, err_msg='Can not remove old neutron agents')
 
-    @staticmethod
-    def install_ruby_puppet(remote):
+    def install_ruby_puppet(self, ip):
         """Install ruby and puppet on a target node.
 
-        :param remote: Remote node for proceed.
+        :param ip: Remote node ip for proceed.
         """
         puppet_install_cmd = "yum install puppet ruby -y"
-        result = remote.execute(puppet_install_cmd)
-        logger.debug(result)
-        asserts.assert_equal(result['exit_code'], 0,
-                             'Ruby and puppet installation failed')
+        self.ssh_manager.execute_on_remote(
+            ip, puppet_install_cmd,
+            err_msg='Ruby and puppet installation failed')
 
-    @staticmethod
-    def rsync_puppet_modules(remote, ip):
+    def rsync_puppet_modules(self, master_node_ip, ip):
         """Rsync puppet modules from remote node to node with specified ip.
 
-        :param remote: Remote node for proceed.
+        :param master_node_ip: Remote node ip for proceed.
         :param ip: IP address of a target node where to sync.
         """
         cmd = ("rsync -avz /etc/puppet/modules/* "
                "{0}@{1}:/etc/puppet/modules/".format(settings.RH_IMAGE_USER,
                                                      ip))
-        result = remote.execute(cmd)
-        logger.debug(cmd)
-        asserts.assert_equal(result['exit_code'], 0,
-                             'Rsync puppet modules failed')
+        self.ssh_manager.execute_on_remote(
+            master_node_ip, cmd, err_msg='Rsync puppet modules failed')
 
-    def save_node_hostname(self, remote):
+    def save_node_hostname(self, ip):
         """Save hostname of a node.
 
-        :param remote: Remote node for proceed.
+        :param ip: Remote node ip for proceed.
         :return: Node hostname.
         """
         cmd = "hostname"
-        result = remote.execute(cmd)
-        asserts.assert_equal(result['exit_code'], 0, 'Can not get hostname '
-                                                     'for remote')
+        result = self.ssh_manager.execute_on_remote(
+            ip, cmd, err_msg='Can not get hostname for remote')
         nodename = self.clean_string(result['stdout'])
         return nodename
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_rh_compute_ha_tun"])
+
+@test(groups=["rh", "rh.ha_one_controller", "rh.basic"])
+class RhHaOneController(RhBase):
+    """RH-based compute HA One Controller basic test"""
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["deploy_rh_compute_ha_one_controller_tun"])
     @log_snapshot_after_test
-    def deploy_rh_based_compute(self):
-        """Deploy RH-based compute in HA mode with Neutron VXLAN
+    def deploy_rh_compute_ha_one_controller_tun(self):
+        """Deploy RH-based compute in HA One Controller mode
+        with Neutron VXLAN
 
         Scenario:
             1. Check required image.
-            2. Revert snapshot 'ready_with_5_slaves'.
+            2. Revert snapshot 'ready_with_3_slaves'.
             3. Create a Fuel cluster.
             4. Update cluster nodes with required roles.
             5. Deploy the Fuel cluster.
@@ -570,7 +519,7 @@ class RhHA(TestBasic):
             11. Run OSTF.
 
         Duration: 150m
-        Snapshot: deploy_rh_compute_ha_tun
+        Snapshot: deploy_rh_compute_ha_one_controller_tun
 
         """
         self.show_step(1, initialize=True)
@@ -584,16 +533,17 @@ class RhHA(TestBasic):
                             'Please, check image path and md5 sum of it.')
 
         self.show_step(2)
-        self.env.revert_snapshot("ready_with_5_slaves")
+        self.env.revert_snapshot("ready_with_3_slaves")
 
         self.show_step(3)
         logger.debug('Create Fuel cluster RH-based compute tests')
         data = {
+            'volumes_lvm': True,
             'net_provider': 'neutron',
             'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
-            'tenant': 'RhHA',
-            'user': 'RhHA',
-            'password': 'RhHA'
+            'tenant': 'admin',
+            'user': 'admin',
+            'password': 'admin'
         }
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -606,9 +556,8 @@ class RhHA(TestBasic):
             cluster_id,
             {
                 'slave-01': ['controller'],
-                'slave-02': ['controller'],
-                'slave-03': ['controller'],
-                'slave-04': ['compute']
+                'slave-02': ['compute'],
+                'slave-03': ['cinder']
             }
         )
 
@@ -621,29 +570,26 @@ class RhHA(TestBasic):
 
         self.show_step(6)
         self.fuel_web.run_ostf(cluster_id=cluster_id,
-                               test_sets=['ha', 'smoke', 'sanity'])
+                               test_sets=['smoke', 'sanity'])
 
         self.show_step(7)
         compute = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['compute'])[0]
-        controller_name = 'slave-01'
-        controller_ip = self.fuel_web.get_nailgun_node_by_name(
-            controller_name)['ip']
+        controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])[0]
         logger.debug('Got node: {0}'.format(compute))
-        target_node_name = compute['name'].split('_')[0]
-        logger.debug('Target node name: {0}'.format(target_node_name))
-        target_node = self.env.d_env.get_node(name=target_node_name)
+        target_node = self.fuel_web.get_devops_node_by_nailgun_node(
+            compute)
         logger.debug('DevOps Node: {0}'.format(target_node))
-        target_node_ip = self.fuel_web.get_nailgun_node_by_name(
-            target_node_name)['ip']
+        target_node_ip = compute['ip']
+        controller_ip = controller['ip']
         logger.debug('Acquired ip: {0} for node: {1}'.format(
-            target_node_ip, target_node_name))
+            target_node_ip, target_node.name))
 
-        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
-            old_hostname = self.save_node_hostname(remote)
+        old_hostname = self.save_node_hostname(target_node_ip)
 
-        with self.env.d_env.get_admin_remote() as remote:
-            self.backup_required_information(remote, target_node_ip)
+        self.backup_required_information(self.ssh_manager.admin_ip,
+                                         target_node_ip)
 
         self.show_step(8)
 
@@ -655,50 +601,37 @@ class RhHA(TestBasic):
         asserts.assert_true(target_node.driver.node_active(node=target_node),
                             'Target node did not start')
         self.wait_for_slave_provision(target_node_ip)
-        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
-            self.verify_image_connected(remote)
+        self.verify_image_connected(target_node_ip)
 
         self.show_step(9)
 
-        with self.env.d_env.get_admin_remote() as remote_admin:
-            with self.env.d_env.get_ssh_to_remote(target_node_ip) as \
-                    remote_slave:
-                self.restore_information(target_node_ip,
-                                         remote_admin, remote_slave)
+        self.restore_information(target_node_ip, self.ssh_manager.admin_ip)
 
-        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
-            self.set_hostname(remote)
-            if not settings.CENTOS_DUMMY_DEPLOY:
-                self.register_rh_subscription(remote)
-            self.install_yum_components(remote)
-            if not settings.CENTOS_DUMMY_DEPLOY:
-                self.enable_rh_repos(remote)
-            self.set_repo_for_perestroika(remote)
-            self.check_hiera_installation(remote)
-            self.install_ruby_puppet(remote)
-            self.check_rsync_installation(remote)
+        self.set_hostname(target_node_ip)
+        if not settings.CENTOS_DUMMY_DEPLOY:
+            self.register_rh_subscription(target_node_ip)
+        self.install_yum_components(target_node_ip)
+        if not settings.CENTOS_DUMMY_DEPLOY:
+            self.enable_rh_repos(target_node_ip)
+        self.set_repo_for_perestroika(target_node_ip)
+        self.check_hiera_installation(target_node_ip)
+        self.install_ruby_puppet(target_node_ip)
+        self.check_rsync_installation(target_node_ip)
 
-        with self.env.d_env.get_admin_remote() as remote:
-            self.rsync_puppet_modules(remote, target_node_ip)
+        self.rsync_puppet_modules(self.ssh_manager.admin_ip, target_node_ip)
 
         self.show_step(10)
-        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
-            self.apply_first_part_puppet(remote)
+        self.apply_first_part_puppet(target_node_ip)
+        self.apply_networking_puppet(target_node_ip)
+        self.check_netconfig_success(target_node_ip)
+        self.apply_last_part_puppet(target_node_ip)
 
-        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
-            self.apply_networking_puppet(remote)
-
-        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
-            self.check_netconfig_success(remote)
-            self.apply_last_part_puppet(remote)
-
-        with self.env.d_env.get_ssh_to_remote(controller_ip) as remote:
-            self.remove_old_compute_services(remote, old_hostname)
-
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)
+        self.remove_old_compute_services(controller_ip, old_hostname)
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
 
         self.show_step(11)
         self.fuel_web.run_ostf(cluster_id=cluster_id,
-                               test_sets=['ha', 'smoke', 'sanity'])
+                               test_sets=['smoke', 'sanity'])
 
-        self.env.make_snapshot("ready_ha_with_rh_compute", is_make=True)
+        self.env.make_snapshot("ready_ha_one_controller_with_rh_compute",
+                               is_make=True)
