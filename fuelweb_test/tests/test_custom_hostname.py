@@ -72,7 +72,6 @@ class CustomHostname(TestBasic):
             cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
         hostname_pattern = "node-\d{1,2}"
-        admin_remote = self.env.d_env.get_admin_remote()
 
         for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
             devops_node = self.fuel_web.get_devops_node_by_nailgun_node(node)
@@ -87,11 +86,10 @@ class CustomHostname(TestBasic):
 
             # Verify that a node is accessible by the default hostname
             assert_true(
-                check_ping(admin_remote, node['hostname']),
+                check_ping(self.env.get_admin_node_ip(),
+                           node['hostname']),
                 "{0} node is not accessible by its default "
                 "hostname {1}".format(devops_node.name, node['hostname']))
-
-        admin_remote.clear()
 
         self.env.make_snapshot("default_hostname")
 

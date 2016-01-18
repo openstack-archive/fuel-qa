@@ -26,6 +26,7 @@ import yaml
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
+from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test.settings import MASTER_IS_CENTOS7
@@ -1014,9 +1015,9 @@ def get_file_size(remote, file_name, file_path):
 
 
 @logwrap
-def check_ping(remote, host, deadline=10, size=56, timeout=1, interval=1):
+def check_ping(ip, host, deadline=10, size=56, timeout=1, interval=1):
     """Check network connectivity from remote to host using ICMP (ping)
-    :param remote: SSHClient
+    :param ip: remote ip
     :param host: string IP address or host/domain name
     :param deadline: time in seconds before ping exits
     :param size: size of data to be sent
@@ -1024,13 +1025,15 @@ def check_ping(remote, host, deadline=10, size=56, timeout=1, interval=1):
     :param interval: wait interval seconds between sending each packet
     :return: bool: True if ping command
     """
+    ssh_manager = SSHManager()
     cmd = ("ping -W {timeout} -i {interval} -s {size} -c 1 -w {deadline} "
            "{host}".format(host=host,
                            size=size,
                            timeout=timeout,
                            interval=interval,
                            deadline=deadline))
-    return int(remote.execute(cmd)['exit_code']) == 0
+    res = ssh_manager.execute(ip, cmd)
+    return int(res['exit_code']) == 0
 
 
 @logwrap

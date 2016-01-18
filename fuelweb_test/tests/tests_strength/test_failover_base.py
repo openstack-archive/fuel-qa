@@ -563,11 +563,10 @@ class TestHaFailoverBase(TestBasic):
         self.env.revert_snapshot(self.snapshot_name)
         cluster_id = self.fuel_web.get_last_created_cluster()
         for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
-            with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
-                assert_true(
-                    check_ping(remote, DNS, deadline=120, interval=10),
-                    "No Internet access from {0}".format(node['fqdn'])
-                )
+            assert_true(
+                check_ping(node['ip'], DNS, deadline=120, interval=10),
+                "No Internet access from {0}".format(node['fqdn'])
+            )
 
         devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
@@ -602,11 +601,11 @@ class TestHaFailoverBase(TestBasic):
         except TimeoutError:
             raise TimeoutError(
                 "Primary controller was not destroyed")
-        with self.fuel_web.get_ssh_for_node('slave-05') as remote:
-            assert_true(
-                check_ping(remote, DNS, deadline=120, interval=10),
-                "No Internet access from {0}".format(node['fqdn'])
-            )
+        slave05 = self.fuel_web.get_nailgun_node_by_name('slave-05')
+        assert_true(
+            check_ping(slave05['ip'], DNS, deadline=120, interval=10),
+            "No Internet access from {0}".format(node['fqdn'])
+        )
         if OPENSTACK_RELEASE == OPENSTACK_RELEASE_UBUNTU:
             with self.fuel_web.get_ssh_for_node('slave-05') as remote:
                 file_size1 = get_file_size(remote, file_name, file_path)
