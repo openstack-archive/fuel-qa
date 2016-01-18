@@ -79,7 +79,7 @@ class NeutronVlan(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_vlan")
+        self.env.make_snapshot("deploy_neutron_vlan", is_make=True)
 
 
 @test(groups=["neutron", "ha", "ha_neutron", "classic_provisioning"])
