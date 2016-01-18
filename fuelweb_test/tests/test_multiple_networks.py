@@ -41,6 +41,10 @@ from fuelweb_test import logger
 class TestMultipleClusterNets(TestBasic):
     """TestMultipleClusterNets."""  # TODO documentation
 
+    def __init__(self):
+        self.netconf_all_groups = None
+        super(TestMultipleClusterNets, self).__init__()
+
     @staticmethod
     def get_modified_ranges(net_dict, net_name, group_id):
         for net in net_dict['networks']:
@@ -100,8 +104,7 @@ class TestMultipleClusterNets(TestBasic):
                 net_name in net['name'] and group_id == net['group_id']][0]
 
     @test(depends_on=[SetupEnvironment.prepare_release],
-          groups=["multiple_cluster_networks",
-                  "deploy_neutron_tun_ha_nodegroups", "thread_7"])
+          groups=["deploy_neutron_tun_ha_nodegroups"])
     @log_snapshot_after_test
     @check_fuel_statistics
     def deploy_neutron_tun_ha_nodegroups(self):
@@ -110,18 +113,19 @@ class TestMultipleClusterNets(TestBasic):
         Scenario:
             1. Revert snapshot with ready master node
             2. Bootstrap slaves from default nodegroup
-            3. Create cluster with Neutron VXLAN and custom nodegroup
-            4. Bootstrap slave nodes from custom nodegroup
-            5. Download network configuration
-            6. Update network.json  with customized ip ranges
-            7. Put new json on master node and update network data
-            8. Verify that new IP ranges are applied for network config
-            9. Add 3 controller nodes from default nodegroup
-            10. Add 2 compute nodes from custom nodegroup
-            11. Deploy cluster
-            12. Run network verification
-            13. Verify that excluded ip is not used for nodes or VIP
-            14. Run health checks (OSTF)
+            3. Create cluster with Neutron VXLAN and custom nodegroups
+            4. Remove 2nd custom nodegroup which is added automatically
+            5. Bootstrap slave nodes from custom nodegroup
+            6. Download network configuration
+            7. Update network.json  with customized ip ranges
+            8. Put new json on master node and update network data
+            9. Verify that new IP ranges are applied for network config
+            10. Add 3 controller nodes from default nodegroup
+            11. Add 2 compute nodes from custom nodegroup
+            12. Deploy cluster
+            13. Run network verification
+            14. Verify that excluded ip is not used for nodes or VIP
+            15. Run health checks (OSTF)
 
         Duration 110m
         Snapshot deploy_neutron_tun_ha_nodegroups
@@ -135,7 +139,7 @@ class TestMultipleClusterNets(TestBasic):
         self.env.revert_snapshot("ready")
 
         self.show_step(2)
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[0:5:2])
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[0:3])
 
         self.show_step(3)
         cluster_id = self.fuel_web.create_cluster(
@@ -151,9 +155,19 @@ class TestMultipleClusterNets(TestBasic):
         )
 
         self.show_step(4)
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[1:5:2])
+        self.netconf_all_groups = self.fuel_web.client.get_networks(cluster_id)
+        custom_group2 = self.fuel_web.get_nodegroup(
+            cluster_id, name=NODEGROUPS[2]['name'])
+        wait(lambda: not self.is_update_dnsmasq_running(
+            self.fuel_web.client.get_tasks()), timeout=60,
+            timeout_msg="Timeout exceeded while waiting for task "
+                        "'update_dnsmasq' is finished!")
+        self.fuel_web.client.delete_nodegroup(custom_group2['id'])
 
         self.show_step(5)
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[3:5])
+
+        self.show_step(6)
         with self.env.d_env.get_admin_remote() as remote:
             check_get_network_data_over_cli(remote, cluster_id, '/var/log/')
 
@@ -165,7 +179,7 @@ class TestMultipleClusterNets(TestBasic):
         custom_group_id = self.fuel_web.get_nodegroup(
             cluster_id, name=NODEGROUPS[1]['name'])['id']
 
-        self.show_step(6)
+        self.show_step(7)
         with self.env.d_env.get_admin_remote() as remote:
             current_net = json.loads(remote.open(
                 '/var/log/network_1.json').read())
@@ -200,14 +214,14 @@ class TestMultipleClusterNets(TestBasic):
                                          management_ranges_custom))
 
             # need to push to remote
-            self.show_step(7)
+            self.show_step(8)
             utils.put_json_on_remote_from_dict(
                 remote, updated_network, cluster_id)
 
             check_update_network_data_over_cli(remote, cluster_id,
                                                '/var/log/')
 
-        self.show_step(8)
+        self.show_step(9)
         with self.env.d_env.get_admin_remote() as remote:
             check_get_network_data_over_cli(remote, cluster_id, '/var/log/')
             latest_net = json.loads(remote.open(
@@ -246,26 +260,28 @@ class TestMultipleClusterNets(TestBasic):
                 'not updated. Expected {0}, Actual: {1}'.format(
                     management_ranges_custom, updated_mgmt_custom))
 
+        self.show_step(10)
+        self.show_step(11)
         nodegroup_default = NODEGROUPS[0]['name']
-        nodegroup_custom = NODEGROUPS[1]['name']
+        nodegroup_custom1 = NODEGROUPS[1]['name']
         self.fuel_web.update_nodes(
             cluster_id,
             {
                 'slave-01': [['controller'], nodegroup_default],
-                'slave-05': [['controller'], nodegroup_default],
+                'slave-02': [['controller'], nodegroup_default],
                 'slave-03': [['controller'], nodegroup_default],
-                'slave-02': [['compute', 'cinder'], nodegroup_custom],
-                'slave-04': [['compute', 'cinder'], nodegroup_custom],
+                'slave-04': [['compute', 'cinder'], nodegroup_custom1],
+                'slave-05': [['compute', 'cinder'], nodegroup_custom1],
             }
         )
 
-        self.show_step(11)
+        self.show_step(12)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        self.show_step(12)
+        self.show_step(13)
         self.fuel_web.verify_network(cluster_id)
 
-        self.show_step(13)
+        self.show_step(14)
         net_data_default_group = [
             data['network_data'] for data
             in self.fuel_web.client.list_cluster_nodes(
@@ -319,14 +335,114 @@ class TestMultipleClusterNets(TestBasic):
         asserts.assert_true(self.is_ip_in_range(mgmt_vip.split('/')[0],
                                                 updated_mgmt_default[0][0],
                                                 updated_mgmt_default[0][-1]))
-        self.show_step(14)
+        self.show_step(15)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_neutron_tun_ha_nodegroups")
+        self.env.make_snapshot("deploy_neutron_tun_ha_nodegroups",
+                               is_make=True)
+
+    @test(depends_on_groups=['deploy_neutron_tun_ha_nodegroups'],
+          groups=["add_custom_nodegroup"])
+    @log_snapshot_after_test
+    def add_custom_nodegroup(self):
+        """Add new nodegroup to operational environment
+
+        Scenario:
+        1. Revert snapshot with operational cluster
+        2. Create new nodegroup for the environment and configure its networks
+        3. Bootstrap slave node from custom-2 nodegroup
+        4. Add node from new nodegroup to the environment with compute role
+        5. Run network verification
+        6. Deploy changes
+        7. Run network verification
+        8. Run OSTF
+        9. Check that nodes from 'default' nodegroup can reach nodes
+           from new nodegroup via management and storage networks
+
+        Duration 50m
+        Snapshot add_custom_nodegroup
+        """
+
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot('deploy_neutron_tun_ha_nodegroups')
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        self.fuel_web.assert_nodes_in_ready_state(cluster_id)
+        asserts.assert_true(not any(ng['name'] == NODEGROUPS[2]['name'] for ng
+                                    in self.fuel_web.client.get_nodegroups()),
+                            'Custom nodegroup {0} already '
+                            'exists!'.format(NODEGROUPS[2]['name']))
+
+        self.show_step(2)
+        new_nodegroup = self.fuel_web.client.create_nodegroup(
+            cluster_id, NODEGROUPS[2]['name'])
+        logger.debug('Updating custom nodegroup ID in network configuration..')
+        network_config_new = self.fuel_web.client.get_networks(cluster_id)
+        asserts.assert_true(self.netconf_all_groups is not None,
+                            'Network configuration for nodegroups is empty!')
+
+        for network in self.netconf_all_groups['networks']:
+            if network['group_id'] is not None and \
+                    not any(network['group_id'] == ng['id']
+                            for ng in self.fuel_web.client.get_nodegroups()):
+                network['group_id'] = new_nodegroup['id']
+                for new_network in network_config_new['networks']:
+                    if new_network['name'] == network['name'] and \
+                       new_network['group_id'] == network['group_id']:
+                        network['id'] = new_network['id']
+
+        self.fuel_web.client.update_network(
+            cluster_id,
+            self.netconf_all_groups['networking_parameters'],
+            self.netconf_all_groups['networks'])
+
+        self.show_step(3)
+        self.env.bootstrap_nodes([self.env.d_env.nodes().slaves[6]])
+
+        self.show_step(4)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {'slave-07': [['compute'], new_nodegroup['name']]},
+            True, False
+        )
+
+        self.show_step(5)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(6)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(7)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(8)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(9)
+        primary_ctrl = self.fuel_web.get_nailgun_node_by_devops_node(
+            self.fuel_web.get_nailgun_primary_node(
+                slave=self.env.d_env.nodes().slaves[0]))
+
+        with self.fuel_web.get_ssh_for_node('slave-07') as remote:
+            new_node_networks = utils.get_net_settings(remote)
+
+        for interface in ('br-storage', 'br-mgmt'):
+            if interface in new_node_networks:
+                logger.info("Checking new node is accessible from primary "
+                            "controller via {0} interface.".format(interface))
+                for ip in new_node_networks[interface]['ip_addresses']:
+                    address = ip.split('/')[0]
+                    result = self.ssh_manager.execute(ip=primary_ctrl['ip'],
+                                                      cmd='ping -q -c 1 -w 3 {'
+                                                          '0}'.format(address))
+                    asserts.assert_equal(result['exit_code'], 0,
+                                         "New node isn't accessible from "
+                                         "primary controller via {0} interface"
+                                         ": {1}.".format(interface, result))
+
+        self.env.make_snapshot("add_custom_nodegroup")
 
     @test(depends_on=[SetupEnvironment.prepare_release],
-          groups=["multiple_cluster_networks",
-                  "deploy_ceph_ha_nodegroups", "thread_7"])
+          groups=["deploy_ceph_ha_nodegroups"])
     @log_snapshot_after_test
     def deploy_ceph_ha_nodegroups(self):
         """Deploy HA environment with Neutron VXLAN, Ceph and 2 nodegroups
@@ -343,6 +459,7 @@ class TestMultipleClusterNets(TestBasic):
             9. Run network verification
             10. Run health checks (OSTF)
             11. Check that excluded IPs aren't allocated to deployed nodes
+            12. Check Ceph health
 
         Duration 110m
         Snapshot deploy_ceph_ha_nodegroups
@@ -362,6 +479,7 @@ class TestMultipleClusterNets(TestBasic):
             settings={
                 'volumes_ceph': True,
                 'images_ceph': True,
+                'ephemeral_ceph': True,
                 'volumes_lvm': False,
                 "net_provider": 'neutron',
                 "net_segment_type": NEUTRON_SEGMENT['tun'],
@@ -388,7 +506,7 @@ class TestMultipleClusterNets(TestBasic):
 
         self.show_step(5)
         default_ng_nodes = [self.fuel_web.get_nailgun_node_by_devops_node(node)
-                            for node in self.env.d_env.nodes().slaves[0:5:2]]
+                            for node in self.env.d_env.nodes().slaves[0:3]]
         for node in default_ng_nodes:
             asserts.assert_true(
                 self.is_ip_in_range(node['ip'], *new_admin_range),
@@ -404,10 +522,10 @@ class TestMultipleClusterNets(TestBasic):
             cluster_id,
             {
                 'slave-01': [['controller', 'ceph-osd'], nodegroup_default],
-                'slave-05': [['controller', 'ceph-osd'], nodegroup_default],
+                'slave-02': [['controller', 'ceph-osd'], nodegroup_default],
                 'slave-03': [['controller', 'ceph-osd'], nodegroup_default],
-                'slave-02': [['compute', 'ceph-osd'], nodegroup_custom],
                 'slave-04': [['compute', 'ceph-osd'], nodegroup_custom],
+                'slave-05': [['compute', 'ceph-osd'], nodegroup_custom],
             }
         )
 
@@ -430,10 +548,13 @@ class TestMultipleClusterNets(TestBasic):
                 "is not from defined IP addresses range:"
                 " {2}!".format(node['fqdn'], node['ip'], new_admin_range))
 
+        self.show_step(12)
+        self.fuel_web.check_ceph_status(cluster_id)
+
         self.env.make_snapshot("deploy_ceph_ha_nodegroups")
 
     @test(depends_on=[SetupEnvironment.prepare_release],
-          groups=["deploy_controllers_from_custom_nodegroup", "thread_7",
+          groups=["deploy_controllers_from_custom_nodegroup",
                   "multiple_cluster_networks"])
     @log_snapshot_after_test
     def deploy_controllers_from_custom_nodegroup(self):
@@ -488,12 +609,12 @@ class TestMultipleClusterNets(TestBasic):
         self.fuel_web.client.update_network(cluster_id, new_settings_float)
 
         self.show_step(4)
-        custom_nodes = self.env.d_env.nodes().slaves[1:6:2]
-        self.env.bootstrap_nodes(custom_nodes)  # nodes 2, 4 and 6
+        custom_nodes = self.env.d_env.nodes().slaves[3:6]
+        self.env.bootstrap_nodes(custom_nodes)  # nodes 4, 5 and 6
 
         self.show_step(5)
-        default_nodes = self.env.d_env.nodes().slaves[0:3:2]
-        self.env.bootstrap_nodes(default_nodes)  # nodes 1 and 3
+        default_nodes = self.env.d_env.nodes().slaves[0:2]
+        self.env.bootstrap_nodes(default_nodes)  # nodes 1 and 2
 
         self.show_step(6)
 
@@ -502,11 +623,11 @@ class TestMultipleClusterNets(TestBasic):
         self.fuel_web.update_nodes(
             cluster_id,
             {
-                'slave-02': [['controller'], custom_nodegroup],
                 'slave-04': [['controller'], custom_nodegroup],
+                'slave-05': [['controller'], custom_nodegroup],
                 'slave-06': [['controller'], custom_nodegroup],
                 'slave-01': [['compute'], default_nodegroup],
-                'slave-03': [['cinder'], default_nodegroup]
+                'slave-02': [['cinder'], default_nodegroup]
             }
         )
 
@@ -546,8 +667,7 @@ class TestMultipleClusterNets(TestBasic):
                                is_make=True)
 
     @test(depends_on=[deploy_controllers_from_custom_nodegroup],
-          groups=["delete_cluster_with_custom_nodegroup", "thread_7",
-                  "multiple_cluster_networks"],
+          groups=["delete_cluster_with_custom_nodegroup"],
           # TODO: enable this test when bug #1521682 is fixed
           enabled=False)
     @log_snapshot_after_test
@@ -570,7 +690,7 @@ class TestMultipleClusterNets(TestBasic):
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
 
         self.show_step(2)
-        custom_nodes = self.env.d_env.nodes().slaves[1:6:2]
+        custom_nodes = self.env.d_env.nodes().slaves[3:6]
 
         self.fuel_web.delete_env_wait(cluster_id)
 
@@ -611,8 +731,7 @@ class TestMultipleClusterNets(TestBasic):
         self.env.make_snapshot("delete_cluster_with_custom_nodegroup")
 
     @test(depends_on=[deploy_controllers_from_custom_nodegroup],
-          groups=["delete_custom_nodegroup", "thread_7",
-                  "multiple_cluster_networks"])
+          groups=["delete_custom_nodegroup"])
     @log_snapshot_after_test
     def delete_custom_nodegroup(self):
         """Delete nodegroup, check its nodes are marked as 'error'
@@ -639,7 +758,7 @@ class TestMultipleClusterNets(TestBasic):
         network_config = self.fuel_web.client.get_networks(cluster_id)
 
         self.show_step(3)
-        custom_nodes = self.env.d_env.nodes().slaves[1:6:2]
+        custom_nodes = self.env.d_env.nodes().slaves[3:6]
         self.fuel_web.stop_reset_env_wait(cluster_id)
         logger.info('Waiting for all nodes online for 900 seconds...')
         wait(lambda: all(n['online'] for n in
