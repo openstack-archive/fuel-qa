@@ -129,6 +129,7 @@ class HaVlanGroup1(TestBasic):
             'tenant': 'cephforvolumesswift',
             'user': 'cephforvolumesswift',
             'password': 'cephforvolumesswift',
+            'osd_pool_size': "2",
             "net_provider": 'neutron',
             "net_segment_type": settings.NEUTRON_SEGMENT['vlan'],
         }
