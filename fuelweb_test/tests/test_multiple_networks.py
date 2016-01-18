@@ -24,6 +24,7 @@ from proboscis import SkipTest
 from proboscis import test
 
 from fuelweb_test.helpers.checkers import check_get_network_data_over_cli
+from fuelweb_test.helpers.checkers import check_ping
 from fuelweb_test.helpers.checkers import check_update_network_data_over_cli
 from fuelweb_test.helpers.decorators import check_fuel_statistics
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -431,13 +432,13 @@ class TestMultipleClusterNets(TestBasic):
                             "controller via {0} interface.".format(interface))
                 for ip in new_node_networks[interface]['ip_addresses']:
                     address = ip.split('/')[0]
-                    result = self.ssh_manager.execute(ip=primary_ctrl['ip'],
-                                                      cmd='ping -q -c 1 -w 3 {'
-                                                          '0}'.format(address))
-                    asserts.assert_equal(result['exit_code'], 0,
-                                         "New node isn't accessible from "
-                                         "primary controller via {0} interface"
-                                         ": {1}.".format(interface, result))
+                    result = check_ping(self, primary_ctrl['ip'],
+                                        address,
+                                        timeout=3)
+                    asserts.assert_true(result,
+                                        "New node isn't accessible from "
+                                        "primary controller via {0} interface"
+                                        ": {1}.".format(interface, result))
 
         self.env.make_snapshot("add_custom_nodegroup")
 
