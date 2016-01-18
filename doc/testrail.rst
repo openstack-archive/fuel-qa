@@ -52,3 +52,8 @@ Upload tempest test suite
 -------------------------
 .. automodule:: fuelweb_test.testrail.upload_tempest_test_suite
    :members:
+
+Generate bugs statistics for TestPlan
+-------------------------------------
+.. automodule:: fuelweb_test.testrail.generate_statistics
+   :members:

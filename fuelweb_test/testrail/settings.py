@@ -72,3 +72,9 @@ class TestRailSettings(object):
     if ubuntu_enabled:
         operation_systems.append(os.environ.get(
             'TESTRAIL_UBUNTU_RELEASE', 'Ubuntu 14.04'))
+    stauses = {
+        'passed': ['passed'],
+        'failed': ['failed', 'product_failed', 'test_failed', 'infra_failed'],
+        'blocked': ['blocked']
+    }
+    max_results_per_request = 250
