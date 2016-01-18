@@ -418,13 +418,13 @@ class TestOSupgrade(base_test_data.TestBasic):
                 remote.execute("ip -s -s neigh flush all")
 
                 for ip in ping_ips:
-                    assert_true(checkers.check_ping(remote, ip),
+                    assert_true(checkers.check_ping(self, node["ip"], ip),
                                 "Can not ping {0} from {1}"
                                 "need to check network"
                                 " connectivity".format(ip, node["ip"]))
 
                 for ip in non_ping_ips:
-                    assert_false(checkers.check_ping(remote, ip),
+                    assert_false(checkers.check_ping(self, node["ip"], ip),
                                  "Patch ports from old controllers"
                                  "isn't removed")
 
