@@ -33,9 +33,8 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["rh", "rh.ha", "rh.basic"])
-class RhHA(TestBasic):
-    """RH-based compute tests"""
+class RhBase(TestBasic):
+    """RH-based compute tests base"""
 
     @staticmethod
     def wait_for_slave_provision(node_ip, timeout=10 * 60):
@@ -550,6 +549,167 @@ class RhHA(TestBasic):
         nodename = self.clean_string(result['stdout'])
         return nodename
 
+
+@test(groups=["rh", "rh.ha_one_controller", "rh.basic"])
+class RhHaOneController(RhBase):
+    """RH-based compute HA One Controller basic test"""
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["deploy_rh_compute_ha_one_controller_tun"])
+    @log_snapshot_after_test
+    def deploy_rh_compute_ha_one_controller_tun(self):
+        """Deploy RH-based compute in HA One Controller mode
+        with Neutron VXLAN
+
+        Scenario:
+            1. Check required image.
+            2. Revert snapshot 'ready_with_3_slaves'.
+            3. Create a Fuel cluster.
+            4. Update cluster nodes with required roles.
+            5. Deploy the Fuel cluster.
+            6. Run OSTF.
+            7. Backup astute.yaml and ssh keys from compute.
+            8. Boot compute with RH image.
+            9. Prepare node for Puppet run.
+            10. Execute modular tasks for compute.
+            11. Run OSTF.
+
+        Duration: 150m
+        Snapshot: deploy_rh_compute_ha_one_controller_tun
+
+        """
+        self.show_step(1, initialize=True)
+        logger.debug('Check MD5 sum of RH 7 image')
+        check_image = checkers.check_image(
+            settings.RH_IMAGE,
+            settings.RH_IMAGE_MD5,
+            settings.RH_IMAGE_PATH)
+        asserts.assert_true(check_image,
+                            'Provided image is incorrect. '
+                            'Please, check image path and md5 sum of it.')
+
+        self.show_step(2)
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        self.show_step(3)
+        logger.debug('Create Fuel cluster RH-based compute tests')
+        data = {
+            'volumes_lvm': True,
+            'net_provider': 'neutron',
+            'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
+            'tenant': 'RhHAOneController',
+            'user': 'RhHAOneController',
+            'password': 'RhHAOneController'
+        }
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings=data
+        )
+
+        self.show_step(4)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['compute'],
+                'slave-03': ['cinder']
+            }
+        )
+
+        self.show_step(5)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        cluster_vip = self.fuel_web.get_public_vip(cluster_id)
+        os_conn = os_actions.OpenStackActions(
+            cluster_vip, data['user'], data['password'], data['tenant'])
+
+        self.show_step(6)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
+
+        self.show_step(7)
+        compute = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute'])[0]
+        controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])[0]
+        logger.debug('Got node: {0}'.format(compute))
+        target_node = self.fuel_web.get_devops_node_by_nailgun_node(
+            compute)
+        logger.debug('DevOps Node: {0}'.format(target_node))
+        target_node_ip = compute['ip']
+        logger.debug('Acquired ip: {0} for node: {1}'.format(
+            target_node_ip, target_node.name))
+
+        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
+            old_hostname = self.save_node_hostname(remote)
+
+        with self.env.d_env.get_admin_remote() as remote:
+            self.backup_required_information(remote, target_node_ip)
+
+        self.show_step(8)
+
+        target_node.destroy()
+        asserts.assert_false(target_node.driver.node_active(node=target_node),
+                             'Target node still active')
+        self.connect_rh_image(target_node)
+        target_node.start()
+        asserts.assert_true(target_node.driver.node_active(node=target_node),
+                            'Target node did not start')
+        self.wait_for_slave_provision(target_node_ip)
+        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
+            self.verify_image_connected(remote)
+
+        self.show_step(9)
+
+        with self.env.d_env.get_admin_remote() as remote_admin:
+            with self.env.d_env.get_ssh_to_remote(target_node_ip) as \
+                    remote_slave:
+                self.restore_information(target_node_ip,
+                                         remote_admin, remote_slave)
+
+        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
+            self.set_hostname(remote)
+            if not settings.CENTOS_DUMMY_DEPLOY:
+                self.register_rh_subscription(remote)
+            self.install_yum_components(remote)
+            if not settings.CENTOS_DUMMY_DEPLOY:
+                self.enable_rh_repos(remote)
+            self.set_repo_for_perestroika(remote)
+            self.check_hiera_installation(remote)
+            self.install_ruby_puppet(remote)
+            self.check_rsync_installation(remote)
+
+        with self.env.d_env.get_admin_remote() as remote:
+            self.rsync_puppet_modules(remote, target_node_ip)
+
+        self.show_step(10)
+        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
+            self.apply_first_part_puppet(remote)
+
+        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
+            self.apply_networking_puppet(remote)
+
+        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
+            self.check_netconfig_success(remote)
+            self.apply_last_part_puppet(remote)
+
+        with self.env.d_env.get_ssh_to_remote(controller['ip']) as remote:
+            self.remove_old_compute_services(remote, old_hostname)
+
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
+
+        self.show_step(11)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
+
+        self.env.make_snapshot("ready_ha_one_controller_with_rh_compute",
+                               is_make=True)
+
+
+@test(groups=["rh", "rh.ha", "rh.basic"])
+class RhHA(RhBase):
+    """RH-based compute HA basic test"""
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_rh_compute_ha_tun"])
     @log_snapshot_after_test
@@ -589,6 +749,7 @@ class RhHA(TestBasic):
         self.show_step(3)
         logger.debug('Create Fuel cluster RH-based compute tests')
         data = {
+            'volumes_lvm': True,
             'net_provider': 'neutron',
             'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
             'tenant': 'RhHA',
@@ -608,7 +769,8 @@ class RhHA(TestBasic):
                 'slave-01': ['controller'],
                 'slave-02': ['controller'],
                 'slave-03': ['controller'],
-                'slave-04': ['compute']
+                'slave-04': ['compute'],
+                'slave-05': ['cinder']
             }
         )
 
@@ -626,18 +788,15 @@ class RhHA(TestBasic):
         self.show_step(7)
         compute = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['compute'])[0]
-        controller_name = 'slave-01'
-        controller_ip = self.fuel_web.get_nailgun_node_by_name(
-            controller_name)['ip']
+        controller_ip = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])[0]
         logger.debug('Got node: {0}'.format(compute))
-        target_node_name = compute['name'].split('_')[0]
-        logger.debug('Target node name: {0}'.format(target_node_name))
-        target_node = self.env.d_env.get_node(name=target_node_name)
+        target_node = self.fuel_web.get_devops_node_by_nailgun_node(
+            compute)
         logger.debug('DevOps Node: {0}'.format(target_node))
-        target_node_ip = self.fuel_web.get_nailgun_node_by_name(
-            target_node_name)['ip']
+        target_node_ip = compute['ip']
         logger.debug('Acquired ip: {0} for node: {1}'.format(
-            target_node_ip, target_node_name))
+            target_node_ip, target_node.name))
 
         with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
             old_hostname = self.save_node_hostname(remote)
