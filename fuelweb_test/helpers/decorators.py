@@ -501,3 +501,206 @@ def check_repos_management(func):
                              "management on nodes. Please see the debug log.")
         return result
     return wrapper
+
+# Setup/Teardown decorators, which is missing in Proboscis.
+# Usage: like in Nose.
+# Python.six is less smart
+
+
+def __getcallargs(func, *positional, **named):
+    if sys.version_info.major < 3:
+        return inspect.getcallargs(func, *positional, **named)
+    else:
+        return inspect.signature(func).bind(*positional, **named).arguments
+
+
+def __get_arg_names(func):
+    """get argument names for function
+
+    :param func: func
+    :return: list of function argnames
+
+    >>> def tst_1():
+    ...     pass
+
+    >>> __get_arg_names(tst_1)
+    []
+
+    >>> def tst_2(arg):
+    ...     pass
+
+    >>> __get_arg_names(tst_2)
+    ['arg']
+    """
+    if sys.version_info.major < 3:
+        return [arg for arg in inspect.getargspec(func=func).args]
+    else:
+        return list(inspect.signature(obj=func).parameters.keys())
+
+
+def __call_in_context(func, context_args):
+    """call function with substitute arguments from dict
+
+    :param func: function or None
+    :param context_args: dict
+    :return: function call results
+
+    >>> __call_in_context(None, {})
+
+    >>> def print_print():
+    ...     print ('print')
+
+    >>> __call_in_context(print_print, {})
+    print
+
+    >>> __call_in_context(print_print, {'val': 1})
+    print
+
+    >>> def print_val(val):
+    ...     print(val)
+
+    >>> __call_in_context(print_val, {'val': 1})
+    1
+    """
+    if func is None:
+        return
+
+    func_args = __get_arg_names(func)
+    if not func_args:
+        return func()
+
+    try:
+        arg_values = [context_args[k] for k in func_args if k != 'cls']
+        # cls if used in @classmethod and could not be posted
+        # via args or kwargs, so classmethod decorators always has access
+        # to it's own class only, except direct class argument
+    except KeyError as e:
+        raise ValueError("Argument '{}' is missing".format(str(e)))
+
+    return func(*arg_values)
+
+
+def setup_teardown(setup=None, teardown=None):
+    """Add setup and teardown for functions and methods.
+
+    :param setup: function
+    :param teardown: function
+    :return:
+
+    >>> def setup_func():
+    ...     print('setup_func called')
+
+    >>> def teardown_func():
+    ...     print('teardown_func called')
+
+    >>> @setup_teardown(setup=setup_func, teardown=teardown_func)
+    ... def positive_example(arg):
+    ...     print(arg)
+
+    >>> positive_example(arg=1)
+    setup_func called
+    1
+    teardown_func called
+
+    >>> class HelpersBase(object):
+    ...     cls_val = None
+    ...     def __init__(self):
+    ...         self.val = None
+    ...     @classmethod
+    ...     def cls_setup(cls):
+    ...         print('cls_setup', cls.cls_val)
+    ...     @classmethod
+    ...     def cls_teardown(cls):
+    ...         print('cls_teardown', cls.cls_val)
+    ...     def self_setup(self):
+    ...         print('self_setup', self.cls_val, self.val)
+    ...     def self_teardown(self):
+    ...         print('self_teardown', self.cls_val, self.val)
+
+    >>> class Test(HelpersBase):
+    ...     @setup_teardown(
+    ...         setup=HelpersBase.self_setup,
+    ...         teardown=HelpersBase.self_teardown)
+    ...     def test_self_self(self, cls_val=0, val=0):
+    ...         print('test_self_self', cls_val, val)
+    ...         self.val = val
+    ...         HelpersBase.cls_val = cls_val
+    ...     @setup_teardown(
+    ...         setup=HelpersBase.cls_setup,
+    ...         teardown=HelpersBase.cls_teardown)
+    ...     def test_self_cls(self, cls_val=1, val=1):
+    ...         print('test_self_cls', cls_val, val)
+    ...         self.val = val
+    ...         HelpersBase.cls_val = cls_val
+    ...     @setup_teardown(
+    ...         setup=setup_func,
+    ...         teardown=teardown_func)
+    ...     def test_self_none(self, cls_val=2, val=2):
+    ...         print('test_self_cls', cls_val, val)
+    ...         self.val = val
+    ...         HelpersBase.cls_val = cls_val
+    ...     @classmethod
+    ...     @setup_teardown(
+    ...         setup=HelpersBase.cls_setup,
+    ...         teardown=HelpersBase.cls_teardown)
+    ...     def test_cls_cls(cls, cls_val=3):
+    ...         print('test_cls_cls', cls_val)
+    ...         HelpersBase.cls_val = cls_val
+    ...     @classmethod
+    ...     @setup_teardown(
+    ...         setup=setup_func,
+    ...         teardown=teardown_func)
+    ...     def test_cls_none(cls, cls_val=4):
+    ...         print('test_cls_cls', cls_val)
+    ...         HelpersBase.cls_val = cls_val
+    ...     @staticmethod
+    ...     @setup_teardown(setup=setup_func, teardown=teardown_func)
+    ...     def test_none_none():
+    ...         print('test')
+
+    >>> test = Test()
+
+    >>> test.test_self_self()
+    ('self_setup', None, None)
+    ('test_self_self', 0, 0)
+    ('self_teardown', 0, 0)
+
+    >>> test.test_self_cls()
+    ('cls_setup', 0)
+    ('test_self_cls', 1, 1)
+    ('cls_teardown', 1)
+
+    >>> test.test_self_none()
+    setup_func called
+    ('test_self_cls', 2, 2)
+    teardown_func called
+
+    >>> test.test_cls_cls()
+    ('cls_setup', 2)
+    ('test_cls_cls', 3)
+    ('cls_teardown', 3)
+
+    >>> test.test_cls_none()
+    setup_func called
+    ('test_cls_cls', 4)
+    teardown_func called
+
+    >>> test.test_none_none()
+    setup_func called
+    test
+    teardown_func called
+
+    Also could be applied to classes, class methods and object methods.
+    """
+    def real_decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            real_args = __getcallargs(func, *args, **kwargs)
+            __call_in_context(setup, real_args)
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                __call_in_context(teardown, real_args)
+            return result
+        return wrapper
+    return real_decorator
