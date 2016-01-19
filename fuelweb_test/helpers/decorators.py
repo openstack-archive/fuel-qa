@@ -501,3 +501,92 @@ def check_repos_management(func):
                              "management on nodes. Please see the debug log.")
         return result
     return wrapper
+
+# Setup/Teardown decorators, which is missing in Proboscis.
+# Usage: like in Nose.
+# Python.six is less smart
+
+
+def __getcallargs(func, *positional, **named):
+    if sys.version_info.major < 3:
+        return inspect.getcallargs(func, *positional, **named)
+    else:
+        return inspect.signature(func).bind(*positional, **named).arguments
+
+
+def __get_arg_names(func):
+    if sys.version_info.major < 3:
+        return [arg for arg in inspect.getargspec(func=func).args]
+    else:
+        return list(inspect.signature(obj=func).parameters.keys())
+
+
+def __call_in_context(func, context_args):
+    if func is None:
+        return
+
+    func_args = __get_arg_names(func)
+    if not func_args:
+        return func()
+
+    try:
+        arg_values = [context_args[k] for k in func_args]
+    except KeyError as e:
+        raise ValueError("Argument '{}' is missing".format(str(e)))
+
+    return func(*arg_values)
+
+
+def setup_teardown(setup=None, teardown=None):
+    """
+    Add setup and teardown for functions and methods.
+    :param setup: function
+    :param teardown: function
+    :return:
+
+    >>> def setup_func():
+        print('setup_func called')
+
+
+    >>> def teardown_func():
+        print('teardown_func called')
+
+
+    >>> @setup_teardown(setup=setup_func, teardown=teardown_func)
+    def positive_example(arg):
+        print(arg)
+
+
+    >>> positive_example(arg=1)
+    setup_func called
+    1
+    teardown_func called
+
+    >>> @setup_teardown(setup=setup_func, teardown=teardown_func)
+    def negative_example(arg):
+        raise ValueError(arg)
+
+    >>> negative_example(arg=1)
+    setup_func called
+    teardown_func called
+
+    Traceback (most recent call last):
+    ...
+    ValueError: 1
+
+    Also could be applied to classes, class methods and object methods.
+    """
+    def real_decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            real_args = __getcallargs(func, *args, **kwargs)
+            if 'self' in real_args:
+                real_args.setdefault('cls', real_args['self'].__class__)
+            __call_in_context(setup, real_args)
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                __call_in_context(teardown, real_args)
+            return result
+        return wrapper
+    return real_decorator
