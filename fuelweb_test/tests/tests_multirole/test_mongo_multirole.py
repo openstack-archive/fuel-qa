@@ -84,7 +84,7 @@ class MongoMultirole(TestBasic):
         )
         self.show_step(7)
         self.show_step(8)
-        vlan_turn_off = {'vlan_start': None}
+        vlan_turn_on = {'vlan_start': 102}
         interfaces = {
             iface_alias('eth0'): ['private'],
             iface_alias('eth1'): ['storage', 'public'],
@@ -98,8 +98,8 @@ class MongoMultirole(TestBasic):
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(node['id'], interfaces)
 
-        [net.update(vlan_turn_off) for net in nets
-         if net['name'] == 'management']
+        [net.update(vlan_turn_on) for net in nets
+         if net['name'] == 'storage']
         self.fuel_web.client.update_network(cluster_id, networks=nets)
 
         self.show_step(9)
