@@ -815,7 +815,7 @@ class ServicesReconfiguration(TestBasic):
         self.env.bootstrap_nodes(bs_nodes)
         self.fuel_web.update_nodes(
             cluster_id,
-            {'slave-05': ['compute']})
+            {'slave-05': ['compute', 'cinder']})
         self.fuel_web.update_nodes(
             cluster_id,
             {'slave-06': ['controller']})
@@ -1227,4 +1227,68 @@ class ServicesReconfiguration(TestBasic):
         self.fuel_web.assert_task_success(task, timeout=7800, interval=30)
 
         snapshot_name = "upload_config_for_node_and_env_in_transitional_state"
+        self.env.make_snapshot(snapshot_name)
+
+    @test(depends_on_groups=['reconfiguration_scalability'],
+          groups=["services_reconfiguration_thread_1",
+                  "apply_config_for_node_with_multiple_role"])
+    @log_snapshot_after_test
+    def apply_config_for_node_with_multiple_role(self):
+        """Apply config for node with multiple role
+
+        Scenario:
+            1. Revert snapshot "reconfiguration_scalability"
+            2. Upload a new openstack configuration for compute role
+            3. Upload a new openstack configuration for cinder role
+            4. Wait for configuration applying
+            5. Get uptime of process "nova-compute"
+            6. Check settings on target node
+
+        Snapshot "apply_config_for_node_with_multiple_role"
+        """
+
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot("reconfiguration_scalability")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        target_node = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute', 'cinder'])
+        config_for_compute_role = utils.get_config_template('nova_disk')
+        config_for_compute_role['nova_config'].update(
+            {'DEFAULT/debug': {'value': 'False'}})
+        config_for_cinder_role = utils.get_config_template(
+            'nova_disk_cinder_role')
+
+        self.show_step(2)
+        self.fuel_web.client.upload_configuration(config_for_compute_role,
+                                                  cluster_id,
+                                                  role='compute')
+
+        self.show_step(3)
+        self.fuel_web.client.upload_configuration(config_for_cinder_role,
+                                                  cluster_id,
+                                                  role='cinder')
+
+        general_config = {}
+        general_config.update(config_for_cinder_role)
+        general_config.update(config_for_compute_role)
+        structured_config = get_structured_config_dict(general_config)
+        service_name = 'nova-compute'
+        uptime = self.get_service_uptime(target_node, service_name)
+
+        self.show_step(4)
+        task = self.fuel_web.client.apply_configuration(
+            cluster_id,
+            node_id=target_node[0]['id'])
+        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+
+        self.show_step(5)
+        self.check_service_was_restarted(target_node,
+                                         uptime,
+                                         service_name)
+
+        self.show_step(6)
+        self.check_config_on_remote(target_node, structured_config)
+
+        snapshot_name = "apply_config_for_node_with_multiple_role"
         self.env.make_snapshot(snapshot_name)
