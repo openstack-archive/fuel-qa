@@ -646,7 +646,6 @@ class RhelHA(TestBasic):
             self.set_repo_for_perestroika(remote)
             self.check_hiera_installation(remote)
             self.install_ruby_puppet(remote)
-            self.disable_selinux(remote)
             self.check_rsync_installation(remote)
 
         with self.env.d_env.get_admin_remote() as remote:
