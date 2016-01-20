@@ -599,6 +599,7 @@ CENTOS_DUMMY_DEPLOY = get_var_as_bool("CENTOS_DUMMY_DEPLOY", False)
 PERESTROIKA_REPO = os.environ.get(
     "PERESTROIKA_REPO", "http://perestroika-repo-tst.infra.mirantis.net/"
                         "mos-repos/centos/mos8.0-centos7-fuel/os/x86_64/")
+RH_POOL_HASH = os.environ.get("RH_POOL_HASH")
 
 # Ironic variables
 IRONIC_USER_IMAGE_URL = os.environ.get(
