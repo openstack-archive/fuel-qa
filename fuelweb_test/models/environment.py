@@ -13,6 +13,7 @@
 #    under the License.
 
 import re
+import subprocess
 import time
 from devops.error import TimeoutError
 
@@ -38,6 +39,7 @@ from fuelweb_test.helpers.fuel_actions import PostgresActions
 from fuelweb_test.helpers.fuel_actions import NessusActions
 from fuelweb_test.helpers.fuel_actions import FuelBootstrapCliActions
 from fuelweb_test.helpers.ssh_manager import SSHManager
+from fuelweb_test.helpers import utils
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.helpers import multiple_networks_hacks
 from fuelweb_test.models.fuel_web_client import FuelWebClient
@@ -425,6 +427,27 @@ class EnvironmentModel(object):
                 'New Fuel UI (keystone) username: "{0}", password: "{1}"'
                 .format(settings.KEYSTONE_CREDS['username'],
                         settings.KEYSTONE_CREDS['password']))
+
+    def insert_cdrom_tray(self):
+        # This is very rude implementation and it SHOULD be changes after
+        # implementation this feature in fuel-devops
+        name = settings.ENV_NAME + "_" + self.d_env.nodes().admin.name
+        NAME_SIZE = 80
+        if len(name) > NAME_SIZE:
+            hash_str = str(hash(name))
+            name = hash_str + name[len(name) - NAME_SIZE + len(hash_str):]
+
+        cmd = """EDITOR="sed -i s/tray=\\'open\\'//" virsh edit {}""".format(
+            name)
+        subprocess.check_call(cmd, shell=True)
+
+    def reinstall_master_node(self):
+        """Erase boot sector and run setup_environment"""
+        with self.d_env.get_admin_remote() as remote:
+            utils.erase_boot_sector(remote, shutdown=True)
+        self.d_env.nodes().admin.destroy()
+        self.insert_cdrom_tray()
+        self.setup_environment()
 
     def setup_environment(self, custom=settings.CUSTOM_ENV,
                           build_images=settings.BUILD_IMAGES,

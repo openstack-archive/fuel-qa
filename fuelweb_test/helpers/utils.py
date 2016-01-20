@@ -792,3 +792,22 @@ def compare_packages_version(remote, package_name, income_package_name):
             package=income_package_name, version=income_version)
     else:
         return True
+
+
+def erase_boot_sector(remote, shutdown=False):
+    device = remote.execute(
+        "mount | grep '/boot ' | awk '{print($1)}'")['stdout'][0]
+    # get block device for partition
+    device = re.findall(r"(/dev/[a-z]+)", device)[0]
+    commands = [
+        "dd bs=512 if=/dev/zero of={device} count=16384 seek="
+        "$((`blockdev --getsz {device}` - 512*2*1024*8))".format(
+            device=device),
+        "dd bs=512 if=/dev/zero of={device} count=16384 ".format(
+            device=device)
+    ]
+    for cmd in commands:
+        run_on_remote(remote, cmd)
+    if shutdown:
+        remote.execute("poweroff")
+        time.sleep(60)
