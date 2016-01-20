@@ -454,11 +454,12 @@ class RhelHA(TestBasic):
         asserts.assert_equal(result['exit_code'], 0,
                              'Ruby and puppet installation failed')
 
-    @staticmethod
-    def disable_selinux(remote):
+    def manage_selinux(self, remote, action, target_node_ip):
         """Disable SELinux on a target node.
 
         :param remote: Remote node for proceed.
+        :param action: enable or disable string.
+        :param target_node_ip: IP of the server to check that it was rebooted.
         """
         def check_in(a, b):
             if isinstance(b, list):
@@ -472,25 +473,52 @@ class RhelHA(TestBasic):
                     return True
                 else:
                     return False
-        cmd = ("rm -f /etc/selinux/config; "
-               "echo 'SELINUX=disabled\n"
-               "SELINUXTYPE=targeted\n"
-               "SETLOCALDEFS=0' > /etc/selinux/config")
-        result = remote.execute(cmd)
+
+        disable_cmd = (
+            "rm -f /etc/selinux/config; "
+            "echo 'SELINUX=disabled\n"
+            "SELINUXTYPE=targeted\n"
+            "SETLOCALDEFS=0' > /etc/selinux/config")
+        enable_cmd = (
+            "rm -f /etc/selinux/config; "
+            "echo 'SELINUX=permissive\n"
+            "SELINUXTYPE=targeted\n"
+            "SETLOCALDEFS=0' > /etc/selinux/config")
+
+        if action == 'enable':
+            result = remote.execute(enable_cmd)
+        else:
+            result = remote.execute(disable_cmd)
         LOGGER.debug(result)
 
         asserts.assert_equal(result['exit_code'], 0,
-                             'SELinux was not disabled on node')
-        cmd = "setenforce 0"
-        result = remote.execute(cmd)
+                             'SELinux was not configured properly')
+
+        enable_cmd = "setenforce 1"
+        disable_cmd = "setenforce 0"
+        if action == 'enable':
+            result = remote.execute(enable_cmd)
+        else:
+            result = remote.execute(disable_cmd)
         LOGGER.debug(result)
-        if result['exit_code'] == 1:
+        if result['exit_code'] == 1 and action == 'disable':
             asserts.assert_true(
                 check_in('SELinux is disabled', result['stderr']),
                 'SELinux was not disabled on node')
+        elif (result['exit_code'] == 1 and action == 'enable'
+              and check_in('SELinux is disabled', result['stderr'])):
+            reboot_cmd = 'sudo reboot'
+            result = remote.execute(reboot_cmd)
+            LOGGER.debug('Rebooting compute to apply SELinux settings')
+            self.wait_for_slave_provision(target_node_ip)
+            LOGGER.debug('Compute with ip {0} successfully rebooted'.
+                         format(target_node_ip))
+            result = remote.execute(enable_cmd)
+            asserts.assert_equal(result['exit_code'], 0,
+                                 'SELinux was not enabled on node')
         else:
             asserts.assert_equal(result['exit_code'], 0,
-                                 'SELinux was not disabled on node')
+                                 'SELinux was not managed on node')
 
     @staticmethod
     def rsync_puppet_modules(remote, ip):
@@ -646,7 +674,7 @@ class RhelHA(TestBasic):
             self.set_repo_for_perestroika(remote)
             self.check_hiera_installation(remote)
             self.install_ruby_puppet(remote)
-            self.disable_selinux(remote)
+            self.manage_selinux(remote, 'enable', target_node_ip)
             self.check_rsync_installation(remote)
 
         with self.env.d_env.get_admin_remote() as remote:
