@@ -48,10 +48,7 @@ class PluginsActions(base_actions_factory.BaseActionsFactory):
         # copy plugin to the master node
         assert_true(self.plugin_path, "plugin_path is not specified")
 
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.upload_tarball(
-                remote,
-                self.plugin_path, '/var')
+        self.env.admin_actions.upload_plugin(plugin=self.plugin_path)
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
@@ -59,10 +56,8 @@ class PluginsActions(base_actions_factory.BaseActionsFactory):
         """Install plugin to Fuel"""
         assert_true(self.plugin_path, "plugin_path is not specified")
 
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.install_plugin_check_code(
-                remote,
-                plugin=os.path.basename(self.plugin_path))
+        self.env.admin_actions.install_plugin(
+            plugin_file_name=os.path.basename(self.plugin_path))
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
