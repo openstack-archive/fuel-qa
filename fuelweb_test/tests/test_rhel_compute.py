@@ -15,6 +15,7 @@
 from __future__ import division
 import re
 
+from devops.error import TimeoutError
 from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
 from proboscis import asserts
@@ -42,6 +43,57 @@ class RhelHA(TestBasic):
         """
         wait(lambda: tcp_ping(node_ip, 22),
              timeout=timeout, timeout_msg="Node doesn't appear in network")
+
+    @staticmethod
+    def wait_for_slave_network_down(node_ip, timeout=10 * 20):
+        """Wait for a target node network down.
+
+        :param node_ip: IP address of target node.
+        :param timeout: Timeout for wait function.
+        """
+        wait(lambda: (not tcp_ping(node_ip, 22)), interval=1,
+             timeout=timeout, timeout_msg="Node doesn't gone offline")
+
+    def warm_restart_nodes(self, devops_nodes):
+        LOGGER.info('Reboot (warm restart) nodes %s',
+                    [n.name for n in devops_nodes])
+        self.warm_shutdown_nodes(devops_nodes)
+        self.warm_start_nodes(devops_nodes)
+
+    def warm_shutdown_nodes(self, devops_nodes):
+        LOGGER.info('Shutting down (warm) nodes %s',
+                    [n.name for n in devops_nodes])
+        for node in devops_nodes:
+            LOGGER.debug('Shutdown node %s', node.name)
+            with self.fuel_web.get_ssh_for_node(node.name) as remote:
+                remote.execute('/sbin/shutdown -Ph now & exit')
+
+        for node in devops_nodes:
+            ip = self.fuel_web.get_node_ip_by_devops_name(node.name)
+            LOGGER.info('Wait a %s node offline status', node.name)
+            try:
+                self.wait_for_slave_network_down(ip)
+            except TimeoutError:
+                asserts.assert_false(
+                    tcp_ping(ip, 22),
+                    'Node {0} has not become '
+                    'offline after warm shutdown'.format(node.name))
+            node.destroy()
+
+    def warm_start_nodes(self, devops_nodes):
+        LOGGER.info('Starting nodes %s', [n.name for n in devops_nodes])
+        for node in devops_nodes:
+            node.create()
+        for node in devops_nodes:
+            ip = self.fuel_web.get_node_ip_by_devops_name(node.name)
+            try:
+                self.wait_for_slave_provision(ip)
+            except TimeoutError:
+                asserts.assert_true(
+                    tcp_ping(ip, 22),
+                    'Node {0} has not become online '
+                    'after warm start'.format(node.name))
+            LOGGER.debug('Node {0} became online.'.format(node.name))
 
     @staticmethod
     def connect_rhel_image(slave):
@@ -113,6 +165,14 @@ class RhelHA(TestBasic):
         result = remote.execute(cmd)
         LOGGER.debug(result)
         asserts.assert_equal(result['exit_code'], 0, 'RHEL registation failed')
+
+        if settings.RH_POOL_HASH:
+            reg_pool_cmd = ("/usr/sbin/subscription-manager "
+                            "attach --pool={0}".format(settings.RH_POOL_HASH))
+            result = remote.execute(reg_pool_cmd)
+            LOGGER.debug(result)
+            asserts.assert_equal(result['exit_code'], 0,
+                                 'Can not attach node to subscription pool')
 
     @staticmethod
     def enable_rhel_repos(remote):
@@ -343,11 +403,57 @@ class RhelHA(TestBasic):
 
         :param remote: Remote node for proceed.
         """
-        cmd = "yum install yum-utils yum-priorities -y"
+        cmd = ("yum install yum-utils yum-priorities policycoreutils "
+               "policycoreutils-python make selinux-policy-devel "
+               "setroubleshoot-server setools -y")
         result = remote.execute(cmd)
         LOGGER.debug(result)
         asserts.assert_equal(result['exit_code'], 0, 'Can not install required'
                                                      'yum components.')
+
+    @staticmethod
+    def allow_selinux_ports(remote):
+        cmd = 'semanage port -a -t amqp_port_t -p tcp 5673'
+        result = remote.execute(cmd)
+        LOGGER.debug(result)
+        asserts.assert_equal(result['exit_code'], 0,
+                             'Can not open port in SeLinux.')
+        cmd = ("cd ~/; "
+               "echo '\n"
+               "module nova_ssh 1.0;\n"
+               "\n"
+               "require {\n"
+               "      type nova_var_lib_t;\n"
+               "      type sshd_t;\n"
+               "      class file { read getattr open };\n"
+               "}\n"
+               "#============= sshd_t ==============\n"
+               "allow sshd_t nova_var_lib_t:file { read getattr open };' "
+               "> nova_ssh.te; "
+               "make -f /usr/share/selinux/devel/Makefile nova_ssh.pp; "
+               "semodule -i nova_ssh.pp")
+        result = remote.execute(cmd)
+        LOGGER.debug(result)
+        asserts.assert_equal(result['exit_code'], 0, 'Can not configure nova'
+                                                     'SeLinux module.')
+        cmd = ('echo "\n'
+               'policy_module(os-neutron, 0.1)\n'
+               '\n'
+               'gen_require(`\n'
+               '  type neutron_t;\n'
+               '\')\n'
+               '\n'
+               'gen_tunable(os_neutron_use_execmem, false)\n'
+               'tunable_policy(`os_neutron_use_execmem\',`\n'
+               '  allow neutron_t self:process execmem;\n'
+               '\')" > os-neutron.te; '
+               'make -f /usr/share/selinux/devel/Makefile os-neutron.pp; '
+               'semodule -i os-neutron.pp; '
+               'setsebool -P os_neutron_use_execmem on')
+        result = remote.execute(cmd)
+        LOGGER.debug(remote)
+        asserts.assert_equal(result['exit_code'], 0, 'Can not configure '
+                                                     'neutron SeLinux module')
 
     @staticmethod
     def set_repo_for_perestroika(remote):
@@ -455,10 +561,12 @@ class RhelHA(TestBasic):
                              'Ruby and puppet installation failed')
 
     @staticmethod
-    def disable_selinux(remote):
+    def manage_selinux(remote, action, rebooted=False):
         """Disable SELinux on a target node.
 
         :param remote: Remote node for proceed.
+        :param action: enable or disable string.
+        :param target_node_ip: IP of the server to check that it was rebooted.
         """
         def check_in(a, b):
             if isinstance(b, list):
@@ -472,25 +580,49 @@ class RhelHA(TestBasic):
                     return True
                 else:
                     return False
-        cmd = ("rm -f /etc/selinux/config; "
-               "echo 'SELINUX=disabled\n"
-               "SELINUXTYPE=targeted\n"
-               "SETLOCALDEFS=0' > /etc/selinux/config")
-        result = remote.execute(cmd)
+
+        cat_selinux_config = 'cat /etc/selinux/config'
+        result = remote.execute(cat_selinux_config)
         LOGGER.debug(result)
 
-        asserts.assert_equal(result['exit_code'], 0,
-                             'SELinux was not disabled on node')
-        cmd = "setenforce 0"
-        result = remote.execute(cmd)
+        disable_cmd = (
+            'sed -i "s/SELINUX=enforcing/SELINUX=disabled/g" '
+            '/etc/selinux/config')
+        enable_cmd = (
+            'sed -i "s/SELINUX=disabled/SELINUX=enforcing/g" '
+            '/etc/selinux/config')
+
+        if not rebooted:
+            if action == 'enable':
+                result = remote.execute(enable_cmd)
+            else:
+                result = remote.execute(disable_cmd)
+            LOGGER.debug(result)
+            res = remote.execute(cat_selinux_config)
+            LOGGER.debug(res)
+
+            asserts.assert_equal(result['exit_code'], 0,
+                                 'SELinux was not configured properly')
+
+        enable_cmd = "setenforce 1"
+        disable_cmd = "setenforce 0"
+        if action == 'enable':
+            result = remote.execute(enable_cmd)
+        else:
+            result = remote.execute(disable_cmd)
         LOGGER.debug(result)
-        if result['exit_code'] == 1:
+        if result['exit_code'] == 1 and action == 'disable':
             asserts.assert_true(
                 check_in('SELinux is disabled', result['stderr']),
                 'SELinux was not disabled on node')
+        elif (result['exit_code'] == 1 and action == 'enable' and
+              check_in('SELinux is disabled', result['stderr']) and not
+              rebooted):
+            LOGGER.debug('Rebooting compute to apply SELinux settings')
+            return True
         else:
             asserts.assert_equal(result['exit_code'], 0,
-                                 'SELinux was not disabled on node')
+                                 'SELinux was not managed on node')
 
     @staticmethod
     def rsync_puppet_modules(remote, ip):
@@ -646,7 +778,14 @@ class RhelHA(TestBasic):
             self.set_repo_for_perestroika(remote)
             self.check_hiera_installation(remote)
             self.install_ruby_puppet(remote)
-            self.disable_selinux(remote)
+            rebooted = self.manage_selinux(remote, 'enable')
+
+        if rebooted:
+            self.warm_restart_nodes([target_node])
+
+        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
+            self.manage_selinux(remote, 'enable', rebooted)
+            self.allow_selinux_ports(remote)
             self.check_rsync_installation(remote)
 
         with self.env.d_env.get_admin_remote() as remote:
