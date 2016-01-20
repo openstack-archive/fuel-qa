@@ -44,6 +44,16 @@ class RhelHA(TestBasic):
              timeout=timeout, timeout_msg="Node doesn't appear in network")
 
     @staticmethod
+    def wait_for_slave_network_down(node_ip, timeout=10 * 20):
+        """Wait for a target node network down.
+
+        :param node_ip: IP address of target node.
+        :param timeout: Timeout for wait function.
+        """
+        wait(lambda: (not tcp_ping(node_ip, 22)), interval=1,
+             timeout=timeout, timeout_msg="Node doesn't gone offline")
+
+    @staticmethod
     def connect_rhel_image(slave):
         """Upload RHEL image into a target node.
 
@@ -455,10 +465,12 @@ class RhelHA(TestBasic):
                              'Ruby and puppet installation failed')
 
     @staticmethod
-    def disable_selinux(remote):
+    def manage_selinux(remote, action, rebooted=False):
         """Disable SELinux on a target node.
 
         :param remote: Remote node for proceed.
+        :param action: enable or disable string.
+        :param target_node_ip: IP of the server to check that it was rebooted.
         """
         def check_in(a, b):
             if isinstance(b, list):
@@ -472,25 +484,46 @@ class RhelHA(TestBasic):
                     return True
                 else:
                     return False
-        cmd = ("rm -f /etc/selinux/config; "
-               "echo 'SELINUX=disabled\n"
-               "SELINUXTYPE=targeted\n"
-               "SETLOCALDEFS=0' > /etc/selinux/config")
-        result = remote.execute(cmd)
-        LOGGER.debug(result)
 
-        asserts.assert_equal(result['exit_code'], 0,
-                             'SELinux was not disabled on node')
-        cmd = "setenforce 0"
-        result = remote.execute(cmd)
+        disable_cmd = (
+            "sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' "
+            "/etc/sysconfig/selinux")
+        enable_cmd = (
+            "sed -i 's/SELINUX=disabled/SELINUX=enforcing/g' "
+            "/etc/sysconfig/selinux")
+
+        if not rebooted:
+            if action == 'enable':
+                result = remote.execute(enable_cmd)
+            else:
+                result = remote.execute(disable_cmd)
+            LOGGER.debug(result)
+
+            asserts.assert_equal(result['exit_code'], 0,
+                                 'SELinux was not configured properly')
+
+        enable_cmd = "setenforce 1"
+        disable_cmd = "setenforce 0"
+        if action == 'enable':
+            result = remote.execute(enable_cmd)
+        else:
+            result = remote.execute(disable_cmd)
         LOGGER.debug(result)
-        if result['exit_code'] == 1:
+        if result['exit_code'] == 1 and action == 'disable':
             asserts.assert_true(
                 check_in('SELinux is disabled', result['stderr']),
                 'SELinux was not disabled on node')
+        elif (result['exit_code'] == 1 and action == 'enable' and
+              check_in('SELinux is disabled', result['stderr']) and not
+              rebooted):
+            reboot_cmd = '/sbin/shutdown -r now'
+            result = remote.execute(reboot_cmd)
+            LOGGER.debug(result)
+            LOGGER.debug('Rebooting compute to apply SELinux settings')
+            return True
         else:
             asserts.assert_equal(result['exit_code'], 0,
-                                 'SELinux was not disabled on node')
+                                 'SELinux was not managed on node')
 
     @staticmethod
     def rsync_puppet_modules(remote, ip):
@@ -646,7 +679,21 @@ class RhelHA(TestBasic):
             self.set_repo_for_perestroika(remote)
             self.check_hiera_installation(remote)
             self.install_ruby_puppet(remote)
-            self.disable_selinux(remote)
+            rebooted = self.manage_selinux(remote, 'enable')
+
+        if rebooted:
+            target_node.destroy()
+            asserts.assert_false(target_node.driver.node_active(
+                    node=target_node), 'Target node still active')
+            target_node.start()
+            asserts.assert_true(target_node.driver.node_active(
+                    node=target_node), 'Target node did not start')
+            self.wait_for_slave_provision(target_node_ip)
+            LOGGER.debug('Compute with ip {0} successfully rebooted'.
+                         format(target_node_ip))
+
+        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
+            self.manage_selinux(remote, 'enable', rebooted)
             self.check_rsync_installation(remote)
 
         with self.env.d_env.get_admin_remote() as remote:
