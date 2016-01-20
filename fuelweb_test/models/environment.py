@@ -13,6 +13,7 @@
 #    under the License.
 
 import re
+import subprocess
 import time
 from devops.error import TimeoutError
 
@@ -425,6 +426,41 @@ class EnvironmentModel(object):
                 'New Fuel UI (keystone) username: "{0}", password: "{1}"'
                 .format(settings.KEYSTONE_CREDS['username'],
                         settings.KEYSTONE_CREDS['password']))
+
+    def insert_cdrom_tray(self):
+        # This is very rude implementation and it SHOULD be changes after
+        # implementation this feature in fuel-devops
+        name = settings.ENV_NAME + "_" + self.d_env.nodes().admin.name
+
+        cmd = """EDITOR="sed -i s/tray=\\'open\\'//" virsh edit {}""".format(
+            name)
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+        output, err = p.communicate()
+        logger.debug(output)
+
+    def reinstall_master_node(self):
+        """Erase boot sector and run setup_environment"""
+        with self.d_env.get_admin_remote() as remote:
+            device = remote.execute(
+                "mount | grep '/boot ' | awk '{print($1)}'")['stdout'][0]
+            # get block device for partition
+            device = re.findall(r"(/dev/[a-z]+)", device)[0]
+            commands = [
+                "dd bs=512 if=/dev/zero of={device} count=16384 seek="
+                "$((`blockdev --getsz {device}` - 512*2*1024*8))".format(
+                    device=device),
+                "dd bs=512 if=/dev/zero of={device} count=16384 ".format(
+                    device=device),
+                "poweroff"
+            ]
+            for cmd in commands:
+                output = remote.execute(cmd)
+                logger.debug(output)
+        # this sleep is required for allowing qemu to flush hdd cache
+        time.sleep(60)
+        self.d_env.nodes().admin.destroy()
+        self.insert_cdrom_tray()
+        self.setup_environment()
 
     def setup_environment(self, custom=settings.CUSTOM_ENV,
                           build_images=settings.BUILD_IMAGES,
