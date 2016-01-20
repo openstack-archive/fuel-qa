@@ -286,7 +286,9 @@ class ServicesReconfiguration(TestBasic):
             raise Exception("New configuration was not applied")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["services_reconfiguration", "basic_env_for_reconfiguration"])
+          groups=["services_reconfiguration_thread_1",
+                  "services_reconfiguration_thread_2"
+                  "basic_env_for_reconfiguration"])
     @log_snapshot_after_test
     def basic_env_for_reconfiguration(self):
         """Basic environment for reconfiguration
@@ -339,7 +341,8 @@ class ServicesReconfiguration(TestBasic):
         self.env.make_snapshot("basic_env_for_reconfiguration", is_make=True)
 
     @test(depends_on_groups=['basic_env_for_reconfiguration'],
-          groups=["services_reconfiguration", "reconfigure_ml2_vlan_range"])
+          groups=["services_reconfiguration_thread_1",
+                  "reconfigure_ml2_vlan_range"])
     @log_snapshot_after_test
     def reconfigure_ml2_vlan_range(self):
         """Reconfigure neutron ml2 VLAN range
@@ -396,7 +399,8 @@ class ServicesReconfiguration(TestBasic):
         self.env.make_snapshot("reconfigure_ml2_vlan_range", is_make=True)
 
     @test(depends_on_groups=["basic_env_for_reconfiguration"],
-          groups=["services_reconfiguration", "reconfigure_overcommit_ratio"])
+          groups=["services_reconfiguration_thread_1",
+                  "reconfigure_overcommit_ratio"])
     @log_snapshot_after_test
     def reconfigure_overcommit_ratio(self):
         """Tests for reconfiguration nova CPU overcommit ratio.
@@ -475,7 +479,7 @@ class ServicesReconfiguration(TestBasic):
                                is_make=True)
 
     @test(depends_on_groups=['basic_env_for_reconfiguration'],
-          groups=["services_reconfiguration",
+          groups=["services_reconfiguration_thread_1",
                   "reconfigure_keystone_to_use_ldap"])
     @log_snapshot_after_test
     def reconfigure_keystone_to_use_ldap(self):
@@ -533,7 +537,8 @@ class ServicesReconfiguration(TestBasic):
         self.env.make_snapshot("reconfigure_keystone_to_use_ldap")
 
     @test(depends_on_groups=['basic_env_for_reconfiguration'],
-          groups=["services_reconfiguration", "reconfigure_nova_quota"])
+          groups=["services_reconfiguration_thread_2",
+                  "reconfigure_nova_quota"])
     @log_snapshot_after_test
     def reconfigure_nova_quota(self):
         """Tests for reconfiguration nova quota.
@@ -601,7 +606,7 @@ class ServicesReconfiguration(TestBasic):
         self.env.make_snapshot("reconfigure_nova_quota")
 
     @test(depends_on_groups=['reconfigure_overcommit_ratio'],
-          groups=["services_reconfiguration",
+          groups=["services_reconfiguration_thread_1",
                   "reconfigure_nova_ephemeral_disk"])
     @log_snapshot_after_test
     def reconfigure_nova_ephemeral_disk(self):
@@ -675,7 +680,7 @@ class ServicesReconfiguration(TestBasic):
                                is_make=True)
 
     @test(depends_on_groups=['reconfigure_ml2_vlan_range'],
-          groups=["services_reconfiguration",
+          groups=["services_reconfiguration_thread_1",
                   "preservation_config_after_reset_and_preconfigured_deploy"])
     @log_snapshot_after_test
     def preservation_config_after_reset_and_preconfigured_deploy(self):
@@ -745,7 +750,7 @@ class ServicesReconfiguration(TestBasic):
         self.env.make_snapshot(snapshot, is_make=True)
 
     @test(depends_on_groups=['reconfigure_nova_ephemeral_disk'],
-          groups=["services_reconfiguration",
+          groups=["services_reconfiguration_thread_1",
                   "reconfiguration_scalability"])
     @log_snapshot_after_test
     def reconfiguration_scalability(self):
@@ -857,7 +862,7 @@ class ServicesReconfiguration(TestBasic):
         self.env.make_snapshot("reconfiguration_scalability", is_make=True)
 
     @test(depends_on_groups=['reconfiguration_scalability'],
-          groups=["services_reconfiguration",
+          groups=["services_reconfiguration_thread_1",
                   "multiple_apply_config"])
     @log_snapshot_after_test
     def multiple_apply_config(self):
@@ -945,7 +950,7 @@ class ServicesReconfiguration(TestBasic):
         self.env.make_snapshot("multiple_apply_config")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["services_reconfiguration",
+          groups=["services_reconfiguration_thread_2",
                   "two_clusters_reconfiguration"])
     @log_snapshot_after_test
     def two_clusters_reconfiguration(self):
@@ -1112,7 +1117,8 @@ class ServicesReconfiguration(TestBasic):
         self.env.make_snapshot("two_clusters_reconfiguration")
 
     @test(depends_on_groups=['basic_env_for_reconfiguration'],
-          groups=["services_reconfiguration", "check_wrong_config"])
+          groups=["services_reconfiguration_thread_2",
+                  "check_wrong_config"])
     @log_snapshot_after_test
     def check_wrong_config(self):
         """Check wrong config
@@ -1142,7 +1148,7 @@ class ServicesReconfiguration(TestBasic):
         self.env.make_snapshot("check_wrong_config")
 
     @test(depends_on_groups=['basic_env_for_reconfiguration'],
-          groups=["services_reconfiguration",
+          groups=["services_reconfiguration_thread_2",
                   "upload_config_for_node_and_env_in_transitional_state"])
     @log_snapshot_after_test
     def upload_config_for_node_and_env_in_transitional_state(self):
