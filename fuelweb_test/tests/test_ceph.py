@@ -447,10 +447,11 @@ class CephRadosGW(TestBasic):
             1. Create cluster with Neutron
             2. Add 3 nodes with controller role
             3. Add 3 nodes with compute and ceph-osd role
-            4. Deploy the cluster
-            5. Check ceph status
-            6. Run OSTF tests
-            7. Check the radosgw daemon is started
+            4. Add 1 node with ironic role
+            5. Deploy the cluster
+            6. Check ceph status
+            7. Run OSTF tests
+            8. Check the radosgw daemon is started
 
         Duration 90m
         Snapshot ceph_rados_gw
@@ -464,7 +465,7 @@ class CephRadosGW(TestBasic):
 
         self.env.revert_snapshot("ready")
         self.env.bootstrap_nodes(
-            self.env.d_env.nodes().slaves[:6])
+            self.env.d_env.nodes().slaves[:7])
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -487,7 +488,8 @@ class CephRadosGW(TestBasic):
                 'slave-03': ['controller'],
                 'slave-04': ['compute', 'ceph-osd'],
                 'slave-05': ['compute', 'ceph-osd'],
-                'slave-06': ['compute', 'ceph-osd']
+                'slave-06': ['compute', 'ceph-osd'],
+                'slave-07': ['ironic']
             }
         )
         self.fuel_web.verify_network(cluster_id)
