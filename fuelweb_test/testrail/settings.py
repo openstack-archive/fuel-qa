@@ -29,8 +29,8 @@ os.environ["ISO_PATH"] = "./fuel.iso"
 
 JENKINS = {
     'url': os.environ.get('JENKINS_URL', 'http://localhost/'),
-    'version_artifact': os.environ.get('JENKINS_VERSION_ARTIFACT',
-                                       'version.yaml.txt')
+    'magnet_link_artifact': os.environ.get('JENKINS_MAGNET_LINK_ARTIFACT',
+                                           'magnet_link.txt')
 }
 
 GROUPS_TO_EXPAND = [
