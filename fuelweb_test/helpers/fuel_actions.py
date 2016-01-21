@@ -289,7 +289,7 @@ class AdminActions(BaseActions):
     def install_plugin(self, plugin_file_name):
         """ Install plugin on master node.
         """
-        return self.ssh_manager.execute_on_remote(
+        return SSHManager().execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd="cd /var && fuel plugins --install "
                 "{plugin!s} ".format(plugin=plugin_file_name),
