@@ -250,6 +250,8 @@ class OpenStackActions(common.Common):
         server = self.nova.servers.get(srv.id)
         return getattr(server, "OS-EXT-SRV-ATTR:instance_name")
 
+
+
     def migrate_server(self, server, host, timeout):
         curr_host = self.get_srv_host_name(server)
         logger.debug("Current compute host is {0}".format(curr_host))
