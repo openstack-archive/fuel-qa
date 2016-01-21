@@ -12,9 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-# TODO: We need to use sshmanager instead of executing bare commands
-# bp link: https://blueprints.launchpad.net/fuel/+spec/sshmanager-integration
-
 from __future__ import division
 import re
 
@@ -198,6 +195,7 @@ class RhBase(TestBasic):
 
         self.ssh_manager.execute_on_remote(
             ip, cmd, err_msg='Setting up hostname for node failed')
+        return hostname
 
     def puppet_apply(self, puppets, ip):
         """Apply list of puppets on a target node.
@@ -274,7 +272,7 @@ class RhBase(TestBasic):
         wait(lambda: file_checker(ip), timeout=timeout,
              timeout_msg='Netconfig puppet task unsuccessful')
 
-    def apply_last_part_puppet(self, ip):
+    def apply_last_part_puppet(self, ip, ceph=False):
         """Apply final part of puppet modular tasks on a target node.
 
         :param ip: Remote node ip for proceed.
@@ -297,51 +295,67 @@ class RhBase(TestBasic):
             "roles/enable_compute.pp",
             "/etc/puppet/modules/osnailyfacter/modular/dns/dns-client.pp",
             "/etc/puppet/modules/osnailyfacter/modular/netconfig/"
-            "configure_default_route.pp",
-            "/etc/puppet/modules/osnailyfacter/modular/ntp/ntp-client.pp"
+            "configure_default_route.pp"
         ]
+
+        if ceph:
+            last_puppet_run.append("/etc/puppet/modules/osnailyfacter/"
+                                   "modular/ceph/ceph_compute.pp")
+        last_puppet_run.append("/etc/puppet/modules/osnailyfacter/modular/"
+                               "ntp/ntp-client.pp")
 
         self.puppet_apply(last_puppet_run, ip)
 
-    def backup_required_information(self, ip, target_ip):
+    def backup_required_information(self, ip, target_ip, node=1, ceph=False):
         """Back up required information for compute from target node.
 
         :param ip: Remote Fuel master node ip.
         :param target_ip: Target node ip to back up from.
+        :param node: Node number
+        :param ceph: Enabled or disabled Ceph storage.
         """
+
         logger.debug('Target node ip: {0}'.format(target_ip))
-        cmd = ("cd ~/ && mkdir rh_backup; "
-               "scp -r {0}:/root/.ssh rh_backup/. ; "
-               "scp {0}:/etc/astute.yaml rh_backup/ ; "
-               "scp -r {0}:/var/lib/astute/nova rh_backup/").format(target_ip)
+        cmd = ("cd ~/ && mkdir rh_backup-{1}; "
+               "scp -r {0}:/root/.ssh rh_backup-{1}/. ; "
+               "scp {0}:/etc/astute.yaml rh_backup-{1}/ ; "
+               "scp -r {0}:/var/lib/astute/nova rh_backup-{1}/"
+               .format(target_ip, node))
+        if ceph:
+            cmd += (" ; scp -r {0}:/var/lib/astute/ceph rh_backup-{1}/"
+                    .format(target_ip, node))
         self.ssh_manager.execute_on_remote(
             ip, cmd, err_msg='Can not back up required information from node')
         logger.debug("Backed up ssh-keys and astute.yaml")
 
     @staticmethod
-    def clean_string(string):
+    def clean_string(string, twice=True):
         """Clean string of redundant characters.
 
         :param string: String.
+        :param twice: Boolean. Use function twice or not.
         :return:
         """
         k = str(string)
         pattern = "^\s+|\[|\]|\n|,|'|\r|\s+$"
         res = re.sub(pattern, '', k)
-        res = res.strip('/\\n')
-        # NOTE(freerunner): Using sub twice to collect key without extra
-        # whitespaces.
-        res = re.sub(pattern, '', res)
-        res = res.strip('/\\n')
+        if twice:
+            res = res.strip('/\\n')
+            # NOTE(freerunner): Using sub twice to collect key without extra
+            # whitespaces.
+            res = re.sub(pattern, '', res)
+            res = res.strip('/\\n')
         return res
 
-    def restore_information(self, ip, remote_admin_ip):
+    def restore_information(self, ip, remote_admin_ip, ceph=False, node=1):
+
         """Restore information on a target node.
 
         :param ip: Remote node ip.
         :param remote_admin_ip: Remote admin node for proceed.
         """
-        cmd = "cat ~/rh_backup/.ssh/authorized_keys"
+
+        cmd = "cat ~/rh_backup-{0}/.ssh/authorized_keys".format(node)
         result = self.ssh_manager.execute_on_remote(
             remote_admin_ip, cmd,
             err_msg='Can not get backed up ssh key.')
@@ -353,8 +367,8 @@ class RhBase(TestBasic):
         self.ssh_manager.execute_on_remote(
             ip, cmd, err_msg='Can not recover ssh key for node')
 
-        cmd = "cd ~/rh_backup && scp astute.yaml {0}@{1}:/etc/.".format(
-            settings.RH_IMAGE_USER, ip)
+        cmd = "cd ~/rh_backup-{2} && scp astute.yaml {0}@{1}:/etc/.".format(
+            settings.RH_IMAGE_USER, ip, node)
         logger.debug("Restoring astute.yaml for node with ip {0}".format(ip))
         self.ssh_manager.execute_on_remote(
             remote_admin_ip, cmd, err_msg='Can not restore astute.yaml')
@@ -365,12 +379,22 @@ class RhBase(TestBasic):
                                            err_msg='Preparation failed')
 
         cmd = (
-            "cd ~/rh_backup && scp -r nova {0}@{1}:/var/lib/astute/.".format(
-                settings.RH_IMAGE_USER, ip)
+            "cd ~/rh_backup-{2} && scp -r nova {0}@{1}:/var/lib/astute/.".
+            format(settings.RH_IMAGE_USER, ip, node)
         )
         logger.debug("Restoring nova ssh-keys")
         self.ssh_manager.execute_on_remote(
             remote_admin_ip, cmd, err_msg='Can not restore ssh-keys for nova')
+
+        if ceph:
+            cmd = (
+                "cd ~/rh_backup-{2} && scp -r ceph {0}@{1}:/var/lib/astute/."
+                .format(settings.RH_IMAGE_USER, ip, node)
+            )
+            logger.debug("Restoring ceph ssh-keys")
+            self.ssh_manager.execute_on_remote(
+                remote_admin_ip, cmd,
+                err_msg='Can not restore ssh-keys for ceph')
 
     def install_yum_components(self, ip):
         """Install required yum components on a target node.
@@ -490,8 +514,33 @@ class RhBase(TestBasic):
         cmd = "hostname"
         result = self.ssh_manager.execute_on_remote(
             ip, cmd, err_msg='Can not get hostname for remote')
-        nodename = self.clean_string(result['stdout'])
+        nodename = self.clean_string(result['stdout'][0], twice=False)
         return nodename
+
+    def backup_hosts_file(self, ip, target_ip):
+        """Backing up hosts file
+
+        :param ip: Remote node ip to backup to.
+        :param target_ip: Node ip to backup from.
+        """
+        cmd = "cd ~/ && scp {0}:/etc/hosts .".format(target_ip)
+        self.ssh_manager.execute_on_remote(
+            ip, cmd, err_msg='Can not save hosts file from remote')
+
+    def prepare_hosts_file(self, ip, old_host, new_host):
+        cmd = "cd ~/ && sed -i 's/{0}/{1}/g' hosts".format(old_host, new_host)
+        self.ssh_manager.execute_on_remote(
+            ip, cmd, err_msg='Can not prepare hosts file.')
+
+    def restore_hosts_file(self, ip, target_ip):
+        """Restore host file
+
+        :param ip: Node ip to restore from.
+        :param target_ip: Node ip to restore to.
+        """
+        cmd = "cd ~/ && scp hosts {0}:/etc/".format(target_ip)
+        self.ssh_manager.execute_on_remote(
+            ip, cmd, err_msg='Can not restore hosts file.')
 
 
 @test(groups=["rh", "rh.ha_one_controller", "rh.basic"])
@@ -635,3 +684,207 @@ class RhHaOneController(RhBase):
 
         self.env.make_snapshot("ready_ha_one_controller_with_rh_compute",
                                is_make=True)
+
+
+@test(groups=['rh.migration'])
+class RhHAOneControllerMigration(RhBase):
+    """RH-based compute HA migration test"""
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["check_vm_migration_rh_ha_one_controller_tun"])
+    @log_snapshot_after_test
+    def check_vm_migration_rh_ha_one_controller_tun(self):
+        """Deploy environment with RH and Ubuntu computes in HA mode with
+           neutron VXLAN
+
+        Scenario:
+            1. Check required image.
+            2. Revert snapshot 'ready_with_5_slaves'.
+            3. Create a Fuel cluster.
+            4. Update cluster nodes with required roles.
+            5. Deploy the Fuel cluster.
+            6. Run OSTF.
+            7. Backup astute.yaml and ssh keys from one of computes.
+            8. Boot compute with RH image.
+            9. Prepare node for Puppet run.
+            10. Execute modular tasks for compute.
+            11. Run OSTF.
+
+
+        Duration: 150m
+        Snapshot: check_vm_migration_rh_ha_one_controller_tun
+
+        """
+        self.show_step(1, initialize=True)
+        logger.debug('Check MD5 sum of RH 7 image')
+        check_image = checkers.check_image(
+            settings.RH_IMAGE,
+            settings.RH_IMAGE_MD5,
+            settings.RH_IMAGE_PATH)
+        asserts.assert_true(check_image,
+                            'Provided image is incorrect. '
+                            'Please, check image path and md5 sum of it.')
+
+        self.show_step(2)
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        self.show_step(3)
+        logger.debug('Create Fuel cluster RH-based compute tests')
+        data = {
+            'net_provider': 'neutron',
+            'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
+            'tenant': 'RhHAMigration',
+            'user': 'RhHAMigration',
+            'password': 'RhHAMigration',
+            'volumes_ceph': True,
+            'ephemeral_ceph': True,
+            'images_ceph': True,
+            'objects_ceph': True,
+            'osd_pool_size': "1"
+        }
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings=data
+        )
+
+        self.show_step(4)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['compute'],
+                'slave-03': ['compute'],
+                'slave-04': ['ceph-osd'],
+            }
+        )
+
+        self.show_step(5)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        cluster_vip = self.fuel_web.get_public_vip(cluster_id)
+        os_conn = os_actions.OpenStackActions(
+            cluster_vip, data['user'], data['password'], data['tenant'])
+
+        self.show_step(6)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['smoke', 'sanity'])
+
+        self.show_step(7)
+        compute_one = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute'])[0]
+        controller_ip = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])[0]['ip']
+        logger.debug('Got node: {0}'.format(compute_one))
+        target_node_one = self.fuel_web.get_devops_node_by_nailgun_node(
+            compute_one)
+        logger.debug('DevOps Node: {0}'.format(target_node_one))
+        target_node_one_ip = compute_one['ip']
+        logger.debug('Acquired ip: {0} for node: {1}'.format(
+            target_node_one_ip, target_node_one.name))
+
+        compute_two = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute'])[1]
+        logger.debug('Got node: {0}'.format(compute_two))
+        target_node_two = self.fuel_web.get_devops_node_by_nailgun_node(
+            compute_two)
+        logger.debug('DevOps Node: {0}'.format(target_node_two))
+        target_node_two_ip = compute_two['ip']
+        logger.debug('Acquired ip: {0} for node: {1}'.format(
+            target_node_two_ip, target_node_two.name))
+
+        old_hostname_one = self.save_node_hostname(target_node_one_ip)
+        old_hostname_two = self.save_node_hostname(target_node_two_ip)
+
+        self.backup_required_information(self.ssh_manager.admin_ip,
+                                         target_node_one_ip, ceph=True)
+        self.backup_required_information(self.ssh_manager.admin_ip,
+                                         target_node_two_ip, ceph=True,
+                                         node=2)
+        self.backup_hosts_file(self.ssh_manager.admin_ip, controller_ip)
+
+        self.show_step(8)
+
+        target_node_one.destroy()
+        target_node_two.destroy()
+        asserts.assert_false(
+            target_node_one.driver.node_active(node=target_node_one),
+            'Target node still active')
+        asserts.assert_false(
+            target_node_two.driver.node_active(node=target_node_two),
+            'Target node still active')
+        self.connect_rh_image(target_node_one)
+        self.connect_rh_image(target_node_two)
+        target_node_one.start()
+        asserts.assert_true(
+            target_node_one.driver.node_active(node=target_node_one),
+            'Target node did not start')
+        self.wait_for_slave_provision(target_node_one_ip)
+        target_node_two.start()
+        asserts.assert_true(
+            target_node_two.driver.node_active(node=target_node_two),
+            'Target node did not start')
+        self.wait_for_slave_provision(target_node_two_ip)
+        self.verify_image_connected(target_node_one_ip)
+        self.verify_image_connected(target_node_two_ip)
+
+        self.show_step(9)
+
+        self.restore_information(target_node_one_ip,
+                                 self.ssh_manager.admin_ip, ceph=True)
+        self.restore_information(target_node_two_ip,
+                                 self.ssh_manager.admin_ip, ceph=True, node=2)
+
+        new_host_one = self.set_hostname(target_node_one_ip)
+        if not settings.CENTOS_DUMMY_DEPLOY:
+            self.register_rh_subscription(target_node_one_ip)
+        self.install_yum_components(target_node_one_ip)
+        if not settings.CENTOS_DUMMY_DEPLOY:
+            self.enable_rh_repos(target_node_one_ip)
+        self.set_repo_for_perestroika(target_node_one_ip)
+        self.check_hiera_installation(target_node_one_ip)
+        self.install_ruby_puppet(target_node_one_ip)
+        self.check_rsync_installation(target_node_one_ip)
+
+        new_host_two = self.set_hostname(target_node_two_ip, host_number=2)
+        if not settings.CENTOS_DUMMY_DEPLOY:
+            self.register_rh_subscription(target_node_two_ip)
+        self.install_yum_components(target_node_two_ip)
+        if not settings.CENTOS_DUMMY_DEPLOY:
+            self.enable_rh_repos(target_node_two_ip)
+        self.set_repo_for_perestroika(target_node_two_ip)
+        self.check_hiera_installation(target_node_two_ip)
+        self.install_ruby_puppet(target_node_two_ip)
+        self.check_rsync_installation(target_node_two_ip)
+
+        self.rsync_puppet_modules(self.ssh_manager.admin_ip,
+                                  target_node_one_ip)
+        self.rsync_puppet_modules(self.ssh_manager.admin_ip,
+                                  target_node_two_ip)
+        self.prepare_hosts_file(self.ssh_manager.admin_ip, old_hostname_one,
+                                new_host_one)
+        self.prepare_hosts_file(self.ssh_manager.admin_ip, old_hostname_two,
+                                new_host_two)
+        self.restore_hosts_file(self.ssh_manager.admin_ip, target_node_one_ip)
+        self.restore_hosts_file(self.ssh_manager.admin_ip, target_node_two_ip)
+
+        self.show_step(10)
+        self.apply_first_part_puppet(target_node_one_ip)
+        self.apply_first_part_puppet(target_node_two_ip)
+        self.apply_networking_puppet(target_node_one_ip)
+        self.apply_networking_puppet(target_node_two_ip)
+        self.check_netconfig_success(target_node_one_ip)
+        self.apply_last_part_puppet(target_node_one_ip, ceph=True)
+        self.check_netconfig_success(target_node_two_ip)
+        self.apply_last_part_puppet(target_node_two_ip, ceph=True)
+
+        self.remove_old_compute_services(controller_ip, old_hostname_one)
+        self.remove_old_compute_services(controller_ip, old_hostname_two)
+
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=6)
+
+        self.show_step(11)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['smoke', 'sanity'])
+
+        self.env.make_snapshot("ready_ha_one_controller_with_rh_computes")
