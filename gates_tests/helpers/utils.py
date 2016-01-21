@@ -68,9 +68,12 @@ def replace_fuel_agent_rpm(environment):
                          format(new_package))
 
             # Update fuel-agent on master node
+            logger.info("Updating fuel-agent package on master node")
             with environment.d_env.get_admin_remote() as remote:
                 cmd = "rpm -q fuel-agent"
-                old_package = ''.join(remote.execute(cmd)['stdout'])
+                old_package = ''.join(remote.execute(cmd)['stdout']).strip()
+                logger.info("Updating package {0} with {1}"
+                            .format(old_package, new_package))
                 if old_package != new_package:
                     cmd = "rpm -Uvh --oldpackage {0}".format(
                         full_pack_path)
