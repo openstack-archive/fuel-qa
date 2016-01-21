@@ -17,7 +17,6 @@
 import functools
 import re
 import time
-import yaml
 
 from logging import DEBUG
 from optparse import OptionParser
@@ -127,11 +126,29 @@ def get_downstream_builds(jenkins_build_data, status=None):
 
 
 def get_version(jenkins_build_data):
-    if any([artifact for artifact in jenkins_build_data['artifacts']
-            if artifact['fileName'] == JENKINS['version_artifact']]):
-        return get_version_from_artifacts(jenkins_build_data)
-    else:
-        return get_version_from_parameters(jenkins_build_data)
+    version = get_version_from_artifacts(jenkins_build_data)
+    if not version:
+        version = get_version_from_parameters(jenkins_build_data)
+    if not version:
+        version = get_version_from_upstream_job(jenkins_build_data)
+    if not version:
+        raise Exception('Failed to get iso version from Jenkins jobs '
+                        'parameters/artifacts!')
+    return version
+
+
+def get_version_from_upstream_job(jenkins_build_data):
+    upstream_job = get_job_parameter(jenkins_build_data, 'UPSTREAM_JOB_URL')
+    if not upstream_job:
+        return
+    causes = [a['causes'] for a in jenkins_build_data['actions']
+              if 'causes' in a.keys()][0]
+    if len(causes) > 0:
+        upstream_job_name = causes[0]['upstreamProject']
+        upstream_build_number = causes[0]['upstreamBuild']
+        upstream_build = Build(upstream_job_name, upstream_build_number)
+        return (get_version_from_artifacts(upstream_build.build_data) or
+                get_version_from_parameters(upstream_build.build_data))
 
 
 def get_job_parameter(jenkins_build_data, parameter):
@@ -146,23 +163,7 @@ def get_job_parameter(jenkins_build_data, parameter):
 def get_version_from_parameters(jenkins_build_data):
     iso_link = get_job_parameter(jenkins_build_data, 'magnet_link')
     if iso_link:
-        match = re.search(r'.*\bfuel-(?P<prefix1>[a-zA-Z]*)-?(?P<version>\d+'
-                          r'(?P<version2>\.\d+)+)-(?P<prefix2>[a-zA-Z]*)-?'
-                          r'(?P<buildnum>\d+)-.*', iso_link)
-        if match:
-            return (match.group('version'),
-                    int(match.group('buildnum')),
-                    match.group('prefix1') or match.group('prefix2'))
-
-    upstream_job = get_job_parameter(jenkins_build_data, 'UPSTREAM_JOB_URL')
-    if upstream_job:
-        causes = [a['causes'] for a in jenkins_build_data['actions']
-                  if 'causes' in a.keys()][0]
-        if len(causes) > 0:
-            upstream_job_name = causes[0]['upstreamProject']
-            upstream_build_number = causes[0]['upstreamBuild']
-            upstream_build = Build(upstream_job_name, upstream_build_number)
-            return get_version_from_artifacts(upstream_build.build_data)
+        return get_version_from_iso_name(iso_link)
 
     custom_version = get_job_parameter(jenkins_build_data, 'CUSTOM_VERSION')
     if custom_version:
@@ -174,11 +175,23 @@ def get_version_from_parameters(jenkins_build_data):
 
 
 def get_version_from_artifacts(jenkins_build_data):
-    version = yaml.load(get_build_artifact(
-        url=jenkins_build_data['url'], artifact=JENKINS['version_artifact']))
-    return version['VERSION']['release'], \
-        int(version['VERSION']['build_number']), \
-        ''
+    if not any([artifact for artifact in jenkins_build_data['artifacts']
+               if artifact['fileName'] == JENKINS['magnet_link_artifact']]):
+        return
+    iso_link = (get_build_artifact(url=jenkins_build_data['url'],
+                                   artifact=JENKINS['magnet_link_artifact']))
+    if iso_link:
+        return get_version_from_iso_name(iso_link)
+
+
+def get_version_from_iso_name(iso_link):
+    match = re.search(r'.*\bfuel-(?P<prefix1>[a-zA-Z]*)-?(?P<version>\d+'
+                      r'(?P<version2>\.\d+)+)-(?P<prefix2>[a-zA-Z]*)-?'
+                      r'(?P<buildnum>\d+)-.*', iso_link)
+    if match:
+        return (match.group('version'),
+                int(match.group('buildnum')),
+                match.group('prefix1') or match.group('prefix2'))
 
 
 def expand_test_group(group, systest_build_name, os):
