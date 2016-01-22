@@ -78,8 +78,9 @@ def replace_fuel_agent_rpm(environment):
                     cmd = "rpm -Uvh --oldpackage {0}".format(
                         full_pack_path)
                     result = remote.execute(cmd)
-            assert_equal(result['exit_code'], 0,
-                         ('Failed to update package {}').format(result))
+                    assert_equal(result['exit_code'], 0,
+                                 ('Failed to update package {}').format(
+                                     result))
 
     except Exception as e:
         logger.error("Could not upload package {e}".format(e=e))
