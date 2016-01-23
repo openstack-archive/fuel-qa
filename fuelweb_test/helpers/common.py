@@ -76,13 +76,13 @@ class Common(object):
                                    token=token,
                                    cacert=path_to_cert)
 
-        ironic_endpoint = self.keystone.service_catalog.url_for(
-            service_type='baremetal',
-            endpoint_type='publicURL')
         self.ironic = ironicclient.get_client(
             api_version=1,
-            os_auth_token=token,
-            ironic_url=ironic_endpoint, insecure=True)
+            os_username=user,
+            os_password=password,
+            os_tenant_name=tenant,
+            os_auth_url=auth_url,
+            ca_cert=path_to_cert, insecure=True)
 
     def goodbye_security(self):
         secgroup_list = self.nova.security_groups.list()
