@@ -70,7 +70,7 @@ class SSHManager(object):
     def _get_keys(self):
         keys = []
         admin_remote = self._get_remote(self.admin_ip)
-        for key_string in ['/root/.ssh/id_rsa', '/root/.ssh/bootstrap.rsa']:
+        for key_string in ['/root/.ssh/id_rsa']:
             with admin_remote.open(key_string) as f:
                 keys.append(RSAKey.from_private_key(f))
         return keys
