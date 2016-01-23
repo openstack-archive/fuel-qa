@@ -75,14 +75,16 @@ class Common(object):
         self.glance = GlanceClient(endpoint=glance_endpoint,
                                    token=token,
                                    cacert=path_to_cert)
-
-        ironic_endpoint = self.keystone.service_catalog.url_for(
-            service_type='baremetal',
-            endpoint_type='publicURL')
-        self.ironic = ironicclient.get_client(
-            api_version=1,
-            os_auth_token=token,
-            ironic_url=ironic_endpoint, insecure=True)
+        try:
+            ironic_endpoint = self.keystone.service_catalog.url_for(
+                service_type='baremetal',
+                endpoint_type='publicURL')
+            self.ironic = ironicclient.get_client(
+                api_version=1,
+                os_auth_token=token,
+                ironic_url=ironic_endpoint, insecure=True)
+        except ClientException as e:
+            LOGGER.warning('Could not initialize ironic client {0}'.format(e))
 
     def goodbye_security(self):
         secgroup_list = self.nova.security_groups.list()
