@@ -1711,7 +1711,9 @@ class FuelWebClient(object):
         self.warm_start_nodes(devops_nodes)
 
     def cold_restart_nodes(self, devops_nodes,
-                           wait_offline=True, wait_online=True):
+                           wait_offline=True, wait_online=True,
+                           wait_after_destroy=False,
+                           wait_after_destroy_time=300):
         logger.info('Cold restart nodes %s',
                     [n.name for n in devops_nodes])
         for node in devops_nodes:
@@ -1728,6 +1730,10 @@ class FuelWebClient(object):
                         self.get_nailgun_node_by_devops_node(node)['online'],
                         'Node {0} has not become offline after '
                         'cold restart'.format(node.name))
+            if wait_after_destroy:
+                time.sleep(wait_after_destroy_time)
+
+        for node in devops_nodes:
             logger.info('Start %s node', node.name)
             node.create()
         if wait_online:
