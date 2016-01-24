@@ -18,6 +18,7 @@ from proboscis.asserts import assert_true, assert_equal
 
 from fuelweb_test import logger
 from fuelweb_test import settings
+from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -44,6 +45,8 @@ class FailoverGroup1(TestBasic):
         Snapshot deploy_ha_cinder
 
         """
+
+        self.check_run('deploy_ha_cinder')
 
         self.env.revert_snapshot('ready_with_5_slaves')
 
@@ -317,3 +320,76 @@ class FailoverGroup1(TestBasic):
         self.fuel_web.run_ostf(cluster_id)
 
         self.env.make_snapshot('hard_reset_primary_controller')
+
+    @test(depends_on_groups=['deploy_ha_cinder'],
+          groups=['power_outage_cinder_cluster'])
+    @log_snapshot_after_test
+    def power_outage_cinder_cluster(self):
+        """Power outage of Neutron vlan, cinder/swift cluster
+
+        Scenario:
+            1. Revert environment with 3 controller nodes
+            2. Create 2 instances
+            3. Create 2 volumes
+            4. Attach volumes to instances
+            5. Fill cinder storage up to 30%
+            6. Cold shutdown of all nodes
+            7. Wait 5 min
+            8. Start of all nodes
+            9. Wait for HA services ready
+            10. Verify networks
+            11. Run OSTF tests
+
+        Duration: 30 min
+        """
+
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot('deploy_ha_cinder')
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id), 'failover', 'failover',
+            'failover')
+        net_name = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+        self.show_step(2)
+        self.show_step(3)
+        self.show_step(4)
+        server = os_conn.create_instance(
+            neutron_network=True, label=net_name)
+        volume = os_conn.create_volume()
+        os_conn.attach_volume(volume, server)
+        server = os_conn.create_instance(
+            flavor_name='test_flavor1',
+            server_name='test_instance1',
+            neutron_network=True, label=net_name)
+        vol = os_conn.create_volume()
+        os_conn.attach_volume(vol, server)
+
+        self.show_step(5)
+        with self.fuel_web.get_ssh_for_node('slave-04') as remote:
+                file_name = 'test_data'
+                result = remote.execute(
+                    'lvcreate -n test -L20G cinder')['exit_code']
+                assert_equal(result, 0, "The file {0} was not "
+                                        "allocated".format(file_name))
+
+        self.show_step(6)
+        self.show_step(7)
+        self.show_step(8)
+        self.fuel_web.cold_restart_nodes(
+            self.env.d_env.get_nodes(name__in=[
+                'slave-01',
+                'slave-02',
+                'slave-03',
+                'slave-04',
+                'slave-05']), wait_after_destroy=300)
+
+        self.show_step(9)
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
+        self.show_step(10)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(11)
+        self.fuel_web.verify_network(cluster_id)
