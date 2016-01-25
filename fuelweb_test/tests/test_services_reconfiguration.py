@@ -287,7 +287,7 @@ class ServicesReconfiguration(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["services_reconfiguration_thread_1",
-                  "services_reconfiguration_thread_2"
+                  "services_reconfiguration_thread_2",
                   "basic_env_for_reconfiguration"])
     @log_snapshot_after_test
     def basic_env_for_reconfiguration(self):
