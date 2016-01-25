@@ -770,7 +770,7 @@ class TestHaFailoverBase(TestBasic):
 
         # turn on 1-st master
 
-        master_rabbit.start(False)
+        master_rabbit.start()
 
         # Wait until Nailgun marked destroyed controller as online
         try:
@@ -798,7 +798,7 @@ class TestHaFailoverBase(TestBasic):
 
         # turn on second master
 
-        second_master_rabbit.start(False)
+        second_master_rabbit.start()
 
         # Wait until Nailgun marked destroyed controller as online
         try:
