@@ -13,8 +13,10 @@
 #    under the License.
 
 import os
+import yaml
 
 from proboscis.asserts import assert_equal, assert_not_equal
+from proboscis import register
 from devops.helpers import helpers
 
 from fuelweb_test.helpers import checkers
@@ -490,3 +492,37 @@ def get_full_filename(env, container, wildcard_name):
         cmd, container=container, exit_code=0)
 
     return full_pkg_name
+
+
+def puppet_modules_mapping(modules):
+    """
+    find fuel-qa system test which have maximum coverage for edited
+    puppet modules and register that group with "review_in_fuel_library" name
+    modules - iterable collections of puppet modules
+    """
+    with open("gates_tests/helpers/puppet_module_mapping.yaml", "r") as f:
+        mapping = yaml.load(f)
+    for module in modules:
+        if module not in mapping['puppet_modules']:
+            raise Exception("{} module not exist or not cover by system_test"
+                            .format(module))
+    system_test = "bvt_2"
+    max_intersection = 0
+    if "ceph" and "cinder" not in modules:
+        for test in mapping:
+            if test != 'puppet_modules':
+                test_intersection = len(
+                    set(mapping[test]).intersection(set(modules)))
+                if test_intersection > max_intersection:
+                    max_intersection = test_intersection
+                    system_test = test
+    else:
+        system_test = "ha_neutron"
+
+    logger.info(
+        "Puppet modules from review {}"
+        "will be checked by next system test: {}".format(
+            modules, system_test))
+
+    register(groups=['review_fuel_library'],
+             depends_on_groups=[system_test])
