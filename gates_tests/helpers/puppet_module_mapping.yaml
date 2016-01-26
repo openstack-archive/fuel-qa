@@ -1,0 +1,187 @@
+---
+
+puppet_modules:
+ - apache
+ - apt
+ - ceph
+ - cluster
+ - cobbler
+ - concat
+ - datacat
+ - database
+ - filemapper
+ - inifile
+ - keystone
+ - l23network
+ - mcollective
+ - memcached
+ - monit
+ - nailgun
+ - neutron
+ - nova
+ - postgresql
+ - rsync
+ - rsyslog
+ - ssh
+ - staging
+ - stdlib
+ - sysctl
+ - sysfs
+ - tftp
+ - tweaks
+ - umm
+ - vcsrepo
+ - xinetd
+ - docker
+ - glance
+ - ceilometer_ha
+ - heat_ha
+ - ceilometer
+ - heat
+ - mongodb
+ - cinder
+ - corosync
+ - haproxy
+ - pacemaker
+ - pacemaker_wrappers
+ - rabbitmq
+ - firewall
+ - galera
+ - mysql
+ - horizon
+ - ironic
+ - murano
+ - ntp
+ - sahara
+ - swift
+ - mellanox_openstack
+ - openstack
+ - sahara_templates
+ - openstacklib
+ - ssl
+ - openssl
+ - api-proxy
+ - astute
+ - cluster-haproxy
+ - cluster-vrouter
+ - dns
+ - fuel_pkgs
+ - globals
+ - hiera
+ - hosts
+ - logging
+ - netconfig
+ - openstack-cinder
+ - openstack-controller
+ - openstack-haproxy
+ - openstack-network
+ - compute
+ - controller
+ - ironic-conductor
+ - mongo
+ - tools
+ - virtual_ips
+ # mellanox_openstack deprecated
+
+bvt_2:
+ - apache
+ - api-proxy
+ - astute
+ - apt
+ - ceph
+ - cluster
+ - cobbler
+ - concat
+ - datacat
+ - database
+ - globals
+ - inifile
+ - keystone
+ - logging
+ - l23network
+ - mcollective
+ - memcached
+ - openstack
+ - monit
+ - nailgun
+ - neutron
+ - nova
+ - postgresql
+ - rsync
+ - rsyslog
+ - ssh
+ - staging
+ - stdlib
+ - sysctl
+ - sysfs
+ - tftp
+ - tweaks
+ - vcsrepo
+ - xinetd
+ - docker
+ - glance
+ - haproxy
+ - cluster-haproxy
+ - cluster-vrouter
+ - corosync
+ - pacemaker
+ - pacemaker_wrappers
+ - rabbitmq
+ - openstacklib
+ - ssl
+ - openssl
+ - horizon
+ - fuel_pkgs
+ - hiera
+ - openstack-controller
+ - openstack-haproxy
+ - openstack-network
+ - compute
+ - controller
+ - virtual_ips
+ - tools
+
+deploy_heat_ha:
+ - ceilometer_ha
+ - heat_ha
+ - ceilometer
+ - heat
+ - mongodb
+ - mongo
+
+ha_neutron:
+ - cinder
+ - openstack-cinder
+
+reduced_footprint:
+ - generate_vms
+
+ha_neutron_firewall:
+ - firewall
+
+separate_db_service_restart:
+ - galera
+ - mysql
+
+ironic_deploy_ceph:
+ - ironic
+ - ceph
+ - ironic-conductor
+
+deploy_murano_ha_with_tun:
+ - murano
+
+deploy_ha_dns_ntp:
+ - ntp
+ - dns
+
+deploy_sahara_ha_tun:
+ - sahara
+ - sahara_templates
+
+neutron_vlan_ha:
+ - swift
+
+positive_cic_maintenance_mode:
+ - umm
+
