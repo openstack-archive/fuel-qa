@@ -621,7 +621,7 @@ class PartitionPreservation(TestBasic):
         self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
 
-@test(groups=["stop_reinstallation", "partition_preservation"])
+@test(groups=["known_issues"])
 class StopReinstallation(TestBasic):
     """StopReinstallation."""  # TODO documentation
 
