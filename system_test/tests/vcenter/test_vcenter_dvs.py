@@ -121,6 +121,13 @@ class VMwareActions(ActionsBase):
             )
 
         if vmware_vcenter['glance']['enable']:
+            attributes = self.fuel_web.client.get_cluster_attributes(
+                self.cluster_id)
+            attributes['editable']['storage']['images_vcenter']['value'] =\
+                vmware_vcenter['glance']['enable']
+            self.fuel_web.client.update_cluster_attributes(self.cluster_id,
+                                                           attributes)
+
             vcenter_value["glance"]["vcenter_host"] = vmware_vcenter[
                 'glance']['host']
             vcenter_value["glance"]["vcenter_username"] = vmware_vcenter[
