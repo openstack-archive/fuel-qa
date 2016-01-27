@@ -1,2 +1,2 @@
 ---
-dvswitch_name: dvSwitch
+dvswitch_name: !os_env DVS_NAME, dvSwitch
