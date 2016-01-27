@@ -832,7 +832,7 @@ def erase_data_from_hdd(remote, device=None, source="/dev/zero",
         )
     if blocks_from_end > 0:
         commands.append(
-            "dd bs={blocksize} if={source} of={device} "
+            "dd bs={block_size} if={source} of={device} "
             "count={blocks_from_start}".format(
                 block_size=block_size,
                 source=source,
