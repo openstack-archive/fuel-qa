@@ -152,9 +152,9 @@ class EnvironmentModel(object):
     def get_keys(self, node, custom=None, build_images=None,
                  iso_connect_as='cdrom'):
         params = {
-            'ks': 'hd:LABEL="Mirantis_Fuel":/ks.cfg' if iso_connect_as == 'usb'
+            'ks': 'hd:LABEL=Mirantis_Fuel:/ks.cfg' if iso_connect_as == 'usb'
             else 'cdrom:/ks.cfg',
-            'repo': 'hd:LABEL="Mirantis_Fuel":/',  # only required for USB boot
+            'repo': 'hd:LABEL=Mirantis_Fuel:/',  # only required for USB boot
             'ip': node.get_ip_address_by_network_name(
                 self.d_env.admin_net),
             'mask': self.d_env.get_network(
