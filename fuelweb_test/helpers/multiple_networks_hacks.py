@@ -28,14 +28,9 @@ from fuelweb_test.helpers.ssh_manager import SSHManager
 @logwrap
 def configure_second_admin_dhcp(ip, interface):
     dhcp_conf_file = '/etc/cobbler/dnsmasq.template'
-    docker_start_file = '/usr/local/bin/start.sh'
-    cmd = ("dockerctl shell cobbler sed "
-           "'0,/^interface.*/s//\\0\\ninterface={0}/' -i {1};"
-           "dockerctl shell cobbler sed \"/^puppet apply/a "
-           "sed '/^interface/a interface={0}' -i {1}\" -i {2};"
-           "dockerctl shell cobbler cobbler sync").format(interface,
-                                                          dhcp_conf_file,
-                                                          docker_start_file)
+    cmd = ("sed '0,/^interface.*/s//\\0\\ninterface={0}/' -i {1};"
+           "cobbler sync").format(interface,
+                                  dhcp_conf_file)
     result = SSHManager().execute(
         ip=ip,
         cmd=cmd

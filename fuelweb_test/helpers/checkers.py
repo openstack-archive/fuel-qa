@@ -362,7 +362,7 @@ def enable_feature_group(env, group):
     fuel_settings = env.admin_actions.get_fuel_settings()
     fuel_settings["FEATURE_GROUPS"].append(group)
     env.admin_actions.save_fuel_settings(fuel_settings)
-    env.docker_actions.restart_container("nailgun")
+    env.admin_actions.restart_service("nailgun")
 
     def check_api_available():
         try:
@@ -379,9 +379,9 @@ def enable_feature_group(env, group):
 
 @logwrap
 def restart_nailgun(remote):
-    cmd = 'dockerctl shell nailgun supervisorctl restart nailgun'
+    cmd = 'supervisorctl restart nailgun'
     if MASTER_IS_CENTOS7:
-        cmd = 'dockerctl shell nailgun systemctl restart nailgun'
+        cmd = 'systemctl restart nailgun'
     result = remote.execute(cmd)
     assert_equal(0, result['exit_code'], result['stderr'])
 

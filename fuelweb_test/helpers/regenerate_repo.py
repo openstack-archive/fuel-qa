@@ -314,7 +314,7 @@ class CustomRepo(object):
         err_end = ('Unable to correct problems,'
                    ' you have held broken packages.')
         cmd = ('fgrep -h -e " Depends: " -e "{0}" -e "{1}" '
-               '/var/log/docker-logs/remote/node-*/'
+               '/var/log/remote/node-*/'
                'puppet*.log'.format(err_start, err_end))
         result = self.ssh_manager.execute(
             ip=self.ip,
@@ -355,7 +355,7 @@ class CustomRepo(object):
             dependency errors during a cluster deployment (centos)"""
 
         cmd = ('fgrep -h -e "Error: Package: " -e " Requires: " /var/log/'
-               'docker-logs/remote/node-*/puppet*.log')
+               'remote/node-*/puppet*.log')
         result = self.ssh_manager.execute(
             ip=self.ip,
             cmd=cmd
