@@ -459,8 +459,8 @@ class CephRadosGW(TestBasic):
         def radosgw_started(remote):
             return len(
                 remote.check_call(
-                    'ps aux | grep "/usr/bin/radosgw -n '
-                    'client.radosgw.gateway"')['stdout']) == 3
+                    'ps aux | grep "/usr/bin/radosgw --cluster=ceph --id '
+                    'radosgw.gateway -f"')['stdout']) == 3
 
         self.env.revert_snapshot("ready")
         self.env.bootstrap_nodes(
