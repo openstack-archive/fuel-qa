@@ -455,6 +455,29 @@ class AdminActions(BaseActions):
         assert_equal(result['exit_code'], 0,
                      "Saving Fuel settings failed: {0}!".format(result))
 
+    def is_service_ready(self, service):
+        result = self.ssh_manager.execute(
+            ip=self.admin_ip,
+            cmd="timeout 5 fuel-utils check_service {0}".format(service)
+        )
+        return result['exit_code'] == 0
+
+    def is_fuel_ready(self):
+        result = self.ssh_manager.execute(
+            ip=self.admin_ip,
+            cmd="timeout 15 fuel-utils check_all"
+        )
+        return result['exit_code'] == 0
+
+    def wait_for_fuel_ready(self, timeout=300):
+        wait(lambda: self.is_fuel_ready, timeout=timeout)
+
+    def execute_on_admin_node(self, cmd):
+        self.ssh_manager.execute(
+            ip=self.ssh_manager.admin_ip,
+            cmd="bash -c '{1}'".format(cmd)
+        )
+
 
 class NailgunActions(BaseActions):
     """NailgunActions."""  # TODO documentation
