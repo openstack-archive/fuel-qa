@@ -2125,39 +2125,12 @@ class FuelWebClient(object):
                              nailgun_node['status']))
 
     @logwrap
-    def manual_rollback(self, remote, rollback_version):
-        remote.execute('rm /etc/supervisord.d/current')
-        remote.execute('ln -s /etc/supervisord.d/{0}/ '
-                       '/etc/supervisord.d/current'.format(rollback_version))
-        remote.execute('rm /etc/fuel/version.yaml')
-        remote.execute('ln -s /etc/fuel/{0}/version.yaml '
-                       '/etc/fuel/version.yaml'.format(rollback_version))
-        remote.execute('rm /var/www/nailgun/bootstrap')
-        remote.execute('ln -s /var/www/nailgun/{}_bootstrap '
-                       '/var/www/nailgun/bootstrap'.format(rollback_version))
-        logger.debug('stopping supervisor')
-        try:
-            remote.execute('/etc/init.d/supervisord stop')
-        except Exception as e:
-            logger.debug('exception is {0}'.format(e))
-        logger.debug('stop docker')
-        try:
-            remote.execute('docker stop $(docker ps -q)')
-        except Exception as e:
-            logger.debug('exception is {0}'.format(e))
-        logger.debug('start supervisor')
-        time.sleep(60)
-        try:
-            remote.execute('/etc/init.d/supervisord start')
-        except Exception as e:
-            logger.debug('exception is {0}'.format(e))
-        time.sleep(60)
-
-    @logwrap
     def modify_python_file(self, remote, modification, file):
         remote.execute('sed -i "{0}" {1}'.format(modification, file))
 
     def backup_master(self, remote):
+        # FIXME(kozhukalov): This approach is outdated
+        # due to getting rid of docker containers.
         logger.info("Backup of the master node is started.")
         run_on_remote(remote, "echo CALC_MY_MD5SUM > /etc/fuel/data",
                       err_msg='command calc_my_mdsum failed')
@@ -2173,6 +2146,8 @@ class FuelWebClient(object):
 
     @logwrap
     def restore_master(self, remote):
+        # FIXME(kozhukalov): This approach is outdated
+        # due to getting rid of docker containers.
         logger.info("Restore of the master node is started.")
         path = checkers.find_backup(remote)
         run_on_remote(remote, 'dockerctl restore {0}'.format(path))

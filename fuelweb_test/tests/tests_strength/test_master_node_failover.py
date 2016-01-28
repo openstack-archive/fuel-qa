@@ -46,12 +46,12 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
             logger.info('Admin node started second time.')
             self.env.d_env.nodes().admin.await(self.env.d_env.admin_net)
             self.env.set_admin_ssh_password()
-            self.env.docker_actions.wait_for_ready_containers(
+            self.env.admin_actions.wait_for_fuel_ready(
                 timeout=600)
 
         logger.info('Waiting for containers')
         self.env.set_admin_ssh_password()
-        self.env.docker_actions.wait_for_ready_containers()
+        self.env.admin_actions.wait_for_fuel_ready()
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["non_functional",
@@ -205,7 +205,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         with self.env.d_env.get_admin_remote() as remote:
             _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
             with self.env.d_env.get_ssh_to_remote(_ip) as remote_slave:
-                remote.execute("dockerctl shell cobbler killall dnsmasq")
+                remote.execute("killall dnsmasq")
                 checkers.external_dns_check(remote_slave)
 
     @test(depends_on=[deploy_ha_dns_ntp],
