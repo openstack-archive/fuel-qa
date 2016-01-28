@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
+
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import test
@@ -22,6 +24,7 @@ from fuelweb_test.helpers import os_actions
 from devops.helpers.helpers import wait
 from devops.error import TimeoutError
 from fuelweb_test.helpers.utils import RunLimit
+from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.tests.test_ha_one_controller_base\
@@ -365,3 +368,79 @@ class BackupRestoreHA(NeutronTunHaBase):
             task = run_on_remote(remote, cmd, jsonify=True)
             cl.assert_cli_task_success(task, remote, timeout=30 * 60)
             logger.info("Finished provisioning via CLI")
+
+
+@test(groups=["backup_reinstall_restore"])
+class BackupReinstallRestoreHA(NeutronTunHaBase):
+    """This test dedicated for verifying dockerctl backup/restore feature
+    with complete re-installation of Fuel after backing up"""
+
+    @test(depends_on_groups=['deploy_neutron_tun_ha_backup_restore'],
+          groups=["backup_reinstall_restore"])
+    @log_snapshot_after_test
+    def backup_reinstall_restore(self):
+        """Backup, reinstall then restore master node with cluster in ha mode
+
+        Scenario:
+            1. Revert snapshot "deploy_neutron_tun_ha"
+            2. Backup master
+            3. Check backup
+            4. Reinstall fuel-master node
+            5. Restore master
+            6. Check restore
+            7. Run OSTF
+            8. Add 1 compute
+            9. Run network check
+            10. Deploy cluster
+            11. Run OSTF
+
+
+        Duration XXm
+        """
+        self.env.revert_snapshot("deploy_neutron_tun_ha_backup_restore")
+
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        with self.env.d_env.get_admin_remote() as remote:
+            self.fuel_web.backup_master(remote)
+            checkers.backup_check(remote)
+            backup = checkers.find_backup(remote).strip()
+            local_backup = os.path.join(
+                settings.LOGS_DIR,
+                os.path.basename(backup))
+            remote.download(backup, local_backup)
+            assert_true(os.path.exists(local_backup),
+                        "Backup file wasn't downloaded!")
+
+        self.env.reinstall_master_node()
+
+        with self.env.d_env.get_admin_remote() as remote:
+            remote.execute('mkdir -p {}'.format(os.path.dirname(backup)))
+            remote.upload(local_backup, backup)
+            assert_true(remote.exists(backup), "Backup file wasn't uploaded!")
+            with RunLimit(
+                    seconds=60 * 10,
+                    error_message="'dockerctl restore' "
+                                  "run longer then 600 sec"):
+                self.fuel_web.restore_master(remote)
+            checkers.restore_check_sum(remote)
+
+            self.fuel_web.restore_check_nailgun_api()
+            checkers.iptables_check(remote)
+
+        assert_equal(
+            5, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
+
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[5:6],
+                                 skip_timesync=True)
+        self.fuel_web.update_nodes(cluster_id, {'slave-06': ['compute']})
+
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['ha', 'smoke', 'sanity'])
+
+        self.env.make_snapshot("neutron_tun_ha_backup_restore")
