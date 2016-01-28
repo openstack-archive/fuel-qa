@@ -13,6 +13,7 @@
 #    under the License.
 
 import re
+import subprocess
 import time
 import yaml
 from devops.error import TimeoutError
@@ -38,6 +39,7 @@ from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.fuel_actions import PostgresActions
 from fuelweb_test.helpers.fuel_actions import NessusActions
 from fuelweb_test.helpers.ntp import GroupNtpSync
+from fuelweb_test.helpers.utils import erase_data_from_hdd
 from fuelweb_test.helpers.utils import timestat
 from fuelweb_test.helpers import multiple_networks_hacks
 from fuelweb_test.models.fuel_web_client import FuelWebClient
@@ -334,6 +336,28 @@ class EnvironmentModel(object):
                 'New Fuel UI (keystone) username: "{0}", password: "{1}"'
                 .format(settings.KEYSTONE_CREDS['username'],
                         settings.KEYSTONE_CREDS['password']))
+
+    def insert_cdrom_tray(self):
+        # This is very rude implementation and it SHOULD be changes after
+        # implementation this feature in fuel-devops
+        name = "{}_{}".format(settings.ENV_NAME, self.d_env.nodes().admin.name)
+        NAME_SIZE = 80
+        if len(name) > NAME_SIZE:
+            hash_str = str(hash(name))
+            name = (hash_str + name)[:NAME_SIZE]
+
+        cmd = """EDITOR="sed -i s/tray=\\'open\\'//" virsh edit {}""".format(
+            name)
+        subprocess.check_call(cmd, shell=True)
+
+    def reinstall_master_node(self):
+        """Erase boot sector and run setup_environment"""
+        with self.d_env.get_admin_remote() as remote:
+            erase_data_from_hdd(remote, mount_point='/boot')
+            remote.execute("/sbin/shutdown")
+        self.d_env.nodes().admin.destroy()
+        self.insert_cdrom_tray()
+        self.setup_environment()
 
     def setup_environment(self, custom=settings.CUSTOM_ENV,
                           build_images=settings.BUILD_IMAGES,

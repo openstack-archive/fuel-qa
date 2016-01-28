@@ -499,3 +499,67 @@ def get_ip_listen_stats(remote, proto='tcp'):
     else:
         cmd = "awk '$4 == \"0A\" {{print $2}}' /proc/net/{0}".format(proto)
     return [l.strip() for l in run_on_remote(remote, cmd)]
+
+
+def erase_data_from_hdd(remote,
+                        device=None,
+                        mount_point=None,
+                        source="/dev/zero",
+                        block_size=512,
+                        blocks_from_start=2 * 1024 * 8,
+                        blocks_from_end=2 * 1024 * 8):
+    """Erases data on "device" using "dd" utility.
+
+    :param remote: devops.SSHClient, remote to node
+    :param device: str, block device which should be corrupted. If none -
+       drive mounted at "mount_point" will be used for erasing
+    :param mount_point: str, mount point for auto-detecting drive for erasing
+    :param source: str, block device or file that will be used as source for
+       "dd", default - /dev/zero
+    :param block_size: int, block size which will be pass to "dd"
+    :param blocks_from_start: int, count of blocks which will be erased from
+       the beginning of the hard drive. Default - 16,384 (with bs=512 - 8MB)
+    :param blocks_from_end: int, count of blocks which will be erased from
+       the end of the hard drive. Default - 16,384 (with bs=512 - 8MB)
+    :raises Exception: if return code of any of commands is not 0
+    """
+    if not device:
+        asserts.assert_is_not_none(
+            mount_point,
+            "Mount point is not defined, will do nothing")
+        device = remote.execute(
+            "awk '$2 == \"{mount_point}\" {{print $1}}' /proc/mounts".format(
+                mount_point=mount_point)
+        )['stdout'][0]
+    # get block device for partition
+    try:
+        device = re.findall(r"(/dev/[a-z]+)", device)[0]
+    except IndexError:
+        logger.error("Can not find any block device in output! "
+                     "Output is:'{}'".format(device))
+    commands = []
+    logger.debug("Boot sector of device '{}' will be erased".format(device))
+    if blocks_from_start > 0:
+        commands.append(
+            "dd bs={block_size} if={source} of={device} "
+            "count={blocks_from_start}".format(
+                block_size=block_size,
+                source=source,
+                device=device,
+                blocks_from_start=blocks_from_start)
+        )
+    if blocks_from_end > 0:
+        commands.append(
+            "dd bs={block_size} if={source} of={device} "
+            "count={blocks_from_end} "
+            "seek=$((`blockdev --getsz {device}` - {seek}))".format(
+                block_size=block_size,
+                source=source,
+                device=device,
+                blocks_from_end=blocks_from_end,
+                seek=block_size * blocks_from_end)
+        )
+    commands.append("sync")
+
+    for cmd in commands:
+        run_on_remote(remote, cmd)
