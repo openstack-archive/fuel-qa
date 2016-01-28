@@ -15,6 +15,7 @@
 from proboscis import SkipTest
 from proboscis import test
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -480,3 +481,138 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
 
         self.env.make_snapshot("network_config_consistency_on_reboot",
                                is_make=self.is_make_snapshot())
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["deploy_cluster_without_management_net"])
+    @log_snapshot_after_test
+    def deploy_cluster_without_management_net(self):
+        """Deploy HA environment network template: no dedicate management nwk
+
+        Scenario:
+            1. Revert snapshot with 3 slaves
+            2. Create cluster (HA) with Neutron VLAN
+            3. Add 1 controller + cinder nodes
+            4. Add 2 compute + cinder nodes
+            5. Upload network template
+            6. Delete 'management' network-group
+            7. Run network verification
+            8. Deploy cluster
+            9. Run network verification
+            10. Run health checks (OSTF)
+
+        Duration 180m
+        Snapshot deploy_cluster_without_management_net
+        """
+        class NwkGrp(object):
+            __slots__ = [
+                'nwk_id', 'name', 'group_id', 'release',
+                'cidr', 'gateway', 'vlan_start',
+                'meta']
+
+            def __init__(
+                    self,
+                    id, name, group_id, release,
+                    cidr, gateway, vlan_start,
+                    meta):
+                self.nwk_id = int(id)
+                self.name = name
+                self.group_id = group_id
+                self.cidr = cidr
+                self.gateway = gateway
+                self.vlan_start = vlan_start
+                self.release = release
+                self.meta = meta
+
+            @property
+            def id(self):
+                return self.nwk_id
+
+            @id.setter
+            def id(self, new_id):
+                self.nwk_id = new_id
+
+            def __str__(self):
+                return (
+                    'network_group \'{name:s}\':\n'
+                    'id={nwk_id:<3d} | '
+                    'group_id={group_id!s:<4s} | '
+                    'cidr={cidr!s:<18s} | '
+                    'gateway={gateway!s:<15s} | '
+                    'vlan_start={vlan_start!s}\n'
+                    '\t(release={release!s}, meta={meta!r})'.format(
+                        name=self.name,
+                        nwk_id=self.nwk_id,
+                        group_id=self.group_id,
+                        cidr=self.cidr,
+                        gateway=self.gateway,
+                        vlan_start=self.vlan_start,
+                        release=self.release,
+                        meta=self.meta
+                    ))
+
+            def __getitem__(self, item):
+                return self.__getattribute__(item)
+
+        def get_network_groups():
+            return [NwkGrp(**grp) for grp
+                    in self.fuel_web.client.get_network_groups()]
+
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        self.show_step(2)
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE_HA,
+        )
+
+        self.show_step(3)
+        self.show_step(4)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller', 'cinder'],
+                'slave-02': ['compute', 'cinder'],
+                'slave-03': ['compute', 'cinder'],
+            },
+            update_interfaces=False
+        )
+
+        self.show_step(5)
+        template = 'default_no_mgmt_nwk'
+        logger.info('using template: {!s}'.format(template))
+        network_template = get_network_template(template)
+        self.fuel_web.client.upload_network_template(
+            cluster_id=cluster_id, network_template=network_template)
+
+        self.show_step(6)
+        grps = get_network_groups()
+        admin_net = filter(lambda grp: grp.name == 'management', grps).pop()
+
+        assert_true(
+            self.fuel_web.client.del_network_group(admin_net.id).code
+            in {200, 204},
+            'Network group delete failed'
+        )
+
+        grps = get_network_groups()
+        assert_true(
+            admin_net not in grps,
+            'Network group has not been deleted'
+        )
+
+        self.show_step(7)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(8)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(9)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(10)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['smoke', 'sanity', 'ha', 'tests_platform'])
+
+        self.env.make_snapshot('deploy_cluster_without_management_net')
