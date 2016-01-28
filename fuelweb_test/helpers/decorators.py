@@ -262,14 +262,6 @@ def update_fuel(func):
             cluster_id = environment.fuel_web.get_last_created_cluster()
 
             if centos_files_count > 0:
-                environment.docker_actions.execute_in_containers(
-                    cmd='yum -y install yum-plugin-priorities')
-
-                # Update docker containers and restart them
-                environment.docker_actions.execute_in_containers(
-                    cmd='yum clean expire-cache; yum update -y')
-                environment.docker_actions.restart_containers()
-
                 with environment.d_env.get_admin_remote() as remote:
                     # Update packages on master node
                     remote.execute(
