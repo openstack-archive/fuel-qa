@@ -17,7 +17,6 @@ import re
 import yaml
 
 from devops.helpers.helpers import wait
-from devops.error import TimeoutError
 from devops.error import DevopsCalledProcessError
 from devops.models import DiskDevice
 from devops.models import Node
@@ -26,7 +25,6 @@ from proboscis.asserts import assert_equal
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
-from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import retry
 
 from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
@@ -47,21 +45,17 @@ class BaseActions(object):
     def __init__(self):
         self.ssh_manager = SSHManager()
         self.admin_ip = self.ssh_manager.admin_ip
-        self.container = None
 
     def __repr__(self):
         klass, obj_id = type(self), hex(id(self))
-        container = getattr(self, 'container', None)
-        return "[{klass}({obj_id}), container:{container}]".format(
+        return "[{klass}({obj_id})]".format(
             klass=klass,
-            obj_id=obj_id,
-            container=container)
+            obj_id=obj_id)
 
-    def execute_in_container(self, command, container=None, exit_code=None,
-                             stdin=None):
-        if not container:
-            container = self.container
-        cmd = 'dockerctl shell {0} {1}'.format(container, command)
+    # TODO(kozhukalov): This method seems not needed and
+    # can easily be replaced by using execute_on_remote
+    # available in SSHManager (up to the type of return value)
+    def execute(self, cmd, exit_code=None, stdin=None):
         if stdin is not None:
             cmd = 'echo "{0}" | {1}'.format(stdin, cmd)
 
@@ -82,46 +76,11 @@ class BaseActions(object):
                          ))
         return ''.join(result['stdout']).strip()
 
-    def copy_between_node_and_container(self, copy_from, copy_to):
-        """ Copy files from/to container.
-        :param copy_from: path to copy file from
-        :param copy_to: path to copy file to
-        For ex.:
-
-            - to copy from container to master node use:
-                 copy_from = container:path_from
-                 copy_to = path_to
-            - to copy from master node to container use:
-                 copy_from = path_from
-                 copy_to = container:path_to
-
-        :return:
-            Standard output from console
-        """
-        cmd = 'dockerctl copy {0} {1}'.format(copy_from, copy_to)
-        result = self.ssh_manager.execute(
+    def restart_service(self, service):
+        result = self.ssh_manager(
             ip=self.admin_ip,
-            cmd=cmd
-        )
-        assert_equal(0, result['exit_code'],
-                     ('Command copy returned exit code "{e}", but '
-                      'expected "0". Output: {out}; {err} ').format(
-                         cmd=cmd,
-                         e=result['exit_code'],
-                         out=result['stdout'],
-                         err=result['stderr']))
-        return ''.join(result['stdout']).strip()
-
-    @property
-    def is_container_ready(self):
-        result = self.ssh_manager.execute(
-            ip=self.admin_ip,
-            cmd="timeout 5 dockerctl check {0}".format(self.container)
-        )
+            cmd="systemctl restart {0}".format(service))
         return result['exit_code'] == 0
-
-    def wait_for_ready_container(self, timeout=300):
-        wait(lambda: self.is_container_ready, timeout=timeout)
 
     def put_value_to_local_yaml(self, old_file, new_file, element, value):
         """Changes content in old_file at element is given to the new value
@@ -172,87 +131,64 @@ class BaseActions(object):
                                .format(element[: i + 1], f_old))
         return yaml_dict
 
-    def change_yaml_file_in_container(
-            self, path_to_file, element, value, container=None):
-        """Changes values in the yaml file stored at container
+    def change_remote_yaml(self, path_to_file, element, value):
+        """Changes values in the yaml file stored
         There is no need to copy file manually
-        :param path_to_file: absolutely path to the file
+        :param path_to_file: absolute path to the file
         :param element: list with path to the element be changed
         :param value: new value for element
-        :param container: Container with file. By default it is nailgun
         :return: Nothing
         """
-        if not container:
-            container = self.container
-
         old_file = '/tmp/temp_file_{0}.old.yaml'.format(str(os.getpid()))
         new_file = '/tmp/temp_file_{0}.new.yaml'.format(str(os.getpid()))
 
-        self.copy_between_node_and_container(
-            '{0}:{1}'.format(container, path_to_file), old_file)
         self.ssh_manager.download_from_remote(
             ip=self.admin_ip,
-            destination=old_file,
+            destination=path_to_file,
             target=old_file
         )
         self.put_value_to_local_yaml(old_file, new_file, element, value)
         self.ssh_manager.upload_to_remote(
             ip=self.admin_ip,
             source=new_file,
-            target=new_file
+            target=path_to_file
         )
-        self.copy_between_node_and_container(
-            new_file, '{0}:{1}'.format(container, path_to_file))
         os.remove(old_file)
         os.remove(new_file)
 
-    def get_value_from_yaml(self, path_to_file, element):
-        """Get a value from the yaml file stored in container
-           or on master node if self.container is None
+    def get_value_from_remote_yaml(self, path_to_file, element):
+        """Get a value from the yaml file stored
+           on the master node
 
-        :param str path_to_file: absolutely path to the file
-        :param list element: list with path to the element be changed
+        :param str path_to_file: absolute path to the file
+        :param list element: list with path to the element
         :return obj: value
         """
-
-        if self.container:
-            admin_tmp_file = '/tmp/temp_file_{0}.yaml'.format(str(os.getpid()))
-            self.copy_between_node_and_container(
-                '{0}:{1}'.format(self.container, path_to_file), admin_tmp_file)
-        else:
-            admin_tmp_file = path_to_file
 
         host_tmp_file = '/tmp/temp_file_{0}.yaml'.format(str(os.getpid()))
         self.ssh_manager.download_from_remote(
             ip=self.admin_ip,
-            destination=admin_tmp_file,
+            destination=path_to_file,
             target=host_tmp_file
         )
         value = self.get_value_from_local_yaml(host_tmp_file, element)
         os.remove(host_tmp_file)
         return value
 
-    def put_value_to_yaml(self, path_to_file, element, value):
-        """Put a value to the yaml file stored in container
-           or on master node if self.container is None
+    def put_value_to_remote_yaml(self, path_to_file, element, value):
+        """Put a value to the yaml file stored
+           on the master node
 
-        :param str path_to_file: absolutely path to the file
+        :param str path_to_file: absolute path to the file
         :param list element: list with path to the element be changed
         :param value: new value for element
         :return: None
         """
 
-        if self.container:
-            admin_tmp_file = '/tmp/temp_file_{0}.yaml'.format(str(os.getpid()))
-            self.copy_between_node_and_container(
-                '{0}:{1}'.format(self.container, path_to_file), admin_tmp_file)
-        else:
-            admin_tmp_file = path_to_file
-
         host_tmp_file = '/tmp/temp_file_{0}.yaml'.format(str(os.getpid()))
         self.ssh_manager.download_from_remote(
             ip=self.admin_ip,
-            destination=admin_tmp_file,
+            destination=path_to_file,
             target=host_tmp_file
         )
         self.put_value_to_local_yaml(host_tmp_file, host_tmp_file,
@@ -260,19 +196,31 @@ class BaseActions(object):
         self.ssh_manager.upload_to_remote(
             ip=self.admin_ip,
             source=host_tmp_file,
-            target=admin_tmp_file
+            target=path_to_file
         )
-        if self.container:
-            self.copy_between_node_and_container(
-                admin_tmp_file, '{0}:{1}'.format(self.container, path_to_file))
         os.remove(host_tmp_file)
 
 
 class AdminActions(BaseActions):
     """ All actions relating to the admin node."""
 
-    def __init__(self):
-        super(AdminActions, self).__init__()
+    @logwrap
+    def is_fuel_service_ready(self, service):
+        result = self.ssh_manager.execute(
+            ip=self.admin_ip,
+            cmd="timeout 5 fuel-utils check_service {0}".format(service))
+        return result['exit_code'] == 0
+
+    @logwrap
+    def is_fuel_ready(self):
+        result = self.ssh_manager.execute(
+            ip=self.admin_ip,
+            cmd="timeout 15 fuel-utils check_all")
+        return result['exit_code'] == 0
+
+    @logwrap
+    def wait_for_fuel_ready(self, timeout=300):
+        wait(lambda: self.is_fuel_ready, timeout=timeout)
 
     @logwrap
     def upload_plugin(self, plugin):
@@ -397,37 +345,12 @@ class AdminActions(BaseActions):
 
     def upgrade_master_node(self, rollback=False, file_upload=True):
         """This method upgrades master node with current state."""
-        # TODO: It will be remooved or changed
 
-        master = self.admin_remote
-        if file_upload:
-            checkers.upload_tarball(master, hlp_data.TARBALL_PATH, '/var')
-            checkers.check_file_exists(master,
-                                       os.path.join(
-                                           '/var',
-                                           os.path.basename(hlp_data.
-                                                            TARBALL_PATH)))
-            self.untar(master, os.path.basename(hlp_data.TARBALL_PATH),
-                       '/var')
-
-        keystone_pass = hlp_data.KEYSTONE_CREDS['password']
-        checkers.run_upgrade_script(master, '/var', 'upgrade.sh',
-                                    password=keystone_pass,
-                                    rollback=rollback,
-                                    exit_code=255 if rollback else 0)
-        if not rollback:
-            checkers.wait_upgrade_is_done(master, 3000,
-                                          phrase='***UPGRADING MASTER NODE'
-                                                 ' DONE SUCCESSFULLY')
-            checkers.check_upgraded_containers(master,
-                                               hlp_data.UPGRADE_FUEL_FROM,
-                                               hlp_data.UPGRADE_FUEL_TO)
-        elif rollback:
-            checkers.wait_rollback_is_done(master, 3000)
-            checkers.check_upgraded_containers(master,
-                                               hlp_data.UPGRADE_FUEL_TO,
-                                               hlp_data.UPGRADE_FUEL_FROM)
-        logger.debug("all containers are ok")
+        # FIXME(kozhukalov): The content of the method is removed
+        # because the approach is totally outdated.
+        # It should be removed entirely together with all those
+        # places that refer to the method.
+        pass
 
     def get_fuel_settings(self):
         cmd = 'cat {cfg_file}'.format(cfg_file=hlp_data.FUEL_SETTINGS_YAML)
@@ -459,28 +382,24 @@ class AdminActions(BaseActions):
 class NailgunActions(BaseActions):
     """NailgunActions."""  # TODO documentation
 
-    def __init__(self):
-        super(NailgunActions, self).__init__()
-        self.container = 'nailgun'
-
     def update_nailgun_settings_once(self, settings):
         # temporary change Nailgun settings (until next container restart)
         cfg_file = '/etc/nailgun/settings.yaml'
-        ng_settings = yaml.load(self.execute_in_container(
+        ng_settings = yaml.load(self.execute(
             'cat {0}'.format(cfg_file), exit_code=0))
         ng_settings.update(settings)
         logger.debug('Uploading new nailgun settings: {}'.format(
             ng_settings))
-        self.execute_in_container('tee {0}'.format(cfg_file),
-                                  stdin=yaml.dump(ng_settings),
-                                  exit_code=0)
+        self.execute('tee {0}'.format(cfg_file),
+                     stdin=yaml.dump(ng_settings),
+                     exit_code=0)
 
     def set_collector_address(self, host, port, ssl=False):
         cmd = ("awk '/COLLECTOR.*URL/' /usr/lib/python2.6"
                "/site-packages/nailgun/settings.yaml")
         protocol = 'http' if not ssl else 'https'
         parameters = {}
-        for p in self.execute_in_container(cmd, exit_code=0).split('\n'):
+        for p in self.execute(cmd, exit_code=0).split('\n'):
             parameters[p.split(': ')[0]] = re.sub(
                 r'https?://\{collector_server\}',
                 '{0}://{1}:{2}'.format(protocol, host, port),
@@ -494,20 +413,20 @@ class NailgunActions(BaseActions):
             # verification and allow using of self-signed SSL certificate
             cmd = ("sed -i '/elf.verify/ s/True/False/' /usr/lib/python2.6"
                    "/site-packages/requests/sessions.py")
-            self.execute_in_container(cmd, exit_code=0)
+            self.execute(cmd, exit_code=0)
 
     def force_fuel_stats_sending(self):
         log_file = '/var/log/nailgun/statsenderd.log'
         # Rotate logs on restart in order to get rid of old errors
         cmd = 'mv {0}{{,.backup_$(date +%s)}}'.format(log_file)
-        self.execute_in_container(cmd)
+        self.execute(cmd)
         cmd = 'supervisorctl restart statsenderd'
         if MASTER_IS_CENTOS7:
             cmd = 'systemctl restart statsenderd'
-        self.execute_in_container(cmd, exit_code=0)
+        self.execute(cmd, exit_code=0)
         cmd = 'grep -sw "ERROR" {0}'.format(log_file)
         try:
-            self.execute_in_container(cmd, exit_code=1)
+            self.execute(cmd, exit_code=1)
         except AssertionError:
             logger.error(("Fuel stats were sent with errors! Check its log"
                          "s in {0} for details.").format(log_file))
@@ -524,20 +443,16 @@ class NailgunActions(BaseActions):
             if MASTER_IS_CENTOS7:
                 cmd = 'systemctl restart oswl' \
                       '_{0}_collectord'.format(resource)
-            self.execute_in_container(cmd, exit_code=0)
+            self.execute(cmd, exit_code=0)
 
 
 class PostgresActions(BaseActions):
     """PostgresActions."""  # TODO documentation
 
-    def __init__(self):
-        super(PostgresActions, self).__init__()
-        self.container = 'postgres'
-
     def run_query(self, db, query):
         cmd = "su - postgres -c 'psql -qt -d {0} -c \"{1};\"'".format(
             db, query)
-        return self.execute_in_container(cmd, exit_code=0)
+        return self.execute(cmd, exit_code=0)
 
     def action_logs_contain(self, action, group=False,
                             table='action_logs'):
@@ -562,10 +477,6 @@ class FuelPluginBuilder(BaseActions):
 
     Initializes BaseActions.
     """
-    def __init__(self):
-        super(FuelPluginBuilder, self).__init__()
-        self.container = 'nailgun'
-
     def fpb_install(self):
         """
         Installs fuel plugin builder from sources
@@ -581,7 +492,7 @@ class FuelPluginBuilder(BaseActions):
                     cd dist;
                     pip install *.tar.gz'""".format(FUEL_PLUGIN_BUILDER_REPO)
 
-        self.execute_in_container(fpb_cmd, self.container, 0)
+        self.execute(fpb_cmd, 0)
 
     def fpb_create_plugin(self, name):
         """
@@ -589,8 +500,7 @@ class FuelPluginBuilder(BaseActions):
         :param name: name for plugin created
         :return: nothing
         """
-        self.execute_in_container("fpb --create {0}".format(
-            name), self.container, 0)
+        self.execute("fpb --create {0}".format(name), 0)
 
     def fpb_build_plugin(self, path):
         """
@@ -598,9 +508,9 @@ class FuelPluginBuilder(BaseActions):
         :param path: path to plugin. For ex.: /root/example_plugin
         :return: packet name
         """
-        packet_name = self.execute_in_container(
+        packet_name = self.execute(
             "bash -c 'fpb --build {0} >> /dev/null && basename {0}/*.rpm'"
-            .format(path), self.container, 0)
+            .format(path), 0)
         return packet_name
 
     def fpb_validate_plugin(self, path):
@@ -609,21 +519,7 @@ class FuelPluginBuilder(BaseActions):
         :param path: path to plugin to be verified
         :return: nothing
         """
-        self.execute_in_container("fpb --check {0}".format(
-            path), self.container, 0)
-
-    def fpb_copy_plugin_from_container(
-            self, folder_name, packet_name, path_to):
-        """
-        Copies plugin with given name to path
-        outside container on the master node
-        :param packet_name: plugin's packet to be copied
-        :param path_to: path to copy to
-        :return: nothing
-        """
-        self.copy_between_node_and_container(
-            '{0}:/{1}/{2}'.format(self.container, folder_name, packet_name),
-            '{0}/{1}'.format(path_to, packet_name))
+        self.execute("fpb --check {0}".format(path), 0)
 
     def fpb_replace_plugin_content(self, local_file, remote_file):
         """
@@ -632,15 +528,13 @@ class FuelPluginBuilder(BaseActions):
         :param remote_file: file to be replaced
         :return: nothing
         """
-        self.execute_in_container(
-            "rm -rf {0}".format(remote_file), self.container)
+        self.execute(
+            "rm -rf {0}".format(remote_file))
         self.ssh_manager.upload_to_remote(
             ip=self.admin_ip,
             source=local_file,
-            target="/tmp/temp.file"
+            target=remote_file
         )
-        self.copy_between_node_and_container(
-            '/tmp/temp.file', '{0}:{1}'.format(self.container, remote_file))
 
     def fpb_change_plugin_version(self, plugin_name, new_version):
         """
@@ -649,7 +543,7 @@ class FuelPluginBuilder(BaseActions):
         :param new_version: new version to be used for plugin
         :return: nothing
         """
-        self.change_yaml_file_in_container(
+        self.change_remote_yaml(
             '/root/{}/metadata.yaml'.format(plugin_name),
             ['version'],
             new_version)
@@ -661,7 +555,7 @@ class FuelPluginBuilder(BaseActions):
         :param new_version: version to be changed at
         :return: nothing
         """
-        self.change_yaml_file_in_container(
+        self.change_remote_yaml(
             '/root/{}/metadata.yaml'.format(plugin_name),
             ['package_version'],
             new_version)
@@ -670,73 +564,16 @@ class FuelPluginBuilder(BaseActions):
 class CobblerActions(BaseActions):
     """CobblerActions."""  # TODO documentation
 
-    def __init__(self):
-        super(CobblerActions, self).__init__()
-        self.container = 'cobbler'
-
     def add_dns_upstream_server(self, dns_server_ip):
-        self.execute_in_container(
+        self.execute(
             command="sed '$anameserver {0}' -i /etc/dnsmasq.upstream".format(
                 dns_server_ip),
             exit_code=0,
         )
-        self.execute_in_container(
+        self.execute(
             command='service dnsmasq restart',
             exit_code=0
         )
-
-
-class DockerActions(object):
-    """DockerActions."""  # TODO documentation
-
-    def __init__(self):
-        self.ssh_manager = SSHManager()
-
-    def list_containers(self):
-        result = self.ssh_manager.execute(
-            ip=self.ssh_manager.admin_ip,
-            cmd='dockerctl list'
-        )
-        return result['stdout']
-
-    def wait_for_ready_containers(self, timeout=300):
-        if MASTER_IS_CENTOS7:
-            return
-        cont_actions = []
-        for container in self.list_containers():
-            cont_action = BaseActions()
-            cont_action.container = container
-            cont_actions.append(cont_action)
-        try:
-            wait(lambda: all([cont_action.is_container_ready
-                              for cont_action in cont_actions]),
-                 timeout=timeout)
-        except TimeoutError:
-            failed_containers = [x.container for x in cont_actions
-                                 if not x.is_container_ready]
-            raise TimeoutError(
-                "Container(s) {0} failed to start in {1} seconds."
-                .format(failed_containers, timeout))
-
-    def restart_container(self, container):
-        self.ssh_manager.execute(
-            ip=self.ssh_manager.admin_ip,
-            cmd='dockerctl restart {0}'.format(container)
-        )
-        cont_action = BaseActions()
-        cont_action.container = container
-        cont_action.wait_for_ready_container()
-
-    def restart_containers(self):
-        for container in self.list_containers():
-            self.restart_container(container)
-
-    def execute_in_containers(self, cmd):
-        for container in self.list_containers():
-            self.ssh_manager.execute(
-                ip=self.ssh_manager.admin_ip,
-                cmd="dockerctl shell {0} bash -c '{1}'".format(container, cmd)
-            )
 
 
 class NessusActions(object):

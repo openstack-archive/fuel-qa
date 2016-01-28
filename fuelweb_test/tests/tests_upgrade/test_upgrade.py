@@ -273,24 +273,13 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             assert_equal(int(update_result['exit_code']), 0,
                          'Packages update failed, '
                          'inspect logs for details')
+        # NOTE(kozhukalov): yum update should potentially be enough.
+        # But maybe we also need to restart some services.
+        # Restart services should probably be a part of fuel-utils package.
+        # Once everything is updated and restarted we need
+        # to check if Fuel ready.
 
-            # Restart containers
-            destroy_command = 'dockerctl destroy all'
-            destroy_result = remote.execute(destroy_command)
-            logger.debug('Result of "{1}" command on master node: '
-                         '{0}'.format(destroy_result, destroy_command))
-            assert_equal(int(destroy_result['exit_code']), 0,
-                         'Destroy containers failed, '
-                         'inspect logs for details')
-
-            start_command = 'dockerctl start all'
-            start_result = remote.execute(start_command)
-            logger.debug('Result of "{1}" command on master node: '
-                         '{0}'.format(start_result, start_command))
-        assert_equal(int(start_result['exit_code']), 0,
-                     'Start containers failed, '
-                     'inspect logs for details')
-        self.env.docker_actions.wait_for_ready_containers()
+        self.env.admin_actions.is_fuel_ready()
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['ha', 'smoke', 'sanity'])
 
