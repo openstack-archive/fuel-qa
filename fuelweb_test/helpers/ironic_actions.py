@@ -39,7 +39,7 @@ class IronicActions(os_actions.OpenStackActions):
                '--file trusty-server-cloudimg-amd64.img --visibility public '
                '--property cpu_arch="x86_64" '
                '--property hypervisor_type="baremetal" '
-               '--property mos_disk_info=\'{disk_info}\'').format(
+               '--property fuel_disk_info=\'{disk_info}\'').format(
             disk_info=json.dumps(disk_info),
             img_url=img_url)
 
