@@ -1,0 +1,40 @@
+test_results:
+  source: xunit
+  jenkins: # TODO: Add Jenkins support
+    url: 'http://jenkins.domain.com'
+    version_artifact: 'version.yaml.txt'
+  xunit:
+    filename: nosetests.xml
+
+testrail:
+  url: 'https://mirantis.testrail.com'
+  username: 'user@example.com'
+  password: 'password'
+  project: 'Test Project'
+  milestone: 'Version 1.0'
+  test_suite: 'Test Suite ${testrail.milestone}'
+  test_plan: '${testrail.project} ${testrail.milestone}'
+  test_section: 'All' # TODO: Add TestRail Suite section support
+  test_include: null # TODO: Add Include or Exclude test cases from reporting
+  test_exclude: null
+  suite_configurations: # TODO: Add support of TestRail configurations
+    'Operating systems':
+      - 'Linux'
+      - 'Windows'
+      - 'Mac OS X'
+    'Browser':
+      - 'IE'
+      - 'Firefox'
+      - 'Chrome'
+common:
+  log_level: INFO
+  log_dir: /var/log/testrail_reporter.log
+
+
+# TODO: Future improvemets regarding to Lauchpad bugs
+#launchpad:
+#    project: 'LP Project name'
+#    milestone: '2.0'
+#    release_statuses:
+#      released: 'Fix Released'
+#      invalid: 'Invalid'
