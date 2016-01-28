@@ -217,27 +217,6 @@ def check_unallocated_space(disks, contr_img_ceph=False):
 
 
 @logwrap
-def check_upgraded_containers(remote, version_from, version_to):
-    logger.info('Checking of containers')
-    containers = remote.execute("docker ps | tail -n +2 |"
-                                "awk '{ print $NF;}'")['stdout']
-    symlink = remote.execute("readlink /etc/supervisord.d/current")['stdout']
-    logger.debug('containers are {0}'.format(containers))
-    logger.debug('symlinks are {0}'.format(symlink))
-    components = [co.split('-') for x in containers for co in x.split(',')]
-
-    for i in components:
-        assert_true(version_from != i[2],
-                    'There are {0} containers'.format(version_from))
-    for i in components:
-        assert_true(version_to == i[2],
-                    'There are no {0} containers'.format(version_to))
-    assert_true('/etc/supervisord.d/{0}'.format(version_to)
-                in symlink[0],
-                'Symlink is set not to {0}'.format(version_to))
-
-
-@logwrap
 def upload_tarball(node_ssh, tar_path, tar_target):
     assert_true(tar_path, "Source path for uploading 'tar_path' is empty, "
                 "please check test settings!")
@@ -264,51 +243,6 @@ def check_file_exists(node_ssh, path):
                  0,
                  'Can not find {0}'.format(path))
     logger.info('File {0} exists on {1}'.format(path, node_ssh.host))
-
-
-@logwrap
-def run_upgrade_script(node_ssh, script_path, script_name, password='admin',
-                       rollback=False, exit_code=0):
-    path = os.path.join(script_path, script_name)
-    check_file_exists(node_ssh, path)
-    c_res = node_ssh.execute('chmod 755 {0}'.format(path))
-    logger.debug("Result of chmod is {0}".format(c_res))
-    if rollback:
-        path = "UPGRADERS='host-system docker openstack" \
-               " raise-error' {0}/{1}" \
-               " --password {2}".format(script_path, script_name, password)
-    else:
-        path = "{0}/{1} --no-rollback --password {2}".format(script_path,
-                                                             script_name,
-                                                             password)
-
-    result = run_on_remote_get_results(node_ssh, path,
-                                       assert_ec_equal=[exit_code],
-                                       raise_on_assert=False)
-
-    # TODO: check that we really need this log from fuel_upgrade.log
-    if result['exit_code'] != exit_code:
-        log = "".join(
-            run_on_remote(node_ssh,
-                          "awk -v p=\"UPGRADE FAILED\" 'BEGIN{m=\"\"}"
-                          " {if ($0 ~ p) {m=$0} else m=m\"\\n\"$0}"
-                          " END{if (m ~ p) print m}'"
-                          " /var/log/fuel_upgrade.log",
-                          raise_on_assert=False)
-        )
-
-        logger.error("Message from /var/log/fuel_upgrade.log:\n"
-                     "{log}".format(log=log))
-
-    assert_equal(
-        result['exit_code'],
-        exit_code,
-        "Upgrade script failed with exit code {exit_code}, "
-        "please inspect logs for details.\n"
-        "last output: \"{output}\""
-        "".format(exit_code=result['exit_code'],
-                  output=''.join(result['stdout'][-5:]) + result['stderr_str'])
-    )
 
 
 @logwrap
@@ -362,7 +296,7 @@ def enable_feature_group(env, group):
     fuel_settings = env.admin_actions.get_fuel_settings()
     fuel_settings["FEATURE_GROUPS"].append(group)
     env.admin_actions.save_fuel_settings(fuel_settings)
-    env.docker_actions.restart_container("nailgun")
+    env.admin_actions.restart_service("nailgun")
 
     def check_api_available():
         try:
@@ -379,9 +313,9 @@ def enable_feature_group(env, group):
 
 @logwrap
 def restart_nailgun(remote):
-    cmd = 'dockerctl shell nailgun supervisorctl restart nailgun'
+    cmd = 'supervisorctl restart nailgun'
     if MASTER_IS_CENTOS7:
-        cmd = 'dockerctl shell nailgun systemctl restart nailgun'
+        cmd = 'systemctl restart nailgun'
     result = remote.execute(cmd)
     assert_equal(0, result['exit_code'], result['stderr'])
 
@@ -931,7 +865,7 @@ def check_oswl_stat(postgres_actions, remote_collector, master_uid,
         q_result = postgres_actions.run_query('nailgun', q)
         assert_true(q_result.strip() is not None,
                     "Resource {0} is absent in 'oswl_stats' table, "
-                    "please check /var/log/docker-logs/nailgun/oswl_{0}"
+                    "please check /var/log/nailgun/oswl_{0}"
                     "_collectord.log on Fuel admin node for details."
                     .format(resource))
         resource_data = json.loads(q_result)
@@ -1121,7 +1055,7 @@ def check_cobbler_node_exists(remote, node_id):
     logger.debug("Check that cluster contains node with ID:{0} ".
                  format(node_id))
     node = remote.execute(
-        'dockerctl shell cobbler bash -c "cobbler system list" | grep '
+        'bash -c "cobbler system list" | grep '
         '-w "node-{0}"'.format(node_id))
     return int(node['exit_code']) == 0
 
