@@ -535,6 +535,10 @@ class NailgunClient(object):
         return self.client.post('/api/networks/', data=network_data)
 
     @logwrap
+    def del_network_group(self, network_id):
+        return self.client.delete('/api/networks/{0}/'.format(network_id))
+
+    @logwrap
     @json_parse
     def update_network_group(self, network_id, network_data):
         return self.client.put('/api/networks/{0}/'.format(network_id),
