@@ -12,14 +12,37 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from proboscis import test
+import functools
+
 from proboscis import after_class
 from proboscis import before_class
+from proboscis import test
 
+from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.tests import base_test_case
 
 from system_test.helpers import utils
-from system_test.helpers.decorators import step_start_stop
+from system_test import logger
+
+
+def step_start_stop(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        with TimeStat(func) as timer:
+            step_name = getattr(func, '_step_name')
+            start_step = '[ START {} ]'.format(step_name)
+            header = "<<< {:-^142} >>>".format(start_step)
+            logger.info("\n{header}\n".format(header=header))
+            result = func(*args, **kwargs)
+            spent_time = timer.spent_time
+            minutes = int(round(spent_time)) / 60
+            seconds = int(round(spent_time)) % 60
+            finish_step = "[ FINISH {} STEP TOOK {} min {} sec ]".format(
+                step_name, minutes, seconds)
+            footer = "<<< {:-^142} >>>".format(finish_step)
+            logger.info("\n{footer}\n".format(footer=footer))
+        return result
+    return wrapper
 
 
 class BaseActionsFactory(base_test_case.TestBasic):
@@ -28,7 +51,7 @@ class BaseActionsFactory(base_test_case.TestBasic):
     def get_actions(cls):
         """Return all action methods"""
         return {m: getattr(cls, m) for m in
-                dir(cls) if m.startswith('_action_') or
+                dir(cls) if
                 getattr(getattr(cls, m), '_action_method_', False) or
                 getattr(getattr(cls, m), '_nested_action_method_', False)}
 
@@ -41,9 +64,29 @@ class BaseActionsFactory(base_test_case.TestBasic):
         actions_method = cls.get_actions()
         linear_order = []
         for action in cls.actions_order:
-            if getattr(actions_method[action],
+            try:
+                action_method = actions_method[action]
+            except KeyError:
+                import inspect
+                source = inspect.getsourcelines(inspect.getmodule(cls))[0]
+                counted_data = [n for n in enumerate(source)]
+                line_num = [n for (n, l) in counted_data if 'ddd' in l][0]
+                cutted = counted_data[line_num - 4:line_num + 4]
+                cutted = [(n, l[:-1] + " " * 20 + "<====\n"
+                          if n == line_num else l)
+                          for (n, l) in cutted]
+                cutted = ["Line {line_num:04d}: {line}".format(
+                    line_num=n, line=l) for (n, l) in cutted]
+                raise LookupError("Class {} orders to run '{}' action as {} "
+                                  "step,\n\tbut action method doesn't exist "
+                                  "in class.\nLook at '{}':\n\n{}".format(
+                                      cls, action,
+                                      cls.actions_order.index(action),
+                                      inspect.getsourcefile(cls),
+                                      ''.join(cutted)))
+            if getattr(action_method,
                        '_nested_action_method_', None):
-                linear_order.extend(actions_method[action]())
+                linear_order.extend(action_method())
             else:
                 linear_order.append(action)
 
@@ -140,8 +183,8 @@ class BaseActionsFactory(base_test_case.TestBasic):
             runs_after=[teardown_method] if teardown_method else [])
 
         # Generate test case groups
-        groups = ['{}({})'.format(g, case_group) for g in cls.base_group]
-        groups = cls.base_group + groups
+        groups = ['{}({})'.format(g, case_group) for g in cls._base_groups]
+        groups = cls._base_groups + groups
 
         # Generate test case docstring
         test_steps["__doc__"] = "{}\n\n{}\n\nDuration {}".format(

@@ -13,13 +13,12 @@
 #    under the License.
 
 
-from proboscis import factory
 from proboscis.asserts import assert_true
+from system_test import testcase
 from system_test import logger
 from system_test.helpers.decorators import make_snapshot_if_step_fail
 from system_test.helpers.decorators import deferred_decorator
 from system_test.helpers.decorators import action
-from system_test.helpers.utils import case_factory
 from system_test.tests.actions_base import ActionsBase
 from fuelweb_test.settings import DVS_PLUGIN_PATH
 from fuelweb_test.settings import DVS_PLUGIN_VERSION
@@ -186,6 +185,9 @@ class VMwareActions(ActionsBase):
         self.scale_step += 1
 
 
+@testcase(groups=['system_test',
+                  'system_test.vcenter',
+                  'system_test.vcenter.deploy_vcenter_dvs_run_ostf'])
 class DeployWithVMware(VMwareActions):
     """Deploy cluster with vCenter and dvs plugin
 
@@ -203,10 +205,6 @@ class DeployWithVMware(VMwareActions):
     Snapshot deploy_vcenter_dvs
     """
 
-    base_group = ['system_test',
-                  'system_test.vcenter',
-                  'system_test.vcenter.deploy_vcenter_dvs_run_ostf']
-
     plugin_name = "fuel-plugin-vmware-dvs"
     plugin_path = DVS_PLUGIN_PATH
     plugin_version = DVS_PLUGIN_VERSION
@@ -223,6 +221,9 @@ class DeployWithVMware(VMwareActions):
     ]
 
 
+@testcase(groups=['system_test',
+                  'system_test.vcenter',
+                  'system_test.vcenter.scale_vcenter_dvs'])
 class ScaleWithVMware(VMwareActions):
     """Deploy and scale cluster with vCenter and dvs plugin
 
@@ -243,10 +244,6 @@ class ScaleWithVMware(VMwareActions):
     Snapshot scale_vcenter_dvs
     """
 
-    base_group = ['system_test',
-                  'system_test.vcenter',
-                  'system_test.vcenter.scale_vcenter_dvs']
-
     plugin_name = "fuel-plugin-vmware-dvs"
     plugin_path = DVS_PLUGIN_PATH
     plugin_version = DVS_PLUGIN_VERSION
@@ -264,9 +261,3 @@ class ScaleWithVMware(VMwareActions):
         'deploy_cluster',
         'health_check_sanity_smoke_ha'
     ]
-
-
-@factory
-def cases():
-    return (case_factory(DeployWithVMware) +
-            case_factory(ScaleWithVMware))
