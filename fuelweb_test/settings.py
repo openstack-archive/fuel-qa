@@ -510,3 +510,10 @@ NESSUS_PASSWORD = os.environ.get("NESSUS_PASSWORD")
 NESSUS_SSL_VERIFY = get_var_as_bool("NESSUS_SSL_VERIFY", False)
 
 NOVA_QUOTAS_ENABLED = get_var_as_bool("NOVA_QUOTAS_ENABLED", False)
+
+DISTRO_SYNC_STEP = os.environ.get('DISTRO_SYNC_STEP', '')
+DISTRO_SYNC_URL = os.environ.get(
+    'DISTRO_SYNC_URL', 'git://172.18.10.105/mos-distro-sync.git')
+DISTRO_SYNC_BRANCH = os.environ.get('DISTRO_SYNC_BRANCH', 'master')
+DISTRO_SYNC_ROLLBACK = get_var_as_bool('DISTRO_SYNC_ROLLBACK', False)
+DISTRO_SYNC_ENV_VARS = os.environ.get('DISTRO_SYNC_ENV_VARS', '')
