@@ -16,13 +16,15 @@ import functools
 import traceback
 import sys
 import hashlib
+import types
 
 from proboscis import SkipTest
 
-from fuelweb_test.helpers.utils import TimeStat
+# from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.helpers.utils import pull_out_logs_via_ssh
 from fuelweb_test.helpers.decorators import create_diagnostic_snapshot
 
+from system_test import Repository
 from system_test import logger
 
 
@@ -41,26 +43,6 @@ def action(method):
 def nested_action(method):
     setattr(method, '_nested_action_method_', True)
     return staticmethod(method)
-
-
-def step_start_stop(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        with TimeStat(func) as timer:
-            step_name = getattr(func, '_step_name')
-            start_step = '[ START {} ]'.format(step_name)
-            header = "<<< {:-^142} >>>".format(start_step)
-            logger.info("\n{header}\n".format(header=header))
-            result = func(*args, **kwargs)
-            spent_time = timer.spent_time
-            minutes = int(round(spent_time)) / 60
-            seconds = int(round(spent_time)) % 60
-            finish_step = "[ FINISH {} STEP TOOK {} min {} sec ]".format(
-                step_name, minutes, seconds)
-            footer = "<<< {:-^142} >>>".format(finish_step)
-            logger.info("\n{footer}\n".format(footer=footer))
-        return result
-    return wrapper
 
 
 def make_snapshot_if_step_fail(func):
@@ -122,3 +104,18 @@ def make_snapshot_if_step_fail(func):
             raise test_exception, None, exc_trace
         return result
     return wrapper
+
+
+def testcase(groups):
+    """Use this decorator for mark a test case class"""
+    def testcase_decorator(cls):
+        if not isinstance(cls, types.TypeType):
+            raise TypeError("Decorator @testcase should used only "
+                            "with classes")
+        if not isinstance(groups, types.ListType):
+            raise TypeError("Use list for groups")
+        cls.get_actions_order()
+        setattr(cls, '_base_groups', groups)
+        Repository.add(cls)
+        return cls
+    return testcase_decorator
