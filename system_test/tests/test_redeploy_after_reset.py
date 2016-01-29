@@ -12,11 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from system_test import testcase
 from system_test.tests import actions_base
-from system_test.helpers.utils import case_factory
-from proboscis import factory
 
 
+@testcase(groups=['system_test', 'system_test.redeploy_after_reset'])
 class RedeployAfterReset(actions_base.ActionsBase):
     """Case deploy Environment
 
@@ -29,7 +29,6 @@ class RedeployAfterReset(actions_base.ActionsBase):
         6. Run OSTF
     """
 
-    base_group = ['system_test', 'system_test.redeploy_after_reset']
     actions_order = [
         'prepare_admin_node_with_slaves',
         'create_env',
@@ -44,8 +43,3 @@ class RedeployAfterReset(actions_base.ActionsBase):
         'network_check',
         'health_check',
     ]
-
-
-@factory
-def cases():
-    return case_factory(RedeployAfterReset)
