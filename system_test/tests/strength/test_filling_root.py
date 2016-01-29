@@ -12,13 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from proboscis import factory
 
-from system_test.helpers.utils import case_factory
-
+from system_test import testcase
 from system_test.tests.strength import strength_base
 
 
+@testcase(groups=['system_test',
+                  'system_test.failover',
+                  'system_test.failover.filling_root'])
 class FillRootPrimaryController(
     strength_base.FillRootBaseActions
 ):
@@ -51,11 +52,6 @@ class FillRootPrimaryController(
         21. Run OSTF Sanity, Smoke, HA
     """
 
-    base_group = ['system_test',
-                  'system_test.failover',
-                  'system_test.failover.filling_root'
-                  ]
-
     actions_order = [
         'setup_master',
         'config_release',
@@ -79,8 +75,3 @@ class FillRootPrimaryController(
         'check_starting_resources',
         'health_check_sanity_smoke_ha',
     ]
-
-
-@factory
-def cases():
-    return case_factory(FillRootPrimaryController)

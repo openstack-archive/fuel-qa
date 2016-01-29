@@ -12,11 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from system_test import testcase
 from system_test.tests import actions_base
-from system_test.helpers.utils import case_factory
-from proboscis import factory
 
 
+@testcase(groups=['system_test', 'system_test.delete_after_deploy'])
 class DeleteAfterDeploy(actions_base.ActionsBase):
     """Case deploy Environment
 
@@ -29,7 +29,6 @@ class DeleteAfterDeploy(actions_base.ActionsBase):
         6. Run OSTF
     """
 
-    base_group = ['system_test', 'system_test.delete_after_deploy']
     actions_order = [
         'prepare_admin_node_with_slaves',
         'create_env',
@@ -40,8 +39,3 @@ class DeleteAfterDeploy(actions_base.ActionsBase):
         'health_check',
         'delete_cluster',
     ]
-
-
-@factory
-def cases():
-    return case_factory(DeleteAfterDeploy)

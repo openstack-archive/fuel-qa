@@ -12,16 +12,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from proboscis import factory
 
 from fuelweb_test.settings import EXAMPLE_PLUGIN_V3_PATH
-from system_test.helpers.utils import case_factory
+from system_test import testcase
 from system_test.helpers.decorators import make_snapshot_if_step_fail
 from system_test.helpers.decorators import deferred_decorator
 from system_test.helpers.decorators import action
 from system_test.tests.actions_base import ActionsBase
 
 
+@testcase(groups=['system_test',
+                  'system_test.plugins',
+                  'system_test.plugins.example_plugin_v3',
+                  'system_test.plugins.example_plugin_v3.simple'])
 class DeployWithPluginExampleV3(ActionsBase):
     """Deploy cluster with one controller and example plugin v3
 
@@ -40,10 +43,6 @@ class DeployWithPluginExampleV3(ActionsBase):
         Duration 35m
         Snapshot deploy_ha_one_controller_neutron_example_v3
     """
-    base_group = ['system_test',
-                  'system_test.plugins',
-                  'system_test.plugins.example_plugin_v3',
-                  'system_test.plugins.example_plugin_v3.simple']
 
     plugin_name = 'fuel_plugin_example_v3'
     plugin_path = EXAMPLE_PLUGIN_V3_PATH
@@ -69,8 +68,3 @@ class DeployWithPluginExampleV3(ActionsBase):
             'roles': ['fuel_plugin_example_v3'],
             'count': 1
         }])
-
-
-@factory
-def cases():
-    return (case_factory(DeployWithPluginExampleV3))
