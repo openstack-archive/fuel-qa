@@ -12,16 +12,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from proboscis import factory
 from proboscis.asserts import assert_true
 
+from system_test import testcase
 from system_test.tests import actions_base
-from system_test.helpers.utils import case_factory
 from system_test.helpers.decorators import deferred_decorator
 from system_test.helpers.decorators import make_snapshot_if_step_fail
 from system_test.helpers.decorators import action
 
 
+@testcase(groups=['system_test',
+                  'system_test.deploy_and_check_radosgw'])
 class DeployCheckRadosGW(actions_base.ActionsBase):
     """Deploy cluster and check RadosGW
 
@@ -38,8 +39,6 @@ class DeployCheckRadosGW(actions_base.ActionsBase):
 
     """
 
-    base_group = ['system_test',
-                  'system_test.deploy_and_check_radosgw']
     actions_order = [
         'setup_master',
         'config_release',
@@ -72,8 +71,3 @@ class DeployCheckRadosGW(actions_base.ActionsBase):
                 'client.radosgw.gateway"')['stdout']) == 3
         with self.fuel_web.get_ssh_for_node('slave-01') as remote:
             assert_true(radosgw_started(remote), 'radosgw daemon started')
-
-
-@factory
-def cases():
-    return case_factory(DeployCheckRadosGW)

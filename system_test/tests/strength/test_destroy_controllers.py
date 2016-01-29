@@ -12,15 +12,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from system_test.helpers.utils import case_factory
-from proboscis import factory
-
+from system_test import testcase
 from system_test.tests.strength import strength_base
 from system_test.helpers.decorators import make_snapshot_if_step_fail
 from system_test.helpers.decorators import deferred_decorator
 from system_test.helpers.decorators import action
 
 
+@testcase(groups=['system_test',
+                  'system_test.failover',
+                  'system_test.failover.destroy_controllers',
+                  'system_test.failover.destroy_controllers.first'])
 class StrengthDestroyFirstController(strength_base.StrengthBaseActions):
     """Destroy two controllers and check pacemaker status is correct
 
@@ -38,11 +40,6 @@ class StrengthDestroyFirstController(strength_base.StrengthBaseActions):
         11. Run OSTF
 
     """
-
-    base_group = ['system_test',
-                  'system_test.failover',
-                  'system_test.failover.destroy_controllers',
-                  'system_test.failover.destroy_controllers.first']
 
     actions_order = [
         'setup_master',
@@ -72,6 +69,10 @@ class StrengthDestroyFirstController(strength_base.StrengthBaseActions):
         self._destroy_controller('slave-01')
 
 
+@testcase(groups=['system_test',
+                  'system_test.failover',
+                  'system_test.failover.destroy_controllers',
+                  'system_test.failover.destroy_controllers.second'])
 class StrengthDestroySecondController(strength_base.StrengthBaseActions):
     """Destroy two controllers and check pacemaker status is correct
 
@@ -89,11 +90,6 @@ class StrengthDestroySecondController(strength_base.StrengthBaseActions):
         11. Run OSTF
 
     """
-
-    base_group = ['system_test',
-                  'system_test.failover',
-                  'system_test.failover.destroy_controllers',
-                  'system_test.failover.destroy_controllers.second']
 
     actions_order = [
         'setup_master',
@@ -121,9 +117,3 @@ class StrengthDestroySecondController(strength_base.StrengthBaseActions):
     def destroy_second_controller(self):
         """Destroy second controller"""
         self._destroy_controller('slave-02')
-
-
-@factory
-def cases():
-    return (case_factory(StrengthDestroyFirstController) +
-            case_factory(StrengthDestroySecondController))
