@@ -488,6 +488,9 @@ class CephRadosGW(TestBasic):
                              haproxy_status))
             remote.clear()
 
+        if settings.DISTRO_SYNC_STEP == 'ceph_rados_gw':
+            self.env.do_distro_sync()
+
         self.fuel_web.check_ceph_status(cluster_id)
 
         # Run ostf
