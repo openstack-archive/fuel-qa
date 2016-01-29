@@ -409,6 +409,27 @@ class EnvironmentModel(object):
                   " -regex '.*/mos[0-9,\.]+\-(updates|security).repo' | " \
                   "xargs -n1 -i sed '$aenabled=0' -i {}"
             self.execute_remote_cmd(remote, cmd)
+        if settings.DO_DISTRO_SYNC:
+            logger.info('Starting distro-sync')
+            self.wait_for_puppet_finished()
+            remote = self.d_env.get_admin_remote()
+            docker_ps_count = len(remote.execute(
+                'docker ps -q -f "name=fuel-core"')['stdout'])
+            logger.info('There are %s containers running' % docker_ps_count)
+            cmd = "yum install -y git && " \
+                  "tmpdir=$(mktemp -d) && cd $tmpdir && " \
+                  "git clone {} . && " \
+                  "git checkout origin/{} && " \
+                  "/bin/bash ./update-master-node.sh".format(
+                settings.DISTRO_SYNC_URL, settings.DISTRO_SYNC_BRANCH)
+            logger.info("Executing distro-sync sequence '{}'".format(
+                cmd
+            ))
+            self.execute_remote_cmd(remote, cmd)
+            self.reboot_master_node()
+            self.wait_docker_containers_up(docker_ps_count)
+            self.wait_for_puppet_finished()
+            logger.info('Exiting distro-sync')
 
     @update_rpm_packages
     @upload_manifests
@@ -417,6 +438,76 @@ class EnvironmentModel(object):
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
             (self.d_env.admin_net), 22), timeout=7 * 60)
+
+    def wait_for_puppet_finished(self, timeout=120):
+        self.wait_for_provisioning()
+        try:
+            remote = self.d_env.get_admin_remote()
+            cmd = 'c=0; ' \
+                  'while test $c -gt 3; do ' \
+                  '(pkill -0 puppet && c=$((c + 1))); ' \
+                  'sleep 1; ' \
+                  'done'
+            logger.info('Waiting for puppet finishes to run ...')
+            wait(lambda: remote.execute(cmd)['exit_code'] == 0,
+                 timeout=timeout)
+        except Exception:
+            logger.error('Failed to wait for master node'
+                         ' readiness after reboot')
+            raise
+
+    def reboot_master_node(self, timeout=600):
+        uptime = self.get_master_node_uptime()
+        logger.info('Rebooting master node, uptime %s ...' % uptime)
+        remote = self.d_env.get_admin_remote()
+        remote.execute('reboot &')
+        logger.info('Waiting for master node to reboot ...')
+        self.wait_for_provisioning()
+        try:
+            wait(lambda: self.check_master_node_rebooted(uptime),
+                 timeout=timeout)
+        except Exception:
+            logger.error('Failed to wait for master node to reboot')
+            raise
+
+    def get_master_node_uptime(self):
+        try:
+            remote = self.d_env.get_admin_remote()
+            result = remote.execute('cat /proc/uptime')
+            return float(result['stdout'][0].split()[0])
+        except Exception:
+            return None
+
+    def check_master_node_rebooted(self, uptime=None):
+        if not uptime:
+            return False
+        curr_uptime = self.get_master_node_uptime()
+        if not curr_uptime:
+            return False
+        if curr_uptime >= uptime:
+            return False
+        logger.info('Node has been rebooted, uptime %s' % curr_uptime)
+        return True
+
+    def wait_docker_containers_up(self, count, timeout=300):
+        try:
+            remote = self.d_env.get_admin_remote()
+            logger.info('Waiting for %s containers to be up' % count)
+            wait(lambda: self.check_docker_containers_count(remote, count),
+                 timeout=timeout)
+            logger.info('Waiting for "dockerctl check all" to succeed')
+            wait(lambda: remote.execute(
+                'dockerctl check all')['exit_code'] == 0, timeout=600)
+        except:
+            logger.error('{} containers were not started in {} sec'
+                         .format(count, timeout))
+            raise
+
+    def check_docker_containers_count(self, remote, count):
+        result = remote.execute('docker ps -q -f "name=fuel-core"')
+        logger.info('Got {} containers running, need {}'
+                    .format(len(result['stdout']), count))
+        return len(result['stdout']) == count
 
     def setup_customisation(self):
         self.wait_for_provisioning()
