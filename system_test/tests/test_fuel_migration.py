@@ -14,19 +14,20 @@
 
 from devops.helpers.helpers import icmp_ping
 from devops.helpers.helpers import wait
-from proboscis import factory
 from proboscis.asserts import assert_equal
 
 from fuelweb_test import logger
 from fuelweb_test.helpers import checkers
+
+from system_test import testcase
 from system_test.helpers.decorators import action
 from system_test.helpers.decorators import deferred_decorator
 from system_test.helpers.decorators import make_snapshot_if_step_fail
-from system_test.helpers.utils import case_factory
 from system_test.tests.actions_base import ActionsBase
 from system_test.tests.actions_base import FuelMasterActions
 
 
+@testcase(groups=['system_test', 'system_test.fuel_migration'])
 class FuelMasterMigrate(ActionsBase, FuelMasterActions):
     """Fuel master migration to VM
 
@@ -41,7 +42,6 @@ class FuelMasterMigrate(ActionsBase, FuelMasterActions):
         8. Run OSTF
     """
 
-    base_group = ['system_test', 'system_test.fuel_migration']
     actions_order = [
         'setup_master',
         'config_release',
@@ -128,8 +128,3 @@ class FuelMasterMigrate(ActionsBase, FuelMasterActions):
             wait(lambda: not remote.exists("/notready"),
                  timeout=900,
                  timeout_msg=("File wasn't removed in 900 sec"))
-
-
-@factory
-def cases():
-    return case_factory(FuelMasterMigrate)
