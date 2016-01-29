@@ -507,3 +507,9 @@ NESSUS_PORT = os.environ.get("NESSUS_PORT", 8834)
 NESSUS_USERNAME = os.environ.get("NESSUS_USERNAME")
 NESSUS_PASSWORD = os.environ.get("NESSUS_PASSWORD")
 NESSUS_SSL_VERIFY = get_var_as_bool("NESSUS_SSL_VERIFY", False)
+
+DISTRO_SYNC_STEP = os.environ.get('DISTRO_SYNC_STEP', '')
+DISTRO_SYNC_URL = os.environ.get(
+    'DISTRO_SYNC_URL', 'git://172.18.10.105/mos-distro-sync.git')
+DISTRO_SYNC_BRANCH = os.environ.get('DISTRO_SYNC_BRANCH', 'master')
+DISTRO_SYNC_ROLLBACK = get_var_as_bool('DISTRO_SYNC_ROLLBACK', False)
