@@ -368,14 +368,20 @@ class FuelWebClient(object):
 
     @logwrap
     def get_rabbit_running_nodes(self, ctrl_node):
-        with self.get_ssh_for_node(ctrl_node) as remote:
-            rabbit_status = ''.join(remote.execute(
-                'rabbitmqctl cluster_status')['stdout']).strip()
+        ip = self.get_node_ip_by_devops_name(ctrl_node)
+        rabbit_status = ''.join(
+            self.ssh_manager.execute(ip,'rabbitmqctl cluster_status')['stdout']
+        ).strip()
+        rabbit_status = re.sub(r',\n\s*', ',', rabbit_status)
         rabbit_nodes = re.search(
-            "\{running_nodes,\[(.*)\]\}",
+            "\{running_nodes,\[([^\]]*)\]\}",
             rabbit_status).group(1).replace("'", "").split(',')
         logger.debug('rabbit nodes are {}'.format(rabbit_nodes))
         nodes = [node.replace('rabbit@', "") for node in rabbit_nodes]
+        hostname_prefix = ''.join(self.ssh_manager.execute(
+            ip, 'hiera node_name_prefix_for_messaging')['stdout']).strip()
+        if hostname_prefix not in ('', 'nil'):
+            nodes = [n.replace(hostname_prefix, "") for n in rabbit_nodes]
         return nodes
 
     @logwrap
