@@ -75,6 +75,7 @@ from fuelweb_test.settings import OSTF_TEST_NAME
 from fuelweb_test.settings import OSTF_TEST_RETRIES_COUNT
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
+from fuelweb_test.settings import SSL_CN
 from fuelweb_test.settings import TIMEOUT
 from fuelweb_test.settings import VCENTER_DATACENTER
 from fuelweb_test.settings import VCENTER_DATASTORE
@@ -575,8 +576,8 @@ class FuelWebClient(object):
     @logwrap
     def ssl_configure(self, cluster_id):
         attributes = self.client.get_cluster_attributes(cluster_id)
-        cn = self.get_public_vip(cluster_id)
-        change_cluster_ssl_config(attributes, cn)
+        # cn = self.get_public_vip(cluster_id)
+        change_cluster_ssl_config(attributes, SSL_CN)
         logger.debug("Try to update cluster "
                      "with next attributes {0}".format(attributes))
         self.client.update_cluster_attributes(cluster_id, attributes)
