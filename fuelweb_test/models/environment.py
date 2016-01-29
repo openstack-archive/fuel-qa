@@ -409,6 +409,16 @@ class EnvironmentModel(object):
                   " -regex '.*/mos[0-9,\.]+\-(updates|security).repo' | " \
                   "xargs -n1 -i sed '$aenabled=0' -i {}"
             self.execute_remote_cmd(remote, cmd)
+        if settings.DO_DISTRO_SYNC:
+            self.wait_for_puppet_finished()
+            remote = self.d_env.get_admin_remote()
+            cmd = "yum install -y git && " \
+                  "tmpdir=$(mktemp -d) && cd $tmpdir && " \
+                  "git clone git clone git://172.18.10.105/mos7-centos6-update.git . && " \
+                  "/bin/bash ./update-master-node.sh && " \
+                  "reboot"
+            self.execute_remote_cmd(remote, cmd)
+            self.wait_for_puppet_finished()
 
     @update_rpm_packages
     @upload_manifests
@@ -417,6 +427,21 @@ class EnvironmentModel(object):
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
             (self.d_env.admin_net), 22), timeout=7 * 60)
+
+    def wait_for_puppet_finished(self, timeout=120):
+        self.wait_for_provisioning()
+        try:
+            remote = self.d_env.get_admin_remote()
+            cmd = 'c=0; ' \
+                  'while test $c -gt 3; do ' \
+                  '(pkill -0 puppet && c=$((c + 1))); ' \
+                  'sleep 1; ' \
+                  'done'
+            wait(lambda: remote.execute(cmd)['exit_code'] == 0,
+                 timeout=timeout)
+        except Exception:
+            logger.error('Failed to wait for master node readiness after a reboot')
+            raise
 
     def setup_customisation(self):
         self.wait_for_provisioning()
