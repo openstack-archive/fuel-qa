@@ -503,6 +503,18 @@ class EnvironmentModel(object):
                 ip=self.ssh_manager.admin_ip,
                 cmd=cmd
             )
+        if settings.DO_DISTRO_SYNC:
+            self.wait_for_puppet_finished()
+            cmd = "yum install -y git && " \
+                  "tmpdir=$(mktemp -d) && cd $tmpdir && " \
+                  "git clone git://172.18.10.105/mos7-centos6-update.git . && " \
+                  "/bin/bash ./update-master-node.sh && " \
+                  "reboot"
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
+            self.wait_for_puppet_finished()
 
     @update_rpm_packages
     @upload_manifests
@@ -517,6 +529,19 @@ class EnvironmentModel(object):
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
             (self.d_env.admin_net), 22), timeout=timeout)
+
+    @logwrap
+    def wait_for_puppet_finished(self, timeout=120):
+        self.wait_for_provisioning()
+        check_cmd = 'c=0; ' \
+                    'while test $c -gt 3; do ' \
+                    '(pkill -0 puppet && c=$((c + 1))); ' \
+                    'sleep 1; ' \
+                    'done'
+        wait(
+            lambda: self.ssh_manager.execute(
+                ip=self.ssh_manager.admin_ip,
+                cmd=check_cmd)['exit_code'] == 0, timeout=timeout)
 
     @logwrap
     def wait_for_external_config(self, timeout=120):
