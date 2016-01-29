@@ -409,6 +409,22 @@ class EnvironmentModel(object):
                   " -regex '.*/mos[0-9,\.]+\-(updates|security).repo' | " \
                   "xargs -n1 -i sed '$aenabled=0' -i {}"
             self.execute_remote_cmd(remote, cmd)
+        if settings.DO_DISTRO_SYNC:
+            logger.info('Entering distro-sync')
+            self.wait_for_puppet_finished()
+            remote = self.d_env.get_admin_remote()
+            git_url = "git://172.18.10.105/mos7-centos6-update.git"
+            cmd = "yum install -y git && " \
+                  "tmpdir=$(mktemp -d) && cd $tmpdir && " \
+                  "git clone %s . && " \
+                  "/bin/bash ./update-master-node.sh" % git_url
+            logger.info("Executing distro-sync sequence '{}'".format(
+                cmd
+            ))
+            self.execute_remote_cmd(remote, cmd)
+            self.reboot_master_node()
+            self.wait_for_puppet_finished()
+            logger.info('Exiting distro-sync')
 
     @update_rpm_packages
     @upload_manifests
@@ -417,6 +433,56 @@ class EnvironmentModel(object):
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
             (self.d_env.admin_net), 22), timeout=7 * 60)
+
+    def wait_for_puppet_finished(self, timeout=120):
+        self.wait_for_provisioning()
+        try:
+            remote = self.d_env.get_admin_remote()
+            cmd = 'c=0; ' \
+                  'while test $c -gt 3; do ' \
+                  '(pkill -0 puppet && c=$((c + 1))); ' \
+                  'sleep 1; ' \
+                  'done'
+            logger.info('Waiting for puppet finishes to run ...')
+            wait(lambda: remote.execute(cmd)['exit_code'] == 0,
+                 timeout=timeout)
+        except Exception:
+            logger.error('Failed to wait for master node'
+                         ' readiness after reboot')
+            raise
+
+    def reboot_master_node(self, timeout=600):
+        last_boot_time = self.get_master_node_boot_time()
+        logger.info('Rebooting master node ...')
+        remote = self.d_env.get_admin_remote()
+        remote.execute('reboot &')
+        logger.info('Waiting for master node to reboot ...')
+        try:
+            wait(lambda: self.check_master_node_rebooted(last_boot_time),
+                 timeout=timeout)
+        except Exception:
+            logger.error('Failed to wait for master node to reboot')
+            raise
+
+    def get_master_node_boot_time(self):
+        self.wait_for_provisioning()
+        try:
+            remote = self.d_env.get_admin_remote()
+            boot_time = remote.execute('uptime -s')['stdout']
+        except Exception:
+            boot_time = None
+        logger.info("Master node boot time '%s'" % boot_time)
+        return boot_time
+
+    def check_master_node_rebooted(self, last_boot_time):
+        boot_time = self.get_master_node_boot_time()
+        if not last_boot_time:
+            return False
+        if not boot_time:
+            return False
+        if boot_time == last_boot_time:
+            return False
+        return True
 
     def setup_customisation(self):
         self.wait_for_provisioning()
