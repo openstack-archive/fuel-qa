@@ -33,6 +33,12 @@ def copy_func(f, name=None):
     return fn
 
 
+def get_basepath():
+    import system_test
+    return os.path.join(
+            os.path.dirname(os.path.dirname(system_test.__file__)))
+
+
 def get_list_confignames(filelist):
     """Get list of config name from file list"""
     return map(get_configname, filelist)
@@ -115,7 +121,7 @@ def find_duplicates(yamls):
             dup[name].append(one)
         else:
             dup[name] = [one]
-    return {k: v for k, v in dup.iteritems() if len(v) > 1}
+    return {k: v for k, v in dup.items() if len(v) > 1}
 
 
 def get_configs():
@@ -129,7 +135,7 @@ def get_configs():
     return {get_configname(y): y for y in yamls}
 
 
-def case_factory(baseclass):
-    """Return list of instance """
-    configs = get_configs()
-    return [baseclass.caseclass_factory(g)(c) for g, c in configs.iteritems()]
+def config_filter(configs=None):
+    if configs is None:
+        return get_configs()
+    return {k: v for k, v in get_configs().items() if k in configs}

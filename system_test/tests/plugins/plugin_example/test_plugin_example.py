@@ -12,13 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from proboscis import factory
-
+from system_test import testcase
 from fuelweb_test.settings import EXAMPLE_PLUGIN_PATH
-from system_test.helpers.utils import case_factory
 from system_test.tests.actions_base import ActionsBase
 
 
+@testcase(groups=['system_test',
+                  'system_test.plugins',
+                  'system_test.plugins.example_plugin',
+                  'system_test.plugins.example_plugin.simple'])
 class DeployWithPluginExample(ActionsBase):
     """Deploy cluster with one controller and example plugin
 
@@ -37,11 +39,6 @@ class DeployWithPluginExample(ActionsBase):
     Snapshot deploy_ha_one_controller_neutron_example
     """
 
-    base_group = ['system_test',
-                  'system_test.plugins',
-                  'system_test.plugins.example_plugin',
-                  'system_test.plugins.example_plugin.simple']
-
     plugin_name = "fuel_plugin_example"
     plugin_path = EXAMPLE_PLUGIN_PATH
 
@@ -58,6 +55,10 @@ class DeployWithPluginExample(ActionsBase):
     ]
 
 
+@testcase(groups=['system_test',
+                  'system_test.plugins',
+                  'system_test.plugins.example_plugin',
+                  'system_test.plugins.example_plugin.simple_scale'])
 class DeployScaleWithPluginExample(ActionsBase):
     """Deploy and scale cluster in ha mode with example plugin
 
@@ -81,11 +82,6 @@ class DeployScaleWithPluginExample(ActionsBase):
     Snapshot deploy_neutron_example_ha_add_node
     """
 
-    base_group = ['system_test',
-                  'system_test.plugins',
-                  'system_test.plugins.example_plugin',
-                  'system_test.plugins.example_plugin.simple_scale']
-
     plugin_name = "fuel_plugin_example"
     plugin_path = EXAMPLE_PLUGIN_PATH
 
@@ -106,9 +102,3 @@ class DeployScaleWithPluginExample(ActionsBase):
         'check_example_plugin',
         'health_check',
     ]
-
-
-@factory
-def cases():
-    return (case_factory(DeployWithPluginExample) +
-            case_factory(DeployScaleWithPluginExample))
