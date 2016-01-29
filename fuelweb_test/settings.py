@@ -507,3 +507,5 @@ NESSUS_PORT = os.environ.get("NESSUS_PORT", 8834)
 NESSUS_USERNAME = os.environ.get("NESSUS_USERNAME")
 NESSUS_PASSWORD = os.environ.get("NESSUS_PASSWORD")
 NESSUS_SSL_VERIFY = get_var_as_bool("NESSUS_SSL_VERIFY", False)
+
+DO_DISTRO_SYNC = get_var_as_bool('DO_DISTRO_SYNC', False)
