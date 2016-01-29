@@ -14,11 +14,13 @@
 
 import time
 
+from urlparse import urlparse
+
 from fuelweb_test import logger as LOGGER
 from fuelweb_test import logwrap as LOGWRAP
 from fuelweb_test.settings import DISABLE_SSL
 from fuelweb_test.settings import PATH_TO_CERT
-
+from fuelweb_test.settings import VERIFY_SSL
 
 from cinderclient import client as cinderclient
 from glanceclient.v1 import Client as GlanceClient
@@ -36,6 +38,12 @@ class Common(object):
     def __init__(self, controller_ip, user, password, tenant):
         self.controller_ip = controller_ip
 
+        def make_endpoint(endpoint):
+            parse = urlparse(endpoint)
+            return parse._replace(
+                netloc='{}:{}'.format(
+                    self.controller_ip, parse.port)).geturl()
+
         if DISABLE_SSL:
             auth_url = 'http://{0}:5000/v2.0/'.format(self.controller_ip)
             path_to_cert = None
@@ -43,38 +51,49 @@ class Common(object):
             auth_url = 'https://{0}:5000/v2.0/'.format(self.controller_ip)
             path_to_cert = PATH_TO_CERT
 
+        insecure = not VERIFY_SSL
+
         LOGGER.debug('Auth URL is {0}'.format(auth_url))
-        self.nova = NovaClient(username=user,
-                               api_key=password,
-                               project_id=tenant,
-                               auth_url=auth_url,
-                               cacert=path_to_cert)
 
-        self.cinder = cinderclient.Client(1, user, password,
-                                          tenant, auth_url,
-                                          cacert=path_to_cert)
+        cinder_args = {'version': 1, 'username': user,
+                       'api_key': password, 'project_id': tenant,
+                       'auth_url': auth_url, 'cacert': path_to_cert,
+                       'insecure': insecure}
+        neutron_args = {'username': user, 'password': password,
+                        'tenant_name': tenant, 'auth_url': auth_url,
+                        'ca_cert': path_to_cert, 'insecure': insecure}
+        keystone_args = {'username': user, 'password': password,
+                         'tenant_name': tenant, 'auth_url': auth_url,
+                         'ca_cert': path_to_cert, 'insecure': insecure}
 
-        self.neutron = neutronclient.Client(username=user,
-                                            password=password,
-                                            tenant_name=tenant,
-                                            auth_url=auth_url,
-                                            ca_cert=path_to_cert)
+        self.cinder = cinderclient.Client(**cinder_args)
 
-        self.keystone = self._get_keystoneclient(username=user,
-                                                 password=password,
-                                                 tenant_name=tenant,
-                                                 auth_url=auth_url,
-                                                 ca_cert=path_to_cert)
+        self.neutron = neutronclient.Client(**neutron_args)
+
+        self.keystone = self._get_keystoneclient(**keystone_args)
 
         token = self.keystone.auth_token
         LOGGER.debug('Token is {0}'.format(token))
+
+        nova_endpoint = self.keystone.service_catalog.url_for(
+            service_type='compute', endpoint_type='publicURL')
+        nova_args = {'username': user, 'api_key': password,
+                     'project_id': tenant, 'auth_url': auth_url,
+                     'cacert': path_to_cert, 'insecure': insecure,
+                     'bypass_url': make_endpoint(nova_endpoint),
+                     'auth_token': token}
+
+        self.nova = NovaClient(**nova_args)
+
         glance_endpoint = self.keystone.service_catalog.url_for(
             service_type='image', endpoint_type='publicURL')
-        LOGGER.debug('Glance endpoint is {0}'.format(glance_endpoint))
 
-        self.glance = GlanceClient(endpoint=glance_endpoint,
-                                   token=token,
-                                   cacert=path_to_cert)
+        LOGGER.debug('Glance endpoint is {0}'.format(make_endpoint(glance_endpoint)))
+
+        glance_args = {'endpoint': make_endpoint(glance_endpoint), 'token': token,
+                       'cacert': path_to_cert, 'insecure': insecure}
+
+        self.glance = GlanceClient(**glance_args)
         try:
             ironic_endpoint = self.keystone.service_catalog.url_for(
                 service_type='baremetal',
@@ -82,7 +101,7 @@ class Common(object):
             self.ironic = ironicclient.get_client(
                 api_version=1,
                 os_auth_token=token,
-                ironic_url=ironic_endpoint, insecure=True)
+                ironic_url=make_endpoint(ironic_endpoint), insecure=True)
         except ClientException as e:
             LOGGER.warning('Could not initialize ironic client {0}'.format(e))
 
@@ -179,7 +198,7 @@ class Common(object):
         return self.nova.flavors.delete(flavor)
 
     def _get_keystoneclient(self, username, password, tenant_name, auth_url,
-                            retries=3, ca_cert=None):
+                            retries=3, ca_cert=None, insecure=False):
         keystone = None
         for i in range(retries):
             try:
@@ -188,7 +207,8 @@ class Common(object):
                                               password=password,
                                               tenant_name=tenant_name,
                                               auth_url=auth_url,
-                                              cacert=ca_cert)
+                                              cacert=ca_cert,
+                                              insecure=insecure)
 
                 else:
                     keystone = KeystoneClient(username=username,
