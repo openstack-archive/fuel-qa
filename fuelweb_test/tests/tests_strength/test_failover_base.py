@@ -875,9 +875,9 @@ class TestHaFailoverBase(TestBasic):
             remote.execute('service corosync stop')
 
         with self.env.d_env.get_admin_remote() as remote:
-            cmd = "grep 'Ignoring alive node rabbit@{0}' /var/log/remote" \
-                  "/{1}/rabbit-fence.log".format(rabbit_slave1_name,
-                                                 pcm_nodes[0])
+            cmd = ("grep -P 'Ignoring alive node rabbit@\S*\\b{0}\\b' "
+                   "/var/log/remote/{1}/rabbit-fence.log").format(
+                rabbit_slave1_name, pcm_nodes[0])
             try:
                 wait(
                     lambda: not remote.execute(cmd)['exit_code'],
@@ -888,17 +888,16 @@ class TestHaFailoverBase(TestBasic):
                              'alive rabbit node was not ignored,'
                              ' result is {}'.format(result))
             assert_equal(0, remote.execute(
-                "grep 'Got {0} that left cluster' /var/log/remote/{1}/"
-                "rabbit-fence.log".format(slave1_name,
-                                          pcm_nodes[0]))['exit_code'],
+                "grep -P 'Got \S*\\b{0}\\b that left cluster' /var/log/remote/"
+                "{1}/rabbit-fence.log".format(slave1_name,
+                                              pcm_nodes[0]))['exit_code'],
                          "slave {} didn't leave cluster".format(slave1_name))
             assert_equal(0, remote.execute(
-                "grep 'Preparing to fence node rabbit@{0} from rabbit cluster'"
-                " /var/log/remote/{1}/"
-                "rabbit-fence.log".format(rabbit_slave1_name,
-                                          pcm_nodes[0]))['exit_code'],
-                         "node {} wasn't prepared for"
-                         " fencing".format(rabbit_slave1_name))
+                "grep -P 'Preparing to fence node rabbit@\S*\\b{0}\\b from "
+                "rabbit cluster' /var/log/remote/{1}/rabbit-fence.log".format(
+                    rabbit_slave1_name, pcm_nodes[0]))['exit_code'],
+                "Node {} wasn't prepared for fencing".format(
+                    rabbit_slave1_name))
 
         cluster_id = self.fuel_web.client.get_cluster_id(
             self.__class__.__name__)
@@ -958,9 +957,9 @@ class TestHaFailoverBase(TestBasic):
 
         with self.env.d_env.get_admin_remote() as remote:
 
-            cmd = "grep 'Forgetting cluster node rabbit@{0}' /var/log/remote" \
-                  "/{1}/rabbit-fence.log".format(rabbit_slave1_name,
-                                                 pcm_nodes[0])
+            cmd = ("grep -P 'Forgetting cluster node rabbit@\S*\\b{0}\\b'"
+                   " /var/log/remote/{1}/rabbit-fence.log").format(
+                rabbit_slave1_name, pcm_nodes[0])
             try:
                 wait(
                     lambda: not remote.execute(cmd)['exit_code'],
@@ -972,23 +971,21 @@ class TestHaFailoverBase(TestBasic):
                              ' result is {}'.format(result))
 
             assert_equal(0, remote.execute(
-                "grep 'Got {0} that left cluster' /var/log/remote/{1}/"
-                "rabbit-fence.log".format(slave1_name,
-                                          pcm_nodes[0]))['exit_code'],
-                         "node {} didn't leave cluster".format(slave1_name))
+                "grep -P 'Got \S*\\b{0}\\b that left cluster' "
+                "/var/log/remote/{1}/rabbit-fence.log".format(
+                    slave1_name, pcm_nodes[0]))['exit_code'],
+                "node {} didn't leave cluster".format(slave1_name))
             assert_equal(0, remote.execute(
-                "grep 'Preparing to fence node rabbit@{0} from rabbit cluster'"
-                " /var/log/remote/{1}/"
-                "rabbit-fence.log".format(rabbit_slave1_name,
-                                          pcm_nodes[0]))['exit_code'],
-                         "node {} wasn't prepared for"
-                         " fencing".format(rabbit_slave1_name))
+                "grep -P 'Preparing to fence node rabbit@\S*\\b{0}\\b from "
+                "rabbit cluster' /var/log/remote/{1}/rabbit-fence.log".format(
+                    rabbit_slave1_name, pcm_nodes[0]))['exit_code'],
+                "Node {} wasn't prepared for fencing".format(
+                    rabbit_slave1_name))
             assert_equal(0, remote.execute(
-                "grep 'Disconnecting node rabbit@{0}' /var/log/remote/{1}/"
-                "rabbit-fence.log".format(rabbit_slave1_name,
-                                          pcm_nodes[0]))['exit_code'],
-                         "node {} wasn't disconnected"
-                         .format(rabbit_slave1_name))
+                "grep -P 'Disconnecting node rabbit@\S*\\b{0}\\b' "
+                "/var/log/remote/{1}/rabbit-fence.log".format(
+                    rabbit_slave1_name, pcm_nodes[0]))['exit_code'],
+                "node {} wasn't disconnected".format(rabbit_slave1_name))
 
         rabbit_nodes.remove(rabbit_slave1_name)
 
