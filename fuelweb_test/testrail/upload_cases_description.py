@@ -20,8 +20,13 @@ from proboscis import TestPlan
 from proboscis.decorators import DEFAULT_REGISTRY
 
 from builds import Build
-from fuelweb_test.run_tests import import_tests
+# from fuelweb_test.run_tests import import_tests
 from system_test import define_custom_groups
+from system_test import discover_import_tests
+from system_test import register_system_test_cases
+from system_test import tests_directory
+from system_test.helpers.utils import get_basepath
+# from system_test import get_groups
 from settings import GROUPS_TO_EXPAND
 from settings import logger
 from settings import TestRailSettings
@@ -31,8 +36,11 @@ from testrail_client import TestRailProject
 def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
                            default_test_priority):
     from system_test.tests.actions_base import ActionsBase
-    import_tests()
+    # import_tests()
+    discover_import_tests(get_basepath(), tests_directory)
     define_custom_groups()
+    for one in groups:
+        register_system_test_cases(one)
     plan = TestPlan.create_from_registry(DEFAULT_REGISTRY)
     all_plan_tests = plan.tests[:]
 
