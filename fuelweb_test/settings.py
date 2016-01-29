@@ -55,6 +55,8 @@ DNS = os.environ.get('DNS', '8.8.8.8')
 PUBLIC_TEST_IP = os.environ.get('PUBLIC_TEST_IP', '8.8.8.8')
 
 DISABLE_SSL = get_var_as_bool('DISABLE_SSL', False)
+VERIFY_SSL = get_var_as_bool('VERIFY_SSL', False)
+SSL_CN = os.environ.get('SSL_CN', 'public.fuel.local')
 SSL_CERTS_DIR = os.environ.get('SSL_CERTS_DIR', os.getcwd())
 if not os.path.exists(SSL_CERTS_DIR):
     os.makedirs(SSL_CERTS_DIR)
