@@ -25,6 +25,8 @@ from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logwrap
 from fuelweb_test import logger
 
+from fuelweb_test.settings import SSL_CN
+
 
 class CommandLine(TestBasic):
     """CommandLine."""  # TODO documentation
@@ -122,8 +124,8 @@ class CommandLine(TestBasic):
     @logwrap
     def update_ssl_configuration(self, cluster_id, remote):
         settings = self.download_settings(cluster_id, remote)
-        cn = self.get_public_vip(cluster_id, remote)
-        change_cluster_ssl_config(settings, cn)
+        # cn = self.get_public_vip(cluster_id, remote)
+        change_cluster_ssl_config(settings, SSL_CN)
         self.upload_settings(cluster_id, remote, settings)
 
     def add_nodes_to_cluster(
