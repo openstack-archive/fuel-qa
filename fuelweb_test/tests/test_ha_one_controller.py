@@ -501,7 +501,7 @@ class MultiroleMultipleServices(TestBasic):
             }
         )
 
-        repos_attr = self.get_cluster_repos(cluster_id)
+        repos_attr = self.fuel_web.get_cluster_repos(cluster_id)
         self.fuel_web.report_repos(repos_attr)
 
         # (ddmitriev): No additional checks is required after deploy,
