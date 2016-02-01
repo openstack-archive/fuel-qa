@@ -2576,3 +2576,19 @@ class FuelWebClient(object):
             else:
                 network['ip_ranges'] = self.get_range(new_cidr, ip_range=0)
         self.client.update_network(cluster_id, params, networks)
+
+    @logwrap
+    def wait_task_success(self, task_name='', interval=30,
+                          timeout=help_data.DEPLOYMENT_TIMEOUT):
+        """Wait provided task to finish
+
+        :param task_name: str
+        :param interval: int
+        :param timeout: int
+        :return: None
+        """
+        all_tasks = self.client.get_tasks()
+        tasks = [task for task in all_tasks if task['name'] == task_name]
+        latest_task = sorted(tasks, key=lambda k: k['id'])[-1]
+        self.assert_task_success(latest_task, interval=interval,
+                                 timeout=timeout)
