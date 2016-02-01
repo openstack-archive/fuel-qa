@@ -115,6 +115,9 @@ class GateOstf(TestBasic):
         update_ostf(self.env)
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.show_step(3)
+        all_test_suits = self.fuel_web.get_all_ostf_set_names(cluster_id)
+        test_to_execute = [
+            suite for suite in all_test_suits if suite != 'configuration']
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
-            test_sets=self.fuel_web.get_all_ostf_set_names(cluster_id))
+            test_sets=test_to_execute)
