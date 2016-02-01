@@ -180,7 +180,7 @@ class EnvironmentModel(object):
                 "<Wait>\n"  # USB boot uses boot_menu=yes for master node
                 "<F12>\n"
                 "2\n"
-                "<Esc><Enter>\n"
+                "<Esc>\n"
                 "<Wait>\n"
                 "vmlinuz initrd=initrd.img ks=%(ks)s\n"
                 " repo=%(repo)s\n"
@@ -224,7 +224,7 @@ class EnvironmentModel(object):
                     "<Wait>\n"  # USB boot uses boot_menu=yes for master node
                     "<F12>\n"
                     "2\n"
-                    "<Esc><Enter>\n"
+                    "<Esc>\n"
                     "<Wait>\n"
                     "vmlinuz initrd=initrd.img ks=%(ks)s\n"
                     " repo=%(repo)s\n"
