@@ -218,6 +218,7 @@ class ActionsBase(PrepareBase, HealthCheckActions, PluginsActions):
             "sahara": self.env_settings['components'].get('sahara', False),
             "ceilometer": self.env_settings['components'].get('ceilometer',
                                                               False),
+            "ironic": self.env_settings['components'].get('ironic', False),
             "user": self.env_config.get("user", "admin"),
             "password": self.env_config.get("password", "admin"),
             "tenant": self.env_config.get("tenant", "admin"),
