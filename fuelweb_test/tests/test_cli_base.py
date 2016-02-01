@@ -14,7 +14,6 @@
 
 import time
 import json
-
 from proboscis.asserts import assert_equal
 
 from devops.error import TimeoutError
@@ -24,6 +23,7 @@ from fuelweb_test.helpers.ssl import change_cluster_ssl_config
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logwrap
 from fuelweb_test import logger
+from fuelweb_test.helpers.utils import hiera_json_out
 
 
 class CommandLine(TestBasic):
@@ -85,6 +85,52 @@ class CommandLine(TestBasic):
                 task['status'], 'ready', name=task["name"]
             )
         )
+
+    @logwrap
+    def hiera_floating_ranges(self, node_ip):
+        """
+
+        1. SSH to controller node
+        2. Get network settings from controller  node
+        3. Convert to json network settings in variable config_json
+        4. Get new list of floating ranges in variable floating ranges
+        5. Convert to sublist floating ranges in variable floating_ranges_json
+
+        """
+        config_json = hiera_json_out(node_ip, 'quantum_settings')
+        floating_ranges = \
+            config_json[
+                "predefined_networks"][
+                "admin_floating_net"][
+                "L3"]["floating"]
+        floating_ranges_json = [
+            [float_address[0], float_address[1]] for float_address in (
+                float_address.split(':') for float_address in floating_ranges)]
+        return floating_ranges_json
+
+    @logwrap
+    def get_floating_ranges(self, cluster_id, remote):
+        """
+
+        This method using for get floating ranges from master node before
+        cluster will be deployed.
+        1. SSH to master node
+        2. Get networks from master node
+        3. Save floating ranges from master node
+
+        """
+        net_config = self.get_networks(cluster_id, remote)
+        floating_ranges =\
+            net_config[u'networking_parameters'][u'floating_ranges']
+        return floating_ranges
+
+    @logwrap
+    def change_floating_ranges(self, cluster_id, remote, floating_range):
+        net_config = self.get_networks(cluster_id, remote)
+        net_config[u'networking_parameters'][u'floating_ranges'] = \
+            floating_range
+        new_settings = net_config
+        self.update_network(cluster_id, remote, new_settings)
 
     @logwrap
     def update_cli_network_configuration(self, cluster_id, remote):

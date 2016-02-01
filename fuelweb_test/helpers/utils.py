@@ -23,6 +23,7 @@ import os
 import posixpath
 import re
 import signal
+import ipaddr
 
 from proboscis import asserts
 
@@ -597,6 +598,37 @@ def node_freemem(remote, unit='MB'):
         }
     }
     return ret
+
+
+def hiera_json_out(node_ip, parameter):
+    hiera_cmd = "ruby -rhiera -rjson -e \"h = Hiera.new(); " \
+                "Hiera.logger = 'noop'; " \
+                "puts JSON.dump(h.lookup(\'{0}\', " \
+                "[], {{}}, nil, nil))\"".format(parameter)
+    ssh_manager = SSHManager()
+    config = ssh_manager.execute_on_remote(
+        ip=node_ip,
+        cmd=hiera_cmd,
+        jsonify=True,
+        err_msg='Cannot get floating ranges')['stdout_json']
+    return config
+
+
+def generate_floating_ranges(start_ip, end_ip, step):
+    """Generating floating range by first and last ip with any step
+
+    :param start_ip: first ip address in floating range
+    :param end_ip: last ip address in floating range
+    :param step: count of ip addresses in floating range
+    :return:
+    """
+    ranges = []
+    ip_start = ipaddr.IPAddress(start_ip)
+    ip_end = ipaddr.IPAddress(end_ip)
+    while ip_end - step > ip_start:
+        ranges.append([str(ip_start), str(ip_start + step)])
+        ip_start += (step + 1)
+    return ranges
 
 
 def get_node_hiera_roles(remote):
