@@ -86,6 +86,7 @@ class HaScaleGroup2(TestBasic):
                 'offline after warm shutdown'.format(primary_controller.name))
         self.show_step(6)
         self.fuel_web.delete_node(primary_controller_id)
+        self.fuel_web.wait_task_success('deployment')
 
         self.show_step(7)
         nodes = {'slave-05': ['controller']}
