@@ -2362,13 +2362,17 @@ class FuelWebClient(object):
 
     def update_plugin_data(self, cluster_id, plugin_name, data):
         attr = self.client.get_cluster_attributes(cluster_id)
+        # Do not re-upload anything, except selected plugin data
+        plugin_attributes = {
+            'editable': {plugin_name: attr['editable'][plugin_name]}}
+
         for option, value in data.items():
-            plugin_data = attr['editable'][plugin_name]
+            plugin_data = plugin_attributes['editable'][plugin_name]
             path = option.split("/")
             for p in path[:-1]:
                 plugin_data = plugin_data[p]
             plugin_data[path[-1]] = value
-        self.client.update_cluster_attributes(cluster_id, attr)
+        self.client.update_cluster_attributes(cluster_id, plugin_attributes)
 
     def get_plugin_data(self, cluster_id, plugin_name, version):
         """Return data (settings) for specified version of plugin
