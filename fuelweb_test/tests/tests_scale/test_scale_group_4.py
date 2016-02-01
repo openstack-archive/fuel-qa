@@ -163,7 +163,12 @@ class HaScaleGroup4(TestBasic):
         self.show_step(1, initialize=True)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE)
+            mode=DEPLOYMENT_MODE,
+            settings={
+                'volumes_lvm': True,
+                'images_ceph': True
+            }
+        )
         self.show_step(2)
         self.fuel_web.update_nodes(
             cluster_id,
