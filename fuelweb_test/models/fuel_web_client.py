@@ -2436,8 +2436,15 @@ class FuelWebClient(object):
         assert_true(ids, "osd ids for {} weren't found".format(hostname))
         for osd_id in ids:
             remote_ceph.execute("ceph osd out {}".format(osd_id))
-        wait(lambda: ceph.is_health_ok(remote_ceph),
-             interval=30, timeout=10 * 60)
+        try:
+            wait(lambda: ceph.is_health_ok(remote_ceph),
+                 interval=30, timeout=10 * 60)
+        except TimeoutError:
+            summary = ceph.get_health(remote_ceph)['summary'][0]['summary']
+            assert_true(
+                'too many PGs per OSD' in summary
+            )
+            logger.error('{} \n Need to re-deploy cluster!'.format(summary))
         for osd_id in ids:
             if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
                 remote_ceph.execute("stop ceph-osd id={}".format(osd_id))
