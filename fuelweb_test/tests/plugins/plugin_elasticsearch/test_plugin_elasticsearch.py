@@ -33,6 +33,10 @@ import requests
 class TestElasticsearchPlugin(TestBasic):
     """Class for testing the Elasticsearch-Kibana plugin."""
 
+    def get_vip(self, cluster_id):
+        networks = self.fuel_web.client.get_networks(cluster_id)
+        return networks.get('vips').get('es_vip_mgmt', {}).get('ipaddr', None)
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_elasticsearch_kibana"])
     @log_snapshot_after_test
@@ -72,8 +76,7 @@ class TestElasticsearchPlugin(TestBasic):
         )
 
         plugin_name = 'elasticsearch_kibana'
-        options = {'metadata/enabled': True,
-                   'node_name/value': 'slave-03_elasticsearch_kibana'}
+        options = {'metadata/enabled': True}
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
 
         assert_true(
@@ -94,7 +97,7 @@ class TestElasticsearchPlugin(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         es_server = self.fuel_web.get_nailgun_node_by_name('slave-03')
-        es_server_ip = es_server.get('ip')
+        es_server_ip = self.get_vip(cluster_id)
         assert_is_not_none(es_server_ip,
                            "Failed to get the IP of Elasticsearch server")
 
