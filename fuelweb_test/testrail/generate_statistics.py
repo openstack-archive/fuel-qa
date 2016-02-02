@@ -179,6 +179,7 @@ class TestRunStatistics(object):
             return self._bugs_statistics
         logger.info('Collecting stats for TestRun "{0}" on "{1}"...'.format(
             self.run['name'], self.run['config'] or 'default config'))
+
         for test in self.tests:
             logger.debug('Checking "{0}" test...'.format(
                 test['title'].encode('utf8')))
@@ -227,7 +228,7 @@ class StatisticsGenerator(object):
     """Generate statistics for bugs attached to TestRuns in TestPlan
     """
 
-    def __init__(self, project, plan_id, run_id=None, handle_blocked=False):
+    def __init__(self, project, plan_id, run_ids=(), handle_blocked=False):
         self.project = project
         self.test_plan = self.project.get_plan(plan_id)
         logger.info('Found TestPlan "{0}"'.format(self.test_plan['name']))
@@ -235,7 +236,7 @@ class StatisticsGenerator(object):
         self.test_runs_stats = [
             TestRunStatistics(self.project, r['id'], handle_blocked)
             for e in self.test_plan['entries'] for r in e['runs']
-            if r['id'] == run_id or run_id is None
+            if r['id'] in run_ids or len(run_ids) == 0
         ]
 
         self.bugs_statistics = {}
@@ -243,12 +244,14 @@ class StatisticsGenerator(object):
     def generate(self):
         for test_run in self.test_runs_stats:
             test_run_stats = test_run.bugs_statistics
+            self.bugs_statistics[test_run['id']] = dict()
             for bug, tests in test_run_stats.items():
-                if bug in self.bugs_statistics:
-                    self.bugs_statistics[bug].update(tests)
+                if bug in self.bugs_statistics[test_run['id']]:
+                    self.bugs_statistics[test_run['id']][bug].update(tests)
                 else:
-                    self.bugs_statistics[bug] = tests
-        logger.info('Found {0} linked bugs'.format(len(self.bugs_statistics)))
+                    self.bugs_statistics[test_run['id']][bug] = tests
+            logger.info('Found {0} linked bug(s)'.format(
+                len(self.bugs_statistics[test_run['id']])))
 
     def update_desription(self, stats):
         old_description = self.test_plan['description']
@@ -262,9 +265,23 @@ class StatisticsGenerator(object):
         return self.project.update_plan(plan_id=self.test_plan['id'],
                                         description=new_description)
 
-    def dump(self):
+    def dump(self, run_id=None):
         stats = dict()
-        for bug_id in self.bugs_statistics:
+
+        if not run_id:
+            joint_bugs_statistics = dict()
+            for run in self.bugs_statistics:
+                for bug, tests in self.bugs_statistics[run].items():
+                    if bug in joint_bugs_statistics:
+                        joint_bugs_statistics[bug].update(tests)
+                    else:
+                        joint_bugs_statistics[bug] = tests
+        else:
+            for _run_id, _stats in self.bugs_statistics.items():
+                if _run_id == run_id:
+                    joint_bugs_statistics = _stats
+
+        for bug_id in joint_bugs_statistics:
             try:
                 lp_bug = LaunchpadBug(bug_id).get_duplicate_of()
             except KeyError:
@@ -275,24 +292,24 @@ class StatisticsGenerator(object):
 
             if lp_bug.bug.id in stats:
                 stats[lp_bug.bug.id]['tests'].update(
-                    self.bugs_statistics[bug_id])
+                    joint_bugs_statistics[bug_id])
                 stats[lp_bug.bug.id]['affected_num'] = len(
                     stats[lp_bug.bug.id]['tests'])
             else:
                 stats[lp_bug.bug.id] = {
-                    'affected_num': len(self.bugs_statistics[bug_id]),
+                    'affected_num': len(joint_bugs_statistics[bug_id]),
                     'title': bug_target['title'],
                     'importance': bug_target['importance'],
                     'status': bug_target['status'],
                     'project': bug_target['project'],
                     'link': lp_bug.bug.web_link,
-                    'tests': self.bugs_statistics[bug_id]
+                    'tests': joint_bugs_statistics[bug_id]
                 }
         return OrderedDict(sorted(stats.items(),
                                   key=lambda x: x[1]['affected_num'],
                                   reverse=True))
 
-    def dump_html(self, stats=None):
+    def dump_html(self, stats=None, run_id=None):
         if stats is None:
             stats = self.dump()
 
@@ -300,6 +317,10 @@ class StatisticsGenerator(object):
         html += '<h2>Bugs Statistics (generated on {0})</h2>\n'.format(
             time.strftime("%c"))
         html += '<h3>TestPlan: "{0}"</h3>\n'.format(self.test_plan['name'])
+        if run_id:
+            test_run = [r for r in self.test_runs_stats if r['id'] == run_id]
+            if test_run:
+                html += '<h4>TestRun: "{0}"</h4>\n'.format(test_run[0]['name'])
 
         for bug, values in stats.items():
             if values['status'].lower() in ('invalid',):
@@ -315,8 +336,9 @@ class StatisticsGenerator(object):
             else:
                 color = 'orange'
 
-            title = values['title'] if len(values['title']) <= 100 \
-                else values['title'][:100] + '...'
+            title = re.sub(r'(Bug\s+#\d+\s+)(in\s+[^:]+:\s+)', '\g<1>',
+                           values['title'])
+            title = re.sub(r'(.{100}).*', '\g<1>...', title)
             html += '[{0:<3} TC(s)]'.format(values['affected_num'])
             html += ('[{0:^4}][{1:^9}]'
                      '[<b><font color={3}>{2:^13}</font></b>]').format(
@@ -345,12 +367,13 @@ class StatisticsGenerator(object):
             time.strftime("%c"))
         header += '==================================\n'
 
-        bugs_table = ('|||:Affected TCs:|:Project:|:Priority:'
-                      '|:Status:|:Bug link:|:Tests:\n')
+        bugs_table = ('|||:Affected TCs|:Project|:Priority'
+                      '|:Status|:Bug link|:Tests\n')
 
         for bug_id, values in stats.items():
-            title = values['title'] if len(values['title']) <= 100 \
-                else values['title'][:100] + '...'
+            title = re.sub(r'(Bug\s+#\d+\s+)(in\s+[^:]+:\s+)', '\g<1>',
+                           values['title'])
+            title = re.sub(r'(.{100}).*', '\g<1>...', title)
             title = title.replace('[', '{')
             title = title.replace(']', '}')
             bugs_table += '||{tc}|{project}|{priority}|{status}|'.format(
@@ -372,6 +395,25 @@ class StatisticsGenerator(object):
         return self.update_desription(header + bugs_table)
 
 
+def save_stats_to_file(stats, file_name, html=False, run_id=None):
+    def warn_file_exists(file_path):
+        if os.path.exists(file_path):
+            logger.warning('File {0} exists and will be '
+                           'overwritten!'.format(file_path))
+
+    json_file_path = '{}.json'.format(file_name)
+    warn_file_exists(json_file_path)
+
+    with open(json_file_path, 'w+') as f:
+        json.dump(stats, f)
+
+    if html:
+        html_file_path = '{}.html'.format(file_name)
+        warn_file_exists(html_file_path)
+        with open(html_file_path, 'w+') as f:
+            f.write(html)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Generate statistics for bugs linked to TestRun. Publish "
@@ -385,17 +427,21 @@ def main():
                              'It will be used for TestPlan search instead ID')
     parser.add_argument('-n', '--build-number', dest='build_number',
                         default='latest', help='Jenkins job build number')
-    parser.add_argument('-r', '--rin-id',
-                        dest='run_id', type=int, default=None,
-                        help='(optional) ID of TestRun to check (skip other)')
+    parser.add_argument('-r', '--run-id',
+                        dest='run_ids', type=str, default=None,
+                        help='(optional) IDs of TestRun to check (skip other)')
     parser.add_argument('-b', '--handle-blocked', action="store_true",
                         dest='handle_blocked', default=False,
                         help='Copy bugs links to downstream blocked results')
+    parser.add_argument('-s', '--separate-runs', action="store_true",
+                        dest='separate_runs', default=False,
+                        help='Create separate statistics for each test run')
     parser.add_argument('-p', '--publish', action="store_true",
                         help='Publish statistics to TestPlan description')
     parser.add_argument('-o', '--out-file', dest='output_file',
                         default=None, type=str,
-                        help='Path to file to save statistics as JSON or HTML')
+                        help='Path to file to save statistics as JSON and/or '
+                             'HTML. Filename extension is added automatically')
     parser.add_argument('-H', '--html', action="store_true",
                         help='Save statistics in HTML format to file '
                              '(used with --out-file option)')
@@ -430,9 +476,11 @@ def main():
         logger.error('There is no TestPlan to process, exiting...')
         return 1
 
+    run_ids = () if not args.run_ids else map(int, args.run_ids.split(','))
+
     generator = StatisticsGenerator(testrail_project,
                                     args.plan_id,
-                                    args.run_id,
+                                    run_ids,
                                     args.handle_blocked)
     generator.generate()
     stats = generator.dump()
@@ -442,18 +490,16 @@ def main():
         generator.publish(stats)
 
     if args.output_file:
-        if not os.path.exists(args.output_file):
-            logger.debug('File {0} doesn\'t exist! '
-                         'Creating...'.format(args.output_file))
-        else:
-            logger.warning('File {0} exists and will be '
-                           'overwritten!'.format(args.output_file))
-        with open(args.output_file, 'w+') as f:
-            if args.html:
-                html = generator.dump_html(stats=stats)
-                f.write(html)
-            else:
-                json.dump(stats, f)
+        html = generator.dump_html(stats) if args.html else args.html
+        save_stats_to_file(stats, args.output_file, html)
+
+        if args.separate_runs:
+            for run in generator.test_runs_stats:
+                file_name = '{0}_{1}'.format(args.output_file, run['id'])
+                stats = generator.dump(run_id=run['id'])
+                html = (generator.dump_html(stats, run['id']) if args.html
+                        else args.html)
+                save_stats_to_file(stats, file_name, html)
 
     logger.info('Statistics generation complete!')
 
