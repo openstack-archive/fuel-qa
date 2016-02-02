@@ -172,6 +172,8 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
 
         #   init variables
         cluster_id = self.fuel_web.get_last_created_cluster()
+        import time
+        time.sleep(100)
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
         net_name = self.fuel_web.get_cluster_predefined_networks_name(
