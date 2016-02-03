@@ -261,3 +261,127 @@ class TestIronicDeploy(TestBasic):
         ironic_conn.verify_vms_connection(ironic_conn)
 
         self.env.make_snapshot("ironic_deploy_ceph")
+
+# new testcase Configuration Tiny
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["ironic_deploy_ceph"])
+    @log_snapshot_after_test
+    def ironic_deploy_tiny(self):
+        """Deploy ironic with 1 baremetal node
+
+        Scenario:
+            1. Create cluster
+            2. Add 1 node with Controller+Ironic role
+            3. Add 2 nodes with Compute+Ceph roles
+            4. Deploy the cluster
+            5. Upload image to glance
+            6. Enroll Ironic nodes
+            7. Boot nova instance
+            8. Check Nova instance status
+
+        Duration 90m
+        Snapshot ironic_deploy_tiny
+        """
+
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        data = {
+            'volumes_ceph': True,
+            'images_ceph': True,
+            'objects_ceph': True,
+            'volumes_lvm': False,
+            'tenant': 'ceph1',
+            'user': 'ceph1',
+            'password': 'ceph1',
+            'net_provider': 'neutron',
+            'net_segment_type': NEUTRON_SEGMENT['vlan'],
+            'ironic': True}
+        nodes = {
+            'slave-01': ['controller', 'ironic'],
+            'slave-02': ['compute', 'ceph-osd'],
+            'slave-03': ['compute', 'ceph-osd']}
+
+        self.show_step(1, initialize=True)
+        self.show_step(2)
+        self.show_step(3)
+        self.show_step(4)
+        cluster_id = self._deploy_ironic_cluster(settings=data, nodes=nodes)
+
+        ironic_conn = ironic_actions.IronicActions(
+            self.fuel_web.get_public_vip(cluster_id),
+            user='ceph1',
+            passwd='ceph1',
+            tenant='ceph1')
+
+        self.show_step(6)
+        self.show_step(7)
+        self._create_os_resources(ironic_conn)
+        self.show_step(8)
+        self._boot_nova_instances(ironic_conn)
+        self.show_step(9)
+        ironic_conn.wait_for_vms(ironic_conn)
+        ironic_conn.verify_vms_connection(ironic_conn)
+
+        self.env.make_snapshot("ironic_deploy_tiny")
+
+# new testcase Configuration Complex
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["ironic_deploy_ceph"])
+    @log_snapshot_after_test
+    def ironic_deploy_complex(self):
+        """Deploy ironic with 1 baremetal node
+
+        Scenario:
+            1. Create cluster
+            2. Add 2 nodes with Controller+Ironic+Ceph role
+            3. Add 1 node with Compute+Ceph roles
+            4. Deploy the cluster
+            5. Upload image to glance
+            6. Enroll Ironic nodes
+            7. Boot nova instance
+            8. Check Nova instance status
+
+        Duration 90m
+        Snapshot ironic_deploy_complex
+        """
+
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        data = {
+            'volumes_ceph': True,
+            'images_ceph': True,
+            'objects_ceph': True,
+            'volumes_lvm': False,
+            'tenant': 'ceph1',
+            'user': 'ceph1',
+            'password': 'ceph1',
+            'net_provider': 'neutron',
+            'net_segment_type': NEUTRON_SEGMENT['vlan'],
+            'ironic': True}
+        nodes = {
+            'slave-01': ['controller', 'ironic', 'ceph-osd'],
+            'slave-02': ['controller', 'ironic', 'ceph-osd'],
+            'slave-03': ['compute', 'ceph-osd']}
+
+        self.show_step(1, initialize=True)
+        self.show_step(2)
+        self.show_step(3)
+        self.show_step(4)
+        cluster_id = self._deploy_ironic_cluster(settings=data, nodes=nodes)
+
+        ironic_conn = ironic_actions.IronicActions(
+            self.fuel_web.get_public_vip(cluster_id),
+            user='ceph1',
+            passwd='ceph1',
+            tenant='ceph1')
+
+        self.show_step(5)
+        self.show_step(6)
+        self._create_os_resources(ironic_conn)
+        self.show_step(7)
+        self._boot_nova_instances(ironic_conn)
+        self.show_step(8)
+        ironic_conn.wait_for_vms(ironic_conn)
+        ironic_conn.verify_vms_connection(ironic_conn)
+
+        self.env.make_snapshot("ironic_deploy_complex")
