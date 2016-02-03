@@ -261,3 +261,63 @@ class TestIronicDeploy(TestBasic):
         ironic_conn.verify_vms_connection(ironic_conn)
 
         self.env.make_snapshot("ironic_deploy_ceph")
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["ironic_deploy_ceilo"])
+    @log_snapshot_after_test
+    def ironic_deploy_ceilometer(self):
+        """Deploy Ironic with Ceilometer
+
+        Scenario:
+            1. Create cluster
+            2. Add 1 node with Controller+Ironic role
+            3. Add 1 node with Compute role
+            4. Deploy the cluster
+            5. Upload image to glance
+            6. Enroll Ironic nodes
+            7. Boot nova instance
+            8. Check Nova instance status
+
+        Duration 90m
+        Snapshot ironic_deploy_ceilometer
+        """
+        # new testcase: Ironic with Ceilometer
+
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        data = {
+            'net_provider': 'neutron',
+            'net_segment_type': NEUTRON_SEGMENT['vlan'],
+            'ironic': True,
+            'ceilometer': True,
+            'user': 'ironicceilometer',
+            'passwd': 'ironicceilometer',
+            'tenant': 'ironicceilometer'}
+
+        nodes = {
+            'slave-01': ['controller', 'ironic'],
+            'slave-02': ['compute'],
+            'slave-03': ['ironic', 'mongo']}
+
+        self.show_step(1, initialize=True)
+        self.show_step(2)
+        self.show_step(3)
+        self.show_step(4)
+        cluster_id = self._deploy_ironic_cluster(settings=data, nodes=nodes)
+
+        ironic_conn = ironic_actions.IronicActions(
+            self.fuel_web.get_public_vip(cluster_id),
+            user='ironicceilometer',
+            passwd='ironicceilometer',
+            tenant='ironicceilometer')
+
+        self.show_step(5)
+        self._create_os_resources(ironic_conn)
+        self.show_step(6)
+        self._boot_nova_instances(ironic_conn)
+        self.show_step(7)
+        ironic_conn.wait_for_vms(ironic_conn)
+        self.show_step(8)
+        ironic_conn.verify_vms_connection(ironic_conn)
+
+        self.env.make_snapshot("ironic_deploy_ceilometer")
