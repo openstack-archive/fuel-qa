@@ -31,8 +31,14 @@ from fuelweb_test.tests.base_test_case import TestBasic
 class TestLmaInfraAlertingPlugin(TestBasic):
     """Class for testing the LMA infrastructure plugin plugin."""
 
+    _name = 'lma_infrastructure_alerting'
+    _version = '0.9.0'
     _role_name = 'infrastructure_alerting'
     _nagios_password = 'foopass'
+
+    def get_nagios_vip(self, cluster_id):
+        networks = self.fuel_web.client.get_networks(cluster_id)
+        return networks.get('vips').get('infrastructure_alerting', {}).get('ipaddr', None)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_lma_infra_alerting_ha"])
@@ -40,16 +46,13 @@ class TestLmaInfraAlertingPlugin(TestBasic):
     def deploy_lma_infra_alerting_ha(self):
         """Deploy cluster in HA with the LMA infrastructure alerting plugin
 
-        This also deploys the LMA Collector plugin and InfluxDB-Grafana plugin
-        since they work together.
-
         Scenario:
-            1. Upload plugins to the master node
+            1. Upload plugin to the master node
             2. Install plugins
             3. Create cluster
             4. Add 3 nodes with controller role
             5. Add 1 node with compute + cinder roles
-            6. Add 1 node with infrastructure_alerting + influxdb_grafana roles
+            6. Add 1 node with infrastructure_alerting
             7. Deploy the cluster
             8. Check that the plugins work
             9. Run OSTF
@@ -70,7 +73,7 @@ class TestLmaInfraAlertingPlugin(TestBasic):
                 "slave-02": ["controller"],
                 "slave-03": ["controller"],
                 "slave-04": ["compute", "cinder"],
-                "slave-05": [self._role_name, "influxdb_grafana"]
+                "slave-05": [self._role_name]
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
@@ -78,119 +81,41 @@ class TestLmaInfraAlertingPlugin(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
         self.env.make_snapshot("deploy_lma_infra_alerting_ha")
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_lma_infra_alerting_nonha"])
-    @log_snapshot_after_test
-    def deploy_lma_infra_alerting_nonha(self):
-        """Deploy cluster non HA mode with the LMA infrastructure alerting
-
-        This also deploys the LMA Collector plugin and InfluxDB-Grafana plugin
-        since they work together.
-
-        Scenario:
-            1. Upload plugins to the master node
-            2. Install plugins
-            3. Create cluster
-            4. Add 1 node with controller role
-            5. Add 1 node with compute + cinder role
-            6. Add 1 node with infrastructure_alerting + influxdb_grafana roles
-            7. Deploy the cluster
-            8. Check that the plugins work
-
-        Duration 70m
-        Snapshot deploy_lma_infra_alerting_nonha
-
-        """
-        self.env.revert_snapshot("ready_with_3_slaves")
-
-        cluster_id = self._bootstrap()
-
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {
-                "slave-01": ["controller"],
-                "slave-02": ["compute", "cinder"],
-                "slave-03": [self._role_name, "influxdb_grafana"],
-            }
-        )
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-        self._check_nagios(cluster_id)
-
     def _bootstrap(self):
 
         with self.env.d_env.get_admin_remote() as remote:
 
-            # copy plugins to the master node
-            checkers.upload_tarball(
-                remote,
-                conf.LMA_COLLECTOR_PLUGIN_PATH, "/var")
+            # copy plugin to the master node
             checkers.upload_tarball(
                 remote,
                 conf.LMA_INFRA_ALERTING_PLUGIN_PATH, "/var")
-            checkers.upload_tarball(
-                remote,
-                conf.INFLUXDB_GRAFANA_PLUGIN_PATH, "/var")
 
-            # install plugins
-
-            checkers.install_plugin_check_code(
-                remote,
-                plugin=os.path.basename(conf.LMA_COLLECTOR_PLUGIN_PATH))
+            # install plugin
             checkers.install_plugin_check_code(
                 remote,
                 plugin=os.path.basename(conf.LMA_INFRA_ALERTING_PLUGIN_PATH))
-            checkers.install_plugin_check_code(
-                remote,
-                plugin=os.path.basename(conf.INFLUXDB_GRAFANA_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=conf.DEPLOYMENT_MODE,
         )
 
-        plugins = [
-            {
-                'name': 'lma_collector',
-                'options': {
-                    'metadata/enabled': True,
-                    'environment_label/value': 'deploy_lma_infra_alerting_ha',
-                    'elasticsearch_mode/value': 'disabled',
-                    'influxdb_mode/value': 'local',
-                    'alerting_mode/value': 'local',
-                }
-            },
-            {
-                'name': 'lma_infrastructure_alerting',
-                'options': {
-                    'metadata/enabled': True,
-                    'send_to/value': 'root@localhost',
-                    'send_from/value': 'nagios@localhost',
-                    'smtp_host/value': '127.0.0.1',
-                    'nagios_password/value': self._nagios_password,
-                }
-            },
-            {
-                'name': 'influxdb_grafana',
-                'options': {
-                    'metadata/enabled': True,
-                    'influxdb_rootpass/value': 'r00tme',
-                    'influxdb_username/value': 'lma',
-                    'influxdb_userpass/value': 'pass',
-                    'grafana_username/value': 'grafana',
-                    'grafana_userpass/value': 'grafanapass',
+        plugin_options = {
+            'send_to/value': 'root@localhost',
+            'send_from/value': 'nagios@localhost',
+            'smtp_host/value': '127.0.0.1',
+            'nagios_password/value': self._nagios_password,
+        }
 
-                }
-            },
-        ]
-        for plugin in plugins:
-            plugin_name = plugin['name']
-            msg = "Plugin '%s' couldn't be found. Test aborted" % plugin_name
-            assert_true(
-                self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
-                msg)
-            logger.debug('%s plugin is installed' % plugin_name)
-            self.fuel_web.update_plugin_data(cluster_id, plugin_name,
-                                             plugin['options'])
+        msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
+        assert_true(self.fuel_web.check_plugin_exists(cluster_id, self._name),
+                    msg)
+        logger.debug('%s (%s) plugin is installed' % (self._name,
+                                                      self._version))
+        self.fuel_wb.update_plugin_settings(cluster_id,
+                                            self._name,
+                                            self._version,
+                                            plugin_options)
 
         return cluster_id
 
@@ -203,7 +128,7 @@ class TestLmaInfraAlertingPlugin(TestBasic):
             "One node with '{}' role must be present, found {}".format(
                 self._role_name, len(nagios_nodes)))
 
-        nagios_node_ip = nagios_nodes[0].get('ip')
+        nagios_node_ip = self.get_nagios_vip(cluster_id)
         assert_is_not_none(
             nagios_node_ip,
             "Fail to retrieve the IP address for node with role {}".format(
