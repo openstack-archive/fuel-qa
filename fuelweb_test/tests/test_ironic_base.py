@@ -94,7 +94,7 @@ class TestIronicDeploy(TestBasic):
             'net_segment_type': NEUTRON_SEGMENT['vlan'],
             'ironic': True}
         default_nodes = {
-            'slave-01': ['controller'],
+            'slave-01': ['controller', 'ironic'],
             'slave-02': ['controller', 'ironic'],
             'slave-03': ['controller', 'ironic'],
             'slave-04': ['ironic'],
@@ -230,7 +230,7 @@ class TestIronicDeploy(TestBasic):
             'net_segment_type': NEUTRON_SEGMENT['vlan'],
             'ironic': True}
         nodes = {
-            'slave-01': ['controller', 'ceph-osd'],
+            'slave-01': ['controller', 'ironic', 'ceph-osd'],
             'slave-02': ['controller', 'ironic', 'ceph-osd'],
             'slave-03': ['controller', 'ironic', 'ceph-osd'],
             'slave-04': ['ironic'],
