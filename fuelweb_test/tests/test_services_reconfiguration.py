@@ -50,6 +50,14 @@ def get_structured_config_dict(config):
             helper(key, '/etc/neutron/neutron.conf')
         if key == 'neutron_plugin_ml2':
             helper(key, '/etc/neutron/plugins/ml2/ml2_conf.ini')
+        if key == 'neutron_dhcp_agent_config':
+            helper(key, '/etc/neutron/dhcp_agent.ini')
+        if key == 'neutron_l3_agent_config':
+            helper(key, '/etc/neutron/l3_agent.ini')
+        if key == 'neutron_metadata_agent_config':
+            helper(key, '/etc/neutron/metadata_agent.ini')
+        if key == 'neutron_api_config':
+            helper(key, '/etc/neutron/api-paste.ini')
         if key == 'nova_config':
             helper(key, '/etc/nova/nova.conf')
     return structured_conf
@@ -1292,3 +1300,89 @@ class ServicesReconfiguration(TestBasic):
 
         snapshot_name = "apply_config_for_node_with_multiple_role"
         self.env.make_snapshot(snapshot_name)
+
+    @test(depends_on_groups=['basic_env_for_reconfiguration'],
+          groups=["services_reconfiguration_thread_2",
+                  "reconfigure_with_new_fields"])
+    @log_snapshot_after_test
+    def reconfigure_with_new_fields(self):
+        """Reconfigure services with new fields
+
+        Scenario:
+            1. Revert snapshot "basic_env_for_reconfiguration"
+            2. Upload a new openstack configuration for controller
+            3. Get uptime of neutron related process on each controller
+            4. Apply a new openstack configuration for controller
+            5. Check that neutron related services were restarted
+            6. Verify configuration file on each controller
+            7. Upload a new openstack configuration for compute
+            8. Get uptime of nova-compute on each compute
+            9. Apply a new openstack configuration for compute
+            10. Check that nova-compute service was restarted
+            12. Verify configuration file on each compute
+
+        Snapshot: reconfigure_with_new_fields
+
+        """
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot("basic_env_for_reconfiguration")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])
+
+        self.show_step(2)
+        config_controller = utils.get_config_template('new_fields_controller')
+        structured_config = get_structured_config_dict(config_controller)
+        self.fuel_web.client.upload_configuration(config_controller,
+                                                  cluster_id,
+                                                  role="controller")
+
+        self.show_step(3)
+        service_list = ['neutron-server', 'neutron-dhcp-agent',
+                        'neutron-l3-agent', 'neutron-metadata-agent']
+        services_uptime = {}
+        for service_name in service_list:
+            services_uptime[service_name] = self.get_service_uptime(
+                                                controllers,
+                                                service_name)
+        self.show_step(4)
+        task = self.fuel_web.client.apply_configuration(cluster_id,
+                                                        role="controller")
+
+        self.fuel_web.assert_task_success(task, timeout=600, interval=5)
+
+        self.show_step(5)
+        for service_name in service_list:
+            self.check_service_was_restarted(
+                controllers,
+                services_uptime[service_name],
+                service_name)
+
+        self.show_step(6)
+        self.check_config_on_remote(controllers, structured_config)
+
+        computes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute'])
+
+        self.show_step(7)
+        config_copmute = utils.get_config_template('new_fields_compute')
+        structured_config = get_structured_config_dict(config_copmute)
+        self.fuel_web.client.upload_configuration(config_copmute, cluster_id)
+
+        self.show_step(8)
+        uptimes_nova = self.get_service_uptime(computes, 'nova-compute')
+
+        self.show_step(9)
+        task = self.fuel_web.client.apply_configuration(cluster_id,
+                                                        role='compute')
+        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+
+        self.show_step(10)
+        self.check_service_was_restarted(computes,
+                                         uptimes_nova,
+                                         'nova-compute')
+
+        self.show_step(11)
+        self.check_config_on_remote(computes, structured_config)
+        self.env.make_snapshot("reconfigure_with_new_fields")
