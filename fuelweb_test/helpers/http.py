@@ -77,6 +77,9 @@ class HTTPClient(object):
     def put(self, endpoint, data=None, content_type="application/json"):
         if not data:
             data = {}
+        import pprint
+        logger.error(pprint.pformat(data))
+        logger.error(self.url + endpoint)
         req = urllib2.Request(self.url + endpoint, data=json.dumps(data))
         req.add_header('Content-Type', content_type)
         req.get_method = lambda: 'PUT'
