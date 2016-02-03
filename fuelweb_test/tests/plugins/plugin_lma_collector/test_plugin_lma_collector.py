@@ -31,6 +31,19 @@ from fuelweb_test.tests.base_test_case import TestBasic
 class TestLmaCollectorPlugin(TestBasic):
     """Class for testing the LMA toolchain."""
 
+    def get_influxdb_vip(self, cluster_id):
+        networks = self.fuel_web.client.get_networks(cluster_id)
+        return networks.get('vips').get('influxdb', {}).get('ipaddr', None)
+
+    def get_elasticserch_vip(self, cluster_id):
+        networks = self.fuel_web.client.get_networks(cluster_id)
+        return networks.get('vips').get('es_vip_mgmt', {}).get('ipaddr', None)
+
+    def get_nagios_vip(self, cluster_id):
+        networks = self.fuel_web.client.get_networks(cluster_id)
+        name = 'infrastructure_alerting'
+        return networks.get('vips').get(name, {}).get('ipaddr', None)
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_lma_toolchain"])
     @log_snapshot_after_test
@@ -47,7 +60,8 @@ class TestLmaCollectorPlugin(TestBasic):
             3. Create cluster
             4. Add 3 nodes with controller role
             5. Add 1 node with compute + cinder role
-            6. Add 1 node with influxdb_grafana + elasticsearch roles
+            6. Add 1 node with influxdb_grafana + elasticsearch_kibana +
+               infrastructure_alerting roles
             7. Deploy the cluster
             8. Check that the plugins work
             9. Run OSTF
@@ -58,6 +72,8 @@ class TestLmaCollectorPlugin(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
+        # TODO(scroiet): use actions fuel_actions.py
+        # upload_plugin and install_plugin
         with self.env.d_env.get_admin_remote() as remote:
             # copy plugins to the master node
             checkers.upload_tarball(
@@ -69,6 +85,9 @@ class TestLmaCollectorPlugin(TestBasic):
             checkers.upload_tarball(
                 remote,
                 conf.INFLUXDB_GRAFANA_PLUGIN_PATH, "/var")
+            checkers.upload_tarball(
+                remote,
+                conf.LMA_INFRA_ALERTING_PLUGIN_PATH, "/var")
 
             # install plugins
             checkers.install_plugin_check_code(
@@ -80,6 +99,9 @@ class TestLmaCollectorPlugin(TestBasic):
             checkers.install_plugin_check_code(
                 remote,
                 plugin=os.path.basename(conf.INFLUXDB_GRAFANA_PLUGIN_PATH))
+            checkers.install_plugin_check_code(
+                remote,
+                plugin=os.path.basename(conf.LMA_INFRA_ALERTING_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -91,45 +113,77 @@ class TestLmaCollectorPlugin(TestBasic):
         influxdb_rootpass = "r00tme"
         grafana_user = "grafana"
         grafana_pass = "grafanapass"
+        mysql_dbname = "grafana_stacklight"
+        mysql_user = "grafana_stacklight"
+        mysql_pass = "mysqlpass"
+        nagios_pass = "nagiospass"
         plugins = [
             {
                 'name': 'lma_collector',
+                'version': '0.9.0',
                 'options': {
-                    'metadata/enabled': True,
+                    #'metadata/enabled': True,
                     'environment_label/value': 'deploy_lma_toolchain',
                     'elasticsearch_mode/value': 'local',
                     'influxdb_mode/value': 'local',
+                    'alerting_mode/value': 'local',
                 }
             },
             {
                 'name': 'elasticsearch_kibana',
+                'version': '0.9.0',
                 'options': {
-                    'metadata/enabled': True,
+                    #'metadata/enabled': True,
+                }
+            },
+            {
+                'name': 'lma_infrastructure_alerting',
+                'version': '0.9.0',
+                'options': {
+                    #'metadata/enabled': True,
+                    'send_to/value': 'root@localhost',
+                    'send_from/value': 'nagios@localhost',
+                    'smtp_host/value': '127.0.0.1',
+                    'nagios_password/value': nagios_pass,
                 }
             },
             {
                 'name': 'influxdb_grafana',
+                'version': '0.9.0',
                 'options': {
-                    'metadata/enabled': True,
+                    #'metadata/enabled': True,
                     'influxdb_rootpass/value': influxdb_rootpass,
                     'influxdb_username/value': influxdb_user,
                     'influxdb_userpass/value': influxdb_pass,
                     'grafana_username/value': grafana_user,
                     'grafana_userpass/value': grafana_pass,
+                    'mysql_mode/value': 'local',
+                    'mysql_dbname/value': mysql_dbname,
+                    'mysql_username/value': mysql_user,
+                    'mysql_password/value': mysql_pass,
                 }
             },
         ]
         for plugin in plugins:
             plugin_name = plugin['name']
+            plugin_version = plugin['version']
             msg = "Plugin '%s' couldn't be found. Test aborted" % plugin_name
             assert_true(
                 self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
                 msg)
-            logger.debug('%s plugin is installed' % plugin_name)
-            self.fuel_web.update_plugin_data(cluster_id, plugin_name,
-                                             plugin['options'])
+            logger.error('%s plugin is installed' % plugin_name)
+            #plugin_data = self.fuel_web.get_plugin_data(cluster_id,
+            #                                            plugin_name,
+            #                                            plugin_version)
+            #plugin['options'].update(
+            #    {'metadata/chosen_id': plugin_data['metadata']['plugin_id']}
+            #)
+            self.fuel_web.update_plugin_settings(cluster_id, plugin_name,
+                                                 plugin_version, plugin['options'])
 
-        analytics_roles = ["influxdb_grafana", "elasticsearch_kibana"]
+        analytics_roles = ["influxdb_grafana",
+                           "elasticsearch_kibana",
+                           "infrastructure_alerting"]
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -150,10 +204,20 @@ class TestLmaCollectorPlugin(TestBasic):
 
         assert_true(len(analytics_nodes) == 1, msg)
 
-        analytics_node_ip = analytics_nodes[0].get('ip')
+        elasticsearch_kibana_vip = self.get_elasticserch_vip(cluster_id)
+        influxdb_grafana_vip = self.get_influxdb_vip(cluster_id)
+        nagios_vip = self.get_nagios_vip(cluster_id)
         assert_is_not_none(
-            analytics_node_ip,
-            "Fail to retrieve the IP address for slave-05"
+            elasticsearch_kibana_vip,
+            "Fail to retrieve the Elasticsearch/Kibana cluster VIP address"
+        )
+        assert_is_not_none(
+            influxdb_grafana_vip,
+            "Fail to retrieve the InfluxDB/Grafana cluster VIP address"
+        )
+        assert_is_not_none(
+            nagios_vip,
+            "Fail to retrieve the Infrastructure Alerting cluster VIP address"
         )
 
         def assert_http_get_response(url, expected=200):
@@ -163,19 +227,21 @@ class TestLmaCollectorPlugin(TestBasic):
                              url, r.status_code, expected))
 
         logger.debug("Check that Elasticsearch is ready")
-        assert_http_get_response("http://{0}:9200/".format(analytics_node_ip))
+        assert_http_get_response("http://{0}:9200/".format(
+            elasticsearch_kibana_vip))
 
         logger.debug("Check that Kibana is ready")
-        assert_http_get_response("http://{0}/".format(analytics_node_ip))
+        assert_http_get_response("http://{0}/".format(
+            elasticsearch_kibana_vip))
 
         logger.debug("Check that the root user can access InfluxDB")
         influxdb_url = "http://{0}:8086/query?db=lma&u={1}&p={2}&" + \
             "q=show+measurements"
-        assert_http_get_response(influxdb_url.format(analytics_node_ip,
+        assert_http_get_response(influxdb_url.format(influxdb_grafana_vip,
                                                      'root',
                                                      influxdb_rootpass))
         logger.debug("Check that the LMA user can access InfluxDB")
-        assert_http_get_response(influxdb_url.format(analytics_node_ip,
+        assert_http_get_response(influxdb_url.format(influxdb_grafana_vip,
                                                      influxdb_user,
                                                      influxdb_pass))
 
@@ -183,153 +249,16 @@ class TestLmaCollectorPlugin(TestBasic):
         assert_http_get_response(
             "http://{0}:{1}@{2}:8000/api/org".format(grafana_user,
                                                      grafana_pass,
-                                                     analytics_node_ip))
+                                                     influxdb_grafana_vip))
 
+        nagios_url = "http://{}:{}".format(nagios_vip, '8001')
+        r = requests.get(nagios_url, auth=('nagiosadmin',
+                                           nagios_pass))
+        assert_equal(
+            r.status_code, 200,
+            "Nagios HTTP response code {}, expected {}".format(
+                r.status_code, 200)
+        )
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_lma_toolchain")
-
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_lma_toolchain_0_7"])
-    @log_snapshot_after_test
-    def deploy_lma_toolchain_0_7(self):
-        """Deploy the LMA toolchain v0.7
-
-        This also deploys the Elasticsearch-Kibana plugin and the
-        InfluxDB-Grafana plugin since they work together with the LMA collector
-        plugin.
-
-        Scenario:
-            1. Upload plugins to the master node
-            2. Install plugins
-            3. Create cluster
-            4. Add 3 nodes with controller role
-            5. Add 1 node with compute + cinder role
-            6. Add 1 node with base-os role
-            7. Deploy the cluster
-            8. Check that the plugins work
-            9. Run OSTF
-
-        Duration 70m
-        Snapshot deploy_lma_toolchain_0_7
-
-        """
-        self.env.revert_snapshot("ready_with_5_slaves")
-
-        # copy plugins to the master node
-
-        checkers.upload_tarball(
-            self.env.d_env.get_admin_remote(),
-            conf.LMA_COLLECTOR_PLUGIN_PATH, "/var")
-        checkers.upload_tarball(
-            self.env.d_env.get_admin_remote(),
-            conf.ELASTICSEARCH_KIBANA_PLUGIN_PATH, "/var")
-        checkers.upload_tarball(
-            self.env.d_env.get_admin_remote(),
-            conf.INFLUXDB_GRAFANA_PLUGIN_PATH, "/var")
-
-        # install plugins
-
-        checkers.install_plugin_check_code(
-            self.env.d_env.get_admin_remote(),
-            plugin=os.path.basename(conf.LMA_COLLECTOR_PLUGIN_PATH))
-        checkers.install_plugin_check_code(
-            self.env.d_env.get_admin_remote(),
-            plugin=os.path.basename(conf.ELASTICSEARCH_KIBANA_PLUGIN_PATH))
-        checkers.install_plugin_check_code(
-            self.env.d_env.get_admin_remote(),
-            plugin=os.path.basename(conf.INFLUXDB_GRAFANA_PLUGIN_PATH))
-
-        cluster_id = self.fuel_web.create_cluster(
-            name=self.__class__.__name__,
-            mode=conf.DEPLOYMENT_MODE,
-            settings={
-                "net_provider": 'neutron',
-                "net_segment_type": conf.NEUTRON_SEGMENT_TYPE,
-            }
-        )
-
-        # this is how the base-os node will be named eventually
-        analytics_node_name = 'slave-05_base-os'
-        plugins = [
-            {
-                'name': 'lma_collector',
-                'options': {
-                    'metadata/enabled': True,
-                    'environment_label/value': 'deploy_lma_toolchain_0_7',
-                    'elasticsearch_mode/value': 'local',
-                    'elasticsearch_node_name/value': analytics_node_name,
-                    'influxdb_mode/value': 'local',
-                    'influxdb_node_name/value': analytics_node_name,
-                    'influxdb_password/value': 'lmapass',
-                }
-            },
-            {
-                'name': 'elasticsearch_kibana',
-                'options': {
-                    'metadata/enabled': True,
-                    'node_name/value': analytics_node_name,
-                }
-            },
-            {
-                'name': 'influxdb_grafana',
-                'options': {
-                    'metadata/enabled': True,
-                    'node_name/value': analytics_node_name,
-                    'influxdb_rootpass/value': 'lmapass',
-                    'influxdb_userpass/value': 'lmapass',
-                }
-            },
-        ]
-        for plugin in plugins:
-            plugin_name = plugin['name']
-            msg = "Plugin '%s' couldn't be found. Test aborted" % plugin_name
-            assert_true(
-                self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
-                msg)
-            logger.debug('%s plugin is installed' % plugin_name)
-            self.fuel_web.update_plugin_data(cluster_id, plugin_name,
-                                             plugin['options'])
-
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {
-                "slave-01": ["controller"],
-                "slave-02": ["controller"],
-                "slave-03": ["controller"],
-                "slave-04": ["compute", "cinder"],
-                "slave-05": ["base-os"]
-            }
-        )
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-
-        analytics_node_ip = self.fuel_web.get_nailgun_node_by_name(
-            "slave-05").get('ip')
-        assert_is_not_none(
-            analytics_node_ip,
-            "Fail to retrieve the IP address for slave-05"
-        )
-
-        def assert_http_get_response(url, expected=200):
-            r = requests.get(url)
-            assert_equal(r.status_code, expected,
-                         "{} responded with {}, expected {}".format(
-                             url, r.status_code, expected))
-
-        logger.debug("Check that Elasticsearch is ready")
-        assert_http_get_response("http://{}:9200/".format(analytics_node_ip))
-
-        logger.debug("Check that Kibana is ready")
-        assert_http_get_response("http://{}/".format(analytics_node_ip))
-
-        logger.debug("Check that InfluxDB is ready")
-        assert_http_get_response(
-            "http://{}:8086/db/lma/series?u=lma&p={}&q=list+series".format(
-                analytics_node_ip, "lmapass"))
-
-        logger.debug("Check that Grafana is ready")
-        assert_http_get_response("http://{}:8000/".format(analytics_node_ip))
-
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
-
-        self.env.make_snapshot("deploy_lma_toolchain_0_7")
