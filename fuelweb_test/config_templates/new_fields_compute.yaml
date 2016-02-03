@@ -1,0 +1,7 @@
+---
+keystone_config:
+  fuel_qa/service_reconfiguration_7:
+    value: "InProgress"
+nova_config:
+  fuel_qa/service_reconfiguration_8:
+    value: "InProgress"
