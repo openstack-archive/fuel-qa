@@ -1322,7 +1322,7 @@ class TestHaFailoverBase(TestBasic):
 
         # Start the test
         for count in xrange(REPEAT_COUNT):
-            logger.info('Attempt {o} to check rabbit recovery'.format(count))
+            logger.info('Attempt {0} to check rabbit recovery'.format(count))
             # Get primary controller from nailgun
             p_d_ctrl = self.fuel_web.get_nailgun_primary_node(
                 self.env.d_env.nodes().slaves[0])
