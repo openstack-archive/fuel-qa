@@ -1316,26 +1316,29 @@ class TestHaFailoverBase(TestBasic):
         self.fuel_web.wait_mysql_galera_is_up(['slave-02'])
 
         # Check ha ans services are fine after revert
-        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300)
+        logger.info('Run ostf tests before destructive actions')
+        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=600)
         self.fuel_web.assert_os_services_ready(cluster_id)
 
         # Start the test
         for count in xrange(REPEAT_COUNT):
-
+            logger.info('Attempt {o} to check rabbit recovery'.format(count))
             # Get primary controller from nailgun
             p_d_ctrl = self.fuel_web.get_nailgun_primary_node(
                 self.env.d_env.nodes().slaves[0])
 
             # get master rabbit controller
             master_rabbit = self.fuel_web.get_rabbit_master_node(p_d_ctrl.name)
-            logger.info('Try to find slave where rabbit slaves are running'
-                        ' on count {0}'.format(count))
+            logger.info('Master rabbit is on {0} for attempt {1}'.format(
+                master_rabbit, count))
 
             # get rabbit slaves
             rabbit_slaves = self.fuel_web.get_rabbit_slaves_node(p_d_ctrl.name)
             assert_true(rabbit_slaves,
                         'Can not find rabbit slaves. On count {0} '
                         'current result is {1}'.format(count, rabbit_slaves))
+            logger.info('Rabbit slaves are running {0}'
+                        ' on count {1}'.format(rabbit_slaves, count))
 
             # Move rabbit master resource from master rabbit controller
             master_rabbit_fqdn = self.fuel_web.get_rabbit_master_node(
@@ -1380,7 +1383,7 @@ class TestHaFailoverBase(TestBasic):
                       timeout=20)
 
             # check ha
-            self.fuel_web.assert_ha_services_ready(cluster_id, timeout=600)
+            self.fuel_web.assert_ha_services_ready(cluster_id, timeout=700)
 
             # get new rabbit master node
             master_rabbit_2 = self.fuel_web.get_rabbit_master_node(
@@ -1409,7 +1412,7 @@ class TestHaFailoverBase(TestBasic):
             # to haproxy backend from destroyed will be down
 
             self.fuel_web.assert_ha_services_ready(
-                cluster_id, timeout=600, should_fail=1)
+                cluster_id, timeout=800, should_fail=1)
 
             # Run sanity and smoke tests to see if cluster operable
             self.fuel_web.run_ostf(cluster_id=cluster_id,
@@ -1429,7 +1432,7 @@ class TestHaFailoverBase(TestBasic):
                                    'in nailgun'.format(master_rabbit_2.name))
 
             # check ha
-            self.fuel_web.assert_ha_services_ready(cluster_id, timeout=600)
+            self.fuel_web.assert_ha_services_ready(cluster_id, timeout=800)
             # check os
             self.fuel_web.assert_os_services_ready(cluster_id)
 
