@@ -12,9 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+# TODO: We need to use sshmanager instead of executing bare commands
+# bp link: https://blueprints.launchpad.net/fuel/+spec/sshmanager-integration
+
 from __future__ import division
 import re
 
+from devops.error import TimeoutError
 from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
 from proboscis import asserts
@@ -42,6 +46,58 @@ class RhelHA(TestBasic):
         """
         wait(lambda: tcp_ping(node_ip, 22),
              timeout=timeout, timeout_msg="Node doesn't appear in network")
+
+    @staticmethod
+    def wait_for_slave_network_down(node_ip, timeout=10 * 20):
+        """Wait for a target node network down.
+
+        :param node_ip: IP address of target node.
+        :param timeout: Timeout for wait function.
+        """
+        wait(lambda: (not tcp_ping(node_ip, 22)), interval=1,
+             timeout=timeout, timeout_msg="Node doesn't gone offline")
+
+    def warm_restart_nodes(self, devops_nodes):
+        LOGGER.info('Reboot (warm restart) nodes '
+                    '{0}'.format([n.name for n in devops_nodes]))
+        self.warm_shutdown_nodes(devops_nodes)
+        self.warm_start_nodes(devops_nodes)
+
+    def warm_shutdown_nodes(self, devops_nodes):
+        LOGGER.info('Shutting down (warm) nodes '
+                    '{0}'.format([n.name for n in devops_nodes]))
+        for node in devops_nodes:
+            LOGGER.debug('Shutdown node {0}'.format(node.name))
+            with self.fuel_web.get_ssh_for_node(node.name) as remote:
+                remote.execute('/sbin/shutdown -Ph now & exit')
+
+        for node in devops_nodes:
+            ip = self.fuel_web.get_node_ip_by_devops_name(node.name)
+            LOGGER.info('Wait a {0} node offline status'.format(node.name))
+            try:
+                self.wait_for_slave_network_down(ip)
+            except TimeoutError:
+                asserts.assert_false(
+                    tcp_ping(ip, 22),
+                    'Node {0} has not become '
+                    'offline after warm shutdown'.format(node.name))
+            node.destroy()
+
+    def warm_start_nodes(self, devops_nodes):
+        LOGGER.info('Starting nodes '
+                    '{0}'.format([n.name for n in devops_nodes]))
+        for node in devops_nodes:
+            node.start()
+        for node in devops_nodes:
+            ip = self.fuel_web.get_node_ip_by_devops_name(node.name)
+            try:
+                self.wait_for_slave_provision(ip)
+            except TimeoutError:
+                asserts.assert_true(
+                    tcp_ping(ip, 22),
+                    'Node {0} has not become online '
+                    'after warm start'.format(node.name))
+            LOGGER.debug('Node {0} became online.'.format(node.name))
 
     @staticmethod
     def connect_rhel_image(slave):
@@ -113,6 +169,14 @@ class RhelHA(TestBasic):
         result = remote.execute(cmd)
         LOGGER.debug(result)
         asserts.assert_equal(result['exit_code'], 0, 'RHEL registation failed')
+
+        if settings.RH_POOL_HASH:
+            reg_pool_cmd = ("/usr/sbin/subscription-manager "
+                            "attach --pool={0}".format(settings.RH_POOL_HASH))
+            result = remote.execute(reg_pool_cmd)
+            LOGGER.debug(result)
+            asserts.assert_equal(result['exit_code'], 0,
+                                 'Can not attach node to subscription pool')
 
     @staticmethod
     def enable_rhel_repos(remote):
@@ -455,44 +519,6 @@ class RhelHA(TestBasic):
                              'Ruby and puppet installation failed')
 
     @staticmethod
-    def disable_selinux(remote):
-        """Disable SELinux on a target node.
-
-        :param remote: Remote node for proceed.
-        """
-        def check_in(a, b):
-            if isinstance(b, list):
-                for element in b:
-                    if a in element:
-                        return True
-                    else:
-                        return False
-            else:
-                if a in b:
-                    return True
-                else:
-                    return False
-        cmd = ("rm -f /etc/selinux/config; "
-               "echo 'SELINUX=disabled\n"
-               "SELINUXTYPE=targeted\n"
-               "SETLOCALDEFS=0' > /etc/selinux/config")
-        result = remote.execute(cmd)
-        LOGGER.debug(result)
-
-        asserts.assert_equal(result['exit_code'], 0,
-                             'SELinux was not disabled on node')
-        cmd = "setenforce 0"
-        result = remote.execute(cmd)
-        LOGGER.debug(result)
-        if result['exit_code'] == 1:
-            asserts.assert_true(
-                check_in('SELinux is disabled', result['stderr']),
-                'SELinux was not disabled on node')
-        else:
-            asserts.assert_equal(result['exit_code'], 0,
-                                 'SELinux was not disabled on node')
-
-    @staticmethod
     def rsync_puppet_modules(remote, ip):
         """Rsync puppet modules from remote node to node with specified ip.
 
@@ -646,7 +672,6 @@ class RhelHA(TestBasic):
             self.set_repo_for_perestroika(remote)
             self.check_hiera_installation(remote)
             self.install_ruby_puppet(remote)
-            self.disable_selinux(remote)
             self.check_rsync_installation(remote)
 
         with self.env.d_env.get_admin_remote() as remote:
