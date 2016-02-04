@@ -38,10 +38,9 @@ class GateOstf(TestBasic):
         Scenario:
             1. Create cluster
             2. Add 3 nodes with controller and ceph OSD roles
-            3. Add 1 node with ceph OSD roles
-            4. Add 2 nodes with compute and ceph OSD roles
-            5. Deploy the cluster
-            6. Run OSTF
+            3. Add 2 nodes with compute
+            4. Deploy the cluster
+            5. Run OSTF
 
         Duration 90m
         Snapshot gate_ostf_ceph_ha
@@ -77,9 +76,8 @@ class GateOstf(TestBasic):
                 'slave-01': ['controller', 'ceph-osd'],
                 'slave-02': ['controller', 'ceph-osd'],
                 'slave-03': ['controller', 'ceph-osd'],
-                'slave-04': ['compute', 'ceph-osd'],
-                'slave-05': ['compute', 'ceph-osd'],
-                'slave-06': ['ceph-osd']
+                'slave-04': ['compute'],
+                'slave-05': ['compute'],
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
