@@ -570,11 +570,11 @@ class TestMultipleClusterNets(TestBasic):
             6. Add 3 nodes from 'custom' nodegroup as controllers
                Add 2 nodes from 'default' nodegroup as compute and cinder
             7. Run network verification
-            8. Check addresses allocated for VIPs belong to networks
-               from custom nodegroup
-            9. Deploy environment
-            10. Run network verification
-            11. Run OSTF
+            8. Deploy environment
+            9. Run network verification
+            10. Run OSTF
+            11. Check addresses allocated for VIPs belong to networks
+                from custom nodegroup
 
         Duration 120m
         Snapshot deploy_controllers_from_custom_nodegroup
@@ -638,6 +638,15 @@ class TestMultipleClusterNets(TestBasic):
         self.fuel_web.verify_network(cluster_id)
 
         self.show_step(8)
+        self.fuel_web.deploy_cluster_wait(cluster_id, timeout=150 * 60)
+
+        self.show_step(9)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(10)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(11)
         current_settings = self.fuel_web.client.get_networks(cluster_id)
         check = {
             'vrouter_pub': 'public2',
@@ -653,15 +662,6 @@ class TestMultipleClusterNets(TestBasic):
                 vip in custom_net,
                 '{0} is not from {1} network'.format(k, check[k]))
             logger.info('{0} is from {1} network'.format(k, check[k]))
-
-        self.show_step(9)
-        self.fuel_web.deploy_cluster_wait(cluster_id, timeout=150 * 60)
-
-        self.show_step(10)
-        self.fuel_web.verify_network(cluster_id)
-
-        self.show_step(11)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_controllers_from_custom_nodegroup",
                                is_make=True)
