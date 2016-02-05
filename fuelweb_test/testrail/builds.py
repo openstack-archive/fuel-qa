@@ -14,7 +14,10 @@
 
 import json
 import re
-import urllib2
+
+# pylint: disable=import-error
+from six.moves.urllib import request
+# pylint: enable=import-error
 
 from fuelweb_test.testrail.settings import JENKINS
 from fuelweb_test.testrail.settings import logger
@@ -25,8 +28,8 @@ def get_jobs_for_view(view):
     """
     view_url = "/".join([JENKINS["url"], 'view', view, 'api/json'])
     logger.debug("Request view data from {}".format(view_url))
-    req = urllib2.Request(view_url)
-    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    req = request.Request(view_url)
+    opener = request.build_opener(request.HTTPHandler)
     s = opener.open(req).read()
     opener.close()
     view_data = json.loads(s)
@@ -39,8 +42,8 @@ def get_downstream_builds_from_html(url):
     """
     url = "/".join([url, 'downstreambuildview/'])
     logger.debug("Request downstream builds data from {}".format(url))
-    req = urllib2.Request(url)
-    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    req = request.Request(url)
+    opener = request.build_opener(request.HTTPHandler)
     s = opener.open(req).read()
     opener.close()
     jobs = []
@@ -66,8 +69,8 @@ def get_build_artifact(url, artifact):
     """
     url = "/".join([url, 'artifact', artifact])
     logger.debug("Request artifact content from {}".format(url))
-    req = urllib2.Request(url)
-    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    req = request.Request(url)
+    opener = request.build_opener(request.HTTPHandler)
     s = opener.open(req).read()
     opener.close()
     return s
@@ -99,13 +102,13 @@ class Build(object):
         job_url = "/".join([JENKINS["url"], 'job', self.name,
                             'api/json?depth={depth}'.format(depth=depth)])
         logger.debug("Request job info from {}".format(job_url))
-        return json.load(urllib2.urlopen(job_url))
+        return json.load(request.urlopen(job_url))
 
     def get_job_console(self):
         job_url = "/".join([JENKINS["url"], 'job', self.name,
                             str(self.number), 'consoleText'])
         logger.debug("Request job console from {}".format(job_url))
-        return urllib2.urlopen(job_url)
+        return request.urlopen(job_url)
 
     def get_build_data(self, depth=1):
         build_url = "/".join([JENKINS["url"], 'job',
@@ -113,7 +116,7 @@ class Build(object):
                               str(self.number),
                               'api/json?depth={depth}'.format(depth=depth)])
         logger.debug("Request build data from {}".format(build_url))
-        return json.load(urllib2.urlopen(build_url))
+        return json.load(request.urlopen(build_url))
 
     @staticmethod
     def get_test_data(url, result_path=None):
@@ -124,7 +127,7 @@ class Build(object):
             test_url = "/".join([url.rstrip("/"), 'testReport', 'api/json'])
 
         logger.debug("Request test data from {}".format(test_url))
-        response = urllib2.urlopen(test_url)
+        response = request.urlopen(test_url)
         return json.load(response)
 
     def test_data(self, result_path=None):
