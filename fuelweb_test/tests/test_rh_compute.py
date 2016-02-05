@@ -33,9 +33,9 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["rhel", "rhel_ha", "rhel.basic"])
-class RhelHA(TestBasic):
-    """RHEL-based compute tests"""
+@test(groups=["rh", "rh.ha", "rh.basic"])
+class RhHA(TestBasic):
+    """RH-based compute tests"""
 
     @staticmethod
     def wait_for_slave_provision(node_ip, timeout=10 * 60):
@@ -100,12 +100,12 @@ class RhelHA(TestBasic):
             LOGGER.debug('Node {0} became online.'.format(node.name))
 
     @staticmethod
-    def connect_rhel_image(slave):
-        """Upload RHEL image into a target node.
+    def connect_rh_image(slave):
+        """Upload RH image into a target node.
 
         :param slave: Target node name.
         """
-        path = settings.RHEL_IMAGE_PATH + settings.RHEL_IMAGE
+        path = settings.RH_IMAGE_PATH + settings.RH_IMAGE
 
         def find_system_drive(node):
             drives = node.disk_devices
@@ -136,50 +136,54 @@ class RhelHA(TestBasic):
         asserts.assert_equal(result['exit_code'], 0, "Image doesn't connected")
 
     @staticmethod
-    def register_rhel_subscription(remote):
-        """Register RHEL subscription.
+    def register_rh_subscription(remote):
+        """Register RH subscription.
 
         :param remote: Remote node to proceed.
         """
         reg_command = (
             "/usr/sbin/subscription-manager register "
             "--username={0} --password={1}".format(
-                settings.RHEL_LICENSE_USERNAME,
-                settings.RHEL_LICENSE_PASSWORD)
+                settings.RH_LICENSE_USERNAME,
+                settings.RH_LICENSE_PASSWORD)
         )
 
-        if settings.RHEL_SERVER_URL:
+        if settings.RH_SERVER_URL:
             reg_command = reg_command + " --serverurl={0}".format(
-                settings.RHEL_SERVER_URL)
+                settings.RH_SERVER_URL)
 
-        if settings.RHEL_REGISTERED_ORG_NAME:
+        if settings.RH_REGISTERED_ORG_NAME:
             reg_command = reg_command + " --org={0}".format(
-                settings.RHEL_REGISTERED_ORG_NAME)
+                settings.RH_REGISTERED_ORG_NAME)
 
-        if settings.RHEL_RELEASE:
+        if settings.RH_RELEASE:
             reg_command = reg_command + " --release={0}".format(
-                settings.RHEL_RELEASE)
+                settings.RH_RELEASE)
 
-        if settings.RHEL_ACTIVATION_KEY:
+        if settings.RH_ACTIVATION_KEY:
             reg_command = reg_command + " --activationkey={0}".format(
-                settings.RHEL_ACTIVATION_KEY)
-
-        cmd = reg_command + " --auto-attach"
-
-        result = remote.execute(cmd)
-        LOGGER.debug(result)
-        asserts.assert_equal(result['exit_code'], 0, 'RHEL registation failed')
+                settings.RH_ACTIVATION_KEY)
 
         if settings.RH_POOL_HASH:
+            result = remote.execute(reg_command)
+            LOGGER.debug(result)
+            asserts.assert_equal(result['exit_code'], 0,
+                                 'RH registration failed')
             reg_pool_cmd = ("/usr/sbin/subscription-manager "
                             "attach --pool={0}".format(settings.RH_POOL_HASH))
             result = remote.execute(reg_pool_cmd)
             LOGGER.debug(result)
             asserts.assert_equal(result['exit_code'], 0,
                                  'Can not attach node to subscription pool')
+        else:
+            cmd = reg_command + " --auto-attach"
+            result = remote.execute(cmd)
+            LOGGER.debug(result)
+            asserts.assert_equal(result['exit_code'], 0,
+                                 'RH registration with auto-attaching failed')
 
     @staticmethod
-    def enable_rhel_repos(remote):
+    def enable_rh_repos(remote):
         """Enable Red Hat mirrors on a target node.
 
         :param remote: Remote node for proceed.
@@ -187,12 +191,12 @@ class RhelHA(TestBasic):
         cmd = ("yum-config-manager --enable rhel-{0}-server-optional-rpms && "
                "yum-config-manager --enable rhel-{0}-server-extras-rpms &&"
                "yum-config-manager --enable rhel-{0}-server-rh-common-rpms"
-               .format(settings.RHEL_MAJOR_RELEASE))
+               .format(settings.RH_MAJOR_RELEASE))
 
         result = remote.execute(cmd)
         LOGGER.debug(result)
         asserts.assert_equal(result['exit_code'], 0,
-                             'Enabling RHEL repos failed')
+                             'Enabling RH repos failed')
 
     @staticmethod
     def set_hostname(remote, host_number=1):
@@ -201,7 +205,7 @@ class RhelHA(TestBasic):
         :param host_number: Node index nubmer (1 by default).
         :param remote: Remote node for proceed.
         """
-        hostname = "rhel-{0}.test.domain.local".format(host_number)
+        hostname = "rh-{0}.test.domain.local".format(host_number)
         cmd = ("sysctl kernel.hostname={0} && "
                "echo '{0}' > /etc/hostname".format(hostname))
 
@@ -326,10 +330,10 @@ class RhelHA(TestBasic):
         :param ip: Target node ip to back up from.
         """
         LOGGER.debug('Target node ip: {0}'.format(ip))
-        cmd = ("cd ~/ && mkdir rhel_backup; "
-               "scp -r {0}:/root/.ssh rhel_backup/. ; "
-               "scp {0}:/etc/astute.yaml rhel_backup/ ; "
-               "scp -r {0}:/var/lib/astute/nova rhel_backup/").format(ip)
+        cmd = ("cd ~/ && mkdir rh_backup; "
+               "scp -r {0}:/root/.ssh rh_backup/. ; "
+               "scp {0}:/etc/astute.yaml rh_backup/ ; "
+               "scp -r {0}:/var/lib/astute/nova rh_backup/").format(ip)
         result = remote.execute(cmd)
         LOGGER.debug(result['stdout'])
         LOGGER.debug(result['stderr'])
@@ -361,7 +365,7 @@ class RhelHA(TestBasic):
         :param remote_admin: Remote admin node for proceed.
         :param remote_slave: Remote slave node for proceed.
         """
-        cmd = "cat ~/rhel_backup/.ssh/authorized_keys"
+        cmd = "cat ~/rh_backup/.ssh/authorized_keys"
         result = remote_admin.execute(cmd)
         key = result['stdout']
         LOGGER.debug(result)
@@ -377,8 +381,8 @@ class RhelHA(TestBasic):
         asserts.assert_equal(result['exit_code'], 0,
                              'Can not recover ssh key for node')
 
-        cmd = "cd ~/rhel_backup && scp astute.yaml {0}@{1}:/etc/.".format(
-            settings.RHEL_IMAGE_USER, ip)
+        cmd = "cd ~/rh_backup && scp astute.yaml {0}@{1}:/etc/.".format(
+            settings.RH_IMAGE_USER, ip)
         LOGGER.debug("Restoring astute.yaml for node with ip {0}".format(ip))
         result = remote_admin.execute(cmd)
         LOGGER.debug(result)
@@ -392,8 +396,8 @@ class RhelHA(TestBasic):
         asserts.assert_equal(result['exit_code'], 0, 'Preparation failed')
 
         cmd = (
-            "cd ~/rhel_backup && scp -r nova {0}@{1}:/var/lib/astute/.".format(
-                settings.RHEL_IMAGE_USER, ip)
+            "cd ~/rh_backup && scp -r nova {0}@{1}:/var/lib/astute/.".format(
+                settings.RH_IMAGE_USER, ip)
         )
         LOGGER.debug("Restoring nova ssh-keys")
         result = remote_admin.execute(cmd)
@@ -526,7 +530,7 @@ class RhelHA(TestBasic):
         :param ip: IP address of a target node where to sync.
         """
         cmd = ("rsync -avz /etc/puppet/modules/* "
-               "{0}@{1}:/etc/puppet/modules/".format(settings.RHEL_IMAGE_USER,
+               "{0}@{1}:/etc/puppet/modules/".format(settings.RH_IMAGE_USER,
                                                      ip))
         result = remote.execute(cmd)
         LOGGER.debug(cmd)
@@ -547,10 +551,10 @@ class RhelHA(TestBasic):
         return nodename
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_rhel_compute_ha_tun"])
+          groups=["deploy_rh_compute_ha_tun"])
     @log_snapshot_after_test
-    def deploy_rhel_based_compute(self):
-        """Deploy RHEL-based compute in HA mode with Neutron VXLAN
+    def deploy_rh_based_compute(self):
+        """Deploy RH-based compute in HA mode with Neutron VXLAN
 
         Scenario:
             1. Check required image.
@@ -560,21 +564,21 @@ class RhelHA(TestBasic):
             5. Deploy the Fuel cluster.
             6. Run OSTF.
             7. Backup astute.yaml and ssh keys from compute.
-            8. Boot compute with RHEL image.
+            8. Boot compute with RH image.
             9. Prepare node for Puppet run.
             10. Execute modular tasks for compute.
             11. Run OSTF.
 
         Duration: 150m
-        Snapshot: deploy_rhel_compute_ha_tun
+        Snapshot: deploy_rh_compute_ha_tun
 
         """
         self.show_step(1, initialize=True)
-        LOGGER.debug('Check MD5 sum of RHEL 7 image')
+        LOGGER.debug('Check MD5 sum of RH 7 image')
         check_image = checkers.check_image(
-            settings.RHEL_IMAGE,
-            settings.RHEL_IMAGE_MD5,
-            settings.RHEL_IMAGE_PATH)
+            settings.RH_IMAGE,
+            settings.RH_IMAGE_MD5,
+            settings.RH_IMAGE_PATH)
         asserts.assert_true(check_image,
                             'Provided image is incorrect. '
                             'Please, check image path and md5 sum of it.')
@@ -583,13 +587,13 @@ class RhelHA(TestBasic):
         self.env.revert_snapshot("ready_with_5_slaves")
 
         self.show_step(3)
-        LOGGER.debug('Create Fuel cluster RHEL-based compute tests')
+        LOGGER.debug('Create Fuel cluster RH-based compute tests')
         data = {
             'net_provider': 'neutron',
             'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
-            'tenant': 'RhelHA',
-            'user': 'RhelHA',
-            'password': 'RhelHA'
+            'tenant': 'RhHA',
+            'user': 'RhHA',
+            'password': 'RhHA'
         }
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -646,7 +650,7 @@ class RhelHA(TestBasic):
         target_node.destroy()
         asserts.assert_false(target_node.driver.node_active(node=target_node),
                              'Target node still active')
-        self.connect_rhel_image(target_node)
+        self.connect_rh_image(target_node)
         target_node.start()
         asserts.assert_true(target_node.driver.node_active(node=target_node),
                             'Target node did not start')
@@ -665,10 +669,10 @@ class RhelHA(TestBasic):
         with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
             self.set_hostname(remote)
             if not settings.CENTOS_DUMMY_DEPLOY:
-                self.register_rhel_subscription(remote)
+                self.register_rh_subscription(remote)
             self.install_yum_components(remote)
             if not settings.CENTOS_DUMMY_DEPLOY:
-                self.enable_rhel_repos(remote)
+                self.enable_rh_repos(remote)
             self.set_repo_for_perestroika(remote)
             self.check_hiera_installation(remote)
             self.install_ruby_puppet(remote)
@@ -697,4 +701,4 @@ class RhelHA(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['ha', 'smoke', 'sanity'])
 
-        self.env.make_snapshot("ready_ha_with_rhel_compute", is_make=True)
+        self.env.make_snapshot("ready_ha_with_rh_compute", is_make=True)

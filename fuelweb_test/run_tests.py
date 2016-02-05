@@ -76,7 +76,7 @@ def import_tests():
     from tests.tests_scale import test_scale_group_5  # noqa
     from tests.tests_scale import test_scale_group_6  # noqa
     from tests.tests_multirole import test_mongo_multirole  # noqa
-    from tests import test_rhel_compute  # noqa
+    from tests import test_rh_compute  # noqa
     from tests.tests_security import test_run_nessus  # noqa
     from tests.tests_separate_services import test_separate_db  # noqa
     from tests.tests_separate_services import test_separate_horizon  # noqa
