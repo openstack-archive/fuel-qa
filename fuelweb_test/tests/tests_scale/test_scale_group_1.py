@@ -12,10 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import urllib2
-
 from proboscis import asserts
 from proboscis import test
+# pylint: disable=import-error
+from six.moves.urllib.error import HTTPError
+# pylint: enable=import-error
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import DEPLOYMENT_MODE
@@ -32,7 +33,7 @@ class HaScaleGroup1(TestBasic):
     def expected_fail_stop_deployment(self, cluster_id):
         try:
             self.fuel_web.client.stop_deployment(cluster_id)
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             asserts.assert_equal(
                 400,
                 e.code,

@@ -17,14 +17,16 @@ from __future__ import division
 import datetime
 import random
 import re
-import urllib2
-import xmlrpclib
 
 from devops.helpers.helpers import http
 from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import test
+# pylint: disable=import-error
+from six.moves.urllib.request import urlopen
+from six.moves.xmlrpc_client import ServerProxy
+# pylint: enable=import-error
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import logger
@@ -58,7 +60,7 @@ class TestAdminNode(TestBasic):
                          waited_code=501),
             timeout=60
         )
-        server = xmlrpclib.Server(
+        server = ServerProxy(
             'http://%s/cobbler_api' % self.env.get_admin_node_ip())
 
         config = self.env.admin_actions.get_fuel_settings()
@@ -557,7 +559,7 @@ class GPGSigningCheck(TestBasic):
             )
 
         self.show_step(6)
-        response = urllib2.urlopen(
+        response = urlopen(
             '{}/os/x86_64/Packages/'.format(settings.CENTOS_REPO_PATH)
         )
         source = response.read()
