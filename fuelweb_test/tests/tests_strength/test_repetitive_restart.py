@@ -16,9 +16,10 @@ import time
 
 from proboscis import test
 from proboscis.asserts import assert_true
+from six.moves import xrange
 
 from fuelweb_test import logger
-from fuelweb_test import ostf_test_mapping as map_ostf
+from fuelweb_test import ostf_test_mapping
 from fuelweb_test import settings
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.decorators import setup_teardown
@@ -127,7 +128,7 @@ class RepetitiveRestart(TestLoadBase):
             try:
                 self.fuel_web.run_single_ostf_test(
                     cluster_id, test_sets=['smoke'],
-                    test_name=map_ostf.OSTF_TEST_MAPPING.get(
+                    test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
                         'Create volume and attach it to instance'))
             except AssertionError:
                 logger.debug("Test failed from first probe,"
@@ -136,7 +137,7 @@ class RepetitiveRestart(TestLoadBase):
                 time.sleep(180)
                 self.fuel_web.run_single_ostf_test(
                     cluster_id, test_sets=['smoke'],
-                    test_name=map_ostf.OSTF_TEST_MAPPING.get(
+                    test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
                         'Create volume and attach it to instance'))
             self.show_step(12)
             # LB 1519018

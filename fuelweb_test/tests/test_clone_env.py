@@ -12,20 +12,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import urllib2
-
 from proboscis.asserts import assert_equal
 from proboscis.asserts import fail
 from proboscis import test
 from proboscis import SkipTest
+from six.moves.urllib.error import HTTPError
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.tests import base_test_case as base_test_data
+from fuelweb_test.tests import base_test_case
 from fuelweb_test.tests.test_os_upgrade import TestOSupgrade
 
 
 @test(groups=["clone_env_for_os_upgrade", "os_upgrade"])
-class TestCloneEnv(base_test_data.TestBasic):
+class TestCloneEnv(base_test_case.TestBasic):
 
     @test(
         depends_on=[TestOSupgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan],
@@ -138,7 +137,7 @@ class TestCloneEnv(base_test_data.TestBasic):
         }
         try:
             self.fuel_web.client.clone_environment(1234567, data)
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             assert_equal(404, e.code)
         else:
             fail("Doesn't raise needed error")
@@ -172,7 +171,7 @@ class TestCloneEnv(base_test_data.TestBasic):
 
         try:
             self.fuel_web.client.clone_environment(cluster_id, data)
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             assert_equal(400, e.code)
         else:
             fail("Doesn't raise needed error")
@@ -203,7 +202,7 @@ class TestCloneEnv(base_test_data.TestBasic):
 
         try:
             self.fuel_web.client.clone_environment(cluster_id, data)
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             assert_equal(400, e.code)
         else:
             fail("Doesn't raise needed error")
@@ -230,7 +229,7 @@ class TestCloneEnv(base_test_data.TestBasic):
 
         try:
             self.fuel_web.client.clone_environment(cluster_id, None)
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             assert_equal(400, e.code)
         else:
             fail("Doesn't raise needed error")
@@ -263,7 +262,7 @@ class TestCloneEnv(base_test_data.TestBasic):
 
         try:
             self.fuel_web.client.clone_environment(cluster_id, data)
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             assert_equal(404, e.code)
         else:
             fail("Doesn't raise needed error")
@@ -296,7 +295,7 @@ class TestCloneEnv(base_test_data.TestBasic):
 
         try:
             self.fuel_web.client.clone_environment(cluster_id, data)
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             assert_equal(400, e.code)
         else:
             fail("Doesn't raise needed error")
@@ -334,7 +333,7 @@ class TestCloneEnv(base_test_data.TestBasic):
         self.fuel_web.client.clone_environment(cluster_id, data)
         try:
             self.fuel_web.client.clone_environment(cluster_id, data)
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             assert_equal(400, e.code)
         else:
             fail("Doesn't raise needed error")
