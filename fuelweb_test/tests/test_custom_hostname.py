@@ -13,13 +13,12 @@
 #    under the License.
 from random import randrange
 from re import match
-from urllib2 import HTTPError
-
 
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
 from proboscis import test
+from six.moves.urllib.error import HTTPError
 
 from fuelweb_test.helpers.checkers import check_ping
 from fuelweb_test.helpers.decorators import log_snapshot_after_test

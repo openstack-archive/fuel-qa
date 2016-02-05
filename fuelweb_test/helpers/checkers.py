@@ -16,12 +16,13 @@ import json
 import os
 import re
 import traceback
-import urllib2
 
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
 import six
+from six.moves.urllib.error import HTTPError
+from six.moves.urllib.error import URLError
 import yaml
 
 from fuelweb_test import logger
@@ -251,7 +252,7 @@ def enable_feature_group(env, group):
         try:
             return (group in
                     env.fuel_web.client.get_api_version()["feature_groups"])
-        except (urllib2.HTTPError, urllib2.URLError):
+        except (HTTPError, URLError):
             return False
 
     wait(check_api_group_enabled, interval=10, timeout=60 * 20)
