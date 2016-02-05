@@ -249,21 +249,21 @@ def get_tests_results(systest_build, os):
     run_test_data = test_build.test_data()
     test_classes = {}
     for one in run_test_data['suites'][0]['cases']:
-        className = one['className']
-        if className not in test_classes:
-            test_classes[className] = {}
-            test_classes[className]['child'] = []
-            test_classes[className]['duration'] = 0
-            test_classes[className]["failCount"] = 0
-            test_classes[className]["passCount"] = 0
-            test_classes[className]["skipCount"] = 0
+        class_name = one['className']
+        if class_name not in test_classes:
+            test_classes[class_name] = {}
+            test_classes[class_name]['child'] = []
+            test_classes[class_name]['duration'] = 0
+            test_classes[class_name]["failCount"] = 0
+            test_classes[class_name]["passCount"] = 0
+            test_classes[class_name]["skipCount"] = 0
         else:
             if one['className'] == one['name']:
                 logger.warning("Found duplicate test in run - {}".format(
                     one['className']))
                 continue
 
-        test_class = test_classes[className]
+        test_class = test_classes[class_name]
         test_class['child'].append(one)
         test_class['duration'] += float(one['duration'])
         if one['status'].lower() in ('failed', 'error'):
