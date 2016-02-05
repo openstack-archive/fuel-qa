@@ -113,7 +113,7 @@ class TestHaFailoverBase(TestBasic):
         self.fuel_web.assert_cluster_ready(os_conn, smiles_count=14)
         self.fuel_web.verify_network(cluster_id)
 
-        for node in ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]:
+        for node in ['slave-0{0}'.format(slave) for slave in range(1, 4)]:
             with self.fuel_web.get_ssh_for_node(node) as remote:
                 check_public_ping(remote)
 
@@ -135,7 +135,7 @@ class TestHaFailoverBase(TestBasic):
 
             return ret
 
-        for num in xrange(2):
+        for num in range(2):
 
             # STEP: Revert environment
             # if num==0: show_step(1); if num==1: show_step(5)
@@ -248,7 +248,7 @@ class TestHaFailoverBase(TestBasic):
             [i.name for i in devops_controllers]))
 
         for resource in resources:
-            for check_counter in xrange(1, 11):
+            for check_counter in range(1, 11):
                 # 1. Locate where resource is running
                 active_nodes = self.fuel_web.get_pacemaker_resource_location(
                     devops_controllers[0].name,
@@ -1259,7 +1259,7 @@ class TestHaFailoverBase(TestBasic):
             expected_up = len(n_ctrls) if all_up else 1
             return run_nodes.count('rabbit@') == expected_up
 
-        for n in xrange(1, 4):
+        for n in range(1, 4):
             logger.info('Checking {} time'.format(n))
             cmd = 'crm_resource --resource p_rabbitmq-server ' \
                   '--set-parameter max_rabbitmqctl_timeouts ' \

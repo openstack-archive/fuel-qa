@@ -157,7 +157,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        for node in ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]:
+        for node in ['slave-0{0}'.format(slave) for slave in range(1, 4)]:
             with self.fuel_web.get_ssh_for_node(node) as remote:
                 checkers.check_public_ping(remote)
 

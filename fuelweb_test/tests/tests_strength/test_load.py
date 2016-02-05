@@ -118,7 +118,7 @@ class Load(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.show_step(5)
-        for node in ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]:
+        for node in ['slave-0{0}'.format(slave) for slave in range(1, 4)]:
             with self.fuel_web.get_ssh_for_node(node) as remote:
                 file_name = "test_data"
                 file_dir = remote.execute(

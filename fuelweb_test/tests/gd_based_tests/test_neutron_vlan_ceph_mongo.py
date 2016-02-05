@@ -191,7 +191,7 @@ class NeutronVlanCephMongo(TestBasic):
         all_tasks = self.fuel_web.client.get_cluster_deployment_tasks(
             cluster_id)
 
-        nodes = ['slave-0{0}'.format(slave) for slave in xrange(1, 6)]
+        nodes = ['slave-0{0}'.format(slave) for slave in range(1, 6)]
 
         # check hiera
 
@@ -301,7 +301,7 @@ class NeutronVlanCephMongo(TestBasic):
 
         logger.debug('task info is {0}'.format(task))
         self.fuel_web.assert_task_success(task)
-        mongo_nodes = ['slave-0{0}'.format(slave) for slave in xrange(1, 3)]
+        mongo_nodes = ['slave-0{0}'.format(slave) for slave in range(1, 3)]
         # check mongo
 
         if self.get_post_test(tasks, 'top-role-mongo'):

@@ -198,7 +198,7 @@ class NeutronTun(TestBasic):
         all_tasks = self.fuel_web.client.get_cluster_deployment_tasks(
             cluster_id)
 
-        nodes = ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]
+        nodes = ['slave-0{0}'.format(slave) for slave in range(1, 4)]
 
         # check hiera
 

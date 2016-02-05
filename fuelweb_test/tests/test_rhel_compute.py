@@ -28,7 +28,7 @@ from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
 from fuelweb_test import settings
-from fuelweb_test import logger as LOGGER
+from fuelweb_test import logger
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -58,22 +58,22 @@ class RhelHA(TestBasic):
              timeout=timeout, timeout_msg="Node doesn't gone offline")
 
     def warm_restart_nodes(self, devops_nodes):
-        LOGGER.info('Reboot (warm restart) nodes '
+        logger.info('Reboot (warm restart) nodes '
                     '{0}'.format([n.name for n in devops_nodes]))
         self.warm_shutdown_nodes(devops_nodes)
         self.warm_start_nodes(devops_nodes)
 
     def warm_shutdown_nodes(self, devops_nodes):
-        LOGGER.info('Shutting down (warm) nodes '
+        logger.info('Shutting down (warm) nodes '
                     '{0}'.format([n.name for n in devops_nodes]))
         for node in devops_nodes:
-            LOGGER.debug('Shutdown node {0}'.format(node.name))
+            logger.debug('Shutdown node {0}'.format(node.name))
             with self.fuel_web.get_ssh_for_node(node.name) as remote:
                 remote.execute('/sbin/shutdown -Ph now & exit')
 
         for node in devops_nodes:
             ip = self.fuel_web.get_node_ip_by_devops_name(node.name)
-            LOGGER.info('Wait a {0} node offline status'.format(node.name))
+            logger.info('Wait a {0} node offline status'.format(node.name))
             try:
                 self.wait_for_slave_network_down(ip)
             except TimeoutError:
@@ -84,7 +84,7 @@ class RhelHA(TestBasic):
             node.destroy()
 
     def warm_start_nodes(self, devops_nodes):
-        LOGGER.info('Starting nodes '
+        logger.info('Starting nodes '
                     '{0}'.format([n.name for n in devops_nodes]))
         for node in devops_nodes:
             node.start()
@@ -97,7 +97,7 @@ class RhelHA(TestBasic):
                     tcp_ping(ip, 22),
                     'Node {0} has not become online '
                     'after warm start'.format(node.name))
-            LOGGER.debug('Node {0} became online.'.format(node.name))
+            logger.debug('Node {0} became online.'.format(node.name))
 
     @staticmethod
     def connect_rhel_image(slave):
@@ -120,9 +120,9 @@ class RhelHA(TestBasic):
         try:
             system_disk.volume.upload(path)
         except Exception as e:
-            LOGGER.error(e)
-        LOGGER.debug("Volume path: {0}".format(vol_path))
-        LOGGER.debug("Image path: {0}".format(path))
+            logger.error(e)
+        logger.debug("Volume path: {0}".format(vol_path))
+        logger.debug("Image path: {0}".format(path))
 
     @staticmethod
     def verify_image_connected(remote):
@@ -132,7 +132,7 @@ class RhelHA(TestBasic):
         """
         cmd = "cat /etc/redhat-release"
         result = remote.execute(cmd)
-        LOGGER.debug(result)
+        logger.debug(result)
         asserts.assert_equal(result['exit_code'], 0, "Image doesn't connected")
 
     @staticmethod
@@ -167,14 +167,14 @@ class RhelHA(TestBasic):
         cmd = reg_command + " --auto-attach"
 
         result = remote.execute(cmd)
-        LOGGER.debug(result)
+        logger.debug(result)
         asserts.assert_equal(result['exit_code'], 0, 'RHEL registation failed')
 
         if settings.RH_POOL_HASH:
             reg_pool_cmd = ("/usr/sbin/subscription-manager "
                             "attach --pool={0}".format(settings.RH_POOL_HASH))
             result = remote.execute(reg_pool_cmd)
-            LOGGER.debug(result)
+            logger.debug(result)
             asserts.assert_equal(result['exit_code'], 0,
                                  'Can not attach node to subscription pool')
 
@@ -190,7 +190,7 @@ class RhelHA(TestBasic):
                .format(settings.RHEL_MAJOR_RELEASE))
 
         result = remote.execute(cmd)
-        LOGGER.debug(result)
+        logger.debug(result)
         asserts.assert_equal(result['exit_code'], 0,
                              'Enabling RHEL repos failed')
 
@@ -206,7 +206,7 @@ class RhelHA(TestBasic):
                "echo '{0}' > /etc/hostname".format(hostname))
 
         result = remote.execute(cmd)
-        LOGGER.debug(result)
+        logger.debug(result)
         asserts.assert_equal(result['exit_code'], 0,
                              'Setting up hostname for node failed')
 
@@ -217,15 +217,15 @@ class RhelHA(TestBasic):
         :param puppets: <list> of puppets.
         :param remote: Remote node for proceed.
         """
-        LOGGER.debug("Applying puppets...")
+        logger.debug("Applying puppets...")
         for puppet in puppets:
-            LOGGER.debug('Applying: {0}'.format(puppet))
+            logger.debug('Applying: {0}'.format(puppet))
             result = remote.execute(
                 'puppet apply -vd -l /var/log/puppet.log {0}'.format(puppet))
             if result['exit_code'] != 0:
-                LOGGER.debug("Failed on task: {0}".format(puppet))
-                LOGGER.debug("STDERR:\n {0}".format(result['stderr']))
-                LOGGER.debug("STDOUT:\n {0}".format(result['stdout']))
+                logger.debug("Failed on task: {0}".format(puppet))
+                logger.debug("STDERR:\n {0}".format(result['stderr']))
+                logger.debug("STDOUT:\n {0}".format(result['stdout']))
             asserts.assert_equal(
                 result['exit_code'], 0, 'Puppet run failed. '
                                         'Task: {0}'.format(puppet))
@@ -258,10 +258,10 @@ class RhelHA(TestBasic):
         if result['exit_code'] == 0:
             remove_iface = "rm -f /etc/sysconfig/network-scripts/ifcfg-eth0"
             result = remote.execute(remove_iface)
-            LOGGER.debug(result)
+            logger.debug(result)
         prep = "screen -dmS netconf"
         result = remote.execute(prep)
-        LOGGER.debug(result)
+        logger.debug(result)
         asserts.assert_equal(result['exit_code'], 0, 'Can not create screen')
         net_puppet = ('screen -r netconf -p 0 -X stuff '
                       '$"puppet apply -vd -l /var/log/puppet.log '
@@ -270,8 +270,8 @@ class RhelHA(TestBasic):
         result = remote.execute(net_puppet)
 
         if result['exit_code'] != 0:
-            LOGGER.debug("STDERR:\n {0}".format(result['stderr']))
-            LOGGER.debug("STDOUT:\n {0}".format(result['stdout']))
+            logger.debug("STDERR:\n {0}".format(result['stderr']))
+            logger.debug("STDOUT:\n {0}".format(result['stdout']))
         asserts.assert_equal(
             result['exit_code'], 0, 'Can not create screen with '
                                     'netconfig task')
@@ -287,7 +287,7 @@ class RhelHA(TestBasic):
         def file_checker(connection):
             cmd = "test -f ~/success"
             result = connection.execute(cmd)
-            LOGGER.debug(result)
+            logger.debug(result)
             if result['exit_code'] != 0:
                 return False
             else:
@@ -325,17 +325,17 @@ class RhelHA(TestBasic):
         :param remote: Remote Fuel master node.
         :param ip: Target node ip to back up from.
         """
-        LOGGER.debug('Target node ip: {0}'.format(ip))
+        logger.debug('Target node ip: {0}'.format(ip))
         cmd = ("cd ~/ && mkdir rhel_backup; "
                "scp -r {0}:/root/.ssh rhel_backup/. ; "
                "scp {0}:/etc/astute.yaml rhel_backup/ ; "
                "scp -r {0}:/var/lib/astute/nova rhel_backup/").format(ip)
         result = remote.execute(cmd)
-        LOGGER.debug(result['stdout'])
-        LOGGER.debug(result['stderr'])
+        logger.debug(result['stdout'])
+        logger.debug(result['stderr'])
         asserts.assert_equal(result['exit_code'], 0,
                              'Can not back up required information from node')
-        LOGGER.debug("Backed up ssh-keys and astute.yaml")
+        logger.debug("Backed up ssh-keys and astute.yaml")
 
     @staticmethod
     def clean_string(string):
@@ -364,7 +364,7 @@ class RhelHA(TestBasic):
         cmd = "cat ~/rhel_backup/.ssh/authorized_keys"
         result = remote_admin.execute(cmd)
         key = result['stdout']
-        LOGGER.debug(result)
+        logger.debug(result)
         asserts.assert_equal(result['exit_code'], 0,
                              'Can not get backed up ssh key.')
 
@@ -372,32 +372,32 @@ class RhelHA(TestBasic):
 
         cmd = "mkdir ~/.ssh; echo '{0}' >> ~/.ssh/authorized_keys".format(key)
         result = remote_slave.execute(cmd)
-        LOGGER.debug(result['stdout'])
-        LOGGER.debug(result['stderr'])
+        logger.debug(result['stdout'])
+        logger.debug(result['stderr'])
         asserts.assert_equal(result['exit_code'], 0,
                              'Can not recover ssh key for node')
 
         cmd = "cd ~/rhel_backup && scp astute.yaml {0}@{1}:/etc/.".format(
             settings.RHEL_IMAGE_USER, ip)
-        LOGGER.debug("Restoring astute.yaml for node with ip {0}".format(ip))
+        logger.debug("Restoring astute.yaml for node with ip {0}".format(ip))
         result = remote_admin.execute(cmd)
-        LOGGER.debug(result)
+        logger.debug(result)
         asserts.assert_equal(result['exit_code'], 0,
                              'Can not restore astute.yaml')
 
         cmd = "mkdir -p /var/lib/astute"
-        LOGGER.debug("Prepare node for restoring nova ssh-keys")
+        logger.debug("Prepare node for restoring nova ssh-keys")
         result = remote_slave.execute(cmd)
-        LOGGER.debug(result)
+        logger.debug(result)
         asserts.assert_equal(result['exit_code'], 0, 'Preparation failed')
 
         cmd = (
             "cd ~/rhel_backup && scp -r nova {0}@{1}:/var/lib/astute/.".format(
                 settings.RHEL_IMAGE_USER, ip)
         )
-        LOGGER.debug("Restoring nova ssh-keys")
+        logger.debug("Restoring nova ssh-keys")
         result = remote_admin.execute(cmd)
-        LOGGER.debug(result)
+        logger.debug(result)
         asserts.assert_equal(result['exit_code'], 0,
                              'Can not restore ssh-keys for nova')
 
@@ -409,7 +409,7 @@ class RhelHA(TestBasic):
         """
         cmd = "yum install yum-utils yum-priorities -y"
         result = remote.execute(cmd)
-        LOGGER.debug(result)
+        logger.debug(result)
         asserts.assert_equal(result['exit_code'], 0, 'Can not install required'
                                                      'yum components.')
 
@@ -423,7 +423,7 @@ class RhelHA(TestBasic):
         cmd = ("curl {0}".format(repo))
 
         result = remote.execute(cmd)
-        LOGGER.debug(result)
+        logger.debug(result)
         asserts.assert_equal(result['exit_code'], 0,
                              'Perestroika repos unavailable from node.')
 
@@ -437,7 +437,7 @@ class RhelHA(TestBasic):
                "/etc/yum.repos.d/mos.repo && "
                "yum clean all".format(repo))
         result = remote.execute(cmd)
-        LOGGER.debug(result)
+        logger.debug(result)
         asserts.assert_equal(result['exit_code'], 0,
                              'Can not create config file for repo')
 
@@ -448,19 +448,19 @@ class RhelHA(TestBasic):
         :param remote: Remote node for proceed.
         """
         cmd = "yum list installed | grep hiera"
-        LOGGER.debug('Checking hiera installation...')
+        logger.debug('Checking hiera installation...')
         result = remote.execute(cmd)
         if result['exit_code'] == 0:
             cmd = "yum remove hiera -y"
-            LOGGER.debug('Found existing installation of hiera. Removing...')
+            logger.debug('Found existing installation of hiera. Removing...')
             result = remote.execute(cmd)
             asserts.assert_equal(result['exit_code'], 0, 'Can not remove '
                                                          'hiera')
             cmd = "ls /etc/hiera"
-            LOGGER.debug('Checking hiera files for removal...')
+            logger.debug('Checking hiera files for removal...')
             result = remote.execute(cmd)
             if result['exit_code'] == 0:
-                LOGGER.debug('Found redundant hiera files. Removing...')
+                logger.debug('Found redundant hiera files. Removing...')
                 cmd = "rm -rf /etc/hiera"
                 result = remote.execute(cmd)
                 asserts.assert_equal(result['exit_code'], 0,
@@ -473,13 +473,13 @@ class RhelHA(TestBasic):
         :param remote: Remote node for proceed.
         """
         cmd = "yum list installed | grep rsync"
-        LOGGER.debug("Checking rsync installation...")
+        logger.debug("Checking rsync installation...")
         result = remote.execute(cmd)
         if result['exit_code'] != 0:
-            LOGGER.debug("Rsync is not found. Installing rsync...")
+            logger.debug("Rsync is not found. Installing rsync...")
             cmd = "yum clean all && yum install rsync -y"
             result = remote.execute(cmd)
-            LOGGER.debug(result)
+            logger.debug(result)
             asserts.assert_equal(result['exit_code'], 0, 'Can not install '
                                                          'rsync on node.')
 
@@ -494,7 +494,7 @@ class RhelHA(TestBasic):
                "awk '/%s/{print $2}'); do nova service-delete $i; "
                "done" % hostname)
         result = remote.execute(cmd)
-        LOGGER.debug(result)
+        logger.debug(result)
         asserts.assert_equal(result['exit_code'], 0, 'Can not remove '
                                                      'old nova computes')
 
@@ -502,7 +502,7 @@ class RhelHA(TestBasic):
                "awk '/%s/{print $2}'); do neutron agent-delete $i; "
                "done" % hostname)
         result = remote.execute(cmd)
-        LOGGER.debug(result)
+        logger.debug(result)
         asserts.assert_equal(result['exit_code'], 0, 'Can not remove '
                                                      'old neutron agents')
 
@@ -514,7 +514,7 @@ class RhelHA(TestBasic):
         """
         puppet_install_cmd = "yum install puppet ruby -y"
         result = remote.execute(puppet_install_cmd)
-        LOGGER.debug(result)
+        logger.debug(result)
         asserts.assert_equal(result['exit_code'], 0,
                              'Ruby and puppet installation failed')
 
@@ -529,7 +529,7 @@ class RhelHA(TestBasic):
                "{0}@{1}:/etc/puppet/modules/".format(settings.RHEL_IMAGE_USER,
                                                      ip))
         result = remote.execute(cmd)
-        LOGGER.debug(cmd)
+        logger.debug(cmd)
         asserts.assert_equal(result['exit_code'], 0,
                              'Rsync puppet modules failed')
 
@@ -570,7 +570,7 @@ class RhelHA(TestBasic):
 
         """
         self.show_step(1, initialize=True)
-        LOGGER.debug('Check MD5 sum of RHEL 7 image')
+        logger.debug('Check MD5 sum of RHEL 7 image')
         check_image = checkers.check_image(
             settings.RHEL_IMAGE,
             settings.RHEL_IMAGE_MD5,
@@ -583,7 +583,7 @@ class RhelHA(TestBasic):
         self.env.revert_snapshot("ready_with_5_slaves")
 
         self.show_step(3)
-        LOGGER.debug('Create Fuel cluster RHEL-based compute tests')
+        logger.debug('Create Fuel cluster RHEL-based compute tests')
         data = {
             'net_provider': 'neutron',
             'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
@@ -625,14 +625,14 @@ class RhelHA(TestBasic):
         controller_name = 'slave-01'
         controller_ip = self.fuel_web.get_nailgun_node_by_name(
             controller_name)['ip']
-        LOGGER.debug('Got node: {0}'.format(compute))
+        logger.debug('Got node: {0}'.format(compute))
         target_node_name = compute['name'].split('_')[0]
-        LOGGER.debug('Target node name: {0}'.format(target_node_name))
+        logger.debug('Target node name: {0}'.format(target_node_name))
         target_node = self.env.d_env.get_node(name=target_node_name)
-        LOGGER.debug('DevOps Node: {0}'.format(target_node))
+        logger.debug('DevOps Node: {0}'.format(target_node))
         target_node_ip = self.fuel_web.get_nailgun_node_by_name(
             target_node_name)['ip']
-        LOGGER.debug('Acquired ip: {0} for node: {1}'.format(
+        logger.debug('Acquired ip: {0} for node: {1}'.format(
             target_node_ip, target_node_name))
 
         with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
