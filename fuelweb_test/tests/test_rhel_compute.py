@@ -164,19 +164,23 @@ class RhelHA(TestBasic):
             reg_command = reg_command + " --activationkey={0}".format(
                 settings.RHEL_ACTIVATION_KEY)
 
-        cmd = reg_command + " --auto-attach"
-
-        result = remote.execute(cmd)
-        LOGGER.debug(result)
-        asserts.assert_equal(result['exit_code'], 0, 'RHEL registation failed')
-
         if settings.RH_POOL_HASH:
+            result = remote.execute(reg_command)
+            LOGGER.debug(result)
+            asserts.assert_equal(result['exit_code'], 0,
+                                 'RH registation failed')
             reg_pool_cmd = ("/usr/sbin/subscription-manager "
                             "attach --pool={0}".format(settings.RH_POOL_HASH))
             result = remote.execute(reg_pool_cmd)
             LOGGER.debug(result)
             asserts.assert_equal(result['exit_code'], 0,
                                  'Can not attach node to subscription pool')
+        else:
+            cmd = reg_command + " --auto-attach"
+            result = remote.execute(cmd)
+            LOGGER.debug(result)
+            asserts.assert_equal(result['exit_code'], 0,
+                                 'RH registation with auto-attaching failed')
 
     @staticmethod
     def enable_rhel_repos(remote):
