@@ -20,12 +20,14 @@ from subprocess import call
 import sys
 import time
 import traceback
-from urlparse import urlparse
 
 from proboscis import SkipTest
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 import requests
+# pylint: disable=import-error
+from six.moves import urllib
+# pylint: enable=import-error
 
 from fuelweb_test import logger
 from fuelweb_test import settings
@@ -196,7 +198,7 @@ def update_rpm_packages(func):
 
             if settings.UPDATE_FUEL_MIRROR:
                 for url in settings.UPDATE_FUEL_MIRROR:
-                    repo_url = urlparse(url)
+                    repo_url = urllib.parse.urlparse(url)
                     cut_dirs = len(repo_url.path.strip('/').split('/'))
                     download_cmd = ('wget --recursive --no-parent'
                                     ' --no-verbose --reject "index'

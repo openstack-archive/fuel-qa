@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import os
-import urllib
-import urlparse
 
 import bs4
 from devops.helpers.helpers import wait
@@ -22,6 +20,9 @@ from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 from proboscis import test
 import requests
+# pylint: disable=import-error
+from six.moves import urllib
+# pylint: enable=import-error
 
 from fuelweb_test.helpers.checkers import check_plugin_path_env
 from fuelweb_test.helpers import utils
@@ -40,19 +41,20 @@ class ZabbixWeb(object):
         self.verify = verify
 
     def login(self):
-        login_params = urllib.urlencode({'request': '',
-                                         'name': self.username,
-                                         'password': self.password,
-                                         'autologin': 1,
-                                         'enter': 'Sign in'})
-        url = urlparse.urljoin(self.base_url, '?{0}'.format(login_params))
+        login_params = urllib.parse.urlencode(
+            {'request': '',
+             'name': self.username,
+             'password': self.password,
+             'autologin': 1,
+             'enter': 'Sign in'})
+        url = urllib.parse.urljoin(self.base_url, '?{0}'.format(login_params))
         response = self.session.post(url, verify=self.verify)
 
         assert_equal(response.status_code, 200,
                      "Login to Zabbix failed: {0}".format(response.content))
 
     def get_trigger_statuses(self):
-        url = urlparse.urljoin(self.base_url, 'tr_status.php')
+        url = urllib.parse.urljoin(self.base_url, 'tr_status.php')
         response = self.session.get(url, verify=self.verify)
 
         assert_equal(response.status_code, 200,
@@ -62,7 +64,7 @@ class ZabbixWeb(object):
         return response.content
 
     def get_screens(self):
-        url = urlparse.urljoin(self.base_url, 'screens.php')
+        url = urllib.parse.urljoin(self.base_url, 'screens.php')
         response = self.session.get(url, verify=self.verify)
 
         assert_equal(response.status_code, 200,
