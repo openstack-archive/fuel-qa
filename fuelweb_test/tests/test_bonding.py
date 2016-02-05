@@ -13,11 +13,11 @@
 #    under the License.
 
 from copy import deepcopy
-from urllib2 import HTTPError
 
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_raises
 from proboscis import test
+from six.moves.urllib.error import HTTPError
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import DEPLOYMENT_MODE
