@@ -317,9 +317,9 @@ Test Services reconfiguration
 .. automodule:: fuelweb_test.tests.test_services_reconfiguration
   :members:
 
-Test RHEL-based computes
-------------------------
-.. automodule:: fuelweb_test.tests.test_rhel_compute
+Test RHH-based computes
+-----------------------
+.. automodule:: fuelweb_test.tests.test_rhh_compute
   :members:
 
 Gating tests
