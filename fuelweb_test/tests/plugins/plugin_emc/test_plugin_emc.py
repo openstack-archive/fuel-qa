@@ -20,7 +20,7 @@ from proboscis import test
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test import settings as CONF
+from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -75,12 +75,12 @@ class EMCPlugin(TestBasic):
         navicli = checkers.get_package_versions_from_node(
             remote=remote,
             name='navicli',
-            os_type=CONF.OPENSTACK_RELEASE)
+            os_type=settings.OPENSTACK_RELEASE)
         naviseccli = checkers.get_package_versions_from_node(
             remote=remote,
             name='naviseccli',
-            os_type=CONF.OPENSTACK_RELEASE)
-        return any([out != '' for out in navicli, naviseccli])
+            os_type=settings.OPENSTACK_RELEASE)
+        return bool(navicli + naviseccli)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_emc_ha"])
@@ -108,16 +108,16 @@ class EMCPlugin(TestBasic):
             # copy plugin to the master node
             checkers.upload_tarball(
                 remote,
-                CONF.EMC_PLUGIN_PATH, '/var')
+                settings.EMC_PLUGIN_PATH, '/var')
 
             # install plugin
             checkers.install_plugin_check_code(
                 remote,
-                plugin=os.path.basename(CONF.EMC_PLUGIN_PATH))
+                plugin=os.path.basename(settings.EMC_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=CONF.DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
         )
 
         attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
@@ -139,11 +139,11 @@ class EMCPlugin(TestBasic):
 
         emc_options = attr["editable"]["emc_vnx"]
         emc_options["metadata"]["enabled"] = True
-        emc_options["emc_sp_a_ip"]["value"] = CONF.EMC_SP_A_IP
-        emc_options["emc_sp_b_ip"]["value"] = CONF.EMC_SP_B_IP
-        emc_options["emc_username"]["value"] = CONF.EMC_USERNAME
-        emc_options["emc_password"]["value"] = CONF.EMC_PASSWORD
-        emc_options["emc_pool_name"]["value"] = CONF.EMC_POOL_NAME
+        emc_options["emc_sp_a_ip"]["value"] = settings.EMC_SP_A_IP
+        emc_options["emc_sp_b_ip"]["value"] = settings.EMC_SP_B_IP
+        emc_options["emc_username"]["value"] = settings.EMC_USERNAME
+        emc_options["emc_password"]["value"] = settings.EMC_PASSWORD
+        emc_options["emc_pool_name"]["value"] = settings.EMC_POOL_NAME
 
         self.fuel_web.client.update_cluster_attributes(cluster_id, attr)
 

@@ -144,7 +144,7 @@ def show_all_groups(**kwargs):
     """Show all Proboscis groups"""
     groups_nums = get_groups()
 
-    out = {k: len(v) for k, v in groups_nums.iteritems()}
+    out = {k: len(v) for k, v in groups_nums.items()}
     print(pretty_log(out))
 
 
@@ -152,7 +152,7 @@ def show_fuelweb_groups(**kwargs):
     """Show Proboscis groups defined in fuelweb suite"""
     groups_nums = get_groups()
 
-    out = {k: len(v) for k, v in groups_nums.iteritems()
+    out = {k: len(v) for k, v in groups_nums.items()
            if not k.startswith('system_test')}
     print(pretty_log(out))
 
@@ -161,7 +161,7 @@ def show_systest_groups(**kwargs):
     """Show Proboscis groups defined in Systest suite"""
     groups_nums = get_groups()
 
-    out = {k: len(v) for k, v in groups_nums.iteritems()
+    out = {k: len(v) for k, v in groups_nums.items()
            if k.startswith('system_test')}
     print(pretty_log(out))
 

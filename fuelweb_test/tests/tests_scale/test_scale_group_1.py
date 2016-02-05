@@ -32,7 +32,7 @@ class HaScaleGroup1(TestBasic):
     def expected_fail_stop_deployment(self, cluster_id):
         try:
             self.fuel_web.client.stop_deployment(cluster_id)
-        except urllib2.HTTPError, e:
+        except urllib2.HTTPError as e:
             asserts.assert_equal(
                 400,
                 e.code,
