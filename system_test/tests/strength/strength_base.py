@@ -115,6 +115,17 @@ class FillRootBaseActions(actions_base.ActionsBase):
     def __init__(self, config=None):
         super(FillRootBaseActions, self).__init__(config)
         self.ostf_tests_should_failed = 0
+        self.primary_controller = None
+        self.primary_controller_fqdn = None
+        self.primary_controller_space_on_root = 0
+        self.disk_monitor_limit = 512
+        self.rabbit_disk_free_limit = 5
+        self.pacemaker_restart_timeout = 600
+        self.pcs_check_timeout = 300
+        self.primary_controller_space_to_filled = 0
+        self.pcs_status = None
+        self.slave_nodes_fqdn = None
+        self.slave_node_running_resources = None
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
