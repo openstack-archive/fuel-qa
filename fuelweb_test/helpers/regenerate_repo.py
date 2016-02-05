@@ -15,11 +15,15 @@
 import traceback
 import os
 import re
-import urllib2
 from xml.etree import ElementTree
 import zlib
 
 from proboscis.asserts import assert_equal
+# pylint: disable=import-error
+from six.moves.urllib.request import urlopen
+from six.moves.urllib.error import HTTPError
+from six.moves.urllib.error import URLError
+# pylint: enable=import-error
 
 from fuelweb_test import logger
 from fuelweb_test import settings
@@ -127,16 +131,16 @@ class CustomRepo(object):
         logger.info("Retrieving additional packages from the custom mirror:"
                     " {0}".format(url))
         try:
-            pkgs_release = urllib2.urlopen(url).read()
-        except (urllib2.HTTPError, urllib2.URLError):
+            pkgs_release = urlopen(url).read()
+        except (HTTPError, URLError):
             logger.error(traceback.format_exc())
             url_gz = '{0}.gz'.format(url)
             logger.info(
                 "Retrieving additional packages from the custom mirror:"
                 " {0}".format(url_gz))
             try:
-                pkgs_release_gz = urllib2.urlopen(url_gz).read()
-            except (urllib2.HTTPError, urllib2.URLError):
+                pkgs_release_gz = urlopen(url_gz).read()
+            except (HTTPError, URLError):
                 logger.error(traceback.format_exc())
                 raise
             try:
@@ -165,8 +169,8 @@ class CustomRepo(object):
                     " {0}".format(self.custom_pkgs_mirror))
         url = "{0}/repodata/repomd.xml".format(self.custom_pkgs_mirror)
         try:
-            repomd_data = urllib2.urlopen(url).read()
-        except (urllib2.HTTPError, urllib2.URLError):
+            repomd_data = urlopen(url).read()
+        except (HTTPError, URLError):
             logger.error(traceback.format_exc())
             raise
         # Remove namespace attribute before parsing XML
@@ -183,8 +187,8 @@ class CustomRepo(object):
                      .format(url, lists_location, traceback.format_exc()))
         url = "{0}/{1}".format(self.custom_pkgs_mirror, lists_location)
         try:
-            lists_data = urllib2.urlopen(url).read()
-        except (urllib2.HTTPError, urllib2.URLError):
+            lists_data = urlopen(url).read()
+        except (HTTPError, URLError):
             logger.error(traceback.format_exc())
             raise
         if '.xml.gz' in lists_location:

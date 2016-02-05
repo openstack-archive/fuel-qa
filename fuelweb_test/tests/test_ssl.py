@@ -1,8 +1,23 @@
-import httplib
-from urlparse import urlparse
+#    Copyright 2016 Mirantis, Inc.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
 
 from proboscis import test
 from proboscis.asserts import assert_equal
+# pylint: disable=import-error
+from six.moves import http_client
+from six.moves import urllib
+# pylint: enable=import-error
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import DEPLOYMENT_MODE
@@ -31,7 +46,7 @@ class SSL_Tests(TestBasic):
         self.env.revert_snapshot("ready")
         admin_ip = self.ssh_manager.admin_ip
         self.show_step(2)
-        connection = httplib.HTTPConnection(admin_ip, 8000)
+        connection = http_client.HTTPConnection(admin_ip, 8000)
         connection.request("GET", "/")
         response = connection.getresponse()
         assert_equal(str(response.status), '301',
@@ -86,7 +101,7 @@ class SSL_Tests(TestBasic):
         action = OpenStackActions(controller_ip=controller_keystone_ip)
         endpoint_list = action.get_keystone_endpoints()
         for endpoint in endpoint_list:
-            url = urlparse(endpoint.publicurl)
+            url = urllib.parse.urlparse(endpoint.publicurl)
             assert_equal(url.scheme, "http",
                          message=(
                              "Endpoint id {0} uses {1} instead http.".format(
