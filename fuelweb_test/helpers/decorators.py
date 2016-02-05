@@ -21,19 +21,19 @@ import requests
 import sys
 import time
 import traceback
-from urlparse import urlparse
 
+from proboscis import SkipTest
+from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
+from six.moves import urllib
+
+from fuelweb_test import logger
+from fuelweb_test import settings
 from fuelweb_test.helpers.checkers import check_action_logs
 from fuelweb_test.helpers.checkers import check_repo_managment
 from fuelweb_test.helpers.checkers import check_stats_on_collector
 from fuelweb_test.helpers.checkers import check_stats_private_info
 from fuelweb_test.helpers.checkers import count_stats_on_collector
-from proboscis import SkipTest
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_true
-
-from fuelweb_test import logger
-from fuelweb_test import settings
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test.helpers.regenerate_repo import CustomRepo
@@ -182,7 +182,7 @@ def update_rpm_packages(func):
 
             if settings.UPDATE_FUEL_MIRROR:
                 for url in settings.UPDATE_FUEL_MIRROR:
-                    repo_url = urlparse(url)
+                    repo_url = urllib.parse(url)
                     cut_dirs = len(repo_url.path.strip('/').split('/'))
                     download_cmd = ('wget --recursive --no-parent'
                                     ' --no-verbose --reject "index'
