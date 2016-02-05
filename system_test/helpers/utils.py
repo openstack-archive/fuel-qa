@@ -115,7 +115,7 @@ def find_duplicates(yamls):
             dup[name].append(one)
         else:
             dup[name] = [one]
-    return {k: v for k, v in dup.iteritems() if len(v) > 1}
+    return {k: v for k, v in dup.items() if len(v) > 1}
 
 
 def get_configs():
@@ -132,4 +132,4 @@ def get_configs():
 def case_factory(baseclass):
     """Return list of instance """
     configs = get_configs()
-    return [baseclass.caseclass_factory(g)(c) for g, c in configs.iteritems()]
+    return [baseclass.caseclass_factory(g)(c) for g, c in configs.items()]
