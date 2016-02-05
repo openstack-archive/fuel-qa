@@ -17,7 +17,7 @@ import sys
 from proboscis.asserts import assert_true
 from proboscis import test
 from proboscis import SkipTest
-
+from six.moves import xrange
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
