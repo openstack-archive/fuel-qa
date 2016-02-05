@@ -12,12 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import urllib2
-
 from proboscis.asserts import assert_equal
 from proboscis.asserts import fail
 from proboscis import test
 from proboscis import SkipTest
+# pylint: disable=import-error
+from six.moves.urllib.error import HTTPError
+# pylint: enable=import-error
+
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 
 from fuelweb_test.tests import base_test_case
@@ -137,7 +139,7 @@ class TestReassignNode(base_test_case.TestBasic):
 
         try:
             self.fuel_web.client.reassign_node(123456, data)
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             assert_equal(404, e.code)
         else:
             fail("Doesn't rise HTTP 404 error"
@@ -180,7 +182,7 @@ class TestReassignNode(base_test_case.TestBasic):
 
         try:
             self.fuel_web.client.reassign_node(cloned_cluster["id"], None)
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             assert_equal(400, e.code)
         else:
             fail("Doesn't raise HTTP 400 error on request"
@@ -224,7 +226,7 @@ class TestReassignNode(base_test_case.TestBasic):
 
         try:
             self.fuel_web.client.reassign_node(cloned_cluster["id"], data)
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             assert_equal(400, e.code)
         else:
             fail("Doesn't raise HTTP 400 error on request"
@@ -268,7 +270,7 @@ class TestReassignNode(base_test_case.TestBasic):
 
         try:
             self.fuel_web.client.reassign_node(cloned_cluster["id"], data)
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             assert_equal(404, e.code)
         else:
             fail("Doesn't raise HTTP 404 error on request"

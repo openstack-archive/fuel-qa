@@ -14,15 +14,20 @@
 
 import json
 import traceback
-import urllib2
 
 from keystoneclient.v2_0 import Client as KeystoneClient
 from keystoneclient import exceptions
+# pylint: disable=import-error
+from six.moves.urllib import request
+from six.moves.urllib.error import HTTPError
+# pylint: enable=import-error
+
 from fuelweb_test import logger
 
 
 class HTTPClient(object):
     """HTTPClient."""  # TODO documentation
+    # TODO: Rewrite using requests library?
 
     def __init__(self, url, keystone_url, credentials, **kwargs):
         logger.info('Initiate HTTPClient with url %s', url)
@@ -30,7 +35,7 @@ class HTTPClient(object):
         self.keystone_url = keystone_url
         self.creds = dict(credentials, **kwargs)
         self.keystone = None
-        self.opener = urllib2.build_opener(urllib2.HTTPHandler)
+        self.opener = request.build_opener(request.HTTPHandler)
 
     def authenticate(self):
         try:
@@ -64,33 +69,33 @@ class HTTPClient(object):
         return None
 
     def get(self, endpoint):
-        req = urllib2.Request(self.url + endpoint)
+        req = request.Request(self.url + endpoint)
         return self._open(req)
 
     def post(self, endpoint, data=None, content_type="application/json"):
         if not data:
             data = {}
-        req = urllib2.Request(self.url + endpoint, data=json.dumps(data))
+        req = request.Request(self.url + endpoint, data=json.dumps(data))
         req.add_header('Content-Type', content_type)
         return self._open(req)
 
     def put(self, endpoint, data=None, content_type="application/json"):
         if not data:
             data = {}
-        req = urllib2.Request(self.url + endpoint, data=json.dumps(data))
+        req = request.Request(self.url + endpoint, data=json.dumps(data))
         req.add_header('Content-Type', content_type)
         req.get_method = lambda: 'PUT'
         return self._open(req)
 
     def delete(self, endpoint):
-        req = urllib2.Request(self.url + endpoint)
+        req = request.Request(self.url + endpoint)
         req.get_method = lambda: 'DELETE'
         return self._open(req)
 
     def _open(self, req):
         try:
             return self._get_response(req)
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             if e.code == 401:
                 logger.warning('Authorization failure: {0}'.format(e.read()))
                 self.authenticate()
@@ -121,10 +126,10 @@ class HTTPClientZabbix(object):
 
     def __init__(self, url):
         self.url = url
-        self.opener = urllib2.build_opener(urllib2.HTTPHandler)
+        self.opener = request.build_opener(request.HTTPHandler)
 
     def get(self, endpoint=None, cookie=None):
-        req = urllib2.Request(self.url + endpoint)
+        req = request.Request(self.url + endpoint)
         if cookie:
             req.add_header('cookie', cookie)
         return self.opener.open(req)
@@ -133,7 +138,7 @@ class HTTPClientZabbix(object):
              cookie=None):
         if not data:
             data = {}
-        req = urllib2.Request(self.url + endpoint, data=json.dumps(data))
+        req = request.Request(self.url + endpoint, data=json.dumps(data))
         req.add_header('Content-Type', content_type)
         if cookie:
             req.add_header('cookie', cookie)
