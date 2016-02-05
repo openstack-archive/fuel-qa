@@ -17,7 +17,6 @@ from __future__ import division
 import re
 import time
 import traceback
-from urllib2 import HTTPError
 
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
@@ -31,6 +30,9 @@ from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
+# pylint: disable=import-error
+from six.moves.urllib.error import HTTPError
+# pylint: enable=import-error
 import yaml
 
 from fuelweb_test import logger
