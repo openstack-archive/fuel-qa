@@ -29,6 +29,9 @@ from fuelweb_test.tests import base_test_case
 
 @test(groups=["jumbo_frames"])
 class TestJumboFrames(base_test_case.TestBasic):
+    def __init__(self):
+        self.os_conn = None
+        super(TestJumboFrames, self).__init__()
 
     interfaces = {
         iface_alias('eth0'): ['fuelweb_admin'],
