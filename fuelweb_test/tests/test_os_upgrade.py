@@ -23,15 +23,15 @@ from proboscis import SkipTest
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import install_pkg
-from fuelweb_test.tests import base_test_case as base_test_data
+from fuelweb_test.tests import base_test_case
 from fuelweb_test import settings as hlp_data
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
 
 
 @test(groups=["prepare_os_upgrade"])
-class PrepareOSupgrade(base_test_data.TestBasic):
+class PrepareOSupgrade(base_test_case.TestBasic):
 
-    @test(depends_on=[base_test_data.SetupEnvironment.prepare_slaves_9],
+    @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_9],
           groups=["ha_ceph_for_all_ubuntu_neutron_vlan"])
     @log_snapshot_after_test
     def ha_ceph_for_all_ubuntu_neutron_vlan(self):
@@ -89,7 +89,7 @@ class PrepareOSupgrade(base_test_data.TestBasic):
 
 
 @test(groups=["os_upgrade"])
-class TestOSupgrade(base_test_data.TestBasic):
+class TestOSupgrade(base_test_case.TestBasic):
 
     @test(groups=["upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"])
     @log_snapshot_after_test

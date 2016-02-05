@@ -15,7 +15,7 @@ import time
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import logger
-from fuelweb_test import ostf_test_mapping as map_ostf
+from fuelweb_test import ostf_test_mapping
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -68,7 +68,7 @@ class CephRestart(TestBasic):
         try:
             self.fuel_web.run_single_ostf_test(
                 cluster_id, test_sets=['smoke'],
-                test_name=map_ostf.OSTF_TEST_MAPPING.get(
+                test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
                     'Create volume and attach it to instance'))
         except AssertionError:
             logger.debug("Test failed from first probe,"
@@ -77,7 +77,7 @@ class CephRestart(TestBasic):
             time.sleep(60)
             self.fuel_web.run_single_ostf_test(
                 cluster_id, test_sets=['smoke'],
-                test_name=map_ostf.OSTF_TEST_MAPPING.get(
+                test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
                     'Create volume and attach it to instance'))
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
@@ -183,7 +183,7 @@ class CephRestart(TestBasic):
         try:
             self.fuel_web.run_single_ostf_test(
                 cluster_id, test_sets=['smoke'],
-                test_name=map_ostf.OSTF_TEST_MAPPING.get(
+                test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
                     'Create volume and attach it to instance'))
         except AssertionError:
             logger.debug("Test failed from first probe,"
@@ -192,7 +192,7 @@ class CephRestart(TestBasic):
             time.sleep(180)
             self.fuel_web.run_single_ostf_test(
                 cluster_id, test_sets=['smoke'],
-                test_name=map_ostf.OSTF_TEST_MAPPING.get(
+                test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
                     'Create volume and attach it to instance'))
 
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)

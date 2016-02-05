@@ -44,7 +44,7 @@ Cheat:
 
 import errno
 import os
-import subprocess as sp
+import subprocess
 import tempfile
 from xml.etree import ElementTree
 
@@ -52,7 +52,7 @@ from proboscis import SkipTest
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.models import nailgun_client as nc
+from fuelweb_test.models import nailgun_client
 from fuelweb_test.tests import base_test_case
 from fuelweb_test.helpers import conf_tempest
 
@@ -95,8 +95,9 @@ def _prepare_and_run(*testr_args):
         tempest_conf = tempfile.NamedTemporaryFile().name
 
         # Get nailgun node ip address
-        netdump = sp.Popen(["virsh", "net-dumpxml", "%s_admin" % env_name],
-                           stdout=sp.PIPE).communicate()[0]
+        netdump = subprocess.Popen(
+            ["virsh", "net-dumpxml", "%s_admin" % env_name],
+            stdout=subprocess.PIPE).communicate()[0]
         try:
             network = ElementTree.fromstring(netdump).find('ip')
             node_ip = "%s2" % network.attrib['address'][:-1]
@@ -105,7 +106,8 @@ def _prepare_and_run(*testr_args):
                 "Nailgun node ip address can not be obtained using the "
                 "specified name of environment('%s')" % env_name)
 
-        cluster_id = nc.NailgunClient(node_ip).get_cluster_id(cluster)
+        cluster_id = nailgun_client.NailgunClient(node_ip).get_cluster_id(
+            cluster)
         if not cluster_id:
             raise ValueError(
                 "Cluster id can not be obtained by using specified envname"
@@ -132,11 +134,12 @@ def _prepare_and_run(*testr_args):
     to_xml_cmd = ['subunit2junitxml' '--output-to', xml_logfile]
 
     try:
-        tempest_process = sp.Popen(tempest_cmd, cwd=tempest_path,
-                                   env=tempest_env, stdout=sp.PIPE)
-        sp.check_call(to_xml_cmd, stdin=tempest_process.stdout,
-                      cwd=tempest_path)
-    except sp.CalledProcessError:
+        tempest_process = subprocess.Popen(
+            tempest_cmd, cwd=tempest_path,
+            env=tempest_env, stdout=subprocess.PIPE)
+        subprocess.check_call(to_xml_cmd, stdin=tempest_process.stdout,
+                              cwd=tempest_path)
+    except subprocess.CalledProcessError:
         if god_mode and not os.path.exists(xml_logfile):
             raise RuntimeError(
                 "An error occurred during the execution of Tempest. "

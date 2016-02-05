@@ -20,7 +20,7 @@ from proboscis import test
 import requests
 
 from fuelweb_test import logger
-from fuelweb_test import settings as conf
+from fuelweb_test import settings
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -69,34 +69,37 @@ class TestLmaCollectorPlugin(TestBasic):
             # copy plugins to the master node
             checkers.upload_tarball(
                 remote,
-                conf.LMA_COLLECTOR_PLUGIN_PATH, "/var")
+                settings.LMA_COLLECTOR_PLUGIN_PATH, "/var")
             checkers.upload_tarball(
                 remote,
-                conf.ELASTICSEARCH_KIBANA_PLUGIN_PATH, "/var")
+                settings.ELASTICSEARCH_KIBANA_PLUGIN_PATH, "/var")
             checkers.upload_tarball(
                 remote,
-                conf.INFLUXDB_GRAFANA_PLUGIN_PATH, "/var")
+                settings.INFLUXDB_GRAFANA_PLUGIN_PATH, "/var")
             checkers.upload_tarball(
                 remote,
-                conf.LMA_INFRA_ALERTING_PLUGIN_PATH, "/var")
+                settings.LMA_INFRA_ALERTING_PLUGIN_PATH, "/var")
 
             # install plugins
             checkers.install_plugin_check_code(
                 remote,
-                plugin=os.path.basename(conf.LMA_COLLECTOR_PLUGIN_PATH))
+                plugin=os.path.basename(settings.LMA_COLLECTOR_PLUGIN_PATH))
             checkers.install_plugin_check_code(
                 remote,
-                plugin=os.path.basename(conf.ELASTICSEARCH_KIBANA_PLUGIN_PATH))
+                plugin=os.path.basename(
+                    settings.ELASTICSEARCH_KIBANA_PLUGIN_PATH))
             checkers.install_plugin_check_code(
                 remote,
-                plugin=os.path.basename(conf.INFLUXDB_GRAFANA_PLUGIN_PATH))
+                plugin=os.path.basename(
+                    settings.INFLUXDB_GRAFANA_PLUGIN_PATH))
             checkers.install_plugin_check_code(
                 remote,
-                plugin=os.path.basename(conf.LMA_INFRA_ALERTING_PLUGIN_PATH))
+                plugin=os.path.basename(
+                    settings.LMA_INFRA_ALERTING_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=conf.DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
         )
 
         influxdb_user = "influxdb"

@@ -25,6 +25,7 @@ from proboscis.asserts import assert_false
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 from proboscis import SkipTest
+from six.moves import xrange
 import yaml
 
 from fuelweb_test.helpers.checkers import check_mysql
