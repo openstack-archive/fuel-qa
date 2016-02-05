@@ -11,12 +11,14 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import ConfigParser
-import cStringIO
 import os
 
 from proboscis import asserts
 from proboscis import test
+# pylint: disable=import-error
+from six.moves import configparser
+from six.moves import cStringIO
+# pylint: enable=import-error
 
 from fuelweb_test.helpers import utils
 from fuelweb_test.helpers.checkers import check_plugin_path_env
@@ -41,8 +43,8 @@ class EMCPlugin(TestBasic):
     def check_emc_cinder_config(cls, ip, path):
         command = 'cat {0}'.format(path)
         conf_data = SSHManager().execute_on_remote(ip, command)['stdout_str']
-        conf_data = cStringIO.StringIO(conf_data)
-        cinder_conf = ConfigParser.ConfigParser()
+        conf_data = cStringIO(conf_data)
+        cinder_conf = configparser.ConfigParser()
         cinder_conf.readfp(conf_data)
 
         asserts.assert_equal(
