@@ -1,10 +1,10 @@
 import json
 import os
-import urlparse
 
 from devops.helpers.helpers import wait
 from proboscis import asserts
 import requests
+from six.moves import urllib
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import token
@@ -40,7 +40,7 @@ class NessusClient(object):
     def request(self, method, url, body=None, **kwargs):
         headers = {'X-Cookie': 'token={0}'.format(self.nessus_auth_token),
                    'Content-Type': 'application/json'}
-        url = urlparse.urljoin(self.nessus_base_url, url)
+        url = urllib.parse.urljoin(self.nessus_base_url, url)
 
         response = requests.request(
             method, url, data=body, headers=headers,
