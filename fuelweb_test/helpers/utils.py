@@ -11,8 +11,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-import ConfigParser
 from distutils import version
 import inspect
 import json
@@ -27,6 +25,7 @@ import ipaddr
 
 from proboscis import asserts
 import six
+from six.moves import configparser
 from six.moves import xrange
 
 from fuelweb_test import logger
@@ -736,7 +735,7 @@ def get_ini_config(data):
     :param data: a file object
     :return: a ConfigParser object
     """
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     config.readfp(data)
     return config
 
@@ -752,7 +751,7 @@ def check_config(conf, conf_name, section, option, value):
     :param value: a string of value in configuration file
     """
     if value is None:
-        asserts.assert_raises(ConfigParser.NoOptionError,
+        asserts.assert_raises(configparser.NoOptionError,
                               conf.get,
                               section,
                               option)

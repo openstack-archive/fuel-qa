@@ -17,8 +17,6 @@ import re
 import sys
 import yaml
 import zlib
-from urllib2 import urlopen
-from urlparse import urlparse
 from xml.dom.minidom import parseString
 
 from proboscis import register
@@ -28,6 +26,8 @@ from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 import six
+from six.moves.urllib.request import urlopen
+from six.moves.urllib.parse import urlparse
 
 from fuelweb_test import logger
 from fuelweb_test import settings
