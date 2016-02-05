@@ -15,10 +15,12 @@
 #    under the License.
 
 import json
-import urllib2
 
 from logging import DEBUG
 from optparse import OptionParser
+# pylint: disable=import-error
+from six.moves.urllib.request import urlopen
+# pylint: enable=import-error
 
 from fuelweb_test.testrail.builds import Build
 from fuelweb_test.testrail.report import get_tests_results
@@ -41,7 +43,7 @@ def find_run_by_name(test_plan, run_name):
 def get_job_info(url):
     job_url = "/".join([url, 'api/json'])
     logger.debug("Request job info from %s", job_url)
-    return json.load(urllib2.urlopen(job_url))
+    return json.load(urlopen(job_url))
 
 
 def main():

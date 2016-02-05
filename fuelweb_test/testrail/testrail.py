@@ -26,7 +26,12 @@
 import base64
 import json
 import time
-import urllib2
+
+# pylint: disable=import-error
+from six.moves.urllib.request import urlopen
+from six.moves.urllib.request import Request
+from six.moves.urllib.error import HTTPError
+# pylint: enable=import-error
 
 from fuelweb_test.testrail.settings import logger
 
@@ -40,7 +45,7 @@ def request_retry(codes):
             while True:
                 try:
                     response = func(*args, **kwargs)
-                except urllib2.HTTPError as e:
+                except HTTPError as e:
                     if e.code in codes:
                         if iter_number < codes[e.code]:
                             wait = 5
@@ -102,10 +107,10 @@ class APIClient(object):
 
         @request_retry(codes=retry_codes)
         def __get_response(_request):
-            return urllib2.urlopen(_request).read()
+            return urlopen(_request).read()
 
         url = self.__url + uri
-        request = urllib2.Request(url)
+        request = Request(url)
         if method == 'POST':
             request.add_data(json.dumps(data))
         auth = base64.encodestring(
@@ -116,7 +121,7 @@ class APIClient(object):
         e = None
         try:
             response = __get_response(request)
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             response = e.read()
 
         if response:
