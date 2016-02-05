@@ -15,12 +15,14 @@
 import random
 import time
 import traceback
-from urllib2 import HTTPError
 
 from devops.helpers import helpers
 import netaddr
 from proboscis import asserts
 from proboscis import test
+# pylint: disable=import-error
+from six.moves.urllib.error import HTTPError
+# pylint: enable=import-error
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions

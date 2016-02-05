@@ -14,11 +14,14 @@
 
 import time
 import json
-from urlparse import urlparse
 from proboscis.asserts import assert_equal
 
 from devops.error import TimeoutError
 from devops.helpers.helpers import wait
+# pylint: disable=import-error
+from six.moves import urllib
+# pylint: enable=import-error
+
 from fuelweb_test.helpers.ssl import change_cluster_ssl_config
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logwrap
@@ -287,7 +290,7 @@ class CommandLine(TestBasic):
                                                jsonify=True)['stdout_json']
         for endpoint in endpoint_list:
             if endpoint['Interface'] == 'public':
-                url = urlparse(endpoint['URL'])
+                url = urllib.parse.urlparse(endpoint['URL'])
                 endpoint_info = {'service_name': endpoint['Service Name'],
                                  'protocol': url.scheme,
                                  'domain': url.hostname}

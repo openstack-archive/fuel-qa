@@ -15,7 +15,6 @@
 import sys
 import time
 import traceback
-from urlparse import urlparse
 
 from cinderclient import client as cinderclient
 from glanceclient.v1 import Client as GlanceClient
@@ -29,6 +28,9 @@ import six
 # pylint: disable=redefined-builtin
 from six.moves import xrange
 # pylint: enable=redefined-builtin
+# pylint: disable=import-error
+from six.moves import urllib
+# pylint: enable=import-error
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
@@ -44,7 +46,7 @@ class Common(object):
         self.controller_ip = controller_ip
 
         def make_endpoint(endpoint):
-            parse = urlparse(endpoint)
+            parse = urllib.parse(endpoint)
             return parse._replace(
                 netloc='{}:{}'.format(
                     self.controller_ip, parse.port)).geturl()

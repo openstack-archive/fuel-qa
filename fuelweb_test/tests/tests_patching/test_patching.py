@@ -14,11 +14,13 @@
 
 import os
 import time
-import urllib2
 
 from proboscis import test
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_true
+# pylint: disable=import-error
+from six.moves.urllib.request import urlopen
+# pylint: enable=import-error
 
 from devops.error import TimeoutError
 from devops.helpers.helpers import wait
@@ -137,8 +139,8 @@ class PatchingTests(TestBasic):
 
         # Step #5
         if settings.LATE_ARTIFACTS_JOB_URL:
-            data = urllib2.urlopen(settings.LATE_ARTIFACTS_JOB_URL +
-                                   "/artifact/artifacts/artifacts.txt")
+            data = urlopen(settings.LATE_ARTIFACTS_JOB_URL +
+                           "/artifact/artifacts/artifacts.txt")
             for package in data:
                 os.system("wget --directory-prefix"
                           " {0} {1}".format(settings.UPDATE_FUEL_PATH,
@@ -313,7 +315,7 @@ class PatchingMasterTests(TestBasic):
 
         # Step #2
         if settings.LATE_ARTIFACTS_JOB_URL:
-            data = urllib2.urlopen(
+            data = urlopen(
                 settings.LATE_ARTIFACTS_JOB_URL +
                 "/artifact/artifacts/artifacts.txt")
             for package in data:
