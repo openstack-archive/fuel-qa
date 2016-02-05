@@ -109,7 +109,6 @@ class EnvironmentModel(object):
         Start vms and wait until they are registered on nailgun.
         :rtype : List of registered nailgun nodes
         """
-        # self.dhcrelay_check()
 
         for node in devops_nodes:
             logger.info("Bootstrapping node: {}".format(node.name))
