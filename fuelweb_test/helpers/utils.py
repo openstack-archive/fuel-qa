@@ -693,7 +693,7 @@ def pretty_log(src, indent=0, invert=False):
     if src and isinstance(src, dict):
         max_len = len(max(src.values() if invert else src.keys(),
                           key=lambda x: len(str(x))))
-        for key, value in src.iteritems():
+        for key, value in src.items():
             if (isinstance(value, dict) and value) or \
                     isinstance(value, list):
                 result += templates[1].format(indent=' ' * indent, item=key)

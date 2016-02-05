@@ -20,11 +20,11 @@ import json
 from paramiko import RSAKey
 from devops.models.node import SSHClient
 from fuelweb_test import logger
-from fuelweb_test.helpers import metaclasses
+from fuelweb_test.helpers.metaclasses import SingletonMeta
 
 
 class SSHManager(object):
-    __metaclass__ = metaclasses.SingletonMeta
+    __metaclass__ = SingletonMeta
     # Slots is used to prevent uncontrolled attributes set or remove.
     __slots__ = [
         '__connections', 'admin_ip', 'admin_port', 'login', '__password'

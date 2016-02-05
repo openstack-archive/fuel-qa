@@ -127,4 +127,4 @@ class FuelMasterMigrate(ActionsBase, FuelMasterActions):
         with self.env.d_env.get_admin_remote() as remote:
             wait(lambda: not remote.exists("/notready"),
                  timeout=900,
-                 timeout_msg=("File wasn't removed in 900 sec"))
+                 timeout_msg="File wasn't removed in 900 sec")
