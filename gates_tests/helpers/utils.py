@@ -79,7 +79,7 @@ def replace_fuel_agent_rpm(environment):
                         full_pack_path)
                     result = remote.execute(cmd)
                     assert_equal(result['exit_code'], 0,
-                                 ('Failed to update package {}').format(
+                                 'Failed to update package {}'.format(
                                      result))
 
     except Exception as e:
@@ -160,7 +160,7 @@ def patch_and_assemble_ubuntu_bootstrap(environment):
             # renew code in bootstrap
 
             # Step 1 - install squashfs-tools
-            cmd = ("yum install -y squashfs-tools")
+            cmd = "yum install -y squashfs-tools"
             result = remote.execute(cmd)
             assert_equal(result['exit_code'], 0,
                          ('Failed to install squashfs-tools {}'
