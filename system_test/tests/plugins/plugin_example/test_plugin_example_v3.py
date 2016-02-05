@@ -73,4 +73,4 @@ class DeployWithPluginExampleV3(ActionsBase):
 
 @factory
 def cases():
-    return (case_factory(DeployWithPluginExampleV3))
+    return case_factory(DeployWithPluginExampleV3)

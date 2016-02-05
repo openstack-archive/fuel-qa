@@ -17,11 +17,11 @@ from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
 import netaddr
 from proboscis import test
-from settings import LOGS_DIR
+from settings import LOGS_DIR  # TODO: Check, that it's really not from project
 
 from fuelweb_test.helpers import decorators
 from fuelweb_test.helpers import nessus
-from fuelweb_test import settings as CONF
+from fuelweb_test import settings as config
 from fuelweb_test.tests import base_test_case
 from fuelweb_test.tests.test_neutron_tun_base import NeutronTunHaBase
 
@@ -112,16 +112,16 @@ class TestNessus(NeutronTunHaBase):
         """
         self.env.revert_snapshot("deploy_neutron_tun_ha_nessus")
 
-        if CONF.NESSUS_ADDRESS is None:
-            CONF.NESSUS_ADDRESS = \
+        if config.NESSUS_ADDRESS is None:
+            config.NESSUS_ADDRESS = \
                 self.find_nessus_address(nessus_net_name='admin',
-                                         nessus_port=CONF.NESSUS_PORT)
+                                         nessus_port=config.NESSUS_PORT)
 
-        nessus_client = nessus.NessusClient(CONF.NESSUS_ADDRESS,
-                                            CONF.NESSUS_PORT,
-                                            CONF.NESSUS_USERNAME,
-                                            CONF.NESSUS_PASSWORD,
-                                            CONF.NESSUS_SSL_VERIFY)
+        nessus_client = nessus.NessusClient(config.NESSUS_ADDRESS,
+                                            config.NESSUS_PORT,
+                                            config.NESSUS_USERNAME,
+                                            config.NESSUS_PASSWORD,
+                                            config.NESSUS_SSL_VERIFY)
 
         scan_start_date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
@@ -133,10 +133,10 @@ class TestNessus(NeutronTunHaBase):
             policies_list)[0]
 
         policy_id = nessus_client.add_cpa_policy(
-            scan_name, CONF.ENV_NAME, cpa_policy_template['uuid'])
+            scan_name, config.ENV_NAME, cpa_policy_template['uuid'])
 
         scan_id = nessus_client.create_scan(
-            scan_name, CONF.ENV_NAME, self.fuel_web.admin_node_ip,
+            scan_name, config.ENV_NAME, self.fuel_web.admin_node_ip,
             policy_id, cpa_policy_template['uuid'])
         scan_uuid = nessus_client.launch_scan(scan_id)
         history_id = nessus_client.list_scan_history_ids(scan_id)[scan_uuid]
@@ -168,16 +168,16 @@ class TestNessus(NeutronTunHaBase):
         """
         self.env.revert_snapshot("deploy_neutron_tun_ha_nessus")
 
-        if CONF.NESSUS_ADDRESS is None:
-            CONF.NESSUS_ADDRESS = \
+        if config.NESSUS_ADDRESS is None:
+            config.NESSUS_ADDRESS = \
                 self.find_nessus_address(nessus_net_name='admin',
-                                         nessus_port=CONF.NESSUS_PORT)
+                                         nessus_port=config.NESSUS_PORT)
 
-        nessus_client = nessus.NessusClient(CONF.NESSUS_ADDRESS,
-                                            CONF.NESSUS_PORT,
-                                            CONF.NESSUS_USERNAME,
-                                            CONF.NESSUS_PASSWORD,
-                                            CONF.NESSUS_SSL_VERIFY)
+        nessus_client = nessus.NessusClient(config.NESSUS_ADDRESS,
+                                            config.NESSUS_PORT,
+                                            config.NESSUS_USERNAME,
+                                            config.NESSUS_PASSWORD,
+                                            config.NESSUS_SSL_VERIFY)
 
         scan_start_date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
@@ -189,10 +189,10 @@ class TestNessus(NeutronTunHaBase):
             policies_list)[0]
 
         policy_id = nessus_client.add_wat_policy(
-            scan_name, CONF.ENV_NAME, wat_policy_template['uuid'])
+            scan_name, config.ENV_NAME, wat_policy_template['uuid'])
 
         scan_id = nessus_client.create_scan(
-            scan_name, CONF.ENV_NAME, self.fuel_web.admin_node_ip,
+            scan_name, config.ENV_NAME, self.fuel_web.admin_node_ip,
             policy_id, wat_policy_template['uuid'])
 
         scan_uuid = nessus_client.launch_scan(scan_id)
@@ -227,16 +227,16 @@ class TestNessus(NeutronTunHaBase):
 
         self.enable_password_login_for_ssh_on_slaves(['slave-01'])
 
-        if CONF.NESSUS_ADDRESS is None:
-            CONF.NESSUS_ADDRESS = \
+        if config.NESSUS_ADDRESS is None:
+            config.NESSUS_ADDRESS = \
                 self.find_nessus_address(nessus_net_name='admin',
-                                         nessus_port=CONF.NESSUS_PORT)
+                                         nessus_port=config.NESSUS_PORT)
 
-        nessus_client = nessus.NessusClient(CONF.NESSUS_ADDRESS,
-                                            CONF.NESSUS_PORT,
-                                            CONF.NESSUS_USERNAME,
-                                            CONF.NESSUS_PASSWORD,
-                                            CONF.NESSUS_SSL_VERIFY)
+        nessus_client = nessus.NessusClient(config.NESSUS_ADDRESS,
+                                            config.NESSUS_PORT,
+                                            config.NESSUS_USERNAME,
+                                            config.NESSUS_PASSWORD,
+                                            config.NESSUS_SSL_VERIFY)
 
         scan_start_date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
@@ -248,13 +248,13 @@ class TestNessus(NeutronTunHaBase):
             policies_list)[0]
 
         policy_id = nessus_client.add_cpa_policy(
-            scan_name, CONF.ENV_NAME, cpa_policy_template['uuid'])
+            scan_name, config.ENV_NAME, cpa_policy_template['uuid'])
 
         slave_address = \
             self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
 
         scan_id = nessus_client.create_scan(
-            scan_name, CONF.ENV_NAME, slave_address,
+            scan_name, config.ENV_NAME, slave_address,
             policy_id, cpa_policy_template['uuid'])
         scan_uuid = nessus_client.launch_scan(scan_id)
         history_id = nessus_client.list_scan_history_ids(scan_id)[scan_uuid]
