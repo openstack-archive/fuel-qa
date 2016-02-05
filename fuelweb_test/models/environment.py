@@ -422,10 +422,10 @@ class EnvironmentModel(object):
         # This is very rude implementation and it SHOULD be changes after
         # implementation this feature in fuel-devops
         name = "{}_{}".format(settings.ENV_NAME, self.d_env.nodes().admin.name)
-        NAME_SIZE = 80
-        if len(name) > NAME_SIZE:
+        name_size = 80
+        if len(name) > name_size:
             hash_str = str(hash(name))
-            name = (hash_str + name)[:NAME_SIZE]
+            name = (hash_str + name)[:name_size]
 
         cmd = """EDITOR="sed -i s/tray=\\'open\\'//" virsh edit {}""".format(
             name)
