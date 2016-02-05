@@ -25,6 +25,7 @@ from proboscis.asserts import assert_false
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 from proboscis import SkipTest
+from six.moves import xrange
 import yaml
 
 from fuelweb_test.helpers.checkers import check_mysql
@@ -1209,6 +1210,8 @@ class TestHaFailoverBase(TestBasic):
                             for node in ctrl_nodes]
             live_remotes = [self.env.d_env.get_ssh_to_remote(node['ip'])
                             for node in alive_corosync_nodes]
+            # TODO: FIXME: _check_all_pcs_nodes_status shouldn't use magic
+            node = alive_corosync_nodes[-1]
             for count in xrange(500):
                 logger.debug('Checking splitbrain in the loop, '
                              'count number: {0}'.format(count))
