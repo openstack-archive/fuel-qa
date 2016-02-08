@@ -34,7 +34,6 @@ from fuelweb_test.helpers.eb_tables import Ebtables
 from fuelweb_test.helpers.fuel_actions import AdminActions
 from fuelweb_test.helpers.fuel_actions import BaseActions
 from fuelweb_test.helpers.fuel_actions import CobblerActions
-from fuelweb_test.helpers.fuel_actions import DockerActions
 from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.fuel_actions import PostgresActions
 from fuelweb_test.helpers.fuel_actions import NessusActions
@@ -71,7 +70,6 @@ class EnvironmentModel(object):
         self.admin_actions = AdminActions()
         self.base_actions = BaseActions()
         self.cobbler_actions = CobblerActions()
-        self.docker_actions = DockerActions()
         self.nailgun_actions = NailgunActions()
         self.postgres_actions = PostgresActions()
         self.fuel_bootstrap_actions = FuelBootstrapCliActions()
@@ -292,7 +290,7 @@ class EnvironmentModel(object):
             logger.info('Admin node started second time.')
             self.d_env.nodes().admin.await(self.d_env.admin_net)
             self.set_admin_ssh_password()
-            self.docker_actions.wait_for_ready_containers(timeout=600)
+            self.admin_actions.wait_for_fuel_ready(timeout=600)
 
             # set collector address in case of admin node destroy
             if settings.FUEL_STATS_ENABLED:
@@ -307,7 +305,7 @@ class EnvironmentModel(object):
                     settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
                 ))
         self.set_admin_ssh_password()
-        self.docker_actions.wait_for_ready_containers()
+        self.admin_actions.wait_for_fuel_ready()
 
     def make_snapshot(self, snapshot_name, description="", is_make=False):
         if settings.MAKE_SNAPSHOT or is_make:
@@ -481,7 +479,7 @@ class EnvironmentModel(object):
                 centos_repo_path=None,
                 ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
 
-        self.docker_actions.wait_for_ready_containers()
+        self.admin_actions.wait_for_fuel_ready()
         time.sleep(10)
         self.set_admin_keystone_password()
         self.sync_time(['admin'])
@@ -659,7 +657,7 @@ class EnvironmentModel(object):
 
     # Execute yum updates
     # If updates installed,
-    # then `dockerctl destroy all; bootstrap_admin_node.sh;`
+    # then `bootstrap_admin_node.sh;`
     def admin_install_updates(self):
         logger.info('Searching for updates..')
         update_command = 'yum clean expire-cache; yum update -y'
@@ -691,7 +689,7 @@ class EnvironmentModel(object):
             return
         logger.info('{0} packet(s) were updated'.format(updates_count))
 
-        cmd = 'dockerctl destroy all; bootstrap_admin_node.sh;'
+        cmd = 'bootstrap_admin_node.sh;'
 
         result = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
@@ -758,7 +756,7 @@ class EnvironmentModel(object):
         if iface_name:
             return self.ssh_manager.execute(
                 ip=self.ssh_manager.admin_ip,
-                cmd="dockerctl shell cobbler cobbler sync")
+                cmd="cobbler sync")
 
     @logwrap
     def describe_admin_interface(self, admin_if, network_name):
