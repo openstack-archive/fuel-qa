@@ -34,7 +34,6 @@ def replace_fuel_agent_rpm(environment):
     try:
         pack_path = '/var/www/nailgun/fuel-agent/'
         full_pack_path = os.path.join(pack_path, 'fuel-agent*.noarch.rpm')
-        container = 'mcollective'
         with environment.d_env.get_admin_remote() as remote:
             remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
                           pack_path)
@@ -42,12 +41,10 @@ def replace_fuel_agent_rpm(environment):
         # Update fuel-agent in MCollective
         cmd = "rpm -q fuel-agent"
         old_package = \
-            environment.base_actions.execute_in_container(
-                cmd, container, exit_code=0)
+            environment.base_actions.execute(cmd, exit_code=0)
         cmd = "rpm -qp {0}".format(full_pack_path)
         new_package = \
-            environment.base_actions.execute_in_container(
-                cmd, container)
+            environment.base_actions.execute(cmd)
         logger.info("Updating package {0} with {1}"
                     .format(old_package, new_package))
 
@@ -55,13 +52,11 @@ def replace_fuel_agent_rpm(environment):
             logger.info('Try to install package {0}'.format(
                 new_package))
             cmd = "rpm -Uvh --oldpackage {0}".format(full_pack_path)
-            environment.base_actions.execute_in_container(
-                cmd, container, exit_code=0)
+            environment.base_actions.execute(cmd, exit_code=0)
 
             cmd = "rpm -q fuel-agent"
             installed_package = \
-                environment.base_actions.execute_in_container(
-                    cmd, container, exit_code=0)
+                environment.base_actions.execute(cmd, exit_code=0)
 
             assert_equal(installed_package, new_package,
                          "The new package {0} was not installed".
@@ -246,9 +241,7 @@ def replace_centos_bootstrap(environment):
                          ('Failed to assign bootstrap {}'
                           ).format(result))
         cmd = "cobbler sync"
-        container = "cobbler"
-        environment.base_actions.execute_in_container(
-            cmd, container, exit_code=0)
+        environment.base_actions.execute(cmd, exit_code=0)
     except Exception as e:
         logger.error("Could not update bootstrap {e}".format(e=e))
         raise
@@ -262,53 +255,44 @@ def update_ostf(environment):
         logger.info("Uploading new package from {0}"
                     .format(settings.UPDATE_FUEL_PATH))
         pack_path = '/var/www/nailgun/fuel-ostf/'
-        container = 'ostf'
         full_pack_path = os.path.join(pack_path, '*.rpm')
 
         with environment.d_env.get_admin_remote() as remote:
             remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
                           pack_path)
         cmd = "service ostf stop"
-        environment.base_actions.execute_in_container(
-            cmd, container)
+        environment.base_actions.execute(cmd)
         cmd = "service ostf status"
         helpers.wait(
             lambda: "dead" in
-            environment.base_actions.execute_in_container(
-                cmd, container),
+            environment.base_actions.execute(cmd),
             timeout=60)
         logger.info("OSTF status: inactive")
         cmd = "rpm -e fuel-ostf"
-        environment.base_actions.execute_in_container(
-            cmd, container, exit_code=0)
+        environment.base_actions.execute(cmd, exit_code=0)
         cmd = "rpm -Uvh --oldpackage {0}".format(
             full_pack_path)
-        environment.base_actions.execute_in_container(
-            cmd, container, exit_code=0)
+        environment.base_actions.execute(cmd, exit_code=0)
         cmd = "rpm -q fuel-ostf"
         installed_package = \
-            environment.base_actions.execute_in_container(
-                cmd, container)
+            environment.base_actions.execute(cmd)
         cmd = "rpm -qp {0}".format(full_pack_path)
         new_package = \
-            environment.base_actions.execute_in_container(
-                cmd, container)
+            environment.base_actions.execute(cmd)
         assert_equal(installed_package, new_package,
                      "The new package {0} was not installed".
                      format(new_package))
         cmd = "service ostf start"
-        environment.base_actions.execute_in_container(
-            cmd, container)
+        environment.base_actions.execute(cmd)
         cmd = "service ostf status"
         helpers.wait(
             lambda: "running" in
-            environment.base_actions.execute_in_container(
-                cmd, container, exit_code=0),
+            environment.base_actions.execute(cmd, exit_code=0),
             timeout=60)
         cmd = "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8777"
         helpers.wait(
-            lambda: "401" in environment.base_actions.execute_in_container(
-                cmd, container), timeout=60)
+            lambda: "401" in environment.base_actions.execute(cmd),
+            timeout=60)
         logger.info("OSTF status: RUNNING")
     except Exception as e:
         logger.error("Could not update OSTF: {e}".format(e=e))
@@ -317,8 +301,7 @@ def update_ostf(environment):
 
 def get_oswl_services_names(remote):
     cmd = "systemctl list-units| grep oswl_ | awk '{print $1}'"
-    result = remote.base_actions.execute_in_container(
-        cmd, 'nailgun', exit_code=0)
+    result = remote.base_actions.execute(cmd, exit_code=0)
     logger.info('list of statistic services inside nailgun {0}'.format(
         result.split('\n')))
     return result.split('\n')
@@ -334,7 +317,6 @@ def replace_fuel_nailgun_rpm(environment):
         raise exceptions.FuelQAVariableNotSet('UPDATE_FUEL', 'True')
     try:
         pack_path = '/var/www/nailgun/fuel-nailgun/'
-        container = 'nailgun'
         full_pack_path = os.path.join(pack_path,
                                       'fuel-nailgun*.noarch.rpm')
         logger.info('Package path {0}'.format(full_pack_path))
@@ -344,56 +326,53 @@ def replace_fuel_nailgun_rpm(environment):
         # stop services
         service_list = ['assassind', 'receiverd',
                         'nailgun', 'statsenderd']
-        [environment.base_actions.execute_in_container(
+        [environment.base_actions.execute(
             'systemctl stop {0}'.format(service),
-            container, exit_code=0) for service in service_list]
+            exit_code=0) for service in service_list]
 
         # stop statistic services
-        [environment.base_actions.execute_in_container(
+        [environment.base_actions.execute(
             'systemctl stop {0}'.format(service),
-            container, exit_code=0) for service in
+            exit_code=0) for service in
          get_oswl_services_names(environment)]
 
         # Check old fuel-nailgun package
         cmd = "rpm -q fuel-nailgun"
         try:
             old_package = \
-                environment.base_actions.execute_in_container(
-                    cmd, container, exit_code=0)
+                environment.base_actions.execute(cmd, exit_code=0)
         except AssertionError:
             if 'fuel-nailgun is not installed' in AssertionError.message:
                 old_package = None
             else:
-                logger.error('Could not check package in container')
+                logger.error('Could not check package')
                 raise AssertionError
 
         # Drop nailgun db manage.py dropdb
         cmd = 'manage.py dropdb'
-        environment.base_actions.execute_in_container(
-            cmd, container, exit_code=0)
+        environment.base_actions.execute(cmd, exit_code=0)
 
         # Delete package
         if old_package:
             logger.info("Delete package {0}".format(old_package))
             cmd = "rpm -e fuel-nailgun"
-            environment.base_actions.execute_in_container(
-                cmd, container, exit_code=0)
+            environment.base_actions.execute(
+                cmd, exit_code=0)
 
         cmd = "ls -1 {0}".format(full_pack_path)
         new_package = \
-            environment.base_actions.execute_in_container(
-                cmd, container).rstrip('.rpm')
+            environment.base_actions.execute(cmd).rstrip('.rpm')
         logger.info("Install package {0}"
                     .format(new_package))
 
         cmd = "yum localinstall -y {0}".format(full_pack_path)
-        environment.base_actions.execute_in_container(
-            cmd, container, exit_code=0)
+        environment.base_actions.execute(
+            cmd, exit_code=0)
 
         cmd = "rpm -q fuel-nailgun"
         installed_package = \
-            environment.base_actions.execute_in_container(
-                cmd, container, exit_code=0)
+            environment.base_actions.execute(
+                cmd, exit_code=0)
         if not old_package:
             assert_equal(installed_package, new_package,
                          "The new package {0} was not installed".
@@ -407,8 +386,8 @@ def replace_fuel_nailgun_rpm(environment):
 
         cmd = ('puppet apply --debug'
                ' /etc/puppet/modules/nailgun/examples/nailgun-only.pp')
-        environment.base_actions.execute_in_container(
-            cmd, container, exit_code=0)
+        environment.base_actions.execute(
+            cmd, exit_code=0)
         with environment.d_env.get_admin_remote() as remote:
             res = remote.execute("fuel release --sync-deployment-tasks"
                                  " --dir /etc/puppet/")
@@ -420,45 +399,40 @@ def replace_fuel_nailgun_rpm(environment):
         raise
 
 
-def update_rpm_in_container(env, container, path,
-                            rpm_cmd='/bin/rpm -Uvh --force'):
+def update_rpm(env, path, rpm_cmd='/bin/rpm -Uvh --force'):
     cmd = '{rpm_cmd} {rpm_path}'\
         .format(rpm_cmd=rpm_cmd, rpm_path=path)
-    logger.info("Updating rpm '{0}' in the '{1}' container"
-                .format(path, container))
+    logger.info("Updating rpm '{0}'".format(path))
     try:
-        env.base_actions.execute_in_container(
-            cmd, container=container, exit_code=0)
+        env.base_actions.execute(cmd, exit_code=0)
         logger.info("Rpm '{0}' has been updated successfully "
-                    "in the '{1}' container".format(path, container))
+                    .format(path))
     except Exception as ex:
-        logger.error("Could not update rpm '{0}' in the '{1}' container: {2}"
-                     .format(path, container, ex))
+        logger.error("Could not update rpm '{0}' in the '{1}'"
+                     .format(path, ex))
         raise
 
 
-def restart_service_in_container(env, container, service_name, timeout=30):
+def restart_service(env, service_name, timeout=30):
     restart_cmd = 'service {} restart'.format(service_name)
     get_status_cmd = 'service {} status'.format(service_name)
-    logger.info("Restarting service '{0}' in the '{1}' container"
-                .format(service_name, container))
+    logger.info("Restarting service '{0}'".format(service_name))
     try:
-        env.base_actions.execute_in_container(restart_cmd, container=container)
+        env.base_actions.execute(restart_cmd)
         helpers.wait(
             lambda: 'running' in
-            env.base_actions.execute_in_container(
-                get_status_cmd, container=container, exit_code=0),
+            env.base_actions.execute(get_status_cmd, exit_code=0),
             timeout=timeout)
         logger.info("Service '{0}' has been restarted successfully "
-                    "in the '{1}' container".format(service_name, container))
+                    .format(service_name))
     except Exception as ex:
         logger.error("Could not restart '{0}' service "
-                     "in the '{1}' container: {2}"
-                     .format(service_name, container, ex))
+                     "in the '{1}'"
+                     .format(service_name, ex))
         raise
 
 
-def does_new_pkg_equal_to_installed_pkg(env, container, installed_package,
+def does_new_pkg_equal_to_installed_pkg(env, installed_package,
                                         new_package):
     rpm_query_cmd = '/bin/rpm -q'
     current_version_cmd = '{rpm} {package}'\
@@ -467,13 +441,11 @@ def does_new_pkg_equal_to_installed_pkg(env, container, installed_package,
         .format(rpm=rpm_query_cmd, package=new_package)
 
     logger.info("Comparing installed package version against "
-                "the package version to be installed in the '{}' container"
-                .format(container))
+                "the package version to be installed in the")
 
-    current_version = env.base_actions.execute_in_container(
-        current_version_cmd, container=container, exit_code=0)
-    new_version = env.base_actions.execute_in_container(
-        urlfile_version_cmd, container=container, exit_code=0)
+    current_version = env.base_actions.execute(
+        current_version_cmd, exit_code=0)
+    new_version = env.base_actions.execute(urlfile_version_cmd, exit_code=0)
 
     logger.info("Installed package version: {}".format(current_version))
     logger.info("Package version to be installed: {}".format(new_version))
@@ -481,12 +453,11 @@ def does_new_pkg_equal_to_installed_pkg(env, container, installed_package,
     return current_version == new_version
 
 
-def get_full_filename(env, container, wildcard_name):
+def get_full_filename(env, wildcard_name):
     cmd = 'ls {}'.format(wildcard_name)
 
     logger.info("Getting full file name for: {}".format(wildcard_name))
 
-    full_pkg_name = env.base_actions.execute_in_container(
-        cmd, container=container, exit_code=0)
+    full_pkg_name = env.base_actions.execute(cmd, exit_code=0)
 
     return full_pkg_name

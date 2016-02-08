@@ -53,7 +53,6 @@ class GateAstute(TestBasic):
                             'UPDATE_FUEL value is {}'
                             .format(settings.UPDATE_FUEL))
 
-        astute_container = 'astute'
         astute_service = 'astute'
         package_name = 'rubygem-astute'
         package_ext = '*noarch.rpm'
@@ -70,21 +69,17 @@ class GateAstute(TestBasic):
         pkg_path = os.path.join(target_path,
                                 '{}{}'.format(package_name, package_ext))
         full_package_name = utils.get_full_filename(
-            self.env, container=astute_container, wildcard_name=pkg_path)
+            self.env, wildcard_name=pkg_path)
         full_package_path = os.path.join(os.path.dirname(pkg_path),
                                          full_package_name)
         if not utils.does_new_pkg_equal_to_installed_pkg(
                 self.env,
-                container=astute_container,
                 installed_package=package_name,
                 new_package=full_package_path):
-            utils.update_rpm_in_container(self.env,
-                                          container=astute_container,
-                                          path=full_package_path)
-            utils.restart_service_in_container(self.env,
-                                               container=astute_container,
-                                               service_name=astute_service,
-                                               timeout=10)
+            utils.update_rpm(self.env, path=full_package_path)
+            utils.restart_service(self.env,
+                                  service_name=astute_service,
+                                  timeout=10)
 
         self.show_step(4)
         self.fuel_web.change_default_network_settings()
