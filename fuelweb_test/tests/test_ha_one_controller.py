@@ -23,13 +23,11 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.eb_tables import Ebtables
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test.settings import MIRROR_UBUNTU
 from fuelweb_test.settings import NODE_VOLUME_SIZE
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
-from fuelweb_test.settings import OPENSTACK_RELEASE
-from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import iface_alias
-from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
@@ -428,68 +426,64 @@ class MultiroleComputeCinder(TestBasic):
 class MultiroleMultipleServices(TestBasic):
     """MultiroleMultipleServices."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.setup_master],
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_multiple_services_local_mirror"])
     @log_snapshot_after_test
     def deploy_multiple_services_local_mirror(self):
         """Deploy cluster with multiple services using local mirror
 
         Scenario:
-            1. Revert snapshot 'empty' with default set of repositories
-            2. Bootstrap 5 slave nodes
-            3. Run 'fuel-createmirror' to replace default repositories
-               with local mirrors
-            4. Create cluster with many components to check as many
+            1. Revert snapshot 'prepare_slaves_5' with default set of mirrors
+            2. Run 'fuel-mirror' to create mirror repositories
+            3. Create cluster with many components to check as many
                packages in local mirrors have correct dependencies
-            5. Deploy cluster
+            4. Run 'fuel-mirror' to replace cluster repositories
+               with local mirrors
+            5. Check that repositories are changed
+            6. Deploy cluster
+            7. Check running services with OSTF
 
-        Duration 50m
+        Duration 140m
         """
-        self.env.revert_snapshot("empty")
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:5])
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot('ready_with_5_slaves')
 
-        logger.info("Executing 'fuel-createmirror' on Fuel admin node")
-        with self.env.d_env.get_admin_remote() as remote:
-            # TODO(ddmitriev):Enable debug via argument for 'fuel-createmirror'
-            # when bug#1458469 fixed.
-            if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
-                cmd = ("sed -i 's/DEBUG=\"no\"/DEBUG=\"yes\"/' {}"
-                       .format('/etc/fuel-createmirror/ubuntu.cfg'))
-                remote.execute(cmd)
-            else:
-                # CentOS is not supported yet, see bug#1467403
-                pass
+        # TODO(akostrikov):Enable debug
+        self.show_step(2)
+        admin_ip = self.ssh_manager.admin_ip
+        if MIRROR_UBUNTU != '':
+            ubuntu_url = MIRROR_UBUNTU.split()[1]
+            replace_cmd = \
+                "sed -i 's,http://archive.ubuntu.com/ubuntu,{0},g'" \
+                " /usr/share/fuel-mirror/ubuntu.yaml".format(
+                    ubuntu_url)
+            self.ssh_manager.execute_on_remote(ip=admin_ip,
+                                               cmd=replace_cmd)
 
-            run_on_remote_get_results(remote, 'fuel-createmirror')
+        create_mirror_cmd = 'fuel-mirror create -P ubuntu -G mos ubuntu'
+        self.ssh_manager.execute_on_remote(ip=admin_ip, cmd=create_mirror_cmd)
 
-        # Check if there all repos were replaced with local mirrors
-        ubuntu_id = self.fuel_web.client.get_release_id(
-            release_name=OPENSTACK_RELEASE_UBUNTU)
-        ubuntu_release = self.fuel_web.client.get_release(ubuntu_id)
-        ubuntu_meta = ubuntu_release["attributes_metadata"]
-        repos_ubuntu = ubuntu_meta["editable"]["repo_setup"]["repos"]['value']
-        remote_repos = []
-        for repo_value in repos_ubuntu:
-            if (self.fuel_web.admin_node_ip not in repo_value['uri'] and
-                    '{settings.MASTER_IP}' not in repo_value['uri']):
-                remote_repos.append({repo_value['name']: repo_value['uri']})
-        assert_true(not remote_repos,
-                    "Some repositories weren't replaced with local mirrors: "
-                    "{0}".format(remote_repos))
-
+        self.show_step(3)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
             settings={
+                'net_provider': 'neutron',
+                'net_segment_type': NEUTRON_SEGMENT['tun'],
                 'sahara': True,
                 'murano': True,
                 'ceilometer': True,
                 'volumes_lvm': True,
                 'volumes_ceph': False,
-                'images_ceph': True,
-                'osd_pool_size': "3"
+                'images_ceph': True
             }
         )
+
+        self.show_step(4)
+        apply_mirror_cmd = 'fuel-mirror apply -P ubuntu -G mos ubuntu ' \
+                           '--env {0} --replace'.format(cluster_id)
+        self.ssh_manager.execute_on_remote(ip=admin_ip, cmd=apply_mirror_cmd)
+
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -501,13 +495,25 @@ class MultiroleMultipleServices(TestBasic):
             }
         )
 
-        repos_attr = self.fuel_web.get_cluster_repos(cluster_id)
-        self.fuel_web.report_repos(repos_attr)
+        self.show_step(5)
+        repos_ubuntu = self.fuel_web.get_cluster_repos(cluster_id)
+        remote_repos = []
+        for repo_value in repos_ubuntu['value']:
+            if (self.fuel_web.admin_node_ip not in repo_value['uri'] and
+                    '{settings.MASTER_IP}' not in repo_value['uri']):
+                remote_repos.append({repo_value['name']: repo_value['uri']})
+        assert_true(not remote_repos,
+                    "Some repositories weren't replaced with local mirrors: "
+                    "{0}".format(remote_repos))
 
-        # (ddmitriev): No additional checks is required after deploy,
-        # just make sure that all components are installed from the
-        # local mirrors without any dependency errors or missing packages.
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(6)
         self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(7)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['ha', 'smoke', 'sanity'])
 
 
 @test
