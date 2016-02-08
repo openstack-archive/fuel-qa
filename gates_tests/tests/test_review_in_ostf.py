@@ -25,7 +25,7 @@ from gates_tests.helpers.utils import update_ostf
 
 @test(groups=["gate_ostf"])
 class GateOstf(TestBasic):
-    """Update fuel-ostf in ostf container,
+    """Update fuel-ostf,
     Check how it works on pre deployed cluster
     Executes for each review in openstack/fuel-ostf"""
 
