@@ -23,13 +23,13 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.eb_tables import Ebtables
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test.settings import MIRROR_UBUNTU
 from fuelweb_test.settings import NODE_VOLUME_SIZE
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import iface_alias
-from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
@@ -449,18 +449,29 @@ class MultiroleMultipleServices(TestBasic):
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:5])
 
         logger.info("Executing 'fuel-createmirror' on Fuel admin node")
-        with self.env.d_env.get_admin_remote() as remote:
-            # TODO(ddmitriev):Enable debug via argument for 'fuel-createmirror'
-            # when bug#1458469 fixed.
-            if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
-                cmd = ("sed -i 's/DEBUG=\"no\"/DEBUG=\"yes\"/' {}"
-                       .format('/etc/fuel-createmirror/ubuntu.cfg'))
-                remote.execute(cmd)
-            else:
-                # CentOS is not supported yet, see bug#1467403
-                pass
 
-            run_on_remote_get_results(remote, 'fuel-createmirror')
+        # TODO(ddmitriev):Enable debug via argument for 'fuel-createmirror'
+        # when bug#1458469 fixed.
+        admin_ip = self.ssh_manager.admin_ip
+        if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
+            if MIRROR_UBUNTU != '':
+                ubuntu_url = MIRROR_UBUNTU.split()[1]
+                replace_cmd = \
+                    "sed -i 's,http://archive.ubuntu.com/ubuntu,{0},g'" \
+                    " /usr/share/fuel-mirror/ubuntu.yaml".format(
+                        ubuntu_url)
+                self.ssh_manager.execute_on_remote(ip=admin_ip,
+                                                   cmd=replace_cmd)
+        else:
+            # CentOS is not supported yet, see bug#1467403
+            pass
+
+        create_mirror_cmd = 'fuel-mirror create -P ubuntu -G mos ubuntu'
+        self.ssh_manager.execute_on_remote(ip=admin_ip, cmd=create_mirror_cmd)
+
+        apply_release_cmd = 'fuel-mirror apply -P ubuntu -G mos ubuntu ' \
+                           '--default --replace'
+        self.ssh_manager.execute_on_remote(ip=admin_ip, cmd=apply_release_cmd)
 
         # Check if there all repos were replaced with local mirrors
         ubuntu_id = self.fuel_web.client.get_release_id(
@@ -500,6 +511,9 @@ class MultiroleMultipleServices(TestBasic):
                 'slave-05': ['mongo']
             }
         )
+        apply_mirror_cmd = 'fuel-mirror apply -P ubuntu -G mos ubuntu ' \
+                           '--env {0} --replace'.format(cluster_id)
+        self.ssh_manager.execute_on_remote(ip=admin_ip, cmd=apply_mirror_cmd)
 
         repos_attr = self.fuel_web.get_cluster_repos(cluster_id)
         self.fuel_web.report_repos(repos_attr)
