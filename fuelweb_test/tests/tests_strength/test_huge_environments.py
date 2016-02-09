@@ -222,7 +222,7 @@ class HugeHaNeutron(base_test_case.TestBasic):
             data['user'],
             data['password'],
             data['tenant'])
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=15)
+        os_conn.assert_cluster_ready(smiles_count=15)
 
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['ha', 'smoke', 'sanity'])
@@ -310,7 +310,7 @@ class HugeHaNeutron(base_test_case.TestBasic):
             data['user'],
             data['password'],
             data['tenant'])
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=15)
+        os_conn.assert_cluster_ready(smiles_count=15)
 
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['ha', 'smoke', 'sanity'])

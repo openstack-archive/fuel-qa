@@ -99,46 +99,46 @@ def verify_service(remote, service_name, count=1,
         assert_true(len(api), "Service '{0}' not found!".format(service_name))
 
 
-@logwrap
-def verify_service_list_api(os_conn, service_count):
-    def _verify():
-        ret = os_conn.get_nova_service_list()
-        logger.debug('Service list {0}'.format(ret))
-        assert_equal(service_count, len(ret),
-                     'Expected service count is {0},'
-                     ' but get {1} count, actual list {2}'.format(
-                         service_count, len(ret), ret))
-        for service in ret:
-            logger.debug('service is {0}'.format(service))
-            assert_equal(
-                service.state, 'up',
-                'Service {0} on host {1} has next '
-                'state {2}'.format(service.binary,
-                                   service.host,
-                                   service.state))
-    try:
-        _verify()
-    except AssertionError:
-        logger.debug(
-            "Services still not read. Sleeping for 60 seconds and retrying")
-        sleep(60)
-        _verify()
+# @logwrap
+# def verify_service_list_api(os_conn, service_count):
+#     def _verify():
+#         ret = os_conn.get_nova_service_list()
+#         logger.debug('Service list {0}'.format(ret))
+#         assert_equal(service_count, len(ret),
+#                      'Expected service count is {0},'
+#                      ' but get {1} count, actual list {2}'.format(
+#                          service_count, len(ret), ret))
+#         for service in ret:
+#             logger.debug('service is {0}'.format(service))
+#             assert_equal(
+#                 service.state, 'up',
+#                 'Service {0} on host {1} has next '
+#                 'state {2}'.format(service.binary,
+#                                    service.host,
+#                                    service.state))
+#     try:
+#         _verify()
+#     except AssertionError:
+#         logger.debug(
+#             "Services still not read. Sleeping for 60 seconds and retrying")
+#         sleep(60)
+#         _verify()
 
 
-@logwrap
-def verify_glance_image_api(os_conn):
-    ret = os_conn.get_image_list()
-    assert_equal(1, len([i for i in ret if i.name == 'TestVM']),
-                 "TestVM not found in glance image-list")
+# @logwrap
+# def verify_glance_image_api(os_conn):
+#     ret = os_conn.get_image_list()
+#     assert_equal(1, len([i for i in ret if i.name == 'TestVM']),
+#                  "TestVM not found in glance image-list")
 
 
-@logwrap
-def verify_network_list_api(os_conn, net_count=None):
-    ret = os_conn.get_nova_network_list()
-    assert_equal(net_count, len(ret),
-                 'Unexpected count of networks detected, '
-                 'expected: {0}, current {1} count,'
-                 ' full list {2}'.format(net_count, len(ret), ret))
+# @logwrap
+# def verify_network_list_api(os_conn, net_count=None):
+#     ret = os_conn.get_nova_network_list()
+#     assert_equal(net_count, len(ret),
+#                  'Unexpected count of networks detected, '
+#                  'expected: {0}, current {1} count,'
+#                  ' full list {2}'.format(net_count, len(ret), ret))
 
 
 @logwrap

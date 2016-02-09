@@ -15,7 +15,7 @@
 import re
 import time
 import traceback
-import ipaddr
+# import ipaddr
 from netaddr import EUI
 from urllib2 import HTTPError
 
@@ -104,12 +104,12 @@ class FuelWebClient(object):
         """
         return self._environment
 
-    @staticmethod
-    @logwrap
-    def get_cluster_status(os_conn, smiles_count, networks_count=2):
-        checkers.verify_service_list_api(os_conn, service_count=smiles_count)
-        checkers.verify_glance_image_api(os_conn)
-        checkers.verify_network_list_api(os_conn, networks_count)
+    # @staticmethod
+    # @logwrap
+    # def get_cluster_status(os_conn, smiles_count, networks_count=2):
+    #     checkers.verify_service_list_api(os_conn, service_count=smiles_count)
+    #     checkers.verify_glance_image_api(os_conn)
+    #     checkers.verify_network_list_api(os_conn, networks_count)
 
     @logwrap
     def _ostf_test_wait(self, cluster_id, timeout):
@@ -132,24 +132,24 @@ class FuelWebClient(object):
                     host, port, cluster_id)
         self.client.add_syslog_server(cluster_id, host, port)
 
-    @logwrap
-    def assert_cluster_floating_list(self, os_conn, cluster_id, expected_ips):
-        logger.info('Assert floating IPs on cluster #{0}. Expected {1}'.format(
-            cluster_id, expected_ips))
-        current_ips = self.get_cluster_floating_list(os_conn, cluster_id)
-        assert_equal(set(expected_ips), set(current_ips),
-                     'Current floating IPs {0}'.format(current_ips))
+    # @logwrap
+    # def assert_cluster_floating_list(self, os_conn, cluster_id, expected_ips):
+    #     logger.info('Assert floating IPs on cluster #{0}. Expected {1}'.format(
+    #         cluster_id, expected_ips))
+    #     current_ips = self.get_cluster_floating_list(os_conn, cluster_id)
+    #     assert_equal(set(expected_ips), set(current_ips),
+    #                  'Current floating IPs {0}'.format(current_ips))
 
-    @logwrap
-    def assert_cluster_ready(self, os_conn, smiles_count,
-                             networks_count=2, timeout=300):
-        logger.info('Assert cluster services are UP')
-        _wait(
-            lambda: self.get_cluster_status(
-                os_conn,
-                smiles_count=smiles_count,
-                networks_count=networks_count),
-            timeout=timeout)
+    # @logwrap
+    # def assert_cluster_ready(self, os_conn, smiles_count,
+    #                          networks_count=2, timeout=300):
+    #     logger.info('Assert cluster services are UP')
+    #     _wait(
+    #         lambda: self.get_cluster_status(
+    #             os_conn,
+    #             smiles_count=smiles_count,
+    #             networks_count=networks_count),
+    #         timeout=timeout)
 
     @logwrap
     def assert_ha_services_ready(self, cluster_id, timeout=20 * 60,
@@ -271,23 +271,23 @@ class FuelWebClient(object):
                                            pretty_log(failed_tests_res,
                                                       indent=1)))
 
-    def assert_release_state(self, release_name, state='available'):
-        logger.info('Assert release %s has state %s', release_name, state)
-        for release in self.client.get_releases():
-            if release["name"].lower().find(release_name) != -1:
-                assert_equal(release['state'], state,
-                             'Release state {0}'.format(release['state']))
-                return release["id"]
+    # def assert_release_state(self, release_name, state='available'):
+    #     logger.info('Assert release %s has state %s', release_name, state)
+    #     for release in self.client.get_releases():
+    #         if release["name"].lower().find(release_name) != -1:
+    #             assert_equal(release['state'], state,
+    #                          'Release state {0}'.format(release['state']))
+    #             return release["id"]
 
-    def assert_release_role_present(self, release_name, role_name):
-        logger.info('Assert role %s is available in release %s',
-                    role_name, release_name)
-        release_id = self.assert_release_state(release_name)
-        release_data = self.client.get_releases_details(release_id=release_id)
-        assert_equal(
-            True, role_name in release_data['roles'],
-            message='There is no {0} role in release id {1}'.format(
-                role_name, release_name))
+    # def assert_release_role_present(self, release_name, role_name):
+    #     logger.info('Assert role %s is available in release %s',
+    #                 role_name, release_name)
+    #     release_id = self.assert_release_state(release_name)
+    #     release_data = self.client.get_releases_details(release_id=release_id)
+    #     assert_equal(
+    #         True, role_name in release_data['roles'],
+    #         message='There is no {0} role in release id {1}'.format(
+    #             role_name, release_name))
 
     @logwrap
     def assert_fuel_version(self, fuel_version):
@@ -800,20 +800,20 @@ class FuelWebClient(object):
         return {'private_net': net_params.get('internal_name', 'net04'),
                 'external_net': net_params.get('floating_name', 'net04_ext')}
 
-    @logwrap
-    def get_cluster_floating_list(self, os_conn, cluster_id):
-        logger.info('Get floating IPs list at cluster #{0}'.format(cluster_id))
+    # @logwrap
+    # def get_cluster_floating_list(self, os_conn, cluster_id):
+    #     logger.info('Get floating IPs list at cluster #{0}'.format(cluster_id))
 
-        subnet = os_conn.get_subnet('{0}__subnet'.format(
-            self.get_cluster_predefined_networks_name(
-                cluster_id)['external_net']))
-        ret = []
-        for pool in subnet['allocation_pools']:
-            ip = ipaddr.IPv4Address(pool['start'])
-            while ip <= ipaddr.IPv4Address(pool['end']):
-                ret.append(str(ip))
-                ip += 1
-        return ret
+    #     subnet = os_conn.get_subnet('{0}__subnet'.format(
+    #         self.get_cluster_predefined_networks_name(
+    #             cluster_id)['external_net']))
+    #     ret = []
+    #     for pool in subnet['allocation_pools']:
+    #         ip = ipaddr.IPv4Address(pool['start'])
+    #         while ip <= ipaddr.IPv4Address(pool['end']):
+    #             ret.append(str(ip))
+    #             ip += 1
+    #     return ret
 
     @logwrap
     def get_cluster_block_devices(self, node_name):

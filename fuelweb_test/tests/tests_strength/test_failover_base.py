@@ -74,7 +74,7 @@ class TestHaFailoverBase(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         public_vip = self.fuel_web.get_public_vip(cluster_id)
         os_conn = os_actions.OpenStackActions(public_vip)
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=14)
+        os_conn.assert_cluster_ready(smiles_count=14)
         self.fuel_web.verify_network(cluster_id)
 
         self.env.make_snapshot(self.snapshot_name, is_make=True)
@@ -110,7 +110,7 @@ class TestHaFailoverBase(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id, timeout=150 * 60)
         public_vip = self.fuel_web.get_public_vip(cluster_id)
         os_conn = os_actions.OpenStackActions(public_vip)
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=14)
+        os_conn.assert_cluster_ready(smiles_count=14)
         self.fuel_web.verify_network(cluster_id)
 
         for node in ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]:
