@@ -34,6 +34,8 @@ from fuelweb_test import logger
 from fuelweb_test.tests.test_ha_one_controller_base\
     import HAOneControllerNeutronBase
 
+from fuelweb_test.checkers import assert_floating_ips
+
 
 @test()
 class OneNodeDeploy(TestBasic):
@@ -582,8 +584,12 @@ class FloatingIPs(TestBasic):
 
         # assert ips
         expected_ips = self.fuel_web.get_floating_ranges()[1][0]
-        self.fuel_web.assert_cluster_floating_list(
-            os_conn, cluster_id, expected_ips)
+        # self.fuel_web.assert_cluster_floating_list(
+        #     os_conn, cluster_id, expected_ips)
+        subnet_name = self.get_cluster_predefined_networks_name(
+            cluster_id)['external_net']
+        current_ips = os_conn.get_subnet_allocation_pool_list(subnet_name)
+        assert_floating_ips(current_ips, expected_ips)
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 

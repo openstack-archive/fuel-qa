@@ -132,13 +132,13 @@ class FuelWebClient(object):
                     host, port, cluster_id)
         self.client.add_syslog_server(cluster_id, host, port)
 
-    @logwrap
-    def assert_cluster_floating_list(self, os_conn, cluster_id, expected_ips):
-        logger.info('Assert floating IPs on cluster #{0}. Expected {1}'.format(
-            cluster_id, expected_ips))
-        current_ips = self.get_cluster_floating_list(os_conn, cluster_id)
-        assert_equal(set(expected_ips), set(current_ips),
-                     'Current floating IPs {0}'.format(current_ips))
+    # @logwrap
+    # def assert_cluster_floating_list(self, os_conn, cluster_id, expected_ips):
+    #     logger.info('Assert floating IPs on cluster #{0}. Expected {1}'.format(
+    #         cluster_id, expected_ips))
+    #     current_ips = self.get_cluster_floating_list(os_conn, cluster_id)
+    #     assert_equal(set(expected_ips), set(current_ips),
+    #                  'Current floating IPs {0}'.format(current_ips))
 
     @logwrap
     def assert_cluster_ready(self, os_conn, smiles_count,
@@ -800,20 +800,20 @@ class FuelWebClient(object):
         return {'private_net': net_params.get('internal_name', 'net04'),
                 'external_net': net_params.get('floating_name', 'net04_ext')}
 
-    @logwrap
-    def get_cluster_floating_list(self, os_conn, cluster_id):
-        logger.info('Get floating IPs list at cluster #{0}'.format(cluster_id))
+    # @logwrap
+    # def get_cluster_floating_list(self, os_conn, cluster_id):
+    #     logger.info('Get floating IPs list at cluster #{0}'.format(cluster_id))
 
-        subnet = os_conn.get_subnet('{0}__subnet'.format(
-            self.get_cluster_predefined_networks_name(
-                cluster_id)['external_net']))
-        ret = []
-        for pool in subnet['allocation_pools']:
-            ip = ipaddr.IPv4Address(pool['start'])
-            while ip <= ipaddr.IPv4Address(pool['end']):
-                ret.append(str(ip))
-                ip += 1
-        return ret
+    #     subnet = os_conn.get_subnet('{0}__subnet'.format(
+    #         self.get_cluster_predefined_networks_name(
+    #             cluster_id)['external_net']))
+    #     ret = []
+    #     for pool in subnet['allocation_pools']:
+    #         ip = ipaddr.IPv4Address(pool['start'])
+    #         while ip <= ipaddr.IPv4Address(pool['end']):
+    #             ret.append(str(ip))
+    #             ip += 1
+    #     return ret
 
     @logwrap
     def get_cluster_block_devices(self, node_name):

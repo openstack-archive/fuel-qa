@@ -17,6 +17,8 @@ from proboscis import asserts
 import random
 import time
 
+from netaddr import iter_iprange
+
 from devops.error import TimeoutError
 from devops.helpers import helpers
 from fuelweb_test.helpers import common
@@ -420,6 +422,14 @@ class OpenStackActions(common.Common):
             if subnet['name'] == subnet_name:
                 return subnet
         return None
+
+    def get_subnet_allocation_pool_list(self, subnet_name):
+        subnet = self.get_subnet(subnet_name)
+        ret = []
+        for pool in subnet['allocation_pools']:
+            ret.extend(
+                [str(ip) for ip in iter_iprange(pool['start'], pool['end'])])
+        return ret
 
     def nova_get_net(self, net_name):
         for net in self.nova.networks.list():
