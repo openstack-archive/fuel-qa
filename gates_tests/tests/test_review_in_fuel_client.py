@@ -215,8 +215,4 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
                 raise TimeoutError(
                     "cluster {0} was not deleted".format(cluster_id))
 
-        asserts.assert_false(
-            check_cluster_presence(cluster_id, self.env.postgres_actions),
-            "cluster {0} is found".format(cluster_id))
-
         self.env.make_snapshot("review_fuel_cli_one_node_deploy")
