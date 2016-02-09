@@ -24,7 +24,7 @@ from gates_tests.helpers import exceptions
 
 
 def replace_fuel_agent_rpm(environment):
-    """Replaced fuel_agent*.rpm in MCollective with fuel_agent*.rpm
+    """Replaced fuel_agent.rpm on master node with fuel_agent.rpm
     from review
     environment - Environment Model object - self.env
     """
@@ -38,7 +38,7 @@ def replace_fuel_agent_rpm(environment):
             remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
                           pack_path)
 
-        # Update fuel-agent in MCollective
+        # Update fuel-agent on master node
         cmd = "rpm -q fuel-agent"
         old_package = \
             environment.base_actions.execute(cmd, exit_code=0)
@@ -49,6 +49,7 @@ def replace_fuel_agent_rpm(environment):
                     .format(old_package, new_package))
 
         if old_package != new_package:
+            logger.info("Updating fuel-agent package on master node")
             logger.info('Try to install package {0}'.format(
                 new_package))
             cmd = "rpm -Uvh --oldpackage {0}".format(full_pack_path)
@@ -61,21 +62,6 @@ def replace_fuel_agent_rpm(environment):
             assert_equal(installed_package, new_package,
                          "The new package {0} was not installed".
                          format(new_package))
-
-            # Update fuel-agent on master node
-            logger.info("Updating fuel-agent package on master node")
-            with environment.d_env.get_admin_remote() as remote:
-                cmd = "rpm -q fuel-agent"
-                old_package = ''.join(remote.execute(cmd)['stdout']).strip()
-                logger.info("Updating package {0} with {1}"
-                            .format(old_package, new_package))
-                if old_package != new_package:
-                    cmd = "rpm -Uvh --oldpackage {0}".format(
-                        full_pack_path)
-                    result = remote.execute(cmd)
-                    assert_equal(result['exit_code'], 0,
-                                 ('Failed to update package {}').format(
-                                     result))
 
     except Exception as e:
         logger.error("Could not upload package {e}".format(e=e))
