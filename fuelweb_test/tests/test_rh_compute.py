@@ -695,7 +695,7 @@ class RhHA(TestBasic):
         with self.env.d_env.get_ssh_to_remote(controller_ip) as remote:
             self.remove_old_compute_services(remote, old_hostname)
 
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)
+        os_conn.assert_cluster_ready(smiles_count=13)
 
         self.show_step(11)
         self.fuel_web.run_ostf(cluster_id=cluster_id,

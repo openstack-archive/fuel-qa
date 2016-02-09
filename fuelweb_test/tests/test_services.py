@@ -80,7 +80,7 @@ class SaharaHAOneController(TestBasic):
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id),
             data['user'], data['password'], data['tenant'])
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
+        os_conn.assert_cluster_ready(smiles_count=5)
 
         LOGGER.debug('Verify Sahara service on controller')
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
@@ -189,7 +189,7 @@ class SaharaHA(TestBasic):
         cluster_vip = self.fuel_web.get_public_vip(cluster_id)
         os_conn = os_actions.OpenStackActions(
             cluster_vip, data['user'], data['password'], data['tenant'])
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)
+        os_conn.assert_cluster_ready(smiles_count=13)
 
         LOGGER.debug('Verify Sahara service on all controllers')
         for slave in ["slave-01", "slave-02", "slave-03"]:
@@ -294,7 +294,7 @@ class MuranoHAOneController(TestBasic):
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id),
             data['user'], data['password'], data['tenant'])
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
+        os_conn.assert_cluster_ready(smiles_count=5)
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
             checkers.verify_service(
@@ -382,7 +382,7 @@ class MuranoHA(TestBasic):
         cluster_vip = self.fuel_web.get_public_vip(cluster_id)
         os_conn = os_actions.OpenStackActions(
             cluster_vip, data['user'], data['password'], data['tenant'])
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)
+        os_conn.assert_cluster_ready(smiles_count=13)
         for slave in ["slave-01", "slave-02", "slave-03"]:
             _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
             with self.env.d_env.get_ssh_to_remote(_ip) as remote:
@@ -873,7 +873,7 @@ class HeatHAOneController(TestBasic):
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id),
             data['user'], data['password'], data['tenant'])
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
+        os_conn.assert_cluster_ready(smiles_count=5)
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
@@ -967,7 +967,7 @@ class HeatHA(TestBasic):
         cluster_vip = self.fuel_web.get_public_vip(cluster_id)
         os_conn = os_actions.OpenStackActions(
             cluster_vip, data['user'], data['password'], data['tenant'])
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)
+        os_conn.assert_cluster_ready(smiles_count=13)
 
         for slave in ["slave-01", "slave-02", "slave-03"]:
             _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']

@@ -34,6 +34,8 @@ from fuelweb_test import logger
 from fuelweb_test.tests.test_ha_one_controller_base\
     import HAOneControllerNeutronBase
 
+from fuelweb_test.checkers import assert_floating_ips
+
 
 @test()
 class OneNodeDeploy(TestBasic):
@@ -72,7 +74,7 @@ class OneNodeDeploy(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=4)
+        os_conn.assert_cluster_ready(smiles_count=4)
         self.fuel_web.run_single_ostf_test(
             cluster_id=cluster_id, test_sets=['sanity'],
             test_name=('fuel_health.tests.sanity.test_sanity_identity'
@@ -178,7 +180,7 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
 
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
+        os_conn.assert_cluster_ready(smiles_count=5)
         ebtables = self.env.get_ebtables(
             cluster_id, self.env.d_env.nodes().slaves[:2])
         ebtables.restore_vlans()
@@ -236,13 +238,13 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id),
             data['user'], data['password'], data['tenant'])
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
+        os_conn.assert_cluster_ready(smiles_count=5)
 
         self.fuel_web.update_nodes(
             cluster_id, {'slave-03': ['compute']}, True, False)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=6)
+        os_conn.assert_cluster_ready(smiles_count=6)
 
         assert_equal(
             3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
@@ -582,8 +584,12 @@ class FloatingIPs(TestBasic):
 
         # assert ips
         expected_ips = self.fuel_web.get_floating_ranges()[1][0]
-        self.fuel_web.assert_cluster_floating_list(
-            os_conn, cluster_id, expected_ips)
+        # self.fuel_web.assert_cluster_floating_list(
+        #     os_conn, cluster_id, expected_ips)
+        subnet_name = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['external_net']
+        current_ips = os_conn.get_subnet_allocation_pool_list(subnet_name)
+        assert_floating_ips(current_ips, expected_ips)
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 

@@ -92,7 +92,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         controller_ip = self.fuel_web.get_public_vip(cluster_id)
 
         os_conn = os_actions.OpenStackActions(controller_ip)
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
+        os_conn.assert_cluster_ready(smiles_count=5)
         net_name = self.fuel_web.get_cluster_predefined_networks_name(
             cluster_id)['private_net']
 
@@ -181,7 +181,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         os_conn = os_actions.OpenStackActions(self.fuel_web.
                                               get_public_vip(cluster_id))
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=14)
+        os_conn.assert_cluster_ready(smiles_count=14)
 
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id)

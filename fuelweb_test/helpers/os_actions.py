@@ -17,6 +17,8 @@ from proboscis import asserts
 import random
 import time
 
+from netaddr import iter_iprange
+
 from devops.error import TimeoutError
 from devops.helpers import helpers
 from fuelweb_test.helpers import common
@@ -421,6 +423,14 @@ class OpenStackActions(common.Common):
                 return subnet
         return None
 
+    def get_subnet_allocation_pool_list(self, subnet_name):
+        subnet = self.get_subnet(subnet_name)
+        ret = []
+        for pool in subnet['allocation_pools']:
+            ret.extend(
+                [str(ip) for ip in iter_iprange(pool['start'], pool['end'])])
+        return ret
+
     def nova_get_net(self, net_name):
         for net in self.nova.networks.list():
             if net.human_id == net_name:
@@ -621,3 +631,50 @@ class OpenStackActions(common.Common):
             }
         }
         return self.neutron.create_router(router_info)['router']
+
+    def get_cluster_status(self, smiles_count, networks_count=2):
+        self.verify_service_list_api(service_count=smiles_count)
+        self.verify_glance_image_api()
+        self.verify_network_list_api(networks_count)
+
+    def verify_service_list_api(self, service_count):
+        def _verify():
+            ret = self.get_nova_service_list()
+            logger.debug('Service list {0}'.format(ret))
+            asserts.assert_equal(
+                service_count, len(ret),
+                'Expected service count is {0},'
+                ' but get {1} count, actual list {2}'.format(
+                             service_count, len(ret), ret))
+
+            for service in ret:
+                logger.debug('service is {0}'.format(service))
+                asserts.assert_equal(
+                    service.state, 'up',
+                    'Service {0} on host {1} has next '
+                    'state {2}'.format(service.binary,
+                                       service.host,
+                                       service.state))
+        try:
+            _verify()
+        except AssertionError:
+            logger.debug("Services still not read. Sleeping for 60 "
+                         "seconds and retrying")
+            time.sleep(60)
+            _verify()
+
+    def verify_glance_image_api(self):
+        ret = self.get_image_list()
+        asserts.assert_equal(
+            1,
+            len([i for i in ret if i.name == 'TestVM']),
+            "TestVM not found in glance image-list")
+
+    def verify_network_list_api(self, net_count=None):
+        ret = self.get_nova_network_list()
+        asserts.assert_equal(
+            net_count,
+            len(ret),
+            'Unexpected count of networks detected, '
+            'expected: {0}, current {1} count, '
+            'full list {2}'.format(net_count, len(ret), ret))

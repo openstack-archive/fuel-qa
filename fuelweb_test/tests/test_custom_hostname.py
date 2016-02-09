@@ -152,7 +152,7 @@ class CustomHostname(TestBasic):
                 cluster_id, test_sets=['ha', 'smoke', 'sanity'])
             os_conn = os_actions.OpenStackActions(
                 self.fuel_web.get_public_vip(cluster_id))
-            self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)
+            os_conn.assert_cluster_ready(smiles_count=13)
 
             # Verify that new hostnames are applied on the nodes
             for node, custom_hostname in zip(
