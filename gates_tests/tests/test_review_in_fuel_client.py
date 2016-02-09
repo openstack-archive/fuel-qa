@@ -21,7 +21,6 @@ from proboscis import asserts
 
 
 from gates_tests.helpers import exceptions
-from fuelweb_test.helpers.checkers import check_cluster_presence
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers.utils import get_package_version
@@ -214,9 +213,5 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
             except TimeoutError:
                 raise TimeoutError(
                     "cluster {0} was not deleted".format(cluster_id))
-
-        asserts.assert_false(
-            check_cluster_presence(cluster_id, self.env.postgres_actions),
-            "cluster {0} is found".format(cluster_id))
 
         self.env.make_snapshot("review_fuel_cli_one_node_deploy")
