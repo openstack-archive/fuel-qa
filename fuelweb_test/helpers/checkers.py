@@ -364,17 +364,14 @@ def enable_feature_group(env, group):
     env.admin_actions.save_fuel_settings(fuel_settings)
     env.docker_actions.restart_container("nailgun")
 
-    def check_api_available():
+    def check_api_group_enabled():
         try:
-            env.fuel_web.client.get_api_version()
+            return (group in
+                    env.fuel_web.client.get_api_version()["feature_groups"])
         except (urllib2.HTTPError, urllib2.URLError):
             return False
-        return True
 
-    wait(check_api_available, interval=10, timeout=60 * 15)
-    wait(lambda: group in
-         env.fuel_web.client.get_api_version()["feature_groups"],
-         interval=10, timeout=60 * 5)
+    wait(check_api_group_enabled, interval=10, timeout=60 * 20)
 
 
 @logwrap
