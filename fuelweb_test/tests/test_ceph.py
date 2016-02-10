@@ -387,7 +387,8 @@ class CephHA(TestBasic):
         self.env.nailgun_actions.force_oswl_collect()
         self.env.nailgun_actions.force_fuel_stats_sending()
         master_uid = self.env.get_masternode_uuid()
-        checkers.check_oswl_stat(self.env.postgres_actions, self.env.collector,
+        checkers.check_oswl_stat(self.env.postgres_actions,
+                                 self.env.nailgun_actions, self.env.collector,
                                  master_uid, operation='current',
                                  resources=['vm', 'flavor', 'volume', 'image',
                                             'tenant', 'keystone_user'])
@@ -406,7 +407,8 @@ class CephHA(TestBasic):
 
         self.env.nailgun_actions.force_oswl_collect()
         self.env.nailgun_actions.force_fuel_stats_sending()
-        checkers.check_oswl_stat(self.env.postgres_actions, self.env.collector,
+        checkers.check_oswl_stat(self.env.postgres_actions,
+                                 self.env.nailgun_actions, self.env.collector,
                                  master_uid, operation='modified',
                                  resources=['vm', 'volume', 'image',
                                             'tenant', 'keystone_user'])
@@ -427,7 +429,8 @@ class CephHA(TestBasic):
 
         self.env.nailgun_actions.force_oswl_collect()
         self.env.nailgun_actions.force_fuel_stats_sending()
-        checkers.check_oswl_stat(self.env.postgres_actions, self.env.collector,
+        checkers.check_oswl_stat(self.env.postgres_actions,
+                                 self.env.nailgun_actions, self.env.collector,
                                  master_uid, operation='removed',
                                  resources=['vm', 'flavor', 'volume', 'image',
                                             'tenant', 'keystone_user'])
