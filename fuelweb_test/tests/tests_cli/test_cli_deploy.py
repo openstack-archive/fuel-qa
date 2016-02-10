@@ -140,3 +140,85 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'],
                 should_fail=1)
+
+    def cli_deploy_ceph_neutron_vlan(self):
+        """ Deployment with 3 controlelrs, NeutronVLAN, both Ceph
+
+        Scenario:
+            1. Create new environment
+            2. Choose Neutron, VLAN
+            3. Choose Ceph for volumes and Ceph for images
+            4. Add 3 controller
+            5. Add 2 compute
+            6. Add 3 ceph
+            7. Verify networks
+            8. Deploy the environment
+            9. Verify networks
+            10. Run OSTF tests
+
+        """
+
+        self.env.revert_snapshot("ready_with_9_slaves")
+
+        node_ids = [self.fuel_web.get_nailgun_node_by_devops_node(
+            self.env.d_env.nodes().slaves[slave_id])['id']
+            for slave_id in range(3)]
+
+        release_id = self.fuel_web.get_releases_list_for_os(
+            release_name=OPENSTACK_RELEASE)[0]
+
+        admin_ip=self.ssh_manager.admin_ip
+
+        self.show_step(1)
+        self.show_step(2)
+        cluster = self.ssh_manager.execute_on_remote(
+                ip=admin_ip,
+                cmd='fuel env create --name={0} --release={1} '
+                    '--nst=vlan --json'.format(self.__class__.__name__,
+                                               release_id),
+                jsonify=True
+        )['stdout_json']
+
+        self.show_step(3)
+        with self.env.d_env.get_admin_remote() as remote:
+            self.use_ceph_for_volumes(cluster['id'], remote)
+            self.use_ceph_for_images(cluster['id'], remote)
+
+        self.show_step(4)
+        self.show_step(5)
+        self.show_step(6)
+        nodes = {
+            'controller': node_ids[0:3],
+            'compute': node_ids[3:5],
+            'ceph-osd': node_ids[5:8]
+        }
+
+        for role in nodes:
+            self.ssh_manager.execute_on_remote(
+                ip=admin_ip,
+                cmd='fuel --env-id={0} node set '
+                    '--node {1} --role={2}'.format(
+                        cluster['id'],
+                        ','.join(map(str,nodes[role])),
+                        role)
+            )
+
+        self.show_step(7)
+        self.fuel_web.verify_network(cluster['id'])
+
+        self.show_step(8)
+        task = self.ssh_manager.execute_on_remote(
+                ip=admin_ip,
+                cmd='fuel --env-id={0} deploy-changes --json'.format(
+                        cluster['id'])
+        )
+        with self.env.d_env.get_admin_remote() as remote:
+            self.assert_cli_task_success(task, remote, timeout=130 * 60)
+
+        self.show_step(9)
+        self.fuel_web.verify_network(cluster['id'])
+        self.show_step(10)
+        self.fuel_web.run_ostf(
+                cluster_id=cluster['id'],
+                test_sets=['ha', 'smoke', 'sanity']
+                )
