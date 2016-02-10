@@ -468,16 +468,19 @@ class PartitionPreservation(TestBasic):
             2. Create an OS volume and OS instance
             3. Mark 'cinder' partition to be preserved
             4. Mark 'vm' partition to be preserved
-            5. Reinstall the compute node
-            6. Run network verification
-            7. Run OSTF
-            8. Verify that the volume is present and has 'available' status
+            5. Disable nova-compute service on the node to be reinstalled
+            6. Shut down the test OS instance
+            7. Reinstall the compute node
+            8. Enable nova-compute service back
+            9. Start the test OS instance back
+            10. Run network verification
+            11. Run OSTF
+            12. Verify that the volume is present and has 'available' status
                after the node reinstallation
-            9. Verify that the VM is available and pingable
+            13. Verify that the VM is available and pingable
                after the node reinstallation
 
         Duration: 115m
-
         """
         self.env.revert_snapshot("node_reinstallation_env")
 
@@ -514,8 +517,37 @@ class PartitionPreservation(TestBasic):
             PartitionPreservation._preserve_partition(
                 remote, cmp_nailgun['id'], "vm")
 
+        logger.info("Disabling.")
+
+        # Disable nova-compute service on the node and shutoff
+        # the test OS instance
+        vm.stop()
+        devops_helpers.wait(
+            lambda: os_conn.get_instance_detail(vm).status == "SHUTOFF",
+            timeout=30)
+        service = "nova-compute"
+        service_status = os_conn.nova_disable_service(
+            cmp_host.hypervisor_hostname, service)
+        assert_equal("disabled", service_status,
+                     "{0} service is not disabled on {0} host.".format(
+                         service, cmp_host))
+
         NodeReinstallationEnv._reinstall_nodes(
             self.fuel_web, cluster_id, [str(cmp_nailgun['id'])])
+
+        logger.info("Enabling.")
+
+        # Enable nova-compute service on the node and start
+        # the test OS instance
+        service_status = os_conn.nova_enable_service(
+            cmp_host.hypervisor_hostname, service)
+        assert_equal("enabled", service_status,
+                     "{0} service is not enabled on {0} host.".format(
+                         service, cmp_host))
+        vm.start()
+        devops_helpers.wait(
+            lambda: os_conn.get_instance_detail(vm).status == "ACTIVE",
+            timeout=30)
 
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
