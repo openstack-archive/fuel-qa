@@ -14,7 +14,7 @@
 
 import os
 
-from proboscis.asserts import assert_equal, assert_not_equal
+from proboscis.asserts import assert_equal
 from devops.helpers import helpers
 
 from fuelweb_test.helpers import checkers
@@ -301,88 +301,74 @@ def replace_fuel_nailgun_rpm(environment):
     logger.info("Patching fuel-nailgun")
     if not settings.UPDATE_FUEL:
         raise exceptions.FuelQAVariableNotSet('UPDATE_FUEL', 'True')
-    try:
-        pack_path = '/var/www/nailgun/fuel-nailgun/'
-        full_pack_path = os.path.join(pack_path,
-                                      'fuel-nailgun*.noarch.rpm')
-        logger.info('Package path {0}'.format(full_pack_path))
-        with environment.d_env.get_admin_remote() as remote:
-            remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
-                          pack_path)
-        # stop services
-        service_list = ['assassind', 'receiverd',
-                        'nailgun', 'statsenderd']
-        [environment.base_actions.execute(
-            'systemctl stop {0}'.format(service),
-            exit_code=0) for service in service_list]
+    pack_path = '/var/www/nailgun/fuel-nailgun/'
 
-        # stop statistic services
-        [environment.base_actions.execute(
-            'systemctl stop {0}'.format(service),
-            exit_code=0) for service in
-         get_oswl_services_names(environment)]
+    full_pack_path = os.path.join(pack_path,
+                                  'fuel-nailgun*.noarch.rpm')
+    logger.info('Package path {0}'.format(full_pack_path))
+    with environment.d_env.get_admin_remote() as remote:
+        remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
+                      pack_path)
 
-        # Check old fuel-nailgun package
-        cmd = "rpm -q fuel-nailgun"
-        try:
-            old_package = \
-                environment.base_actions.execute(cmd, exit_code=0)
-        except AssertionError:
-            if 'fuel-nailgun is not installed' in AssertionError.message:
-                old_package = None
-            else:
-                logger.error('Could not check package')
-                raise AssertionError
+    # Check old fuel-nailgun package
+    cmd = "rpm -q fuel-nailgun"
 
-        # Drop nailgun db manage.py dropdb
-        cmd = 'manage.py dropdb'
-        environment.base_actions.execute(cmd, exit_code=0)
+    old_package = environment.base_actions.execute(cmd, exit_code=0)
+    logger.info(
+        'Current package version of '
+        'fuel-nailgun: {0}'.format(old_package))
 
-        # Delete package
-        if old_package:
-            logger.info("Delete package {0}".format(old_package))
-            cmd = "rpm -e fuel-nailgun"
-            environment.base_actions.execute(
-                cmd, exit_code=0)
+    cmd = "rpm -qp {0}".format(full_pack_path)
+    new_package = environment.base_actions.execute(cmd)
+    logger.info("Updating package {0} with {1}".format(
+        old_package, new_package))
 
-        cmd = "ls -1 {0}".format(full_pack_path)
-        new_package = \
-            environment.base_actions.execute(cmd).rstrip('.rpm')
-        logger.info("Install package {0}"
-                    .format(new_package))
+    if old_package == new_package:
+        logger.debug('Looks like package from review '
+                     'was installed during setups of master node')
+        return
 
-        cmd = "yum localinstall -y {0}".format(full_pack_path)
-        environment.base_actions.execute(
-            cmd, exit_code=0)
+    # stop services
+    service_list = ['assassind', 'receiverd', 'nailgun', 'statsenderd']
+    [environment.base_actions.execute(
+        'systemctl stop {0}'.format(service),
+        exit_code=0) for service in service_list]
 
-        cmd = "rpm -q fuel-nailgun"
-        installed_package = \
-            environment.base_actions.execute(
-                cmd, exit_code=0)
-        if not old_package:
-            assert_equal(installed_package, new_package,
-                         "The new package {0} was not installed".
-                         format(new_package))
-        else:
-            assert_not_equal(
-                installed_package,
-                old_package,
-                "The new package {0} is "
-                "the same as {1}".format(new_package, old_package))
+    # stop statistic services
+    [environment.base_actions.execute(
+        'systemctl stop {0}'.format(service),
+        exit_code=0) for service in
+        get_oswl_services_names(environment)]
 
-        cmd = ('puppet apply --debug'
-               ' /etc/puppet/modules/nailgun/examples/nailgun-only.pp')
-        environment.base_actions.execute(
-            cmd, exit_code=0)
-        with environment.d_env.get_admin_remote() as remote:
-            res = remote.execute("fuel release --sync-deployment-tasks"
-                                 " --dir /etc/puppet/")
-            assert_equal(res['exit_code'], 0,
-                         'Failed to sync tasks with result {0}'.format(res))
+    # Drop nailgun db manage.py dropdb
+    cmd = 'manage.py dropdb'
+    environment.base_actions.execute(cmd, exit_code=0)
 
-    except Exception as e:
-        logger.error("Could not upload package {e}".format(e=e))
-        raise
+    # Delete package
+    logger.info("Delete package {0}".format(old_package))
+    cmd = "rpm -e fuel-nailgun"
+    environment.base_actions.execute(cmd, exit_code=0)
+
+    logger.info("Install package {0}".format(new_package))
+
+    cmd = "rpm -Uvh --oldpackage {0}".format(full_pack_path)
+
+    environment.base_actions.execute(cmd, exit_code=0)
+
+    cmd = "rpm -q fuel-nailgun"
+    installed_package = environment.base_actions.execute(cmd, exit_code=0)
+
+    assert_equal(installed_package, new_package,
+                 "The new package {0} was not installed".format(new_package))
+
+    cmd = ('puppet apply --debug '
+           '/etc/puppet/modules/fuel/examples/nailgun.pp')
+    environment.base_actions.execute(cmd, exit_code=0)
+    with environment.d_env.get_admin_remote() as remote:
+        res = remote.execute(
+            "fuel release --sync-deployment-tasks --dir /etc/puppet/")
+        assert_equal(res['exit_code'], 0,
+                     'Failed to sync tasks with result {0}'.format(res))
 
 
 def update_rpm(env, path, rpm_cmd='/bin/rpm -Uvh --force'):
