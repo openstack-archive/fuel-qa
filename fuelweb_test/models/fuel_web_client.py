@@ -2376,7 +2376,8 @@ class FuelWebClient(object):
         raise AssertionError("Plugin {0} version {1} is not "
                              "found".format(plugin_name, version))
 
-    def update_plugin_settings(self, cluster_id, plugin_name, version, data):
+    def update_plugin_settings(self, cluster_id, plugin_name, version, data,
+                               enabled=True):
         """Update settings for specified version of plugin
 
         :param plugin_name: string
@@ -2386,6 +2387,8 @@ class FuelWebClient(object):
         """
         attr = self.client.get_cluster_attributes(cluster_id)
         plugin_versions = attr['editable'][plugin_name]['metadata']['versions']
+        if enabled:
+            attr['editable'][plugin_name]['metadata']['enabled'] = True
         plugin_data = None
         for item in plugin_versions:
             if item['metadata']['plugin_version'] == version:
