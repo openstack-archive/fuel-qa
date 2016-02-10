@@ -822,7 +822,8 @@ def check_swift_ring(remote):
                     " balance is {0}".format(balance, ring))
 
 
-def check_oswl_stat(postgres_actions, remote_collector, master_uid,
+def check_oswl_stat(postgres_actions, nailgun_actions,
+                    remote_collector, master_uid,
                     operation='current',
                     resources=None):
     if resources is None:
@@ -859,6 +860,18 @@ def check_oswl_stat(postgres_actions, remote_collector, master_uid,
     for resource in resources:
         q = "select resource_data from oswl_stats where" \
             " resource_type = '\"'\"'{0}'\"'\"';".format(resource)
+
+        def get_resource():
+            result = postgres_actions.run_query('nailgun', q)
+            logger.debug("resource state is {}".format(result))
+            if not result:
+                return False
+            return (
+                len(json.loads(result)[operation]) >
+                expected_resource_count[operation][resource])
+
+        wait(get_resource, timeout=10,
+             timeout_msg="resource {} wasn't updated in db".format(resource))
         q_result = postgres_actions.run_query('nailgun', q)
         assert_true(q_result.strip() is not None,
                     "Resource {0} is absent in 'oswl_stats' table, "
@@ -880,6 +893,17 @@ def check_oswl_stat(postgres_actions, remote_collector, master_uid,
                                                   operation][resource]))
 
     # check stat on collector side
+
+    def are_logs_sent():
+        sent_logs = postgres_actions.count_sent_action_logs(
+            table='oswl_stats')
+        result = sent_logs == 6
+        if not result:
+            nailgun_actions.force_fuel_stats_sending()
+        return result
+
+    wait(are_logs_sent, timeout=20,
+         timeout_msg='Logs status was not changed to sent in db')
     sent_logs_count = postgres_actions.count_sent_action_logs(
         table='oswl_stats')
     logger.info("Number of logs that were sent to collector: {}".format(
