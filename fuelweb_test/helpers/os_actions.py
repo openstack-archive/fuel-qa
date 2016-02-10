@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from novaclient.exceptions import NotFound
 import paramiko
 from proboscis import asserts
 import random
@@ -621,3 +622,21 @@ class OpenStackActions(common.Common):
             }
         }
         return self.neutron.create_router(router_info)['router']
+
+    def nova_enable_service(self, hostname, service_name):
+        try:
+            service = self.nova.services.enable(hostname, service_name)
+        except NotFound as e:
+            logger.debug("Failed to enable nova-compute service.")
+            raise NotFound(e)
+
+        return service.status
+
+    def nova_disable_service(self, hostname, service_name):
+        try:
+            service = self.nova.services.disable(hostname, service_name)
+        except NotFound as e:
+            logger.debug("Failed to disable nova-compute service.")
+            raise NotFound(e)
+
+        return service.status
