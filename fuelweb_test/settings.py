@@ -271,7 +271,8 @@ SERVTEST_MURANO_IMAGE_META = {
     'murano_image_info': '{"type": "linux", "title": "murano"}'}
 
 SERVTEST_EXTERNAL_MONGO_URLS = os.environ.get('EXTERNAL_MONGO_URLS')
-SERVTEST_EXTERNAL_MONGO_DB_NAME = "ceilometer"
+SERVTEST_EXTERNAL_MONGO_DB_NAME = os.environ.get('EXTERNAL_MONGO_DB_NAME',
+                                                 'ceilometer')
 SERVTEST_EXTERNAL_MONGO_USER = os.environ.get('EXTERNAL_MONGO_USER')
 SERVTEST_EXTERNAL_MONGO_PASS = os.environ.get('EXTERNAL_MONGO_PASS')
 SERVTEST_EXTERNAL_MONGO_REPL_SET = os.environ.get('EXTERNAL_MONGO_REPL_SET')
