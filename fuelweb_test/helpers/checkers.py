@@ -859,6 +859,16 @@ def check_oswl_stat(postgres_actions, remote_collector, master_uid,
     for resource in resources:
         q = "select resource_data from oswl_stats where" \
             " resource_type = '\"'\"'{0}'\"'\"';".format(resource)
+        get_resource = lambda: (
+            len(json.loads(
+                postgres_actions.run_query('nailgun', q))[operation]) >
+            expected_resource_count[operation][resource])
+        _wait(get_resource, timeout=10)
+        try:
+            wait(get_resource, timeout=10)
+        except TimeoutError:
+            raise TimeoutError("query returns {}".format(
+                postgres_actions.run_query('nailgun', q)))
         q_result = postgres_actions.run_query('nailgun', q)
         assert_true(q_result.strip() is not None,
                     "Resource {0} is absent in 'oswl_stats' table, "
