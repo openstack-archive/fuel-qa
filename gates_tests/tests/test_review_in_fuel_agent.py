@@ -28,7 +28,7 @@ from fuelweb_test import settings
 @test(groups=["review_fuel_agent"])
 class Gate(TestBasic):
     """Using in fuel-agent CI-gates
-    Update fuel-agent in MCollective, bootstrap from review,
+    Update fuel-agent on master node, bootstrap from review,
     build environment images and provision one node"""
 
     @test(depends_on_groups=['prepare_release'],
@@ -40,7 +40,7 @@ class Gate(TestBasic):
 
     Scenario:
         1. Revert snapshot "ready"
-        2. Update fuel-agent in MCollective
+        2. Update fuel-agent on master node
         3. Update bootstrap
         4. Bootstrap 1 slave
         5. Create environment via FUEL CLI
