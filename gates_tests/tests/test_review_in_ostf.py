@@ -83,8 +83,12 @@ class GateOstf(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         all_test_suits = self.fuel_web.get_all_ostf_set_names(cluster_id)
+        # Temporary do not execute platform
+        # test until https://bugs.launchpad.net/fuel/+bug/1544179 fixed
+        # TODO(tleontovich) enable platform test after fix LP1544179
         test_to_execute = [
-            suite for suite in all_test_suits if suite != 'configuration']
+            suite for suite in all_test_suits
+            if suite not in ['configuration', 'tests_platform']]
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
             test_sets=test_to_execute)
@@ -117,8 +121,12 @@ class GateOstf(TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.show_step(3)
         all_test_suits = self.fuel_web.get_all_ostf_set_names(cluster_id)
+        # Temporary do not execute platform
+        # test until https://bugs.launchpad.net/fuel/+bug/1544179 fixed
+        # TODO(tleontovich) enable platform test after fix LP1544179
         test_to_execute = [
-            suite for suite in all_test_suits if suite != 'configuration']
+            suite for suite in all_test_suits
+            if suite not in ['configuration', 'tests_platform']]
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
             test_sets=test_to_execute)
