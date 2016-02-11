@@ -783,9 +783,12 @@ class FuelWebClient(object):
                 logger.info('Node status: {}'.format(pretty_log(node_status,
                                                                 indent=1)))
 
-    def deploy_cluster_wait_progress(self, cluster_id, progress):
+    def deploy_cluster_wait_progress(self, cluster_id, progress,
+                                     return_task=None):
         task = self.deploy_cluster(cluster_id)
         self.assert_task_success(task, interval=30, progress=progress)
+        if return_task:
+            return task
 
     @logwrap
     def deploy_cluster(self, cluster_id):
