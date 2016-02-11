@@ -15,6 +15,10 @@
 import re
 import time
 import traceback
+
+import yaml
+import netaddr
+
 from urllib2 import HTTPError
 
 from devops.error import DevopsCalledProcessError
@@ -22,16 +26,13 @@ from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
 from devops.models.node import Node
-import ipaddr
-from ipaddr import IPNetwork
-from netaddr import EUI
+
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
-import yaml
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
@@ -818,10 +819,8 @@ class FuelWebClient(object):
                 cluster_id)['external_net']))
         ret = []
         for pool in subnet['allocation_pools']:
-            ip = ipaddr.IPv4Address(pool['start'])
-            while ip <= ipaddr.IPv4Address(pool['end']):
-                ret.append(str(ip))
-                ip += 1
+            ret.extend([str(ip) for ip in
+                        netaddr.iter_iprange(pool['start'], pool['end'])])
         return ret
 
     @logwrap
@@ -898,7 +897,7 @@ class FuelWebClient(object):
         Returns dict with nailgun slave node description if node is
         registered. Otherwise return None.
         """
-        d_macs = {EUI(i.mac_address) for i in devops_node.interfaces}
+        d_macs = {netaddr.EUI(i.mac_address) for i in devops_node.interfaces}
         logger.debug('Verify that nailgun api is running')
         attempts = ATTEMPTS
         nodes = []
@@ -916,7 +915,8 @@ class FuelWebClient(object):
                 time.sleep(TIMEOUT)
         logger.debug('Look for nailgun node by macs %s', d_macs)
         for nailgun_node in nodes:
-            macs = {EUI(i['mac']) for i in nailgun_node['meta']['interfaces']}
+            macs = {netaddr.EUI(i['mac']) for i in
+                    nailgun_node['meta']['interfaces']}
             logger.debug('Look for macs returned by nailgun {0}'.format(macs))
             # Because our HAproxy may create some interfaces
             if d_macs.issubset(macs):
@@ -947,9 +947,11 @@ class FuelWebClient(object):
             :rtype: Devops Node or None
         """
         nailgun_node = self.get_nailgun_node_by_fqdn(fqdn)
-        macs = {EUI(i['mac']) for i in nailgun_node['meta']['interfaces']}
+        macs = {netaddr.EUI(i['mac']) for i in
+                nailgun_node['meta']['interfaces']}
         for devops_node in devops_nodes:
-            devops_macs = {EUI(i.mac_address) for i in devops_node.interfaces}
+            devops_macs = {netaddr.EUI(i.mac_address) for i in
+                           devops_node.interfaces}
             if devops_macs == macs:
                 return devops_node
 
@@ -962,7 +964,7 @@ class FuelWebClient(object):
         """
         for node in self.environment.d_env.nodes():
             for iface in node.interfaces:
-                if EUI(iface.mac_address) == EUI(mac_address):
+                if netaddr.EUI(iface.mac_address) == netaddr.EUI(mac_address):
                     return node
 
     @logwrap
