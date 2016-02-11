@@ -23,7 +23,7 @@ import os
 import posixpath
 import re
 import signal
-import ipaddr
+import netaddr
 
 from proboscis import asserts
 
@@ -622,13 +622,7 @@ def generate_floating_ranges(start_ip, end_ip, step):
     :param step: count of ip addresses in floating range
     :return:
     """
-    ranges = []
-    ip_start = ipaddr.IPAddress(start_ip)
-    ip_end = ipaddr.IPAddress(end_ip)
-    while ip_end - step > ip_start:
-        ranges.append([str(ip_start), str(ip_start + step)])
-        ip_start += (step + 1)
-    return ranges
+    return [str(ip) for ip in netaddr.iter_iprange(start_ip, end_ip)][:step]
 
 
 def get_node_hiera_roles(remote):

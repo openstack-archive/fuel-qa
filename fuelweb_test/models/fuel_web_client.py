@@ -15,7 +15,7 @@
 import re
 import time
 import traceback
-import ipaddr
+import netaddr
 from netaddr import EUI
 from urllib2 import HTTPError
 
@@ -27,7 +27,7 @@ from devops.models.node import Node
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.ssl import copy_cert_from_master
 from fuelweb_test.helpers.ssl import change_cluster_ssl_config
-from ipaddr import IPNetwork
+from netaddr import IPNetwork
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_false
@@ -809,10 +809,8 @@ class FuelWebClient(object):
                 cluster_id)['external_net']))
         ret = []
         for pool in subnet['allocation_pools']:
-            ip = ipaddr.IPv4Address(pool['start'])
-            while ip <= ipaddr.IPv4Address(pool['end']):
-                ret.append(str(ip))
-                ip += 1
+            ret.extend([str(ip) for ip in
+                        netaddr.iter_iprange(pool['start'], pool['end'])])
         return ret
 
     @logwrap

@@ -3,7 +3,6 @@ git+git://github.com/openstack/fuel-devops.git@2.9.16
 anyjson==0.3.1
 paramiko
 proboscis==1.2.6.0
-ipaddr
 junitxml>=0.7.0
 netaddr
 python-glanceclient==0.17.1
