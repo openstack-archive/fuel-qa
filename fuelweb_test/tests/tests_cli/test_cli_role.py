@@ -17,7 +17,6 @@ from proboscis import test
 from proboscis.asserts import assert_equal, assert_true
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -69,27 +68,32 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
             cmd='fuel role --rel {} --update --file'
                 ' /tmp/controller.yaml'.format(release_id))
 
-        with self.env.d_env.get_admin_remote() as remote:
+        if NEUTRON_SEGMENT_TYPE:
+            nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
+        else:
+            nst = ''
+        self.show_step(5)
+        cmd = ('fuel env create --name={0} --release={1} '
+               '{2} --json'.format(self.__class__.__name__,
+                                   release_id, nst))
+        env_result = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd,
+            jsonify=True
+        )['stdout_json']
+        cluster_id = env_result['id']
+        self.show_step(6)
+        cmd = ('fuel --env-id={0} node set --node {1} --role=controller,'
+               'compute'.format(cluster_id, node_ids[0]))
+        result = self.ssh_manager.execute(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd,
+        )
+        assert_equal(result['exit_code'], 0,
+                     "Can't assign controller and compute node"
+                     " to node id {}".format(node_ids[0]))
 
-            if NEUTRON_SEGMENT_TYPE:
-                nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
-            else:
-                nst = ''
-            self.show_step(5)
-            cmd = ('fuel env create --name={0} --release={1} '
-                   '{2} --json'.format(self.__class__.__name__,
-                                       release_id, nst))
-            env_result = run_on_remote(remote, cmd, jsonify=True)
-            cluster_id = env_result['id']
-            self.show_step(6)
-            cmd = ('fuel --env-id={0} node set --node {1} --role=controller,'
-                   'compute'.format(cluster_id, node_ids[0]))
-            result = remote.execute(cmd)
-            assert_equal(result['exit_code'], 0,
-                         "Can't assign controller and compute node"
-                         " to node id {}".format(node_ids[0]))
-
-            self.env.make_snapshot("cli_update_role")
+        self.env.make_snapshot("cli_update_role")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["cli_create_role"])
@@ -127,34 +131,42 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
             cmd='fuel role --rel {} --create --file'
                 ' /tmp/create_role.yaml'.format(release_id))
 
-        with self.env.d_env.get_admin_remote() as remote:
-
-            if NEUTRON_SEGMENT_TYPE:
-                nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
-            else:
-                nst = ''
-            self.show_step(4)
-            cmd = ('fuel env create --name={0} --release={1} '
-                   '{2} --json'.format(self.__class__.__name__,
-                                       release_id, nst))
-            env_result = run_on_remote(remote, cmd, jsonify=True)
-            cluster_id = env_result['id']
-            self.show_step(5)
-            cmd = ('fuel --env-id={0} node set --node {1}'
-                   ' --role=test-role'.format(cluster_id, node_ids[0]))
-            result = remote.execute(cmd)
-            assert_equal(result['exit_code'], 0,
-                         "Can't assign controller and compute node"
-                         " to node id {}".format(node_ids[0]))
-            self.show_step(6)
-            cmd = ('fuel --env-id={0} node set --node {1}'
-                   ' --role=test-role,controller,'
-                   'compute'.format(cluster_id, node_ids[1]))
-            result = remote.execute(cmd)
-            assert_equal(result['exit_code'], 1,
-                         "We shouldn't be able to assign controller and"
-                         " compute node to node id {}".format(node_ids[1]))
-            self.env.make_snapshot("cli_create_role")
+        if NEUTRON_SEGMENT_TYPE:
+            nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
+        else:
+            nst = ''
+        self.show_step(4)
+        cmd = ('fuel env create --name={0} --release={1} '
+               '{2} --json'.format(self.__class__.__name__,
+                                   release_id, nst))
+        env_result = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd,
+            jsonify=True
+        )['stdout_json']
+        cluster_id = env_result['id']
+        self.show_step(5)
+        cmd = ('fuel --env-id={0} node set --node {1}'
+               ' --role=test-role'.format(cluster_id, node_ids[0]))
+        result = self.ssh_manager.execute(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd,
+        )
+        assert_equal(result['exit_code'], 0,
+                     "Can't assign controller and compute node"
+                     " to node id {}".format(node_ids[0]))
+        self.show_step(6)
+        cmd = ('fuel --env-id={0} node set --node {1}'
+               ' --role=test-role,controller,'
+               'compute'.format(cluster_id, node_ids[1]))
+        result = self.ssh_manager.execute(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd,
+        )
+        assert_equal(result['exit_code'], 1,
+                     "We shouldn't be able to assign controller and"
+                     " compute node to node id {}".format(node_ids[1]))
+        self.env.make_snapshot("cli_create_role")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["cli_create_role_with_has_primary"])
@@ -191,27 +203,32 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
             cmd='fuel role --rel {} --create --file'
                 ' /tmp/create_primary_role.yaml'.format(release_id))
 
-        with self.env.d_env.get_admin_remote() as remote:
-
-            if NEUTRON_SEGMENT_TYPE:
-                nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
-            else:
-                nst = ''
-            self.show_step(4)
-            cmd = ('fuel env create --name={0} --release={1} '
-                   '{2} --json'.format(self.__class__.__name__,
-                                       release_id, nst))
-            env_result = run_on_remote(remote, cmd, jsonify=True)
-            cluster_id = env_result['id']
-            self.show_step(5)
-            cmd = ('fuel --env-id={0} node set --node {1}'
-                   ' --role=test-primary-role'.format(cluster_id,
-                                                      node_ids[0]))
-            result = remote.execute(cmd)
-            assert_equal(result['exit_code'], 0,
-                         "Can't assign new role"
-                         " to node id {}".format(node_ids[0]))
-            self.env.make_snapshot("cli_create_role_with_has_primary")
+        if NEUTRON_SEGMENT_TYPE:
+            nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
+        else:
+            nst = ''
+        self.show_step(4)
+        cmd = ('fuel env create --name={0} --release={1} '
+               '{2} --json'.format(self.__class__.__name__,
+                                   release_id, nst))
+        env_result = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd,
+            jsonify=True
+        )['stdout_json']
+        cluster_id = env_result['id']
+        self.show_step(5)
+        cmd = ('fuel --env-id={0} node set --node {1}'
+               ' --role=test-primary-role'.format(cluster_id,
+                                                  node_ids[0]))
+        result = self.ssh_manager.execute(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd,
+        )
+        assert_equal(result['exit_code'], 0,
+                     "Can't assign new role"
+                     " to node id {}".format(node_ids[0]))
+        self.env.make_snapshot("cli_create_role_with_has_primary")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["cli_delete_role"])
@@ -258,46 +275,58 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
         assert_true('test-role' in roles,
                     "role is not in the list {}".format(roles))
 
-        with self.env.d_env.get_admin_remote() as remote:
-            if NEUTRON_SEGMENT_TYPE:
-                nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
-            else:
-                nst = ''
-            self.show_step(5)
-            cmd = ('fuel env create --name={0} --release={1} '
-                   '{2} --json'.format(self.__class__.__name__,
-                                       release_id, nst))
-            env_result = run_on_remote(remote, cmd, jsonify=True)
-            cluster_id = env_result['id']
-            self.show_step(6)
-            cmd = ('fuel --env-id={0} node set --node {1}'
-                   ' --role=controller'.format(cluster_id, node_ids[0]))
-            result = remote.execute(cmd)
-            assert_equal(result['exit_code'], 0,
-                         "Can't assign controller and"
-                         " compute node to node id {}".format(node_ids[0]))
+        if NEUTRON_SEGMENT_TYPE:
+            nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
+        else:
+            nst = ''
+        self.show_step(5)
+        cmd = ('fuel env create --name={0} --release={1} '
+               '{2} --json'.format(self.__class__.__name__,
+                                   release_id, nst))
+        env_result = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd,
+            jsonify=True
+        )['stdout_json']
+        cluster_id = env_result['id']
+        self.show_step(6)
+        cmd = ('fuel --env-id={0} node set --node {1}'
+               ' --role=controller'.format(cluster_id, node_ids[0]))
+        result = self.ssh_manager.execute(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd,
+        )
+        assert_equal(result['exit_code'], 0,
+                     "Can't assign controller and"
+                     " compute node to node id {}".format(node_ids[0]))
 
-            self.show_step(7)
-            cmd = ('fuel role --rel {} --delete'
-                   ' --role test-role'.format(release_id))
-            result = remote.execute(cmd)
-            assert_equal(result['exit_code'], 0,
-                         "Can't delete role, result is {}".format(result))
+        self.show_step(7)
+        cmd = ('fuel role --rel {} --delete'
+               ' --role test-role'.format(release_id))
+        result = self.ssh_manager.execute(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd,
+        )
+        assert_equal(result['exit_code'], 0,
+                     "Can't delete role, result is {}".format(result))
 
-            result = self.ssh_manager.execute_on_remote(
-                ip=self.ssh_manager.admin_ip,
-                cmd='fuel role --rel {}'.format(release_id))['stdout']
-            roles = [i.strip() for i in result]
-            assert_true('test-role' not in roles,
-                        "role is not in the list {}".format(roles))
-            cmd = ('fuel role --rel {} --delete'
-                   ' --role controller'.format(release_id))
-            result = remote.execute(cmd)
-            self.show_step(8)
-            assert_equal(result['exit_code'], 1,
-                         "Controller role shouldn't be able to be deleted")
+        result = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='fuel role --rel {}'.format(release_id))['stdout']
+        roles = [i.strip() for i in result]
+        assert_true('test-role' not in roles,
+                    "role is not in the list {}".format(roles))
+        cmd = ('fuel role --rel {} --delete'
+               ' --role controller'.format(release_id))
+        result = self.ssh_manager.execute(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd,
+        )
+        self.show_step(8)
+        assert_equal(result['exit_code'], 1,
+                     "Controller role shouldn't be able to be deleted")
 
-            self.env.make_snapshot("cli_delete_role")
+        self.env.make_snapshot("cli_delete_role")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["cli_incorrect_update_role"])
