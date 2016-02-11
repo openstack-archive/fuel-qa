@@ -169,11 +169,17 @@ class SSHManager(object):
             if raise_on_assert:
                 raise Exception(log_msg)
 
+        # adhoc solution
+        if result['stdout'][0].startswith('DEPRECATION WARNING') and\
+                result['stdout'][1].startswith('DEPRECATION WARNING'):
+            result['stdout'] = result['stdout'][2:]
+        else:
+            result['stdout'] = result['stdout']
+        # delete above after cli will be restored
         result['stdout_str'] = ''.join(result['stdout'])
         result['stdout_len'] = len(result['stdout'])
         result['stderr_str'] = ''.join(result['stderr'])
         result['stderr_len'] = len(result['stderr'])
-
         if jsonify:
             try:
                 result['stdout_json'] = \
