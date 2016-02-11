@@ -234,55 +234,58 @@ def replace_centos_bootstrap(environment):
 
 
 def update_ostf(environment):
-    try:
-        if not settings.UPDATE_FUEL:
-            raise exceptions.ConfigurationException(
-                'Variable "UPDATE_FUEL" was not set to true')
-        logger.info("Uploading new package from {0}"
-                    .format(settings.UPDATE_FUEL_PATH))
-        pack_path = '/var/www/nailgun/fuel-ostf/'
-        full_pack_path = os.path.join(pack_path, '*.rpm')
+    logger.info("Uploading new package from {0}".format(
+        settings.UPDATE_FUEL_PATH))
+    pack_path = '/var/www/nailgun/fuel-ostf/'
+    full_pack_path = os.path.join(pack_path, 'fuel-ostf*.noarch.rpm')
 
-        with environment.d_env.get_admin_remote() as remote:
-            remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
-                          pack_path)
-        cmd = "service ostf stop"
-        environment.base_actions.execute(cmd)
-        cmd = "service ostf status"
-        helpers.wait(
-            lambda: "dead" in
-            environment.base_actions.execute(cmd),
-            timeout=60)
-        logger.info("OSTF status: inactive")
-        cmd = "rpm -e fuel-ostf"
-        environment.base_actions.execute(cmd, exit_code=0)
-        cmd = "rpm -Uvh --oldpackage {0}".format(
-            full_pack_path)
-        environment.base_actions.execute(cmd, exit_code=0)
-        cmd = "rpm -q fuel-ostf"
-        installed_package = \
-            environment.base_actions.execute(cmd)
-        cmd = "rpm -qp {0}".format(full_pack_path)
-        new_package = \
-            environment.base_actions.execute(cmd)
-        assert_equal(installed_package, new_package,
-                     "The new package {0} was not installed".
-                     format(new_package))
-        cmd = "service ostf start"
-        environment.base_actions.execute(cmd)
-        cmd = "service ostf status"
-        helpers.wait(
-            lambda: "running" in
-            environment.base_actions.execute(cmd, exit_code=0),
-            timeout=60)
-        cmd = "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8777"
-        helpers.wait(
-            lambda: "401" in environment.base_actions.execute(cmd),
-            timeout=60)
-        logger.info("OSTF status: RUNNING")
-    except Exception as e:
-        logger.error("Could not update OSTF: {e}".format(e=e))
-        raise
+    # Check old fuel-ostf package
+    cmd = "rpm -q fuel-ostf"
+
+    old_package = environment.base_actions.execute(cmd, exit_code=0)
+    logger.info(
+        'Current package version of '
+        'fuel-ostf: {0}'.format(old_package))
+
+    cmd = "rpm -qp {0}".format(full_pack_path)
+    new_package = environment.base_actions.execute(cmd)
+
+    if old_package == new_package:
+        logger.info('Package {0} is installed'.format(new_package))
+        return
+
+    with environment.d_env.get_admin_remote() as remote:
+        remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
+                      pack_path)
+    cmd = "service ostf stop"
+    environment.base_actions.execute(cmd)
+    cmd = "service ostf status"
+    helpers.wait(lambda: "dead" in environment.base_actions.execute(cmd),
+                 timeout=60)
+    logger.info("OSTF status: inactive")
+    cmd = "rpm -e fuel-ostf"
+    environment.base_actions.execute(cmd, exit_code=0)
+    cmd = "rpm -Uvh --oldpackage {0}".format(full_pack_path)
+    environment.base_actions.execute(cmd, exit_code=0)
+    cmd = "rpm -q fuel-ostf"
+    installed_package = environment.base_actions.execute(cmd)
+    cmd = "rpm -qp {0}".format(full_pack_path)
+
+    assert_equal(
+        installed_package, new_package,
+        "The new package {0} was not installed".format(new_package))
+    cmd = "service ostf start"
+    environment.base_actions.execute(cmd)
+    cmd = "service ostf status"
+    helpers.wait(
+        lambda: "running" in
+        environment.base_actions.execute(cmd, exit_code=0),
+        timeout=60)
+    cmd = "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8777"
+    helpers.wait(
+        lambda: "401" in environment.base_actions.execute(cmd),
+        timeout=60)
+    logger.info("OSTF status: RUNNING")
 
 
 def get_oswl_services_names(remote):
