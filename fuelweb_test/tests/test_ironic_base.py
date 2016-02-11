@@ -157,14 +157,15 @@ class TestIronicDeploy(TestBasic):
 
         Scenario:
             1. Create cluster
-            2. Add 3 node with controller+ironic role
-            3. Add 1 node with compute role
-            4. Add 1 nodes with ironic role
-            5. Deploy the cluster
-            6. Upload image to glance
-            7. Enroll Ironic nodes
-            8. Boot nova instance
-            9. Check Nova instance status
+            2. Add 1 node with controller role
+            3. Add 2 node with controller+ironic role
+            4. Add 1 node with compute role
+            5. Add 1 nodes with ironic role
+            6. Deploy the cluster
+            7. Upload image to glance
+            8. Enroll Ironic nodes
+            9. Boot nova instance
+            10. Check Nova instance status
 
         Duration 90m
         Snapshot ironic_deploy_swift
@@ -177,19 +178,20 @@ class TestIronicDeploy(TestBasic):
         self.show_step(3)
         self.show_step(4)
         self.show_step(5)
+        self.show_step(6)
         cluster_id = self._deploy_ironic_cluster()
 
         ironic_conn = ironic_actions.IronicActions(
             self.fuel_web.get_public_vip(cluster_id))
 
-        self.show_step(6)
         self.show_step(7)
+        self.show_step(8)
         self._create_os_resources(ironic_conn)
 
-        self.show_step(8)
+        self.show_step(9)
         self._boot_nova_instances(ironic_conn)
 
-        self.show_step(9)
+        self.show_step(10)
         ironic_conn.wait_for_vms(ironic_conn)
         ironic_conn.verify_vms_connection(ironic_conn)
 
@@ -203,14 +205,15 @@ class TestIronicDeploy(TestBasic):
 
         Scenario:
             1. Create cluster
-            2. Add 3 node with controller+ironic+ceph-osd role
-            3. Add 1 node with compute role
-            4. Add 1 nodes with ironic role
-            5. Deploy the cluster
-            6. Upload image to glance
-            7. Enroll Ironic nodes
-            8. Boot nova instance
-            9. Check Nova instance status
+            2. Add 1 node with controller+ceph-osd role
+            3. Add 2 nodes with controller+ironic+ceph-osd role
+            4. Add 1 node with compute role
+            5. Add 1 nodes with ironic role
+            6. Deploy the cluster
+            7. Upload image to glance
+            8. Enroll Ironic nodes
+            9. Boot nova instance
+            10. Check Nova instance status
 
         Duration 90m
         Snapshot ironic_deploy_ceph
@@ -241,6 +244,7 @@ class TestIronicDeploy(TestBasic):
         self.show_step(3)
         self.show_step(4)
         self.show_step(5)
+        self.show_step(6)
         cluster_id = self._deploy_ironic_cluster(settings=data, nodes=nodes)
 
         ironic_conn = ironic_actions.IronicActions(
@@ -249,14 +253,14 @@ class TestIronicDeploy(TestBasic):
             passwd='ceph1',
             tenant='ceph1')
 
-        self.show_step(6)
         self.show_step(7)
+        self.show_step(8)
         self._create_os_resources(ironic_conn)
 
-        self.show_step(8)
+        self.show_step(9)
         self._boot_nova_instances(ironic_conn)
 
-        self.show_step(9)
+        self.show_step(10)
         ironic_conn.wait_for_vms(ironic_conn)
         ironic_conn.verify_vms_connection(ironic_conn)
 
