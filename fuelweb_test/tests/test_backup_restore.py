@@ -30,7 +30,6 @@ from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.tests.test_ha_one_controller_base\
     import HAOneControllerNeutronBase
 from fuelweb_test.tests.test_neutron_tun_base import NeutronTunHaBase
-from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
@@ -332,42 +331,52 @@ class BackupRestoreHA(NeutronTunHaBase):
             self.env.d_env.nodes().slaves[slave_id])['id']
             for slave_id in range(3)]
 
-        with self.env.d_env.get_admin_remote() as remote:
-            # Create an environment
-            if NEUTRON_SEGMENT_TYPE:
-                nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
-            else:
-                nst = ''
-            cmd = ('fuel env create --name={0} --release={1} '
-                   '{2} --json'.format(self.__class__.__name__,
-                                       release_id, nst))
-            env_result = run_on_remote(remote, cmd, jsonify=True)
-            cluster_id = env_result['id']
+        # Create an environment
+        if NEUTRON_SEGMENT_TYPE:
+            nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
+        else:
+            nst = ''
+        cmd = ('fuel env create --name={0} --release={1} '
+               '{2} --json'.format(self.__class__.__name__,
+                                   release_id, nst))
+        env_result = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd,
+            jsonify=True
+        )['stdout_json']
+        cluster_id = env_result['id']
 
-            # Update network parameters
-            cl.update_cli_network_configuration(cluster_id, remote)
+        # Update network parameters
+        cl.update_cli_network_configuration(cluster_id)
 
-            # Update SSL configuration
-            cl.update_ssl_configuration(cluster_id, remote)
+        # Update SSL configuration
+        cl.update_ssl_configuration(cluster_id)
 
-            roles = {'controller': node_ids[0],
-                     'compute': node_ids[1],
-                     'ceph-osd': node_ids[2]}
+        roles = {'controller': node_ids[0],
+                 'compute': node_ids[1],
+                 'ceph-osd': node_ids[2]}
 
-            for role in roles:
-                cmd = ('fuel --env-id={0} node set --node {1} --role={2}'
-                       .format(cluster_id,
-                               roles[role],
-                               role))
-                remote.execute(cmd)
-            cmd = (
-                'fuel --env-id={0} node --provision --node={1} --json'.format(
-                    cluster_id, ','.join(str(l) for l in node_ids))
+        for role in roles:
+            cmd = ('fuel --env-id={0} node set --node {1} --role={2}'
+                   .format(cluster_id,
+                           roles[role],
+                           role))
+            self.ssh_manager.execute(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
             )
-            logger.info("Started provisioning via CLI")
-            task = run_on_remote(remote, cmd, jsonify=True)
-            cl.assert_cli_task_success(task, remote, timeout=30 * 60)
-            logger.info("Finished provisioning via CLI")
+        cmd = (
+            'fuel --env-id={0} node --provision --node={1} --json'.format(
+                cluster_id, ','.join(str(l) for l in node_ids))
+        )
+        logger.info("Started provisioning via CLI")
+        task = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd,
+            jsonify=True
+        )['stdout_json']
+        cl.assert_cli_task_success(task, timeout=30 * 60)
+        logger.info("Finished provisioning via CLI")
 
 
 @test(groups=["backup_reinstall_restore"])
