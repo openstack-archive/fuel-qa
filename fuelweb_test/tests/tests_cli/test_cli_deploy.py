@@ -15,7 +15,6 @@
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests import test_cli_base
@@ -50,40 +49,46 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
         release_id = self.fuel_web.get_releases_list_for_os(
             release_name=OPENSTACK_RELEASE)[0]
 
-        with self.env.d_env.get_admin_remote() as remote:
-            self.show_step(1, initialize=True)
-            cmd = ('fuel env create --name={0} --release={1} '
-                   '--nst=tun --json'.format(self.__class__.__name__,
-                                             release_id))
-            env_result = run_on_remote(remote, cmd, jsonify=True)
-            cluster_id = env_result['id']
+        self.show_step(1, initialize=True)
+        cmd = ('fuel env create --name={0} --release={1} '
+               '--nst=tun --json'.format(self.__class__.__name__,
+                                         release_id))
 
-            self.update_cli_network_configuration(cluster_id, remote)
+        env_result = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd,
+            jsonify=True
+        )['stdout_json']
+        cluster_id = env_result['id']
 
-            self.update_ssl_configuration(cluster_id, remote)
-            self.show_step(2)
-            self.show_step(3)
-            self.show_step(4)
-            self.add_nodes_to_cluster(remote, cluster_id, node_ids[0],
-                                      ['controller'])
-            self.add_nodes_to_cluster(remote, cluster_id, node_ids[1],
-                                      ['compute'])
-            self.add_nodes_to_cluster(remote, cluster_id, node_ids[2],
-                                      ['cinder'])
+        self.update_cli_network_configuration(cluster_id)
 
-            self.fuel_web.verify_network(cluster_id)
-            self.show_step(5)
-            cmd = 'fuel --env-id={0} deploy-changes --json'.format(cluster_id)
-            task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, remote, timeout=130 * 60)
+        self.update_ssl_configuration(cluster_id)
+        self.show_step(2)
+        self.show_step(3)
+        self.show_step(4)
+        self.add_nodes_to_cluster(cluster_id, node_ids[0], ['controller'])
+        self.add_nodes_to_cluster(cluster_id, node_ids[1], ['compute'])
+        self.add_nodes_to_cluster(cluster_id, node_ids[2], ['cinder'])
 
-            self.show_step(6)
-            self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(5)
+        cmd = 'fuel --env-id={0} deploy-changes --json'.format(cluster_id)
 
-            self.show_step(7)
-            self.fuel_web.run_ostf(
-                cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'],
-                should_fail=1)
+        task = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd,
+            jsonify=True
+        )['stdout_json']
+        self.assert_cli_task_success(task, timeout=130 * 60)
+
+        self.show_step(6)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(7)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'],
+            should_fail=1)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["cli_deploy_tasks"])
@@ -110,33 +115,48 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
         release_id = self.fuel_web.get_releases_list_for_os(
             release_name=OPENSTACK_RELEASE)[0]
 
-        with self.env.d_env.get_admin_remote() as remote:
-            self.show_step(1)
-            cmd = ('fuel env create --name={0} --release={1} '
-                   '--nst=vlan --json'.format(self.__class__.__name__,
-                                              release_id))
-            env_result = run_on_remote(remote, cmd, jsonify=True)
-            cluster_id = env_result['id']
-            self.show_step(2)
-            self.add_nodes_to_cluster(remote, cluster_id, node_ids[0:3],
-                                      ['controller'])
-            self.show_step(3)
-            cmd = ('fuel node --node-id {0} --provision --env {1} --json'.
-                   format(','.join(str(n) for n in node_ids), cluster_id))
-            task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, remote, timeout=20 * 60)
-            self.show_step(4)
-            cmd = ('fuel node --node {0} --end netconfig --env {1} --json'.
-                   format(node_ids[1], release_id))
-            task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, remote, timeout=30 * 60)
-            self.show_step(5)
-            cmd = 'fuel --env-id={0} deploy-changes --json'.format(cluster_id)
-            task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, remote, timeout=130 * 60)
-            self.show_step(6)
-            self.fuel_web.verify_network(cluster_id)
-            self.show_step(7)
-            self.fuel_web.run_ostf(
-                cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'],
-                should_fail=1)
+        self.show_step(1)
+        cmd = ('fuel env create --name={0} --release={1} '
+               '--nst=vlan --json'.format(self.__class__.__name__,
+                                          release_id))
+        env_result = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd,
+            jsonify=True
+        )['stdout_json']
+        cluster_id = env_result['id']
+        self.show_step(2)
+        self.add_nodes_to_cluster(cluster_id, node_ids[0:3],
+                                  ['controller'])
+        self.show_step(3)
+        cmd = ('fuel node --node-id {0} --provision --env {1} --json'.
+               format(','.join(str(n) for n in node_ids), cluster_id))
+        task = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd,
+            jsonify=True
+        )['stdout_json']
+        self.assert_cli_task_success(task, timeout=20 * 60)
+        self.show_step(4)
+        cmd = ('fuel node --node {0} --end netconfig --env {1} --json'.
+               format(node_ids[1], release_id))
+        task = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd,
+            jsonify=True
+        )['stdout_json']
+        self.assert_cli_task_success(task, timeout=30 * 60)
+        self.show_step(5)
+        cmd = 'fuel --env-id={0} deploy-changes --json'.format(cluster_id)
+        task = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd,
+            jsonify=True
+        )['stdout_json']
+        self.assert_cli_task_success(task, timeout=130 * 60)
+        self.show_step(6)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(7)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'],
+            should_fail=1)
