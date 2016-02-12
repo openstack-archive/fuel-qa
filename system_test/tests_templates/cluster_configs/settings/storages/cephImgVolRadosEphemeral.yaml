@@ -3,5 +3,5 @@ volume-lvm: false
 volume-ceph: true
 image-ceph: true
 rados-ceph: true
-ephemeral-ceph: false
+ephemeral-ceph: true
 replica-ceph: 3

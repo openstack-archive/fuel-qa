@@ -1,0 +1,59 @@
+---
+template:
+ name: |
+  3 Controller+Ceph 1 Compute 1 Conder. Add 1 Ceph, 1 Cinder. Replace 1 Cinder.
+    Replace 1 Ceph. Remove 1 Ceph, 1 Cinder.
+      On Neutron/VLAN.
+      Ceph for Images.
+ slaves: 9
+ cluster_template:
+  name: ScaleAndReaplaceAndRemoveCeph
+  release: ubuntu
+  network:
+   !include cluster_configs/networks/neutron_vlan.yaml
+  settings:
+   !include cluster_configs/settings/cinder_cephImg_wo_components.yaml
+  nodes:
+  - roles:
+     - controller
+     - ceph-osd
+    count: 3
+  - roles:
+     - compute
+    count: 1
+  - roles:
+     - cinder
+    count: 1
+  scale_nodes:
+  - - roles:
+      - ceph-osd
+      count: 1
+      action: add
+    - roles:
+      - cinder
+      count: 1
+      action: add
+  - - roles:
+      - ceph-osd
+      count: 1
+      action: delete
+    - roles:
+      - ceph-osd
+      count: 1
+      action: add
+  - - roles:
+      - cinder
+      count: 1
+      action: delete
+    - roles:
+      - cinder
+      count: 1
+      action: add
+  - - roles:
+      - ceph-osd
+      count: 1
+      action: delete
+    - roles:
+      - cinder
+      count: 1
+      action: delete

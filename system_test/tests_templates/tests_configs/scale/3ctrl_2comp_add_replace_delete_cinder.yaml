@@ -1,0 +1,37 @@
+---
+template:
+ name: |
+  3 Controller 2 Compute. Add 2 Cinder. Replace 1 Cinder. Remove 1 Cinder.
+    On Neutron/VLAN
+ slaves: 5
+ cluster_template:
+  name: ScaleAndReaplaceAndRemoveCinder
+  release: ubuntu
+  network:
+   !include cluster_configs/networks/neutron_vlan.yaml
+  settings:
+   !include cluster_configs/settings/cinder_wo_components.yaml
+  nodes:
+  - roles:
+     - controller
+    count: 3
+  - roles:
+     - compute
+    count: 2
+  scale_nodes:
+  - - roles:
+      - cinder
+      count: 1
+      action: add
+  - - roles:
+      - cinder
+      count: 1
+      action: delete
+    - roles:
+      - cinder
+      count: 2
+      action: add
+  - - roles:
+      - cinder
+      count: 1
+      action: delete

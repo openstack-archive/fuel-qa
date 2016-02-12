@@ -1,0 +1,5 @@
+---
+storages:
+ !include cluster_configs/settings/storages/cinder_cephImg.yaml
+components:
+ !include cluster_configs/settings/components/wo_components.yaml

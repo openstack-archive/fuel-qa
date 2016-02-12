@@ -4,4 +4,4 @@ volume-ceph: false
 image-ceph: true
 rados-ceph: true
 ephemeral-ceph: false
-replica-ceph: 2
+replica-ceph: 3
