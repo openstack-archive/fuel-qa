@@ -348,9 +348,46 @@ class ActionsBase(PrepareBase, HealthCheckActions, PluginsActions):
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def scale_node(self):
-        """Scale node in cluster"""
+        """Scale node in cluster
+
+        For add nodes with role use scale_nodes in yaml with action add in
+            step:
+
+          scale_nodes:
+          - - roles:
+              - controller
+              count: 2
+              action: add
+
+        For remove nodes with role use scale_nodes in yaml with action delete
+            in step:
+
+          scale_nodes:
+          - - roles:
+              - controller
+              count: 2
+              action: delete
+
+        Step may contain add and remove action together:
+
+          scale_nodes:
+          - - roles:
+              - compute
+              count: 2
+              action: add
+          - - roles:
+              - ceph-osd
+              count: 1
+              action: delete
+        """
         step_config = self.env_config['scale_nodes'][self.scale_step]
-        self._add_node(step_config)
+        for node in step_config:
+            if node['action'] == 'add':
+                self._add_node([node])
+            elif node['action'] == 'delete':
+                self._del_node([node])
+            else:
+                logger.error("Unknow scale action: {}".format(node['action']))
         self.scale_step += 1
 
     @deferred_decorator([make_snapshot_if_step_fail])

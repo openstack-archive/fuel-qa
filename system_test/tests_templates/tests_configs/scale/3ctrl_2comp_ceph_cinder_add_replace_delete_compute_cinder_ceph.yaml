@@ -1,0 +1,49 @@
+---
+template:
+ name: |
+  3 Controller 2 Compute+Ceph+Cinder. Add 1 Compute+Ceph+Cinder. Replace 1
+    Compute+Ceph+Cinder. Remove 1 Compute+Ceph+Cinder.
+      On Neutron/VXLAN
+      Ceph for Images
+ slaves: 9
+ cluster_template:
+  name: ScaleAndReaplaceAndRemoveCinder
+  release: ubuntu
+  network:
+   !include cluster_configs/networks/neutron_tun.yaml
+  settings:
+   !include cluster_configs/settings/cinder_cephImg_wo_components.yaml
+  nodes:
+  - roles:
+     - controller
+    count: 3
+  - roles:
+     - compute
+     - ceph-osd
+     - cinder
+    count: 2
+  scale_nodes:
+  - - roles:
+      - compute
+      - ceph-osd
+      - cinder
+      count: 1
+      action: add
+  - - roles:
+      - compute
+      - ceph-osd
+      - cinder
+      count: 1
+      action: delete
+    - roles:
+      - compute
+      - ceph-osd
+      - cinder
+      count: 1
+      action: add
+  - - roles:
+      - compute
+      - ceph-osd
+      - cinder
+      count: 1
+      action: delete
