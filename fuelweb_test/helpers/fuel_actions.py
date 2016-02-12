@@ -395,7 +395,7 @@ class NailgunActions(BaseActions):
                      exit_code=0)
 
     def set_collector_address(self, host, port, ssl=False):
-        cmd = ("awk '/COLLECTOR.*URL/' /usr/lib/python2.6"
+        cmd = ("awk '/COLLECTOR.*URL/' /usr/lib/python2.7"
                "/site-packages/nailgun/settings.yaml")
         protocol = 'http' if not ssl else 'https'
         parameters = {}
@@ -418,7 +418,9 @@ class NailgunActions(BaseActions):
     def force_fuel_stats_sending(self):
         log_file = '/var/log/nailgun/statsenderd.log'
         # Rotate logs on restart in order to get rid of old errors
-        cmd = 'mv {0}{{,.backup_$(date +%s)}}'.format(log_file)
+        cmd = 'cp {0}{{,.backup_$(date +%s)}}'.format(log_file)
+        self.execute(cmd)
+        cmd = "bash -c 'echo > /var/log/nailgun/statsenderd.log'"
         self.execute(cmd)
         cmd = 'supervisorctl restart statsenderd'
         if MASTER_IS_CENTOS7:
