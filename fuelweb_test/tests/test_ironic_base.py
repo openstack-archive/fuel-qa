@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
+
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import ironic_actions
 from fuelweb_test.settings import DEPLOYMENT_MODE
@@ -21,6 +23,8 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 from proboscis import test
+from proboscis.asserts import assert_true
+from fuelweb_test import settings
 
 
 @test(groups=["ironic"])
@@ -265,3 +269,84 @@ class TestIronicDeploy(TestBasic):
         ironic_conn.verify_vms_connection(ironic_conn)
 
         self.env.make_snapshot("ironic_deploy_ceph")
+
+    def _install_plugins(self):
+        for plugin_path in (
+            settings.SEPARATE_SERVICE_MURANO_PLUGIN_PATH
+        ):
+            self.env.admin_actions.upload_plugin(plugin=plugin_path)
+            self.env.admin_actions.install_plugin(
+                plugin_file_name=os.path.basename(plugin_path))
+
+    def _enable_plugins(self, cluster_id):
+        plugin_names = [
+            'murano']
+        msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
+        for plugin_name in plugin_names:
+            assert_true(
+                self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
+                msg)
+            options = {'metadata/enabled': True}
+            self.fuel_web.update_plugin_data(cluster_id, plugin_name, options)
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["ironic_deploy_murano"],
+          enabled=False)
+    @log_snapshot_after_test
+    def ironic_deploy_murano(self):
+        """Deploy Ironic with Murano
+
+        Scenario:
+            1. Create cluster. Set option for Murano plugin installation
+            2. Add 1 node with Controller role
+            3. Add 1 node with Compute role
+            4. Add 1 node with Ironic conductor role
+            5. Deploy the cluster
+            6. Upload image to Glance
+            7. Enroll Ironic nodes
+            8. Boot Nova instance
+            9. Check Nova instance status
+
+        Duration 90m
+        Snapshot ironic_deploy_murano
+        """
+
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        data = {
+            'net_provider': 'neutron',
+            'net_segment_type': NEUTRON_SEGMENT['vlan'],
+            'ironic': True,
+            'murano': True,
+            'tenant': 'muranooscomponent',
+            'user': 'muranooscomponent',
+            'password': 'muranooscomponent'}
+
+        nodes = {
+            'slave-01': ['controller'],
+            'slave-02': ['compute'],
+            'slave-03': ['ironic']}
+
+        self.show_step(1, initialize=True)
+        self._install_plugins()
+        self.show_step(2)
+        self.show_step(3)
+        self.show_step(4)
+        self.show_step(5)
+        cluster_id = self._deploy_ironic_cluster(settings=data, nodes=nodes)
+        self._enable_plugins(cluster_id=cluster_id)
+
+        ironic_conn = ironic_actions.IronicActions(
+            self.fuel_web.get_public_vip(cluster_id),
+            data['user'], data['password'], data['tenant'])
+
+        self.show_step(6)
+        self._create_os_resources(ironic_conn)
+        self.show_step(7)
+        self._boot_nova_instances(ironic_conn)
+        self.show_step(8)
+        ironic_conn.wait_for_vms(ironic_conn)
+        self.show_step(9)
+        ironic_conn.verify_vms_connection(ironic_conn)
+
+        self.env.make_snapshot("ironic_deploy_murano")
