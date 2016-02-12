@@ -442,15 +442,10 @@ class EnvironmentModel(object):
                           build_images=settings.BUILD_IMAGES,
                           iso_connect_as=settings.ADMIN_BOOT_DEVICE,
                           security=settings.SECURITY_TEST):
-        # start admin node
+        # Create environment and start the Fuel master node
         admin = self.d_env.nodes().admin
-        if iso_connect_as == 'usb':
-            admin.disk_devices.get(device='disk',
-                                   bus='usb').volume.upload(settings.ISO_PATH)
-        else:  # cdrom is default
-            admin.disk_devices.get(
-                device='cdrom').volume.upload(settings.ISO_PATH)
         self.d_env.start([admin])
+
         logger.info("Waiting for admin node to start up")
         wait(lambda: admin.driver.node_active(admin), 60)
         logger.info("Proceed with installation")
