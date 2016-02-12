@@ -450,7 +450,7 @@ class EnvironmentModel(object):
         else:  # cdrom is default
             admin.disk_devices.get(
                 device='cdrom').volume.upload(settings.ISO_PATH)
-        self.d_env.start(self.d_env.nodes().admins)
+        self.d_env.start(admin)
         logger.info("Waiting for admin node to start up")
         wait(lambda: admin.driver.node_active(admin), 60)
         logger.info("Proceed with installation")
