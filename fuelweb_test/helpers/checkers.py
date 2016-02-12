@@ -749,11 +749,17 @@ def check_kernel(kernel, expected_kernel):
 @logwrap
 def external_dns_check(remote_slave):
     logger.info("External dns check")
-    ext_dns_ip = ''.join(
-        remote_slave.execute("grep {0} /etc/resolv.dnsmasq.conf | "
-                             "awk {{'print $2'}}".
-                             format(EXTERNAL_DNS))["stdout"]).rstrip()
-    assert_equal(ext_dns_ip, EXTERNAL_DNS,
+    provided_dns = EXTERNAL_DNS.split(', ')
+    logger.debug("provided to test dns is {}".format(provided_dns))
+    cluster_dns = []
+    for dns in provided_dns:
+        ext_dns_ip = ''.join(
+            remote_slave.execute("grep {0} /etc/resolv.dnsmasq.conf | "
+                                 "awk {{'print $2'}}".
+                                 format(dns))["stdout"]).rstrip()
+        cluster_dns.append(ext_dns_ip)
+    logger.debug("external dns in conf is {}".format(cluster_dns))
+    assert_equal(set(provided_dns), set(cluster_dns),
                  "/etc/resolv.dnsmasq.conf does not contain external dns ip")
     command_hostname = ''.join(
         remote_slave.execute("host {0} | awk {{'print $5'}}"
@@ -793,15 +799,21 @@ def verify_bootstrap_on_node(remote, os_type, uuid=None):
 @logwrap
 def external_ntp_check(remote_slave, vrouter_vip):
     logger.info("External ntp check")
-    ext_ntp_ip = ''.join(
-        remote_slave.execute("awk '/^server +{0}/{{print $2}}' "
-                             "/etc/ntp.conf".
-                             format(EXTERNAL_NTP))["stdout"]).rstrip()
-    assert_equal(ext_ntp_ip, EXTERNAL_NTP,
+    provided_ntp = EXTERNAL_NTP.split(', ')
+    logger.debug("provided to test ntp is {}".format(provided_ntp))
+    cluster_ntp = []
+    for ntp in provided_ntp:
+        ext_ntp_ip = ''.join(
+            remote_slave.execute("awk '/^server +{0}/{{print $2}}' "
+                                 "/etc/ntp.conf".
+                                 format(ntp))["stdout"]).rstrip()
+        cluster_ntp.append(ext_ntp_ip)
+    logger.debug("external ntp in conf is {}".format(cluster_ntp))
+    assert_equal(set(provided_ntp), set(cluster_ntp),
                  "/etc/ntp.conf does not contain external ntp ip")
     try:
         wait(
-            lambda: not is_ntpd_active(remote_slave, vrouter_vip), timeout=120)
+            lambda: is_ntpd_active(remote_slave, vrouter_vip), timeout=120)
     except Exception as e:
         logger.error(e)
         status = is_ntpd_active(remote_slave, vrouter_vip)
