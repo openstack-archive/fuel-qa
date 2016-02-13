@@ -175,6 +175,13 @@ if __name__ == '__main__':
 
     import_tests()
     define_custom_groups()
+    from gates_tests.helpers.utils import \
+        puppet_modules_mapping
+    if any(re.search(r'--group=review_in_fuel_library', arg)
+           for arg in sys.argv):
+        modules = "gerrit_client.get_list_files()"  # Not implemented yet
+        puppet_modules_mapping(modules)
+
     from fuelweb_test.helpers.patching import map_test
     if any(re.search(r'--group=patching_master_tests', arg)
            for arg in sys.argv):
