@@ -31,7 +31,8 @@ from system_test.helpers.utils import config_filter
 
 tests_directory = [
     'fuelweb_test/tests',
-    'system_test/tests'
+    'system_test/tests',
+    'gates_tests'
 ]
 
 __all__ = [
