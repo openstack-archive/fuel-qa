@@ -150,6 +150,12 @@ aliases:
 
 env_name: !os_env ENV_NAME
 
+credentials:
+  fuel_node_login: root
+  fuel_node_password: r00tme
+  slave_node_login: fuel
+  slave_node_password: fuel
+
 address_pools:
 # Network pools used by the environment
   fuelweb_admin-pool01:
