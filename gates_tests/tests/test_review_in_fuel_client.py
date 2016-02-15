@@ -22,8 +22,8 @@ from proboscis import asserts
 
 from gates_tests.helpers import exceptions
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers.utils import get_package_version
+from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import UPDATE_FUEL
 from fuelweb_test.settings import UPDATE_FUEL_PATH
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -138,7 +138,7 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
             self.show_step(4)
             list_release_cmd = 'fuel release --json'
             list_release_res = run_on_remote(
-                remote, list_release_cmd, jsonify=True)
+                remote, list_release_cmd, jsonify=True, cli_command=True)
             active_release_id = [
                 release['id'] for release
                 in list_release_res if release['is_deployable']]
@@ -152,7 +152,8 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
                    '--nst=tun --json'.format(self.__class__.__name__,
                                              active_release_id[0]))
 
-            env_result = run_on_remote(remote, cmd, jsonify=True)
+            env_result = run_on_remote(
+                remote, cmd, jsonify=True, cli_command=True)
             cluster_id = env_result['id']
             cluster_name = env_result['name']
 
@@ -167,7 +168,7 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
             self.show_step(8)
             cmd = 'fuel env --json'
             env_list_res = run_on_remote(
-                remote, cmd, jsonify=True)
+                remote, cmd, jsonify=True, cli_command=True)
             asserts.assert_true(
                 cluster_id in [cluster['id'] for cluster in env_list_res],
                 'Can not find created before environment'
@@ -185,14 +186,14 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
             remote.execute(cmd)
             cmd = ('fuel --env-id={0} node --provision --node={1} --json'
                    .format(cluster_id, node_id[0]))
-            task = run_on_remote(remote, cmd, jsonify=True)
+            task = run_on_remote(remote, cmd, jsonify=True, cli_command=True)
             self.assert_cli_task_success(task, remote, timeout=30 * 60)
 
             # Deploy the controller node
             self.show_step(10)
             cmd = ('fuel --env-id={0} node --deploy --node {1} --json'
                    .format(cluster_id, node_id[0]))
-            task = run_on_remote(remote, cmd, jsonify=True)
+            task = run_on_remote(remote, cmd, jsonify=True, cli_command=True)
             self.assert_cli_task_success(task, remote, timeout=60 * 60)
 
         self.fuel_web.run_ostf(

@@ -388,7 +388,7 @@ def run_on_remote(*args, **kwargs):
 @logwrap
 def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
                               jsonify=False, assert_ec_equal=None,
-                              raise_on_assert=True):
+                              raise_on_assert=True, cli_command=None):
     # TODO(ivankliuk): move it to devops.helpers.SSHClient
     """Execute ``cmd`` on ``remote`` and return result.
 
@@ -426,11 +426,14 @@ def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
     if clear:
         remote.clear()
 
-    result['stdout_str'] = ''.join(result['stdout'])
+    if cli_command:
+        result['stdout_str'] = ''.join(result['stdout'][2:])
+    else:
+        result['stdout_str'] = ''.join(result['stdout'])
     result['stdout_len'] = len(result['stdout'])
     result['stderr_str'] = ''.join(result['stderr'])
     result['stderr_len'] = len(result['stderr'])
-
+    logger.debug('Result sdtout_str {0}'.format(result['stdout_str']))
     if jsonify:
         try:
             result['stdout_json'] = json_deserialize(result['stdout_str'])
