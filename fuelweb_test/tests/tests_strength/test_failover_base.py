@@ -1248,16 +1248,9 @@ class TestHaFailoverBase(TestBasic):
         rabbit_slaves = self.fuel_web.get_rabbit_slaves_node(d_ctrls[0].name)
 
         def count_run_rabbit(node, all_up=False):
-            with self.fuel_web.get_ssh_for_node(node.name) as remote:
-                cmd = 'rabbitmqctl cluster_status'
-                with RunLimit(seconds=60, error_message=error.format(cmd)):
-                    out = run_on_remote(remote, cmd=cmd, raise_on_assert=False)
-            run_nodes = [el for el in out if 'running_nodes' in el]
-            run_nodes = run_nodes[0] if run_nodes else ''
-            logger.debug('### Status for {} \n {}'.format(str(node.name),
-                                                          run_nodes))
+            r_nodes = len(self.fuel_web.get_rabbit_running_nodes(node.name))
             expected_up = len(n_ctrls) if all_up else 1
-            return run_nodes.count('rabbit@') == expected_up
+            return r_nodes == expected_up
 
         for n in xrange(1, 4):
             logger.info('Checking {} time'.format(n))
