@@ -471,7 +471,7 @@ class MultiroleMultipleServices(TestBasic):
                 'net_provider': 'neutron',
                 'net_segment_type': NEUTRON_SEGMENT['tun'],
                 'sahara': True,
-                'murano': True,
+                'murano': False,
                 'ceilometer': True,
                 'volumes_lvm': True,
                 'volumes_ceph': False,
