@@ -126,9 +126,9 @@ def get_downstream_builds(jenkins_build_data, status=None):
 
 
 def get_version(jenkins_build_data):
-    version = get_version_from_artifacts(jenkins_build_data)
+    version = get_version_from_parameters(jenkins_build_data)
     if not version:
-        version = get_version_from_parameters(jenkins_build_data)
+        version = get_version_from_artifacts(jenkins_build_data)
     if not version:
         version = get_version_from_upstream_job(jenkins_build_data)
     if not version:
@@ -161,10 +161,6 @@ def get_job_parameter(jenkins_build_data, parameter):
 
 
 def get_version_from_parameters(jenkins_build_data):
-    iso_link = get_job_parameter(jenkins_build_data, 'magnet_link')
-    if iso_link:
-        return get_version_from_iso_name(iso_link)
-
     custom_version = get_job_parameter(jenkins_build_data, 'CUSTOM_VERSION')
     if custom_version:
         swarm_timestamp = jenkins_build_data['timestamp'] / 1000 \
@@ -172,6 +168,10 @@ def get_version_from_parameters(jenkins_build_data):
         return (TestRailSettings.milestone,
                 time.strftime("%D %H:%M", time.localtime(swarm_timestamp)),
                 custom_version)
+
+    iso_link = get_job_parameter(jenkins_build_data, 'magnet_link')
+    if iso_link:
+        return get_version_from_iso_name(iso_link)
 
 
 def get_version_from_artifacts(jenkins_build_data):
