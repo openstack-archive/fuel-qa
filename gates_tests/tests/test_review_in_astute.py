@@ -91,7 +91,8 @@ class GateAstute(TestBasic):
             cmd = ('fuel env create --name={0} --release={1} '
                    '--nst=tun --json'.format(self.__class__.__name__,
                                              release_id))
-            env_result = run_on_remote(remote, cmd, jsonify=True)
+            env_result = run_on_remote(
+                remote, cmd, jsonify=True, cli_command=True)
 
         self.show_step(6)
         cluster_id = env_result['id']
