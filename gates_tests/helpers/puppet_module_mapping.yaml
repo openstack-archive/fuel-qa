@@ -1,0 +1,226 @@
+---
+
+deployment/puppet:
+ - ceilometer_ha
+ - ceph
+ - cluster
+ - cobbler
+ - compute
+ - controller
+ - corosync
+ - docker
+ - fuel
+ - galera
+ - haproxy
+ - heat_ha
+ - l23network
+ - mellanox_openstack
+ - mysql
+ - nailgun
+ - openstack
+ - pacemaker
+ - pacemaker_wrappers
+ - rsyslog
+ - sahara_templates
+ - sysfs
+ - tweaks
+ - umm
+ - vmware
+ # mellanox_openstack are deprecated
+ # deployment_groups are deprecated
+
+deployment/Puppetfile:
+ - apache
+ - apt
+ - ceilometer
+ - cinder
+ - concat
+ - datacat
+ - filemapper
+ - firewall
+ - glance
+ - heat
+ - horizon
+ - inifile
+ - ironic
+ - keystone
+ - mcollective
+ - memcached
+ - mongodb
+ - monit
+ - murano
+ - neutron
+ - nova
+ - ntp
+ - openssl
+ - openstacklib
+ - postgresql
+ - rabbitmq
+ - rsync
+ - sahara
+ - ssh
+ - staging
+ - stdlib
+ - swift
+ - sysctl
+ - tftp
+ - vcsrepo
+ - xinetd
+
+osnailyfacter/modular:
+ - apache
+ - api-proxy
+ - astute
+ - ceilometer
+ - ceph
+ - cluster
+ - cluster-haproxy
+ - cluster-vrouter
+ - database
+ - dns
+ - firewall
+ - fuel_pkgs
+ - generate_vms
+ - glance
+ - globals
+ - heat
+ - hiera
+ - horizon
+ - hosts
+ - ironic
+ - keystone
+ - logging
+ - memcached
+ - murano
+ - netconfig
+ - ntp
+ - openstack-cinder
+ - openstack-controller
+ - openstack-haproxy
+ - openstack-network
+ - rabbitmq
+ - roles/cinder.pp
+ - roles/compute.pp
+ - roles/controller.pp
+ - roles/ironic-conductor.pp
+ - roles/mongo.pp
+ - sahara
+ - spec
+ - ssl
+ - swift
+ - tools
+ - umm
+ - virtual_ips
+ - vmware
+
+
+bvt_2:
+ - apache
+ - api-proxy
+ - apt
+ - astute
+ - ceph
+ - cluster
+ - cluster-haproxy
+ - cluster-vrouter
+ - cobbler
+ - compute
+ - concat
+ - controller
+ - corosync
+ - database
+ - datacat
+ - docker
+ - fuel
+ - fuel_pkgs
+ - glance
+ - globals
+ - haproxy
+ - hiera
+ - horizon
+ - inifile
+ - keystone
+ - l23network
+ - logging
+ - mcollective
+ - memcached
+ - monit
+ - nailgun
+ - neutron
+ - nova
+ - openssl
+ - openstack
+ - openstack-controller
+ - openstack-haproxy
+ - openstack-network
+ - openstacklib
+ - pacemaker
+ - pacemaker_wrappers
+ - postgresql
+ - rabbitmq
+ - roles/controller.pp
+ - roles/compute.pp
+ - rsync
+ - rsyslog
+ - spec
+ - ssh
+ - ssl
+ - staging
+ - stdlib
+ - sysctl
+ - sysfs
+ - tftp
+ - tools
+ - tweaks
+ - vcsrepo
+ - virtual_ips
+ - xinetd
+ - vmware
+
+deploy_heat_ha:
+ - ceilometer
+ - ceilometer_ha
+ - heat
+ - heat_ha
+ - mongo
+ - mongodb
+ - roles/mongo.pp
+
+ha_neutron:
+ - cinder
+ - openstack-cinder
+ - roles/cinder.pp
+
+reduced_footprint:
+ - generate_vms
+
+ha_neutron_firewall:
+ - firewall
+
+ha_neutron_mysql_termination:
+ - galera
+ - mysql
+
+ironic_deploy_ceph:
+ - ceph
+ - ironic
+ - ironic-conductor
+ - roles/ironic-conductor.pp
+
+deploy_murano_ha_with_tun:
+ - murano
+
+deploy_ha_dns_ntp:
+ - dns
+ - ntp
+
+deploy_sahara_ha_tun:
+ - sahara
+ - sahara_templates
+
+neutron_vlan_ha:
+ - swift
+
+positive_cic_maintenance_mode:
+ - umm
+
