@@ -304,8 +304,7 @@ class ActionsBase(PrepareBase, HealthCheckActions, PluginsActions):
                 env_name, self.cluster_id))
             self.env.make_snapshot(env_name, is_make=True)
             self.env.resume_environment()
-            self.env.sync_time(
-                self.fuel_web.client.list_cluster_nodes(self.cluster_id))
+            self.env.sync_time()
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
