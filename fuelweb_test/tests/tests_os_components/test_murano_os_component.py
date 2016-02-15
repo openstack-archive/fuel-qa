@@ -13,6 +13,7 @@
 #    under the License.
 
 from proboscis import test
+from proboscis import SkipTest
 
 from fuelweb_test import settings
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -45,6 +46,8 @@ class MuranoOSComponent(TestBasic):
         Duration: 180 min
         Snapshot: murano_neutron_vlan
         """
+        link = 'https://blueprints.launchpad.net/fuel/+spec/murano-fuel-plugin'
+        raise SkipTest('Murano is disabled due to {link}'.format(link=link))
 
         self.env.revert_snapshot('ready_with_9_slaves')
 

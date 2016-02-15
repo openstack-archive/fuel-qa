@@ -15,6 +15,7 @@
 from __future__ import division
 
 from proboscis import asserts
+from proboscis import SkipTest
 from proboscis import test
 from proboscis.asserts import assert_equal
 
@@ -266,6 +267,9 @@ class MuranoHAOneController(TestBasic):
         Duration 40m
         Snapshot: deploy_murano_ha_one_controller_tun
         """
+        link = 'https://blueprints.launchpad.net/fuel/+spec/murano-fuel-plugin'
+        raise SkipTest('Murano is disabled due to {link}'.format(link=link))
+
         self.env.revert_snapshot("ready_with_3_slaves")
 
         data = {
@@ -353,6 +357,9 @@ class MuranoHA(TestBasic):
         Snapshot: deploy_murano_ha_with_tun
 
         """
+        link = 'https://blueprints.launchpad.net/fuel/+spec/murano-fuel-plugin'
+        raise SkipTest('Murano is disabled due to {link}'.format(link=link))
+
         self.env.revert_snapshot("ready_with_5_slaves")
 
         data = {
