@@ -8,6 +8,8 @@ from proboscis import register
 
 from fuelweb_test.helpers.utils import pretty_log
 
+from gates_tests.helpers.utils import map_test_review_in_fuel_library
+
 from system_test import register_system_test_cases
 from system_test import get_groups
 from system_test import define_custom_groups
@@ -188,6 +190,7 @@ def shell():
     args = cli()
     discover_import_tests(basedir, tests_directory)
     define_custom_groups()
+    map_test_review_in_fuel_library()
     COMMAND_MAP[args.command](**vars(args))
 
 
