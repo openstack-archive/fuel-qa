@@ -897,11 +897,11 @@ def fill_space(ip, file_dir, size):
 
     :param ip: the ip of the node
     :param file_dir: the specified directory
-    :param size: the amount of space in Gb
+    :param size: the amount of space in Mb
     """
     file_name = "test_data"
     file_path = os.path.join(file_dir, file_name)
     SSHManager().execute_on_remote(
         ip=ip,
-        cmd='fallocate -l {0}G {1}'.format(size, file_path),
+        cmd='fallocate -l {0}M {1}'.format(size, file_path),
         err_msg="The file {0} was not allocated".format(file_name))

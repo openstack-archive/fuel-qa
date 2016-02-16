@@ -161,6 +161,11 @@ Test failover group 2
 .. automodule:: fuelweb_test.tests.tests_strength.test_failover_group_2
    :members:
 
+Test failover group 3
+---------------------
+.. automodule:: fuelweb_test.tests.tests_strength.test_failover_group_3
+   :members:
+
 Test failover mongo
 -------------------
 .. automodule:: fuelweb_test.tests.tests_strength.test_failover_mongo
