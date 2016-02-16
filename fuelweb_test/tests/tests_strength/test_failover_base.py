@@ -1301,6 +1301,7 @@ class TestHaFailoverBase(TestBasic):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
             raise SkipTest()
         logger.info('Revert environment started...')
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot(self.snapshot_name)
 
         cluster_id = self.fuel_web.client.get_cluster_id(
@@ -1308,10 +1309,12 @@ class TestHaFailoverBase(TestBasic):
 
         logger.info('Waiting for mysql cluster is up')
 
+        self.show_step(2)
         # Wait until MySQL Galera is UP on some controller
         self.fuel_web.wait_mysql_galera_is_up(['slave-02'])
 
         # Check ha ans services are fine after revert
+        self.show_step(3)
         logger.info('Run ostf tests before destructive actions')
         self.fuel_web.assert_ha_services_ready(cluster_id, timeout=600)
         self.fuel_web.assert_os_services_ready(cluster_id)
@@ -1322,7 +1325,9 @@ class TestHaFailoverBase(TestBasic):
             # Get primary controller from nailgun
             p_d_ctrl = self.fuel_web.get_nailgun_primary_node(
                 self.env.d_env.nodes().slaves[0])
-
+            self.show_step(4,
+                           details='Run count: {0}'.format(count),
+                           initialize=True)
             # get master rabbit controller
             master_rabbit = self.fuel_web.get_rabbit_master_node(p_d_ctrl.name)
             logger.info('Master rabbit is on {0} for attempt {1}'.format(
@@ -1358,30 +1363,32 @@ class TestHaFailoverBase(TestBasic):
                        'location-p_rabbitmq-server 2>&1 >/dev/null| true')
                 remote_master_rabbit.execute(cmd)
 
+                self.show_step(5, details='Run count: {0}'.format(count))
                 # Move resource to rabbit slave
                 cmd_move = ('pcs constraint location p_rabbitmq-server '
                             'rule role=master score=-INFINITY \#uname '
                             'ne {0}').format(slaves_rabbit_fqdn[0])
-                _wait(lambda: assert_equal(
-                    remote_master_rabbit.execute(cmd_move)['exit_code'], 0,
+                result = remote_master_rabbit.execute(cmd_move)
+                assert_equal(
+                    result['exit_code'], 0,
                     'Fail to move p_rabbitmq-server with {0} on '
-                    'count {1}'.format(
-                        remote_master_rabbit.execute(cmd_move), count)),
-                      timeout=20)
+                    'count {1}'.format(result, count))
 
                 # Clear all
+                self.show_step(6, details='Run count: {0}'.format(count))
                 cmd_clear = ('pcs constraint delete '
                              'location-p_rabbitmq-server')
-                _wait(lambda: assert_equal(
-                    remote_master_rabbit.execute(cmd_clear)['exit_code'], 0,
-                    'Fail to delete pcs constraint {0} on count {1}'.format(
-                        remote_master_rabbit.execute(cmd_clear), count)),
-                      timeout=20)
-
+                result = remote_master_rabbit.execute(cmd_clear)
+                assert_equal(
+                    result['exit_code'], 0,
+                    'Fail to delete pcs constraint using {0} on '
+                    'count {1}'.format(cmd_clear, count))
             # check ha
+            self.show_step(7)
             self.fuel_web.assert_ha_services_ready(cluster_id, timeout=700)
 
             # get new rabbit master node
+            self.show_step(8)
             master_rabbit_2 = self.fuel_web.get_rabbit_master_node(
                 p_d_ctrl.name)
 
@@ -1393,6 +1400,7 @@ class TestHaFailoverBase(TestBasic):
                 master_rabbit_2.name, count))
 
             # destroy devops node with rabbit master
+            self.show_step(9)
             master_rabbit_2.destroy()
 
             # Wait until Nailgun marked suspended controller as offline
@@ -1407,15 +1415,17 @@ class TestHaFailoverBase(TestBasic):
             # check ha, should fail 1 test according
             # to haproxy backend from destroyed will be down
 
+            self.show_step(10)
             self.fuel_web.assert_ha_services_ready(
                 cluster_id, timeout=800, should_fail=1)
 
             # Run sanity and smoke tests to see if cluster operable
+            self.show_step(11)
             self.fuel_web.run_ostf(cluster_id=cluster_id,
                                    should_fail=1)
 
             # turn on destroyed node
-
+            self.show_step(12)
             master_rabbit_2.start()
 
             # Wait until Nailgun marked suspended controller as online
@@ -1428,9 +1438,12 @@ class TestHaFailoverBase(TestBasic):
                                    'in nailgun'.format(master_rabbit_2.name))
 
             # check ha
+            self.show_step(13)
             self.fuel_web.assert_ha_services_ready(cluster_id, timeout=800)
             # check os
+            self.show_step(14)
             self.fuel_web.assert_os_services_ready(cluster_id)
 
             # run ostf smoke and sanity
+            self.show_step(15)
             self.fuel_web.run_ostf(cluster_id=cluster_id, test_sets=['smoke'])
