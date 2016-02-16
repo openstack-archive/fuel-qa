@@ -481,6 +481,11 @@ FUEL_PLUGIN_BUILDER_REPO = 'https://github.com/openstack/fuel-plugins.git'
 # Ubuntu: http://osci-obs.vm.mirantis.net:82/ubuntu-fuel-master-20921/ubuntu/
 CUSTOM_PKGS_MIRROR = os.environ.get('CUSTOM_PKGS_MIRROR', '')
 
+# URL for Fuel proposed repository - required for correct ordering of upgrade:
+# update Fuel Master node using published packages (UPDATE_FUEL=True)
+# then attach the repository in the test case.
+FUEL_PROPOSED_REPO_URL = os.environ.get('FUEL_PROPOSED_REPO_URL', '')
+
 # Location of local mirrors on master node.
 LOCAL_MIRROR_UBUNTU = os.environ.get('LOCAL_MIRROR_UBUNTU',
                                      '/var/www/nailgun/ubuntu/x86_64')
