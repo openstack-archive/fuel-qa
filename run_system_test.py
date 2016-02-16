@@ -126,6 +126,9 @@ def run(**kwargs):
         else:
             register_system_test_cases(groups=[g])
             groups_to_run.append(g)
+    if not TestProgram().cases:
+        raise Exception('There are no cases mapped to current group, '
+                        'please be sure that you put right test group name')
     if explain:
         print_explain(groups)
     else:
