@@ -903,5 +903,5 @@ def fill_space(ip, file_dir, size):
     file_path = os.path.join(file_dir, file_name)
     SSHManager().execute_on_remote(
         ip=ip,
-        cmd='fallocate -l {0}G {1}'.format(size, file_path),
+        cmd='fallocate -l {0}M {1}'.format(size, file_path),
         err_msg="The file {0} was not allocated".format(file_name))
