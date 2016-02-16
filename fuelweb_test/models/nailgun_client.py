@@ -428,14 +428,11 @@ class NailgunClient(object):
         return self.client.put("/api/settings", data=data)
 
     @logwrap
-    def send_fuel_stats(self, enabled=False, user_email="test@localhost"):
+    def send_fuel_stats(self, enabled=False):
         settings = self.update_settings()
-        params = ('send_anonymous_statistic', 'send_user_info',
-                  'user_choice_saved')
+        params = ('send_anonymous_statistic', 'user_choice_saved')
         for p in params:
             settings['settings']['statistics'][p]['value'] = enabled
-        if user_email:
-            settings['settings']['statistics']['email']['value'] = user_email
         self.update_settings(data=settings)
 
     @logwrap
