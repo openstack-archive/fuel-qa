@@ -581,6 +581,11 @@ Restart tests
 Upgrade tests
 =============
 
+Test Data-Driven Upgrade
+------------------------
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade
+   :members:
+
 OS upgrade tests
 ================
 
