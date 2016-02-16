@@ -451,8 +451,8 @@ BUILD_IMAGES = get_var_as_bool('BUILD_IMAGES', False)
 
 STORE_ASTUTE_YAML = get_var_as_bool('STORE_ASTUTE_YAML', False)
 
-EXTERNAL_DNS = os.environ.get('EXTERNAL_DNS', '208.67.220.220')
-EXTERNAL_NTP = os.environ.get('EXTERNAL_NTP', 'ua.pool.ntp.org')
+EXTERNAL_DNS = os.environ.get('EXTERNAL_DNS', '208.67.220.220').split(',')
+EXTERNAL_NTP = os.environ.get('EXTERNAL_NTP', 'ua.pool.ntp.org').split(',')
 DNS_SUFFIX = os.environ.get('DNS_SUFFIX', '.test.domain.local')
 FUEL_MASTER_HOSTNAME = os.environ.get('FUEL_MASTER_HOSTNAME', 'nailgun')
 
