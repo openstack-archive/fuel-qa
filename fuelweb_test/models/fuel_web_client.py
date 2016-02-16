@@ -527,7 +527,7 @@ class FuelWebClient(object):
                     and checkers.is_ntpd_active(
                         remote, public_gw):
                 attributes['editable']['external_ntp']['ntp_list']['value'] =\
-                    public_gw
+                    [public_gw]
                 logger.info("Configuring cluster #{0}"
                             "to use NTP server {1}"
                             .format(cluster_id, public_gw))
@@ -535,7 +535,7 @@ class FuelWebClient(object):
 
             if help_data.FUEL_USE_LOCAL_DNS and ('dns_list' not in settings):
                 attributes['editable']['external_dns']['dns_list']['value'] =\
-                    public_gw
+                    [public_gw]
                 logger.info("Configuring cluster #{0} to use DNS server {1}"
                             .format(cluster_id, public_gw))
 
