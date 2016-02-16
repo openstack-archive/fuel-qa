@@ -83,7 +83,7 @@ class Load(TestLoadBase):
             file_dir = self.ssh_manager.execute_on_remote(
                 ip=ip,
                 cmd="mount | grep -m 1 ceph | awk '{printf($3)}'")['stdout'][0]
-            fill_space(ip, file_dir, 30)
+            fill_space(ip, file_dir, 30 * 1024)
 
         self.show_step(6)
         self.fuel_web.check_ceph_status(cluster_id)
