@@ -320,10 +320,13 @@ class TestHaFailoverBase(TestBasic):
             logger.info("Resource {0} restored "
                         "{1} times".format(resource, check_counter))
 
+            # Assert ha services are ready
+            self.fuel_web.assert_ha_services_ready(cluster_id)
+
             # Run OSTF tests
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
-                test_sets=['ha', 'smoke', 'sanity'])
+                test_sets=['smoke', 'sanity'])
 
     def ha_mysql_termination(self):
         if not self.env.d_env.has_snapshot(self.snapshot_name):
