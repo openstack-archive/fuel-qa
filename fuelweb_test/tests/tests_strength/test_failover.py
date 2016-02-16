@@ -359,15 +359,21 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
         Scenario:
             1. Deploy environment with at least 3 controllers
-            2. Get rabbit master node
-            3. Move master rabbit resource to slave with pcs
-            4. Delete pcs constraint for rabbit resource
-            5. Run OSTF
-            6. Get new rabbit master node
-            7. Destroy it
-            8. Run OSTF
-            9. Power on destroyed node
-            10. Run OSTF
+               (Or revert existing snapshot)
+            2. Wait for mysql cluster to become active
+            3. Run ostf tests before destructive actions
+            4. Get rabbit master node
+            5. Move master rabbit resource to slave with pcs
+            6. Delete pcs constraint for rabbit resource
+            7. Assert HA services ready
+            8. Get new rabbit master node
+            9. Destroy it
+            10. Assert HA services ready
+            11. Run sanity and smoke OSTF sets
+            12. Power on destroyed node
+            13. Assert HA services ready
+            14. Assert OS services ready
+            15. Run OSTF
 
         Duration 80 min
 
