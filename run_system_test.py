@@ -126,6 +126,9 @@ def run(**kwargs):
         else:
             register_system_test_cases(groups=[g])
             groups_to_run.append(g)
+    if not set(groups_to_run) < set(get_groups()):
+        sys.exit('There are no cases mapped to current group, '
+                 'please be sure that you put right test group name.')
     if explain:
         print_explain(groups)
     else:
@@ -143,7 +146,6 @@ def explain_group(**kwargs):
 def show_all_groups(**kwargs):
     """Show all Proboscis groups"""
     groups_nums = get_groups()
-
     out = {k: len(v) for k, v in groups_nums.iteritems()}
     print(pretty_log(out))
 
