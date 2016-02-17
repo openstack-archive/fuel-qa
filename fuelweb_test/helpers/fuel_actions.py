@@ -396,40 +396,6 @@ class AdminActions(BaseActions):
                                                                   stderr))
         assert_equal(result['exit_code'], 0)
 
-    def upgrade_master_node(self, rollback=False, file_upload=True):
-        """This method upgrades master node with current state."""
-        # TODO: It will be remooved or changed
-
-        master = self.admin_remote
-        if file_upload:
-            checkers.upload_tarball(master, hlp_data.TARBALL_PATH, '/var')
-            checkers.check_file_exists(master,
-                                       os.path.join(
-                                           '/var',
-                                           os.path.basename(hlp_data.
-                                                            TARBALL_PATH)))
-            self.untar(master, os.path.basename(hlp_data.TARBALL_PATH),
-                       '/var')
-
-        keystone_pass = hlp_data.KEYSTONE_CREDS['password']
-        checkers.run_upgrade_script(master, '/var', 'upgrade.sh',
-                                    password=keystone_pass,
-                                    rollback=rollback,
-                                    exit_code=255 if rollback else 0)
-        if not rollback:
-            checkers.wait_upgrade_is_done(master, 3000,
-                                          phrase='***UPGRADING MASTER NODE'
-                                                 ' DONE SUCCESSFULLY')
-            checkers.check_upgraded_containers(master,
-                                               hlp_data.UPGRADE_FUEL_FROM,
-                                               hlp_data.UPGRADE_FUEL_TO)
-        elif rollback:
-            checkers.wait_rollback_is_done(master, 3000)
-            checkers.check_upgraded_containers(master,
-                                               hlp_data.UPGRADE_FUEL_TO,
-                                               hlp_data.UPGRADE_FUEL_FROM)
-        logger.debug("all containers are ok")
-
     def get_fuel_settings(self):
         cmd = 'cat {cfg_file}'.format(cfg_file=hlp_data.FUEL_SETTINGS_YAML)
         result = self.ssh_manager.execute(
