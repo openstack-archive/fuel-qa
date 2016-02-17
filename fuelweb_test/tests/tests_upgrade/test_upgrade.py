@@ -28,7 +28,7 @@ from fuelweb_test import settings as hlp_data
 from fuelweb_test.tests import base_test_case as base_test_data
 
 
-@test(groups=["upgrade"])
+@test(groups=["upgrade"], enabled=False)
 class UpgradeFuelMaster(base_test_data.TestBasic):
     """UpgradeFuelMaster."""  # TODO documentation
 
@@ -474,7 +474,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.env.make_snapshot("upgrade_fuel_after_rollback")
 
 
-@test(groups=["rollback"])
+@test(groups=["rollback"], enabled=False)
 class RollbackFuelMaster(base_test_data.TestBasic):
     """RollbackFuelMaster."""  # TODO documentation
 
@@ -641,7 +641,8 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         self.env.make_snapshot("rollback_automatically_delete_node")
 
 
-@test(groups=['upgrade_neutron_ceph', 'upgrade_neutron_ceph_classic'])
+@test(groups=['upgrade_neutron_ceph', 'upgrade_neutron_ceph_classic'],
+      enabled=False)
 class UpgradeNeutronCeph(base_test_data.TestBasic):
     """ Upgrade Neutron Ceph."""
 
@@ -868,7 +869,8 @@ class UpgradeNeutronCeph(base_test_data.TestBasic):
                                should_fail=1)
 
 
-@test(groups=['upgrade_nova_cinder', 'upgrade_nova_cinder_classic'])
+@test(groups=['upgrade_nova_cinder', 'upgrade_nova_cinder_classic'],
+      enabled=False)
 class UpgradeNovaCinder(base_test_data.TestBasic):
     """Upgrade Nova Cinder."""
 

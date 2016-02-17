@@ -24,7 +24,7 @@ from fuelweb_test import settings as hlp_data
 from fuelweb_test.tests import base_test_case as base_test_data
 
 
-@test(groups=["upgrade_chains"])
+@test(groups=["upgrade_chains"], enabled=False)
 class UpgradeFuelChains(base_test_data.TestBasic):
     """UpgradeChains."""  # TODO documentation
 
