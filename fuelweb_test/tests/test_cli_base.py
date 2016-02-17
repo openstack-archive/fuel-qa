@@ -33,7 +33,7 @@ class CommandLine(TestBasic):
     @logwrap
     def get_task(self, remote, task_id):
         tasks = run_on_remote(remote, 'fuel task --task-id {0} --json'
-                              .format(task_id), jsonify=True, cli_command=True)
+                              .format(task_id), jsonify=True)
         return tasks[0]
 
     @logwrap
