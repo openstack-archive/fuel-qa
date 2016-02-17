@@ -66,7 +66,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
-        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+        with self.get_ssh_to_remote(_ip) as remote:
             expected_kernel = self.get_slave_kernel(remote)
 
         self.env.admin_actions.upgrade_master_node()
@@ -91,7 +91,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
                                test_sets=['ha', 'smoke', 'sanity'])
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
             _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
-            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            with self.get_ssh_to_remote(_ip) as remote:
                 kernel = self.get_slave_kernel(remote)
             checkers.check_kernel(kernel, expected_kernel)
         create_diagnostic_snapshot(
@@ -216,7 +216,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
             _ip = self.fuel_web.get_nailgun_node_by_name('slave-06')['ip']
-            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            with self.get_ssh_to_remote(_ip) as remote:
                 kernel = self.get_slave_kernel(remote)
             logger.debug("ubuntu kernel version"
                          " on new node is {}".format(kernel))
@@ -384,7 +384,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         assert_equal(str(cluster['net_provider']), 'neutron')
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
             _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
-            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            with self.get_ssh_to_remote(_ip) as remote:
                 kernel = self.get_slave_kernel(remote)
             logger.debug("ubuntu kernel version"
                          " on new node is {}".format(kernel))
@@ -552,7 +552,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
-        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+        with self.get_ssh_to_remote(_ip) as remote:
             expected_kernel = UpgradeFuelMaster.get_slave_kernel(remote)
 
         self.env.admin_actions.upgrade_master_node(rollback=True)
@@ -576,7 +576,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
             _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
-            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            with self.get_ssh_to_remote(_ip) as remote:
                 kernel = UpgradeFuelMaster.get_slave_kernel(remote)
             checkers.check_kernel(kernel, expected_kernel)
         self.fuel_web.run_ostf(cluster_id=cluster_id,

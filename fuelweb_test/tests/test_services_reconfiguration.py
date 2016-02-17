@@ -127,7 +127,7 @@ class ServicesReconfiguration(TestBasic):
         nodes = [x['ip'] for x in nodes]
         uptimes = dict(zip(nodes, range(len(nodes))))
         for node in nodes:
-            with self.env.d_env.get_ssh_to_remote(node) as remote:
+            with self.get_ssh_to_remote(node) as remote:
                 uptimes[node] = \
                     utils.get_process_uptime(remote, service_name)
         return uptimes
@@ -140,7 +140,7 @@ class ServicesReconfiguration(TestBasic):
         """
         nodes = [x['ip'] for x in nodes]
         for node in nodes:
-            with self.env.d_env.get_ssh_to_remote(node) as remote:
+            with self.get_ssh_to_remote(node) as remote:
                 for configpath, params in config.items():
                     result = remote.open(configpath)
                     conf_for_check = utils.get_ini_config(result)
@@ -160,7 +160,7 @@ class ServicesReconfiguration(TestBasic):
         """
         nodes = [x['ip'] for x in nodes]
         for node in nodes:
-            with self.env.d_env.get_ssh_to_remote(node) as remote:
+            with self.get_ssh_to_remote(node) as remote:
                 uptime = utils.get_process_uptime(remote, service_name)
                 asserts.assert_true(uptime <= uptime_before[node],
                                     'Service "{0}" was not '
@@ -223,7 +223,7 @@ class ServicesReconfiguration(TestBasic):
         creds = ("cirros", "cubswin:)")
         controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])[0]['ip']
-        with self.env.d_env.get_ssh_to_remote(controller) as remote:
+        with self.get_ssh_to_remote(controller) as remote:
             res = os_conn.execute_through_host(
                 remote, floating_ip.ip, "mount", creds)
             asserts.assert_true('/mnt type {0}'.format(fs_type)
@@ -532,7 +532,7 @@ class ServicesReconfiguration(TestBasic):
         self.show_step(5)
         flag = False
         for cntrllr in controllers:
-            with self.env.d_env.get_ssh_to_remote(cntrllr['ip']) as remote:
+            with self.get_ssh_to_remote(cntrllr['ip']) as remote:
                 log_path = '/var/log/puppet.log'
                 cmd = "grep \"Can't contact LDAP server\" {0}".format(log_path)
                 result = remote.execute(cmd)

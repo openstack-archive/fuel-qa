@@ -258,7 +258,7 @@ class TestOSupgrade(base_test_data.TestBasic):
             seed_cluster_id, ["controller"]
         )[0]
 
-        with self.env.d_env.get_ssh_to_remote(
+        with self.get_ssh_to_remote(
                 target_controller["ip"]) as remote:
             target_ids = remote.execute(
                 'mysql cinder <<< "select id from volumes;"; '
@@ -281,7 +281,7 @@ class TestOSupgrade(base_test_data.TestBasic):
                      "status code,"
                      "current result is {}".format(octane_upgrade_db))
 
-        with self.env.d_env.get_ssh_to_remote(controller["ip"]) as remote:
+        with self.get_ssh_to_remote(controller["ip"]) as remote:
             stdout = remote.execute("crm resource status")["stdout"]
             seed_ids = remote.execute(
                 'mysql cinder <<< "select id from volumes;"; '
@@ -349,7 +349,7 @@ class TestOSupgrade(base_test_data.TestBasic):
                      "octane upgrade-ceph returns non zero status code,"
                      "current result is {}".format(octane_upgrade_ceph))
 
-        with self.env.d_env.get_ssh_to_remote(controller["ip"]) as remote:
+        with self.get_ssh_to_remote(controller["ip"]) as remote:
             ceph_health = remote.execute("ceph health")["stdout"][0][:-1]
 
         assert_equal("HEALTH_OK", ceph_health)
@@ -430,7 +430,7 @@ class TestOSupgrade(base_test_data.TestBasic):
         time.sleep(180)  # TODO need to remove
         # after fix of https://bugs.launchpad.net/fuel/+bug/1499696
 
-        with self.env.d_env.get_ssh_to_remote(controllers[0]["ip"]) as remote:
+        with self.get_ssh_to_remote(controllers[0]["ip"]) as remote:
             stdout = remote.execute("crm resource status")["stdout"]
 
         while stdout:

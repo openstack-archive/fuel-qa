@@ -82,7 +82,7 @@ class BondingTest(TestBasic):
         nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
 
         for node in nodes:
-            with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
+            with self.get_ssh_to_remote(node['ip']) as remote:
                 network_settings[node['hostname']] = \
                     get_net_settings(remote, skip_interfaces)
 
@@ -92,7 +92,7 @@ class BondingTest(TestBasic):
         network_settings_changed = False
 
         for node in nodes:
-            with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
+            with self.get_ssh_to_remote(node['ip']) as remote:
                 saved_settings = network_settings[node['hostname']]
                 actual_settings = get_net_settings(remote, skip_interfaces)
                 if not saved_settings == actual_settings:

@@ -856,7 +856,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
             self.show_step(7, node)
             logger.info("Get partitions for {node}".format(node=node))
             _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            with self.get_ssh_to_remote(_ip) as remote:
                 before_reboot_partitions = [checkers.get_ceph_partitions(
                     remote,
                     "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
@@ -871,7 +871,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
                 node=node
             ))
             _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            with self.get_ssh_to_remote(_ip) as remote:
                 after_reboot_partitions = [checkers.get_ceph_partitions(
                     remote,
                     "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
@@ -893,7 +893,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
 
             self.show_step(12, node)
             _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            with self.get_ssh_to_remote(_ip) as remote:
                 after_reboot_partitions = [checkers.get_ceph_partitions(
                     remote,
                     "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]

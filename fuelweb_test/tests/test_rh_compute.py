@@ -639,7 +639,7 @@ class RhHA(TestBasic):
         LOGGER.debug('Acquired ip: {0} for node: {1}'.format(
             target_node_ip, target_node_name))
 
-        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
+        with self.get_ssh_to_remote(target_node_ip) as remote:
             old_hostname = self.save_node_hostname(remote)
 
         with self.env.d_env.get_admin_remote() as remote:
@@ -655,18 +655,18 @@ class RhHA(TestBasic):
         asserts.assert_true(target_node.driver.node_active(node=target_node),
                             'Target node did not start')
         self.wait_for_slave_provision(target_node_ip)
-        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
+        with self.get_ssh_to_remote(target_node_ip) as remote:
             self.verify_image_connected(remote)
 
         self.show_step(9)
 
         with self.env.d_env.get_admin_remote() as remote_admin:
-            with self.env.d_env.get_ssh_to_remote(target_node_ip) as \
+            with self.get_ssh_to_remote(target_node_ip) as \
                     remote_slave:
                 self.restore_information(target_node_ip,
                                          remote_admin, remote_slave)
 
-        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
+        with self.get_ssh_to_remote(target_node_ip) as remote:
             self.set_hostname(remote)
             if not settings.CENTOS_DUMMY_DEPLOY:
                 self.register_rh_subscription(remote)
@@ -682,17 +682,17 @@ class RhHA(TestBasic):
             self.rsync_puppet_modules(remote, target_node_ip)
 
         self.show_step(10)
-        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
+        with self.get_ssh_to_remote(target_node_ip) as remote:
             self.apply_first_part_puppet(remote)
 
-        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
+        with self.get_ssh_to_remote(target_node_ip) as remote:
             self.apply_networking_puppet(remote)
 
-        with self.env.d_env.get_ssh_to_remote(target_node_ip) as remote:
+        with self.get_ssh_to_remote(target_node_ip) as remote:
             self.check_netconfig_success(remote)
             self.apply_last_part_puppet(remote)
 
-        with self.env.d_env.get_ssh_to_remote(controller_ip) as remote:
+        with self.get_ssh_to_remote(controller_ip) as remote:
             self.remove_old_compute_services(remote, old_hostname)
 
         self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)

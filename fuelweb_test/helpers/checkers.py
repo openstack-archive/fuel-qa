@@ -1182,7 +1182,7 @@ def check_log_lines_order(remote, log_file_path, line_matcher):
 def check_hiera_hosts(self, nodes, cmd):
     hiera_hosts = []
     for node in nodes:
-        with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
+        with self.get_ssh_to_remote(node['ip']) as remote:
             hosts = ''.join(run_on_remote(remote, cmd)).strip().split(',')
             logger.debug("hosts on {0} are {1}".format(node['hostname'],
                                                        hosts))
