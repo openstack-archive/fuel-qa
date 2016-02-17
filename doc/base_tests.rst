@@ -601,16 +601,6 @@ Restart tests
 Upgrade tests
 =============
 
-Test Upgrade
-------------
-.. automodule:: fuelweb_test.tests.tests_upgrade.test_upgrade
-   :members:
-
-Test Upgrade Chains
--------------------
-.. automodule:: fuelweb_test.tests.tests_upgrade.test_upgrade_chains
-   :members:
-
 OS upgrade tests
 ================
 
