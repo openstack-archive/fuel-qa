@@ -328,30 +328,6 @@ class AdminActions(BaseActions):
                 " -delete".format(distro.lower())
         )
 
-    @logwrap
-    @retry(2)
-    def untar(self, node_ip, name, path):
-        logger.info('Unpacking file')
-        filename, ext = os.path.splitext(name)
-        cmd = "tar -xpvf" if ext.endswith("tar") else "lrzuntar"
-        result = self.ssh_manager.execute(
-            ip=node_ip,
-            cmd='cd {0} && {2} {1}'.format(path, name, cmd)
-        )
-        stdout, stderr = ''.join(result['stdout']), ''.join(result['stderr'])
-        logger.debug('Result from tar command is {0}\n{1}'.format(stdout,
-                                                                  stderr))
-        assert_equal(result['exit_code'], 0)
-
-    def upgrade_master_node(self, rollback=False, file_upload=True):
-        """This method upgrades master node with current state."""
-
-        # FIXME(kozhukalov): The content of the method is removed
-        # because the approach is totally outdated.
-        # It should be removed entirely together with all those
-        # places that refer to the method.
-        pass
-
     def get_fuel_settings(self):
         cmd = 'cat {cfg_file}'.format(cfg_file=hlp_data.FUEL_SETTINGS_YAML)
         result = self.ssh_manager.execute(
