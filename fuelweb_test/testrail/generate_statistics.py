@@ -188,6 +188,7 @@ class TestRunStatistics(object):
                 key=lambda x: x['id'], reverse=True)
 
             linked_bugs = []
+            is_blocked = False
 
             for result in test_results:
                 if result['status_id'] in self.blocked_statuses:
@@ -195,9 +196,11 @@ class TestRunStatistics(object):
                         new_bug_link = self.handle_blocked(test, result)
                         if new_bug_link:
                             linked_bugs.append(new_bug_link)
+                            is_blocked = True
                             break
                     if result['custom_launchpad_bug']:
                         linked_bugs.append(result['custom_launchpad_bug'])
+                        is_blocked = True
                         break
                 if result['status_id'] in self.failed_statuses \
                         and result['custom_launchpad_bug']:
@@ -211,14 +214,16 @@ class TestRunStatistics(object):
                 if bug_id in self._bugs_statistics:
                     self._bugs_statistics[bug_id][test['id']] = {
                         'group': test['custom_test_group'] or 'manual',
-                        'config': self.run['config'] or 'default'
+                        'config': self.run['config'] or 'default',
+                        'blocked': is_blocked
                     }
 
                 else:
                     self._bugs_statistics[bug_id] = {
                         test['id']: {
                             'group': test['custom_test_group'] or 'manual',
-                            'config': self.run['config'] or 'default'
+                            'config': self.run['config'] or 'default',
+                            'blocked': is_blocked
                         }
                     }
         return self._bugs_statistics
@@ -293,11 +298,20 @@ class StatisticsGenerator(object):
             if lp_bug.bug.id in stats:
                 stats[lp_bug.bug.id]['tests'].update(
                     joint_bugs_statistics[bug_id])
-                stats[lp_bug.bug.id]['affected_num'] = len(
-                    stats[lp_bug.bug.id]['tests'])
+                stats[lp_bug.bug.id]['failed_num'] = len(
+                    [t for t in stats[lp_bug.bug.id]
+                     if not t['blocked']])
+                stats[lp_bug.bug.id]['blocked_num'] = len(
+                    [t for t in stats[lp_bug.bug.id]
+                     if t['blocked']])
             else:
                 stats[lp_bug.bug.id] = {
-                    'affected_num': len(joint_bugs_statistics[bug_id]),
+                    'failed_num': len(
+                        [t for t, v in joint_bugs_statistics[bug_id].items()
+                         if not v['blocked']]),
+                    'blocked_num': len(
+                        [t for t, v in joint_bugs_statistics[bug_id].items()
+                         if v['blocked']]),
                     'title': bug_target['title'],
                     'importance': bug_target['importance'],
                     'status': bug_target['status'],
@@ -306,7 +320,8 @@ class StatisticsGenerator(object):
                     'tests': joint_bugs_statistics[bug_id]
                 }
         return OrderedDict(sorted(stats.items(),
-                                  key=lambda x: x[1]['affected_num'],
+                                  key=lambda x: (x[1]['failed_num'] +
+                                                 x[1]['blocked_num']),
                                   reverse=True))
 
     def dump_html(self, stats=None, run_id=None):
@@ -339,7 +354,8 @@ class StatisticsGenerator(object):
             title = re.sub(r'(Bug\s+#\d+\s+)(in\s+[^:]+:\s+)', '\g<1>',
                            values['title'])
             title = re.sub(r'(.{100}).*', '\g<1>...', title)
-            html += '[{0:<3} TC(s)]'.format(values['affected_num'])
+            html += '[{0:<3} failed TC(s)]'.format(values['failed_num'])
+            html += '[{0:<3} blocked TC(s)]'.format(values['blocked_num'])
             html += ('[{0:^4}][{1:^9}]'
                      '[<b><font color={3}>{2:^13}</font></b>]').format(
                 values['project'], values['importance'], values['status'],
@@ -367,7 +383,7 @@ class StatisticsGenerator(object):
             time.strftime("%c"))
         header += '==================================\n'
 
-        bugs_table = ('|||:Affected TCs|:Project|:Priority'
+        bugs_table = ('|||:Failed|:Blocked|:Project|:Priority'
                       '|:Status|:Bug link|:Tests\n')
 
         for bug_id, values in stats.items():
@@ -376,8 +392,10 @@ class StatisticsGenerator(object):
             title = re.sub(r'(.{100}).*', '\g<1>...', title)
             title = title.replace('[', '{')
             title = title.replace(']', '}')
-            bugs_table += '||{tc}|{project}|{priority}|{status}|'.format(
-                tc=values['affected_num'], project=values['project'].upper(),
+            bugs_table += (
+                '||{failed}|{blocked}|{project}|{priority}|{status}|').format(
+                failed=values['failed_num'], blocked=values['blocked_num'],
+                project=values['project'].upper(),
                 priority=values['importance'], status=values['status'])
             bugs_table += '[{0}]({1})|'.format(title, values['link'])
             index = 1
@@ -395,7 +413,7 @@ class StatisticsGenerator(object):
         return self.update_desription(header + bugs_table)
 
 
-def save_stats_to_file(stats, file_name, html=False, run_id=None):
+def save_stats_to_file(stats, file_name, html=False):
     def warn_file_exists(file_path):
         if os.path.exists(file_path):
             logger.warning('File {0} exists and will be '
