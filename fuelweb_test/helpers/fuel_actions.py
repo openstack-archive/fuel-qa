@@ -77,7 +77,7 @@ class BaseActions(object):
         return ''.join(result['stdout']).strip()
 
     def restart_service(self, service):
-        result = self.ssh_manager(
+        result = self.ssh_manager.execute_on_remote(
             ip=self.admin_ip,
             cmd="systemctl restart {0}".format(service))
         return result['exit_code'] == 0
