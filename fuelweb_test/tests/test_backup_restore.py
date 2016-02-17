@@ -64,9 +64,9 @@ class TestAdminNodeBackupRestore(TestBasic):
             self.fuel_web.backup_master(remote)
             checkers.backup_check(remote)
             with RunLimit(
-                    seconds=60 * 10,
+                    seconds=60 * 20,
                     error_message="'dockerctl restore' "
-                                  "run longer then 600 sec"):
+                                  "run longer then 1200 sec"):
                 self.fuel_web.restore_master(remote)
             self.fuel_web.restore_check_nailgun_api()
             checkers.restore_check_sum(remote)
@@ -143,9 +143,9 @@ class BackupRestoreHAOneController(HAOneControllerNeutronBase):
 
         with self.env.d_env.get_admin_remote() as remote:
             with RunLimit(
-                    seconds=60 * 10,
+                    seconds=60 * 20,
                     error_message="'dockerctl restore' "
-                                  "run longer then 600 sec"):
+                                  "run longer then 1200 sec"):
                 self.fuel_web.restore_master(remote)
             checkers.restore_check_sum(remote)
             self.fuel_web.restore_check_nailgun_api()
@@ -233,9 +233,9 @@ class BackupRestoreHA(NeutronTunHaBase):
 
         with self.env.d_env.get_admin_remote() as remote:
             with RunLimit(
-                    seconds=60 * 10,
+                    seconds=60 * 20,
                     error_message="'dockerctl restore' "
-                                  "run longer then 600 sec"):
+                                  "run longer then 1200 sec"):
                 self.fuel_web.restore_master(remote)
             checkers.restore_check_sum(remote)
 
@@ -305,9 +305,9 @@ class BackupRestoreHA(NeutronTunHaBase):
 
         with self.env.d_env.get_admin_remote() as remote:
             with RunLimit(
-                    seconds=60 * 10,
+                    seconds=60 * 20,
                     error_message="'dockerctl restore' "
-                                  "ran longer then 600 sec"):
+                                  "run longer then 600 sec"):
                 self.fuel_web.restore_master(remote)
             checkers.restore_check_sum(remote)
 
@@ -419,9 +419,9 @@ class BackupReinstallRestoreHA(NeutronTunHaBase):
             remote.upload(local_backup, backup)
             assert_true(remote.exists(backup), "Backup file wasn't uploaded!")
             with RunLimit(
-                    seconds=60 * 10,
+                    seconds=60 * 20,
                     error_message="'dockerctl restore' "
-                                  "run longer then 600 sec"):
+                                  "run longer then 1200 sec"):
                 self.fuel_web.restore_master(remote)
             checkers.restore_check_sum(remote)
 
