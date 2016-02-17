@@ -58,6 +58,7 @@ from fuelweb_test.settings import DISABLE_SSL
 from fuelweb_test.settings import DNS_SUFFIX
 from fuelweb_test.settings import KVM_USE
 from fuelweb_test.settings import MULTIPLE_NETWORKS
+from fuelweb_test.settings import NOVA_QUOTAS_ENABLED
 from fuelweb_test.settings import NEUTRON
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import NODEGROUPS
@@ -492,6 +493,11 @@ class FuelWebClient(object):
                 logger.info('Enable Dual Hypervisors Mode')
                 hpv_data = attributes['editable']['common']['use_vcenter']
                 hpv_data['value'] = True
+
+            if NOVA_QUOTAS_ENABLED:
+                logger.info('Enable Nova quotas')
+                nova_quotas = attributes['editable']['common']['nova_quota']
+                nova_quotas['value'] = True
 
             if MULTIPLE_NETWORKS:
                 node_groups = {n['name']: [] for n in NODEGROUPS}
