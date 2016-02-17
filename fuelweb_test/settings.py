@@ -454,3 +454,5 @@ RALLY_TAGS = os.environ.get('RALLY_TAGS', 'nova').split(',')
 REGENERATE_ENV_IMAGE = os.environ.get('REGENERATE_ENV_IMAGE',
                                       'false') == 'true'
 LATE_ARTIFACTS_JOB_URL = os.environ.get("LATE_ARTIFACTS_JOB_URL", '')
+
+NOVA_QUOTAS_ENABLED = os.environ.get("NOVA_QUOTAS_ENABLED", 'false') == 'true'
