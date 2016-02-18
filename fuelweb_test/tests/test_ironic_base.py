@@ -12,6 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import random
+import time
+
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -135,11 +138,26 @@ class TestIronicDeploy(TestBasic):
 
         ironic_conn.wait_for_ironic_hypervisors(ironic_conn, ironic_slaves)
 
+    def _rand_name(self, name):
+        return name + str(random.randint(1, 0x7fffffff))
+
+    def _swift_rings_rebalance(self, cluster_id):
+        """Rebalance Swift Rings"""
+        controller_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])
+        cmd = "/usr/local/bin/swift-rings-rebalance.sh"
+        for node in controller_nodes:
+            self.ssh_manager.execute_on_remote(ip=node['ip'], cmd=cmd)
+            time.sleep(60)
+        time.sleep(600)
+
     def _boot_nova_instances(self, ironic_conn):
         ironic_slaves = self.env.d_env.nodes().ironics
         user_image = ironic_conn.get_image_by_name('virtual_trusty_ext4')
         network = ironic_conn.nova.networks.find(label='baremetal')
-        flavor = ironic_conn.create_flavor('baremetal_flavor', 1024, 1, 50)
+        # Randomize name to avoid conflict on repetitive flavor creation.
+        flavor_name = self._rand_name('baremetal_flavor')
+        flavor = ironic_conn.create_flavor(flavor_name, 1024, 1, 50)
         nics = [{'net-id': network.id}]
 
         for ironic_slave in ironic_slaves:
@@ -148,6 +166,12 @@ class TestIronicDeploy(TestBasic):
                 image=user_image.id,
                 flavor=flavor.id,
                 nics=nics)
+
+    def _ironic_happy_path(self, ironic_conn):
+        self._boot_nova_instances(ironic_conn)
+        ironic_conn.wait_for_vms(ironic_conn)
+        ironic_conn.verify_vms_connection(ironic_conn)
+        ironic_conn.delete_servers(ironic_conn)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["ironic_deploy_swift"])
@@ -379,3 +403,96 @@ class TestIronicDeploy(TestBasic):
         ironic_conn.verify_vms_connection(ironic_conn)
 
         self.env.make_snapshot("ironic_deploy_ceilometer")
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["ironic_deploy_scale_controller_ironic"])
+    @log_snapshot_after_test
+    def ironic_deploy_scale_controller_ironic(self):
+        """Test cluster scaling with Controller and Ironic
+
+        Scenario:
+            1. Create cluster
+            2. Add 1 Controller node
+            3. Add 1 Compute node
+            4. Add 1 Controller+Ironic node
+            5. Deploy the cluster
+            6. Run happy-path sequence for Ironic
+            7. Add 1 Controller node
+            8. Add 1 Controller+Ironic node
+            9. Redeploy the cluster
+            10. Run happy-path sequence for Ironic
+            11. Remove 1 Controller node
+            12. Remove 1 Controller+Ironic node
+            13. Redeploy the cluster
+            14. Run happy-path sequence for Ironic
+
+        Duration 90m
+        Snapshot ironic_deploy_scale_controller_ironic
+        """
+
+        self.env.revert_snapshot("ready_with_5_slaves")
+        # Deploy 1st part
+        data = {
+            'net_provider': 'neutron',
+            'net_segment_type': NEUTRON_SEGMENT['vlan'],
+            'ironic': True}
+
+        nodes = {
+            'slave-01': ['controller'],
+            'slave-02': ['controller', 'ironic'],
+            'slave-03': ['compute']}
+
+        self.show_step(1, initialize=True)
+        self.show_step(2)
+        self.show_step(3)
+        self.show_step(4)
+        self.show_step(5)
+        cluster_id = self._deploy_ironic_cluster(settings=data, nodes=nodes)
+        self.show_step(6)
+        ironic_conn = ironic_actions.IronicActions(
+            self.fuel_web.get_public_vip(cluster_id))
+        self._create_os_resources(ironic_conn)
+        self._ironic_happy_path(ironic_conn)
+
+        # Add nodes and redeploy,
+        self.show_step(7)
+        self.show_step(8)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-04': ['controller'],
+                'slave-05': ['controller', 'ironic']
+            }
+        )
+        self.show_step(9)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        # Happypath
+        self.show_step(10)
+        ironic_conn = ironic_actions.IronicActions(
+            self.fuel_web.get_public_vip(cluster_id))
+        self._ironic_happy_path(ironic_conn)
+
+        # Rebalance swift rings
+        # Remove nodes and redeploy
+        self.show_step(11)
+        self._swift_rings_rebalance(cluster_id)
+        self.show_step(12)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-04': ['controller'],
+                'slave-05': ['controller', 'ironic']
+            },
+            pending_addition=False,
+            pending_deletion=True
+        )
+        self.show_step(13)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        # Happypath
+        self.show_step(14)
+        ironic_conn = ironic_actions.IronicActions(
+            self.fuel_web.get_public_vip(cluster_id))
+        self._ironic_happy_path(ironic_conn)
+
+        self.env.make_snapshot("ironic_deploy_scale_controller_ironic")
