@@ -52,6 +52,7 @@ from fuelweb_test.helpers.security import SecurityChecks
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.ssl import change_cluster_ssl_config
 from fuelweb_test.helpers.ssl import copy_cert_from_master
+from fuelweb_test.helpers.uca import change_cluster_uca_config
 from fuelweb_test.helpers.utils import get_node_hiera_roles
 from fuelweb_test.helpers.utils import node_freemem
 from fuelweb_test.helpers.utils import pretty_log
@@ -79,6 +80,7 @@ from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
 from fuelweb_test.settings import SSL_CN
 from fuelweb_test.settings import TIMEOUT
+from fuelweb_test.settings import UCA_ENABLED
 from fuelweb_test.settings import USER_OWNED_CERT
 from fuelweb_test.settings import VCENTER_DATACENTER
 from fuelweb_test.settings import VCENTER_DATASTORE
@@ -578,6 +580,9 @@ class FuelWebClient(object):
             if configure_ssl:
                 self.ssl_configure(cluster_id)
 
+            if UCA_ENABLED:
+                self.enable_uca(cluster_id)
+
         if not cluster_id:
             raise Exception("Could not get cluster '%s'" % name)
         # TODO: rw105719
@@ -590,6 +595,14 @@ class FuelWebClient(object):
     def ssl_configure(self, cluster_id):
         attributes = self.client.get_cluster_attributes(cluster_id)
         change_cluster_ssl_config(attributes, SSL_CN)
+        logger.debug("Try to update cluster "
+                     "with next attributes {0}".format(attributes))
+        self.client.update_cluster_attributes(cluster_id, attributes)
+
+    @logwrap
+    def enable_uca(self, cluster_id):
+        attributes = self.client.get_cluster_attributes(cluster_id)
+        change_cluster_uca_config(attributes)
         logger.debug("Try to update cluster "
                      "with next attributes {0}".format(attributes))
         self.client.update_cluster_attributes(cluster_id, attributes)
