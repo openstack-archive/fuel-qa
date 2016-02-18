@@ -158,11 +158,11 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
 
             # Update network parameters
             self.show_step(6)
-            self.update_cli_network_configuration(cluster_id, remote)
+            self.update_cli_network_configuration(cluster_id)
 
             # Update SSL configuration
             self.show_step(7)
-            self.update_ssl_configuration(cluster_id, remote)
+            self.update_ssl_configuration(cluster_id)
 
             self.show_step(8)
             cmd = 'fuel env --json'
@@ -186,14 +186,14 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
             cmd = ('fuel --env-id={0} node --provision --node={1} --json'
                    .format(cluster_id, node_id[0]))
             task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, remote, timeout=30 * 60)
+            self.assert_cli_task_success(task, timeout=30 * 60)
 
             # Deploy the controller node
             self.show_step(10)
             cmd = ('fuel --env-id={0} node --deploy --node {1} --json'
                    .format(cluster_id, node_id[0]))
             task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, remote, timeout=60 * 60)
+            self.assert_cli_task_success(task, timeout=60 * 60)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity'])
