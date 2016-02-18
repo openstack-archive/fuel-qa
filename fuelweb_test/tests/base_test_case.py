@@ -34,11 +34,15 @@ class TestBasic(object):
     Initializes EnvironmentModel and FuelWebModel.
 
     """
-    def __init__(self):
-        self._devops_config = None
-        self.__env = None
-        self.__current_log_step = 0
-        self.__test_program = None
+    _devops_config = None
+    __env = None
+    __current_log_step = 0
+    __test_program = None
+    # def __init__(self):
+    #     self._devops_config = None
+    #     self.__env = None
+    #     self.__current_log_step = 0
+    #     self.__test_program = None
 
     @property
     def ssh_manager(self):
@@ -143,7 +147,7 @@ class TestBasic(object):
         return False
 
 
-@test
+@test()
 class SetupEnvironment(TestBasic):
     @test(groups=["setup"])
     @log_snapshot_after_test
