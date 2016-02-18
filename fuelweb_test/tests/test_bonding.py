@@ -238,6 +238,8 @@ class BondingHA(BondingTest):
             9. Save network configuration from slave nodes
             10. Reboot all environment nodes
             11. Verify that network configuration is the same after reboot
+            12. Run network verification
+            13. Run OSTF
 
         Duration 70m
         Snapshot deploy_bonding_neutron_vlan
@@ -300,6 +302,13 @@ class BondingHA(BondingTest):
         self.show_step(10)
         self.show_step(11)
         self.check_interfaces_config_after_reboot(cluster_id)
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
+        self.show_step(12)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(13)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_bonding_neutron_vlan")
 
@@ -322,6 +331,8 @@ class BondingHA(BondingTest):
             9. Save network configuration from slave nodes
             10. Reboot all environment nodes
             11. Verify that network configuration is the same after reboot
+            12. Run network verification
+            13. Run OSTF
 
         Duration 70m
         Snapshot deploy_bonding_neutron_tun
@@ -384,5 +395,12 @@ class BondingHA(BondingTest):
         self.show_step(10)
         self.show_step(11)
         self.check_interfaces_config_after_reboot(cluster_id)
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
+        self.show_step(12)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(13)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_bonding_neutron_tun")
