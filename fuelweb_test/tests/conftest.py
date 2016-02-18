@@ -1,0 +1,1 @@
+/home/dtyzhnenko/workspace/test/conftest.py
