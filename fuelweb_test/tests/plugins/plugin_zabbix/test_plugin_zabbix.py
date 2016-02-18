@@ -28,6 +28,7 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings as conf
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
+from fuelweb_test import logger
 
 
 class ZabbixWeb(object):
@@ -142,6 +143,27 @@ class ZabbixPlugin(TestBasic):
                 return True
         return False
 
+    def check_plugins(self, plugins):
+        for plugin in plugins:
+            p = getattr(conf, plugin)
+            self.raise_error(p is None,
+                             plugin + " environment variable should be set")
+            self.raise_error(os.path.exists(p) is False,
+                             "{0} does not exist".format(p))
+            logger.info(
+                "Using plugin archive from %s "
+                "(taken from %s environment variable)",
+                p, plugin)
+
+    def install_plugins(self, plugins):
+        for plugin in plugins:
+            p = getattr(conf, plugin)
+            checkers.upload_tarball(
+                self.env.d_env.get_admin_remote(), p, "/var")
+            checkers.install_plugin_check_code(
+                self.env.d_env.get_admin_remote(),
+                plugin=os.path.basename(p))
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_zabbix_ha"])
     @log_snapshot_after_test
@@ -165,12 +187,11 @@ class ZabbixPlugin(TestBasic):
         Snapshot deploy_zabbix_ha
 
         """
+        plugins = ["ZABBIX_PLUGIN_PATH"]
+        self.check_plugins(plugins)
+
         self.env.revert_snapshot("ready_with_5_slaves")
-        checkers.upload_tarball(
-            self.env.d_env.get_admin_remote(), conf.ZABBIX_PLUGIN_PATH, "/var")
-        checkers.install_plugin_check_code(
-            self.env.d_env.get_admin_remote(),
-            plugin=os.path.basename(conf.ZABBIX_PLUGIN_PATH))
+        self.install_plugins(plugins)
 
         settings = None
         if conf.NEUTRON_ENABLE:
@@ -253,18 +274,14 @@ class ZabbixPlugin(TestBasic):
         Snapshot deploy_zabbix_snmptrap_ha
 
         """
-        self.env.revert_snapshot("ready_with_5_slaves")
+        plugins = ["ZABBIX_PLUGIN_PATH",
+                   "ZABBIX_SNMP_PLUGIN_PATH"]
+        self.check_plugins(plugins)
 
-        for plugin in [conf.ZABBIX_PLUGIN_PATH,
-                       conf.ZABBIX_SNMP_PLUGIN_PATH]:
-            checkers.upload_tarball(
-                self.env.d_env.get_admin_remote(), plugin, "/var")
-            checkers.install_plugin_check_code(
-                self.env.d_env.get_admin_remote(),
-                plugin=os.path.basename(plugin))
+        self.env.revert_snapshot("ready_with_5_slaves")
+        self.install_plugins(plugins)
 
         settings = None
-
         if conf.NEUTRON_ENABLE:
             settings = {
                 "net_provider": "neutron",
@@ -358,19 +375,15 @@ class ZabbixPlugin(TestBasic):
         Snapshot deploy_zabbix_snmp_emc_ha
 
         """
-        self.env.revert_snapshot("ready_with_5_slaves")
+        plugins = ["ZABBIX_PLUGIN_PATH",
+                   "ZABBIX_SNMP_PLUGIN_PATH",
+                   "ZABBIX_SNMP_EMC_PLUGIN_PATH"]
+        self.check_plugin(plugins)
 
-        for plugin in [conf.ZABBIX_PLUGIN_PATH,
-                       conf.ZABBIX_SNMP_PLUGIN_PATH,
-                       conf.ZABBIX_SNMP_EMC_PLUGIN_PATH]:
-            checkers.upload_tarball(
-                self.env.d_env.get_admin_remote(), plugin, "/var")
-            checkers.install_plugin_check_code(
-                self.env.d_env.get_admin_remote(),
-                plugin=os.path.basename(plugin))
+        self.env.revert_snapshot("ready_with_5_slaves")
+        self.install_plugins(plugins)
 
         settings = None
-
         if conf.NEUTRON_ENABLE:
             settings = {
                 "net_provider": "neutron",
@@ -448,19 +461,15 @@ class ZabbixPlugin(TestBasic):
         Snapshot deploy_zabbix_snmp_extreme_ha
 
         """
-        self.env.revert_snapshot("ready_with_5_slaves")
+        plugins = ["ZABBIX_PLUGIN_PATH",
+                   "ZABBIX_SNMP_PLUGIN_PATH",
+                   "ZABBIX_SNMP_EXTREME_PLUGIN_PATH"]
+        self.check_plugin(plugins)
 
-        for plugin in [conf.ZABBIX_PLUGIN_PATH,
-                       conf.ZABBIX_SNMP_PLUGIN_PATH,
-                       conf.ZABBIX_SNMP_EXTREME_PLUGIN_PATH]:
-            checkers.upload_tarball(
-                self.env.d_env.get_admin_remote(), plugin, "/var")
-            checkers.install_plugin_check_code(
-                self.env.d_env.get_admin_remote(),
-                plugin=os.path.basename(plugin))
+        self.env.revert_snapshot("ready_with_5_slaves")
+        self.install_plugins(plugins)
 
         settings = None
-
         if conf.NEUTRON_ENABLE:
             settings = {
                 "net_provider": "neutron",
@@ -538,16 +547,13 @@ class ZabbixPlugin(TestBasic):
         Snapshot deploy_zabbix_ceph_ha
 
         """
+        plugins = ["ZABBIX_PLUGIN_PATH"]
+        self.check_plugins(plugins)
+
         self.env.revert_snapshot("ready_with_5_slaves")
+        self.install_plugins(plugins)
 
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.upload_tarball(
-                remote, conf.ZABBIX_PLUGIN_PATH, "/var")
-            checkers.install_plugin_check_code(
-                remote,
-                plugin=os.path.basename(conf.ZABBIX_PLUGIN_PATH))
-
-        settings = {}
+        settings = None
         if conf.NEUTRON_ENABLE:
             settings = {
                 "net_provider": "neutron",
