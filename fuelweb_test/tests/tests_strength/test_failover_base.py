@@ -32,6 +32,7 @@ from fuelweb_test.helpers.checkers import check_ping
 from fuelweb_test.helpers.checkers import check_public_ping
 from fuelweb_test.helpers.checkers import get_file_size
 from fuelweb_test.helpers import os_actions
+from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test.helpers.utils import run_on_remote
@@ -1019,7 +1020,8 @@ class TestHaFailoverBase(TestBasic):
         self.fuel_web.wait_mysql_galera_is_up(['slave-02'])
 
         # Check ha ans services are fine after revert
-        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=300)
+        with TimeStat("ha_ostf_after_revert", is_uniq=True):
+            self.fuel_web.assert_ha_services_ready(cluster_id, timeout=800)
         self.fuel_web.assert_os_services_ready(cluster_id)
 
         p_d_ctrl = self.fuel_web.get_nailgun_primary_node(
@@ -1049,9 +1051,9 @@ class TestHaFailoverBase(TestBasic):
         # check ha
         logger.info('Node was destroyed {0}'.format(rabbit_slaves[0].name))
         # backend for destroyed node will be down
-
-        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=600,
-                                               should_fail=1)
+        with TimeStat("ha_ostf_after_slave_rabbit_destroy", is_uniq=True):
+            self.fuel_web.assert_ha_services_ready(
+                cluster_id, timeout=800, should_fail=1)
 
         # Run sanity and smoke tests to see if cluster operable
 
@@ -1086,7 +1088,8 @@ class TestHaFailoverBase(TestBasic):
                                'in nailgun'.format(rabbit_slaves[0].name))
 
         # check ha
-        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=600)
+        with TimeStat("ha_ostf_after_rabbit_slave_power_on", is_uniq=True):
+            self.fuel_web.assert_ha_services_ready(cluster_id, timeout=800)
         # check os
         self.fuel_web.assert_os_services_ready(cluster_id)
 
@@ -1114,8 +1117,9 @@ class TestHaFailoverBase(TestBasic):
                                'in nailgun'.format(master_rabbit.name))
 
         # check ha and note that backend for destroyed node will be down
-        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=600,
-                                               should_fail=1)
+        with TimeStat("ha_ostf_master_rabbit_destroy", is_uniq=True):
+            self.fuel_web.assert_ha_services_ready(
+                cluster_id, timeout=800, should_fail=1)
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
 
         active_slaves = [slave for slave
@@ -1142,8 +1146,8 @@ class TestHaFailoverBase(TestBasic):
                                'in nailgun'.format(master_rabbit.name))
 
         # check ha
-
-        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=600)
+        with TimeStat("ha_ostf_master_rabbit_power_on", is_uniq=True):
+            self.fuel_web.assert_ha_services_ready(cluster_id, timeout=800)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         # check that master rabbit is the same
