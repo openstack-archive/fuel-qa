@@ -219,7 +219,7 @@ class FailoverGroupMongo(TestBasic):
         target_node = self.fuel_web.get_devops_node_by_nailgun_node(mongodb[0])
 
         self.show_step(2)
-        self.fuel_web.warm_shutdown_nodes(target_node)
+        self.fuel_web.warm_shutdown_nodes([target_node])
 
         self.show_step(3)
         self.fuel_web.verify_network(cluster_id)
@@ -228,7 +228,7 @@ class FailoverGroupMongo(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
 
         self.show_step(5)
-        self.fuel_web.warm_start_nodes(target_node)
+        self.fuel_web.warm_start_nodes([target_node])
 
         self.show_step(6)
         self.fuel_web.verify_network(cluster_id)
