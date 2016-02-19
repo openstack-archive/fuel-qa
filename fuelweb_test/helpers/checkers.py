@@ -451,6 +451,15 @@ def check_mysql(remote, node_name):
 
 
 @logwrap
+def get_nodes_number(
+        nodes, state='discover', online=True):
+    fnodes = filter(lambda n:
+                    n['online'] == online and n['status'] == state,
+                    nodes)
+    return len(fnodes)
+
+
+@logwrap
 def install_plugin_check_code(
         remote, plugin, exit_code=0):
     cmd = "cd /var && fuel plugins --install {0} ".format(plugin)
