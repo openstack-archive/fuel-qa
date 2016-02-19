@@ -13,17 +13,20 @@
 #    under the License.
 
 from system_test import testcase
-from system_test.tests.strength import strength_base
+from system_test import deferred_decorator
+from system_test import action
+
+from system_test.tests import ActionTest
+from system_test.actions import BaseActions
+from system_test.actions import StrengthActions
 from system_test.helpers.decorators import make_snapshot_if_step_fail
-from system_test.helpers.decorators import deferred_decorator
-from system_test.helpers.decorators import action
 
 
 @testcase(groups=['system_test',
                   'system_test.failover',
                   'system_test.failover.destroy_controllers',
                   'system_test.failover.destroy_controllers.first'])
-class StrengthDestroyFirstController(strength_base.StrengthBaseActions):
+class StrengthDestroyFirstController(ActionTest, BaseActions, StrengthActions):
     """Destroy two controllers and check pacemaker status is correct
 
     Scenario:
@@ -73,7 +76,8 @@ class StrengthDestroyFirstController(strength_base.StrengthBaseActions):
                   'system_test.failover',
                   'system_test.failover.destroy_controllers',
                   'system_test.failover.destroy_controllers.second'])
-class StrengthDestroySecondController(strength_base.StrengthBaseActions):
+class StrengthDestroySecondController(ActionTest, BaseActions,
+                                      StrengthActions):
     """Destroy two controllers and check pacemaker status is correct
 
     Scenario:

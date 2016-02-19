@@ -14,15 +14,15 @@
 
 
 from system_test import testcase
-from system_test.tests.strength import strength_base
+from system_test.tests import ActionTest
+from system_test.actions import BaseActions
+from system_test.actions import FillRootActions
 
 
 @testcase(groups=['system_test',
                   'system_test.failover',
                   'system_test.failover.filling_root'])
-class FillRootPrimaryController(
-    strength_base.FillRootBaseActions
-):
+class FillRootPrimaryController(ActionTest, BaseActions, FillRootActions):
     """Fill root filesystem on primary controller and check pacemaker
 
     Scenario:

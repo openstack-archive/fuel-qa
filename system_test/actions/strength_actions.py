@@ -24,21 +24,17 @@ from fuelweb_test.helpers.pacemaker import get_pacemaker_nodes_attributes
 from fuelweb_test.helpers.pacemaker import get_pcs_nodes
 from fuelweb_test.helpers.pacemaker import parse_pcs_status_xml
 
-from system_test.tests import actions_base
-from system_test.helpers.decorators import make_snapshot_if_step_fail
-from system_test.helpers.decorators import deferred_decorator
-from system_test.helpers.decorators import action
-
 from system_test import logger
+from system_test import deferred_decorator
+from system_test import action
+from system_test.helpers.decorators import make_snapshot_if_step_fail
 
 
-class StrengthBaseActions(actions_base.ActionsBase):
+class StrengthActions(object):
 
-    def __init__(self, config=None):
-        super(StrengthBaseActions, self).__init__(config)
-        self.destroyed_devops_nodes = []
-        self.ostf_tests_should_failed = 0
-        self.os_service_should_failed = 0
+    destroyed_devops_nodes = []
+    ostf_tests_should_failed = 0
+    os_service_should_failed = 0
 
     def _destroy_controller(self, devops_node_name):
         logger.info("Suspend {} node".format(devops_node_name))
@@ -110,22 +106,20 @@ class StrengthBaseActions(actions_base.ActionsBase):
                 self.destroyed_devops_nodes)
 
 
-class FillRootBaseActions(actions_base.ActionsBase):
+class FillRootActions(object):
 
-    def __init__(self, config=None):
-        super(FillRootBaseActions, self).__init__(config)
-        self.ostf_tests_should_failed = 0
-        self.primary_controller = None
-        self.primary_controller_fqdn = None
-        self.primary_controller_space_on_root = 0
-        self.disk_monitor_limit = 512
-        self.rabbit_disk_free_limit = 5
-        self.pacemaker_restart_timeout = 600
-        self.pcs_check_timeout = 300
-        self.primary_controller_space_to_filled = 0
-        self.pcs_status = None
-        self.slave_nodes_fqdn = None
-        self.slave_node_running_resources = None
+    ostf_tests_should_failed = 0
+    primary_controller = None
+    primary_controller_fqdn = None
+    primary_controller_space_on_root = 0
+    disk_monitor_limit = 512
+    rabbit_disk_free_limit = 5
+    pacemaker_restart_timeout = 600
+    pcs_check_timeout = 300
+    primary_controller_space_to_filled = 0
+    pcs_status = None
+    slave_nodes_fqdn = None
+    slave_node_running_resources = None
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action

@@ -13,11 +13,12 @@
 #    under the License.
 
 from system_test import testcase
-from system_test.tests import actions_base
+from system_test.tests import ActionTest
+from system_test.actions import BaseActions
 
 
 @testcase(groups=['system_test', 'system_test.redeploy_after_reset'])
-class RedeployAfterReset(actions_base.ActionsBase):
+class RedeployAfterReset(ActionTest, BaseActions):
     """Case deploy Environment
 
     Scenario:
