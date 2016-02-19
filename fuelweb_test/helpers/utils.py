@@ -29,6 +29,15 @@ from fuelweb_test import settings
 
 
 @logwrap
+def get_nodes_number(
+        nodes, state='discover', online=True):
+    fnodes = filter(lambda n:
+                    n['online'] == online and n['status'] == state,
+                    nodes)
+    return len(fnodes)
+
+
+@logwrap
 def get_yaml_to_json(node_ssh, file):
     cmd = ("python -c 'import sys, yaml, json; json.dump("
            "yaml.load(sys.stdin),"
