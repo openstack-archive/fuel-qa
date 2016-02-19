@@ -17,15 +17,16 @@ import os
 from proboscis.asserts import assert_true, assert_equal
 
 from fuelweb_test.helpers import checkers
+
 from system_test import logger
-from system_test.helpers.decorators import action
-from system_test.helpers.decorators import deferred_decorator
+from system_test import action
+from system_test import deferred_decorator
+from system_test import nested_action
+
 from system_test.helpers.decorators import make_snapshot_if_step_fail
-from system_test.helpers.decorators import nested_action
-from system_test.tests import base_actions_factory
 
 
-class PluginsActions(base_actions_factory.BaseActionsFactory):
+class PluginsActions(object):
 
     plugin_name = None
     plugin_path = None
