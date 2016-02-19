@@ -740,9 +740,9 @@ class FuelWebClient(object):
     @duration
     @check_repos_management
     @custom_repo
-    def deploy_cluster_wait(self, cluster_id, is_feature=False,
-                            timeout=help_data.DEPLOYMENT_TIMEOUT, interval=30,
-                            check_services=True):
+    def _deploy_cluster_wait(self, cluster_id, is_feature=False,
+                             timeout=help_data.DEPLOYMENT_TIMEOUT, interval=30,
+                             check_services=True):
         if not is_feature:
             logger.info('Deploy cluster %s', cluster_id)
             task = self.deploy_cluster(cluster_id)
@@ -788,6 +788,13 @@ class FuelWebClient(object):
 
                 logger.info('Node status: {}'.format(pretty_log(node_status,
                                                                 indent=1)))
+
+    def deploy_cluster_wait(self, cluster_id, is_feature=False,
+                            timeout=help_data.DEPLOYMENT_TIMEOUT, interval=30,
+                            check_services=True):
+        for i in range(3):
+            self._deploy_cluster_wait(cluster_id, is_feature, timeout,
+                                      interval, check_services)
 
     def deploy_cluster_wait_progress(self, cluster_id, progress,
                                      return_task=None):
