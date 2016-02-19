@@ -186,6 +186,9 @@ class TestHaFailoverBase(TestBasic):
                 [n.name for n in set(d_ctrls) - {devops_node}],
                 timeout=300)
 
+            # Wait, until OpenStack will be really ready
+            time.sleep(300)  # It's enough to PASS test.
+
             # STEP: Run OSTF
             self.show_step([4, 8][num])
             # should fail 2 according to haproxy backends marked as fail
