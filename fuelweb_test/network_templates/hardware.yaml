@@ -85,18 +85,8 @@ adv_net_template:
         - action: add-br
           name: br-mgmt
         - action: add-port
-          name: <% if1 %>.360
-        - action: add-port
-          name: <% if2 %>.360
-        - action: add-bond
-          bond_properties:
-            mode: active-backup
           bridge: br-mgmt
-          interface_properties: {}
-          interfaces:
-          - <% if1 %>.360
-          - <% if2 %>.360
-          name: lnxbond0
+          name: <% if2 %>.360
       messaging:
         endpoints:
         - br-messaging
@@ -212,8 +202,8 @@ adv_net_template:
           name: <% if2 %>.361
     nic_mapping:
       default:
-        if1: enp0s1
-        if2: enp0s2
+        if1: enp0s3
+        if2: enp0s4
     templates_for_node_role:
       ceph-osd:
       - admin
