@@ -52,6 +52,33 @@ ssh_manager = SSHManager()
 
 
 @logwrap
+def validate_amount_nodes(
+        nodes, expected_amount,
+        state='discover', online=True):
+    """Validate amount of nodes in state
+
+    :type nodes: iterable
+    :type expected_amount: int
+    :type state: str
+    :type online: bool
+    :raises: Exception
+    """
+    fnodes = [
+        node for node in nodes
+        if node['online'] == online and node['status'] == state]
+    if len(fnodes) != expected_amount:
+        raise Exception(
+            'Nodes in state {state} (online: {online}): '
+            '{amount}, while expected: {expected}'.format(
+                state=state,
+                online=online,
+                amount=len(fnodes),
+                expected=expected_amount
+            )
+        )
+
+
+@logwrap
 def check_cinder_status(ip):
     """Parse output and return False if any enabled service is down.
     'cinder service-list' stdout example:
