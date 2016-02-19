@@ -164,6 +164,14 @@ class ZabbixPlugin(TestBasic):
                 self.env.d_env.get_admin_remote(),
                 plugin=os.path.basename(p))
 
+    def check_nodes(self, min_nodes):
+        nodes_num = checkers.get_discovered_nodes_number(
+            self.fuel_web.client.list_nodes())
+        self.raise_error(
+            nodes_num < min_nodes,
+            "not enough nodes available: found {0}, "
+            "required {1}".format(nodes_num, min_nodes))
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_zabbix_ha"])
     @log_snapshot_after_test
@@ -191,6 +199,7 @@ class ZabbixPlugin(TestBasic):
         self.check_plugins(plugins)
 
         self.env.revert_snapshot("ready_with_5_slaves")
+        self.check_nodes(5)
         self.install_plugins(plugins)
 
         settings = None
@@ -279,6 +288,7 @@ class ZabbixPlugin(TestBasic):
         self.check_plugins(plugins)
 
         self.env.revert_snapshot("ready_with_5_slaves")
+        self.check_nodes(5)
         self.install_plugins(plugins)
 
         settings = None
@@ -381,6 +391,7 @@ class ZabbixPlugin(TestBasic):
         self.check_plugin(plugins)
 
         self.env.revert_snapshot("ready_with_5_slaves")
+        self.check_nodes(5)
         self.install_plugins(plugins)
 
         settings = None
@@ -467,6 +478,7 @@ class ZabbixPlugin(TestBasic):
         self.check_plugin(plugins)
 
         self.env.revert_snapshot("ready_with_5_slaves")
+        self.check_nodes(5)
         self.install_plugins(plugins)
 
         settings = None
@@ -551,6 +563,7 @@ class ZabbixPlugin(TestBasic):
         self.check_plugins(plugins)
 
         self.env.revert_snapshot("ready_with_5_slaves")
+        self.check_nodes(5)
         self.install_plugins(plugins)
 
         settings = None
