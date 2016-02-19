@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from proboscis.asserts import assert_true
 from proboscis import test
 from proboscis import SkipTest
 
@@ -19,7 +20,7 @@ from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
-from fuelweb_test.helpers.utils import run_on_remote
+from fuelweb_test import logger
 
 
 @test(groups=['fuel-mirror'])
@@ -35,89 +36,48 @@ class TestUseMirror(TestBasic):
     that is not reflected in our mirror.
     """
 
-    @test(groups=['fuel-mirror', 'use-mirror'],
+    @test(groups=['fuel-mirror', 'deploy_with_custom_mirror'],
           depends_on=[SetupEnvironment.prepare_slaves_5])
     def deploy_with_custom_mirror(self):
         """Create mirror for deployment without internet dependencies.
 
-        TODO(akostrikov) wait for good way to package packetary/fuel-mirror.
-        Good package covers steps from 1 to 7.
-
         Scenario:
-            1. Install packages to build fuel-mirror and packetary
-            2. Download packetary from github
-            3. Checkout to packetary3 version of packetary
-            4. Install packetary and fuel-mirror
-            5. Create configuration directory
-            6. Copy configuration file to configuration directory
-            7. Update config file with real master ip.
-            8. Run create mirror command
-            9. Create cluster with neutron networking
-            10. Add 3 nodes with controller role
-            11. Add 1 node with compute role and 1 node with cinder role
-            12. Run network verification
-            13. Deploy the cluster
-            14. Run OSTF
-            15. Create snapshot
+            1. Create cluster with neutron networking
+            2. Add 3 nodes with controller role
+            3. Add 1 node with compute role and 1 node with cinder role
+            4. Run create, apply commands for Ubuntu mirrors
+            5. Check that only Ubuntu mirrors were changed
+            6. Run create, apply commands for mos mirrors
+            7. Check than mos mirrors were also changed
+            8. Run network verification
+            9. Deploy the cluster
+            10. Run OSTF
+            11. Create snapshot
 
         Duration 90m
         Snapshot deploy_with_custom_mirror
         """
         self.env.revert_snapshot('ready_with_5_slaves')
+        admin_ip = self.ssh_manager.admin_ip
 
-        with self.env.d_env.get_admin_remote() as remote:
-            # FIXME(akostrikov) This should be removed with correct install.
-            # All that above is a hack.
-            self.show_step(1, initialize=True)
-            run_on_remote(remote,
-                          'yum install git python-lxml.x86_64 '
-                          'python-eventlet -y')
-            self.show_step(2)
-            run_on_remote(remote,
-                          'cd /opt && rm -rf packetary && '
-                          'git clone https://github.com/bgaifullin/packetary')
-            self.show_step(3)
-            run_on_remote(remote,
-                          'cd /opt/packetary && git checkout packetary3')
-            self.show_step(4)
-            run_on_remote(remote, 'cd /opt/packetary && pip install -e .')
-            run_on_remote(remote,
-                          'cd /opt/packetary/contrib/fuel_mirror/ && '
-                          'pip install -e .')
-            self.show_step(5)
-            run_on_remote(remote, 'mkdir -p /etc/fuel-mirror/')
-            self.show_step(6)
-            run_on_remote(remote,
-                          'cp /opt/packetary/contrib/fuel_mirror/'
-                          'etc/config.yaml /etc/fuel-mirror/config.yaml')
-            self.show_step(7)
-            admin_ip = str(
-                self.env.d_env.nodes().admin.get_ip_address_by_network_name(
-                    'admin'))
-            cmd = "sed -r 's/{prev_ip}'/{admin_ip}/ -i'' {config_path}".format(
-                prev_ip='10.20.0.2',
-                admin_ip=admin_ip,
-                config_path='/etc/fuel-mirror/config.yaml'
-            )
-            run_on_remote(remote, cmd)
-            self.show_step(8)
-            run_on_remote(remote, 'fuel-mirror create --ubuntu')
-
-        self.show_step(9)
-
+        self.show_step(1, initialize=True)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
                 "net_segment_type": NEUTRON_SEGMENT['tun'],
-                'tenant': 'packetary',
-                'user': 'packetary',
-                'password': 'packetary'
+                'sahara': True,
+                'murano': True,
+                'ceilometer': True,
+                'volumes_lvm': True,
+                'volumes_ceph': False,
+                'images_ceph': True
             }
         )
-        self.show_step(10)
-        self.show_step(11)
+
+        self.show_step(2)
+        self.show_step(3)
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -128,16 +88,69 @@ class TestUseMirror(TestBasic):
                 'slave-05': ['cinder']
             }
         )
-        self.show_step(12)
+
+        self.show_step(4)
+        create_cmd = 'fuel-mirror create -P ubuntu -G ubuntu'
+        self.ssh_manager.execute_on_remote(ip=admin_ip, cmd=create_cmd)
+        apply_cmd = 'fuel-mirror apply -P ubuntu -G ubuntu'
+        self.ssh_manager.execute_on_remote(ip=admin_ip, cmd=apply_cmd)
+
+        self.show_step(5)
+        cluster_repos = self.fuel_web.get_cluster_repos(cluster_id)['value']
+        ubuntu_repos = [repo for repo in cluster_repos
+                        if 'ubuntu' in repo['name']]
+        mos_repos = [repo for repo in cluster_repos
+                     if 'mos-' in repo['name'] or 'Auxilary' in repo['name']]
+        remote_ubuntu_repos = [repo for repo in ubuntu_repos
+                               if admin_ip not in repo['uri'] and
+                               '{settings.MASTER_IP}' not in repo['uri']]
+        local_mos_repos = [repo for repo in mos_repos
+                           if admin_ip in repo['uri'] or
+                           '{settings.MASTER_IP}' in repo['uri']]
+        message = "All: {0} \nMos: {1} \nR ubuntu: {2}\nL MOS: {3}".format(
+            cluster_repos,
+            mos_repos,
+            remote_ubuntu_repos,
+            local_mos_repos)
+        logger.info(message)
+
+        assert_true(not remote_ubuntu_repos,
+                    message="There is still some remote Ubuntu repositories: "
+                            "{repos}".format(repos=remote_ubuntu_repos))
+        assert_true(not local_mos_repos,
+                    message="Some MOS repos became local:{repos}".format(
+                        local_mos_repos
+                    )
+                    )
+
+        self.show_step(6)
+        create_cmd = 'fuel-mirror create -P ubuntu -G mos'
+        self.ssh_manager.execute_on_remote(ip=admin_ip, cmd=create_cmd)
+        apply_cmd = 'fuel-mirror apply -P ubuntu -G mos'
+        self.ssh_manager.execute_on_remote(ip=admin_ip, cmd=apply_cmd)
+
+        self.show_step(7)
+        cluster_repos = self.fuel_web.get_cluster_repos(cluster_id)['value']
+        remote_repos = [repo for repo in cluster_repos
+                        if admin_ip not in repo['uri'] and
+                        '{settings.MASTER_IP}' not in repo['uri']]
+        message = "Cluster repos: {0}".format(cluster_repos)
+        logger.info(message)
+        assert_true(not remote_repos,
+                    message="There is still some remote MOS repositories: "
+                            "{repos}".format(repos=remote_repos))
+
+        self.show_step(8)
         self.fuel_web.verify_network(cluster_id)
-        self.show_step(13)
+        self.show_step(9)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        self.show_step(14)
+        self.show_step(10)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
+        self.show_step(11)
         self.env.make_snapshot('deploy_with_custom_mirror')
 
     @test(groups=['fuel-mirror', 'use-mirror'])
