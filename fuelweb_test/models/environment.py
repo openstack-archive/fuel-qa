@@ -25,6 +25,7 @@ from keystoneclient import exceptions
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
+from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import revert_info
 from fuelweb_test.helpers.decorators import update_rpm_packages
 from fuelweb_test.helpers.decorators import upload_manifests
@@ -134,6 +135,12 @@ class EnvironmentModel(object):
 
         if not skip_timesync:
             self.sync_time()
+
+        checkers.validate_amount_nodes(
+            nodes=self.fuel_web.client.list_nodes(),
+            expected_amount=len(devops_nodes)
+        )
+
         return self.nailgun_nodes(devops_nodes)
 
     def sync_time(self, nodes_names=None, skip_sync=False):
