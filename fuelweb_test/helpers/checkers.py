@@ -451,6 +451,23 @@ def check_mysql(remote, node_name):
 
 
 @logwrap
+def get_discovered_nodes_number(
+        remote, exit_code=0, state='discover', online='True'):
+    cmd = "fuel nodes | awk -F\| '{" \
+          + "gsub(/^ */,\"\",$2); gsub(/ *$/,\"\",$2);" \
+          + "gsub(/^ */,\"\",$9); gsub(/ *$/,\"\",$9) " \
+          + "} $2==\"" + state + "\"" \
+          + " && $9==\"" + online + "\" {print $1}' | wc -l"
+    logger.debug('Running command {0}'.format(cmd))
+    chan, stdin, stderr, stdout = remote.execute_async(cmd)
+    logger.debug('Try to read status code from chain...')
+    assert_equal(
+        chan.recv_exit_status(), exit_code,
+        'Nodes list fails with next message {0}'.format(''.join(stderr)))
+    return ''.join(stdout).strip('\n\r ')
+
+
+@logwrap
 def install_plugin_check_code(
         remote, plugin, exit_code=0):
     cmd = "cd /var && fuel plugins --install {0} ".format(plugin)
