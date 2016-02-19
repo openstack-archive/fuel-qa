@@ -743,17 +743,15 @@ class FuelWebClient(object):
     def deploy_cluster_wait(self, cluster_id, is_feature=False,
                             timeout=help_data.DEPLOYMENT_TIMEOUT, interval=30,
                             check_services=True):
-        if not is_feature:
-            logger.info('Deploy cluster %s', cluster_id)
-            task = self.deploy_cluster(cluster_id)
-            self.assert_task_success(task, interval=interval, timeout=timeout)
-        else:
-            logger.info('Provision nodes of a cluster %s', cluster_id)
-            task = self.client.provision_nodes(cluster_id)
-            self.assert_task_success(task, timeout=timeout, interval=interval)
-            logger.info('Deploy nodes of a cluster %s', cluster_id)
-            task = self.client.deploy_nodes(cluster_id)
-            self.assert_task_success(task, timeout=timeout, interval=interval)
+        logger.info('Provision nodes of a cluster %s', cluster_id)
+        task = self.client.provision_nodes(cluster_id)
+        self.assert_task_success(task, timeout=timeout, interval=interval)
+        logger.info('Deploy nodes of a cluster %s', cluster_id)
+        task = self.client.deploy_nodes(cluster_id)
+        self.assert_task_success(task, timeout=timeout, interval=interval)
+        task = self.client.deploy_nodes(cluster_id)
+        self.assert_task_success(task, timeout=timeout, interval=interval)
+
         if check_services:
             self.assert_ha_services_ready(cluster_id)
             self.assert_os_services_ready(cluster_id)
