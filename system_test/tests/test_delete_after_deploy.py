@@ -13,11 +13,12 @@
 #    under the License.
 
 from system_test import testcase
-from system_test.tests import actions_base
+from system_test.tests import ActionTest
+from system_test.actions import BaseActions
 
 
 @testcase(groups=['system_test', 'system_test.delete_after_deploy'])
-class DeleteAfterDeploy(actions_base.ActionsBase):
+class DeleteAfterDeploy(ActionTest, BaseActions):
     """Case deploy Environment
 
     Scenario:

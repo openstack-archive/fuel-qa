@@ -13,15 +13,14 @@
 #    under the License.
 
 import functools
+import types
 
 from proboscis import after_class
 from proboscis import before_class
 from proboscis import test
 
 from fuelweb_test.helpers.utils import TimeStat
-from fuelweb_test.tests import base_test_case
 
-from system_test.helpers import utils
 from system_test import logger
 
 
@@ -45,7 +44,23 @@ def step_start_stop(func):
     return wrapper
 
 
-class BaseActionsFactory(base_test_case.TestBasic):
+def copy_func(f, name=None):
+    """
+    :param f:
+    :param name:
+    :return: a function with same code, globals, defaults, closure,
+             and name (or provide a new name)
+
+    """
+
+    fn = types.FunctionType(f.__code__, f.__globals__, name or f.__name__,
+                            f.__defaults__, f.__closure__)
+    # in case f was given attrs (note this dict is a shallow copy):
+    fn.__dict__.update(f.__dict__)
+    return fn
+
+
+class ActionsFactory(object):
 
     @classmethod
     def get_actions(cls):
@@ -66,11 +81,11 @@ class BaseActionsFactory(base_test_case.TestBasic):
         for action in cls.actions_order:
             try:
                 action_method = actions_method[action]
-            except KeyError:
+            except KeyError as e:
                 import inspect
                 source = inspect.getsourcelines(inspect.getmodule(cls))[0]
                 counted_data = [n for n in enumerate(source)]
-                line_num = [n for (n, l) in counted_data if 'ddd' in l][0]
+                line_num = [n for (n, l) in counted_data if str(e) in l][0]
                 cutted = counted_data[line_num - 4:line_num + 4]
                 cutted = [(n, l[:-1] + " " * 20 + "<====\n"
                           if n == line_num else l)
@@ -114,7 +129,7 @@ class BaseActionsFactory(base_test_case.TestBasic):
                                                          step,
                                                          n_action)
 
-            method = utils.copy_func(action['method'], step_method_name)
+            method = copy_func(action['method'], step_method_name)
             _step_name = getattr(action['method'],
                                  "__doc__").splitlines()[0]
             setattr(method, "_step_name", "Step {:03d}. {}".format(step,
@@ -150,14 +165,14 @@ class BaseActionsFactory(base_test_case.TestBasic):
                 depends_on=depends)
 
         #  Create before case methods, start case and setup
-        start_method = utils.copy_func(
+        start_method = copy_func(
             getattr(cls, "_start_case"),
             "{}.StartCase".format(class_name))
         test_steps["{}.StartCase".format(class_name)] = before_class(
             start_method)
 
         if hasattr(cls, 'case_setup'):
-            setup_method = utils.copy_func(
+            setup_method = copy_func(
                 getattr(cls, "case_setup"),
                 "{}.CaseSetup".format(class_name))
             setattr(setup_method, "_step_name", "CaseSetup")
@@ -165,7 +180,7 @@ class BaseActionsFactory(base_test_case.TestBasic):
                 step_start_stop(setup_method), runs_after=[start_method])
 
         if hasattr(cls, 'case_teardown'):
-            teardown_method = utils.copy_func(
+            teardown_method = copy_func(
                 getattr(cls, "case_teardown"),
                 "{}.CaseTeardown".format(class_name))
             setattr(teardown_method, "_step_name", "CaseTeardown")
@@ -175,7 +190,7 @@ class BaseActionsFactory(base_test_case.TestBasic):
             teardown_method = None
 
         #  Create case methods, teardown and finish case
-        finish_method = utils.copy_func(
+        finish_method = copy_func(
             getattr(cls, "_finish_case"),
             "{}.FinishCase".format(class_name))
         test_steps["{}.FinishCase".format(class_name)] = after_class(

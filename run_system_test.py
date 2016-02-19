@@ -13,11 +13,10 @@ from system_test import get_groups
 from system_test import define_custom_groups
 from system_test import discover_import_tests
 from system_test import tests_directory
-
-from system_test.helpers.utils import collect_yamls
-from system_test.helpers.utils import get_path_to_config
-from system_test.helpers.utils import get_list_confignames
-from system_test.helpers.utils import get_basepath
+from system_test import collect_yamls
+from system_test import get_path_to_config
+from system_test import get_list_confignames
+from system_test import get_basepath
 
 basedir = get_basepath()
 
