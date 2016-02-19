@@ -16,19 +16,22 @@ from devops.helpers.helpers import icmp_ping
 from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
 
-from fuelweb_test import logger
 from fuelweb_test.helpers import checkers
 
+from system_test import logger
 from system_test import testcase
-from system_test.helpers.decorators import action
-from system_test.helpers.decorators import deferred_decorator
+from system_test import action
+from system_test import deferred_decorator
+
+from system_test.tests import ActionTest
+from system_test.actions import BaseActions
+from system_test.actions import FuelMasterActions
+
 from system_test.helpers.decorators import make_snapshot_if_step_fail
-from system_test.tests.actions_base import ActionsBase
-from system_test.tests.actions_base import FuelMasterActions
 
 
 @testcase(groups=['system_test', 'system_test.fuel_migration'])
-class FuelMasterMigrate(ActionsBase, FuelMasterActions):
+class FuelMasterMigrate(ActionTest, BaseActions, FuelMasterActions):
     """Fuel master migration to VM
 
     Scenario:
