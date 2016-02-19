@@ -14,16 +14,18 @@
 
 from proboscis import SkipTest
 
+from system_test import deferred_decorator
+from system_test import action
+
 from system_test.helpers.decorators import make_snapshot_if_step_fail
-from system_test.helpers.decorators import deferred_decorator
-from system_test.helpers.decorators import action
-from system_test.tests import base_actions_factory
 
 
-class HealthCheckActions(base_actions_factory.BaseActionsFactory):
+class HealthCheckActions(object):
     """Basic actions for OSTF tests
+
     health_check - run sanity and smoke OSTF tests
     health_check_sanity_smoke_ha - run sanity, smoke and ha OSTF tests
+    health_check_ha - run ha OSTF tests
     """
     @deferred_decorator([make_snapshot_if_step_fail])
     @action

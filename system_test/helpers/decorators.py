@@ -16,33 +16,13 @@ import functools
 import traceback
 import sys
 import hashlib
-import inspect
-import collections
 
 from proboscis import SkipTest
 
 from fuelweb_test.helpers.utils import pull_out_logs_via_ssh
 from fuelweb_test.helpers.decorators import create_diagnostic_snapshot
 
-from system_test import Repository
 from system_test import logger
-
-
-def deferred_decorator(decorator_list):
-    def real_decorator(func):
-        setattr(func, '_deferred_decorator_', decorator_list)
-        return func
-    return real_decorator
-
-
-def action(method):
-    setattr(method, '_action_method_', True)
-    return method
-
-
-def nested_action(method):
-    setattr(method, '_nested_action_method_', True)
-    return staticmethod(method)
 
 
 def make_snapshot_if_step_fail(func):
@@ -104,18 +84,3 @@ def make_snapshot_if_step_fail(func):
             raise test_exception, None, exc_trace
         return result
     return wrapper
-
-
-def testcase(groups):
-    """Use this decorator for mark a test case class"""
-    def testcase_decorator(cls):
-        if not inspect.isclass(cls):
-            raise TypeError("Decorator @testcase should used only "
-                            "with classes")
-        if not isinstance(groups, collections.Sequence):
-            raise TypeError("Use list for groups")
-        cls.get_actions_order()
-        setattr(cls, '_base_groups', groups)
-        Repository.add(cls)
-        return cls
-    return testcase_decorator
