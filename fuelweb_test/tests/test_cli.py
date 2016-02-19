@@ -131,10 +131,10 @@ class CommandLineTest(test_cli_base.CommandLine):
             cluster_id = env_result['id']
 
             # Update network parameters
-            self.update_cli_network_configuration(cluster_id, remote)
+            self.update_cli_network_configuration(cluster_id)
             # Change floating ranges
             current_floating_range =\
-                self.get_floating_ranges(cluster_id, remote)
+                self.get_floating_ranges(cluster_id)
             logger.info(
                 "Current floating ranges: {0}".format(
                     current_floating_range))
@@ -150,9 +150,9 @@ class CommandLineTest(test_cli_base.CommandLine):
                 first_floating_address,
                 last_floating_address, 10)
             logger.info("New floating range: {0}".format(new_floating_range))
-            self.change_floating_ranges(cluster_id, remote, new_floating_range)
+            self.change_floating_ranges(cluster_id, new_floating_range)
             # Update SSL configuration
-            self.update_ssl_configuration(cluster_id, remote)
+            self.update_ssl_configuration(cluster_id)
 
             # Add and provision a controller node
             logger.info("Add to the cluster and start provisioning "
@@ -163,7 +163,7 @@ class CommandLineTest(test_cli_base.CommandLine):
             cmd = ('fuel --env-id={0} node --provision --node={1} --json'
                    .format(cluster_id, node_ids[0]))
             task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, remote, timeout=30 * 60)
+            self.assert_cli_task_success(task, timeout=30 * 60)
 
             # Add and provision 2 compute+cinder
             logger.info("Add to the cluster and start provisioning two "
@@ -176,18 +176,18 @@ class CommandLineTest(test_cli_base.CommandLine):
             cmd = ('fuel --env-id={0} node --provision --node={1},{2} --json'
                    .format(cluster_id, node_ids[1], node_ids[2]))
             task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, remote, timeout=10 * 60)
+            self.assert_cli_task_success(task, timeout=10 * 60)
 
             # Deploy the controller node
             cmd = ('fuel --env-id={0} node --deploy --node {1} --json'
                    .format(cluster_id, node_ids[0]))
             task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, remote, timeout=60 * 60)
+            self.assert_cli_task_success(task, timeout=60 * 60)
             # Deploy the compute nodes
             cmd = ('fuel --env-id={0} node --deploy --node {1},{2} --json'
                    .format(cluster_id, node_ids[1], node_ids[2]))
             task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, remote, timeout=30 * 60)
+            self.assert_cli_task_success(task, timeout=30 * 60)
             # Verify networks
             self.fuel_web.verify_network(cluster_id)
         # Get hiera floating ranges after deploying cluster
