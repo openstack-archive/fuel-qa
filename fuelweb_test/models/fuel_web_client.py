@@ -743,51 +743,48 @@ class FuelWebClient(object):
     def deploy_cluster_wait(self, cluster_id, is_feature=False,
                             timeout=help_data.DEPLOYMENT_TIMEOUT, interval=30,
                             check_services=True):
-        if not is_feature:
-            logger.info('Deploy cluster %s', cluster_id)
-            task = self.deploy_cluster(cluster_id)
-            self.assert_task_success(task, interval=interval, timeout=timeout)
-        else:
-            logger.info('Provision nodes of a cluster %s', cluster_id)
-            task = self.client.provision_nodes(cluster_id)
-            self.assert_task_success(task, timeout=timeout, interval=interval)
+        logger.info('Provision nodes of a cluster %s', cluster_id)
+        task = self.client.provision_nodes(cluster_id)
+        self.assert_task_success(task, timeout=timeout, interval=interval)
+        for i in range(2):
             logger.info('Deploy nodes of a cluster %s', cluster_id)
             task = self.client.deploy_nodes(cluster_id)
             self.assert_task_success(task, timeout=timeout, interval=interval)
-        if check_services:
-            self.assert_ha_services_ready(cluster_id)
-            self.assert_os_services_ready(cluster_id)
-        if not DISABLE_SSL and not USER_OWNED_CERT:
-            with self.environment.d_env.get_admin_remote() as admin_remote:
-                copy_cert_from_master(admin_remote, cluster_id)
-        n_nodes = self.client.list_cluster_nodes(cluster_id)
-        n_nodes = filter(lambda n: 'ready' in n['status'], n_nodes)
-        for n in n_nodes:
-            node = self.get_devops_node_by_nailgun_node(n)
-            if node:
-                node_name = node.name
-                with self.get_ssh_for_node(node_name) as remote:
-                    free = node_freemem(remote)
-                    hiera_roles = get_node_hiera_roles(remote)
-                node_status = {
-                    node_name:
-                    {
-                        'Host': n['hostname'],
-                        'Roles':
-                        {
-                            'Nailgun': n['roles'],
-                            'Hiera': hiera_roles,
-                        },
-                        'Memory':
-                        {
-                            'RAM': free['mem'],
-                            'SWAP': free['swap'],
-                        },
-                    },
-                }
 
-                logger.info('Node status: {}'.format(pretty_log(node_status,
-                                                                indent=1)))
+            if check_services:
+                self.assert_ha_services_ready(cluster_id)
+                self.assert_os_services_ready(cluster_id)
+            if not DISABLE_SSL and not USER_OWNED_CERT:
+                with self.environment.d_env.get_admin_remote() as admin_remote:
+                    copy_cert_from_master(admin_remote, cluster_id)
+            n_nodes = self.client.list_cluster_nodes(cluster_id)
+            n_nodes = filter(lambda n: 'ready' in n['status'], n_nodes)
+            for n in n_nodes:
+                node = self.get_devops_node_by_nailgun_node(n)
+                if node:
+                    node_name = node.name
+                    with self.get_ssh_for_node(node_name) as remote:
+                        free = node_freemem(remote)
+                        hiera_roles = get_node_hiera_roles(remote)
+                    node_status = {
+                        node_name:
+                        {
+                            'Host': n['hostname'],
+                            'Roles':
+                            {
+                                'Nailgun': n['roles'],
+                                'Hiera': hiera_roles,
+                            },
+                            'Memory':
+                            {
+                                'RAM': free['mem'],
+                                'SWAP': free['swap'],
+                            },
+                        },
+                    }
+
+                    logger.info('Node status: {}'.format(pretty_log(node_status,
+                                                                    indent=1)))
 
     def deploy_cluster_wait_progress(self, cluster_id, progress,
                                      return_task=None):
