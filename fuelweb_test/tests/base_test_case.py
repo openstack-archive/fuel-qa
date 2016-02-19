@@ -17,6 +17,7 @@ from proboscis import SkipTest
 from proboscis import test
 
 from fuelweb_test import logger
+from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import get_test_method_name
 from fuelweb_test.helpers.utils import TimeStat
@@ -238,6 +239,10 @@ class SetupEnvironment(TestBasic):
         self.show_step(2)
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:1],
                                  skip_timesync=True)
+        checkers.validate_amount_nodes(
+            nodes=self.fuel_web.client.list_nodes(),
+            expected_amount=1
+        )
         self.env.make_snapshot("ready_with_1_slaves", is_make=True)
         self.current_log_step = 0
 
@@ -260,6 +265,10 @@ class SetupEnvironment(TestBasic):
         self.show_step(2)
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:3],
                                  skip_timesync=True)
+        checkers.validate_amount_nodes(
+            nodes=self.fuel_web.client.list_nodes(),
+            expected_amount=3
+        )
         self.env.make_snapshot("ready_with_3_slaves", is_make=True)
         self.current_log_step = 0
 
@@ -282,6 +291,10 @@ class SetupEnvironment(TestBasic):
         self.show_step(2)
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:5],
                                  skip_timesync=True)
+        checkers.validate_amount_nodes(
+            nodes=self.fuel_web.client.list_nodes(),
+            expected_amount=5
+        )
         self.env.make_snapshot("ready_with_5_slaves", is_make=True)
         self.current_log_step = 0
 
@@ -307,5 +320,9 @@ class SetupEnvironment(TestBasic):
                                  skip_timesync=True)
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[5:9],
                                  skip_timesync=True)
+        checkers.validate_amount_nodes(
+            nodes=self.fuel_web.client.list_nodes(),
+            expected_amount=9
+        )
         self.env.make_snapshot("ready_with_9_slaves", is_make=True)
         self.current_log_step = 0
