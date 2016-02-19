@@ -587,6 +587,10 @@ NESSUS_SSL_VERIFY = get_var_as_bool("NESSUS_SSL_VERIFY", False)
 # possibility to change count of repeats failures
 REPEAT_COUNT = os.environ.get("REPEAT_COUNT", 2)
 
+# The number of cold restarts
+# in the 'repetitive_restart' test group
+RESTART_COUNT = os.environ.get("RESTART_COUNT", 10)
+
 # RH-related variables
 # Need to update these variables, when image with RH for
 # MOS will be available.
