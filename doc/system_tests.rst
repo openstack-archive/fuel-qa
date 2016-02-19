@@ -3,17 +3,73 @@
 System tests
 ************
 
+Core
+====
+
+Repository
+--------
+.. automodule:: system_test.core.repository
+   :members:
+
+Discover
+--------
+.. automodule:: system_test.core.discover
+   :members:
+
+Decorators
+----------
+.. automodule:: system_test.core.decorators
+   :members:
+
+Factory
+-------
+.. automodule:: system_test.core.factory
+   :members:
+
+Config
+------
+.. automodule:: system_test.core.config
+   :members:
+
+Actions
+=======
+
+Base actions
+------------
+.. automodule:: system_test.actions.base
+   :members:
+
+Fuelmaster actions
+------------------
+.. automodule:: system_test.actions.fuelmaster_actions
+   :members:
+
+OSTF actions
+------------
+.. automodule:: system_test.actions.ostf_actions
+   :members:
+
+Plugins actions
+---------------
+.. automodule:: system_test.actions.plugins_actions
+   :members:
+
+Strength actions
+----------------
+.. automodule:: system_test.actions.strength_actions
+   :members:
+
+VCenter actions
+---------------
+.. automodule:: system_test.actions.vcenter_actions
+   :members:
+
 General tests
 =============
 
-Actions Base
-------------
-.. automodule:: system_test.tests.actions_base
-   :members:
-
-Base actions factory
---------------------
-.. automodule:: system_test.tests.base_actions_factory
+ActionTest
+----------
+.. automodule:: system_test.tests.base
    :members:
 
 Case deploy Environment
@@ -56,17 +112,7 @@ Destroy controllers
 
 Fill root and check pacemaker
 -----------------------------
-.. automodule:: system_test.tests.strength.filling_root
-   :members:
-
-OSTF base actions
------------------
-.. automodule:: system_test.tests.ostf_base_actions
-   :members:
-
-Strength Base
--------------
-.. automodule:: system_test.tests.strength.strength_base
+.. automodule:: system_test.tests.strength.test_filling_root
    :members:
 
 Plugin tests
@@ -106,9 +152,4 @@ Helpers
 Decorators
 ----------
 .. automodule:: system_test.helpers.decorators
-   :members:
-
-Utils
------
-.. automodule:: system_test.helpers.utils
    :members:

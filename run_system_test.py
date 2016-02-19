@@ -13,11 +13,12 @@ from system_test import get_groups
 from system_test import define_custom_groups
 from system_test import discover_import_tests
 from system_test import tests_directory
+from system_test import collect_yamls
+from system_test import get_path_to_config
+from system_test import get_list_confignames
+from system_test import get_basepath
 
-from system_test.helpers.utils import collect_yamls
-from system_test.helpers.utils import get_path_to_config
-from system_test.helpers.utils import get_list_confignames
-from system_test.helpers.utils import get_basepath
+from system_test.core.repository import split_group_config
 
 basedir = get_basepath()
 
@@ -27,7 +28,8 @@ def print_explain(names):
     if not isinstance(names, list):
         names = [names]
     out = []
-    for name in names:
+    for name in [split_group_config(i)[0] if split_group_config(i) else i
+                 for i in names]:
         for i in groups_nums[name]:
             if hasattr(i, 'home'):
                 out.append((i.home._proboscis_entry_.parent.home, i.home))
@@ -126,7 +128,8 @@ def run(**kwargs):
         else:
             register_system_test_cases(groups=[g])
             groups_to_run.append(g)
-    if not set(groups_to_run) < set(get_groups()):
+    if not set([split_group_config(i)[0] if split_group_config(i) else i
+               for i in groups_to_run]) < set(get_groups()):
         sys.exit('There are no cases mapped to current group, '
                  'please be sure that you put right test group name.')
     if explain:

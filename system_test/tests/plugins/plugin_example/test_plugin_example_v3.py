@@ -14,18 +14,21 @@
 
 
 from fuelweb_test.settings import EXAMPLE_PLUGIN_V3_PATH
+
 from system_test import testcase
+from system_test import deferred_decorator
+from system_test import action
+
+from system_test.tests import ActionTest
+from system_test.actions import BaseActions
 from system_test.helpers.decorators import make_snapshot_if_step_fail
-from system_test.helpers.decorators import deferred_decorator
-from system_test.helpers.decorators import action
-from system_test.tests.actions_base import ActionsBase
 
 
 @testcase(groups=['system_test',
                   'system_test.plugins',
                   'system_test.plugins.example_plugin_v3',
                   'system_test.plugins.example_plugin_v3.simple'])
-class DeployWithPluginExampleV3(ActionsBase):
+class DeployWithPluginExampleV3(ActionTest, BaseActions):
     """Deploy cluster with one controller and example plugin v3
 
         Scenario:
