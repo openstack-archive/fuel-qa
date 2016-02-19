@@ -24,21 +24,17 @@ from fuelweb_test.helpers.pacemaker import get_pacemaker_nodes_attributes
 from fuelweb_test.helpers.pacemaker import get_pcs_nodes
 from fuelweb_test.helpers.pacemaker import parse_pcs_status_xml
 
-from system_test.tests import actions_base
-from system_test.helpers.decorators import make_snapshot_if_step_fail
-from system_test.helpers.decorators import deferred_decorator
-from system_test.helpers.decorators import action
-
 from system_test import logger
+from system_test import deferred_decorator
+from system_test import action
+from system_test.helpers.decorators import make_snapshot_if_step_fail
 
 
-class StrengthBaseActions(actions_base.ActionsBase):
+class StrengthActions(object):
 
-    def __init__(self, config=None):
-        super(StrengthBaseActions, self).__init__(config)
-        self.destroyed_devops_nodes = []
-        self.ostf_tests_should_failed = 0
-        self.os_service_should_failed = 0
+    destroyed_devops_nodes = []
+    ostf_tests_should_failed = 0
+    os_service_should_failed = 0
 
     def _destroy_controller(self, devops_node_name):
         logger.info("Suspend {} node".format(devops_node_name))
@@ -110,11 +106,9 @@ class StrengthBaseActions(actions_base.ActionsBase):
                 self.destroyed_devops_nodes)
 
 
-class FillRootBaseActions(actions_base.ActionsBase):
+class FillRootActions(object):
 
-    def __init__(self, config=None):
-        super(FillRootBaseActions, self).__init__(config)
-        self.ostf_tests_should_failed = 0
+    ostf_tests_should_failed = 0
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action

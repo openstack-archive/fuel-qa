@@ -12,16 +12,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from system_test import testcase
 from fuelweb_test.settings import EXAMPLE_PLUGIN_PATH
-from system_test.tests.actions_base import ActionsBase
+
+from system_test import testcase
+
+from system_test.tests import ActionTest
+from system_test.actions import BaseActions
 
 
 @testcase(groups=['system_test',
                   'system_test.plugins',
                   'system_test.plugins.example_plugin',
                   'system_test.plugins.example_plugin.simple'])
-class DeployWithPluginExample(ActionsBase):
+class DeployWithPluginExample(ActionTest, BaseActions):
     """Deploy cluster with one controller and example plugin
 
     Scenario:
@@ -59,7 +62,7 @@ class DeployWithPluginExample(ActionsBase):
                   'system_test.plugins',
                   'system_test.plugins.example_plugin',
                   'system_test.plugins.example_plugin.simple_scale'])
-class DeployScaleWithPluginExample(ActionsBase):
+class DeployScaleWithPluginExample(ActionTest, BaseActions):
     """Deploy and scale cluster in ha mode with example plugin
 
     Scenario:
