@@ -13,11 +13,12 @@
 #    under the License.
 
 from system_test import testcase
-from system_test.tests import actions_base
+from system_test.tests import ActionTest
+from system_test.actions import BaseActions
 
 
 @testcase(groups=['system_test', 'system_test.create_deploy_ostf'])
-class CreateDeployOstf(actions_base.ActionsBase):
+class CreateDeployOstf(ActionTest, BaseActions):
     """Case deploy Environment
 
     Scenario:

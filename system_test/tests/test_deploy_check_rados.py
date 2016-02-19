@@ -15,15 +15,18 @@
 from proboscis.asserts import assert_true
 
 from system_test import testcase
-from system_test.tests import actions_base
-from system_test.helpers.decorators import deferred_decorator
+from system_test import action
+from system_test import deferred_decorator
+
+from system_test.tests import ActionTest
+from system_test.actions import BaseActions
+
 from system_test.helpers.decorators import make_snapshot_if_step_fail
-from system_test.helpers.decorators import action
 
 
 @testcase(groups=['system_test',
                   'system_test.deploy_and_check_radosgw'])
-class DeployCheckRadosGW(actions_base.ActionsBase):
+class DeployCheckRadosGW(ActionTest, BaseActions):
     """Deploy cluster and check RadosGW
 
     Scenario:

@@ -1,4 +1,4 @@
-#    Copyright 2015 Mirantis, Inc.
+#    Copyright 2015-2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -22,17 +22,18 @@ from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test import settings as test_settings
 
 from system_test import logger
-from system_test.tests import base_actions_factory
-from system_test.tests.ostf_base_actions import HealthCheckActions
-from system_test.tests.plugins_actions import PluginsActions
+from system_test import action
+from system_test import nested_action
+from system_test import deferred_decorator
+
+from system_test.actions.ostf_actions import HealthCheckActions
+from system_test.actions.plugins_actions import PluginsActions
+
+from system_test.core.discover import load_yaml
 from system_test.helpers.decorators import make_snapshot_if_step_fail
-from system_test.helpers.decorators import deferred_decorator
-from system_test.helpers.decorators import action
-from system_test.helpers.decorators import nested_action
-from system_test.helpers.utils import load_yaml
 
 
-class PrepareBase(base_actions_factory.BaseActionsFactory):
+class PrepareActions(object):
     """Base class with prepare actions
 
     _start_case - runned before test case start
@@ -121,6 +122,7 @@ class PrepareBase(base_actions_factory.BaseActionsFactory):
         """Bootstrap slave and make snapshot
 
         Use slaves parameter from case section
+
         """
         slaves = int(self.full_config['template']['slaves'])
         snapshot_name = "ready_with_{}_slaves".format(slaves)
@@ -137,6 +139,7 @@ class PrepareBase(base_actions_factory.BaseActionsFactory):
         """Revert bootstrapped nodes
 
         Skip if snapshot with cluster exists
+
         """
         self.check_run(self.env_config['name'])
         slaves = int(self.full_config['template']['slaves'])
@@ -154,7 +157,7 @@ class PrepareBase(base_actions_factory.BaseActionsFactory):
         ]
 
 
-class ActionsBase(PrepareBase, HealthCheckActions, PluginsActions):
+class BaseActions(PrepareActions, HealthCheckActions, PluginsActions):
     """Basic actions for acceptance cases
 
     For choosing action order use actions_order variable, set list of actions
@@ -165,21 +168,18 @@ class ActionsBase(PrepareBase, HealthCheckActions, PluginsActions):
         add_nodes - add nodes to environment
         deploy_cluster - deploy en environment
         network_check - run network check
-        reset_cluster - reset an environment (NotImplemented)
-        delete_cluster - delete en environment (NotImplemented)
-        stop_deploy - stop deploying of environment (NotImplemented)
+        reset_cluster - reset an environment
+        delete_cluster - delete en environment
+        stop_deploy - stop deploying of environment
+
     """
 
     est_duration = None
     base_group = None
     actions_order = None
-
-    def __init__(self, config_file=None):
-        super(ActionsBase, self).__init__()
-        self.config_file = config_file
-        self.cluster_id = None
-        self.assigned_slaves = set()
-        self.scale_step = 0
+    cluster_id = None
+    assigned_slaves = set()
+    scale_step = 0
 
     def _add_node(self, nodes_list):
         """Add nodes to Environment"""
@@ -200,6 +200,25 @@ class ActionsBase(PrepareBase, HealthCheckActions, PluginsActions):
                                                              name))
         self.fuel_web.update_nodes(self.cluster_id, nodes)
 
+    def _del_node(self, nodes_list):
+        """Delete nodes from Environment"""
+        logger.info("Delete nodes from env {}".format(self.cluster_id))
+        nodes = {}
+
+        for node in nodes_list:
+            cluster_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+                self.cluster_id, node['roles'])
+            for i in xrange(node['count']):
+                dnode = self.fuel_web.get_devops_node_by_nailgun_node(
+                    cluster_nodes[i])
+                self.assigned_slaves.remove(dnode.name)
+
+                nodes[dnode.name] = node['roles']
+                logger.info("Delete node {} with role {}".format(
+                    dnode.name, node['roles']))
+
+        self.fuel_web.update_nodes(self.cluster_id, nodes, False, True)
+
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def create_env(self):
@@ -208,6 +227,7 @@ class ActionsBase(PrepareBase, HealthCheckActions, PluginsActions):
         For configure Environment use environment-config section in config file
 
         Skip action if we have snapshot with Environment name
+
         """
         self.check_run(self.env_config['name'])
 
@@ -265,6 +285,7 @@ class ActionsBase(PrepareBase, HealthCheckActions, PluginsActions):
         Used sub-section nodes in environment-config section
 
         Skip action if cluster doesn't exist
+
         """
         if self.cluster_id is None:
             raise SkipTest()
@@ -277,6 +298,7 @@ class ActionsBase(PrepareBase, HealthCheckActions, PluginsActions):
         """Deploy environment
 
         Skip action if cluster doesn't exist
+
         """
         if self.cluster_id is None:
             raise SkipTest()
@@ -303,6 +325,7 @@ class ActionsBase(PrepareBase, HealthCheckActions, PluginsActions):
         """Run network checker
 
         Skip action if cluster doesn't exist
+
         """
         if self.cluster_id is None:
             raise SkipTest()
@@ -348,9 +371,47 @@ class ActionsBase(PrepareBase, HealthCheckActions, PluginsActions):
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def scale_node(self):
-        """Scale node in cluster"""
+        """Scale node in cluster
+
+        For add nodes with role use scale_nodes in yaml with action add in
+            step:
+
+          scale_nodes:
+          - - roles:
+              - controller
+              count: 2
+              action: add
+
+        For remove nodes with role use scale_nodes in yaml with action delete
+            in step:
+
+          scale_nodes:
+          - - roles:
+              - controller
+              count: 2
+              action: delete
+
+        Step may contain add and remove action together:
+
+          scale_nodes:
+          - - roles:
+              - compute
+              count: 2
+              action: add
+          - - roles:
+              - ceph-osd
+              count: 1
+              action: delete
+
+        """
         step_config = self.env_config['scale_nodes'][self.scale_step]
-        self._add_node(step_config)
+        for node in step_config:
+            if node['action'] == 'add':
+                self._add_node([node])
+            elif node['action'] == 'delete':
+                self._del_node([node])
+            else:
+                logger.error("Unknow scale action: {}".format(node['action']))
         self.scale_step += 1
 
     @deferred_decorator([make_snapshot_if_step_fail])
@@ -366,18 +427,3 @@ class ActionsBase(PrepareBase, HealthCheckActions, PluginsActions):
         """Delete environment"""
         cluster_id = self.cluster_id
         self.fuel_web.delete_env_wait(cluster_id)
-
-
-class FuelMasterActions(base_actions_factory.BaseActionsFactory):
-    """Actions specific only to Fuel Master node
-
-    _action_check_containers - check that docker containers are up
-        and running
-    """
-
-    @deferred_decorator([make_snapshot_if_step_fail])
-    @action
-    def check_containers(self):
-        """Check that containers are up and running"""
-        logger.info("Check containers")
-        self.env.docker_actions.wait_for_ready_containers(timeout=60 * 30)
