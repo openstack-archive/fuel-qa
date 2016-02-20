@@ -109,10 +109,10 @@ class HaTunGroup1(TestBasic):
         """
         self.env.revert_snapshot("ready_with_9_slaves")
 
-        if len(settings.EXTERNAL_DNS) < 2:
+        if len(settings.EXTERNAL_DNS.split(',')) < 2:
             logging.warning("Less than 2 DNS servers was configured!")
 
-        if len(settings.EXTERNAL_NTP) < 2:
+        if len(settings.EXTERNAL_NTP.split(',')) < 2:
             logging.warning("Less than 2 NTP servers was configured!")
 
         data = {

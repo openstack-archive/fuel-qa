@@ -156,7 +156,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         external_dns = settings.EXTERNAL_DNS
         if settings.FUEL_USE_LOCAL_DNS:
             public_gw = self.env.d_env.router(router_name="public")
-            external_dns += [public_gw]
+            external_dns += ',' + public_gw
 
         net_provider_data = {
             'ntp_list': settings.EXTERNAL_NTP,
