@@ -13,7 +13,9 @@
 #    under the License.
 
 import os
+import yaml
 
+from proboscis import register
 from proboscis.asserts import assert_equal
 from devops.helpers import helpers
 
@@ -438,3 +440,62 @@ def get_full_filename(env, wildcard_name):
     full_pkg_name = env.base_actions.execute(cmd, exit_code=0)
 
     return full_pkg_name
+
+
+def puppet_modules_mapping(modules):
+    """
+    find fuel-qa system test which have maximum coverage for edited
+    puppet modules and register that group with "review_in_fuel_library" name
+    modules - dictionary of puppet modules edited in review
+    Example: modules = {'horizon':'fuel-library/deployment/Puppetfile'}
+    """
+
+    # open yaml with covered modules
+    with open("gates_tests/helpers/puppet_module_mapping.yaml", "r") as f:
+        mapping = yaml.load(f)
+
+    all_modules = set([j for i in mapping.values() for j in i])
+    logger.debug("List of puppet modules covered by system_tests {}".format(
+        all_modules))
+    logger.info("List of modules edited in review {}".format(modules.keys()))
+
+    # checking that module from review covered by system_test
+    for module in modules.keys():
+        if module not in all_modules:
+            logger.warning("{} module not exist or not covered by system_test"
+                           .format(modules[module]))
+
+    # find test group which has better coverage of modules from review
+    system_test = "bvt_2"
+    max_intersection = 0
+    if not ("ceph" in modules and set(
+            ["roles/cinder.pp", "cinder", "openstack-cinder"]) & set(modules)):
+        for test in mapping:
+            test_intersection = len(
+                set(mapping[test]).intersection(set(modules)))
+            if test_intersection > max_intersection:
+                max_intersection = test_intersection
+                system_test = test
+    # To completely check ceph module we can't mix storage settings with cinder
+    else:
+        logger.warning(
+            "{} contain both ceph and cinder and we cannot check both modules"
+            .format(modules))
+        system_test = "bvt_2"
+
+    logger.info(
+        "Puppet modules from review {}"
+        " will be checked by next system test: {}".format(
+            modules, system_test))
+
+    register(groups=['review_in_fuel_library'],
+             depends_on_groups=[system_test])
+
+
+def map_test_review_in_fuel_library(**kwargs):
+    groups = kwargs.get('run_groups', None)
+    old_groups = kwargs.get('groups', None)
+    groups.extend(old_groups or [])
+    if 'review_in_fuel_library' in groups:
+        modules = "gerrit_client.get_list_files()"  # Not implemented yet
+        puppet_modules_mapping(modules)
