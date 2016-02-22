@@ -43,6 +43,7 @@ adv_net_template:
           - br-storage
         roles:
           cinder/iscsi: br-storage
+          swift/api: br-storage
           swift/replication: br-storage
           ceph/replication: br-storage
           storage: br-storage
@@ -106,7 +107,6 @@ adv_net_template:
           keystone/api: br-fw-admin
           neutron/api: br-fw-admin
           neutron/mesh: br-fw-admin
-          swift/api: br-fw-admin
           sahara/api: br-fw-admin
           ceilometer/api: br-fw-admin
           cinder/api: br-fw-admin
