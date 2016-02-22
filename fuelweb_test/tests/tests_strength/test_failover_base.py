@@ -446,9 +446,9 @@ class TestHaFailoverBase(TestBasic):
                     pcm_nodes), config), None,
                 'Some of [heat*] engine resources are not properly configured')
             assert_not_equal(re.search(
-                "Clone Set: clone_p_mysql \[p_mysql\]\s+Started:"
+                "Clone Set: clone_p_mysqld \[p_mysqld\]\s+Started:"
                 " \[ {0} \]".format(pcm_nodes), config), None,
-                'Resource [p_mysql] is not properly configured')
+                'Resource [p_mysqld] is not properly configured')
             assert_not_equal(re.search(
                 "Clone Set: clone_p_haproxy \[p_haproxy\]\s+Started:"
                 " \[ {0} \]".format(pcm_nodes), config), None,
