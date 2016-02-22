@@ -41,7 +41,7 @@ def inspect_bug(bug):
     # one available target.
     for target in bug.targets:
         if target['project'] == LaunchpadSettings.project and \
-           target['milestone'] == LaunchpadSettings.milestone and\
+           LaunchpadSettings.milestone in target['milestone'] and\
            target['status'] not in LaunchpadSettings.closed_statuses:
             return target
     return bug.targets[0]
