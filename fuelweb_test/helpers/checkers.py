@@ -351,7 +351,7 @@ def iptables_check(remote):
 @logwrap
 def check_mysql(remote, node_name):
     check_cmd = 'pkill -0 -x mysqld'
-    check_crm_cmd = ('crm resource status clone_p_mysql |'
+    check_crm_cmd = ('crm resource status clone_p_mysqld |'
                      ' grep -q "is running on: $HOSTNAME"')
     check_galera_cmd = ("mysql --connect_timeout=5 -sse \"SELECT"
                         " VARIABLE_VALUE FROM"
