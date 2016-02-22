@@ -193,7 +193,7 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
             cmd = ('fuel --env-id={0} node --deploy --node {1} --json'
                    .format(cluster_id, node_id[0]))
             task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, timeout=60 * 60)
+            self.assert_cli_task_success(task, timeout=90 * 60)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['sanity'])
