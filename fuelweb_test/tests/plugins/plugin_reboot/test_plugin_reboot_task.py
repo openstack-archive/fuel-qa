@@ -40,7 +40,7 @@ class RebootPlugin(TestBasic):
         1. Revert snapshot with 5 nodes
         2. Download and install fuel-plugin-builder
         3. Create plugin with reboot task
-        4. Build and copy plugin from container nailgun
+        4. Build plugin and copy it in var directory
         5. Install plugin to fuel
         6. Create cluster and enable plugin
         7. Provision nodes
@@ -52,37 +52,37 @@ class RebootPlugin(TestBasic):
         """
         # define some plugin related variables
         plugin_name = 'reboot_plugin'
-        container_plugin_path = os.path.join('/root/', plugin_name)
+        source_plugin_path = os.path.join('/root/', plugin_name)
         plugin_path = '/var'
         tasks_path = os.path.dirname(os.path.abspath(__file__))
         tasks_file = 'reboot_tasks.yaml'
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_5_slaves")
         # let's get ssh client for the master node
 
         with self.env.d_env.get_admin_remote() as admin_remote:
             # initiate fuel plugin builder instance
+            self.show_step(2)
             fpb = FuelPluginBuilder()
             # install fuel_plugin_builder on master node
             fpb.fpb_install()
             # create plugin template on the master node
-            fpb.fpb_create_plugin(container_plugin_path)
+            self.show_step(3)
+            fpb.fpb_create_plugin(source_plugin_path)
             # replace plugin tasks with our file
             fpb.fpb_replace_plugin_content(
                 os.path.join(tasks_path, tasks_file),
-                os.path.join(container_plugin_path, 'tasks.yaml'))
+                os.path.join(source_plugin_path, 'tasks.yaml'))
             # build plugin
-            packet_name = fpb.fpb_build_plugin(container_plugin_path)
-            # copy plugin archive file from nailgun container
-            # to the /var directory on the master node
-            fpb.fpb_copy_plugin_from_container(
-                container_plugin_path,
-                packet_name,
-                plugin_path)
-            # let's install plugin
+            self.show_step(4)
+            packet_name = fpb.fpb_build_plugin(source_plugin_path)
+            fpb.fpb_copy_plugin(
+                os.path.join(source_plugin_path, packet_name), plugin_path)
+            self.show_step(5)
             checkers.install_plugin_check_code(
                 admin_remote,
                 plugin=os.path.join(plugin_path, packet_name))
-
+        self.show_step(6)
         # create cluster
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -106,6 +106,7 @@ class RebootPlugin(TestBasic):
                 'slave-04': ['ceph-osd']}
         )
         # firstly, let's provision nodes
+        self.show_step(7)
         self.fuel_web.provisioning_cluster_wait(cluster_id)
         # after provision is done, collect timestamps from nodes
         old_timestamps = {}
@@ -116,7 +117,7 @@ class RebootPlugin(TestBasic):
             'slave-03': False,
             'slave-04': True
         }
-
+        self.show_step(8)
         for node in nodes:
             logger.debug(
                 "Get init object creation time from node {0}".format(node))
@@ -126,9 +127,11 @@ class RebootPlugin(TestBasic):
 
         # start deploying nodes
         # here nodes with controller and ceph roles should be rebooted
+        self.show_step(9)
         self.fuel_web.deploy_cluster_wait_progress(cluster_id, 30)
 
         # collect new timestamps and check them
+        self.show_step(10)
         for node in nodes:
             logger.debug(
                 "Get init object creation time from node {0}".format(node))
@@ -164,7 +167,7 @@ class RebootPlugin(TestBasic):
             2. Download and install fuel-plugin-builder
             3. Create plugin with reboot task,
                set timeout for reboot task as 1 second
-            4. Build and copy plugin from container nailgun
+            4. Build plugin
             5. Install plugin to fuel
             6. Create cluster and enable plugin
             7. Provision nodes
@@ -176,14 +179,16 @@ class RebootPlugin(TestBasic):
         """
         # define some plugin related variables
         plugin_name = 'timeout_plugin'
-        container_plugin_path = os.path.join('/root/', plugin_name)
+        source_plugin_path = os.path.join('/root/', plugin_name)
         plugin_path = '/var'
         tasks_path = os.path.dirname(os.path.abspath(__file__))
         tasks_file = 'reboot_tasks.yaml'
         # start reverting snapshot
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_3_slaves")
         # let's get ssh client for the master node
         with self.env.d_env.get_admin_remote() as admin_remote:
+            self.show_step(2)
             # initiate fuel plugin builder instance
             fpb = FuelPluginBuilder()
             # install fuel_plugin_builder on master node
@@ -193,25 +198,28 @@ class RebootPlugin(TestBasic):
                                         os.path.join('/tmp/', tasks_file),
                                         [1, 'parameters', 'timeout'],
                                         1)
+            self.show_step(3)
             # create plugin template on the master node
-            fpb.fpb_create_plugin(container_plugin_path)
+            fpb.fpb_create_plugin(source_plugin_path)
             # replace plugin tasks with our file
             fpb.fpb_replace_plugin_content(
                 os.path.join('/tmp/', tasks_file),
-                os.path.join(container_plugin_path, 'tasks.yaml'))
+                os.path.join(source_plugin_path, 'tasks.yaml'))
             # build plugin
-            packet_name = fpb.fpb_build_plugin(container_plugin_path)
-            # copy plugin archive file from nailgun container
+            self.show_step(4)
+            packet_name = fpb.fpb_build_plugin(source_plugin_path)
+            # copy plugin archive file
             # to the /var directory on the master node
-            fpb.fpb_copy_plugin_from_container(
-                container_plugin_path,
-                packet_name,
+            fpb.fpb_copy_plugin(
+                os.path.join(source_plugin_path, packet_name),
                 plugin_path)
             # let's install plugin
+            self.show_step(5)
             checkers.install_plugin_check_code(
                 admin_remote,
                 plugin=os.path.join(plugin_path, packet_name))
         # create cluster
+        self.show_step(6)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -230,14 +238,17 @@ class RebootPlugin(TestBasic):
             cluster_id,
             {'slave-01': ['controller', 'ceph-osd']}
         )
-
+        self.show_step(7)
         self.fuel_web.provisioning_cluster_wait(cluster_id)
         logger.info('Start cluster #%s deployment', cluster_id)
+        self.show_step(8)
         task = self.fuel_web.client.deploy_nodes(cluster_id)
+        self.show_step(9)
         self.fuel_web.assert_task_failed(task)
 
         msg = 'Time detection (1 sec) for node reboot has expired'
         cmd = 'grep "{0}" /var/log/docker-logs/astute/astute.log'.format(msg)
+        self.show_step(10)
         with self.env.d_env.get_admin_remote() as admin_remote:
             result = admin_remote.execute(cmd)['stdout'][0]
 
