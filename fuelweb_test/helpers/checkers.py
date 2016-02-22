@@ -246,19 +246,6 @@ def check_file_exists(node_ssh, path):
 
 
 @logwrap
-def wait_upgrade_is_done(node_ssh, timeout, phrase):
-    logger.info('Waiting while upgrade is done')
-    cmd = "grep '{0}' /var/log/fuel_upgrade.log".format(phrase)
-    try:
-        wait(
-            lambda: not node_ssh.execute(cmd)['exit_code'], timeout=timeout)
-    except Exception as e:
-        a = node_ssh.execute(cmd)
-        logger.error(e)
-        assert_equal(0, a['exit_code'], a['stderr'])
-
-
-@logwrap
 def wait_phrase_in_log(node_ssh, timeout, interval, phrase, log_path):
     cmd = "grep '{0}' '{1}'".format(phrase, log_path)
     wait(
@@ -266,15 +253,6 @@ def wait_phrase_in_log(node_ssh, timeout, interval, phrase, log_path):
         timeout=timeout,
         timeout_msg="The phrase {0} not found in {1} file on "
                     "remote node".format(phrase, log_path))
-
-
-@logwrap
-def wait_rollback_is_done(node_ssh, timeout):
-    logger.info('Waiting while rollback is done')
-    wait(
-        lambda: not node_ssh.execute(
-            "grep 'UPGRADE FAILED' /var/log/fuel_upgrade.log"
-        )['exit_code'], timeout=timeout)
 
 
 @logwrap
