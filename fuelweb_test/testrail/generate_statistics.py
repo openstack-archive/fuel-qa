@@ -298,20 +298,8 @@ class StatisticsGenerator(object):
             if lp_bug.bug.id in stats:
                 stats[lp_bug.bug.id]['tests'].update(
                     joint_bugs_statistics[bug_id])
-                stats[lp_bug.bug.id]['failed_num'] = len(
-                    [t for t in stats[lp_bug.bug.id]
-                     if not t['blocked']])
-                stats[lp_bug.bug.id]['blocked_num'] = len(
-                    [t for t in stats[lp_bug.bug.id]
-                     if t['blocked']])
             else:
                 stats[lp_bug.bug.id] = {
-                    'failed_num': len(
-                        [t for t, v in joint_bugs_statistics[bug_id].items()
-                         if not v['blocked']]),
-                    'blocked_num': len(
-                        [t for t, v in joint_bugs_statistics[bug_id].items()
-                         if v['blocked']]),
                     'title': bug_target['title'],
                     'importance': bug_target['importance'],
                     'status': bug_target['status'],
@@ -319,6 +307,13 @@ class StatisticsGenerator(object):
                     'link': lp_bug.bug.web_link,
                     'tests': joint_bugs_statistics[bug_id]
                 }
+            stats[lp_bug.bug.id]['failed_num'] = len(
+                [t for t, v in stats[lp_bug.bug.id]['tests'].items()
+                 if not v['blocked']])
+            stats[lp_bug.bug.id]['blocked_num'] = len(
+                [t for t, v in stats[lp_bug.bug.id]['tests'].items()
+                 if v['blocked']])
+
         return OrderedDict(sorted(stats.items(),
                                   key=lambda x: (x[1]['failed_num'] +
                                                  x[1]['blocked_num']),
