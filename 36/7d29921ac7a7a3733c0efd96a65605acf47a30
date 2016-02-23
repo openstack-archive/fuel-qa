@@ -1,0 +1,13 @@
+Code-Review+1: Vitaly Gusev <vgusev@mirantis.com>
+Code-Review+2: tatyana-leontovich <tleontovich@mirantis.com>
+Code-Review+1: Vasily Gorin <vgorin@mirantis.com>
+Code-Review+1: Simon Pasquier <spasquier@mirantis.com>
+Code-Review+1: Eric Lemoine <elemoine@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Workflow+1: tatyana-leontovich <tleontovich@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 23 Feb 2016 07:10:35 +0000
+Reviewed-on: https://review.openstack.org/275255
+Project: openstack/fuel-qa
+Branch: refs/heads/master
