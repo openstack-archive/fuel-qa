@@ -72,10 +72,6 @@ OSTF_TEST_MAPPING = {
                                             'test_sanity_infrastructure.'
                                             'SanityInfrastructureTest.'
                                             'test_003_dns_resolution',
-    'Create and delete Murano environment': 'fuel_health.tests.sanity.'
-                                            'test_sanity_murano.'
-                                            'MuranoSanityTests.'
-                                            'test_create_and_delete_service',
     'Request list of networks': 'fuel_health.tests.sanity.'
                                 'test_sanity_networking.NetworksTest.'
                                 'test_list_networks',

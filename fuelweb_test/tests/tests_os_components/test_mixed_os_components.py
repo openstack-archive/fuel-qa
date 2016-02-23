@@ -25,16 +25,16 @@ class MixedComponents(TestBasic):
     """MixedComponents"""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
-          groups=["mixed_components_murano_sahara_ceilometer"])
+          groups=["mixed_components_sahara_ceilometer"])
     @log_snapshot_after_test
-    def mixed_components_murano_sahara_ceilometer(self):
-        """Deployment with 3 controllers, NeutronTUN, with Murano,
+    def mixed_components_sahara_ceilometer(self):
+        """Deployment with 3 controllers, NeutronTUN,
            Sahara and Ceilometer
 
         Scenario:
             1. Create new environment
             2. Choose Neutron + TUN, Cinder
-            3. Enable Sahara, Murano and Ceilometer
+            3. Enable Sahara and Ceilometer
             4. Add 3 controller, 1 compute, 1 cinder and 3 mongo nodes
             5. Verify networks
             6. Deploy the environment
@@ -42,13 +42,12 @@ class MixedComponents(TestBasic):
             8. Run OSTF tests
 
         Duration: 300 min
-        Snapshot: mixed_components_murano_sahara_ceilometer
+        Snapshot: mixed_components_sahara_ceilometer
         """
 
         self.env.revert_snapshot('ready_with_9_slaves')
 
         data = {
-            'murano': True,
             'sahara': True,
             'ceilometer': True,
             'tenant': 'mixedcomponents',
@@ -94,4 +93,4 @@ class MixedComponents(TestBasic):
         self.fuel_web.run_ostf(cluster_id, test_sets=['smoke', 'sanity', 'ha',
                                                       'tests_platform'])
 
-        self.env.make_snapshot('mixed_components_murano_sahara_ceilometer')
+        self.env.make_snapshot('mixed_components_sahara_ceilometer')

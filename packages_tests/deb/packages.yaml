@@ -1740,9 +1740,6 @@ deployment:
       - menu
       - monit
       - msr-tools
-      - murano
-      - murano-apps
-      - murano-dashboard
       - netcat
       - nginx
       - nmap
@@ -1816,7 +1813,6 @@ deployment:
       - python-memcache
       - python-mimeparse
       - python-mock
-      - python-muranoclient
       - python-mysqldb
       - python-netaddr
       - python-networkx
@@ -2475,9 +2471,6 @@ master:
     - name: python-migrate
       packages:
       - python-migrate
-    - name: python-muranoclient
-      packages:
-      - python-muranoclient
     - name: python-netaddr
       packages:
       - python-netaddr

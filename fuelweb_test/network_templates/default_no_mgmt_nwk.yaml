@@ -114,8 +114,6 @@ adv_net_template:
           heat/api: br-fw-admin
           nova/api: br-fw-admin
           nova/migration: br-fw-admin
-          murano/api: br-fw-admin
-          murano/cfapi: br-fw-admin
           horizon: br-fw-admin
           mgmt/api: br-fw-admin
           mgmt/memcache: br-fw-admin

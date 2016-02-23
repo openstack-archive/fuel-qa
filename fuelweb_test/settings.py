@@ -331,12 +331,6 @@ SERVTEST_SAHARA_VANILLA_2_IMAGE_META = {'_sahara_tag_2.7.1': 'True',
                                         '_sahara_tag_vanilla': 'True',
                                         '_sahara_username': 'ubuntu'}
 
-SERVTEST_MURANO_IMAGE = "ubuntu_14_04-murano-agent_stable_juno_26_02_15.qcow2"
-SERVTEST_MURANO_IMAGE_MD5 = '3da5ec5984d6d19c1b88d0062c885a89'
-SERVTEST_MURANO_IMAGE_NAME = 'murano'
-SERVTEST_MURANO_IMAGE_META = {
-    'murano_image_info': '{"type": "linux", "title": "murano"}'}
-
 SERVTEST_EXTERNAL_MONGO_URLS = os.environ.get('EXTERNAL_MONGO_URLS')
 SERVTEST_EXTERNAL_MONGO_DB_NAME = os.environ.get('EXTERNAL_MONGO_DB_NAME',
                                                  'ceilometer')

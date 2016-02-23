@@ -1104,9 +1104,6 @@ deployment:
       - mongodb
       - mongodb-server
       - mtr
-      - murano
-      - murano-apps
-      - murano-dashboard
       - nagios
       - nagios-common
       - nagios-plugins
@@ -1948,9 +1945,6 @@ master:
     - name: python-migrate
       packages:
       - python-migrate
-    - name: python-muranoclient
-      packages:
-      - python-muranoclient
     - name: python-netaddr
       packages:
       - python-netaddr

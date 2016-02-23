@@ -31,7 +31,6 @@ template:
   settings:
    components:
     sahara: false
-    murano: false
     ceilometer: false
    storages: *storages-config
   network: *network-config

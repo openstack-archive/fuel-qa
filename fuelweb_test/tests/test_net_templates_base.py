@@ -283,13 +283,6 @@ class TestNetworkTemplatesBase(TestBasic):
                 'enabled': True
             },
             {
-                'name': 'murano-api',
-                'network_roles': ['murano/api'],
-                'tcp_ports': [8082],
-                'udp_ports': [],
-                'enabled': True
-            },
-            {
                 'name': 'ceph',
                 'network_roles': ['ceph/replication', 'ceph/public'],
                 'tcp_ports': [6804, 6805, 6806, 6807],

@@ -173,8 +173,6 @@ adv_net_template:
         roles:
           ceilometer/api: br-services
           heat/api: br-services
-          murano/api: br-services
-          murano/cfapi: br-services
           sahara/api: br-services
         transformations:
         - action: add-br

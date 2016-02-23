@@ -60,8 +60,6 @@ adv_net_template:
           ep: br-nova
         nova-migration:
           ep: br-novamigr
-        murano:
-          ep: br-murano
         horizon:
           ep: br-horizon
         messaging:
@@ -228,11 +226,6 @@ adv_net_template:
             bridge: br-novamigr
             name: <% if4 %>.212
           - action: add-br
-            name: br-murano
-          - action: add-port
-            bridge: br-murano
-            name: <% if4 %>.213
-          - action: add-br
             name: br-horizon
           - action: add-port
             bridge: br-horizon
@@ -280,7 +273,6 @@ adv_net_template:
           - br-heat
           - br-nova
           - br-novamigr
-          - br-murano
           - br-horizon
           - br-messaging
           - br-corosync
@@ -301,8 +293,6 @@ adv_net_template:
           heat/api: br-heat
           nova/api: br-nova
           nova/migration: br-novamigr
-          murano/api: br-murano
-          murano/cfapi: br-murano
           horizon: br-horizon
           mgmt/messaging: br-messaging
           mgmt/corosync: br-corosync

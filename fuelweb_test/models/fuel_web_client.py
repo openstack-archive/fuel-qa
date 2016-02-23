@@ -475,7 +475,10 @@ class FuelWebClient(object):
 
             for option in settings:
                 section = False
-                if option in ('sahara', 'murano', 'ceilometer', 'mongo',
+                if option in 'murano':
+                    raise Exception('Murano is no available from the box, '
+                                    'please use Murano Plugin')
+                if option in ('sahara', 'ceilometer', 'mongo',
                               'ironic'):
                     section = 'additional_components'
                 if option in ('mongo_db_name', 'mongo_replset', 'mongo_user',
