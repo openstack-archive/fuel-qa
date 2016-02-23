@@ -43,7 +43,7 @@ class VipReservation(TestBasic):
         1. Revert snapshot with 3 nodes
         2. Download and install fuel-plugin-builder
         3. Create plugin with predefined network_roles.yaml
-        4. Build and copy plugin from container nailgun
+        4. Build and copy plugin to /var directory
         5. Install plugin to fuel
         6. Create cluster and enable plugin
         7. Deploy cluster
@@ -52,7 +52,7 @@ class VipReservation(TestBasic):
         Duration 40m
         """
         plugin_name = 'vip_reservation_plugin'
-        container_plugin_path = os.path.join('/root/', plugin_name)
+        source_plugin_path = os.path.join('/root/', plugin_name)
         plugin_path = '/var'
         dir_path = os.path.dirname(os.path.abspath(__file__))
         tasks_file = 'tasks.yaml'
@@ -60,37 +60,40 @@ class VipReservation(TestBasic):
         metadata_file = 'metadata.yaml'
         namespace = 'haproxy'
 
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_3_slaves")
         with self.env.d_env.get_admin_remote() as admin_remote:
             # initiate fuel plugin builder instance
             fpb = FuelPluginBuilder()
             # install fuel_plugin_builder on master node
+            self.show_step(2)
             fpb.fpb_install()
             # create plugin template on the master node
-            fpb.fpb_create_plugin(container_plugin_path)
+            self.show_step(3)
+            fpb.fpb_create_plugin(source_plugin_path)
             # replace plugin tasks, metadata, network_roles
             fpb.fpb_replace_plugin_content(
                 os.path.join(dir_path, net_role_file),
-                os.path.join(container_plugin_path, net_role_file))
+                os.path.join(source_plugin_path, net_role_file))
             fpb.fpb_replace_plugin_content(
                 os.path.join(dir_path, tasks_file),
-                os.path.join(container_plugin_path, tasks_file))
+                os.path.join(source_plugin_path, tasks_file))
             fpb.fpb_replace_plugin_content(
                 os.path.join(dir_path, metadata_file),
-                os.path.join(container_plugin_path, metadata_file))
+                os.path.join(source_plugin_path, metadata_file))
             # build plugin
-            packet_name = fpb.fpb_build_plugin(container_plugin_path)
+            self.show_step(4)
+            packet_name = fpb.fpb_build_plugin(source_plugin_path)
             # copy plugin archive file from nailgun container
             # to the /var directory on the master node
-            fpb.fpb_copy_plugin_from_container(
-                container_plugin_path,
-                packet_name,
-                plugin_path)
+            fpb.fpb_copy_plugin(os.path.join(source_plugin_path, packet_name),
+                                plugin_name)
             # let's install plugin
+            self.show_step(5)
             checkers.install_plugin_check_code(
                 admin_remote,
                 plugin=os.path.join(plugin_path, packet_name))
-
+        self.show_step(6)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -111,10 +114,12 @@ class VipReservation(TestBasic):
                 'slave-01': ['controller'],
                 'slave-02': ['compute']}
         )
+        self.show_step(7)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
+        self.show_step(8)
         with self.fuel_web.get_ssh_for_node('slave-01') as remote:
             hiera_json_out = "ruby -rhiera -rjson -e \"h = Hiera.new(); " \
                              "Hiera.logger = 'noop'; puts JSON.dump " \
@@ -161,7 +166,7 @@ class VipReservation(TestBasic):
         1. Revert snapshot with 3 nodes
         2. Download and install fuel-plugin-builder
         3. Create plugin with predefined network_roles.yaml
-        4. Build and copy plugin from container nailgun
+        4. Build and copy plugin to /var directory
         5. Install plugin to fuel
         6. Create cluster and enable plugin
         7. Deploy cluster
@@ -170,55 +175,57 @@ class VipReservation(TestBasic):
         Duration 40m
         """
         plugin_name = 'vip_reservation_plugin'
-        container_plugin_path = os.path.join('/root/', plugin_name)
+        source_plugin_path = os.path.join('/root/', plugin_name)
         plugin_path = '/var'
         task_path = os.path.dirname(os.path.abspath(__file__))
         tasks_file = 'tasks.yaml'
         net_role_file = 'network_roles.yaml'
         metadata_file = 'metadata.yaml'
         namespace = 'haproxy'
-
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_3_slaves")
 
         with self.env.d_env.get_admin_remote() as admin_remote:
             # initiate fuel plugin builder instance
+            self.show_step(2)
             fpb = FuelPluginBuilder()
             # install fuel_plugin_builder on master node
             fpb.fpb_install()
             # create plugin template on the master node
-            fpb.fpb_create_plugin(container_plugin_path)
+            self.show_step(3)
+            fpb.fpb_create_plugin(source_plugin_path)
             # replace plugin tasks, metadata, network_roles
             fpb.fpb_replace_plugin_content(
                 os.path.join(task_path, net_role_file),
-                os.path.join(container_plugin_path, net_role_file))
+                os.path.join(source_plugin_path, net_role_file))
             fpb.fpb_replace_plugin_content(
                 os.path.join(task_path, tasks_file),
-                os.path.join(container_plugin_path, tasks_file))
+                os.path.join(source_plugin_path, tasks_file))
             fpb.fpb_replace_plugin_content(
                 os.path.join(task_path, metadata_file),
-                os.path.join(container_plugin_path, metadata_file))
+                os.path.join(source_plugin_path, metadata_file))
 
-            fpb.change_yaml_file_in_container(
-                os.path.join(container_plugin_path, net_role_file),
-                [0, 'properties', 'vip', 0, 'namespace'],
-                namespace)
-            fpb.change_yaml_file_in_container(
-                os.path.join(container_plugin_path, net_role_file),
+            fpb.change_remote_yaml(
+                path_to_file=os.path.join(source_plugin_path, net_role_file),
+                element=[0, 'properties', 'vip', 0, 'namespace'],
+                value=namespace)
+            fpb.change_remote_yaml(
+                os.path.join(source_plugin_path, net_role_file),
                 [1, 'properties', 'vip', 0, 'namespace'],
                 namespace)
             # build plugin
-            packet_name = fpb.fpb_build_plugin(container_plugin_path)
-            # copy plugin archive file from nailgun container
+            self.show_step(4)
+            packet_name = fpb.fpb_build_plugin(source_plugin_path)
+            # copy plugin archive file
             # to the /var directory on the master node
-            fpb.fpb_copy_plugin_from_container(
-                container_plugin_path,
-                packet_name,
-                plugin_path)
+            fpb.fpb_copy_plugin(os.path.join(source_plugin_path, packet_name),
+                                plugin_name)
             # let's install plugin
+            self.show_step(5)
             checkers.install_plugin_check_code(
                 admin_remote,
                 plugin=os.path.join(plugin_path, packet_name))
-
+        self.show_step(6)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -239,10 +246,11 @@ class VipReservation(TestBasic):
                 'slave-01': ['controller'],
                 'slave-02': ['compute']}
         )
+        self.show_step(7)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
-
+        self.show_step(8)
         with self.fuel_web.get_ssh_for_node('slave-01') as remote:
             hiera_json_out = "ruby -rhiera -rjson -e \"h = Hiera.new(); " \
                              "Hiera.logger = 'noop'; " \
@@ -286,7 +294,7 @@ class VipReservation(TestBasic):
         1. Revert snapshot with 3 nodes
         2. Download and install fuel-plugin-builder
         3. Create plugin with predefined network_roles.yaml
-        4. Build and copy plugin from container nailgun
+        4. Build and copy plugin to /var
         5. Install plugin to fuel
         6. Create cluster and enable plugin
         7. Deploy cluster
@@ -295,55 +303,57 @@ class VipReservation(TestBasic):
         Duration 40m
         """
         plugin_name = 'vip_reservation_plugin'
-        container_plugin_path = os.path.join('/root/', plugin_name)
+        source_plugin_path = os.path.join('/root/', plugin_name)
         plugin_path = '/var'
         task_path = os.path.dirname(os.path.abspath(__file__))
         tasks_file = 'tasks.yaml'
         net_role_file = 'network_roles.yaml'
         metadata_file = 'metadata.yaml'
         namespace = 'custom_ns'
-
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_3_slaves")
 
         with self.env.d_env.get_admin_remote() as admin_remote:
+            self.show_step(2)
             # initiate fuel plugin builder instance
             fpb = FuelPluginBuilder()
             # install fuel_plugin_builder on master node
             fpb.fpb_install()
             # create plugin template on the master node
-            fpb.fpb_create_plugin(container_plugin_path)
+            self.show_step(3)
+            fpb.fpb_create_plugin(source_plugin_path)
             # replace plugin tasks, metadata, network_roles
             fpb.fpb_replace_plugin_content(
                 os.path.join(task_path, net_role_file),
-                os.path.join(container_plugin_path, net_role_file))
+                os.path.join(source_plugin_path, net_role_file))
             fpb.fpb_replace_plugin_content(
                 os.path.join(task_path, tasks_file),
-                os.path.join(container_plugin_path, tasks_file))
+                os.path.join(source_plugin_path, tasks_file))
             fpb.fpb_replace_plugin_content(
                 os.path.join(task_path, metadata_file),
-                os.path.join(container_plugin_path, metadata_file))
+                os.path.join(source_plugin_path, metadata_file))
 
-            fpb.change_yaml_file_in_container(
-                os.path.join(container_plugin_path, net_role_file),
+            fpb.change_remote_yaml(
+                os.path.join(source_plugin_path, net_role_file),
                 [0, 'properties', 'vip', 0, 'namespace'],
                 namespace)
-            fpb.change_yaml_file_in_container(
-                os.path.join(container_plugin_path, net_role_file),
+            fpb.change_remote_yaml(
+                os.path.join(source_plugin_path, net_role_file),
                 [1, 'properties', 'vip', 0, 'namespace'],
                 namespace)
             # build plugin
-            packet_name = fpb.fpb_build_plugin(container_plugin_path)
-            # copy plugin archive file from nailgun container
+            self.show_step(4)
+            packet_name = fpb.fpb_build_plugin(source_plugin_path)
+            # copy plugin archive file
             # to the /var directory on the master node
-            fpb.fpb_copy_plugin_from_container(
-                container_plugin_path,
-                packet_name,
-                plugin_path)
+            fpb.fpb_copy_plugin(os.path.join(source_plugin_path, packet_name),
+                                plugin_path)
+            self.show_step(5)
             # let's install plugin
             checkers.install_plugin_check_code(
                 admin_remote,
                 plugin=os.path.join(plugin_path, packet_name))
-
+        self.show_step(6)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
@@ -364,10 +374,12 @@ class VipReservation(TestBasic):
                 'slave-01': ['controller'],
                 'slave-02': ['compute']}
         )
+        self.show_step(7)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
+        self.show_step(8)
         with self.fuel_web.get_ssh_for_node('slave-01') as remote:
             hiera_json_out = "ruby -rhiera -rjson -e \"h = Hiera.new(); " \
                              "Hiera.logger = 'noop'; " \
