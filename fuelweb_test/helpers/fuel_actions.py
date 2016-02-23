@@ -457,7 +457,7 @@ class FuelPluginBuilder(BaseActions):
     def fpb_install(self):
         """
         Installs fuel plugin builder from sources
-        in nailgun container on master node
+        on master node
 
         :return: nothing
         """
@@ -500,7 +500,7 @@ class FuelPluginBuilder(BaseActions):
 
     def fpb_replace_plugin_content(self, local_file, remote_file):
         """
-        Replaces file inside nailgun container with given local file
+        Replaces file  with given local file
         :param local_file: path to the local file
         :param remote_file: file to be replaced
         :return: nothing
@@ -536,6 +536,15 @@ class FuelPluginBuilder(BaseActions):
             '/root/{}/metadata.yaml'.format(plugin_name),
             ['package_version'],
             new_version)
+
+    def fpb_copy_plugin(self, source, target):
+        """
+        Copy new plugin from source to target
+        :param source: initial plugin location
+        :param target: target path
+        :return: nothing
+        """
+        self.execute("cp {0} {1}".format(source, target), 0)
 
 
 class CobblerActions(BaseActions):
