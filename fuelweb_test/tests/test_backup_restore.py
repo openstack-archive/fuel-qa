@@ -37,10 +37,10 @@ from fuelweb_test.tests.test_cli_base import CommandLine
 from fuelweb_test import logger
 
 
-@test(groups=["backup_restore_master"])
+@test(enabled=False, groups=["backup_restore_master"])
 class TestAdminNodeBackupRestore(TestBasic):
 
-    @test(depends_on=[SetupEnvironment.setup_master],
+    @test(enabled=False, depends_on=[SetupEnvironment.setup_master],
           groups=["backup_restore_master_base"])
     @log_snapshot_after_test
     def backup_restore_master_base(self):
@@ -72,11 +72,11 @@ class TestAdminNodeBackupRestore(TestBasic):
             checkers.iptables_check(remote)
 
 
-@test(groups=["backup_restore_master"])
+@test(enabled=False, groups=["backup_restore_master"])
 class BackupRestoreHAOneController(HAOneControllerNeutronBase):
     """BackupRestoreHAOneController"""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+    @test(enabled=False, depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ha_one_controller_backup_restore"])
     @log_snapshot_after_test
     def deploy_ha_one_controller_backup_restore(self):
@@ -99,7 +99,7 @@ class BackupRestoreHAOneController(HAOneControllerNeutronBase):
         super(self.__class__, self).deploy_ha_one_controller_neutron_base(
             snapshot_name="deploy_ha_one_controller_backup_restore")
 
-    @test(depends_on=[deploy_ha_one_controller_backup_restore],
+    @test(enabled=False, depends_on=[deploy_ha_one_controller_backup_restore],
           groups=["ha_one_controller_backup_restore"])
     @log_snapshot_after_test
     def ha_one_controller_backup_restore(self):
@@ -163,11 +163,11 @@ class BackupRestoreHAOneController(HAOneControllerNeutronBase):
         self.env.make_snapshot("ha_one_controller_backup_restore")
 
 
-@test(groups=["backup_restore_master"])
+@test(enabled=False, groups=["backup_restore_master"])
 class BackupRestoreHA(NeutronTunHaBase):
     """BackupRestoreHAOneController"""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+    @test(enabled=False, depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_tun_ha_backup_restore"])
     @log_snapshot_after_test
     def deploy_neutron_tun_ha_backup_restore(self):
@@ -187,7 +187,8 @@ class BackupRestoreHA(NeutronTunHaBase):
         super(self.__class__, self).deploy_neutron_tun_ha_base(
             snapshot_name="deploy_neutron_tun_ha_backup_restore")
 
-    @test(depends_on_groups=['deploy_neutron_tun_ha_backup_restore'],
+    @test(enabled=False,
+          depends_on_groups=['deploy_neutron_tun_ha_backup_restore'],
           groups=["neutron_tun_ha_backup_restore"])
     @log_snapshot_after_test
     def neutron_tun_ha_backup_restore(self):
@@ -257,7 +258,7 @@ class BackupRestoreHA(NeutronTunHaBase):
 
         self.env.make_snapshot("neutron_tun_ha_backup_restore")
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+    @test(enabled=False, depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["create_backup_reset_restore_and_deploy_via_cli"])
     @log_snapshot_after_test
     def create_backup_reset_restore_and_deploy_via_cli(self):
@@ -379,12 +380,13 @@ class BackupRestoreHA(NeutronTunHaBase):
         logger.info("Finished provisioning via CLI")
 
 
-@test(groups=["backup_reinstall_restore"])
+@test(enabled=False, groups=["backup_reinstall_restore"])
 class BackupReinstallRestoreHA(NeutronTunHaBase):
     """This test dedicated for verifying dockerctl backup/restore feature
     with complete re-installation of Fuel after backing up"""
 
-    @test(depends_on_groups=['deploy_neutron_tun_ha_backup_restore'],
+    @test(enabled=False,
+          depends_on_groups=['deploy_neutron_tun_ha_backup_restore'],
           groups=["backup_reinstall_restore"])
     @log_snapshot_after_test
     def backup_reinstall_restore(self):
