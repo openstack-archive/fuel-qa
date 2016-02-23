@@ -22,7 +22,7 @@ from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
 from fuelweb_test import settings
-from fuelweb_test import logger as LOGGER
+from fuelweb_test import logger
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -55,7 +55,7 @@ class SaharaHAOneController(TestBasic):
 
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        LOGGER.debug('Create Fuel cluster for Sahara tests')
+        logger.debug('Create Fuel cluster for Sahara tests')
         data = {
             'sahara': True,
             'net_provider': 'neutron',
@@ -82,7 +82,7 @@ class SaharaHAOneController(TestBasic):
             data['user'], data['password'], data['tenant'])
         self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
 
-        LOGGER.debug('Verify Sahara service on controller')
+        logger.debug('Verify Sahara service on controller')
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
             checkers.verify_service(
@@ -92,14 +92,14 @@ class SaharaHAOneController(TestBasic):
                 remote,
                 service_name='sahara-engine')
 
-        LOGGER.debug('Check MD5 sum of Vanilla2 image')
+        logger.debug('Check MD5 sum of Vanilla2 image')
         check_image = checkers.check_image(
             settings.SERVTEST_SAHARA_VANILLA_2_IMAGE,
             settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_MD5,
             settings.SERVTEST_LOCAL_PATH)
         asserts.assert_true(check_image)
 
-        LOGGER.debug('Run all sanity and smoke tests')
+        logger.debug('Run all sanity and smoke tests')
         path_to_tests = 'fuel_health.tests.sanity.test_sanity_sahara.'
         test_names = ['VanillaTwoTemplatesTest.test_vanilla_two_templates',
                       'HDPTwoTemplatesTest.test_hdp_two_templates']
@@ -109,7 +109,7 @@ class SaharaHAOneController(TestBasic):
                                   for test_name in test_names]
         )
 
-        LOGGER.debug('Import Vanilla2 image for Sahara')
+        logger.debug('Import Vanilla2 image for Sahara')
 
         with open('{0}/{1}'.format(
                 settings.SERVTEST_LOCAL_PATH,
@@ -125,7 +125,7 @@ class SaharaHAOneController(TestBasic):
         path_to_tests = 'fuel_health.tests.tests_platform.test_sahara.'
         test_names = ['VanillaTwoClusterTest.test_vanilla_two_cluster']
         for test_name in test_names:
-            LOGGER.debug('Run platform test {0} for Sahara'.format(test_name))
+            logger.debug('Run platform test {0} for Sahara'.format(test_name))
             self.fuel_web.run_single_ostf_test(
                 cluster_id=cluster_id, test_sets=['tests_platform'],
                 test_name=path_to_tests + test_name, timeout=60 * 200)
@@ -162,7 +162,7 @@ class SaharaHA(TestBasic):
 
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        LOGGER.debug('Create Fuel cluster for Sahara tests')
+        logger.debug('Create Fuel cluster for Sahara tests')
         data = {
             'sahara': True,
             'net_provider': 'neutron',
@@ -191,7 +191,7 @@ class SaharaHA(TestBasic):
             cluster_vip, data['user'], data['password'], data['tenant'])
         self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)
 
-        LOGGER.debug('Verify Sahara service on all controllers')
+        logger.debug('Verify Sahara service on all controllers')
         for slave in ["slave-01", "slave-02", "slave-03"]:
             _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
             with self.env.d_env.get_ssh_to_remote(_ip) as remote:
@@ -202,14 +202,14 @@ class SaharaHA(TestBasic):
                     remote,
                     service_name='sahara-engine')
 
-        LOGGER.debug('Check MD5 sum of Vanilla2 image')
+        logger.debug('Check MD5 sum of Vanilla2 image')
         check_image = checkers.check_image(
             settings.SERVTEST_SAHARA_VANILLA_2_IMAGE,
             settings.SERVTEST_SAHARA_VANILLA_2_IMAGE_MD5,
             settings.SERVTEST_LOCAL_PATH)
         asserts.assert_true(check_image)
 
-        LOGGER.debug('Run all sanity and smoke tests')
+        logger.debug('Run all sanity and smoke tests')
         path_to_tests = 'fuel_health.tests.sanity.test_sanity_sahara.'
         test_names = ['VanillaTwoTemplatesTest.test_vanilla_two_templates',
                       'HDPTwoTemplatesTest.test_hdp_two_templates']
@@ -219,7 +219,7 @@ class SaharaHA(TestBasic):
                                   for test_name in test_names]
         )
 
-        LOGGER.debug('Import Vanilla2 image for Sahara')
+        logger.debug('Import Vanilla2 image for Sahara')
 
         with open('{0}/{1}'.format(
                 settings.SERVTEST_LOCAL_PATH,
@@ -235,7 +235,7 @@ class SaharaHA(TestBasic):
         path_to_tests = 'fuel_health.tests.tests_platform.test_sahara.'
         test_names = ['VanillaTwoClusterTest.test_vanilla_two_cluster']
         for test_name in test_names:
-            LOGGER.debug('Run platform test {0} for Sahara'.format(test_name))
+            logger.debug('Run platform test {0} for Sahara'.format(test_name))
             self.fuel_web.run_single_ostf_test(
                 cluster_id=cluster_id, test_sets=['tests_platform'],
                 test_name=path_to_tests + test_name, timeout=60 * 200)
@@ -303,7 +303,7 @@ class MuranoHAOneController(TestBasic):
                 remote,
                 service_name='murano-api')
 
-        LOGGER.debug('Run sanity and functional Murano OSTF tests')
+        logger.debug('Run sanity and functional Murano OSTF tests')
         self.fuel_web.run_single_ostf_test(
             cluster_id=self.fuel_web.get_last_created_cluster(),
             test_sets=['sanity'],
@@ -311,7 +311,7 @@ class MuranoHAOneController(TestBasic):
                        'MuranoSanityTests.test_create_and_delete_service')
         )
 
-        LOGGER.debug('Run OSTF platform tests')
+        logger.debug('Run OSTF platform tests')
 
         test_class_main = ('fuel_health.tests.tests_platform'
                            '.test_murano_linux.MuranoDeployLinuxServicesTests')
@@ -393,7 +393,7 @@ class MuranoHA(TestBasic):
                     remote,
                     service_name='murano-api')
 
-        LOGGER.debug('Run sanity and functional Murano OSTF tests')
+        logger.debug('Run sanity and functional Murano OSTF tests')
         self.fuel_web.run_single_ostf_test(
             cluster_id=self.fuel_web.get_last_created_cluster(),
             test_sets=['sanity'],
@@ -401,7 +401,7 @@ class MuranoHA(TestBasic):
                        'MuranoSanityTests.test_create_and_delete_service')
         )
 
-        LOGGER.debug('Run OSTF platform tests')
+        logger.debug('Run OSTF platform tests')
 
         test_class_main = ('fuel_health.tests.tests_platform'
                            '.test_murano_linux.MuranoDeployLinuxServicesTests')
@@ -426,14 +426,14 @@ class OSTFCeilometerHelper(TestBasic):
     def run_tests(self, cluster_id, skip_tests=None):
         """Method run smoke, sanity and platform Ceilometer tests."""
 
-        LOGGER.debug('Run sanity and smoke tests')
+        logger.debug('Run sanity and smoke tests')
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
             test_sets=['smoke', 'sanity'],
             timeout=60 * 15
         )
 
-        LOGGER.debug('Run platform OSTF Ceilometer tests')
+        logger.debug('Run platform OSTF Ceilometer tests')
 
         test_class_main = ('fuel_health.tests.tests_platform.'
                            'test_ceilometer.'
@@ -535,7 +535,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
                 disk_mb = self.fuel_web.get_node_disk_size(node.get('id'),
                                                            "vda")
 
-        LOGGER.debug('disk size is {0}'.format(disk_mb))
+        logger.debug('disk size is {0}'.format(disk_mb))
         mongo_disk_mb = 11116
         os_disk_mb = disk_mb - mongo_disk_mb
         mongo_disk_gb = ("{0}G".format(round(mongo_disk_mb / 1024, 1)))
@@ -890,7 +890,7 @@ class HeatHAOneController(TestBasic):
                                     service_name='ceilometer-api',
                                     ignore_count_of_proccesses=True)
 
-        LOGGER.debug('Run Heat OSTF platform tests')
+        logger.debug('Run Heat OSTF platform tests')
 
         test_class_main = ('fuel_health.tests.tests_platform.'
                            'test_heat.'
@@ -982,7 +982,7 @@ class HeatHA(TestBasic):
                                         service_name='ceilometer-api',
                                         ignore_count_of_proccesses=True)
 
-        LOGGER.debug('Run Heat OSTF platform tests')
+        logger.debug('Run Heat OSTF platform tests')
 
         test_class_main = ('fuel_health.tests.tests_platform.'
                            'test_heat.'
