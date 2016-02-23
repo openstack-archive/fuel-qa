@@ -20,11 +20,11 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=['murano_os_component', 'additional_components'])
+@test(enabled=False, groups=['murano_os_component', 'additional_components'])
 class MuranoOSComponent(TestBasic):
     """MuranoOSComponent"""  # TODO documentation
-
-    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
+    # TODO (tleontovich) Update test with Murano Plugin
+    @test(enabled=False, depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=['murano_neutron_vlan'])
     @log_snapshot_after_test
     def murano_neutron_vlan(self):
