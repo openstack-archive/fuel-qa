@@ -44,6 +44,9 @@ from proboscis.asserts import assert_true
 from time import sleep
 
 
+ssh_manager = SSHManager()
+
+
 @logwrap
 def check_cinder_status(remote):
     """Parse output and return False if any enabled service is down.
@@ -237,12 +240,10 @@ def check_archive_type(tar_path):
 
 
 @logwrap
-def check_file_exists(node_ssh, path):
-    result = node_ssh.execute('test -e "{0}"'.format(path))
-    assert_equal(result['exit_code'],
-                 0,
-                 'Can not find {0}'.format(path))
-    logger.info('File {0} exists on {1}'.format(path, node_ssh.host))
+def check_file_exists(ip, path):
+    assert_true(ssh_manager.exists_on_remote(ip, path),
+                'Can not find {0}'.format(path))
+    logger.info('File {0} exists on {1}'.format(path, ip))
 
 
 @logwrap
@@ -1105,36 +1106,28 @@ def check_haproxy_backend(remote,
     return remote.execute("{}{}".format(cmd, ''.join(grep)))
 
 
-def check_log_lines_order(remote, log_file_path, line_matcher):
+def check_log_lines_order(ip, log_file_path, line_matcher):
     """Read log file and check that lines order are same as strings in list
 
-    :param remote: SSHClient
+    :param ip: ip of node in str format
     :param log_file_path: path to log file
     :param line_matcher: list of strings to search
     """
-    check_file_exists(remote, path=log_file_path)
+    check_file_exists(ip, path=log_file_path)
 
     previous_line_pos = 1
     previous_line = None
     for current_line in line_matcher:
         cmd = 'tail -n +{0} {1} | grep -n "{2}"'\
             .format(previous_line_pos, log_file_path, current_line)
-        result = remote.execute(cmd)
 
-        # line not found case
-        assert_equal(0,
-                     result['exit_code'],
-                     "Line '{0}' not found after line '{1}' in the file '{2}'."
-                     " Command '{3}' executed with exit_code='{4}'\n"
-                     "stdout:\n* {5} *\n"
-                     "stderr:\n'* {6} *\n"
-                     .format(current_line,
-                             previous_line,
-                             log_file_path,
-                             cmd,
-                             result['exit_code'],
-                             '\n'.join(result['stdout']),
-                             '\n'.join(result['stderr'])))
+        result = ssh_manager.execute_on_remote(
+            ip=ip,
+            cmd=cmd,
+            err_msg="Line '{0}' not found after line '{1}' in the file "
+                    "'{2}'.".format(current_line, previous_line, log_file_path)
+
+        )
 
         # few lines found case
         assert_equal(1,
@@ -1157,54 +1150,68 @@ def check_log_lines_order(remote, log_file_path, line_matcher):
         previous_line = current_line
 
 
-def check_hiera_hosts(self, nodes, cmd):
+def check_hiera_hosts(nodes, cmd):
     hiera_hosts = []
     for node in nodes:
-        with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
-            hosts = ''.join(run_on_remote(remote, cmd)).strip().split(',')
-            logger.debug("hosts on {0} are {1}".format(node['hostname'],
-                                                       hosts))
-            if not hiera_hosts:
-                hiera_hosts = hosts
-                continue
-            else:
-                assert_true(set(hosts) == set(hiera_hosts),
-                            'Hosts on node {0} differ from'
-                            ' others'.format(node['hostname']))
+        result = ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd=cmd
+        )['stdout']
+        hosts = ''.join(result.strip().split(','))
+        logger.debug("hosts on {0} are {1}".format(node['hostname'], hosts))
+
+        if not hiera_hosts:
+            hiera_hosts = hosts
+            continue
+        else:
+            assert_true(set(hosts) == set(hiera_hosts),
+                        'Hosts on node {0} differ from'
+                        ' others'.format(node['hostname']))
 
 
-def check_client_smoke(remote):
-    fuel_output = remote.execute(
-        'fuel env list')['stdout'][2].split('|')[2].strip()
-    fuel_2_output = remote.execute(
-        'fuel2 env list')['stdout'][3].split('|')[3].strip()
+def check_client_smoke(ip):
+    fuel_output = ssh_manager.execute(
+        ip=ip,
+        cmd='fuel env list'
+    )['stdout'][2].split('|')[2].strip()
+    fuel_2_output = ssh_manager.execute(
+        ip=ip,
+        cmd='fuel2 env list'
+    )['stdout'][3].split('|')[3].strip()
     assert_equal(fuel_output, fuel_2_output,
                  "The fuel: {0} and fuel2: {1} outputs are not equal")
 
 
-def check_offload(node, interface, offload_type):
-    command = "ethtool --show-offload %s | awk '/%s/ {print $2}'"
-    offload_status = node.execute(command % (interface, offload_type))
-    assert_equal(offload_status['exit_code'], 0,
-                 "Failed to get Offload {0} "
-                 "on node {1}".format(offload_type, node))
-    return ''.join(node.execute(
-        command % (interface, offload_type))['stdout']).rstrip()
+def check_offload(ip, interface, offload_type):
+    command = "ethtool --show-offload {0} |" \
+              " awk '/{1}/ {{print $2}}'".format(interface, offload_type)
+
+    result = ssh_manager.execute_on_remote(
+        ip=ip,
+        cmd=command,
+        err_msg="Failed to get Offload {0} "
+                "on node {1}".format(offload_type, ip)
+    )
+    return ''.join(result['stdout']).rstrip()
 
 
-def check_get_network_data_over_cli(remote, cluster_id, path):
+def check_get_network_data_over_cli(ip, cluster_id, path):
     logger.info("Download network data over cli")
     cmd = 'fuel --debug --env {0} network --dir {1} --json -d'.format(
         cluster_id, path)
-    result = remote.execute(cmd)
-    assert_equal(result['exit_code'], 0,
-                 'Failed to download network data {0}'.format(result))
+    ssh_manager.execute_on_remote(
+        ip=ip,
+        cmd=cmd,
+        err_msg='Failed to upload network data'
+    )
 
 
-def check_update_network_data_over_cli(remote, cluster_id, path):
+def check_update_network_data_over_cli(ip, cluster_id, path):
     logger.info("Upload network data over cli")
     cmd = 'fuel --debug --env {0} network --dir {1} --json -u'.format(
         cluster_id, path)
-    result = remote.execute(cmd)
-    assert_equal(result['exit_code'], 0,
-                 'Failed to upload network data {0}'.format(result))
+    ssh_manager.execute_on_remote(
+        ip=ip,
+        cmd=cmd,
+        err_msg='Failed to upload network data'
+    )
