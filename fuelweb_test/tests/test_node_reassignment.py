@@ -20,12 +20,12 @@ from proboscis import test
 from proboscis import SkipTest
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 
-from fuelweb_test.tests import base_test_case as base_test_data
+from fuelweb_test.tests import base_test_case
 from fuelweb_test.tests.test_os_upgrade import TestOSupgrade
 
 
 @test(groups=["reassign_node_for_os_upgrade", "os_upgrade"])
-class TestReassignNode(base_test_data.TestBasic):
+class TestReassignNode(base_test_case.TestBasic):
 
     @test(
         depends_on=[TestOSupgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan],
