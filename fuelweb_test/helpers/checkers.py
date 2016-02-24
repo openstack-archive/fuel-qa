@@ -15,7 +15,6 @@ import hashlib
 import json
 import os
 import re
-import traceback
 import urllib2
 
 from devops.error import TimeoutError
@@ -26,7 +25,6 @@ import yaml
 from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test.helpers.ssh_manager import SSHManager
-from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test.helpers.utils import get_mongo_partitions
 from fuelweb_test.settings import MASTER_IS_CENTOS7
@@ -213,30 +211,6 @@ def check_file_exists(ip, path):
     assert_true(ssh_manager.exists_on_remote(ip, path),
                 'Can not find {0}'.format(path))
     logger.info('File {0} exists on {1}'.format(path, ip))
-
-
-@logwrap
-def wait_phrase_in_log(node_ssh, timeout, interval, phrase, log_path):
-    cmd = "grep '{0}' '{1}'".format(phrase, log_path)
-    wait(
-        lambda: not node_ssh.execute(cmd)['exit_code'], interval=interval,
-        timeout=timeout,
-        timeout_msg="The phrase {0} not found in {1} file on "
-                    "remote node".format(phrase, log_path))
-
-
-@logwrap
-def get_package_versions_from_node(remote, name, os_type):
-    if os_type and 'Ubuntu' in os_type:
-        cmd = "dpkg-query -W -f='${Version}' %s" % name
-    else:
-        cmd = "rpm -q {0}".format(name)
-    try:
-        result = ''.join(remote.execute(cmd)['stdout'])
-        return result.strip()
-    except Exception:
-        logger.error(traceback.format_exc())
-        raise
 
 
 @logwrap
@@ -734,35 +708,36 @@ def verify_bootstrap_on_node(remote, os_type, uuid=None):
 
 
 @logwrap
-def external_ntp_check(remote_slave, vrouter_vip):
+def external_ntp_check(ip, vrouter_vip):
     logger.info("External ntp check")
     provided_ntp = EXTERNAL_NTP.split(', ')
     logger.debug("provided to test ntp is {}".format(provided_ntp))
     cluster_ntp = []
     for ntp in provided_ntp:
         ext_ntp_ip = ''.join(
-            remote_slave.execute("awk '/^server +{0}/{{print $2}}' "
-                                 "/etc/ntp.conf".
-                                 format(ntp))["stdout"]).rstrip()
+            ssh_manager.execute(
+                ip=ip,
+                cmd="awk '/^server +{0}/{{print $2}}' "
+                    "/etc/ntp.conf".format(ntp))["stdout"]).rstrip()
         cluster_ntp.append(ext_ntp_ip)
     logger.debug("external ntp in conf is {}".format(cluster_ntp))
     assert_equal(set(provided_ntp), set(cluster_ntp),
                  "/etc/ntp.conf does not contain external ntp ip")
     try:
         wait(
-            lambda: is_ntpd_active(remote_slave, vrouter_vip), timeout=120)
+            lambda: is_ntpd_active(ip, vrouter_vip), timeout=120)
     except Exception as e:
         logger.error(e)
-        status = is_ntpd_active(remote_slave, vrouter_vip)
+        status = is_ntpd_active(ip, vrouter_vip)
         assert_equal(
             status, 1, "Failed updated ntp. "
                        "Exit code is {0}".format(status))
 
 
-def check_swift_ring(remote):
+def check_swift_ring(ip):
     for ring in ['object', 'account', 'container']:
-        res = ''.join(remote.execute(
-            "swift-ring-builder /etc/swift/{0}.builder".format(
+        res = ''.join(ssh_manager.execute(
+            ip, "swift-ring-builder /etc/swift/{0}.builder".format(
                 ring))['stdout'])
         logger.debug("swift ring builder information is {0}".format(res))
         balance = re.search('(\d+.\d+) balance', res).group(1)
@@ -887,17 +862,6 @@ def check_oswl_stat(postgres_actions, nailgun_actions,
 
 
 @logwrap
-def get_file_size(remote, file_name, file_path):
-    file_size = remote.execute(
-        'stat -c "%s" {0}/{1}'.format(file_path, file_name))
-    assert_equal(
-        int(file_size['exit_code']), 0, "Failed to get '{0}/{1}' file stats on"
-                                        " remote node".format(file_path,
-                                                              file_name))
-    return int(file_size['stdout'][0].rstrip())
-
-
-@logwrap
 def check_ping(ip, host, deadline=10, size=56, timeout=1, interval=1):
     """Check network connectivity from remote to host using ICMP (ping)
     :param ip: remote ip
@@ -920,7 +884,7 @@ def check_ping(ip, host, deadline=10, size=56, timeout=1, interval=1):
 
 
 @logwrap
-def check_neutron_dhcp_lease(remote, instance_ip, instance_mac,
+def check_neutron_dhcp_lease(ip, instance_ip, instance_mac,
                              dhcp_server_ip, dhcp_port_tag):
     """Check if the DHCP server offers a lease for a client with the specified
        MAC address
@@ -943,48 +907,50 @@ def check_neutron_dhcp_lease(remote, instance_ip, instance_mac,
     ovs_del_port_cmd = ("--if-exists del-port {0}".format(ovs_port_name))
 
     # Add an OVS interface with a tag for accessing the DHCP server
-    run_on_remote(remote, ovs_cmd + ovs_add_port_cmd)
+    ssh_manager.execute_on_remote(ip, ovs_cmd + ovs_add_port_cmd)
 
     # Set to the created interface the same MAC address
     # that was used for the instance.
-    run_on_remote(remote, "ifconfig {0} hw ether {1}".format(ovs_port_name,
-                                                             instance_mac))
-    run_on_remote(remote, "ifconfig {0} up".format(ovs_port_name))
+    ssh_manager.execute_on_remote(
+        ip, "ifconfig {0} hw ether {1}".format(ovs_port_name,
+                                               instance_mac))
+    ssh_manager.execute_on_remote(ip, "ifconfig {0} up".format(ovs_port_name))
 
     # Perform a 'dhcpcheck' request to check if the lease can be obtained
-    lease = run_on_remote(remote,
-                          "dhcpcheck request {0} {1} --range_start {2} "
-                          "--range_end 255.255.255.255 | fgrep \" {1} \""
-                          .format(ovs_port_name, dhcp_server_ip, instance_ip))
+    lease = ssh_manager.execute_on_remote(
+        ip=ip,
+        cmd="dhcpcheck request {0} {1} --range_start {2} "
+            "--range_end 255.255.255.255 | fgrep \" {1} \""
+            .format(ovs_port_name, dhcp_server_ip, instance_ip))
 
     # Remove the OVS interface
-    run_on_remote(remote, ovs_cmd + ovs_del_port_cmd)
+    ssh_manager.execute_on_remote(ip, ovs_cmd + ovs_del_port_cmd)
 
     logger.debug("DHCP server answer: {}".format(lease))
     return ' ack ' in lease
 
 
-def check_available_mode(remote):
+def check_available_mode(ip):
     command = ('umm status | grep runlevel &>/dev/null && echo "True" '
                '|| echo "False"')
-    if remote.execute(command)['exit_code'] == 0:
-        return ''.join(remote.execute(command)['stdout']).strip()
+    if ssh_manager.execute(ip, command)['exit_code'] == 0:
+        return ''.join(ssh_manager.execute(ip, command)['stdout']).strip()
     else:
-        return ''.join(remote.execute(command)['stderr']).strip()
+        return ''.join(ssh_manager.execute(ip, command)['stderr']).strip()
 
 
-def check_auto_mode(remote):
+def check_auto_mode(ip):
     command = ('umm status | grep umm &>/dev/null && echo "True" '
                '|| echo "False"')
-    if remote.execute(command)['exit_code'] == 0:
-        return ''.join(remote.execute(command)['stdout']).strip()
+    if ssh_manager.execute(ip, command)['exit_code'] == 0:
+        return ''.join(ssh_manager.execute(ip, command)['stdout']).strip()
     else:
-        return ''.join(remote.execute(command)['stderr']).strip()
+        return ''.join(ssh_manager.execute(ip, command)['stderr']).strip()
 
 
-def is_ntpd_active(remote, ntpd_ip):
+def is_ntpd_active(ip, ntpd_ip):
     cmd = 'ntpdate -d -p 4 -t 0.2 -u {0}'.format(ntpd_ip)
-    return not remote.execute(cmd)['exit_code']
+    return not ssh_manager.execute(ip, cmd)['exit_code']
 
 
 def check_repo_managment(ip):

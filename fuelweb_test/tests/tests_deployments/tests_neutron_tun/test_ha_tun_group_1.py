@@ -164,6 +164,6 @@ class HaTunGroup1(TestBasic):
         for node in ctrls:
             with self.fuel_web.get_ssh_for_nailgun_node(node) as remote:
                 checkers.external_dns_check(remote)
-                checkers.external_ntp_check(remote, vrouter_vip)
+            checkers.external_ntp_check(node['ip'], vrouter_vip)
 
         self.env.make_snapshot("tun_ceph_images_rados_objects")

@@ -30,7 +30,7 @@ import yaml
 from fuelweb_test.helpers.checkers import check_mysql
 from fuelweb_test.helpers.checkers import check_ping
 from fuelweb_test.helpers.checkers import check_public_ping
-from fuelweb_test.helpers.checkers import get_file_size
+from fuelweb_test.helpers.utils import get_file_size
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test import logger
@@ -590,10 +590,10 @@ class TestHaFailoverBase(TestBasic):
                 raise TimeoutError(
                     "File download was not started")
 
-        with self.fuel_web.get_ssh_for_node('slave-05') as remote:
-            file_size1 = get_file_size(remote, file_name, file_path)
-            time.sleep(60)
-            file_size2 = get_file_size(remote, file_name, file_path)
+        ip_slave_5 = self.fuel_web.get_nailgun_node_by_name('slave-05')['ip']
+        file_size1 = get_file_size(ip_slave_5, file_name, file_path)
+        time.sleep(60)
+        file_size2 = get_file_size(ip_slave_5, file_name, file_path)
         assert_true(file_size2 > file_size1,
                     "File download was interrupted, size of downloading "
                     "does not change. File: {0}. Current size: {1} byte(s), "
@@ -614,10 +614,10 @@ class TestHaFailoverBase(TestBasic):
             "No Internet access from {0}".format(node['fqdn'])
         )
         if OPENSTACK_RELEASE == OPENSTACK_RELEASE_UBUNTU:
-            with self.fuel_web.get_ssh_for_node('slave-05') as remote:
-                file_size1 = get_file_size(remote, file_name, file_path)
-                time.sleep(60)
-                file_size2 = get_file_size(remote, file_name, file_path)
+            _ip = self.fuel_web.get_nailgun_node_by_name('slave-05')['ip']
+            file_size1 = get_file_size(_ip, file_name, file_path)
+            time.sleep(60)
+            file_size2 = get_file_size(_ip, file_name, file_path)
             assert_true(file_size2 > file_size1,
                         "File download was interrupted, size of downloading "
                         "does not change")
