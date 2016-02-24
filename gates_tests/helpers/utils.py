@@ -164,8 +164,7 @@ def patch_and_assemble_ubuntu_bootstrap(environment):
             no_progress_bar,
             no_append)
         ssh.execute_on_remote(ip=ssh.admin_ip, cmd=image_rebuild)
-        with environment.d_env.get_admin_remote() as remote:
-            checkers.check_file_exists(remote, '{0}'.format(bootstrap_file))
+        checkers.check_file_exists(ssh.admin_ip, str(bootstrap_file))
     except Exception as e:
         logger.error("Could not upload package {e}".format(e=e))
         raise
@@ -182,10 +181,9 @@ def replace_centos_bootstrap(environment):
         raise Exception("{} variable don't exist"
                         .format(settings.UPDATE_FUEL))
     rebuilded_bootstrap = '/var/initramfs.img.updated'
-    with environment.d_env.get_admin_remote() as remote:
-        checkers.check_file_exists(
-            remote,
-            '{0}'.format(rebuilded_bootstrap))
+    checkers.check_file_exists(
+        ssh.admin_ip,
+        str(rebuilded_bootstrap))
     logger.info("Assigning new bootstrap from {}".format(rebuilded_bootstrap))
     bootstrap = "/var/www/nailgun/bootstrap"
     cmd = ("mv {0}/initramfs.img /var/initramfs.img;"
