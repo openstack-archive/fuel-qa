@@ -485,8 +485,7 @@ def check_repos_management(func):
                 for n in nailgun_nodes:
                     logger.debug("Check repository management on {0}"
                                  .format(n['ip']))
-                    with env.d_env.get_ssh_to_remote(n['ip']) as node_ssh:
-                        check_repo_managment(node_ssh)
+                    check_repo_managment(n['ip'])
             except Exception:
                 logger.error("An error happened during check repositories "
                              "management on nodes. Please see the debug log.")
