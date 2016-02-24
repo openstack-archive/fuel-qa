@@ -221,6 +221,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
         self.env.bootstrap_nodes(nodes)
 
         for node in nodes:
+            n_node = self.fuel_web.get_nailgun_node_by_devops_node(node)
             with self.fuel_web.get_ssh_for_node(node.name) as slave_remote:
                 checkers.verify_bootstrap_on_node(slave_remote,
                                                   os_type="ubuntu",
@@ -234,7 +235,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
                                      "{1}".format(package, node.name))
 
                 for injected_dir in ["/var/lib/testdir", "/var/www/testdir2"]:
-                    checkers.check_file_exists(slave_remote, injected_dir)
+                    checkers.check_file_exists(n_node['ip'], injected_dir)
 
                 file_content = \
                     slave_remote.execute("cat /test_bootstrap_script")

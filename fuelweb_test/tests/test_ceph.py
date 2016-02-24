@@ -505,7 +505,7 @@ class CephRadosGW(TestBasic):
             remote = self.env.d_env.get_ssh_to_remote(node['ip'])
             logger.info("Check all HAProxy backends on {}".format(
                 node['meta']['system']['fqdn']))
-            haproxy_status = checkers.check_haproxy_backend(remote)
+            haproxy_status = checkers.check_haproxy_backend(node['ip'])
             remote.clear()
             assert_equal(haproxy_status['exit_code'], 1,
                          "HAProxy backends are DOWN. {0}".format(
