@@ -16,7 +16,7 @@
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test import settings as hlp_date
+from fuelweb_test import settings
 from fuelweb_test.tests import base_test_case
 
 
@@ -47,10 +47,10 @@ class OstfRepeatableTests(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_date.DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
             settings={
                 'net_provider': 'neutron',
-                'net_segment_type': hlp_date.NEUTRON_SEGMENT['vlan']
+                'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
             }
         )
         self.fuel_web.update_nodes(
@@ -91,10 +91,10 @@ class OstfRepeatableTests(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_date.DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
             settings={
                 'net_provider': 'neutron',
-                'net_segment_type': hlp_date.NEUTRON_SEGMENT['tun']
+                'net_segment_type': settings.NEUTRON_SEGMENT['tun']
             }
         )
         self.fuel_web.update_nodes(
@@ -115,5 +115,5 @@ class OstfRepeatableTests(base_test_case.TestBasic):
     @log_snapshot_after_test
     def run_ostf_n_times_against_custom_deployment(self):
         cluster_id = self.fuel_web.client.get_cluster_id(
-            hlp_date.DEPLOYMENT_NAME)
+            settings.DEPLOYMENT_NAME)
         self.fuel_web.run_ostf_repeatably(cluster_id)

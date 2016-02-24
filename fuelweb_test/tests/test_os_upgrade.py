@@ -23,15 +23,14 @@ from proboscis import SkipTest
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import install_pkg
-from fuelweb_test.tests import base_test_case as base_test_data
-from fuelweb_test import settings as hlp_data
-from fuelweb_test.settings import DEPLOYMENT_MODE_HA
+from fuelweb_test.tests import base_test_case
+from fuelweb_test import settings
 
 
 @test(groups=["prepare_os_upgrade"])
-class PrepareOSupgrade(base_test_data.TestBasic):
+class PrepareOSupgrade(base_test_case.TestBasic):
 
-    @test(depends_on=[base_test_data.SetupEnvironment.prepare_slaves_9],
+    @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_9],
           groups=["ha_ceph_for_all_ubuntu_neutron_vlan"])
     @log_snapshot_after_test
     def ha_ceph_for_all_ubuntu_neutron_vlan(self):
@@ -48,7 +47,7 @@ class PrepareOSupgrade(base_test_data.TestBasic):
         Duration 50m
         Snapshot ha_ceph_for_all_ubuntu_neutron_vlan
         """
-        if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
+        if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
             raise SkipTest()
 
         self.check_run('ha_ceph_for_all_ubuntu_neutron_vlan')
@@ -61,12 +60,12 @@ class PrepareOSupgrade(base_test_data.TestBasic):
             'objects_ceph': True,
             'volumes_lvm': False,
             'net_provider': 'neutron',
-            'net_segment_type': hlp_data.NEUTRON_SEGMENT['vlan']
+            'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
         }
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE_HA,
+            mode=settings.DEPLOYMENT_MODE_HA,
             settings=data
         )
 
@@ -89,7 +88,7 @@ class PrepareOSupgrade(base_test_data.TestBasic):
 
 
 @test(groups=["os_upgrade"])
-class TestOSupgrade(base_test_data.TestBasic):
+class TestOSupgrade(base_test_case.TestBasic):
 
     @test(groups=["upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"])
     @log_snapshot_after_test
@@ -102,7 +101,7 @@ class TestOSupgrade(base_test_data.TestBasic):
             3. Check that upgrade was successful
 
         """
-        if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
+        if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
             raise SkipTest()
 
         self.check_run('upgrade_ha_ceph_for_all_ubuntu_neutron_vlan')
@@ -115,7 +114,7 @@ class TestOSupgrade(base_test_data.TestBasic):
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:6])
-        self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
+        self.fuel_web.assert_fuel_version(settings.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nailgun_upgrade_migration()
 
         self.env.make_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan",
@@ -135,7 +134,7 @@ class TestOSupgrade(base_test_data.TestBasic):
             5. Create mirrors
 
         """
-        if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
+        if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
             raise SkipTest()
 
         self.check_run('prepare_before_os_upgrade')
@@ -166,7 +165,7 @@ class TestOSupgrade(base_test_data.TestBasic):
             2. run octane upgrade-env <target_env_id>
 
         """
-        if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
+        if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
             raise SkipTest()
 
         self.check_run('os_upgrade_env')
@@ -198,7 +197,7 @@ class TestOSupgrade(base_test_data.TestBasic):
             2. run octane upgrade-node --isolated <seed_env_id> <node_id>
 
         """
-        if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
+        if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
             raise SkipTest()
 
         self.check_run('upgrade_first_cic')
@@ -241,7 +240,7 @@ class TestOSupgrade(base_test_data.TestBasic):
 
         """
 
-        if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
+        if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
             raise SkipTest()
 
         self.check_run('upgrade_db')
@@ -325,7 +324,7 @@ class TestOSupgrade(base_test_data.TestBasic):
 
         """
 
-        if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
+        if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
             raise SkipTest()
 
         self.check_run('upgrade_ceph')
@@ -369,7 +368,7 @@ class TestOSupgrade(base_test_data.TestBasic):
 
         """
 
-        if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
+        if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
             raise SkipTest()
 
         self.check_run('upgrade_control_plane')
