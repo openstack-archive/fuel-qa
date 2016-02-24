@@ -229,7 +229,8 @@ class CommandLineTest(test_cli_base.CommandLine):
             node_id = self.fuel_web.get_nailgun_node_by_devops_node(
                 self.env.d_env.nodes().slaves[2])['id']
 
-            assert_true(check_cobbler_node_exists(remote, node_id),
+            assert_true(check_cobbler_node_exists(self.ssh_manager.admin_ip,
+                                                  node_id),
                         "node-{0} is not found".format(node_id))
         self.env.d_env.nodes().slaves[2].destroy()
         try:
@@ -258,8 +259,8 @@ class CommandLineTest(test_cli_base.CommandLine):
                     "After deletion node-{0} is found in fuel list".
                     format(node_id))
 
-        with self.env.d_env.get_admin_remote() as remote:
-            is_cobbler_node_exists = check_cobbler_node_exists(remote, node_id)
+        is_cobbler_node_exists = check_cobbler_node_exists(
+            self.ssh_manager.admin_ip, node_id)
 
         assert_false(is_cobbler_node_exists,
                      "After deletion node-{0} is found in cobbler list".
