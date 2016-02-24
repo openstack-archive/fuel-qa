@@ -18,7 +18,6 @@ import yaml
 
 from devops.helpers.helpers import wait
 from devops.error import TimeoutError
-from devops.error import DevopsCalledProcessError
 from devops.models import DiskDevice
 from devops.models import Node
 from devops.models import Volume
@@ -396,18 +395,11 @@ class AdminActions(BaseActions):
         assert_equal(result['exit_code'], 0)
 
     def get_fuel_settings(self):
-        cmd = 'cat {cfg_file}'.format(cfg_file=hlp_data.FUEL_SETTINGS_YAML)
-        result = self.ssh_manager.execute(
+        result = self.ssh_manager.execute_on_remote(
             ip=self.admin_ip,
-            cmd=cmd
+            cmd='cat {cfg_file}'.format(cfg_file=hlp_data.FUEL_SETTINGS_YAML)
         )
-        if result['exit_code'] == 0:
-            fuel_settings = yaml.load(''.join(result['stdout']))
-        else:
-            raise Exception('Can\'t output {cfg_file} file: {error}'.
-                            format(cfg_file=hlp_data.FUEL_SETTINGS_YAML,
-                                   error=result['stderr']))
-        return fuel_settings
+        return yaml.load(result['stdout_str'])
 
     def save_fuel_settings(self, settings):
         cmd = 'echo \'{0}\' > {1}'.format(yaml.dump(settings,
@@ -746,15 +738,6 @@ class NessusActions(object):
 
 
 class FuelBootstrapCliActions(AdminActions):
-    def _execute_check_retcode(self, command):
-        result = self.ssh_manager.execute(ip=self.admin_ip, cmd=command)
-        if result['exit_code'] != 0:
-            raise DevopsCalledProcessError(command=command,
-                                           returncode=result['exit_code'],
-                                           output=result['stderr'])
-
-        return ''.join(result['stdout'])
-
     def get_bootstrap_default_config(self):
         fuel_settings = self.get_fuel_settings()
         return fuel_settings["BOOTSTRAP"]
@@ -780,7 +763,10 @@ class FuelBootstrapCliActions(AdminActions):
 
     def activate_bootstrap_image(self, uuid):
         command = "fuel-bootstrap activate {0}".format(uuid)
-        result = self._execute_check_retcode(command)
+        result = self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd=command,
+        )['stdout_str']
         if "centos" in uuid:
             return "centos"
         return self.parse_uuid(result)[0]
@@ -808,7 +794,10 @@ class FuelBootstrapCliActions(AdminActions):
                 command += "--{0} ".format(field)
 
         logger.info("Building bootstrap image: {0}".format(command))
-        result = self._execute_check_retcode(command)
+        result = self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd=command,
+        )['stdout_str']
 
         logger.info("Bootstrap image has been built: {0}".format(result))
         uuid = self.parse_uuid(result)[0]
@@ -821,12 +810,18 @@ class FuelBootstrapCliActions(AdminActions):
                    .format(filename,
                            "--activate" if activate else ""))
 
-        result = self._execute_check_retcode(command)
+        result = self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd=command,
+        )['stdout_str']
         return self.parse_uuid(result)[0]
 
     def list_bootstrap_images(self):
         command = "fuel-bootstrap list"
-        result = self._execute_check_retcode(command)
+        result = self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd=command,
+        )['stdout_str']
         return result
 
     def list_bootstrap_images_uuids(self):
@@ -837,7 +832,7 @@ class FuelBootstrapCliActions(AdminActions):
         bootstrap_images = \
             self.ssh_manager.execute_on_remote(
                 ip=self.admin_ip,
-                cmd=command)['stdout']
+                cmd=command)['stdout_str']
 
         for line in bootstrap_images:
             if "active" in line and "centos" not in line:
@@ -849,5 +844,8 @@ class FuelBootstrapCliActions(AdminActions):
 
     def delete_bootstrap_image(self, uuid):
         command = "fuel-bootstrap delete {0}".format(uuid)
-        result = self._execute_check_retcode(command)
+        result = self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd=command,
+        )['stdout_str']
         return self.parse_uuid(result)[0]
