@@ -34,7 +34,7 @@ from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
 from fuelweb_test.settings import MIRROR_UBUNTU
-from fuelweb_test import settings as hlp_data
+from fuelweb_test.settings import FUEL_SETTINGS_YAML
 from fuelweb_test.settings import NESSUS_IMAGE_PATH
 
 
@@ -328,7 +328,7 @@ class AdminActions(BaseActions):
         )
 
     def get_fuel_settings(self):
-        cmd = 'cat {cfg_file}'.format(cfg_file=hlp_data.FUEL_SETTINGS_YAML)
+        cmd = 'cat {cfg_file}'.format(cfg_file=FUEL_SETTINGS_YAML)
         result = self.ssh_manager.execute(
             ip=self.admin_ip,
             cmd=cmd
@@ -337,7 +337,7 @@ class AdminActions(BaseActions):
             fuel_settings = yaml.load(''.join(result['stdout']))
         else:
             raise Exception('Can\'t output {cfg_file} file: {error}'.
-                            format(cfg_file=hlp_data.FUEL_SETTINGS_YAML,
+                            format(cfg_file=FUEL_SETTINGS_YAML,
                                    error=result['stderr']))
         return fuel_settings
 
@@ -345,7 +345,7 @@ class AdminActions(BaseActions):
         cmd = 'echo \'{0}\' > {1}'.format(yaml.dump(settings,
                                                     default_style='"',
                                                     default_flow_style=False),
-                                          hlp_data.FUEL_SETTINGS_YAML)
+                                          FUEL_SETTINGS_YAML)
         result = self.ssh_manager.execute(
             ip=self.admin_ip,
             cmd=cmd
