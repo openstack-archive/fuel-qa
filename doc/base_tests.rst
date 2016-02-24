@@ -642,6 +642,11 @@ Test for separate rabbitmq service and ceph
 .. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_rabbitmq_ceph
    :members:
 
+Deployment with platform components
+-----------------------------------
+.. automodule:: fuelweb_test.tests.tests_separate_services.test_deploy_platform_components
+   :members:
+
 Template based tests
 --------------------
 .. automodule:: fuelweb_test.actions_tests
