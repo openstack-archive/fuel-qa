@@ -30,7 +30,7 @@ import yaml
 from fuelweb_test.helpers.checkers import check_mysql
 from fuelweb_test.helpers.checkers import check_ping
 from fuelweb_test.helpers.checkers import check_public_ping
-from fuelweb_test.helpers.checkers import get_file_size
+from fuelweb_test.helpers.utils import get_file_size
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test import logger
@@ -338,20 +338,22 @@ class TestHaFailoverBase(TestBasic):
             self.__class__.__name__)
         n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])
-        d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
-        for devops_node in d_ctrls:
-            with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
-                logger.info('Terminating MySQL on {0}'
-                            .format(devops_node.name))
+        for nailgun_node in n_ctrls:
+            dev_node = self.fuel_web.get_devops_nodes_by_nailgun_nodes(
+                nailgun_node
+            )
+            logger.info('Terminating MySQL on {0}'
+                        .format(dev_node.name))
 
-                try:
-                    remote.check_call('pkill -9 -x "mysqld"')
-                except:
-                    logger.error('MySQL on {0} is down after snapshot revert'.
-                                 format(devops_node.name))
-                    raise
+            try:
+                self.ssh_manager.check_call(nailgun_node['ip'],
+                                            'pkill -9 -x "mysqld"')
+            except:
+                logger.error('MySQL on {0} is down after snapshot revert'.
+                             format(dev_node.name))
+                raise
 
-                check_mysql(remote, devops_node.name)
+            check_mysql(nailgun_node['ip'], dev_node.name)
 
         cluster_id = self.fuel_web.client.get_cluster_id(
             self.__class__.__name__)
@@ -590,10 +592,10 @@ class TestHaFailoverBase(TestBasic):
                 raise TimeoutError(
                     "File download was not started")
 
-        with self.fuel_web.get_ssh_for_node('slave-05') as remote:
-            file_size1 = get_file_size(remote, file_name, file_path)
-            time.sleep(60)
-            file_size2 = get_file_size(remote, file_name, file_path)
+        ip_slave_5 = self.fuel_web.get_nailgun_node_by_name('slave-05')['ip']
+        file_size1 = get_file_size(ip_slave_5, file_name, file_path)
+        time.sleep(60)
+        file_size2 = get_file_size(ip_slave_5, file_name, file_path)
         assert_true(file_size2 > file_size1,
                     "File download was interrupted, size of downloading "
                     "does not change. File: {0}. Current size: {1} byte(s), "
@@ -614,10 +616,10 @@ class TestHaFailoverBase(TestBasic):
             "No Internet access from {0}".format(node['fqdn'])
         )
         if OPENSTACK_RELEASE == OPENSTACK_RELEASE_UBUNTU:
-            with self.fuel_web.get_ssh_for_node('slave-05') as remote:
-                file_size1 = get_file_size(remote, file_name, file_path)
-                time.sleep(60)
-                file_size2 = get_file_size(remote, file_name, file_path)
+            _ip = self.fuel_web.get_nailgun_node_by_name('slave-05')['ip']
+            file_size1 = get_file_size(_ip, file_name, file_path)
+            time.sleep(60)
+            file_size2 = get_file_size(_ip, file_name, file_path)
             assert_true(file_size2 > file_size1,
                         "File download was interrupted, size of downloading "
                         "does not change")

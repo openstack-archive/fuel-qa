@@ -89,11 +89,10 @@ class FuelMasterMigrate(ActionTest, BaseActions, FuelMasterActions):
     def check_migration_status(self):
         """Check periodically the status of Fuel Master migration process"""
 
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.wait_phrase_in_log(
-                remote, 60 * 60, interval=0.2,
-                phrase='Rebooting to begin the data sync process',
-                log_path='/var/log/fuel-migrate.log')
+        checkers.wait_phrase_in_log(
+            self.env.get_admin_node_ip(), 60 * 60, interval=0.2,
+            phrase='Rebooting to begin the data sync process',
+            log_path='/var/log/fuel-migrate.log')
         logger.info(
             'Rebooting to begin the data sync process for fuel migrate')
 
@@ -107,11 +106,10 @@ class FuelMasterMigrate(ActionTest, BaseActions, FuelMasterActions):
             network_name=self.env.d_env.admin_net,
             timeout=60 * 15)
 
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.wait_phrase_in_log(
-                remote, 60 * 90, interval=0.1,
-                phrase='Stop network and up with new settings',
-                log_path='/var/log/fuel-migrate.log')
+        checkers.wait_phrase_in_log(
+            self.env.get_admin_node_ip(), 60 * 90, interval=0.1,
+            phrase='Stop network and up with new settings',
+            log_path='/var/log/fuel-migrate.log')
         logger.info('Shutting down network')
 
         wait(lambda: not icmp_ping(self.env.get_admin_node_ip()),

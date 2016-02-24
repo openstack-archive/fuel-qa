@@ -24,6 +24,7 @@ from proboscis import SkipTest
 from proboscis import test
 
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import utils
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
 from fuelweb_test.tests import base_test_case
@@ -77,10 +78,8 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
         self.env.bootstrap_nodes(nodes)
 
         for node in nodes:
-            with self.fuel_web.get_ssh_for_node(node.name) as slave_remote:
-                checkers.verify_bootstrap_on_node(slave_remote,
-                                                  os_type="ubuntu",
-                                                  uuid=uuid)
+            _ip = self.fuel_web.get_nailgun_node_by_devops_node(node)['ip']
+            checkers.verify_bootstrap_on_node(_ip, os_type="ubuntu", uuid=uuid)
 
         self.env.make_snapshot("build_default_bootstrap", is_make=True)
 
@@ -136,14 +135,14 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
         self.env.bootstrap_nodes(nodes)
 
         for node in nodes:
-            with self.fuel_web.get_ssh_for_node(node.name) as slave_remote:
-                checkers.verify_bootstrap_on_node(slave_remote,
-                                                  os_type="ubuntu",
-                                                  uuid=uuid)
+            n_node = self.fuel_web.get_nailgun_node_by_devops_node(node)
+            checkers.verify_bootstrap_on_node(n_node['ip'],
+                                              os_type="ubuntu",
+                                              uuid=uuid)
 
-                ipython_version = checkers.get_package_versions_from_node(
-                    slave_remote, name="ipython", os_type="Ubuntu")
-                assert_not_equal(ipython_version, "")
+            ipython_version = utils.get_package_versions_from_node(
+                n_node['ip'], name="ipython", os_type="Ubuntu")
+            assert_not_equal(ipython_version, "")
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
           groups=["build_full_bootstrap"])
@@ -223,13 +222,13 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
         for node in nodes:
             n_node = self.fuel_web.get_nailgun_node_by_devops_node(node)
             with self.fuel_web.get_ssh_for_node(node.name) as slave_remote:
-                checkers.verify_bootstrap_on_node(slave_remote,
+                checkers.verify_bootstrap_on_node(n_node['ip'],
                                                   os_type="ubuntu",
                                                   uuid=uuid)
 
                 for package in ['ipython', 'fuse', 'sshfs']:
-                    package_version = checkers.get_package_versions_from_node(
-                        slave_remote, name=package, os_type="Ubuntu")
+                    package_version = utils.get_package_versions_from_node(
+                        n_node['ip'], name=package, os_type="Ubuntu")
                     assert_not_equal(package_version, "",
                                      "Package {0} is not installed on slave "
                                      "{1}".format(package, node.name))
@@ -338,10 +337,8 @@ class UbuntuBootstrap(base_test_case.TestBasic):
 
         self.env.bootstrap_nodes(nodes)
         for node in nodes:
-            with self.fuel_web.get_ssh_for_node(node.name) as slave_remote:
-                checkers.verify_bootstrap_on_node(slave_remote,
-                                                  os_type="ubuntu",
-                                                  uuid=uuid)
+            _ip = self.fuel_web.get_nailgun_node_by_devops_node(node)['ip']
+            checkers.verify_bootstrap_on_node(_ip, os_type="ubuntu", uuid=uuid)
 
         new_uuid, _ = \
             self.env.fuel_bootstrap_actions.build_bootstrap_image(
@@ -445,10 +442,8 @@ class UbuntuBootstrap(base_test_case.TestBasic):
         nodes = self.env.d_env.get_nodes(
             name__in=["slave-01", "slave-02"])
         for node in nodes:
-            with self.fuel_web.get_ssh_for_node(node.name) as slave_remote:
-                checkers.verify_bootstrap_on_node(slave_remote,
-                                                  os_type="ubuntu",
-                                                  uuid=uuid)
+            _ip = self.fuel_web.get_nailgun_node_by_devops_node(node)['ip']
+            checkers.verify_bootstrap_on_node(_ip, os_type="ubuntu", uuid=uuid)
 
         # Network verification
         self.fuel_web.verify_network(cluster_id)
@@ -504,9 +499,8 @@ class UbuntuBootstrap(base_test_case.TestBasic):
 
         self.fuel_web.wait_nodes_get_online_state(nodes, timeout=10 * 60)
         for node in nodes:
-            with self.fuel_web.get_ssh_for_node(node.name) as slave_remote:
-                checkers.verify_bootstrap_on_node(slave_remote,
-                                                  os_type="ubuntu")
+            _ip = self.fuel_web.get_nailgun_node_by_devops_node(node)['ip']
+            checkers.verify_bootstrap_on_node(_ip, os_type="ubuntu")
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
@@ -550,9 +544,8 @@ class UbuntuBootstrap(base_test_case.TestBasic):
         nodes = self.env.d_env.get_nodes(
             name__in=["slave-01", "slave-02", "slave-03"])
         for node in nodes:
-            with self.fuel_web.get_ssh_for_node(node.name) as slave_remote:
-                checkers.verify_bootstrap_on_node(slave_remote,
-                                                  os_type="ubuntu")
+            _ip = self.fuel_web.get_nailgun_node_by_devops_node(node)['ip']
+            checkers.verify_bootstrap_on_node(_ip, os_type="ubuntu")
 
         self.env.make_snapshot(
             "delete_on_ready_ubuntu_bootstrap",
@@ -595,7 +588,5 @@ class UbuntuBootstrap(base_test_case.TestBasic):
         wait(lambda: len(self.fuel_web.client.list_nodes()) == 3,
              timeout=10 * 60)
 
-        node = self.env.d_env.get_node(name="slave-03")
-        with self.fuel_web.get_ssh_for_node(node.name) as slave_remote:
-            checkers.verify_bootstrap_on_node(slave_remote,
-                                              os_type="ubuntu")
+        node = self.fuel_web.get_nailgun_node_by_name("slave-03")
+        checkers.verify_bootstrap_on_node(node['ip'], os_type="ubuntu")
