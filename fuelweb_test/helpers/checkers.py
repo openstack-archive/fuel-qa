@@ -28,6 +28,7 @@ from fuelweb_test import logwrap
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers.utils import run_on_remote_get_results
+from fuelweb_test.helpers.utils import get_mongo_partitions
 from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test.settings import EXTERNAL_DNS
 from fuelweb_test.settings import EXTERNAL_NTP
@@ -151,41 +152,17 @@ def verify_network_list_api(os_conn, net_count=None):
 
 
 @logwrap
-def get_ceph_partitions(remote, device, type="xfs"):
-    ret = remote.check_call("parted {device} print | grep {type}".format(
-                            device=device, type=type))['stdout']
-    if not ret:
-        logger.error("Partition not present! {partitions}: ".format(
-                     remote.check_call("parted {device} print")))
-        raise Exception
-    logger.debug("Partitions: {part}".format(part=ret))
-    return ret
-
-
-@logwrap
-def get_mongo_partitions(remote, device):
-    ret = remote.check_call("lsblk | grep {device} | awk {size}".format(
-                            device=device,
-                            size=re.escape('{print $4}')))['stdout']
-    if not ret:
-        logger.error("Partition not present! {partitions}: ".format(
-                     remote.check_call("parted {device} print")))
-        raise Exception
-    logger.debug("Partitions: {part}".format(part=ret))
-    return ret
-
-
-@logwrap
-def check_ceph_image_size(remote, expected_size, device='vdc'):
-    ret = remote.check_call("df -m /dev/{device}* | grep ceph |"
-                            " awk"
-                            " {size}".format(device=device,
-                                             size=re.escape('{print $2}')
-                                             ))['stdout']
+def check_ceph_image_size(ip, expected_size, device='vdc'):
+    ret = ssh_manager.check_call(
+        ip=ip,
+        cmd="df -m /dev/{device}* | grep ceph | awk"
+            " {size}".format(device=device,
+                             size=re.escape('{print $2}'))
+    )['stdout']
 
     if not ret:
         logger.error("Partition not present! {}: ".format(
-                     remote.check_call("df -m")))
+                     ssh_manager.check_call(ip=ip, cmd="df -m")))
         raise Exception
     logger.debug("Partitions: {part}".format(part=ret))
     assert_true(abs(float(ret[0].rstrip()) / float(expected_size) - 1) < 0.1,
@@ -195,8 +172,8 @@ def check_ceph_image_size(remote, expected_size, device='vdc'):
 
 
 @logwrap
-def check_cinder_image_size(remote, expected_size, device='vdc3'):
-    ret = get_mongo_partitions(remote, device)[0].rstrip().rstrip('G')
+def check_cinder_image_size(ip, expected_size, device='vdc3'):
+    ret = get_mongo_partitions(ip, device)[0].rstrip().rstrip('G')
     cinder_size = float(ret) * 1024
     assert_true(abs(cinder_size / float(expected_size) - 1) < 0.1,
                 "size {0} is not equal"
@@ -223,20 +200,6 @@ def check_unallocated_space(disks, contr_img_ceph=False):
             if not bool(sum(sizes) == disk["size"]):
                 return False
     return True
-
-
-@logwrap
-def upload_tarball(node_ssh, tar_path, tar_target):
-    assert_true(tar_path, "Source path for uploading 'tar_path' is empty, "
-                "please check test settings!")
-    check_archive_type(tar_path)
-    try:
-        logger.info("Start to upload tar file")
-        node_ssh.upload(tar_path, tar_target)
-        logger.info('File {} was uploaded on master'.format(tar_path))
-    except Exception:
-        logger.error('Failed to upload file')
-        logger.error(traceback.format_exc())
 
 
 @logwrap
@@ -382,17 +345,6 @@ def check_mysql(remote, node_name):
         logger.error('galera status is {0}'.format(''.join(remote.execute(
             check_galera_cmd)['stdout']).rstrip()))
         raise
-
-
-@logwrap
-def install_plugin_check_code(
-        remote, plugin, exit_code=0):
-    cmd = "cd /var && fuel plugins --install {0} ".format(plugin)
-    chan, stdin, stderr, stdout = remote.execute_async(cmd)
-    logger.debug('Try to read status code from chain...')
-    assert_equal(
-        chan.recv_exit_status(), exit_code,
-        'Install script fails with next message {0}'.format(''.join(stderr)))
 
 
 @logwrap
