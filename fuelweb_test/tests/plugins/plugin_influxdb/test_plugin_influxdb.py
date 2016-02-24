@@ -20,7 +20,6 @@ from proboscis import test
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.helpers import checkers
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import INFLUXDB_GRAFANA_PLUGIN_PATH
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -32,6 +31,61 @@ import requests
 @test(groups=["plugins"])
 class TestInfluxdbPlugin(TestBasic):
     """Class for testing the InfluxDB-Grafana plugin."""
+
+    _name = 'influxdb_grafana'
+    _version = '0.9.0'
+    _role_name = 'influxdb_grafana'
+    _influxdb_rootpass = 'lmapass'
+    _influxdb_userpass = 'lmapass'
+    _grafana_userpass = 'lmapass'
+
+    def get_vip(self, cluster_id):
+        networks = self.fuel_web.client.get_networks(cluster_id)
+        return networks.get('vips').get('influxdb', {}).get('ipaddr', None)
+
+    def upload_and_install_plugin(self):
+        self.env.admin_actions.upload_plugin(
+            plugin=INFLUXDB_GRAFANA_PLUGIN_PATH)
+        self.env.admin_actions.install_plugin(
+            plugin_file_name=os.path.basename(INFLUXDB_GRAFANA_PLUGIN_PATH))
+
+    def update_plugin_settings(self, cluster_id):
+        msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
+        assert_true(
+            self.fuel_web.check_plugin_exists(cluster_id, self._name),
+            msg)
+
+        options = {
+            'influxdb_rootpass/value': self._influxdb_rootpass,
+            'influxdb_userpass/value': self._influxdb_userpass,
+            'grafana_userpass/value': self._grafana_userpass,
+        }
+
+        self.fuel_web.update_plugin_settings(cluster_id, self._name,
+                                             self._version, options)
+
+    def check_influxdb_plugin(self, cluster_id):
+        influxdb_vip = self.get_vip(cluster_id)
+        assert_is_not_none(influxdb_vip,
+                           "Failed to get the IP of InfluxDB server")
+
+        logger.debug("Check that InfluxDB is ready")
+
+        influxdb_url = "http://{0}:8086/query?db=lma&u={1}&p={2}&" + \
+            "q=show+measurements"
+        r = requests.get(influxdb_url.format(
+            influxdb_vip, 'lma', self._influxdb_userpass))
+        msg = "InfluxDB responded with {}, expected 200".format(r.status_code)
+        assert_equal(r.status_code, 200, msg)
+
+        logger.debug("Check that the Grafana server is running")
+
+        r = requests.get(
+            "http://{0}:{1}@{2}:8000/api/org".format(
+                'grafana', self._grafana_userpass, influxdb_vip))
+        msg = "Grafana server responded with {}, expected 200".format(
+            r.status_code)
+        assert_equal(r.status_code, 200, msg)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_influxdb_grafana"])
@@ -55,67 +109,27 @@ class TestInfluxdbPlugin(TestBasic):
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        # copy plugin to the master node and install it
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.upload_tarball(
-                remote, INFLUXDB_GRAFANA_PLUGIN_PATH, '/var')
-            checkers.install_plugin_check_code(
-                remote, plugin=os.path.basename(INFLUXDB_GRAFANA_PLUGIN_PATH))
+        self.upload_and_install_plugin()
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
         )
 
-        plugin_name = 'influxdb_grafana'
-        options = {
-            'metadata/enabled': True,
-            'node_name/value': 'slave-03_influxdb_grafana',
-            'influxdb_rootpass/value': 'lmapass',
-            'influxdb_userpass/value': 'lmapass',
-            'grafana_userpass/value': 'lmapass',
-        }
-
-        assert_true(
-            self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
-            "Plugin couldn't be enabled. Check plugin version. Test aborted")
-
-        self.fuel_web.update_plugin_data(cluster_id, plugin_name, options)
+        self.update_plugin_settings(cluster_id)
 
         self.fuel_web.update_nodes(
             cluster_id,
             {
                 'slave-01': ['controller'],
                 'slave-02': ['compute'],
-                'slave-03': ['influxdb_grafana']
+                'slave-03': [self._role_name]
             }
         )
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        influxdb_server = self.fuel_web.get_nailgun_node_by_name('slave-03')
-        influxdb_server_ip = influxdb_server.get('ip')
-        assert_is_not_none(influxdb_server_ip,
-                           "Failed to get the IP of InfluxDB server")
-
-        logger.debug("Check that InfluxDB is ready")
-
-        influxdb_url = "http://{0}:8086/query?db=lma&u={1}&p={2}&" + \
-            "q=show+measurements"
-        r = requests.get(influxdb_url.format(
-            influxdb_server_ip, 'lma', options['influxdb_userpass/value']))
-        msg = "InfluxDB responded with {}, expected 200".format(r.status_code)
-        assert_equal(r.status_code, 200, msg)
-
-        logger.debug("Check that the Grafana server is running")
-
-        r = requests.get(
-            "http://{0}:{1}@{2}:8000/api/org".format(
-                'grafana', options['grafana_userpass/value'],
-                influxdb_server_ip))
-        msg = "Grafana server responded with {}, expected 200".format(
-            r.status_code)
-        assert_equal(r.status_code, 200, msg)
+        self.check_influxdb_plugin(cluster_id)
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
