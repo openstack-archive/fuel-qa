@@ -90,8 +90,7 @@ class NeutronTun(TestBasic):
         self.fuel_web.check_fixed_network_cidr(
             cluster_id, os_conn)
 
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.check_client_smoke(remote)
+        checkers.check_client_smoke(self.ssh_manager.admin_ip)
 
         self.fuel_web.verify_network(cluster_id)
 
