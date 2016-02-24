@@ -16,7 +16,7 @@ from proboscis import asserts
 from proboscis import test
 from fuelweb_test.helpers.decorators import check_fuel_statistics
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test import settings as hlp_data
+from fuelweb_test import settings
 from fuelweb_test.tests import base_test_case
 
 
@@ -51,7 +51,7 @@ class EnvironmentAction(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_data.DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
             settings={
                 'tenant': 'stop_deploy',
                 'user': 'stop_deploy',
@@ -114,7 +114,7 @@ class EnvironmentAction(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_data.DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -174,7 +174,7 @@ class EnvironmentAction(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_data.DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -228,7 +228,7 @@ class EnvironmentActionOnHA(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_data.DEPLOYMENT_MODE_HA,
+            mode=settings.DEPLOYMENT_MODE_HA,
         )
         self.fuel_web.update_nodes(
             cluster_id,
@@ -296,7 +296,7 @@ class ControllerReplacement(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_data.DEPLOYMENT_MODE_HA,
+            mode=settings.DEPLOYMENT_MODE_HA,
             settings=data
 
         )
@@ -350,7 +350,7 @@ class ControllerReplacement(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_data.DEPLOYMENT_MODE_HA,
+            mode=settings.DEPLOYMENT_MODE_HA,
             settings=data
 
         )
@@ -404,7 +404,7 @@ class ControllerReplacement(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=hlp_data.DEPLOYMENT_MODE_HA,
+            mode=settings.DEPLOYMENT_MODE_HA,
 
         )
         self.fuel_web.update_nodes(
