@@ -79,16 +79,14 @@ class HaVlanGroup4(TestBasic):
             }
         )
         self.show_step(6)
-        n_cinders = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+        cinders = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id=cluster_id,
             roles=['cinder'],
             role_status='pending_roles'
         )
 
-        for node in n_cinders:
+        for node in cinders:
             cinder_image_size = self.fuel_web.update_node_partitioning(node)
-
-        d_cinders = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_cinders)
 
         self.show_step(7)
         self.fuel_web.verify_network(cluster_id)
@@ -100,9 +98,8 @@ class HaVlanGroup4(TestBasic):
         self.fuel_web.verify_network(cluster_id)
 
         self.show_step(10)
-        for d_cinder in d_cinders:
-            with self.fuel_web.get_ssh_for_node(d_cinder.name) as remote:
-                checkers.check_cinder_image_size(remote, cinder_image_size)
+        for cinder in cinders:
+            checkers.check_cinder_image_size(cinder['ip'], cinder_image_size)
 
         self.show_step(11)
         self.fuel_web.run_ostf(cluster_id)

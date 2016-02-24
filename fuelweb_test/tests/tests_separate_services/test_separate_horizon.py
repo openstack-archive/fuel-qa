@@ -18,7 +18,7 @@ from proboscis import test
 from proboscis.asserts import assert_true
 from devops.helpers.helpers import wait
 
-from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import utils
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
 from fuelweb_test import logger
@@ -52,20 +52,19 @@ class SeparateHorizon(TestBasic):
         self.check_run("separate_horizon_service")
         self.env.revert_snapshot("ready_with_9_slaves")
 
-        with self.env.d_env.get_admin_remote() as remote:
+        # copy plugins to the master node
 
-            # copy plugins to the master node
+        utils.upload_tarball(
+            ip=self.ssh_manager.admin_ip,
+            tar_path=settings.SEPARATE_SERVICE_HORIZON_PLUGIN_PATH,
+            tar_target="/var")
 
-            checkers.upload_tarball(
-                remote,
-                settings.SEPARATE_SERVICE_HORIZON_PLUGIN_PATH, "/var")
+        # install plugins
 
-            # install plugins
-
-            checkers.install_plugin_check_code(
-                remote,
-                plugin=os.path.basename(
-                    settings.SEPARATE_SERVICE_HORIZON_PLUGIN_PATH))
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.basename(
+                settings.SEPARATE_SERVICE_HORIZON_PLUGIN_PATH))
 
         data = {
             'volumes_lvm': False,
