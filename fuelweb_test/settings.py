@@ -399,7 +399,7 @@ UBUNTU_RELEASE = os.environ.get('UBUNTU_RELEASE', 'precise')
 
 UPDATE_TIMEOUT = os.environ.get('UPDATE_TIMEOUT', 3600)
 
-
+PLUGIN_PACKAGE_VERSION = os.environ.get('PLUGIN_PACKAGE_VERSION', '4.0.0')
 # Plugin path for plugins tests
 
 CONTRAIL_PLUGIN_PATH = os.environ.get('CONTRAIL_PLUGIN_PATH')
