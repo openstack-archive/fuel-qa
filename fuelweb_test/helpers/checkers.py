@@ -28,6 +28,7 @@ from fuelweb_test import logwrap
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers.utils import run_on_remote_get_results
+from fuelweb_test.helpers.utils import get_mongo_partitions
 from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test.settings import EXTERNAL_DNS
 from fuelweb_test.settings import EXTERNAL_NTP
@@ -148,31 +149,6 @@ def verify_network_list_api(os_conn, net_count=None):
                  'Unexpected count of networks detected, '
                  'expected: {0}, current {1} count,'
                  ' full list {2}'.format(net_count, len(ret), ret))
-
-
-@logwrap
-def get_ceph_partitions(remote, device, type="xfs"):
-    ret = remote.check_call("parted {device} print | grep {type}".format(
-                            device=device, type=type))['stdout']
-    if not ret:
-        logger.error("Partition not present! {partitions}: ".format(
-                     remote.check_call("parted {device} print")))
-        raise Exception
-    logger.debug("Partitions: {part}".format(part=ret))
-    return ret
-
-
-@logwrap
-def get_mongo_partitions(remote, device):
-    ret = remote.check_call("lsblk | grep {device} | awk {size}".format(
-                            device=device,
-                            size=re.escape('{print $4}')))['stdout']
-    if not ret:
-        logger.error("Partition not present! {partitions}: ".format(
-                     remote.check_call("parted {device} print")))
-        raise Exception
-    logger.debug("Partitions: {part}".format(part=ret))
-    return ret
 
 
 @logwrap
