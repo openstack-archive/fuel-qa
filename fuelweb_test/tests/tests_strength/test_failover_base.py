@@ -115,8 +115,8 @@ class TestHaFailoverBase(TestBasic):
         self.fuel_web.verify_network(cluster_id)
 
         for node in ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]:
-            with self.fuel_web.get_ssh_for_node(node) as remote:
-                check_public_ping(remote)
+            ip = self.fuel_web.get_nailgun_node_by_base_name(node)['ip']
+            check_public_ping(ip)
 
         self.env.make_snapshot(self.snapshot_name, is_make=True)
 
