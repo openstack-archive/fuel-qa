@@ -359,11 +359,9 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions):
             self.cluster_id, ['controller'])
 
         for node in controller_nodes:
-            remote = self.env.d_env.get_ssh_to_remote(node['ip'])
             logger.info("Check all HAProxy backends on {}".format(
                 node['meta']['system']['fqdn']))
-            haproxy_status = checkers.check_haproxy_backend(remote)
-            remote.clear()
+            haproxy_status = checkers.check_haproxy_backend(node['ip'])
             assert_equal(haproxy_status['exit_code'], 1,
                          "HAProxy backends are DOWN. {0}".format(
                              haproxy_status))
