@@ -121,7 +121,6 @@ def patch_and_assemble_ubuntu_bootstrap(environment):
     environment - Environment Model object - self.env
     """
     logger.info("Update fuel-agent code and assemble new ubuntu bootstrap")
-    ssh = SSHManager()
     if not settings.UPDATE_FUEL:
         raise Exception("{} variable don't exist"
                         .format(settings.UPDATE_FUEL))
@@ -166,6 +165,25 @@ def patch_and_assemble_ubuntu_bootstrap(environment):
         ssh.execute_on_remote(ip=ssh.admin_ip, cmd=image_rebuild)
         with environment.d_env.get_admin_remote() as remote:
             checkers.check_file_exists(remote, '{0}'.format(bootstrap_file))
+            # Step 4 - assemble new bootstrap
+            compression = "-comp xz"
+            no_progress_bar = "-no-progress"
+            no_append = "-noappend"
+            image_rebuild = "mksquashfs {0} {1} {2} {3} {4}".format(
+                bootstrap_var,
+                bootstrap_file,
+                compression,
+                no_progress_bar,
+                no_append
+            )
+            result = remote.execute(image_rebuild)
+            assert_equal(result['exit_code'], 0,
+                         ('Failed to rebuild bootstrap {}'
+                          ).format(result))
+
+            checkers.check_file_exists(
+                SSHManager().admin_ip,
+                str(bootstrap_file))
     except Exception as e:
         logger.error("Could not upload package {e}".format(e=e))
         raise
@@ -184,8 +202,8 @@ def replace_centos_bootstrap(environment):
     rebuilded_bootstrap = '/var/initramfs.img.updated'
     with environment.d_env.get_admin_remote() as remote:
         checkers.check_file_exists(
-            remote,
-            '{0}'.format(rebuilded_bootstrap))
+            ssh.admin_ip,
+            str(rebuilded_bootstrap))
     logger.info("Assigning new bootstrap from {}".format(rebuilded_bootstrap))
     bootstrap = "/var/www/nailgun/bootstrap"
     cmd = ("mv {0}/initramfs.img /var/initramfs.img;"
