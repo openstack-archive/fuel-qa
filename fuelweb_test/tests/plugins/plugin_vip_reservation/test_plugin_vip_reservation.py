@@ -18,7 +18,7 @@ import os
 from proboscis import asserts
 from proboscis import test
 
-from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import utils
 from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -62,37 +62,36 @@ class VipReservation(TestBasic):
 
         self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_3_slaves")
-        with self.env.d_env.get_admin_remote() as admin_remote:
-            # initiate fuel plugin builder instance
-            fpb = FuelPluginBuilder()
-            # install fuel_plugin_builder on master node
-            self.show_step(2)
-            fpb.fpb_install()
-            # create plugin template on the master node
-            self.show_step(3)
-            fpb.fpb_create_plugin(source_plugin_path)
-            # replace plugin tasks, metadata, network_roles
-            fpb.fpb_replace_plugin_content(
-                os.path.join(dir_path, net_role_file),
-                os.path.join(source_plugin_path, net_role_file))
-            fpb.fpb_replace_plugin_content(
-                os.path.join(dir_path, tasks_file),
-                os.path.join(source_plugin_path, tasks_file))
-            fpb.fpb_replace_plugin_content(
-                os.path.join(dir_path, metadata_file),
-                os.path.join(source_plugin_path, metadata_file))
-            # build plugin
-            self.show_step(4)
-            packet_name = fpb.fpb_build_plugin(source_plugin_path)
-            # copy plugin archive file from nailgun container
-            # to the /var directory on the master node
-            fpb.fpb_copy_plugin(os.path.join(source_plugin_path, packet_name),
-                                plugin_path)
-            # let's install plugin
-            self.show_step(5)
-            checkers.install_plugin_check_code(
-                admin_remote,
-                plugin=os.path.join(plugin_path, packet_name))
+        # initiate fuel plugin builder instance
+        fpb = FuelPluginBuilder()
+        # install fuel_plugin_builder on master node
+        self.show_step(2)
+        fpb.fpb_install()
+        # create plugin template on the master node
+        self.show_step(3)
+        fpb.fpb_create_plugin(source_plugin_path)
+        # replace plugin tasks, metadata, network_roles
+        fpb.fpb_replace_plugin_content(
+            os.path.join(dir_path, net_role_file),
+            os.path.join(source_plugin_path, net_role_file))
+        fpb.fpb_replace_plugin_content(
+            os.path.join(dir_path, tasks_file),
+            os.path.join(source_plugin_path, tasks_file))
+        fpb.fpb_replace_plugin_content(
+            os.path.join(dir_path, metadata_file),
+            os.path.join(source_plugin_path, metadata_file))
+        # build plugin
+        self.show_step(4)
+        packet_name = fpb.fpb_build_plugin(source_plugin_path)
+        # copy plugin archive file from nailgun container
+        # to the /var directory on the master node
+        fpb.fpb_copy_plugin(os.path.join(source_plugin_path, packet_name),
+                            plugin_path)
+        # let's install plugin
+        self.show_step(5)
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.join(plugin_path, packet_name))
         self.show_step(6)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -185,46 +184,45 @@ class VipReservation(TestBasic):
         self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        with self.env.d_env.get_admin_remote() as admin_remote:
-            # initiate fuel plugin builder instance
-            self.show_step(2)
-            fpb = FuelPluginBuilder()
-            # install fuel_plugin_builder on master node
-            fpb.fpb_install()
-            # create plugin template on the master node
-            self.show_step(3)
-            fpb.fpb_create_plugin(source_plugin_path)
-            # replace plugin tasks, metadata, network_roles
-            fpb.fpb_replace_plugin_content(
-                os.path.join(task_path, net_role_file),
-                os.path.join(source_plugin_path, net_role_file))
-            fpb.fpb_replace_plugin_content(
-                os.path.join(task_path, tasks_file),
-                os.path.join(source_plugin_path, tasks_file))
-            fpb.fpb_replace_plugin_content(
-                os.path.join(task_path, metadata_file),
-                os.path.join(source_plugin_path, metadata_file))
+        # initiate fuel plugin builder instance
+        self.show_step(2)
+        fpb = FuelPluginBuilder()
+        # install fuel_plugin_builder on master node
+        fpb.fpb_install()
+        # create plugin template on the master node
+        self.show_step(3)
+        fpb.fpb_create_plugin(source_plugin_path)
+        # replace plugin tasks, metadata, network_roles
+        fpb.fpb_replace_plugin_content(
+            os.path.join(task_path, net_role_file),
+            os.path.join(source_plugin_path, net_role_file))
+        fpb.fpb_replace_plugin_content(
+            os.path.join(task_path, tasks_file),
+            os.path.join(source_plugin_path, tasks_file))
+        fpb.fpb_replace_plugin_content(
+            os.path.join(task_path, metadata_file),
+            os.path.join(source_plugin_path, metadata_file))
 
-            fpb.change_remote_yaml(
-                path_to_file=os.path.join(source_plugin_path, net_role_file),
-                element=[0, 'properties', 'vip', 0, 'namespace'],
-                value=namespace)
-            fpb.change_remote_yaml(
-                os.path.join(source_plugin_path, net_role_file),
-                [1, 'properties', 'vip', 0, 'namespace'],
-                namespace)
-            # build plugin
-            self.show_step(4)
-            packet_name = fpb.fpb_build_plugin(source_plugin_path)
-            # copy plugin archive file
-            # to the /var directory on the master node
-            fpb.fpb_copy_plugin(os.path.join(source_plugin_path, packet_name),
-                                plugin_path)
-            # let's install plugin
-            self.show_step(5)
-            checkers.install_plugin_check_code(
-                admin_remote,
-                plugin=os.path.join(plugin_path, packet_name))
+        fpb.change_remote_yaml(
+            path_to_file=os.path.join(source_plugin_path, net_role_file),
+            element=[0, 'properties', 'vip', 0, 'namespace'],
+            value=namespace)
+        fpb.change_remote_yaml(
+            os.path.join(source_plugin_path, net_role_file),
+            [1, 'properties', 'vip', 0, 'namespace'],
+            namespace)
+        # build plugin
+        self.show_step(4)
+        packet_name = fpb.fpb_build_plugin(source_plugin_path)
+        # copy plugin archive file
+        # to the /var directory on the master node
+        fpb.fpb_copy_plugin(os.path.join(source_plugin_path, packet_name),
+                            plugin_path)
+        # let's install plugin
+        self.show_step(5)
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.join(plugin_path, packet_name))
         self.show_step(6)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -313,46 +311,45 @@ class VipReservation(TestBasic):
         self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        with self.env.d_env.get_admin_remote() as admin_remote:
-            self.show_step(2)
-            # initiate fuel plugin builder instance
-            fpb = FuelPluginBuilder()
-            # install fuel_plugin_builder on master node
-            fpb.fpb_install()
-            # create plugin template on the master node
-            self.show_step(3)
-            fpb.fpb_create_plugin(source_plugin_path)
-            # replace plugin tasks, metadata, network_roles
-            fpb.fpb_replace_plugin_content(
-                os.path.join(task_path, net_role_file),
-                os.path.join(source_plugin_path, net_role_file))
-            fpb.fpb_replace_plugin_content(
-                os.path.join(task_path, tasks_file),
-                os.path.join(source_plugin_path, tasks_file))
-            fpb.fpb_replace_plugin_content(
-                os.path.join(task_path, metadata_file),
-                os.path.join(source_plugin_path, metadata_file))
+        self.show_step(2)
+        # initiate fuel plugin builder instance
+        fpb = FuelPluginBuilder()
+        # install fuel_plugin_builder on master node
+        fpb.fpb_install()
+        # create plugin template on the master node
+        self.show_step(3)
+        fpb.fpb_create_plugin(source_plugin_path)
+        # replace plugin tasks, metadata, network_roles
+        fpb.fpb_replace_plugin_content(
+            os.path.join(task_path, net_role_file),
+            os.path.join(source_plugin_path, net_role_file))
+        fpb.fpb_replace_plugin_content(
+            os.path.join(task_path, tasks_file),
+            os.path.join(source_plugin_path, tasks_file))
+        fpb.fpb_replace_plugin_content(
+            os.path.join(task_path, metadata_file),
+            os.path.join(source_plugin_path, metadata_file))
 
-            fpb.change_remote_yaml(
-                os.path.join(source_plugin_path, net_role_file),
-                [0, 'properties', 'vip', 0, 'namespace'],
-                namespace)
-            fpb.change_remote_yaml(
-                os.path.join(source_plugin_path, net_role_file),
-                [1, 'properties', 'vip', 0, 'namespace'],
-                namespace)
-            # build plugin
-            self.show_step(4)
-            packet_name = fpb.fpb_build_plugin(source_plugin_path)
-            # copy plugin archive file
-            # to the /var directory on the master node
-            fpb.fpb_copy_plugin(os.path.join(source_plugin_path, packet_name),
-                                plugin_path)
-            self.show_step(5)
-            # let's install plugin
-            checkers.install_plugin_check_code(
-                admin_remote,
-                plugin=os.path.join(plugin_path, packet_name))
+        fpb.change_remote_yaml(
+            os.path.join(source_plugin_path, net_role_file),
+            [0, 'properties', 'vip', 0, 'namespace'],
+            namespace)
+        fpb.change_remote_yaml(
+            os.path.join(source_plugin_path, net_role_file),
+            [1, 'properties', 'vip', 0, 'namespace'],
+            namespace)
+        # build plugin
+        self.show_step(4)
+        packet_name = fpb.fpb_build_plugin(source_plugin_path)
+        # copy plugin archive file
+        # to the /var directory on the master node
+        fpb.fpb_copy_plugin(os.path.join(source_plugin_path, packet_name),
+                            plugin_path)
+        self.show_step(5)
+        # let's install plugin
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.join(plugin_path, packet_name))
         self.show_step(6)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,

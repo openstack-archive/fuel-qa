@@ -20,7 +20,7 @@ from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
-from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import utils
 from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE_SIMPLE
 from fuelweb_test.settings import LBAAS_PLUGIN_PATH
@@ -112,16 +112,17 @@ class LbaasPlugin(TestBasic):
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        with self.env.d_env.get_admin_remote() as remote:
-            # copy plugin to the master node
-            checkers.upload_tarball(
-                remote, LBAAS_PLUGIN_PATH, '/var')
+        # copy plugin to the master node
+        utils.upload_tarball(
+            ip=self.ssh_manager.admin_ip,
+            tar_path=LBAAS_PLUGIN_PATH,
+            tar_target='/var')
 
-            # install plugin
+        # install plugin
 
-            checkers.install_plugin_check_code(
-                remote,
-                plugin=os.path.basename(LBAAS_PLUGIN_PATH))
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.basename(LBAAS_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -193,15 +194,16 @@ class LbaasPlugin(TestBasic):
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        with self.env.d_env.get_admin_remote() as remote:
-            # copy plugin to the master node
-            checkers.upload_tarball(
-                remote, LBAAS_PLUGIN_PATH, '/var')
+        # copy plugin to the master node
+        utils.upload_tarball(
+            ip=self.ssh_manager.admin_ip,
+            tar_path=LBAAS_PLUGIN_PATH,
+            tar_target='/var')
 
-            # install plugin
-            checkers.install_plugin_check_code(
-                remote,
-                plugin=os.path.basename(LBAAS_PLUGIN_PATH))
+        # install plugin
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.basename(LBAAS_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
