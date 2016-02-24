@@ -526,7 +526,7 @@ class FuelWebClient(object):
             if help_data.FUEL_USE_LOCAL_NTPD\
                     and ('ntp_list' not in settings)\
                     and checkers.is_ntpd_active(
-                        remote, public_gw):
+                        self.ssh_manager.admin_ip, public_gw):
                 attributes['editable']['external_ntp']['ntp_list']['value'] =\
                     public_gw
                 logger.info("Configuring cluster #{0}"

@@ -24,6 +24,7 @@ from proboscis import SkipTest
 from proboscis import test
 
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import utils
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
 from fuelweb_test.tests import base_test_case
@@ -136,13 +137,14 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
         self.env.bootstrap_nodes(nodes)
 
         for node in nodes:
+            n_node = self.fuel_web.get_nailgun_node_by_devops_node(node)
             with self.fuel_web.get_ssh_for_node(node.name) as slave_remote:
                 checkers.verify_bootstrap_on_node(slave_remote,
                                                   os_type="ubuntu",
                                                   uuid=uuid)
 
-                ipython_version = checkers.get_package_versions_from_node(
-                    slave_remote, name="ipython", os_type="Ubuntu")
+                ipython_version = utils.get_package_versions_from_node(
+                    n_node['ip'], name="ipython", os_type="Ubuntu")
                 assert_not_equal(ipython_version, "")
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
@@ -228,8 +230,8 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
                                                   uuid=uuid)
 
                 for package in ['ipython', 'fuse', 'sshfs']:
-                    package_version = checkers.get_package_versions_from_node(
-                        slave_remote, name=package, os_type="Ubuntu")
+                    package_version = utils.get_package_versions_from_node(
+                        n_node['ip'], name=package, os_type="Ubuntu")
                     assert_not_equal(package_version, "",
                                      "Package {0} is not installed on slave "
                                      "{1}".format(package, node.name))

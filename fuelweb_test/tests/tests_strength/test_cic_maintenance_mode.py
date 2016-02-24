@@ -108,8 +108,10 @@ class CICMaintenanceMode(TestBasic):
         d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
 
         for devops_node in d_ctrls:
+            _ip = self.fuel_web.get_nailgun_node_by_name(
+                devops_node.name)['ip']
             with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
-                assert_true('True' in check_available_mode(remote),
+                assert_true('True' in check_available_mode(_ip),
                             "Maintenance mode is not available")
 
                 logger.info('Maintenance mode for node %s', devops_node.name)
@@ -138,7 +140,7 @@ class CICMaintenanceMode(TestBasic):
                 devops_node.name)['ip']
             wait(lambda: tcp_ping(_ip, 22), timeout=60 * 10)
             with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
-                assert_true('True' in check_auto_mode(remote),
+                assert_true('True' in check_auto_mode(_ip),
                             "Maintenance mode is not switch")
 
                 result = remote.execute('umm off')
@@ -220,7 +222,7 @@ class CICMaintenanceMode(TestBasic):
             _ip = self.fuel_web.get_nailgun_node_by_name(
                 devops_node.name)['ip']
             with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
-                assert_true('True' in check_available_mode(remote),
+                assert_true('True' in check_available_mode(_ip),
                             "Maintenance mode is not available")
 
                 logger.info('Change UMM.CONF on node %s', devops_node.name)
@@ -259,7 +261,7 @@ class CICMaintenanceMode(TestBasic):
 
             wait(lambda: tcp_ping(_ip, 22), timeout=60 * 10)
             with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
-                assert_true('True' in check_auto_mode(remote),
+                assert_true('True' in check_auto_mode(_ip),
                             "Maintenance mode is not switch")
 
                 result = remote.execute('umm off')
@@ -346,8 +348,10 @@ class CICMaintenanceMode(TestBasic):
         d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
 
         for devops_node in d_ctrls:
+            _ip = self.fuel_web.get_nailgun_node_by_name(
+                devops_node.name)['ip']
             with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
-                assert_true('True' in check_available_mode(remote),
+                assert_true('True' in check_available_mode(_ip),
                             "Maintenance mode is not available")
 
                 logger.info('Maintenance mode for node %s is disable',
@@ -357,7 +361,7 @@ class CICMaintenanceMode(TestBasic):
                              'Failed to execute "{0}" on remote host: {1}'.
                              format('umm disable', result))
 
-                assert_false('True' in check_available_mode(remote),
+                assert_false('True' in check_available_mode(_ip),
                              "Maintenance mode should not be available")
 
                 logger.info('Try to execute maintenance mode for node %s',
@@ -417,7 +421,7 @@ class CICMaintenanceMode(TestBasic):
             _ip = self.fuel_web.get_nailgun_node_by_name(
                 devops_node.name)['ip']
             with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
-                assert_true('True' in check_available_mode(remote),
+                assert_true('True' in check_available_mode(_ip),
                             "Maintenance mode is not available")
 
                 logger.info('Change UMM.CONF on node %s', devops_node.name)
@@ -434,7 +438,7 @@ class CICMaintenanceMode(TestBasic):
                              'Failed to execute "{0}" on remote host: {1}'.
                              format('umm disable', result))
 
-                assert_false('True' in check_available_mode(remote),
+                assert_false('True' in check_available_mode(_ip),
                              "Maintenance mode should not be available")
 
                 logger.info('Unexpected reboot on node %s', devops_node.name)
@@ -458,9 +462,8 @@ class CICMaintenanceMode(TestBasic):
             logger.info('Check that %s node not in maintenance mode after'
                         ' unexpected reboot', devops_node.name)
 
-            with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
-                assert_false('True' in check_auto_mode(remote),
-                             "Maintenance mode should not switched")
+            assert_false('True' in check_auto_mode(_ip),
+                         "Maintenance mode should not switched")
 
             # Wait until MySQL Galera is UP on some controller
             self.fuel_web.wait_mysql_galera_is_up(

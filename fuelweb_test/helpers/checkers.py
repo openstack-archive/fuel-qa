@@ -15,7 +15,6 @@ import hashlib
 import json
 import os
 import re
-import traceback
 import urllib2
 
 from devops.error import TimeoutError
@@ -213,30 +212,6 @@ def check_file_exists(ip, path):
     assert_true(ssh_manager.exists_on_remote(ip, path),
                 'Can not find {0}'.format(path))
     logger.info('File {0} exists on {1}'.format(path, ip))
-
-
-@logwrap
-def wait_phrase_in_log(node_ssh, timeout, interval, phrase, log_path):
-    cmd = "grep '{0}' '{1}'".format(phrase, log_path)
-    wait(
-        lambda: not node_ssh.execute(cmd)['exit_code'], interval=interval,
-        timeout=timeout,
-        timeout_msg="The phrase {0} not found in {1} file on "
-                    "remote node".format(phrase, log_path))
-
-
-@logwrap
-def get_package_versions_from_node(remote, name, os_type):
-    if os_type and 'Ubuntu' in os_type:
-        cmd = "dpkg-query -W -f='${Version}' %s" % name
-    else:
-        cmd = "rpm -q {0}".format(name)
-    try:
-        result = ''.join(remote.execute(cmd)['stdout'])
-        return result.strip()
-    except Exception:
-        logger.error(traceback.format_exc())
-        raise
 
 
 @logwrap
@@ -734,26 +709,27 @@ def verify_bootstrap_on_node(remote, os_type, uuid=None):
 
 
 @logwrap
-def external_ntp_check(remote_slave, vrouter_vip):
+def external_ntp_check(ip, vrouter_vip):
     logger.info("External ntp check")
     provided_ntp = EXTERNAL_NTP.split(', ')
     logger.debug("provided to test ntp is {}".format(provided_ntp))
     cluster_ntp = []
     for ntp in provided_ntp:
         ext_ntp_ip = ''.join(
-            remote_slave.execute("awk '/^server +{0}/{{print $2}}' "
-                                 "/etc/ntp.conf".
-                                 format(ntp))["stdout"]).rstrip()
+            ssh_manager.execute(
+                ip=ip,
+                cmd="awk '/^server +{0}/{{print $2}}' "
+                    "/etc/ntp.conf".format(ntp))["stdout"]).rstrip()
         cluster_ntp.append(ext_ntp_ip)
     logger.debug("external ntp in conf is {}".format(cluster_ntp))
     assert_equal(set(provided_ntp), set(cluster_ntp),
                  "/etc/ntp.conf does not contain external ntp ip")
     try:
         wait(
-            lambda: is_ntpd_active(remote_slave, vrouter_vip), timeout=120)
+            lambda: is_ntpd_active(ip, vrouter_vip), timeout=120)
     except Exception as e:
         logger.error(e)
-        status = is_ntpd_active(remote_slave, vrouter_vip)
+        status = is_ntpd_active(ip, vrouter_vip)
         assert_equal(
             status, 1, "Failed updated ntp. "
                        "Exit code is {0}".format(status))
@@ -964,27 +940,27 @@ def check_neutron_dhcp_lease(remote, instance_ip, instance_mac,
     return ' ack ' in lease
 
 
-def check_available_mode(remote):
+def check_available_mode(ip):
     command = ('umm status | grep runlevel &>/dev/null && echo "True" '
                '|| echo "False"')
-    if remote.execute(command)['exit_code'] == 0:
-        return ''.join(remote.execute(command)['stdout']).strip()
+    if ssh_manager.execute(ip, command)['exit_code'] == 0:
+        return ''.join(ssh_manager.execute(ip, command)['stdout']).strip()
     else:
-        return ''.join(remote.execute(command)['stderr']).strip()
+        return ''.join(ssh_manager.execute(ip, command)['stderr']).strip()
 
 
-def check_auto_mode(remote):
+def check_auto_mode(ip):
     command = ('umm status | grep umm &>/dev/null && echo "True" '
                '|| echo "False"')
-    if remote.execute(command)['exit_code'] == 0:
-        return ''.join(remote.execute(command)['stdout']).strip()
+    if ssh_manager.execute(ip, command)['exit_code'] == 0:
+        return ''.join(ssh_manager.execute(ip, command)['stdout']).strip()
     else:
-        return ''.join(remote.execute(command)['stderr']).strip()
+        return ''.join(ssh_manager.execute(ip, command)['stderr']).strip()
 
 
-def is_ntpd_active(remote, ntpd_ip):
+def is_ntpd_active(ip, ntpd_ip):
     cmd = 'ntpdate -d -p 4 -t 0.2 -u {0}'.format(ntpd_ip)
-    return not remote.execute(cmd)['exit_code']
+    return not ssh_manager.execute(ip, cmd)['exit_code']
 
 
 def check_repo_managment(ip):

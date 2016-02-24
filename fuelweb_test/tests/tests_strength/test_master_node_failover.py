@@ -226,8 +226,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
         with self.env.d_env.get_admin_remote() as remote:
             _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
-            with self.env.d_env.get_ssh_to_remote(_ip) as remote_slave:
-                vrouter_vip = self.fuel_web\
-                    .get_management_vrouter_vip(cluster_id)
-                remote.execute("pkill -9 ntpd")
-                checkers.external_ntp_check(remote_slave, vrouter_vip)
+            vrouter_vip = self.fuel_web\
+                .get_management_vrouter_vip(cluster_id)
+            remote.execute("pkill -9 ntpd")
+            checkers.external_ntp_check(_ip, vrouter_vip)

@@ -28,6 +28,7 @@ import ipaddr
 from proboscis import asserts
 from proboscis.asserts import assert_true
 from proboscis.asserts import assert_equal
+from devops.helpers.helpers import wait
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
@@ -972,3 +973,28 @@ def install_plugin_check_code(ip, plugin, exit_code=0):
     assert_equal(
         chan.recv_exit_status(), exit_code,
         'Install script fails with next message {0}'.format(''.join(stderr)))
+
+
+@logwrap
+def wait_phrase_in_log(ip, timeout, interval, phrase, log_path):
+    cmd = "grep '{0}' '{1}'".format(phrase, log_path)
+    wait(
+        lambda: not SSHManager().execute(ip=ip, cmd=cmd)['exit_code'],
+        interval=interval,
+        timeout=timeout,
+        timeout_msg="The phrase {0} not found in {1} file on "
+                    "remote node".format(phrase, log_path))
+
+
+@logwrap
+def get_package_versions_from_node(ip, name, os_type):
+    if os_type and 'Ubuntu' in os_type:
+        cmd = "dpkg-query -W -f='${Version}' %s" % name
+    else:
+        cmd = "rpm -q {0}".format(name)
+    try:
+        result = ''.join(SSHManager().execute(ip, cmd)['stdout'])
+        return result.strip()
+    except Exception:
+        logger.error(traceback.format_exc())
+        raise
