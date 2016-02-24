@@ -222,9 +222,9 @@ class SSHManager(object):
         remote = self._get_remote(ip=ip, port=port)
         return remote.download(destination, target)
 
-    def exist_on_remote(self, ip, path, port=22):
+    def exists_on_remote(self, ip, path, port=22):
         remote = self._get_remote(ip=ip, port=port)
-        return remote.exist(path)
+        return remote.exists(path)
 
     def isdir_on_remote(self, ip, path, port=22):
         remote = self._get_remote(ip=ip, port=port)
