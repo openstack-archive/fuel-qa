@@ -34,6 +34,7 @@ from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
 from fuelweb_test.settings import MIRROR_UBUNTU
+from fuelweb_test.settings import PLUGIN_PACKAGE_VERSION
 from fuelweb_test import settings as hlp_data
 from fuelweb_test.settings import NESSUS_IMAGE_PATH
 
@@ -471,13 +472,17 @@ class FuelPluginBuilder(BaseActions):
 
         self.execute(fpb_cmd, 0)
 
-    def fpb_create_plugin(self, name):
+    def fpb_create_plugin(self, name, package_version=PLUGIN_PACKAGE_VERSION):
         """
         Creates new plugin with given name
         :param name: name for plugin created
+        :param package_version: plugin package version to create template for
         :return: nothing
         """
-        self.execute("fpb --create {0}".format(name), 0)
+        cmd = "fpb --create {0}".format(name)
+        if package_version != '':
+            cmd += ' --package-version {0}'.format(package_version)
+        self.execute(cmd, 0)
 
     def fpb_build_plugin(self, path):
         """
