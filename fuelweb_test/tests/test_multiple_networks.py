@@ -169,8 +169,8 @@ class TestMultipleClusterNets(TestBasic):
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[3:5])
 
         self.show_step(6)
-        with self.env.d_env.get_admin_remote() as remote:
-            check_get_network_data_over_cli(remote, cluster_id, '/var/log/')
+        check_get_network_data_over_cli(self.ssh_manager.admin_ip,
+                                        cluster_id, '/var/log/')
 
         management_ranges_default = []
         management_ranges_custom = []
@@ -219,12 +219,14 @@ class TestMultipleClusterNets(TestBasic):
             utils.put_json_on_remote_from_dict(
                 remote, updated_network, cluster_id)
 
-            check_update_network_data_over_cli(remote, cluster_id,
+            check_update_network_data_over_cli(self.ssh_manager.admin_ip,
+                                               cluster_id,
                                                '/var/log/')
 
         self.show_step(9)
         with self.env.d_env.get_admin_remote() as remote:
-            check_get_network_data_over_cli(remote, cluster_id, '/var/log/')
+            check_get_network_data_over_cli(self.ssh_manager.admin_ip,
+                                            cluster_id, '/var/log/')
             latest_net = json.loads(remote.open(
                 '/var/log/network_1.json').read())
             updated_storage_default = self.get_ranges(latest_net, 'storage',
