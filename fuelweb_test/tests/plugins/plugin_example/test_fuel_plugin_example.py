@@ -183,72 +183,65 @@ class ExamplePlugin(TestBasic):
         # plugin+100.0.all
         # plugin+100.all
         # fuel_plugin_example_v3_sh]
-        with self.env.fuel_web.get_ssh_for_node('slave-01') as remote:
-            checkers.check_file_exists(remote,
-                                       '/tmp/plugin+100.0.all')
-            checkers.check_file_exists(remote,
-                                       '/tmp/plugin+100.all')
-            checkers.check_file_exists(remote,
-                                       '/tmp/fuel_plugin_example_v3_sh')
-            checkers.check_file_exists(remote,
-                                       '/tmp/fuel_plugin_example_v3_puppet')
+        slave1 = self.fuel_web.get_nailgun_node_by_name('slave-01')
+        checkers.check_file_exists(slave1['ip'], '/tmp/plugin+100.0.all')
+        checkers.check_file_exists(slave1['ip'], '/tmp/plugin+100.all')
+        checkers.check_file_exists(slave1['ip'],
+                                   '/tmp/fuel_plugin_example_v3_sh')
+        checkers.check_file_exists(slave1['ip'],
+                                   '/tmp/fuel_plugin_example_v3_puppet')
 
-            # check if fuel_plugin_example_v3_puppet called
-            # between netconfig and connectivity_tests
-            netconfig_str = 'MODULAR: netconfig.pp'
-            plugin_str = 'PLUGIN: fuel_plugin_example_v3 - deploy.pp'
-            connect_str = 'MODULAR: connectivity_tests.pp'
-            checkers.check_log_lines_order(remote,
-                                           log_file_path='/var/log/puppet.log',
-                                           line_matcher=[netconfig_str,
-                                                         plugin_str,
-                                                         connect_str])
+        # check if fuel_plugin_example_v3_puppet called
+        # between netconfig and connectivity_tests
+        netconfig_str = 'MODULAR: netconfig.pp'
+        plugin_str = 'PLUGIN: fuel_plugin_example_v3 - deploy.pp'
+        connect_str = 'MODULAR: connectivity_tests.pp'
+        checkers.check_log_lines_order(
+            ip=slave1['ip'],
+            log_file_path='/var/log/puppet.log',
+            line_matcher=[netconfig_str,
+                          plugin_str,
+                          connect_str])
 
         # check if slave-02 contain
         # plugin+100.0.all
         # plugin+100.al
-        with self.env.fuel_web.get_ssh_for_node('slave-02') as remote:
-            checkers.check_file_exists(remote,
-                                       '/tmp/plugin+100.0.all')
-            checkers.check_file_exists(remote,
-                                       '/tmp/plugin+100.all')
+        slave2 = self.fuel_web.get_nailgun_node_by_name('slave-02')
+        checkers.check_file_exists(slave2['ip'], '/tmp/plugin+100.0.all')
+        checkers.check_file_exists(slave2['ip'], '/tmp/plugin+100.all')
 
         # check if slave-03 contain
         # plugin+100.0.all
         # plugin+100.all
         # fuel_plugin_example_v3_sh
         # fuel_plugin_example_v3_puppet
-        with self.env.fuel_web.get_ssh_for_node('slave-03') as remote:
-            checkers.check_file_exists(remote,
-                                       '/tmp/plugin+100.0.all')
-            checkers.check_file_exists(remote,
-                                       '/tmp/plugin+100.all')
-            checkers.check_file_exists(remote,
-                                       '/tmp/fuel_plugin_example_v3_sh')
-            checkers.check_file_exists(remote,
-                                       '/tmp/fuel_plugin_example_v3_puppet')
+        slave3 = self.fuel_web.get_nailgun_node_by_name('slave-03')
+        checkers.check_file_exists(slave3['ip'], '/tmp/plugin+100.0.all')
+        checkers.check_file_exists(slave3['ip'], '/tmp/plugin+100.all')
+        checkers.check_file_exists(slave3['ip'],
+                                   '/tmp/fuel_plugin_example_v3_sh')
+        checkers.check_file_exists(slave3['ip'],
+                                   '/tmp/fuel_plugin_example_v3_puppet')
 
-            # check if service run on slave-03
-            logger.debug("Checking service on node {0}".format('slave-03'))
+        # check if service run on slave-03
+        logger.debug("Checking service on node {0}".format('slave-03'))
 
-            cmd = 'pgrep -f fuel-simple-service'
-            res_pgrep = remote.execute(cmd)
-            assert_equal(0, res_pgrep['exit_code'],
-                         'Command {0} failed with error {1}'
-                         .format(cmd, res_pgrep['stderr']))
-            process_count = len(res_pgrep['stdout'])
-            assert_equal(1, process_count,
-                         "There should be 1 process 'fuel-simple-service',"
-                         " but {0} found {1} processes".format(cmd,
-                                                               process_count))
+        cmd = 'pgrep -f fuel-simple-service'
+        res_pgrep = self.ssh_manager.execute_on_remote(
+            ip=slave3['ip'],
+            cmd=cmd
+        )
+        process_count = len(res_pgrep['stdout'])
+        assert_equal(1, process_count,
+                     "There should be 1 process 'fuel-simple-service',"
+                     " but {0} found {1} processes".format(cmd, process_count))
 
-            # curl to service
-            cmd_curl = 'curl localhost:8234'
-            res_curl = remote.execute(cmd_curl)
-            assert_equal(0, res_pgrep['exit_code'],
-                         'Command {0} failed with error {1}'
-                         .format(cmd_curl, res_curl['stderr']))
-
+        # curl to service
+        cmd_curl = 'curl localhost:8234'
+        self.ssh_manager.execute_on_remote(
+            ip=slave3['ip'],
+            cmd=cmd_curl
+        )
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_ha_one_controller_neutron_example_v3")

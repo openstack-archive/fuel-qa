@@ -241,18 +241,18 @@ class SeparateRabbitFailover(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['sanity', 'smoke', 'ha'])
         checkers.check_hiera_hosts(
-            self, self.fuel_web.client.list_cluster_nodes(cluster_id),
+            self.fuel_web.client.list_cluster_nodes(cluster_id),
             cmd='hiera amqp_hosts')
 
         checkers.check_hiera_hosts(
-            self, self.fuel_web.client.list_cluster_nodes(cluster_id),
+            self.fuel_web.client.list_cluster_nodes(cluster_id),
             cmd='hiera memcache_roles')
 
         rabbit_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['standalone-rabbitmq'])
         logger.debug("rabbit nodes are {0}".format(rabbit_nodes))
         checkers.check_hiera_hosts(
-            self, rabbit_nodes,
+            rabbit_nodes,
             cmd='hiera corosync_roles')
 
         nailgun_node = self.fuel_web.update_nodes(cluster_id, node,
@@ -265,16 +265,16 @@ class SeparateRabbitFailover(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['sanity', 'smoke', 'ha'])
         checkers.check_hiera_hosts(
-            self, self.fuel_web.client.list_cluster_nodes(cluster_id),
+            self.fuel_web.client.list_cluster_nodes(cluster_id),
             cmd='hiera amqp_hosts')
 
         checkers.check_hiera_hosts(
-            self, self.fuel_web.client.list_cluster_nodes(cluster_id),
+            self.fuel_web.client.list_cluster_nodes(cluster_id),
             cmd='hiera memcache_roles')
 
         rabbit_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['standalone-rabbitmq'])
         logger.debug("rabbit nodes are {0}".format(rabbit_nodes))
         checkers.check_hiera_hosts(
-            self, rabbit_nodes,
+            rabbit_nodes,
             cmd='hiera corosync_roles')
