@@ -18,6 +18,7 @@ from proboscis.asserts import assert_equal
 from devops.helpers import helpers
 
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test import logger
 from fuelweb_test import settings
 from gates_tests.helpers import exceptions
@@ -192,8 +193,8 @@ def patch_and_assemble_ubuntu_bootstrap(environment):
                           ).format(result))
 
             checkers.check_file_exists(
-                remote,
-                '{0}'.format(bootstrap_file))
+                SSHManager().admin_ip,
+                str(bootstrap_file))
     except Exception as e:
         logger.error("Could not upload package {e}".format(e=e))
         raise
@@ -213,8 +214,8 @@ def replace_centos_bootstrap(environment):
         rebuilded_bootstrap = '/var/initramfs.img.updated'
         with environment.d_env.get_admin_remote() as remote:
             checkers.check_file_exists(
-                remote,
-                '{0}'.format(rebuilded_bootstrap))
+                SSHManager().admin_ip,
+                str(rebuilded_bootstrap))
             logger.info("Assigning new bootstrap from {}"
                         .format(rebuilded_bootstrap))
             bootstrap = "/var/www/nailgun/bootstrap"

@@ -133,17 +133,16 @@ class TestOffloading(TestBasic):
 
         self.show_step(8)
         for node in nodes:
-            with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
-                for name in offloadings_1:
-                    result = check_offload(remote, iface1, name)
-                    assert_equal(result, "off",
-                                 "Offload type {0} is {1} on {2}".format(
-                                         name, result, node['name']))
-                for name in offloadings_2:
-                    result = check_offload(remote, iface2, name)
-                    assert_equal(result, "on",
-                                 "Offload type {0} is {1} on {2}".format(
-                                         name, result, node['name']))
+            for name in offloadings_1:
+                result = check_offload(node['ip'], iface1, name)
+                assert_equal(result, "off",
+                             "Offload type {0} is {1} on {2}".format(
+                                     name, result, node['name']))
+            for name in offloadings_2:
+                result = check_offload(node['ip'], iface2, name)
+                assert_equal(result, "on",
+                             "Offload type {0} is {1} on {2}".format(
+                                     name, result, node['name']))
 
         self.show_step(9)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
@@ -234,17 +233,16 @@ class TestOffloading(TestBasic):
 
         self.show_step(8)
         for node in nodes:
-            with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
-                for name in offloadings_1:
-                    result = check_offload(remote, iface1, name)
-                    assert_equal(result, "off",
-                                 "Offload type {0} is {1} on {2}".format(
-                                         name, result, node['name']))
-                for name in offloadings_2:
-                    result = check_offload(remote, iface2, name)
-                    assert_equal(result, "on",
-                                 "Offload type {0} is {1} on {2}".format(
-                                         name, result, node['name']))
+            for name in offloadings_1:
+                result = check_offload(node['ip'], iface1, name)
+                assert_equal(result, "off",
+                             "Offload type {0} is {1} on {2}".format(
+                                     name, result, node['name']))
+            for name in offloadings_2:
+                result = check_offload(node['ip'], iface2, name)
+                assert_equal(result, "on",
+                             "Offload type {0} is {1} on {2}".format(
+                                     name, result, node['name']))
 
         self.show_step(9)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
