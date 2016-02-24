@@ -19,6 +19,7 @@ from proboscis import test
 from proboscis.asserts import assert_equal
 
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import utils
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
 from fuelweb_test import settings
@@ -547,8 +548,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
                                 ignore_count_of_proccesses=True)
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-03")['ip']
-        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
-            partitions = checkers.get_mongo_partitions(remote, "vda5")
+        partitions = utils.get_mongo_partitions(_ip, "vda5")
 
         assert_equal(partitions[0].rstrip(), mongo_disk_gb,
                      'Mongo size {0} before deployment is not equal'
