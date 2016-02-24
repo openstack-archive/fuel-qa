@@ -256,10 +256,11 @@ class TestHaNeutronScalability(TestBasic):
 
         """
         def _check_swift(node):
+            _ip = self.fuel_web.get_nailgun_node_by_name(node.name)['ip']
             with self.fuel_web.get_ssh_for_node(node.name) as remote:
                 for i in range(5):
                     try:
-                        checkers.check_swift_ring(remote)
+                        checkers.check_swift_ring(_ip)
                         break
                     except AssertionError:
                         result = remote.execute(
@@ -272,7 +273,7 @@ class TestHaNeutronScalability(TestBasic):
                             # LP1498368/comments/16
                             time.sleep(600)
                 else:
-                    checkers.check_swift_ring(remote)
+                    checkers.check_swift_ring(_ip)
 
         def _check_pacemaker(devops_nodes):
             for devops_node in devops_nodes:
