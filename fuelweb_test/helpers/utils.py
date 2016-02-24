@@ -28,6 +28,7 @@ import ipaddr
 from proboscis import asserts
 from proboscis.asserts import assert_true
 from proboscis.asserts import assert_equal
+from devops.helpers.helpers import wait
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
@@ -976,3 +977,30 @@ def install_plugin_check_code(ip, plugin, exit_code=0):
     assert_equal(
         chan.recv_exit_status(), exit_code,
         'Install script fails with next message {0}'.format(''.join(stderr)))
+
+
+@logwrap
+def get_package_versions_from_node(ip, name, os_type):
+    # Moved from checkers.py for improvement of code
+    if os_type and 'Ubuntu' in os_type:
+        cmd = "dpkg-query -W -f='${Version}' %s" % name
+    else:
+        cmd = "rpm -q {0}".format(name)
+    try:
+        result = ''.join(SSHManager().execute(ip, cmd)['stdout'])
+        return result.strip()
+    except Exception:
+        logger.error(traceback.format_exc())
+        raise
+
+
+@logwrap
+def get_file_size(ip, file_name, file_path):
+    # Moved from checkers.py for improvement of code
+    file_size = SSHManager().execute(
+        ip, 'stat -c "%s" {0}/{1}'.format(file_path, file_name))
+    assert_equal(
+        int(file_size['exit_code']), 0, "Failed to get '{0}/{1}' file stats on"
+                                        " remote node".format(file_path,
+                                                              file_name))
+    return int(file_size['stdout'][0].rstrip())

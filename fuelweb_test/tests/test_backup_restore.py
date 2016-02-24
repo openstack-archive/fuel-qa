@@ -66,10 +66,10 @@ class TestAdminNodeBackupRestore(TestBasic):
                     seconds=60 * 10,
                     error_message="'dockerctl restore' "
                                   "run longer then 600 sec"):
-                self.fuel_web.restore_master(remote)
+                self.fuel_web.restore_master(self.ssh_manager.admin_ip)
             self.fuel_web.restore_check_nailgun_api()
-            checkers.restore_check_sum(remote)
-            checkers.iptables_check(remote)
+            checkers.restore_check_sum(self.ssh_manager.admin_ip)
+            checkers.iptables_check(self.ssh_manager.admin_ip)
 
 
 @test(enabled=False, groups=["backup_restore_master"])
@@ -140,15 +140,14 @@ class BackupRestoreHAOneController(HAOneControllerNeutronBase):
         assert_equal(
             3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
 
-        with self.env.d_env.get_admin_remote() as remote:
-            with RunLimit(
-                    seconds=60 * 10,
-                    error_message="'dockerctl restore' "
-                                  "run longer then 600 sec"):
-                self.fuel_web.restore_master(remote)
-            checkers.restore_check_sum(remote)
-            self.fuel_web.restore_check_nailgun_api()
-            checkers.iptables_check(remote)
+        with RunLimit(
+                seconds=60 * 10,
+                error_message="'dockerctl restore' "
+                              "run longer then 600 sec"):
+            self.fuel_web.restore_master(self.ssh_manager.admin_ip)
+        checkers.restore_check_sum(self.ssh_manager.admin_ip)
+        self.fuel_web.restore_check_nailgun_api()
+        checkers.iptables_check(self.ssh_manager.admin_ip)
 
         assert_equal(
             2, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
@@ -231,16 +230,15 @@ class BackupRestoreHA(NeutronTunHaBase):
         assert_equal(
             6, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
 
-        with self.env.d_env.get_admin_remote() as remote:
-            with RunLimit(
-                    seconds=60 * 10,
-                    error_message="'dockerctl restore' "
-                                  "run longer then 600 sec"):
-                self.fuel_web.restore_master(remote)
-            checkers.restore_check_sum(remote)
+        with RunLimit(
+                seconds=60 * 10,
+                error_message="'dockerctl restore' "
+                              "run longer then 600 sec"):
+            self.fuel_web.restore_master(self.ssh_manager.admin_ip)
+        checkers.restore_check_sum(self.ssh_manager.admin_ip)
 
-            self.fuel_web.restore_check_nailgun_api()
-            checkers.iptables_check(remote)
+        self.fuel_web.restore_check_nailgun_api()
+        checkers.iptables_check(self.ssh_manager.admin_ip)
 
         assert_equal(
             5, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
@@ -303,13 +301,12 @@ class BackupRestoreHA(NeutronTunHaBase):
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:3], timeout=10 * 60)
 
-        with self.env.d_env.get_admin_remote() as remote:
-            with RunLimit(
-                    seconds=60 * 10,
-                    error_message="'dockerctl restore' "
-                                  "ran longer then 600 sec"):
-                self.fuel_web.restore_master(remote)
-            checkers.restore_check_sum(remote)
+        with RunLimit(
+                seconds=60 * 10,
+                error_message="'dockerctl restore' "
+                              "ran longer then 600 sec"):
+            self.fuel_web.restore_master(self.ssh_manager.admin_ip)
+        checkers.restore_check_sum(self.ssh_manager.admin_ip)
 
         number_of_nodes = len(self.fuel_web.client.list_cluster_nodes(
             cluster_id))
@@ -415,7 +412,7 @@ class BackupReinstallRestoreHA(NeutronTunHaBase):
         with self.env.d_env.get_admin_remote() as remote:
             self.fuel_web.backup_master(remote)
             checkers.backup_check(remote)
-            backup = checkers.find_backup(remote).strip()
+            backup = checkers.find_backup(self.ssh_manager.admin_ip).strip()
             local_backup = os.path.join(
                 settings.LOGS_DIR,
                 os.path.basename(backup))
@@ -433,11 +430,11 @@ class BackupReinstallRestoreHA(NeutronTunHaBase):
                     seconds=60 * 10,
                     error_message="'dockerctl restore' "
                                   "run longer then 600 sec"):
-                self.fuel_web.restore_master(remote)
-            checkers.restore_check_sum(remote)
+                self.fuel_web.restore_master(self.ssh_manager.admin_ip)
+            checkers.restore_check_sum(self.ssh_manager.admin_ip)
 
             self.fuel_web.restore_check_nailgun_api()
-            checkers.iptables_check(remote)
+            checkers.iptables_check(self.ssh_manager.admin_ip)
 
         assert_equal(
             5, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))

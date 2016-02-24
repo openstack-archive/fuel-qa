@@ -50,9 +50,8 @@ class CentosBootstrap(TestBasic):
 
         self.env.bootstrap_nodes(nodes)
         for node in nodes:
-            with self.fuel_web.get_ssh_for_node(node.name) as slave_remote:
-                checkers.verify_bootstrap_on_node(slave_remote,
-                                                  os_type="centos")
+            _ip = self.fuel_web.get_nailgun_node_by_devops_node(node)['ip']
+            checkers.verify_bootstrap_on_node(_ip, os_type="centos")
 
         self.env.make_snapshot("activate_centos_bootstrap",
                                is_make=True)
@@ -115,9 +114,8 @@ class CentosBootstrap(TestBasic):
         nodes = self.env.d_env.get_nodes(
             name__in=['slave-01', 'slave-02', 'slave-03'])
         for node in nodes:
-            with self.fuel_web.get_ssh_for_node(node.name) as slave_remote:
-                checkers.verify_bootstrap_on_node(slave_remote,
-                                                  os_type="centos")
+            _ip = self.fuel_web.get_nailgun_node_by_devops_node(node)['ip']
+            checkers.verify_bootstrap_on_node(_ip, os_type="centos")
 
         # Network verification
         self.fuel_web.verify_network(cluster_id)
@@ -173,9 +171,8 @@ class CentosBootstrap(TestBasic):
 
         self.fuel_web.wait_nodes_get_online_state(nodes, timeout=10 * 60)
         for node in nodes:
-            with self.fuel_web.get_ssh_for_node(node.name) as slave_remote:
-                checkers.verify_bootstrap_on_node(slave_remote,
-                                                  os_type="centos")
+            _ip = self.fuel_web.get_nailgun_node_by_devops_node(node)['ip']
+            checkers.verify_bootstrap_on_node(_ip, os_type="centos")
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
@@ -220,9 +217,8 @@ class CentosBootstrap(TestBasic):
             name__in=["slave-01", "slave-02", "slave-03"])
 
         for node in nodes:
-            with self.fuel_web.get_ssh_for_node(node.name) as slave_remote:
-                checkers.verify_bootstrap_on_node(slave_remote,
-                                                  os_type="centos")
+            _ip = self.fuel_web.get_nailgun_node_by_devops_node(node)['ip']
+            checkers.verify_bootstrap_on_node(_ip, os_type="centos")
 
         self.env.make_snapshot(
             "delete_on_ready_centos_bootstrap",
@@ -265,7 +261,5 @@ class CentosBootstrap(TestBasic):
         wait(lambda: len(self.fuel_web.client.list_nodes()) == 3,
              timeout=10 * 60)
 
-        node = self.env.d_env.get_node(name="slave-03")
-        with self.fuel_web.get_ssh_for_node(node.name) as slave_remote:
-            checkers.verify_bootstrap_on_node(slave_remote,
-                                              os_type="centos")
+        node = self.fuel_web.get_nailgun_node_by_name(node_name="slave-03")
+        checkers.verify_bootstrap_on_node(node['ip'], os_type="centos")
