@@ -905,3 +905,36 @@ def fill_space(ip, file_dir, size):
         ip=ip,
         cmd='fallocate -l {0}G {1}'.format(size, file_path),
         err_msg="The file {0} was not allocated".format(file_name))
+
+
+@logwrap
+def get_ceph_partitions(ip, device, type="xfs"):
+    ret = SSHManager().check_call(
+        ip=ip,
+        cmd="parted {device} print | grep {type}".format(device=device,
+                                                         type=type)
+    )['stdout']
+    if not ret:
+        logger.error("Partition not present! {partitions}: ".format(
+                     SSHManager().check_call(ip=ip,
+                                             cmd="parted {device} print")))
+        raise Exception
+    logger.debug("Partitions: {part}".format(part=ret))
+    return ret
+
+
+@logwrap
+def get_mongo_partitions(ip, device):
+    ret = SSHManager().check_call(
+        ip=ip,
+        cmd="lsblk | grep {device} | awk {size}".format(
+            device=device,
+            size=re.escape('{print $4}'))
+    )['stdout']
+    if not ret:
+        logger.error("Partition not present! {partitions}: ".format(
+                     SSHManager().check_call(ip=ip,
+                                             cmd="parted {device} print")))
+        raise Exception
+    logger.debug("Partitions: {part}".format(part=ret))
+    return ret
