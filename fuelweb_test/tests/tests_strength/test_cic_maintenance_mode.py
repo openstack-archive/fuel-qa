@@ -26,7 +26,7 @@ from fuelweb_test.helpers.checkers import check_auto_mode
 from fuelweb_test.helpers.checkers import check_available_mode
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import logger
-from fuelweb_test import ostf_test_mapping as map_ostf
+from fuelweb_test import ostf_test_mapping
 from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -170,7 +170,7 @@ class CICMaintenanceMode(TestBasic):
             _wait(lambda:
                   self.fuel_web.run_single_ostf_test(
                       cluster_id, test_sets=['sanity'],
-                      test_name=map_ostf.OSTF_TEST_MAPPING.get(
+                      test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
                           'Check that required services are running')),
                   timeout=1500)
             logger.debug("Required services are running")
@@ -299,7 +299,7 @@ class CICMaintenanceMode(TestBasic):
             _wait(lambda:
                   self.fuel_web.run_single_ostf_test(
                       cluster_id, test_sets=['sanity'],
-                      test_name=map_ostf.OSTF_TEST_MAPPING.get(
+                      test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
                           'Check that required services are running')),
                   timeout=1500)
             logger.debug("Required services are running")
@@ -473,7 +473,7 @@ class CICMaintenanceMode(TestBasic):
             _wait(lambda:
                   self.fuel_web.run_single_ostf_test(
                       cluster_id, test_sets=['sanity'],
-                      test_name=map_ostf.OSTF_TEST_MAPPING.get(
+                      test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
                           'Check that required services are running')),
                   timeout=1500)
             logger.debug("Required services are running")

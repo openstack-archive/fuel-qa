@@ -35,7 +35,7 @@ import yaml
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
-from fuelweb_test import ostf_test_mapping as map_ostf
+from fuelweb_test import ostf_test_mapping
 from fuelweb_test import QuietLogger
 from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
@@ -1943,7 +1943,7 @@ class FuelWebClient(object):
         failed_count = []
         test_name_to_run = test_name or OSTF_TEST_NAME
         retries = test_retries or OSTF_TEST_RETRIES_COUNT
-        test_path = map_ostf.OSTF_TEST_MAPPING.get(test_name_to_run)
+        test_path = ostf_test_mapping.OSTF_TEST_MAPPING.get(test_name_to_run)
         logger.info('Test path is {0}'.format(test_path))
 
         for i in range(0, retries):
