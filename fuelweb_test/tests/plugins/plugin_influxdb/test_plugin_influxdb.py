@@ -134,3 +134,92 @@ class TestInfluxdbPlugin(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("deploy_influxdb_grafana_plugin")
+
+    @test(depends_on=[deploy_influxdb_grafana_plugin],
+          groups=["scale_up_influxdb_cluster"])
+    @log_snapshot_after_test
+    def scale_up_influxdb_cluster(self):
+        """Scale up InfluxDB cluster
+
+        Scenario:
+            1. Revert snapshot deploy_influxdb_grafana_plugin
+            2. Add 2 node with influxdb_grafana role
+            3. Deploy the cluster
+            4. Check that plugin is working
+            5. Run OSTF
+
+        Duration 60m
+        Snapshot: scale_up_influxdb_cluster
+
+        """
+        self.env.revert_snapshot("deploy_influxdb_grafana_plugin")
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[3:5])
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-04': [self._role_name],
+                'slave-05': [self._role_name]
+            }
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.check_influxdb_plugin(cluster_id)
+
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.env.make_snapshot("scale_up_influxdb_cluster")
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["deploy_elasticsearch_kibana_ha_mode"])
+    @log_snapshot_after_test
+    def deploy_influxdb_grafana_plugin_ha_mode(self):
+        """Deploy a cluster with the InfluxDB-Grafana plugin in HA mode
+
+        Scenario:
+            1. Upload plugin to the master node
+            2. Install plugin
+            3. Create cluster
+            4. Add 1 node with controller role
+            5. Add 1 node with compute role
+            6. Add 3 nodes with influxdb_grafana role
+            7. Deploy the cluster
+            8. Check that plugin is working
+            9. Run OSTF
+
+        Duration 60m
+        Snapshot deploy_influxdb_grafana_plugin_ha_mode
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        self.upload_and_install_plugin()
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+        )
+
+        self.update_plugin_settings(cluster_id)
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['compute'],
+                'slave-03': [self._role_name],
+                'slave-04': [self._role_name],
+                'slave-05': [self._role_name]
+            }
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.check_influxdb_plugin(cluster_id)
+
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.env.make_snapshot(
+            "deploy_influxdb_grafana_plugin_ha_mode")
