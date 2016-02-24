@@ -18,8 +18,8 @@ import os
 from proboscis import asserts
 from proboscis import test
 
-from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers import utils
+from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -31,9 +31,9 @@ class EMCPlugin(TestBasic):
     """EMCPlugin."""  # TODO documentation
 
     @classmethod
-    def check_emc_cinder_config(cls, remote, path):
+    def check_emc_cinder_config(cls, ip, path):
         command = 'cat {0}'.format(path)
-        conf_data = ''.join(remote.execute(command)['stdout'])
+        conf_data = ''.join(SSHManager.execute(ip, command)['stdout'])
         conf_data = cStringIO.StringIO(conf_data)
         cinder_conf = ConfigParser.ConfigParser()
         cinder_conf.readfp(conf_data)
@@ -72,13 +72,13 @@ class EMCPlugin(TestBasic):
         return service in ps_output
 
     @classmethod
-    def check_emc_management_package(cls, remote):
-        navicli = checkers.get_package_versions_from_node(
-            remote=remote,
+    def check_emc_management_package(cls, ip):
+        navicli = utils.get_package_versions_from_node(
+            ip=ip,
             name='navicli',
             os_type=settings.OPENSTACK_RELEASE)
-        naviseccli = checkers.get_package_versions_from_node(
-            remote=remote,
+        naviseccli = utils.get_package_versions_from_node(
+            ip=ip,
             name='naviseccli',
             os_type=settings.OPENSTACK_RELEASE)
         return bool(navicli + naviseccli)
@@ -175,10 +175,10 @@ class EMCPlugin(TestBasic):
 
         # check cinder-volume settings
 
-        for remote in controller_remotes:
+        for node in controller_nodes:
             self.check_emc_cinder_config(
-                remote=remote, path='/etc/cinder/cinder.conf')
-            self.check_emc_management_package(remote=remote)
+                ip=node['ip'], path='/etc/cinder/cinder.conf')
+            self.check_emc_management_package(ip=node['ip'])
 
         # check cinder-volume layout on controllers
 
