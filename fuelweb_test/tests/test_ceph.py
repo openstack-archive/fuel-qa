@@ -369,16 +369,19 @@ class CephHA(TestBasic):
             if settings.OPENSTACK_RELEASE_CENTOS in settings.OPENSTACK_RELEASE:
                 slave.execute(". openrc; glance image-create --name"
                               " 'custom-image' --disk-format qcow2"
+                              " --protected False --visibility public"
                               " --container-format bare"
                               " --file /opt/vm/cirros-x86_64-disk.img")
             else:
                 slave.execute(
                     ". openrc; glance image-create --name"
                     " 'custom-image' --disk-format qcow2"
+                    " --protected False --visibility public"
                     " --container-format bare --file"
                     " /usr/share/cirros-testvm/cirros-x86_64-disk.img")
 
         image = os_conn.get_image_by_name('custom-image')
+        logger.debug("image is {}".format(image))
 
         # create tenant and user
         tenant = os_conn.create_tenant("openstack_tenant")
