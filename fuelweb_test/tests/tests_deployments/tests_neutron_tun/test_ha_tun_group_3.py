@@ -122,9 +122,8 @@ class HaTunGroup3(TestBasic):
             cluster_id, roles=['controller'])
         vrouter_vip = self.fuel_web.get_management_vrouter_vip(cluster_id)
         for node in ctrls:
-            with self.fuel_web.get_ssh_for_nailgun_node(node) as remote:
-                checkers.external_dns_check(remote)
-                checkers.external_ntp_check(remote, vrouter_vip)
+            checkers.external_dns_check(node['ip'])
+            checkers.external_ntp_check(node['ip'], vrouter_vip)
 
         self.fuel_web.check_ceph_status(cluster_id)
         self.fuel_web.verify_network(cluster_id)

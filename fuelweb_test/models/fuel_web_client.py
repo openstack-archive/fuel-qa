@@ -526,7 +526,7 @@ class FuelWebClient(object):
             if help_data.FUEL_USE_LOCAL_NTPD\
                     and ('ntp_list' not in settings)\
                     and checkers.is_ntpd_active(
-                        remote, public_gw):
+                        self.ssh_manager.admin_ip, public_gw):
                 attributes['editable']['external_ntp']['ntp_list']['value'] =\
                     [public_gw]
                 logger.info("Configuring cluster #{0}"
@@ -2154,12 +2154,14 @@ class FuelWebClient(object):
         logger.info("Backup of the master node is complete.")
 
     @logwrap
-    def restore_master(self, remote):
+    def restore_master(self, ip):
         # FIXME(kozhukalov): This approach is outdated
         # due to getting rid of docker containers.
         logger.info("Restore of the master node is started.")
-        path = checkers.find_backup(remote)
-        run_on_remote(remote, 'dockerctl restore {0}'.format(path))
+        path = checkers.find_backup(ip)
+        self.ssh_manager.execute_on_remote(
+            ip=ip,
+            cmd='dockerctl restore {0}'.format(path))
         logger.info("Restore of the master node is complete.")
 
     @logwrap

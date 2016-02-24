@@ -15,7 +15,6 @@ import hashlib
 import json
 import os
 import re
-import traceback
 import urllib2
 
 from devops.error import TimeoutError
@@ -26,10 +25,7 @@ import yaml
 from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test.helpers.ssh_manager import SSHManager
-from fuelweb_test.helpers.utils import run_on_remote
-from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test.helpers.utils import get_mongo_partitions
-from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test.settings import EXTERNAL_DNS
 from fuelweb_test.settings import EXTERNAL_NTP
 from fuelweb_test.settings import OPENSTACK_RELEASE
@@ -216,27 +212,14 @@ def check_file_exists(ip, path):
 
 
 @logwrap
-def wait_phrase_in_log(node_ssh, timeout, interval, phrase, log_path):
+def wait_phrase_in_log(ip, timeout, interval, phrase, log_path):
     cmd = "grep '{0}' '{1}'".format(phrase, log_path)
     wait(
-        lambda: not node_ssh.execute(cmd)['exit_code'], interval=interval,
+        lambda: not SSHManager().execute(ip=ip, cmd=cmd)['exit_code'],
+        interval=interval,
         timeout=timeout,
         timeout_msg="The phrase {0} not found in {1} file on "
                     "remote node".format(phrase, log_path))
-
-
-@logwrap
-def get_package_versions_from_node(remote, name, os_type):
-    if os_type and 'Ubuntu' in os_type:
-        cmd = "dpkg-query -W -f='${Version}' %s" % name
-    else:
-        cmd = "rpm -q {0}".format(name)
-    try:
-        result = ''.join(remote.execute(cmd)['stdout'])
-        return result.strip()
-    except Exception:
-        logger.error(traceback.format_exc())
-        raise
 
 
 @logwrap
@@ -256,17 +239,9 @@ def enable_feature_group(env, group):
     wait(check_api_group_enabled, interval=10, timeout=60 * 20)
 
 
-@logwrap
-def restart_nailgun(remote):
-    cmd = 'supervisorctl restart nailgun'
-    if MASTER_IS_CENTOS7:
-        cmd = 'systemctl restart nailgun'
-    result = remote.execute(cmd)
-    assert_equal(0, result['exit_code'], result['stderr'])
-
-
-def find_backup(remote):
-    backups = remote.execute("ls -1u /var/backup/fuel/*/*.lrz")["stdout"]
+def find_backup(ip):
+    backups = ssh_manager.execute(ip,
+                                  "ls -1u /var/backup/fuel/*/*.lrz")["stdout"]
     if backups:
         arch_path = backups[0]
         logger.info('Backup archive found: {0}'.format(arch_path))
@@ -276,50 +251,58 @@ def find_backup(remote):
 
 
 @logwrap
-def backup_check(remote):
+def backup_check(ip):
     logger.info("Backup check archive status")
-    path = find_backup(remote)
+    path = find_backup(ip)
     assert_true(path, "Can not find backup. Path value '{0}'".format(path))
-    test_result = remote.execute("test -e {0}".format(path.rstrip()))
+    test_result = ssh_manager.execute(ip,
+                                      "test -e {0}".format(path.rstrip()))
     assert_true(test_result['exit_code'] == 0,
                 "Archive '{0}' does not exist".format(path.rstrip()))
 
 
 @logwrap
-def restore_check_sum(remote):
+def restore_check_sum(ip):
     logger.debug('Check if removed file /etc/fuel/data was restored')
-    res = remote.execute("if [ -e /etc/fuel/data ]; "
-                         "then echo Restored!!;"
-                         " fi")
+    res = ssh_manager.execute(
+        ip=ip,
+        cmd="if [ -e /etc/fuel/data ]; then echo Restored!!; fi"
+    )
     assert_true("Restored!!" in ''.join(res['stdout']).strip(),
                 'Test file /etc/fuel/data '
                 'was not restored!!! {0}'.format(res['stderr']))
     logger.info("Restore check md5sum")
-    md5sum_backup = remote.execute("cat /etc/fuel/sum")
+    md5sum_backup = ssh_manager.execute(ip, "cat /etc/fuel/sum")
     assert_true(''.join(md5sum_backup['stdout']).strip(),
                 'Command cat /etc/fuel/sum '
                 'failed with {0}'.format(md5sum_backup['stderr']))
-    md5sum_restore = remote.execute("md5sum /etc/fuel/data | sed -n 1p "
-                                    " | awk '{print $1}'")
+    md5sum_restore = ssh_manager.execute(
+        ip=ip,
+        cmd="md5sum /etc/fuel/data | sed -n 1p | awk '{print $1}'"
+    )
     assert_equal(md5sum_backup, md5sum_restore,
                  "md5sums not equal: backup{0}, restore{1}".
                  format(md5sum_backup, md5sum_restore))
 
 
 @logwrap
-def iptables_check(remote):
+def iptables_check(ip):
     logger.info("Iptables check")
-    remote.execute("iptables-save > /etc/fuel/iptables-restore")
-    iptables_backup = remote.execute("sed -e '/^:/d; /^#/d' "
-                                     " /etc/fuel/iptables-backup")
-    iptables_restore = remote.execute("sed -e '/^:/d; /^#/d' "
-                                      " /etc/fuel/iptables-restore")
+    ssh_manager.execute(ip, "iptables-save > /etc/fuel/iptables-restore")
+    iptables_backup = ssh_manager.execute(
+        ip=ip,
+        cmd="sed -e '/^:/d; /^#/d' /etc/fuel/iptables-backup"
+    )
+    iptables_restore = ssh_manager.execute(
+        ip=ip,
+        cmd="sed -e '/^:/d; /^#/d' /etc/fuel/iptables-restore"
+    )
     assert_equal(iptables_backup, iptables_restore,
                  "list of iptables rules are not equal")
 
 
 @logwrap
-def check_mysql(remote, node_name):
+def check_mysql(ip, node_name):
     check_cmd = 'pkill -0 -x mysqld'
     check_crm_cmd = ('crm resource status clone_p_mysqld |'
                      ' grep -q "is running on: $HOSTNAME"')
@@ -329,21 +312,26 @@ def check_mysql(remote, node_name):
                         " WHERE VARIABLE_NAME"
                         " = 'wsrep_local_state_comment';\"")
     try:
-        wait(lambda: remote.execute(check_cmd)['exit_code'] == 0,
+        wait(lambda: ssh_manager.execute(ip, check_cmd)['exit_code'] == 0,
              timeout=10 * 60)
         logger.info('MySQL daemon is started on {0}'.format(node_name))
     except TimeoutError:
         logger.error('MySQL daemon is down on {0}'.format(node_name))
         raise
-    _wait(lambda: assert_equal(remote.execute(check_crm_cmd)['exit_code'], 0,
-                               'MySQL resource is NOT running on {0}'.format(
-                                   node_name)), timeout=60)
+    _wait(
+        lambda: assert_equal(
+            ssh_manager.execute(
+                ip,
+                check_crm_cmd)['exit_code'],
+            0,
+            'MySQL resource is NOT running on {0}'.format(node_name)),
+        timeout=60)
     try:
-        wait(lambda: ''.join(remote.execute(
-            check_galera_cmd)['stdout']).rstrip() == 'Synced', timeout=600)
+        wait(lambda: ''.join(ssh_manager.execute(
+            ip, check_galera_cmd)['stdout']).rstrip() == 'Synced', timeout=600)
     except TimeoutError:
-        logger.error('galera status is {0}'.format(''.join(remote.execute(
-            check_galera_cmd)['stdout']).rstrip()))
+        logger.error('galera status is {0}'.format(''.join(ssh_manager.execute(
+            ip, check_galera_cmd)['stdout']).rstrip()))
         raise
 
 
@@ -684,49 +672,52 @@ def check_kernel(kernel, expected_kernel):
 
 
 @logwrap
-def external_dns_check(remote_slave):
+def external_dns_check(ip):
     logger.info("External dns check")
     provided_dns = EXTERNAL_DNS
     logger.debug("provided to test dns is {}".format(provided_dns))
     cluster_dns = []
     for dns in provided_dns:
         ext_dns_ip = ''.join(
-            remote_slave.execute("grep {0} /etc/resolv.dnsmasq.conf | "
-                                 "awk {{'print $2'}}".
-                                 format(dns))["stdout"]).rstrip()
+            ssh_manager.execute(
+                ip=ip,
+                cmd="grep {0} /etc/resolv.dnsmasq.conf | "
+                    "awk {{'print $2'}}".format(dns)
+            )["stdout"]).rstrip()
         cluster_dns.append(ext_dns_ip)
     logger.debug("external dns in conf is {}".format(cluster_dns))
     assert_equal(set(provided_dns), set(cluster_dns),
                  "/etc/resolv.dnsmasq.conf does not contain external dns ip")
     command_hostname = ''.join(
-        remote_slave.execute("host {0} | awk {{'print $5'}}"
-                             .format(PUBLIC_TEST_IP))
+        ssh_manager.execute(ip,
+                            "host {0} | awk {{'print $5'}}"
+                            .format(PUBLIC_TEST_IP))
         ["stdout"]).rstrip()
     hostname = 'google-public-dns-a.google.com.'
     assert_equal(command_hostname, hostname,
                  "Can't resolve hostname")
 
 
-def verify_bootstrap_on_node(remote, os_type, uuid=None):
+def verify_bootstrap_on_node(ip, os_type, uuid=None):
     os_type = os_type.lower()
     if os_type not in ['ubuntu', 'centos']:
         raise Exception("Only Ubuntu and CentOS are supported, "
                         "you have chosen {0}".format(os_type))
 
-    logger.info("Verify bootstrap on slave {0}".format(remote.host))
+    logger.info("Verify bootstrap on slave {0}".format(ip))
 
     cmd = 'cat /etc/*release'
-    output = run_on_remote_get_results(remote, cmd)['stdout_str'].lower()
+    output = ssh_manager.execute_on_remote(ip, cmd)['stdout_str'].lower()
     assert_true(os_type in output,
                 "Slave {0} doesn't use {1} image for bootstrap "
                 "after {1} images were enabled, /etc/release "
-                "content: {2}".format(remote.host, os_type, output))
+                "content: {2}".format(ip, os_type, output))
 
     if os_type == 'centos' or uuid is None:
         return
 
     cmd = "cat /etc/nailgun-agent/config.yaml"
-    output = yaml.load(run_on_remote_get_results(remote, cmd)['stdout_str'])
+    output = yaml.load(ssh_manager.execute_on_remote(ip, cmd)['stdout_str'])
     actual_uuid = output.get("runtime_uuid")
     assert_equal(actual_uuid, uuid,
                  "Actual uuid {0} is not the same as expected {1}"
@@ -734,35 +725,36 @@ def verify_bootstrap_on_node(remote, os_type, uuid=None):
 
 
 @logwrap
-def external_ntp_check(remote_slave, vrouter_vip):
+def external_ntp_check(ip, vrouter_vip):
     logger.info("External ntp check")
     provided_ntp = EXTERNAL_NTP
     logger.debug("provided to test ntp is {}".format(provided_ntp))
     cluster_ntp = []
     for ntp in provided_ntp:
         ext_ntp_ip = ''.join(
-            remote_slave.execute("awk '/^server +{0}/{{print $2}}' "
-                                 "/etc/ntp.conf".
-                                 format(ntp))["stdout"]).rstrip()
+            ssh_manager.execute(
+                ip=ip,
+                cmd="awk '/^server +{0}/{{print $2}}' "
+                    "/etc/ntp.conf".format(ntp))["stdout"]).rstrip()
         cluster_ntp.append(ext_ntp_ip)
     logger.debug("external ntp in conf is {}".format(cluster_ntp))
     assert_equal(set(provided_ntp), set(cluster_ntp),
                  "/etc/ntp.conf does not contain external ntp ip")
     try:
         wait(
-            lambda: is_ntpd_active(remote_slave, vrouter_vip), timeout=120)
+            lambda: is_ntpd_active(ip, vrouter_vip), timeout=120)
     except Exception as e:
         logger.error(e)
-        status = is_ntpd_active(remote_slave, vrouter_vip)
+        status = is_ntpd_active(ip, vrouter_vip)
         assert_equal(
             status, 1, "Failed updated ntp. "
                        "Exit code is {0}".format(status))
 
 
-def check_swift_ring(remote):
+def check_swift_ring(ip):
     for ring in ['object', 'account', 'container']:
-        res = ''.join(remote.execute(
-            "swift-ring-builder /etc/swift/{0}.builder".format(
+        res = ''.join(ssh_manager.execute(
+            ip, "swift-ring-builder /etc/swift/{0}.builder".format(
                 ring))['stdout'])
         logger.debug("swift ring builder information is {0}".format(res))
         balance = re.search('(\d+.\d+) balance', res).group(1)
@@ -887,17 +879,6 @@ def check_oswl_stat(postgres_actions, nailgun_actions,
 
 
 @logwrap
-def get_file_size(remote, file_name, file_path):
-    file_size = remote.execute(
-        'stat -c "%s" {0}/{1}'.format(file_path, file_name))
-    assert_equal(
-        int(file_size['exit_code']), 0, "Failed to get '{0}/{1}' file stats on"
-                                        " remote node".format(file_path,
-                                                              file_name))
-    return int(file_size['stdout'][0].rstrip())
-
-
-@logwrap
 def check_ping(ip, host, deadline=10, size=56, timeout=1, interval=1):
     """Check network connectivity from remote to host using ICMP (ping)
     :param ip: remote ip
@@ -920,7 +901,7 @@ def check_ping(ip, host, deadline=10, size=56, timeout=1, interval=1):
 
 
 @logwrap
-def check_neutron_dhcp_lease(remote, instance_ip, instance_mac,
+def check_neutron_dhcp_lease(ip, instance_ip, instance_mac,
                              dhcp_server_ip, dhcp_port_tag):
     """Check if the DHCP server offers a lease for a client with the specified
        MAC address
@@ -943,48 +924,50 @@ def check_neutron_dhcp_lease(remote, instance_ip, instance_mac,
     ovs_del_port_cmd = ("--if-exists del-port {0}".format(ovs_port_name))
 
     # Add an OVS interface with a tag for accessing the DHCP server
-    run_on_remote(remote, ovs_cmd + ovs_add_port_cmd)
+    ssh_manager.execute_on_remote(ip, ovs_cmd + ovs_add_port_cmd)
 
     # Set to the created interface the same MAC address
     # that was used for the instance.
-    run_on_remote(remote, "ifconfig {0} hw ether {1}".format(ovs_port_name,
-                                                             instance_mac))
-    run_on_remote(remote, "ifconfig {0} up".format(ovs_port_name))
+    ssh_manager.execute_on_remote(
+        ip, "ifconfig {0} hw ether {1}".format(ovs_port_name,
+                                               instance_mac))
+    ssh_manager.execute_on_remote(ip, "ifconfig {0} up".format(ovs_port_name))
 
     # Perform a 'dhcpcheck' request to check if the lease can be obtained
-    lease = run_on_remote(remote,
-                          "dhcpcheck request {0} {1} --range_start {2} "
-                          "--range_end 255.255.255.255 | fgrep \" {1} \""
-                          .format(ovs_port_name, dhcp_server_ip, instance_ip))
+    lease = ssh_manager.execute_on_remote(
+        ip=ip,
+        cmd="dhcpcheck request {0} {1} --range_start {2} "
+            "--range_end 255.255.255.255 | fgrep \" {1} \""
+            .format(ovs_port_name, dhcp_server_ip, instance_ip))['stdout']
 
     # Remove the OVS interface
-    run_on_remote(remote, ovs_cmd + ovs_del_port_cmd)
+    ssh_manager.execute_on_remote(ip, ovs_cmd + ovs_del_port_cmd)
 
     logger.debug("DHCP server answer: {}".format(lease))
     return ' ack ' in lease
 
 
-def check_available_mode(remote):
+def check_available_mode(ip):
     command = ('umm status | grep runlevel &>/dev/null && echo "True" '
                '|| echo "False"')
-    if remote.execute(command)['exit_code'] == 0:
-        return ''.join(remote.execute(command)['stdout']).strip()
+    if ssh_manager.execute(ip, command)['exit_code'] == 0:
+        return ''.join(ssh_manager.execute(ip, command)['stdout']).strip()
     else:
-        return ''.join(remote.execute(command)['stderr']).strip()
+        return ''.join(ssh_manager.execute(ip, command)['stderr']).strip()
 
 
-def check_auto_mode(remote):
+def check_auto_mode(ip):
     command = ('umm status | grep umm &>/dev/null && echo "True" '
                '|| echo "False"')
-    if remote.execute(command)['exit_code'] == 0:
-        return ''.join(remote.execute(command)['stdout']).strip()
+    if ssh_manager.execute(ip, command)['exit_code'] == 0:
+        return ''.join(ssh_manager.execute(ip, command)['stdout']).strip()
     else:
-        return ''.join(remote.execute(command)['stderr']).strip()
+        return ''.join(ssh_manager.execute(ip, command)['stderr']).strip()
 
 
-def is_ntpd_active(remote, ntpd_ip):
+def is_ntpd_active(ip, ntpd_ip):
     cmd = 'ntpdate -d -p 4 -t 0.2 -u {0}'.format(ntpd_ip)
-    return not remote.execute(cmd)['exit_code']
+    return not ssh_manager.execute(ip, cmd)['exit_code']
 
 
 def check_repo_managment(ip):

@@ -140,7 +140,7 @@ class NeutronGreHa(TestBasic):
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
             for i in range(5):
                 try:
-                    checkers.check_swift_ring(remote)
+                    checkers.check_swift_ring(_ip)
                     break
                 except AssertionError:
                     result = remote.execute(
@@ -148,7 +148,7 @@ class NeutronGreHa(TestBasic):
                     logger.debug("command execution result is {0}"
                                  .format(result))
             else:
-                checkers.check_swift_ring(remote)
+                checkers.check_swift_ring(_ip)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
@@ -219,7 +219,7 @@ class NeutronVlanHa(TestBasic):
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
             for i in range(5):
                 try:
-                    checkers.check_swift_ring(remote)
+                    checkers.check_swift_ring(_ip)
                     break
                 except AssertionError:
                     result = remote.execute(
@@ -227,7 +227,7 @@ class NeutronVlanHa(TestBasic):
                     logger.debug("command execution result is {0}"
                                  .format(result))
             else:
-                checkers.check_swift_ring(remote)
+                checkers.check_swift_ring(_ip)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'])
