@@ -20,7 +20,7 @@ from proboscis import test
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import utils
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import INFLUXDB_GRAFANA_PLUGIN_PATH
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -56,11 +56,13 @@ class TestInfluxdbPlugin(TestBasic):
         self.env.revert_snapshot("ready_with_3_slaves")
 
         # copy plugin to the master node and install it
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.upload_tarball(
-                remote, INFLUXDB_GRAFANA_PLUGIN_PATH, '/var')
-            checkers.install_plugin_check_code(
-                remote, plugin=os.path.basename(INFLUXDB_GRAFANA_PLUGIN_PATH))
+        utils.upload_tarball(
+            ip=self.ssh_manager.admin_ip,
+            tar_path=INFLUXDB_GRAFANA_PLUGIN_PATH,
+            tar_target='/var')
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.basename(INFLUXDB_GRAFANA_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,

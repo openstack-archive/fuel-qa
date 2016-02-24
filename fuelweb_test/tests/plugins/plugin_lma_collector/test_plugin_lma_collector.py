@@ -21,7 +21,7 @@ import requests
 
 from fuelweb_test import logger
 from fuelweb_test import settings as conf
-from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import utils
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -65,34 +65,37 @@ class TestLmaCollectorPlugin(TestBasic):
 
         # TODO(scroiset): use actions fuel_actions.py
         # upload_plugin and install_plugin
-        with self.env.d_env.get_admin_remote() as remote:
-            # copy plugins to the master node
-            checkers.upload_tarball(
-                remote,
-                conf.LMA_COLLECTOR_PLUGIN_PATH, "/var")
-            checkers.upload_tarball(
-                remote,
-                conf.ELASTICSEARCH_KIBANA_PLUGIN_PATH, "/var")
-            checkers.upload_tarball(
-                remote,
-                conf.INFLUXDB_GRAFANA_PLUGIN_PATH, "/var")
-            checkers.upload_tarball(
-                remote,
-                conf.LMA_INFRA_ALERTING_PLUGIN_PATH, "/var")
+        # copy plugins to the master node
+        utils.upload_tarball(
+            ip=self.ssh_manager.admin_ip,
+            tar_path=conf.LMA_COLLECTOR_PLUGIN_PATH,
+            tar_target="/var")
+        utils.upload_tarball(
+            ip=self.ssh_manager.admin_ip,
+            tar_path=conf.ELASTICSEARCH_KIBANA_PLUGIN_PATH,
+            tar_target="/var")
+        utils.upload_tarball(
+            ip=self.ssh_manager.admin_ip,
+            tar_path=conf.INFLUXDB_GRAFANA_PLUGIN_PATH,
+            tar_target="/var")
+        utils.upload_tarball(
+            ip=self.ssh_manager.admin_ip,
+            tar_path=conf.LMA_INFRA_ALERTING_PLUGIN_PATH,
+            tar_target="/var")
 
-            # install plugins
-            checkers.install_plugin_check_code(
-                remote,
-                plugin=os.path.basename(conf.LMA_COLLECTOR_PLUGIN_PATH))
-            checkers.install_plugin_check_code(
-                remote,
-                plugin=os.path.basename(conf.ELASTICSEARCH_KIBANA_PLUGIN_PATH))
-            checkers.install_plugin_check_code(
-                remote,
-                plugin=os.path.basename(conf.INFLUXDB_GRAFANA_PLUGIN_PATH))
-            checkers.install_plugin_check_code(
-                remote,
-                plugin=os.path.basename(conf.LMA_INFRA_ALERTING_PLUGIN_PATH))
+        # install plugins
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.basename(conf.LMA_COLLECTOR_PLUGIN_PATH))
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.basename(conf.ELASTICSEARCH_KIBANA_PLUGIN_PATH))
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.basename(conf.INFLUXDB_GRAFANA_PLUGIN_PATH))
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.basename(conf.LMA_INFRA_ALERTING_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
