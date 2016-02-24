@@ -17,7 +17,6 @@ import re
 import yaml
 
 from devops.helpers.helpers import wait
-from devops.error import DevopsCalledProcessError
 from devops.models import DiskDevice
 from devops.models import Node
 from devops.models import Volume
@@ -50,30 +49,6 @@ class BaseActions(object):
         return "[{klass}({obj_id})]".format(
             klass=klass,
             obj_id=obj_id)
-
-    # TODO(kozhukalov): This method seems not needed and
-    # can easily be replaced by using execute_on_remote
-    # available in SSHManager (up to the type of return value)
-    def execute(self, cmd, exit_code=None, stdin=None):
-        if stdin is not None:
-            cmd = 'echo "{0}" | {1}'.format(stdin, cmd)
-
-        result = self.ssh_manager.execute(
-            ip=self.admin_ip,
-            cmd=cmd
-        )
-        if exit_code is not None:
-            assert_equal(exit_code,
-                         result['exit_code'],
-                         ('Command {cmd} returned exit code "{e}", but '
-                          'expected "{c}". Output: {out}; {err} ').format(
-                             cmd=cmd,
-                             e=result['exit_code'],
-                             c=exit_code,
-                             out=result['stdout'],
-                             err=result['stderr']
-                         ))
-        return ''.join(result['stdout']).strip()
 
     def restart_service(self, service):
         result = self.ssh_manager.execute(
@@ -328,18 +303,11 @@ class AdminActions(BaseActions):
         )
 
     def get_fuel_settings(self):
-        cmd = 'cat {cfg_file}'.format(cfg_file=FUEL_SETTINGS_YAML)
-        result = self.ssh_manager.execute(
+        result = self.ssh_manager.execute_on_remote(
             ip=self.admin_ip,
-            cmd=cmd
+            cmd='cat {cfg_file}'.format(cfg_file=FUEL_SETTINGS_YAML)
         )
-        if result['exit_code'] == 0:
-            fuel_settings = yaml.load(''.join(result['stdout']))
-        else:
-            raise Exception('Can\'t output {cfg_file} file: {error}'.
-                            format(cfg_file=FUEL_SETTINGS_YAML,
-                                   error=result['stderr']))
-        return fuel_settings
+        return yaml.load(result['stdout_str'])
 
     def save_fuel_settings(self, settings):
         cmd = 'echo \'{0}\' > {1}'.format(yaml.dump(settings,
@@ -360,21 +328,28 @@ class NailgunActions(BaseActions):
     def update_nailgun_settings_once(self, settings):
         # temporary change Nailgun settings (until next container restart)
         cfg_file = '/etc/nailgun/settings.yaml'
-        ng_settings = yaml.load(self.execute(
-            'cat {0}'.format(cfg_file), exit_code=0))
+        ng_settings = yaml.load(
+            self.ssh_manager.execute_on_remote(
+                ip=self.admin_ip,
+                cmd='cat {0}'.format(cfg_file))['stdout_str']
+        )
+
         ng_settings.update(settings)
         logger.debug('Uploading new nailgun settings: {}'.format(
             ng_settings))
-        self.execute('tee {0}'.format(cfg_file),
-                     stdin=yaml.dump(ng_settings),
-                     exit_code=0)
+        self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd='echo "{0}" | tee {1}'.format(yaml.dump(ng_settings), cfg_file)
+        )
 
     def set_collector_address(self, host, port, ssl=False):
         cmd = ("awk '/COLLECTOR.*URL/' /usr/lib/python2.7"
                "/site-packages/nailgun/settings.yaml")
         protocol = 'http' if not ssl else 'https'
         parameters = {}
-        for p in self.execute(cmd, exit_code=0).split('\n'):
+        for p in self.ssh_manager.execute_on_remote(
+                ip=self.admin_ip,
+                cmd=cmd)['stdout_str'].split('\n'):
             parameters[p.split(': ')[0]] = re.sub(
                 r'https?://\{collector_server\}',
                 '{0}://{1}:{2}'.format(protocol, host, port),
@@ -388,23 +363,29 @@ class NailgunActions(BaseActions):
             # verification and allow using of self-signed SSL certificate
             cmd = ("sed -i '/elf.verify/ s/True/False/' /usr/lib/python2.6"
                    "/site-packages/requests/sessions.py")
-            self.execute(cmd, exit_code=0)
+            self.ssh_manager.execute_on_remote(ip=self.admin_ip, cmd=cmd)
 
     def force_fuel_stats_sending(self):
         log_file = '/var/log/nailgun/statsenderd.log'
         # Rotate logs on restart in order to get rid of old errors
         cmd = 'cp {0}{{,.backup_$(date +%s)}}'.format(log_file)
-        self.execute(cmd)
+        self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip, cmd=cmd, raise_on_assert=False)
         cmd = "bash -c 'echo > /var/log/nailgun/statsenderd.log'"
-        self.execute(cmd)
+        self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip, cmd=cmd, raise_on_assert=False)
         cmd = 'supervisorctl restart statsenderd'
         if MASTER_IS_CENTOS7:
             cmd = 'systemctl restart statsenderd'
-        self.execute(cmd, exit_code=0)
+        self.ssh_manager.execute_on_remote(ip=self.admin_ip, cmd=cmd)
         cmd = 'grep -sw "ERROR" {0}'.format(log_file)
         try:
-            self.execute(cmd, exit_code=1)
-        except AssertionError:
+            self.ssh_manager.execute_on_remote(
+                ip=self.admin_ip,
+                cmd=cmd,
+                assert_ec_equal=[1]
+            )
+        except Exception:
             logger.error(("Fuel stats were sent with errors! Check its log"
                          "s in {0} for details.").format(log_file))
             raise
@@ -420,7 +401,7 @@ class NailgunActions(BaseActions):
             if MASTER_IS_CENTOS7:
                 cmd = 'systemctl restart oswl' \
                       '_{0}_collectord'.format(resource)
-            self.execute(cmd, exit_code=0)
+            self.ssh_manager.execute_on_remote(ip=self.admin_ip, cmd=cmd)
 
 
 class PostgresActions(BaseActions):
@@ -429,7 +410,9 @@ class PostgresActions(BaseActions):
     def run_query(self, db, query):
         cmd = "su - postgres -c 'psql -qt -d {0} -c \"{1};\"'".format(
             db, query)
-        return self.execute(cmd, exit_code=0)
+        return self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd=cmd)['stdout_str']
 
     def action_logs_contain(self, action, group=False,
                             table='action_logs'):
@@ -469,7 +452,7 @@ class FuelPluginBuilder(BaseActions):
                     cd dist;
                     pip install *.tar.gz'""".format(FUEL_PLUGIN_BUILDER_REPO)
 
-        self.execute(fpb_cmd, 0)
+        self.ssh_manager.execute_on_remote(ip=self.admin_ip, cmd=fpb_cmd)
 
     def fpb_create_plugin(self, name):
         """
@@ -477,7 +460,10 @@ class FuelPluginBuilder(BaseActions):
         :param name: name for plugin created
         :return: nothing
         """
-        self.execute("fpb --create {0}".format(name), 0)
+        self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd="fpb --create {0}".format(name)
+        )
 
     def fpb_build_plugin(self, path):
         """
@@ -485,9 +471,14 @@ class FuelPluginBuilder(BaseActions):
         :param path: path to plugin. For ex.: /root/example_plugin
         :return: packet name
         """
-        packet_name = self.execute(
-            "bash -c 'fpb --build {0} >> /dev/null && basename {0}/*.rpm'"
-            .format(path), 0)
+        self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd="bash -c 'fpb --build {0}'".format(path)
+        )
+        packet_name = self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd="bash -c 'basename {0}/*.rpm'".format(path)
+        )['stdout_str']
         return packet_name
 
     def fpb_validate_plugin(self, path):
@@ -496,7 +487,9 @@ class FuelPluginBuilder(BaseActions):
         :param path: path to plugin to be verified
         :return: nothing
         """
-        self.execute("fpb --check {0}".format(path), 0)
+        self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd="fpb --check {0}".format(path))
 
     def fpb_replace_plugin_content(self, local_file, remote_file):
         """
@@ -505,8 +498,7 @@ class FuelPluginBuilder(BaseActions):
         :param remote_file: file to be replaced
         :return: nothing
         """
-        self.execute(
-            "rm -rf {0}".format(remote_file))
+        self.ssh_manager.rm_rf_on_remote(ip=self.admin_ip, path=remote_file)
         self.ssh_manager.upload_to_remote(
             ip=self.admin_ip,
             source=local_file,
@@ -544,22 +536,22 @@ class FuelPluginBuilder(BaseActions):
         :param target: target path
         :return: nothing
         """
-        self.execute("cp {0} {1}".format(source, target), 0)
+        self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd="cp {0} {1}".format(source, target))
 
 
 class CobblerActions(BaseActions):
     """CobblerActions."""  # TODO documentation
 
     def add_dns_upstream_server(self, dns_server_ip):
-        self.execute(
-            command="sed '$anameserver {0}' -i /etc/dnsmasq.upstream".format(
-                dns_server_ip),
-            exit_code=0,
-        )
-        self.execute(
-            command='service dnsmasq restart',
-            exit_code=0
-        )
+        self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd="sed '$anameserver {0}' -i /etc/dnsmasq.upstream".format(
+                dns_server_ip))
+        self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd='service dnsmasq restart')
 
 
 class NessusActions(object):
@@ -581,15 +573,6 @@ class NessusActions(object):
 
 
 class FuelBootstrapCliActions(AdminActions):
-    def _execute_check_retcode(self, command):
-        result = self.ssh_manager.execute(ip=self.admin_ip, cmd=command)
-        if result['exit_code'] != 0:
-            raise DevopsCalledProcessError(command=command,
-                                           returncode=result['exit_code'],
-                                           output=result['stderr'])
-
-        return ''.join(result['stdout'])
-
     def get_bootstrap_default_config(self):
         fuel_settings = self.get_fuel_settings()
         return fuel_settings["BOOTSTRAP"]
@@ -615,7 +598,10 @@ class FuelBootstrapCliActions(AdminActions):
 
     def activate_bootstrap_image(self, uuid):
         command = "fuel-bootstrap activate {0}".format(uuid)
-        result = self._execute_check_retcode(command)
+        result = self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd=command,
+        )['stdout_str']
         if "centos" in uuid:
             return "centos"
         return self.parse_uuid(result)[0]
@@ -643,7 +629,10 @@ class FuelBootstrapCliActions(AdminActions):
                 command += "--{0} ".format(field)
 
         logger.info("Building bootstrap image: {0}".format(command))
-        result = self._execute_check_retcode(command)
+        result = self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd=command,
+        )['stdout_str']
 
         logger.info("Bootstrap image has been built: {0}".format(result))
         uuid = self.parse_uuid(result)[0]
@@ -656,12 +645,18 @@ class FuelBootstrapCliActions(AdminActions):
                    .format(filename,
                            "--activate" if activate else ""))
 
-        result = self._execute_check_retcode(command)
+        result = self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd=command,
+        )['stdout_str']
         return self.parse_uuid(result)[0]
 
     def list_bootstrap_images(self):
         command = "fuel-bootstrap list"
-        result = self._execute_check_retcode(command)
+        result = self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd=command,
+        )['stdout_str']
         return result
 
     def list_bootstrap_images_uuids(self):
@@ -672,7 +667,7 @@ class FuelBootstrapCliActions(AdminActions):
         bootstrap_images = \
             self.ssh_manager.execute_on_remote(
                 ip=self.admin_ip,
-                cmd=command)['stdout']
+                cmd=command)['stdout_str']
 
         for line in bootstrap_images:
             if "active" in line and "centos" not in line:
@@ -684,5 +679,8 @@ class FuelBootstrapCliActions(AdminActions):
 
     def delete_bootstrap_image(self, uuid):
         command = "fuel-bootstrap delete {0}".format(uuid)
-        result = self._execute_check_retcode(command)
+        result = self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd=command,
+        )['stdout_str']
         return self.parse_uuid(result)[0]
