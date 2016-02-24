@@ -23,7 +23,7 @@ from proboscis.asserts import assert_true
 from proboscis import test
 import requests
 
-from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import utils
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings as conf
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -167,12 +167,13 @@ class ZabbixPlugin(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.upload_tarball(
-                remote, conf.ZABBIX_PLUGIN_PATH, "/var")
-            checkers.install_plugin_check_code(
-                remote,
-                plugin=os.path.basename(conf.ZABBIX_PLUGIN_PATH))
+        utils.upload_tarball(
+            ip=self.ssh_manager.admin_ip,
+            tar_path=conf.ZABBIX_PLUGIN_PATH,
+            tar_target="/var")
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.basename(conf.ZABBIX_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -249,14 +250,15 @@ class ZabbixPlugin(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        with self.env.d_env.get_admin_remote() as remote:
-            for plugin in [conf.ZABBIX_PLUGIN_PATH,
-                           conf.ZABBIX_SNMP_PLUGIN_PATH]:
-                checkers.upload_tarball(
-                    remote, plugin, "/var")
-                checkers.install_plugin_check_code(
-                    remote,
-                    plugin=os.path.basename(plugin))
+        for plugin in [conf.ZABBIX_PLUGIN_PATH,
+                       conf.ZABBIX_SNMP_PLUGIN_PATH]:
+            utils.upload_tarball(
+                ip=self.ssh_manager.admin_ip,
+                tar_path=plugin,
+                tar_target="/var")
+            utils.install_plugin_check_code(
+                ip=self.ssh_manager.admin_ip,
+                plugin=os.path.basename(plugin))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -346,15 +348,16 @@ class ZabbixPlugin(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        with self.env.d_env.get_admin_remote() as remote:
-            for plugin in [conf.ZABBIX_PLUGIN_PATH,
-                           conf.ZABBIX_SNMP_PLUGIN_PATH,
-                           conf.ZABBIX_SNMP_EMC_PLUGIN_PATH]:
-                checkers.upload_tarball(
-                    remote, plugin, "/var")
-                checkers.install_plugin_check_code(
-                    remote,
-                    plugin=os.path.basename(plugin))
+        for plugin in [conf.ZABBIX_PLUGIN_PATH,
+                       conf.ZABBIX_SNMP_PLUGIN_PATH,
+                       conf.ZABBIX_SNMP_EMC_PLUGIN_PATH]:
+            utils.upload_tarball(
+                ip=self.ssh_manager.admin_ip,
+                tar_path=plugin,
+                tar_target="/var")
+            utils.install_plugin_check_code(
+                ip=self.ssh_manager.admin_ip,
+                plugin=os.path.basename(plugin))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -428,15 +431,16 @@ class ZabbixPlugin(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        with self.env.d_env.get_admin_remote() as remote:
-            for plugin in [conf.ZABBIX_PLUGIN_PATH,
-                           conf.ZABBIX_SNMP_PLUGIN_PATH,
-                           conf.ZABBIX_SNMP_EXTREME_PLUGIN_PATH]:
-                checkers.upload_tarball(
-                    remote, plugin, "/var")
-                checkers.install_plugin_check_code(
-                    remote,
-                    plugin=os.path.basename(plugin))
+        for plugin in [conf.ZABBIX_PLUGIN_PATH,
+                       conf.ZABBIX_SNMP_PLUGIN_PATH,
+                       conf.ZABBIX_SNMP_EXTREME_PLUGIN_PATH]:
+            utils.upload_tarball(
+                ip=self.ssh_manager.admin_ip,
+                tar_path=plugin,
+                tar_target="/var")
+            utils.install_plugin_check_code(
+                ip=self.ssh_manager.admin_ip,
+                plugin=os.path.basename(plugin))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -510,12 +514,13 @@ class ZabbixPlugin(TestBasic):
         """
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.upload_tarball(
-                remote, conf.ZABBIX_PLUGIN_PATH, "/var")
-            checkers.install_plugin_check_code(
-                remote,
-                plugin=os.path.basename(conf.ZABBIX_PLUGIN_PATH))
+        utils.upload_tarball(
+            ip=self.ssh_manager.admin_ip,
+            tar_path=conf.ZABBIX_PLUGIN_PATH,
+            tar_target="/var")
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.basename(conf.ZABBIX_PLUGIN_PATH))
 
         settings = {}
         if conf.NEUTRON_ENABLE:

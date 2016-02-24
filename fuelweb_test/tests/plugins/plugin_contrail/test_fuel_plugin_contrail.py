@@ -20,7 +20,7 @@ from proboscis import test
 from proboscis.asserts import assert_true
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import utils
 from fuelweb_test.helpers.common import Common
 from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE
@@ -89,13 +89,15 @@ class ContrailPlugin(TestBasic):
         with self.env.d_env.get_admin_remote() as remote:
 
             # copy plugin to the master node
-            checkers.upload_tarball(
-                remote,
-                CONTRAIL_PLUGIN_PATH, '/var')
+            utils.upload_tarball(
+                ip=self.ssh_manager.admin_ip,
+                tar_path=CONTRAIL_PLUGIN_PATH,
+                tar_target='/var'
+            )
 
             # install plugin
-            checkers.install_plugin_check_code(
-                remote,
+            utils.install_plugin_check_code(
+                ip=self.ssh_manager.admin_ip,
                 plugin=os.path.basename(CONTRAIL_PLUGIN_PATH))
 
             # copy additional packages to the master node

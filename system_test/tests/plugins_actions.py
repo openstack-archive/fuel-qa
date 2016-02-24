@@ -16,7 +16,7 @@ import os
 
 from proboscis.asserts import assert_true, assert_equal
 
-from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import utils
 from system_test import logger
 from system_test.helpers.decorators import action
 from system_test.helpers.decorators import deferred_decorator
@@ -48,10 +48,10 @@ class PluginsActions(base_actions_factory.BaseActionsFactory):
         # copy plugin to the master node
         assert_true(self.plugin_path, "plugin_path is not specified")
 
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.upload_tarball(
-                remote,
-                self.plugin_path, '/var')
+        utils.upload_tarball(
+            ip=self.ssh_manager.admin_ip,
+            tar_path=self.plugin_path,
+            tar_target='/var')
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
@@ -59,10 +59,9 @@ class PluginsActions(base_actions_factory.BaseActionsFactory):
         """Install plugin to Fuel"""
         assert_true(self.plugin_path, "plugin_path is not specified")
 
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.install_plugin_check_code(
-                remote,
-                plugin=os.path.basename(self.plugin_path))
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.basename(self.plugin_path))
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
