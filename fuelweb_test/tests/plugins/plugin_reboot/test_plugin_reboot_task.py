@@ -17,7 +17,7 @@ import os
 from proboscis import asserts
 from proboscis import test
 
-from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import utils
 from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -60,29 +60,28 @@ class RebootPlugin(TestBasic):
         self.env.revert_snapshot("ready_with_5_slaves")
         # let's get ssh client for the master node
 
-        with self.env.d_env.get_admin_remote() as admin_remote:
-            # initiate fuel plugin builder instance
-            self.show_step(2)
-            fpb = FuelPluginBuilder()
-            # install fuel_plugin_builder on master node
-            fpb.fpb_install()
-            # create plugin template on the master node
-            self.show_step(3)
-            fpb.fpb_create_plugin(source_plugin_path)
-            fpb.fpb_change_plugin_version(plugin_name, 'mitaka-9.0')
-            # replace plugin tasks with our file
-            fpb.fpb_replace_plugin_content(
-                os.path.join(tasks_path, tasks_file),
-                os.path.join(source_plugin_path, 'tasks.yaml'))
-            # build plugin
-            self.show_step(4)
-            packet_name = fpb.fpb_build_plugin(source_plugin_path)
-            fpb.fpb_copy_plugin(
-                os.path.join(source_plugin_path, packet_name), plugin_path)
-            self.show_step(5)
-            checkers.install_plugin_check_code(
-                admin_remote,
-                plugin=os.path.join(plugin_path, packet_name))
+        # initiate fuel plugin builder instance
+        self.show_step(2)
+        fpb = FuelPluginBuilder()
+        # install fuel_plugin_builder on master node
+        fpb.fpb_install()
+        # create plugin template on the master node
+        self.show_step(3)
+        fpb.fpb_create_plugin(source_plugin_path)
+        fpb.fpb_change_plugin_version(plugin_name, 'mitaka-9.0')
+        # replace plugin tasks with our file
+        fpb.fpb_replace_plugin_content(
+            os.path.join(tasks_path, tasks_file),
+            os.path.join(source_plugin_path, 'tasks.yaml'))
+        # build plugin
+        self.show_step(4)
+        packet_name = fpb.fpb_build_plugin(source_plugin_path)
+        fpb.fpb_copy_plugin(
+            os.path.join(source_plugin_path, packet_name), plugin_path)
+        self.show_step(5)
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.join(plugin_path, packet_name))
         self.show_step(6)
         # create cluster
         cluster_id = self.fuel_web.create_cluster(
@@ -188,38 +187,37 @@ class RebootPlugin(TestBasic):
         self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_3_slaves")
         # let's get ssh client for the master node
-        with self.env.d_env.get_admin_remote() as admin_remote:
-            self.show_step(2)
-            # initiate fuel plugin builder instance
-            fpb = FuelPluginBuilder()
-            # install fuel_plugin_builder on master node
-            fpb.fpb_install()
-            # change timeout to a new value '1'
-            fpb.put_value_to_local_yaml(os.path.join(tasks_path, tasks_file),
-                                        os.path.join('/tmp/', tasks_file),
-                                        [1, 'parameters', 'timeout'],
-                                        1)
-            self.show_step(3)
-            # create plugin template on the master node
-            fpb.fpb_create_plugin(source_plugin_path)
-            # replace plugin tasks with our file
-            fpb.fpb_change_plugin_version(plugin_name, 'mitaka-9.0')
-            fpb.fpb_replace_plugin_content(
-                os.path.join('/tmp/', tasks_file),
-                os.path.join(source_plugin_path, 'tasks.yaml'))
-            # build plugin
-            self.show_step(4)
-            packet_name = fpb.fpb_build_plugin(source_plugin_path)
-            # copy plugin archive file
-            # to the /var directory on the master node
-            fpb.fpb_copy_plugin(
-                os.path.join(source_plugin_path, packet_name),
-                plugin_path)
-            # let's install plugin
-            self.show_step(5)
-            checkers.install_plugin_check_code(
-                admin_remote,
-                plugin=os.path.join(plugin_path, packet_name))
+        self.show_step(2)
+        # initiate fuel plugin builder instance
+        fpb = FuelPluginBuilder()
+        # install fuel_plugin_builder on master node
+        fpb.fpb_install()
+        # change timeout to a new value '1'
+        fpb.put_value_to_local_yaml(os.path.join(tasks_path, tasks_file),
+                                    os.path.join('/tmp/', tasks_file),
+                                    [1, 'parameters', 'timeout'],
+                                    1)
+        self.show_step(3)
+        # create plugin template on the master node
+        fpb.fpb_create_plugin(source_plugin_path)
+        # replace plugin tasks with our file
+        fpb.fpb_change_plugin_version(plugin_name, 'mitaka-9.0')
+        fpb.fpb_replace_plugin_content(
+            os.path.join('/tmp/', tasks_file),
+            os.path.join(source_plugin_path, 'tasks.yaml'))
+        # build plugin
+        self.show_step(4)
+        packet_name = fpb.fpb_build_plugin(source_plugin_path)
+        # copy plugin archive file
+        # to the /var directory on the master node
+        fpb.fpb_copy_plugin(
+            os.path.join(source_plugin_path, packet_name),
+            plugin_path)
+        # let's install plugin
+        self.show_step(5)
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.join(plugin_path, packet_name))
         # create cluster
         self.show_step(6)
         cluster_id = self.fuel_web.create_cluster(

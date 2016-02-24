@@ -25,6 +25,7 @@ from devops.helpers.helpers import wait
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import utils
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.ovs import ovs_get_tag_by_port
 from fuelweb_test import ostf_test_mapping
@@ -857,10 +858,9 @@ class CheckCephPartitionsAfterReboot(TestBasic):
             self.show_step(7, node)
             logger.info("Get partitions for {node}".format(node=node))
             _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
-                before_reboot_partitions = [checkers.get_ceph_partitions(
-                    remote,
-                    "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
+            before_reboot_partitions = [utils.get_ceph_partitions(
+                _ip,
+                "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
 
             self.show_step(8, node)
             logger.info("Warm-restart nodes")
@@ -872,10 +872,9 @@ class CheckCephPartitionsAfterReboot(TestBasic):
                 node=node
             ))
             _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
-                after_reboot_partitions = [checkers.get_ceph_partitions(
-                    remote,
-                    "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
+            after_reboot_partitions = [utils.get_ceph_partitions(
+                _ip,
+                "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
 
             if before_reboot_partitions != after_reboot_partitions:
                 logger.info("Partitions don`t match")
@@ -894,10 +893,9 @@ class CheckCephPartitionsAfterReboot(TestBasic):
 
             self.show_step(12, node)
             _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
-                after_reboot_partitions = [checkers.get_ceph_partitions(
-                    remote,
-                    "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
+            after_reboot_partitions = [utils.get_ceph_partitions(
+                _ip,
+                "/dev/vd{p}".format(p=part)) for part in ["b", "c"]]
 
             if before_reboot_partitions != after_reboot_partitions:
                 logger.info("Partitions don`t match")
