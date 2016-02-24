@@ -1925,15 +1925,15 @@ class FuelWebClient(object):
     def wait_cinder_is_up(self, node_names):
         logger.info("Waiting for all Cinder services up.")
         for node_name in node_names:
-            with self.get_ssh_for_node(node_name) as remote:
-                try:
-                    wait(lambda: checkers.check_cinder_status(remote),
-                         timeout=300)
-                    logger.info("All Cinder services up.")
-                except TimeoutError:
-                    logger.error("Cinder services not ready.")
-                    raise TimeoutError(
-                        "Cinder services not ready. ")
+            node = self.get_nailgun_node_by_name(node_name)
+            try:
+                wait(lambda: checkers.check_cinder_status(node['ip']),
+                     timeout=300)
+                logger.info("All Cinder services up.")
+            except TimeoutError:
+                logger.error("Cinder services not ready.")
+                raise TimeoutError(
+                    "Cinder services not ready. ")
         return True
 
     def run_ostf_repeatably(self, cluster_id, test_name=None,

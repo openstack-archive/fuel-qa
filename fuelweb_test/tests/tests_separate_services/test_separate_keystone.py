@@ -255,7 +255,7 @@ class SeparateKeystoneFailover(TestBasic):
             cluster_id, ['standalone-keystone'])
         logger.debug("keystone nodes are {0}".format(keystone_nodes))
         checkers.check_hiera_hosts(
-            self, keystone_nodes,
+            keystone_nodes,
             cmd='hiera memcache_roles')
 
         other_nodes = []
@@ -265,11 +265,11 @@ class SeparateKeystoneFailover(TestBasic):
                 other_nodes.append(nodes_list)
         logger.debug("other nodes are {0}".format(other_nodes))
         checkers.check_hiera_hosts(
-            self, other_nodes,
+            other_nodes,
             cmd='hiera memcache_roles')
 
         checkers.check_hiera_hosts(
-            self, keystone_nodes,
+            keystone_nodes,
             cmd='hiera corosync_roles')
 
         nailgun_node = self.fuel_web.update_nodes(cluster_id, node,
@@ -286,7 +286,7 @@ class SeparateKeystoneFailover(TestBasic):
             cluster_id, ['standalone-keystone'])
         logger.debug("keystone nodes are {0}".format(keystone_nodes))
         checkers.check_hiera_hosts(
-            self, keystone_nodes,
+            keystone_nodes,
             cmd='hiera memcache_roles')
 
         other_nodes = []
@@ -296,9 +296,9 @@ class SeparateKeystoneFailover(TestBasic):
                 other_nodes.append(nodes_list)
         logger.debug("other nodes are {0}".format(other_nodes))
         checkers.check_hiera_hosts(
-            self, other_nodes,
+            other_nodes,
             cmd='hiera memcache_roles')
 
         checkers.check_hiera_hosts(
-            self, keystone_nodes,
+            keystone_nodes,
             cmd='hiera corosync_roles')
