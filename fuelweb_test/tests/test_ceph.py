@@ -704,9 +704,10 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         self.show_step(11)
         # Check if the dhcp lease for instance still remains
         # on the previous compute node. Related Bug: #1391010
+        _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
         with self.fuel_web.get_ssh_for_node('slave-01') as remote:
             dhcp_port_tag = ovs_get_tag_by_port(remote, ports[0]['id'])
-            assert_false(checkers.check_neutron_dhcp_lease(remote,
+            assert_false(checkers.check_neutron_dhcp_lease(_ip,
                                                            srv_instance_ip,
                                                            srv_instance_mac,
                                                            dhcp_server_ip,
