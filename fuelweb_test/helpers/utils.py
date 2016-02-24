@@ -26,6 +26,8 @@ import signal
 import ipaddr
 
 from proboscis import asserts
+from proboscis.asserts import assert_true
+from proboscis.asserts import assert_equal
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
@@ -905,3 +907,68 @@ def fill_space(ip, file_dir, size):
         ip=ip,
         cmd='fallocate -l {0}G {1}'.format(size, file_path),
         err_msg="The file {0} was not allocated".format(file_name))
+
+
+@logwrap
+def get_ceph_partitions(ip, device, type="xfs"):
+    ret = SSHManager().check_call(
+        ip=ip,
+        cmd="parted {device} print | grep {type}".format(device=device,
+                                                         type=type)
+    )['stdout']
+    if not ret:
+        logger.error("Partition not present! {partitions}: ".format(
+                     SSHManager().check_call(ip=ip,
+                                             cmd="parted {device} print")))
+        raise Exception
+    logger.debug("Partitions: {part}".format(part=ret))
+    return ret
+
+
+@logwrap
+def get_mongo_partitions(ip, device):
+    ret = SSHManager().check_call(
+        ip=ip,
+        cmd="lsblk | grep {device} | awk {size}".format(
+            device=device,
+            size=re.escape('{print $4}'))
+    )['stdout']
+    if not ret:
+        logger.error("Partition not present! {partitions}: ".format(
+                     SSHManager().check_call(ip=ip,
+                                             cmd="parted {device} print")))
+        raise Exception
+    logger.debug("Partitions: {part}".format(part=ret))
+    return ret
+
+
+@logwrap
+def upload_tarball(ip, tar_path, tar_target):
+    assert_true(tar_path, "Source path for uploading 'tar_path' is empty, "
+                "please check test settings!")
+    if os.path.splitext(tar_path)[1] not in [".tar", ".lrz", ".fp", ".rpm"]:
+        raise Exception("Wrong archive type!")
+    try:
+        logger.info("Start to upload tar file")
+        SSHManager().upload_to_remote(
+            ip=ip,
+            source=tar_path,
+            target=tar_target
+        )
+        logger.info('File {} was uploaded on master'.format(tar_path))
+    except Exception:
+        logger.error('Failed to upload file')
+        logger.error(traceback.format_exc())
+
+
+@logwrap
+def install_plugin_check_code(ip, plugin, exit_code=0):
+    cmd = "cd /var && fuel plugins --install {0} ".format(plugin)
+    chan, stdin, stderr, stdout = SSHManager().execute_async_on_remote(
+        ip=ip,
+        cmd=cmd
+    )
+    logger.debug('Try to read status code from chain...')
+    assert_equal(
+        chan.recv_exit_status(), exit_code,
+        'Install script fails with next message {0}'.format(''.join(stderr)))
