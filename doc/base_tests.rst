@@ -36,11 +36,6 @@ Test Bond offloading types
 .. automodule:: fuelweb_test.tests.test_bond_offloading
    :members:
 
-Test By Tempest
----------------
-.. automodule:: fuelweb_test.tests.test_by_tempest
-   :members:
-
 Test Ceph
 ---------
 .. automodule:: fuelweb_test.tests.test_ceph
