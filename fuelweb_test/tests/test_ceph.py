@@ -27,7 +27,7 @@ from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.ovs import ovs_get_tag_by_port
-from fuelweb_test import ostf_test_mapping as map_ostf
+from fuelweb_test import ostf_test_mapping
 from fuelweb_test import settings
 from fuelweb_test import logger
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -592,7 +592,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
         def _check():
             # Run volume test several times with hope that it pass
-            test_path = map_ostf.OSTF_TEST_MAPPING.get(
+            test_path = ostf_test_mapping.OSTF_TEST_MAPPING.get(
                 'Create volume and attach it to instance')
             logger.debug('Start to run test {0}'.format(test_path))
             self.fuel_web.run_single_ostf_test(
