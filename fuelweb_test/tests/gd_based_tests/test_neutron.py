@@ -14,7 +14,6 @@
 
 import sys
 
-
 from proboscis.asserts import assert_true
 from proboscis import test
 from proboscis import SkipTest
