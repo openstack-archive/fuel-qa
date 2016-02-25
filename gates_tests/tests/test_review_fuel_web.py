@@ -53,7 +53,7 @@ class GateFuelWeb(TestBasic):
         self.show_step(1)
         self.env.revert_snapshot("empty")
         self.show_step(2)
-        replace_fuel_nailgun_rpm(self.env)
+        replace_fuel_nailgun_rpm()
         self.show_step(3)
         release_id = self.fuel_web.get_releases_list_for_os(
             release_name=OPENSTACK_RELEASE)[0]
@@ -63,12 +63,11 @@ class GateFuelWeb(TestBasic):
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[:3])
         self.show_step(6)
-        with self.env.d_env.get_admin_remote() as remote:
-            cmd = ('fuel env create --name={0} --release={1} '
-                   '--nst=tun --json'.format(self.__class__.__name__,
-                                             release_id))
-            env_result = run_on_remote(remote, cmd, jsonify=True)
-            cluster_id = env_result['id']
+        cmd = ('fuel env create --name={0} --release={1} --nst=tun '
+               '--json'.format(self.__class__.__name__, release_id))
+        env_result = self.ssh_manager.execute_on_remote(
+            self.ssh_manager.admin_ip, cmd=cmd, jsonify=True)['stdout_json']
+        cluster_id = env_result['id']
 
         self.show_step(7)
         self.show_step(8)
