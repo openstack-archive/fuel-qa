@@ -62,7 +62,7 @@ class TestNessus(NeutronTunHaBase):
             self.env.d_env.get_network(name=nessus_net_name).ip_network
 
         for address in netaddr.IPNetwork(admin_net_cidr).iter_hosts():
-            if tcp_ping(address.format(), nessus_port):
+            if tcp_ping(address.format(), nessus_port, timeout=1):
                 return address.format()
 
     @staticmethod

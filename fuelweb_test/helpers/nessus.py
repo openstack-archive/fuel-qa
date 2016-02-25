@@ -7,6 +7,7 @@ from proboscis import asserts
 import requests
 
 from fuelweb_test import logger
+from fuelweb_test.helpers.decorators import token
 
 
 class NessusClient(object):
@@ -35,6 +36,7 @@ class NessusClient(object):
                                    response_headers=response_headers,
                                    response_body=response_body))
 
+    @token
     def request(self, method, url, body=None, **kwargs):
         headers = {'X-Cookie': 'token={0}'.format(self.nessus_auth_token),
                    'Content-Type': 'application/json'}
