@@ -35,7 +35,6 @@ from proboscis.asserts import assert_true
 from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers.ssh_manager import SSHManager
-from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test.helpers.regenerate_repo import CustomRepo
 from fuelweb_test.helpers.utils import get_current_env
 from fuelweb_test.helpers.utils import pull_out_logs_via_ssh
@@ -464,11 +463,7 @@ def duration(func):
     """
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        if MASTER_IS_CENTOS7:
-            return func(*args, **kwargs)
-        else:
-            with TimeStat(func.__name__):
-                return func(*args, **kwargs)
+        return func(*args, **kwargs)
     return wrapper
 
 

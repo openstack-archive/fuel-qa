@@ -45,7 +45,6 @@ from fuelweb_test.helpers import multiple_networks_hacks
 from fuelweb_test.models.fuel_web_client import FuelWebClient
 from fuelweb_test.models.collector_client import CollectorClient
 from fuelweb_test import settings
-from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test import logwrap
 from fuelweb_test import logger
 
@@ -157,6 +156,7 @@ class EnvironmentModel(object):
             'ks': 'hd:LABEL=Mirantis_Fuel:/ks.cfg' if iso_connect_as == 'usb'
             else 'cdrom:/ks.cfg',
             'repo': 'hd:LABEL=Mirantis_Fuel:/',  # only required for USB boot
+            'iface': 'enp0s3',
             'ip': node.get_ip_address_by_network_name(
                 self.d_env.admin_net),
             'mask': self.d_env.get_network(
@@ -170,6 +170,9 @@ class EnvironmentModel(object):
             'wait_for_external_config': 'yes',
             'build_images': '1' if build_images else '0'
         }
+        # CentOS 7 is pretty stable with admin iface.
+        # TODO(akostrikov) add tests for menu items/kernel parameters
+        # TODO(akostrikov) refactor it.
         if iso_connect_as == 'usb':
             keys = (
                 "<Wait>\n"  # USB boot uses boot_menu=yes for master node
@@ -179,12 +182,8 @@ class EnvironmentModel(object):
                 "<Wait>\n"
                 "vmlinuz initrd=initrd.img ks=%(ks)s\n"
                 " repo=%(repo)s\n"
-                " ip=%(ip)s\n"
-                " netmask=%(mask)s\n"
-                " gw=%(gw)s\n"
-                " dns1=%(dns1)s\n"
-                " hostname=%(hostname)s\n"
-                " dhcp_interface=%(nat_interface)s\n"
+                " ip=%(ip)s::%(gw)s:%(mask)s:%(hostname)s"
+                ":%(iface)s:off::: dns1=%(dns1)s"
                 " showmenu=%(showmenu)s\n"
                 " wait_for_external_config=%(wait_for_external_config)s\n"
                 " build_images=%(build_images)s\n"
@@ -198,53 +197,13 @@ class EnvironmentModel(object):
                 "<Esc>\n"
                 "<Wait>\n"
                 "vmlinuz initrd=initrd.img ks=%(ks)s\n"
-                " ip=%(ip)s\n"
-                " netmask=%(mask)s\n"
-                " gw=%(gw)s\n"
-                " dns1=%(dns1)s\n"
-                " hostname=%(hostname)s\n"
-                " dhcp_interface=%(nat_interface)s\n"
+                " ip=%(ip)s::%(gw)s:%(mask)s:%(hostname)s"
+                ":%(iface)s:off::: dns1=%(dns1)s"
                 " showmenu=%(showmenu)s\n"
                 " wait_for_external_config=%(wait_for_external_config)s\n"
                 " build_images=%(build_images)s\n"
                 " <Enter>\n"
             ) % params
-        if MASTER_IS_CENTOS7:
-            # CentOS 7 is pretty stable with admin iface.
-            # TODO(akostrikov) add tests for menu items/kernel parameters
-            # TODO(akostrikov) refactor it.
-            iface = 'enp0s3'
-            if iso_connect_as == 'usb':
-                keys = (
-                    "<Wait>\n"  # USB boot uses boot_menu=yes for master node
-                    "<F12>\n"
-                    "2\n"
-                    "<Esc><Enter>\n"
-                    "<Wait>\n"
-                    "vmlinuz initrd=initrd.img ks=%(ks)s\n"
-                    " repo=%(repo)s\n"
-                    " ip=%(ip)s::%(gw)s:%(mask)s:%(hostname)s"
-                    ":{iface}:off::: dns1=%(dns1)s"
-                    " showmenu=%(showmenu)s\n"
-                    " wait_for_external_config=%(wait_for_external_config)s\n"
-                    " build_images=%(build_images)s\n"
-                    " <Enter>\n".format(iface=iface)
-                ) % params
-            else:  # cdrom case is default
-                keys = (
-                    "<Wait>\n"
-                    "<Wait>\n"
-                    "<Wait>\n"
-                    "<Esc>\n"
-                    "<Wait>\n"
-                    "vmlinuz initrd=initrd.img ks=%(ks)s\n"
-                    " ip=%(ip)s::%(gw)s:%(mask)s:%(hostname)s"
-                    ":{iface}:off::: dns1=%(dns1)s"
-                    " showmenu=%(showmenu)s\n"
-                    " wait_for_external_config=%(wait_for_external_config)s\n"
-                    " build_images=%(build_images)s\n"
-                    " <Enter>\n".format(iface=iface)
-                ) % params
         return keys
 
     def get_target_devs(self, devops_nodes):
@@ -533,16 +492,10 @@ class EnvironmentModel(object):
     def wait_for_external_config(self, timeout=120):
         check_cmd = 'pkill -0 -f wait_for_external_config'
 
-        if MASTER_IS_CENTOS7:
-            self.ssh_manager.execute(
-                ip=self.ssh_manager.admin_ip,
-                cmd=check_cmd
-            )
-        else:
-            wait(
-                lambda: self.ssh_manager.execute(
-                    ip=self.ssh_manager.admin_ip,
-                    cmd=check_cmd)['exit_code'] == 0, timeout=timeout)
+        self.ssh_manager.execute(
+            ip=self.ssh_manager.admin_ip,
+            cmd=check_cmd
+        )
 
     @logwrap
     def kill_wait_for_external_config(self):
