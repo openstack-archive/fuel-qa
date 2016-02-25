@@ -117,7 +117,7 @@ class GateOstf(TestBasic):
                 'gate_ostf_ceph_ha'):
             raise SkipTest()
         self.show_step(2)
-        update_ostf(self.env)
+        update_ostf()
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.show_step(3)
         all_test_suits = self.fuel_web.get_all_ostf_set_names(cluster_id)
