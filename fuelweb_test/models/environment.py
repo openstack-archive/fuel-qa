@@ -455,13 +455,14 @@ class EnvironmentModel(object):
             self.admin_install_updates()
         if settings.MULTIPLE_NETWORKS:
             self.describe_other_admin_interfaces(admin)
-        self.nailgun_actions.set_collector_address(
-            settings.FUEL_STATS_HOST,
-            settings.FUEL_STATS_PORT,
-            settings.FUEL_STATS_SSL)
-        # Restart statsenderd to apply settings(Collector address)
-        self.nailgun_actions.force_fuel_stats_sending()
-        if settings.FUEL_STATS_ENABLED:
+        if settings.FUEL_STATS_HOST:
+            self.nailgun_actions.set_collector_address(
+                settings.FUEL_STATS_HOST,
+                settings.FUEL_STATS_PORT,
+                settings.FUEL_STATS_SSL)
+            # Restart statsenderd to apply settings(Collector address)
+            self.nailgun_actions.force_fuel_stats_sending()
+        if settings.FUEL_STATS_ENABLED and settings.FUEL_STATS_HOST:
             self.fuel_web.client.send_fuel_stats(enabled=True)
             logger.info('Enabled sending of statistics to {0}:{1}'.format(
                 settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
