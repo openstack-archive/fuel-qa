@@ -52,10 +52,10 @@ class LaunchpadSettings(object):
 class TestRailSettings(object):
     """TestRailSettings."""  # TODO documentation
 
-    url = os.environ.get('TESTRAIL_URL', 'https://mirantis.testrail.com')
+    url = os.environ.get('TESTRAIL_URL')
     user = os.environ.get('TESTRAIL_USER', 'user@example.com')
     password = os.environ.get('TESTRAIL_PASSWORD', 'password')
-    project = os.environ.get('TESTRAIL_PROJECT', 'Mirantis OpenStack')
+    project = os.environ.get('TESTRAIL_PROJECT', 'Fuel')
     milestone = os.environ.get('TESTRAIL_MILESTONE', '9.0')
     tests_suite = os.environ.get('TESTRAIL_TEST_SUITE',
                                  '[{0}] Swarm'.format(milestone))
