@@ -474,7 +474,7 @@ class GPGSigningCheck(TestBasic):
 
         Scenario:
             1. Revert snapshot with installed master
-            2. Import publick mirantis GPG key
+            2. Import publick GPG key
             3. Check all local rpm packet and verify it
 
         Duration: 15 min
@@ -511,8 +511,8 @@ class GPGSigningCheck(TestBasic):
 
         Scenario:
             1. Revert snapshot with installed master
-            2. Import mirantis publick GPG key for rpm
-            3. Import mirantis publick GPG key for gpg
+            2. Import publick GPG key for rpm
+            3. Import publick GPG key for gpg
             4. Download repomd.xml.asc and repomd.xml and verify they
             5. Download Release and Releasee.gpg and verify they
             6. Download randomly choosed .rpm file and verify it

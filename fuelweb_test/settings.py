@@ -434,12 +434,10 @@ SEPARATE_SERVICE_HORIZON_PLUGIN_PATH = os.environ.get(
 FUEL_STATS_CHECK = get_var_as_bool('FUEL_STATS_CHECK', False)
 FUEL_STATS_ENABLED = get_var_as_bool('FUEL_STATS_ENABLED', True)
 FUEL_STATS_SSL = get_var_as_bool('FUEL_STATS_SSL', False)
-FUEL_STATS_HOST = os.environ.get('FUEL_STATS_HOST',
-                                 'fuel-collect-systest.infra.mirantis.net')
+FUEL_STATS_HOST = os.environ.get('FUEL_STATS_HOST')
 FUEL_STATS_PORT = os.environ.get('FUEL_STATS_PORT', '80')
 
-ANALYTICS_IP = os.environ.get('ANALYTICS_IP',
-                              'fuel-stats-systest.infra.mirantis.net')
+ANALYTICS_IP = os.environ.get('ANALYTICS_IP')
 
 CUSTOM_ENV = get_var_as_bool('CUSTOM_ENV', False)
 SECURITY_TEST = get_var_as_bool('SECURITY_TEST', False)
@@ -464,10 +462,7 @@ FUEL_PLUGIN_BUILDER_REPO = 'https://github.com/openstack/fuel-plugins.git'
 # Change various Fuel master node default settings                           #
 ###############################################################################
 
-# URL to custom mirror with new OSCI packages which should be tested,
-# for example:
-# CentOS: http://osci-obs.vm.mirantis.net:82/centos-fuel-master-20921/centos/
-# Ubuntu: http://osci-obs.vm.mirantis.net:82/ubuntu-fuel-master-20921/ubuntu/
+# URL to custom mirror with new OSCI packages which should be tested
 CUSTOM_PKGS_MIRROR = os.environ.get('CUSTOM_PKGS_MIRROR', '')
 
 # Location of local mirrors on master node.
@@ -600,9 +595,7 @@ RH_ACTIVATION_KEY = os.environ.get("RH_ACTIVATION_KEY")
 RH_RELEASE = os.environ.get("RH_RELEASE")
 RH_MAJOR_RELEASE = os.environ.get("RH_MAJOR_RELEASE", "7")
 CENTOS_DUMMY_DEPLOY = get_var_as_bool("CENTOS_DUMMY_DEPLOY", False)
-PERESTROIKA_REPO = os.environ.get(
-    "PERESTROIKA_REPO", "http://perestroika-repo-tst.infra.mirantis.net/"
-                        "mos-repos/centos/mos8.0-centos7-fuel/os/x86_64/")
+PERESTROIKA_REPO = os.environ.get("PERESTROIKA_REPO")
 RH_POOL_HASH = os.environ.get("RH_POOL_HASH")
 
 # Ironic variables
