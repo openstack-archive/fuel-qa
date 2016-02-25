@@ -28,7 +28,6 @@ from fuelweb_test import logwrap
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers.utils import run_on_remote_get_results
-from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test.settings import EXTERNAL_DNS
 from fuelweb_test.settings import EXTERNAL_NTP
 from fuelweb_test.settings import OPENSTACK_RELEASE
@@ -288,9 +287,7 @@ def enable_feature_group(env, group):
 
 @logwrap
 def restart_nailgun(remote):
-    cmd = 'supervisorctl restart nailgun'
-    if MASTER_IS_CENTOS7:
-        cmd = 'systemctl restart nailgun'
+    cmd = 'systemctl restart nailgun'
     result = remote.execute(cmd)
     assert_equal(0, result['exit_code'], result['stderr'])
 
