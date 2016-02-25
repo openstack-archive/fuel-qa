@@ -16,9 +16,9 @@ import os
 
 from proboscis import test
 
+from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -55,30 +55,31 @@ class GateAstute(TestBasic):
 
         astute_service = 'astute'
         package_name = 'rubygem-astute'
-        package_ext = '*noarch.rpm'
-        target_path = '/var/www/nailgun/'
+        package_ext = '*.noarch.rpm'
+        target_path = '/var/www/nailgun/astute/'
 
         self.show_step(1)
         self.env.revert_snapshot('ready_with_3_slaves')
 
         self.show_step(2)
-        with self.env.d_env.get_admin_remote() as remote:
-            remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'), target_path)
+        self.ssh_manager.upload_to_remote(
+            self.ssh_manager.admin_ip,
+            source=settings.UPDATE_FUEL_PATH.rstrip('/'),
+            target=target_path)
 
         self.show_step(3)
         pkg_path = os.path.join(target_path,
                                 '{}{}'.format(package_name, package_ext))
-        full_package_name = utils.get_full_filename(
-            self.env, wildcard_name=pkg_path)
+        logger.debug('Package path is {0}'.format(pkg_path))
+        full_package_name = utils.get_full_filename(wildcard_name=pkg_path)
+        logger.debug('Package name is {0}'.format(full_package_name))
         full_package_path = os.path.join(os.path.dirname(pkg_path),
                                          full_package_name)
         if not utils.does_new_pkg_equal_to_installed_pkg(
-                self.env,
                 installed_package=package_name,
                 new_package=full_package_path):
-            utils.update_rpm(self.env, path=full_package_path)
-            utils.restart_service(self.env,
-                                  service_name=astute_service,
+            utils.update_rpm(path=full_package_path)
+            utils.restart_service(service_name=astute_service,
                                   timeout=10)
 
         self.show_step(4)
@@ -87,20 +88,22 @@ class GateAstute(TestBasic):
         self.show_step(5)
         release_id = self.fuel_web.get_releases_list_for_os(
             release_name=OPENSTACK_RELEASE)[0]
-        with self.env.d_env.get_admin_remote() as remote:
-            cmd = ('fuel env create --name={0} --release={1} '
-                   '--nst=tun --json'.format(self.__class__.__name__,
-                                             release_id))
-            env_result = run_on_remote(remote, cmd, jsonify=True)
+        cmd = ('fuel env create --name={0} --release={1} '
+               '--nst=tun --json'.format(self.__class__.__name__,
+                                         release_id))
+        env_result = self.ssh_manager.execute_on_remote(
+            self.ssh_manager.admin_ip,
+            cmd=cmd, jsonify=True)['stdout_json']
 
         self.show_step(6)
         cluster_id = env_result['id']
+        logger.debug('cluster id is {0}'.format(cluster_id))
         self.fuel_web.update_nodes(
             cluster_id,
             {
                 'slave-01': ['controller'],
                 'slave-02': ['compute'],
-                'slave-03': ['cinder'],
+                'slave-03': ['cinder']
             }
         )
 

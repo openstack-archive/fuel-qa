@@ -18,33 +18,33 @@ from proboscis.asserts import assert_equal
 from devops.helpers import helpers
 
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test import logger
 from fuelweb_test import settings
 from gates_tests.helpers import exceptions
 
 
-def replace_fuel_agent_rpm(environment):
+def replace_fuel_agent_rpm():
     """Replaced fuel_agent.rpm on master node with fuel_agent.rpm
     from review
-    environment - Environment Model object - self.env
     """
+    ssh = SSHManager()
     logger.info("Patching fuel-agent")
     if not settings.UPDATE_FUEL:
         raise exceptions.FuelQAVariableNotSet('UPDATE_FUEL', 'True')
     try:
         pack_path = '/var/www/nailgun/fuel-agent/'
         full_pack_path = os.path.join(pack_path, 'fuel-agent*.noarch.rpm')
-        with environment.d_env.get_admin_remote() as remote:
-            remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
-                          pack_path)
+        ssh.upload_to_remote(
+            ip=ssh.admin_ip,
+            source=settings.UPDATE_FUEL_PATH.rstrip('/'),
+            target=pack_path)
 
         # Update fuel-agent on master node
         cmd = "rpm -q fuel-agent"
-        old_package = \
-            environment.base_actions.execute(cmd, exit_code=0)
+        old_package = ssh.execute_on_remote(ssh.admin_ip, cmd)['stdout_str']
         cmd = "rpm -qp {0}".format(full_pack_path)
-        new_package = \
-            environment.base_actions.execute(cmd)
+        new_package = ssh.execute_on_remote(ssh.admin_ip, cmd)['stdout_str']
         logger.info("Updating package {0} with {1}"
                     .format(old_package, new_package))
 
@@ -53,11 +53,11 @@ def replace_fuel_agent_rpm(environment):
             logger.info('Try to install package {0}'.format(
                 new_package))
             cmd = "rpm -Uvh --oldpackage {0}".format(full_pack_path)
-            environment.base_actions.execute(cmd, exit_code=0)
+            ssh.execute_on_remote(ssh.admin_ip, cmd)
 
             cmd = "rpm -q fuel-agent"
-            installed_package = \
-                environment.base_actions.execute(cmd, exit_code=0)
+            installed_package = ssh.execute_on_remote(
+                ssh.admin_ip, cmd)['stdout_str']
 
             assert_equal(installed_package, new_package,
                          "The new package {0} was not installed".
@@ -68,57 +68,48 @@ def replace_fuel_agent_rpm(environment):
         raise
 
 
-def patch_centos_bootstrap(environment):
+def patch_centos_bootstrap():
     """Replaced initramfs.img in /var/www/nailgun/
     with newly_builded from review
     environment - Environment Model object - self.env
     """
     logger.info("Update fuel-agent code and assemble new bootstrap")
+    ssh = SSHManager()
     if not settings.UPDATE_FUEL:
         raise Exception("{} variable don't exist"
                         .format(settings.UPDATE_FUEL))
     try:
         pack_path = '/var/www/nailgun/fuel-agent-review/'
-        with environment.d_env.get_admin_remote() as remote:
-            remote.upload(settings.FUEL_AGENT_REPO_PATH.rstrip('/'),
-                          pack_path)
-            # renew code in bootstrap
+        ssh.upload_to_remote(
+            ip=ssh.admin_ip,
+            source=settings.FUEL_AGENT_REPO_PATH.rstrip('/'),
+            target=pack_path)
+        # Step 1 - unpack bootstrap
+        bootstrap_var = "/var/initramfs"
+        bootstrap = "/var/www/nailgun/bootstrap"
+        cmd = ("mkdir {0}; cp /{1}/initramfs.img {0}/; cd {0}; "
+               "cat initramfs.img | gunzip | cpio -imudv;").format(
+            bootstrap_var, bootstrap)
+        result = ssh.execute_on_remote(
+            ip=ssh.admin_ip, cmd=cmd)['stdout_str']
+        logger.debug("Patching bootsrap finishes with {0}".format(result))
 
-            # Step 1 - unpack bootstrap
-            bootstrap_var = "/var/initramfs"
-            bootstrap = "/var/www/nailgun/bootstrap"
-            cmd = ("mkdir {0};"
-                   "cp /{1}/initramfs.img {0}/;"
-                   "cd {0};"
-                   "cat initramfs.img | gunzip | cpio -imudv;").format(
-                bootstrap_var,
-                bootstrap
-            )
-            result = remote.execute(cmd)
-            assert_equal(result['exit_code'], 0,
-                         ('Failed to add unpack bootstrap {}'
-                          ).format(result))
+        # Step 2 - replace fuel-agent code in unpacked bootstrap
+        agent_path = "/usr/lib/python2.7/site-packages/fuel_agent"
+        image_rebuild = "{} | {} | {}".format(
+            "find . -xdev",
+            "cpio --create --format='newc'",
+            "gzip -9 > /var/initramfs.img.updated")
 
-            # Step 2 - replace fuel-agent code in unpacked bootstrap
-            agent_path = "/usr/lib/python2.7/site-packages/fuel_agent"
-            image_rebuild = "{} | {} | {}".format(
-                "find . -xdev",
-                "cpio --create --format='newc'",
-                "gzip -9 > /var/initramfs.img.updated")
+        cmd = ("rm -rf {0}/initramfs.img; "
+               "rsync -r {2}fuel_agent/* {0}{1}/;"
+               "cd {0}/;"
+               "{3};").format(bootstrap_var, agent_path, pack_path,
+                              image_rebuild)
+        result = ssh.execute_on_remote(
+            ip=ssh.admin_ip, cmd=cmd)['stdout_str']
+        logger.debug("Failed to rebuild image with {0}".format(result))
 
-            cmd = ("rm -rf {0}/initramfs.img;"
-                   "rsync -r {2}fuel_agent/* {0}{1}/;"
-                   "cd {0}/;"
-                   "{3};"
-                   ).format(
-                bootstrap_var,
-                agent_path,
-                pack_path,
-                image_rebuild)
-
-            result = remote.execute(cmd)
-            assert_equal(result['exit_code'], 0,
-                         'Failed to rebuild bootstrap {}'.format(result))
     except Exception as e:
         logger.error("Could not upload package {e}".format(e=e))
         raise
@@ -130,70 +121,51 @@ def patch_and_assemble_ubuntu_bootstrap(environment):
     environment - Environment Model object - self.env
     """
     logger.info("Update fuel-agent code and assemble new ubuntu bootstrap")
+    ssh = SSHManager()
     if not settings.UPDATE_FUEL:
         raise Exception("{} variable don't exist"
                         .format(settings.UPDATE_FUEL))
     try:
         pack_path = '/var/www/nailgun/fuel-agent-review/'
+        ssh.upload_to_remote(
+            ip=ssh.admin_ip,
+            source=settings.FUEL_AGENT_REPO_PATH.rstrip('/'),
+            target=pack_path)
+        # renew code in bootstrap
+
+        # Step 1 - install squashfs-tools
+        cmd = "yum install -y squashfs-tools"
+        ssh.execute_on_remote(ip=ssh.admin_ip, cmd=cmd)
+
+        # Step 2 - unpack bootstrap
+        bootstrap = "/var/www/nailgun/bootstraps/active_bootstrap"
+        bootstrap_var = "/var/root.squashfs"
+
+        cmd = "unsquashfs -d /var/root.squashfs {}/root.squashfs".format(
+            bootstrap)
+        ssh.execute_on_remote(ip=ssh.admin_ip, cmd=cmd)
+
+        # Step 3 - replace fuel-agent code in unpacked bootstrap
+        agent_path = "/usr/lib/python2.7/dist-packages/fuel_agent"
+        bootstrap_file = bootstrap + "/root.squashfs"
+        cmd = ("rsync -r {2}fuel_agent/* {0}{1}/;"
+               "mv {3} /var/root.squashfs.old;"
+               ).format(bootstrap_var, agent_path, pack_path, bootstrap_file)
+        ssh.execute_on_remote(ip=ssh.admin_ip, cmd=cmd)
+
+        # Step 4 - assemble new bootstrap
+        compression = "-comp xz"
+        no_progress_bar = "-no-progress"
+        no_append = "-noappend"
+        image_rebuild = "mksquashfs {0} {1} {2} {3} {4}".format(
+            bootstrap_var,
+            bootstrap_file,
+            compression,
+            no_progress_bar,
+            no_append)
+        ssh.execute_on_remote(ip=ssh.admin_ip, cmd=image_rebuild)
         with environment.d_env.get_admin_remote() as remote:
-            remote.upload(settings.FUEL_AGENT_REPO_PATH.rstrip('/'),
-                          pack_path)
-            # renew code in bootstrap
-
-            # Step 1 - install squashfs-tools
-            cmd = "yum install -y squashfs-tools"
-            result = remote.execute(cmd)
-            assert_equal(result['exit_code'], 0,
-                         ('Failed to install squashfs-tools {}'
-                          ).format(result))
-
-            # Step 2 - unpack bootstrap
-            bootstrap = "/var/www/nailgun/bootstraps/active_bootstrap"
-            bootstrap_var = "/var/root.squashfs"
-
-            cmd = ("unsquashfs -d /var/root.squashfs {}/root.squashfs"
-                   ).format(bootstrap)
-            result = remote.execute(cmd)
-            assert_equal(result['exit_code'], 0,
-                         ('Failed to add unpack bootstrap {}'
-                          ).format(result))
-
-            # Step 3 - replace fuel-agent code in unpacked bootstrap
-            agent_path = "/usr/lib/python2.7/dist-packages/fuel_agent"
-            bootstrap_file = bootstrap + "/root.squashfs"
-            cmd = ("rsync -r {2}fuel_agent/* {0}{1}/;"
-                   "mv {3} /var/root.squashfs.old;"
-                   ).format(
-                bootstrap_var,
-                agent_path,
-                pack_path,
-                bootstrap_file
-            )
-
-            result = remote.execute(cmd)
-            assert_equal(result['exit_code'], 0,
-                         ('Failed to replace fuel-agent code {}'
-                          ).format(result))
-
-            # Step 4 - assemble new bootstrap
-            compression = "-comp xz"
-            no_progress_bar = "-no-progress"
-            no_append = "-noappend"
-            image_rebuild = "mksquashfs {0} {1} {2} {3} {4}".format(
-                bootstrap_var,
-                bootstrap_file,
-                compression,
-                no_progress_bar,
-                no_append
-            )
-            result = remote.execute(image_rebuild)
-            assert_equal(result['exit_code'], 0,
-                         ('Failed to rebuild bootstrap {}'
-                          ).format(result))
-
-            checkers.check_file_exists(
-                remote,
-                '{0}'.format(bootstrap_file))
+            checkers.check_file_exists(remote, '{0}'.format(bootstrap_file))
     except Exception as e:
         logger.error("Could not upload package {e}".format(e=e))
         raise
@@ -205,54 +177,45 @@ def replace_centos_bootstrap(environment):
     environment - Environment Model object - self.env
     """
     logger.info("Updating bootstrap")
+    ssh = SSHManager()
     if not settings.UPDATE_FUEL:
         raise Exception("{} variable don't exist"
                         .format(settings.UPDATE_FUEL))
-    try:
-
-        rebuilded_bootstrap = '/var/initramfs.img.updated'
-        with environment.d_env.get_admin_remote() as remote:
-            checkers.check_file_exists(
-                remote,
-                '{0}'.format(rebuilded_bootstrap))
-            logger.info("Assigning new bootstrap from {}"
-                        .format(rebuilded_bootstrap))
-            bootstrap = "/var/www/nailgun/bootstrap"
-            cmd = ("mv {0}/initramfs.img /var/initramfs.img;"
-                   "cp /var/initramfs.img.updated {0}/initramfs.img;"
-                   "chmod +r {0}/initramfs.img;"
-                   ).format(bootstrap)
-            result = remote.execute(cmd)
-            assert_equal(result['exit_code'], 0,
-                         ('Failed to assign bootstrap {}'
-                          ).format(result))
-        cmd = "cobbler sync"
-        environment.base_actions.execute(cmd, exit_code=0)
-    except Exception as e:
-        logger.error("Could not update bootstrap {e}".format(e=e))
-        raise
+    rebuilded_bootstrap = '/var/initramfs.img.updated'
+    with environment.d_env.get_admin_remote() as remote:
+        checkers.check_file_exists(
+            remote,
+            '{0}'.format(rebuilded_bootstrap))
+    logger.info("Assigning new bootstrap from {}".format(rebuilded_bootstrap))
+    bootstrap = "/var/www/nailgun/bootstrap"
+    cmd = ("mv {0}/initramfs.img /var/initramfs.img;"
+           "cp /var/initramfs.img.updated {0}/initramfs.img;"
+           "chmod +r {0}/initramfs.img;").format(bootstrap)
+    ssh.execute_on_remote(ip=ssh.admin_ip, cmd=cmd)
+    cmd = "cobbler sync"
+    ssh.execute_on_remote(ip=ssh.admin_ip, cmd=cmd)
 
 
-def update_ostf(environment):
+def update_ostf():
     logger.info("Uploading new package from {0}".format(
         settings.UPDATE_FUEL_PATH))
+    ssh = SSHManager()
     pack_path = '/var/www/nailgun/fuel-ostf/'
     full_pack_path = os.path.join(pack_path, 'fuel-ostf*.noarch.rpm')
-
-    with environment.d_env.get_admin_remote() as remote:
-        remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
-                      pack_path)
+    ssh.upload_to_remote(
+        ssh.admin_ip,
+        source=settings.UPDATE_FUEL_PATH.rstrip('/'), target=pack_path)
 
     # Check old fuel-ostf package
     cmd = "rpm -q fuel-ostf"
 
-    old_package = environment.base_actions.execute(cmd, exit_code=0)
+    old_package = ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)['stdout_str']
     logger.info(
         'Current package version of '
         'fuel-ostf: {0}'.format(old_package))
 
     cmd = "rpm -qp {0}".format(full_pack_path)
-    new_package = environment.base_actions.execute(cmd)
+    new_package = ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)['stdout_str']
     logger.info('Package from review {0}'.format(new_package))
 
     if old_package == new_package:
@@ -260,50 +223,53 @@ def update_ostf(environment):
         return
 
     cmd = "service ostf stop"
-    environment.base_actions.execute(cmd)
+    ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
     cmd = "service ostf status"
-    helpers.wait(lambda: "dead" in environment.base_actions.execute(cmd),
-                 timeout=60)
+    helpers.wait(lambda: "dead" in ssh.execute_on_remote(
+        ssh.admin_ip, cmd=cmd)['stdout_str'], timeout=60)
     logger.info("OSTF status: inactive")
     cmd = "rpm -e fuel-ostf"
-    environment.base_actions.execute(cmd, exit_code=0)
+    ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
     cmd = "rpm -Uvh --oldpackage {0}".format(full_pack_path)
-    environment.base_actions.execute(cmd, exit_code=0)
+    ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
     cmd = "rpm -q fuel-ostf"
-    installed_package = environment.base_actions.execute(cmd)
+    installed_package = ssh.execute_on_remote(
+        ssh.admin_ip, cmd=cmd)['stdout_str']
 
     assert_equal(
         installed_package, new_package,
         "The new package {0} was not installed. Actual {1}".format(
             new_package, installed_package))
     cmd = "service ostf start"
-    environment.base_actions.execute(cmd)
+    ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
     cmd = "service ostf status"
     helpers.wait(
         lambda: "running" in
-        environment.base_actions.execute(cmd, exit_code=0),
+        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)['stdout_str'],
         timeout=60)
     cmd = "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8777"
     helpers.wait(
-        lambda: "401" in environment.base_actions.execute(cmd),
+        lambda: "401" in ssh.execute_on_remote(
+            ssh.admin_ip, cmd=cmd)['stdout_str'],
         timeout=60)
     logger.info("OSTF status: RUNNING")
 
 
-def get_oswl_services_names(remote):
+def get_oswl_services_names():
     cmd = "systemctl list-units| grep oswl_ | awk '{print $1}'"
-    result = remote.base_actions.execute(cmd, exit_code=0)
-    logger.info('list of statistic services inside nailgun {0}'.format(
+    result = SSHManager().execute_on_remote(
+        SSHManager().admin_ip, cmd)['stdout_str'].strip()
+    logger.info('list of statistic services {0}'.format(
         result.split('\n')))
     return result.split('\n')
 
 
-def replace_fuel_nailgun_rpm(environment):
+def replace_fuel_nailgun_rpm():
     """
     Replace fuel_nailgun*.rpm from review
-    environment - Environment Model object - self.env
     """
     logger.info("Patching fuel-nailgun")
+    ssh = SSHManager()
     if not settings.UPDATE_FUEL:
         raise exceptions.FuelQAVariableNotSet('UPDATE_FUEL', 'True')
     pack_path = '/var/www/nailgun/fuel-nailgun/'
@@ -311,20 +277,22 @@ def replace_fuel_nailgun_rpm(environment):
     full_pack_path = os.path.join(pack_path,
                                   'fuel-nailgun*.noarch.rpm')
     logger.info('Package path {0}'.format(full_pack_path))
-    with environment.d_env.get_admin_remote() as remote:
-        remote.upload(settings.UPDATE_FUEL_PATH.rstrip('/'),
-                      pack_path)
+    ssh.upload_to_remote(
+        ip=ssh.admin_ip,
+        source=settings.UPDATE_FUEL_PATH.rstrip('/'), target=pack_path)
 
     # Check old fuel-nailgun package
     cmd = "rpm -q fuel-nailgun"
 
-    old_package = environment.base_actions.execute(cmd, exit_code=0)
+    old_package = ssh.execute_on_remote(
+        ip=ssh.admin_ip, cmd=cmd)['stdout_str']
     logger.info(
         'Current package version of '
         'fuel-nailgun: {0}'.format(old_package))
 
     cmd = "rpm -qp {0}".format(full_pack_path)
-    new_package = environment.base_actions.execute(cmd)
+    new_package = ssh.execute_on_remote(
+        ip=ssh.admin_ip, cmd=cmd)['stdout_str']
     logger.info("Updating package {0} with {1}".format(
         old_package, new_package))
 
@@ -335,53 +303,50 @@ def replace_fuel_nailgun_rpm(environment):
 
     # stop services
     service_list = ['assassind', 'receiverd', 'nailgun', 'statsenderd']
-    [environment.base_actions.execute(
-        'systemctl stop {0}'.format(service),
-        exit_code=0) for service in service_list]
-
+    [ssh.execute_on_remote(
+        ip=ssh.admin_ip,
+        cmd='systemctl stop {0}'.format(service)) for service in service_list]
+    logger.info('statistic services {0}'.format(get_oswl_services_names()))
     # stop statistic services
-    [environment.base_actions.execute(
-        'systemctl stop {0}'.format(service),
-        exit_code=0) for service in
-        get_oswl_services_names(environment)]
+    [ssh.execute_on_remote(
+        ip=ssh.admin_ip,
+        cmd='systemctl stop {0}'.format(service))
+     for service in get_oswl_services_names()]
 
     # Drop nailgun db manage.py dropdb
     cmd = 'manage.py dropdb'
-    environment.base_actions.execute(cmd, exit_code=0)
+    ssh.execute_on_remote(ssh.admin_ip, cmd)
 
     # Delete package
     logger.info("Delete package {0}".format(old_package))
     cmd = "rpm -e fuel-nailgun"
-    environment.base_actions.execute(cmd, exit_code=0)
+    ssh.execute_on_remote(ssh.admin_ip, cmd)
 
     logger.info("Install package {0}".format(new_package))
 
     cmd = "rpm -Uvh --oldpackage {0}".format(full_pack_path)
 
-    environment.base_actions.execute(cmd, exit_code=0)
+    ssh.execute_on_remote(ssh.admin_ip, cmd)
 
     cmd = "rpm -q fuel-nailgun"
-    installed_package = environment.base_actions.execute(cmd, exit_code=0)
+    installed_package = ssh.execute_on_remote(ssh.admin_ip, cmd)['stdout_str']
 
     assert_equal(installed_package, new_package,
                  "The new package {0} was not installed".format(new_package))
 
     cmd = ('puppet apply --debug '
            '/etc/puppet/modules/fuel/examples/nailgun.pp')
-    environment.base_actions.execute(cmd, exit_code=0)
-    with environment.d_env.get_admin_remote() as remote:
-        res = remote.execute(
-            "fuel release --sync-deployment-tasks --dir /etc/puppet/")
-        assert_equal(res['exit_code'], 0,
-                     'Failed to sync tasks with result {0}'.format(res))
+    ssh.execute_on_remote(ssh.admin_ip, cmd)
+    cmd_sync = 'fuel release --sync-deployment-tasks --dir /etc/puppet/'
+    ssh.execute_on_remote(ssh.admin_ip, cmd=cmd_sync)
 
 
-def update_rpm(env, path, rpm_cmd='/bin/rpm -Uvh --force'):
+def update_rpm(path, rpm_cmd='/bin/rpm -Uvh --force'):
     cmd = '{rpm_cmd} {rpm_path}'\
         .format(rpm_cmd=rpm_cmd, rpm_path=path)
     logger.info("Updating rpm '{0}'".format(path))
     try:
-        env.base_actions.execute(cmd, exit_code=0)
+        SSHManager().execute(SSHManager().admin_ip, cmd)
         logger.info("Rpm '{0}' has been updated successfully "
                     .format(path))
     except Exception as ex:
@@ -390,15 +355,17 @@ def update_rpm(env, path, rpm_cmd='/bin/rpm -Uvh --force'):
         raise
 
 
-def restart_service(env, service_name, timeout=30):
+def restart_service(service_name, timeout=30):
     restart_cmd = 'service {} restart'.format(service_name)
     get_status_cmd = 'service {} status'.format(service_name)
     logger.info("Restarting service '{0}'".format(service_name))
     try:
-        env.base_actions.execute(restart_cmd)
+        SSHManager().execute_on_remote(SSHManager().admin_ip,
+                                       restart_cmd)
         helpers.wait(
             lambda: 'running' in
-            env.base_actions.execute(get_status_cmd, exit_code=0),
+            SSHManager().execute_on_remote(SSHManager().admin_ip,
+                                           get_status_cmd)['stdout_str'],
             timeout=timeout)
         logger.info("Service '{0}' has been restarted successfully "
                     .format(service_name))
@@ -409,7 +376,7 @@ def restart_service(env, service_name, timeout=30):
         raise
 
 
-def does_new_pkg_equal_to_installed_pkg(env, installed_package,
+def does_new_pkg_equal_to_installed_pkg(installed_package,
                                         new_package):
     rpm_query_cmd = '/bin/rpm -q'
     current_version_cmd = '{rpm} {package}'\
@@ -420,9 +387,11 @@ def does_new_pkg_equal_to_installed_pkg(env, installed_package,
     logger.info("Comparing installed package version against "
                 "the package version to be installed in the")
 
-    current_version = env.base_actions.execute(
-        current_version_cmd, exit_code=0)
-    new_version = env.base_actions.execute(urlfile_version_cmd, exit_code=0)
+    current_version = SSHManager().execute_on_remote(
+        ip=SSHManager().admin_ip, cmd=current_version_cmd)
+
+    new_version = SSHManager().execute_on_remote(
+        ip=SSHManager().admin_ip, cmd=urlfile_version_cmd)
 
     logger.info("Installed package version: {}".format(current_version))
     logger.info("Package version to be installed: {}".format(new_version))
@@ -430,11 +399,12 @@ def does_new_pkg_equal_to_installed_pkg(env, installed_package,
     return current_version == new_version
 
 
-def get_full_filename(env, wildcard_name):
+def get_full_filename(wildcard_name):
     cmd = 'ls {}'.format(wildcard_name)
 
     logger.info("Getting full file name for: {}".format(wildcard_name))
 
-    full_pkg_name = env.base_actions.execute(cmd, exit_code=0)
-
+    full_pkg_name = SSHManager().execute_on_remote(
+        ip=SSHManager().admin_ip,
+        cmd=cmd)['stdout_str']
     return full_pkg_name

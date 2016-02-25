@@ -18,7 +18,6 @@ from gates_tests.helpers.utils import patch_and_assemble_ubuntu_bootstrap
 from gates_tests.helpers.utils import replace_fuel_agent_rpm
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -55,7 +54,7 @@ class Gate(TestBasic):
         self.env.revert_snapshot("ready")
 
         self.show_step(2)
-        replace_fuel_agent_rpm(self.env)
+        replace_fuel_agent_rpm()
 
         self.show_step(3)
         patch_and_assemble_ubuntu_bootstrap(self.env)
@@ -68,12 +67,12 @@ class Gate(TestBasic):
             release_name=OPENSTACK_RELEASE)[0]
 
         self.show_step(5)
-        with self.env.d_env.get_admin_remote() as remote:
-            cmd = ('fuel env create --name={0} --release={1} '
-                   '--nst=tun --json'.format(self.__class__.__name__,
-                                             release_id))
-            env_result = run_on_remote(remote, cmd, jsonify=True)
-            cluster_id = env_result['id']
+        cmd = ('fuel env create --name={0} --release={1} --nst=tun '
+               '--json'.format(self.__class__.__name__, release_id))
+        env_result = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd, jsonify=True)['stdout_json']
+        cluster_id = env_result['id']
 
         self.show_step(6)
         self.fuel_web.update_nodes(
