@@ -117,20 +117,79 @@ def pull_out_logs_via_ssh(admin_remote, name,
 @logwrap
 def store_astute_yaml(env):
     func_name = get_test_method_name()
-    for node in env.d_env.nodes().slaves:
-        nailgun_node = env.fuel_web.get_nailgun_node_by_devops_node(node)
-        if node.driver.node_active(node) and nailgun_node['roles']:
-            try:
-                filename = '{0}/{1}-{2}.yaml'.format(settings.LOGS_DIR,
-                                                     func_name, node.name)
-                logger.info("Storing {0}".format(filename))
-                _ip = env.fuel_web.get_nailgun_node_by_name(node.name)['ip']
-                with env.d_env.get_ssh_to_remote(_ip) as remote:
-                    if not remote.download('/etc/astute.yaml', filename):
-                        logger.error("Downloading 'astute.yaml' from the node "
-                                     "{0} failed.".format(node.name))
-            except Exception:
-                logger.error(traceback.format_exc())
+    nailgun_nodes = env.fuel_web.client.list_nodes()
+
+    def store_astute_yaml_for_one_node(nailgun_node):
+        ssh_manager = SSHManager()
+        if 'roles' not in nailgun_node:
+            return None
+        errmsg = 'Downloading "{0}.yaml" from the {1} failed'
+        msg = 'File "{0}.yaml" was downloaded from the {1}'
+        nodename = nailgun_node['name']
+        ip = nailgun_node['ip']
+        for role in nailgun_node['roles']:
+            filename = '{0}/{1}-{2}-{3}.yaml'.format(settings.LOGS_DIR,
+                                                     func_name,
+                                                     nodename,
+                                                     role)
+
+            if not ssh_manager.isfile_on_remote(ip,
+                                                '/etc/{0}.yaml'.format(role)):
+                role = 'primary-' + role
+            if ssh_manager.download_from_remote(ip,
+                                                '/etc/{0}.yaml'.format(role),
+                                                filename):
+                logger.info(msg.format(role, nodename))
+            else:
+                logger.error(errmsg.format(role, nodename))
+        if settings.DOWNLOAD_FACTS:
+            fact_filename = re.sub(r'-\w*\.', '-facts.', filename)
+            generate_facts(ip)
+            if ssh_manager.download_from_remote(ip,
+                                                '/tmp/facts.yaml',
+                                                fact_filename):
+                logger.info(msg.format('facts', nodename))
+            else:
+                logger.error(errmsg.format('facts', nodename))
+
+    try:
+        for node in nailgun_nodes:
+            store_astute_yaml_for_one_node(node)
+    except Exception:
+        logger.error(traceback.format_exc())
+
+
+@logwrap
+def generate_facts(ip):
+    ssh_manager = SSHManager()
+    facter_dir = '/var/lib/puppet/lib/facter'
+    exluded_facts = ['naily.rb']
+
+    if not ssh_manager.isdir_on_remote(ip, facter_dir):
+        ssh_manager.mkdir_on_remote(ip, facter_dir)
+        logger.debug('Directory {0} was created'.format(facter_dir))
+
+    ssh_manager.execute_on_remote(ip, 'rm -f {0}/*.rb'.format(facter_dir))
+    logger.debug('rb files were removed from {0}'.format(facter_dir))
+
+    facts_files = ssh_manager.execute_on_remote(
+        ip,
+        'find /etc/puppet/modules/ -wholename "*/lib/facter/*.rb"')['stdout']
+    facts_files = [i.strip() for i in facts_files]
+    logger.debug('The following facts {0} will'
+                 ' be copied to {1}'.format(facts_files, facter_dir))
+    for fact in facts_files:
+        if not fact or re.sub(r'.*/', '', fact) in exluded_facts:
+            continue
+        ssh_manager.execute_on_remote(ip,
+                                      'cp {0} {1}/'.format(fact, facter_dir))
+    logger.debug('Facts were copied')
+
+    ssh_manager.execute_on_remote(ip, 'facter -p -y > /tmp/facts.yaml')
+    logger.info('Facts yaml was created')
+
+    ssh_manager.execute_on_remote(ip, 'rm -f {0}/*.rb'.format(facter_dir))
+    logger.debug('rb files were removed from {0}'.format(facter_dir))
 
 
 @logwrap
