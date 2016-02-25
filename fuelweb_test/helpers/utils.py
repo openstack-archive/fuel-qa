@@ -118,17 +118,22 @@ def store_astute_yaml(env):
     for node in env.d_env.nodes().slaves:
         nailgun_node = env.fuel_web.get_nailgun_node_by_devops_node(node)
         if node.driver.node_active(node) and nailgun_node['roles']:
-            try:
-                filename = '{0}/{1}-{2}.yaml'.format(settings.LOGS_DIR,
-                                                     func_name, node.name)
-                logger.info("Storing {0}".format(filename))
-                _ip = env.fuel_web.get_nailgun_node_by_name(node.name)['ip']
-                with env.d_env.get_ssh_to_remote(_ip) as remote:
-                    if not remote.download('/etc/astute.yaml', filename):
-                        logger.error("Downloading 'astute.yaml' from the node "
-                                     "{0} failed.".format(node.name))
-            except Exception:
-                logger.error(traceback.format_exc())
+            for role in nailgun_node['roles']:
+                try:
+                    filename = '{0}/{1}-{2}-{3}.yaml'.format(settings.LOGS_DIR,
+                                                         func_name, node.name,
+                                                         role)
+                    logger.info("Storing {0}".format(filename))
+                    _ip = env.fuel_web.get_nailgun_node_by_name(
+                        node.name)['ip']
+                    with env.d_env.get_ssh_to_remote(_ip) as remote:
+                        if not remote.download('/etc/{0}.yaml'.format(role),
+                                               filename):
+                            logger.error("Downloading '{0}.yaml' from the "
+                                         "node {1} failed.".format(role,
+                                                                   node.name))
+                except Exception:
+                    logger.error(traceback.format_exc())
 
 
 @logwrap
