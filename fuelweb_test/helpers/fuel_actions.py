@@ -29,7 +29,6 @@ from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
 from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
 from fuelweb_test.helpers import replace_repos
 from fuelweb_test.helpers.ssh_manager import SSHManager
-from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
 from fuelweb_test.settings import MIRROR_UBUNTU
@@ -375,9 +374,7 @@ class NailgunActions(BaseActions):
         cmd = "bash -c 'echo > /var/log/nailgun/statsenderd.log'"
         self.ssh_manager.execute_on_remote(
             ip=self.admin_ip, cmd=cmd, raise_on_assert=False)
-        cmd = 'supervisorctl restart statsenderd'
-        if MASTER_IS_CENTOS7:
-            cmd = 'systemctl restart statsenderd'
+        cmd = 'systemctl restart statsenderd'
         self.ssh_manager.execute_on_remote(ip=self.admin_ip, cmd=cmd)
         cmd = 'grep -sw "ERROR" {0}'.format(log_file)
         try:
@@ -397,11 +394,8 @@ class NailgunActions(BaseActions):
                 'vm', 'flavor', 'volume', 'image', 'tenant', 'keystone_user'
             ]
         for resource in resources:
-            cmd = 'supervisorctl restart oswl' \
+            cmd = 'systemctl restart oswl' \
                   '_{0}_collectord'.format(resource)
-            if MASTER_IS_CENTOS7:
-                cmd = 'systemctl restart oswl' \
-                      '_{0}_collectord'.format(resource)
             self.ssh_manager.execute_on_remote(ip=self.admin_ip, cmd=cmd)
 
 

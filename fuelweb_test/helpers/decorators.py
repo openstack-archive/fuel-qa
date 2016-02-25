@@ -29,7 +29,6 @@ import requests
 
 from fuelweb_test import logger
 from fuelweb_test import settings
-from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test.helpers.checkers import check_action_logs
 from fuelweb_test.helpers.checkers import check_repo_managment
 from fuelweb_test.helpers.checkers import check_stats_on_collector
@@ -479,11 +478,8 @@ def duration(func):
     """
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        if MASTER_IS_CENTOS7:
+        with TimeStat(func.__name__):
             return func(*args, **kwargs)
-        else:
-            with TimeStat(func.__name__):
-                return func(*args, **kwargs)
     return wrapper
 
 
