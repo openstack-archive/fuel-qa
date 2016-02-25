@@ -4,7 +4,7 @@ version: '3.0.0'
 description: Build plugin for test vip_reservation_plugin
 fuel_version: ['9.0']
 licenses: ['Apache License Version 2.0']
-authors: ['Mirantis']
+authors: ['Fuel']
 homepage: 'https://github.com/openstack/fuel-plugins'
 groups: []
 releases:

@@ -32,7 +32,7 @@ def generate_user_own_cert(cn, path_to_cert=PATH_TO_CERT,
     k = crypto.PKey()
     k.generate_key(crypto.TYPE_RSA, 2048)
     cert = crypto.X509()
-    cert.get_subject().OU = 'Mirantis Fuel-QA Team'
+    cert.get_subject().OU = 'Fuel-QA Team'
     cert.get_subject().CN = cn
     cert.set_serial_number(1000)
     cert.gmtime_adj_notBefore(0)
