@@ -750,10 +750,13 @@ def check_config(conf, conf_name, section, option, value):
     :param value: a string of value in configuration file
     """
     if value is None:
-        asserts.assert_raises(ConfigParser.NoOptionError,
-                              conf.get,
-                              section,
-                              option)
+        try:
+            conf.get(section, option)
+        except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+            pass
+        else:
+            raise Exception('Config file {0} has section "{1}" and '
+                            'option "{2}"!'.format(conf_name, section, option))
     else:
         asserts.assert_equal(conf.get(section, option),
                              value,
