@@ -514,6 +514,57 @@ class EnvironmentModel(object):
                 ip=self.ssh_manager.admin_ip,
                 cmd=cmd
             )
+        if settings.DISABLE_OFFLOADING:
+            logger.info(
+                '========================================'
+                'Applying workaround for bug #1526544'
+                '========================================'
+            )
+            # Disable TSO offloading for every network interface
+            # that is not virtual (loopback, bridges, etc)
+            # Note that #!/bin/bash echo'ed separately to workaround issue
+            #   bash: !/bin/bash: event not found
+            ifup_local = (
+                """if [[ -z "${1}" ]]; then\n"""
+                """  exit\n"""
+                """fi\n"""
+                """devpath=$(readlink -m /sys/class/net/${1})\n"""
+                """if [[ "${devpath}" == /sys/devices/virtual/* ]]; then\n"""
+                """  exit\n"""
+                """fi\n"""
+                """ethtool -K ${1} tso off\n"""
+            )
+            cmd = (
+                'touch /sbin/ifup-local;'
+                'chmod +x /sbin/ifup-local;'
+                'echo -e \#\!/bin/bash > /sbin/ifup-local;'
+                'echo -e "{0}" >> /sbin/ifup-local;'
+            ).format(ifup_local)
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
+            cmd = (
+                'for ifname in $(ls /sys/class/net); do '
+                'sudo /sbin/ifup-local ${ifname}; done'
+            )
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
+            # Log interface settings
+            cmd = (
+                'for ifname in $(ls /sys/class/net); do '
+                '([[ $(readlink -e /sys/class/net/${ifname}) == '
+                '/sys/devices/virtual/* ]] '
+                '|| ethtool -k ${ifname}); done'
+            )
+            result = self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
+            logger.debug('Offloading settings:\n{0}\n'.format(
+                         ''.join(result['stdout'])))
 
     @update_rpm_packages
     @upload_manifests
