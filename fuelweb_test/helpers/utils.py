@@ -750,15 +750,29 @@ def check_config(conf, conf_name, section, option, value):
     :param value: a string of value in configuration file
     """
     if value is None:
-        asserts.assert_raises(ConfigParser.NoOptionError,
-                              conf.get,
-                              section,
-                              option)
+        if conf.has_section(section) and conf.has_option(section, option):
+            current_value = conf.get(section, option)
+            raise Exception('The option "{0}" of section "{1}" should be '
+                            'absent but actually has value "{2}" '
+                            'in config file "{3}"'.format(option,
+                                                          section,
+                                                          current_value,
+                                                          conf_name))
+        logger.debug('The option "{0}" of section "{1}" '
+                     'is in a correct state (absent) '
+                     'in config file "{2}"'.format(option,
+                                                   section,
+                                                   conf_name))
     else:
         asserts.assert_equal(conf.get(section, option),
                              value,
                              'The option "{0}" has not value '
                              '"{1}" in {2}'.format(option, value, conf_name))
+        logger.debug('Config file "{0}" contains the correct value "{1}"'
+                     ' of option "{2}" in section "{3}"'.format(conf_name,
+                                                                value,
+                                                                option,
+                                                                section))
 
 
 @logwrap
