@@ -369,6 +369,11 @@ class EnvironmentModel(object):
         new_login = settings.SSH_CREDENTIALS['login']
         new_password = settings.SSH_CREDENTIALS['password']
         try:
+            self.ssh_manager.update_connection(
+                ip=self.ssh_manager.admin_ip,
+                login=new_login,
+                password=new_password
+            )
             self.ssh_manager.execute_on_remote(
                 ip=self.ssh_manager.admin_ip,
                 cmd='date'
