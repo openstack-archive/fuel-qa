@@ -514,6 +514,23 @@ class EnvironmentModel(object):
                 ip=self.ssh_manager.admin_ip,
                 cmd=cmd
             )
+        if settings.DISABLE_OFFLOADING:
+            cmd = 'for ifname in $(ls /sys/class/net); do ' \
+                  '([ $(readlink -e ${ifname}) == /sys/devices/virtual/* ] ' \
+                  '|| ethtool -K ${ifname} tso off); done'
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
+            cmd = 'for ifname in $(ls /sys/class/net); do ' \
+                  '([ $(readlink -e ${ifname}) == /sys/devices/virtual/* ] ' \
+                  '|| ethtool -k ${ifname}); done'
+            result = self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
+            logger.info('Offloading settings:\n%s\n'
+                        % '\n'.join(result['stdout']))
 
     @update_rpm_packages
     @upload_manifests
