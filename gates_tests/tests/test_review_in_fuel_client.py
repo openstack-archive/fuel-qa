@@ -108,8 +108,7 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
             7. Update SSL settings
             8. List environments
             9. Add and provision 1 node with controller role
-            10. Deploy node
-            11. Delete cluster
+            10. Delete cluster
 
         Duration 20m
         """
@@ -188,16 +187,7 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
             task = run_on_remote(remote, cmd, jsonify=True)
             self.assert_cli_task_success(task, timeout=30 * 60)
 
-            # Deploy the controller node
-            self.show_step(10)
-            cmd = ('fuel --env-id={0} node --deploy --node {1} --json'
-                   .format(cluster_id, node_id[0]))
-            task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, timeout=60 * 60)
-
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['sanity'])
-        self.show_step(11)
+        self.show_step(10)
         with self.env.d_env.get_admin_remote() as remote:
             res = remote.execute('fuel --env {0} env delete'
                                  .format(cluster_id))
