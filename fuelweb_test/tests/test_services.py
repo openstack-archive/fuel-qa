@@ -87,10 +87,12 @@ class SaharaHAOneController(TestBasic):
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
             checkers.verify_service(
                 remote,
-                service_name='sahara-api')
+                service_name='sahara-api',
+                count=2)
             checkers.verify_service(
                 remote,
-                service_name='sahara-engine')
+                service_name='sahara-engine',
+                count=2)
 
         logger.debug('Check MD5 sum of Vanilla2 image')
         check_image = checkers.check_image(
@@ -197,10 +199,12 @@ class SaharaHA(TestBasic):
             with self.env.d_env.get_ssh_to_remote(_ip) as remote:
                 checkers.verify_service(
                     remote,
-                    service_name='sahara-api')
+                    service_name='sahara-api',
+                    count=2)
                 checkers.verify_service(
                     remote,
-                    service_name='sahara-engine')
+                    service_name='sahara-engine',
+                    count=2)
 
         logger.debug('Check MD5 sum of Vanilla2 image')
         check_image = checkers.check_image(
