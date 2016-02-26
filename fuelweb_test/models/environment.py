@@ -514,6 +514,75 @@ class EnvironmentModel(object):
                 ip=self.ssh_manager.admin_ip,
                 cmd=cmd
             )
+        if settings.DISABLE_OFFLOADING:
+            cmd = 'for ifname in $(ls /sys/class/net); do ' \
+                  '([ $(readlink -e ${ifname}) == /sys/devices/virtual/* ] ' \
+                  '|| ethtool -K ${ifname} tso off); done'
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
+        if settings.CONFIGURE_E1000:
+            cmd = 'echo "options e1000 TxDescriptorStep=4" ' \
+                  '>> /etc/modprobe.d/e1000.conf'
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
+            self.reboot_master_node()
+            self.wait_for_provisioning()
+            self.wait_for_puppet_finished()
+
+
+    def wait_for_puppet_finished(self, timeout=120):
+        self.wait_for_provisioning()
+        try:
+            remote = self.d_env.get_admin_remote()
+            cmd = 'c=0; ' \
+                  'while test $c -gt 3; do ' \
+                  '(pkill -0 puppet && c=$((c + 1))); ' \
+                  'sleep 1; ' \
+                  'done'
+            logger.info('Waiting for puppet finishes to run ...')
+            wait(lambda: remote.execute(cmd)['exit_code'] == 0,
+                 timeout=timeout)
+        except Exception:
+            logger.error('Failed to wait for master node'
+                         ' readiness after reboot')
+            raise
+
+    def reboot_master_node(self, timeout=600):
+        uptime = self.get_master_node_uptime()
+        logger.info('Rebooting master node, uptime %s ...' % uptime)
+        remote = self.d_env.get_admin_remote()
+        remote.execute('reboot &')
+        logger.info('Waiting for master node to reboot ...')
+        self.wait_for_provisioning()
+        try:
+            wait(lambda: self.check_master_node_rebooted(uptime),
+                 timeout=timeout)
+        except Exception:
+            logger.error('Failed to wait for master node to reboot')
+            raise
+
+    def get_master_node_uptime(self):
+        try:
+            remote = self.d_env.get_admin_remote()
+            result = remote.execute('cat /proc/uptime')
+            return float(result['stdout'][0].split()[0])
+        except Exception:
+            return None
+
+    def check_master_node_rebooted(self, uptime=None):
+        if not uptime:
+            return False
+        curr_uptime = self.get_master_node_uptime()
+        if not curr_uptime:
+            return False
+        if curr_uptime >= uptime:
+            return False
+        logger.info('Node has been rebooted, uptime %s' % curr_uptime)
+        return True
 
     @update_rpm_packages
     @upload_manifests
