@@ -312,7 +312,7 @@ class ZabbixPlugin(TestBasic):
         mgmt_vip_nailgun_node = self.fuel_web.get_nailgun_node_by_devops_node(
             mgmt_vip_devops_node)
 
-        with self.env.d_env.get_ssh_to_remote(
+        with self.env.get_ssh_to_remote(
                 mgmt_vip_nailgun_node['ip']) as remote:
             cmd = ('grep netSnmpExampleHeartbeatNotification '
                    '/var/log/zabbix/zabbix_server.log | '

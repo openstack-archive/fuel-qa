@@ -131,7 +131,7 @@ class TestOffloading(BondingTest):
         for node in nodes:
             for eth in bond0:
                 for name in offloadings_1:
-                    with self.env.d_env.get_ssh_to_remote(node['ip']) as host:
+                    with self.env.get_ssh_to_remote(node['ip']) as host:
                         result = check_offload(host, eth, name)
                         assert_equal(
                             result, 'off',
@@ -139,7 +139,7 @@ class TestOffloading(BondingTest):
                                 name, result, node['id'], eth))
             for eth in bond1:
                 for name in offloadings_2:
-                    with self.env.d_env.get_ssh_to_remote(node['ip']) as host:
+                    with self.env.get_ssh_to_remote(node['ip']) as host:
                         result = check_offload(host, eth, name)
                         assert_equal(
                             result, 'on',
@@ -241,7 +241,7 @@ class TestOffloading(BondingTest):
         for node in nodes:
             for eth in bond0:
                 for name in offloadings_1:
-                    with self.env.d_env.get_ssh_to_remote(node['ip']) as host:
+                    with self.env.get_ssh_to_remote(node['ip']) as host:
                         result = check_offload(host, eth, name)
                         assert_equal(
                             result, 'off',
@@ -249,7 +249,7 @@ class TestOffloading(BondingTest):
                                 name, result, node['id'], eth))
             for eth in bond1:
                 for name in offloadings_2:
-                    with self.env.d_env.get_ssh_to_remote(node['ip']) as host:
+                    with self.env.get_ssh_to_remote(node['ip']) as host:
                         result = check_offload(host, eth, name)
                         assert_equal(
                             result, 'on',
