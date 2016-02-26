@@ -560,15 +560,26 @@ class EnvironmentModel(object):
     def wait_bootstrap(self):
         logger.info("Waiting while bootstrapping is in progress")
         log_path = "/var/log/puppet/bootstrap_admin_node.log"
-        logger.info("Puppet timeout set in {0}".format(
-            float(settings.PUPPET_TIMEOUT)))
         with self.d_env.get_admin_remote() as admin_remote:
+            logger.info("Running puppet (timeout: {0})".format(
+                float(settings.ADMIN_NODE_PUPPET_TIMEOUT)))
+            wait(
+                lambda: not
+                admin_remote.execute(
+                    "grep 'There is no active bootstrap. Bootstrap image "
+                    "building is in progress' '%s'" % log_path
+                )['exit_code'],
+                timeout=(float(settings.ADMIN_NODE_PUPPET_TIMEOUT))
+            )
+            logger.info("Start building Ubuntu bootstrap image "
+                "(timeout: {0})".format(
+                float(settings.ADMIN_NODE_BOOTSTRAP_TIMEOUT)))
             wait(
                 lambda: not
                 admin_remote.execute(
                     "grep 'Fuel node deployment' '%s'" % log_path
                 )['exit_code'],
-                timeout=(float(settings.PUPPET_TIMEOUT))
+                timeout=(float(settings.ADMIN_NODE_BOOTSTRAP_TIMEOUT))
             )
             result = admin_remote.execute(
                 "grep 'Fuel node deployment "
