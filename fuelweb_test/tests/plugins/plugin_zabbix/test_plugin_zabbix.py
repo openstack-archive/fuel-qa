@@ -84,8 +84,7 @@ class ZabbixPlugin(TestBasic):
         assert_true(
             self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
             "Plugin couldn't be enabled. Check plugin version. Test aborted")
-        plugin_options = {'metadata/enabled': True,
-                          'username/value': zabbix_username,
+        plugin_options = {'username/value': zabbix_username,
                           'password/value': zabbix_password}
         self.fuel_web.update_plugin_data(
             cluster_id, plugin_name, plugin_options)
@@ -98,8 +97,7 @@ class ZabbixPlugin(TestBasic):
         assert_true(
             self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
             "Plugin couldn't be enabled. Check plugin version. Test aborted")
-        plugin_options = {'metadata/enabled': True,
-                          'community/value': snmp_community}
+        plugin_options = {'community/value': snmp_community}
         self.fuel_web.update_plugin_data(
             cluster_id, plugin_name, plugin_options)
 
@@ -110,8 +108,7 @@ class ZabbixPlugin(TestBasic):
             self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
             "Plugin couldn't be enabled. Check plugin version. Test aborted")
 
-        plugin_options = {'metadata/enabled': True,
-                          'hosts/value': 'emc:10.109.2.2'}
+        plugin_options = {'hosts/value': 'emc:10.109.2.2'}
         self.fuel_web.update_plugin_data(
             cluster_id, plugin_name, plugin_options)
 
@@ -122,8 +119,7 @@ class ZabbixPlugin(TestBasic):
             self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
             "Plugin couldn't be enabled. Check plugin version. Test aborted")
 
-        plugin_options = {'metadata/enabled': True,
-                          'hosts/value': 'extreme:10.109.2.2'}
+        plugin_options = {'hosts/value': 'extreme:10.109.2.2'}
         self.fuel_web.update_plugin_data(
             cluster_id, plugin_name, plugin_options)
 
