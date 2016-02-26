@@ -522,9 +522,13 @@ KEYSTONE_CREDS = {'username': os.environ.get('KEYSTONE_USERNAME', 'admin'),
                   'tenant_name': os.environ.get('KEYSTONE_TENANT', 'admin')}
 
 # Default SSH password 'ENV_FUEL_PASSWORD' can be changed on Fuel master node
-SSH_CREDENTIALS = {
+SSH_FUEL_CREDENTIALS = {
     'login': os.environ.get('ENV_FUEL_LOGIN', 'root'),
     'password': os.environ.get('ENV_FUEL_PASSWORD', 'r00tme')}
+
+SSH_SLAVE_CREDENTIALS = {
+    'login': os.environ.get('ENV_SLAVE_LOGIN', 'fuel'),
+    'password': os.environ.get('ENV_SLAVE_PASSWORD', 'fuel')}
 
 ###############################################################################
 

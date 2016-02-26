@@ -306,7 +306,7 @@ class TestJumboFrames(base_test_case.TestBasic):
         for node_name in ['slave-01', 'slave-02', 'slave-03',
                           'slave-04', 'slave-05']:
             node = self.fuel_web.get_nailgun_node_by_name(node_name)
-            with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
+            with self.env.get_ssh_to_remote(node['ip']) as remote:
                 for iface in self.interfaces_update:
                     asserts.assert_true(
                         self.check_node_iface_mtu(remote, iface['name'], 9000),
@@ -387,7 +387,7 @@ class TestJumboFrames(base_test_case.TestBasic):
         for node_name in ['slave-01', 'slave-02', 'slave-03',
                           'slave-04', 'slave-05']:
             node = self.fuel_web.get_nailgun_node_by_name(node_name)
-            with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
+            with self.env.get_ssh_to_remote(node['ip']) as remote:
                 for iface in self.interfaces_update:
                     asserts.assert_true(
                         self.check_node_iface_mtu(remote, iface['name'], 9000),
@@ -470,7 +470,7 @@ class TestJumboFrames(base_test_case.TestBasic):
         for node_name in ['slave-01', 'slave-02', 'slave-03',
                           'slave-04', 'slave-05']:
             node = self.fuel_web.get_nailgun_node_by_name(node_name)
-            with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
+            with self.env.get_ssh_to_remote(node['ip']) as remote:
                 for iface in self.interfaces_update:
                     asserts.assert_true(
                         self.check_node_iface_mtu(remote, iface['name'], 9000),
@@ -553,7 +553,7 @@ class TestJumboFrames(base_test_case.TestBasic):
         for node_name in ['slave-01', 'slave-02', 'slave-03',
                           'slave-04', 'slave-05']:
             node = self.fuel_web.get_nailgun_node_by_name(node_name)
-            with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
+            with self.env.get_ssh_to_remote(node['ip']) as remote:
                 for iface in self.interfaces_update:
                     asserts.assert_true(
                         self.check_node_iface_mtu(remote, iface['name'], 9000),

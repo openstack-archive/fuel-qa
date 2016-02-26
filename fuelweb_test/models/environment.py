@@ -64,8 +64,8 @@ class EnvironmentModel(object):
         self.ssh_manager = SSHManager()
         self.ssh_manager.initialize(
             self.get_admin_node_ip(),
-            login=settings.SSH_CREDENTIALS['login'],
-            password=settings.SSH_CREDENTIALS['password']
+            login=settings.SSH_FUEL_CREDENTIALS['login'],
+            password=settings.SSH_FUEL_CREDENTIALS['password']
         )
         self.admin_actions = AdminActions()
         self.base_actions = BaseActions()
@@ -366,8 +366,8 @@ class EnvironmentModel(object):
         return True
 
     def set_admin_ssh_password(self):
-        new_login = settings.SSH_CREDENTIALS['login']
-        new_password = settings.SSH_CREDENTIALS['password']
+        new_login = settings.SSH_FUEL_CREDENTIALS['login']
+        new_password = settings.SSH_FUEL_CREDENTIALS['password']
         try:
             self.ssh_manager.execute_on_remote(
                 ip=self.ssh_manager.admin_ip,
@@ -807,3 +807,10 @@ class EnvironmentModel(object):
         return self.postgres_actions.run_query(
             db='nailgun',
             query="select master_node_uid from master_node_settings limit 1;")
+
+    def get_ssh_to_remote(self, ip,
+                          login=SSH_SLAVE_CREDENTIALS['login'],
+                          password=SSH_SLAVE_CREDENTIALS['password']):
+        return self.d_env.get_ssh_to_remote(ip,
+                                            login=login,
+                                            password=password).sudo

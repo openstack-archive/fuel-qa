@@ -1205,9 +1205,9 @@ class TestHaFailoverBase(TestBasic):
                 cluster_id, ['controller'])
             alive_corosync_nodes = [node for node in ctrl_nodes
                                     if node['mac'] != controller_node['mac']]
-            ctrl_remotes = [self.env.d_env.get_ssh_to_remote(node['ip'])
+            ctrl_remotes = [self.env.get_ssh_to_remote(node['ip'])
                             for node in ctrl_nodes]
-            live_remotes = [self.env.d_env.get_ssh_to_remote(node['ip'])
+            live_remotes = [self.env.get_ssh_to_remote(node['ip'])
                             for node in alive_corosync_nodes]
             for count in xrange(500):
                 logger.debug('Checking splitbrain in the loop, '

@@ -166,9 +166,9 @@ class EMCPlugin(TestBasic):
         compute_nodes = [self.fuel_web.get_nailgun_node_by_name(node)
                          for node in ['slave-04', 'slave-05']]
 
-        controller_remotes = [self.env.d_env.get_ssh_to_remote(node['ip'])
+        controller_remotes = [self.env.get_ssh_to_remote(node['ip'])
                               for node in controller_nodes]
-        compute_remotes = [self.env.d_env.get_ssh_to_remote(node['ip'])
+        compute_remotes = [self.env.get_ssh_to_remote(node['ip'])
                            for node in compute_nodes]
 
         # check cinder-volume settings

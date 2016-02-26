@@ -38,7 +38,7 @@ class SecurityChecks(object):
             cmd = '/usr/bin/apt-get install -y {pkg}'.format(pkg='socat')
         else:
             cmd = '/usr/bin/yum install -y {pkg}'.format(pkg='socat')
-        with self.environment.d_env.get_ssh_to_remote(ip_address) as remote:
+        with self.environment.get_ssh_to_remote(ip_address) as remote:
             result = remote.execute(cmd)
         if not result['exit_code'] == 0:
             raise Exception('Could not install package: {0}\n{1}'.
@@ -47,7 +47,7 @@ class SecurityChecks(object):
         cmd = ('netstat -A inet -ln --{proto} | awk \'$4 ~ /^({ip}'
                '|0\.0\.0\.0):[0-9]+/ {{split($4,port,":"); print '
                'port[2]}}\'').format(ip=ip_address, proto=protocol)
-        with self.environment.d_env.get_ssh_to_remote(ip_address) as remote:
+        with self.environment.get_ssh_to_remote(ip_address) as remote:
             used_ports = [int(p.strip())
                           for p in remote.execute(cmd)['stdout']]
 
@@ -58,7 +58,7 @@ class SecurityChecks(object):
                ' while read ports; do if [[ "$ports" =~ [[:digit:]]'
                '[[:blank:]][[:digit:]] ]]; then seq $ports; else echo '
                '"$ports";fi; done').format(proto=protocol)
-        with self.environment.d_env.get_ssh_to_remote(ip_address) as remote:
+        with self.environment.get_ssh_to_remote(ip_address) as remote:
             allowed_ports = [int(p.strip())
                              for p in remote.execute(cmd)['stdout']]
 
@@ -68,7 +68,7 @@ class SecurityChecks(object):
 
         # Create dump of iptables rules
         cmd = 'iptables-save > {0}.dump'.format(tmp_file_path)
-        with self.environment.d_env.get_ssh_to_remote(ip_address) as remote:
+        with self.environment.get_ssh_to_remote(ip_address) as remote:
             result = remote.execute(cmd)
         assert_equal(result['exit_code'], 0,
                      'Dumping of iptables rules failed on {0}: {1}; {2}'.
@@ -79,7 +79,7 @@ class SecurityChecks(object):
                '&>/dev/null & pid=$! ; disown; sleep 1; kill -0 $pid').\
             format(proto=protocol, ip=ip_address, file=tmp_file_path,
                    port=test_port)
-        with self.environment.d_env.get_ssh_to_remote(ip_address) as remote:
+        with self.environment.get_ssh_to_remote(ip_address) as remote:
             result = remote.execute(cmd)
 
         assert_equal(result['exit_code'], 0,
@@ -114,8 +114,7 @@ class SecurityChecks(object):
                            port=port)
                 with self.environment.d_env.get_admin_remote() as admin_remote:
                     admin_remote.execute(cmd)
-                with self.environment.d_env\
-                        .get_ssh_to_remote(node['ip']) as remote:
+                with self.environment.get_ssh_to_remote(node['ip']) as remote:
                     cmd = 'cat {0}; mv {0}{{,.old}}'.format(tmp_file_path)
                     result = remote.execute(cmd)
                 if ''.join(result['stdout']).strip() == check_string:

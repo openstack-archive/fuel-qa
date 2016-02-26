@@ -26,6 +26,7 @@ from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import MULTIPLE_NETWORKS_TEMPLATE
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
+from fuelweb_test.settings import SSH_SLAVE_CREDENTIALS
 
 
 class TestBasic(object):
@@ -141,6 +142,13 @@ class TestBasic(object):
                 test_groups & dependent_groups:
             return True
         return False
+
+    def get_ssh_to_remote(self, ip,
+                          login=SSH_SLAVE_CREDENTIALS['login'],
+                          password=SSH_SLAVE_CREDENTIALS['password']):
+        return self.env.get_ssh_to_remote(ip,
+                                                login=login,
+                                                password=password).sudo
 
 
 @test
