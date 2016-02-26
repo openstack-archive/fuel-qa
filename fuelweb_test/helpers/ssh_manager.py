@@ -126,6 +126,30 @@ class SSHManager(object):
                 private_keys=keys if keys is not None else []
             )
 
+    def clean_all_connections(self, ip, port=22):
+        """Re-open all connections
+
+        :param ip: host ip string
+        :param port: ssh port int
+        :return: None
+        """
+        if (ip, port) in self.connections:
+            logger.info('SSH_MANAGER:Close connection for {ip}:{port}'.format(
+                ip=ip, port=port))
+            self.connections[(ip, port)].clear()
+            logger.info('SSH_MANAGER:Create new connection for '
+                        '{ip}:{port}'.format(ip=ip, port=port))
+
+            keys = self._get_keys() if ip != self.admin_ip else []
+
+            self.connections[(ip, port)] = SSHClient(
+                host=ip,
+                port=port,
+                username=self.login,
+                password=self.__password,
+                private_keys=keys
+            )
+
     def execute(self, ip, cmd, port=22):
         remote = self._get_remote(ip=ip, port=port)
         return remote.execute(cmd)

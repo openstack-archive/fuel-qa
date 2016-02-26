@@ -277,6 +277,10 @@ class EnvironmentModel(object):
         self.d_env.resume()
         admin = self.d_env.nodes().admin
 
+        self.ssh_manager.clean_all_connections(
+            ip=self.ssh_manager.admin_ip
+        )
+
         try:
             admin.await(self.d_env.admin_net, timeout=30, by_port=8000)
         except Exception as e:
