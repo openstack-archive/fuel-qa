@@ -36,8 +36,8 @@ from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import POOLS
 from fuelweb_test.settings import PUBLIC_TEST_IP
 
-from ipaddr import IPAddress
-from ipaddr import IPNetwork
+from netaddr import IPAddress
+from netaddr import IPNetwork
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
