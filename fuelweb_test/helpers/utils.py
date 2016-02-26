@@ -741,24 +741,53 @@ def get_ini_config(data):
 
 @logwrap
 def check_config(conf, conf_name, section, option, value):
-    """Check param and their value in configuration file.
+    """Check existence of parameter with a proper value
+    or its absence in configuration file.
 
     :param conf: a file object
     :param conf_name: a string of full file path
     :param section: a string of section name in configuration file
     :param option: a string of option name in configuration file
-    :param value: a string of value in configuration file
+    :param value: None or a string of value in configuration file
     """
     if value is None:
-        asserts.assert_raises(ConfigParser.NoOptionError,
-                              conf.get,
-                              section,
-                              option)
+        if conf.has_section(section) and conf.has_option(section, option):
+            current_value = conf.get(section, option)
+            raise Exception('The option "{0}" of section "{1}" should be '
+                            'absent but actually has value "{2}" '
+                            'in config file "{3}": FAIL'.format(option,
+                                                                section,
+                                                                current_value,
+                                                                conf_name))
+        logger.debug('Expected that the option "{0}" of section "{1}" is '
+                     'absent in config file "{2}": SUCCESS'.format(option,
+                                                                   section,
+                                                                   conf_name))
     else:
-        asserts.assert_equal(conf.get(section, option),
+        if not conf.has_section(section):
+            raise Exception('The section "{0}" is absent in '
+                            'config file "{1}": FAIL'.format(section,
+                                                             conf_name))
+        if not conf.has_option(section, option):
+            raise Exception('The option "{0}" of section "{1}" is absent '
+                            'in config file "{2}": FAIL'.format(option,
+                                                                section,
+                                                                conf_name))
+        current_value = conf.get(section, option)
+        asserts.assert_equal(current_value,
                              value,
-                             'The option "{0}" has not value '
-                             '"{1}" in {2}'.format(option, value, conf_name))
+                             'Expected that the option "{0}" has value '
+                             '"{1}" in config file {2} but actually has '
+                             'value "{3}": FAIL'.format(option,
+                                                        value,
+                                                        current_value,
+                                                        conf_name))
+        logger.debug('The config file "{0}" contains '
+                     'the correct value "{1}" of option "{2}" '
+                     'in section "{3}": SUCCESS'.format(conf_name,
+                                                        value,
+                                                        option,
+                                                        section))
 
 
 @logwrap
