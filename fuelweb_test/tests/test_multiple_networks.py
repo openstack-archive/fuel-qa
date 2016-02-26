@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from ipaddr import IPAddress
+from ipaddr import summarize_address_range
 import netaddr
 import json
 
@@ -65,7 +67,7 @@ class TestMultipleClusterNets(TestBasic):
         asserts.assert_true(len(default_admin_network) == 1,
                             "Default 'admin/pxe' network not found "
                             "in cluster network configuration!")
-        default_admin_range = [netaddr.IPAddress(ip) for ip
+        default_admin_range = [IPAddress(ip) for ip
                                in default_admin_network[0]["ip_ranges"][0]]
         new_admin_range = [default_admin_range[0] + number_excluded_ips,
                            default_admin_range[1]]
@@ -75,8 +77,9 @@ class TestMultipleClusterNets(TestBasic):
 
     @staticmethod
     def is_ip_in_range(ip_addr, ip_range_start, ip_range_end):
-        return netaddr.IPAddress(ip_addr) in netaddr.iter_iprange(
-            ip_range_start, ip_range_end)
+        ip_addr_ranges = summarize_address_range(IPAddress(ip_range_start),
+                                                 IPAddress(ip_range_end))
+        return any(IPAddress(ip_addr) in iprange for iprange in ip_addr_ranges)
 
     @staticmethod
     def is_update_dnsmasq_running(tasks):
@@ -654,9 +657,8 @@ class TestMultipleClusterNets(TestBasic):
         }
 
         for k in check:
-            vip = netaddr.IPAddress(current_settings['vips'][k]['ipaddr'])
-            custom_net = netaddr.IPNetwork(
-                self.env.d_env.get_network(name=check[k]).ip)
+            vip = IPAddress(current_settings['vips'][k]['ipaddr'])
+            custom_net = self.env.d_env.get_network(name=check[k]).ip
             asserts.assert_true(
                 vip in custom_net,
                 '{0} is not from {1} network'.format(k, check[k]))
