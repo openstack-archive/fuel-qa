@@ -560,19 +560,30 @@ class EnvironmentModel(object):
     def wait_bootstrap(self):
         logger.info("Waiting while bootstrapping is in progress")
         log_path = "/var/log/puppet/bootstrap_admin_node.log"
-        logger.info("Puppet timeout set in {0}".format(
-            float(settings.PUPPET_TIMEOUT)))
-        with self.d_env.get_admin_remote() as admin_remote:
-            wait(
-                lambda: not
-                admin_remote.execute(
-                    "grep 'Fuel node deployment' '%s'" % log_path
-                )['exit_code'],
-                timeout=(float(settings.PUPPET_TIMEOUT))
-            )
-            result = admin_remote.execute(
-                "grep 'Fuel node deployment "
-                "complete' '%s'" % log_path)['exit_code']
+        logger.info("Running puppet (timeout: {0})".format(
+            float(settings.ADMIN_NODE_PUPPET_TIMEOUT)))
+        wait(
+            lambda: self.ssh_manager.execute(
+                ip=self.ssh_manager.admin_ip,
+                cmd="grep 'There is no active bootstrap. Bootstrap image "
+                "building is in progress' '%s'" % log_path
+            )['exit_code'] == 0,
+            timeout=(float(settings.ADMIN_NODE_PUPPET_TIMEOUT))
+        )
+        logger.info("Start building Ubuntu bootstrap image "
+                    "(timeout: {0})".format(
+                        float(settings.ADMIN_NODE_BOOTSTRAP_TIMEOUT)))
+        wait(
+            lambda: self.ssh_manager.execute(
+                ip=self.ssh_manager.admin_ip,
+                cmd="grep 'Fuel node deployment' '%s'" % log_path
+            )['exit_code'] == 0,
+            timeout=(float(settings.ADMIN_NODE_BOOTSTRAP_TIMEOUT))
+        )
+        result = self.ssh_manager.execute(
+            ip=self.ssh_manager.admin_ip,
+            cmd="grep 'Fuel node deployment "
+            "complete' '%s'" % log_path)['exit_code']
         if result != 0:
             raise Exception('Fuel node deployment failed.')
         self.bootstrap_image_check()
