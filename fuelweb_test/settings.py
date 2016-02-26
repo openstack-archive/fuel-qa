@@ -611,3 +611,14 @@ IRONIC_USER_IMAGE_URL = os.environ.get(
                              "trusty-server-cloudimg-amd64.tar.gz")
 
 NOVA_QUOTAS_ENABLED = get_var_as_bool("NOVA_QUOTAS_ENABLED", False)
+
+# A list of plugins, separated by ' ', to be installed on the Fuel master node.
+# For example,
+# AIC_PLUGINS = 'aic-fuel-plugin-0.1 contrail-3.0'
+AIC_PLUGINS = os.environ.get('AIC_PLUGINS', '')
+
+# A list of plugin repositories, separated by '|', to download plugins from.
+# Format: <repo name> <repo URL> <priority>
+# For example,
+# AIC_PLUGIN_REPOS = 'repo-1 http://... 100| repo-2 http://... 99'
+AIC_PLUGIN_REPOS = os.environ.get('AIC_PLUGIN_REPOS', '')
