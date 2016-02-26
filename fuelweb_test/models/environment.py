@@ -514,6 +514,28 @@ class EnvironmentModel(object):
                 ip=self.ssh_manager.admin_ip,
                 cmd=cmd
             )
+        if settings.DISABLE_OFFLOADING:
+            # Disable TSO offloading for every network interface
+            # that is not virtual (loopback, bridges, etc)
+            cmd = 'for ifname in $(ls /sys/class/net); do ' \
+                  '([[ $(readlink -e /sys/class/net/${ifname}) == ' \
+                  '/sys/devices/virtual/* ]] ' \
+                  '|| ethtool -K ${ifname} tso off); done'
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
+            # Log interface settings
+            cmd = 'for ifname in $(ls /sys/class/net); do ' \
+                  '([[ $(readlink -e /sys/class/net/${ifname}) == ' \
+                  '/sys/devices/virtual/* ]] ' \
+                  '|| ethtool -k ${ifname}); done'
+            result = self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
+            logger.debug('Offloading settings:\n%s\n'
+                         % ''.join(result['stdout']))
 
     @update_rpm_packages
     @upload_manifests
