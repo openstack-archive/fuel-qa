@@ -17,6 +17,8 @@ import posixpath
 import re
 import json
 
+import six
+
 from paramiko import RSAKey
 from devops.models.node import SSHClient
 from fuelweb_test import logger
@@ -125,6 +127,12 @@ class SSHManager(object):
                 password=password,
                 private_keys=keys if keys is not None else []
             )
+
+    def clean_all_connections(self):
+        for (ip, port), connection in six.iteritems(self.connections):
+            connection.clear()
+            logger.info('SSH_MANAGER:Close connection for {ip}:{port}'.format(
+                ip=ip, port=port))
 
     def execute(self, ip, cmd, port=22):
         remote = self._get_remote(ip=ip, port=port)
