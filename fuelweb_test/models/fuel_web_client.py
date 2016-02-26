@@ -2363,9 +2363,22 @@ class FuelWebClient(object):
         for option, value in data.items():
             plugin_data = attr['editable'][plugin_name]
             path = option.split("/")
-            for p in path[:-1]:
-                plugin_data = plugin_data[p]
-            plugin_data[path[-1]] = value
+            """Key 'metadata' can be in section
+            plugin_data['metadata']['versions']
+            For enable/disable plugin value must be set in
+            plugin_data['metadata']['enabled']
+            """
+            if 'metadata' in path:
+                plugin_data['metadata'][path[-1]] = value
+            elif 'versions' in plugin_data['metadata']:
+                for version in plugin_data['metadata']['versions']:
+                    for p in path[:-1]:
+                        version = version[p]
+                    version[path[-1]] = value
+            else:
+                for p in path[:-1]:
+                    plugin_data = plugin_data[p]
+                plugin_data[path[-1]] = value
         self.client.update_cluster_attributes(cluster_id, attr)
 
     def get_plugin_data(self, cluster_id, plugin_name, version):
