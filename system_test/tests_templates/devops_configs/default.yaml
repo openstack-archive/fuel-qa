@@ -4,17 +4,25 @@ aliases:
   dynamic_address_pool:
    - &pool_default !os_env POOL_DEFAULT, 10.109.0.0/16:24
 
+  default_interface_model:
+   - &interface_model !os_env INTERFACE_MODEL, e1000
+
   rack-01-slave-interfaces: &rack-01-slave-interfaces
    - label: eth0
      l2_network_device: admin      # Libvirt bridge name. It is *NOT* Nailgun networks
+     interface_model: *interface_model
    - label: eth1
      l2_network_device: public
+     interface_model: *interface_model
    - label: eth2
      l2_network_device: storage
+     interface_model: *interface_model
    - label: eth3
      l2_network_device: management
+     interface_model: *interface_model
    - label: eth4
      l2_network_device: private
+     interface_model: *interface_model
 
   rack-01-slave-network_config: &rack-01-slave-network_config
     eth0:
@@ -145,6 +153,7 @@ groups:
         interfaces:
          - label: eth0
            l2_network_device: admin    # Libvirt bridge name. It is *NOT* a Nailgun network
+           interface_model: *interface_model
         network_config:
           eth0:
             networks:
