@@ -514,6 +514,15 @@ class EnvironmentModel(object):
                 ip=self.ssh_manager.admin_ip,
                 cmd=cmd
             )
+        if settings.DISABLE_OFFLOADING:
+            cmd = 'for ifname in $(ls /sys/class/net); do \\n' \
+                  '[ $(readlink -e ${ifname}) == /sys/devices/virtual/* ] ' \
+                  '|| ethtool -K ${ifname} tso off;\\n' \
+                  'done'
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
 
     @update_rpm_packages
     @upload_manifests
