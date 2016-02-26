@@ -85,12 +85,16 @@ class SaharaHAOneController(TestBasic):
         logger.debug('Verify Sahara service on controller')
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            # count = 1 + api_workers (from sahara.conf)
             checkers.verify_service(
                 remote,
-                service_name='sahara-api')
+                service_name='sahara-api',
+                count=2)
+            # count = 2 * 1 (hardcoded by deployment team)
             checkers.verify_service(
                 remote,
-                service_name='sahara-engine')
+                service_name='sahara-engine',
+                count=2)
 
         logger.debug('Check MD5 sum of Vanilla2 image')
         check_image = checkers.check_image(
@@ -195,12 +199,16 @@ class SaharaHA(TestBasic):
         for slave in ["slave-01", "slave-02", "slave-03"]:
             _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
             with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+                # count = 1 + api_workers (from sahara.conf)
                 checkers.verify_service(
                     remote,
-                    service_name='sahara-api')
+                    service_name='sahara-api',
+                    count=2)
+                # count = 2 * 1 (hardcoded by deployment team)
                 checkers.verify_service(
                     remote,
-                    service_name='sahara-engine')
+                    service_name='sahara-engine',
+                    count=2)
 
         logger.debug('Check MD5 sum of Vanilla2 image')
         check_image = checkers.check_image(
