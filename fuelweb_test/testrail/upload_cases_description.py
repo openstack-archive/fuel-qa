@@ -24,7 +24,7 @@ from system_test import define_custom_groups
 from system_test import discover_import_tests
 from system_test import register_system_test_cases
 from system_test import tests_directory
-from system_test.helpers.utils import get_basepath
+from system_test import get_basepath
 from settings import GROUPS_TO_EXPAND
 from settings import logger
 from settings import TestRailSettings
