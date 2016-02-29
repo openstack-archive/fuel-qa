@@ -207,7 +207,7 @@ class HAOneControllerNeutronRestart(TestBasic):
           groups=["ha_one_controller_neutron_warm_restart"])
     @log_snapshot_after_test
     def ha_one_controller_neutron_warm_restart(self):
-        """Cold restart for ha one controller environment
+        """Warm restart for ha one controller environment
 
         Scenario:
             1. Create cluster
@@ -217,19 +217,25 @@ class HAOneControllerNeutronRestart(TestBasic):
             5. Run network verification
             6. Run OSTF
             7. Warm restart
-            8. Wait for Galera is up
-            9. Run network verification
-            10. Run OSTF
+            8. Wait for HA services to be ready
+            9. Wait for OS services to be ready
+            10. Wait for Galera is up
+            11. Verify firewall rules
+            12. Run network verification
+            13. Run OSTF
 
         Duration 30m
 
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
+        self.show_step(1, initialize=True)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
         )
+        self.show_step(2)
+        self.show_step(3)
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -237,21 +243,32 @@ class HAOneControllerNeutronRestart(TestBasic):
                 'slave-02': ['compute']
             }
         )
+        self.show_step(4)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
+        self.show_step(5)
         self.fuel_web.verify_network(cluster_id)
+        self.show_step(6)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        # Warm restart
+        self.show_step(7)
         self.fuel_web.warm_restart_nodes(
             self.env.d_env.get_nodes(name__in=['slave-01', 'slave-02']))
 
-        # Wait for HA services ready
+        self.show_step(8)
         self.fuel_web.assert_ha_services_ready(cluster_id)
-        # Wait until OpenStack services are UP
+
+        self.show_step(9)
         self.fuel_web.assert_os_services_ready(cluster_id)
+
+        self.show_step(10)
         self.fuel_web.wait_mysql_galera_is_up(['slave-01'])
+
+        self.show_step(11)
         self.fuel_web.security.verify_firewall(cluster_id)
 
+        self.show_step(12)
         self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(13)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
