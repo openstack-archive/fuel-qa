@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import time
+
 from devops.helpers.helpers import wait
 from proboscis import test
 from proboscis.asserts import assert_true, assert_equal
@@ -393,3 +395,63 @@ class FailoverGroup1(TestBasic):
 
         self.show_step(11)
         self.fuel_web.verify_network(cluster_id)
+
+    @test(depends_on_groups=['deploy_ha_cinder'],
+          groups=['block_net_traffic_cinder'])
+    @log_snapshot_after_test
+    def block_net_traffic_cinder(self):
+        """Block network traffic of hole environment
+
+        Scenario:
+            1. Revert environment deploy_ha_cinder
+            2. Block traffic of all networks
+            3. Sleep 5 minutes
+            4. Unblock traffic of all networks
+            5. Wait until cluster nodes become online
+            6. Verify networks
+            7. Run OSTF tests
+
+        Duration: 40 min
+        Snapshot: block_net_traffic
+        """
+
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot('deploy_ha_cinder')
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.show_step(2)
+        nodes = [node for node in self.env.d_env.get_nodes()
+                 if node.driver.node_active(node)]
+        for interface in nodes[1].interfaces:
+            if interface.is_blocked:
+                raise Exception('Interface {0} is blocked'.format(interface))
+            else:
+                interface.network.block()
+
+        self.show_step(3)
+        time.sleep(60 * 5)
+
+        self.show_step(4)
+        for interface in nodes[1].interfaces:
+            if interface.network.is_blocked:
+                interface.network.unblock()
+            else:
+                raise Exception(
+                    'Interface {0} was not blocked'.format(interface))
+
+        self.show_step(5)
+        self.fuel_web.wait_nodes_get_online_state(nodes[1:])
+
+        self.show_step(6)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(7)
+        try:
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha', 'smoke', 'sanity'])
+        except AssertionError:
+            time.sleep(600)
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha', 'smoke', 'sanity'])
