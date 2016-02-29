@@ -23,7 +23,7 @@ import os
 import posixpath
 import re
 import signal
-import ipaddr
+import netaddr
 
 from proboscis import asserts
 from proboscis.asserts import assert_true
@@ -625,8 +625,8 @@ def generate_floating_ranges(start_ip, end_ip, step):
     :return:
     """
     ranges = []
-    ip_start = ipaddr.IPAddress(start_ip)
-    ip_end = ipaddr.IPAddress(end_ip)
+    ip_start = netaddr.IPAddress(str(start_ip))
+    ip_end = netaddr.IPAddress(str(end_ip))
     while ip_end - step > ip_start:
         ranges.append([str(ip_start), str(ip_start + step)])
         ip_start += (step + 1)
