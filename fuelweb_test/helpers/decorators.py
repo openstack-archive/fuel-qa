@@ -110,7 +110,7 @@ def log_snapshot_after_test(func):
                                      " {0}".format(traceback.format_exc()))
             logger.error(traceback.format_exc())
             logger.info("<" * 5 + "*" * 100 + ">" * 5)
-            raise test_exception
+            raise
         else:
             if settings.ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT:
                 if args[0].env is None:
