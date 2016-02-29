@@ -150,8 +150,8 @@ class Common(object):
                 else:
                     image = [i.id for i in self.nova.images.list()]
                 break
-            except:
-                pass
+            except Exception as e:
+                logger.warning('Ignoring exception: {!r}'.format(e))
         else:
             raise Exception('Can not get image')
 

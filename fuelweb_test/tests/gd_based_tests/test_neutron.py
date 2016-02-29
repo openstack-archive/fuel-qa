@@ -50,9 +50,9 @@ class NeutronTun(TestBasic):
         test_group = sys.argv[-1]
         try:
             self.check_run(snapshot_name=snapshot_name)
-        except SkipTest:
+        except SkipTest as e:
             if expected_group in test_group:
-                pass
+                logger.warning('Ignoring exception: {!r}'.format(e))
             else:
                 raise
 
