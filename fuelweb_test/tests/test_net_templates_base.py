@@ -12,8 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from ipaddr import IPAddress
-from ipaddr import IPNetwork
+import netaddr
+
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis.asserts import fail
@@ -55,9 +55,8 @@ class TestNetworkTemplatesBase(TestBasic):
                         '"{0}", which does not exist!'.format(nodegroup))
             group_id = [n['id'] for n in nodegroups if
                         n['name'] == nodegroup][0]
-            ip_network = IPNetwork(ip_nets[nodegroup])
-            ip_subnets = ip_network.subnet(
-                int(ip_prefixlen) - int(ip_network.prefixlen))
+            ip_network = netaddr.IPNetwork(str(ip_nets[nodegroup]))
+            ip_subnets = ip_network.subnet(int(ip_prefixlen))
             for network, interface in networks:
                 ip_subnet = ip_subnets.pop()
                 networks_data.append(
@@ -147,13 +146,14 @@ class TestNetworkTemplatesBase(TestBasic):
         raw_addresses = self.get_interface_ips(remote, iface_name)
         raw_ips = [raw_addr.split('/')[0] for raw_addr in raw_addresses]
         try:
-            ips = [IPAddress(raw_ip) for raw_ip in raw_ips]
+            ips = [netaddr.IPAddress(str(raw_ip)) for raw_ip in raw_ips]
         except ValueError:
             fail('Device {0} on remote node does not have a valid '
                  'IPv4 address assigned!'.format(iface_name))
             return
-        actual_networks = [IPNetwork(raw_addr) for raw_addr in raw_addresses]
-        network = IPNetwork(cidr)
+        actual_networks = [netaddr.IPNetwork(str(raw_addr)) for
+                           raw_addr in raw_addresses]
+        network = netaddr.IPNetwork(str(cidr))
         assert_true(network in actual_networks,
                     'Network(s) on {0} device differs than {1}: {2}'.format(
                         iface_name, cidr, raw_addresses))
