@@ -919,9 +919,10 @@ class HeatHAOneController(TestBasic):
             service_name='heat-api', count=3)
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(
-            self.env.d_env.get_ssh_to_remote(_ip),
-            service_name='ceilometer-api')
+        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            checkers.verify_service(remote,
+                                    service_name='ceilometer-api',
+                                    ignore_count_of_proccesses=True)
 
         LOGGER.debug('Run Heat OSTF platform tests')
 
