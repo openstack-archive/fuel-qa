@@ -12,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from ipaddr import IPAddress
 import random
 import time
+import netaddr
 
 from devops.helpers import helpers
 from proboscis import asserts
@@ -100,7 +100,7 @@ class ServicesReconfiguration(TestBasic):
                 lambda x: ((x['name'] != 'fuelweb_admin')and
                            (x['name'] != 'private')),
                 networks):
-            default_range = [IPAddress(ip) for ip
+            default_range = [netaddr.IPAddress(str(ip)) for ip
                              in default_network["ip_ranges"][0]]
             if cut_from_start:
                 new_range = [default_range[0],

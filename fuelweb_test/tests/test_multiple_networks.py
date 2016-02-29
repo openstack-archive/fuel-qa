@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from ipaddr import IPAddress
-from ipaddr import summarize_address_range
 import netaddr
 import json
 
@@ -51,7 +49,7 @@ class TestMultipleClusterNets(TestBasic):
         for net in net_dict['networks']:
             if net_name in net['name'] and net['group_id'] == group_id:
                 cidr = net['cidr']
-                sliced_list = list(netaddr.IPNetwork(cidr))[5:-5]
+                sliced_list = list(netaddr.IPNetwork(str(cidr)))[5:-5]
                 return [str(sliced_list[0]), str(sliced_list[-1])]
 
     @staticmethod
@@ -67,7 +65,7 @@ class TestMultipleClusterNets(TestBasic):
         asserts.assert_true(len(default_admin_network) == 1,
                             "Default 'admin/pxe' network not found "
                             "in cluster network configuration!")
-        default_admin_range = [IPAddress(ip) for ip
+        default_admin_range = [netaddr.IPAddress(str(ip)) for ip
                                in default_admin_network[0]["ip_ranges"][0]]
         new_admin_range = [default_admin_range[0] + number_excluded_ips,
                            default_admin_range[1]]
@@ -77,9 +75,8 @@ class TestMultipleClusterNets(TestBasic):
 
     @staticmethod
     def is_ip_in_range(ip_addr, ip_range_start, ip_range_end):
-        ip_addr_ranges = summarize_address_range(IPAddress(ip_range_start),
-                                                 IPAddress(ip_range_end))
-        return any(IPAddress(ip_addr) in iprange for iprange in ip_addr_ranges)
+        return netaddr.IPAddress(str(ip_addr)) in netaddr.iter_iprange(
+            str(ip_range_start), str(ip_range_end))
 
     @staticmethod
     def is_update_dnsmasq_running(tasks):
@@ -657,8 +654,9 @@ class TestMultipleClusterNets(TestBasic):
         }
 
         for k in check:
-            vip = IPAddress(current_settings['vips'][k]['ipaddr'])
-            custom_net = self.env.d_env.get_network(name=check[k]).ip
+            vip = netaddr.IPAddress(str(current_settings['vips'][k]['ipaddr']))
+            custom_net = netaddr.IPNetwork(
+                str(self.env.d_env.get_network(name=check[k]).ip))
             asserts.assert_true(
                 vip in custom_net,
                 '{0} is not from {1} network'.format(k, check[k]))
