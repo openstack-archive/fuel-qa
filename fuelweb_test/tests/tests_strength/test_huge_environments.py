@@ -211,7 +211,7 @@ class HugeHaNeutron(base_test_case.TestBasic):
 
         # Cluster deploy
         self.fuel_web.deploy_cluster_wait(cluster_id,
-                                          timeout=150 * 60,
+                                          timeout=300 * 60,
                                           interval=30)
 
         # Verify network
