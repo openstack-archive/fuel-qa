@@ -12,6 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import time
+
+from proboscis import SkipTest
 from proboscis import test
 from proboscis.asserts import assert_equal
 
@@ -19,6 +22,7 @@ from proboscis.asserts import assert_equal
 from fuelweb_test import settings
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import TestBasic
+from devops.helpers.helpers import _wait
 
 
 @test(groups=['failover_group_2'])
@@ -44,6 +48,8 @@ class FailoverGroup2(TestBasic):
 
         """
 
+        if self.env.d_env.has_snapshot('deploy_ha_ceph'):
+            raise SkipTest("Test 'deploy_ha_ceph' already ran")
         self.env.revert_snapshot('ready_with_5_slaves')
 
         self.show_step(1, initialize=True)
@@ -174,3 +180,54 @@ class FailoverGroup2(TestBasic):
         self.fuel_web.run_ostf(cluster_id)
 
         self.env.make_snapshot('safe_reboot_primary_controller_ceph')
+
+    @test(depends_on_groups=['deploy_ha_ceph'],
+          groups=['block_net_traffic'])
+    @log_snapshot_after_test
+    def block_net_traffic(self):
+        """Block network traffic of hole environment
+
+        Scenario:
+            1. Revert environment deploy_ha_ceph
+            2. Block traffic of all networks
+            3. Sleep 5 minutes
+            4. Unblock traffic of all networks
+            5. Verify networks
+            6. Run OSTF tests
+
+        Duration: 40 min
+        Snapshot: block_net_traffic
+        """
+
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot('deploy_ha_ceph')
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.show_step(2)
+        nodes = [node for node in self.env.d_env.get_nodes()
+                 if node.driver.node_active(node)]
+        for interface in nodes[1].interfaces:
+            if not interface.is_blocked:
+                interface.network.block()
+
+        self.show_step(3)
+        time.sleep(60 * 5)
+
+        self.show_step(4)
+        for interface in nodes[1].interfaces:
+            if interface.network.is_blocked:
+                interface.network.unblock()
+
+        self.show_step(5)
+        _wait(lambda: self.fuel_web.verify_network(cluster_id), timeout=300)
+
+        self.show_step(6)
+        try:
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha', 'smoke', 'sanity'])
+        except AssertionError:
+            time.sleep(600)
+            self.fuel_web.run_ostf(
+                cluster_id=cluster_id,
+                test_sets=['ha', 'smoke', 'sanity'])
