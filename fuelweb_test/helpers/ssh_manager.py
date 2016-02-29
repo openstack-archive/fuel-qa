@@ -15,9 +15,11 @@
 import os
 import posixpath
 import re
+import traceback
 import json
 
 from paramiko import RSAKey
+from devops.helpers.helpers import wait
 from devops.models.node import SSHClient
 from fuelweb_test import logger
 from fuelweb_test.helpers.metaclasses import SingletonMeta
@@ -62,8 +64,11 @@ class SSHManager(object):
         :return:
         """
         try:
-            remote.execute("cd ~")
+            wait(lambda: remote.execute("cd ~")['exit_code'] == 0, timeout=20)
         except Exception:
+            logger.info('SSHManager: Check for current '
+                        'connection fails. Try to reconnect')
+            logger.warning(traceback.format_exc())
             remote.reconnect()
         return remote
 
