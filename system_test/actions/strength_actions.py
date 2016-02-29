@@ -186,47 +186,45 @@ class FillRootActions(object):
                 self.primary_controller_space_to_filled
             ))
 
-        with self.fuel_web.get_ssh_for_node(
-                self.primary_controller.name) as remote:
-            run_on_remote_get_results(
-                remote, 'fallocate -l {}M /root/bigfile'.format(
-                    self.primary_controller_space_to_filled))
-            check_file_exists(remote, '/root/bigfile')
+        node = self.fuel_web.get_nailgun_node_by_name(
+            self.primary_controller.name)
+        self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd='fallocate -l {}M /root/bigfile'.format(
+                self.primary_controller_space_to_filled)
+        )
+        check_file_exists(node['ip'], '/root/bigfile')
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def fill_root_below_rabbit_disk_free_limit(self):
         """Fill root more to below rabbit disk free limit"""
 
-        with self.fuel_web.get_ssh_for_node(
-                self.primary_controller.name) as remote:
+        node = self.fuel_web.get_nailgun_node_by_name(
+            self.primary_controller.name)
+        pacemaker_attributes = self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd='cibadmin --query --scope status'
+        )['stdout_str']
+        controller_space_on_root = get_pacemaker_nodes_attributes(
+            pacemaker_attributes)[self.primary_controller_fqdn]['root_free']
 
-            pacemaker_attributes = run_on_remote_get_results(
-                remote, 'cibadmin --query --scope status')['stdout_str']
+        logger.info("Free space in root on primary controller - {}".format(
+                    controller_space_on_root))
 
-            controller_space_on_root = get_pacemaker_nodes_attributes(
-                pacemaker_attributes)[self.primary_controller_fqdn][
-                'root_free']
+        controller_space_to_filled = str(
+            int(controller_space_on_root) - self.rabbit_disk_free_limit - 1
+        )
 
-            logger.info(
-                "Free space in root on primary controller - {}".format(
-                    controller_space_on_root
-                ))
+        logger.info("Need to fill space on root - {}".format(
+            controller_space_to_filled))
 
-            controller_space_to_filled = str(
-                int(
-                    controller_space_on_root
-                ) - self.rabbit_disk_free_limit - 1)
-
-            logger.info(
-                "Need to fill space on root - {}".format(
-                    controller_space_to_filled
-                ))
-
-            run_on_remote_get_results(
-                remote, 'fallocate -l {}M /root/bigfile2'.format(
-                    controller_space_to_filled))
-            check_file_exists(remote, '/root/bigfile2')
+        self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd='fallocate -l {}M /root/bigfile2'.format(
+                controller_space_to_filled)
+        )
+        check_file_exists(node['ip'], '/root/bigfile2')
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action

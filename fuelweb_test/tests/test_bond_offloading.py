@@ -131,20 +131,18 @@ class TestOffloading(BondingTest):
         for node in nodes:
             for eth in bond0:
                 for name in offloadings_1:
-                    with self.env.d_env.get_ssh_to_remote(node['ip']) as host:
-                        result = check_offload(host, eth, name)
-                        assert_equal(
-                            result, 'off',
-                            "Offload type '{0}': '{1}' - node-{2}, {3}".format(
-                                name, result, node['id'], eth))
+                    result = check_offload(node['ip'], eth, name)
+                    assert_equal(
+                        result, 'off',
+                        "Offload type '{0}': '{1}' - node-{2}, {3}".format(
+                            name, result, node['id'], eth))
             for eth in bond1:
                 for name in offloadings_2:
-                    with self.env.d_env.get_ssh_to_remote(node['ip']) as host:
-                        result = check_offload(host, eth, name)
-                        assert_equal(
-                            result, 'on',
-                            "Offload type '{0}': '{1}' - node-{2}, {3}".format(
-                                name, result, node['id'], eth))
+                    result = check_offload(node['ip'], eth, name)
+                    assert_equal(
+                        result, 'on',
+                        "Offload type '{0}': '{1}' - node-{2}, {3}".format(
+                            name, result, node['id'], eth))
 
         self.show_step(10)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
@@ -241,20 +239,18 @@ class TestOffloading(BondingTest):
         for node in nodes:
             for eth in bond0:
                 for name in offloadings_1:
-                    with self.env.d_env.get_ssh_to_remote(node['ip']) as host:
-                        result = check_offload(host, eth, name)
-                        assert_equal(
-                            result, 'off',
-                            "Offload type '{0}': '{1}' - node-{2}, {3}".format(
-                                name, result, node['id'], eth))
+                    result = check_offload(node['ip'], eth, name)
+                    assert_equal(
+                        result, 'off',
+                        "Offload type '{0}': '{1}' - node-{2}, {3}".format(
+                            name, result, node['id'], eth))
             for eth in bond1:
                 for name in offloadings_2:
-                    with self.env.d_env.get_ssh_to_remote(node['ip']) as host:
-                        result = check_offload(host, eth, name)
-                        assert_equal(
-                            result, 'on',
-                            "Offload type '{0}': '{1}' - node-{2}, {3}".format(
-                                name, result, node['id'], eth))
+                    result = check_offload(node['ip'], eth, name)
+                    assert_equal(
+                        result, 'on',
+                        "Offload type '{0}': '{1}' - node-{2}, {3}".format(
+                            name, result, node['id'], eth))
 
         self.show_step(10)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
