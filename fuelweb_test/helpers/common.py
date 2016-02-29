@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import sys
 import time
 from urlparse import urlparse
 
@@ -23,6 +24,7 @@ from keystoneclient.exceptions import ClientException
 from novaclient.v2 import Client as NovaClient
 import neutronclient.v2_0.client as neutronclient
 from proboscis.asserts import assert_equal
+import six
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
@@ -203,7 +205,7 @@ class Common(object):
 
     def _get_keystoneclient(self, username, password, tenant_name, auth_url,
                             retries=3, ca_cert=None, insecure=False):
-        exception = None
+        exc_type, exc_value, exc_traceback = None, None, None
         for i in xrange(retries):
             try:
                 if ca_cert:
@@ -220,8 +222,10 @@ class Common(object):
                                           tenant_name=tenant_name,
                                           auth_url=auth_url)
             except ClientException as exc:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
                 err = "Try nr {0}. Could not get keystone client, error: {1}"
                 logger.warning(err.format(i + 1, exc))
-                exception = exc
                 time.sleep(5)
-        raise exception if exception else RuntimeError()
+        if exc_type and exc_traceback and exc_value:
+            six.reraise(exc_type, exc_value, exc_traceback)
+        raise RuntimeError()
