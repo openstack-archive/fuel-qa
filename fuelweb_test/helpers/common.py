@@ -21,7 +21,7 @@ from glanceclient.v1 import Client as GlanceClient
 from keystoneclient.v2_0 import Client as KeystoneClient
 from keystoneclient.exceptions import ClientException
 from keystoneclient.exceptions import EndpointNotFound
-from novaclient.v2 import Client as NovaClient
+from novaclient.client import Client as NovaClient
 import neutronclient.v2_0.client as neutronclient
 from proboscis.asserts import assert_equal
 
