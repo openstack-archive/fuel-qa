@@ -33,8 +33,8 @@ from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import POOLS
 from fuelweb_test.settings import PUBLIC_TEST_IP
 
-from ipaddr import IPAddress
-from ipaddr import IPNetwork
+from netaddr import IPAddress
+from netaddr import IPNetwork
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
@@ -596,7 +596,8 @@ def check_stats_private_info(collector_remote, postgres_actions,
             # If IP address isn't public and doesn't belong to defined for
             # deployment pools (e.g. admin, public, storage), then skip it
             if any(re.search(_r, _match.group()) for _r in _not_public_regex) \
-                    and not any(IPAddress(_match.group()) in IPNetwork(net) for
+                    and not any(IPAddress(str(_match.group())) in
+                                IPNetwork(str(net)) for
                                 net in _used_networks):
                 continue
             logger.debug('Usage statistics with public IP(s):\n {0}'.
