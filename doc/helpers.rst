@@ -18,11 +18,6 @@ Common
 .. automodule:: fuelweb_test.helpers.common
    :members:
 
-Conf tempest
-------------
-.. automodule:: fuelweb_test.helpers.conf_tempest
-   :members:
-
 Decorators
 ----------
 .. automodule:: fuelweb_test.helpers.decorators

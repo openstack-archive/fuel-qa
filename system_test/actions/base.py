@@ -19,7 +19,7 @@ from proboscis.asserts import assert_true
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.utils import TimeStat
-from fuelweb_test import settings as test_settings
+from fuelweb_test import settings
 
 from system_test import logger
 from system_test import action
@@ -110,8 +110,8 @@ class PrepareActions(object):
         self.fuel_web.get_nailgun_version()
         self.fuel_web.change_default_network_settings()
 
-        if (test_settings.REPLACE_DEFAULT_REPOS and
-                test_settings.REPLACE_DEFAULT_REPOS_ONLY_ONCE):
+        if (settings.REPLACE_DEFAULT_REPOS and
+                settings.REPLACE_DEFAULT_REPOS_ONLY_ONCE):
             self.fuel_web.replace_default_repos()
 
         self.env.make_snapshot("ready", is_make=True)
@@ -233,7 +233,7 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions):
 
         logger.info("Create env {}".format(
             self.env_config['name']))
-        settings = {
+        cluster_settings = {
             "murano": self.env_settings['components'].get('murano', False),
             "sahara": self.env_settings['components'].get('sahara', False),
             "ceilometer": self.env_settings['components'].get('ceilometer',
@@ -271,9 +271,9 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions):
 
         self.cluster_id = self.fuel_web.create_cluster(
             name=self.env_config['name'],
-            mode=test_settings.DEPLOYMENT_MODE,
+            mode=settings.DEPLOYMENT_MODE,
             release_name=self.env_config['release'],
-            settings=settings)
+            settings=cluster_settings)
 
         logger.info("Cluster created with ID:{}".format(self.cluster_id))
 
