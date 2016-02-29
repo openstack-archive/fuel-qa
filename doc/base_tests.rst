@@ -681,3 +681,8 @@ Test for ssl components
 -----------------------
 .. automodule:: fuelweb_test.tests.test_ssl
    :members:
+
+Test for network outage
+-----------------------
+.. automodule:: fuelweb_test.tests.tests_strength.test_network_outage
+   :members:
