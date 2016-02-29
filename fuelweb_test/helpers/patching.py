@@ -15,6 +15,7 @@
 import os
 import re
 import sys
+import traceback
 import yaml
 import zlib
 from urllib2 import urlopen
@@ -222,8 +223,9 @@ def get_package_test_info(package, pkg_type, tests_path, patch_target):
             test = yaml.load(open(path).read())
             if 'system_tests' in test.keys():
                 tests.update(test['system_tests']['tags'])
-        except IOError:
-            pass
+        except IOError as e:
+            logger.warning('Ignoring exception: {!r}'.format(e))
+            logger.debug(traceback.format_exc())
     return tests
 
 

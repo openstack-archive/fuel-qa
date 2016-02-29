@@ -15,6 +15,7 @@
 from ipaddr import IPAddress
 import random
 import time
+import traceback
 
 from devops.helpers import helpers
 from proboscis import asserts
@@ -23,6 +24,7 @@ from proboscis import test
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers import utils
+from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -81,7 +83,8 @@ class ServicesReconfiguration(TestBasic):
         except Exception as e:
             if e.code != expected_code:
                 raise e
-            pass
+            logger.warning('Ignoring exception: {!r}'.format(e))
+            logger.debug(traceback.format_exc())
         else:
             raise Exception(err_msg)
 
@@ -246,7 +249,8 @@ class ServicesReconfiguration(TestBasic):
         except Exception as e:
             if 'No tenant network is available' not in e.message:
                 raise e
-            pass
+            logger.warning('Ignoring exception: {!r}'.format(e))
+            logger.debug(traceback.format_exc())
         else:
             raise Exception("New configuration was not applied")
 
@@ -270,7 +274,8 @@ class ServicesReconfiguration(TestBasic):
         except Exception as e:
             if 'Quota exceeded for instances' not in e.message:
                 raise e
-            pass
+            logger.warning('Ignoring exception: {!r}'.format(e))
+            logger.debug(traceback.format_exc())
         else:
             raise Exception("New configuration was not applied")
 
@@ -289,7 +294,8 @@ class ServicesReconfiguration(TestBasic):
         except Exception as e:
             if e.http_status != 404:
                 raise e
-            pass
+            logger.warning('Ignoring exception: {!r}'.format(e))
+            logger.debug(traceback.format_exc())
         else:
             raise Exception("New configuration was not applied")
 
@@ -524,8 +530,9 @@ class ServicesReconfiguration(TestBasic):
         self.show_step(4)
         try:
             self.fuel_web.assert_task_success(task, timeout=3600, interval=30)
-        except AssertionError:
-            pass
+        except AssertionError as e:
+            logger.warning('Ignoring exception: {!r}'.format(e))
+            logger.debug(traceback.format_exc())
         else:
             raise Exception("New configuration was not applied")
 
