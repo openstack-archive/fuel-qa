@@ -12,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from ipaddr import IPAddress
 import random
 import time
+import netaddr
 import traceback
 
 from devops.helpers import helpers
@@ -103,7 +103,7 @@ class ServicesReconfiguration(TestBasic):
                 lambda x: ((x['name'] != 'fuelweb_admin')and
                            (x['name'] != 'private')),
                 networks):
-            default_range = [IPAddress(ip) for ip
+            default_range = [netaddr.IPAddress(str(ip)) for ip
                              in default_network["ip_ranges"][0]]
             if cut_from_start:
                 new_range = [default_range[0],
@@ -1349,7 +1349,8 @@ class ServicesReconfiguration(TestBasic):
         service_list = ['neutron-server', 'neutron-dhcp-agent',
                         'neutron-l3-agent', 'neutron-metadata-agent',
                         'nova-scheduler', 'nova-novncproxy', 'nova-conductor',
-                        'nova-api', 'nova-consoleauth', 'nova-cert']
+                        'nova-api', 'nova-consoleauth', 'nova-objectstore',
+                        'nova-cert']
         services_uptime = {}
         for service_name in service_list:
             services_uptime[service_name] = self.get_service_uptime(
