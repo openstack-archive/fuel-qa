@@ -16,12 +16,12 @@ import re
 import time
 import traceback
 import yaml
+import netaddr
 
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
-from ipaddr import IPNetwork
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_is_not_none
@@ -850,7 +850,7 @@ class FuelWebClient(object):
         Returns dict with nailgun slave node description if node is
         registered. Otherwise return None.
         """
-        d_macs = {i.mac_address.upper() for i in devops_node.interfaces}
+        d_macs = {netaddr.EUI(i.mac_address.upper()) for i in devops_node.interfaces}
         logger.debug('Verify that nailgun api is running')
         attempts = ATTEMPTS
         nodes = []
@@ -868,7 +868,8 @@ class FuelWebClient(object):
                 time.sleep(TIMEOUT)
         logger.debug('Look for nailgun node by macs %s', d_macs)
         for nailgun_node in nodes:
-            macs = {i['mac'] for i in nailgun_node['meta']['interfaces']}
+            macs = {netaddr.EUI(i['mac']) for i in
+                    nailgun_node['meta']['interfaces']}
             logger.debug('Look for macs returned by nailgun {0}'.format(macs))
             # Because our HAproxy may create some interfaces
             if d_macs.issubset(macs):
@@ -896,9 +897,10 @@ class FuelWebClient(object):
             :rtype: Devops Node or None
         """
         nailgun_node = self.get_nailgun_node_by_fqdn(fqdn)
-        macs = {i['mac'] for i in nailgun_node['meta']['interfaces']}
+        macs = {netaddr.EUI(i['mac']) for i in
+                nailgun_node['meta']['interfaces']}
         for devops_node in devops_nodes:
-            devops_macs = {i.mac_address.upper()
+            devops_macs = {netaddr.EUI(i.mac_address)
                            for i in devops_node.interfaces}
             if devops_macs == macs:
                 return devops_node
@@ -912,7 +914,7 @@ class FuelWebClient(object):
         """
         for node in self.environment.d_env.nodes():
             for iface in node.interfaces:
-                if iface.mac_address.lower() == mac_address.lower():
+                if netaddr.EUI(iface.mac_address) == netaddr.EUI(mac_address):
                     return node
 
     @logwrap
@@ -1345,7 +1347,7 @@ class FuelWebClient(object):
         if not BONDING:
             float_range = public
         else:
-            float_range = list(public.subnet(new_prefix=27))[0]
+            float_range = list(public.subnet(27))[0]
         nc["floating_ranges"] = self.get_range(float_range, 1)
 
     def set_network(self, net_config, net_name, net_pools=None, seg_type=None):
@@ -1361,7 +1363,7 @@ class FuelWebClient(object):
                     self.net_settings(net_config, net_name)
             else:
                 ip_obj = self.environment.d_env.get_network(name="public").ip
-                pub_subnets = list(ip_obj.subnet(new_prefix=27))
+                pub_subnets = list(ip_obj.subnet(27))
                 if "floating" == net_name:
                     self.net_settings(net_config, pub_subnets[0],
                                       floating=True, jbond=True)
@@ -1386,7 +1388,7 @@ class FuelWebClient(object):
                     self.net_settings(net_config, admin_net)
             else:
                 ip_obj = self.environment.d_env.get_network(name=public_net).ip
-                pub_subnets = list(ip_obj.subnet(new_prefix=27))
+                pub_subnets = list(ip_obj.subnet(27))
 
                 if "floating" == net_name:
                     self.net_settings(net_config, pub_subnets[0],
@@ -1419,7 +1421,7 @@ class FuelWebClient(object):
             net_config['gateway'] = self.environment.d_env.router(net_name)
 
     def get_range(self, ip_network, ip_range=0):
-        net = list(IPNetwork(ip_network))
+        net = list(netaddr.IPNetwork(str(ip_network)))
         half = len(net) / 2
         if ip_range == 0:
             return [[str(net[2]), str(net[-2])]]
@@ -1531,7 +1533,7 @@ class FuelWebClient(object):
                 cmd = 'ip netns exec {0} ip -4 ' \
                       '-o address show {1}'.format(namespace, interface)
             else:
-                cmd = 'ip -4 -o address show {1}'.format(interface)
+                cmd = 'ip -4 -o address show {0}'.format(interface)
 
             ret = remote.check_call(cmd)
             remote.clear()
@@ -1946,7 +1948,8 @@ class FuelWebClient(object):
         for subnet in subnets_list:
             logger.debug("Check that subnet {0} is part of network {1}"
                          .format(subnet, nailgun_cidr))
-            assert_true(IPNetwork(subnet) in IPNetwork(nailgun_cidr),
+            assert_true(netaddr.IPNetwork(subnet) in
+                        netaddr.IPNetwork(nailgun_cidr),
                         'Something goes wrong. Seems subnet {0} is out '
                         'of net {1}'.format(subnet, nailgun_cidr))
 
@@ -1958,7 +1961,8 @@ class FuelWebClient(object):
         for subnet1, subnet2 in subnets_pairs:
             logger.debug("Check if the subnet {0} is part of the subnet {1}"
                          .format(subnet1, subnet2))
-            assert_true(IPNetwork(subnet1) not in IPNetwork(subnet2),
+            assert_true(netaddr.IPNetwork(subnet1) not in
+                        netaddr.IPNetwork(subnet2),
                         "Subnet {0} is part of subnet {1}"
                         .format(subnet1, subnet2))
 
