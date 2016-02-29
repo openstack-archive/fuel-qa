@@ -15,8 +15,8 @@
 import re
 import time
 import traceback
-import ipaddr
-from netaddr import EUI
+import yaml
+import netaddr
 from urllib2 import HTTPError
 
 from devops.error import DevopsCalledProcessError
@@ -33,14 +33,12 @@ from devops.helpers.helpers import wait
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.ssl import copy_cert_from_master
 from fuelweb_test.helpers.ssl import change_cluster_ssl_config
-from ipaddr import IPNetwork
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_true
 from proboscis.asserts import assert_raises
-import yaml
 
 from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
@@ -801,10 +799,8 @@ class FuelWebClient(object):
                 cluster_id)['external_net']))
         ret = []
         for pool in subnet['allocation_pools']:
-            ip = ipaddr.IPv4Address(pool['start'])
-            while ip <= ipaddr.IPv4Address(pool['end']):
-                ret.append(str(ip))
-                ip += 1
+            ret.extend([str(ip) for ip in
+                        netaddr.iter_iprange(pool['start'], pool['end'])])
         return ret
 
     @logwrap
@@ -881,7 +877,7 @@ class FuelWebClient(object):
         Returns dict with nailgun slave node description if node is
         registered. Otherwise return None.
         """
-        d_macs = {EUI(i.mac_address) for i in devops_node.interfaces}
+        d_macs = {netaddr.EUI(i.mac_address) for i in devops_node.interfaces}
         logger.debug('Verify that nailgun api is running')
         attempts = ATTEMPTS
         nodes = []
@@ -899,7 +895,8 @@ class FuelWebClient(object):
                 time.sleep(TIMEOUT)
         logger.debug('Look for nailgun node by macs %s', d_macs)
         for nailgun_node in nodes:
-            macs = {EUI(i['mac']) for i in nailgun_node['meta']['interfaces']}
+            macs = {netaddr.EUI(i['mac']) for i in
+                    nailgun_node['meta']['interfaces']}
             logger.debug('Look for macs returned by nailgun {0}'.format(macs))
             # Because our HAproxy may create some interfaces
             if d_macs.issubset(macs):
@@ -930,9 +927,11 @@ class FuelWebClient(object):
             :rtype: Devops Node or None
         """
         nailgun_node = self.get_nailgun_node_by_fqdn(fqdn)
-        macs = {EUI(i['mac']) for i in nailgun_node['meta']['interfaces']}
+        macs = {netaddr.EUI(i['mac']) for i in
+                nailgun_node['meta']['interfaces']}
         for devops_node in devops_nodes:
-            devops_macs = {EUI(i.mac_address) for i in devops_node.interfaces}
+            devops_macs = {netaddr.EUI(i.mac_address) for i in
+                           devops_node.interfaces}
             if devops_macs == macs:
                 return devops_node
 
@@ -945,7 +944,7 @@ class FuelWebClient(object):
         """
         for node in self.environment.d_env.nodes():
             for iface in node.interfaces:
-                if EUI(iface.mac_address) == EUI(mac_address):
+                if netaddr.EUI(iface.mac_address) == netaddr.EUI(mac_address):
                     return node
 
     @logwrap
@@ -1643,7 +1642,7 @@ class FuelWebClient(object):
                 baremetal_net = self.environment.d_env.get_network(
                     name='ironic').ip_network
                 net_config['gateway'] = str(
-                    list(IPNetwork(baremetal_net))[-2])
+                    list(netaddr.IPNetwork(str(baremetal_net)))[-2])
                 ip_network = baremetal_net
             else:
                 ip_network = net_name
@@ -1653,7 +1652,7 @@ class FuelWebClient(object):
                 baremetal_net = self.environment.d_env.get_network(
                     name='ironic').ip_network
                 net_config['gateway'] = str(
-                    list(IPNetwork(baremetal_net))[-2])
+                    list(netaddr.IPNetwork(str(baremetal_net)))[-2])
                 ip_network = baremetal_net
             else:
                 net_config['gateway'] = self.environment.d_env.router(net_name)
@@ -1670,7 +1669,7 @@ class FuelWebClient(object):
             net_config['ip_ranges'] = self.get_range(ip_network, -1)
 
     def get_range(self, ip_network, ip_range=0):
-        net = list(IPNetwork(ip_network))
+        net = list(netaddr.IPNetwork(str(ip_network)))
         half = len(net) / 2
         if ip_range == 0:
             return [[str(net[2]), str(net[-2])]]
@@ -2235,7 +2234,8 @@ class FuelWebClient(object):
         for subnet in subnets_list:
             logger.debug("Check that subnet {0} is part of network {1}"
                          .format(subnet, nailgun_cidr))
-            assert_true(IPNetwork(subnet) in IPNetwork(nailgun_cidr),
+            assert_true(netaddr.IPNetwork(str(subnet)) in
+                        netaddr.IPNetwork(str(nailgun_cidr)),
                         'Something goes wrong. Seems subnet {0} is out '
                         'of net {1}'.format(subnet, nailgun_cidr))
 
@@ -2247,7 +2247,8 @@ class FuelWebClient(object):
         for subnet1, subnet2 in subnets_pairs:
             logger.debug("Check if the subnet {0} is part of the subnet {1}"
                          .format(subnet1, subnet2))
-            assert_true(IPNetwork(subnet1) not in IPNetwork(subnet2),
+            assert_true(netaddr.IPNetwork(str(subnet1)) not in
+                        netaddr.IPNetwork(str(subnet2)),
                         "Subnet {0} is part of subnet {1}"
                         .format(subnet1, subnet2))
 
@@ -2583,7 +2584,7 @@ class FuelWebClient(object):
         for network in networks:
             if network['name'] != network_name:
                 continue
-            old_cidr = IPNetwork(network['cidr'])
+            old_cidr = netaddr.IPNetwork(str(network['cidr']))
             new_cidr = old_cidr.subnet(1)[0]
             assert_not_equal(old_cidr, new_cidr,
                              'Can\t create a subnet using default cidr {0} '
