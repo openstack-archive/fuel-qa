@@ -18,6 +18,7 @@ from logging import DEBUG
 from optparse import OptionParser
 from proboscis import TestPlan
 from proboscis.decorators import DEFAULT_REGISTRY
+import six
 
 from builds import Build
 from system_test import define_custom_groups
@@ -158,7 +159,7 @@ def upload_tests_descriptions(testrail_project, section_id,
                              TestRailSettings.tests_suite))
             continue
 
-        for case_field, default_value in custom_cases_fields.items():
+        for case_field, default_value in six.iteritems(custom_cases_fields):
             if case_field not in test_case:
                 test_case[case_field] = default_value
 
