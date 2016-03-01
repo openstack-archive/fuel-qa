@@ -15,8 +15,8 @@
 import re
 import subprocess
 import time
-from devops.error import TimeoutError
 
+from devops.error import TimeoutError
 from devops.helpers.helpers import _tcp_ping
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
@@ -25,6 +25,7 @@ from devops.models import Environment
 from keystoneclient import exceptions
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
+import six
 
 from fuelweb_test.helpers.decorators import revert_info
 from fuelweb_test.helpers.decorators import update_rpm_packages
@@ -50,10 +51,9 @@ from fuelweb_test import logwrap
 from fuelweb_test import logger
 
 
+@six.add_metaclass(SingletonMeta)
 class EnvironmentModel(object):
     """EnvironmentModel."""  # TODO documentation
-
-    __metaclass__ = SingletonMeta
 
     def __init__(self, config=None):
         if not hasattr(self, "_virt_env"):

@@ -17,6 +17,7 @@ from ipaddr import IPNetwork
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis.asserts import fail
+import six
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
@@ -47,7 +48,7 @@ class TestNetworkTemplatesBase(TestBasic):
         """
         networks_data = []
         nodegroups = self.fuel_web.client.get_nodegroups()
-        for nodegroup, section in template['adv_net_template'].items():
+        for nodegroup, section in six.iteritems(template['adv_net_template']):
             networks = [(n, section['network_assignments'][n]['ep'])
                         for n in section['network_assignments']]
             assert_true(any(n['name'] == nodegroup for n in nodegroups),
