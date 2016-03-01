@@ -61,6 +61,14 @@ def define_custom_groups():
               systest_group="system_test.deploy_and_check_radosgw",
               config_name="ceph_all_on_neutron_vlan")
 
+    add_group(group="system_test.ceph_ha_30",
+              systest_group="system_test.deploy_and_check_radosgw",
+              config_name="ceph_all_on_neutron_vlan_30")
+
+    add_group(group="system_test.ceph_ha_30_bond",
+              systest_group="system_test.deploy_and_check_radosgw",
+              config_name="ceph_all_on_neutron_vlan_30-bond")
+
     add_group(group="filling_root",
               systest_group="system_test.failover.filling_root",
               config_name="ceph_all_on_neutron_vlan")
