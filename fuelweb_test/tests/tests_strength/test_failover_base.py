@@ -25,6 +25,7 @@ from proboscis.asserts import assert_false
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 from proboscis import SkipTest
+from six.moves import xrange
 import yaml
 
 from fuelweb_test.helpers.checkers import check_mysql
@@ -1181,9 +1182,12 @@ class TestHaFailoverBase(TestBasic):
                                         status):
             for remote in ctrl_remotes:
                 pcs_nodes = _get_pcm_nodes(remote)
+                # TODO: FIXME: Rewrite using normal SSHManager and node name
+                node_name = ''.join(
+                    remote.execute('hostname -f')['stdout']).strip()
                 logger.debug(
                     "Status of pacemaker nodes on node {0}: {1}".
-                    format(node['name'], pcs_nodes))
+                    format(node_name, pcs_nodes))
                 if set(pcs_nodes_online) != set(pcs_nodes[status]):
                     return False
             return True

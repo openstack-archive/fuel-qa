@@ -413,7 +413,7 @@ class FuelWebClient(object):
     def create_cluster(self,
                        name,
                        settings=None,
-                       release_name=help_data.OPENSTACK_RELEASE,
+                       release_name=OPENSTACK_RELEASE,
                        mode=DEPLOYMENT_MODE_HA,
                        port=514,
                        release_id=None,
@@ -924,7 +924,7 @@ class FuelWebClient(object):
                 return nailgun_node
         # On deployed environment MAC addresses of bonded network interfaces
         # are changes and don't match addresses associated with devops node
-        if help_data.BONDING:
+        if BONDING:
             return self.get_nailgun_node_by_base_name(devops_node.name)
 
     @logwrap
@@ -2414,7 +2414,6 @@ class FuelWebClient(object):
         assert_true(plugin_data is not None, "Plugin {0} version {1} is not "
                     "found".format(plugin_name, version))
         for option, value in data.items():
-            plugin_data = item
             path = option.split("/")
             for p in path[:-1]:
                 plugin_data = plugin_data[p]
