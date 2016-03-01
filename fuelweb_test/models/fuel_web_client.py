@@ -18,6 +18,8 @@ import re
 import time
 import traceback
 
+import distutils
+import devops
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
@@ -59,6 +61,7 @@ from fuelweb_test.helpers.utils import get_node_hiera_roles
 from fuelweb_test.helpers.utils import node_freemem
 from fuelweb_test.helpers.utils import pretty_log
 from fuelweb_test.helpers.utils import run_on_remote
+from fuelweb_test.models.fuel_web_client30 import FuelWebClient30
 from fuelweb_test.models.nailgun_client import NailgunClient
 import fuelweb_test.settings as help_data
 from fuelweb_test.settings import ATTEMPTS
@@ -92,7 +95,7 @@ from fuelweb_test.settings import VCENTER_PASSWORD
 from fuelweb_test.settings import VCENTER_USERNAME
 
 
-class FuelWebClient(object):
+class FuelWebClient29(object):
     """FuelWebClient."""  # TODO documentation
 
     def __init__(self, environment):
@@ -101,7 +104,7 @@ class FuelWebClient(object):
         self.client = NailgunClient(self.ssh_manager.admin_ip)
         self._environment = environment
         self.security = SecurityChecks(self.client, self._environment)
-        super(FuelWebClient, self).__init__()
+        super(FuelWebClient29, self).__init__()
 
     @property
     def environment(self):
@@ -537,9 +540,8 @@ class FuelWebClient(object):
                                     "it is required for VxLAN DVR "
                                     "network configuration.")
 
-            public_gw = self.environment.d_env.router(router_name="public")
+            public_gw = self.get_public_gw()
 
-            remote = self.environment.d_env.get_admin_remote()
             if help_data.FUEL_USE_LOCAL_NTPD\
                     and ('ntp_list' not in settings)\
                     and checkers.is_ntpd_active(
@@ -549,7 +551,6 @@ class FuelWebClient(object):
                 logger.info("Configuring cluster #{0}"
                             "to use NTP server {1}"
                             .format(cluster_id, public_gw))
-            remote.clear()
 
             if help_data.FUEL_USE_LOCAL_DNS and ('dns_list' not in settings):
                 attributes['editable']['external_dns']['dns_list']['value'] =\
@@ -581,12 +582,7 @@ class FuelWebClient(object):
             # may be created by new components like ironic
             self.client.update_cluster_attributes(cluster_id, attributes)
 
-            if MULTIPLE_NETWORKS:
-                ng = {rack['name']: [] for rack in NODEGROUPS}
-                self.update_nodegroups(cluster_id=cluster_id,
-                                       node_groups=ng)
-                self.update_nodegroups_network_configuration(cluster_id,
-                                                             NODEGROUPS)
+            self.nodegroups_configure(cluster_id)
 
             logger.debug("Try to update cluster "
                          "with next attributes {0}".format(attributes))
@@ -605,6 +601,21 @@ class FuelWebClient(object):
         #    cluster_id, self.environment.get_host_node_ip(), port)
 
         return cluster_id
+
+    @logwrap
+    def get_public_gw(self):
+        return self.environment.d_env.router(router_name="public")
+
+    @logwrap
+    def nodegroups_configure(self, cluster_id):
+        """Update nodegroups configuration
+        """
+        if not MULTIPLE_NETWORKS:
+            return
+
+        ng = {rack['name']: [] for rack in NODEGROUPS}
+        self.update_nodegroups(cluster_id=cluster_id, node_groups=ng)
+        self.update_nodegroups_network_configuration(cluster_id, NODEGROUPS)
 
     @logwrap
     def ssl_configure(self, cluster_id):
@@ -2676,18 +2687,11 @@ class FuelWebClient(object):
         self.assert_task_success(latest_task, interval=interval,
                                  timeout=timeout)
 
-    @logwrap
-    def get_vip_info(self, cluster_id, vip_name='public'):
-        vip_data = self.client.get_vip_info_by_name(cluster_id, vip_name)
-        assert_true(vip_data, "Vip with name {} wasn't found".format(vip_name))
-        logger.debug("vip data is {}".format(vip_data[0]))
-        return vip_data[0]
 
-    @logwrap
-    def update_vip_ip(self, cluster_id, ip, vip_name='public'):
-        vip_data = self.get_vip_info(cluster_id, vip_name=vip_name)
-        vip_data['ip_addr'] = ip
-        vip_data['is_user_defined'] = True
-        vip_id = vip_data['id']
-        logger.debug("data to send {}".format(vip_data))
-        self.client.update_vip_ip(cluster_id, vip_id, vip_data)
+if (distutils.version.LooseVersion(devops.__version__) <
+        distutils.version.LooseVersion('3')):
+    logger.info("Use FuelWebClient compatible to fuel-devops 2.9")
+    FuelWebClient = FuelWebClient29
+else:
+    logger.info("Use FuelWebClient compatible to fuel-devops 3.0")
+    FuelWebClient = FuelWebClient30
