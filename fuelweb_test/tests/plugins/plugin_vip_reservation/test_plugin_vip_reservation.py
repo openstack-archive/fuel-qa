@@ -134,7 +134,7 @@ class VipReservation(TestBasic):
                 vip_db = self.env.postgres_actions.run_query(
                     db='nailgun',
                     query="select ip_addr from ip_addrs where "
-                          "vip_type = '\"'\"'{0}'\"'\"';".format(vip))
+                          "vip_name = '\"'\"'{0}'\"'\"';".format(vip))
                 vip_array = [vip_hiera, vip_db]
                 for ip in vip_array[1:]:
                     asserts.assert_equal(
@@ -265,11 +265,14 @@ class VipReservation(TestBasic):
                 vip_db = self.env.postgres_actions.run_query(
                     db='nailgun',
                     query="select ip_addr from ip_addrs where "
-                          "vip_type = '\"'\"'{0}'\"'\"';".format(vip))
+                          "vip_name = '\"'\"'{0}'\"'\"';".format(vip))
                 # get vips from pacemaker
-                vip_pcs = remote.execute(
-                    'pcs resource show {0}{1}'.format(
-                        'vip__', vip))['stdout'][1].split(' ')[6].split('=')[1]
+                if vip == 'reserved_pub':
+                    elem = 7
+                else:
+                    elem = 6
+                vip_pcs = remote.execute('pcs resource show {0}{1}'.format(
+                    'vip__', vip))['stdout'][1].split(' ')[elem].split('=')[1]
                 # fet vips from namespace
                 vip_ns = remote.execute(
                     'ip netns exec {0} ip -4 a show {1}{2}'.format(
@@ -394,11 +397,14 @@ class VipReservation(TestBasic):
                 vip_db = self.env.postgres_actions.run_query(
                     db='nailgun',
                     query="select ip_addr from ip_addrs where "
-                          "vip_type = '\"'\"'{0}'\"'\"';".format(vip))
+                          "vip_name = '\"'\"'{0}'\"'\"';".format(vip))
                 # get vips from pacemaker
-                vip_pcs = remote.execute(
-                    'pcs resource show {0}{1}'.format(
-                        'vip__', vip))['stdout'][1].split(' ')[6].split('=')[1]
+                if vip == 'reserved_pub':
+                    elem = 7
+                else:
+                    elem = 6
+                vip_pcs = remote.execute('pcs resource show {0}{1}'.format(
+                    'vip__', vip))['stdout'][1].split(' ')[elem].split('=')[1]
                 # get vips from namespace
                 vip_ns = remote.execute(
                     'ip netns exec {0} ip -4 a show {1}{2}'.format(
