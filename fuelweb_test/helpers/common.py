@@ -26,6 +26,9 @@ from novaclient.v2 import Client as NovaClient
 import neutronclient.v2_0.client as neutronclient
 from proboscis.asserts import assert_equal
 import six
+# pylint: disable=redefined-builtin
+from six.moves import xrange
+# pylint: enable=redefined-builtin
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap

@@ -18,6 +18,9 @@ from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import SkipTest
+# pylint: disable=redefined-builtin
+from six.moves import xrange
+# pylint: enable=redefined-builtin
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import retry
