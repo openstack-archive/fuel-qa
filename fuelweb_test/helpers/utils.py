@@ -28,6 +28,7 @@ import ipaddr
 from proboscis import asserts
 from proboscis.asserts import assert_true
 from proboscis.asserts import assert_equal
+from six.moves import xrange
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
