@@ -194,7 +194,9 @@ def get_test_method_name():
 def get_current_env(args):
     if args[0].__class__.__name__ == "EnvironmentModel":
         return args[0]
-    elif args[0].__class__.__name__ == "FuelWebClient":
+    elif args[0].__class__.__name__ in ("FuelWebClient",
+                                        "FuelWebClient29",
+                                        "FuelWebClient30"):
         return args[0].environment
     else:
         try:
