@@ -24,10 +24,12 @@ import time
 import traceback
 
 import netaddr
-
 from proboscis import asserts
 from proboscis.asserts import assert_true
 from proboscis.asserts import assert_equal
+# pylint: disable=redefined-builtin
+from six.moves import xrange
+# pylint: enable=redefined-builtin
 import yaml
 
 from fuelweb_test import logger

@@ -19,6 +19,9 @@ import traceback
 from proboscis.asserts import assert_true
 from proboscis import test
 from proboscis import SkipTest
+# pylint: disable=redefined-builtin
+from six.moves import xrange
+# pylint: enable=redefined-builtin
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
