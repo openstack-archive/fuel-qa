@@ -16,6 +16,7 @@ import time
 
 from proboscis import test
 from proboscis.asserts import assert_true
+from six.moves import xrange
 
 from fuelweb_test import logger
 from fuelweb_test import ostf_test_mapping
