@@ -106,7 +106,6 @@ class HaTunGroup3(TestBasic):
         ceph_nodes = self.fuel_web.\
             get_nailgun_cluster_nodes_by_roles(cluster_id, ['ceph-osd'],
                                                role_status='pending_roles')
-        d_ceph = self.fuel_web.get_devops_nodes_by_nailgun_nodes(ceph_nodes)
         for ceph_node in ceph_nodes:
             ceph_image_size = self.fuel_web.\
                 update_node_partitioning(ceph_node, node_role='ceph')
@@ -116,9 +115,8 @@ class HaTunGroup3(TestBasic):
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        for devops_ceph in d_ceph:
-            with self.fuel_web.get_ssh_for_node(devops_ceph.name) as remote:
-                checkers.check_ceph_image_size(remote, ceph_image_size)
+        for ceph in ceph_nodes:
+            checkers.check_ceph_image_size(ceph['ip'], ceph_image_size)
 
         ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, roles=['controller'])
@@ -192,7 +190,6 @@ class HaTunGroup3(TestBasic):
         ceph_nodes = self.fuel_web.\
             get_nailgun_cluster_nodes_by_roles(cluster_id, ['ceph-osd'],
                                                role_status='pending_roles')
-        d_ceph = self.fuel_web.get_devops_nodes_by_nailgun_nodes(ceph_nodes)
         for ceph_node in ceph_nodes:
             ceph_image_size = self.fuel_web.\
                 update_node_partitioning(ceph_node, node_role='ceph')
@@ -202,10 +199,9 @@ class HaTunGroup3(TestBasic):
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        for devops_ceph in d_ceph:
-            with self.fuel_web.get_ssh_for_node(devops_ceph.name) as remote:
-                # TODO: add pool size check
-                checkers.check_ceph_image_size(remote, ceph_image_size)
+        for ceph in ceph_nodes:
+            # TODO: add pool size check
+            checkers.check_ceph_image_size(ceph['ip'], ceph_image_size)
 
         self.fuel_web.check_ceph_status(cluster_id)
         self.fuel_web.verify_network(cluster_id)

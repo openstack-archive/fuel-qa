@@ -19,6 +19,7 @@ from proboscis import test
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import utils
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import EXAMPLE_PLUGIN_PATH
 from fuelweb_test.settings import EXAMPLE_PLUGIN_V3_PATH
@@ -56,16 +57,16 @@ class ExamplePlugin(TestBasic):
         # copy plugin to the master node
         checkers.check_archive_type(EXAMPLE_PLUGIN_PATH)
 
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.upload_tarball(
-                remote,
-                EXAMPLE_PLUGIN_PATH, '/var')
+        utils.upload_tarball(
+            ip=self.ssh_manager.admin_ip,
+            tar_path=EXAMPLE_PLUGIN_PATH,
+            tar_target='/var')
 
-            # install plugin
+        # install plugin
 
-            checkers.install_plugin_check_code(
-                remote,
-                plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
 
         segment_type = NEUTRON_SEGMENT['vlan']
         cluster_id = self.fuel_web.create_cluster(
@@ -141,17 +142,17 @@ class ExamplePlugin(TestBasic):
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        with self.env.d_env.get_admin_remote() as admin_remote:
-            # copy plugin to the master node
-            checkers.check_archive_type(EXAMPLE_PLUGIN_V3_PATH)
-            checkers.upload_tarball(
-                admin_remote,
-                EXAMPLE_PLUGIN_V3_PATH,
-                '/var')
-            # install plugin
-            checkers.install_plugin_check_code(
-                admin_remote,
-                plugin=os.path.basename(EXAMPLE_PLUGIN_V3_PATH))
+        # copy plugin to the master node
+        checkers.check_archive_type(EXAMPLE_PLUGIN_V3_PATH)
+        utils.upload_tarball(
+            ip=self.ssh_manager.admin_ip,
+            tar_path=EXAMPLE_PLUGIN_V3_PATH,
+            tar_target='/var'
+        )
+        # install plugin
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.basename(EXAMPLE_PLUGIN_V3_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -273,15 +274,17 @@ class ExamplePlugin(TestBasic):
         # copy plugin to the master node
         checkers.check_archive_type(EXAMPLE_PLUGIN_PATH)
 
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.upload_tarball(
-                remote, EXAMPLE_PLUGIN_PATH, '/var')
+        utils.upload_tarball(
+            ip=self.ssh_manager.admin_ip,
+            tar_path=EXAMPLE_PLUGIN_PATH,
+            tar_target='/var'
+        )
 
-            # install plugin
+        # install plugin
 
-            checkers.install_plugin_check_code(
-                remote,
-                plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -362,15 +365,16 @@ class ExamplePlugin(TestBasic):
         # copy plugin to the master node
         checkers.check_archive_type(EXAMPLE_PLUGIN_PATH)
 
-        with self.env.d_env.get_admin_remote() as remote:
-            checkers.upload_tarball(
-                remote, EXAMPLE_PLUGIN_PATH, '/var')
+        utils.upload_tarball(
+            ip=self.ssh_manager.admin_ip,
+            tar_path=EXAMPLE_PLUGIN_PATH,
+            tar_target='/var')
 
-            # install plugin
+        # install plugin
 
-            checkers.install_plugin_check_code(
-                remote,
-                plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.basename(EXAMPLE_PLUGIN_PATH))
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
