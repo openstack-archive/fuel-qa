@@ -302,9 +302,9 @@ class TestHaFailoverBase(TestBasic):
                 logger.debug("Waiting while deleted ip restores ...")
                 try:
                     wait(check_restore, timeout=60)
-                except TimeoutError as e:
+                except TimeoutError:
                     logger.error("Resource has not been restored for a 60 sec")
-                    raise e
+                    raise
 
                 new_nodes = self.fuel_web.get_pacemaker_resource_location(
                     devops_controllers[0].name,
