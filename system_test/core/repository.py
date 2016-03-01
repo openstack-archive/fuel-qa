@@ -17,15 +17,15 @@ import re
 import proboscis.core
 from proboscis import factory
 from proboscis.decorators import DEFAULT_REGISTRY
+from six import add_metaclass
 
-from fuelweb_test.helpers import metaclasses
+from fuelweb_test.helpers.metaclasses import SingletonMeta
 from system_test.tests import ActionTest
 from system_test.core.discover import config_filter
 
 
+@add_metaclass(SingletonMeta)
 class TestCaseRepository(set):
-
-    __metaclass__ = metaclasses.SingletonMeta
 
     def __init__(self):
         super(TestCaseRepository, self).__init__()
