@@ -18,6 +18,7 @@ from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import SkipTest
+from six.moves import xrange
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import retry

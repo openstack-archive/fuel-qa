@@ -19,6 +19,7 @@ import urllib2
 import zlib
 
 from proboscis.asserts import assert_equal
+import six
 from xml.etree import ElementTree
 
 from fuelweb_test import logger
@@ -299,7 +300,7 @@ class CustomRepo(object):
         else:
             err_deps = self.check_puppet_logs_centos()
 
-        for err_deps_key in err_deps.keys():
+        for err_deps_key in six.iterkeys(err_deps):
             logger.info('Error: Package: {0} has unmet dependencies:'
                         .format(err_deps_key))
             for dep in err_deps[err_deps_key]:
