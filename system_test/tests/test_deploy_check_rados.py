@@ -69,8 +69,7 @@ class DeployCheckRadosGW(ActionTest, BaseActions):
     def check_rados_daemon(self):
         """Check the radosgw daemon is started"""
         def radosgw_started(remote):
-            return len(remote.check_call(
-                'ps aux | grep "/usr/bin/radosgw -n '
-                'client.radosgw.gateway"')['stdout']) == 3
+            return remote.check_call('pkill -0 radosgw')['exit_code'] == 0
+
         with self.fuel_web.get_ssh_for_node('slave-01') as remote:
             assert_true(radosgw_started(remote), 'radosgw daemon started')
