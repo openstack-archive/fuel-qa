@@ -21,6 +21,7 @@ class PackageVersionError(Exception):
     def __init__(self, package, version):
         self.package = package
         self.version = version
+        super(PackageVersionError, self).__init__()
 
     def __repr__(self):
         return 'Package {0} has wrong version {1}'.format(
@@ -30,6 +31,7 @@ class PackageVersionError(Exception):
 class FuelQATestException(Exception):
     def __init__(self, message):
         self.message = message
+        super(FuelQATestException, self).__init__()
 
     def __str__(self):
         return self.message
@@ -39,6 +41,9 @@ class FuelQAVariableNotSet(FuelQATestException):
     def __init__(self, variable_name, expected_value):
         self.variable_name = variable_name
         self.expected_value = expected_value
+        super(FuelQAVariableNotSet, self).__init__(
+            "Variable {0} was not set in value {1}".format(
+                self.variable_name, self.expected_value))
 
     def __str__(self):
         return "Variable {0} was not set in value {1}".format(

@@ -15,11 +15,10 @@
 import re
 import time
 import traceback
+from urllib2 import HTTPError
 
 import yaml
 import netaddr
-
-from urllib2 import HTTPError
 
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
@@ -416,7 +415,7 @@ class FuelWebClient(object):
     def create_cluster(self,
                        name,
                        settings=None,
-                       release_name=help_data.OPENSTACK_RELEASE,
+                       release_name=OPENSTACK_RELEASE,
                        mode=DEPLOYMENT_MODE_HA,
                        port=514,
                        release_id=None,
@@ -938,7 +937,7 @@ class FuelWebClient(object):
                 return nailgun_node
         # On deployed environment MAC addresses of bonded network interfaces
         # are changes and don't match addresses associated with devops node
-        if help_data.BONDING:
+        if BONDING:
             return self.get_nailgun_node_by_base_name(devops_node.name)
 
     @logwrap
@@ -1463,7 +1462,7 @@ class FuelWebClient(object):
                         net.get('seg_type', '') == 'tun'):
                     result['private_tun'] = net
                 elif (net['name'] == 'private' and
-                        net.get('seg_type', '') == 'gre'):
+                      net.get('seg_type', '') == 'gre'):
                     result['private_gre'] = net
                 elif net['name'] == 'public':
                     result['public'] = net
@@ -1827,12 +1826,12 @@ class FuelWebClient(object):
                 'inet (?P<ip>\d+\.\d+\.\d+.\d+/\d+).*scope .* '
                 '{0}'.format(interface), ' '.join(ret['stdout']))
             if ip_search is None:
-                    logger.debug("Ip show output does not match in regex. "
-                                 "Current value is None. On node {0} in netns "
-                                 "{1} for interface {2}".format(node_name,
-                                                                namespace,
-                                                                interface))
-                    return None
+                logger.debug("Ip show output does not match in regex. "
+                             "Current value is None. On node {0} in netns "
+                             "{1} for interface {2}".format(node_name,
+                                                            namespace,
+                                                            interface))
+                return None
             return ip_search.group('ip')
         except DevopsCalledProcessError as err:
             logger.error(err)
@@ -1995,7 +1994,7 @@ class FuelWebClient(object):
     def run_ceph_task(self, cluster_id, offline_nodes):
         ceph_id = [n['id'] for n in self.client.list_cluster_nodes(cluster_id)
                    if 'ceph-osd'
-                      in n['roles'] and n['id'] not in offline_nodes]
+                   in n['roles'] and n['id'] not in offline_nodes]
         res = self.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['top-role-ceph-osd'],
             node_id=str(ceph_id).strip('[]'))
@@ -2428,7 +2427,6 @@ class FuelWebClient(object):
         assert_true(plugin_data is not None, "Plugin {0} version {1} is not "
                     "found".format(plugin_name, version))
         for option, value in data.items():
-            plugin_data = item
             path = option.split("/")
             for p in path[:-1]:
                 plugin_data = plugin_data[p]
@@ -2555,9 +2553,9 @@ class FuelWebClient(object):
 
     @logwrap
     def spawn_vms_wait(self, cluster_id, timeout=60 * 60, interval=30):
-            logger.info('Spawn VMs of a cluster %s', cluster_id)
-            task = self.client.spawn_vms(cluster_id)
-            self.assert_task_success(task, timeout=timeout, interval=interval)
+        logger.info('Spawn VMs of a cluster %s', cluster_id)
+        task = self.client.spawn_vms(cluster_id)
+        self.assert_task_success(task, timeout=timeout, interval=interval)
 
     @logwrap
     def get_all_ostf_set_names(self, cluster_id):
@@ -2579,7 +2577,7 @@ class FuelWebClient(object):
             if network['name'] != network_name:
                 continue
             old_cidr = netaddr.IPNetwork(str(network['cidr']))
-            new_cidr = old_cidr.subnet(1)[0]
+            new_cidr = list(old_cidr.subnet(1))[0]
             assert_not_equal(old_cidr, new_cidr,
                              'Can\t create a subnet using default cidr {0} '
                              'for {1} network!'.format(old_cidr, network_name))

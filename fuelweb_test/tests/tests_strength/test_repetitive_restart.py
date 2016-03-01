@@ -16,6 +16,9 @@ import time
 
 from proboscis import test
 from proboscis.asserts import assert_true
+# pylint: disable=redefined-builtin
+from six.moves import xrange
+# pylint: enable=redefined-builtin
 
 from fuelweb_test import logger
 from fuelweb_test import ostf_test_mapping

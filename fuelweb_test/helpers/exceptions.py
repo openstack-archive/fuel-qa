@@ -20,6 +20,7 @@ class UnexpectedExitCode(Exception):
         self.cmd = command
         self.stdout = stdout
         self.stderr = stderr
+        super(UnexpectedExitCode, self).__init__()
 
     def __str__(self):
         message = "Command '{cmd:s}' returned unexpected exit code {code:d}," \

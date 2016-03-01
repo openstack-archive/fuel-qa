@@ -16,18 +16,21 @@ import ConfigParser
 from distutils import version
 import inspect
 import json
-import time
-import traceback
-import yaml
 import os
 import posixpath
 import re
 import signal
-import netaddr
+import time
+import traceback
 
+import netaddr
 from proboscis import asserts
 from proboscis.asserts import assert_true
 from proboscis.asserts import assert_equal
+# pylint: disable=redefined-builtin
+from six.moves import xrange
+# pylint: enable=redefined-builtin
+import yaml
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
@@ -491,7 +494,9 @@ def get_network_template(template_name):
 
 
 @logwrap
-def get_net_settings(remote, skip_interfaces=set()):
+def get_net_settings(remote, skip_interfaces=None):
+    if skip_interfaces is None:
+        skip_interfaces = set()
     net_settings = dict()
     interface_cmd = ('awk \'$1~/:/{split($1,iface,":"); print iface[1]}\''
                      ' /proc/net/dev')

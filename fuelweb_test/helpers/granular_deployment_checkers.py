@@ -26,8 +26,7 @@ def check_hiera_resources(remote, file_name=None):
     assert_true('fine' in output, output)
     if not file_name:
         output_f = ''.join(remote.execute(
-            'if [ -r /etc/hiera.yaml ] ; then echo "passed" ;  fi')[
-            'stdout'])
+            'if [ -r /etc/hiera.yaml ] ; then echo "passed" ;  fi')['stdout'])
         assert_true('passed' in output_f, output_f)
     else:
         output_f = ''.join(remote.execute(

@@ -14,10 +14,10 @@
 
 import random
 import time
-import netaddr
 import traceback
 
 from devops.helpers import helpers
+import netaddr
 from proboscis import asserts
 from proboscis import test
 
