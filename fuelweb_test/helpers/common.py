@@ -13,6 +13,7 @@
 #    under the License.
 
 import time
+import traceback
 from urlparse import urlparse
 
 from cinderclient import client as cinderclient
@@ -150,8 +151,9 @@ class Common(object):
                 else:
                     image = [i.id for i in self.nova.images.list()]
                 break
-            except:
-                pass
+            except Exception as e:
+                logger.warning('Ignoring exception: {!r}'.format(e))
+                logger.debug(traceback.format_exc())
         else:
             raise Exception('Can not get image')
 

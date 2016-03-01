@@ -13,11 +13,11 @@
 #    under the License.
 
 import sys
+import traceback
 
 from proboscis.asserts import assert_true
 from proboscis import test
 from proboscis import SkipTest
-
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -49,9 +49,10 @@ class NeutronTun(TestBasic):
         test_group = sys.argv[-1]
         try:
             self.check_run(snapshot_name=snapshot_name)
-        except SkipTest:
+        except SkipTest as e:
             if expected_group in test_group:
-                pass
+                logger.warning('Ignoring exception: {!r}'.format(e))
+                logger.debug(traceback.format_exc())
             else:
                 raise
 
