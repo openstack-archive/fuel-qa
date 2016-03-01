@@ -17,6 +17,7 @@ import os
 
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
+import six
 
 from devops.helpers.helpers import wait
 from fuelweb_test import logger
@@ -356,7 +357,7 @@ class RallyResult(object):
         """
         message = ''
         equal = True
-        for val in first_result.values.keys():
+        for val in six.iterkeys(first_result.values):
             logger.debug('Comparing {2}: {0} and {1}'.format(
                 first_result.values[val], second_result.values[val],
                 val
