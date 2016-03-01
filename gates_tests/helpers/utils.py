@@ -522,9 +522,9 @@ def puppet_modules_mapping(modules):
         # find test group which has better coverage of modules from review
         system_test = "bvt_2"
         max_intersection = 0
-        if not ("ceph" in modules and set(
-                ["roles/cinder.pp", "cinder", "openstack-cinder"]) & set(
-                modules)):
+        if not ("ceph" in modules and
+                {"roles/cinder.pp", "cinder", "openstack-cinder"} &
+                set(modules)):
             for test in mapping:
                 test_intersection = len(
                     set(mapping[test]).intersection(set(modules)))

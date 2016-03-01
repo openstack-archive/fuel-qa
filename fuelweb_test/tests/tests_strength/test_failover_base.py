@@ -25,16 +25,17 @@ from proboscis.asserts import assert_false
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 from proboscis import SkipTest
+from six.moves import xrange
 import yaml
 
+from fuelweb_test import logger
+from fuelweb_test import logwrap
+from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.checkers import check_mysql
 from fuelweb_test.helpers.checkers import check_ping
 from fuelweb_test.helpers.checkers import check_public_ping
 from fuelweb_test.helpers.utils import get_file_size
-from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.utils import TimeStat
-from fuelweb_test import logger
-from fuelweb_test import logwrap
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import DNS
@@ -647,8 +648,8 @@ class TestHaFailoverBase(TestBasic):
             remote.check_call(cmd_input)
             remote.check_call(cmd_output)
         except:
-            logger.error('command failed to be executed'.format(
-                p_d_ctrl.name))
+            logger.error(
+                'command {:s} failed to be executed'.format(p_d_ctrl.name))
             raise
         finally:
             remote.clear()
@@ -1181,9 +1182,12 @@ class TestHaFailoverBase(TestBasic):
                                         status):
             for remote in ctrl_remotes:
                 pcs_nodes = _get_pcm_nodes(remote)
+                # TODO: FIXME: Rewrite using normal SSHManager and node name
+                node_name = ''.join(
+                    remote.execute('hostname -f')['stdout']).strip()
                 logger.debug(
                     "Status of pacemaker nodes on node {0}: {1}".
-                    format(node['name'], pcs_nodes))
+                    format(node_name, pcs_nodes))
                 if set(pcs_nodes_online) != set(pcs_nodes[status]):
                     return False
             return True

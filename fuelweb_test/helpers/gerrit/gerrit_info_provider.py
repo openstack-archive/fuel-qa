@@ -16,9 +16,12 @@ import base64
 from collections import namedtuple
 import os
 import re
+
+from six.moves import xrange
+
 from fuelweb_test import settings
-from gerrit_client import GerritClient
-import utils
+from fuelweb_test.helpers.gerrit.gerrit_client import GerritClient
+from fuelweb_test.helpers.gerrit import utils
 
 
 class FuelLibraryModulesProvider(object):

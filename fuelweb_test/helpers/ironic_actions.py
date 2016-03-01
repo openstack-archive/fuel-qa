@@ -12,10 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
+
 from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
+
 from fuelweb_test.helpers import os_actions
-import json
 
 
 class IronicActions(os_actions.OpenStackActions):

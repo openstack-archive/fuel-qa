@@ -16,7 +16,6 @@ import os
 import re
 import sys
 import traceback
-import yaml
 import zlib
 from urllib2 import urlopen
 from urlparse import urlparse
@@ -28,6 +27,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
+import yaml
 
 from fuelweb_test import logger
 from fuelweb_test import settings
@@ -418,13 +418,14 @@ def verify_fix_apply_step(apply_step):
                                       value=apply_step[key],
                                       valid=validation_schema[key]['values']))
         if 'data_type' in validation_schema[key].keys():
-            assert_true(type(apply_step[key]) is
-                        validation_schema[key]['data_type'],
-                        "Unexpected data type in patch apply scenario step:  '"
-                        "{key}' is '{type}', but expecting '{expect}'.".format(
-                            key=key,
-                            type=type(apply_step[key]),
-                            expect=validation_schema[key]['data_type']))
+            assert_true(
+                isinstance(
+                    apply_step[key], validation_schema[key]['data_type']),
+                "Unexpected data type in patch apply scenario step:  '"
+                "{key}' is '{type}', but expecting '{expect}'.".format(
+                    key=key,
+                    type=type(apply_step[key]),
+                    expect=validation_schema[key]['data_type']))
 
 
 def validate_fix_apply_step(apply_step, environment, slaves):
@@ -519,7 +520,7 @@ def validate_fix_apply_step(apply_step, environment, slaves):
 def get_errata(path, bug_id):
     scenario_path = '{0}/bugs/{1}/erratum.yaml'.format(path, bug_id)
     assert_true(os.path.exists(scenario_path),
-                "Erratum for bug #{0} is not found in '{0}' "
+                "Erratum for bug #{0} is not found in '{1}' "
                 "directory".format(bug_id, settings.PATCHING_APPLY_TESTS))
     with open(scenario_path) as f:
         return yaml.load(f.read())
