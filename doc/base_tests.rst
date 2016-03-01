@@ -335,6 +335,16 @@ Test Fuel astute
 .. automodule:: gates_tests.test_review_in_astute
   :members:
 
+Test Fuel nailgun agent
+-----------------------
+.. automodule:: gates_tests.test_nailgun_agent
+  :members:
+
+Test Fuel web
+-------------
+.. automodule:: gates_tests.test_review_fuel_web
+  :members:
+
 Fuel mirror verification
 ========================
 
