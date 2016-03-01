@@ -158,7 +158,7 @@ class SetupEnvironment(TestBasic):
         # inside 'address_pool', so we can use 'network_pools' section
         # for L3 configuration in tests for multi racks
         if MULTIPLE_NETWORKS:
-            from system_test.helpers.utils import load_yaml
+            from system_test.core.discover import load_yaml
             self._devops_config = load_yaml(MULTIPLE_NETWORKS_TEMPLATE)
 
         self.check_run("empty")
