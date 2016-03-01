@@ -616,13 +616,13 @@ class EnvironmentModel(object):
             wait(
                 lambda: not
                 admin_remote.execute(
-                    "grep 'Fuel node deployment' '%s'" % log_path
+                    "grep 'Fuel node deployment' '{:s}'".format(log_path)
                 )['exit_code'],
                 timeout=(float(settings.PUPPET_TIMEOUT))
             )
             result = admin_remote.execute(
                 "grep 'Fuel node deployment "
-                "complete' '%s'" % log_path)['exit_code']
+                "complete' '{:s}'".format(log_path))['exit_code']
         if result != 0:
             raise Exception('Fuel node deployment failed.')
         self.bootstrap_image_check()

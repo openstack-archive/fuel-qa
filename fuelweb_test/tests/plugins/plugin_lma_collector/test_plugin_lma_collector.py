@@ -157,7 +157,8 @@ class TestLmaCollectorPlugin(TestBasic):
         for plugin in plugins:
             plugin_name = plugin['name']
             plugin_version = plugin['version']
-            msg = "Plugin '%s' couldn't be found. Test aborted" % plugin_name
+            msg = "Plugin '{:s}' couldn't be found. " \
+                  "Test aborted".format(plugin_name)
             assert_true(
                 self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
                 msg)

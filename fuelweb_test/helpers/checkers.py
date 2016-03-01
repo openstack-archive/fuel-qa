@@ -229,7 +229,7 @@ def wait_phrase_in_log(node_ssh, timeout, interval, phrase, log_path):
 @logwrap
 def get_package_versions_from_node(remote, name, os_type):
     if os_type and 'Ubuntu' in os_type:
-        cmd = "dpkg-query -W -f='${Version}' %s" % name
+        cmd = "dpkg-query -W -f='${{Version}}' {:s}".format(name)
     else:
         cmd = "rpm -q {0}".format(name)
     try:

@@ -84,7 +84,7 @@ class ContrailPlugin(TestBasic):
     def _prepare_contrail_plugin(self, slaves=None, pub_net=False):
         """Copy necessary packages to the master node and install them"""
 
-        self.env.revert_snapshot("ready_with_%d_slaves" % slaves)
+        self.env.revert_snapshot("ready_with_{:d}_slaves".format(slaves))
 
         with self.env.d_env.get_admin_remote() as remote:
 

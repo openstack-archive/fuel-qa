@@ -526,8 +526,11 @@ class PuppetLog(AbstractLog):
             line = record.get('line', None)
             if not (log and time and line):
                 continue
-            IO.output("%s %s %s" % (self.node_name(log),
-                                    time.isoformat(), line))
+            IO.output("{name:s} {time:s} {line:s}".format(
+                name=self.node_name(log),
+                time=time.isoformat(),
+                line=line
+            ))
 
     def sort_log(self):
         """
