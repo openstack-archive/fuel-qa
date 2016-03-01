@@ -72,17 +72,19 @@ class ChangeVipManually(TestBasic):
             }
         )
         self.show_step(4)
-        ip_to_set = str(
-            self.env.d_env.get_network(name='public').ip.subnet()[0][5])
-        logger.debug("public vip is going to be set to {}".format(ip_to_set))
-        public_vip_data = {'network': 2,
-                           'vip_name': 'public',
-                           'vip_namespace': 'haproxy',
-                           'ip_addr': ip_to_set}
 
         # TODO(ddmitriev): remove this 'disable' after moving to fuel-devops3.0
         # pylint: disable=no-member
-        self.fuel_web.client.update_vip_ip(cluster_id, public_vip_data)
+        ip = netaddr.IPAddress(
+            self.fuel_web.get_vip_info(cluster_id)['ip_addr'])
+        # pylint: enable=no-member
+
+        ip_to_set = str(ip + 1)
+        logger.debug('ip to be set is {}'.format(ip_to_set))
+
+        # TODO(ddmitriev): remove this 'disable' after moving to fuel-devops3.0
+        # pylint: disable=no-member
+        self.fuel_web.update_vip_ip(cluster_id, ip_to_set)
         # pylint: enable=no-member
 
         self.show_step(5)
@@ -166,14 +168,11 @@ class ChangeVipManually(TestBasic):
         self.show_step(5)
         ip_to_set = str(floating_upper_range + 1)
         logger.debug('ip to be set is {}'.format(ip_to_set))
-        public_vip_data = {'network': 2,
-                           'vip_name': 'public',
-                           'vip_namespace': 'haproxy',
-                           'ip_addr': ip_to_set}
 
         # TODO(ddmitriev): remove this 'disable' after moving to fuel-devops3.0
         # pylint: disable=no-member
-        self.fuel_web.client.update_vip_ip(cluster_id, public_vip_data)
+        self.fuel_web.update_vip_ip(cluster_id, ip_to_set)
+
         # pylint: enable=no-member
 
         self.show_step(6)
