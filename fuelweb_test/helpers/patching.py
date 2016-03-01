@@ -28,6 +28,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
+import six
 
 from fuelweb_test import logger
 from fuelweb_test import settings
@@ -192,7 +193,7 @@ def get_repository_packages(remote_repo_url, repo_type):
 
 
 def _get_target_and_project(_pkg, _all_pkgs):
-    for _installation_target in _all_pkgs.keys():
+    for _installation_target in six.iterkeys(_all_pkgs):
         for _project in _all_pkgs[_installation_target]['projects']:
             if _pkg in _project['packages']:
                 return _installation_target, _project['name']
@@ -392,7 +393,7 @@ def get_slaves_ids_by_role(slaves, role=None):
 
 def verify_fix_apply_step(apply_step):
     validation_schema = patching_validation_schema
-    for key in validation_schema.keys():
+    for key in six.iterkeys(validation_schema):
         if key in apply_step.keys():
             is_exists = apply_step[key] is not None
         else:

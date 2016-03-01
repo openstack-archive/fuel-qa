@@ -28,6 +28,8 @@ import ipaddr
 from proboscis import asserts
 from proboscis.asserts import assert_true
 from proboscis.asserts import assert_equal
+import six
+from six.moves import xrange
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
@@ -692,7 +694,7 @@ def pretty_log(src, indent=0, invert=False):
     if src and isinstance(src, dict):
         max_len = len(max(src.values() if invert else src.keys(),
                           key=lambda x: len(str(x))))
-        for key, value in src.items():
+        for key, value in six.iteritems(src):
             if (isinstance(value, dict) and value) or \
                     isinstance(value, list):
                 result += templates[1].format(indent=' ' * indent, item=key)

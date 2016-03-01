@@ -15,6 +15,8 @@
 import os.path
 import yaml
 
+import six
+
 
 def get_basepath():
     import system_test
@@ -104,7 +106,7 @@ def find_duplicates(yamls):
             dup[name].append(one)
         else:
             dup[name] = [one]
-    return {k: v for k, v in dup.items() if len(v) > 1}
+    return {k: v for k, v in six.iteritems(dup) if len(v) > 1}
 
 
 def get_configs():
@@ -121,7 +123,7 @@ def get_configs():
 def config_filter(configs=None):
     if configs is None:
         return get_configs()
-    return {k: v for k, v in get_configs().items() if k in configs}
+    return {k: v for k, v in six.iteritems(get_configs()) if k in configs}
 
 
 def discover_test_files(basedir, dirs):

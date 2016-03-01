@@ -12,13 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import paramiko
-from proboscis import asserts
 import random
 import time
 
 from devops.error import TimeoutError
 from devops.helpers import helpers
+import paramiko
+from proboscis import asserts
+import six
+
 from fuelweb_test.helpers import common
 from fuelweb_test import logger
 
@@ -547,7 +549,7 @@ class OpenStackActions(common.Common):
         return self.neutron.show_vip(vip)
 
     def get_nova_instance_ip(self, srv, net_name='novanetwork', type='fixed'):
-        for network_label, address_list in srv.addresses.items():
+        for network_label, address_list in six.iteritems(srv.addresses):
             if network_label != net_name:
                 continue
             for addr in address_list:

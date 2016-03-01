@@ -25,6 +25,8 @@ from collections import OrderedDict
 from logging import CRITICAL
 from logging import DEBUG
 
+import six
+
 from builds import Build
 from launchpad_client import LaunchpadBug
 from report import get_version
@@ -250,7 +252,7 @@ class StatisticsGenerator(object):
         for test_run in self.test_runs_stats:
             test_run_stats = test_run.bugs_statistics
             self.bugs_statistics[test_run['id']] = dict()
-            for bug, tests in test_run_stats.items():
+            for bug, tests in six.iteritems(test_run_stats):
                 if bug in self.bugs_statistics[test_run['id']]:
                     self.bugs_statistics[test_run['id']][bug].update(tests)
                 else:
@@ -276,13 +278,13 @@ class StatisticsGenerator(object):
         if not run_id:
             joint_bugs_statistics = dict()
             for run in self.bugs_statistics:
-                for bug, tests in self.bugs_statistics[run].items():
+                for bug, tests in six.iteritems(self.bugs_statistics[run]):
                     if bug in joint_bugs_statistics:
                         joint_bugs_statistics[bug].update(tests)
                     else:
                         joint_bugs_statistics[bug] = tests
         else:
-            for _run_id, _stats in self.bugs_statistics.items():
+            for _run_id, _stats in six.iteritems(self.bugs_statistics):
                 if _run_id == run_id:
                     joint_bugs_statistics = _stats
 
@@ -308,10 +310,10 @@ class StatisticsGenerator(object):
                     'tests': joint_bugs_statistics[bug_id]
                 }
             stats[lp_bug.bug.id]['failed_num'] = len(
-                [t for t, v in stats[lp_bug.bug.id]['tests'].items()
+                [t for t, v in six.iteritems(stats[lp_bug.bug.id]['tests'])
                  if not v['blocked']])
             stats[lp_bug.bug.id]['blocked_num'] = len(
-                [t for t, v in stats[lp_bug.bug.id]['tests'].items()
+                [t for t, v in six.iteritems(stats[lp_bug.bug.id]['tests'])
                  if v['blocked']])
 
         return OrderedDict(sorted(stats.items(),
@@ -332,7 +334,7 @@ class StatisticsGenerator(object):
             if test_run:
                 html += '<h4>TestRun: "{0}"</h4>\n'.format(test_run[0]['name'])
 
-        for bug, values in stats.items():
+        for bug, values in six.iteritems(stats):
             if values['status'].lower() in ('invalid',):
                 color = 'gray'
             elif values['status'].lower() in ('new', 'confirmed', 'triaged'):
@@ -357,7 +359,7 @@ class StatisticsGenerator(object):
                 color)
             html += '[<a href="{0}">{1}</a>]'.format(values['link'], title)
             index = 1
-            for tid, params in values['tests'].items():
+            for tid, params in six.iteritems(values['tests']):
                 if index > 1:
                     link_text = str(index)
                 else:
@@ -381,7 +383,7 @@ class StatisticsGenerator(object):
         bugs_table = ('|||:Failed|:Blocked|:Project|:Priority'
                       '|:Status|:Bug link|:Tests\n')
 
-        for bug_id, values in stats.items():
+        for bug_id, values in six.iteritems(stats):
             title = re.sub(r'(Bug\s+#\d+\s+)(in\s+[^:]+:\s+)', '\g<1>',
                            values['title'])
             title = re.sub(r'(.{100}).*', '\g<1>...', title)
@@ -394,7 +396,7 @@ class StatisticsGenerator(object):
                 priority=values['importance'], status=values['status'])
             bugs_table += '[{0}]({1})|'.format(title, values['link'])
             index = 1
-            for tid, params in values['tests'].items():
+            for tid, params in six.iteritems(values['tests']):
                 if index > 1:
                     link_text = str(index)
                 else:

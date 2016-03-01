@@ -5,6 +5,7 @@ import argparse
 
 from proboscis import TestProgram
 from proboscis import register
+import six
 
 from fuelweb_test.helpers.utils import pretty_log
 
@@ -151,7 +152,7 @@ def explain_group(**kwargs):
 def show_all_groups(**kwargs):
     """Show all Proboscis groups"""
     groups_nums = get_groups()
-    out = {k: len(v) for k, v in groups_nums.items()}
+    out = {k: len(v) for k, v in six.iteritems(groups_nums)}
     print(pretty_log(out))
 
 
@@ -159,7 +160,7 @@ def show_fuelweb_groups(**kwargs):
     """Show Proboscis groups defined in fuelweb suite"""
     groups_nums = get_groups()
 
-    out = {k: len(v) for k, v in groups_nums.items()
+    out = {k: len(v) for k, v in six.iteritems(groups_nums)
            if not k.startswith('system_test')}
     print(pretty_log(out))
 
@@ -168,7 +169,7 @@ def show_systest_groups(**kwargs):
     """Show Proboscis groups defined in Systest suite"""
     groups_nums = get_groups()
 
-    out = {k: len(v) for k, v in groups_nums.items()
+    out = {k: len(v) for k, v in six.iteritems(groups_nums)
            if k.startswith('system_test')}
     print(pretty_log(out))
 

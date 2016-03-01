@@ -16,6 +16,9 @@ import base64
 from collections import namedtuple
 import os
 import re
+
+from six.moves import xrange
+
 from fuelweb_test import settings
 from gerrit_client import GerritClient
 import utils

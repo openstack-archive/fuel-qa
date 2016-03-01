@@ -20,6 +20,7 @@ import traceback
 from devops.helpers import helpers
 from proboscis import asserts
 from proboscis import test
+import six
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
@@ -35,7 +36,7 @@ def get_structured_config_dict(config):
 
     def helper(key1, key2):
         structured_conf[key2] = []
-        for param, value in config[key1].items():
+        for param, value in six.iteritems(config[key1]):
             d = {}
             param = param.split('/')
             d['section'] = param[0]
@@ -47,7 +48,7 @@ def get_structured_config_dict(config):
                 d['value'] = v
             structured_conf[key2].append(d)
 
-    for key in config.keys():
+    for key in six.iterkeys(config):
         if key == 'neutron_config':
             helper(key, '/etc/neutron/neutron.conf')
         if key == 'neutron_plugin_ml2':
@@ -144,7 +145,7 @@ class ServicesReconfiguration(TestBasic):
         nodes = [x['ip'] for x in nodes]
         for node in nodes:
             with self.env.d_env.get_ssh_to_remote(node) as remote:
-                for configpath, params in config.items():
+                for configpath, params in six.iteritems(config):
                     result = remote.open(configpath)
                     conf_for_check = utils.get_ini_config(result)
                     for param in params:

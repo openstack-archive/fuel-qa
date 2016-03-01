@@ -31,6 +31,7 @@ from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
+import six
 import yaml
 
 from fuelweb_test import logger
@@ -412,7 +413,7 @@ class FuelWebClient(object):
     def create_cluster(self,
                        name,
                        settings=None,
-                       release_name=help_data.OPENSTACK_RELEASE,
+                       release_name=OPENSTACK_RELEASE,
                        mode=DEPLOYMENT_MODE_HA,
                        port=514,
                        release_id=None,
@@ -924,7 +925,7 @@ class FuelWebClient(object):
                 return nailgun_node
         # On deployed environment MAC addresses of bonded network interfaces
         # are changes and don't match addresses associated with devops node
-        if help_data.BONDING:
+        if BONDING:
             return self.get_nailgun_node_by_base_name(devops_node.name)
 
     @logwrap
@@ -1515,7 +1516,7 @@ class FuelWebClient(object):
                     # leave defaults for mgmt, storage and private if
                     # BONDING is enabled
                     continue
-                for net, cidr in default_networks.items():
+                for net, cidr in six.iteritems(default_networks):
                     if net in ('public', 'private'):
                         continue
                     networks[net]['cidr'] = str(cidr)
@@ -2364,7 +2365,7 @@ class FuelWebClient(object):
         plugin_attributes = {
             'editable': {plugin_name: attr['editable'][plugin_name]}}
 
-        for option, value in data.items():
+        for option, value in six.iteritems(data):
             plugin_data = plugin_attributes['editable'][plugin_name]
             path = option.split("/")
             for p in path[:-1]:
@@ -2409,8 +2410,7 @@ class FuelWebClient(object):
                 break
         assert_true(plugin_data is not None, "Plugin {0} version {1} is not "
                     "found".format(plugin_name, version))
-        for option, value in data.items():
-            plugin_data = item
+        for option, value in six.iteritems(data):
             path = option.split("/")
             for p in path[:-1]:
                 plugin_data = plugin_data[p]
@@ -2528,7 +2528,8 @@ class FuelWebClient(object):
     def get_cluster_additional_components(self, cluster_id):
         components = {}
         attributes = self.client.get_cluster_attributes(cluster_id)
-        add_comps = attributes['editable']['additional_components'].items()
+        add_comps = six.iteritems(
+            attributes['editable']['additional_components'])
         for comp, opts in add_comps:
             # exclude metadata
             if 'metadata' not in comp:
