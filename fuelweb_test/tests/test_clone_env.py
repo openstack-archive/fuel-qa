@@ -18,6 +18,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import fail
 from proboscis import test
 from proboscis import SkipTest
+import six
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests import base_test_case
@@ -73,7 +74,8 @@ class TestCloneEnv(base_test_case.TestBasic):
         for key in cloned_cluster_attrs["editable"]:
             if key == "repo_setup":
                 continue
-            for key1, value1 in cloned_cluster_attrs["editable"][key].items():
+            for key1, value1 in six.iteritems(
+                    cloned_cluster_attrs["editable"][key]):
                 if "value" in value1:
                     if "value" in cluster_attrs["editable"].get(key, {}).get(
                             key1, {}):

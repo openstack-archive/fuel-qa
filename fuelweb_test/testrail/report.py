@@ -18,6 +18,8 @@ import functools
 import re
 import time
 
+import six
+
 from logging import DEBUG
 from optparse import OptionParser
 from builds import Build
@@ -73,7 +75,7 @@ class TestResult(object):
 
     @property
     def status(self):
-        for s in self.available_statuses.keys():
+        for s in six.iterkeys(self.available_statuses):
             if self._status in self.available_statuses[s]:
                 return s
         logger.error('Unsupported result status: "{0}"!'.format(self._status))
@@ -464,7 +466,7 @@ def make_bug_statistics(test_results, test_plan, tests_suite,
                        " {0}\n".format(time.strftime("%c"))
         for bug in bugs_sorted:
             jresults = ""
-            for distro in bugs[bug]['distro'].keys():
+            for distro in six.iterkeys(bugs[bug]['distro']):
                 jresults += " {0}: ".format(distro)
                 bugs_distro = bugs[bug]['distro'][distro]
                 for res in bugs_distro:
@@ -618,7 +620,7 @@ def main():
                                                     systest_build['number'],))
                 is_running_builds = True
                 continue
-        for os in tests_results.keys():
+        for os in six.iterkeys(tests_results):
             if os in systest_build['name'].lower():
                 tests_results[os].extend(get_tests_results(systest_build, os))
 
