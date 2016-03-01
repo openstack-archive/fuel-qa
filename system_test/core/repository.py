@@ -19,6 +19,7 @@ import re
 import proboscis.core
 from proboscis import factory
 from proboscis.decorators import DEFAULT_REGISTRY
+import six
 
 from system_test.tests import ActionTest
 from system_test.core.discover import config_filter
@@ -98,7 +99,7 @@ def get_groups(only_groups=None, exclude=None):
         groups = DEFAULT_REGISTRY.groups.copy()
         groups.update({g: Repository.index[g] for g in Repository.index})
 
-    for group_name, group in groups.items():
+    for group_name, group in six.iteritems(groups):
         klass_entries = set()
         entries_in_class = set()
 
@@ -148,7 +149,7 @@ def case_filter(groups=None):
 def case_factory(baseclass, configs):
     """Return list of instance """
     return [baseclass.caseclass_factory(g)(c)
-            for g, c in config_filter(configs).items()]
+            for g, c in six.iteritems(config_filter(configs))]
 
 
 def reg_factory(cases, configs):

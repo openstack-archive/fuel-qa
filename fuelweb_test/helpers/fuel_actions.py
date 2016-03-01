@@ -21,6 +21,7 @@ from devops.models import DiskDevice
 from devops.models import Node
 from devops.models import Volume
 from proboscis.asserts import assert_equal
+import six
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
@@ -239,7 +240,7 @@ class AdminActions(BaseActions):
                 # remove all NTP sources and add the host instead.
                 logger.info("Switching NTPD on the Fuel admin node to use "
                             "{0} as the time source.".format(router))
-                ntp_keys = [k for k in fuel_settings.keys()
+                ntp_keys = [k for k in six.iterkeys(fuel_settings)
                             if re.match(r'^NTP', k)]
                 for key in ntp_keys:
                     fuel_settings.pop(key)
