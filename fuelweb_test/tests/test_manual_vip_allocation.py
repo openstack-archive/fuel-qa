@@ -75,11 +75,21 @@ class ChangeVipManually(TestBasic):
             }
         )
         self.show_step(4)
+
+        # TODO(ddmitriev): remove this 'disable' after moving to fuel-devops3.0
+        # pylint: disable=no-member
         ip = netaddr.IPAddress(
             self.fuel_web.get_vip_info(cluster_id)['ip_addr'])
+        # pylint: enable=no-member
+
         ip_to_set = str(ip + 1)
         logger.debug('ip to be set is {}'.format(ip_to_set))
+
+        # TODO(ddmitriev): remove this 'disable' after moving to fuel-devops3.0
+        # pylint: disable=no-member
         self.fuel_web.update_vip_ip(cluster_id, ip_to_set)
+        # pylint: enable=no-member
+
         self.show_step(5)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(6)
@@ -166,7 +176,12 @@ class ChangeVipManually(TestBasic):
         self.show_step(5)
         ip_to_set = str(floating_upper_range + 1)
         logger.debug('ip to be set is {}'.format(ip_to_set))
+
+        # TODO(ddmitriev): remove this 'disable' after moving to fuel-devops3.0
+        # pylint: disable=no-member
         self.fuel_web.update_vip_ip(cluster_id, ip_to_set)
+        # pylint: enable=no-member
+
         self.show_step(6)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(7)
