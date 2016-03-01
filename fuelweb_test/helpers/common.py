@@ -26,6 +26,7 @@ from novaclient.v2 import Client as NovaClient
 import neutronclient.v2_0.client as neutronclient
 from proboscis.asserts import assert_equal
 import six
+from six.moves import xrange
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap

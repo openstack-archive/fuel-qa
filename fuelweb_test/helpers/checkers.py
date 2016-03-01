@@ -15,11 +15,17 @@ import hashlib
 import json
 import os
 import re
+from time import sleep
 import urllib2
 
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
+from ipaddr import IPAddress
+from ipaddr import IPNetwork
+from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
+import six
 import yaml
 
 from fuelweb_test import logger
@@ -32,13 +38,6 @@ from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import POOLS
 from fuelweb_test.settings import PUBLIC_TEST_IP
-
-from ipaddr import IPAddress
-from ipaddr import IPNetwork
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_true
-
-from time import sleep
 
 
 ssh_manager = SSHManager()
@@ -488,7 +487,7 @@ def check_stats_on_collector(collector_remote, postgres_actions, master_uuid):
 
     # Check that important data (clusters number, nodes number, nodes roles,
     # user's email, used operation system, OpenStack stats) is saved correctly
-    for stat_type in general_stats.keys():
+    for stat_type in six.iterkeys(general_stats):
         assert_true(type(summ_stats[stat_type]) == general_stats[stat_type],
                     "Installation structure in Collector's DB doesn't contain"
                     "the following stats: {0}".format(stat_type))
@@ -547,7 +546,7 @@ def check_stats_private_info(collector_remote, postgres_actions,
         _has_private_data = False
         # Check that stats doesn't contain private data (e.g.
         # specific passwords, settings, emails)
-        for _private in private_data.keys():
+        for _private in six.iterkeys(private_data):
             _regex = r'(?P<key>"\S+"): (?P<value>[^:]*"{0}"[^:]*)'.format(
                 private_data[_private])
             for _match in re.finditer(_regex, data):
@@ -563,7 +562,7 @@ def check_stats_private_info(collector_remote, postgres_actions,
                 _has_private_data = True
         # Check that stats doesn't contain private types of data (e.g. any kind
         # of passwords)
-        for _data_type in secret_data_types.keys():
+        for _data_type in six.iterkeys(secret_data_types):
             _regex = (r'(?P<secret>"[^"]*{0}[^"]*": (\{{[^\}}]+\}}|\[[^\]+]\]|'
                       r'"[^"]+"))').format(secret_data_types[_data_type])
 
@@ -639,7 +638,7 @@ def check_stats_private_info(collector_remote, postgres_actions,
         'nailgun', 'select id from action_logs;').split('\n')]
     sent_stats = str(collector_remote.get_installation_info_data(master_uuid))
     logger.debug('installation structure is {0}'.format(sent_stats))
-    used_networks = [POOLS[net_name][0] for net_name in POOLS.keys()]
+    used_networks = [POOLS[net_name][0] for net_name in six.iterkeys(POOLS)]
     has_no_private_data = True
 
     logger.debug("Looking for private data in the installation structure, "
