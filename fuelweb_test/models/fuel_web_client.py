@@ -580,7 +580,7 @@ class FuelWebClient(object):
                 self.ssl_configure(cluster_id)
 
         if not cluster_id:
-            raise Exception("Could not get cluster '%s'" % name)
+            raise Exception("Could not get cluster '{:s}'".format(name))
         # TODO: rw105719
         # self.client.add_syslog_server(
         #    cluster_id, self.environment.get_host_node_ip(), port)

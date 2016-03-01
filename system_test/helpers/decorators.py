@@ -45,7 +45,7 @@ def make_snapshot_if_step_fail(func):
             case_name = getattr(func, '_base_class', None)
             step_num = getattr(func, '_step_num', None)
             config_name = getattr(func, '_config_case_group', None)
-            description = "Failed in method '%s'." % func.__name__
+            description = "Failed in method '{:s}'.".format(func.__name__)
             if args[0].env is not None:
                 try:
                     create_diagnostic_snapshot(args[0].env,
