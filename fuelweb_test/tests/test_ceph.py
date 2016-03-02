@@ -630,7 +630,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
             neutron=True,
             scenario='./fuelweb_test/helpers/instance_initial_scenario',
             label=net_name)
-        logger.info("Srv is currently in status: %s" % srv.status)
+        logger.info("Srv is currently in status: {:s}".format(srv.status))
 
         # Prepare to DHCP leases checks
         net_name = self.fuel_web.get_cluster_predefined_networks_name(
@@ -648,7 +648,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         logger.info("Assigning floating ip to server")
         floating_ip = os.assign_floating_ip(srv)
         srv_host = os.get_srv_host_name(srv)
-        logger.info("Server is on host %s" % srv_host)
+        logger.info("Server is on host {:s}".format(srv_host))
 
         wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120)
 
@@ -722,12 +722,12 @@ class VmBackedWithCephMigrationBasic(TestBasic):
             neutron=True,
             scenario='./fuelweb_test/helpers/instance_initial_scenario',
             label=net_name)
-        logger.info("Srv is currently in status: %s" % srv.status)
+        logger.info("Srv is currently in status: {:s}".format(srv.status))
 
         logger.info("Assigning floating ip to server")
         floating_ip = os.assign_floating_ip(srv)
         srv_host = os.get_srv_host_name(srv)
-        logger.info("Server is on host %s" % srv_host)
+        logger.info("Server is on host {:s}".format(srv_host))
 
         self.show_step(13)
         logger.info("Create volume")
@@ -765,7 +765,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
                 remote,
                 floating_ip.ip, 'sudo mount /dev/vdb /mnt', creds)
 
-        logger.info("out of mounting volume is: %s" % out['stdout'])
+        logger.info("out of mounting volume is: {:s}".format(out['stdout']))
 
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
             out = os.execute_through_host(
@@ -878,8 +878,10 @@ class CheckCephPartitionsAfterReboot(TestBasic):
 
             if before_reboot_partitions != after_reboot_partitions:
                 logger.info("Partitions don`t match")
-                logger.info("Before reboot: %s" % before_reboot_partitions)
-                logger.info("After reboot: %s" % after_reboot_partitions)
+                logger.info("Before reboot: "
+                            "{:s}".format(before_reboot_partitions))
+                logger.info("After reboot: "
+                            "{:s}".format(after_reboot_partitions))
                 raise Exception()
 
             self.show_step(10, node)
@@ -899,8 +901,10 @@ class CheckCephPartitionsAfterReboot(TestBasic):
 
             if before_reboot_partitions != after_reboot_partitions:
                 logger.info("Partitions don`t match")
-                logger.info("Before reboot: %s" % before_reboot_partitions)
-                logger.info("After reboot: %s" % after_reboot_partitions)
+                logger.info("Before reboot: "
+                            "{:s}".format(before_reboot_partitions))
+                logger.info("After reboot: "
+                            "{:s}".format(after_reboot_partitions))
                 raise Exception()
 
             self.show_step(13, node)
