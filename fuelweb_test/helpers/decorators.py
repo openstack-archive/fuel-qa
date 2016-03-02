@@ -798,3 +798,16 @@ def setup_teardown(setup=None, teardown=None):
             return result
         return wrapper
     return real_decorator
+
+
+def token(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except AssertionError:
+            logger.info("Response code not equivalent to 200,"
+                        " trying to update the token")
+            args[0].login()
+            return func(*args, **kwargs)
+    return wrapper
