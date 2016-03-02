@@ -25,6 +25,8 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers.utils import generate_floating_ranges
 from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test.settings import SSL_CN
+from fuelweb_test.settings import PATH_TO_PEM
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -119,7 +121,7 @@ class CommandLineTest(test_cli_base.CommandLine):
 
         with self.env.d_env.get_admin_remote() as remote:
 
-            # Create an environment
+             # Create an environment
             if NEUTRON_SEGMENT_TYPE:
                 nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
             else:
@@ -163,7 +165,7 @@ class CommandLineTest(test_cli_base.CommandLine):
             cmd = ('fuel --env-id={0} node --provision --node={1} --json'
                    .format(cluster_id, node_ids[0]))
             task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, timeout=30 * 60)
+            self.assert_cli_task_success(task, timeout=60 * 60)
 
             # Add and provision 2 compute+cinder
             logger.info("Add to the cluster and start provisioning two "
@@ -176,8 +178,7 @@ class CommandLineTest(test_cli_base.CommandLine):
             cmd = ('fuel --env-id={0} node --provision --node={1},{2} --json'
                    .format(cluster_id, node_ids[1], node_ids[2]))
             task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, timeout=10 * 60)
-
+            self.assert_cli_task_success(task, timeout=60 * 60)
             # Deploy the controller node
             cmd = ('fuel --env-id={0} node --deploy --node {1} --json'
                    .format(cluster_id, node_ids[0]))
@@ -187,23 +188,52 @@ class CommandLineTest(test_cli_base.CommandLine):
             cmd = ('fuel --env-id={0} node --deploy --node {1},{2} --json'
                    .format(cluster_id, node_ids[1], node_ids[2]))
             task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, timeout=30 * 60)
+            self.assert_cli_task_success(task, timeout=60 * 60)
             # Verify networks
             self.fuel_web.verify_network(cluster_id)
-        # Get hiera floating ranges after deploying cluster
-        controller_nodes = \
-            self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-                cluster_id, ['controller'])
+        controller_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])
+        # Get controller ip address
         controller_node = controller_nodes[0]['ip']
+        # Get endpoint list
+        endpoint_list = self.get_endpoint_list(controller_node)
+        logger.info(endpoint_list)
+        # Check protocol and domain names for endpoints
+        for endpoint in endpoint_list:
+            logger.debug(("Endpoint {0} use protocol {1}\
+            and have domain name {2}".format(endpoint['service_name'],
+                                             endpoint['protocol'],
+                                             endpoint['domain'])))
+            assert_equal(endpoint['protocol'], "https", message=("Endpoint {0}\
+            use protocol {1} instead https.".format(endpoint['service_name'],
+                                                    endpoint['protocol'])))
+            assert_equal(endpoint['domain'], SSL_CN, message=("Endpoint {0}\
+            have domain name {1} instead {2}.".format(
+                endpoint['service_name'], endpoint['domain'],
+                SSL_CN)))
+        # Check SSL CNs
+        current_ssl_cn = self.get_current_ssl_cn(controller_node)
+        logger.info(("CN before cluster deploy {0} \
+             and after deploy {1}".format(SSL_CN, current_ssl_cn)))
+        assert_equal(SSL_CN, current_ssl_cn, message="SSL CNs are not equal")
+        # Check SSL certificate keypairs
+        with open(PATH_TO_PEM) as pem_file:
+            old_ssl_keypair = pem_file.read()
+        current_ssl_keypair = self.get_current_ssl_keypair(controller_node)
+        logger.info(("SSL keypair before cluster deploy {0} \
+                          and after deploy {1}".format(old_ssl_keypair,
+                                                       current_ssl_keypair)))
+        assert_equal(old_ssl_keypair, current_ssl_keypair,
+                     message="SSL keypiars are not equal")
+        # Check floating ranges are equal after cluster deploy
         actual_floating_ranges = self.hiera_floating_ranges(controller_node)
         logger.info(
             "Current floating ranges: {0}".format(actual_floating_ranges))
         assert_equal(actual_floating_ranges, new_floating_range,
                      message="Floating ranges are not equal")
         # Run OSTF
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id,
-            test_sets=['ha', 'smoke', 'sanity'])
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
         self.env.make_snapshot("cli_selected_nodes_deploy", is_make=True)
 
     @test(depends_on_groups=['cli_selected_nodes_deploy'],
