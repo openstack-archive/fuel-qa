@@ -14,6 +14,7 @@
 
 import time
 import json
+from urlparse import urlparse
 from proboscis.asserts import assert_equal
 
 from devops.error import TimeoutError
@@ -256,3 +257,39 @@ class CommandLine(TestBasic):
             settings['editable']['storage']['objects_ceph'][
                 'value'] = True
         self.upload_settings(cluster_id, settings)
+
+    @logwrap
+    def get_current_ssl_cn(self, controller_ip):
+        cmd = "openssl x509 -noout -subject -in \
+        /var/lib/astute/haproxy/public_haproxy.pem \
+        | sed -n '/^subject/s/^.*CN=//p'"
+        ssl_cn = self.ssh_manager.execute_on_remote(
+            ip=controller_ip,
+            cmd=cmd)['stdout_str'].rstrip()
+        return ssl_cn
+
+    @logwrap
+    def get_current_ssl_keypair(self, controller_ip):
+        cmd = "cat /var/lib/astute/haproxy/public_haproxy.pem"
+        current_ssl_keypair = self.ssh_manager.execute_on_remote(
+            ip=controller_ip,
+            cmd=cmd)['stdout_str'].split('\n')
+        return current_ssl_keypair
+
+    @logwrap
+    def get_endpoints(self, controller_ip):
+        cmd = "source openrc;export OS_IDENTITY_API_VERSION=3;" \
+              "openstack endpoint list -f json"
+        endpoints = []
+        endpoint_list =\
+            self.ssh_manager.execute_on_remote(ip=controller_ip,
+                                               cmd=cmd,
+                                               jsonify=True)['stdout_json']
+        for endpoint in endpoint_list:
+            if endpoint['Interface'] == 'public':
+                url = urlparse(endpoint['URL'])
+                endpoint_info = {'service_name': endpoint['Service Name'],
+                                 'protocol': url.scheme,
+                                 'domain': url.hostname}
+                endpoints.append(endpoint_info)
+        return endpoints
