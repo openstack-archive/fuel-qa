@@ -686,7 +686,7 @@ def check_kernel(kernel, expected_kernel):
 @logwrap
 def external_dns_check(remote_slave):
     logger.info("External dns check")
-    provided_dns = EXTERNAL_DNS.split(', ')
+    provided_dns = EXTERNAL_DNS
     logger.debug("provided to test dns is {}".format(provided_dns))
     cluster_dns = []
     for dns in provided_dns:
@@ -736,7 +736,7 @@ def verify_bootstrap_on_node(remote, os_type, uuid=None):
 @logwrap
 def external_ntp_check(remote_slave, vrouter_vip):
     logger.info("External ntp check")
-    provided_ntp = EXTERNAL_NTP.split(', ')
+    provided_ntp = EXTERNAL_NTP
     logger.debug("provided to test ntp is {}".format(provided_ntp))
     cluster_ntp = []
     for ntp in provided_ntp:
