@@ -125,7 +125,7 @@ class OpenStackActions(common.Common):
                 with open(scenario, "r+") as f:
                     scenario = f.read()
         except Exception as exc:
-            logger.info("Error opening file: %s" % exc)
+            logger.info("Error opening file: {:s}".format(exc))
             raise Exception()
         image_id = self._get_cirros_image().id
         security_group[self.keystone.tenant_id] =\
@@ -315,7 +315,7 @@ class OpenStackActions(common.Common):
     def get_md5sum(self, file_path, controller_ssh, vm_ip, creds=()):
         logger.info("Get file md5sum and compare it with previous one")
         out = self.execute_through_host(
-            controller_ssh, vm_ip, "md5sum %s" % file_path, creds)
+            controller_ssh, vm_ip, "md5sum {:s}".format(file_path), creds)
         return out['stdout']
 
     def execute_through_host(self, ssh, vm_host, cmd, creds=()):
