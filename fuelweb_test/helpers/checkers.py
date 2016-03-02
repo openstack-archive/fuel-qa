@@ -243,6 +243,9 @@ def get_package_versions_from_node(remote, name, os_type):
 def enable_feature_group(env, group):
     fuel_settings = env.admin_actions.get_fuel_settings()
     fuel_settings["FEATURE_GROUPS"].append(group)
+    from fuelweb_test.helpers.fuel_actions import NailgunActions
+    ng_actions = NailgunActions()
+    ng_actions.update_nailgun_settings_once({'FEATURE_GROUPS': ['advanced']})
     env.admin_actions.save_fuel_settings(fuel_settings)
     env.admin_actions.restart_service("nailgun")
 
