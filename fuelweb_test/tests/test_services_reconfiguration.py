@@ -82,7 +82,7 @@ class ServicesReconfiguration(TestBasic):
             func(*args, **kwargs)
         except Exception as e:
             if e.code != expected_code:
-                raise e
+                raise
             logger.warning('Ignoring exception: {!r}'.format(e))
             logger.debug(traceback.format_exc())
         else:
@@ -248,7 +248,7 @@ class ServicesReconfiguration(TestBasic):
             os_conn.create_network('net2', tenant_id=tenant.id)
         except Exception as e:
             if 'No tenant network is available' not in e.message:
-                raise e
+                raise
             logger.warning('Ignoring exception: {!r}'.format(e))
             logger.debug(traceback.format_exc())
         else:
@@ -273,7 +273,7 @@ class ServicesReconfiguration(TestBasic):
                                     flavor_name="nova_quota")
         except Exception as e:
             if 'Quota exceeded for instances' not in e.message:
-                raise e
+                raise
             logger.warning('Ignoring exception: {!r}'.format(e))
             logger.debug(traceback.format_exc())
         else:
@@ -293,7 +293,7 @@ class ServicesReconfiguration(TestBasic):
             os_conn.keystone.tokens.validate(token.id)
         except Exception as e:
             if e.http_status != 404:
-                raise e
+                raise
             logger.warning('Ignoring exception: {!r}'.format(e))
             logger.debug(traceback.format_exc())
         else:
