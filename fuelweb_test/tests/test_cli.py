@@ -22,9 +22,10 @@ from devops.helpers.helpers import wait
 from fuelweb_test.helpers.checkers import check_cluster_presence
 from fuelweb_test.helpers.checkers import check_cobbler_node_exists
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers.utils import generate_floating_ranges
 from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test.settings import SSL_CN
+from fuelweb_test.settings import PATH_TO_PEM
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -105,105 +106,137 @@ class CommandLineTest(test_cli_base.CommandLine):
             6. Deploy the controller node using Fuel CLI
             7. Deploy the compute+cinder nodes using Fuel CLI
             8. Compare floating ranges
-            9. Run OSTF
-            10. Make snapshot "cli_selected_nodes_deploy"
+            9. Check that all services work by 'https'
+            10. Check that all services have domain name
+            11. Check CNs for user owned certificate
+            12. Check keypairs for user owned ceritificate
+            13. Run OSTF
+            14. Make snapshot "cli_selected_nodes_deploy"
 
         Duration 50m
         """
         self.env.revert_snapshot("ready_with_3_slaves")
         node_ids = [self.fuel_web.get_nailgun_node_by_devops_node(
-            self.env.d_env.nodes().slaves[slave_id])['id']
-            for slave_id in range(3)]
+            self.env.d_env.nodes().slaves[
+                slave_id])['id']for slave_id in range(3)]
         release_id = self.fuel_web.get_releases_list_for_os(
             release_name=OPENSTACK_RELEASE)[0]
+        admin_ip = self.ssh_manager.admin_ip
+        # Create an environment
+        if NEUTRON_SEGMENT_TYPE:
+            nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
+        else:
+            nst = ''
+        cmd = ('fuel env create --name={0} --release={1} {2} --json'.format(
+            self.__class__.__name__, release_id, nst))
+        env_result =\
+            self.ssh_manager.execute_on_remote(admin_ip, cmd,
+                                               jsonify=True)['stdout_json']
+        cluster_id = env_result['id']
+        # Update network parameters
+        self.update_cli_network_configuration(cluster_id)
+        # Change floating ranges
+        current_floating_range = self.get_floating_ranges(cluster_id)
+        logger.info("Current floating ranges: {0}".format(
+            current_floating_range))
+        first_floating_address = current_floating_range[0][0]
+        logger.info("First floating address: {0}".format(
+            first_floating_address))
+        last_floating_address = current_floating_range[0][1]
+        logger.info("Last floating address: {0}".format(last_floating_address))
+        new_floating_range = generate_floating_ranges(first_floating_address,
+                                                      last_floating_address,
+                                                      10)
+        logger.info("New floating range: {0}".format(new_floating_range))
+        self.change_floating_ranges(cluster_id, new_floating_range)
+        # Update SSL configuration
+        self.update_ssl_configuration(cluster_id)
 
-        with self.env.d_env.get_admin_remote() as remote:
+        # Add and provision a controller node
+        logger.info("Add to the cluster \
+        and start provisioning a controller node [{0}]".format(node_ids[0]))
+        cmd = ('fuel --env-id={0} node set --node {1}\
+         --role=controller'.format(cluster_id, node_ids[0]))
+        self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        cmd = ('fuel --env-id={0} node --provision --node={1} --json'.format(
+            cluster_id, node_ids[0]))
+        task = self.ssh_manager.execute_on_remote(admin_ip,
+                                                  cmd,
+                                                  jsonify=True)['stdout_json']
+        self.assert_cli_task_success(task, timeout=30 * 60)
 
-            # Create an environment
-            if NEUTRON_SEGMENT_TYPE:
-                nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
-            else:
-                nst = ''
-            cmd = ('fuel env create --name={0} --release={1} '
-                   '{2} --json'.format(self.__class__.__name__,
-                                       release_id, nst))
-            env_result = run_on_remote(remote, cmd, jsonify=True)
-            cluster_id = env_result['id']
-
-            # Update network parameters
-            self.update_cli_network_configuration(cluster_id)
-            # Change floating ranges
-            current_floating_range =\
-                self.get_floating_ranges(cluster_id)
-            logger.info(
-                "Current floating ranges: {0}".format(
-                    current_floating_range))
-            first_floating_address = current_floating_range[0][0]
-            logger.info(
-                "First floating address: {0}".format(
-                    first_floating_address))
-            last_floating_address = current_floating_range[0][1]
-            logger.info(
-                "Last floating address: {0}".format(
-                    last_floating_address))
-            new_floating_range = generate_floating_ranges(
-                first_floating_address,
-                last_floating_address, 10)
-            logger.info("New floating range: {0}".format(new_floating_range))
-            self.change_floating_ranges(cluster_id, new_floating_range)
-            # Update SSL configuration
-            self.update_ssl_configuration(cluster_id)
-
-            # Add and provision a controller node
-            logger.info("Add to the cluster and start provisioning "
-                        "a controller node [{0}]".format(node_ids[0]))
-            cmd = ('fuel --env-id={0} node set --node {1} --role=controller'
-                   .format(cluster_id, node_ids[0]))
-            remote.execute(cmd)
-            cmd = ('fuel --env-id={0} node --provision --node={1} --json'
-                   .format(cluster_id, node_ids[0]))
-            task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, timeout=30 * 60)
-
-            # Add and provision 2 compute+cinder
-            logger.info("Add to the cluster and start provisioning two "
-                        "compute+cinder nodes [{0},{1}]".format(node_ids[1],
-                                                                node_ids[2]))
-            cmd = ('fuel --env-id={0} node set --node {1},{2} '
-                   '--role=compute,cinder'.format(cluster_id,
-                                                  node_ids[1], node_ids[2]))
-            remote.execute(cmd)
-            cmd = ('fuel --env-id={0} node --provision --node={1},{2} --json'
-                   .format(cluster_id, node_ids[1], node_ids[2]))
-            task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, timeout=10 * 60)
-
-            # Deploy the controller node
-            cmd = ('fuel --env-id={0} node --deploy --node {1} --json'
-                   .format(cluster_id, node_ids[0]))
-            task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, timeout=60 * 60)
-            # Deploy the compute nodes
-            cmd = ('fuel --env-id={0} node --deploy --node {1},{2} --json'
-                   .format(cluster_id, node_ids[1], node_ids[2]))
-            task = run_on_remote(remote, cmd, jsonify=True)
-            self.assert_cli_task_success(task, timeout=30 * 60)
-            # Verify networks
-            self.fuel_web.verify_network(cluster_id)
-        # Get hiera floating ranges after deploying cluster
-        controller_nodes = \
-            self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-                cluster_id, ['controller'])
+        # Add and provision 2 compute+cinder
+        logger.info("Add to the cluster and start provisioning two "
+                    "compute+cinder nodes [{0},{1}]".format(node_ids[1],
+                                                            node_ids[2]))
+        cmd = ('fuel --env-id={0} node set --node {1},{2} \
+        --role=compute,cinder'.format(cluster_id, node_ids[1], node_ids[2]))
+        self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        cmd = ('fuel --env-id={0} node --provision \
+        --node={1},{2} --json'.format(cluster_id, node_ids[1], node_ids[2]))
+        task = self.ssh_manager.execute_on_remote(admin_ip,
+                                                  cmd,
+                                                  jsonify=True)['stdout_json']
+        self.assert_cli_task_success(task, timeout=10 * 60)
+        # Deploy the controller node
+        cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
+            cluster_id, node_ids[0]))
+        task = self.ssh_manager.execute_on_remote(admin_ip,
+                                                  cmd,
+                                                  jsonify=True)['stdout_json']
+        self.assert_cli_task_success(task, timeout=60 * 60)
+        # Deploy the compute nodes
+        cmd = ('fuel --env-id={0} node --deploy --node {1},{2} --json'.format(
+            cluster_id, node_ids[1], node_ids[2]))
+        task = self.ssh_manager.execute_on_remote(admin_ip,
+                                                  cmd,
+                                                  jsonify=True)['stdout_json']
+        self.assert_cli_task_success(task, timeout=30 * 60)
+        # Verify networks
+        self.fuel_web.verify_network(cluster_id)
+        controller_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])
+        # Get controller ip address
         controller_node = controller_nodes[0]['ip']
+        # Get endpoint list
+        endpoint_list = self.get_endpoints(controller_node)
+        logger.info(endpoint_list)
+        # Check protocol and domain names for endpoints
+        for endpoint in endpoint_list:
+            logger.debug(("Endpoint {0} use protocol {1}\
+            and have domain name {2}".format(endpoint['service_name'],
+                                             endpoint['protocol'],
+                                             endpoint['domain'])))
+            assert_equal(endpoint['protocol'], "https",
+                         message=("Endpoint {0} don't use https.".format(
+                             endpoint['service_name'])))
+            assert_equal(endpoint['domain'], SSL_CN, message=(
+                "{0} domain name not equal {1}.".format(
+                    endpoint['service_name'], SSL_CN)))
+        # Check SSL CNs
+        current_ssl_cn = self.get_current_ssl_cn(controller_node)
+        logger.info(("CN before cluster deploy {0} \
+        and after deploy {1}".format(SSL_CN, current_ssl_cn)))
+        assert_equal(SSL_CN, current_ssl_cn, message="SSL CNs are not equal")
+        # Check SSL certificate keypairs
+        with open(PATH_TO_PEM) as pem_file:
+            old_ssl_keypair = pem_file.read().strip()
+            current_ssl_keypair = self.get_current_ssl_keypair(controller_node)
+            logger.info(("SSL keypair before cluster deploy {0} \
+                              and after deploy {1}".format(old_ssl_keypair,
+                                                           current_ssl_keypair)
+                         ))
+            assert_equal(old_ssl_keypair, current_ssl_keypair,
+                         message="SSL keypiars are not equal")
+            # Check floating ranges are equal after cluster deploy
         actual_floating_ranges = self.hiera_floating_ranges(controller_node)
-        logger.info(
-            "Current floating ranges: {0}".format(actual_floating_ranges))
+        logger.info("Current floating ranges: {0}".format(
+            actual_floating_ranges))
         assert_equal(actual_floating_ranges, new_floating_range,
                      message="Floating ranges are not equal")
         # Run OSTF
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id,
-            test_sets=['ha', 'smoke', 'sanity'])
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
         self.env.make_snapshot("cli_selected_nodes_deploy", is_make=True)
 
     @test(depends_on_groups=['cli_selected_nodes_deploy'],
