@@ -25,6 +25,7 @@ import yaml
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
+from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers.utils import run_on_remote_get_results
@@ -242,9 +243,16 @@ def get_package_versions_from_node(remote, name, os_type):
 @logwrap
 def enable_feature_group(env, group):
     fuel_settings = env.admin_actions.get_fuel_settings()
-    fuel_settings["FEATURE_GROUPS"].append(group)
+    if group not in fuel_settings["FEATURE_GROUPS"]:
+        fuel_settings["FEATURE_GROUPS"].append(group)
     env.admin_actions.save_fuel_settings(fuel_settings)
-    env.admin_actions.restart_service("nailgun")
+
+    # NOTE(akostrikov) We use FUEL_SETTINGS_YAML as primary source or truth and
+    # update nailgun configs via puppet from that value
+    ssh_manager.execute(
+        ip=ssh_manager.admin_ip,
+        cmd='puppet apply /etc/puppet/modules/nailgun/examples/nailgun-only.pp'
+    )
 
     def check_api_group_enabled():
         try:
