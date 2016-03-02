@@ -25,6 +25,7 @@ from fuelweb_test import settings
 from fuelweb_test import logger
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
+from proboscis.decorators import factory
 
 
 @test(groups=["thread_separate_services", "thread_2_separate_services"])
@@ -113,6 +114,13 @@ class SeparateRabbit(TestBasic):
             cluster_id=cluster_id)
 
         self.env.make_snapshot("separate_rabbit_service", is_make=True)
+
+
+@test(groups=["SeparateRabbitMultyrun"])
+class SeparateRabbitMultyrun(SeparateRabbit):
+
+    def deploy_rabbit_service_mult(self):
+        super(self.__class__, self).separate_rabbit_service_shutdown()
 
 
 @test(groups=["thread_separate_services", "thread_2_separate_services"])
@@ -278,3 +286,9 @@ class SeparateRabbitFailover(TestBasic):
         checkers.check_hiera_hosts(
             rabbit_nodes,
             cmd='hiera corosync_roles')
+
+
+@factory
+def generate_tests():
+    result = [SeparateRabbitMultyrun() for s in range(0, 10)]
+    return result
