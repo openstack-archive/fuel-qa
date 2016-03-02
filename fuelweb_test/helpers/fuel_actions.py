@@ -33,6 +33,7 @@ from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
 from fuelweb_test.settings import MIRROR_UBUNTU
+from fuelweb_test.settings import EXTRA_RPM_REPOS
 from fuelweb_test.settings import PLUGIN_PACKAGE_VERSION
 from fuelweb_test.settings import FUEL_SETTINGS_YAML
 from fuelweb_test.settings import NESSUS_IMAGE_PATH
@@ -253,6 +254,16 @@ class AdminActions(BaseActions):
                     },
                     upstream_host='archive.ubuntu.com')
             logger.info("Replace default Ubuntu mirror URL for "
+                        "bootstrap image in Fuel settings")
+
+        if EXTRA_RPM_REPOS:
+            fuel_settings['BOOTSTRAP']['repos'] = \
+                replace_repos.add_centos_extra_mirrors(
+                    {
+                        'value': fuel_settings['BOOTSTRAP']['repos']
+                    },
+                    mirrors=EXTRA_RPM_REPOS)
+            logger.info("Add rpm mirror URL for "
                         "bootstrap image in Fuel settings")
         self.save_fuel_settings(fuel_settings)
 
