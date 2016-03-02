@@ -50,7 +50,7 @@ def request_retry(codes):
                             time.sleep(wait)
                             iter_number += 1
                             continue
-                    raise e
+                    raise
                 else:
                     return response
         return wrapper
