@@ -24,6 +24,7 @@ from fuelweb_test import logwrap
 from fuelweb_test import logger
 from fuelweb_test.helpers.utils import hiera_json_out
 from fuelweb_test.settings import SSL_CN
+from fuelweb_test.helpers.ssh_manager import SSHManager
 
 
 class CommandLine(TestBasic):
@@ -256,3 +257,54 @@ class CommandLine(TestBasic):
             settings['editable']['storage']['objects_ceph'][
                 'value'] = True
         self.upload_settings(cluster_id, settings)
+
+    @logwrap
+    def get_current_ssl_cn(self, controller_ip):
+        cmd = "openssl x509 -noout -subject -in \
+          /var/lib/astute/haproxy/public_haproxy.pem \
+           | sed -n '/^subject/s/^.*CN=//p'"
+        ssh_manager = SSHManager()
+        ssl_cn = ssh_manager.execute_on_remote(
+            ip=controller_ip,
+            cmd=cmd)['stdout_str'].rstrip()
+        return ssl_cn
+
+    @logwrap
+    def get_current_ssl_keypair(self, controller_ip):
+        cmd = "cat /var/lib/astute/haproxy/public_haproxy.pem"
+        ssh_manager = SSHManager()
+        current_ssl_keypair = ssh_manager.execute_on_remote(
+            ip=controller_ip,
+            cmd=cmd)['stdout_str']
+        return current_ssl_keypair
+
+    @logwrap
+    def get_endpoint_list(self, controller_ip):
+        cmd = '. ./openrc;openstack endpoint list -f json'
+        ssh_manager = SSHManager()
+        endpoint_list = ssh_manager.execute_on_remote(
+            ip=controller_ip,
+            cmd=cmd,
+            jsonify=True)['stdout_json']
+        return endpoint_list
+
+    @logwrap
+    def get_endpoint_info(self, controller_ip, endpoint_list):
+        endpoints = []
+        for service in endpoint_list:
+            cmd = '. ./openrc;\
+            openstack endpoint show {0} -f json'.format(service['ID'])
+            ssh_manager = SSHManager()
+            public_url = ssh_manager.execute_on_remote(
+                ip=controller_ip,
+                cmd=cmd,
+                jsonify=True)['stdout_json']
+            service_value = public_url['service_name']
+            url_value = public_url['publicurl']
+            protocol = url_value.split(':')[0]
+            domain = url_value.split(':')[1].strip('/')
+            endpoint_info_list = {'service_name': service_value,
+                                  'url': url_value, 'protocol': protocol,
+                                  'domain': domain}
+            endpoints.append(endpoint_info_list)
+        return endpoints
