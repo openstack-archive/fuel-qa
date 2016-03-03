@@ -38,6 +38,7 @@ from fuelweb_test.helpers.checkers import check_public_ping
 from fuelweb_test.helpers.utils import get_file_size
 from fuelweb_test.helpers.utils import RunLimit
 from fuelweb_test.helpers.utils import TimeStat
+from fuelweb_test.helpers.pacemaker import get_pacemaker_resource_name
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import DNS
@@ -1353,6 +1354,9 @@ class TestHaFailoverBase(TestBasic):
 
             # get rabbit slaves
             rabbit_slaves = self.fuel_web.get_rabbit_slaves_node(p_d_ctrl.name)
+            rabbit_resource_name = get_pacemaker_resource_name(
+                self.fuel_web.get_node_ip_by_devops_name(p_d_ctrl.name),
+                self.__fuel_constants['rabbit_pcs_name'])
             assert_true(rabbit_slaves,
                         'Can not find rabbit slaves. On count {0} '
                         'current result is {1}'.format(count, rabbit_slaves))
@@ -1378,14 +1382,16 @@ class TestHaFailoverBase(TestBasic):
             with self.fuel_web.get_ssh_for_node(
                     master_rabbit.name) as remote_master_rabbit:
                 cmd = ('pcs constraint delete '
-                       'location-p_rabbitmq-server 2>&1 >/dev/null| true')
+                       'location-{0} 2>&1 >/dev/null| true'.format(
+                           rabbit_resource_name))
                 remote_master_rabbit.execute(cmd)
 
                 self.show_step(5, details='Run count: {0}'.format(count))
                 # Move resource to rabbit slave
-                cmd_move = ('pcs constraint location p_rabbitmq-server '
+                cmd_move = ('pcs constraint location {0} '
                             'rule role=master score=-INFINITY \#uname '
-                            'ne {0}').format(slaves_rabbit_fqdn[0])
+                            'ne {1}').format(rabbit_resource_name,
+                                             slaves_rabbit_fqdn[0])
                 result = remote_master_rabbit.execute(cmd_move)
                 assert_equal(
                     result['exit_code'], 0,
@@ -1395,7 +1401,7 @@ class TestHaFailoverBase(TestBasic):
                 # Clear all
                 self.show_step(6, details='Run count: {0}'.format(count))
                 cmd_clear = ('pcs constraint delete '
-                             'location-p_rabbitmq-server')
+                             'location-{0}').format(rabbit_resource_name)
                 result = remote_master_rabbit.execute(cmd_clear)
                 assert_equal(
                     result['exit_code'], 0,
