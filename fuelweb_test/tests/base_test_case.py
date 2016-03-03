@@ -39,6 +39,13 @@ class TestBasic(object):
         self.__env = None
         self.__current_log_step = 0
         self.__test_program = None
+        self.__fuel_constants = {
+            'rabbit_pcs_name': 'p_rabbitmq-server'
+        }
+
+    @property
+    def fuel_constants(self):
+        return self.__fuel_constants
 
     @property
     def ssh_manager(self):
