@@ -154,9 +154,9 @@ class EnvironmentModel(object):
     def get_keys(self, node, custom=None, build_images=None,
                  iso_connect_as='cdrom'):
         params = {
-            'ks': 'hd:LABEL=OpenStack_Fuel:/ks.cfg' if iso_connect_as == 'usb'
-            else 'cdrom:/ks.cfg',
-            'repo': 'hd:LABEL=OpenStack_Fuel:/',  # only required for USB boot
+            'ks': 'cdrom:LABEL=OpenStack_Fuel:/ks.cfg',
+            'repo': 'cdrom:LABEL=OpenStack_Fuel:/',
+            'iface': 'enp0s3',
             'ip': node.get_ip_address_by_network_name(
                 self.d_env.admin_net),
             'mask': self.d_env.get_network(
@@ -210,40 +210,32 @@ class EnvironmentModel(object):
                 " <Enter>\n"
             ) % params
         if MASTER_IS_CENTOS7:
-            # CentOS 7 is pretty stable with admin iface.
             # TODO(akostrikov) add tests for menu items/kernel parameters
             # TODO(akostrikov) refactor it.
-            iface = 'enp0s3'
             if iso_connect_as == 'usb':
                 keys = (
                     "<Wait>\n"  # USB boot uses boot_menu=yes for master node
                     "<F12>\n"
                     "2\n"
-                    "<Esc><Enter>\n"
-                    "<Wait>\n"
-                    "vmlinuz initrd=initrd.img ks=%(ks)s\n"
-                    " repo=%(repo)s\n"
-                    " ip=%(ip)s::%(gw)s:%(mask)s:%(hostname)s"
-                    ":{iface}:off::: dns1=%(dns1)s"
-                    " showmenu=%(showmenu)s\n"
-                    " wait_for_external_config=%(wait_for_external_config)s\n"
-                    " build_images=%(build_images)s\n"
-                    " <Enter>\n".format(iface=iface)
-                ) % params
-            else:  # cdrom case is default
+                )
+            else:  # cdrom is default
                 keys = (
                     "<Wait>\n"
                     "<Wait>\n"
                     "<Wait>\n"
+                )
+
+                keys += (
                     "<Esc>\n"
                     "<Wait>\n"
-                    "vmlinuz initrd=initrd.img ks=%(ks)s\n"
+                    "vmlinuz initrd=initrd.img inst.ks=%(ks)s\n"
+                    " inst.repo=%(repo)s\n"
                     " ip=%(ip)s::%(gw)s:%(mask)s:%(hostname)s"
-                    ":{iface}:off::: dns1=%(dns1)s"
+                    ":%{iface}s:off::: dns1=%(dns1)s"
                     " showmenu=%(showmenu)s\n"
                     " wait_for_external_config=%(wait_for_external_config)s\n"
                     " build_images=%(build_images)s\n"
-                    " <Enter>\n".format(iface=iface)
+                    " <Enter>\n"
                 ) % params
         return keys
 
