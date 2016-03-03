@@ -25,6 +25,8 @@ from devops.helpers.helpers import wait
 from devops.models.node import SSHClient
 from fuelweb_test import logger
 from fuelweb_test.helpers.metaclasses import SingletonMeta
+from fuelweb_test.helpers.exception \
+    import ExecuteOnRemoteUnexpectedExitCodeError
 
 
 class SSHManager(object):
@@ -180,7 +182,10 @@ class SSHManager(object):
                        "Details: {2}".format(error_msg, cmd, error_details))
             logger.error(log_msg)
             if raise_on_assert:
-                raise Exception(log_msg)
+                raise \
+                    ExecuteOnRemoteUnexpectedExitCodeError(cmd,
+                                                           result['exit_code'],
+                                                           assert_ec_equal)
 
         result['stdout_str'] = ''.join(result['stdout']).strip()
         result['stdout_len'] = len(result['stdout'])
