@@ -52,6 +52,11 @@ class ExamplePlugin(TestBasic):
         Duration 35m
         Snapshot deploy_ha_one_controller_neutron_example
         """
+        checkers.check_plugin_path_env(
+            var_name='EXAMPLE_PLUGIN_PATH',
+            plugin_path=EXAMPLE_PLUGIN_PATH
+        )
+
         self.env.revert_snapshot("ready_with_3_slaves")
 
         # copy plugin to the master node
@@ -140,6 +145,11 @@ class ExamplePlugin(TestBasic):
         Duration 35m
         Snapshot deploy_ha_one_controller_neutron_example_v3
         """
+        checkers.check_plugin_path_env(
+            var_name='EXAMPLE_PLUGIN_V3_PATH',
+            plugin_path=EXAMPLE_PLUGIN_V3_PATH
+        )
+
         self.env.revert_snapshot("ready_with_3_slaves")
 
         # copy plugin to the master node
@@ -269,6 +279,11 @@ class ExamplePlugin(TestBasic):
         Snapshot deploy_neutron_example_ha
 
         """
+        checkers.check_plugin_path_env(
+            var_name='EXAMPLE_PLUGIN_PATH',
+            plugin_path=EXAMPLE_PLUGIN_PATH
+        )
+
         self.env.revert_snapshot("ready_with_5_slaves")
 
         # copy plugin to the master node
@@ -360,6 +375,11 @@ class ExamplePlugin(TestBasic):
         Snapshot deploy_neutron_example_ha_add_node
 
         """
+        checkers.check_plugin_path_env(
+            var_name='EXAMPLE_PLUGIN_PATH',
+            plugin_path=EXAMPLE_PLUGIN_PATH
+        )
+
         self.env.revert_snapshot("ready_with_5_slaves")
 
         # copy plugin to the master node
