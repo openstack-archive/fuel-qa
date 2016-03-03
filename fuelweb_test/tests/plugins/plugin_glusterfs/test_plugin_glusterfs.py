@@ -17,6 +17,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import test
 
+from fuelweb_test.helpers.checkers import check_plugin_path_env
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import utils
 from fuelweb_test.settings import DEPLOYMENT_MODE
@@ -63,6 +64,11 @@ class GlusterfsPlugin(TestBasic):
         Duration 35m
         Snapshot deploy_ha_one_controller_glusterfs
         """
+        check_plugin_path_env(
+            plugin_name='GLUSTER_PLUGIN_PATH',
+            plugin_path=GLUSTER_PLUGIN_PATH
+        )
+
         self.env.revert_snapshot("ready_with_3_slaves")
 
         # copy plugin to the master node
@@ -141,6 +147,11 @@ class GlusterfsPlugin(TestBasic):
         Snapshot deploy_glusterfs_ha
 
         """
+        check_plugin_path_env(
+            plugin_name='GLUSTER_PLUGIN_PATH',
+            plugin_path=GLUSTER_PLUGIN_PATH
+        )
+
         self.env.revert_snapshot("ready_with_5_slaves")
 
         # copy plugin to the master node

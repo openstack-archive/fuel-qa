@@ -18,6 +18,7 @@ from devops.helpers.helpers import wait
 from proboscis import asserts
 from proboscis import test
 
+from fuelweb_test.helpers.checkers import check_plugin_path_env
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers import utils
@@ -110,6 +111,11 @@ class LbaasPlugin(TestBasic):
         Snapshot deploy_neutron_vlan_lbaas_simple
 
         """
+        check_plugin_path_env(
+            plugin_name='LBAAS_PLUGIN_PATH',
+            plugin_path=LBAAS_PLUGIN_PATH
+        )
+
         self.env.revert_snapshot("ready_with_3_slaves")
 
         # copy plugin to the master node
@@ -192,6 +198,11 @@ class LbaasPlugin(TestBasic):
         Snapshot deploy_neutron_lbaas_simple_reset_ready
 
         """
+        check_plugin_path_env(
+            plugin_name='LBAAS_PLUGIN_PATH',
+            plugin_path=LBAAS_PLUGIN_PATH
+        )
+
         self.env.revert_snapshot("ready_with_3_slaves")
 
         # copy plugin to the master node

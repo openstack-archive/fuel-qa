@@ -36,6 +36,11 @@ class ExamplePluginPostDeploy(TestBasic):
 
     def __init__(self):
         super(ExamplePluginPostDeploy, self).__init__()
+        checkers.check_plugin_path_env(
+            plugin_name='EXAMPLE_PLUGIN_V4_PATH',
+            plugin_path=EXAMPLE_PLUGIN_V4_PATH
+        )
+
         self.__primary_controller = None
         self.__controllers = None
         self.__cluster_id = None
