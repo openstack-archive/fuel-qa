@@ -20,6 +20,7 @@ from proboscis import test
 import requests
 
 from fuelweb_test import logger
+from fuelweb_test.helpers.checkers import check_plugin_path_env
 from fuelweb_test.helpers import utils
 from fuelweb_test import settings
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -62,6 +63,10 @@ class TestLmaInfraAlertingPlugin(TestBasic):
         Snapshot deploy_lma_infra_alerting_ha
 
         """
+        check_plugin_path_env(
+            plugin_name='LMA_INFRA_ALERTING_PLUGIN_PATH',
+            plugin_path=settings.LMA_INFRA_ALERTING_PLUGIN_PATH
+        )
 
         self.env.revert_snapshot("ready_with_5_slaves")
 
