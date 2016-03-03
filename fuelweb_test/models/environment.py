@@ -222,7 +222,7 @@ class EnvironmentModel(object):
                     "<Esc><Enter>\n"
                     "<Wait>\n"
                     "vmlinuz initrd=initrd.img ks=%(ks)s\n"
-                    " repo=%(repo)s\n"
+                    " inst.stage2=%(repo)s\n"
                     " ip=%(ip)s::%(gw)s:%(mask)s:%(hostname)s"
                     ":{iface}:off::: dns1=%(dns1)s"
                     " showmenu=%(showmenu)s\n"
