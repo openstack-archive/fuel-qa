@@ -219,10 +219,10 @@ class EnvironmentModel(object):
                     "<Wait>\n"  # USB boot uses boot_menu=yes for master node
                     "<F12>\n"
                     "2\n"
-                    "<Esc><Enter>\n"
+                    "<Esc>\n"
                     "<Wait>\n"
-                    "vmlinuz initrd=initrd.img ks=%(ks)s\n"
-                    " repo=%(repo)s\n"
+                    "vmlinuz initrd=initrd.img inst.ks=%(ks)s\n"
+                    " inst.repo=%(repo)s\n"
                     " ip=%(ip)s::%(gw)s:%(mask)s:%(hostname)s"
                     ":{iface}:off::: dns1=%(dns1)s"
                     " showmenu=%(showmenu)s\n"
