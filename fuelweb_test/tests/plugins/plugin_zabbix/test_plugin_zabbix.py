@@ -23,6 +23,7 @@ from proboscis.asserts import assert_true
 from proboscis import test
 import requests
 
+from fuelweb_test.helpers.checkers import check_plugin_path_env
 from fuelweb_test.helpers import utils
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
@@ -74,6 +75,12 @@ class ZabbixWeb(object):
 @test(groups=["plugins", "zabbix_plugins"])
 class ZabbixPlugin(TestBasic):
     """ZabbixPlugin."""
+    def __init__(self):
+        super(ZabbixPlugin, self).__init__()
+        check_plugin_path_env(
+            var_name='ZABBIX_PLUGIN_PATH',
+            plugin_path=settings.ZABBIX_PLUGIN_PATH
+        )
 
     def setup_zabbix_plugin(self,
                             cluster_id,
@@ -248,6 +255,11 @@ class ZabbixPlugin(TestBasic):
         Snapshot deploy_zabbix_snmptrap_ha
 
         """
+        check_plugin_path_env(
+            var_name='ZABBIX_SNMP_PLUGIN_PATH',
+            plugin_path=settings.ZABBIX_SNMP_PLUGIN_PATH
+        )
+
         self.env.revert_snapshot("ready_with_5_slaves")
 
         for plugin in [settings.ZABBIX_PLUGIN_PATH,
@@ -346,6 +358,15 @@ class ZabbixPlugin(TestBasic):
         Snapshot deploy_zabbix_snmp_emc_ha
 
         """
+        check_plugin_path_env(
+            var_name='ZABBIX_SNMP_PLUGIN_PATH',
+            plugin_path=settings.ZABBIX_SNMP_PLUGIN_PATH
+        )
+        check_plugin_path_env(
+            var_name='ZABBIX_SNMP_EMC_PLUGIN_PATH',
+            plugin_path=settings.ZABBIX_SNMP_EMC_PLUGIN_PATH
+        )
+
         self.env.revert_snapshot("ready_with_5_slaves")
 
         for plugin in [settings.ZABBIX_PLUGIN_PATH,
@@ -429,6 +450,14 @@ class ZabbixPlugin(TestBasic):
         Snapshot deploy_zabbix_snmp_extreme_ha
 
         """
+        check_plugin_path_env(
+            var_name='ZABBIX_SNMP_PLUGIN_PATH',
+            plugin_path=settings.ZABBIX_SNMP_PLUGIN_PATH
+        )
+        check_plugin_path_env(
+            var_name='ZABBIX_SNMP_EXTREME_PLUGIN_PATH',
+            plugin_path=settings.ZABBIX_SNMP_EXTREME_PLUGIN_PATH
+        )
         self.env.revert_snapshot("ready_with_5_slaves")
 
         for plugin in [settings.ZABBIX_PLUGIN_PATH,
