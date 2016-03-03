@@ -33,6 +33,11 @@ Eb tables
 .. automodule:: fuelweb_test.helpers.eb_tables
    :members:
 
+Exception
+---------
+.. automodule:: fuelweb_test.helpers.exception
+   :members:
+
 Fuel Actions
 ------------
 .. automodule:: fuelweb_test.helpers.fuel_actions
