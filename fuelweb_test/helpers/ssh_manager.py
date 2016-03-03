@@ -25,6 +25,7 @@ from devops.helpers.helpers import wait
 from devops.models.node import SSHClient
 from fuelweb_test import logger
 from fuelweb_test.helpers.metaclasses import SingletonMeta
+from fuelweb_test.helpers.exceptions import UnexpectedExitCode
 
 
 class SSHManager(object):
@@ -163,7 +164,14 @@ class SSHManager(object):
         """
         if assert_ec_equal is None:
             assert_ec_equal = [0]
+
         result = self.execute(ip=ip, port=port, cmd=cmd)
+
+        result['stdout_str'] = ''.join(result['stdout']).strip()
+        result['stdout_len'] = len(result['stdout'])
+        result['stderr_str'] = ''.join(result['stderr']).strip()
+        result['stderr_len'] = len(result['stderr'])
+
         if result['exit_code'] not in assert_ec_equal:
             error_details = {
                 'command': cmd,
@@ -180,12 +188,11 @@ class SSHManager(object):
                        "Details: {2}".format(error_msg, cmd, error_details))
             logger.error(log_msg)
             if raise_on_assert:
-                raise Exception(log_msg)
-
-        result['stdout_str'] = ''.join(result['stdout']).strip()
-        result['stdout_len'] = len(result['stdout'])
-        result['stderr_str'] = ''.join(result['stderr']).strip()
-        result['stderr_len'] = len(result['stderr'])
+                raise UnexpectedExitCode(cmd,
+                                         result['exit_code'],
+                                         assert_ec_equal,
+                                         stdout=result['stdout_str'],
+                                         stderr=result['stderr_str'])
 
         if jsonify:
             try:
