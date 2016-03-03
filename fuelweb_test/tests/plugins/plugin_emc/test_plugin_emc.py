@@ -19,6 +19,7 @@ from proboscis import asserts
 from proboscis import test
 
 from fuelweb_test.helpers import utils
+from fuelweb_test.helpers.checkers import check_plugin_path_env
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
@@ -29,6 +30,12 @@ from fuelweb_test.tests.base_test_case import TestBasic
 @test(groups=["plugins"])
 class EMCPlugin(TestBasic):
     """EMCPlugin."""  # TODO documentation
+    def __init__(self):
+        super(EMCPlugin, self).__init__()
+        check_plugin_path_env(
+            plugin_name='EMC_PLUGIN_PATH',
+            plugin_path=settings.EMC_PLUGIN_PATH
+        )
 
     @classmethod
     def check_emc_cinder_config(cls, ip, path):

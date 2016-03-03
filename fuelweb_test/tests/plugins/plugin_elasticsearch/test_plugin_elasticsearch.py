@@ -18,9 +18,10 @@ from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_true
 from proboscis import test
 
-from fuelweb_test import logger
+from fuelweb_test.helpers.checkers import check_plugin_path_env
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import utils
+from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import ELASTICSEARCH_KIBANA_PLUGIN_PATH
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -32,6 +33,13 @@ import requests
 @test(groups=["plugins"])
 class TestElasticsearchPlugin(TestBasic):
     """Class for testing the Elasticsearch-Kibana plugin."""
+
+    def __init__(self):
+        super(TestElasticsearchPlugin, self).__init__()
+        check_plugin_path_env(
+            plugin_name='ELASTICSEARCH_KIBANA_PLUGIN_PATH',
+            plugin_path=ELASTICSEARCH_KIBANA_PLUGIN_PATH
+        )
 
     _name = 'elasticsearch_kibana'
     _version = '0.9.0'
