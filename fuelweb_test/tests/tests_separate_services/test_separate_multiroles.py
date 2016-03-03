@@ -18,6 +18,7 @@ from proboscis import test
 from proboscis.asserts import assert_true
 from devops.helpers.helpers import wait
 
+from fuelweb_test.helpers.checkers import check_plugin_path_env
 from fuelweb_test.helpers import utils
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
@@ -51,6 +52,10 @@ class SeparateAllServices(TestBasic):
         Snapshot separate_all_service
         """
         self.check_run("separate_all_service")
+
+        check_plugin_path_env(var_name='SEPARATE_SERVICE_DB_PLUGIN_PATH')
+        check_plugin_path_env(var_name='SEPARATE_SERVICE_KEYSTONE_PLUGIN_PATH')
+        check_plugin_path_env(var_name='SEPARATE_SERVICE_RABBIT_PLUGIN_PATH')
         self.env.revert_snapshot("ready_with_9_slaves")
 
         # copy plugins to the master node

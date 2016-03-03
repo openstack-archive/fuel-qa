@@ -17,6 +17,7 @@ import os
 from proboscis.asserts import assert_true
 from proboscis import test
 
+from fuelweb_test.helpers.checkers import check_plugin_path_env
 from fuelweb_test.helpers import utils
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
@@ -49,6 +50,8 @@ class SeparateDbCeph(TestBasic):
         Snapshot separate_db_ceph_service
         """
         self.check_run("separate_db_ceph_service")
+        check_plugin_path_env(var_name='SEPARATE_SERVICE_DB_PLUGIN_PATH')
+
         self.env.revert_snapshot("ready_with_9_slaves")
 
         # copy plugins to the master node
