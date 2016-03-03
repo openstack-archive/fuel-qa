@@ -18,6 +18,7 @@ from devops.helpers.helpers import wait
 from proboscis import asserts
 from proboscis import test
 
+from fuelweb_test.helpers.checkers import check_plugin_path_env
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers import utils
@@ -31,6 +32,12 @@ from fuelweb_test.tests.base_test_case import TestBasic
 @test(enabled=False, groups=["plugins"])
 class LbaasPlugin(TestBasic):
     """LbaasPlugin."""  # TODO documentation
+    def __init__(self):
+        super(LbaasPlugin, self).__init__()
+        check_plugin_path_env(
+            plugin_name='LBAAS_PLUGIN_PATH',
+            plugin_path=LBAAS_PLUGIN_PATH
+        )
 
     @classmethod
     def check_neutron_agents_statuses(cls, os_conn):

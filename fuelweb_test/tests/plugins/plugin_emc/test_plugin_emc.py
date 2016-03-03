@@ -19,6 +19,7 @@ from proboscis import asserts
 from proboscis import test
 
 from fuelweb_test.helpers import utils
+from fuelweb_test.helpers.checkers import check_plugin_path_env
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
@@ -103,6 +104,11 @@ class EMCPlugin(TestBasic):
         Duration 35m
         Snapshot deploy_ha_emc
         """
+        check_plugin_path_env(
+            plugin_name='EMC_PLUGIN_PATH',
+            plugin_path=settings.EMC_PLUGIN_PATH
+        )
+
         self.env.revert_snapshot("ready_with_5_slaves")
 
         # copy plugin to the master node
