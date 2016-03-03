@@ -154,9 +154,9 @@ class EnvironmentModel(object):
     def get_keys(self, node, custom=None, build_images=None,
                  iso_connect_as='cdrom'):
         params = {
-            'ks': 'hd:LABEL=OpenStack_Fuel:/ks.cfg' if iso_connect_as == 'usb'
+            'ks': 'cdrom:LABEL=OpenStack_Fuel:/ks.cfg' if iso_connect_as == 'usb'
             else 'cdrom:/ks.cfg',
-            'repo': 'hd:LABEL=OpenStack_Fuel:/',  # only required for USB boot
+            'repo': 'cdrom:LABEL=OpenStack_Fuel:/',  # only required for USB boot
             'ip': node.get_ip_address_by_network_name(
                 self.d_env.admin_net),
             'mask': self.d_env.get_network(
@@ -219,10 +219,10 @@ class EnvironmentModel(object):
                     "<Wait>\n"  # USB boot uses boot_menu=yes for master node
                     "<F12>\n"
                     "2\n"
-                    "<Esc><Enter>\n"
+                    "<Esc>\n"
                     "<Wait>\n"
-                    "vmlinuz initrd=initrd.img ks=%(ks)s\n"
-                    " repo=%(repo)s\n"
+                    "vmlinuz initrd=initrd.img inst.ks=%(ks)s\n"
+                    " inst.repo=%(repo)s\n"
                     " ip=%(ip)s::%(gw)s:%(mask)s:%(hostname)s"
                     ":{iface}:off::: dns1=%(dns1)s"
                     " showmenu=%(showmenu)s\n"
