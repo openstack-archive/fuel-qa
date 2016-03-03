@@ -1166,3 +1166,13 @@ def check_update_network_data_over_cli(ip, cluster_id, path):
         cmd=cmd,
         err_msg='Failed to upload network data'
     )
+
+
+def check_plugin_path_env(plugin_name, plugin_path):
+    assert_true(
+        plugin_path and os.path.exists(plugin_path),
+        '{plugin_name:s} variable is not set or set incorrectly: '
+        '{plugin_path!r}'.format(
+            plugin_name=plugin_name,
+            plugin_path=plugin_path)
+    )
