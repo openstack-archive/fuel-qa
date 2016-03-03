@@ -16,6 +16,7 @@ import os
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_true
+from proboscis import SkipTest
 from proboscis import test
 import requests
 
@@ -62,6 +63,10 @@ class TestLmaInfraAlertingPlugin(TestBasic):
         Snapshot deploy_lma_infra_alerting_ha
 
         """
+        if settings.LMA_INFRA_ALERTING_PLUGIN_PATH is None:
+            raise SkipTest(
+                'LMA_INFRA_ALERTING_PLUGIN_PATH variable is not set'
+            )
 
         self.env.revert_snapshot("ready_with_5_slaves")
 

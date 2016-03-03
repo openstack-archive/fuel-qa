@@ -16,6 +16,7 @@ import cStringIO
 import os
 
 from proboscis import asserts
+from proboscis import SkipTest
 from proboscis import test
 
 from fuelweb_test.helpers import utils
@@ -103,6 +104,9 @@ class EMCPlugin(TestBasic):
         Duration 35m
         Snapshot deploy_ha_emc
         """
+        if settings.EMC_PLUGIN_PATH is None:
+            raise SkipTest('EMC_PLUGIN_PATH variable is not set')
+
         self.env.revert_snapshot("ready_with_5_slaves")
 
         # copy plugin to the master node

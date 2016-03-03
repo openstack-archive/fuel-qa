@@ -18,6 +18,7 @@ import time
 
 from proboscis import test
 from proboscis.asserts import assert_true
+from proboscis import SkipTest
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import utils
@@ -190,6 +191,19 @@ class ContrailPlugin(TestBasic):
         Duration 20 min
 
         """
+        if CONTRAIL_PLUGIN_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PATH variable is not set'
+            )
+        if CONTRAIL_PLUGIN_PACK_UB_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PACK_UB_PATH variable is not set'
+            )
+        if CONTRAIL_PLUGIN_PACK_CEN_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PACK_CEN_PATH variable is not set'
+            )
+
         self._prepare_contrail_plugin(slaves=5)
 
         self.env.make_snapshot("install_contrail", is_make=True)
@@ -211,6 +225,19 @@ class ContrailPlugin(TestBasic):
         Duration 90 min
 
         """
+        if CONTRAIL_PLUGIN_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PATH variable is not set'
+            )
+        if CONTRAIL_PLUGIN_PACK_UB_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PACK_UB_PATH variable is not set'
+            )
+        if CONTRAIL_PLUGIN_PACK_CEN_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PACK_CEN_PATH variable is not set'
+            )
+
         self._prepare_contrail_plugin(slaves=5)
 
         self.fuel_web.update_nodes(
@@ -258,6 +285,19 @@ class ContrailPlugin(TestBasic):
         Duration 110 min
 
         """
+        if CONTRAIL_PLUGIN_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PATH variable is not set'
+            )
+        if CONTRAIL_PLUGIN_PACK_UB_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PACK_UB_PATH variable is not set'
+            )
+        if CONTRAIL_PLUGIN_PACK_CEN_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PACK_CEN_PATH variable is not set'
+            )
+
         self._prepare_contrail_plugin(slaves=5)
 
         self.fuel_web.update_nodes(
@@ -332,6 +372,19 @@ class ContrailPlugin(TestBasic):
         Duration 140 min
 
         """
+        if CONTRAIL_PLUGIN_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PATH variable is not set'
+            )
+        if CONTRAIL_PLUGIN_PACK_UB_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PACK_UB_PATH variable is not set'
+            )
+        if CONTRAIL_PLUGIN_PACK_CEN_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PACK_CEN_PATH variable is not set'
+            )
+
         self._prepare_contrail_plugin(slaves=9)
 
         # create cluster: 3 nodes with Operating system role,
@@ -424,6 +477,19 @@ class ContrailPlugin(TestBasic):
         Duration 140 min
 
         """
+        if CONTRAIL_PLUGIN_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PATH variable is not set'
+            )
+        if CONTRAIL_PLUGIN_PACK_UB_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PACK_UB_PATH variable is not set'
+            )
+        if CONTRAIL_PLUGIN_PACK_CEN_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PACK_CEN_PATH variable is not set'
+            )
+
         self._prepare_contrail_plugin(slaves=9)
 
         # create cluster: 3 nodes with Operating system role
@@ -532,6 +598,19 @@ class ContrailPlugin(TestBasic):
         Duration 140 min
 
         """
+        if CONTRAIL_PLUGIN_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PATH variable is not set'
+            )
+        if CONTRAIL_PLUGIN_PACK_UB_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PACK_UB_PATH variable is not set'
+            )
+        if CONTRAIL_PLUGIN_PACK_CEN_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PACK_CEN_PATH variable is not set'
+            )
+
         self._prepare_contrail_plugin(slaves=9)
 
         # create cluster: 3 nodes with Operating system role
@@ -626,6 +705,19 @@ class ContrailPlugin(TestBasic):
         Duration 140 min
 
         """
+        if CONTRAIL_PLUGIN_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PATH variable is not set'
+            )
+        if CONTRAIL_PLUGIN_PACK_UB_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PACK_UB_PATH variable is not set'
+            )
+        if CONTRAIL_PLUGIN_PACK_CEN_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PACK_CEN_PATH variable is not set'
+            )
+
         self._prepare_contrail_plugin(slaves=9, pub_net=True)
 
         # create cluster: 3 nodes with Operating system role,
@@ -700,6 +792,19 @@ class ContrailPlugin(TestBasic):
         Duration 140 min
 
         """
+        if CONTRAIL_PLUGIN_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PATH variable is not set'
+            )
+        if CONTRAIL_PLUGIN_PACK_UB_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PACK_UB_PATH variable is not set'
+            )
+        if CONTRAIL_PLUGIN_PACK_CEN_PATH is None:
+            raise SkipTest(
+                'CONTRAIL_PLUGIN_PACK_CEN_PATH variable is not set'
+            )
+
         self._prepare_contrail_plugin(slaves=5)
 
         # create cluster: 3 nodes with Operating system role,

@@ -14,6 +14,7 @@
 import os
 
 from proboscis.asserts import assert_equal, assert_true
+from proboscis import SkipTest
 from proboscis import test
 
 from fuelweb_test import logger
@@ -52,6 +53,9 @@ class ExamplePlugin(TestBasic):
         Duration 35m
         Snapshot deploy_ha_one_controller_neutron_example
         """
+        if EXAMPLE_PLUGIN_PATH is None:
+            raise SkipTest('EXAMPLE_PLUGIN_PATH variable is not set')
+
         self.env.revert_snapshot("ready_with_3_slaves")
 
         # copy plugin to the master node
@@ -140,6 +144,9 @@ class ExamplePlugin(TestBasic):
         Duration 35m
         Snapshot deploy_ha_one_controller_neutron_example_v3
         """
+        if EXAMPLE_PLUGIN_V3_PATH is None:
+            raise SkipTest('EXAMPLE_PLUGIN_V3_PATH variable is not set')
+
         self.env.revert_snapshot("ready_with_3_slaves")
 
         # copy plugin to the master node
@@ -269,6 +276,9 @@ class ExamplePlugin(TestBasic):
         Snapshot deploy_neutron_example_ha
 
         """
+        if EXAMPLE_PLUGIN_PATH is None:
+            raise SkipTest('EXAMPLE_PLUGIN_PATH variable is not set')
+
         self.env.revert_snapshot("ready_with_5_slaves")
 
         # copy plugin to the master node
@@ -360,6 +370,9 @@ class ExamplePlugin(TestBasic):
         Snapshot deploy_neutron_example_ha_add_node
 
         """
+        if EXAMPLE_PLUGIN_PATH is None:
+            raise SkipTest('EXAMPLE_PLUGIN_PATH variable is not set')
+
         self.env.revert_snapshot("ready_with_5_slaves")
 
         # copy plugin to the master node

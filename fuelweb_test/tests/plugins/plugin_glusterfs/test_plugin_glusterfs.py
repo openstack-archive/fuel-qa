@@ -15,6 +15,7 @@ import os
 
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
+from proboscis import SkipTest
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -63,6 +64,9 @@ class GlusterfsPlugin(TestBasic):
         Duration 35m
         Snapshot deploy_ha_one_controller_glusterfs
         """
+        if GLUSTER_PLUGIN_PATH is None:
+            raise SkipTest('GLUSTER_PLUGIN_PATH variable is not set')
+
         self.env.revert_snapshot("ready_with_3_slaves")
 
         # copy plugin to the master node
@@ -141,6 +145,9 @@ class GlusterfsPlugin(TestBasic):
         Snapshot deploy_glusterfs_ha
 
         """
+        if GLUSTER_PLUGIN_PATH is None:
+            raise SkipTest('GLUSTER_PLUGIN_PATH variable is not set')
+
         self.env.revert_snapshot("ready_with_5_slaves")
 
         # copy plugin to the master node

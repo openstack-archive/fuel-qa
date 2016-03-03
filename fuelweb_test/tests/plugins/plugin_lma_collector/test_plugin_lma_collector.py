@@ -16,6 +16,7 @@ import os
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_true
+from proboscis import SkipTest
 from proboscis import test
 import requests
 
@@ -61,6 +62,21 @@ class TestLmaCollectorPlugin(TestBasic):
         Snapshot deploy_lma_toolchain
 
         """
+        if settings.LMA_COLLECTOR_PLUGIN_PATH is None:
+            raise SkipTest('LMA_COLLECTOR_PLUGIN_PATH variable is not set')
+        if settings.ELASTICSEARCH_KIBANA_PLUGIN_PATH is None:
+            raise SkipTest(
+                'ELASTICSEARCH_KIBANA_PLUGIN_PATH variable is not set'
+            )
+        if settings.INFLUXDB_GRAFANA_PLUGIN_PATH is None:
+            raise SkipTest(
+                'INFLUXDB_GRAFANA_PLUGIN_PATH variable is not set'
+            )
+        if settings.LMA_INFRA_ALERTING_PLUGIN_PATH is None:
+            raise SkipTest(
+                'LMA_INFRA_ALERTING_PLUGIN_PATH variable is not set'
+            )
+
         self.env.revert_snapshot("ready_with_5_slaves")
 
         # TODO(scroiset): use actions fuel_actions.py

@@ -16,6 +16,7 @@ import traceback
 
 from devops.helpers.helpers import wait
 from proboscis import asserts
+from proboscis import SkipTest
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -110,6 +111,9 @@ class LbaasPlugin(TestBasic):
         Snapshot deploy_neutron_vlan_lbaas_simple
 
         """
+        if LBAAS_PLUGIN_PATH is None:
+            raise SkipTest('LBAAS_PLUGIN_PATH variable is not set')
+
         self.env.revert_snapshot("ready_with_3_slaves")
 
         # copy plugin to the master node
@@ -192,6 +196,9 @@ class LbaasPlugin(TestBasic):
         Snapshot deploy_neutron_lbaas_simple_reset_ready
 
         """
+        if LBAAS_PLUGIN_PATH is None:
+            raise SkipTest('LBAAS_PLUGIN_PATH variable is not set')
+
         self.env.revert_snapshot("ready_with_3_slaves")
 
         # copy plugin to the master node
