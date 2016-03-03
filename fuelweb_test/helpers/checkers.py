@@ -26,6 +26,7 @@ from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import get_mongo_partitions
+import fuelweb_test.settings
 from fuelweb_test.settings import EXTERNAL_DNS
 from fuelweb_test.settings import EXTERNAL_NTP
 from fuelweb_test.settings import OPENSTACK_RELEASE
@@ -1172,4 +1173,19 @@ def check_update_network_data_over_cli(ip, cluster_id, path):
         ip=ip,
         cmd=cmd,
         err_msg='Failed to upload network data'
+    )
+
+
+def check_plugin_path_env(var_name):
+    plugin_path = getattr(fuelweb_test.settings, var_name)
+    assert_true(
+        plugin_path,
+        '{var_name:s} variable is not set or set incorrectly: '
+        '{plugin_path!r}'.format(
+            var_name=var_name,
+            plugin_path=plugin_path)
+    )
+    assert_true(
+        os.path.exists(plugin_path),
+        'File {plugin_path:s} does not exists!'.format(plugin_path=plugin_path)
     )
