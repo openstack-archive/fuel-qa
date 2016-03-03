@@ -337,19 +337,20 @@ class UbuntuBootstrap(base_test_case.TestBasic):
 
         self.env.bootstrap_nodes(nodes)
         for node in nodes:
-            _ip = self.fuel_web.get_nailgun_node_by_devops_node(node)['ip']
-            checkers.verify_bootstrap_on_node(_ip, os_type="ubuntu", uuid=uuid)
+            checkers.verify_bootstrap_on_node(
+                self.env.fuel_web.get_node_ip_by_devops_name(node.name),
+                os_type="ubuntu",
+                uuid=uuid)
 
         new_uuid, _ = \
             self.env.fuel_bootstrap_actions.build_bootstrap_image(
                 activate=True)
-
         new_node = self.env.d_env.get_node(name="slave-03")
         self.env.bootstrap_nodes([new_node])
-        with self.fuel_web.get_ssh_for_node(new_node.name) as slave_remote:
-            checkers.verify_bootstrap_on_node(slave_remote,
-                                              os_type="ubuntu",
-                                              uuid=new_uuid)
+        checkers.verify_bootstrap_on_node(
+            self.env.fuel_web.get_node_ip_by_devops_name(new_node.name),
+            os_type="ubuntu",
+            uuid=new_uuid)
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
