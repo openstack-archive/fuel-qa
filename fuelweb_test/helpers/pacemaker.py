@@ -13,7 +13,7 @@
 #    under the License.
 from xml.etree import ElementTree
 
-from fuelweb_test.helpers.utils import run_on_remote_get_results
+from fuelweb_test.helpers.ssh_manager import SSHManager
 
 
 def get_pacemaker_nodes_attributes(cibadmin_status_xml):
@@ -98,11 +98,32 @@ def get_pcs_nodes(pcs_status_xml):
     return nodes
 
 
-def parse_pcs_status_xml(remote):
+def parse_pcs_status_xml(remote_ip):
     """Parse 'pcs status xml'. <Nodes> section
-    :param remote: SSHClient instance
+    :param remote_ip: remote IP address
     :return: nested dictionary with node-fqdn and attribute name as keys
     """
-    pcs_status_dict = run_on_remote_get_results(
-        remote, 'pcs status xml')['stdout_str']
+    pcs_status_dict = SSHManager().execute_on_remote(
+        remote_ip, 'pcs status xml')['stdout_str']
     return pcs_status_dict
+
+
+def get_pacemaker_resource_name(remote_ip, resource_name):
+    """ Parse 'cibadmin -Q --scope resources' and check whether the resource
+    is multistate. Return parent resource name if it is, resource name
+    otherwise
+    :param remote_ip: remote IP address
+    :param resource_name: resource name string
+    :return: string with proper resource name
+    """
+    cib = SSHManager().execute_on_remote(
+        remote_ip, 'cibadmin -Q --scope resources')['stdout_str']
+    root = ElementTree.fromstring(cib)
+
+    resource_parent = root.find(
+        ".//primitive[@id='{0}']/..".format(resource_name))
+
+    if resource_parent.tag in ['master', 'clone']:
+        return resource_parent.attrib['id']
+    else:
+        return resource_name
