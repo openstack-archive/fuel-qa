@@ -14,6 +14,7 @@
 from os.path import basename
 
 from proboscis.asserts import assert_equal, assert_true
+from proboscis import SkipTest
 from proboscis import test
 
 from fuelweb_test import logger
@@ -36,6 +37,9 @@ class ExamplePluginPostDeploy(TestBasic):
 
     def __init__(self):
         super(ExamplePluginPostDeploy, self).__init__()
+        if EXAMPLE_PLUGIN_V4_PATH is None:
+            raise SkipTest('EXAMPLE_PLUGIN_V4_PATH variable is not set')
+
         self.__primary_controller = None
         self.__controllers = None
         self.__cluster_id = None
