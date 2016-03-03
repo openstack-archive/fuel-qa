@@ -28,6 +28,8 @@ from fuelweb_test.helpers import utils
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
 from fuelweb_test.tests import base_test_case
+from fuelweb_test.helpers.exception \
+    import ExecuteOnRemoteUnexpectedExitCodeError
 
 
 @test(groups=["ubuntu_bootstrap_builder", "bvt_ubuntu_bootstrap"])
@@ -290,9 +292,9 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
                     "Bootstrap {0} was not deleted and still available: {1}"
                     .format(uuid, bootstrap_uuids))
 
-        assert_raises(error.DevopsCalledProcessError,
-                      self.env.fuel_bootstrap_actions.activate_bootstrap_image,
-                      uuid)
+        assert_true(ExecuteOnRemoteUnexpectedExitCodeError,
+                    self.env.fuel_bootstrap_actions.activate_bootstrap_image,
+                    uuid)
 
         assert_equal(2, len(bootstrap_uuids),
                      "Only two bootstrap images should be available, current"
