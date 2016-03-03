@@ -19,6 +19,7 @@ import time
 from proboscis import test
 from proboscis.asserts import assert_true
 
+from fuelweb_test.helpers.checkers import check_plugin_path_env
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import utils
 from fuelweb_test.helpers.common import Common
@@ -49,6 +50,12 @@ class ContrailPlugin(TestBasic):
     cluster_id = ''
 
     _pack_path = [CONTRAIL_PLUGIN_PACK_UB_PATH, CONTRAIL_PLUGIN_PACK_CEN_PATH]
+
+    def __init__(self):
+        super(ContrailPlugin, self).__init__()
+        check_plugin_path_env(var_name='CONTRAIL_PLUGIN_PATH')
+        check_plugin_path_env(var_name='CONTRAIL_PLUGIN_PACK_UB_PATH')
+        check_plugin_path_env(var_name='CONTRAIL_PLUGIN_PACK_CEN_PATH')
 
     def _upload_contrail_packages(self, remote):
         for pack in self._pack_path:

@@ -51,6 +51,10 @@ class SeparateRabbit(TestBasic):
         Snapshot separate_rabbit_service
         """
         self.check_run("separate_rabbit_service")
+        checkers.check_plugin_path_env(
+            var_name='SEPARATE_SERVICE_RABBIT_PLUGIN_PATH'
+        )
+
         self.env.revert_snapshot("ready_with_9_slaves")
 
         # copy plugins to the master node
