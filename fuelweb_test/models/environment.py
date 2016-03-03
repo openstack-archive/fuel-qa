@@ -45,6 +45,7 @@ from fuelweb_test.helpers import multiple_networks_hacks
 from fuelweb_test.models.fuel_web_client import FuelWebClient
 from fuelweb_test.models.collector_client import CollectorClient
 from fuelweb_test import settings
+from fuelweb_test.settings import iface_alias
 from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test import logwrap
 from fuelweb_test import logger
@@ -213,7 +214,7 @@ class EnvironmentModel(object):
             # CentOS 7 is pretty stable with admin iface.
             # TODO(akostrikov) add tests for menu items/kernel parameters
             # TODO(akostrikov) refactor it.
-            iface = 'enp0s3'
+            iface = iface_alias('eth0')
             if iso_connect_as == 'usb':
                 keys = (
                     "<Wait>\n"  # USB boot uses boot_menu=yes for master node
@@ -630,7 +631,7 @@ class EnvironmentModel(object):
     def dhcrelay_check(self):
         # CentOS 7 is pretty stable with admin iface.
         # TODO(akostrikov) refactor it.
-        iface = 'enp0s3'
+        iface = iface_alias('eth0')
         command = "dhcpcheck discover " \
                   "--ifaces {iface} " \
                   "--repeat 3 " \
