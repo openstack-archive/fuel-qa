@@ -21,6 +21,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import test
 
+from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import check_fuel_snapshot
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.eb_tables import Ebtables
@@ -30,6 +31,11 @@ from fuelweb_test.settings import MIRROR_UBUNTU
 from fuelweb_test.settings import NODE_VOLUME_SIZE
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
+from fuelweb_test.settings import SERVTEST_SAHARA_VANILLA_2_IMAGE
+from fuelweb_test.settings import SERVTEST_SAHARA_VANILLA_2_IMAGE_MD5
+from fuelweb_test.settings import SERVTEST_SAHARA_VANILLA_2_IMAGE_NAME
+from fuelweb_test.settings import SERVTEST_SAHARA_VANILLA_2_IMAGE_META
+from fuelweb_test.settings import SERVTEST_LOCAL_PATH
 from fuelweb_test.settings import iface_alias
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -430,6 +436,105 @@ class MultiroleComputeCinder(TestBasic):
 @test(groups=["multirole"])
 class MultiroleMultipleServices(TestBasic):
     """MultiroleMultipleServices."""  # TODO documentation
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["deploy_multiple_services_no_mirror"])
+    @log_snapshot_after_test
+    def deploy_multiple_services_no_mirror(self):
+        """Deploy cluster with multiple services without mirror
+
+        Scenario:
+            1. Revert snapshot 'prepare_slaves_5' with default set of mirrors
+            2. Create cluster with many components to check as many
+               packages are correct
+            3. Add nodes with multiple services to cluster
+            4. Deploy cluster
+            5. Check Sahara services
+            6. Check Sahara image
+            7. Upload Sahara image
+            8. Check running services with OSTF
+
+        Duration 90m
+        """
+        self.show_step(1)  # Revert snapshot
+        self.env.revert_snapshot('ready_with_5_slaves')
+
+        self.show_step(2)  # Create cluster with many components
+        data = {
+            'sahara': True,
+            'net_provider': 'neutron',
+            'net_segment_type': NEUTRON_SEGMENT['tun'],
+            'tenant': 'saharaHA',
+            'user': 'saharaHA',
+            'password': 'saharaHA'
+        }
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings=data
+        )
+        self.show_step(3)  # Add nodes with multiple services to cluster
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['compute'],
+                'slave-03': ['cinder'],
+                'slave-04': ['mongo'],
+                'slave-05': ['mongo']
+            }
+        )
+
+        self.show_step(4)  # Deploy cluster
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(5)  # Check Sahara services
+        cluster_vip = self.fuel_web.get_public_vip(cluster_id)
+        os_conn = os_actions.OpenStackActions(
+            cluster_vip, data['user'], data['password'], data['tenant'])
+        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
+
+        sahara_ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
+        # count = 1 + api_workers (from sahara.conf)
+        checkers.verify_service(sahara_ip, service_name='sahara-api', count=2)
+        # count = 2 * 1 (hardcoded by deployment team)
+        checkers.verify_service(sahara_ip,
+                                service_name='sahara-engine',
+                                count=2)
+
+        self.show_step(6)  # Check Sahara image
+        check_image = checkers.check_image(
+            SERVTEST_SAHARA_VANILLA_2_IMAGE,
+            SERVTEST_SAHARA_VANILLA_2_IMAGE_MD5,
+            SERVTEST_LOCAL_PATH)
+        assert_true(check_image)
+
+        self.show_step(7)  # Upload Sahara image
+        with open('{0}/{1}'.format(
+                SERVTEST_LOCAL_PATH,
+                SERVTEST_SAHARA_VANILLA_2_IMAGE)) as data:
+            os_conn.create_image(
+                name=SERVTEST_SAHARA_VANILLA_2_IMAGE_NAME,
+                properties=SERVTEST_SAHARA_VANILLA_2_IMAGE_META,
+                data=data,
+                is_public=True,
+                disk_format='qcow2',
+                container_format='bare')
+
+        self.show_step(8)  # Check running services with OSTF
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['ha', 'smoke', 'sanity']
+        )
+        path_to_tests = 'fuel_health.tests.sanity.test_sanity_sahara.'
+        test_names = ['VanillaTwoTemplatesTest.test_vanilla_two_templates',
+                      'HDPTwoTemplatesTest.test_hdp_two_templates']
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            tests_must_be_passed=[path_to_tests + test_name
+                                  for test_name in test_names]
+        )
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_multiple_services_local_mirror"])
