@@ -427,6 +427,59 @@ class MultiroleMultipleServices(TestBasic):
     """MultiroleMultipleServices."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["deploy_multiple_services_no_mirror"])
+    @log_snapshot_after_test
+    def deploy_multiple_services_no_mirror(self):
+        """Deploy cluster with multiple services without mirror
+
+        Scenario:
+            1. Revert snapshot 'prepare_slaves_5' with default set of mirrors
+            2. Create cluster with many components to check as many
+               packages are correct
+            3. Deploy cluster
+            4. Check running services with OSTF
+
+        Duration 90m
+        """
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot('ready_with_5_slaves')
+
+        self.show_step(2)
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                'net_provider': 'neutron',
+                'net_segment_type': NEUTRON_SEGMENT['tun'],
+                'sahara': True,
+                'ceilometer': True,
+                'volumes_lvm': True,
+                'volumes_ceph': False,
+                'images_ceph': True
+            }
+        )
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller', 'ceph-osd'],
+                'slave-02': ['compute', 'ceph-osd'],
+                'slave-03': ['cinder', 'ceph-osd'],
+                'slave-04': ['mongo'],
+                'slave-05': ['mongo']
+            }
+        )
+
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(3)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(4)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['ha', 'smoke', 'sanity', 'tests_platform'])
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_multiple_services_local_mirror"])
     @log_snapshot_after_test
     def deploy_multiple_services_local_mirror(self):
