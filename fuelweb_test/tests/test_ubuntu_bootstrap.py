@@ -15,7 +15,6 @@ import tempfile
 import textwrap
 
 from devops.helpers.helpers import wait
-from devops import error
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
@@ -28,6 +27,7 @@ from fuelweb_test.helpers import utils
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
 from fuelweb_test.tests import base_test_case
+from fuelweb_test.helpers.exceptions import UnexpectedExitCode
 
 
 @test(groups=["ubuntu_bootstrap_builder", "bvt_ubuntu_bootstrap"])
@@ -290,7 +290,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
                     "Bootstrap {0} was not deleted and still available: {1}"
                     .format(uuid, bootstrap_uuids))
 
-        assert_raises(error.DevopsCalledProcessError,
+        assert_raises(UnexpectedExitCode,
                       self.env.fuel_bootstrap_actions.activate_bootstrap_image,
                       uuid)
 
@@ -300,7 +300,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
 
         uuid = self.env.fuel_bootstrap_actions.get_active_bootstrap_uuid()
         assert_raises(
-            error.DevopsCalledProcessError,
+            UnexpectedExitCode,
             self.env.fuel_bootstrap_actions.delete_bootstrap_image,
             uuid)
 
