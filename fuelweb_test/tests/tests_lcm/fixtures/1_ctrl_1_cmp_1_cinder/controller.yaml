@@ -1,0 +1,441 @@
+roles:
+  controller
+tasks:
+  aodh:
+    no_puppet_run: true
+  aodh-db:
+    no_puppet_run: true
+  aodh-keystone:
+    no_puppet_run: true
+  apache: null
+  api-proxy: null
+  ceilometer-controller:
+    no_puppet_run: true
+  ceilometer-keystone:
+    no_puppet_run: true
+  ceilometer-radosgw-user:
+    no_puppet_run: true
+  ceph_create_pools:
+    no_puppet_run: true
+  ceph_ready_check:
+    type: shell
+  cgroups: null
+  cinder-db: null
+  cinder-keystone: null
+  clear_nodes_info:
+    type: shell
+  cluster-vrouter: null
+  cluster_health: null
+  connectivity_tests: null
+  conntrackd: null
+  controller_remaining_tasks: null
+  copy_haproxy_keys:
+    type: shell
+  copy_keys:
+    type: shell
+  copy_keys_ceph:
+    type: shell
+  create-cinder-types: null
+  disable_keystone_service_token: null
+  dns-client: null
+  dump_rabbitmq_definitions: null
+  enable_quorum:
+    type: shell
+  enable_rados:
+    no_puppet_run: true
+  firewall: null
+  fuel_pkgs: null
+  glance: null
+  glance-db: null
+  glance-keystone: null
+  globals: null
+  heat-db: null
+  heat-keystone: null
+  horizon: null
+  hosts: null
+  ironic-api:
+    no_puppet_run: true
+  ironic-compute:
+    no_puppet_run: true
+  ironic-db:
+    no_puppet_run: true
+  ironic-keystone:
+    no_puppet_run: true
+  ironic_post_swift_key:
+    type: shell
+  ironic_upload_images:
+    type: shell
+  keystone-db:
+    check:
+    - Anchor[mysql::client::end]
+    - Anchor[mysql::client::start]
+    - Filebucket[puppet]
+    - Mysql_database[keystone]
+    - Mysql_grant[keystone@%/keystone.*]
+    - Mysql_grant[keystone@127.0.0.1/keystone.*]
+    - Mysql_grant[keystone@localhost/keystone.*]
+    - Mysql_user[keystone@%]
+    - Mysql_user[keystone@127.0.0.1]
+    - Mysql_user[keystone@localhost]
+    - Package[mysql_client]
+    - Schedule[daily]
+    - Schedule[hourly]
+    - Schedule[monthly]
+    - Schedule[never]
+    - Schedule[puppet]
+    - Schedule[weekly]
+    skip:
+    - File[/root/.my.cnf]
+    - File[10.109.16.3-mysql-access]
+  logging: null
+  memcached: null
+  murano:
+    no_puppet_run: true
+  murano-cfapi:
+    no_puppet_run: true
+  murano-cfapi-keystone:
+    no_puppet_run: true
+  murano-db:
+    no_puppet_run: true
+  murano-keystone:
+    no_puppet_run: true
+  murano-rabbitmq:
+    no_puppet_run: true
+  netconfig:
+    check:
+    - Anchor[l23network::init]
+    - Anchor[l23network::l2::init]
+    - File[/etc/network/interfaces.d]
+    - File[/etc/network/interfaces]
+    - File[/etc/sysctl.conf]
+    - File[sysfs.d]
+    - Filebucket[puppet]
+    - K_mod[8021q]
+    - K_mod[bonding]
+    - K_mod[bridge]
+    - K_mod[openvswitch]
+    - L2_bridge[br-floating]
+    - L2_port[enp0s6.103]
+    - L3_ifconfig[br-ex]
+    - L3_ifconfig[br-fw-admin]
+    - L3_ifconfig[br-mesh]
+    - L3_ifconfig[br-mgmt]
+    - L3_ifconfig[br-storage]
+    - Package[bridge-utils]
+    - Package[ethtool]
+    - Package[ifenslave]
+    - Package[iputils-arping]
+    - Package[irqbalance]
+    - Package[network-manager]
+    - Package[openvswitch-common]
+    - Package[openvswitch-datapath]
+    - Package[sysfsutils]
+    - Package[vlan]
+    - Ping_host[10.109.18.1]
+    - Schedule[daily]
+    - Schedule[hourly]
+    - Schedule[monthly]
+    - Schedule[never]
+    - Schedule[puppet]
+    - Schedule[weekly]
+    - Service[openvswitch-service]
+    - Sysctl[net.core.netdev_max_backlog]
+    - Sysctl[net.ipv4.conf.all.arp_accept]
+    - Sysctl[net.ipv4.conf.default.arp_accept]
+    - Sysctl[net.ipv4.tcp_keepalive_intvl]
+    - Sysctl[net.ipv4.tcp_keepalive_probes]
+    - Sysctl[net.ipv4.tcp_keepalive_time]
+    - Sysctl[net.ipv4.tcp_retries2]
+    - Sysctl_runtime[net.core.netdev_max_backlog]
+    - Sysctl_runtime[net.ipv4.conf.all.arp_accept]
+    - Sysctl_runtime[net.ipv4.conf.default.arp_accept]
+    - Sysctl_runtime[net.ipv4.tcp_keepalive_intvl]
+    - Sysctl_runtime[net.ipv4.tcp_keepalive_probes]
+    - Sysctl_runtime[net.ipv4.tcp_keepalive_time]
+    - Sysctl_runtime[net.ipv4.tcp_retries2]
+    skip:
+    - Disable_hotplug[global]
+    - Enable_hotplug[global]
+    - Exec[wait-for-interfaces]
+    - L23_stored_config[br-ex]
+    - L23_stored_config[br-floating]
+    - L23_stored_config[br-fw-admin]
+    - L23_stored_config[br-mesh]
+    - L23_stored_config[br-mgmt]
+    - L23_stored_config[br-storage]
+    - L23_stored_config[enp0s3]
+    - L23_stored_config[enp0s4]
+    - L23_stored_config[enp0s5]
+    - L23_stored_config[enp0s6.103]
+    - L23_stored_config[enp0s6]
+    - L23_stored_config[enp0s7]
+    - L23_stored_config[p_ff798dba-0]
+    - L2_bridge[br-ex]
+    - L2_bridge[br-fw-admin]
+    - L2_bridge[br-mesh]
+    - L2_bridge[br-mgmt]
+    - L2_bridge[br-storage]
+    - L2_patch[patch__br-ex--br-floating]
+    - L2_port[enp0s3]
+    - L2_port[enp0s4]
+    - L2_port[enp0s5]
+    - L2_port[enp0s6]
+    - L2_port[enp0s7]
+    - L3_clear_route[default]
+    - L3_ifconfig[br-floating]
+    - Notify[SDN]
+    - Service[irqbalance]
+    - Service[sysfsutils]
+    - Sysfs_config_value[rps_cpus]
+    - Sysfs_config_value[xps_cpus]
+  neutron-db: null
+  neutron-keystone: null
+  nova-db: null
+  nova-keystone: null
+  ntp-check: null
+  ntp-server: null
+  openstack-cinder:
+    check:
+    - Anchor[cinder-start]
+    - Cinder_api_paste_ini[filter:ratelimit/limits]
+    - Cinder_api_paste_ini[filter:ratelimit/paste.filter_factory]
+    - Cinder_config[DEFAULT/api_paste_config]
+    - Cinder_config[DEFAULT/auth_strategy]
+    - Cinder_config[DEFAULT/control_exchange]
+    - Cinder_config[DEFAULT/debug]
+    - Cinder_config[DEFAULT/default_availability_zone]
+    - Cinder_config[DEFAULT/default_log_levels]
+    - Cinder_config[DEFAULT/default_volume_type]
+    - Cinder_config[DEFAULT/enable_v1_api]
+    - Cinder_config[DEFAULT/enable_v2_api]
+    - Cinder_config[DEFAULT/fatal_deprecations]
+    - Cinder_config[DEFAULT/glance_api_insecure]
+    - Cinder_config[DEFAULT/glance_api_servers]
+    - Cinder_config[DEFAULT/glance_api_ssl_compression]
+    - Cinder_config[DEFAULT/glance_api_version]
+    - Cinder_config[DEFAULT/glance_num_retries]
+    - Cinder_config[DEFAULT/glance_request_timeout]
+    - Cinder_config[DEFAULT/host]
+    - Cinder_config[DEFAULT/image_conversion_dir]
+    - Cinder_config[DEFAULT/instance_format]
+    - Cinder_config[DEFAULT/instance_uuid_format]
+    - Cinder_config[DEFAULT/kombu_reconnect_delay]
+    - Cinder_config[DEFAULT/log_config_append]
+    - Cinder_config[DEFAULT/log_date_format]
+    - Cinder_config[DEFAULT/log_dir]
+    - Cinder_config[DEFAULT/logging_context_format_string]
+    - Cinder_config[DEFAULT/logging_debug_format_suffix]
+    - Cinder_config[DEFAULT/logging_default_format_string]
+    - Cinder_config[DEFAULT/logging_exception_prefix]
+    - Cinder_config[DEFAULT/notification_driver]
+    - Cinder_config[DEFAULT/nova_catalog_admin_info]
+    - Cinder_config[DEFAULT/nova_catalog_info]
+    - Cinder_config[DEFAULT/os_privileged_user_auth_url]
+    - Cinder_config[DEFAULT/os_privileged_user_name]
+    - Cinder_config[DEFAULT/os_privileged_user_password]
+    - Cinder_config[DEFAULT/os_privileged_user_tenant]
+    - Cinder_config[DEFAULT/os_region_name]
+    - Cinder_config[DEFAULT/osapi_volume_listen]
+    - Cinder_config[DEFAULT/osapi_volume_workers]
+    - Cinder_config[DEFAULT/publish_errors]
+    - Cinder_config[DEFAULT/report_interval]
+    - Cinder_config[DEFAULT/rpc_backend]
+    - Cinder_config[DEFAULT/scheduler_default_filters]
+    - Cinder_config[DEFAULT/scheduler_driver]
+    - Cinder_config[DEFAULT/service_down_time]
+    - Cinder_config[DEFAULT/ssl_ca_file]
+    - Cinder_config[DEFAULT/ssl_cert_file]
+    - Cinder_config[DEFAULT/ssl_key_file]
+    - Cinder_config[DEFAULT/storage_availability_zone]
+    - Cinder_config[DEFAULT/syslog_log_facility]
+    - Cinder_config[DEFAULT/use_stderr]
+    - Cinder_config[DEFAULT/use_syslog]
+    - Cinder_config[DEFAULT/use_syslog_rfc_format]
+    - Cinder_config[DEFAULT/verbose]
+    - Cinder_config[database/connection]
+    - Cinder_config[database/idle_timeout]
+    - Cinder_config[database/max_overflow]
+    - Cinder_config[database/max_pool_size]
+    - Cinder_config[database/max_retries]
+    - Cinder_config[database/min_pool_size]
+    - Cinder_config[database/retry_interval]
+    - Cinder_config[keymgr/encryption_auth_url]
+    - Cinder_config[keystone_authtoken/admin_password]
+    - Cinder_config[keystone_authtoken/admin_tenant_name]
+    - Cinder_config[keystone_authtoken/admin_user]
+    - Cinder_config[keystone_authtoken/auth_uri]
+    - Cinder_config[keystone_authtoken/identity_uri]
+    - Cinder_config[keystone_authtoken/signing_dir]
+    - Cinder_config[keystone_authtoken/signing_dirname]
+    - Cinder_config[oslo_concurrency/lock_path]
+    - Cinder_config[oslo_messaging_rabbit/amqp_durable_queues]
+    - Cinder_config[oslo_messaging_rabbit/heartbeat_rate]
+    - Cinder_config[oslo_messaging_rabbit/heartbeat_timeout_threshold]
+    - Cinder_config[oslo_messaging_rabbit/kombu_reconnect_delay]
+    - Cinder_config[oslo_messaging_rabbit/kombu_ssl_ca_certs]
+    - Cinder_config[oslo_messaging_rabbit/kombu_ssl_certfile]
+    - Cinder_config[oslo_messaging_rabbit/kombu_ssl_keyfile]
+    - Cinder_config[oslo_messaging_rabbit/kombu_ssl_version]
+    - Cinder_config[oslo_messaging_rabbit/rabbit_ha_queues]
+    - Cinder_config[oslo_messaging_rabbit/rabbit_host]
+    - Cinder_config[oslo_messaging_rabbit/rabbit_hosts]
+    - Cinder_config[oslo_messaging_rabbit/rabbit_password]
+    - Cinder_config[oslo_messaging_rabbit/rabbit_port]
+    - Cinder_config[oslo_messaging_rabbit/rabbit_use_ssl]
+    - Cinder_config[oslo_messaging_rabbit/rabbit_userid]
+    - Cinder_config[oslo_messaging_rabbit/rabbit_virtual_host]
+    - Exec[cinder-manage db_sync]
+    - Filebucket[puppet]
+    - Package[cinder-api]
+    - Package[cinder-scheduler]
+    - Package[cinder]
+    - Package[python-mysqldb]
+    - Schedule[daily]
+    - Schedule[hourly]
+    - Schedule[monthly]
+    - Schedule[never]
+    - Schedule[puppet]
+    - Schedule[weekly]
+    - Service[cinder-api]
+    - Service[cinder-scheduler]
+    skip:
+    - Exec[remove-policy-rc.d]
+    - File[create-policy-rc.d]
+  openstack-haproxy: null
+  openstack-haproxy-aodh: null
+  openstack-haproxy-ceilometer: null
+  openstack-haproxy-cinder: null
+  openstack-haproxy-glance: null
+  openstack-haproxy-heat: null
+  openstack-haproxy-horizon: null
+  openstack-haproxy-ironic:
+    no_puppet_run: true
+  openstack-haproxy-keystone: null
+  openstack-haproxy-murano: null
+  openstack-haproxy-mysqld: null
+  openstack-haproxy-neutron: null
+  openstack-haproxy-nova: null
+  openstack-haproxy-radosgw: null
+  openstack-haproxy-sahara: null
+  openstack-haproxy-stats: null
+  openstack-haproxy-swift: null
+  openstack-network-common-config: null
+  openstack-network-end:
+    type: shell
+  openstack-network-networks: null
+  openstack-network-routers: null
+  openstack-network-routers-ha:
+    no_puppet_run: true
+  openstack-network-server-config: null
+  openstack-network-server-nova: null
+  openstack-network-start:
+    type: shell
+  override_configuration: null
+  primary-ceph-mon: null
+  primary-ceph-radosgw: null
+  primary-cluster: null
+  primary-cluster-haproxy: null
+  primary-database:
+    check:
+    - Anchor[mysql::server::end]
+    - Anchor[mysql::server::start]
+    - Augeas[galeracheck]
+    - Cs_resource[p_mysqld]
+    - Exec[clean_up_ubuntu]
+    - Exec[create-init-file]
+    - Exec[mysql_install_db]
+    - Exec[remove install pass]
+    - Exec[rm-init-file]
+    - Exec[wait-initial-sync]
+    - File[/etc/mysql/conf.d/wsrep.cnf]
+    - File[/etc/mysql/conf.d]
+    - File[/etc/mysql/debian.cnf]
+    - File[/etc/wsrepclustercheckrc]
+    - File[/etc/xinetd.conf]
+    - File[/etc/xinetd.d/galeracheck]
+    - File[/etc/xinetd.d]
+    - File[/var/log/mysql/error.log]
+    - File[/var/run/mysqld]
+    - File[localhost-mysql-access]
+    - File[mysql-config-file]
+    - Filebucket[puppet]
+    - Haproxy_backend_status[mysql]
+    - Mysql_grant[clustercheck@10.109.16.4/*.*]
+    - Mysql_grant[root@10.109.16.0/255.255.255.0/*.*]
+    - Mysql_grant[root@240.0.0.0/255.255.0.0/*.*]
+    - Mysql_user[clustercheck@10.109.16.4]
+    - Mysql_user[root@10.109.16.0/255.255.255.0]
+    - Mysql_user[root@240.0.0.0/255.255.0.0]
+    - Mysql_user[root@localhost]
+    - Package[galera-3]
+    - Package[mysql-server]
+    - Package[percona-xtrabackup]
+    - Package[xinetd]
+    - Schedule[daily]
+    - Schedule[hourly]
+    - Schedule[monthly]
+    - Schedule[never]
+    - Schedule[puppet]
+    - Schedule[weekly]
+    - Service[mysqld]
+    - Service[xinetd]
+    skip:
+    - Exec[create /root/.my.cnf]
+    - File[/root/.my.cnf]
+  primary-dns-server: null
+  primary-heat: null
+  primary-keystone: null
+  primary-openstack-controller: null
+  primary-openstack-network-agents-dhcp: null
+  primary-openstack-network-agents-l3: null
+  primary-openstack-network-agents-metadata: null
+  primary-openstack-network-plugins-l2: null
+  primary-rabbitmq: null
+  primary-swift: null
+  public_vip_ping:
+    check:
+    - Cs_resource[ping_vip__public]
+    - Filebucket[puppet]
+    - Schedule[daily]
+    - Schedule[hourly]
+    - Schedule[monthly]
+    - Schedule[never]
+    - Schedule[puppet]
+    - Schedule[weekly]
+    - Service[ping_vip__public]
+    skip:
+    - Cs_rsc_location[loc_ping_vip__public]
+  reboot_provisioned_nodes:
+    type: shell
+  reserved_ports: null
+  rsync_core_puppet:
+    type: shell
+  sahara:
+    no_puppet_run: true
+  sahara-db:
+    no_puppet_run: true
+  sahara-keystone:
+    no_puppet_run: true
+  setup_repositories: null
+  ssl-add-trust-chain: null
+  ssl-dns-setup: null
+  ssl-keys-saving: null
+  swift-keystone: null
+  swift-rebalance-cron: null
+  sync_time:
+    type: shell
+  tools: null
+  umm: null
+  update_hosts: null
+  updatedb:
+    no_puppet_run: true
+  upload_cirros:
+    type: shell
+  upload_nodes_info:
+    type: shell
+  vcenter_compute_zones_create:
+    type: shell
+  virtual_ips: null
+  vmware-vcenter:
+    no_puppet_run: true
+  workloads_collector_add: null
