@@ -949,3 +949,138 @@ class RhHAOneControllerMigration(RhBase):
                                test_sets=['smoke', 'sanity'])
 
         self.env.make_snapshot("ready_ha_one_controller_with_rh_computes")
+
+
+@test(groups=['rh', 'rh.failover_group'])
+class RHFailoverGroup(RhBase):
+    """Failover tests for RH-based computes"""
+
+    @test(depends_on_groups=['deploy_rh_compute_ha_one_controller_tun'],
+          groups=['check_rh_warm_reboot'])
+    @log_snapshot_after_test
+    def check_rh_warm_reboot(self):
+        """Check that resumed VM is working properly after warm reboot of
+        RH-based compute
+
+        Scenario:
+            1. Revert environment with 1 controller nodes, 1 RH-based
+            compute and cinder-role.
+            2. Boot VM on compute and check its connectivity via floating ip.
+            3. Warm reboot RH-based compute.
+            4. Verify VM connectivity via floating ip after successful reboot
+            and VM resume action.
+
+        Duration 20m
+        Snapshot check_rh_warm_reboot
+        """
+
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot('ready_ha_one_controller_with_rh_compute')
+
+        self.show_step(2)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, roles=('controller',))
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+        asserts.assert_equal(len(controllers), 1,
+                             'Environment does not have 1 controller node, '
+                             'found {} nodes!'.format(len(controllers)))
+        compute = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute'])[0]
+        target_node = self.fuel_web.get_devops_node_by_nailgun_node(
+            compute)
+        net_label = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+        vm = os_conn.create_server_for_migration(
+            neutron=True, label=net_label)
+        vm_floating_ip = os_conn.assign_floating_ip(vm)
+        try:
+            wait(lambda: tcp_ping(vm_floating_ip.ip, 22), timeout=120)
+        except TimeoutError:
+            raise TimeoutError('Can not ping instance'
+                               ' by floating ip {0}'.format(vm_floating_ip.ip))
+        self.show_step(3)
+        self.warm_restart_nodes([target_node])
+        self.show_step(4)
+        asserts.assert_equal(
+            self.get_instance_detail(vm).status, "STOPPED",
+            "Instance did not reach stopped state after compute restart, "
+            "current state is {0}".format(self.get_instance_detail(vm).status))
+        vm = os_conn.start_server(vm, timeout=120)
+        try:
+            wait(lambda: tcp_ping(vm_floating_ip.ip, 22), timeout=120)
+        except TimeoutError:
+            raise TimeoutError('Can not ping instance'
+                               ' by floating ip {0}'.format(vm_floating_ip.ip))
+        os_conn.delete_instance(vm)
+        os_conn.verify_srv_deleted(vm)
+
+    @test(depends_on_groups=['deploy_rh_compute_ha_one_controller_tun'],
+          groups=['check_rh_hard_reboot'])
+    @log_snapshot_after_test
+    def check_rh_hard_reboot(self):
+        """Check that resumed VM is working properly after warm reboot of
+        RH-based compute
+
+        Scenario:
+            1. Revert environment with 1 controller nodes, 1 RH-based
+            compute and cinder-role.
+            2. Boot VM on compute and check its connectivity via floating ip.
+            3. Hard reboot RH-based compute.
+            4. Verify VM connectivity via floating ip after successful reboot
+            and VM resume action.
+
+        Duration 20m
+        Snapshot check_rh_hard_reboot
+        """
+
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot('ready_ha_one_controller_with_rh_compute')
+
+        self.show_step(2)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, roles=('controller',))
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+        asserts.assert_equal(len(controllers), 1,
+                             'Environment does not have 1 controller node, '
+                             'found {} nodes!'.format(len(controllers)))
+        compute = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute'])[0]
+        target_node = self.fuel_web.get_devops_node_by_nailgun_node(
+            compute)
+        target_node_ip = self.fuel_web.get_node_ip_by_devops_name(
+            target_node.name)
+        net_label = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+        vm = os_conn.create_server_for_migration(
+            neutron=True, label=net_label)
+        vm_floating_ip = os_conn.assign_floating_ip(vm)
+        try:
+            wait(lambda: tcp_ping(vm_floating_ip.ip, 22), timeout=120)
+        except TimeoutError:
+            raise TimeoutError('Can not ping instance'
+                               ' by floating ip {0}'.format(vm_floating_ip.ip))
+        self.show_step(3)
+        target_node.destroy()
+        asserts.assert_false(target_node.driver.node_active(node=target_node),
+                             'Target node still active')
+        target_node.start()
+        asserts.assert_true(target_node.driver.node_active(node=target_node),
+                            'Target node did not start')
+        self.wait_for_slave_provision(target_node_ip)
+        self.show_step(4)
+        asserts.assert_equal(
+            self.get_instance_detail(vm).status, "STOPPED",
+            "Instance did not reach stopped state after compute restart, "
+            "current state is {0}".format(self.get_instance_detail(vm).status))
+        vm = os_conn.start_server(vm, timeout=120)
+        try:
+            wait(lambda: tcp_ping(vm_floating_ip.ip, 22), timeout=120)
+        except TimeoutError:
+            raise TimeoutError('Can not ping instance'
+                               ' by floating ip {0}'.format(vm_floating_ip.ip))
+        os_conn.delete_instance(vm)
+        os_conn.verify_srv_deleted(vm)
