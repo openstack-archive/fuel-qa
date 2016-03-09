@@ -389,15 +389,16 @@ class UbuntuBootstrap(base_test_case.TestBasic):
             1. Create cluster in Ha mode with 1 controller
             2. Add 1 node with controller role
             3. Add 1 node with compute role
-            4. Verify network
-            5. Deploy cluster
-            6. Build and activate new bootstrap image
-            7. Stop deployment
-            8. Verify bootstrap on slaves
-            9. Add 1 node with cinder role
-            10. Re-deploy cluster
-            11. Verify network
-            12. Run OSTF
+            4. Add 1 node with cinder role
+            5. Verify network
+            6. Provision nodes
+            7. Make a test file on every node
+            8. Deploy nodes
+            9. Stop deployment
+            10. Verify nodes are not reset to bootstrap image
+            11. Re-deploy cluster
+            12. Verify network
+            13. Run OSTF
 
         Duration 45m
         Snapshot: deploy_stop_on_deploying_ubuntu_bootstrap
@@ -405,6 +406,21 @@ class UbuntuBootstrap(base_test_case.TestBasic):
 
         if not self.env.revert_snapshot('ready_with_3_slaves'):
             raise SkipTest()
+
+        def check_node(remote, ip):
+            cmd = 'grep bootstrap /etc/hostname'
+            err_msg = "Node with ip {:s} was reset to bootstrap".format(ip)
+            remote(ip, cmd, err_msg=err_msg, assert_ec_equal=[1])
+            cmd = 'grep test ~/test'
+            remote(ip, cmd, err_msg=err_msg, assert_ec_equal=[0])
+
+        def make_test_file(remote, ip):
+            cmd = 'echo test >> ~/test'
+            remote(ip, cmd)
+
+        self.show_step(step=1, initialize=True)
+
+        executor = self.ssh_manager.execute_on_remote
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -415,53 +431,53 @@ class UbuntuBootstrap(base_test_case.TestBasic):
                 'password': 'stop_deploy',
             }
         )
+        self.show_step(2)
+        self.show_step(3)
+        self.show_step(4)
         self.fuel_web.update_nodes(
             cluster_id,
             {
                 'slave-01': ['controller'],
-                'slave-02': ['compute']
-            }
-        )
-        # Network verification
-        self.fuel_web.verify_network(cluster_id)
-
-        # Deploy cluster and stop deployment, then verify bootstrap on slaves
-        self.fuel_web.provisioning_cluster_wait(cluster_id)
-
-        # Build another bootstrap image
-        uuid, _ = self.env.\
-            fuel_bootstrap_actions.build_bootstrap_image(activate=True)
-
-        self.fuel_web.deploy_task_wait(cluster_id=cluster_id, progress=10)
-        self.fuel_web.stop_deployment_wait(cluster_id)
-
-        self.fuel_web.wait_nodes_get_online_state(
-            self.env.d_env.get_nodes(name__in=['slave-01', 'slave-02']),
-            timeout=10 * 60)
-
-        # Verify new bootstrap image on affected nodes
-        nodes = self.env.d_env.get_nodes(
-            name__in=["slave-01", "slave-02"])
-        for node in nodes:
-            _ip = self.fuel_web.get_nailgun_node_by_devops_node(node)['ip']
-            checkers.verify_bootstrap_on_node(_ip, os_type="ubuntu", uuid=uuid)
-
-        # Network verification
-        self.fuel_web.verify_network(cluster_id)
-
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {
+                'slave-02': ['compute'],
                 'slave-03': ['cinder']
             }
         )
 
+        self.show_step(5)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(6)
+        self.fuel_web.provisioning_cluster_wait(cluster_id)
+
+        self.show_step(7)
+        nodes_ips = [
+            self.fuel_web.get_nailgun_node_by_devops_node(node)['ip']
+            for node in self.env.d_env.get_nodes(
+                name__in=['slave-01', 'slave-02', 'slave-03'])]
+
+        for _ip in nodes_ips:
+            make_test_file(executor, _ip)
+
+        self.show_step(8)
+        self.fuel_web.deploy_task_wait(cluster_id=cluster_id, progress=30)
+
+        self.show_step(9)
+        self.fuel_web.stop_deployment_wait(cluster_id)
+
+        self.show_step(10)
+        for _ip in nodes_ips:
+            check_node(executor, _ip)
+
+        self.show_step(11)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         assert_equal(
             3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
 
-        # Run ostf
+        self.show_step(12)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(13)
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['smoke'])
 
