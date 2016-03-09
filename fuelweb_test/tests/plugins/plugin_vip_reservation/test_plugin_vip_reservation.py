@@ -133,7 +133,7 @@ class VipReservation(TestBasic):
                 vip_db = self.env.postgres_actions.run_query(
                     db='nailgun',
                     query="select ip_addr from ip_addrs where "
-                          "vip_type = '\"'\"'{0}'\"'\"';".format(vip))
+                          "vip_name = '\"'\"'{0}'\"'\"';".format(vip))
                 vip_array = [vip_hiera, vip_db]
                 for ip in vip_array[1:]:
                     asserts.assert_equal(
@@ -263,17 +263,17 @@ class VipReservation(TestBasic):
                 vip_db = self.env.postgres_actions.run_query(
                     db='nailgun',
                     query="select ip_addr from ip_addrs where "
-                          "vip_type = '\"'\"'{0}'\"'\"';".format(vip))
-                # get vips from pacemaker
-                vip_pcs = remote.execute(
-                    'pcs resource show {0}{1}'.format(
-                        'vip__', vip))['stdout'][1].split(' ')[6].split('=')[1]
+                          "vip_name = '\"'\"'{0}'\"'\"';".format(vip))
+                # get vips from corosync
+                vip_crm = remote.execute(
+                    'crm_resource --resource {0}{1} --get-parameter=ip'.format(
+                        'vip__', vip))['stdout'][0].rstrip()
                 # fet vips from namespace
                 vip_ns = remote.execute(
                     'ip netns exec {0} ip -4 a show {1}{2}'.format(
                         namespace, 'b_',
                         vip))['stdout'][1].split(' ')[5].split('/')[0]
-                vip_array = [vip_hiera, vip_db, vip_pcs, vip_ns]
+                vip_array = [vip_hiera, vip_db, vip_crm, vip_ns]
                 for ip in vip_array[1:]:
                     asserts.assert_equal(
                         vip_array[0], ip,
@@ -391,17 +391,17 @@ class VipReservation(TestBasic):
                 vip_db = self.env.postgres_actions.run_query(
                     db='nailgun',
                     query="select ip_addr from ip_addrs where "
-                          "vip_type = '\"'\"'{0}'\"'\"';".format(vip))
-                # get vips from pacemaker
-                vip_pcs = remote.execute(
-                    'pcs resource show {0}{1}'.format(
-                        'vip__', vip))['stdout'][1].split(' ')[6].split('=')[1]
+                          "vip_name = '\"'\"'{0}'\"'\"';".format(vip))
+                # get vips from corosync
+                vip_crm = remote.execute(
+                    'crm_resource --resource {0}{1} --get-parameter=ip'.format(
+                        'vip__', vip))['stdout'][0].rstrip()
                 # get vips from namespace
                 vip_ns = remote.execute(
                     'ip netns exec {0} ip -4 a show {1}{2}'.format(
                         namespace, 'b_',
                         vip))['stdout'][1].split(' ')[5].split('/')[0]
-                vip_array = [vip_hiera, vip_db, vip_pcs, vip_ns]
+                vip_array = [vip_hiera, vip_db, vip_crm, vip_ns]
                 for ip in vip_array[1:]:
                     asserts.assert_equal(
                         vip_array[0], ip,
