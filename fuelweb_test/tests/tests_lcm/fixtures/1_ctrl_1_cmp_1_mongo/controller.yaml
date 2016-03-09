@@ -1,0 +1,182 @@
+roles:
+  controller
+tasks:
+  allocate_hugepages:
+    skip:
+    - Service[sysfsutils]
+  aodh: null
+  aodh-db: null
+  aodh-keystone: null
+  apache: null
+  api-proxy: null
+  ceilometer-controller: null
+  ceilometer-keystone: null
+  ceilometer-radosgw-user:
+    no_puppet_run: true
+  ceph_create_pools:
+    no_puppet_run: true
+  ceph_ready_check:
+    type: shell
+  cgroups: null
+  cinder-db: null
+  cinder-keystone: null
+  clear_nodes_info:
+    type: shell
+  cluster-vrouter: null
+  cluster_health: null
+  connectivity_tests: null
+  conntrackd: null
+  controller_remaining_tasks: null
+  copy_haproxy_keys:
+    type: copy_files
+  copy_keys:
+    type: copy_files
+  copy_keys_ceph:
+    type: copy_files
+  create-cinder-types: null
+  disable_keystone_service_token: null
+  dns-client: null
+  dump_rabbitmq_definitions: null
+  enable_quorum:
+    type: shell
+  enable_rados:
+    no_puppet_run: true
+  firewall: null
+  fuel_pkgs: null
+  glance: null
+  glance-db: null
+  glance-keystone: null
+  globals: null
+  heat-db: null
+  heat-keystone: null
+  horizon: null
+  hosts: null
+  ironic-api:
+    no_puppet_run: true
+  ironic-compute:
+    no_puppet_run: true
+  ironic-db:
+    no_puppet_run: true
+  ironic-keystone:
+    no_puppet_run: true
+  ironic_post_swift_key:
+    type: shell
+  ironic_upload_images:
+    type: shell
+  keystone-db:
+    skip:
+    - File[/root/.my.cnf]
+  logging: null
+  memcached: null
+  murano:
+    no_puppet_run: true
+  murano-cfapi:
+    no_puppet_run: true
+  murano-cfapi-keystone:
+    no_puppet_run: true
+  murano-db:
+    no_puppet_run: true
+  murano-keystone:
+    no_puppet_run: true
+  murano-rabbitmq:
+    no_puppet_run: true
+  neutron-db: null
+  neutron-keystone: null
+  nova-db: null
+  nova-keystone: null
+  ntp-check: null
+  ntp-server: null
+  openrc-delete:
+    skip:
+    - File[/root/openrc]
+  openstack-cinder: null
+  openstack-haproxy: null
+  openstack-haproxy-aodh: null
+  openstack-haproxy-ceilometer: null
+  openstack-haproxy-cinder: null
+  openstack-haproxy-glance: null
+  openstack-haproxy-heat: null
+  openstack-haproxy-horizon: null
+  openstack-haproxy-ironic:
+    no_puppet_run: true
+  openstack-haproxy-keystone: null
+  openstack-haproxy-murano: null
+  openstack-haproxy-mysqld:
+    skip:
+    - Pcmk_colocation[ntp-with-vrouter-ns]
+    - File[ocf_handler_ntp]
+    - Service[ntp]
+    - File[/etc/ntp.conf]
+    - Pcmk_resource[p_ntp]
+  openstack-haproxy-neutron: null
+  openstack-haproxy-nova: null
+  openstack-haproxy-radosgw: null
+  openstack-haproxy-sahara: null
+  openstack-haproxy-stats: null
+  openstack-haproxy-swift: null
+  openstack-network-common-config: null
+  openstack-network-end:
+    type: skipped
+  openstack-network-networks: null
+  openstack-network-routers: null
+  openstack-network-routers-ha:
+    no_puppet_run: true
+  openstack-network-server-config: null
+  openstack-network-server-nova: null
+  openstack-network-start:
+    type: skipped
+  override_configuration: null
+  primary-ceph-mon: null
+  primary-ceph-radosgw: null
+  primary-cluster: null
+  primary-cluster-haproxy: null
+  primary-database:
+    skip:
+    - File[/root/.my.cnf]
+  primary-dns-server: null
+  primary-heat: null
+  primary-keystone: null
+  primary-openstack-controller: null
+  primary-openstack-network-agents-dhcp: null
+  primary-openstack-network-agents-l3: null
+  primary-openstack-network-agents-metadata: null
+  primary-openstack-network-plugins-l2: null
+  primary-rabbitmq: null
+  primary-swift: null
+  public_vip_ping: null
+  reserved_ports: null
+  rsync_core_puppet:
+    type: sync
+  sahara:
+    no_puppet_run: true
+  sahara-db:
+    no_puppet_run: true
+  sahara-keystone:
+    no_puppet_run: true
+  setup_repositories: null
+  ssl-add-trust-chain:
+    no_puppet_run: true
+  ssl-dns-setup: null
+  ssl-keys-saving:
+    no_puppet_run: true
+  swift-keystone: null
+  swift-rebalance-cron: null
+  sync_time:
+    type: shell
+  tools: null
+  umm: null
+  update_hosts: null
+  updatedb:
+    no_puppet_run: true
+  upload_cirros:
+    type: shell
+  upload_nodes_info:
+    type: upload_file
+  upload_provision_data:
+    type: false
+  vcenter_compute_zones_create:
+    type: shell
+  virtual_ips: null
+  vmware-vcenter:
+    no_puppet_run: true
+  workloads_collector_add: null
