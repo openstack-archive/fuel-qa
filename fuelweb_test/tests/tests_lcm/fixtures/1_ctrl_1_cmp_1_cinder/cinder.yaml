@@ -1,0 +1,42 @@
+roles:
+  cinder
+tasks:
+-  allocate_hugepages: null
+-  cgroups: null
+-  clear_nodes_info:
+     type: shell
+-  configuration_symlink: null
+-  connectivity_tests: null
+-  copy_haproxy_keys:
+     type: copy_files
+-  copy_keys:
+     type: copy_files
+-  copy_keys_ceph:
+     type: copy_files
+-  dns-client: null
+-  enable_cinder_volume_service: null
+-  firewall: null
+-  fuel_pkgs: null
+-  globals: null
+-  hosts: null
+-  logging: null
+-  ntp-client: null
+-  override_configuration: null
+-  reserved_ports: null
+-  rsync_core_puppet:
+     type: sync
+-  setup_repositories: null
+-  ssl-add-trust-chain: null
+-  ssl-keys-saving: null
+-  sync_time:
+     type: shell
+-  tools: null
+-  top-role-cinder:
+     skip:
+     - Service[cinder-volume]
+-  upload_configuration: null
+-  update_hosts: null
+-  upload_nodes_info:
+     type: upload_file
+-  upload_provision_data:
+     type: false
