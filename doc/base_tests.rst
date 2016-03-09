@@ -337,6 +337,16 @@ Test Daemon Resource Allocation Control
 .. automodule:: fuelweb_test.tests.test_cgroups
   :members:
 
+Test LCM base
+-------------
+.. automodule:: fuelweb_test.tests.tests_lcm.base_lcm_test
+  :members:
+
+Test task idempotency
+---------------------
+.. automodule:: fuelweb_test.tests.tests_lcm.test_idempotency
+  :members:
+
 Gating tests
 ============
 
