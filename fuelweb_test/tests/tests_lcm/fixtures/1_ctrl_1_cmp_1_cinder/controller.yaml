@@ -1,0 +1,189 @@
+roles:
+  controller
+tasks:
+-  allocate_hugepages: null
+-  aodh:
+     no_puppet_run: true
+-  aodh-db:
+     no_puppet_run: true
+-  aodh-keystone:
+     no_puppet_run: true
+-  apache: null
+-  api-proxy: null
+-  ceilometer-controller:
+     no_puppet_run: true
+-  ceilometer-keystone:
+     no_puppet_run: true
+-  ceilometer-radosgw-user:
+     no_puppet_run: true
+-  ceph_create_pools:
+     no_puppet_run: true
+-  ceph_ready_check:
+     type: shell
+-  cgroups: null
+-  cinder-db: null
+-  cinder-keystone: null
+-  clear_nodes_info:
+     type: shell
+-  cluster-vrouter: null
+-  cluster_health: null
+-  configuration_symlink: null
+-  connectivity_tests: null
+-  conntrackd: null
+-  controller_remaining_tasks: null
+-  copy_haproxy_keys:
+     type: shell
+-  copy_keys:
+     type: shell
+-  copy_keys_ceph:
+     type: shell
+-  create-cinder-types: null
+-  disable_keystone_service_token: null
+-  dns-client: null
+-  dump_rabbitmq_definitions: null
+-  enable_quorum:
+     type: shell
+-  enable_rados:
+     no_puppet_run: true
+-  firewall: null
+-  fuel_pkgs: null
+-  glance: null
+-  glance-db: null
+-  glance-keystone: null
+-  globals: null
+-  heat-db: null
+-  heat-keystone: null
+-  horizon: null
+-  hosts: null
+-  ironic-api:
+     no_puppet_run: true
+-  ironic-compute:
+     no_puppet_run: true
+-  ironic-db:
+     no_puppet_run: true
+-  ironic-keystone:
+     no_puppet_run: true
+-  ironic_post_swift_key:
+     type: shell
+-  ironic_upload_images:
+     type: shell
+-  keystone-db:
+     skip:
+     - File[/root/.my.cnf]
+     - File[10.109.16.3-mysql-access]
+-  logging: null
+-  memcached: null
+-  murano:
+     no_puppet_run: true
+-  murano-cfapi:
+     no_puppet_run: true
+-  murano-cfapi-keystone:
+     no_puppet_run: true
+-  murano-db:
+     no_puppet_run: true
+-  murano-keystone:
+     no_puppet_run: true
+-  murano-rabbitmq:
+     no_puppet_run: true
+-  neutron-db: null
+-  neutron-keystone: null
+-  nova-db: null
+-  nova-keystone: null
+-  ntp-check: null
+-  ntp-server: null
+-  openrc-delete: null
+-  openstack-cinder:
+     skip:
+     - Exec[remove-policy-rc.d]
+     - File[create-policy-rc.d]
+-  openstack-haproxy: null
+-  openstack-haproxy-aodh: null
+-  openstack-haproxy-ceilometer: null
+-  openstack-haproxy-cinder: null
+-  openstack-haproxy-glance: null
+-  openstack-haproxy-heat: null
+-  openstack-haproxy-horizon: null
+-  openstack-haproxy-ironic:
+     no_puppet_run: true
+-  openstack-haproxy-keystone: null
+-  openstack-haproxy-murano: null
+-  openstack-haproxy-mysqld: null
+-  openstack-haproxy-neutron: null
+-  openstack-haproxy-nova: null
+-  openstack-haproxy-radosgw: null
+-  openstack-haproxy-sahara: null
+-  openstack-haproxy-stats: null
+-  openstack-haproxy-swift: null
+-  openstack-network-common-config: null
+-  openstack-network-end:
+     type: shell
+-  openstack-network-networks: null
+-  openstack-network-routers: null
+-  openstack-network-routers-ha:
+     no_puppet_run: true
+-  openstack-network-server-config: null
+-  openstack-network-server-nova: null
+-  openstack-network-start:
+     type: shell
+-  override_configuration: null
+-  primary-ceph-mon: null
+-  primary-ceph-radosgw: null
+-  primary-cluster: null
+-  primary-cluster-haproxy: null
+-  primary-database:
+     skip:
+     - Exec[create /root/.my.cnf]
+     - File[/root/.my.cnf]
+-  primary-dns-server: null
+-  primary-heat: null
+-  primary-keystone: null
+-  primary-openstack-controller: null
+-  primary-openstack-network-agents-dhcp: null
+-  primary-openstack-network-agents-l3: null
+-  primary-openstack-network-agents-metadata: null
+-  primary-openstack-network-plugins-l2: null
+-  primary-rabbitmq: null
+-  primary-swift: null
+-  primary-swift-proxy: null
+-  public_vip_ping:
+     skip:
+     - Cs_rsc_location[loc_ping_vip__public]
+-  radosgw-keystone: null
+-  reboot_provisioned_nodes:
+     type: shell
+-  reserved_ports: null
+-  rsync_core_puppet:
+     type: shell
+-  sahara:
+     no_puppet_run: true
+-  sahara-db:
+     no_puppet_run: true
+-  sahara-keystone:
+     no_puppet_run: true
+-  setup_repositories: null
+-  ssl-add-trust-chain: null
+-  ssl-dns-setup: null
+-  ssl-keys-saving: null
+-  swift-keystone: null
+-  swift-rebalance-cron: null
+-  swift-storage: null
+-  sync_time:
+     type: shell
+-  tools: null
+-  umm: null
+-  update_hosts: null
+-  updatedb:
+     no_puppet_run: true
+-  upload_cirros:
+     type: shell
+-  upload_configuration: null
+-  upload_nodes_info:
+     type: shell
+-  upload_provision_data:
+     type: false
+-  vcenter_compute_zones_create:
+     type: shell
+-  virtual_ips: null
+-  vmware-vcenter:
+     no_puppet_run: true
+-  workloads_collector_add: null

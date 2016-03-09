@@ -1,0 +1,60 @@
+roles:
+  compute
+tasks:
+-  allocate_hugepages:
+     skip:
+     - Service[sysfsutils]
+-  ceilometer-compute:
+     no_puppet_run: true
+-  ceph-compute: null
+-  cgroups: null
+-  clear_nodes_info:
+     type: shell
+-  connectivity_tests: null
+-  copy_haproxy_keys:
+     type: copy_files
+-  copy_keys:
+     type: copy_files
+-  copy_keys_ceph:
+     type: copy_files
+-  dns-client: null
+-  enable_nova_compute_service: null
+-  firewall: null
+-  fuel_pkgs: null
+-  globals: null
+-  hosts: null
+-  logging: null
+-  ntp-client: null
+-  openstack-network-agents-l3: null
+-  openstack-network-agents-metadata: null
+-  openstack-network-agents-sriov: null
+-  openstack-network-common-config: null
+-  openstack-network-compute-nova: null
+-  openstack-network-end:
+     type: skipped
+-  openstack-network-plugins-l2: null
+-  openstack-network-start:
+     type: skipped
+-  override_configuration: null
+-  reserved_ports: null
+-  rsync_core_puppet:
+     type: sync
+-  setup_repositories: null
+-  sriov_iommu_check:
+     skip:
+     - Exec[sriov_iommu_check]
+-  ssl-add-trust-chain:
+     no_puppet_run: true
+-  ssl-keys-saving: null
+-  sync_time:
+     type: shell
+-  tools: null
+-  top-role-compute:
+     skip:
+     - Notify[Module openstack cannot notify service nova-compute on packages update]
+     - Service[nova-compute]
+-  update_hosts: null
+-  upload_nodes_info:
+     type: upload_file
+-  upload_provision_data:
+     type: false
