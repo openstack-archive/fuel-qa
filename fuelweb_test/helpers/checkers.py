@@ -225,9 +225,16 @@ def wait_phrase_in_log(ip, timeout, interval, phrase, log_path):
 @logwrap
 def enable_feature_group(env, group):
     fuel_settings = env.admin_actions.get_fuel_settings()
-    fuel_settings["FEATURE_GROUPS"].append(group)
+    if group not in fuel_settings["FEATURE_GROUPS"]:
+        fuel_settings["FEATURE_GROUPS"].append(group)
     env.admin_actions.save_fuel_settings(fuel_settings)
-    env.admin_actions.restart_service("nailgun")
+
+    # NOTE(akostrikov) We use FUEL_SETTINGS_YAML as primary source or truth and
+    # update nailgun configs via puppet from that value
+    ssh_manager.execute(
+        ip=ssh_manager.admin_ip,
+        cmd='puppet apply /etc/puppet/modules/nailgun/examples/nailgun-only.pp'
+    )
 
     def check_api_group_enabled():
         try:
