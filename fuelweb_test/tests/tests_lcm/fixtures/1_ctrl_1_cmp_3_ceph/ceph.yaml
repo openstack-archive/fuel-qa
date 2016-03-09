@@ -1,0 +1,43 @@
+roles:
+  ceph-osd
+tasks:
+  allocate_hugepages:
+    skip:
+    - Service[sysfsutils]
+  cgroups:
+    skip:
+    - Service[cgconfigparser]
+  clear_nodes_info:
+    type: shell
+  connectivity_tests: null
+  copy_haproxy_keys:
+    type: copy_files
+  copy_keys:
+    type: copy_files
+  copy_keys_ceph:
+    type: copy_files
+  dns-client: null
+  firewall: null
+  fuel_pkgs: null
+  globals: null
+  hosts: null
+  logging: null
+  ntp-client: null
+  override_configuration: null
+  reserved_ports: null
+  rsync_core_puppet:
+    type: sync
+  setup_repositories: null
+  ssl-add-trust-chain:
+    no_puppet_run: true
+  ssl-keys-saving: null
+  sync_time:
+    type: shell
+  tools: null
+  top-role-ceph-osd: null
+  update_hosts: null
+  updatedb: null
+  upload_nodes_info:
+    type: upload_file
+  upload_provision_data:
+    type: false
