@@ -1,0 +1,44 @@
+roles:
+  mongo
+tasks:
+  - update_hosts: null
+  - clear_nodes_info:
+      type: shell
+  - top-role-primary-mongo: null
+  - copy_keys_ceph:
+      type: copy_files
+  - globals: null
+  - fuel_pkgs: null
+  - tools: null
+  - rsync_core_puppet:
+      type: sync
+  - cgroups: null
+  - upload_nodes_info:
+      type: skipped
+  - copy_keys:
+      type: copy_files
+  - override_configuration: null
+  - setup_repositories: null
+  - dns-client: null
+  - allocate_hugepages: null
+  - plugins_setup_repositories: null
+  - upload_provision_data:
+      type: false
+  - ssl-keys-saving: null
+  - upload_configuration:
+      type: upload_file
+  - firewall: null
+  - logging: null
+  - sync_time:
+      type: shell
+  - plugins_rsync:
+      no_puppet_run: true
+  - connectivity_tests: null
+  - configuration_symlink:
+      type: shell
+  - hosts: null
+  - copy_haproxy_keys:
+      type: copy_files
+  - ntp-client: null
+  - ssl-add-trust-chain: null
+  - reserved_ports: null
