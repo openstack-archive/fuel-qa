@@ -265,7 +265,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
 
         Duration 30m
         """
-        self.env.revert_snapshot("prepare_default_ubuntu_bootstrap")
+        self.env.revert_snapshot("build_default_bootstrap")
 
         uuid, bootstrap_location = \
             self.env.fuel_bootstrap_actions.build_bootstrap_image()
