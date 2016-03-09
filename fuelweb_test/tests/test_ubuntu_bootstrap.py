@@ -256,7 +256,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
         """Validate CRD operations of fuel-bootstrap utility
 
         Scenario:
-            1. Revert snapshot prepare_default_ubuntu_bootstrap
+            1. Revert snapshot build_default_bootstrap
             2. Build and Ubuntu bootstrap with default settings
             3. Validate it is available in images list
             4. Delete Ubuntu bootstrap image
@@ -265,7 +265,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
 
         Duration 30m
         """
-        self.env.revert_snapshot("prepare_default_ubuntu_bootstrap")
+        self.env.revert_snapshot("build_default_bootstrap")
 
         uuid, bootstrap_location = \
             self.env.fuel_bootstrap_actions.build_bootstrap_image()
