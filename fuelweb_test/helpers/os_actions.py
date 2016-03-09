@@ -162,6 +162,21 @@ class OpenStackActions(common.Common):
                 "Instance do not reach active state, current state"
                 " is {0}".format(self.get_instance_detail(srv).status))
 
+    def start_server(self, srv, timeout):
+        self.nova.servers.start(srv)
+        try:
+            helpers.wait(
+                lambda: self.get_instance_detail(srv).status == "ACTIVE",
+                timeout=timeout)
+            return self.get_instance_detail(srv.id)
+        except TimeoutError:
+            logger.debug("Start server failed by timeout")
+            asserts.assert_equal(
+                self.get_instance_detail(srv).status,
+                "ACTIVE",
+                "Instance did not reach active state, current state"
+                " is {0}".format(self.get_instance_detail(srv).status))
+
     def verify_srv_deleted(self, srv):
         try:
             if self.get_instance_detail(srv.id):
