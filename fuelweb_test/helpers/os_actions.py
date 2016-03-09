@@ -162,17 +162,22 @@ class OpenStackActions(common.Common):
                 "Instance do not reach active state, current state"
                 " is {0}".format(self.get_instance_detail(srv).status))
 
-    def verify_srv_deleted(self, srv):
+    def verify_srv_deleted(self, srv, timeout=150):
         try:
-            if self.get_instance_detail(srv.id):
-                logger.info("Try getting server another time.")
-                time.sleep(30)
-                if self.get_instance_detail(srv.id) in \
-                   self.nova.servers.list():
-                    return False
+            server = self.get_instance_detail(srv.id)
         except Exception:
             logger.info("Server was successfully deleted")
             return True
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            if server in self.nova.servers.list():
+                time.sleep(10)
+                logger.info("Try getting server another time.")
+            else:
+                logger.info("Server was successfully deleted")
+                return True
+        logger.error("Server wasn't deleted in {0} seconds".format(timeout))
+        return False
 
     def assign_floating_ip(self, srv, use_neutron=False):
         if use_neutron:
