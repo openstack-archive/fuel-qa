@@ -293,7 +293,8 @@ class EnvironmentModel(object):
                     "Node {0} does not become online".format(node.name))
         return True
 
-    def revert_snapshot(self, name, skip_timesync=False):
+    def revert_snapshot(self, name, skip_timesync=False,
+                        skip_slaves_check=False):
         if not self.d_env.has_snapshot(name):
             return False
 
@@ -314,7 +315,8 @@ class EnvironmentModel(object):
             self.set_admin_keystone_password()
             self.fuel_web.get_nailgun_version()
 
-        _wait(lambda: self.check_slaves_are_ready(), timeout=60 * 6)
+        if not skip_slaves_check:
+            _wait(lambda: self.check_slaves_are_ready(), timeout=60 * 6)
         return True
 
     def set_admin_ssh_password(self):
