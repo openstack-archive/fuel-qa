@@ -24,11 +24,11 @@ import utils
 class FuelLibraryModulesProvider(object):
 
     PROJECT_ROOT_PATH = 'fuel-library'
-    MODULE_ROOT_PATH = 'deployment/puppet'
+    MODULE_ROOT_PATH = 'deployment/puppet/'
     OSNAILYFACTER_NAME = 'osnailyfacter'
     OSNAILYFACTER_PATH = \
-        os.path.join(MODULE_ROOT_PATH, OSNAILYFACTER_NAME, 'modular')
-    OSNAILYFACTER_ROLES_PATH = os.path.join(OSNAILYFACTER_PATH, 'roles')
+        os.path.join(MODULE_ROOT_PATH, OSNAILYFACTER_NAME, 'modular/')
+    OSNAILYFACTER_ROLES_PATH = os.path.join(OSNAILYFACTER_PATH, 'roles/')
     TASKS_YAML_PATH = os.path.join(OSNAILYFACTER_ROLES_PATH, 'tasks.yaml')
     PUPPETFILE_PATH = 'deployment/Puppetfile'
 
@@ -195,12 +195,14 @@ class DependencyProvider(object):
 
     def _store_dependent_reviews(self, dependencies):
         for dependency in dependencies['changes']:
-            d = DependencyProvider.Dependency(
-                change_id=dependency['change_id'],
-                patchset_num=dependency['_current_revision_number']
-            )
-            if d.change_id != self.review.change_id:
-                self.dependent_reviews.add(d)
+            if 'change_id' in dependency and \
+                            '_current_revision_number' in dependency:
+                d = DependencyProvider.Dependency(
+                    change_id=dependency['change_id'],
+                    patchset_num=dependency['_current_revision_number']
+                )
+                if d.change_id != self.review.change_id:
+                    self.dependent_reviews.add(d)
 
     def get_dependencies(self, review=None):
         if review:
