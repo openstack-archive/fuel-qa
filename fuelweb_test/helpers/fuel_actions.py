@@ -348,13 +348,13 @@ class NailgunActions(BaseActions):
                "/site-packages/nailgun/settings.yaml")
         protocol = 'http' if not ssl else 'https'
         parameters = {}
-        for p in self.ssh_manager.execute_on_remote(
+        for param in self.ssh_manager.execute_on_remote(
                 ip=self.admin_ip,
                 cmd=cmd)['stdout_str'].split('\n'):
-            parameters[p.split(': ')[0]] = re.sub(
+            parameters[param.split(': ')[0]] = re.sub(
                 r'https?://\{collector_server\}',
                 '{0}://{1}:{2}'.format(protocol, host, port),
-                p.split(': ')[1])[1:-1]
+                param.split(': ')[1])[1:-1]
         parameters['OSWL_COLLECT_PERIOD'] = 0
         logger.debug('Custom collector parameters: {0}'.format(parameters))
         self.update_nailgun_settings_once(parameters)
@@ -387,8 +387,9 @@ class NailgunActions(BaseActions):
                 assert_ec_equal=[1]
             )
         except Exception:
-            logger.error(("Fuel stats were sent with errors! Check its log"
-                         "s in {0} for details.").format(log_file))
+            logger.error(
+                "Fuel stats were sent with errors! "
+                "Check its logs in {0} for details.".format(log_file))
             raise
 
     def force_oswl_collect(self, resources=None):
@@ -420,16 +421,16 @@ class PostgresActions(BaseActions):
         logger.info("Checking that '{0}' action was logged..".format(
             action))
         log_filter = "action_name" if not group else "action_group"
-        q = "select id from {0} where {1} = '\"'\"'{2}'\"'\"'".format(
+        query = "select id from {0} where {1} = '\"'\"'{2}'\"'\"'".format(
             table, log_filter, action)
-        logs = [i.strip() for i in self.run_query('nailgun', q).split('\n')
+        logs = [i.strip() for i in self.run_query('nailgun', query).split('\n')
                 if re.compile(r'\d+').match(i.strip())]
         logger.info("Found log records with ids: {0}".format(logs))
         return len(logs) > 0
 
     def count_sent_action_logs(self, table='action_logs'):
-        q = "select count(id) from {0} where is_sent = True".format(table)
-        return int(self.run_query('nailgun', q))
+        query = "select count(id) from {0} where is_sent = True".format(table)
+        return int(self.run_query('nailgun', query))
 
 
 class FuelPluginBuilder(BaseActions):

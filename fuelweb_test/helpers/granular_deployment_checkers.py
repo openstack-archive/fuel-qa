@@ -27,12 +27,12 @@ def check_hiera_resources(remote, file_name=None):
     if not file_name:
         output_f = ''.join(remote.execute(
             'if [ -r /etc/hiera.yaml ] ; then echo "passed" ;  fi')[
-            'stdout'])
+                'stdout'])
         assert_true('passed' in output_f, output_f)
     else:
         output_f = ''.join(remote.execute(
             'if [ -r /etc/%s ] ; then echo "passed" ;  fi' % file_name)[
-            'stdout'])
+                'stdout'])
         assert_true('passed' in output_f,
                     'Can not find passed result in '
                     'output {0}'.format(output_f))

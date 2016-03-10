@@ -377,11 +377,13 @@ def get_slaves_ips_by_role(slaves, role=None):
 
 def get_devops_slaves_by_role(env, slaves, role=None):
     if role:
-        return [env.fuel_web.find_devops_node_by_nailgun_fqdn(slave['fqdn'],
-                env.d_env.nodes().slaves)
-                for slave in slaves if role in slave['roles']]
-    return [env.fuel_web.find_devops_node_by_nailgun_fqdn(slave['fqdn'],
-            env.d_env.nodes().slaves) for slave in slaves]
+        return [
+            env.fuel_web.find_devops_node_by_nailgun_fqdn(
+                slave['fqdn'], env.d_env.nodes().slaves)
+            for slave in slaves if role in slave['roles']]
+    return [
+        env.fuel_web.find_devops_node_by_nailgun_fqdn(
+            slave['fqdn'], env.d_env.nodes().slaves) for slave in slaves]
 
 
 def get_slaves_ids_by_role(slaves, role=None):
@@ -418,13 +420,14 @@ def verify_fix_apply_step(apply_step):
                                       value=apply_step[key],
                                       valid=validation_schema[key]['values']))
         if 'data_type' in validation_schema[key].keys():
-            assert_true(type(apply_step[key]) is
-                        validation_schema[key]['data_type'],
-                        "Unexpected data type in patch apply scenario step:  '"
-                        "{key}' is '{type}', but expecting '{expect}'.".format(
-                            key=key,
-                            type=type(apply_step[key]),
-                            expect=validation_schema[key]['data_type']))
+            assert_true(
+                isinstance(
+                    apply_step[key], validation_schema[key]['data_type']),
+                "Unexpected data type in patch apply scenario step:  '"
+                "{key}' is '{type}', but expecting '{expect}'.".format(
+                    key=key,
+                    type=type(apply_step[key]),
+                    expect=validation_schema[key]['data_type']))
 
 
 def validate_fix_apply_step(apply_step, environment, slaves):
@@ -471,9 +474,10 @@ def validate_fix_apply_step(apply_step, environment, slaves):
                     "service isn't specified".format(apply_step['id'],
                                                      apply_step['type']))
         action = apply_step['type'].split('service_')[1]
-        command = ("find /etc/init.d/ -regex '/etc/init.d/{service}' -printf "
-                   "'%f\n' -quit | xargs -i service {{}} {action}").format(
-            service=apply_step['service'], action=action)
+        command = (
+            "find /etc/init.d/ -regex '/etc/init.d/{service}' -printf "
+            "'%f\n' -quit | xargs -i service {{}} {action}").format(
+                service=apply_step['service'], action=action)
     elif apply_step['type'] in ('server_down', 'server_up', 'server_reboot'):
         assert_true('master' not in apply_step['target'],
                     'Action type "{0}" doesn\'t accept "master" node as '
@@ -519,10 +523,10 @@ def validate_fix_apply_step(apply_step, environment, slaves):
 def get_errata(path, bug_id):
     scenario_path = '{0}/bugs/{1}/erratum.yaml'.format(path, bug_id)
     assert_true(os.path.exists(scenario_path),
-                "Erratum for bug #{0} is not found in '{0}' "
+                "Erratum for bug #{0} is not found in '{1}' "
                 "directory".format(bug_id, settings.PATCHING_APPLY_TESTS))
-    with open(scenario_path) as f:
-        return yaml.load(f.read())
+    with open(scenario_path) as scenario_file:
+        return yaml.load(scenario_file.read())
 
 
 def verify_errata(errata):

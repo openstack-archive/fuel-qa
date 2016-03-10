@@ -20,17 +20,17 @@ import time
 
 from logging import DEBUG
 from optparse import OptionParser
-from builds import Build
-from builds import get_build_artifact
-from builds import get_downstream_builds_from_html
-from builds import get_jobs_for_view
-from launchpad_client import LaunchpadBug
-from settings import JENKINS
-from settings import GROUPS_TO_EXPAND
-from settings import LaunchpadSettings
-from settings import logger
-from settings import TestRailSettings
-from testrail_client import TestRailProject
+from fuelweb_test.testrail.builds import Build
+from fuelweb_test.testrail.builds import get_build_artifact
+from fuelweb_test.testrail.builds import get_downstream_builds_from_html
+from fuelweb_test.testrail.builds import get_jobs_for_view
+from fuelweb_test.testrail.launchpad_client import LaunchpadBug
+from fuelweb_test.testrail.settings import JENKINS
+from fuelweb_test.testrail.settings import GROUPS_TO_EXPAND
+from fuelweb_test.testrail.settings import LaunchpadSettings
+from fuelweb_test.testrail.settings import logger
+from fuelweb_test.testrail.settings import TestRailSettings
+from fuelweb_test.testrail.testrail_client import TestRailProject
 
 
 class TestResult(object):
@@ -176,7 +176,7 @@ def get_version_from_parameters(jenkins_build_data):
 
 def get_version_from_artifacts(jenkins_build_data):
     if not any([artifact for artifact in jenkins_build_data['artifacts']
-               if artifact['fileName'] == JENKINS['magnet_link_artifact']]):
+                if artifact['fileName'] == JENKINS['magnet_link_artifact']]):
         return
     iso_link = (get_build_artifact(url=jenkins_build_data['url'],
                                    artifact=JENKINS['magnet_link_artifact']))
@@ -293,8 +293,8 @@ def get_tests_results(systest_build, os):
                     [test_build.build_data["id"]] + (
                         test_build.build_data["description"] or
                         test['name']).split()),
-                description=test_build.build_data["description"] or
-                    test['name'],
+                description=(
+                    test_build.build_data["description"] or test['name']),
                 comments=test['skippedMessage']
             )
         else:
@@ -314,8 +314,8 @@ def get_tests_results(systest_build, os):
                 if step['status'].lower() in ('failed', 'error'):
                     case_steps.append({
                         "content": step['name'],
-                        "actual": step['errorStackTrace'] or
-                        step['errorDetails'],
+                        "actual":
+                            step['errorStackTrace'] or step['errorDetails'],
                         "status": step['status'].lower()})
                     test_comments = "{err}\n\n\n{stack}".format(
                         err=step['errorDetails'],
@@ -339,8 +339,7 @@ def get_tests_results(systest_build, os):
                     [test_build.build_data["id"]] + (
                         test_build.build_data["description"] or
                         test_name).split()),
-                description=test_build.build_data["description"] or
-                    test_name,
+                description=test_build.build_data["description"] or test_name,
                 comments=test_comments,
                 steps=case_steps,
             )
@@ -389,8 +388,10 @@ def publish_results(project, milestone_id, test_plan,
                     result.launchpad_bug_title = lp_bug['title']
             continue
         if result.status != 'passed':
-            run_ids = [run['id'] for run in previous_tests_runs[0:
-                       int(TestRailSettings.previous_results_depth)]]
+            run_ids = [
+                run['id'] for run in
+                previous_tests_runs[0: int(
+                    TestRailSettings.previous_results_depth)]]
             previous_results = project.get_all_results_for_case(
                 run_ids=run_ids,
                 case_id=case_id)
@@ -571,11 +572,12 @@ def main():
                               project=TestRailSettings.project)
 
     tests_suite = project.get_suite_by_name(TestRailSettings.tests_suite)
-    operation_systems = [{'name': config['name'], 'id': config['id'],
-                         'distro': config['name'].split()[0].lower()}
-                         for config in project.get_config_by_name(
-                             'Operation System')['configs'] if
-                         config['name'] in TestRailSettings.operation_systems]
+    operation_systems = [
+        {
+            'name': config['name'], 'id': config['id'],
+            'distro': config['name'].split()[0].lower()}
+        for config in project.get_config_by_name('Operation System')['configs']
+        if config['name'] in TestRailSettings.operation_systems]
     tests_results = {os['distro']: [] for os in operation_systems}
 
     # STEP #2
@@ -635,11 +637,12 @@ def main():
     iso_link = '/'.join([JENKINS['url'], 'job',
                          '{0}.all'.format(milestone['name']), str(iso_number)])
     if not test_plan:
-        test_plan = project.add_plan(test_plan_name,
-                                     description=iso_link,
-                                     milestone_id=milestone['id'],
-                                     entries=[]
-                                     )
+        test_plan = project.add_plan(
+            test_plan_name,
+            description=iso_link,
+            milestone_id=milestone['id'],
+            entries=[]
+        )
         logger.info('Created new TestPlan "{0}".'.format(test_plan_name))
     else:
         logger.info('Found existing TestPlan "{0}".'.format(test_plan_name))

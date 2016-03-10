@@ -25,14 +25,14 @@ from collections import OrderedDict
 from logging import CRITICAL
 from logging import DEBUG
 
-from builds import Build
-from launchpad_client import LaunchpadBug
-from report import get_version
-from settings import GROUPS_TO_EXPAND
-from settings import LaunchpadSettings
-from settings import logger
-from settings import TestRailSettings
-from testrail_client import TestRailProject
+from fuelweb_test.testrail.builds import Build
+from fuelweb_test.testrail.launchpad_client import LaunchpadBug
+from fuelweb_test.testrail.report import get_version
+from fuelweb_test.testrail.settings import GROUPS_TO_EXPAND
+from fuelweb_test.testrail.settings import LaunchpadSettings
+from fuelweb_test.testrail.settings import logger
+from fuelweb_test.testrail.settings import TestRailSettings
+from fuelweb_test.testrail.testrail_client import TestRailProject
 
 
 def inspect_bug(bug):
@@ -351,10 +351,11 @@ class StatisticsGenerator(object):
             title = re.sub(r'(.{100}).*', '\g<1>...', title)
             html += '[{0:<3} failed TC(s)]'.format(values['failed_num'])
             html += '[{0:<3} blocked TC(s)]'.format(values['blocked_num'])
-            html += ('[{0:^4}][{1:^9}]'
-                     '[<b><font color={3}>{2:^13}</font></b>]').format(
-                values['project'], values['importance'], values['status'],
-                color)
+            html += (
+                '[{0:^4}][{1:^9}]'
+                '[<b><font color={3}>{2:^13}</font></b>]'.format(
+                    values['project'], values['importance'], values['status'],
+                    color))
             html += '[<a href="{0}">{1}</a>]'.format(values['link'], title)
             index = 1
             for tid, params in values['tests'].items():
@@ -388,10 +389,10 @@ class StatisticsGenerator(object):
             title = title.replace('[', '{')
             title = title.replace(']', '}')
             bugs_table += (
-                '||{failed}|{blocked}|{project}|{priority}|{status}|').format(
-                failed=values['failed_num'], blocked=values['blocked_num'],
-                project=values['project'].upper(),
-                priority=values['importance'], status=values['status'])
+                '||{failed}|{blocked}|{project}|{priority}|{status}|'.format(
+                    failed=values['failed_num'], blocked=values['blocked_num'],
+                    project=values['project'].upper(),
+                    priority=values['importance'], status=values['status']))
             bugs_table += '[{0}]({1})|'.format(title, values['link'])
             index = 1
             for tid, params in values['tests'].items():
