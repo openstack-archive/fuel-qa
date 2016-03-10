@@ -2,7 +2,7 @@
 template:
  name: 1 Controller, 2 Compute on Neutron/VLAN
  slaves: 3
- cluster-template:
+ cluster_template:
   name: Simple2ComputeNeutronVLAN
   release: ubuntu
   network:

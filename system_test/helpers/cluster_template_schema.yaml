@@ -1,0 +1,220 @@
+schema: 'http://json-schema.org/draft-05/schema#'
+description: Schema for test config
+type: object
+required:
+  - template
+properties:
+    template:
+        type: object
+        required:
+          - slaves
+          - cluster_template
+        additionalProperties: False
+        properties:
+            name:
+                type: string
+            slaves:
+                type: integer
+                minimum: 0
+            cluster_template:
+                type: object
+                required:
+                  - release
+                  - network
+                  - nodes
+                  - settings
+                additionalProperties: False
+                properties:
+                    name:
+                        type: string
+                    release:
+                        type: string
+                        enum:
+                          - ubuntu
+                    network:
+                        $ref: '#/definitions/network'
+                    nodes:
+                        type: array
+                        items:
+                            $ref: '#/definitions/node'
+                    scale_nodes:
+                        type: array
+                        items:
+                            type: array
+                            items:
+                                $ref: '#/definitions/scale_node'
+
+                    settings:
+                        $ref: '#/definitions/settings'
+            devops_settings:
+                type: object
+            testrail:
+                type: string
+
+definitions:
+
+    network:
+        type: object
+        required:
+          - provider
+          - segment-type
+        properties:
+            provider:
+                type: string
+                enum:
+                  - neutron
+            segment-type:
+                type: string
+                enum:
+                  - vlan
+                  - tun
+            pubip-to-all:
+                type: boolean
+
+    node:
+        type: object
+        required:
+          - roles
+          - count
+        additionalProperties: False
+        properties:
+            roles:
+                type: array
+                items:
+                    $ref: '#/definitions/role'
+            count:
+                type: integer
+                minimum: 1
+            nodegroup:
+                type: string
+            iface:
+                type: array
+                items:
+                    type: object
+                    minProperties: 1
+                    patternProperties:
+                        '^\S+$':
+                            type: array
+                            items:
+                                type: string
+                                enum:
+                                  - admin
+                                  - public
+                                  - management
+                                  - private
+                                  - storage
+
+    scale_node:
+        type: object
+        required:
+          - count
+          - roles
+        additionalProperties: False
+        properties:
+            action:
+                type: string
+                enum:
+                  - add
+                  - delete
+            count:
+                type: integer
+                minimum: 1
+            roles:
+                type: array
+                items:
+                    $ref: '#/definitions/role'
+
+    settings:
+        type: object
+        additionalProperties: False
+        properties:
+            components:
+                type: object
+                additionalProperties: False
+                properties:
+                    sahara:
+                        type: boolean
+                    murano:
+                        type: boolean
+                    ceilometer:
+                        type: boolean
+            storages:
+                type: object
+                additionalProperties: False
+                properties:
+                    volume-lvm:
+                        type: boolean
+                    volume-ceph:
+                        type: boolean
+                    image-ceph:
+                        type: boolean
+                    ephemeral-ceph:
+                        type: boolean
+                    rados-ceph:
+                        type: boolean
+                    replica-ceph:
+                        type: integer
+                        minimum: 0
+            vmware_dvs:
+                type: object
+                additionalProperties: False
+                properties:
+                    dvswitch_name:
+                        type: string
+            vmware_vcenter:
+                type: object
+                additionalProperties: False
+                properties:
+                    glance:
+                        type: object
+                        additionalProperties: False
+                        properties:
+                            datacenter:
+                                type: string
+                            datastore:
+                                type: string
+                            enable:
+                                type: boolean
+                            host:
+                                type: string
+                            pwd:
+                                type: string
+                            user:
+                                type: string
+                    nova-compute:
+                        type: array
+                        items:
+                            type: object
+                            additionalProperties: False
+                            properties:
+                                cluster:
+                                    type: string
+                                datastore:
+                                    type: string
+                                srv_name:
+                                    type: string
+                                target_node:
+                                    type: string
+                    settings:
+                        type: object
+                        additionalProperties: False
+                        properties:
+                            az:
+                                type: string
+                            host:
+                                type: string
+                            pwd:
+                                type: string
+                            user:
+                                type: string
+
+    role:
+        type: string
+        enum:
+          - controller
+          - compute
+          - compute-vmware
+          - cinder
+          - cinder-vmware
+          - ceph-osd
+          - mongo
