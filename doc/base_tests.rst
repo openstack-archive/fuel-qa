@@ -312,6 +312,11 @@ Test Services reconfiguration
 .. automodule:: fuelweb_test.tests.test_services_reconfiguration
   :members:
 
+Test Support HugePages
+-----------------------------
+.. automodule:: fuelweb_test.tests.test_support_hugepages
+  :members:
+
 Test RH-based computes
 ----------------------
 .. automodule:: fuelweb_test.tests.test_rh_compute
