@@ -630,3 +630,26 @@ class NailgunClient(object):
             data['node_id'] = node_id
         url = '/api/openstack-config/execute/'
         return self.client.put(url, data=data)
+
+    @logwrap
+    @json_parse
+    def upload_node_attributes(self, attributes, node_id=None):
+        """Upload attributes of node id.
+
+        :param attributes: a dictionary of attributes to upload.
+        :param node_id: An integer number of node id.
+        :return: a decoded JSON response.
+        """
+        url = '/api/v1/nodes/{}/attributes/'.format(node_id)
+        return self.client.put(url, data=attributes)
+
+    @logwrap
+    @json_parse
+    def get_node_attributes(self, node_id=None):
+        """Get attributes of node id.
+
+        :param node_id: An integer number of node id.
+        :return: a decoded JSON response.
+        """
+        url = '/api/v1/nodes/{}/attributes/'.format(node_id)
+        return self.client.get(url)
