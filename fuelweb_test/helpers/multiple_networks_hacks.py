@@ -35,8 +35,10 @@ def configure_second_admin_dhcp(ip, interface):
         ip=ip,
         cmd=cmd
     )
-    assert_equal(result['exit_code'], 0, ('Failed to add second admin '
-                 'network to DHCP server: {0}').format(result))
+    assert_equal(
+        result['exit_code'], 0,
+        'Failed to add second admin network to DHCP server: {0}'.format(result)
+    )
 
 
 @logwrap

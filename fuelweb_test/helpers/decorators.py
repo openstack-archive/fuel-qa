@@ -17,31 +17,32 @@ import inspect
 import json
 import os
 from subprocess import call
-import requests
 import sys
 import time
 import traceback
 from urlparse import urlparse
 
+
+from proboscis import SkipTest
+from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
+import requests
+
+from fuelweb_test import logger
+from fuelweb_test import settings
 from fuelweb_test.helpers.checkers import check_action_logs
 from fuelweb_test.helpers.checkers import check_repo_managment
 from fuelweb_test.helpers.checkers import check_stats_on_collector
 from fuelweb_test.helpers.checkers import check_stats_private_info
 from fuelweb_test.helpers.checkers import count_stats_on_collector
-from proboscis import SkipTest
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_true
-
-from fuelweb_test import logger
-from fuelweb_test import settings
-from fuelweb_test.helpers.ssh_manager import SSHManager
-from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test.helpers.regenerate_repo import CustomRepo
+from fuelweb_test.helpers.ssh_manager import SSHManager
+from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.helpers.utils import get_current_env
 from fuelweb_test.helpers.utils import pull_out_logs_via_ssh
 from fuelweb_test.helpers.utils import store_astute_yaml
 from fuelweb_test.helpers.utils import store_packages_json
-from fuelweb_test.helpers.utils import TimeStat
+from fuelweb_test.settings import MASTER_IS_CENTOS7
 from gates_tests.helpers.exceptions import ConfigurationException
 
 
@@ -57,11 +58,11 @@ def save_logs(url, path, auth_token=None, chunk_size=1024):
                      stream.content)
         return
 
-    with open(path, 'wb') as fp:
+    with open(path, 'wb') as log_file:
         for chunk in stream.iter_content(chunk_size=chunk_size):
             if chunk:
-                fp.write(chunk)
-                fp.flush()
+                log_file.write(chunk)
+                log_file.flush()
 
 
 def log_snapshot_after_test(func):
@@ -142,19 +143,22 @@ def upload_manifests(func):
         result = func(*args, **kwargs)
         try:
             if settings.UPLOAD_MANIFESTS:
-                logger.info("Uploading new manifests from %s" %
-                            settings.UPLOAD_MANIFESTS_PATH)
+                logger.info(
+                    "Uploading new manifests from "
+                    "{:s}".format(settings.UPLOAD_MANIFESTS_PATH))
                 environment = get_current_env(args)
                 if not environment:
-                    logger.warning("Can't upload manifests: method of "
-                                   "unexpected class is decorated.")
+                    logger.warning(
+                        "Can't upload manifests: method of "
+                        "unexpected class is decorated.")
                     return result
                 with environment.d_env.get_admin_remote() as remote:
                     remote.execute('rm -rf /etc/puppet/modules/*')
                     remote.upload(settings.UPLOAD_MANIFESTS_PATH,
                                   '/etc/puppet/modules/')
-                    logger.info("Copying new site.pp from %s" %
-                                settings.SITEPP_FOR_UPLOAD)
+                    logger.info(
+                        "Copying new site.pp from "
+                        "{:s}".format(settings.SITEPP_FOR_UPLOAD))
                     remote.execute("cp %s /etc/puppet/manifests" %
                                    settings.SITEPP_FOR_UPLOAD)
                     if settings.SYNC_DEPL_TASKS:
@@ -172,7 +176,7 @@ def update_rpm_packages(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
         if not settings.UPDATE_FUEL:
-                return result
+            return result
         try:
             environment = get_current_env(args)
             if not environment:
@@ -209,9 +213,10 @@ def update_rpm_packages(func):
 
             # Add temporary repo with new packages to YUM configuration
             conf_file = '/etc/yum.repos.d/temporary.repo'
-            cmd = ("echo -e '[temporary]\nname=temporary\nbaseurl=file://{0}/"
-                   "\ngpgcheck=0\npriority=1' > {1}").format(
-                settings.LOCAL_MIRROR_CENTOS, conf_file)
+            cmd = (
+                "echo -e '[temporary]\nname=temporary\nbaseurl=file://{0}/"
+                "\ngpgcheck=0\npriority=1' > {1}".format(
+                    settings.LOCAL_MIRROR_CENTOS, conf_file))
 
             SSHManager().execute_on_remote(
                 ip=SSHManager().admin_ip,
@@ -482,10 +487,10 @@ def check_repos_management(func):
                 env = get_current_env(args)
                 nailgun_nodes = env.fuel_web.client.list_cluster_nodes(
                     env.fuel_web.get_last_created_cluster())
-                for n in nailgun_nodes:
+                for node in nailgun_nodes:
                     logger.debug("Check repository management on {0}"
-                                 .format(n['ip']))
-                    check_repo_managment(n['ip'])
+                                 .format(node['ip']))
+                    check_repo_managment(node['ip'])
             except Exception:
                 logger.error("An error happened during check repositories "
                              "management on nodes. Please see the debug log.")
