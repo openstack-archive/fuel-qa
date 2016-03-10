@@ -13,6 +13,16 @@
 #    under the License.
 
 import time
+from urlparse import urlparse
+
+from cinderclient import client as cinderclient
+from heatclient.v1.client import Client as HeatClient
+from glanceclient.v1 import Client as GlanceClient
+from keystoneclient.v2_0 import Client as KeystoneClient
+from keystoneclient.exceptions import ClientException
+from novaclient.v2 import Client as NovaClient
+import neutronclient.v2_0.client as neutronclient
+from proboscis.asserts import assert_equal
 
 from fuelweb_test import logger as LOGGER
 from fuelweb_test import logwrap as LOGWRAP
@@ -20,20 +30,17 @@ from fuelweb_test.settings import DISABLE_SSL
 from fuelweb_test.settings import PATH_TO_CERT
 
 
-from cinderclient import client as cinderclient
-from glanceclient.v1 import Client as glanceclient
-from keystoneclient.v2_0 import Client as keystoneclient
-from keystoneclient.exceptions import ClientException
-from novaclient.v2 import Client as novaclient
-import neutronclient.v2_0.client as neutronclient
-from proboscis.asserts import assert_equal
-
-
 class Common(object):
     """Common."""  # TODO documentation
 
     def __init__(self, controller_ip, user, password, tenant):
         self.controller_ip = controller_ip
+
+        def make_endpoint(endpoint):
+            parse = urlparse(endpoint)
+            return parse._replace(
+                netloc='{}:{}'.format(
+                    self.controller_ip, parse.port)).geturl()
 
         if DISABLE_SSL:
             auth_url = 'http://{0}:5000/v2.0/'.format(self.controller_ip)
@@ -43,37 +50,56 @@ class Common(object):
             path_to_cert = PATH_TO_CERT
 
         LOGGER.debug('Auth URL is {0}'.format(auth_url))
-        self.nova = novaclient(username=user,
-                               api_key=password,
-                               project_id=tenant,
-                               auth_url=auth_url,
-                               cacert=path_to_cert)
 
-        self.cinder = cinderclient.Client(1, user, password,
-                                          tenant, auth_url,
-                                          cacert=path_to_cert)
-
-        self.neutron = neutronclient.Client(username=user,
-                                            password=password,
-                                            tenant_name=tenant,
-                                            auth_url=auth_url,
-                                            ca_cert=path_to_cert)
-
-        self.keystone = self._get_keystoneclient(username=user,
-                                                 password=password,
-                                                 tenant_name=tenant,
-                                                 auth_url=auth_url,
-                                                 ca_cert=path_to_cert)
+        keystone_args = {'username': user, 'password': password,
+                         'tenant_name': tenant, 'auth_url': auth_url,
+                         'ca_cert': path_to_cert,}
+        self.keystone = self._get_keystoneclient(**keystone_args)
 
         token = self.keystone.auth_token
         LOGGER.debug('Token is {0}'.format(token))
+
+        neutron_endpoint = self.keystone.service_catalog.url_for(
+            service_type='network', endpoint_type='publicURL')
+        neutron_args = {'username': user, 'password': password,
+                        'tenant_name': tenant, 'auth_url': auth_url,
+                        'ca_cert': path_to_cert,
+                        'endpoint_url': make_endpoint(neutron_endpoint)}
+        self.neutron = neutronclient.Client(**neutron_args)
+
+        nova_endpoint = self.keystone.service_catalog.url_for(
+            service_type='compute', endpoint_type='publicURL')
+        nova_args = {'username': user, 'api_key': password,
+                     'project_id': tenant, 'auth_url': auth_url,
+                     'cacert': path_to_cert,
+                     'bypass_url': make_endpoint(nova_endpoint),
+                     'auth_token': token}
+        self.nova = NovaClient(**nova_args)
+
+        cinder_endpoint = self.keystone.service_catalog.url_for(
+            service_type='volume', endpoint_type='publicURL')
+        cinder_args = {'version': 1, 'username': user,
+                       'api_key': password, 'project_id': tenant,
+                       'auth_url': auth_url, 'cacert': path_to_cert,
+                       'bypass_url': make_endpoint(cinder_endpoint)}
+        self.cinder = cinderclient.Client(**cinder_args)
+
         glance_endpoint = self.keystone.service_catalog.url_for(
             service_type='image', endpoint_type='publicURL')
-        LOGGER.debug('Glance endpoind is {0}'.format(glance_endpoint))
+        LOGGER.debug('Glance endpoint is {0}'.format(
+            make_endpoint(glance_endpoint)))
+        glance_args = {'endpoint': make_endpoint(glance_endpoint),
+                       'token': token,
+                       'cacert': path_to_cert}
+        self.glance = GlanceClient(**glance_args)
 
-        self.glance = glanceclient(endpoint=glance_endpoint,
-                                   token=token,
-                                   cacert=path_to_cert)
+        heat_endpoint = self.keystone.service_catalog.url_for(
+            service_type='orchestration', endpoint_type='publicURL')
+
+        heat_args = {'endpoint': make_endpoint(heat_endpoint),
+                     'token': token,
+                     'cacert': path_to_cert}
+        self.heat = HeatClient(**heat_args)
 
     def goodbye_security(self):
         secgroup_list = self.nova.security_groups.list()
@@ -148,13 +174,13 @@ class Common(object):
         try:
             _verify_instance_state()
         except AssertionError:
-            LOGGER.debug('Instance is not active, '
-                         'lets provide it the last chance and sleep 60 sec')
+            LOGGER.debug('Instance is not {0}, lets provide it the last '
+                         'chance and sleep 60 sec'.format(expected_state))
             time.sleep(60)
             _verify_instance_state()
 
     def delete_instance(self, server):
-        LOGGER.debug('Try to create instance')
+        LOGGER.debug('Try to delete instance')
         self.nova.servers.delete(server)
 
     def create_flavor(self, name, ram, vcpus, disk, flavorid="auto"):
@@ -170,14 +196,14 @@ class Common(object):
         for i in range(retries):
             try:
                 if ca_cert:
-                    keystone = keystoneclient(username=username,
+                    keystone = KeystoneClient(username=username,
                                               password=password,
                                               tenant_name=tenant_name,
                                               auth_url=auth_url,
                                               cacert=ca_cert)
 
                 else:
-                    keystone = keystoneclient(username=username,
+                    keystone = KeystoneClient(username=username,
                                               password=password,
                                               tenant_name=tenant_name,
                                               auth_url=auth_url)
