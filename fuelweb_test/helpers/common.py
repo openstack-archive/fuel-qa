@@ -17,6 +17,7 @@ import time
 import traceback
 
 from cinderclient import client as cinderclient
+from heatclient.v1.client import Client as HeatClient
 from glanceclient.v1 import Client as GlanceClient
 import ironicclient.client as ironicclient
 from keystoneclient.v2_0 import Client as KeystoneClient
@@ -109,6 +110,15 @@ class Common(object):
                        'cacert': path_to_cert,
                        'insecure': insecure}
         self.glance = GlanceClient(**glance_args)
+
+        heat_endpoint = self.keystone.service_catalog.url_for(
+            service_type='orchestration', endpoint_type='publicURL')
+
+        heat_args = {'endpoint': make_endpoint(heat_endpoint),
+                     'token': token,
+                     'cacert': path_to_cert,
+                     'insecure': insecure}
+        self.heat = HeatClient(**heat_args)
 
         try:
             ironic_endpoint = self.keystone.service_catalog.url_for(
