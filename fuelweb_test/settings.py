@@ -280,6 +280,11 @@ NETWORK_MANAGERS = {
     'vlan': 'VlanManager'
 }
 
+NETWORK_PROVIDERS = [
+    'neutron',
+    'nova_network'
+]
+
 NEUTRON = 'neutron'
 
 NEUTRON_SEGMENT = {
