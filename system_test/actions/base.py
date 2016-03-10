@@ -31,6 +31,7 @@ from system_test.actions.plugins_actions import PluginsActions
 
 from system_test.core.discover import load_yaml
 from system_test.helpers.decorators import make_snapshot_if_step_fail
+from system_test.helpers.validator import validate
 
 
 class PrepareActions(object):
@@ -47,6 +48,13 @@ class PrepareActions(object):
 
     def _load_config(self):
         config = load_yaml(self.config_file)
+
+        try:
+            validate(config)
+        except Exception as e:
+            logger.error('Error in config file: {}'.format(self.config_file))
+            raise e
+
         self.full_config = config
         self.env_config = config[
             'template']['cluster_template']
