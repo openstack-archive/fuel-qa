@@ -230,25 +230,23 @@ class RallyDeployment(object):
 
     @property
     def is_deployment_exist(self):
-        if self.uuid is not None:
-                return True
-        return False
+        return self.uuid is not None
 
     def create_deployment(self):
         if self.is_deployment_exist:
             return
-        cmd = ('rally deployment create --name "{0}" --filename '
-               '<(echo \'{{ "admin": {{ "password": "{1}", "tenant_name": "{2}'
-               '", "username": "{3}" }}, "auth_url": "{4}", "endpoint": null, '
-               '"type": "ExistingCloud", "https_insecure": true }}\')').format(
-            self.cluster_vip, self.password, self.tenant_name, self.username,
-            self.auth_url)
+        cmd = (
+            'rally deployment create --name "{0}" --filename '
+            '<(echo \'{{ "admin": {{ "password": "{1}", "tenant_name": "{2}'
+            '", "username": "{3}" }}, "auth_url": "{4}", "endpoint": null, '
+            '"type": "ExistingCloud", "https_insecure": true }}\')'.format(
+                self.cluster_vip, self.password, self.tenant_name,
+                self.username, self.auth_url))
         result = self.rally_engine.run_container_command(cmd)
         assert_true(self.is_deployment_exist,
                     'Rally deployment creation failed: {0}'.format(result))
         logger.debug('Rally deployment created: {0}'.format(result))
-        assert_true(self.check_deployment(),
-                    "Rally deployment check failed.")
+        assert_true(self.check_deployment(), "Rally deployment check failed.")
 
     def check_deployment(self, deployment_uuid=''):
         cmd = 'rally deployment check {0}'.format(deployment_uuid)

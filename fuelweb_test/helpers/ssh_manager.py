@@ -79,8 +79,8 @@ class SSHManager(object):
         keys = []
         admin_remote = self._get_remote(self.admin_ip)
         key_string = '/root/.ssh/id_rsa'
-        with admin_remote.open(key_string) as f:
-            keys.append(RSAKey.from_private_key(f))
+        with admin_remote.open(key_string) as key_file:
+            keys.append(RSAKey.from_private_key(key_file))
         return keys
 
     def _get_remote(self, ip, port=22):

@@ -191,8 +191,9 @@ class FuelWebClient(object):
         """Wait for OSTF tests to finish, check that the tests specified
            in [tests_must_be_passed] are passed"""
 
-        logger.info('Assert OSTF tests are passed at cluster #{0}: {1}'.format(
-                    cluster_id, pretty_log(tests_must_be_passed, indent=1)))
+        logger.info(
+            'Assert OSTF tests are passed at cluster #{0}: {1}'.format(
+                cluster_id, pretty_log(tests_must_be_passed, indent=1)))
 
         set_result_list = self._ostf_test_wait(cluster_id, timeout)
         tests_pass_count = 0
@@ -266,12 +267,12 @@ class FuelWebClient(object):
                                 failed_test_name, actual_failed_names))
 
         assert_true(
-            failed <= should_fail, 'Failed {0} OSTF tests; should fail'
-                                   ' {1} tests. Names of failed tests: {2}'
-                                   .format(failed,
-                                           should_fail,
-                                           pretty_log(failed_tests_res,
-                                                      indent=1)))
+            failed <= should_fail,
+            'Failed {0} OSTF tests; should fail {1} tests. '
+            'Names of failed tests: {2}'.format(
+                failed,
+                should_fail,
+                pretty_log(failed_tests_res, indent=1)))
 
     def assert_release_state(self, release_name, state='available'):
         logger.info('Assert release %s has state %s', release_name, state)
@@ -470,8 +471,9 @@ class FuelWebClient(object):
             cluster_id = self.client.get_cluster_id(name)
             logger.info('The cluster id is %s', cluster_id)
 
-            logger.info('Set cluster settings to {}'.format(
-                        pretty_log(settings, indent=1)))
+            logger.info(
+                'Set cluster settings to {}'.format(
+                    pretty_log(settings, indent=1)))
             attributes = self.client.get_cluster_attributes(cluster_id)
 
             for option in settings:
@@ -524,10 +526,10 @@ class FuelWebClient(object):
             public_gw = self.environment.d_env.router(router_name="public")
 
             remote = self.environment.d_env.get_admin_remote()
-            if help_data.FUEL_USE_LOCAL_NTPD\
-                    and ('ntp_list' not in settings)\
-                    and checkers.is_ntpd_active(
-                        self.ssh_manager.admin_ip, public_gw):
+            if (help_data.FUEL_USE_LOCAL_NTPD and
+                    ('ntp_list' not in settings) and
+                    checkers.is_ntpd_active(
+                        self.ssh_manager.admin_ip, public_gw)):
                 attributes['editable']['external_ntp']['ntp_list']['value'] =\
                     [public_gw]
                 logger.info("Configuring cluster #{0}"
@@ -609,39 +611,37 @@ class FuelWebClient(object):
                     "vcenter_host": "",
                     "vcenter_password": "",
                     "datastore": "", },
-                "availability_zones": [
-                    {"vcenter_username": VCENTER_USERNAME,
-                     "nova_computes": [
-                         {"datastore_regex": ".*",
-                          "vsphere_cluster": "Cluster1",
-                          "service_name": "vmcluster1",
-                          "target_node": {
-                              "current": {"id": target_node_1,
-                                          "label": target_node_1},
-                              "options": [{"id": "controllers",
-                                           "label": "controllers"}, ]},
-                          },
-
-                     ],
-                     "vcenter_host": VCENTER_IP,
-                     "az_name": "vcenter",
-                     "vcenter_password": VCENTER_PASSWORD,
-                     }],
+                "availability_zones": [{
+                    "vcenter_username": VCENTER_USERNAME,
+                    "nova_computes": [{
+                        "datastore_regex": ".*",
+                        "vsphere_cluster": "Cluster1",
+                        "service_name": "vmcluster1",
+                        "target_node": {
+                            "current": {"id": target_node_1,
+                                        "label": target_node_1},
+                            "options": [{"id": "controllers",
+                                         "label": "controllers"}, ]},
+                    }],
+                    "vcenter_host": VCENTER_IP,
+                    "az_name": "vcenter",
+                    "vcenter_password": VCENTER_PASSWORD,
+                }],
                 "network": {"esxi_vlan_interface": "vmnic0"}
             }
             if multiclusters:
                 multiclusters =\
                     vcenter_value["availability_zones"][0]["nova_computes"]
-                multiclusters.append(
-                    {"datastore_regex": ".*",
-                     "vsphere_cluster": "Cluster2",
-                     "service_name": "vmcluster2",
-                     "target_node": {
-                         "current": {"id": target_node_2,
-                                     "label": target_node_2},
-                         "options": [{"id": "controllers",
-                                      "label": "controllers"}, ]},
-                     })
+                multiclusters.append({
+                    "datastore_regex": ".*",
+                    "vsphere_cluster": "Cluster2",
+                    "service_name": "vmcluster2",
+                    "target_node": {
+                        "current": {"id": target_node_2,
+                                    "label": target_node_2},
+                        "options": [{"id": "controllers",
+                                     "label": "controllers"}, ]},
+                })
             if vc_glance:
                 vcenter_value["glance"]["vcenter_username"] = VCENTER_USERNAME
                 vcenter_value["glance"]["datacenter"] = VCENTER_DATACENTER
@@ -1035,8 +1035,8 @@ class FuelWebClient(object):
 
     @logwrap
     def get_ssh_for_role(self, nodes_dict, role):
-        node_name = sorted(filter(lambda name: role in nodes_dict[name],
-                           nodes_dict.keys()))[0]
+        node_name = sorted(filter(
+            lambda name: role in nodes_dict[name], nodes_dict.keys()))[0]
         return self.get_ssh_for_node(node_name)
 
     @logwrap
@@ -1111,8 +1111,9 @@ class FuelWebClient(object):
 
     @logwrap
     def task_wait(self, task, timeout, interval=5):
-        logger.info('Wait for task {0} seconds: {1}'.format(
-                    timeout, pretty_log(task, indent=1)))
+        logger.info(
+            'Wait for task {0} seconds: {1}'.format(
+                timeout, pretty_log(task, indent=1)))
         start = time.time()
         try:
             wait(
@@ -1127,9 +1128,9 @@ class FuelWebClient(object):
                 "was exceeded: ".format(task=task["name"], timeout=timeout))
         took = time.time() - start
         task = self.client.get_task(task['id'])
-        logger.info('Task finished. Took {0} seconds. {1}'.format(
-                    took,
-                    pretty_log(task, indent=1)))
+        logger.info(
+            'Task finished. Took {0} seconds. {1}'.format(
+                took, pretty_log(task, indent=1)))
         return task
 
     @logwrap
@@ -1449,7 +1450,7 @@ class FuelWebClient(object):
                         net.get('seg_type', '') == 'tun'):
                     result['private_tun'] = net
                 elif (net['name'] == 'private' and
-                        net.get('seg_type', '') == 'gre'):
+                      net.get('seg_type', '') == 'gre'):
                     result['private_gre'] = net
                 elif net['name'] == 'public':
                     result['public'] = net
@@ -1537,9 +1538,9 @@ class FuelWebClient(object):
                         str(default_networks['private'][1])
 
                 elif net_provider == 'nova_network':
+                    priv = str(default_networks['private'])
                     net_settings[net_provider]['config'][
-                        'fixed_networks_cidr'] = str(
-                        default_networks['private'])
+                        'fixed_networks_cidr'] = priv
 
             self.client.put_release_default_net_settings(
                 _release['id'], net_settings)
@@ -1764,8 +1765,9 @@ class FuelWebClient(object):
             if wait_offline:
                 logger.info('Wait a %s node offline status', node.name)
                 try:
-                    wait(lambda: not self.get_nailgun_node_by_devops_node(
-                         node)['online'], timeout=60 * 10)
+                    wait(
+                        lambda: not self.get_nailgun_node_by_devops_node(node)
+                        ['online'], timeout=60 * 10)
                 except TimeoutError:
                     assert_false(
                         self.get_nailgun_node_by_devops_node(node)['online'],
@@ -1813,12 +1815,12 @@ class FuelWebClient(object):
                 'inet (?P<ip>\d+\.\d+\.\d+.\d+/\d+).*scope .* '
                 '{0}'.format(interface), ' '.join(ret['stdout']))
             if ip_search is None:
-                    logger.debug("Ip show output does not match in regex. "
-                                 "Current value is None. On node {0} in netns "
-                                 "{1} for interface {2}".format(node_name,
-                                                                namespace,
-                                                                interface))
-                    return None
+                logger.debug("Ip show output does not match in regex. "
+                             "Current value is None. On node {0} in netns "
+                             "{1} for interface {2}".format(node_name,
+                                                            namespace,
+                                                            interface))
+                return None
             return ip_search.group('ip')
         except DevopsCalledProcessError as err:
             logger.error(err)
@@ -1912,12 +1914,13 @@ class FuelWebClient(object):
                 try:
                     wait(lambda: _get_galera_status(remote) == 'ON',
                          timeout=timeout)
-                    logger.info("MySQL Galera is up on {host} node.".format(
-                                host=node_name))
+                    logger.info(
+                        "MySQL Galera is up on {host} node.".format(
+                            host=node_name))
                 except TimeoutError:
-                    logger.error("MySQL Galera isn't ready on {0}: {1}"
-                                 .format(node_name,
-                                         _get_galera_status(remote)))
+                    logger.error(
+                        "MySQL Galera isn't ready on {0}: {1}".format(
+                            node_name, _get_galera_status(remote)))
                     raise TimeoutError(
                         "MySQL Galera isn't ready on {0}: {1}".format(
                             node_name, _get_galera_status(remote)))
@@ -1981,7 +1984,7 @@ class FuelWebClient(object):
     def run_ceph_task(self, cluster_id, offline_nodes):
         ceph_id = [n['id'] for n in self.client.list_cluster_nodes(cluster_id)
                    if 'ceph-osd'
-                      in n['roles'] and n['id'] not in offline_nodes]
+                   in n['roles'] and n['id'] not in offline_nodes]
         res = self.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['top-role-ceph-osd'],
             node_id=str(ceph_id).strip('[]'))
@@ -2136,8 +2139,8 @@ class FuelWebClient(object):
                              nailgun_node['status']))
 
     @logwrap
-    def modify_python_file(self, remote, modification, file):
-        remote.execute('sed -i "{0}" {1}'.format(modification, file))
+    def modify_python_file(self, remote, modification, filename):
+        remote.execute('sed -i "{0}" {1}'.format(modification, filename))
 
     def backup_master(self, remote):
         # FIXME(kozhukalov): This approach is outdated
@@ -2464,8 +2467,9 @@ class FuelWebClient(object):
         if fqdn_needed:
             return slaves_nodes
         else:
-            devops_nodes = [self.find_devops_node_by_nailgun_fqdn(
-                slave_node, self.environment.d_env.nodes().slaves)
+            devops_nodes = [
+                self.find_devops_node_by_nailgun_fqdn(
+                    slave_node, self.environment.d_env.nodes().slaves)
                 for slave_node in slaves_nodes]
             return devops_nodes
 
@@ -2541,9 +2545,9 @@ class FuelWebClient(object):
 
     @logwrap
     def spawn_vms_wait(self, cluster_id, timeout=60 * 60, interval=30):
-            logger.info('Spawn VMs of a cluster %s', cluster_id)
-            task = self.client.spawn_vms(cluster_id)
-            self.assert_task_success(task, timeout=timeout, interval=interval)
+        logger.info('Spawn VMs of a cluster %s', cluster_id)
+        task = self.client.spawn_vms(cluster_id)
+        self.assert_task_success(task, timeout=timeout, interval=interval)
 
     @logwrap
     def get_all_ostf_set_names(self, cluster_id):

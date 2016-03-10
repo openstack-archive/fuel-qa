@@ -40,12 +40,12 @@ def generate_user_own_cert(cn, path_to_cert=PATH_TO_CERT,
     cert.set_issuer(cert.get_subject())
     cert.set_pubkey(k)
     cert.sign(k, 'sha1')
-    with open(path_to_pem, 'wt') as f:
-        f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
-        f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k))
+    with open(path_to_pem, 'wt') as pem_file:
+        pem_file.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
+        pem_file.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k))
     logger.debug("Generated PEM file {}".format(path_to_pem))
-    with open(path_to_cert, 'wt') as f:
-        f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
+    with open(path_to_cert, 'wt') as cert_file:
+        cert_file.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
     logger.debug("Generated PEM file {}".format(path_to_cert))
 
 
@@ -70,8 +70,8 @@ def change_cluster_ssl_config(attributes, CN):
             attributes['editable']['public_ssl'][
                 'cert_source']['value'] = 'user_uploaded'
             cert_data = {}
-            with open(PATH_TO_PEM, 'r') as f:
-                cert_data['content'] = f.read()
+            with open(PATH_TO_PEM, 'r') as pem_file:
+                cert_data['content'] = pem_file.read()
             cert_data['name'] = os.path.basename(PATH_TO_PEM)
             attributes['editable']['public_ssl'][
                 'cert_data']['value'] = cert_data

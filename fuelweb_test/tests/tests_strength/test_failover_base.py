@@ -647,8 +647,8 @@ class TestHaFailoverBase(TestBasic):
             remote.check_call(cmd_input)
             remote.check_call(cmd_output)
         except:
-            logger.error('command failed to be executed'.format(
-                p_d_ctrl.name))
+            logger.error(
+                'command {:s} failed to be executed'.format(p_d_ctrl.name))
             raise
         finally:
             remote.clear()
