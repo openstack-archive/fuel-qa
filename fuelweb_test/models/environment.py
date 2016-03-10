@@ -136,8 +136,8 @@ class EnvironmentModel(object):
                     .format(', '.join(sorted(nodes_names))))
         new_time = sync_time(self.d_env, nodes_names, skip_sync)
         for name in sorted(new_time):
-                logger.info("New time on '{0}' = {1}".format(name,
-                                                             new_time[name]))
+            logger.info("New time on '{0}' = {1}".format(name,
+                                                         new_time[name]))
 
     @logwrap
     def get_admin_node_ip(self):
@@ -154,8 +154,9 @@ class EnvironmentModel(object):
     def get_keys(self, node, custom=None, build_images=None,
                  iso_connect_as='cdrom'):
         params = {
-            'ks': 'hd:LABEL=OpenStack_Fuel:/ks.cfg' if iso_connect_as == 'usb'
-            else 'cdrom:/ks.cfg',
+            'ks': (
+                'hd:LABEL=OpenStack_Fuel:/ks.cfg' if iso_connect_as == 'usb'
+                else 'cdrom:/ks.cfg'),
             'repo': 'hd:LABEL=OpenStack_Fuel:/',  # only required for USB boot
             'ip': node.get_ip_address_by_network_name(
                 self.d_env.admin_net),
@@ -336,18 +337,19 @@ class EnvironmentModel(object):
         for node in devops_nodes:
             try:
                 wait(lambda:
-                     self.fuel_web.get_nailgun_node_by_devops_node(
-                         node)['online'], timeout=60 * 6)
+                     self.fuel_web.get_nailgun_node_by_devops_node(node)
+                     ['online'],
+                     timeout=60 * 6)
             except TimeoutError:
-                    raise TimeoutError(
-                        "Node {0} does not become online".format(node.name))
+                raise TimeoutError(
+                    "Node {0} does not become online".format(node.name))
         return True
 
     def revert_snapshot(self, name, skip_timesync=False):
         if not self.d_env.has_snapshot(name):
             return False
 
-        logger.info('We have snapshot with such name: %s' % name)
+        logger.info('We have snapshot with such name: {:s}'.format(name))
 
         logger.info("Reverting the snapshot '{0}' ....".format(name))
         self.d_env.revert(name)
@@ -562,8 +564,9 @@ class EnvironmentModel(object):
                 ip=self.ssh_manager.admin_ip,
                 cmd=cmd
             )
-            logger.debug('Offloading settings:\n{0}\n'.format(
-                         ''.join(result['stdout'])))
+            logger.debug(
+                'Offloading settings:\n{0}\n'.format(''.join(result['stdout']))
+            )
 
     @update_rpm_packages
     @upload_manifests
@@ -825,9 +828,10 @@ class EnvironmentModel(object):
                         'NETMASK={2}\\n').format(admin_if,
                                                  admin_ip,
                                                  admin_netmask)
-        cmd = ('echo -e "{0}" > /etc/sysconfig/network-scripts/ifcfg-{1};'
-               'ifup {1}; ip -o -4 a s {1} | grep -w {2}').format(
-            add_admin_ip, admin_if, admin_ip)
+        cmd = (
+            'echo -e "{0}" > /etc/sysconfig/network-scripts/ifcfg-{1};'
+            'ifup {1}; ip -o -4 a s {1} | grep -w {2}'.format(
+                add_admin_ip, admin_if, admin_ip))
         logger.debug('Trying to assign {0} IP to the {1} on master node...'.
                      format(admin_ip, admin_if))
 
@@ -835,8 +839,10 @@ class EnvironmentModel(object):
             ip=self.ssh_manager.admin_ip,
             cmd=cmd
         )
-        assert_equal(result['exit_code'], 0, ('Failed to assign second admin '
-                     'IP address on master node: {0}').format(result))
+        assert_equal(
+            result['exit_code'], 0,
+            'Failed to assign second admin IP address on master node: '
+            '{0}'.format(result))
         logger.debug('Done: {0}'.format(result['stdout']))
 
         # TODO for ssh manager

@@ -29,16 +29,16 @@ from fuelweb_test.helpers.ssh_manager import SSHManager
 
 def regenerate_ubuntu_repo(path):
     # Ubuntu
-    cr = CustomRepo()
-    cr.install_tools(['dpkg', 'dpkg-devel', 'dpkg-dev'])
-    cr.regenerate_repo('regenerate_ubuntu_repo', path)
+    custom_repo = CustomRepo()
+    custom_repo.install_tools(['dpkg', 'dpkg-devel', 'dpkg-dev'])
+    custom_repo.regenerate_repo('regenerate_ubuntu_repo', path)
 
 
 def regenerate_centos_repo(path):
     # CentOS
-    cr = CustomRepo()
-    cr.install_tools(['createrepo'])
-    cr.regenerate_repo('regenerate_centos_repo', path)
+    custom_repo = CustomRepo()
+    custom_repo.install_tools(['createrepo'])
+    custom_repo.regenerate_repo('regenerate_centos_repo', path)
 
 
 class CustomRepo(object):
@@ -140,8 +140,8 @@ class CustomRepo(object):
                 logger.error(traceback.format_exc())
                 raise
             try:
-                d = zlib.decompressobj(zlib.MAX_WBITS | 32)
-                pkgs_release = d.decompress(pkgs_release_gz)
+                decompressor = zlib.decompressobj(zlib.MAX_WBITS | 32)
+                pkgs_release = decompressor.decompress(pkgs_release_gz)
             except Exception:
                 logger.error('Ubuntu mirror error: Could not decompress {0}\n'
                              '{1}'.format(url_gz, traceback.format_exc()))
@@ -189,8 +189,8 @@ class CustomRepo(object):
             raise
         if '.xml.gz' in lists_location:
             try:
-                d = zlib.decompressobj(zlib.MAX_WBITS | 32)
-                lists_data = d.decompress(lists_data)
+                decompressor = zlib.decompressobj(zlib.MAX_WBITS | 32)
+                lists_data = decompressor.decompress(lists_data)
             except Exception:
                 logger.error('CentOS mirror error: Could not decompress {0}\n'
                              '{1}'.format(url, traceback.format_exc()))
@@ -372,7 +372,7 @@ class CustomRepo(object):
                 if err_deps_key not in err_deps:
                     err_deps[err_deps_key] = set()
             elif ' Requires: ' in res_str and err_deps_key:
-                str0, str1, str2 = res_str.partition(' Requires: ')
+                _, str1, str2 = res_str.partition(' Requires: ')
                 err_deps[err_deps_key].add(str1 + str2)
             else:
                 err_deps_key = ''

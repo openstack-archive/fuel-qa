@@ -20,13 +20,13 @@ import urllib2
 from logging import DEBUG
 from optparse import OptionParser
 
-from builds import Build
-from settings import JENKINS
-from settings import logger
-from settings import TestRailSettings
-from testrail_client import TestRailProject
-from report import get_tests_results
-from report import publish_results
+from fuelweb_test.testrail.builds import Build
+from fuelweb_test.testrail.settings import JENKINS
+from fuelweb_test.testrail.settings import logger
+from fuelweb_test.testrail.settings import TestRailSettings
+from fuelweb_test.testrail.testrail_client import TestRailProject
+from fuelweb_test.testrail.report import get_tests_results
+from fuelweb_test.testrail.report import publish_results
 
 
 def find_run_by_name(test_plan, run_name):
@@ -108,8 +108,9 @@ def main():
                      'number': int(tests_result['url'].split('/')[-2]),
                      'mile': (tests_result['description'].
                               split()[0].split('-')[0]),
-                     'iso': (int(tests_result['description'].
-                             split()[0].split('-')[1]))}
+                     'iso': (
+                         int(tests_result['description']
+                             .split()[0].split('-')[1]))}
         if tests_job['mile'] not in tests_results:
             tests_results[tests_job['mile']] = {}
         test_mile = tests_results[tests_job['mile']]

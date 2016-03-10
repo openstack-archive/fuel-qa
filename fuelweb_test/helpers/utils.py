@@ -38,10 +38,10 @@ from gates_tests.helpers import exceptions
 
 
 @logwrap
-def get_yaml_to_json(node_ssh, file):
+def get_yaml_to_json(node_ssh, filename):
     cmd = ("python -c 'import sys, yaml, json; json.dump("
            "yaml.load(sys.stdin),"
-           " sys.stdout)' < {0}").format(file)
+           " sys.stdout)' < {0}").format(filename)
     err_res = ''
     res = node_ssh.execute(cmd)
     err_res.join(res['stderr'])
@@ -53,9 +53,9 @@ def get_yaml_to_json(node_ssh, file):
 
 
 @logwrap
-def put_json_on_remote_from_dict(remote, dict, cluster_id):
+def put_json_on_remote_from_dict(remote, src_dict, cluster_id):
     cmd = ('python -c "import json; '
-           'data=json.dumps({0}); print data"').format(dict)
+           'data=json.dumps({0}); print data"').format(src_dict)
     result = remote.execute(
         '{0} > /var/log/network_{1}.json'.format(cmd, cluster_id))
     asserts.assert_equal(
@@ -66,9 +66,9 @@ def put_json_on_remote_from_dict(remote, dict, cluster_id):
 @logwrap
 def nova_service_get_pid(node_ssh, nova_services=None):
     pid_dict = {}
-    for el in nova_services:
-        cmd = "pgrep {0}".format(el)
-        pid_dict[el] = node_ssh.execute(cmd)['stdout']
+    for elem in nova_services:
+        cmd = "pgrep {0}".format(elem)
+        pid_dict[elem] = node_ssh.execute(cmd)['stdout']
         logger.debug('current dict is {0}'. format(pid_dict))
     return pid_dict
 
@@ -179,11 +179,11 @@ def get_test_method_name():
     # run the test method with unittest.FunctionTestCase)
     stack = inspect.stack()
     method = ''
-    for m in stack:
-        if 'self' in m[0].f_locals:
-            if m[0].f_locals['self'].__class__.__name__ == 'NoneType':
+    for mtd in stack:
+        if 'self' in mtd[0].f_locals:
+            if mtd[0].f_locals['self'].__class__.__name__ == 'NoneType':
                 break
-            method = m[3]
+            method = mtd[3]
     return method
 
 
@@ -214,29 +214,29 @@ def update_yaml(yaml_tree=None, yaml_value='', is_uniq=True,
         yaml_tree = []
     yaml_data = {}
     if os.path.isfile(yaml_file):
-        with open(yaml_file, 'r') as f:
-            yaml_data = yaml.load(f)
+        with open(yaml_file, 'r') as file_yaml:
+            yaml_data = yaml.load(file_yaml)
 
     # Walk through the 'yaml_data' dict, find or create a tree using
     # sub-keys in order provided in 'yaml_tree' list
     item = yaml_data
-    for n in yaml_tree[:-1]:
-        if n not in item:
-            item[n] = {}
-        item = item[n]
+    for elem in yaml_tree[:-1]:
+        if elem not in item:
+            item[elem] = {}
+        item = item[elem]
 
     if is_uniq:
         last = yaml_tree[-1]
     else:
         # Create an uniq suffix in range '_00' to '_99'
-        for n in range(100):
-            last = str(yaml_tree[-1]) + '_' + str(n).zfill(2)
+        for elem in range(100):
+            last = str(yaml_tree[-1]) + '_' + str(elem).zfill(2)
             if last not in item:
                 break
 
     item[last] = yaml_value
-    with open(yaml_file, 'w') as f:
-        yaml.dump(yaml_data, f, default_flow_style=False)
+    with open(yaml_file, 'w') as file_yaml:
+        yaml.dump(yaml_data, file_yaml, default_flow_style=False)
 
 
 class TimeStat(object):
@@ -491,7 +491,9 @@ def get_network_template(template_name):
 
 
 @logwrap
-def get_net_settings(remote, skip_interfaces=set()):
+def get_net_settings(remote, skip_interfaces=None):
+    if skip_interfaces is None:
+        skip_interfaces = set()
     net_settings = dict()
     interface_cmd = ('awk \'$1~/:/{split($1,iface,":"); print iface[1]}\''
                      ' /proc/net/dev')
@@ -704,12 +706,12 @@ def pretty_log(src, indent=0, invert=False):
                                               len=max_len + 5)
 
     elif src and isinstance(src, list):
-        for el in src:
-            if (isinstance(el, dict) and el) or isinstance(el, list):
-                res = pretty_log(el, indent + 3)
+        for elem in src:
+            if (isinstance(elem, dict) and elem) or isinstance(elem, list):
+                res = pretty_log(elem, indent + 3)
             else:
                 res = templates[2].format(indent=' ' * (indent + 3),
-                                          value=str(el))
+                                          value=str(elem))
             result += res[:indent + 2] + '-' + res[indent + 3:]
     return result
 
@@ -816,7 +818,7 @@ def compare_packages_version(remote, package_name, income_package_name):
         return True
     installed_release, installed_version = get_package_version(
         remote, package_name).split(' ')
-    if not version.LooseVersion(income_release) == version.LooseVersion(
+    if version.LooseVersion(income_release) != version.LooseVersion(
             installed_release):
         raise exceptions.PackageVersionError(
             package=income_package_name, version=income_release)
@@ -910,17 +912,18 @@ def fill_space(ip, file_dir, size):
 
 
 @logwrap
-def get_ceph_partitions(ip, device, type="xfs"):
+def get_ceph_partitions(ip, device, fstype="xfs"):
     # Moved from checkers.py for improvement of code
     ret = SSHManager().check_call(
         ip=ip,
         cmd="parted {device} print | grep {type}".format(device=device,
-                                                         type=type)
+                                                         type=fstype)
     )['stdout']
     if not ret:
-        logger.error("Partition not present! {partitions}: ".format(
-                     SSHManager().check_call(ip=ip,
-                                             cmd="parted {device} print")))
+        logger.error(
+            "Partition not present! {partitions}: ".format(
+                partitions=SSHManager().check_call(
+                    ip=ip, cmd="parted {device} print")))
         raise Exception()
     logger.debug("Partitions: {part}".format(part=ret))
     return ret
@@ -936,9 +939,10 @@ def get_mongo_partitions(ip, device):
             size=re.escape('{print $4}'))
     )['stdout']
     if not ret:
-        logger.error("Partition not present! {partitions}: ".format(
-                     SSHManager().check_call(ip=ip,
-                                             cmd="parted {device} print")))
+        logger.error(
+            "Partition not present! {partitions}: ".format(
+                partitions=SSHManager().check_call(
+                    ip=ip, cmd="parted {device} print")))
         raise Exception()
     logger.debug("Partitions: {part}".format(part=ret))
     return ret

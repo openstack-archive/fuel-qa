@@ -12,13 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from devops.error import TimeoutError
+from devops.helpers.helpers import wait
 from proboscis import test
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
 
-from devops.error import TimeoutError
-from devops.helpers.helpers import wait
 from fuelweb_test.helpers.checkers import check_cluster_presence
 from fuelweb_test.helpers.checkers import check_cobbler_node_exists
 from fuelweb_test.helpers.decorators import log_snapshot_after_test

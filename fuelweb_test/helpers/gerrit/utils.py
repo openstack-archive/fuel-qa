@@ -16,15 +16,15 @@ import json
 
 
 def check_status_code(code):
-    def outer_wrap(f):
+    def outer_wrap(func):
         def inner_wrap(*args, **kwargs):
-            r = f(*args, **kwargs)
-            if r.status_code != code:
+            result = func(*args, **kwargs)
+            if result.status_code != code:
                 raise Exception("Unexpected status code. "
                                 "Wanted status code: {0}. "
                                 "Got status code: {1}"
-                                .format(code, r.status_code))
-            return r
+                                .format(code, result.status_code))
+            return result
         return inner_wrap
     return outer_wrap
 

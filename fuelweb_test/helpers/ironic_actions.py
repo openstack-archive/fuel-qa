@@ -12,10 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
+
 from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
+
 from fuelweb_test.helpers import os_actions
-import json
 
 
 class IronicActions(os_actions.OpenStackActions):
@@ -32,16 +34,17 @@ class IronicActions(os_actions.OpenStackActions):
                       "type": "disk", "id": "vda", "size": 11000,
                       "volumes": [{"mount": "/", "type": "partition",
                                    "file_system": "ext4", "size": 10000}]}]
-        cmd = ('. /root/openrc; cd /tmp/; '
-               'curl {img_url} | tar -xzp; '
-               'glance image-create --name virtual_trusty_ext4 '
-               '--disk-format raw --container-format bare '
-               '--file trusty-server-cloudimg-amd64.img --visibility public '
-               '--property cpu_arch="x86_64" '
-               '--property hypervisor_type="baremetal" '
-               '--property fuel_disk_info=\'{disk_info}\'').format(
-            disk_info=json.dumps(disk_info),
-            img_url=img_url)
+        cmd = (
+            '. /root/openrc; cd /tmp/; '
+            'curl {img_url} | tar -xzp; '
+            'glance image-create --name virtual_trusty_ext4 '
+            '--disk-format raw --container-format bare '
+            '--file trusty-server-cloudimg-amd64.img --visibility public '
+            '--property cpu_arch="x86_64" '
+            '--property hypervisor_type="baremetal" '
+            '--property fuel_disk_info=\'{disk_info}\''.format(
+                disk_info=json.dumps(disk_info),
+                img_url=img_url))
 
         ssh_manager.execute_on_remote(nailgun_node['ip'], cmd=cmd)
 

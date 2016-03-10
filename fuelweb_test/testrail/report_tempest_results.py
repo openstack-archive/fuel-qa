@@ -18,11 +18,11 @@ import optparse
 import urlparse
 from xml.etree import ElementTree
 
-import report
-from settings import JENKINS
-from settings import logger
-from settings import TestRailSettings
-from testrail_client import TestRailProject
+from fuelweb_test.testrail import report
+from fuelweb_test.testrail.settings import JENKINS
+from fuelweb_test.testrail.settings import logger
+from fuelweb_test.testrail.settings import TestRailSettings
+from fuelweb_test.testrail.testrail_client import TestRailProject
 
 
 LOG = logger
