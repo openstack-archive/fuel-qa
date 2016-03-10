@@ -322,8 +322,8 @@ class NailgunClient(object):
     def get_cluster_id(self, name):
         for cluster in self.list_clusters():
             if cluster["name"] == name:
-                logger.info('cluster name is %s' % name)
-                logger.info('cluster id is %s' % cluster["id"])
+                logger.info('cluster name is {:s}'.format(name))
+                logger.info('cluster id is {:s}'.format(cluster["id"]))
                 return cluster["id"]
 
     @logwrap

@@ -50,10 +50,10 @@ def ovs_decode_columns(ovs_data):
         for i, field in enumerate(fields):
             if isinstance(field, list):
                 if field[0] == 'map':
-                    d = {}
-                    for f in field[1]:
-                        d[f[0]] = f[1]
-                    res_fields[headings[i]] = d
+                    dic = {}
+                    for field_content in field[1]:
+                        dic[field_content[0]] = field_content[1]
+                    res_fields[headings[i]] = dic
                 elif field[0] == 'uuid':
                     res_fields[headings[i]] = {'uuid': field[1]}
                 else:

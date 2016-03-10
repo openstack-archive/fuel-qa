@@ -17,8 +17,8 @@ from collections import namedtuple
 import os
 import re
 from fuelweb_test import settings
-from gerrit_client import GerritClient
-import utils
+from fuelweb_test.helpers.gerrit.gerrit_client import GerritClient
+from fuelweb_test.helpers.gerrit import utils
 
 
 class FuelLibraryModulesProvider(object):
@@ -63,8 +63,8 @@ class FuelLibraryModulesProvider(object):
         return self.changed_modules
 
     def _store_file_list(self):
-        r = self._request_file_list()
-        text = r.text
+        req = self._request_file_list()
+        text = req.text
         files = utils.filter_response_text(text)
         self._files_list.update(set(filter(lambda x: x != '/COMMIT_MSG',
                                            utils.json_to_dict(files).keys())))
@@ -74,12 +74,13 @@ class FuelLibraryModulesProvider(object):
         return self.gerrit_review.list_files()
 
     def _find_modules_in_files(self):
-        for f in self._files_list:
-            if f.startswith(FuelLibraryModulesProvider.MODULE_ROOT_PATH):
-                split_path = f.split('/')
+        for filename in self._files_list:
+            if filename.startswith(
+                    FuelLibraryModulesProvider.MODULE_ROOT_PATH):
+                split_path = filename.split('/')
                 module = split_path[2]
                 self._add_module_from_files(module, split_path)
-                self._add_module_from_osnailyfacter(f, split_path)
+                self._add_module_from_osnailyfacter(filename, split_path)
 
     def _add_module_from_files(self, module, split_path):
         if module != FuelLibraryModulesProvider.OSNAILYFACTER_NAME:
@@ -197,12 +198,12 @@ class DependencyProvider(object):
         for dependency in dependencies['changes']:
             if 'change_id' in dependency and \
                '_current_revision_number' in dependency:
-                d = DependencyProvider.Dependency(
+                dep = DependencyProvider.Dependency(
                     change_id=dependency['change_id'],
                     patchset_num=dependency['_current_revision_number']
                 )
-                if d.change_id != self.review.change_id:
-                    self.dependent_reviews.add(d)
+                if dep.change_id != self.review.change_id:
+                    self.dependent_reviews.add(dep)
 
     def get_dependencies(self, review=None):
         if review:
