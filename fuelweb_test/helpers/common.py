@@ -21,8 +21,9 @@ from fuelweb_test.settings import PATH_TO_CERT
 
 
 from cinderclient import client as cinderclient
-from glanceclient.v1 import Client as glanceclient
-from keystoneclient.v2_0 import Client as keystoneclient
+from heatclient.v1.client import Client as HeatClient
+from glanceclient.v1 import Client as GlanceClient
+from keystoneclient.v2_0 import Client as KeystoneClient
 from keystoneclient.exceptions import ClientException
 from novaclient.v2 import Client as novaclient
 import neutronclient.v2_0.client as neutronclient
@@ -70,6 +71,15 @@ class Common(object):
         glance_endpoint = self.keystone.service_catalog.url_for(
             service_type='image', endpoint_type='publicURL')
         LOGGER.debug('Glance endpoind is {0}'.format(glance_endpoint))
+
+        heat_endpoint = self.keystone.service_catalog.url_for(
+            service_type='orchestration', endpoint_type='publicURL')
+
+        heat_args = {'endpoint': make_endpoint(heat_endpoint),
+                     'token': token,
+                     'cacert': path_to_cert,
+                     'insecure': insecure}
+        self.heat = HeatClient(**heat_args)
 
         self.glance = glanceclient(endpoint=glance_endpoint,
                                    token=token,
