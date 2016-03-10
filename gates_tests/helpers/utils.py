@@ -552,7 +552,7 @@ def puppet_modules_mapping(modules):
 
 
 def map_test_review_in_fuel_library(**kwargs):
-    groups = kwargs.get('run_groups', None)
+    groups = kwargs.get('run_groups', [])
     old_groups = kwargs.get('groups', None)
     groups.extend(old_groups or [])
     if 'review_in_fuel_library' in groups:
