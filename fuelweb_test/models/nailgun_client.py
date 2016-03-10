@@ -660,3 +660,24 @@ class NailgunClient(object):
     def update_vip_ip(self, cluster_id, vip_id, data):
         return self.client.put("/api/clusters/{0}/network_configuration/ips/"
                                "{1}/vips".format(cluster_id, vip_id), data)
+
+    def upload_node_attributes(self, attributes, node_id):
+        """Upload node attributes for specified node.
+
+        :param attributes: a dictionary of attributes to upload.
+        :param node_id: an integer number of node id.
+        :return: a decoded JSON response.
+        """
+        url = '/api/v1/nodes/{}/attributes/'.format(node_id)
+        return self.client.put(url, data=attributes)
+
+    @logwrap
+    @json_parse
+    def get_node_attributes(self, node_id):
+        """Get attributes for specified node.
+
+        :param node_id: an integer number of node id.
+        :return: a decoded JSON response.
+        """
+        url = '/api/v1/nodes/{}/attributes/'.format(node_id)
+        return self.client.get(url)
