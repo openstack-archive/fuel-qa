@@ -174,7 +174,14 @@ def is_health_ok(remote):
     :param remote: devops.helpers.helpers.SSHClient
     :return: bool
     """
-    return health_overall_status(remote) == 'HEALTH_OK'
+
+    if health_overall_status(remote) == 'HEALTH_OK':
+        return True
+    if is_health_warn(remote):
+        health = get_health(remote)
+        if 'too many PGs' in health['summary'][0]['summary']:
+            return True
+    return False
 
 
 def is_health_warn(remote):

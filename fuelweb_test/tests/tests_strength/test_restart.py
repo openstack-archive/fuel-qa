@@ -165,7 +165,7 @@ class CephRestart(TestBasic):
                 'slave-04']))
 
         # Wait for HA services ready
-        self.fuel_web.assert_ha_services_ready(cluster_id)
+        self.fuel_web.assert_ha_services_ready(cluster_id, timeout=30 * 60)
 
         # Wait until OpenStack services are UP, should fail 2 services
         # because slave-05 (compute+ceph-osd) destroyed. We ignore
