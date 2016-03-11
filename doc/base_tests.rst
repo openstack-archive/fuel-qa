@@ -297,6 +297,11 @@ Test CentOS bootstrap
 .. automodule:: fuelweb_test.tests.test_centos_bootstrap
    :members:
 
+Test Ubuntu Cloud Archive
+-------------------------
+.. automodule:: fuelweb_test.tests.test_uca
+   :members:
+
 Test Vcenter
 ------------
 .. automodule:: fuelweb_test.tests.test_vcenter
