@@ -17,6 +17,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import test
 
+from fuelweb_test.helpers.checkers import check_plugin_path_env
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import utils
 from fuelweb_test.settings import DEPLOYMENT_MODE
@@ -29,6 +30,12 @@ from fuelweb_test.tests.base_test_case import TestBasic
 @test(groups=["plugins"])
 class GlusterfsPlugin(TestBasic):
     """GlusterfsPlugin."""  # TODO documentation
+    def __init__(self):
+        super(GlusterfsPlugin, self).__init__()
+        check_plugin_path_env(
+            var_name='GLUSTER_PLUGIN_PATH',
+            plugin_path=GLUSTER_PLUGIN_PATH
+        )
 
     @classmethod
     def check_glusterfs_conf(cls, remote, path, gfs_endpoint):

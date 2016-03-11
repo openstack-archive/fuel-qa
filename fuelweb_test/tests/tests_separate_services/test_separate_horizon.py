@@ -18,6 +18,7 @@ from proboscis import test
 from proboscis.asserts import assert_true
 from devops.helpers.helpers import wait
 
+from fuelweb_test.helpers.checkers import check_plugin_path_env
 from fuelweb_test.helpers import utils
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
@@ -50,6 +51,11 @@ class SeparateHorizon(TestBasic):
         Snapshot separate_horizon_service
         """
         self.check_run("separate_horizon_service")
+        check_plugin_path_env(
+            var_name='SEPARATE_SERVICE_HORIZON_PLUGIN_PATH',
+            plugin_path=settings.SEPARATE_SERVICE_HORIZON_PLUGIN_PATH
+        )
+
         self.env.revert_snapshot("ready_with_9_slaves")
 
         # copy plugins to the master node

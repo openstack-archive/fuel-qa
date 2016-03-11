@@ -21,6 +21,7 @@ import requests
 
 from fuelweb_test import logger
 from fuelweb_test import settings
+from fuelweb_test.helpers.checkers import check_plugin_path_env
 from fuelweb_test.helpers import utils
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -30,6 +31,24 @@ from fuelweb_test.tests.base_test_case import TestBasic
 @test(groups=["plugins"])
 class TestLmaCollectorPlugin(TestBasic):
     """Class for testing the LMA toolchain."""
+    def __init__(self):
+        super(TestLmaCollectorPlugin, self).__init__()
+        check_plugin_path_env(
+            var_name='LMA_COLLECTOR_PLUGIN_PATH',
+            plugin_path=settings.LMA_COLLECTOR_PLUGIN_PATH
+        )
+        check_plugin_path_env(
+            var_name='ELASTICSEARCH_KIBANA_PLUGIN_PATH',
+            plugin_path=settings.ELASTICSEARCH_KIBANA_PLUGIN_PATH
+        )
+        check_plugin_path_env(
+            var_name='INFLUXDB_GRAFANA_PLUGIN_PATH',
+            plugin_path=settings.INFLUXDB_GRAFANA_PLUGIN_PATH
+        )
+        check_plugin_path_env(
+            var_name='LMA_INFRA_ALERTING_PLUGIN_PATH',
+            plugin_path=settings.LMA_INFRA_ALERTING_PLUGIN_PATH
+        )
 
     def get_vip(self, cluster_id, name):
         networks = self.fuel_web.client.get_networks(cluster_id)

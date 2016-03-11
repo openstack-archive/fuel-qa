@@ -18,9 +18,10 @@ from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_true
 from proboscis import test
 
-from fuelweb_test import logger
+from fuelweb_test.helpers.checkers import check_plugin_path_env
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import utils
+from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import INFLUXDB_GRAFANA_PLUGIN_PATH
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -32,6 +33,12 @@ import requests
 @test(groups=["plugins"])
 class TestInfluxdbPlugin(TestBasic):
     """Class for testing the InfluxDB-Grafana plugin."""
+    def __init__(self):
+        super(TestInfluxdbPlugin, self).__init__()
+        check_plugin_path_env(
+            var_name='INFLUXDB_GRAFANA_PLUGIN_PATH',
+            plugin_path=INFLUXDB_GRAFANA_PLUGIN_PATH
+        )
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_influxdb_grafana"])
