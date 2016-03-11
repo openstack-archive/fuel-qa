@@ -56,7 +56,7 @@ class TestNetworkTemplatesBase(TestBasic):
             group_id = [n['id'] for n in nodegroups if
                         n['name'] == nodegroup][0]
             ip_network = netaddr.IPNetwork(str(ip_nets[nodegroup]))
-            ip_subnets = ip_network.subnet(int(ip_prefixlen))
+            ip_subnets = list(ip_network.subnet(int(ip_prefixlen)))
             for network, interface in networks:
                 ip_subnet = ip_subnets.pop()
                 networks_data.append(
