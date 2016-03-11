@@ -20,6 +20,7 @@ touch ${RELEASE}
 
 release_header=`sed '/MD5Sum:/,$d' ${RELEASE}`
 
+
 override_main="indices/override.${SUITE}.${SECTION}"
 override_udeb="indices/override.${SUITE}.${SECTION}.debian-installer"
 override_extra="indices/override.${SUITE}.extra.${SECTION}"
@@ -71,7 +72,6 @@ fi
 
 # Generate release file
 cd ${REPO_PATH}/dists/${SUITE}
-echo "$release_header" > Release.tmp
 
 # Generate hashes
 c1=(MD5Sum: SHA1: SHA256: SHA512:)
@@ -90,3 +90,4 @@ while [ $i -lt ${#c1[*]} ]; do
 done >> Release.tmp
 
 mv --backup -f Release.tmp Release
+sed -i '1,1iOrigin: $SUITE \nLabel: $SUITE \nSuite: $SUITE \nCodename: $SUITE \nDescription: The packages repository \nArchitectures: $ARCH \nComponents: main' $RELEASE
