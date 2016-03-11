@@ -291,7 +291,7 @@ class CephHA(TestBasic):
         Scenario:
             1. Revert snapshot with ceph cluster in HA mode
             2. Check ceph status
-            3. Check ceph version, should be equal 0.94.5
+            3. Check ceph version, should be consistent across nodes
 
         Duration 10m
         Snapshot check_ceph_ha
@@ -303,7 +303,6 @@ class CephHA(TestBasic):
         self.fuel_web.check_ceph_status(cluster_id)
 
         versions = []
-        ceph_version = '0.94.5'
         for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
             role = '_'.join(node['roles'])
             logger.debug('{} has role {}'.format(node['fqdn'], role))
@@ -313,6 +312,8 @@ class CephHA(TestBasic):
                                                           version))
             versions.append({'name': node['fqdn'], 'ceph_version': version})
 
+        ceph_version = versions[0]['ceph_version']
+
         def check_ver(v):
             # Check version. True if version is not equal @ceph_version
             return (parse_version(v['ceph_version']) !=
@@ -320,8 +321,10 @@ class CephHA(TestBasic):
 
         bad_nodes = filter(check_ver, versions)
         assert_true(len(bad_nodes) == 0,
-                    message="Nodes should have Ceph version equal "
-                            "to {0}: {1}".format(ceph_version, bad_nodes))
+                    message="Nodes should same Ceph version on all nodes. "
+                            "Expecting version {0}, the following nodes "
+                            "do not have this version: {1}".format(
+                            ceph_version, bad_nodes))
         # Run ostf
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
