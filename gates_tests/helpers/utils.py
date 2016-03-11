@@ -28,24 +28,25 @@ from fuelweb_test import settings
 from gates_tests.helpers import exceptions
 
 
-def replace_fuel_agent_rpm():
-    """Replaced fuel_agent.rpm on master node with fuel_agent.rpm
+def replace_rpm_package(package):
+    """Replaced rpm package.rpm on master node with package.rpm
     from review
     """
     ssh = SSHManager()
-    logger.info("Patching fuel-agent")
+    logger.info("Patching {}".format(package))
     if not settings.UPDATE_FUEL:
         raise exceptions.FuelQAVariableNotSet('UPDATE_FUEL', 'True')
     try:
-        pack_path = '/var/www/nailgun/fuel-agent/'
-        full_pack_path = os.path.join(pack_path, 'fuel-agent*.noarch.rpm')
+        pack_path = '/var/www/nailgun/{}/'.format(package)
+        full_pack_path = os.path.join(pack_path,
+                                      '{}*.noarch.rpm'.format(package))
         ssh.upload_to_remote(
             ip=ssh.admin_ip,
             source=settings.UPDATE_FUEL_PATH.rstrip('/'),
             target=pack_path)
 
-        # Update fuel-agent on master node
-        cmd = "rpm -q fuel-agent"
+        # Update package on master node
+        cmd = "rpm -q {}".format(package)
         old_package = ssh.execute_on_remote(ssh.admin_ip, cmd)['stdout_str']
         cmd = "rpm -qp {0}".format(full_pack_path)
         new_package = ssh.execute_on_remote(ssh.admin_ip, cmd)['stdout_str']
@@ -59,7 +60,7 @@ def replace_fuel_agent_rpm():
             cmd = "rpm -Uvh --oldpackage {0}".format(full_pack_path)
             ssh.execute_on_remote(ssh.admin_ip, cmd)
 
-            cmd = "rpm -q fuel-agent"
+            cmd = "rpm -q {}".format(package)
             installed_package = ssh.execute_on_remote(
                 ssh.admin_ip, cmd)['stdout_str']
 
