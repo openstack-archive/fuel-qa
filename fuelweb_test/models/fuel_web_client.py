@@ -68,6 +68,7 @@ from fuelweb_test.settings import iface_alias
 from fuelweb_test.settings import KVM_USE
 from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import NOVA_QUOTAS_ENABLED
+from fuelweb_test.settings import NETWORK_PROVIDERS
 from fuelweb_test.settings import NEUTRON
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
@@ -1476,8 +1477,8 @@ class FuelWebClient(object):
             net_settings = \
                 self.client.get_release_default_net_settings(
                     _release['id'])
-            for net_provider in net_settings:
-                if net_provider == "bonding":
+            for net_provider in NETWORK_PROVIDERS:
+                if net_provider not in net_settings:
                     continue
 
                 networks = fetch_networks(
