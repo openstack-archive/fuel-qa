@@ -158,6 +158,8 @@ class EnvironmentModel(object):
             'ks': 'hd:LABEL=OpenStack_Fuel:/ks.cfg' if iso_connect_as == 'usb'
             else 'cdrom:/ks.cfg',
             'repo': 'hd:LABEL=OpenStack_Fuel:/',  # only required for USB boot
+            'device_label': settings.ISO_LABEL,
+            'iface': iface_alias('eth0'),
             'ip': node.get_ip_address_by_network_name(
                 self.d_env.admin_net),
             'mask': self.d_env.get_network(
@@ -211,41 +213,33 @@ class EnvironmentModel(object):
                 " <Enter>\n"
             ) % params
         if MASTER_IS_CENTOS7:
-            # CentOS 7 is pretty stable with admin iface.
             # TODO(akostrikov) add tests for menu items/kernel parameters
             # TODO(akostrikov) refactor it.
-            iface = iface_alias('eth0')
             if iso_connect_as == 'usb':
                 keys = (
                     "<Wait>\n"  # USB boot uses boot_menu=yes for master node
                     "<F12>\n"
                     "2\n"
-                    "<Esc><Enter>\n"
-                    "<Wait>\n"
-                    "vmlinuz initrd=initrd.img ks=%(ks)s\n"
-                    " repo=%(repo)s\n"
-                    " ip=%(ip)s::%(gw)s:%(mask)s:%(hostname)s"
-                    ":{iface}:off::: dns1=%(dns1)s"
-                    " showmenu=%(showmenu)s\n"
-                    " wait_for_external_config=%(wait_for_external_config)s\n"
-                    " build_images=%(build_images)s\n"
-                    " <Enter>\n".format(iface=iface)
-                ) % params
-            else:  # cdrom case is default
+                )
+            else:  # cdrom is default
                 keys = (
                     "<Wait>\n"
                     "<Wait>\n"
                     "<Wait>\n"
-                    "<Esc>\n"
-                    "<Wait>\n"
-                    "vmlinuz initrd=initrd.img ks=%(ks)s\n"
-                    " ip=%(ip)s::%(gw)s:%(mask)s:%(hostname)s"
-                    ":{iface}:off::: dns1=%(dns1)s"
-                    " showmenu=%(showmenu)s\n"
-                    " wait_for_external_config=%(wait_for_external_config)s\n"
-                    " build_images=%(build_images)s\n"
-                    " <Enter>\n".format(iface=iface)
-                ) % params
+                )
+
+            keys += (
+                "<Esc>\n"
+                "<Wait>\n"
+                "vmlinuz initrd=initrd.img inst.ks=cdrom:LABEL=%(device_label)s:/ks.cfg\n"
+                " inst.repo=cdrom:LABEL=%(device_label)s:/\n"
+                " ip=%(ip)s::%(gw)s:%(mask)s:%(hostname)s"
+                ":%(iface)s:off::: nameserver=%(dns1)s"
+                " showmenu=%(showmenu)s\n"
+                " wait_for_external_config=%(wait_for_external_config)s\n"
+                " build_images=%(build_images)s\n"
+                " <Enter>\n"
+            ) % params
         return keys
 
     def get_target_devs(self, devops_nodes):
