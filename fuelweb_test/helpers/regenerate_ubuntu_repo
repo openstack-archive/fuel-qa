@@ -20,6 +20,7 @@ touch ${RELEASE}
 
 release_header=`sed '/MD5Sum:/,$d' ${RELEASE}`
 
+
 override_main="indices/override.${SUITE}.${SECTION}"
 override_udeb="indices/override.${SUITE}.${SECTION}.debian-installer"
 override_extra="indices/override.${SUITE}.extra.${SECTION}"
@@ -71,7 +72,6 @@ fi
 
 # Generate release file
 cd ${REPO_PATH}/dists/${SUITE}
-echo "$release_header" > Release.tmp
 
 # Generate hashes
 c1=(MD5Sum: SHA1: SHA256: SHA512:)
