@@ -291,7 +291,7 @@ class CephHA(TestBasic):
         Scenario:
             1. Revert snapshot with ceph cluster in HA mode
             2. Check ceph status
-            3. Check ceph version, should be equal 0.94.5
+            3. Check ceph version, should be equal 0.94.6
 
         Duration 10m
         Snapshot check_ceph_ha
@@ -303,7 +303,7 @@ class CephHA(TestBasic):
         self.fuel_web.check_ceph_status(cluster_id)
 
         versions = []
-        ceph_version = '0.94.5'
+        ceph_version = '0.94.6'
         for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
             role = '_'.join(node['roles'])
             logger.debug('{} has role {}'.format(node['fqdn'], role))
