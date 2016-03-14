@@ -771,7 +771,7 @@ class MultinicBootstrap(TestBasic):
                 Ebtables.block_mac(mac)
             for mac in mac_addresses:
                 Ebtables.restore_mac(mac)
-                slave.destroy(verbose=False)
+                slave.destroy()
                 self.env.d_env.nodes().admins[0].revert("ready")
                 nailgun_slave = self.env.bootstrap_nodes([slave])[0]
                 assert_equal(mac.upper(), nailgun_slave['mac'].upper())
