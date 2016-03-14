@@ -17,26 +17,26 @@ import inspect
 import json
 import os
 from subprocess import call
-import requests
 import sys
 import time
 import traceback
 from urlparse import urlparse
 
+from proboscis import SkipTest
+from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
+import requests
+
+from fuelweb_test import logger
+from fuelweb_test import settings
+from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test.helpers.checkers import check_action_logs
 from fuelweb_test.helpers.checkers import check_repo_managment
 from fuelweb_test.helpers.checkers import check_stats_on_collector
 from fuelweb_test.helpers.checkers import check_stats_private_info
 from fuelweb_test.helpers.checkers import count_stats_on_collector
-from proboscis import SkipTest
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_true
-
-from fuelweb_test import logger
-from fuelweb_test import settings
-from fuelweb_test.helpers.ssh_manager import SSHManager
-from fuelweb_test.settings import MASTER_IS_CENTOS7
 from fuelweb_test.helpers.regenerate_repo import CustomRepo
+from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import get_current_env
 from fuelweb_test.helpers.utils import pull_out_logs_via_ssh
 from fuelweb_test.helpers.utils import store_astute_yaml
@@ -499,6 +499,7 @@ def check_repos_management(func):
 # Python.six is less smart
 
 
+# pylint: disable=no-member
 def __getcallargs(func, *positional, **named):
     if sys.version_info.major < 3:
         return inspect.getcallargs(func, *positional, **named)
@@ -528,6 +529,7 @@ def __get_arg_names(func):
         return [arg for arg in inspect.getargspec(func=func).args]
     else:
         return list(inspect.signature(obj=func).parameters.keys())
+# pylint:enable=no-member
 
 
 def __call_in_context(func, context_args):

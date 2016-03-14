@@ -15,10 +15,6 @@
 import re
 import time
 import traceback
-
-import yaml
-import netaddr
-
 from urllib2 import HTTPError
 
 from devops.error import DevopsCalledProcessError
@@ -26,13 +22,14 @@ from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
 from devops.models.node import Node
-
+import netaddr
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
+import yaml
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap

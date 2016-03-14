@@ -16,18 +16,18 @@ import ConfigParser
 from distutils import version
 import inspect
 import json
-import time
-import traceback
-import yaml
 import os
 import posixpath
 import re
 import signal
-import netaddr
+import time
+import traceback
 
+import netaddr
 from proboscis import asserts
 from proboscis.asserts import assert_true
 from proboscis.asserts import assert_equal
+import yaml
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
@@ -251,6 +251,9 @@ class TimeStat(object):
         else:
             self.name = 'timestat'
         self.is_uniq = is_uniq
+        self.begin_time = 0
+        self.end_time = 0
+        self.total_time = 0
 
     def __enter__(self):
         self.begin_time = time.time()
