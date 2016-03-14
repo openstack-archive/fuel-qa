@@ -52,7 +52,7 @@ def collect_yamls(path):
     for r, d, f in os.walk(path):
         for one in f:
             if os.path.splitext(one)[1] in ('.yaml', '.yml'):
-                    ret.append(os.path.join(r, one))
+                ret.append(os.path.join(r, one))
     return ret
 
 

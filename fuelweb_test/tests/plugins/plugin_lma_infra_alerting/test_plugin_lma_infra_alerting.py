@@ -118,12 +118,13 @@ class TestLmaInfraAlertingPlugin(TestBasic):
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         assert_true(self.fuel_web.check_plugin_exists(cluster_id, self._name),
                     msg)
-        logger.debug('%s (%s) plugin is installed' % (self._name,
-                                                      self._version))
-        self.fuel_wb.update_plugin_settings(cluster_id,
-                                            self._name,
-                                            self._version,
-                                            plugin_options)
+        logger.debug(
+            '{name:s} ({ver!s}) plugin is installed'
+            ''.format(name=self._name, ver=self._version))
+        self.fuel_web.update_plugin_settings(cluster_id,
+                                             self._name,
+                                             self._version,
+                                             plugin_options)
 
         return cluster_id
 
