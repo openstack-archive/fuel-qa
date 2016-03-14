@@ -304,7 +304,7 @@ class EnvironmentModel(object):
 
     def make_snapshot(self, snapshot_name, description="", is_make=False):
         if settings.MAKE_SNAPSHOT or is_make:
-            self.d_env.suspend(verbose=False)
+            self.d_env.suspend()
             time.sleep(10)
 
             self.d_env.snapshot(snapshot_name, force=True,

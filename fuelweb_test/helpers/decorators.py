@@ -63,6 +63,40 @@ def save_logs(url, path, auth_token=None, chunk_size=1024):
                 fp.write(chunk)
                 fp.flush()
 
+def store_error_details(name, env):
+    description = "Failed in method {:s}.".format(name)
+    if env is not None:
+        try:
+            create_diagnostic_snapshot(env, "fail", name)
+        except:
+            logger.error("Fetching of diagnostic snapshot failed: {0}".format(
+                traceback.format_exception_only(sys.exc_info()[0],
+                                                sys.exc_info()[1])))
+            logger.debug("Fetching of diagnostic snapshot failed: {0}".
+                         format(traceback.format_exc()))
+            try:
+                with env.d_env.get_admin_remote()\
+                        as admin_remote:
+                    pull_out_logs_via_ssh(admin_remote, name)
+            except:
+                logger.error("Fetching of raw logs failed: {0}".format(
+                    traceback.format_exception_only(sys.exc_info()[0],
+                                                    sys.exc_info()[1])))
+                logger.debug("Fetching of raw logs failed: {0}".
+                             format(traceback.format_exc()))
+        finally:
+            try:
+                env.make_snapshot(snapshot_name=name[-50:],
+                                          description=description,
+                                          is_make=True)
+            except:
+                logger.error(
+                    "Error making the environment snapshot: {0}".format(
+                        traceback.format_exception_only(sys.exc_info()[0],
+                                                        sys.exc_info()[1])))
+                logger.debug("Error making the environment snapshot:"
+                             " {0}".format(traceback.format_exc()))
+
 
 def log_snapshot_after_test(func):
     """Generate diagnostic snapshot after the end of the test.
@@ -85,29 +119,7 @@ def log_snapshot_after_test(func):
             raise SkipTest()
         except Exception:
             name = 'error_{:s}'.format(func.__name__)
-            description = "Failed in method {:s}.".format(func.__name__)
-            if args[0].env is not None:
-                try:
-                    create_diagnostic_snapshot(args[0].env, "fail", name)
-                except:
-                    logger.error("Fetching of diagnostic snapshot failed: {0}".
-                                 format(traceback.format_exc()))
-                    try:
-                        with args[0].env.d_env.get_admin_remote()\
-                                as admin_remote:
-                            pull_out_logs_via_ssh(admin_remote, name)
-                    except:
-                        logger.error("Fetching of raw logs failed: {0}".
-                                     format(traceback.format_exc()))
-                finally:
-                    logger.debug(args)
-                    try:
-                        args[0].env.make_snapshot(snapshot_name=name[-50:],
-                                                  description=description,
-                                                  is_make=True)
-                    except:
-                        logger.error("Error making the environment snapshot:"
-                                     " {0}".format(traceback.format_exc()))
+            store_error_details(name, args[0].env)
             logger.error(traceback.format_exc())
             logger.info("<" * 5 + "*" * 100 + ">" * 5)
             raise

@@ -15,6 +15,13 @@
 
 class UnexpectedExitCode(Exception):
     def __init__(self, command, ec, expected_ec, stdout=None, stderr=None):
+        """Exception for unexpected exit code after executing shell/ssh command
+        :param command: str - executed command
+        :param ec: int - actual exit code
+        :param expected_ec: list of integers - expected exit codes
+        :param stdout: str
+        :param stderr: str
+        """
         self.ec = ec
         self.expected_ec = expected_ec
         self.cmd = command
@@ -23,7 +30,7 @@ class UnexpectedExitCode(Exception):
 
     def __str__(self):
         message = "Command '{cmd:s}' returned unexpected exit code {code:d}," \
-                  " while waiting for {exp:d}".format(cmd=self.cmd,
+                  " while waiting for {exp}".format(cmd=self.cmd,
                                                       code=self.ec,
                                                       exp=self.expected_ec)
         if self.stdout:
