@@ -368,11 +368,11 @@ class FailoverGroup1(TestBasic):
 
         self.show_step(5)
         with self.fuel_web.get_ssh_for_node('slave-04') as remote:
-                file_name = 'test_data'
-                result = remote.execute(
-                    'lvcreate -n test -L20G cinder')['exit_code']
-                assert_equal(result, 0, "The file {0} was not "
-                                        "allocated".format(file_name))
+            file_name = 'test_data'
+            result = remote.execute(
+                'lvcreate -n test -L20G cinder')['exit_code']
+            assert_equal(result, 0, "The file {0} was not "
+                                    "allocated".format(file_name))
 
         self.show_step(6)
         self.show_step(7)

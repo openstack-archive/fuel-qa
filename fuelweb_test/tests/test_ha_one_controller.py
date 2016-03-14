@@ -64,7 +64,7 @@ class OneNodeDeploy(TestBasic):
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
         )
-        logger.info('cluster is %s' % str(cluster_id))
+        logger.info('Cluster is {!s}'.format(cluster_id))
         self.fuel_web.update_nodes(
             cluster_id,
             {'slave-01': ['controller']}
