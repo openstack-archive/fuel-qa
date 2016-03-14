@@ -494,7 +494,9 @@ def get_network_template(template_name):
 
 
 @logwrap
-def get_net_settings(remote, skip_interfaces=set()):
+def get_net_settings(remote, skip_interfaces=None):
+    if skip_interfaces is None:
+        skip_interfaces = set()
     net_settings = dict()
     interface_cmd = ('awk \'$1~/:/{split($1,iface,":"); print iface[1]}\''
                      ' /proc/net/dev')
