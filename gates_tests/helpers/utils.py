@@ -504,7 +504,7 @@ def puppet_modules_mapping(modules):
     with open("gates_tests/helpers/puppet_module_mapping.yaml", "r") as f:
         mapping = yaml.load(f)
 
-    if modules and type(modules) is dict:
+    if modules and isinstance(modules, dict):
         all_modules = set([j for i in mapping.values() for j in i])
         logger.debug(
             "List of puppet modules covered by system_tests {}".format(
@@ -522,9 +522,9 @@ def puppet_modules_mapping(modules):
         # find test group which has better coverage of modules from review
         system_test = "bvt_2"
         max_intersection = 0
-        if not ("ceph" in modules and set(
-                ["roles/cinder.pp", "cinder", "openstack-cinder"]) & set(
-                modules)):
+        if not ("ceph" in modules and
+                {"roles/cinder.pp", "cinder", "openstack-cinder"} &
+                set(modules)):
             for test in mapping:
                 test_intersection = len(
                     set(mapping[test]).intersection(set(modules)))

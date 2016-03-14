@@ -691,8 +691,8 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         logger.info("Check Ceph health is ok after migration")
         self.fuel_web.check_ceph_status(cluster_id)
 
-        logger.info("Server is now on host %s" %
-                    os.get_srv_host_name(new_srv))
+        logger.info(
+            "Server is now on host {:s}".format(os.get_srv_host_name(new_srv)))
 
         self.show_step(10)
 
@@ -779,8 +779,8 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         logger.info("Check Ceph health is ok after migration")
         self.fuel_web.check_ceph_status(cluster_id)
 
-        logger.info("Server is now on host %s" %
-                    os.get_srv_host_name(new_srv))
+        logger.info(
+            "Server is now on host {:s}".format(os.get_srv_host_name(new_srv)))
 
         self.show_step(18)
         logger.info("Terminate migrated server")

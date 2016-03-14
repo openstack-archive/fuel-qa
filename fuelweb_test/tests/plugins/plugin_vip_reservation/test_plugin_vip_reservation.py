@@ -105,7 +105,7 @@ class VipReservation(TestBasic):
         options = {'metadata/enabled': True}
         self.fuel_web.update_plugin_data(cluster_id, plugin_name, options)
 
-        logger.info('cluster is %s' % str(cluster_id))
+        logger.info('Cluster is {!s}'.format(cluster_id))
 
         self.fuel_web.update_nodes(
             cluster_id,
@@ -236,7 +236,7 @@ class VipReservation(TestBasic):
         options = {'metadata/enabled': True}
         self.fuel_web.update_plugin_data(cluster_id, plugin_name, options)
 
-        logger.info('cluster is %s' % str(cluster_id))
+        logger.info('Cluster is {!s}'.format(cluster_id))
 
         self.fuel_web.update_nodes(
             cluster_id,
@@ -363,7 +363,7 @@ class VipReservation(TestBasic):
         options = {'metadata/enabled': True}
         self.fuel_web.update_plugin_data(cluster_id, plugin_name, options)
 
-        logger.info('cluster is %s' % str(cluster_id))
+        logger.info('Cluster is {!s}'.format(cluster_id))
 
         self.fuel_web.update_nodes(
             cluster_id,

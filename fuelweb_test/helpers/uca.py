@@ -19,7 +19,7 @@ from fuelweb_test import settings
 
 
 def change_cluster_uca_config(cluster_attributes):
-    'Returns cluster attributes with UCA repo configuration.'
+    """Returns cluster attributes with UCA repo configuration."""
 
     # check attributes have uca options
 
