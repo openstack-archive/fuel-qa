@@ -83,7 +83,9 @@ class TestNetworkTemplatesBase(TestBasic):
     @staticmethod
     @logwrap
     def get_template_ep_for_role(template, role, nodegroup='default',
-                                 skip_net_roles=set()):
+                                 skip_net_roles=None):
+        if skip_net_roles is None:
+            skip_net_roles = set()
         tmpl = template['adv_net_template'][nodegroup]
         endpoints = set()
         networks = set()

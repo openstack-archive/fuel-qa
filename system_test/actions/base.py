@@ -44,6 +44,13 @@ class PrepareActions(object):
     revert_slaves - revert environment with bootstrapped slaves
 
     """
+    def __init__(self):
+        self.full_config = None
+        self.env_config = None
+        self.env_settings = None
+        self.config_name = None
+        self._devops_config = None
+        self._start_time = 0
 
     def _load_config(self):
         config = load_yaml(self.config_file)
@@ -189,7 +196,7 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions):
         num = iter(xrange(1, slaves + 1))
         nodes = {}
         for new in nodes_list:
-            for one in xrange(new['count']):
+            for _ in xrange(new['count']):
                 name = names.format(next(num))
                 while name in self.assigned_slaves:
                     name = names.format(next(num))

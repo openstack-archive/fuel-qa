@@ -87,8 +87,8 @@ class TestAdminNode(TestBasic):
         assert_equal(len(astute_master), 1)
         astute_workers = filter(lambda x: 'astute worker' in x, ps_output)
         logger.info(
-            "Found %d astute worker processes: %s" %
-            (len(astute_workers), astute_workers))
+            "Found {len:d} astute worker processes: {workers!s}"
+            "".format(len=len(astute_workers), workers=astute_workers))
         assert_equal(True, len(astute_workers) > 1)
 
 

@@ -12,13 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import paramiko
-from proboscis import asserts
 import random
 import time
 
+import paramiko
+from proboscis import asserts
 from devops.error import TimeoutError
 from devops.helpers import helpers
+
 from fuelweb_test.helpers import common
 from fuelweb_test import logger
 
@@ -116,7 +117,7 @@ class OpenStackActions(common.Common):
                 " is {0}".format(self.get_instance_detail(srv).status))
 
     def create_server_for_migration(self, neutron=True, scenario='',
-                                    timeout=100, file=None, key_name=None,
+                                    timeout=100, filename=None, key_name=None,
                                     label=None, flavor=1, **kwargs):
         name = "test-serv" + str(random.randint(1, 0x7fffffff))
         security_group = {}
@@ -146,7 +147,7 @@ class OpenStackActions(common.Common):
                                        image=image_id,
                                        flavor=flavor,
                                        userdata=scenario,
-                                       files=file,
+                                       files=filename,
                                        key_name=key_name,
                                        **kwargs)
         try:
@@ -546,16 +547,17 @@ class OpenStackActions(common.Common):
     def get_vip(self, vip):
         return self.neutron.show_vip(vip)
 
-    def get_nova_instance_ip(self, srv, net_name='novanetwork', type='fixed'):
+    def get_nova_instance_ip(
+            self, srv, net_name='novanetwork', addrtype='fixed'):
         for network_label, address_list in srv.addresses.items():
             if network_label != net_name:
                 continue
             for addr in address_list:
-                if addr['OS-EXT-IPS:type'] == type:
+                if addr['OS-EXT-IPS:type'] == addrtype:
                     return addr['addr']
         raise Exception("Instance {0} doesn't have {1} address for network "
                         "{2}, available addresses: {3}".format(srv.id,
-                                                               type,
+                                                               addrtype,
                                                                net_name,
                                                                srv.addresses))
 

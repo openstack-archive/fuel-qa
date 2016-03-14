@@ -25,14 +25,14 @@ from collections import OrderedDict
 from logging import CRITICAL
 from logging import DEBUG
 
-from builds import Build
-from launchpad_client import LaunchpadBug
-from report import get_version
-from settings import GROUPS_TO_EXPAND
-from settings import LaunchpadSettings
-from settings import logger
-from settings import TestRailSettings
-from testrail_client import TestRailProject
+from fuelweb_test.testrail.builds import Build
+from fuelweb_test.testrail.launchpad_client import LaunchpadBug
+from fuelweb_test.testrail.report import get_version
+from fuelweb_test.testrail.settings import GROUPS_TO_EXPAND
+from fuelweb_test.testrail.settings import LaunchpadSettings
+from fuelweb_test.testrail.settings import logger
+from fuelweb_test.testrail.settings import TestRailSettings
+from fuelweb_test.testrail.testrail_client import TestRailProject
 
 
 def inspect_bug(bug):
@@ -332,7 +332,7 @@ class StatisticsGenerator(object):
             if test_run:
                 html += '<h4>TestRun: "{0}"</h4>\n'.format(test_run[0]['name'])
 
-        for bug, values in stats.items():
+        for values in stats.values():
             if values['status'].lower() in ('invalid',):
                 color = 'gray'
             elif values['status'].lower() in ('new', 'confirmed', 'triaged'):
@@ -381,7 +381,7 @@ class StatisticsGenerator(object):
         bugs_table = ('|||:Failed|:Blocked|:Project|:Priority'
                       '|:Status|:Bug link|:Tests\n')
 
-        for bug_id, values in stats.items():
+        for values in stats.values():
             title = re.sub(r'(Bug\s+#\d+\s+)(in\s+[^:]+:\s+)', '\g<1>',
                            values['title'])
             title = re.sub(r'(.{100}).*', '\g<1>...', title)

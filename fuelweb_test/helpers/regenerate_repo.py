@@ -16,10 +16,10 @@ import traceback
 import os
 import re
 import urllib2
+from xml.etree import ElementTree
 import zlib
 
 from proboscis.asserts import assert_equal
-from xml.etree import ElementTree
 
 from fuelweb_test import logger
 from fuelweb_test import settings
@@ -372,7 +372,7 @@ class CustomRepo(object):
                 if err_deps_key not in err_deps:
                     err_deps[err_deps_key] = set()
             elif ' Requires: ' in res_str and err_deps_key:
-                str0, str1, str2 = res_str.partition(' Requires: ')
+                _, str1, str2 = res_str.partition(' Requires: ')
                 err_deps[err_deps_key].add(str1 + str2)
             else:
                 err_deps_key = ''

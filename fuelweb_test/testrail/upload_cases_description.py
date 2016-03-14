@@ -19,16 +19,16 @@ from optparse import OptionParser
 from proboscis import TestPlan
 from proboscis.decorators import DEFAULT_REGISTRY
 
-from builds import Build
+from fuelweb_test.testrail.builds import Build
+from fuelweb_test.testrail.settings import GROUPS_TO_EXPAND
+from fuelweb_test.testrail.settings import logger
+from fuelweb_test.testrail.settings import TestRailSettings
+from fuelweb_test.testrail.testrail_client import TestRailProject
 from system_test import define_custom_groups
 from system_test import discover_import_tests
 from system_test import register_system_test_cases
 from system_test import tests_directory
 from system_test import get_basepath
-from settings import GROUPS_TO_EXPAND
-from settings import logger
-from settings import TestRailSettings
-from testrail_client import TestRailProject
 
 
 def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
@@ -226,7 +226,7 @@ def main():
                       help='Look for existing test case only in specified '
                            'section of test suite.')
 
-    (options, args) = parser.parse_args()
+    (options, _) = parser.parse_args()
 
     if options.verbose:
         logger.setLevel(DEBUG)

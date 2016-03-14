@@ -181,7 +181,7 @@ class TestLmaCollectorPlugin(TestBasic):
             assert_true(
                 self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
                 msg)
-            logger.debug('%s plugin is installed' % plugin_name)
+            logger.debug('{:s} plugin is installed'.format(plugin_name))
             self.fuel_web.update_plugin_settings(
                 cluster_id, plugin_name,
                 plugin_version, plugin['options'])

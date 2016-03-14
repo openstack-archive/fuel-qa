@@ -15,11 +15,10 @@
 import re
 import time
 import traceback
+from urllib2 import HTTPError
 
 import yaml
 import netaddr
-
-from urllib2 import HTTPError
 
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
@@ -246,17 +245,14 @@ class FuelWebClient(object):
                 )
             )
 
-            [actual_failed_names.append(test['name'])
-             for test in set_result['tests']
-             if test['status'] not in ['success', 'disabled', 'skipped']]
-
-            [test_result.update({test['name']:test['status']})
-             for test in set_result['tests']]
-
-            [failed_tests_res.append(
-                {'%s (%s)' % (test['name'], test['status']): test['message']})
-             for test in set_result['tests']
-             if test['status'] not in ['success', 'disabled', 'skipped']]
+            for test in set_result['tests']:
+                test_result.update({test['name']: test['status']})
+                if test['status'] not in ['success', 'disabled', 'skipped']:
+                    actual_failed_names.append(test['name'])
+                    failed_tests_res.append(
+                        {'{name:s} ({status:s})'
+                         ''.format(name=test['name'], status=test['status']):
+                             test['message']})
 
         logger.info('OSTF test statuses are :\n{}\n'.format(
             pretty_log(test_result, indent=1)))
@@ -416,7 +412,7 @@ class FuelWebClient(object):
     def create_cluster(self,
                        name,
                        settings=None,
-                       release_name=help_data.OPENSTACK_RELEASE,
+                       release_name=OPENSTACK_RELEASE,
                        mode=DEPLOYMENT_MODE_HA,
                        port=514,
                        release_id=None,
@@ -938,7 +934,7 @@ class FuelWebClient(object):
                 return nailgun_node
         # On deployed environment MAC addresses of bonded network interfaces
         # are changes and don't match addresses associated with devops node
-        if help_data.BONDING:
+        if BONDING:
             return self.get_nailgun_node_by_base_name(devops_node.name)
 
     @logwrap
@@ -1463,7 +1459,7 @@ class FuelWebClient(object):
                         net.get('seg_type', '') == 'tun'):
                     result['private_tun'] = net
                 elif (net['name'] == 'private' and
-                        net.get('seg_type', '') == 'gre'):
+                      net.get('seg_type', '') == 'gre'):
                     result['private_gre'] = net
                 elif net['name'] == 'public':
                     result['public'] = net
@@ -1827,12 +1823,12 @@ class FuelWebClient(object):
                 'inet (?P<ip>\d+\.\d+\.\d+.\d+/\d+).*scope .* '
                 '{0}'.format(interface), ' '.join(ret['stdout']))
             if ip_search is None:
-                    logger.debug("Ip show output does not match in regex. "
-                                 "Current value is None. On node {0} in netns "
-                                 "{1} for interface {2}".format(node_name,
-                                                                namespace,
-                                                                interface))
-                    return None
+                logger.debug("Ip show output does not match in regex. "
+                             "Current value is None. On node {0} in netns "
+                             "{1} for interface {2}".format(node_name,
+                                                            namespace,
+                                                            interface))
+                return None
             return ip_search.group('ip')
         except DevopsCalledProcessError as err:
             logger.error(err)
@@ -1962,7 +1958,7 @@ class FuelWebClient(object):
         test_path = ostf_test_mapping.OSTF_TEST_MAPPING.get(test_name_to_run)
         logger.info('Test path is {0}'.format(test_path))
 
-        for i in range(0, retries):
+        for _ in range(0, retries):
             result = self.run_single_ostf_test(
                 cluster_id=cluster_id, test_sets=['smoke', 'sanity'],
                 test_name=test_path,
@@ -1972,12 +1968,11 @@ class FuelWebClient(object):
 
         logger.info('full res is {0}'.format(res))
         for element in res:
-            [passed_count.append(test)
-             for test in element if test.get(test_name) == 'success']
-            [failed_count.append(test)
-             for test in element if test.get(test_name) == 'failure']
-            [failed_count.append(test)
-             for test in element if test.get(test_name) == 'error']
+            for test in element:
+                if test.get(test_name) == 'success':
+                    passed_count.append(test)
+                elif test.get(test_name) in {'failure', 'error'}:
+                    failed_count.append(test)
 
         if not checks:
             assert_true(
@@ -1995,7 +1990,7 @@ class FuelWebClient(object):
     def run_ceph_task(self, cluster_id, offline_nodes):
         ceph_id = [n['id'] for n in self.client.list_cluster_nodes(cluster_id)
                    if 'ceph-osd'
-                      in n['roles'] and n['id'] not in offline_nodes]
+                   in n['roles'] and n['id'] not in offline_nodes]
         res = self.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['top-role-ceph-osd'],
             node_id=str(ceph_id).strip('[]'))
@@ -2150,8 +2145,8 @@ class FuelWebClient(object):
                              nailgun_node['status']))
 
     @logwrap
-    def modify_python_file(self, remote, modification, file):
-        remote.execute('sed -i "{0}" {1}'.format(modification, file))
+    def modify_python_file(self, remote, modification, filename):
+        remote.execute('sed -i "{0}" {1}'.format(modification, filename))
 
     def backup_master(self, remote):
         # FIXME(kozhukalov): This approach is outdated
@@ -2428,7 +2423,6 @@ class FuelWebClient(object):
         assert_true(plugin_data is not None, "Plugin {0} version {1} is not "
                     "found".format(plugin_name, version))
         for option, value in data.items():
-            plugin_data = item
             path = option.split("/")
             for p in path[:-1]:
                 plugin_data = plugin_data[p]
@@ -2555,9 +2549,9 @@ class FuelWebClient(object):
 
     @logwrap
     def spawn_vms_wait(self, cluster_id, timeout=60 * 60, interval=30):
-            logger.info('Spawn VMs of a cluster %s', cluster_id)
-            task = self.client.spawn_vms(cluster_id)
-            self.assert_task_success(task, timeout=timeout, interval=interval)
+        logger.info('Spawn VMs of a cluster %s', cluster_id)
+        task = self.client.spawn_vms(cluster_id)
+        self.assert_task_success(task, timeout=timeout, interval=interval)
 
     @logwrap
     def get_all_ostf_set_names(self, cluster_id):
@@ -2579,7 +2573,7 @@ class FuelWebClient(object):
             if network['name'] != network_name:
                 continue
             old_cidr = netaddr.IPNetwork(str(network['cidr']))
-            new_cidr = old_cidr.subnet(1)[0]
+            new_cidr = list(old_cidr.subnet(1))[0]
             assert_not_equal(old_cidr, new_cidr,
                              'Can\t create a subnet using default cidr {0} '
                              'for {1} network!'.format(old_cidr, network_name))
