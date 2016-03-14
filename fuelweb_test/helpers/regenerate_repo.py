@@ -16,10 +16,10 @@ import traceback
 import os
 import re
 import urllib2
+from xml.etree import ElementTree
 import zlib
 
 from proboscis.asserts import assert_equal
-from xml.etree import ElementTree
 
 from fuelweb_test import logger
 from fuelweb_test import settings

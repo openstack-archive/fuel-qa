@@ -44,6 +44,13 @@ class PrepareActions(object):
     revert_slaves - revert environment with bootstrapped slaves
 
     """
+    def __init__(self):
+        self.full_config = None
+        self.env_config = None
+        self.env_settings = None
+        self.config_name = None
+        self._devops_config = None
+        self._start_time = 0
 
     def _load_config(self):
         config = load_yaml(self.config_file)

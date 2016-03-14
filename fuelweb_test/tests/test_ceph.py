@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from six import BytesIO
 import time
 
 from pkg_resources import parse_version
@@ -21,6 +20,7 @@ from proboscis import SkipTest
 from proboscis import test
 from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
+from six import BytesIO
 
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers import ceph

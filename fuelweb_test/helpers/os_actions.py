@@ -12,11 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import paramiko
-from proboscis import asserts
 import random
 import time
 
+import paramiko
+from proboscis import asserts
 from devops.error import TimeoutError
 from devops.helpers import helpers
 

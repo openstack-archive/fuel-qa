@@ -14,27 +14,27 @@
 
 import os
 
+from devops.error import TimeoutError
+from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import test
 
-from fuelweb_test.helpers import checkers
-from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.helpers import os_actions
-from devops.helpers.helpers import wait
-from devops.error import TimeoutError
-from fuelweb_test.helpers.utils import RunLimit
 from fuelweb_test import settings
+from fuelweb_test import logger
+from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import os_actions
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers.utils import RunLimit
+from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
+from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.tests.test_ha_one_controller_base\
     import HAOneControllerNeutronBase
 from fuelweb_test.tests.test_neutron_tun_base import NeutronTunHaBase
-from fuelweb_test.settings import DEPLOYMENT_MODE
-from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
-from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.tests.test_cli_base import CommandLine
-from fuelweb_test import logger
 
 
 @test(enabled=False, groups=["backup_restore_master"])

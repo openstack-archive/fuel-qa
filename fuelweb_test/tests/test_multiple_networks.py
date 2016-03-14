@@ -12,8 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import netaddr
 import json
+
+import netaddr
 
 from devops.helpers.helpers import wait
 from devops.error import TimeoutError

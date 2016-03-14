@@ -12,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from settings import logger
-from testrail import APIClient
-from testrail import APIError
+from fuelweb_test.testrail.settings import logger
+from fuelweb_test.testrail.testrail import APIClient
+from fuelweb_test.testrail.testrail import APIError
 
 
 class TestRailProject(object):

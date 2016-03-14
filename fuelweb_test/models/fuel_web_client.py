@@ -15,11 +15,10 @@
 import re
 import time
 import traceback
+from urllib2 import HTTPError
 
 import yaml
 import netaddr
-
-from urllib2 import HTTPError
 
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
