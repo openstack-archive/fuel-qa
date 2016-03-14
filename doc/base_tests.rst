@@ -322,6 +322,11 @@ Test RH-based computes
 .. automodule:: fuelweb_test.tests.test_rh_compute
   :members:
 
+Test deploy services with enabled cgroups
+-----------------------------------------
+.. automodule:: fuelweb_test.tests.test_cgroup
+  :members:
+
 Gating tests
 ============
 
