@@ -14,10 +14,11 @@
 
 import random
 import time
-import netaddr
 import traceback
+from urllib2 import HTTPError
 
 from devops.helpers import helpers
+import netaddr
 from proboscis import asserts
 from proboscis import test
 
@@ -80,7 +81,7 @@ class ServicesReconfiguration(TestBasic):
                             func, *args, **kwargs):
         try:
             func(*args, **kwargs)
-        except Exception as e:
+        except HTTPError as e:
             if e.code != expected_code:
                 raise
             logger.warning('Ignoring exception: {!r}'.format(e))

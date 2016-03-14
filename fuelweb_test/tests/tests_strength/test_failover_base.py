@@ -19,7 +19,6 @@ from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
-from fuelweb_test.helpers.utils import RunLimit
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_not_equal
@@ -27,14 +26,15 @@ from proboscis.asserts import assert_true
 from proboscis import SkipTest
 import yaml
 
+from fuelweb_test import logger
+from fuelweb_test import logwrap
+from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.checkers import check_mysql
 from fuelweb_test.helpers.checkers import check_ping
 from fuelweb_test.helpers.checkers import check_public_ping
 from fuelweb_test.helpers.utils import get_file_size
-from fuelweb_test.helpers import os_actions
+from fuelweb_test.helpers.utils import RunLimit
 from fuelweb_test.helpers.utils import TimeStat
-from fuelweb_test import logger
-from fuelweb_test import logwrap
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import DNS

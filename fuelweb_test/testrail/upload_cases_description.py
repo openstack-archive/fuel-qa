@@ -19,21 +19,21 @@ from optparse import OptionParser
 from proboscis import TestPlan
 from proboscis.decorators import DEFAULT_REGISTRY
 
-from builds import Build
+from fuelweb_test.testrail.builds import Build
+from fuelweb_test.testrail.settings import GROUPS_TO_EXPAND
+from fuelweb_test.testrail.settings import logger
+from fuelweb_test.testrail.settings import TestRailSettings
+from fuelweb_test.testrail.testrail_client import TestRailProject
 from system_test import define_custom_groups
 from system_test import discover_import_tests
 from system_test import register_system_test_cases
 from system_test import tests_directory
 from system_test import get_basepath
-from settings import GROUPS_TO_EXPAND
-from settings import logger
-from settings import TestRailSettings
-from testrail_client import TestRailProject
+from system_test.tests.base import ActionTest
 
 
 def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
                            default_test_priority):
-    from system_test.tests.actions_base import ActionsBase
     discover_import_tests(get_basepath(), tests_directory)
     define_custom_groups()
     for one in groups:
@@ -55,7 +55,7 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
                 continue
             parent_home = case.entry.parent.home
             case_state = case.state
-            if issubclass(parent_home, ActionsBase):
+            if issubclass(parent_home, ActionTest):
                 case_name = parent_home.__name__
                 test_group = parent_home.__name__
                 if any([x['custom_test_group'] == test_group for x in tests]):
@@ -78,7 +78,7 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
                                          tests_exclude))
                     continue
 
-            if issubclass(parent_home, ActionsBase):
+            if issubclass(parent_home, ActionTest):
                 docstring = parent_home.__doc__.split('\n')
                 case_state.instance._load_config()
                 configuration = case_state.instance.config_name

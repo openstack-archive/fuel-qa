@@ -16,7 +16,6 @@ import os
 import re
 import sys
 import traceback
-import yaml
 import zlib
 from urllib2 import urlopen
 from urlparse import urlparse
@@ -28,6 +27,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
+import yaml
 
 from fuelweb_test import logger
 from fuelweb_test import settings

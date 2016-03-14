@@ -16,5 +16,5 @@ from .base import ActionTest
 
 
 __all__ = [
-    ActionTest
+    'ActionTest'
 ]
