@@ -2578,7 +2578,7 @@ class FuelWebClient(object):
             if network['name'] != network_name:
                 continue
             old_cidr = netaddr.IPNetwork(str(network['cidr']))
-            new_cidr = old_cidr.subnet(1)[0]
+            new_cidr = list(old_cidr.subnet(1))[0]
             assert_not_equal(old_cidr, new_cidr,
                              'Can\t create a subnet using default cidr {0} '
                              'for {1} network!'.format(old_cidr, network_name))
