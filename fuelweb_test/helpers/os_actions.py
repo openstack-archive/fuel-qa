@@ -12,13 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import paramiko
-from proboscis import asserts
 import random
 import time
 
 from devops.error import TimeoutError
 from devops.helpers import helpers
+import paramiko
+from proboscis import asserts
 
 from fuelweb_test.helpers import common
 from fuelweb_test import logger

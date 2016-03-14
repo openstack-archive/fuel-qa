@@ -12,14 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from fuelweb_test.helpers import metaclasses
-
 import re
 
 import proboscis.core
 from proboscis import factory
 from proboscis.decorators import DEFAULT_REGISTRY
 
+from fuelweb_test.helpers import metaclasses
 from system_test.tests import ActionTest
 from system_test.core.discover import config_filter
 

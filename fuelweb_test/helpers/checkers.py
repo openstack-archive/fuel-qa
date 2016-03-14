@@ -15,11 +15,16 @@ import hashlib
 import json
 import os
 import re
+from time import sleep
 import urllib2
 
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
+from netaddr import IPAddress
+from netaddr import IPNetwork
+from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
 import yaml
 
 from fuelweb_test import logger
@@ -32,13 +37,6 @@ from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import POOLS
 from fuelweb_test.settings import PUBLIC_TEST_IP
-
-from netaddr import IPAddress
-from netaddr import IPNetwork
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_true
-
-from time import sleep
 
 
 ssh_manager = SSHManager()

@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from proboscis import test
+
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import ironic_actions
 from fuelweb_test.settings import DEPLOYMENT_MODE
@@ -19,8 +21,6 @@ from fuelweb_test.settings import IRONIC_USER_IMAGE_URL
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
-
-from proboscis import test
 
 
 @test(groups=["ironic"])

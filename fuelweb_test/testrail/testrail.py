@@ -28,7 +28,7 @@ import json
 import time
 import urllib2
 
-from settings import logger
+from fuelweb_test.testrail.settings import logger
 
 
 def request_retry(codes):

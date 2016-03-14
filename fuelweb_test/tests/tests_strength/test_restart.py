@@ -13,15 +13,15 @@
 #    under the License.
 import time
 
+from devops.helpers.helpers import wait
+from proboscis import test
+
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import logger
 from fuelweb_test import ostf_test_mapping
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
-
-from devops.helpers.helpers import wait
-from proboscis import test
 
 
 @test(groups=["thread_3", "ceph"])
