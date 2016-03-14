@@ -1349,8 +1349,7 @@ class ServicesReconfiguration(TestBasic):
         service_list = ['neutron-server', 'neutron-dhcp-agent',
                         'neutron-l3-agent', 'neutron-metadata-agent',
                         'nova-scheduler', 'nova-novncproxy', 'nova-conductor',
-                        'nova-api', 'nova-consoleauth', 'nova-objectstore',
-                        'nova-cert']
+                        'nova-api', 'nova-consoleauth', 'nova-cert']
         services_uptime = {}
         for service_name in service_list:
             services_uptime[service_name] = self.get_service_uptime(
