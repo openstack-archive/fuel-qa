@@ -379,7 +379,8 @@ class UbuntuBootstrap(base_test_case.TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['smoke'])
 
-    @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
+    @test(enabled=False,
+          depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["deploy_stop_on_deploying_ubuntu_bootstrap"])
     @log_snapshot_after_test
     def deploy_stop_on_deploying_ubuntu_bootstrap(self):
