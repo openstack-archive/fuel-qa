@@ -12,11 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import netaddr
 import json
 
 from devops.helpers.helpers import wait
 from devops.error import TimeoutError
+import netaddr
 from proboscis import asserts
 from proboscis import SkipTest
 from proboscis import test

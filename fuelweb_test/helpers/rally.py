@@ -15,10 +15,10 @@
 import json
 import os
 
+from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
-from devops.helpers.helpers import wait
 from fuelweb_test import logger
 
 

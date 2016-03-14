@@ -13,6 +13,7 @@
 #    under the License.
 
 import sys
+import time
 import traceback
 
 from proboscis.asserts import assert_true
@@ -28,7 +29,6 @@ from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import UPLOAD_MANIFESTS
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
-import time
 
 
 @test(groups=["gd", "gd_deploy_neutron_tun"])
@@ -272,7 +272,6 @@ class NeutronTun(TestBasic):
                         remote=ssh,
                         path=post_virtual_ips[0]['cmd'])
                 except AssertionError:
-                    import time
                     time.sleep(60)
                     gd.run_check_from_task(
                         remote=ssh,
