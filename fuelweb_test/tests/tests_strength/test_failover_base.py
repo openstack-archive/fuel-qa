@@ -647,8 +647,8 @@ class TestHaFailoverBase(TestBasic):
             remote.check_call(cmd_input)
             remote.check_call(cmd_output)
         except:
-            logger.error('command failed to be executed'.format(
-                p_d_ctrl.name))
+            logger.error(
+                'command {:s} failed to be executed'.format(p_d_ctrl.name))
             raise
         finally:
             remote.clear()
@@ -1181,9 +1181,12 @@ class TestHaFailoverBase(TestBasic):
                                         status):
             for remote in ctrl_remotes:
                 pcs_nodes = _get_pcm_nodes(remote)
+                # TODO: FIXME: Rewrite using normal SSHManager and node name
+                node_name = ''.join(
+                    remote.execute('hostname -f')['stdout']).strip()
                 logger.debug(
                     "Status of pacemaker nodes on node {0}: {1}".
-                    format(node['name'], pcs_nodes))
+                    format(node_name, pcs_nodes))
                 if set(pcs_nodes_online) != set(pcs_nodes[status]):
                     return False
             return True

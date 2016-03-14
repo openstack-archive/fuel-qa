@@ -142,8 +142,9 @@ def upload_manifests(func):
         result = func(*args, **kwargs)
         try:
             if settings.UPLOAD_MANIFESTS:
-                logger.info("Uploading new manifests from %s" %
-                            settings.UPLOAD_MANIFESTS_PATH)
+                logger.info(
+                    "Uploading new manifests from "
+                    "{:s}".format(settings.UPLOAD_MANIFESTS_PATH))
                 environment = get_current_env(args)
                 if not environment:
                     logger.warning("Can't upload manifests: method of "
@@ -153,8 +154,9 @@ def upload_manifests(func):
                     remote.execute('rm -rf /etc/puppet/modules/*')
                     remote.upload(settings.UPLOAD_MANIFESTS_PATH,
                                   '/etc/puppet/modules/')
-                    logger.info("Copying new site.pp from %s" %
-                                settings.SITEPP_FOR_UPLOAD)
+                    logger.info(
+                        "Copying new site.pp from "
+                        "{:s}".format(settings.SITEPP_FOR_UPLOAD))
                     remote.execute("cp %s /etc/puppet/manifests" %
                                    settings.SITEPP_FOR_UPLOAD)
                     if settings.SYNC_DEPL_TASKS:
@@ -172,7 +174,7 @@ def update_rpm_packages(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
         if not settings.UPDATE_FUEL:
-                return result
+            return result
         try:
             environment = get_current_env(args)
             if not environment:

@@ -496,9 +496,10 @@ def check_stats_on_collector(collector_remote, postgres_actions, master_uuid):
     # Check that important data (clusters number, nodes number, nodes roles,
     # user's email, used operation system, OpenStack stats) is saved correctly
     for stat_type in general_stats.keys():
-        assert_true(type(summ_stats[stat_type]) == general_stats[stat_type],
-                    "Installation structure in Collector's DB doesn't contain"
-                    "the following stats: {0}".format(stat_type))
+        assert_true(
+            isinstance(summ_stats[stat_type], general_stats[stat_type]),
+            "Installation structure in Collector's DB doesn't contain"
+            "the following stats: {0}".format(stat_type))
 
     real_clusters_number = int(postgres_actions.run_query(
         db='nailgun', query='select count(*) from clusters;'))
@@ -619,9 +620,10 @@ def check_stats_private_info(collector_remote, postgres_actions,
         'dns_domain': _settings['DNS_DOMAIN'],
         'dns_search': _settings['DNS_SEARCH'],
         'dns_upstream': _settings['DNS_UPSTREAM'],
-        'fuel_password': _settings['FUEL_ACCESS']['password'] if
-        _settings['FUEL_ACCESS']['password'] != 'admin'
-        else 'DefaultPasswordIsNotAcceptableForSearch',
+        'fuel_password': (
+            _settings['FUEL_ACCESS']['password']
+            if _settings['FUEL_ACCESS']['password'] != 'admin'
+            else 'DefaultPasswordIsNotAcceptableForSearch'),
         'nailgun_password': _settings['postgres']['nailgun_password'],
         'keystone_password': _settings['postgres']['keystone_password'],
         'ostf_password': _settings['postgres']['ostf_password'],

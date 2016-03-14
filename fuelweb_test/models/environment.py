@@ -15,8 +15,8 @@
 import re
 import subprocess
 import time
-from devops.error import TimeoutError
 
+from devops.error import TimeoutError
 from devops.helpers.helpers import _tcp_ping
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
@@ -137,8 +137,7 @@ class EnvironmentModel(object):
                     .format(', '.join(sorted(nodes_names))))
         new_time = sync_time(self.d_env, nodes_names, skip_sync)
         for name in sorted(new_time):
-                logger.info("New time on '{0}' = {1}".format(name,
-                                                             new_time[name]))
+            logger.info("New time on '{0}' = {1}".format(name, new_time[name]))
 
     @logwrap
     def get_admin_node_ip(self):
@@ -340,15 +339,15 @@ class EnvironmentModel(object):
                      self.fuel_web.get_nailgun_node_by_devops_node(
                          node)['online'], timeout=60 * 6)
             except TimeoutError:
-                    raise TimeoutError(
-                        "Node {0} does not become online".format(node.name))
+                raise TimeoutError(
+                    "Node {0} does not become online".format(node.name))
         return True
 
     def revert_snapshot(self, name, skip_timesync=False):
         if not self.d_env.has_snapshot(name):
             return False
 
-        logger.info('We have snapshot with such name: %s' % name)
+        logger.info('We have snapshot with such name: {:s}'.format(name))
 
         logger.info("Reverting the snapshot '{0}' ....".format(name))
         self.d_env.revert(name)

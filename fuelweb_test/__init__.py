@@ -60,11 +60,10 @@ def debug(logger):
                 logger.debug(
                     "Done: {} with result: {}".format(func.__name__, result))
             except BaseException as e:
-                tb = traceback.format_exc()
                 logger.error(
                     '{func} raised: {exc!r}\n'
                     'Traceback: {tb!s}'.format(
-                        func=func.__name__, exc=e, tb=tb))
+                        func=func.__name__, exc=e, tb=traceback.format_exc()))
                 raise
             return result
         return wrapped
