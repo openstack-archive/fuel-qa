@@ -2150,8 +2150,8 @@ class FuelWebClient(object):
                              nailgun_node['status']))
 
     @logwrap
-    def modify_python_file(self, remote, modification, file):
-        remote.execute('sed -i "{0}" {1}'.format(modification, file))
+    def modify_python_file(self, remote, modification, filename):
+        remote.execute('sed -i "{0}" {1}'.format(modification, filename))
 
     def backup_master(self, remote):
         # FIXME(kozhukalov): This approach is outdated
