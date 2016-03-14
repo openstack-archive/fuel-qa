@@ -16,18 +16,19 @@ import ConfigParser
 from distutils import version
 import inspect
 import json
-import time
-import traceback
-import yaml
 import os
 import posixpath
 import re
 import signal
+import time
+import traceback
+
 import netaddr
 
 from proboscis import asserts
 from proboscis.asserts import assert_true
 from proboscis.asserts import assert_equal
+import yaml
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
@@ -38,10 +39,10 @@ from gates_tests.helpers import exceptions
 
 
 @logwrap
-def get_yaml_to_json(node_ssh, file):
+def get_yaml_to_json(node_ssh, filename):
     cmd = ("python -c 'import sys, yaml, json; json.dump("
            "yaml.load(sys.stdin),"
-           " sys.stdout)' < {0}").format(file)
+           " sys.stdout)' < {0}").format(filename)
     err_res = ''
     res = node_ssh.execute(cmd)
     err_res.join(res['stderr'])
@@ -53,9 +54,9 @@ def get_yaml_to_json(node_ssh, file):
 
 
 @logwrap
-def put_json_on_remote_from_dict(remote, dict, cluster_id):
+def put_json_on_remote_from_dict(remote, src_dict, cluster_id):
     cmd = ('python -c "import json; '
-           'data=json.dumps({0}); print data"').format(dict)
+           'data=json.dumps({0}); print data"').format(src_dict)
     result = remote.execute(
         '{0} > /var/log/network_{1}.json'.format(cmd, cluster_id))
     asserts.assert_equal(
@@ -251,6 +252,9 @@ class TimeStat(object):
         else:
             self.name = 'timestat'
         self.is_uniq = is_uniq
+        self.begin_time = 0
+        self.end_time = 0
+        self.total_time = 0
 
     def __enter__(self):
         self.begin_time = time.time()
@@ -352,7 +356,7 @@ def cond_upload(remote, source, target, condition=''):
             return 0
 
     files_count = 0
-    for rootdir, subdirs, files in os.walk(source):
+    for rootdir, _, files in os.walk(source):
         targetdir = os.path.normpath(
             os.path.join(
                 target,
@@ -491,7 +495,9 @@ def get_network_template(template_name):
 
 
 @logwrap
-def get_net_settings(remote, skip_interfaces=set()):
+def get_net_settings(remote, skip_interfaces=None):
+    if skip_interfaces is None:
+        skip_interfaces = set()
     net_settings = dict()
     interface_cmd = ('awk \'$1~/:/{split($1,iface,":"); print iface[1]}\''
                      ' /proc/net/dev')
@@ -910,17 +916,18 @@ def fill_space(ip, file_dir, size):
 
 
 @logwrap
-def get_ceph_partitions(ip, device, type="xfs"):
+def get_ceph_partitions(ip, device, fs_type="xfs"):
     # Moved from checkers.py for improvement of code
     ret = SSHManager().check_call(
         ip=ip,
         cmd="parted {device} print | grep {type}".format(device=device,
-                                                         type=type)
+                                                         type=fs_type)
     )['stdout']
     if not ret:
-        logger.error("Partition not present! {partitions}: ".format(
-                     SSHManager().check_call(ip=ip,
-                                             cmd="parted {device} print")))
+        logger.error(
+            "Partition not present! {partitions}: ".format(
+                partitions=SSHManager().check_call(
+                    ip=ip, cmd="parted {device} print")))
         raise Exception()
     logger.debug("Partitions: {part}".format(part=ret))
     return ret
@@ -936,9 +943,10 @@ def get_mongo_partitions(ip, device):
             size=re.escape('{print $4}'))
     )['stdout']
     if not ret:
-        logger.error("Partition not present! {partitions}: ".format(
-                     SSHManager().check_call(ip=ip,
-                                             cmd="parted {device} print")))
+        logger.error(
+            "Partition not present! {partitions}: ".format(
+                partitions=SSHManager().check_call(
+                    ip=ip, cmd="parted {device} print")))
         raise Exception()
     logger.debug("Partitions: {part}".format(part=ret))
     return ret
@@ -968,7 +976,7 @@ def upload_tarball(ip, tar_path, tar_target):
 def install_plugin_check_code(ip, plugin, exit_code=0):
     # Moved from checkers.py for improvement of code
     cmd = "cd /var && fuel plugins --install {0} ".format(plugin)
-    chan, stdin, stderr, stdout = SSHManager().execute_async_on_remote(
+    chan, _, stderr, _ = SSHManager().execute_async_on_remote(
         ip=ip,
         cmd=cmd
     )

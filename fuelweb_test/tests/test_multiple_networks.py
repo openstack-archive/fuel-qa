@@ -12,8 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import netaddr
 import json
+
+import netaddr
 
 from devops.helpers.helpers import wait
 from devops.error import TimeoutError
@@ -707,8 +708,7 @@ class TestMultipleClusterNets(TestBasic):
             try:
                 wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
                     slave)['status'] == 'error', timeout=15 * 60)
-                logger.info('Node {} become error state'.format(slave.name,
-                                                                'error'))
+                logger.info('Node {} become error state'.format(slave.name))
             except TimeoutError:
                 raise TimeoutError('Node {} not become '
                                    'error state'.format(slave.name))

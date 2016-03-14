@@ -18,11 +18,11 @@ import re
 import traceback
 import json
 
-import six
-
-from paramiko import RSAKey
 from devops.helpers.helpers import wait
 from devops.models.node import SSHClient
+from paramiko import RSAKey
+import six
+
 from fuelweb_test import logger
 from fuelweb_test.helpers.metaclasses import SingletonMeta
 from fuelweb_test.helpers.exceptions import UnexpectedExitCode
@@ -293,7 +293,7 @@ class SSHManager(object):
                 return 0
 
         files_count = 0
-        for rootdir, subdirs, files in os.walk(source):
+        for rootdir, _, files in os.walk(source):
             targetdir = os.path.normpath(
                 os.path.join(
                     target,

@@ -49,10 +49,10 @@ def get_path_to_template():
 def collect_yamls(path):
     """Walk through config directory and find all yaml files"""
     ret = []
-    for r, d, f in os.walk(path):
+    for r, _, f in os.walk(path):
         for one in f:
             if os.path.splitext(one)[1] in ('.yaml', '.yml'):
-                    ret.append(os.path.join(r, one))
+                ret.append(os.path.join(r, one))
     return ret
 
 
@@ -129,7 +129,7 @@ def discover_test_files(basedir, dirs):
     ret = []
     for path in dirs:
         path = os.path.join(basedir, path)
-        for r, d, f in os.walk(path):
+        for r, _, f in os.walk(path):
             for one in f:
                 if one.startswith('test_') and one.endswith('.py'):
                     ret.append(os.path.join(r, one))

@@ -64,7 +64,7 @@ class OneNodeDeploy(TestBasic):
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
         )
-        logger.info('cluster is %s' % str(cluster_id))
+        logger.info('cluster is {!s}'.format(cluster_id))
         self.fuel_web.update_nodes(
             cluster_id,
             {'slave-01': ['controller']}
@@ -833,7 +833,8 @@ class UntaggedNetworksNegative(TestBasic):
             self.fuel_web.update_node_networks(node['id'], interfaces)
 
         # select networks that will be untagged:
-        [net.update(vlan_turn_off) for net in nets]
+        for net in nets:
+            net.update(vlan_turn_off)
 
         # stop using VLANs:
         self.fuel_web.client.update_network(cluster_id, networks=nets)

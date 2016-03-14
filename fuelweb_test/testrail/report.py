@@ -20,17 +20,17 @@ import time
 
 from logging import DEBUG
 from optparse import OptionParser
-from builds import Build
-from builds import get_build_artifact
-from builds import get_downstream_builds_from_html
-from builds import get_jobs_for_view
-from launchpad_client import LaunchpadBug
-from settings import JENKINS
-from settings import GROUPS_TO_EXPAND
-from settings import LaunchpadSettings
-from settings import logger
-from settings import TestRailSettings
-from testrail_client import TestRailProject
+from fuelweb_test.testrail.builds import Build
+from fuelweb_test.testrail.builds import get_build_artifact
+from fuelweb_test.testrail.builds import get_downstream_builds_from_html
+from fuelweb_test.testrail.builds import get_jobs_for_view
+from fuelweb_test.testrail.launchpad_client import LaunchpadBug
+from fuelweb_test.testrail.settings import JENKINS
+from fuelweb_test.testrail.settings import GROUPS_TO_EXPAND
+from fuelweb_test.testrail.settings import LaunchpadSettings
+from fuelweb_test.testrail.settings import logger
+from fuelweb_test.testrail.settings import TestRailSettings
+from fuelweb_test.testrail.testrail_client import TestRailProject
 
 
 class TestResult(object):
@@ -554,7 +554,7 @@ def main():
                       action="store_true", dest="verbose", default=False,
                       help="Enable debug output")
 
-    (options, args) = parser.parse_args()
+    (options, _) = parser.parse_args()
 
     if options.verbose:
         logger.setLevel(DEBUG)

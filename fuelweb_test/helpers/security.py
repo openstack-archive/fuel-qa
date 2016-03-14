@@ -12,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from random import randrange
 
 from proboscis.asserts import assert_equal
-from random import randrange
 
 from fuelweb_test import logwrap
 from fuelweb_test import logger

@@ -205,7 +205,8 @@ class Common(object):
     def delete_flavor(self, flavor):
         return self.nova.flavors.delete(flavor)
 
-    def _get_keystoneclient(self, username, password, tenant_name, auth_url,
+    @staticmethod
+    def _get_keystoneclient(username, password, tenant_name, auth_url,
                             retries=3, ca_cert=None, insecure=False):
         exc_type, exc_value, exc_traceback = None, None, None
         for i in xrange(retries):
