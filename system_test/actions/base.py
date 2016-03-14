@@ -196,7 +196,7 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions):
         num = iter(xrange(1, slaves + 1))
         nodes = {}
         for new in nodes_list:
-            for one in xrange(new['count']):
+            for _ in xrange(new['count']):
                 name = names.format(next(num))
                 while name in self.assigned_slaves:
                     name = names.format(next(num))

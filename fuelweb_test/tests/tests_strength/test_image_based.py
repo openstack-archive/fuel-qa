@@ -74,7 +74,7 @@ class RepeatableImageBased(TestBasic):
 
         self.env.make_snapshot("deploy_after_delete", is_make=True)
 
-        for i in range(0, 10):
+        for _ in range(10):
             self.env.revert_snapshot("deploy_after_delete")
             for node in self.env.d_env.nodes().slaves[:5]:
                 node.start()
