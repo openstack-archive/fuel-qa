@@ -243,17 +243,14 @@ class FuelWebClient(object):
                 )
             )
 
-            [actual_failed_names.append(test['name'])
-             for test in set_result['tests']
-             if test['status'] not in ['success', 'disabled', 'skipped']]
-
-            [test_result.update({test['name']:test['status']})
-             for test in set_result['tests']]
-
-            [failed_tests_res.append(
-                {'%s (%s)' % (test['name'], test['status']): test['message']})
-             for test in set_result['tests']
-             if test['status'] not in ['success', 'disabled', 'skipped']]
+            for test in set_result['tests']:
+                test_result.update({test['name']: test['status']})
+                if test['status'] not in ['success', 'disabled', 'skipped']:
+                    actual_failed_names.append(test['name'])
+                    key = ('{name:s} ({status:s})'
+                           ''.format(name=test['name'], status=test['status']))
+                    failed_tests_res.append(
+                        {key: test['message']})
 
         logger.info('OSTF test statuses are :\n{}\n'.format(
             pretty_log(test_result, indent=1)))
@@ -413,7 +410,7 @@ class FuelWebClient(object):
     def create_cluster(self,
                        name,
                        settings=None,
-                       release_name=help_data.OPENSTACK_RELEASE,
+                       release_name=OPENSTACK_RELEASE,
                        mode=DEPLOYMENT_MODE_HA,
                        port=514,
                        release_id=None,
@@ -935,7 +932,7 @@ class FuelWebClient(object):
                 return nailgun_node
         # On deployed environment MAC addresses of bonded network interfaces
         # are changes and don't match addresses associated with devops node
-        if help_data.BONDING:
+        if BONDING:
             return self.get_nailgun_node_by_base_name(devops_node.name)
 
     @logwrap
@@ -1959,7 +1956,7 @@ class FuelWebClient(object):
         test_path = ostf_test_mapping.OSTF_TEST_MAPPING.get(test_name_to_run)
         logger.info('Test path is {0}'.format(test_path))
 
-        for i in range(0, retries):
+        for _ in range(retries):
             result = self.run_single_ostf_test(
                 cluster_id=cluster_id, test_sets=['smoke', 'sanity'],
                 test_name=test_path,
@@ -1969,12 +1966,11 @@ class FuelWebClient(object):
 
         logger.info('full res is {0}'.format(res))
         for element in res:
-            [passed_count.append(test)
-             for test in element if test.get(test_name) == 'success']
-            [failed_count.append(test)
-             for test in element if test.get(test_name) == 'failure']
-            [failed_count.append(test)
-             for test in element if test.get(test_name) == 'error']
+            for test in element:
+                if test.get(test_name) == 'success':
+                    passed_count.append(test)
+                elif test.get(test_name) in {'failure', 'error'}:
+                    failed_count.append(test)
 
         if not checks:
             assert_true(
@@ -2425,7 +2421,6 @@ class FuelWebClient(object):
         assert_true(plugin_data is not None, "Plugin {0} version {1} is not "
                     "found".format(plugin_name, version))
         for option, value in data.items():
-            plugin_data = item
             path = option.split("/")
             for p in path[:-1]:
                 plugin_data = plugin_data[p]

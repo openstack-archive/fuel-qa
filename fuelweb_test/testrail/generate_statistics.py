@@ -332,7 +332,7 @@ class StatisticsGenerator(object):
             if test_run:
                 html += '<h4>TestRun: "{0}"</h4>\n'.format(test_run[0]['name'])
 
-        for bug, values in stats.items():
+        for values in stats.values():
             if values['status'].lower() in ('invalid',):
                 color = 'gray'
             elif values['status'].lower() in ('new', 'confirmed', 'triaged'):
@@ -381,7 +381,7 @@ class StatisticsGenerator(object):
         bugs_table = ('|||:Failed|:Blocked|:Project|:Priority'
                       '|:Status|:Bug link|:Tests\n')
 
-        for bug_id, values in stats.items():
+        for values in stats.values():
             title = re.sub(r'(Bug\s+#\d+\s+)(in\s+[^:]+:\s+)', '\g<1>',
                            values['title'])
             title = re.sub(r'(.{100}).*', '\g<1>...', title)
