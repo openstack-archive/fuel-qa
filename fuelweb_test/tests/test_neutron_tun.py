@@ -258,7 +258,7 @@ class TestHaNeutronScalability(TestBasic):
         def _check_swift(node):
             _ip = self.fuel_web.get_nailgun_node_by_name(node.name)['ip']
             with self.fuel_web.get_ssh_for_node(node.name) as remote:
-                for i in range(5):
+                for _ in range(5):
                     try:
                         checkers.check_swift_ring(_ip)
                         break

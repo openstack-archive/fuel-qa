@@ -98,8 +98,10 @@ class MongoMultirole(TestBasic):
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(node['id'], interfaces)
 
-        [net.update(vlan_turn_on) for net in nets
-         if net['name'] == 'storage']
+        for net in nets:
+            if net['name'] == 'storage':
+                net.update(vlan_turn_on)
+
         self.fuel_web.client.update_network(cluster_id, networks=nets)
 
         self.show_step(9)

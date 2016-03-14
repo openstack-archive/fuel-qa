@@ -60,7 +60,7 @@ def main():
                       action="store_true", dest="verbose", default=False,
                       help="Enable debug output")
 
-    (options, args) = parser.parse_args()
+    (options, _) = parser.parse_args()
 
     if options.verbose:
         logger.setLevel(DEBUG)
