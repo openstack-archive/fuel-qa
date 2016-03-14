@@ -226,7 +226,7 @@ def main():
                       help='Look for existing test case only in specified '
                            'section of test suite.')
 
-    (options, args) = parser.parse_args()
+    (options, _) = parser.parse_args()
 
     if options.verbose:
         logger.setLevel(DEBUG)

@@ -305,15 +305,14 @@ def replace_fuel_nailgun_rpm():
 
     # stop services
     service_list = ['assassind', 'receiverd', 'nailgun', 'statsenderd']
-    [ssh.execute_on_remote(
-        ip=ssh.admin_ip,
-        cmd='systemctl stop {0}'.format(service)) for service in service_list]
+    for service in service_list:
+        ssh.execute_on_remote(
+            ip=ssh.admin_ip, cmd='systemctl stop {0}'.format(service))
     logger.info('statistic services {0}'.format(get_oswl_services_names()))
     # stop statistic services
-    [ssh.execute_on_remote(
-        ip=ssh.admin_ip,
-        cmd='systemctl stop {0}'.format(service))
-     for service in get_oswl_services_names()]
+    for service in get_oswl_services_names():
+        ssh.execute_on_remote(
+            ip=ssh.admin_ip, cmd='systemctl stop {0}'.format(service))
 
     # Drop nailgun db manage.py dropdb
     cmd = 'manage.py dropdb'

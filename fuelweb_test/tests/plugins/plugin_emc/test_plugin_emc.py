@@ -200,8 +200,10 @@ class EMCPlugin(TestBasic):
         cinder_volume_comps = [self.check_service(compute, "cinder-volume")
                                for compute in compute_remotes]
         # closing connections
-        [remote.clear() for remote in controller_remotes]
-        [remote.clear() for remote in compute_remotes]
+        for remote in controller_remotes:
+            remote.clear()
+        for remote in compute_remotes:
+            remote.clear()
 
         asserts.assert_equal(sum(cinder_volume_comps), 0,
                              "Cluster has active cinder-volume on compute")
