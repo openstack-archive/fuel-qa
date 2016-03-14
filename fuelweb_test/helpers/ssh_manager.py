@@ -293,7 +293,7 @@ class SSHManager(object):
                 return 0
 
         files_count = 0
-        for rootdir, subdirs, files in os.walk(source):
+        for rootdir, _, files in os.walk(source):
             targetdir = os.path.normpath(
                 os.path.join(
                     target,

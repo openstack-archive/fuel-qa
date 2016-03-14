@@ -60,7 +60,7 @@ class NeutronTunHaBase(TestBasic):
         logger.debug("devops node name is {0}".format(devops_node.name))
         _ip = self.fuel_web.get_nailgun_node_by_devops_node(devops_node)['ip']
         with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
-            for i in range(5):
+            for _ in range(5):
                 try:
                     checkers.check_swift_ring(_ip)
                     break

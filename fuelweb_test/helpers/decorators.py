@@ -200,7 +200,7 @@ def update_rpm_packages(func):
                                                  ' packages '
                                                  'repository failed')
 
-            centos_files_count, ubuntu_files_count = \
+            centos_files_count, _ = \
                 environment.admin_actions.upload_packages(
                     local_packages_dir=settings.UPDATE_FUEL_PATH,
                     centos_repo_path=settings.LOCAL_MIRROR_CENTOS,

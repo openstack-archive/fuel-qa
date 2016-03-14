@@ -356,7 +356,7 @@ def cond_upload(remote, source, target, condition=''):
             return 0
 
     files_count = 0
-    for rootdir, subdirs, files in os.walk(source):
+    for rootdir, _, files in os.walk(source):
         targetdir = os.path.normpath(
             os.path.join(
                 target,
@@ -974,7 +974,7 @@ def upload_tarball(ip, tar_path, tar_target):
 def install_plugin_check_code(ip, plugin, exit_code=0):
     # Moved from checkers.py for improvement of code
     cmd = "cd /var && fuel plugins --install {0} ".format(plugin)
-    chan, stdin, stderr, stdout = SSHManager().execute_async_on_remote(
+    chan, _, stderr, _ = SSHManager().execute_async_on_remote(
         ip=ip,
         cmd=cmd
     )
