@@ -227,7 +227,7 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                            current_ssl_keypair)
                          ))
             assert_equal(old_ssl_keypair, current_ssl_keypair,
-                         message="SSL keypiars are not equal")
+                         message="SSL keypairs are not equal")
             # Check floating ranges are equal after cluster deploy
         actual_floating_ranges = self.hiera_floating_ranges(controller_node)
         logger.info("Current floating ranges: {0}".format(
