@@ -700,10 +700,16 @@ class EnvironmentModel(object):
                                 remote_status['exit_code'],
                                 remote_status['stdout']))
 
-    # Execute yum updates
-    # If updates installed,
-    # then `bootstrap_admin_node.sh;`
     def admin_install_updates(self):
+        """Install maintenance updates using the following commands (see docs
+        for details):
+        yum clean expire-cache
+        yum update -y
+        docker load -i /var/www/nailgun/docker/images/fuel-images.tar
+        dockerctl destroy all
+        dockerctl start all
+        fuel release --sync-deployment-tasks --dir /etc/puppet/
+        """
         logger.info('Searching for updates..')
         update_command = 'yum clean expire-cache; yum update -y'
 
@@ -734,7 +740,16 @@ class EnvironmentModel(object):
             return
         logger.info('{0} packet(s) were updated'.format(updates_count))
 
-        cmd = 'bootstrap_admin_node.sh;'
+        cmd = ' ; '.join(
+            ["docker load -i /var/www/nailgun/docker/images/fuel-images.tar",
+             "dockerctl destroy all",
+             "dockerctl start all",
+             "fuel release --sync-deployment-tasks --dir /etc/puppet/ "
+             "--user={user} --password={pwd}"
+             "".format(user=settings.KEYSTONE_CREDS['username'],
+                       pwd=settings.KEYSTONE_CREDS['password'])
+            ]
+        )
 
         result = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
