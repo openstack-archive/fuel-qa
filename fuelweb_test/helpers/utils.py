@@ -38,10 +38,10 @@ from gates_tests.helpers import exceptions
 
 
 @logwrap
-def get_yaml_to_json(node_ssh, file):
+def get_yaml_to_json(node_ssh, filename):
     cmd = ("python -c 'import sys, yaml, json; json.dump("
            "yaml.load(sys.stdin),"
-           " sys.stdout)' < {0}").format(file)
+           " sys.stdout)' < {0}").format(filename)
     err_res = ''
     res = node_ssh.execute(cmd)
     err_res.join(res['stderr'])
@@ -53,9 +53,9 @@ def get_yaml_to_json(node_ssh, file):
 
 
 @logwrap
-def put_json_on_remote_from_dict(remote, dict, cluster_id):
+def put_json_on_remote_from_dict(remote, src_dict, cluster_id):
     cmd = ('python -c "import json; '
-           'data=json.dumps({0}); print data"').format(dict)
+           'data=json.dumps({0}); print data"').format(src_dict)
     result = remote.execute(
         '{0} > /var/log/network_{1}.json'.format(cmd, cluster_id))
     asserts.assert_equal(
@@ -915,12 +915,12 @@ def fill_space(ip, file_dir, size):
 
 
 @logwrap
-def get_ceph_partitions(ip, device, type="xfs"):
+def get_ceph_partitions(ip, device, fs_type="xfs"):
     # Moved from checkers.py for improvement of code
     ret = SSHManager().check_call(
         ip=ip,
         cmd="parted {device} print | grep {type}".format(device=device,
-                                                         type=type)
+                                                         type=fs_type)
     )['stdout']
     if not ret:
         logger.error(
