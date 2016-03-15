@@ -131,7 +131,7 @@ class OpenStackActions(common.Common):
         image_id = self._get_cirros_image().id
         security_group[self.keystone.tenant_id] =\
             self.create_sec_group_for_ssh()
-        security_group = [security_group[self.keystone.tenant_id].name]
+        security_groups = [security_group[self.keystone.tenant_id].name]
 
         if neutron:
             net_label = label if label else 'net04'
@@ -139,9 +139,9 @@ class OpenStackActions(common.Common):
                        if net.label == net_label]
 
             kwargs.update({'nics': [{'net-id': network[0]}],
-                           'security_groups': security_group})
+                           'security_groups': security_groups})
         else:
-            kwargs.update({'security_groups': security_group})
+            kwargs.update({'security_groups': security_groups})
 
         srv = self.nova.servers.create(name=name,
                                        image=image_id,
