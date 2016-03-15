@@ -77,7 +77,8 @@ class ServicesReconfiguration(TestBasic):
             timeout_msg="Timeout exceeded while waiting for "
                         "node status: {0}".format(status))
 
-    def check_response_code(self, expected_code, err_msg,
+    @staticmethod
+    def check_response_code(expected_code, err_msg,
                             func, *args, **kwargs):
         try:
             func(*args, **kwargs)
@@ -89,7 +90,8 @@ class ServicesReconfiguration(TestBasic):
         else:
             raise Exception(err_msg)
 
-    def change_default_range(self, networks, number_excluded_ips,
+    @staticmethod
+    def change_default_range(networks, number_excluded_ips,
                              cut_from_start=True):
         """
         Change IP range for public, management, storage network
@@ -115,7 +117,8 @@ class ServicesReconfiguration(TestBasic):
             default_network["ip_ranges"][0] = [str(ip)
                                                for ip in new_range]
 
-    def is_update_dnsmasq_running(self, tasks):
+    @staticmethod
+    def is_update_dnsmasq_running(tasks):
         for task in tasks:
             if task['name'] == "update_dnsmasq" and \
                task["status"] == "running":
@@ -237,7 +240,8 @@ class ServicesReconfiguration(TestBasic):
                                 "Please, see details: {0}".format(res))
         os_conn.delete_instance(instance)
 
-    def check_ml2_vlan_range(self, os_conn):
+    @staticmethod
+    def check_ml2_vlan_range(os_conn):
         """
         :param os_conn: an object of connection to openstack services
         :return:
@@ -280,7 +284,8 @@ class ServicesReconfiguration(TestBasic):
         else:
             raise Exception("New configuration was not applied")
 
-    def check_token_expiration(self, os_conn, time_expiration):
+    @staticmethod
+    def check_token_expiration(os_conn, time_expiration):
         """
         :param os_conn: an object of connection to openstack services
         :param time_expiration: an integer value of token time expiration
