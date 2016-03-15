@@ -11,6 +11,9 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
+from __future__ import division
+
 import hashlib
 import json
 import os
@@ -94,7 +97,7 @@ def verify_service(ip, service_name, count=1,
         ip=ip,
         cmd='ps ax'
     )['stdout']
-    api = filter(lambda x: service_name in x, ps_output)
+    api = [ps for ps in ps_output if service_name in ps]
     logger.debug("{} \\n: {}".format(service_name, str(api)))
     if not ignore_count_of_proccesses:
         assert_equal(len(api), count,
@@ -159,7 +162,7 @@ def check_ceph_image_size(ip, expected_size, device='vdc'):
                      ssh_manager.check_call(ip=ip, cmd="df -m")))
         raise Exception()
     logger.debug("Partitions: {part}".format(part=ret))
-    assert_true(abs(float(ret[0].rstrip()) / float(expected_size) - 1) < 0.1,
+    assert_true(abs(ret[0].rstrip() / expected_size - 1) < 0.1,
                 "size {0} is not equal"
                 " to {1}".format(ret[0].rstrip(),
                                  expected_size))
@@ -169,7 +172,7 @@ def check_ceph_image_size(ip, expected_size, device='vdc'):
 def check_cinder_image_size(ip, expected_size, device='vdc3'):
     ret = get_mongo_partitions(ip, device)[0].rstrip().rstrip('G')
     cinder_size = float(ret) * 1024
-    assert_true(abs(cinder_size / float(expected_size) - 1) < 0.1,
+    assert_true(abs(cinder_size / expected_size - 1) < 0.1,
                 "size {0} is not equal"
                 " to {1}".format(ret[0].rstrip(),
                                  expected_size))

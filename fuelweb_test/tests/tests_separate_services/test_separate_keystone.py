@@ -284,7 +284,8 @@ class SeparateKeystoneFailover(TestBasic):
 
         nailgun_node = self.fuel_web.update_nodes(cluster_id, node,
                                                   False, True)
-        nodes = filter(lambda x: x["pending_deletion"] is True, nailgun_node)
+        nodes = [
+            node for node in nailgun_node if node["pending_deletion"] is True]
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
         wait(lambda: self.fuel_web.is_node_discovered(nodes[0]),
              timeout=6 * 60)
