@@ -198,7 +198,8 @@ class EnvironmentModel(object):
         ) % params
         return keys
 
-    def get_target_devs(self, devops_nodes):
+    @staticmethod
+    def get_target_devs(devops_nodes):
         return [
             interface.target_dev for interface in [
                 val for var in map(lambda node: node.interfaces, devops_nodes)
@@ -516,11 +517,13 @@ class EnvironmentModel(object):
             logger.debug('Offloading settings:\n{0}\n'.format(
                          ''.join(result['stdout'])))
 
+    # pylint: disable=no-self-use
     @update_rpm_packages
     @upload_manifests
     def setup_customisation(self):
         logger.info('Installing custom packages/manifests '
                     'before master node bootstrap...')
+    # pylint: enable=no-self-use
 
     @logwrap
     def wait_for_provisioning(self,
@@ -722,8 +725,9 @@ class EnvironmentModel(object):
                      .format(echo_cmd, echo_result['stderr']))
         return resolv_conf['stdout']
 
+    @staticmethod
     @logwrap
-    def execute_remote_cmd(self, remote, cmd, exit_code=0):
+    def execute_remote_cmd(remote, cmd, exit_code=0):
         result = remote.execute(cmd)
         assert_equal(result['exit_code'], exit_code,
                      'Failed to execute "{0}" on remote host: {1}'.
