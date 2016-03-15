@@ -472,7 +472,7 @@ class FuelWebClient(object):
             attributes = self.client.get_cluster_attributes(cluster_id)
 
             for option in settings:
-                section = False
+                section = ''
                 if option in ('sahara', 'murano', 'ceilometer', 'mongo',
                               'ironic'):
                     section = 'additional_components'
