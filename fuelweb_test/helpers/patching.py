@@ -431,7 +431,7 @@ def verify_fix_apply_step(apply_step):
 def validate_fix_apply_step(apply_step, environment, slaves):
     verify_fix_apply_step(apply_step)
     slaves = [] if not slaves else slaves
-    command = ''
+    command = '',
     remotes_ips = set()
     devops_action = ''
     devops_nodes = set()
@@ -472,9 +472,10 @@ def validate_fix_apply_step(apply_step, environment, slaves):
                     "service isn't specified".format(apply_step['id'],
                                                      apply_step['type']))
         action = apply_step['type'].split('service_')[1]
-        command = ("find /etc/init.d/ -regex '/etc/init.d/{service}' -printf "
-                   "'%f\n' -quit | xargs -i service {{}} {action}").format(
-            service=apply_step['service'], action=action)
+        command = (
+            "find /etc/init.d/ -regex '/etc/init.d/{service}' -printf "
+            "'%f\n' -quit | xargs -i service {{}} {action}".format(
+                service=apply_step['service'], action=action), )
     elif apply_step['type'] in ('server_down', 'server_up', 'server_reboot'):
         assert_true('master' not in apply_step['target'],
                     'Action type "{0}" doesn\'t accept "master" node as '
@@ -498,12 +499,12 @@ def validate_fix_apply_step(apply_step, environment, slaves):
                                                     apply_step['type']))
         tasks_timeout = apply_step['tasks_timeout'] if 'tasks_timeout' in \
             apply_step.keys() else 60 * 30
-        command = [
+        command = (
             'RUN_TASKS',
             nodes_ids,
             apply_step['tasks'],
             tasks_timeout
-        ]
+        )
     else:
         assert_true(len(apply_step['command'] or '') > 0,
                     "Step #{0} in apply patch scenario perform '{1}', but "
