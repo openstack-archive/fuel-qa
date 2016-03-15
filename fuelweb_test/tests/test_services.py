@@ -528,7 +528,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
         logger.debug('disk size is {0}'.format(disk_mb))
         mongo_disk_mb = 11116
         os_disk_mb = disk_mb - mongo_disk_mb
-        mongo_disk_gb = ("{0}G".format(round(mongo_disk_mb / 1024, 1)))
+        mongo_disk_gb = "{0}G".format(mongo_disk_mb // 1024)
         disk_part = {
             "vda": {
                 "os": os_disk_mb,
