@@ -48,7 +48,68 @@ confidence=
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
 # multiple time. See also the "--disable" option for examples.
-#enable=
+
+# old-style-class (C1001)
+# return-arg-in-generator (E0106)
+# slots-on-old-class (E1001)
+# super-on-old-class (E1002)
+# missing-super-argument (E1004)
+# print-statement (E1601)
+# parameter-unpacking (E1602)
+# unpacking-in-except (E1603)
+# old-raise-syntax (E1604)
+# backtick (E1605)
+# long-suffix (E1606)
+# old-ne-operator (E1607)
+# old-octal-literal (E1608)
+# import-star-module-level (E1609)
+# lowercase-l-suffix (W0332)
+# deprecated-module (W0402)
+# invalid-encoded-data (W0512)
+# property-on-old-class (W1001)
+# boolean-datetime (W1502)
+# deprecated-method (W1505)
+# apply-builtin (W1601)
+# basestring-builtin (W1602)
+# buffer-builtin (W1603)
+# cmp-builtin (W1604)
+# coerce-builtin (W1605)
+# execfile-builtin (W1606)
+# file-builtin (W1607)
+# long-builtin (W1608)
+# raw_input-builtin (W1609)
+# reduce-builtin (W1610)
+# standarderror-builtin (W1611)
+# unicode-builtin (W1612)
+# xrange-builtin (W1613)
+# coerce-method (W1614)
+# delslice-method (W1615)
+# getslice-method (W1616)
+# setslice-method (W1617)
+# old-division (W1619)
+# dict-iter-method (W1620)
+# dict-view-method (W1621)
+# next-method-called (W1622)
+# metaclass-assignment (W1623)
+# indexing-exception (W1624)
+# raising-string (W1625)
+# reload-builtin (W1626)
+# oct-method (W1627)
+# hex-method (W1628)
+# nonzero-method (W1629)
+# cmp-method (W1630)
+# input-builtin (W1632)
+# round-builtin (W1633)
+# intern-builtin (W1634)
+# unichr-builtin (W1635)
+# map-builtin-not-iterating (W1636)
+# zip-builtin-not-iterating (W1637)
+# range-builtin-not-iterating (W1638)
+# filter-builtin-not-iterating (W1639)
+# filter-builtin-not-iterating (W1639)
+# using-cmp-argument (W1640)
+
+enable = E0106,C1001,E1001,E1002,E1004,E1601,E1602,E1603,E1604,E1605,E1606,E1607,E1608,E1609,W0332,W0402,W0512,W1001,W1502,W1505,W1601,W1602,W1603,W1604,W1605,W1606,W1607,W1608,W1609,W1610,W1611,W1612,W1613,W1614,W1615,W1616,W1617,W1619,W1620,W1621,W1622,W1623,W1624,W1625,W1626,W1627,W1628,W1629,W1630,W1632,W1633,W1634,W1635,W1636,W1637,W1638,W1639,W1640,
 
 # Disable the message, report, category or checker with the given id(s). You
 # can either give multiple identifiers separated by comma (,) or put this
@@ -60,28 +121,44 @@ confidence=
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
 
+# Disabling pointless reports:
 # RP0401:	External dependencies
 # RP0402:	Modules dependencies graph
 # RP0801:	Duplication
 # R0801: Duplication
 
+# Disabling messages:
+# pointless-string-statement (W0105)
+# unnecessary-lambda (W0108)
 # deprecated-lambda (W0110)
 # bad-builtin (W0141)
+# fixme (W0511)
+# unused-argument (W0613)
 # redefined-outer-name (W0621)
+# cell-var-from-loop (W0640)
+# bare-except (W0702)
+# broad-except (W0703)
 # logging-format-interpolation (W1202)
 # anomalous-backslash-in-string (W1401) - DO NOT ENABLE, INCORRECTLY PARSES REGEX
-# broad-except (W0703)
 # no-absolute-import (W1618):
 #  import missing `from __future__ import absolute_import` Used when an import is not accompanied by from __future__ import absolute_import (default behaviour in Python 3)
-# bare-except (W0702)
-# cell-var-from-loop (W0640)
-# unused-argument (W0613)
+
+# invalid-name (C0103)
 # missing-docstring (C0111)
 # misplaced-comparison-constant (C0122)
-# fixme (W0511)
+# too-many-lines (C0302)
+# bad-continuation (C0330)
 
-disable=RP0401,RP0402,RP0801,R0801,W0110,W0141,suppressed-message,W1618,W0621,W1202,W1401,W0703,W0702,C0111,W0640,C0122,W0511,W0613
+# too-many-ancestors (R0901)
+# too-many-public-methods (R0904)
+# too-few-public-methods (R0903)
+# too-many-return-statements (R0911)
+# too-many-branches (R0912)
+# too-many-arguments (R0913)
+# too-many-locals (R0914)
+# too-many-statements (R0915)
 
+disable=RP0401,RP0402,RP0801,R0801,W0141,W1618,W0621,W1202,W1401,W0703,W0702,C0111,W0640,C0122,W0511, W0613, C0103, R0903, C0330, C0302, R0915, R0914, R0912, W0105, R0904, R0911, W0108, W0110, R0913, R0901
 
 [REPORTS]
 
