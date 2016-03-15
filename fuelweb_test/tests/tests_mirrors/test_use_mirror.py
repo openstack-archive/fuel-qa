@@ -41,8 +41,8 @@ class TestUseMirror(TestBasic):
     def _get_cluster_repos(self, cluster_id):
         all_repos = self.fuel_web.get_cluster_repos(cluster_id)['value']
         return {
-            'ubuntu': filter(lambda x: 'ubuntu' in x['name'], all_repos),
-            'mos': filter(lambda x: 'mos' in x['name'], all_repos),
+            'ubuntu': [repo for repo in all_repos if 'ubuntu' in repo['name']],
+            'mos': [repo for repo in all_repos if 'mos' in repo['name']],
             'all': all_repos}
 
     def _fix_fuel_mirror_config(self, admin_ip):
@@ -130,12 +130,14 @@ class TestUseMirror(TestBasic):
         self.show_step(8)
 
         cluster_repos = self._get_cluster_repos(cluster_id)
-        remote_ubuntu_repos = filter(
-            lambda x: admin_ip not in x['uri'] and
-            '{settings.MASTER_IP}' not in x['uri'], cluster_repos['ubuntu'])
-        local_mos_repos = filter(
-            lambda x: admin_ip in x['uri'] or
-            '{settings.MASTER_IP}' in x['uri'], cluster_repos['mos'])
+        remote_ubuntu_repos = [
+            repo for repo in cluster_repos['ubuntu']
+            if admin_ip not in repo['uri'] and
+            '{settings.MASTER_IP}' not in repo['uri']]
+        local_mos_repos = [
+            repo for repo in cluster_repos['mos']
+            if admin_ip in repo['uri'] or
+            '{settings.MASTER_IP}' in repo['uri']]
         repos_log = pretty_log(
             {'All': cluster_repos['all'],
              'Remote Ubuntu': remote_ubuntu_repos,
@@ -163,9 +165,10 @@ class TestUseMirror(TestBasic):
 
         self.show_step(11)
         cluster_repos = self._get_cluster_repos(cluster_id)['all']
-        remote_repos = filter(
-            lambda x: admin_ip not in x['uri'] and
-            '{settings.MASTER_IP}' not in x['uri'], cluster_repos)
+        remote_repos = [
+            repo for repo in cluster_repos
+            if admin_ip not in repo['uri'] and
+            '{settings.MASTER_IP}' not in repo['uri']]
         message = pretty_log(cluster_repos)
         logger.info(message)
         assert_false(remote_repos,

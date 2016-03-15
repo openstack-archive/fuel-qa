@@ -313,12 +313,11 @@ class CephHA(TestBasic):
                                                           version))
             versions.append({'name': node['fqdn'], 'ceph_version': version})
 
-        def check_ver(v):
-            # Check version. True if version is not equal @ceph_version
-            return (parse_version(v['ceph_version']) !=
-                    parse_version(ceph_version))
+        bad_nodes = [
+            ver for ver in versions
+            if parse_version(ver['ceph_version']) != parse_version(
+                ceph_version)]
 
-        bad_nodes = filter(check_ver, versions)
         assert_true(len(bad_nodes) == 0,
                     message="Nodes should have Ceph version equal "
                             "to {0}: {1}".format(ceph_version, bad_nodes))

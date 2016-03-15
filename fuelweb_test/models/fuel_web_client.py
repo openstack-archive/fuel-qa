@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import division
+
 import re
 import time
 import traceback
@@ -236,12 +238,10 @@ class FuelWebClient(object):
             if set_result['testset'] not in test_sets:
                 continue
             failed += len(
-                filter(
-                    lambda test: test['status'] == 'failure' or
-                    test['status'] == 'error',
-                    set_result['tests']
-                )
-            )
+                [
+                    test for test in set_result['tests']
+                    if test['status'] == 'failure' or
+                    test['status'] == 'error'])
 
             for test in set_result['tests']:
                 test_result.update({test['name']: test['status']})
@@ -770,8 +770,7 @@ class FuelWebClient(object):
             with self.environment.d_env.get_admin_remote() as admin_remote:
                 copy_cert_from_master(admin_remote, cluster_id)
         n_nodes = self.client.list_cluster_nodes(cluster_id)
-        n_nodes = filter(lambda n: 'ready' in n['status'], n_nodes)
-        for n in n_nodes:
+        for n in filter(lambda n: 'ready' in n['status'], n_nodes):
             node = self.get_devops_node_by_nailgun_node(n)
             if node:
                 node_name = node.name
@@ -1257,7 +1256,7 @@ class FuelWebClient(object):
                 interfaces_dict[iface].append('fuelweb_admin')
 
         def get_iface_by_name(ifaces, name):
-            iface = filter(lambda iface: iface['name'] == name, ifaces)
+            iface = [_iface for _iface in ifaces if _iface['name'] == name]
             assert_true(len(iface) > 0,
                         "Interface with name {} is not present on "
                         "node. Please check override params.".format(name))
@@ -1690,7 +1689,7 @@ class FuelWebClient(object):
 
     def get_range(self, ip_network, ip_range=0):
         net = list(netaddr.IPNetwork(str(ip_network)))
-        half = len(net) / 2
+        half = len(net) // 2
         if ip_range == 0:
             return [[str(net[2]), str(net[-2])]]
         elif ip_range == 1:

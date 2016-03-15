@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import division
+
 import ConfigParser
 # pylint: disable=no-name-in-module
 from distutils import version
@@ -596,17 +598,17 @@ def node_freemem(remote, unit='MB'):
     swap_free = run_on_remote(remote, cmd_swap_free)[0]
     ret = {
         "mem": {
-            "total": int(mem_free.split()[1]) / denominator,
-            "used": int(mem_free.split()[2]) / denominator,
-            "free": int(mem_free.split()[3]) / denominator,
-            "shared": int(mem_free.split()[4]) / denominator,
-            "buffers": int(mem_free.split()[5]) / denominator,
-            "cached": int(mem_free.split()[6]) / denominator
+            "total": int(mem_free.split()[1]) // denominator,
+            "used": int(mem_free.split()[2]) // denominator,
+            "free": int(mem_free.split()[3]) // denominator,
+            "shared": int(mem_free.split()[4]) // denominator,
+            "buffers": int(mem_free.split()[5]) // denominator,
+            "cached": int(mem_free.split()[6]) // denominator
         },
         "swap": {
-            "total": int(swap_free.split()[1]) / denominator,
-            "used": int(swap_free.split()[2]) / denominator,
-            "free": int(swap_free.split()[3]) / denominator,
+            "total": int(swap_free.split()[1]) // denominator,
+            "used": int(swap_free.split()[2]) // denominator,
+            "free": int(swap_free.split()[3]) // denominator,
         }
     }
     return ret
