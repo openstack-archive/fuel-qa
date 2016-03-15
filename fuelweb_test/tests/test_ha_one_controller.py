@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import division
+
 import re
 
 from devops.helpers.helpers import wait
@@ -674,7 +676,7 @@ class NodeDiskSizes(TestBasic):
             for disk in node['meta']['disks']:
                 assert_equal(disk['size'], disk_size, 'Disk size')
 
-        hdd_size = "{} TB HDD".format(float(disk_size * 3 / (10 ** 9)) / 1000)
+        hdd_size = "{} TB HDD".format((disk_size * 3 / (10 ** 9)) / 1000)
         notifications = self.fuel_web.client.get_notifications()
         for node in nailgun_nodes:
             # assert /api/notifications
