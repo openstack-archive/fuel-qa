@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import division
+
 import datetime
 import random
 import re
@@ -152,7 +154,7 @@ class TestLogrotateBase(TestBasic):
             prefix[s] = 1 << (i + 1) * 10
         for s in reversed(symbols):
             if data >= prefix[s]:
-                value = float(data) / prefix[s]
+                value = data / prefix[s]
                 return format(value, '.1f'), s
         return data, 'B'
 

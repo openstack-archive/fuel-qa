@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import division
+
 import functools
 import re
 import time
@@ -163,7 +165,7 @@ def get_job_parameter(jenkins_build_data, parameter):
 def get_version_from_parameters(jenkins_build_data):
     custom_version = get_job_parameter(jenkins_build_data, 'CUSTOM_VERSION')
     if custom_version:
-        swarm_timestamp = jenkins_build_data['timestamp'] / 1000 \
+        swarm_timestamp = jenkins_build_data['timestamp'] // 1000 \
             if 'timestamp' in jenkins_build_data else None
         return (TestRailSettings.milestone,
                 time.strftime("%D %H:%M", time.localtime(swarm_timestamp)),
