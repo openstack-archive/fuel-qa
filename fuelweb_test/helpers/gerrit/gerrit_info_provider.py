@@ -132,7 +132,8 @@ class FuelLibraryModulesProvider(object):
     def _request_diff(self, filename):
         return self.gerrit_review.get_diff(filename)
 
-    def _get_lines_num_changed_from_diff(self, diff):
+    @staticmethod
+    def _get_lines_num_changed_from_diff(diff):
         lines_changed = []
         cursor = 1
         for content in diff['content']:
@@ -145,7 +146,8 @@ class FuelLibraryModulesProvider(object):
                 cursor += len(diff_content)
         return lines_changed
 
-    def _get_modules_line_num_changed_from_content(self, lines, content):
+    @staticmethod
+    def _get_modules_line_num_changed_from_content(lines, content):
         modules_lines_changed = []
         for num in lines:
             index = num

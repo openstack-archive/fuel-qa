@@ -32,7 +32,8 @@ from fuelweb_test.helpers.exceptions import UnexpectedExitCode
 
 @test(groups=["ubuntu_bootstrap_builder", "bvt_ubuntu_bootstrap"])
 class UbuntuBootstrapBuild(base_test_case.TestBasic):
-    def _get_main_repo(self, repos, repo_name, suite_type):
+    @staticmethod
+    def _get_main_repo(repos, repo_name, suite_type):
         for repo in repos:
             if repo_name not in repo["name"]:
                 continue

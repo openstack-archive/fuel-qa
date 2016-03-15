@@ -60,6 +60,7 @@ class TestCreateMirror(TestBasic):
         # TODO(akostrikov) add check that images are present.
         self.env.make_snapshot(snapshot_name, is_make=True)
 
+    # pylint: disable=no-self-use
     @test(groups=['fuel-mirror', 'create-mirror'],
           depends_on=[prepare_mirrors_environment])
     def no_dependencies_package_install(self):
@@ -76,3 +77,4 @@ class TestCreateMirror(TestBasic):
     def check_download_with_proxy(self):
         # TODO(akostrikov) Wait for https://review.openstack.org/#/c/242533/
         raise SkipTest('Not implemented yet')
+    # pylint: enable=no-self-use
