@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import division
+
 import functools
 import types
 
@@ -34,8 +36,8 @@ def step_start_stop(func):
             logger.info("\n{header}\n".format(header=header))
             result = func(*args, **kwargs)
             spent_time = timer.spent_time
-            minutes = int(round(spent_time)) / 60
-            seconds = int(round(spent_time)) % 60
+            minutes = spent_time // 60
+            seconds = int(spent_time) % 60
             finish_step = "[ FINISH {} STEP TOOK {} min {} sec ]".format(
                 step_name, minutes, seconds)
             footer = "<<< {:-^142} >>>".format(finish_step)
