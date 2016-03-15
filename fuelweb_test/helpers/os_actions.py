@@ -308,10 +308,10 @@ class OpenStackActions(common.Common):
 
     def get_hosts_for_migr(self, srv_host_name):
         # Determine which host is available for live migration
-        host_list = filter(lambda host: host.host_name != srv_host_name,
-                           self.nova.hosts.list())
-        return filter(lambda host: host._info['service'] == 'compute',
-                      host_list)
+        return [
+            host for host in self.nova.hosts.list()
+            if host.host_name != srv_host_name and
+            host._info['service'] == 'compute']
 
     def get_md5sum(self, file_path, controller_ssh, vm_ip, creds=()):
         logger.info("Get file md5sum and compare it with previous one")

@@ -1193,8 +1193,9 @@ class ServicesReconfiguration(TestBasic):
 
         self.show_step(2)
         cluster_id = self.fuel_web.get_last_created_cluster()
-        bs_node = filter(lambda x: x.name == 'slave-05',
-                         self.env.d_env.get_nodes())
+        bs_node = [
+            node for node in self.env.d_env.get_nodes()
+            if node.name == 'slave-05']
         self.env.bootstrap_nodes(bs_node)
         self.fuel_web.update_nodes(
             cluster_id,

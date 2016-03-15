@@ -226,8 +226,8 @@ class PatchingTests(TestBasic):
 
             nailgun_node = self.fuel_web.update_nodes(
                 cluster_id, node, False, True)
-            nodes = filter(
-                lambda x: x["pending_deletion"] is True, nailgun_node)
+            nodes = [_node for _node in nailgun_node
+                     if _node["pending_deletion"] is True]
             self.fuel_web.deploy_cluster(cluster_id)
             wait(
                 lambda: self.fuel_web.is_node_discovered(nodes[0]),
@@ -385,8 +385,8 @@ class PatchingMasterTests(TestBasic):
                         self.fuel_web.prepare_ceph_to_delete(remote)
                 nailgun_node = self.fuel_web.update_nodes(
                     cluster_id, node, False, True)
-                nodes = filter(
-                    lambda x: x["pending_deletion"] is True, nailgun_node)
+                nodes = [_node for _node in nailgun_node
+                         if _node["pending_deletion"] is True]
                 self.fuel_web.deploy_cluster(cluster_id)
                 wait(
                     lambda: self.fuel_web.is_node_discovered(nodes[0]),
