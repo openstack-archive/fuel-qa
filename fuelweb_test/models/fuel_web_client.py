@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import division
+
 import re
 import time
 import traceback
@@ -1696,7 +1698,7 @@ class FuelWebClient(object):
     @staticmethod
     def get_range(ip_network, ip_range=0):
         net = list(netaddr.IPNetwork(str(ip_network)))
-        half = len(net) / 2
+        half = len(net) // 2
         if ip_range == 0:
             return [[str(net[2]), str(net[-2])]]
         elif ip_range == 1:
