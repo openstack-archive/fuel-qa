@@ -36,7 +36,8 @@ class TestOffloading(BondingTest):
                      'rx-vlan-offload',
                      'tx-vlan-offload']
 
-    def prepare_offloading_modes(self, interfaces, offloading_types, state):
+    @staticmethod
+    def prepare_offloading_modes(interfaces, offloading_types, state):
         modes = [{'name': name, 'state': state} for name in offloading_types]
         return [{'name': interface, 'offloading_modes': deepcopy(modes)}
                 for interface in interfaces]

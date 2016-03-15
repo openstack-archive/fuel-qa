@@ -185,6 +185,7 @@ class TestUseMirror(TestBasic):
         self.show_step(15)
         self.env.make_snapshot('deploy_with_custom_mirror')
 
+    # pylint: disable=no-self-use
     @test(groups=['fuel-mirror', 'use-mirror'])
     def deploy_no_official_access(self):
         # TODO(akostrikov) add firewall rules to verify that there is no
@@ -196,3 +197,4 @@ class TestUseMirror(TestBasic):
         # TODO(akostrikov) add tests to verify that fuel-mirror works with
         # proxies too.
         raise SkipTest('Not implemented yet')
+    # pylint: enable=no-self-use

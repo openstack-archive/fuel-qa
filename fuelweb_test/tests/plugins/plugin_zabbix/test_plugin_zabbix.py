@@ -134,7 +134,8 @@ class ZabbixPlugin(TestBasic):
         self.fuel_web.update_plugin_data(
             cluster_id, plugin_name, plugin_options)
 
-    def check_event_message(self, zabbix_web, zabbix_hostgroup, message):
+    @staticmethod
+    def check_event_message(zabbix_web, zabbix_hostgroup, message):
         statuses_html = bs4.BeautifulSoup(zabbix_web.get_trigger_statuses())
         status_lines = statuses_html.find_all('tr', {'class': 'even_row'})
 

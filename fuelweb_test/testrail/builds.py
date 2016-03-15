@@ -115,7 +115,8 @@ class Build(object):
         logger.debug("Request build data from {}".format(build_url))
         return json.load(urllib2.urlopen(build_url))
 
-    def get_test_data(self, url, result_path=None):
+    @staticmethod
+    def get_test_data(url, result_path=None):
         if result_path:
             test_url = "/".join(
                 [url.rstrip("/"), 'testReport'] + result_path + ['api/json'])
