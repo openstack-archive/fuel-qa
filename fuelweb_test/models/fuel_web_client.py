@@ -1576,7 +1576,8 @@ class FuelWebClient(object):
             networks=new_settings["networks"]
         )
 
-    def _get_true_net_name(self, name, net_pools):
+    @staticmethod
+    def _get_true_net_name(name, net_pools):
         """Find a devops network name in net_pools"""
         for net in net_pools:
             if name in net:
@@ -1694,7 +1695,8 @@ class FuelWebClient(object):
         else:
             net_config['ip_ranges'] = self.get_range(ip_network, -1)
 
-    def get_range(self, ip_network, ip_range=0):
+    @staticmethod
+    def get_range(ip_network, ip_range=0):
         net = list(netaddr.IPNetwork(str(ip_network)))
         half = len(net) // 2
         if ip_range == 0:
@@ -2148,11 +2150,13 @@ class FuelWebClient(object):
                          'Nailgun node status is not ready but {0}'.format(
                              nailgun_node['status']))
 
+    @staticmethod
     @logwrap
-    def modify_python_file(self, remote, modification, filename):
+    def modify_python_file(remote, modification, filename):
         remote.execute('sed -i "{0}" {1}'.format(modification, filename))
 
-    def backup_master(self, remote):
+    @staticmethod
+    def backup_master(remote):
         # FIXME(kozhukalov): This approach is outdated
         # due to getting rid of docker containers.
         logger.info("Backup of the master node is started.")
@@ -2225,8 +2229,9 @@ class FuelWebClient(object):
                          'Cidr after deployment is not equal'
                          ' to cidr by default')
 
+    @staticmethod
     @logwrap
-    def check_fixed_nova_splited_cidr(self, os_conn, nailgun_cidr):
+    def check_fixed_nova_splited_cidr(os_conn, nailgun_cidr):
         logger.debug('Nailgun cidr for nova: {0}'.format(nailgun_cidr))
 
         subnets_list = [net.cidr for net in os_conn.get_nova_network_list()]
@@ -2317,13 +2322,12 @@ class FuelWebClient(object):
             fqdn, self.environment.d_env.nodes().slaves)
         return devops_node
 
+    @staticmethod
     @logwrap
-    def get_fqdn_by_hostname(self, hostname):
-        if DNS_SUFFIX not in hostname:
-            hostname += DNS_SUFFIX
-            return hostname
-        else:
-            return hostname
+    def get_fqdn_by_hostname(hostname):
+        return (
+            hostname + DNS_SUFFIX if DNS_SUFFIX not in hostname else hostname
+        )
 
     def get_nodegroup(self, cluster_id, name='default', group_id=None):
         ngroups = self.client.get_nodegroups()
@@ -2433,8 +2437,9 @@ class FuelWebClient(object):
             plugin_data[path[-1]] = value
         self.client.update_cluster_attributes(cluster_id, attr)
 
+    @staticmethod
     @logwrap
-    def prepare_ceph_to_delete(self, remote_ceph):
+    def prepare_ceph_to_delete(remote_ceph):
         hostname = ''.join(remote_ceph.execute(
             "hostname -s")['stdout']).strip()
         osd_tree = ceph.get_osd_tree(remote_ceph)

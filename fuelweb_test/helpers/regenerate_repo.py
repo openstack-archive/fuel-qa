@@ -288,7 +288,8 @@ class CustomRepo(object):
         logger.info('Local repository {0} has been updated successfully.'
                     .format(local_mirror_path))
 
-    def assert_msg(self, cmd, err):
+    @staticmethod
+    def assert_msg(cmd, err):
         return 'Executing \'{0}\' on the admin node has failed with: {1}'\
                .format(cmd, err)
 

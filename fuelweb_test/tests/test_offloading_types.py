@@ -44,7 +44,8 @@ class TestOffloading(TestBasic):
                      'rx-vlan-offload',
                      'tx-vlan-offload']
 
-    def prepare_offloading_modes(self, interface, types, state):
+    @staticmethod
+    def prepare_offloading_modes(interface, types, state):
         return [{'name': interface,
                  'offloading_modes': [{'name': name, 'state': state,
                                        'sub': []} for name in types]}]

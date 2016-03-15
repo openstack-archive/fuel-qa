@@ -99,14 +99,16 @@ class TestAdminNode(TestBasic):
 @test(groups=["logrotate"])
 class TestLogrotateBase(TestBasic):
 
-    def generate_file(self, remote, name, path, size):
+    @staticmethod
+    def generate_file(remote, name, path, size):
         cmd = 'cd {0} && fallocate -l {1} {2}'.format(path, size, name)
         result = remote.execute(cmd)
         assert_equal(0, result['exit_code'],
                      'Command {0} execution failed. '
                      'Execution result is: {1}'.format(cmd, result))
 
-    def execute_logrotate_cmd(self, remote, cmd=None, exit_code=None):
+    @staticmethod
+    def execute_logrotate_cmd(remote, cmd=None, exit_code=None):
         if not cmd:
             cmd = 'logrotate -v -f /etc/logrotate.conf'
         result = remote.execute(cmd)
@@ -144,7 +146,8 @@ class TestLogrotateBase(TestBasic):
                      'inodes with {0}'. format(result))
         return self.bytestogb(int(result['stdout'][0]))
 
-    def bytestogb(self, data):
+    @staticmethod
+    def bytestogb(data):
         symbols = ('K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
         prefix = {}
         for i, s in enumerate(symbols):
@@ -155,7 +158,8 @@ class TestLogrotateBase(TestBasic):
                 return format(value, '.1f'), s
         return data, 'B'
 
-    def create_old_file(self, remote, name):
+    @staticmethod
+    def create_old_file(remote, name):
         one_week_old = datetime.datetime.now() - datetime.timedelta(days=7)
         res = remote.execute(
             'touch {0} -d {1}'.format(name, one_week_old))
