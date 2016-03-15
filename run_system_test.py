@@ -115,7 +115,7 @@ def cli():
 
 def run(**kwargs):
     config_name = kwargs.get('config_name', None)
-    groups = kwargs.get('run_groups', None)
+    groups = kwargs.get('run_groups', [])
     old_groups = kwargs.get('groups', None)
     explain = kwargs.get('explain', None)
 

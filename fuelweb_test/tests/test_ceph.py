@@ -11,7 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
+from __future__ import unicode_literals
 import time
 
 from pkg_resources import parse_version
@@ -113,7 +113,8 @@ class CephCompact(TestBasic):
             self.fuel_web.get_public_vip(cluster_id), 'ceph1', 'ceph1',
             'ceph1')
 
-        image_data = BytesIO(bytearray(self.__class__.__name__))
+        image_data = BytesIO(
+            self.__class__.__name__.encode(encoding='ascii', errors='ignore'))
         image = os_conn.create_image(disk_format='raw',
                                      container_format='bare',
                                      name='test_ceph_cinder_cow',
