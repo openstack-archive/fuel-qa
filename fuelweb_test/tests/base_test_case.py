@@ -87,7 +87,7 @@ class TestBasic(object):
         """
         test_func_name = get_test_method_name()
 
-        if initialize:
+        if initialize or step == 1:
             self.current_log_step = step
         else:
             self.current_log_step += 1
