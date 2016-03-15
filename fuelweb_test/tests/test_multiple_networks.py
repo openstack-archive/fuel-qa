@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import division
+
 import json
 
 from devops.helpers.helpers import wait
@@ -603,7 +605,7 @@ class TestMultipleClusterNets(TestBasic):
         # floating range
         public2_cidr = self.env.d_env.get_network(name='public2').ip
         new_settings_float = {
-            'floating_ranges': [[str(public2_cidr[public2_cidr.numhosts / 2]),
+            'floating_ranges': [[str(public2_cidr[public2_cidr.numhosts // 2]),
                                  str(public2_cidr[-2])]]
         }
         self.fuel_web.client.update_network(cluster_id, new_settings_float)
