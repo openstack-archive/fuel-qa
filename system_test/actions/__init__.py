@@ -20,9 +20,9 @@ from .strength_actions import FillRootActions
 
 
 __all__ = [
-    BaseActions,
-    FuelMasterActions,
-    VMwareActions,
-    StrengthActions,
-    FillRootActions
+    'BaseActions',
+    'FuelMasterActions',
+    'VMwareActions',
+    'StrengthActions',
+    'FillRootActions'
 ]

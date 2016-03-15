@@ -80,7 +80,7 @@ class HaScaleGroup2(TestBasic):
                 primary_controller)['online'], timeout=30 * 8)
         except TimeoutError:
             assert_false(
-                self.get_nailgun_node_by_devops_node(
+                self.fuel_web.get_nailgun_node_by_devops_node(
                     primary_controller)['online'],
                 'Node {0} has not become '
                 'offline after warm shutdown'.format(primary_controller.name))

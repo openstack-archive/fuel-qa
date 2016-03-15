@@ -18,6 +18,6 @@ from .repository import Repository
 
 
 __all__ = [
-    ActionsFactory,
-    Repository,
+    'ActionsFactory',
+    'Repository',
 ]
