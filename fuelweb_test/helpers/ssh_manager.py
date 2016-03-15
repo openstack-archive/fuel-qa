@@ -56,7 +56,8 @@ class SSHManager(object):
         self.login = login
         self.__password = password
 
-    def _connect(self, remote):
+    @staticmethod
+    def _connect(remote):
         """ Check if connection is stable and return this one
 
         :param remote:
@@ -207,7 +208,8 @@ class SSHManager(object):
         remote = self._get_remote(ip=ip, port=port)
         return remote.execute_async(cmd)
 
-    def _json_deserialize(self, json_string):
+    @staticmethod
+    def _json_deserialize(json_string):
         """ Deserialize json_string and return object
 
         :param json_string: string or list with json

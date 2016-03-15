@@ -104,8 +104,9 @@ class CommandLine(TestBasic):
             )
         )
 
+    @staticmethod
     @logwrap
-    def hiera_floating_ranges(self, node_ip):
+    def hiera_floating_ranges(node_ip):
         """
 
         1. SSH to controller node
