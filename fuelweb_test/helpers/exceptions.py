@@ -23,7 +23,7 @@ class UnexpectedExitCode(Exception):
 
     def __str__(self):
         message = "Command '{cmd:s}' returned unexpected exit code {code:d}," \
-                  " while waiting for {exp:d}".format(cmd=self.cmd,
+                  " while waiting for {exp!s}".format(cmd=self.cmd,
                                                       code=self.ec,
                                                       exp=self.expected_ec)
         if self.stdout:
