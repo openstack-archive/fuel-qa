@@ -36,7 +36,8 @@ class VcenterDeploy(TestBasic):
     def node_name(self, name_node):
         return self.fuel_web.get_nailgun_node_by_name(name_node)['hostname']
 
-    def create_vm(self, os_conn=None, vm_count=None):
+    @staticmethod
+    def create_vm(os_conn=None, vm_count=None):
         # Get list of available images,flavors and hypervisors
         images_list = os_conn.nova.images.list()
         flavors_list = os_conn.nova.flavors.list()
