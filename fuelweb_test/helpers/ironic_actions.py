@@ -29,7 +29,8 @@ class IronicActions(os_actions.OpenStackActions):
                                             user, passwd,
                                             tenant)
 
-    def upload_user_image(self, nailgun_node, ssh_manager, img_url):
+    @staticmethod
+    def upload_user_image(nailgun_node, ssh_manager, img_url):
         disk_info = [{"name": "vda", "extra": [], "free_space": 11000,
                       "type": "disk", "id": "vda", "size": 11000,
                       "volumes": [{"mount": "/", "type": "partition",
@@ -73,7 +74,8 @@ class IronicActions(os_actions.OpenStackActions):
         self.create_ironic_port(address=mac_address,
                                 node_uuid=ironic_node.uuid)
 
-    def wait_for_ironic_hypervisors(self, ironic_conn, ironic_slaves):
+    @staticmethod
+    def wait_for_ironic_hypervisors(ironic_conn, ironic_slaves):
 
         def _wait_for_ironic_hypervisor():
             hypervisors = ironic_conn.get_hypervisors()
@@ -96,7 +98,8 @@ class IronicActions(os_actions.OpenStackActions):
             wait(lambda: self.get_instance_detail(srv).status == "ACTIVE",
                  timeout=60 * 15, timeout_msg='Server didn\'t became active')
 
-    def verify_vms_connection(self, ironic_conn):
+    @staticmethod
+    def verify_vms_connection(ironic_conn):
         srv_list = ironic_conn.get_servers()
         for srv in srv_list:
             wait(lambda: tcp_ping(srv.networks['baremetal'][0], 22),

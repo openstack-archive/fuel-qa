@@ -319,7 +319,8 @@ class OpenStackActions(common.Common):
             controller_ssh, vm_ip, "md5sum {:s}".format(file_path), creds)
         return out['stdout']
 
-    def execute_through_host(self, ssh, vm_host, cmd, creds=()):
+    @staticmethod
+    def execute_through_host(ssh, vm_host, cmd, creds=()):
         logger.debug("Making intermediate transport")
         intermediate_transport = ssh._ssh.get_transport()
 
@@ -547,8 +548,8 @@ class OpenStackActions(common.Common):
     def get_vip(self, vip):
         return self.neutron.show_vip(vip)
 
-    def get_nova_instance_ip(
-            self, srv, net_name='novanetwork', addrtype='fixed'):
+    @staticmethod
+    def get_nova_instance_ip(srv, net_name='novanetwork', addrtype='fixed'):
         for network_label, address_list in srv.addresses.items():
             if network_label != net_name:
                 continue
