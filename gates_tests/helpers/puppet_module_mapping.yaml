@@ -107,3 +107,7 @@ neutron_vlan_ha:
 
 positive_cic_maintenance_mode:
  - umm
+
+deploy_ha_cgrou:
+ - cgroups
+
