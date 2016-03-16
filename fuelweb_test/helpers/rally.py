@@ -230,9 +230,7 @@ class RallyDeployment(object):
 
     @property
     def is_deployment_exist(self):
-        if self.uuid is not None:
-                return True
-        return False
+        return self.uuid is not None
 
     def create_deployment(self):
         if self.is_deployment_exist:

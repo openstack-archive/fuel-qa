@@ -1470,7 +1470,7 @@ class FuelWebClient(object):
                         net.get('seg_type', '') == 'tun'):
                     result['private_tun'] = net
                 elif (net['name'] == 'private' and
-                        net.get('seg_type', '') == 'gre'):
+                      net.get('seg_type', '') == 'gre'):
                     result['private_gre'] = net
                 elif net['name'] == 'public':
                     result['public'] = net
@@ -1834,12 +1834,12 @@ class FuelWebClient(object):
                 'inet (?P<ip>\d+\.\d+\.\d+.\d+/\d+).*scope .* '
                 '{0}'.format(interface), ' '.join(ret['stdout']))
             if ip_search is None:
-                    logger.debug("Ip show output does not match in regex. "
-                                 "Current value is None. On node {0} in netns "
-                                 "{1} for interface {2}".format(node_name,
-                                                                namespace,
-                                                                interface))
-                    return None
+                logger.debug("Ip show output does not match in regex. "
+                             "Current value is None. On node {0} in netns "
+                             "{1} for interface {2}".format(node_name,
+                                                            namespace,
+                                                            interface))
+                return None
             return ip_search.group('ip')
         except DevopsCalledProcessError as err:
             logger.error(err)
@@ -2001,8 +2001,8 @@ class FuelWebClient(object):
     @logwrap
     def run_ceph_task(self, cluster_id, offline_nodes):
         ceph_id = [n['id'] for n in self.client.list_cluster_nodes(cluster_id)
-                   if 'ceph-osd'
-                      in n['roles'] and n['id'] not in offline_nodes]
+                   if 'ceph-osd' in n['roles'] and
+                   n['id'] not in offline_nodes]
         res = self.client.put_deployment_tasks_for_cluster(
             cluster_id, data=['top-role-ceph-osd'],
             node_id=str(ceph_id).strip('[]'))
@@ -2562,9 +2562,9 @@ class FuelWebClient(object):
 
     @logwrap
     def spawn_vms_wait(self, cluster_id, timeout=60 * 60, interval=30):
-            logger.info('Spawn VMs of a cluster %s', cluster_id)
-            task = self.client.spawn_vms(cluster_id)
-            self.assert_task_success(task, timeout=timeout, interval=interval)
+        logger.info('Spawn VMs of a cluster %s', cluster_id)
+        task = self.client.spawn_vms(cluster_id)
+        self.assert_task_success(task, timeout=timeout, interval=interval)
 
     @logwrap
     def get_all_ostf_set_names(self, cluster_id):

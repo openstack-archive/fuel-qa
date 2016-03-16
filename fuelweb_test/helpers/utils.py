@@ -918,9 +918,10 @@ def get_ceph_partitions(ip, device, type="xfs"):
                                                          type=type)
     )['stdout']
     if not ret:
-        logger.error("Partition not present! {partitions}: ".format(
-                     SSHManager().check_call(ip=ip,
-                                             cmd="parted {device} print")))
+        logger.error(
+            "Partition not present! {partitions}: ".format(
+                partitions=SSHManager().check_call(
+                    ip=ip, cmd="parted {device} print")))
         raise Exception()
     logger.debug("Partitions: {part}".format(part=ret))
     return ret
@@ -936,9 +937,10 @@ def get_mongo_partitions(ip, device):
             size=re.escape('{print $4}'))
     )['stdout']
     if not ret:
-        logger.error("Partition not present! {partitions}: ".format(
-                     SSHManager().check_call(ip=ip,
-                                             cmd="parted {device} print")))
+        logger.error(
+            "Partition not present! {partitions}: ".format(
+                partitions=SSHManager().check_call(
+                    ip=ip, cmd="parted {device} print")))
         raise Exception()
     logger.debug("Partitions: {part}".format(part=ret))
     return ret

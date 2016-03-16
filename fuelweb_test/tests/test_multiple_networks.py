@@ -707,11 +707,11 @@ class TestMultipleClusterNets(TestBasic):
             try:
                 wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
                     slave)['status'] == 'error', timeout=15 * 60)
-                logger.info('Node {} become error state'.format(slave.name,
-                                                                'error'))
+                logger.info(
+                    'Node {} changed state to error'.format(slave.name))
             except TimeoutError:
-                raise TimeoutError('Node {} not become '
-                                   'error state'.format(slave.name))
+                raise TimeoutError('Node {} not changed state to '
+                                   'error'.format(slave.name))
 
         self.show_step(4)
         logger.info('Rebooting nodes from custom nodegroup..')

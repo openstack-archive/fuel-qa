@@ -465,9 +465,9 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         check_ping = ping.format(ip=floating_ip)
         err_msg = 'Instance with ip:{ip} is not reachable by ICMP.'
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
-                wait(lambda: remote.execute(check_ping)['exit_code'] == 0,
-                     timeout=120,
-                     timeout_msg=err_msg.format(ip=floating_ip))
+            wait(lambda: remote.execute(check_ping)['exit_code'] == 0,
+                 timeout=120,
+                 timeout_msg=err_msg.format(ip=floating_ip))
 
         #   command for get original MTU for external bridge on one
         # of controllers
