@@ -170,7 +170,7 @@ def main():
                       dest='prefix', action='store_true', default='',
                       help='Add some prefix to test run')
 
-    (options, args) = parser.parse_args()
+    (options, _) = parser.parse_args()
 
     if options.run_name is None:
         raise optparse.OptionValueError('No run name was specified!')

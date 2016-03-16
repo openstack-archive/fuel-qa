@@ -115,7 +115,7 @@ def add_centos_mirrors(repos=None, mirrors=help_data.MIRROR_CENTOS,
     if not repos:
         repos = []
     # Add external Centos repositories
-    for x, repo_str in enumerate(mirrors.split('|')):
+    for repo_str in mirrors.split('|'):
         repo_value = parse_centos_repo(repo_str, priority)
         if repo_value and check_new_centos_repo(repos, repo_value):
             repos.append(repo_value)
@@ -147,7 +147,7 @@ def add_centos_extra_mirrors(repos=None,
     if not repos:
         repos = []
     # Add extra Centos repositories
-    for x, repo_str in enumerate(mirrors.split('|')):
+    for repo_str in mirrors.split('|'):
         repo_value = parse_centos_repo(repo_str, priority)
         if repo_value and check_new_centos_repo(repos, repo_value):
             # Remove repos that use the same name
