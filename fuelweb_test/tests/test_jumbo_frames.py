@@ -93,7 +93,7 @@ class TestJumboFrames(base_test_case.TestBasic):
         logger.info("New instance {0} created on {1}"
                     .format(instance.id, hypervisor_name))
         ip = self.os_conn.get_nova_instance_ip(instance, net_name=label,
-                                               type='fixed')
+                                               addrtype='fixed')
         logger.info("Instance {0} has IP {1}".format(instance.id, ip))
 
         if not need_floating_ip:
@@ -117,9 +117,9 @@ class TestJumboFrames(base_test_case.TestBasic):
                                     net_from, net_to, size, count=1):
         creds = ("cirros", "cubswin:)")
         destination_ip = self.os_conn.get_nova_instance_ip(
-            destination_instance, net_name=net_to, type='fixed')
+            destination_instance, net_name=net_to, addrtype='fixed')
         source_ip = self.os_conn.get_nova_instance_ip(
-            source_instance, net_name=net_from, type='floating')
+            source_instance, net_name=net_from, addrtype='floating')
 
         with self.fuel_web.get_ssh_for_node("slave-01") as ssh:
             command = "ping -s {0} {1}".format(size, destination_ip)

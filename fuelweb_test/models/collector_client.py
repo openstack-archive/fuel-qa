@@ -68,10 +68,11 @@ class CollectorClient(object):
                     for actions in self.get_action_logs(master_node_uid)])
 
     @logwrap
-    def get_action_logs_additional_info_by_id(self, master_node_uid, id):
+    def get_action_logs_additional_info_by_id(
+            self, master_node_uid, action_id):
         return [actions['body']['additional_info']
                 for actions in self.get_action_logs(master_node_uid)
-                if actions['id'] == id]
+                if actions['id'] == action_id]
 
     @logwrap
     def get_installation_info_data(self, master_node_uid):
