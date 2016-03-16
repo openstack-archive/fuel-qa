@@ -51,6 +51,10 @@ ISO_PATH = os.environ.get('ISO_PATH')
 LOGS_DIR = os.environ.get('LOGS_DIR', os.getcwd())
 # cdrom or usb
 ADMIN_BOOT_DEVICE = os.environ.get('ADMIN_BOOT_DEVICE', 'cdrom')
+ISO_MIRANTIS_FEATURE_GROUP = get_var_as_bool(
+    'ISO_MIRANTIS_FEATURE_GROUP',
+    False)
+ISO_LABEL = 'Mirantis_Fuel' if ISO_MIRANTIS_FEATURE_GROUP else 'OpenStack_Fuel'
 DNS = os.environ.get('DNS', '8.8.8.8')
 PUBLIC_TEST_IP = os.environ.get('PUBLIC_TEST_IP', '8.8.8.8')
 
