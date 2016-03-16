@@ -30,8 +30,6 @@ TIME_ZONE = 'UTC'
 ENV_NAME = os.environ.get("ENV_NAME", "fuel_system_test")
 VIRTUAL_ENV = os.environ.get("VIRTUAL_ENV", "")
 
-MASTER_IS_CENTOS7 = get_var_as_bool('MASTER_IS_CENTOS7', True)
-
 INTERFACES_DICT = {
     'eth0': os.environ.get('IFACE_0', 'enp0s3'),
     'eth1': os.environ.get('IFACE_1', 'enp0s4'),

@@ -35,7 +35,6 @@ from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test import settings
 from fuelweb_test.helpers.ssh_manager import SSHManager
-from fuelweb_test.settings import MASTER_IS_CENTOS7
 from gates_tests.helpers import exceptions
 
 
@@ -284,8 +283,7 @@ class TimeStat(object):
         except Exception:
             logger.error("Error storing time statistic for {0}"
                          " {1}".format(yaml_path, traceback.format_exc()))
-            if not MASTER_IS_CENTOS7:
-                raise
+            raise
 
     @property
     def spent_time(self):
