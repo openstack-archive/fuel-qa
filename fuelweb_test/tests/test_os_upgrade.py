@@ -87,7 +87,8 @@ class PrepareOSupgrade(base_test_case.TestBasic):
                                is_make=True)
 
 
-@test(groups=["os_upgrade"])
+@test(groups=["os_upgrade"],
+      enabled=False)
 class TestOSupgrade(base_test_case.TestBasic):
 
     @test(groups=["upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"])
@@ -109,7 +110,11 @@ class TestOSupgrade(base_test_case.TestBasic):
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
-        self.env.admin_actions.upgrade_master_node()
+        # TODO: Upgrade procedure were changed and upgrade to 9.0 not
+        # implemented yet. This should be replaced with actual code when it
+        # will be ready
+
+        # self.env.admin_actions.upgrade_master_node()
 
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
