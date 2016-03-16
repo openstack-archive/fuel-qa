@@ -293,8 +293,11 @@ class ServicesReconfiguration(TestBasic):
         try:
             os_conn.keystone.tokens.validate(token.id)
         except Exception as e:
-            if e.http_status != 404:
+            # TODO: Refactor HttpError in library (too much of copy-paste)
+            # pylint: disable=no-member
+            if hasattr(e, 'http_status') and e.http_status != 404:
                 raise
+            # pylint: enable=no-member
             logger.warning('Ignoring exception: {!r}'.format(e))
             logger.debug(traceback.format_exc())
         else:

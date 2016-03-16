@@ -1034,11 +1034,13 @@ class FuelWebClient(object):
         :param node_name: str
         :return: str
         """
+        # pylint: disable=no-member
         try:
             node = self.get_nailgun_node_by_devops_node(
                 self.environment.d_env.get_node(name=node_name))
         except Node.DoesNotExist:
             node = self.get_nailgun_node_by_fqdn(node_name)
+        # pylint: enable=no-member
         assert_true(node is not None,
                     'Node with name "{0}" not found!'.format(node_name))
         return node['ip']
