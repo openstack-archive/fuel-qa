@@ -25,7 +25,9 @@ from fuelweb_test.tests.tests_strength.test_neutron_base\
 class TestNeutronFailoverVlan(TestNeutronFailoverBase):
     """TestNeutronFailoverVlan"""  # TODO(kkuznetsova) documentation
 
-    segment_type = "vlan"
+    @property
+    def segment_type(self):
+        return "vlan"
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
           groups=["deploy_ha_neutron_vlan"])
@@ -137,7 +139,9 @@ class TestNeutronFailoverVlan(TestNeutronFailoverBase):
 class TestNeutronFailoverVxlan(TestNeutronFailoverBase):
     """TestNeutronFailoverVxlan"""  # TODO(akostrikov) documentation
 
-    segment_type = "tun"
+    @property
+    def segment_type(self):
+        return "tun"
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
           groups=["deploy_ha_neutron_vxlan"])

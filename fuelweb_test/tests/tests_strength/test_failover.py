@@ -24,7 +24,9 @@ from fuelweb_test.tests.tests_strength.test_failover_base\
 class TestHaNeutronFailover(TestHaFailoverBase):
     """TestHaNeutronFailover."""  # TODO documentation
 
-    snapshot_name = "prepare_ha_neutron"
+    @property
+    def snapshot_name(self):
+        return "prepare_ha_neutron"
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha", "prepare_ha_neutron", "neutron", "deployment"])
