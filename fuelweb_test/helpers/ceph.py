@@ -32,9 +32,9 @@ def start_monitor(remote):
     """
     logger.debug("Starting Ceph monitor on {0}".format(remote.host))
     check_distribution()
-    if OPENSTACK_RELEASE == OPENSTACK_RELEASE_UBUNTU:
+    if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
         run_on_remote(remote, 'start ceph-mon-all')
-    if OPENSTACK_RELEASE == OPENSTACK_RELEASE_CENTOS:
+    if OPENSTACK_RELEASE_CENTOS in OPENSTACK_RELEASE:
         run_on_remote(remote, '/etc/init.d/ceph start')
 
 
@@ -47,9 +47,9 @@ def stop_monitor(remote):
     """
     logger.debug("Stopping Ceph monitor on {0}".format(remote.host))
     check_distribution()
-    if OPENSTACK_RELEASE == OPENSTACK_RELEASE_UBUNTU:
+    if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
         run_on_remote(remote, 'stop ceph-mon-all')
-    if OPENSTACK_RELEASE == OPENSTACK_RELEASE_CENTOS:
+    if OPENSTACK_RELEASE_CENTOS in OPENSTACK_RELEASE:
         run_on_remote(remote, '/etc/init.d/ceph stop')
 
 

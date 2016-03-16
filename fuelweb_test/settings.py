@@ -67,9 +67,14 @@ PATH_TO_PEM = os.environ.get('PATH_TO_PEM', os.path.join(
     SSL_CERTS_DIR, 'ca.pem'))
 
 OPENSTACK_RELEASE_CENTOS = 'centos'
-OPENSTACK_RELEASE_UBUNTU = 'ubuntu'
+OPENSTACK_RELEASE_UBUNTU = 'Ubuntu 14.04'
+OPENSTACK_RELEASE_UBUNTU_UCA = 'Ubuntu+UCA 14.04'
 OPENSTACK_RELEASE = os.environ.get(
     'OPENSTACK_RELEASE', OPENSTACK_RELEASE_UBUNTU).lower()
+
+# FIXME(mattmymo): Update CI jobs to use 'Ubuntu 14.04' for OPENSTACK_RELEASE
+if OPENSTACK_RELEASE.lower() == 'ubuntu':
+    OPENSTACK_RELEASE = OPENSTACK_RELEASE_UBUNTU
 
 DEPLOYMENT_MODE_SIMPLE = "multinode"
 DEPLOYMENT_MODE_HA = "ha_compact"
@@ -571,10 +576,6 @@ EMC_POOL_NAME = os.environ.get('EMC_POOL_NAME', '')
 
 UCA_ENABLED = os.environ.get('UCA_ENABLED', False)
 UCA_REPO_TYPE = os.environ.get('UCA_REPO_TYPE', 'uca')
-UCA_REPO_URL = os.environ.get(
-    'UCA_REPO_URL',
-    'http://ubuntu-cloud.archive.canonical.com/ubuntu')
-UCA_RELEASE = os.environ.get('UCA_RELEASE', 'mitaka')
 UCA_PIN_HAPROXY = get_var_as_bool('UCA_PIN_HAPROXY', True)
 UCA_PIN_RABBITMQ = get_var_as_bool('UCA_PIN_RABBITMQ', True)
 UCA_PIN_CEPH = get_var_as_bool('UCA_PIN_CEPH', True)
