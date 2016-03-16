@@ -120,9 +120,9 @@ def main():
             if os['distro'] in tests_job['name'].lower() and\
                     os['name'] in os_mile[tests_job['mile']]:
                 if os['id'] not in test_iso:
-                    (test_iso[os['id']]) = []
+                    test_iso[os['id']] = []
                 test_os_id = test_iso[os['id']]
-                test_os_id.extend(get_tests_results(tests_job))
+                test_os_id.extend(get_tests_results(tests_job, os['distro']))
 
     # STEP #3
     # Create new TestPlan in TestRail (or get existing) and add TestRuns

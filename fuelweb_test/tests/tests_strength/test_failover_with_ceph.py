@@ -22,7 +22,10 @@ from fuelweb_test.tests.tests_strength.test_failover_base\
 
 @test(groups=["ha_destructive_ceph_neutron"])
 class TestHaCephNeutronFailover(TestHaFailoverBase):
-    snapshot_name = "prepare_ha_ceph_neutron"
+
+    @property
+    def snapshot_name(self):
+        return "prepare_ha_ceph_neutron"
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ceph_ha", "prepare_ha_ceph_neutron"])
