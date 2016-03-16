@@ -559,3 +559,70 @@ def map_test_review_in_fuel_library(**kwargs):
         mp = FuelLibraryModulesProvider.from_environment_vars()
         modules = mp.get_changed_modules()
         puppet_modules_mapping(modules)
+
+
+def rebuild_and_activate_new_bootstrap(self):
+    uuid, bootstrap_location = \
+        self.env.fuel_bootstrap_actions.build_bootstrap_image()
+    self.env.fuel_bootstrap_actions.\
+        import_bootstrap_image(bootstrap_location)
+    self.env.fuel_bootstrap_actions.\
+        activate_bootstrap_image(uuid)
+
+
+def check_package_version_injected_in_bootstraps(
+        self,
+        package,
+        ironic=None):
+
+    ssh = SSHManager()
+    try:
+        pack_path = '/var/www/nailgun/{}/'.format(package)
+        ssh.upload_to_remote(
+            ip=ssh.admin_ip,
+            source=settings.UPDATE_FUEL_PATH.rstrip('/'),
+            target=pack_path)
+    except Exception as e:
+        logger.error("Could not upload package {e}".format(e=e))
+        raise
+    # Step 1 - unpack active bootstrap
+    logger.info("unpack active bootstrap")
+
+    if ironic:
+        bootstrap = "/var/www/nailgun/bootstrap/ironic/{}".format(
+            self.fuel_web.get_last_created_cluster())
+    else:
+        bootstrap = "/var/www/nailgun/bootstraps/active_bootstrap"
+    bootstrap_var = "/var/root.squashfs"
+
+    cmd = "unsquashfs -d {} {}/root.squashfs".format(
+        bootstrap_var, bootstrap)
+    ssh.execute_on_remote(
+        ip=ssh.admin_ip,
+        cmd=cmd)
+
+    # Step 2 - check package version
+    logger.info(
+        "check package {} version injected in ubuntu bootstrap".format(
+            package))
+
+    cmd = "ls {}|grep {} |grep deb |cut -f 2 -d '_'".format(
+        pack_path, package)
+
+    package_from_review = ssh.execute_on_remote(
+        ip=ssh.admin_ip,
+        cmd=cmd)['stdout_str']
+
+    logger.info("package from review is {}".format(package_from_review))
+
+    awk_pattern = "awk '{print $2}'"
+    cmd = "chroot {}/ /bin/bash -c \"dpkg -s {}\"|grep Version|{}".format(
+        bootstrap_var, package, awk_pattern)
+    installed_package = ssh.execute_on_remote(
+        ip=ssh.admin_ip,
+        cmd=cmd)['stdout_str']
+    logger.info("injected package is {}".format(installed_package))
+
+    assert_equal(installed_package, package_from_review,
+                 "The new package {0} wasn't injected in bootstrap".format(
+                     package_from_review))
