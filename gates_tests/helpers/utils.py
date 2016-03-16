@@ -555,6 +555,9 @@ def map_test_review_in_fuel_library(**kwargs):
     old_groups = kwargs.get('groups', None)
     groups.extend(old_groups or [])
     if 'review_in_fuel_library' in groups:
-        mp = FuelLibraryModulesProvider.from_environment_vars()
-        modules = mp.get_changed_modules()
+        if settings.GERRIT_CHANGE_ID and settings.GERRIT_PATCHSET_NUMBER:
+            mp = FuelLibraryModulesProvider.from_environment_vars()
+            modules = mp.get_changed_modules()
+        else:
+            modules = dict()
         puppet_modules_mapping(modules)
