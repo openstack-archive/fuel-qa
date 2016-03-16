@@ -46,6 +46,12 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
 
     #   ----------- helpers -----------
 
+    @property
+    def segment_type(self):
+        raise ValueError(
+            'Property segment_type should be redefined in child classes '
+            'before use!')
+
     @staticmethod
     @logwrap
     def create_instance_with_keypair(os_conn, key_name, label):

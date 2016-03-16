@@ -551,24 +551,18 @@ class ZabbixPlugin(TestBasic):
             ip=self.ssh_manager.admin_ip,
             plugin=os.path.basename(settings.ZABBIX_PLUGIN_PATH))
 
-        cluster_settings = {}
-        if settings.NEUTRON_ENABLE:
-            cluster_settings = {
-                "net_provider": "neutron",
-                "net_segment_type": settings.NEUTRON_SEGMENT_TYPE
-            }
+        cluster_settings = {
+            "net_provider": "neutron",
+            "net_segment_type": settings.NEUTRON_SEGMENT_TYPE,
+            'volumes_ceph': True,
+            'images_ceph': True,
+            'volumes_lvm': False,
+            'tenant': 'cephHA',
+            'user': 'cephHA',
+            'password': 'cephHA',
+            'osd_pool_size': "3"
+        }
 
-        cluster_settings.update(
-            {
-                'volumes_ceph': True,
-                'images_ceph': True,
-                'volumes_lvm': False,
-                'tenant': 'cephHA',
-                'user': 'cephHA',
-                'password': 'cephHA',
-                'osd_pool_size': "3"
-            }
-        )
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE,
