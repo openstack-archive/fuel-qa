@@ -235,13 +235,8 @@ class FuelWebClient(object):
         for set_result in set_result_list:
             if set_result['testset'] not in test_sets:
                 continue
-            failed += len(
-                filter(
-                    lambda test: test['status'] == 'failure' or
-                    test['status'] == 'error',
-                    set_result['tests']
-                )
-            )
+            failed += len([test for test in set_result['tests']
+                           if test['status'] in {'failure', 'error'}])
 
             for test in set_result['tests']:
                 test_result.update({test['name']: test['status']})
@@ -777,8 +772,7 @@ class FuelWebClient(object):
             with self.environment.d_env.get_admin_remote() as admin_remote:
                 copy_cert_from_master(admin_remote, cluster_id)
         n_nodes = self.client.list_cluster_nodes(cluster_id)
-        n_nodes = filter(lambda n: 'ready' in n['status'], n_nodes)
-        for n in n_nodes:
+        for n in filter(lambda n: 'ready' in n['status'], n_nodes):
             node = self.get_devops_node_by_nailgun_node(n)
             if node:
                 node_name = node.name
@@ -1221,7 +1215,7 @@ class FuelWebClient(object):
         self.client.update_nodes(nodes_data)
 
         nailgun_nodes = self.client.list_cluster_nodes(cluster_id)
-        cluster_node_ids = map(lambda _node: str(_node['id']), nailgun_nodes)
+        cluster_node_ids = [str(_node['id']) for _node in nailgun_nodes]
         assert_true(
             all([node_id in cluster_node_ids for node_id in node_ids]))
 
@@ -1264,7 +1258,7 @@ class FuelWebClient(object):
                 interfaces_dict[iface].append('fuelweb_admin')
 
         def get_iface_by_name(ifaces, name):
-            iface = filter(lambda iface: iface['name'] == name, ifaces)
+            iface = [_iface for _iface in ifaces if _iface['name'] == name]
             assert_true(len(iface) > 0,
                         "Interface with name {} is not present on "
                         "node. Please check override params.".format(name))

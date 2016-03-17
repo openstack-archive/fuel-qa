@@ -82,10 +82,12 @@ class TestAdminNode(TestBasic):
         self.env.revert_snapshot("empty")
         with self.env.d_env.get_admin_remote() as remote:
             ps_output = remote.execute('ps ax')['stdout']
-        astute_master = filter(lambda x: 'astute master' in x, ps_output)
+        astute_master = [
+            master for master in ps_output if 'astute master' in master]
         logger.info("Found astute processes: {:s}".format(astute_master))
         assert_equal(len(astute_master), 1)
-        astute_workers = filter(lambda x: 'astute worker' in x, ps_output)
+        astute_workers = [
+            worker for worker in ps_output if 'astute worker' in worker]
         logger.info(
             "Found {len:d} astute worker processes: {workers!s}"
             "".format(len=len(astute_workers), workers=astute_workers))

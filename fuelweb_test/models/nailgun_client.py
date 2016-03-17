@@ -376,7 +376,9 @@ class NailgunClient(object):
     def do_cluster_action(self, cluster_id, node_ids=None, action="provision"):
         if not node_ids:
             nailgun_nodes = self.list_cluster_nodes(cluster_id)
+            # pylint: disable=map-builtin-not-iterating
             node_ids = map(lambda _node: str(_node['id']), nailgun_nodes)
+            # pylint: enable=map-builtin-not-iterating
         return self.client.put(
             "/api/clusters/{0}/{1}?nodes={2}".format(
                 cluster_id,
