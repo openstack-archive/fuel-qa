@@ -708,8 +708,8 @@ def external_dns_check(ip):
 
 def verify_bootstrap_on_node(ip, os_type, uuid=None):
     os_type = os_type.lower()
-    if os_type not in ['ubuntu', 'centos']:
-        raise Exception("Only Ubuntu and CentOS are supported, "
+    if 'ubuntu' not in os_type:
+        raise Exception("Only Ubuntu are supported, "
                         "you have chosen {0}".format(os_type))
 
     logger.info("Verify bootstrap on slave {0}".format(ip))
@@ -720,9 +720,9 @@ def verify_bootstrap_on_node(ip, os_type, uuid=None):
                 "Slave {0} doesn't use {1} image for bootstrap "
                 "after {1} images were enabled, /etc/release "
                 "content: {2}".format(ip, os_type, output))
-
-    if os_type == 'centos' or uuid is None:
-        return
+    assert_true(uuid is not None,
+                "Uuid of bootstrap image is None on node {0} "
+                "in command {1} output {2} }".format(ip, cmd, output))
 
     cmd = "cat /etc/nailgun-agent/config.yaml"
     output = yaml.load(ssh_manager.execute_on_remote(ip, cmd)['stdout_str'])
