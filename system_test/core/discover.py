@@ -24,7 +24,7 @@ def get_basepath():
 
 def get_list_confignames(filelist):
     """Get list of config name from file list"""
-    return map(get_configname, filelist)
+    return [get_configname(filename) for filename in filelist]
 
 
 def get_configname(path):

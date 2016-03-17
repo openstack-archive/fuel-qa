@@ -84,7 +84,7 @@ class TestJumboFrames(base_test_case.TestBasic):
 
         ifaces = ifaces.splitlines()[1:]
         bridge_iface = ifaces[0].split()[-1]
-        ifaces = map(lambda iface: iface.strip(), ifaces[1:])
+        ifaces = [iface.strip() for iface in ifaces[1:]]
         ifaces.append(bridge_iface)
 
         return ifaces

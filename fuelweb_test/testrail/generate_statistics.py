@@ -489,7 +489,8 @@ def main():
         logger.error('There is no TestPlan to process, exiting...')
         return 1
 
-    run_ids = () if not args.run_ids else map(int, args.run_ids.split(','))
+    run_ids = () if not args.run_ids else (
+        int(arg) for arg in args.run_ids.split(','))
 
     generator = StatisticsGenerator(testrail_project,
                                     args.plan_id,

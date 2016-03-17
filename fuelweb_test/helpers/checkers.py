@@ -94,7 +94,7 @@ def verify_service(ip, service_name, count=1,
         ip=ip,
         cmd='ps ax'
     )['stdout']
-    api = filter(lambda x: service_name in x, ps_output)
+    api = [ps for ps in ps_output if service_name in ps]
     logger.debug("{} \\n: {}".format(service_name, str(api)))
     if not ignore_count_of_proccesses:
         assert_equal(len(api), count,
