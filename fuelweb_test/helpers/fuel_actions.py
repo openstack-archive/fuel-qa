@@ -666,7 +666,7 @@ class FuelBootstrapCliActions(AdminActions):
         bootstrap_images = \
             self.ssh_manager.execute_on_remote(
                 ip=self.admin_ip,
-                cmd=command)['stdout_str']
+                cmd=command)['stdout_str'].split('\n')
 
         for line in bootstrap_images:
             if "active" in line and "centos" not in line:

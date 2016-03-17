@@ -299,6 +299,10 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
                      " list: \n{0}".format(bootstrap_uuids))
 
         uuid = self.env.fuel_bootstrap_actions.get_active_bootstrap_uuid()
+        # we need to fail in case uuid is None, otherwise the assert_raises
+        # will use: uuid = None
+        assert_true(uuid is not None, "No active bootstrap. Possibly centos "
+                    "is active or something went wrong.")
         assert_raises(
             UnexpectedExitCode,
             self.env.fuel_bootstrap_actions.delete_bootstrap_image,
