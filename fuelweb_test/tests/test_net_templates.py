@@ -532,10 +532,9 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
             cluster_id=cluster_id, network_template=network_template)
 
         self.show_step(6)
-        mgmt_net = filter(
-            lambda grp: grp['name'] == 'management',
-            self.fuel_web.client.get_network_groups()
-        ).pop()
+        mgmt_net = [
+            grp for grp in self.fuel_web.client.get_network_groups()
+            if grp['name'] == 'management'].pop()
 
         assert_true(
             self.fuel_web.client.del_network_group(mgmt_net['id']).code
