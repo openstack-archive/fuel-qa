@@ -601,8 +601,7 @@ class FuelBootstrapCliActions(AdminActions):
             ip=self.admin_ip,
             cmd=command,
         )['stdout_str']
-        if "centos" in uuid:
-            return "centos"
+
         return self.parse_uuid(result)[0]
 
     def build_bootstrap_image(self, **kwargs):
@@ -669,11 +668,10 @@ class FuelBootstrapCliActions(AdminActions):
                 cmd=command)['stdout_str'].split('\n')
 
         for line in bootstrap_images:
-            if "active" in line and "centos" not in line:
+            if "active" in line:
                 return self.parse_uuid(line)[0]
 
-        logger.warning("No active bootstrap. Possibly centos is active or "
-                       "something went wrong. fuel-bootstrap list:\n{0}"
+        logger.warning("No active bootstrap. Fuel-bootstrap list:\n{0}"
                        .format("".join(bootstrap_images)))
 
     def delete_bootstrap_image(self, uuid):

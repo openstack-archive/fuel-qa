@@ -72,53 +72,6 @@ def replace_fuel_agent_rpm():
         raise
 
 
-def patch_centos_bootstrap():
-    """Replaced initramfs.img in /var/www/nailgun/
-    with newly_builded from review
-    environment - Environment Model object - self.env
-    """
-    logger.info("Update fuel-agent code and assemble new bootstrap")
-    ssh = SSHManager()
-    if not settings.UPDATE_FUEL:
-        raise Exception("{} variable don't exist"
-                        .format(settings.UPDATE_FUEL))
-    try:
-        pack_path = '/var/www/nailgun/fuel-agent-review/'
-        ssh.upload_to_remote(
-            ip=ssh.admin_ip,
-            source=settings.FUEL_AGENT_REPO_PATH.rstrip('/'),
-            target=pack_path)
-        # Step 1 - unpack bootstrap
-        bootstrap_var = "/var/initramfs"
-        bootstrap = "/var/www/nailgun/bootstrap"
-        cmd = ("mkdir {0}; cp /{1}/initramfs.img {0}/; cd {0}; "
-               "cat initramfs.img | gunzip | cpio -imudv;").format(
-            bootstrap_var, bootstrap)
-        result = ssh.execute_on_remote(
-            ip=ssh.admin_ip, cmd=cmd)['stdout_str']
-        logger.debug("Patching bootsrap finishes with {0}".format(result))
-
-        # Step 2 - replace fuel-agent code in unpacked bootstrap
-        agent_path = "/usr/lib/python2.7/site-packages/fuel_agent"
-        image_rebuild = "{} | {} | {}".format(
-            "find . -xdev",
-            "cpio --create --format='newc'",
-            "gzip -9 > /var/initramfs.img.updated")
-
-        cmd = ("rm -rf {0}/initramfs.img; "
-               "rsync -r {2}fuel_agent/* {0}{1}/;"
-               "cd {0}/;"
-               "{3};").format(bootstrap_var, agent_path, pack_path,
-                              image_rebuild)
-        result = ssh.execute_on_remote(
-            ip=ssh.admin_ip, cmd=cmd)['stdout_str']
-        logger.debug("Failed to rebuild image with {0}".format(result))
-
-    except Exception as e:
-        logger.error("Could not upload package {e}".format(e=e))
-        raise
-
-
 def patch_and_assemble_ubuntu_bootstrap(environment):
     """Replaced initramfs.img in /var/www/nailgun/
     with newly_builded from review
@@ -172,30 +125,6 @@ def patch_and_assemble_ubuntu_bootstrap(environment):
     except Exception as e:
         logger.error("Could not upload package {e}".format(e=e))
         raise
-
-
-def replace_centos_bootstrap(environment):
-    """Replaced initramfs.img in /var/www/nailgun/
-    with re-builded with review code
-    environment - Environment Model object - self.env
-    """
-    logger.info("Updating bootstrap")
-    ssh = SSHManager()
-    if not settings.UPDATE_FUEL:
-        raise Exception("{} variable don't exist"
-                        .format(settings.UPDATE_FUEL))
-    rebuilded_bootstrap = '/var/initramfs.img.updated'
-    checkers.check_file_exists(
-        ssh.admin_ip,
-        '{0}'.format(rebuilded_bootstrap))
-    logger.info("Assigning new bootstrap from {}".format(rebuilded_bootstrap))
-    bootstrap = "/var/www/nailgun/bootstrap"
-    cmd = ("mv {0}/initramfs.img /var/initramfs.img;"
-           "cp /var/initramfs.img.updated {0}/initramfs.img;"
-           "chmod +r {0}/initramfs.img;").format(bootstrap)
-    ssh.execute_on_remote(ip=ssh.admin_ip, cmd=cmd)
-    cmd = "cobbler sync"
-    ssh.execute_on_remote(ip=ssh.admin_ip, cmd=cmd)
 
 
 def update_ostf():
