@@ -433,8 +433,7 @@ class TestRailProject(object):
                 custom_step_results = []
                 steps = case.get('custom_test_case_steps', None)
                 if steps and len(steps) == len(results.steps):
-                    steps = zip(steps, results.steps)
-                    for s in steps:
+                    for s in zip(steps, results.steps):
                         custom_step_results.append({
                             "content": s[0]["content"],
                             "expected": s[0]["expected"],

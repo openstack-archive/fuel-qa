@@ -132,7 +132,9 @@ class ServicesReconfiguration(TestBasic):
         :return: a dictionary of ip nodes and process uptime
         """
         nodes = [x['ip'] for x in nodes]
+        # pylint: disable=range-builtin-not-iterating
         uptimes = dict(zip(nodes, range(len(nodes))))
+        # pylint: enable=range-builtin-not-iterating
         for node in nodes:
             with self.env.d_env.get_ssh_to_remote(node) as remote:
                 uptimes[node] = \
@@ -1201,8 +1203,9 @@ class ServicesReconfiguration(TestBasic):
 
         self.show_step(2)
         cluster_id = self.fuel_web.get_last_created_cluster()
-        bs_node = filter(lambda x: x.name == 'slave-05',
-                         self.env.d_env.get_nodes())
+        bs_node = [
+            node for node in self.env.d_env.get_nodes()
+            if node.name == 'slave-05']
         self.env.bootstrap_nodes(bs_node)
         self.fuel_web.update_nodes(
             cluster_id,

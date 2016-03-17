@@ -274,10 +274,8 @@ class EnvironmentModel(object):
             self.resume_environment()
 
     def nailgun_nodes(self, devops_nodes):
-        return map(
-            lambda node: self.fuel_web.get_nailgun_node_by_devops_node(node),
-            devops_nodes
-        )
+        return [self.fuel_web.get_nailgun_node_by_devops_node(node)
+                for node in devops_nodes]
 
     def check_slaves_are_ready(self):
         devops_nodes = [node for node in self.d_env.nodes().slaves
