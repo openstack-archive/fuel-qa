@@ -187,7 +187,7 @@ def get_tests_groups_from_jenkins(runner_name, build_number, distros):
         groups = [keyword.split('=')[1]
                   for line in console
                   for keyword in line.split()
-                  if 'run_tests.py' in line and '--group=' in keyword]
+                  if 'run_system_test.py' in line and '--group=' in keyword]
         if not groups:
             logger.error("No test group found in console of the job {0}/{1}"
                          .format(b['jobName'], b['buildNumber']))
