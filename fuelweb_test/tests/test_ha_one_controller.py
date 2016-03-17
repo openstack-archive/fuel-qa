@@ -128,7 +128,8 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
             cluster_id, {'slave-02': ['compute']}, False, True)
         task = self.fuel_web.deploy_cluster(cluster_id)
         self.fuel_web.assert_task_success(task)
-        nodes = filter(lambda x: x["pending_deletion"] is True, nailgun_nodes)
+        nodes = [
+            node for node in nailgun_nodes if node["pending_deletion"] is True]
         assert_true(
             len(nodes) == 1, "Verify 1 node has pending deletion status"
         )
@@ -313,7 +314,8 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.fuel_web.client.delete_cluster(cluster_id)
         nailgun_nodes = self.fuel_web.client.list_nodes()
-        nodes = filter(lambda x: x["pending_deletion"] is True, nailgun_nodes)
+        nodes = [
+            node for node in nailgun_nodes if node["pending_deletion"] is True]
         assert_true(
             len(nodes) == 2, "Verify 2 node has pending deletion status"
         )

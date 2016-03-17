@@ -55,9 +55,10 @@ class StrengthActions(object):
                     "No destroyed nodes in Environment")
 
         def wait_offline_nodes():
-            n_nodes = map(self.fuel_web.get_nailgun_node_by_devops_node,
-                          self.destroyed_devops_nodes)
-            n_nodes = map(lambda x: x['online'], n_nodes)
+            n_nodes = [
+                self.fuel_web.get_nailgun_node_by_devops_node(node) for node in
+                self.destroyed_devops_nodes]
+            n_nodes = [node['online'] for node in n_nodes]
             return n_nodes.count(False) == 0
 
         wait(wait_offline_nodes, timeout=60 * 5)
@@ -83,9 +84,10 @@ class StrengthActions(object):
         n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             self.cluster_id,
             ['controller'])
-        d_ctrls = map(self.fuel_web.get_devops_node_by_nailgun_node, n_ctrls)
+        d_ctrls = {self.fuel_web.get_devops_node_by_nailgun_node(node)
+                   for node in n_ctrls}
         self.fuel_web.wait_mysql_galera_is_up(
-            [n.name for n in set(d_ctrls) - set(self.destroyed_devops_nodes)],
+            [n.name for n in d_ctrls - set(self.destroyed_devops_nodes)],
             timeout=300)
 
     @deferred_decorator([make_snapshot_if_step_fail])
@@ -95,8 +97,9 @@ class StrengthActions(object):
         n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             self.cluster_id,
             ['controller'])
-        d_ctrls = map(self.fuel_web.get_devops_node_by_nailgun_node, n_ctrls)
-        online_d_ctrls = set(d_ctrls) - set(self.destroyed_devops_nodes)
+        d_ctrls = {self.fuel_web.get_devops_node_by_nailgun_node(node)
+                   for node in n_ctrls}
+        online_d_ctrls = d_ctrls - set(self.destroyed_devops_nodes)
 
         for node in online_d_ctrls:
             logger.info("Check pacemaker status on {}".format(node.name))
