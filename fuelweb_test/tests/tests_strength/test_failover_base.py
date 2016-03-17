@@ -342,7 +342,7 @@ class TestHaFailoverBase(TestBasic):
         n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])
         for nailgun_node in n_ctrls:
-            dev_node = self.fuel_web.get_devops_nodes_by_nailgun_nodes(
+            dev_node = self.fuel_web.get_devops_node_by_nailgun_node(
                 nailgun_node
             )
             logger.info('Terminating MySQL on {0}'
