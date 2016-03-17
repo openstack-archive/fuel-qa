@@ -51,6 +51,7 @@ class UCATest(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE,
+            release_name=settings.OPENSTACK_RELEASE_UBUNTU_UCA,
             settings=uca_enabled
         )
 

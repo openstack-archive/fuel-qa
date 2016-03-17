@@ -488,7 +488,7 @@ def check_repos_management(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
         # FIXME: Enable me for all release after fix #1403088 and #1448114
-        if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_UBUNTU:
+        if settings.OPENSTACK_RELEASE_UBUNTU in settings.OPENSTACK_RELEASE:
             try:
                 env = get_current_env(args)
                 nailgun_nodes = env.fuel_web.client.list_cluster_nodes(

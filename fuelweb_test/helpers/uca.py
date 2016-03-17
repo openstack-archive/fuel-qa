@@ -23,8 +23,7 @@ def change_cluster_uca_config(cluster_attributes):
 
     # check attributes have uca options
 
-    for option in ["repo_type", "uca_repo_url", "uca_openstack_release",
-                   "pin_haproxy", "pin_rabbitmq", "pin_ceph"]:
+    for option in ["pin_haproxy", "pin_rabbitmq", "pin_ceph"]:
         asserts.assert_true(
             option in cluster_attributes["editable"]["repo_setup"],
             "{0} is not in cluster attributes: {1}".
@@ -33,9 +32,6 @@ def change_cluster_uca_config(cluster_attributes):
     # enable UCA repository
 
     uca_options = cluster_attributes["editable"]["repo_setup"]
-    uca_options["repo_type"]["value"] = settings.UCA_REPO_TYPE
-    uca_options["uca_repo_url"]["value"] = settings.UCA_REPO_URL
-    uca_options["uca_openstack_release"]["value"] = settings.UCA_RELEASE
     uca_options["pin_haproxy"]["value"] = settings.UCA_PIN_HAPROXY
     uca_options["pin_rabbitmq"]["value"] = settings.UCA_PIN_RABBITMQ
     uca_options["pin_ceph"]["value"] = settings.UCA_PIN_RABBITMQ
