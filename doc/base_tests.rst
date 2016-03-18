@@ -322,6 +322,11 @@ Test Support HugePages
 .. automodule:: fuelweb_test.tests.test_support_hugepages
   :members:
 
+Test CPU pinning
+----------------
+.. automodule:: fuelweb_test.tests.test_cpu_pinning
+  :members:
+
 Test RH-based computes
 ----------------------
 .. automodule:: fuelweb_test.tests.test_rh_compute
