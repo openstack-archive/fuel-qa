@@ -317,6 +317,12 @@ Test Services reconfiguration
 .. automodule:: fuelweb_test.tests.test_services_reconfiguration
   :members:
 
+Test CPU pinning
+----------------
+
+.. automodule:: fuelweb_test.tests.test_cpu_pinning
+  :members:
+
 Test RH-based computes
 ----------------------
 .. automodule:: fuelweb_test.tests.test_rh_compute
