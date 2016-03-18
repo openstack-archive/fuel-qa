@@ -52,6 +52,12 @@ from fuelweb_test.tests.base_test_case import TestBasic
 class TestHaFailoverBase(TestBasic):
     """TestHaFailoverBase."""  # TODO documentation
 
+    @property
+    def snapshot_name(self):
+        raise ValueError(
+            'Property snapshot_name should be redefined in child classes '
+            'before use!')
+
     def deploy_ha(self):
 
         self.check_run(self.snapshot_name)
