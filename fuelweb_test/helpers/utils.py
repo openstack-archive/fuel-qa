@@ -1041,3 +1041,22 @@ def get_file_size(ip, file_name, file_path):
                                         " remote node".format(file_path,
                                                               file_name))
     return int(file_size['stdout'][0].rstrip())
+
+
+@logwrap
+def get_quantity_of_numa(ip):
+    """Get number of NUMA nodes that are contained on remote node
+
+    :param remote: node IP
+    :return: int, count of available NUMA nodes on the node
+    """
+
+    numa = int(SSHManager().check_call(
+        ip=ip,
+        cmd="lstopo | grep NUMANode| wc -l"
+    )['stdout'][0])
+
+    if not numa:
+        logger.debug("There are no NUMA nodes on {0}".format(ip))
+    logger.debug("There is {0} NUMA node(s) on {1}".format(numa, ip))
+    return numa
