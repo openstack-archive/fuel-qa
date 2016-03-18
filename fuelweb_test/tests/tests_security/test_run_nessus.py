@@ -127,9 +127,9 @@ class TestNessus(NeutronTunHaBase):
         scan_name = "Scan CPA {0}".format(scan_start_date)
 
         policies_list = nessus_client.list_policy_templates()
-        cpa_policy_template = filter(
-            lambda template: template['title'] == 'Credentialed Patch Audit',
-            policies_list)[0]
+        cpa_policy_template = [
+            template for template in policies_list
+            if template['title'] == 'Credentialed Patch Audit'][0]
 
         policy_id = nessus_client.add_cpa_policy(
             scan_name, settings.ENV_NAME, cpa_policy_template['uuid'])
@@ -183,9 +183,9 @@ class TestNessus(NeutronTunHaBase):
         scan_name = "Scan WAT {0}".format(scan_start_date)
 
         policies_list = nessus_client.list_policy_templates()
-        wat_policy_template = filter(
-            lambda template: template['title'] == 'Web Application Tests',
-            policies_list)[0]
+        wat_policy_template = [
+            template for template in policies_list
+            if template['title'] == 'Web Application Tests'][0]
 
         policy_id = nessus_client.add_wat_policy(
             scan_name, settings.ENV_NAME, wat_policy_template['uuid'])
@@ -242,9 +242,9 @@ class TestNessus(NeutronTunHaBase):
         scan_name = "Scan CPA {0}".format(scan_start_date)
 
         policies_list = nessus_client.list_policy_templates()
-        cpa_policy_template = filter(
-            lambda template: template['title'] == 'Credentialed Patch Audit',
-            policies_list)[0]
+        cpa_policy_template = [
+            template for template in policies_list
+            if template['title'] == 'Credentialed Patch Audit'][0]
 
         policy_id = nessus_client.add_cpa_policy(
             scan_name, settings.ENV_NAME, cpa_policy_template['uuid'])

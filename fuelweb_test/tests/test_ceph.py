@@ -314,12 +314,11 @@ class CephHA(TestBasic):
 
         ceph_version = versions[0]['ceph_version']
 
-        def check_ver(v):
-            # Check version. True if version is not equal @ceph_version
-            return (parse_version(v['ceph_version']) !=
-                    parse_version(ceph_version))
+        bad_nodes = [
+            ver for ver in versions
+            if parse_version(ver['ceph_version']) != parse_version(
+                ceph_version)]
 
-        bad_nodes = filter(check_ver, versions)
         assert_true(len(bad_nodes) == 0,
                     message="Nodes should same Ceph version on all nodes. "
                             "Expecting version {0}, the following nodes "
