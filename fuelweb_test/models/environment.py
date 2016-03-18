@@ -515,6 +515,12 @@ class EnvironmentModel(object):
             logger.debug('Offloading settings:\n{0}\n'.format(
                          ''.join(result['stdout'])))
 
+        if settings.MOS_ALT_REPO_URL:
+            from fuelweb_test.models.fuel_web_client \
+                import replace_to_alt_mos_repo
+            replace_to_alt_mos_repo(self.ssh_manager)
+            settings.MOS_ALT_REPO_URL = None
+
     # pylint: disable=no-self-use
     @update_rpm_packages
     @upload_manifests

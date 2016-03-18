@@ -644,3 +644,6 @@ GERRIT_PROJECT = os.environ.get("GERRIT_PROJECT")
 GERRIT_BRANCH = os.environ.get("GERRIT_BRANCH")
 GERRIT_CHANGE_ID = os.environ.get("GERRIT_CHANGE_ID")
 GERRIT_PATCHSET_NUMBER = os.environ.get("GERRIT_PATCHSET_NUMBER")
+
+# MOS alternative mirror
+MOS_ALT_REPO_URL = os.environ.get("MOS_ALT_REPO_URL")
