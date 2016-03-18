@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import re
 import time
 import traceback
@@ -64,6 +65,7 @@ from fuelweb_test.settings import DISABLE_SSL
 from fuelweb_test.settings import DNS_SUFFIX
 from fuelweb_test.settings import iface_alias
 from fuelweb_test.settings import KVM_USE
+from fuelweb_test.settings import MOS_REPOS
 from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import NOVA_QUOTAS_ENABLED
 from fuelweb_test.settings import NETWORK_PROVIDERS
@@ -741,6 +743,9 @@ class FuelWebClient(object):
 
         self.client.put_release(centos_id, centos_release)
         replace_repos.report_centos_repos(repos_centos["value"])
+
+        if os.environ.get('MOS_REPOS'):
+            replace_to_alt_mos_repo(self.ssh_manager)
 
     def get_cluster_repos(self, cluster_id):
         attributes = self.client.get_cluster_attributes(cluster_id)
@@ -2641,3 +2646,21 @@ class FuelWebClient(object):
         vip_id = vip_data['id']
         logger.debug("data to send {}".format(vip_data))
         self.client.update_vip_ip(cluster_id, vip_id, vip_data)
+
+
+def replace_to_alt_mos_repo(ssh_manager):
+    default_mos_mirror = 'http://mirror.fuel-infra.org/mos-repos'
+    for config in _get_configs_to_replace_alt_mos_repo():
+        replace_cmd = "sed -i 's|{0}|{1}|g' {2}"\
+            .format(default_mos_mirror, MOS_REPOS, config)
+        logger.info('Replacing MOS mirrors in the {1} with cmd: {0}'
+                    .format(config, replace_cmd))
+        ssh_manager.execute_on_remote(ip=ssh_manager.admin_ip, cmd=replace_cmd)
+
+
+def _get_configs_to_replace_alt_mos_repo():
+    base_path = '/usr/share/fuel-mirror'
+    centos_config = os.path.join(base_path, 'ubuntu.yaml')
+    ubuntu_config = os.path.join(base_path, 'centos.yaml')
+    astute_config = '/etc/fuel/astute.yaml'
+    return centos_config, ubuntu_config, astute_config

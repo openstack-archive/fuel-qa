@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import re
 import subprocess
 import time
@@ -514,6 +515,12 @@ class EnvironmentModel(object):
             )
             logger.debug('Offloading settings:\n{0}\n'.format(
                          ''.join(result['stdout'])))
+
+        if os.environ.get('MOS_REPOS'):
+            from fuelweb_test.models.fuel_web_client \
+                import replace_to_alt_mos_repo
+            replace_to_alt_mos_repo(self.ssh_manager)
+            del os.environ['MOS_REPOS']
 
     # pylint: disable=no-self-use
     @update_rpm_packages
