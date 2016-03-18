@@ -56,7 +56,8 @@ class BaseActions(object):
             cmd="systemctl restart {0}".format(service))
         return result['exit_code'] == 0
 
-    def put_value_to_local_yaml(self, old_file, new_file, element, value):
+    @staticmethod
+    def put_value_to_local_yaml(old_file, new_file, element, value):
         """Changes content in old_file at element is given to the new value
         and creates new file with changed content
         :param old_file: a path to the file content from to be changed
@@ -80,7 +81,8 @@ class BaseActions(object):
             yaml.dump(origin_yaml, f_new, default_flow_style=False,
                       default_style='"')
 
-    def get_value_from_local_yaml(self, yaml_file, element):
+    @staticmethod
+    def get_value_from_local_yaml(yaml_file, element):
         """Get a value of the element from the local yaml file
 
            :param str yaml_file: a path to the yaml file
@@ -576,7 +578,8 @@ class FuelBootstrapCliActions(AdminActions):
         fuel_settings = self.get_fuel_settings()
         return fuel_settings["BOOTSTRAP"]
 
-    def parse_uuid(self, message):
+    @staticmethod
+    def parse_uuid(message):
         uuid_regex = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-" \
                      r"[0-9a-f]{4}-[0-9a-f]{12}"
 
