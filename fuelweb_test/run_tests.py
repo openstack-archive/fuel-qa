@@ -126,8 +126,6 @@ def import_tests():
     from tests.tests_strength import test_huge_environments  # noqa
     from tests.tests_strength import test_image_based  # noqa
     from tests.tests_strength import test_cic_maintenance_mode  # noqa
-    from tests.tests_upgrade import test_upgrade  # noqa
-    from tests.tests_upgrade import test_upgrade_chains  # noqa
     from tests import test_bonding  # noqa
     from tests import test_offloading_types  # noqa
     from tests import test_bond_offloading  # noqa
