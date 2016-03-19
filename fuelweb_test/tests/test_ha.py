@@ -247,6 +247,8 @@ class TestHaFlat(TestBasic):
         self.env.revert_snapshot("deploy_ha_flat")
         cluster_id = self.fuel_web.get_last_created_cluster()
 
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[5:7])
 
@@ -300,6 +302,8 @@ class TestHaFlatAddCompute(TestBasic):
         """
         self.env.revert_snapshot("deploy_ha_flat")
         cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.fuel_web.assert_ha_services_ready(cluster_id)
 
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[5:6])
@@ -471,6 +475,9 @@ class BackupRestoreHa(TestBasic):
         self.env.revert_snapshot("deploy_ha_flat")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id),
             'novaHaFlat', 'novaHaFlat', 'novaHaFlat')
