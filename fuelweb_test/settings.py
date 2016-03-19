@@ -373,6 +373,9 @@ MAKE_SNAPSHOT = get_var_as_bool('MAKE_SNAPSHOT', False)
 
 FUEL_SETTINGS_YAML = os.environ.get('FUEL_SETTINGS_YAML',
                                     '/etc/fuel/astute.yaml')
+# TarBall data for updates and upgrades
+
+TARBALL_PATH = os.environ.get('TARBALL_PATH')
 
 UPGRADE_FUEL_FROM = os.environ.get('UPGRADE_FUEL_FROM', '7.0')
 UPGRADE_FUEL_TO = os.environ.get('UPGRADE_FUEL_TO', '8.0')
