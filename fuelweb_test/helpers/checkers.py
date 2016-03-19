@@ -218,6 +218,27 @@ def check_unallocated_space(disks, contr_img_ceph=False):
 
 
 @logwrap
+def check_upgraded_containers(remote, version_from, version_to):
+    logger.info('Checking of containers')
+    containers = remote.execute("docker ps | tail -n +2 |"
+                                "awk '{ print $NF;}'")['stdout']
+    symlink = remote.execute("readlink /etc/supervisord.d/current")['stdout']
+    logger.debug('containers are {0}'.format(containers))
+    logger.debug('symlinks are {0}'.format(symlink))
+    components = [co.split('-') for x in containers for co in x.split(',')]
+
+    for i in components:
+        assert_true(version_from != i[2],
+                    'There are {0} containers'.format(version_from))
+    for i in components:
+        assert_true(version_to == i[2],
+                    'There are no {0} containers'.format(version_to))
+    assert_true('/etc/supervisord.d/{0}'.format(version_to)
+                in symlink[0],
+                'Symlink is set not to {0}'.format(version_to))
+
+
+@logwrap
 def upload_tarball(node_ssh, tar_path, tar_target):
     assert_true(tar_path, "Source path for uploading 'tar_path' is empty, "
                 "please check test settings!")
@@ -247,6 +268,64 @@ def check_file_exists(node_ssh, path):
 
 
 @logwrap
+def run_upgrade_script(node_ssh, script_path, script_name, password='admin',
+                       rollback=False, exit_code=0):
+    path = os.path.join(script_path, script_name)
+    check_file_exists(node_ssh, path)
+    c_res = node_ssh.execute('chmod 755 {0}'.format(path))
+    logger.debug("Result of chmod is {0}".format(c_res))
+    if rollback:
+        path = "UPGRADERS='host-system docker openstack" \
+               " raise-error' {0}/{1}" \
+               " --password {2}".format(script_path, script_name, password)
+    else:
+        path = "{0}/{1} --no-rollback --password {2}".format(script_path,
+                                                             script_name,
+                                                             password)
+
+    result = run_on_remote_get_results(node_ssh, path,
+                                       assert_ec_equal=[exit_code],
+                                       raise_on_assert=False)
+
+    # TODO: check that we really need this log from fuel_upgrade.log
+    if result['exit_code'] != exit_code:
+        log = "".join(
+            run_on_remote(node_ssh,
+                          "awk -v p=\"UPGRADE FAILED\" 'BEGIN{m=\"\"}"
+                          " {if ($0 ~ p) {m=$0} else m=m\"\\n\"$0}"
+                          " END{if (m ~ p) print m}'"
+                          " /var/log/fuel_upgrade.log",
+                          raise_on_assert=False)
+        )
+
+        logger.error("Message from /var/log/fuel_upgrade.log:\n"
+                     "{log}".format(log=log))
+
+    assert_equal(
+        result['exit_code'],
+        exit_code,
+        "Upgrade script failed with exit code {exit_code}, "
+        "please inspect logs for details.\n"
+        "last output: \"{output}\""
+        "".format(exit_code=result['exit_code'],
+                  output=''.join(result['stdout'][-5:]) + result['stderr_str'])
+    )
+
+
+@logwrap
+def wait_upgrade_is_done(node_ssh, timeout, phrase):
+    logger.info('Waiting while upgrade is done')
+    cmd = "grep '{0}' /var/log/fuel_upgrade.log".format(phrase)
+    try:
+        wait(
+            lambda: not node_ssh.execute(cmd)['exit_code'], timeout=timeout)
+    except Exception as e:
+        a = node_ssh.execute(cmd)
+        logger.error(e)
+        assert_equal(0, a['exit_code'], a['stderr'])
+
+
+@logwrap
 def wait_phrase_in_log(node_ssh, timeout, interval, phrase, log_path):
     cmd = "grep '{0}' '{1}'".format(phrase, log_path)
     wait(
@@ -254,6 +333,15 @@ def wait_phrase_in_log(node_ssh, timeout, interval, phrase, log_path):
         timeout=timeout,
         timeout_msg="The phrase {0} not found in {1} file on "
                     "remote node".format(phrase, log_path))
+
+
+@logwrap
+def wait_rollback_is_done(node_ssh, timeout):
+    logger.info('Waiting while rollback is done')
+    wait(
+        lambda: not node_ssh.execute(
+            "grep 'UPGRADE FAILED' /var/log/fuel_upgrade.log"
+        )['exit_code'], timeout=timeout)
 
 
 @logwrap
