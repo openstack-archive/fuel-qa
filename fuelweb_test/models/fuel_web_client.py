@@ -1739,6 +1739,29 @@ class FuelWebClient(object):
                 wait(lambda: not ceph.is_clock_skew(remote), timeout=120)
 
     @logwrap
+    def restart_ceph_unconditionally(self, cluster_id,
+                                     offline_nodes=()):
+        """This method only works for CentOS installations,
+        as they have no ability to restart crashed mons/osds.
+        This is needed in some cases like after reverting a
+        "live" snapshot, because of time skew osds could crash.
+        """
+        if OPENSTACK_RELEASE == OPENSTACK_RELEASE_UBUNTU:
+            logger.info("Skipping Ceph restart for Ubuntu...")
+            return
+
+        ceph_nodes = self.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['ceph-osd'])
+        online_ceph_nodes = [
+            n for n in ceph_nodes if n['id'] not in offline_nodes]
+        logger.info("Restarting Ceph service on all ceph-osd nodes...")
+        for node in online_ceph_nodes:
+            # No need to check states or exit codes of operations
+            # as there is no logic to catch errors or to recover ceph
+            remote = self.environment.d_env.get_ssh_to_remote(node['ip'])
+            remote.execute("service ceph restart")
+
+    @logwrap
     def check_ceph_status(self, cluster_id, offline_nodes=(),
                           recovery_timeout=360):
         ceph_nodes = self.get_nailgun_cluster_nodes_by_roles(
