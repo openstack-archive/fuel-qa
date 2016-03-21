@@ -57,6 +57,7 @@ from fuelweb_test.helpers.utils import get_node_hiera_roles
 from fuelweb_test.helpers.utils import node_freemem
 from fuelweb_test.helpers.utils import pretty_log
 from fuelweb_test.helpers.utils import run_on_remote
+from fuelweb_test.helpers.utils import store_tasks_list
 from fuelweb_test.models.nailgun_client import NailgunClient
 import fuelweb_test.settings as help_data
 from fuelweb_test.settings import ATTEMPTS
@@ -64,6 +65,7 @@ from fuelweb_test.settings import BONDING
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
 from fuelweb_test.settings import DISABLE_SSL
 from fuelweb_test.settings import DNS_SUFFIX
+from fuelweb_test.settings import DOWNLOAD_TASKS
 from fuelweb_test.settings import iface_alias
 from fuelweb_test.settings import KVM_USE
 from fuelweb_test.settings import MULTIPLE_NETWORKS
@@ -756,6 +758,11 @@ class FuelWebClient(object):
     def deploy_cluster_wait(self, cluster_id, is_feature=False,
                             timeout=help_data.DEPLOYMENT_TIMEOUT, interval=30,
                             check_services=True):
+        if DOWNLOAD_TASKS:
+            store_tasks_list(cluster_id=cluster_id,
+                             ssh_manager=self.ssh_manager,
+                             nailgun=self.client,
+                             write_on_disk=True)
         if not is_feature:
             logger.info('Deploy cluster %s', cluster_id)
             task = self.deploy_cluster(cluster_id)

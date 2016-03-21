@@ -685,3 +685,14 @@ class NailgunClient(object):
         """
         url = '/api/v1/nodes/{}/attributes/'.format(node_id)
         return self.client.get(url)
+
+    @logwrap
+    @json_parse
+    def get_serialized_cluster_tasks(self, cluster_id):
+        """
+
+        :param cluster_id: a cluster id
+        :return: a list of tasks to be executed during deployment
+        """
+        return self.client.get("/api/clusters/{}/serialized_tasks"
+                               .format(cluster_id))

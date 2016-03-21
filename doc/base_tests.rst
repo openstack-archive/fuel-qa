@@ -680,3 +680,7 @@ Deployment with platform components
 Template based tests
 --------------------
 .. automodule:: fuelweb_test.actions_tests
+
+Test deploying tasks
+--------------------
+.. automodule:: fuelweb_test.tests.test_deploying_tasks
