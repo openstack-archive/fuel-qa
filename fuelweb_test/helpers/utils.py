@@ -563,3 +563,29 @@ def erase_data_from_hdd(remote,
 
     for cmd in commands:
         run_on_remote(remote, cmd)
+
+
+def repeat_until(func, exc=Exception, interval=5, deadline=60,
+                  success_count=1, limit=100):
+    """Runs func() every `interval` seconds until the number of
+    `success_count` retries occurs. Raises the `exc` Exception
+    if `deadline` is exceeded or `limit` is breached. Almost
+    fully compatible with the _wait() function from the devops
+    package.
+
+    :raises Exception, ValueError
+    :returns None"""
+    start = time.time()
+    while success_count and limit:
+        try:
+            func()
+            success_count -= 1
+        except exc:
+            is_out_of_time = deadline + start < time.time()
+            if is_out_of_time:
+                raise
+        limit -= 1
+        time.sleep(interval)
+    if success_count and not limit:
+        raise ValueError("{0} has breached its retry limit."
+                         .format(func))

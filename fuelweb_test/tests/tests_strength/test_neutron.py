@@ -178,6 +178,9 @@ class TestNeutronFailover(base_test_case.TestBasic):
         """
         self.env.revert_snapshot("deploy_ha_neutron")
         cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
 
@@ -251,6 +254,9 @@ class TestNeutronFailover(base_test_case.TestBasic):
 
         self.env.revert_snapshot("deploy_ha_neutron")
         cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
 
@@ -329,6 +335,9 @@ class TestNeutronFailover(base_test_case.TestBasic):
         """
         self.env.revert_snapshot("deploy_ha_neutron")
         cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
 
@@ -418,6 +427,9 @@ class TestNeutronFailover(base_test_case.TestBasic):
         """
         self.env.revert_snapshot("deploy_ha_neutron")
         cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
 

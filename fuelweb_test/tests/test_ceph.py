@@ -303,6 +303,8 @@ class CephHA(TestBasic):
         self.env.revert_snapshot("ceph_ha")
         cluster_id = self.fuel_web.get_last_created_cluster()
 
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
         self.fuel_web.check_ceph_status(cluster_id)
 
         # Run ostf
@@ -329,6 +331,9 @@ class CephHA(TestBasic):
         """
         self.env.revert_snapshot("ceph_ha")
         cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id), 'cephHA', 'cephHA',
             'cephHA')

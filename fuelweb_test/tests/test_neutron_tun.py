@@ -147,6 +147,8 @@ class TestHaNeutronAddCompute(TestBasic):
         self.env.revert_snapshot("deploy_neutron_tun_ha")
         cluster_id = self.fuel_web.get_last_created_cluster()
 
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[5:6])
         self.fuel_web.update_nodes(
@@ -185,6 +187,8 @@ class TestHaNeutronAddCompute(TestBasic):
 
         self.env.revert_snapshot("deploy_neutron_tun_ha")
         cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.fuel_web.assert_ha_services_ready(cluster_id)
 
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[5:7])
