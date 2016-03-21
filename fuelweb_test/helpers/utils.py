@@ -1063,3 +1063,107 @@ def get_quantity_of_numa(ip):
     else:
         logger.debug("There is {0} NUMA node(s) on {1}".format(numa, ip))
     return numa
+
+
+@logwrap
+def store_tasks_list(cluster_id, nailgun, write_on_disk=False):
+    """
+    This function collects settings and tasks that will be executed on all
+    nodes under deployment. This is a first step of a two steps process.
+    First step is collect data and review it. Second step is to verify
+    tasks are not changed when deploying a new cluster with the same
+    settings staff. Second step implemented at the module
+    test_deploying_tasks.py.
+
+    :param cluster_id: id of a cluster to work with
+    :param nailgun: nailgun instance for working with API
+    :param write_on_disk: bool parameter, indicates will be tasks written on
+     disk or not.
+    :return: if write_on_disk == False (default) function returns three
+     structures: the first is a list with all tasks grouped by nodes:
+
+    [
+        {
+            "tasks": {
+                "ironic_post_swift_key": "skipped",
+                "openstack-haproxy-mysqld": "puppet"
+
+            },
+
+            "hostname": "node-1",
+            "name": "slave-01_controller",
+            "roles":
+
+            [
+                "controller"
+
+            ]
+
+        }
+
+    ]
+
+    Second structure is a dict with parsed cluster options like:
+
+    {
+        "Ceph RBD for images (Glance)": [
+            "checkbox", false
+
+        ],"Select source for certificate": [
+        "radio", "user_uploaded"
+
+        ]
+
+    }
+
+    And finally third section is raw attributes
+    """
+    def parse_settings(attrs):
+        """
+        Function parses attributes by its type
+        :param attrs: a cluster attributes
+        :return: a dict with options
+        """
+        options = {}
+        types = ['checkbox', 'radio', 'hidden']
+        for attr in attrs:
+            for option in attrs[attr]:
+                opt = attrs[attr][option]
+                try:
+                    if opt['type'] in types:
+                        options[opt['label']] = [opt['type'], opt['value']]
+                except KeyError:
+                    pass
+        return options
+
+    tasks_file = '{0}/tasks_{1}.json'.format(settings.LOGS_DIR,
+                                             time.strftime("%Y%m%d_%H:%M"))
+    logger.debug('Trying to trigger serializer to generate tasks')
+    admin_ip = SSHManager().admin_ip
+    cmd = "fuel deployment --env {} --default".format(cluster_id)
+    SSHManager().execute(admin_ip, cmd)
+
+    nodes_list = nailgun.list_cluster_nodes(cluster_id)
+
+    logger.debug('Trying to get list of tasks for nodes')
+    serialized_tasks = nailgun.get_serialized_cluster_tasks(cluster_id)
+    graph = serialized_tasks['tasks_graph']
+    nodes_tasks = []
+    for node in nodes_list:
+        tasks = {task['id']: task['type'] for task in graph[str(node['id'])]}
+        nodes_tasks.append({'hostname': node['hostname'],
+                            'name': node['name'],
+                            'roles': node['pending_roles'],
+                            'tasks': tasks})
+
+    raw_attributes = nailgun.get_cluster_attributes(cluster_id)
+    logger.debug('Parsing settings for options')
+    attrs = parse_settings(raw_attributes['editable'])
+    if not write_on_disk:
+        logger.debug('Writing to file is disabled, '
+                     'function will just return tasks')
+        return nodes_tasks, attrs, raw_attributes
+    with open(tasks_file, 'w') as f:
+        logger.debug('Writing tasks structure to the file {}'.format(
+            tasks_file))
+        json.dump([nodes_tasks, attrs, raw_attributes], f, indent=4)
