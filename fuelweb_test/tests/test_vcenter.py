@@ -1259,10 +1259,12 @@ class VcenterDeploy(TestBasic):
                         "Current state of Vm {0} is {1}".format(
                             srv.name, os_conn.get_instance_detail(srv).status))
             try:
+                # pylint: disable=undefined-loop-variable
                 wait(
                     lambda:
                     os_conn.get_instance_detail(srv).status == "ACTIVE",
                     timeout=60 * 60)
+                # pylint: enable=undefined-loop-variable
             except TimeoutError:
                 logger.error(
                     "Current state of Vm {0} is {1}".format(
@@ -1376,10 +1378,12 @@ class VcenterDeploy(TestBasic):
                         "Current state of Vm {0} is {1}".format(
                             srv.name, os_conn.get_instance_detail(srv).status))
             try:
+                # pylint: disable=undefined-loop-variable
                 wait(
                     lambda:
                     os_conn.get_instance_detail(srv).status == "ACTIVE",
                     timeout=60 * 60)
+                # pylint: enable=undefined-loop-variable
             except TimeoutError:
                 logger.error(
                     "Current state of Vm {0} is {1}".format(
