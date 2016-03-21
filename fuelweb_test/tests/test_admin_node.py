@@ -82,12 +82,10 @@ class TestAdminNode(TestBasic):
         self.env.revert_snapshot("empty")
         with self.env.d_env.get_admin_remote() as remote:
             ps_output = remote.execute('ps ax')['stdout']
-        astute_master = [
-            master for master in ps_output if 'astute master' in master]
+        astute_master = filter(lambda x: 'astute master' in x, ps_output)
         logger.info("Found astute processes: {:s}".format(astute_master))
         assert_equal(len(astute_master), 1)
-        astute_workers = [
-            worker for worker in ps_output if 'astute worker' in worker]
+        astute_workers = filter(lambda x: 'astute worker' in x, ps_output)
         logger.info(
             "Found {len:d} astute worker processes: {workers!s}"
             "".format(len=len(astute_workers), workers=astute_workers))
@@ -97,18 +95,17 @@ class TestAdminNode(TestBasic):
 @test(groups=["logrotate"])
 class TestLogrotateBase(TestBasic):
 
-    @staticmethod
-    def generate_file(remote, name, path, size):
+    def generate_file(self, remote, name, path, size):
         cmd = 'cd {0} && fallocate -l {1} {2}'.format(path, size, name)
         result = remote.execute(cmd)
         assert_equal(0, result['exit_code'],
                      'Command {0} execution failed. '
                      'Execution result is: {1}'.format(cmd, result))
 
-    @staticmethod
-    def execute_logrotate_cmd(remote, cmd=None, exit_code=None):
+    def execute_logrotate_cmd(self, remote, force=True, cmd=None, exit_code=None):
         if not cmd:
-            cmd = 'logrotate -v -f /etc/logrotate.conf'
+            cmd = 'logrotate -v {0} /etc/logrotate.conf'.format(
+                '-f' if force else "")
         result = remote.execute(cmd)
         logger.debug(
             'Results of command {0} execution exit_code:{1} '
@@ -144,8 +141,7 @@ class TestLogrotateBase(TestBasic):
                      'inodes with {0}'. format(result))
         return self.bytestogb(int(result['stdout'][0]))
 
-    @staticmethod
-    def bytestogb(data):
+    def bytestogb(self, data):
         symbols = ('K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
         prefix = {}
         for i, s in enumerate(symbols):
@@ -156,8 +152,7 @@ class TestLogrotateBase(TestBasic):
                 return format(value, '.1f'), s
         return data, 'B'
 
-    @staticmethod
-    def create_old_file(remote, name):
+    def create_old_file(self, remote, name):
         one_week_old = datetime.datetime.now() - datetime.timedelta(days=7)
         res = remote.execute(
             'touch {0} -d {1}'.format(name, one_week_old))
@@ -214,6 +209,12 @@ class TestLogrotateBase(TestBasic):
             free3, suff3 = self.check_free_space(remote)
             logger.debug('Free space after first '
                          'rotation {0} {1}'.format(free3, suff3))
+
+            self.generate_file(
+                remote, size='1K',
+                path='/var/log/',
+                name='messages')
+
             res = self.execute_logrotate_cmd(remote, exit_code=1)
 
             # Expect 1 exit code here, according
