@@ -676,3 +676,7 @@ Test for ssl components
 -----------------------
 .. automodule:: fuelweb_test.tests.test_ssl
    :members:
+
+Test deploying tasks
+--------------------
+.. automodule:: fuelweb_test.tests.test_deploying_tasks
