@@ -106,9 +106,10 @@ class TestLogrotateBase(TestBasic):
                      'Execution result is: {1}'.format(cmd, result))
 
     @staticmethod
-    def execute_logrotate_cmd(remote, cmd=None, exit_code=None):
+    def execute_logrotate_cmd(remote, force=True, cmd=None, exit_code=None):
         if not cmd:
-            cmd = 'logrotate -v -f /etc/logrotate.conf'
+            cmd = 'logrotate -v {0} /etc/logrotate.conf'.format(
+                '-f' if force else "")
         result = remote.execute(cmd)
         logger.debug(
             'Results of command {0} execution exit_code:{1} '
@@ -209,7 +210,7 @@ class TestLogrotateBase(TestBasic):
                 'creation {2}{3}'.format(free, suff, free2, suff2))
 
             self.show_step(4)
-            self.execute_logrotate_cmd(remote)
+            self.execute_logrotate_cmd(remote, force=False)
 
             free3, suff3 = self.check_free_space(remote)
             logger.debug('Free space after first '
@@ -349,7 +350,7 @@ class TestLogrotateBase(TestBasic):
                 'free space after '
                 'creation {2}{3}'.format(free, suff, free2, suff2))
             self.show_step(4)
-            self.execute_logrotate_cmd(remote)
+            self.execute_logrotate_cmd(remote, force=False)
 
             free3, suff3 = self.check_free_space(remote)
             logger.debug('free space after first '
@@ -430,7 +431,7 @@ class TestLogrotateBase(TestBasic):
                 'free space after '
                 'creation {1}'.format(free, free2))
             self.show_step(4)
-            self.execute_logrotate_cmd(remote)
+            self.execute_logrotate_cmd(remote, force=False)
 
             free3 = self.check_free_space(remote, return_as_is=True)
             logger.debug('Free space after first'
