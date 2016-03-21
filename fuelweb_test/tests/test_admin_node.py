@@ -106,9 +106,10 @@ class TestLogrotateBase(TestBasic):
                      'Execution result is: {1}'.format(cmd, result))
 
     @staticmethod
-    def execute_logrotate_cmd(remote, cmd=None, exit_code=None):
+    def execute_logrotate_cmd(remote, force=True, cmd=None, exit_code=None):
         if not cmd:
-            cmd = 'logrotate -v -f /etc/logrotate.conf'
+            cmd = 'logrotate -v {0} /etc/logrotate.conf'.format(
+                '-f' if force else "")
         result = remote.execute(cmd)
         logger.debug(
             'Results of command {0} execution exit_code:{1} '
