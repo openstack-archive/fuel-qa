@@ -644,3 +644,8 @@ GERRIT_PROJECT = os.environ.get("GERRIT_PROJECT")
 GERRIT_BRANCH = os.environ.get("GERRIT_BRANCH")
 GERRIT_CHANGE_ID = os.environ.get("GERRIT_CHANGE_ID")
 GERRIT_PATCHSET_NUMBER = os.environ.get("GERRIT_PATCHSET_NUMBER")
+
+DOWNLOAD_TASKS = get_var_as_bool("DOWNLOAD_TASKS", True)
+TASKS_DIR = os.environ.get(
+    'TASKS_DIR', os.path.join(os.getcwd(),
+                              'fuelweb_test/deploying_tasks'))
