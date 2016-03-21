@@ -21,6 +21,7 @@ from system_test import action
 from system_test.helpers.decorators import make_snapshot_if_step_fail
 
 
+# pylint: disable=no-member
 class VMwareActions(object):
     """VMware vCenter/DVS related actions"""
 
