@@ -78,6 +78,8 @@ class ActionsFactory(object):
 
         actions_method = cls.get_actions()
         linear_order = []
+        # pylint: disable=no-member
+
         for action in cls.actions_order:
             try:
                 action_method = actions_method[action]
@@ -104,6 +106,7 @@ class ActionsFactory(object):
                 linear_order.extend(action_method())
             else:
                 linear_order.append(action)
+        # pylint: enable=no-member
 
         steps = [{"action": step, "method": actions_method[step]} for
                  step in linear_order]
@@ -198,8 +201,10 @@ class ActionsFactory(object):
             runs_after=[teardown_method] if teardown_method else [])
 
         # Generate test case groups
+        # pylint: disable=no-member
         groups = ['{}({})'.format(g, case_group) for g in cls._base_groups]
         groups = cls._base_groups + groups
+        # pylint: enable=no-member
 
         # Generate test case docstring
         test_steps["__doc__"] = "{}\n\n{}\n\nDuration {}".format(
