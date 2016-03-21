@@ -45,6 +45,7 @@ from fuelweb_test.helpers.decorators import update_ostf
 from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers.security import SecurityChecks
 from fuelweb_test.helpers.utils import run_on_remote
+from fuelweb_test.helpers.utils import repeat_until
 from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test.models.nailgun_client import NailgunClient
@@ -142,22 +143,26 @@ class FuelWebClient(object):
             timeout=timeout)
 
     @logwrap
-    def assert_ha_services_ready(self, cluster_id, timeout=20 * 60,
+    def assert_ha_services_ready(self, cluster_id, timeout=30 * 60,
                                  should_fail=0):
         """Wait until HA services are UP.
-        Should be used before run any other check for services."""
-        if self.get_cluster_mode(cluster_id) == DEPLOYMENT_MODE_HA:
-            logger.info('Waiting {0} sec. for passed OSTF HA tests.'
-                        .format(timeout))
-            with quiet_logger():
-                _wait(lambda: self.run_ostf(cluster_id,
-                                            test_sets=['ha'],
-                                            should_fail=should_fail),
-                      interval=20, timeout=timeout)
-            logger.info('OSTF HA tests passed successfully.')
-        else:
+        Should be used before running any other check for services.
+        As RabbitMQ's OCF script has increased timeouts we should
+        not trust the first success, as the cluster might be still
+        under construction."""
+        if self.get_cluster_mode(cluster_id) != DEPLOYMENT_MODE_HA:
             logger.debug('Cluster {0} is not in HA mode, OSTF HA tests '
                          'skipped.'.format(cluster_id))
+            return
+        logger.info('Waiting {0} sec. for passed OSTF HA tests.'
+                    .format(timeout))
+        with quiet_logger():
+            repeat_until(lambda: self.run_ostf(cluster_id,
+                                               test_sets=['ha'],
+                                               should_fail=should_fail),
+                         deadline=timeout, interval=180,
+                         success_count=3, limit=200)
+        logger.info('OSTF HA tests passed successfully.')
 
     @logwrap
     def assert_os_services_ready(self, cluster_id, timeout=5 * 60,
