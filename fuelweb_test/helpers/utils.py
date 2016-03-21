@@ -773,7 +773,7 @@ def check_config(conf, conf_name, section, option, value):
                                                                    section,
                                                                    conf_name))
     else:
-        if not conf.has_section(section):
+        if not conf.has_section(section) and section != 'DEFAULT':
             raise Exception('The section "{0}" is absent in '
                             'config file "{1}": FAIL'.format(section,
                                                              conf_name))
