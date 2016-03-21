@@ -1,0 +1,1431 @@
+[
+    [
+        {
+            "tasks": {
+                "ironic_post_swift_key": "skipped", 
+                "openstack-haproxy-mysqld": "puppet", 
+                "cinder-db": "puppet", 
+                "netconfig": "puppet", 
+                "dump_rabbitmq_definitions": "puppet", 
+                "rsync_core_puppet": "sync", 
+                "create-cinder-types": "puppet", 
+                "ceilometer-controller": "skipped", 
+                "override_configuration": "puppet", 
+                "ceilometer-keystone": "skipped", 
+                "ceph_create_pools": "skipped", 
+                "workloads_collector_add": "puppet", 
+                "primary-openstack-network-plugins-l2": "puppet", 
+                "aodh-db": "skipped", 
+                "virtual_ips": "puppet", 
+                "primary-dns-server": "puppet", 
+                "openstack-haproxy-murano": "puppet", 
+                "openstack-network-end": "skipped", 
+                "openstack-haproxy-radosgw": "puppet", 
+                "openstack-haproxy-swift": "puppet", 
+                "heat-db": "puppet", 
+                "openstack-haproxy-neutron": "puppet", 
+                "updatedb": "skipped", 
+                "ironic-db": "skipped", 
+                "ceilometer-radosgw-user": "skipped", 
+                "openstack-haproxy-keystone": "puppet", 
+                "hosts": "puppet", 
+                "primary-rabbitmq": "puppet", 
+                "primary-cluster-haproxy": "puppet", 
+                "openstack-network-routers": "puppet", 
+                "reserved_ports": "puppet", 
+                "controller_remaining_tasks": "puppet", 
+                "glance-keystone": "puppet", 
+                "openstack-haproxy-aodh": "puppet", 
+                "murano-cfapi": "skipped", 
+                "vmware-vcenter": "skipped", 
+                "ironic-compute": "skipped", 
+                "vcenter_compute_zones_create": "skipped", 
+                "cinder-keystone": "puppet", 
+                "copy_keys": "copy_files", 
+                "enable_rados": "skipped", 
+                "ntp-check": "puppet", 
+                "hiera": "puppet", 
+                "disable_keystone_service_token": "puppet", 
+                "umm": "puppet", 
+                "memcached": "puppet", 
+                "allocate_hugepages": "puppet", 
+                "openrc-delete": "puppet", 
+                "sahara-keystone": "skipped", 
+                "openstack-haproxy-sahara": "puppet", 
+                "ssl-keys-saving": "puppet", 
+                "primary-cluster": "puppet", 
+                "upload_cirros": "shell", 
+                "primary-keystone": "puppet", 
+                "primary-openstack-network-agents-l3": "puppet", 
+                "ssl-dns-setup": "puppet", 
+                "neutron-keystone": "puppet", 
+                "logging": "puppet", 
+                "nova-keystone": "puppet", 
+                "update_hosts": "puppet", 
+                "ironic-keystone": "skipped", 
+                "connectivity_tests": "puppet", 
+                "primary-heat": "puppet", 
+                "conntrackd": "puppet", 
+                "sahara-db": "skipped", 
+                "horizon": "puppet", 
+                "pre_hiera_config": "puppet", 
+                "openstack-haproxy-ceilometer": "puppet", 
+                "openstack-network-common-config": "puppet", 
+                "firewall": "puppet", 
+                "apache": "puppet", 
+                "globals": "puppet", 
+                "aodh-keystone": "skipped", 
+                "glance": "puppet", 
+                "tools": "puppet", 
+                "openstack-haproxy": "puppet", 
+                "cgroups": "puppet", 
+                "primary-swift": "puppet", 
+                "murano-cfapi-keystone": "skipped", 
+                "aodh": "skipped", 
+                "nova-db": "puppet", 
+                "openstack-haproxy-ironic": "skipped", 
+                "clear_nodes_info": "shell", 
+                "openstack-network-routers-ha": "skipped", 
+                "glance-db": "puppet", 
+                "neutron-db": "puppet", 
+                "ironic_upload_images": "skipped", 
+                "swift-rebalance-cron": "puppet", 
+                "primary-ceph-mon": "puppet", 
+                "openstack-haproxy-stats": "puppet", 
+                "ironic-api": "skipped", 
+                "primary-ceph-radosgw": "puppet", 
+                "dns-client": "puppet", 
+                "cluster-vrouter": "puppet", 
+                "murano-rabbitmq": "skipped", 
+                "api-proxy": "puppet", 
+                "cluster_health": "puppet", 
+                "heat-keystone": "puppet", 
+                "openstack-haproxy-horizon": "puppet", 
+                "openstack-network-start": "skipped", 
+                "setup_repositories": "puppet", 
+                "murano-db": "skipped", 
+                "copy_keys_ceph": "copy_files", 
+                "sahara": "skipped", 
+                "fuel_pkgs": "puppet", 
+                "swift-keystone": "puppet", 
+                "public_vip_ping": "puppet", 
+                "upload_nodes_info": "upload_file", 
+                "openstack-haproxy-glance": "puppet", 
+                "murano": "skipped", 
+                "ceph_ready_check": "skipped", 
+                "enable_quorum": "shell", 
+                "openstack-haproxy-nova": "puppet", 
+                "openstack-network-server-config": "puppet", 
+                "primary-database": "puppet", 
+                "primary-openstack-network-agents-metadata": "puppet", 
+                "openstack-haproxy-cinder": "puppet", 
+                "ntp-server": "puppet", 
+                "murano-keystone": "skipped", 
+                "primary-openstack-network-agents-dhcp": "puppet", 
+                "openstack-haproxy-heat": "puppet", 
+                "primary-openstack-controller": "puppet", 
+                "openstack-cinder": "puppet", 
+                "keystone-db": "puppet", 
+                "sync_time": "shell", 
+                "openstack-network-server-nova": "puppet", 
+                "copy_haproxy_keys": "skipped", 
+                "openstack-network-networks": "puppet", 
+                "ssl-add-trust-chain": "puppet"
+            }, 
+            "hostname": "node-1", 
+            "name": "slave-01_controller", 
+            "roles": [
+                "controller"
+            ]
+        }, 
+        {
+            "tasks": {
+                "openstack-network-start": "skipped", 
+                "openstack-network-common-config": "puppet", 
+                "clear_nodes_info": "shell", 
+                "openstack-network-agents-sriov": "puppet", 
+                "ceilometer-compute": "skipped", 
+                "globals": "puppet", 
+                "fuel_pkgs": "puppet", 
+                "openstack-network-agents-l3": "puppet", 
+                "netconfig": "puppet", 
+                "tools": "puppet", 
+                "rsync_core_puppet": "sync", 
+                "enable_nova_compute_service": "puppet", 
+                "cgroups": "puppet", 
+                "upload_nodes_info": "upload_file", 
+                "copy_keys": "copy_files", 
+                "override_configuration": "puppet", 
+                "setup_repositories": "puppet", 
+                "hiera": "puppet", 
+                "openstack-network-plugins-l2": "puppet", 
+                "allocate_hugepages": "puppet", 
+                "connectivity_tests": "puppet", 
+                "ceph-compute": "skipped", 
+                "ssl-keys-saving": "puppet", 
+                "sriov_iommu_check": "puppet", 
+                "configure_default_route": "puppet", 
+                "openstack-network-end": "skipped", 
+                "copy_keys_ceph": "copy_files", 
+                "firewall": "puppet", 
+                "logging": "puppet", 
+                "top-role-compute": "puppet", 
+                "sync_time": "shell", 
+                "openstack-network-compute-nova": "puppet", 
+                "update_hosts": "puppet", 
+                "dns-client": "puppet", 
+                "openstack-network-agents-metadata": "puppet", 
+                "hosts": "puppet", 
+                "copy_haproxy_keys": "skipped", 
+                "pre_hiera_config": "puppet", 
+                "ntp-client": "puppet", 
+                "ssl-add-trust-chain": "puppet", 
+                "reserved_ports": "puppet"
+            }, 
+            "hostname": "node-2", 
+            "name": "slave-02_compute", 
+            "roles": [
+                "compute"
+            ]
+        }, 
+        {
+            "tasks": {
+                "openstack-network-start": "skipped", 
+                "openstack-network-common-config": "puppet", 
+                "clear_nodes_info": "shell", 
+                "openstack-network-agents-sriov": "puppet", 
+                "ceilometer-compute": "skipped", 
+                "globals": "puppet", 
+                "fuel_pkgs": "puppet", 
+                "openstack-network-agents-l3": "puppet", 
+                "netconfig": "puppet", 
+                "tools": "puppet", 
+                "rsync_core_puppet": "sync", 
+                "enable_nova_compute_service": "puppet", 
+                "cgroups": "puppet", 
+                "upload_nodes_info": "upload_file", 
+                "copy_keys": "copy_files", 
+                "override_configuration": "puppet", 
+                "setup_repositories": "puppet", 
+                "hiera": "puppet", 
+                "openstack-network-plugins-l2": "puppet", 
+                "allocate_hugepages": "puppet", 
+                "connectivity_tests": "puppet", 
+                "ceph-compute": "skipped", 
+                "ssl-keys-saving": "puppet", 
+                "sriov_iommu_check": "puppet", 
+                "configure_default_route": "puppet", 
+                "openstack-network-end": "skipped", 
+                "copy_keys_ceph": "copy_files", 
+                "firewall": "puppet", 
+                "logging": "puppet", 
+                "top-role-compute": "puppet", 
+                "sync_time": "shell", 
+                "openstack-network-compute-nova": "puppet", 
+                "update_hosts": "puppet", 
+                "dns-client": "puppet", 
+                "openstack-network-agents-metadata": "puppet", 
+                "hosts": "puppet", 
+                "copy_haproxy_keys": "skipped", 
+                "pre_hiera_config": "puppet", 
+                "ntp-client": "puppet", 
+                "ssl-add-trust-chain": "puppet", 
+                "reserved_ports": "puppet"
+            }, 
+            "hostname": "node-3", 
+            "name": "slave-03_compute", 
+            "roles": [
+                "compute"
+            ]
+        }
+    ], 
+    {
+        "": [
+            "hidden", 
+            true
+        ], 
+        "Ceph RBD for images (Glance)": [
+            "checkbox", 
+            false
+        ], 
+        "Neutron QoS": [
+            "checkbox", 
+            false
+        ], 
+        "Neutron L2 population": [
+            "checkbox", 
+            false
+        ], 
+        "OpenStack debug logging": [
+            "checkbox", 
+            true
+        ], 
+        "HTTPS for Horizon": [
+            "checkbox", 
+            true
+        ], 
+        "Install Ironic": [
+            "checkbox", 
+            false
+        ], 
+        "Neutron L3 HA": [
+            "checkbox", 
+            false
+        ], 
+        "Auto assign floating IP": [
+            "checkbox", 
+            false
+        ], 
+        "Install Murano": [
+            "checkbox", 
+            false
+        ], 
+        "Puppet debug logging": [
+            "checkbox", 
+            true
+        ], 
+        "Install Murano service broker for Cloud Foundry": [
+            "checkbox", 
+            false
+        ], 
+        "Ceph RBD for volumes (Cinder)": [
+            "checkbox", 
+            false
+        ], 
+        "HAProxy APT Pinning": [
+            "checkbox", 
+            true
+        ], 
+        "Public Key": [
+            "hidden", 
+            ""
+        ], 
+        "Use qcow format for images": [
+            "checkbox", 
+            true
+        ], 
+        "Resume guests state on host boot": [
+            "checkbox", 
+            true
+        ], 
+        "RabbitMQ APT Pinning": [
+            "checkbox", 
+            true
+        ], 
+        "Cinder Block device driver": [
+            "checkbox", 
+            false
+        ], 
+        "Ceph RBD for ephemeral volumes (Nova)": [
+            "checkbox", 
+            false
+        ], 
+        "Syslog transport protocol": [
+            "radio", 
+            "tcp"
+        ], 
+        "Hypervisor type": [
+            "radio", 
+            "qemu"
+        ], 
+        "Neutron DVR": [
+            "checkbox", 
+            false
+        ], 
+        "Cinder LVM over iSCSI for volumes": [
+            "checkbox", 
+            true
+        ], 
+        "Install Ceilometer and Aodh": [
+            "checkbox", 
+            false
+        ], 
+        "VMware vCenter/ESXi datastore for images (Glance)": [
+            "checkbox", 
+            false
+        ], 
+        "Assign public network to all nodes": [
+            "checkbox", 
+            false
+        ], 
+        "Enable glance artifact repository": [
+            "checkbox", 
+            false
+        ], 
+        "Ceph APT Pinning": [
+            "checkbox", 
+            true
+        ], 
+        "Use external Mongo DB": [
+            "checkbox", 
+            false
+        ], 
+        "Nova quotas": [
+            "checkbox", 
+            false
+        ], 
+        "Need to pass network verification.": [
+            "checkbox", 
+            false
+        ], 
+        "Enable task based deploy": [
+            "hidden", 
+            true
+        ], 
+        "OpenStack packages source": [
+            "radio", 
+            "fuel"
+        ], 
+        "TLS for OpenStack public endpoints": [
+            "checkbox", 
+            true
+        ], 
+        "Select source for certificate": [
+            "radio", 
+            "user_uploaded"
+        ], 
+        "Install Sahara": [
+            "checkbox", 
+            false
+        ], 
+        "Ceph RadosGW for objects (Swift API)": [
+            "checkbox", 
+            false
+        ]
+    }, 
+    {
+        "editable": {
+            "service_user": {
+                "name": {
+                    "type": "hidden", 
+                    "value": "fuel"
+                }, 
+                "sudo": {
+                    "type": "hidden", 
+                    "value": "ALL=(ALL) NOPASSWD: ALL"
+                }, 
+                "homedir": {
+                    "type": "hidden", 
+                    "value": "/var/lib/fuel"
+                }, 
+                "root_password": {
+                    "type": "hidden", 
+                    "value": "r00tme"
+                }, 
+                "password": {
+                    "type": "hidden", 
+                    "value": "VZormdnIwZwAtgHxlp8gTvSZ"
+                }, 
+                "metadata": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "condition": "true"
+                        }
+                    ], 
+                    "group": "general", 
+                    "weight": 10, 
+                    "label": "Service user account"
+                }
+            }, 
+            "additional_components": {
+                "ceilometer": {
+                    "value": false, 
+                    "type": "checkbox", 
+                    "description": "If selected, Ceilometer and Aodh components will be installed", 
+                    "weight": 60, 
+                    "label": "Install Ceilometer and Aodh"
+                }, 
+                "murano_glance_artifacts_plugin": {
+                    "restrictions": [
+                        {
+                            "message": "Murano should be enabled", 
+                            "condition": "settings:additional_components.murano.value == false"
+                        }, 
+                        {
+                            "action": "hide", 
+                            "condition": "not ('experimental' in version:feature_groups)"
+                        }
+                    ], 
+                    "description": "If selected glance artifact repository will be enabled", 
+                    "weight": 40, 
+                    "value": false, 
+                    "label": "Enable glance artifact repository", 
+                    "type": "checkbox"
+                }, 
+                "heat": {
+                    "value": true, 
+                    "type": "hidden", 
+                    "description": "", 
+                    "weight": 50, 
+                    "label": ""
+                }, 
+                "murano-cfapi": {
+                    "restrictions": [
+                        {
+                            "message": "Murano should be enabled", 
+                            "condition": "settings:additional_components.murano.value == false"
+                        }, 
+                        {
+                            "action": "hide", 
+                            "condition": "not ('experimental' in version:feature_groups)"
+                        }
+                    ], 
+                    "description": "If selected, Murano service broker will be installed", 
+                    "weight": 30, 
+                    "value": false, 
+                    "label": "Install Murano service broker for Cloud Foundry", 
+                    "type": "checkbox"
+                }, 
+                "murano": {
+                    "value": false, 
+                    "type": "checkbox", 
+                    "description": "If selected, Murano component will be installed", 
+                    "weight": 20, 
+                    "label": "Install Murano"
+                }, 
+                "sahara": {
+                    "value": false, 
+                    "type": "checkbox", 
+                    "description": "If selected, Sahara component will be installed", 
+                    "weight": 10, 
+                    "label": "Install Sahara"
+                }, 
+                "ironic": {
+                    "restrictions": [
+                        {
+                            "cluster:net_provider != 'neutron' or networking_parameters:segmentation_type != 'vlan'": "Ironic requires Neutron with VLAN segmentation."
+                        }, 
+                        {
+                            "settings:storage.images_ceph.value == true and settings:storage.objects_ceph.value == false": "Ironic requires Swift or RadosGW for Glance images."
+                        }
+                    ], 
+                    "description": "If selected, Ironic component will be installed", 
+                    "weight": 80, 
+                    "value": false, 
+                    "label": "Install Ironic", 
+                    "type": "checkbox"
+                }, 
+                "metadata": {
+                    "group": "openstack_services", 
+                    "weight": 20, 
+                    "label": "Additional Components"
+                }, 
+                "mongo": {
+                    "restrictions": [
+                        "settings:additional_components.ceilometer.value == false"
+                    ], 
+                    "description": "If selected, You can use external Mongo DB as ceilometer backend", 
+                    "weight": 70, 
+                    "value": false, 
+                    "label": "Use external Mongo DB", 
+                    "type": "checkbox"
+                }
+            }, 
+            "repo_setup": {
+                "repo_type": {
+                    "type": "radio", 
+                    "values": [
+                        {
+                            "data": "fuel", 
+                            "description": "Use bundled OpenStack packages", 
+                            "label": "Fuel"
+                        }, 
+                        {
+                            "data": "uca", 
+                            "description": "Use Ubuntu Cloud Archive repository", 
+                            "label": "Ubuntu Cloud Archive"
+                        }
+                    ], 
+                    "weight": 51, 
+                    "value": "fuel", 
+                    "label": "OpenStack packages source"
+                }, 
+                "uca_openstack_release": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "condition": "settings:repo_setup.repo_type.value != 'uca'"
+                        }
+                    ], 
+                    "description": "This is the named release for the UCA packages (kilo, liberty, etc)", 
+                    "weight": 52, 
+                    "value": "mitaka", 
+                    "label": "UCA OpenStack Release", 
+                    "type": "text"
+                }, 
+                "repos": {
+                    "type": "custom_repo_configuration", 
+                    "description": "Please note: the first repository will be considered the operating system mirror that will be used during node provisioning.\nTo create a local repository mirror on the Fuel master node, please follow the instructions provided by running \"fuel-createmirror --help\" on the Fuel master node.\nPlease make sure your Fuel master node has Internet access to the repository before attempting to create a mirror.\nFor more details, please refer to the documentation (https://docs.mirantis.com/openstack/fuel/fuel-9.0/operations.html#external-ubuntu-ops).\n", 
+                    "value": [
+                        {
+                            "name": "ubuntu", 
+                            "section": "main universe multiverse", 
+                            "uri": "http://archive.ubuntu.com/ubuntu/", 
+                            "priority": null, 
+                            "suite": "trusty", 
+                            "type": "deb"
+                        }, 
+                        {
+                            "name": "ubuntu-updates", 
+                            "section": "main universe multiverse", 
+                            "uri": "http://archive.ubuntu.com/ubuntu/", 
+                            "priority": null, 
+                            "suite": "trusty-updates", 
+                            "type": "deb"
+                        }, 
+                        {
+                            "name": "ubuntu-security", 
+                            "section": "main universe multiverse", 
+                            "uri": "http://archive.ubuntu.com/ubuntu/", 
+                            "priority": null, 
+                            "suite": "trusty-security", 
+                            "type": "deb"
+                        }, 
+                        {
+                            "name": "mos", 
+                            "section": "main restricted", 
+                            "uri": "http://10.109.5.2:8080/liberty-9.0/ubuntu/x86_64", 
+                            "priority": 1050, 
+                            "suite": "mos9.0", 
+                            "type": "deb"
+                        }, 
+                        {
+                            "name": "mos-updates", 
+                            "section": "main restricted", 
+                            "uri": "http://mirror.fuel-infra.org/mos-repos/ubuntu/9.0/", 
+                            "priority": 1050, 
+                            "suite": "mos9.0-updates", 
+                            "type": "deb"
+                        }, 
+                        {
+                            "name": "mos-security", 
+                            "section": "main restricted", 
+                            "uri": "http://mirror.fuel-infra.org/mos-repos/ubuntu/9.0/", 
+                            "priority": 1050, 
+                            "suite": "mos9.0-security", 
+                            "type": "deb"
+                        }, 
+                        {
+                            "name": "mos-holdback", 
+                            "section": "main restricted", 
+                            "uri": "http://mirror.fuel-infra.org/mos-repos/ubuntu/9.0/", 
+                            "priority": 1100, 
+                            "suite": "mos9.0-holdback", 
+                            "type": "deb"
+                        }, 
+                        {
+                            "name": "Auxiliary", 
+                            "section": "main restricted", 
+                            "uri": "http://10.109.5.2:8080/liberty-9.0/ubuntu/auxiliary", 
+                            "priority": 1150, 
+                            "suite": "auxiliary", 
+                            "type": "deb"
+                        }
+                    ], 
+                    "extra_priority": null
+                }, 
+                "pin_ceph": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "condition": "settings:repo_setup.repo_type.value == 'fuel'"
+                        }
+                    ], 
+                    "description": "Use Fuel Ceph packages instead of upstream", 
+                    "weight": 61, 
+                    "value": true, 
+                    "label": "Ceph APT Pinning", 
+                    "type": "checkbox"
+                }, 
+                "uca_repo_url": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "condition": "settings:repo_setup.repo_type.value != 'uca'"
+                        }
+                    ], 
+                    "description": "This the url to the repository hosting the UCA packages", 
+                    "weight": 58, 
+                    "value": "http://ubuntu-cloud.archive.canonical.com/ubuntu", 
+                    "label": "URL to UCA repository", 
+                    "type": "text"
+                }, 
+                "pin_rabbitmq": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "condition": "settings:repo_setup.repo_type.value == 'fuel'"
+                        }
+                    ], 
+                    "description": "Use Fuel RabbitMQ packages instead of upstream", 
+                    "weight": 60, 
+                    "value": true, 
+                    "label": "RabbitMQ APT Pinning", 
+                    "type": "checkbox"
+                }, 
+                "pin_haproxy": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "condition": "settings:repo_setup.repo_type.value == 'fuel'"
+                        }
+                    ], 
+                    "description": "Use Fuel HAProxy packages instead of upstream", 
+                    "weight": 59, 
+                    "value": true, 
+                    "label": "HAProxy APT Pinning", 
+                    "type": "checkbox"
+                }, 
+                "metadata": {
+                    "group": "general", 
+                    "always_editable": true, 
+                    "weight": 50, 
+                    "label": "Repositories"
+                }
+            }, 
+            "cgroups": {
+                "metadata": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "condition": "true"
+                        }
+                    ], 
+                    "group": "general", 
+                    "always_editable": true, 
+                    "weight": 90, 
+                    "label": "Cgroups conguration for services"
+                }
+            }, 
+            "common": {
+                "use_vcenter": {
+                    "type": "hidden", 
+                    "value": false, 
+                    "weight": 30
+                }, 
+                "auto_assign_floating_ip": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "condition": "cluster:net_provider == 'neutron'"
+                        }
+                    ], 
+                    "group": "network", 
+                    "description": "If selected, OpenStack will automatically assign a floating IP to a new instance", 
+                    "weight": 40, 
+                    "value": false, 
+                    "label": "Auto assign floating IP", 
+                    "type": "checkbox"
+                }, 
+                "use_cow_images": {
+                    "group": "storage", 
+                    "description": "For most cases you will want qcow format. If it's disabled, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting.", 
+                    "weight": 60, 
+                    "value": true, 
+                    "label": "Use qcow format for images", 
+                    "type": "checkbox"
+                }, 
+                "auth_key": {
+                    "group": "security", 
+                    "description": "Public key(s) to include in authorized_keys on deployed nodes", 
+                    "weight": 70, 
+                    "value": "", 
+                    "label": "Public Key", 
+                    "type": "hidden"
+                }, 
+                "puppet_debug": {
+                    "group": "logging", 
+                    "description": "Debug puppet logging mode provides more information, but requires more disk space.", 
+                    "weight": 20, 
+                    "value": true, 
+                    "label": "Puppet debug logging", 
+                    "type": "checkbox"
+                }, 
+                "libvirt_type": {
+                    "group": "compute", 
+                    "weight": 30, 
+                    "value": "qemu", 
+                    "label": "Hypervisor type", 
+                    "values": [
+                        {
+                            "data": "kvm", 
+                            "description": "Choose this type of hypervisor if you run OpenStack on hardware", 
+                            "label": "KVM"
+                        }, 
+                        {
+                            "data": "qemu", 
+                            "description": "Choose this type of hypervisor if you run OpenStack on virtual hosts.", 
+                            "label": "QEMU"
+                        }
+                    ], 
+                    "type": "radio"
+                }, 
+                "resume_guests_state_on_host_boot": {
+                    "group": "compute", 
+                    "description": "Whether to resume previous guests state when the host reboots. If enabled, this option causes guests assigned to the host to resume their previous state. If the guest was running a restart will be attempted when nova-compute starts. If the guest was not running previously, a restart will not be attempted.", 
+                    "weight": 50, 
+                    "value": true, 
+                    "label": "Resume guests state on host boot", 
+                    "type": "checkbox"
+                }, 
+                "debug": {
+                    "group": "logging", 
+                    "description": "Debug logging mode provides more information, but requires more disk space.", 
+                    "weight": 20, 
+                    "value": true, 
+                    "label": "OpenStack debug logging", 
+                    "type": "checkbox"
+                }, 
+                "task_deploy": {
+                    "value": true, 
+                    "type": "hidden", 
+                    "description": "The new deployment engine based on cross-node dependencies for deployment tasks.", 
+                    "weight": 11, 
+                    "label": "Enable task based deploy"
+                }, 
+                "nova_quota": {
+                    "group": "compute", 
+                    "description": "Quotas are used to limit CPU and memory usage for tenants. Enabling quotas will increase load on the Nova database.", 
+                    "weight": 30, 
+                    "value": false, 
+                    "label": "Nova quotas", 
+                    "type": "checkbox"
+                }, 
+                "metadata": {
+                    "weight": 10, 
+                    "label": "Common"
+                }
+            }, 
+            "public_network_assignment": {
+                "assign_to_all_nodes": {
+                    "value": false, 
+                    "type": "checkbox", 
+                    "description": "When disabled, public network will be assigned to controllers only", 
+                    "weight": 10, 
+                    "label": "Assign public network to all nodes"
+                }, 
+                "metadata": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "condition": "cluster:net_provider != 'neutron'"
+                        }
+                    ], 
+                    "group": "network", 
+                    "weight": 10, 
+                    "label": "Public network assignment"
+                }
+            }, 
+            "storage": {
+                "volumes_ceph": {
+                    "restrictions": [
+                        "settings:storage.volumes_lvm.value == true or settings:storage.volumes_block_device.value == true"
+                    ], 
+                    "description": "Configures Cinder to store volumes in Ceph RBD images.", 
+                    "weight": 20, 
+                    "value": false, 
+                    "label": "Ceph RBD for volumes (Cinder)", 
+                    "type": "checkbox"
+                }, 
+                "objects_ceph": {
+                    "value": false, 
+                    "type": "checkbox", 
+                    "description": "Configures RadosGW front end for Ceph RBD. This exposes S3 and Swift API Interfaces. If enabled, this option will prevent Swift from installing.", 
+                    "weight": 80, 
+                    "label": "Ceph RadosGW for objects (Swift API)"
+                }, 
+                "volumes_block_device": {
+                    "restrictions": [
+                        "settings:storage.volumes_ceph.value == true"
+                    ], 
+                    "description": "High performance block device storage. It is recommended to have at least one Cinder Block Device", 
+                    "weight": 15, 
+                    "value": false, 
+                    "label": "Cinder Block device driver", 
+                    "type": "checkbox"
+                }, 
+                "ephemeral_ceph": {
+                    "value": false, 
+                    "type": "checkbox", 
+                    "description": "Configures Nova to store ephemeral volumes in RBD. This works best if Ceph is enabled for volumes and images, too. Enables live migration of all types of Ceph backed VMs (without this option, live migration will only work with VMs launched from Cinder volumes).", 
+                    "weight": 75, 
+                    "label": "Ceph RBD for ephemeral volumes (Nova)"
+                }, 
+                "volumes_lvm": {
+                    "restrictions": [
+                        "settings:storage.volumes_ceph.value == true"
+                    ], 
+                    "description": "It is recommended to have at least one Cinder node.", 
+                    "weight": 10, 
+                    "value": true, 
+                    "label": "Cinder LVM over iSCSI for volumes", 
+                    "type": "checkbox"
+                }, 
+                "images_vcenter": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "condition": "settings:common.use_vcenter.value != true"
+                        }, 
+                        {
+                            "message": "Only one Glance backend could be selected.", 
+                            "condition": "settings:storage.images_ceph.value == true"
+                        }
+                    ], 
+                    "description": "Configures Glance to use the vCenter/ESXi backend to store images. If enabled, this option will prevent Swift from installing.", 
+                    "weight": 35, 
+                    "value": false, 
+                    "label": "VMware vCenter/ESXi datastore for images (Glance)", 
+                    "type": "checkbox"
+                }, 
+                "osd_pool_size": {
+                    "regex": {
+                        "source": "^[1-9]\\d*$", 
+                        "error": "Invalid number"
+                    }, 
+                    "description": "Configures the default number of object replicas in Ceph. This number must be equal to or lower than the number of deployed 'Ceph OSD' nodes.", 
+                    "weight": 85, 
+                    "value": "3", 
+                    "label": "Ceph object replication factor", 
+                    "type": "text"
+                }, 
+                "images_ceph": {
+                    "restrictions": [
+                        {
+                            "settings:storage.images_vcenter.value == true": "Only one Glance backend could be selected."
+                        }
+                    ], 
+                    "description": "Configures Glance to use the Ceph RBD backend to store images. If enabled, this option will prevent Swift from installing.", 
+                    "weight": 30, 
+                    "value": false, 
+                    "label": "Ceph RBD for images (Glance)", 
+                    "type": "checkbox"
+                }, 
+                "metadata": {
+                    "group": "storage", 
+                    "weight": 60, 
+                    "label": "Storage Backends"
+                }
+            }, 
+            "public_ssl": {
+                "hostname": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "condition": "settings:public_ssl.horizon.value == false and settings:public_ssl.services.value == false"
+                        }
+                    ], 
+                    "description": "Your DNS entries should point to this name. Self-signed certificates also will use this hostname", 
+                    "weight": 50, 
+                    "value": "public.fuel.local", 
+                    "label": "DNS hostname for public TLS endpoints", 
+                    "type": "text"
+                }, 
+                "horizon": {
+                    "restrictions": [
+                        {
+                            "settings:public_ssl.services.value == false": "TLS for OpenStack public endpoints should be enabled"
+                        }
+                    ], 
+                    "description": "Secure access to Horizon enabling HTTPS instead of HTTP", 
+                    "weight": 20, 
+                    "value": true, 
+                    "label": "HTTPS for Horizon", 
+                    "type": "checkbox"
+                }, 
+                "services": {
+                    "value": true, 
+                    "type": "checkbox", 
+                    "description": "Enable TLS termination on HAProxy for OpenStack services", 
+                    "weight": 10, 
+                    "label": "TLS for OpenStack public endpoints"
+                }, 
+                "cert_data": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "condition": "(settings:public_ssl.cert_source.value != 'user_uploaded') or (settings:public_ssl.horizon.value == false and settings:public_ssl.services.value == false)"
+                        }
+                    ], 
+                    "description": "Certificate and private key data, concatenated into a single file", 
+                    "weight": 40, 
+                    "value": {
+                        "content": "-----BEGIN CERTIFICATE-----\nMIIC7TCCAdUCAgPoMA0GCSqGSIb3DQEBBQUAMDwxHjAcBgNVBAsTFU1pcmFudGlz\nIEZ1ZWwtUUEgVGVhbTEaMBgGA1UEAxMRcHVibGljLmZ1ZWwubG9jYWwwHhcNMTYw\nMzIzMTQzMDE2WhcNMjYwMzIxMTQzMDE2WjA8MR4wHAYDVQQLExVNaXJhbnRpcyBG\ndWVsLVFBIFRlYW0xGjAYBgNVBAMTEXB1YmxpYy5mdWVsLmxvY2FsMIIBIjANBgkq\nhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsp108koE2GcNJS0OOhjaqEDD1QS+/iT5\nsoLVkCrdmryGW8i5thqBdK/PuzzrSvRsiScZ1Vrclm4iQrXFR/y6z7Vtn4UtKOtu\n4p/XsP3jNd6nqLcxhJ26Zyn1I4xBXE6lcBGADt7O58aJj8ivLM2gN5cKspzURJex\nddTyanxISdNrzYTUlJ/9NsJ0C57udKhT64UxAHT8cJbKOIuyBlnwI4OpwEJTBaDu\ngdF/6fy9q4xMpE4N6ZlmQ3Yk2yg+HJNYMudjc7YaGAHxYuZETbLuLkLEu0zO9h7U\nuspGzuVPpJmKkpXphIZmc4zPTaoYG+w8ToJYGxxNljL9O8v7b2AbowIDAQABMA0G\nCSqGSIb3DQEBBQUAA4IBAQBmjuGskNRBAbEnWRzhWG8W5Gq/OD4XEhX8kY7s9TQI\nbyrmBoFLjtMb8jptj6CNHprVkzF7+UoQpWe7dv2pzIt+ctRvH4UqpmlbeoSHpsET\nQ0PoVz7pJTmKfaZcUHIMvVkI0vFoLq8aQrGPFgCdIwmcXYHJzswo+XmoCHxlKbcJ\nFxG88aDB16qdJzo0pcil/AH5e4yhfaS8YBP4gYf1gpSlUx5JpwTwrKWcBTPMEbI6\nLf9iKnBRduIkafq37p04beKtLIhsAWDSmSwypItL1VK/8RAeGKoDXLJxzCb5ak+y\nGWwIia4uso+MgMmWUY3s89A3DuSZrIZ/P7cYQ168Ntoi\n-----END CERTIFICATE-----\n-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCynXTySgTYZw0l\nLQ46GNqoQMPVBL7+JPmygtWQKt2avIZbyLm2GoF0r8+7POtK9GyJJxnVWtyWbiJC\ntcVH/LrPtW2fhS0o627in9ew/eM13qeotzGEnbpnKfUjjEFcTqVwEYAO3s7nxomP\nyK8szaA3lwqynNREl7F11PJqfEhJ02vNhNSUn/02wnQLnu50qFPrhTEAdPxwlso4\ni7IGWfAjg6nAQlMFoO6B0X/p/L2rjEykTg3pmWZDdiTbKD4ck1gy52NzthoYAfFi\n5kRNsu4uQsS7TM72HtS6ykbO5U+kmYqSlemEhmZzjM9Nqhgb7DxOglgbHE2WMv07\ny/tvYBujAgMBAAECggEAIItJ9J+B9IAKSBzGe9VtebybMeP0fM/14w2tpd/5kqkI\n/g47sC9yKPWjruTxpi2U3QSP020DxjD48xi1gmFNFG1lNOyKBuumv4oKPch0rqsL\n91SxpA0tGoDtlnWGry/xOtMldxAnuNlW1Sjmqg4pRBe0Lkke8ASHpAWRyc8tSK37\nvPtL1h9RZflU2aViQWLc14TfY9jRCVj1/Bna4IodWPhnh3SzcbjiYfuUVP++Qq4J\nosfOSn7tR67P+u6t0HFsqdZ8RiSqQ5/MGFm8Sa1OmfXSBI9+zDX/CxLD33bgqEQB\nvc6F39OTnX3mdpWUQwzswpW4jgB4d0zB5wjWVfGG6QKBgQDpVETXCR3U5jifcOIR\nlMLIswRQOBqgK0MArq1PZHz8QSLv2Z2HCwzFy5H8VTubdwXrJSBoYKM+VrcqoeC7\nGvuLTgh1Ffjr+LSNZ20vVAqql7LUilYnjdBrPg1xJ82Z8D0TWGwFB7PjmjoV30VS\n+HlEu82sKlZoWhkpha0e+2sNHQKBgQDD+ECYN2wg9HGAVEj3kh1HmEFFcYsHZC19\nlGuEWNJMz3PnNDnBW4oEKWV5qfontLNlOyTKd61gUSm/5PfUUhycb9Vjc3qrIBgf\nDbiR3lTh/kYai8nW25C88mBI4Yo7oRhP06jLlvfIm+7Xm0kTE4QfREXEG6DnUbpQ\nJXUfaS0vvwKBgEPZFj91TjBnVZW/bG1yVYWo0JtHBS8IBW7AXHMWpGVxx2f5Xp4z\nL16gyG2Yl0GoxZbP7/GKEE4DRzXlZoTh3r1uTnVFk2GCq3Xm2lAF3ygl/oFhTJYp\n3a4hmCUMTvPxcMEcWCTKTZvkb/mGOBFdYV4EQlVK5l9nu6NgVKwKreFdAoGAR58j\nfH5E9oZgNRaY1GKCcPgkYszskvb56TulT+lmcswfABEGSrS57Gt0utJ0qq5QIl9L\nQvQaWWlQaOG18dNQwZvd0UsTOhewuSi6nBU10KKt3GXajrwQWf37Uqebbc+iowoo\nVsAGLztOP15xhpdLYmIBXXr7g49LGJ+X/rLh4OECgYEA30rCKxPekBdNWxX7uwVl\n/jRdvYvsUvCt3EK+v7lYKj1Sepc22V8rIZX4nSklMxpLcYdMqMXvdPbdR5/4h+27\nvbcKxtZO56oHi2i54iSVerOh78Wx0V/XE0DcC14dI03C4+TKty8TGh9dGqQGQuXi\nnMIGeA8iRgvjEa16Fm99BeE=\n-----END PRIVATE KEY-----\n", 
+                        "name": "ca.pem"
+                    }, 
+                    "label": "Certificate", 
+                    "type": "file"
+                }, 
+                "cert_source": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "condition": "settings:public_ssl.horizon.value == false and settings:public_ssl.services.value == false"
+                        }
+                    ], 
+                    "description": "From where we'll get certificate and private key", 
+                    "weight": 30, 
+                    "value": "user_uploaded", 
+                    "label": "Select source for certificate", 
+                    "values": [
+                        {
+                            "data": "self_signed", 
+                            "description": "Generate private key and certificate that will be signed by this key", 
+                            "label": "Self-signed"
+                        }, 
+                        {
+                            "data": "user_uploaded", 
+                            "description": "Use pre-generated key and certificate", 
+                            "label": "I have my own keypair with certificate"
+                        }
+                    ], 
+                    "type": "radio"
+                }, 
+                "metadata": {
+                    "group": "security", 
+                    "weight": 110, 
+                    "label": "Public TLS"
+                }
+            }, 
+            "corosync": {
+                "group": {
+                    "value": "226.94.1.1", 
+                    "type": "text", 
+                    "description": "", 
+                    "weight": 10, 
+                    "label": "Group"
+                }, 
+                "verified": {
+                    "value": false, 
+                    "type": "checkbox", 
+                    "description": "Set True only if multicast is configured correctly on router.", 
+                    "weight": 10, 
+                    "label": "Need to pass network verification."
+                }, 
+                "port": {
+                    "value": "12000", 
+                    "type": "text", 
+                    "description": "", 
+                    "weight": 20, 
+                    "label": "Port"
+                }, 
+                "metadata": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "condition": "true"
+                        }
+                    ], 
+                    "group": "general", 
+                    "weight": 50, 
+                    "label": "Corosync"
+                }
+            }, 
+            "access": {
+                "metadata": {
+                    "group": "general", 
+                    "weight": 10, 
+                    "label": "OpenStack Access"
+                }, 
+                "password": {
+                    "regex": {
+                        "source": "\\S", 
+                        "error": "Empty password"
+                    }, 
+                    "description": "Password for Administrator", 
+                    "weight": 20, 
+                    "value": "simpleVlan", 
+                    "label": "Password", 
+                    "type": "password"
+                }, 
+                "email": {
+                    "regex": {
+                        "source": "^\\S+@\\S+$", 
+                        "error": "Invalid email"
+                    }, 
+                    "description": "Email address for Administrator", 
+                    "weight": 40, 
+                    "value": "admin@localhost", 
+                    "label": "Email", 
+                    "type": "text"
+                }, 
+                "tenant": {
+                    "regex": {
+                        "source": "^(?!services$)(?!nova$)(?!glance$)(?!keystone$)(?!neutron$)(?!cinder$)(?!swift$)(?!ceph$)(?!ironic$)(?![Gg]uest$)(?!.* +.*$).+", 
+                        "error": "Invalid tenant name"
+                    }, 
+                    "description": "Tenant (project) name for Administrator", 
+                    "weight": 30, 
+                    "value": "simpleVlan", 
+                    "label": "Tenant", 
+                    "type": "text"
+                }, 
+                "user": {
+                    "regex": {
+                        "source": "^(?!services$)(?!nova$)(?!glance$)(?!keystone$)(?!neutron$)(?!cinder$)(?!swift$)(?!ceph$)(?!ironic$)(?![Gg]uest$)(?!.* +.*$).+", 
+                        "error": "Invalid username"
+                    }, 
+                    "description": "Username for Administrator", 
+                    "weight": 10, 
+                    "value": "simpleVlan", 
+                    "label": "Username", 
+                    "type": "text"
+                }
+            }, 
+            "syslog": {
+                "syslog_port": {
+                    "regex": {
+                        "source": "^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$", 
+                        "error": "Invalid syslog port"
+                    }, 
+                    "description": "Remote syslog port", 
+                    "weight": 20, 
+                    "value": "514", 
+                    "label": "Port", 
+                    "type": "text"
+                }, 
+                "syslog_transport": {
+                    "values": [
+                        {
+                            "data": "udp", 
+                            "description": "", 
+                            "label": "UDP"
+                        }, 
+                        {
+                            "data": "tcp", 
+                            "description": "", 
+                            "label": "TCP"
+                        }
+                    ], 
+                    "type": "radio", 
+                    "value": "tcp", 
+                    "weight": 30, 
+                    "label": "Syslog transport protocol"
+                }, 
+                "syslog_server": {
+                    "regex": {
+                        "source": "^[a-zA-Z\\d]+[-\\.\\da-zA-Z]*$", 
+                        "error": "Invalid hostname"
+                    }, 
+                    "description": "Remote syslog hostname", 
+                    "weight": 10, 
+                    "value": "", 
+                    "label": "Hostname", 
+                    "type": "text"
+                }, 
+                "metadata": {
+                    "group": "logging", 
+                    "enabled": false, 
+                    "weight": 50, 
+                    "toggleable": true, 
+                    "label": "Syslog"
+                }
+            }, 
+            "operator_user": {
+                "name": {
+                    "regex": {
+                        "source": "\\S", 
+                        "error": "Empty username"
+                    }, 
+                    "description": "Username for operator user", 
+                    "weight": 50, 
+                    "value": "fueladmin", 
+                    "label": "Username", 
+                    "type": "text"
+                }, 
+                "sudo": {
+                    "weight": 90, 
+                    "type": "textarea", 
+                    "description": "Sudoers configuration directives for operator user, one per line.", 
+                    "value": "ALL=(ALL) NOPASSWD: ALL", 
+                    "label": "Sudoers configuration"
+                }, 
+                "homedir": {
+                    "regex": {
+                        "source": "^/\\S", 
+                        "error": "Invalid path"
+                    }, 
+                    "description": "Home directory for operator user", 
+                    "weight": 70, 
+                    "value": "/home/fueladmin", 
+                    "label": "Home directory", 
+                    "type": "text"
+                }, 
+                "password": {
+                    "regex": {
+                        "source": "\\S", 
+                        "error": "Empty password"
+                    }, 
+                    "description": "Password for operator user", 
+                    "weight": 60, 
+                    "value": "eCG40hMNHCKeCLWEyC9smHbc", 
+                    "label": "Password", 
+                    "type": "password"
+                }, 
+                "authkeys": {
+                    "weight": 80, 
+                    "type": "textarea", 
+                    "description": "Public SSH keys to include to operator user's authorized keys, one per line.", 
+                    "value": "", 
+                    "label": "Authorized SSH keys"
+                }, 
+                "metadata": {
+                    "group": "general", 
+                    "weight": 15, 
+                    "label": "Operating System Access"
+                }
+            }, 
+            "murano_settings": {
+                "murano_repo_url": {
+                    "value": "http://storage.apps.openstack.org/", 
+                    "type": "text", 
+                    "description": "", 
+                    "weight": 10, 
+                    "label": "Murano Repository URL"
+                }, 
+                "metadata": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "message": "Murano is not enabled on the Additional Components section", 
+                            "condition": "settings:additional_components.murano.value == false"
+                        }
+                    ], 
+                    "group": "openstack_services", 
+                    "weight": 20, 
+                    "label": "Murano Settings"
+                }
+            }, 
+            "external_mongo": {
+                "mongo_db_name": {
+                    "regex": {
+                        "source": "^\\w+$", 
+                        "error": "Invalid database name"
+                    }, 
+                    "description": "Mongo database name", 
+                    "weight": 30, 
+                    "value": "ceilometer", 
+                    "label": "Database name", 
+                    "type": "text"
+                }, 
+                "mongo_replset": {
+                    "value": "", 
+                    "type": "text", 
+                    "description": "Name for Mongo replication set", 
+                    "weight": 30, 
+                    "label": "Replset"
+                }, 
+                "mongo_user": {
+                    "regex": {
+                        "source": "^\\w+$", 
+                        "error": "Empty username"
+                    }, 
+                    "description": "Mongo database username", 
+                    "weight": 30, 
+                    "value": "ceilometer", 
+                    "label": "Username", 
+                    "type": "text"
+                }, 
+                "hosts_ip": {
+                    "regex": {
+                        "source": "^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?),)*((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$", 
+                        "error": "Invalid hosts ip sequence"
+                    }, 
+                    "description": "IP Addresses of MongoDB. Use comma to split IPs", 
+                    "weight": 30, 
+                    "value": "", 
+                    "label": "MongoDB hosts IP", 
+                    "type": "text"
+                }, 
+                "mongo_password": {
+                    "regex": {
+                        "source": "^\\S*$", 
+                        "error": "Password contains spaces"
+                    }, 
+                    "description": "Mongo database password", 
+                    "weight": 30, 
+                    "value": "ceilometer", 
+                    "label": "Password", 
+                    "type": "password"
+                }, 
+                "metadata": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "message": "Ceilometer and MongoDB are not enabled on the Additional Components section", 
+                            "condition": "settings:additional_components.mongo.value == false"
+                        }
+                    ], 
+                    "group": "openstack_services", 
+                    "weight": 20, 
+                    "label": "External MongoDB"
+                }
+            }, 
+            "external_dns": {
+                "dns_list": {
+                    "regex": {
+                        "source": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$", 
+                        "error": "Invalid IP address"
+                    }, 
+                    "description": "List of upstream DNS servers", 
+                    "weight": 10, 
+                    "max": 3, 
+                    "value": [
+                        "10.109.8.1"
+                    ], 
+                    "label": "DNS list", 
+                    "type": "text_list"
+                }, 
+                "metadata": {
+                    "group": "network", 
+                    "weight": 30, 
+                    "label": "Host OS DNS Servers"
+                }
+            }, 
+            "workloads_collector": {
+                "password": {
+                    "type": "password", 
+                    "value": "slYNaFDsN8eNbux5JtFfgiPM"
+                }, 
+                "enabled": {
+                    "type": "hidden", 
+                    "value": true
+                }, 
+                "user": {
+                    "type": "text", 
+                    "value": "fuel_stats_user"
+                }, 
+                "tenant": {
+                    "type": "text", 
+                    "value": "services"
+                }, 
+                "metadata": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "condition": "true"
+                        }
+                    ], 
+                    "group": "general", 
+                    "weight": 10, 
+                    "label": "Workloads Collector User"
+                }
+            }, 
+            "kernel_params": {
+                "kernel": {
+                    "type": "text", 
+                    "description": "Default kernel parameters", 
+                    "value": "console=tty0 net.ifnames=0 biosdevname=0 rootdelay=90 nomodeset", 
+                    "label": "Initial parameters"
+                }, 
+                "metadata": {
+                    "group": "general", 
+                    "weight": 60, 
+                    "label": "Kernel parameters"
+                }
+            }, 
+            "provision": {
+                "packages": {
+                    "type": "textarea", 
+                    "weight": 10, 
+                    "value": "acl\nanacron\nbash-completion\nbridge-utils\nbsdmainutils\nbuild-essential\ncloud-init\ncurl\ndaemonize\ndebconf-utils\ngdisk\ngrub-pc\nhpsa-dkms\nhwloc\ni40e-dkms\nlinux-firmware\nlinux-firmware-nonfree\nlinux-headers-generic-lts-trusty\nlinux-image-generic-lts-trusty\nlvm2\nmcollective\nmdadm\nmultipath-tools\nmultipath-tools-boot\nnailgun-agent\nnailgun-mcagents\nnetwork-checker\nntp\nopenssh-client\nopenssh-server\npuppet\npython-amqp\nruby-augeas\nruby-ipaddress\nruby-json\nruby-netaddr\nruby-openstack\nruby-shadow\nruby-stomp\ntelnet\nubuntu-minimal\nubuntu-standard\nuuid-runtime\nvim\nvirt-what\nvlan\n", 
+                    "label": "Initial packages"
+                }, 
+                "method": {
+                    "type": "hidden", 
+                    "value": "image"
+                }, 
+                "metadata": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "condition": "false"
+                        }
+                    ], 
+                    "group": "general", 
+                    "weight": 80, 
+                    "label": "Provision"
+                }
+            }, 
+            "external_ntp": {
+                "ntp_list": {
+                    "regex": {
+                        "source": "^[a-zA-Z\\d]+[-\\.\\da-zA-Z]*$", 
+                        "error": "Invalid NTP server"
+                    }, 
+                    "description": "List of upstream NTP servers", 
+                    "weight": 10, 
+                    "value": [
+                        "10.109.8.1"
+                    ], 
+                    "label": "NTP server list", 
+                    "type": "text_list"
+                }, 
+                "metadata": {
+                    "group": "network", 
+                    "weight": 40, 
+                    "label": "Host OS NTP Servers"
+                }
+            }, 
+            "neutron_advanced_configuration": {
+                "neutron_qos": {
+                    "value": false, 
+                    "type": "checkbox", 
+                    "description": "Enable Neutron QoS advanced service plug-in", 
+                    "weight": 40, 
+                    "label": "Neutron QoS"
+                }, 
+                "neutron_l3_ha": {
+                    "restrictions": [
+                        {
+                            "message": "Neutron DVR must be disabled in order to use Neutron L3 HA", 
+                            "condition": "settings:neutron_advanced_configuration.neutron_dvr.value == true"
+                        }
+                    ], 
+                    "description": "Enable High Availability features for Virtual Routers in Neutron\nRequires at least 2 Controller nodes to function properly\n", 
+                    "weight": 30, 
+                    "value": false, 
+                    "label": "Neutron L3 HA", 
+                    "type": "checkbox"
+                }, 
+                "neutron_dvr": {
+                    "restrictions": [
+                        {
+                            "networking_parameters:segmentation_type != 'vlan' and settings:neutron_advanced_configuration.neutron_l2_pop.value == false": "DVR requires L2 population to be enabled."
+                        }
+                    ], 
+                    "description": "Enable Distributed Virtual Routers in Neutron", 
+                    "weight": 20, 
+                    "value": false, 
+                    "label": "Neutron DVR", 
+                    "type": "checkbox"
+                }, 
+                "neutron_l2_pop": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "condition": "networking_parameters:segmentation_type == 'vlan'"
+                        }
+                    ], 
+                    "description": "Enable L2 population mechanism in Neutron", 
+                    "weight": 10, 
+                    "value": false, 
+                    "label": "Neutron L2 population", 
+                    "type": "checkbox"
+                }, 
+                "metadata": {
+                    "restrictions": [
+                        {
+                            "action": "hide", 
+                            "condition": "cluster:net_provider != 'neutron'"
+                        }
+                    ], 
+                    "group": "network", 
+                    "weight": 20, 
+                    "label": "Neutron Advanced Configuration"
+                }
+            }
+        }
+    }
+]
