@@ -327,8 +327,7 @@ class TestHaFailoverBase(TestBasic):
                     "restored on {1}".format(
                         active_nodes[0].name,
                         new_nodes[0].name))
-            logger.info("Resource {0} restored "
-                        "{1} times".format(resource, check_counter))
+            logger.info("Resource {0} restored 10 times".format(resource))
 
             # Assert ha services are ready
             self.fuel_web.assert_ha_services_ready(cluster_id)
@@ -622,7 +621,7 @@ class TestHaFailoverBase(TestBasic):
         slave05 = self.fuel_web.get_nailgun_node_by_name('slave-05')
         assert_true(
             check_ping(slave05['ip'], DNS, deadline=120, interval=10),
-            "No Internet access from {0}".format(node['fqdn'])
+            "No Internet access from {0}".format(slave05['fqdn'])
         )
         if OPENSTACK_RELEASE == OPENSTACK_RELEASE_UBUNTU:
             _ip = self.fuel_web.get_nailgun_node_by_name('slave-05')['ip']
@@ -1302,10 +1301,12 @@ class TestHaFailoverBase(TestBasic):
                  timeout=600, interval=20,
                  timeout_msg='RabbitMQ cluster was not assembled')
             for node in rabbit_slaves:
+                # pylint: disable=undefined-loop-variable
                 wait(lambda: count_run_rabbit(node, all_up=True), timeout=60,
                      interval=10,
                      timeout_msg='Some nodes did not back to the cluster after'
                                  '10 minutes wait.')
+                # pylint: enable=undefined-loop-variable
 
             for node in d_ctrls:
                 with self.fuel_web.get_ssh_for_node(node.name) as remote:
