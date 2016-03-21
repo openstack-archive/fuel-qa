@@ -106,9 +106,10 @@ class TestLogrotateBase(TestBasic):
                      'Execution result is: {1}'.format(cmd, result))
 
     @staticmethod
-    def execute_logrotate_cmd(remote, cmd=None, exit_code=None):
+    def execute_logrotate_cmd(remote, force=True, cmd=None, exit_code=None):
         if not cmd:
-            cmd = 'logrotate -v -f /etc/logrotate.conf'
+            cmd = 'logrotate -v {0} /etc/logrotate.conf'.format(
+                '-f' if force else "")
         result = remote.execute(cmd)
         logger.debug(
             'Results of command {0} execution exit_code:{1} '
@@ -153,7 +154,7 @@ class TestLogrotateBase(TestBasic):
         for s in reversed(symbols):
             if data >= prefix[s]:
                 value = float(data) / prefix[s]
-                return format(value, '.1f'), s
+                return "{:.1f}{}".format(value, s)
         return data, 'B'
 
     @staticmethod
@@ -188,11 +189,12 @@ class TestLogrotateBase(TestBasic):
 
             # get data before logrotate
             self.show_step(2)
-            free, suff = self.check_free_space(remote)
+            free_space = self.check_free_space(remote)
 
-            free_inodes, i_suff = self.check_free_inodes(remote)
-            logger.debug('Free inodes before file '
-                         'creation: {0}{1}'.format(free_inodes, i_suff))
+            free_inodes = self.check_free_inodes(remote)
+            logger.debug('Before file creation: '
+                         'Free inodes: {0} '
+                         'Free space: {1}'.format(free_inodes, free_space))
             self.show_step(3)
             self.generate_file(
                 remote, size='2G',
@@ -200,20 +202,20 @@ class TestLogrotateBase(TestBasic):
                 name='messages')
 
             # Get free space after file creation
-            free2, suff2 = self.check_free_space(remote)
+            free_space2 = self.check_free_space(remote)
             assert_true(
-                free2 < free,
+                free_space2 < free_space,
                 'File was not created. Free space '
-                'before creation {0}{1}, '
+                'before creation {0}, '
                 'free space after '
-                'creation {2}{3}'.format(free, suff, free2, suff2))
+                'creation {1}'.format(free_space, free_space2))
 
             self.show_step(4)
-            self.execute_logrotate_cmd(remote)
+            self.execute_logrotate_cmd(remote, force=False)
 
-            free3, suff3 = self.check_free_space(remote)
+            free_space3 = self.check_free_space(remote)
             logger.debug('Free space after first '
-                         'rotation {0} {1}'.format(free3, suff3))
+                         'rotation {0}'.format(free_space3))
             res = self.execute_logrotate_cmd(remote, exit_code=1)
 
             # Expect 1 exit code here, according
@@ -225,25 +227,26 @@ class TestLogrotateBase(TestBasic):
                 'Second run of logrotate failed'
                 ' with {0}'.format(res['stderr']))
 
-            free4, suff4 = self.check_free_space(remote)
-            free_inodes4, i_suff4 = self.check_free_inodes(remote)
-            logger.info('Free inodes  after logrotation:'
-                        ' {0}{1}'.format(free_inodes4, i_suff4))
+            free_space4 = self.check_free_space(remote)
+            free_inodes4 = self.check_free_inodes(remote)
+            logger.debug('After second log rotation:'
+                         'Free inodes: {0} '
+                         'Free space: {1}'.format(free_inodes4, free_space4))
 
             assert_true(
-                free4 > free2,
+                free_space4 > free_space2,
                 'Logs were not rotated. '
                 'Rotate was executed 2 times. '
-                'Free space after file creation: {0}{1}, '
-                'after rotation {2}{3} free space before rotation {4}'
-                '{5}'.format(free2, suff2, free4, suff4, free, suff))
+                'Free space after file creation: {0}, '
+                'after rotation {1} free space before rotation {2}'
+                ''.format(free_space2, free_space4, free_space))
 
             assert_equal(
-                (free_inodes, i_suff),
-                (free_inodes4, i_suff4),
-                'Unexpected  free inodes count. Before log rotate was: {0}{1}'
-                ' after logrotation: {2}{3}'.format(
-                    free_inodes, i_suff, free_inodes4, i_suff4))
+                free_inodes,
+                free_inodes4,
+                'Unexpected  free inodes count. Before log rotate was: {0}'
+                ' after logrotation: {1}'.format(
+                    free_inodes, free_inodes4))
         self.env.make_snapshot("test_logrotate")
 
     @test(depends_on=[SetupEnvironment.setup_master],
@@ -268,43 +271,42 @@ class TestLogrotateBase(TestBasic):
 
             # get data before logrotate
             self.show_step(2)
-            free, suff = self.check_free_space(remote)
-            free_inodes, i_suff = self.check_free_inodes(remote)
+            free_space = self.check_free_space(remote)
+            free_inodes = self.check_free_inodes(remote)
             logger.debug('Free inodes before file '
-                         'creation: {0}{1}'.format(free_inodes, i_suff))
+                         'creation: {0}'.format(free_inodes))
             self.show_step(3)
             self.generate_file(
                 remote, size='2G',
                 path='/var/log/',
                 name='ostf-test.log')
 
-            free2, suff2 = self.check_free_space(remote)
+            free_space2 = self.check_free_space(remote)
             assert_true(
-                free2 < free,
+                free_space2 < free_space,
                 'File was not created. Free space '
-                'before creation {0}{1}, '
+                'before creation {0}, '
                 'free space after '
-                'creation {2}{3}'.format(free, suff, free2, suff2))
+                'creation {1}'.format(free_space, free_space2))
             self.show_step(4)
             self.execute_logrotate_cmd(remote, cmd='/usr/bin/fuel-logrotate')
             self.show_step(5)
-            free3, suff3 = self.check_free_space(remote)
-            free_inodes3, i_suff3 = self.check_free_inodes(remote)
+            free_space3 = self.check_free_space(remote)
+            free_inodes3 = self.check_free_inodes(remote)
             logger.info('Free inodes  after logrotation:'
-                        ' {0}{1}'.format(free_inodes3, i_suff3))
+                        ' {0}'.format(free_inodes3))
 
             assert_true(
-                free3 > free2,
+                free_space3 > free_space2,
                 'Logs were not rotated. '
-                'Free space before rotation: {0}{1}, '
-                'after rotation {2}{3}'.format(free2, suff2, free3, suff3))
+                'Free space before rotation: {0}, '
+                'after rotation {1}'.format(free_space2, free_space3))
 
             assert_equal(
-                (free_inodes, i_suff),
-                (free_inodes3, i_suff3),
-                'Unexpected  free inodes count. Before log rotate was: {0}{1}'
-                ' after logrotation: {2}{3}'.format(
-                    free_inodes, i_suff, free_inodes3, i_suff3))
+                free_inodes,
+                free_inodes3,
+                'Unexpected  free inodes count. Before log rotate was: {0}'
+                ' after logrotation: {1}'.format(free_inodes, free_inodes3))
 
         self.env.make_snapshot("test_fuel_nondaily_logrotate")
 
@@ -330,30 +332,30 @@ class TestLogrotateBase(TestBasic):
 
             # get data before logrotate
             self.show_step(2)
-            free, suff = self.check_free_space(remote)
+            free_space = self.check_free_space(remote)
 
-            free_inodes, i_suff = self.check_free_inodes(remote)
+            free_inodes = self.check_free_inodes(remote)
             logger.debug('Free inodes before file '
-                         'creation: {0}{1}'.format(free_inodes, i_suff))
+                         'creation: {0}'.format(free_inodes))
             self.show_step(3)
             self.generate_file(
                 remote, size='101M',
                 path='/var/log/',
                 name='messages')
 
-            free2, suff2 = self.check_free_space(remote)
+            free_space2 = self.check_free_space(remote)
             assert_true(
-                free2 < free,
+                free_space2 < free_space,
                 'File was not created. Free space '
-                'before creation {0}{1}, '
+                'before creation {0}, '
                 'free space after '
-                'creation {2}{3}'.format(free, suff, free2, suff2))
+                'creation {1}'.format(free_space, free_space2))
             self.show_step(4)
-            self.execute_logrotate_cmd(remote)
+            self.execute_logrotate_cmd(remote, force=False)
 
-            free3, suff3 = self.check_free_space(remote)
+            free_space3 = self.check_free_space(remote)
             logger.debug('free space after first '
-                         'rotation: {0}{1}'.format(free3, suff3))
+                         'rotation: {0}'.format(free_space3))
             res = self.execute_logrotate_cmd(remote, exit_code=1)
 
             # Expect 1 exit code here, according
@@ -365,25 +367,25 @@ class TestLogrotateBase(TestBasic):
                 'Second run of logrotate failed'
                 ' with {0}'.format(res['stderr']))
 
-            free4, suff4 = self.check_free_space(remote)
-            free_inodes4, i_suff4 = self.check_free_inodes(remote)
+            free_space4 = self.check_free_space(remote)
+            free_inodes4 = self.check_free_inodes(remote)
             logger.info('Free inodes  after logrotation:'
-                        ' {0}{1}'.format(free_inodes4, i_suff4))
+                        ' {0}'.format(free_inodes4))
 
             assert_true(
-                free4 > free2,
+                free_space4 > free_space2,
                 'Logs were not rotated. '
                 'Rotate was executed 2 times. '
-                'Free space after file creation: {0}{1}, '
-                'after rotation {2}{3} free space before rotation {4}'
-                '{5}'.format(free2, suff2, free4, suff4, free, suff))
+                'Free space after file creation: {0}, '
+                'after rotation {1} free space before rotation {2}'
+                ''.format(free_space2, free_space4, free_space))
 
             assert_equal(
-                (free_inodes, i_suff),
-                (free_inodes4, i_suff4),
-                'Unexpected  free inodes count. Before log rotate was: {0}{1}'
-                ' after logrotation: {2}{3}'.format(
-                    free_inodes, i_suff, free_inodes4, i_suff4))
+                free_inodes,
+                free_inodes4,
+                'Unexpected  free inodes count. Before log rotate was: {0}'
+                ' after logrotation: {1}'.format(
+                    free_inodes, free_inodes4))
         self.env.make_snapshot("test_logrotate_101MB")
 
     @test(depends_on=[SetupEnvironment.setup_master],
@@ -408,11 +410,11 @@ class TestLogrotateBase(TestBasic):
 
             # get data before logrotate
             self.show_step(2)
-            free = self.check_free_space(remote, return_as_is=True)
+            free_space = self.check_free_space(remote, return_as_is=True)
 
-            free_inodes, i_suff = self.check_free_inodes(remote)
+            free_inodes = self.check_free_inodes(remote)
             logger.debug('Free inodes before file '
-                         'creation: {0}{1}'.format(free_inodes, i_suff))
+                         'creation: {0}'.format(free_inodes))
             # create 1 week old empty file
 
             self.create_old_file(remote, name='/var/log/messages')
@@ -422,19 +424,19 @@ class TestLogrotateBase(TestBasic):
                 path='/var/log/',
                 name='messages')
 
-            free2 = self.check_free_space(remote, return_as_is=True)
+            free_space2 = self.check_free_space(remote, return_as_is=True)
             assert_true(
-                free2 < free,
+                free_space2 < free_space,
                 'File was not created. Free space '
                 'before creation {0}, '
                 'free space after '
-                'creation {1}'.format(free, free2))
+                'creation {1}'.format(free_space, free_space2))
             self.show_step(4)
-            self.execute_logrotate_cmd(remote)
+            self.execute_logrotate_cmd(remote, force=False)
 
-            free3 = self.check_free_space(remote, return_as_is=True)
+            free_space3 = self.check_free_space(remote, return_as_is=True)
             logger.debug('Free space after first'
-                         ' rotation {0}'.format(free3))
+                         ' rotation {0}'.format(free_space3))
             res = self.execute_logrotate_cmd(remote, exit_code=1)
 
             # Expect 1 exit code here, according
@@ -446,25 +448,25 @@ class TestLogrotateBase(TestBasic):
                 'Second run of logrotate failed'
                 ' with {0}'.format(res['stderr']))
             self.show_step(5)
-            free4 = self.check_free_space(remote, return_as_is=True)
-            free_inodes4, i_suff4 = self.check_free_inodes(remote)
+            free_space4 = self.check_free_space(remote, return_as_is=True)
+            free_inodes4 = self.check_free_inodes(remote)
             logger.info('Free inodes  after logrotation:'
-                        ' {0}{1}'.format(free_inodes4, i_suff4))
+                        ' {0}'.format(free_inodes4))
 
             assert_true(
-                free4 > free2,
+                free_space4 > free_space2,
                 'Logs were not rotated. '
                 'Rotate was executed 2 times. '
                 'Free space after file creation: {0}, '
                 'after rotation {1} free space before rotation'
-                '{2}'.format(free2, free4, free))
+                '{2}'.format(free_space2, free_space4, free_space))
 
             assert_equal(
-                (free_inodes, i_suff),
-                (free_inodes4, i_suff4),
-                'Unexpected  free inodes count. Before log rotate was: {0}{1}'
-                ' after logrotation: {2}{3}'.format(
-                    free_inodes, i_suff, free_inodes4, i_suff4))
+                free_inodes,
+                free_inodes4,
+                'Unexpected  free inodes count. Before log rotate was: {0}'
+                ' after logrotation: {1}'.format(
+                    free_inodes, free_inodes4))
         self.env.make_snapshot("test_logrotate_one_week_11MB")
 
 
