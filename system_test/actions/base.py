@@ -36,6 +36,7 @@ from system_test.core.discover import load_yaml
 from system_test.helpers.decorators import make_snapshot_if_step_fail
 
 
+# pylint: disable=no-member
 class PrepareActions(object):
     """Base class with prepare actions
 

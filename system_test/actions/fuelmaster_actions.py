@@ -19,6 +19,7 @@ from system_test import logger
 from system_test.helpers.decorators import make_snapshot_if_step_fail
 
 
+# pylint: disable=no-member
 class FuelMasterActions(object):
     """Actions specific only to Fuel Master node
 
