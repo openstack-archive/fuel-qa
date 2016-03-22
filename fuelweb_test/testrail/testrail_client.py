@@ -177,19 +177,19 @@ class TestRailProject(object):
     def get_case_fields(self):
         return self.client.send_get('get_case_fields')
 
-    def get_plans(self):
+    def get_plans(self, milestone_ids=None, limit=None):
         plans_uri = 'get_plans/{project_id}'.format(
             project_id=self.project['id'])
+        if milestone_ids:
+            plans_uri += '&milestone_id' + ','.join([str(m)
+                                                     for m in milestone_ids])
+        if limit:
+            plans_uri += '&limit={0}'.format(limit)
         return self.client.send_get(plans_uri)
 
     def get_plan(self, plan_id):
         plan_uri = 'get_plan/{plan_id}'.format(plan_id=plan_id)
         return self.client.send_get(plan_uri)
-
-    def get_plans_by_milestone(self, milestone_id):
-        plans = self.get_plans()
-        return [self.get_plan(plan['id']) for plan in plans
-                if plan['milestone_id'] == milestone_id]
 
     def get_plan_by_name(self, name):
         for plan in self.get_plans():
@@ -253,10 +253,10 @@ class TestRailProject(object):
             if run['name'] == name:
                 return self.get_run(run_id=run['id'])
 
-    def get_previous_runs(self, milestone_id, suite_id, config_id):
+    def get_previous_runs(self, milestone_id, suite_id, config_id, limit=None):
         all_runs = []
-        for plan in self.get_plans_by_milestone(milestone_id=milestone_id):
-            for entry in plan['entries']:
+        for plan in self.get_plans(milestone_ids=[milestone_id], limit=limit):
+            for entry in self.get_plan(plan['id'])['entries']:
                 if entry['suite_id'] == suite_id:
                     run_ids = [run for run in entry['runs'] if
                                config_id in run['config_ids']]

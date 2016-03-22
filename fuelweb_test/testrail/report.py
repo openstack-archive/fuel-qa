@@ -48,9 +48,6 @@ class TestResult(object):
         self.description = description
         self.comments = comments
         self.launchpad_bug = launchpad_bug
-        self.launchpad_bug_status = None
-        self.launchpad_bug_importance = None
-        self.launchpad_bug_title = None
         self.available_statuses = {
             'passed': ['passed', 'fixed'],
             'failed': ['failed', 'regression'],
@@ -356,9 +353,11 @@ def publish_results(project, milestone_id, test_plan,
     logger.debug('Looking for previous tests runs on "{0}" using tests suite '
                  '"{1}"...'.format(project.get_config(config_id)['name'],
                                    project.get_suite(suite_id)['name']))
-    previous_tests_runs = project.get_previous_runs(milestone_id=milestone_id,
-                                                    suite_id=suite_id,
-                                                    config_id=config_id)
+    previous_tests_runs = project.get_previous_runs(
+        milestone_id=milestone_id,
+        suite_id=suite_id,
+        config_id=config_id,
+        limit=TestRailSettings.previous_results_depth)
     cases = project.get_cases(suite_id=suite_id)
     tests = project.get_tests(run_id=test_run_ids[0])
     results_to_publish = []
@@ -373,22 +372,12 @@ def publish_results(project, milestone_id, test_plan,
             continue
         existing_results_versions = [r['version'] for r in
                                      project.get_results_for_test(test['id'])]
-        case_id = project.get_case_by_group(suite_id=suite_id,
-                                            group=result.group,
-                                            cases=cases)['id']
-        if result.version in existing_results_versions or not result.status:
-            if result.status != 'passed':
-                previous_results = project.get_all_results_for_case(
-                    run_ids=[test_run_ids[0]],
-                    case_id=case_id)
-                lp_bug = get_existing_bug_link(previous_results)
-                if lp_bug:
-                    result.launchpad_bug = lp_bug['bug_link']
-                    result.launchpad_bug_status = lp_bug['status']
-                    result.launchpad_bug_importance = lp_bug['importance']
-                    result.launchpad_bug_title = lp_bug['title']
+        if result.version in existing_results_versions:
             continue
         if result.status not in ('passed', 'blocked'):
+            case_id = project.get_case_by_group(suite_id=suite_id,
+                                                group=result.group,
+                                                cases=cases)['id']
             run_ids = [run['id'] for run in previous_tests_runs[0:
                        int(TestRailSettings.previous_results_depth)]]
             previous_results = project.get_all_results_for_case(
@@ -397,9 +386,6 @@ def publish_results(project, milestone_id, test_plan,
             lp_bug = get_existing_bug_link(previous_results)
             if lp_bug:
                 result.launchpad_bug = lp_bug['bug_link']
-                result.launchpad_bug_status = lp_bug['status']
-                result.launchpad_bug_importance = lp_bug['importance']
-                result.launchpad_bug_title = lp_bug['title']
         results_to_publish.append(result)
 
     try:
@@ -413,78 +399,6 @@ def publish_results(project, milestone_id, test_plan,
         ))
         raise
     return results_to_publish
-
-
-def make_bug_statistics(test_results, test_plan, tests_suite,
-                        project, operation_systems):
-    bugs = {}
-    cases = project.get_cases(suite_id=tests_suite['id'])
-
-    for os in operation_systems:
-        test_run_ids = [run['id'] for entry in test_plan['entries']
-                        for run in entry['runs']
-                        if tests_suite['id'] == run['suite_id'] and
-                        os['id'] in run['config_ids']]
-
-        for result in test_results[os['distro']]:
-            try:
-                case_id = project.get_case_by_group(suite_id=tests_suite['id'],
-                                                    group=result.group,
-                                                    cases=cases)['id']
-            except:
-                logger.info("group {} has no test".format(result.group))
-                continue
-            case_result = project.get_all_results_for_case(
-                run_ids=test_run_ids, case_id=case_id)
-            lp_bug = get_existing_bug_link(case_result)
-            bug = lp_bug['bug_link'] if lp_bug else None
-            if not bug:
-                continue    # Bug is not linked to the test case result.
-            distro = os['distro']
-            if bug not in bugs:
-                bugs[bug] = {}
-                bugs[bug]['distro'] = {}
-                bugs[bug]['count'] = 0
-                bugs[bug]['status'] = lp_bug['status']
-                bugs[bug]['importance'] = lp_bug['importance']
-                bugs[bug]['title'] = lp_bug['title']
-            if distro not in bugs[bug]['distro']:
-                bugs[bug]['distro'][distro] = {}
-            bugs[bug]['count'] += 1
-            bugs[bug]['distro'][distro][result.url] = {}
-            bugs[bug]['distro'][distro][result.url]['status'] = result.status
-            bugs[bug]['distro'][distro][result.url]['group'] = result.group
-
-    bugs_sorted = sorted(bugs.keys(), key=lambda x: bugs[x]['count'],
-                         reverse=True)
-
-    if bugs_sorted:
-        bugs_string = ''
-        bugs_string += "Summary of bugs in TestRail at" \
-                       " {0}\n".format(time.strftime("%c"))
-        for bug in bugs_sorted:
-            jresults = ""
-            for distro in bugs[bug]['distro'].keys():
-                jresults += " {0}: ".format(distro)
-                bugs_distro = bugs[bug]['distro'][distro]
-                for res in bugs_distro:
-                    jresults += (
-                        '[{hint}]({res}) '
-                        .format(res=res,
-                                hint=bugs_distro[res]['group']))
-            line = ('[{affected} TC(s)] [{importance}] [{status}] '
-                    '[{title}]({link}) [{jresults}]\n'
-                    .format(affected=bugs[bug]['count'],
-                            importance=bugs[bug]['importance'],
-                            status=bugs[bug]['status'],
-                            link=bug,
-                            title=bugs[bug]['title'],
-                            jresults=jresults))
-            bugs_string += line
-        return bugs_string
-    else:
-        logger.info("No linked to test cases bugs found")
-        return ''
 
 
 @retry(count=3)
@@ -543,10 +457,6 @@ def main():
                       help="Get tests results from running swarm")
     parser.add_option("-m", "--manual", dest="manual_run", action="store_true",
                       help="Manually add tests cases to TestRun (tested only)")
-    parser.add_option("-s", "--statistics", action="store_true",
-                      dest="bug_statistics", default=False,
-                      help="Make a statistics for bugs linked to TestRail for "
-                      "the test run")
     parser.add_option('-c', '--create-plan-only', action="store_true",
                       dest="create_plan_only", default=False,
                       help='Jenkins swarm runner job name')
@@ -597,8 +507,6 @@ def main():
                      " or Jenkins view with system tests jobs (-w). Exiting..")
         return
 
-    is_running_builds = False
-
     for systest_build in tests_jobs:
         if (options.one_job_name and
                 options.one_job_name != systest_build['name']):
@@ -616,7 +524,6 @@ def main():
                 logger.debug("Skipping '{0}' job (build #{1}) because it's sti"
                              "ll running...".format(systest_build['name'],
                                                     systest_build['number'],))
-                is_running_builds = True
                 continue
         for os in tests_results.keys():
             if os in systest_build['name'].lower():
@@ -698,20 +605,6 @@ def main():
 
     logger.info('Report URL: {0}'.format(test_plan['url']))
 
-    # STEP #5
-    # Provide the bugs linked in TestRail for current run as a short statistics
-    if options.bug_statistics:
-        if is_running_builds:
-            logger.info("Some jobs are still running. "
-                        "Skipping bug statistics report, please try later.")
-        else:
-            logger.info("Generating a bug statistics report...")
-            bug_results = make_bug_statistics(tests_results, test_plan,
-                                              tests_suite, project,
-                                              operation_systems)
-            project.update_plan(plan_id=test_plan['id'],
-                                description=test_plan['description'] + '\n' +
-                                bug_results)
 
 if __name__ == "__main__":
     main()
