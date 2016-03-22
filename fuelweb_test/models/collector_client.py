@@ -60,17 +60,18 @@ class CollectorClient(object):
     @logwrap
     def get_action_logs_ids(self, master_node_uid):
         return [actions['id']
-                for actions in self.get_action_logs(master_node_uid)]
+                for actions in self.get_action_logs(master_node_uid)['objs']]
 
     @logwrap
     def get_action_logs_count(self, master_node_uid):
-        return len([actions['id']
-                    for actions in self.get_action_logs(master_node_uid)])
+        return len(
+            [actions['id'] for actions
+             in self.get_action_logs(master_node_uid)]['objs'])
 
     @logwrap
     def get_action_logs_additional_info_by_id(self, master_node_uid, id):
         return [actions['body']['additional_info']
-                for actions in self.get_action_logs(master_node_uid)
+                for actions in self.get_action_logs(master_node_uid)['objs']
                 if actions['id'] == id]
 
     @logwrap
