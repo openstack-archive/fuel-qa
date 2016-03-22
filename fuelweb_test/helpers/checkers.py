@@ -330,7 +330,7 @@ def check_mysql(ip, node_name):
                 check_crm_cmd)['exit_code'],
             0,
             'MySQL resource is NOT running on {0}'.format(node_name)),
-        timeout=60)
+        timeout=120)
     try:
         wait(lambda: ''.join(ssh_manager.execute(
             ip, check_galera_cmd)['stdout']).rstrip() == 'Synced', timeout=600)
