@@ -76,6 +76,11 @@ Test custom hostname
 .. automodule:: fuelweb_test.tests.test_custom_hostname
    :members:
 
+Test DPDK
+--------------------
+.. automodule:: fuelweb_test.tests.test_dpdk
+   :members:
+
 Test Environment Action
 -----------------------
 .. automodule:: fuelweb_test.tests.test_environment_action
