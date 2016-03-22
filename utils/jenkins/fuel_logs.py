@@ -61,6 +61,9 @@ import re
 import sys
 import tarfile
 
+PUPPET_LOG = 'puppet-apply.log'
+ASTUTE_LOG = 'astute.log'
+
 
 class IO(object):
     """
@@ -236,7 +239,7 @@ class IO(object):
         cls.args = parser.parse_args()
         if not cls.args.puppet and not cls.args.astute:
             cls.args.puppet = True
-            cls.args.astute = True
+            cls.args.astute = False
         return cls.args
 
 
@@ -508,9 +511,15 @@ class PuppetLog(AbstractLog):
         :return: node name
         :rtype: str
         """
-        match = re.search(r'(node-\d+)', string)
-        if match:
-            return match.group(0)
+        path_elements = string.split('/')
+        try:
+            log_index = path_elements.index(PUPPET_LOG)
+        except ValueError:
+            return None
+        name_index = log_index - 1
+        if name_index < 0:
+            return None
+        return path_elements[name_index]
 
     def output(self):
         """
@@ -677,7 +686,7 @@ class FuelSnapshot(object):
         for log in self.snapshot.getmembers():
             if not log.isfile():
                 continue
-            if log.name.endswith('/astute.log'):
+            if log.name.endswith(ASTUTE_LOG):
                 yield log
 
     def puppet_logs(self):
@@ -688,7 +697,7 @@ class FuelSnapshot(object):
         for log in self.snapshot.getmembers():
             if not log.isfile():
                 continue
-            if log.name.endswith('/puppet-apply.log'):
+            if log.name.endswith(PUPPET_LOG):
                 yield log
 
     def parse_log(self, log_file, parser):
@@ -717,6 +726,7 @@ class FuelSnapshot(object):
         astute_logs.show_mcagent = show_mcagent
         astute_logs.show_full = show_full
         for astute_log in self.astute_logs():
+            IO.output("Parsing Astute log: '%s'" % astute_log.name)
             self.parse_log(astute_log, astute_logs)
         astute_logs.output()
         astute_logs.clear()
@@ -738,6 +748,7 @@ class FuelSnapshot(object):
         puppet_logs.enable_sort = enable_sort
         puppet_logs.show_full = show_full
         for puppet_log in self.puppet_logs():
+            IO.output("Parsing Puppet log: '%s'" % puppet_log.name)
             puppet_logs.log_name = puppet_log.name
             self.parse_log(puppet_log, puppet_logs)
         puppet_logs.output()
@@ -762,7 +773,6 @@ class FuelLogs(object):
             for log_file in files:
                 if log_file == name:
                     path = os.path.join(root, log_file)
-                    IO.output('Processing: %s' % path)
                     yield path
 
     def puppet_logs(self):
@@ -770,14 +780,14 @@ class FuelLogs(object):
         Find the Puppet logs in the log directory
         :return: iter
         """
-        return self.find_logs('puppet-apply.log')
+        return self.find_logs(PUPPET_LOG)
 
     def astute_logs(self):
         """
         Find the Astute logs in the log directory
         :return: iter
         """
-        return self.find_logs('astute.log')
+        return self.find_logs(ASTUTE_LOG)
 
     @staticmethod
     def truncate_log(log_file):
