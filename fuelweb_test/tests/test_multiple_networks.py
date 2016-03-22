@@ -776,8 +776,10 @@ class TestMultipleClusterNets(TestBasic):
                     'in error state..')
         for slave in custom_nodes:
             try:
+                # pylint: disable=undefined-loop-variable
                 wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
                     slave)['status'] == 'error', timeout=60 * 5)
+                # pylint: enable=undefined-loop-variable
                 logger.info('Node {} is in "error" state'.format(slave.name))
             except TimeoutError:
                 raise TimeoutError('Node {} status wasn\'t changed '

@@ -810,6 +810,7 @@ def check_oswl_stat(postgres_actions, nailgun_actions,
         q = "select resource_data from oswl_stats where" \
             " resource_type = '\"'\"'{0}'\"'\"';".format(resource)
 
+        # pylint: disable=undefined-loop-variable
         def get_resource():
             result = postgres_actions.run_query('nailgun', q)
             logger.debug("resource state is {}".format(result))
@@ -818,6 +819,7 @@ def check_oswl_stat(postgres_actions, nailgun_actions,
             return (
                 len(json.loads(result)[operation]) >
                 expected_resource_count[operation][resource])
+        # pylint: enable=undefined-loop-variable
 
         wait(get_resource, timeout=10,
              timeout_msg="resource {} wasn't updated in db".format(resource))
