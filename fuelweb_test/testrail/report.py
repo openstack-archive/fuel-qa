@@ -390,7 +390,7 @@ def publish_results(project, milestone_id, test_plan,
                     result.launchpad_bug_importance = lp_bug['importance']
                     result.launchpad_bug_title = lp_bug['title']
             continue
-        if result.status != 'passed':
+        if result.status not in ('passed', 'blocked'):
             run_ids = [run['id'] for run in previous_tests_runs[0:
                        int(TestRailSettings.previous_results_depth)]]
             previous_results = project.get_all_results_for_case(
