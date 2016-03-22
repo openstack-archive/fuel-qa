@@ -245,7 +245,6 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions):
         logger.info("Create env {}".format(
             self.env_config['name']))
         cluster_settings = {
-            "murano": self.env_settings['components'].get('murano', False),
             "sahara": self.env_settings['components'].get('sahara', False),
             "ceilometer": self.env_settings['components'].get('ceilometer',
                                                               False),
