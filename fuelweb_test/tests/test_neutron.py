@@ -11,17 +11,18 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
 from proboscis.asserts import assert_equal
 from proboscis import test
 
-from fuelweb_test.helpers import checkers
-from fuelweb_test.helpers import os_actions
+from fuelweb_test.helpers.common import Common
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers import os_actions
+from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
-from fuelweb_test import logger
 
 
 @test(groups=["thread_1", "neutron"])
@@ -97,7 +98,8 @@ class NeutronGreHa(TestBasic):
             3. Add 2 nodes with compute role
             4. Deploy the cluster
             5. Run network verification
-            6. Run OSTF
+            6. Check Swift ring and rebalance it if needed
+            7. Run OSTF
 
         Duration 80m
         Snapshot deploy_neutron_gre_ha
@@ -135,19 +137,8 @@ class NeutronGreHa(TestBasic):
         devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
-        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
-        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
-            for _ in range(5):
-                try:
-                    checkers.check_swift_ring(_ip)
-                    break
-                except AssertionError:
-                    result = remote.execute(
-                        "/usr/local/bin/swift-rings-rebalance.sh")
-                    logger.debug("command execution result is {0}"
-                                 .format(result))
-            else:
-                checkers.check_swift_ring(_ip)
+        ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
+        Common.rebalance_swift_ring(ip)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
@@ -172,7 +163,8 @@ class NeutronVlanHa(TestBasic):
             3. Add 2 nodes with compute role
             4. Deploy the cluster
             5. Run network verification
-            6. Run OSTF
+            6. Check Swift ring and rebalance it if needed
+            7. Run OSTF
 
         Duration 80m
         Snapshot deploy_neutron_vlan_ha
@@ -213,19 +205,8 @@ class NeutronVlanHa(TestBasic):
         devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
-        _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
-        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
-            for _ in range(5):
-                try:
-                    checkers.check_swift_ring(_ip)
-                    break
-                except AssertionError:
-                    result = remote.execute(
-                        "/usr/local/bin/swift-rings-rebalance.sh")
-                    logger.debug("command execution result is {0}"
-                                 .format(result))
-            else:
-                checkers.check_swift_ring(_ip)
+        ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
+        Common.rebalance_swift_ring(ip)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'])
