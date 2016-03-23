@@ -245,7 +245,7 @@ class RebootPlugin(TestBasic):
         self.fuel_web.assert_task_failed(task)
 
         msg = 'Time detection (1 sec) for node reboot has expired'
-        cmd = 'grep "{0}" /var/log/docker-logs/astute/astute.log'.format(msg)
+        cmd = 'grep "{0}" /var/log/astute/astute.log'.format(msg)
         self.show_step(10)
         with self.env.d_env.get_admin_remote() as admin_remote:
             result = admin_remote.execute(cmd)['stdout'][0]
