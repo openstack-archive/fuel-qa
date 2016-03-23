@@ -408,7 +408,7 @@ class StatisticsGenerator(object):
         return self.update_desription(header + bugs_table)
 
 
-def save_stats_to_file(stats, file_name, html=False):
+def save_stats_to_file(stats, file_name, html=''):
     def warn_file_exists(file_path):
         if os.path.exists(file_path):
             logger.warning('File {0} exists and will be '
