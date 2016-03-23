@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import re
-import time
 
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
@@ -255,25 +254,6 @@ class TestHaNeutronScalability(TestBasic):
         Snapshot neutron_tun_scalability
 
         """
-        def _check_swift(node):
-            _ip = self.fuel_web.get_nailgun_node_by_name(node.name)['ip']
-            with self.fuel_web.get_ssh_for_node(node.name) as remote:
-                for _ in range(5):
-                    try:
-                        checkers.check_swift_ring(_ip)
-                        break
-                    except AssertionError:
-                        result = remote.execute(
-                            "/usr/local/bin/swift-rings-rebalance.sh")
-                        logger.debug(
-                            "command execution result is {0}".format(result))
-                        if result['exit_code'] == 0:
-                            # (tleontovich) We should sleep here near 5-10
-                            #  minute and waiting for replica
-                            # LP1498368/comments/16
-                            time.sleep(600)
-                else:
-                    checkers.check_swift_ring(_ip)
 
         def _check_pacemaker(devops_nodes):
             for devops_node in devops_nodes:
@@ -316,7 +296,7 @@ class TestHaNeutronScalability(TestBasic):
         # Step 4. Check swift
         logger.info("STEP4: Check swift on primary controller {0}".format(
             primary_node))
-        _check_swift(primary_node)
+        self.rebalance_swift_ring(primary_node)
 
         nodes = {'slave-02': ['controller'],
                  'slave-03': ['controller']}
@@ -339,7 +319,7 @@ class TestHaNeutronScalability(TestBasic):
             primary_node_s3.name))
         logger.info("STEP7: Check swift on primary controller {0}".format(
             primary_node_s3))
-        _check_swift(primary_node_s3)
+        self.rebalance_swift_ring(primary_node_s3)
 
         # Run smoke tests only according to ha and
         # sanity executed in scope of deploy_cluster_wait()
@@ -372,7 +352,7 @@ class TestHaNeutronScalability(TestBasic):
         logger.info("STEP11: Check swift on primary controller {0}".format(
             primary_node_s9))
 
-        _check_swift(primary_node_s9)
+        self.rebalance_swift_ring(primary_node_s9)
 
         # Run smoke tests only according to ha and
         # sanity executed in scope of deploy_cluster_wait()
@@ -411,7 +391,7 @@ class TestHaNeutronScalability(TestBasic):
         logger.info("STEP15: Check swift on primary controller {0}".format(
             primary_node_s14))
 
-        _check_swift(primary_node_s14)
+        self.rebalance_swift_ring(primary_node_s14)
 
         # Step 16-17. Run OSTF and sync time
         self.fuel_web.run_ostf(
