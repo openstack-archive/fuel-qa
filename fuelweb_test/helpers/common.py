@@ -27,8 +27,11 @@ import neutronclient.v2_0.client as neutronclient
 from proboscis.asserts import assert_equal
 import six
 
+from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test import logger
 from fuelweb_test import logwrap
+from fuelweb_test.models.fuel_web_client import FuelWebClient
 from fuelweb_test.settings import DISABLE_SSL
 from fuelweb_test.settings import PATH_TO_CERT
 from fuelweb_test.settings import VERIFY_SSL
@@ -231,3 +234,24 @@ class Common(object):
         if exc_type and exc_traceback and exc_value:
             six.reraise(exc_type, exc_value, exc_traceback)
         raise RuntimeError()
+
+    def rebalance_swift_ring(self, ip, retry_count=5, sleep=600):
+        """Check swift ring and rebalance it if needed.
+
+        Replication should be performed on primary controller node.
+        Retry check several times. Wait for replication due to LP1498368.
+        """
+        ssh = SSHManager()
+        cmd = "/usr/local/bin/swift-rings-rebalance.sh"
+        for _ in xrange(retry_count):
+            try:
+                checkers.check_swift_ring(ip)
+                break
+            except AssertionError:
+                result = ssh.execute_on_remote(ip=ip, cmd=cmd)
+                logger.debug("command execution result is {0}".format(result))
+                if result['exit_code'] == 0:
+
+                    time.sleep(sleep)
+        else:
+            checkers.check_swift_ring(ip)
