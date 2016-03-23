@@ -44,7 +44,7 @@ adv_net_template:
             name: br-fw-admin
           - action: add-port
             bridge: br-fw-admin
-            name: eth0
+            name: <% if1 %>
         endpoints:
           - br-fw-admin
         roles:
@@ -65,7 +65,7 @@ adv_net_template:
             mtu: 65000
           - action: add-port
             bridge: br-ex
-            name: eth1
+            name: <% if2 %>
         endpoints:
           - br-ex
         roles:
@@ -79,7 +79,7 @@ adv_net_template:
             name: br-mgmt
           - action: add-port
             bridge: br-mgmt
-            name: eth2
+            name: <% if3 %>
         endpoints:
           - br-mgmt
         roles:
@@ -126,7 +126,7 @@ adv_net_template:
             mtu: 65000
           - action: add-port
             bridge: br-aux
-            name: eth3
+            name: <% if4 %>
         endpoints:
           - br-prv
         roles:
@@ -138,7 +138,7 @@ adv_net_template:
             name: br-storage
           - action: add-port
             bridge: br-storage
-            name: eth4
+            name: <% if5 %>
         endpoints:
           - br-storage
         roles:
@@ -147,11 +147,11 @@ adv_net_template:
   group-custom-1:
     nic_mapping:
       default:
-        if11: eth0       # admin
-        if12: eth1       # public
-        if13: eth2       # management
-        if14: eth3       # private
-        if15: eth4       # storage
+        if11: enp0s3       # admin
+        if12: enp0s4       # public
+        if13: enp0s5       # management
+        if14: enp0s6       # private
+        if15: enp0s7       # storage
     templates_for_node_role:
         controller:
           - admin
@@ -189,7 +189,7 @@ adv_net_template:
             name: br-fw-admin
           - action: add-port
             bridge: br-fw-admin
-            name: eth0
+            name: <% if11 %>
         endpoints:
           - br-fw-admin
         roles:
@@ -210,7 +210,7 @@ adv_net_template:
             mtu: 65000
           - action: add-port
             bridge: br-ex
-            name: eth1
+            name: <% if12 %>
         endpoints:
           - br-ex
         roles:
@@ -224,7 +224,7 @@ adv_net_template:
             name: br-mgmt
           - action: add-port
             bridge: br-mgmt
-            name: eth2
+            name: <% if13 %>
         endpoints:
           - br-mgmt
         roles:
@@ -270,7 +270,7 @@ adv_net_template:
             mtu: 65000
           - action: add-port
             bridge: br-aux
-            name: eth3
+            name: <% if14 %>
         endpoints:
           - br-prv
         roles:
@@ -282,7 +282,7 @@ adv_net_template:
             name: br-storage
           - action: add-port
             bridge: br-storage
-            name: eth4
+            name: <% if15 %>
         endpoints:
           - br-storage
         roles:

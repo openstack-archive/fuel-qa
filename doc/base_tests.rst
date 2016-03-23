@@ -211,10 +211,14 @@ Test network templates base
 .. automodule:: fuelweb_test.tests.test_net_templates_base
    :members:
 
-
 Test network templates
 ----------------------
 .. automodule:: fuelweb_test.tests.test_net_templates
+   :members:
+
+Test multiple networks templates
+--------------------------------
+.. automodule:: fuelweb_test.tests.test_net_templates_multiple_networks
    :members:
 
 Test Neutron
