@@ -1171,6 +1171,34 @@ class FuelWebClient(object):
                      update_nodegroups=False, custom_names=None,
                      update_interfaces=True):
 
+        failed_nodes = {}
+        for node_name, node_roles in nodes_dict.items():
+            # pylint: disable=no-member
+            try:
+                self.environment.d_env.get_node(name=node_name)
+            except Node.DoesNotExist:
+                failed_nodes[node_name] = node_roles
+            # pylint: enable=no-member
+        if failed_nodes:
+            text = 'Some nodes is inaccessible:\n'
+            for node_name, node_roles in sorted(failed_nodes.items()):
+                text += '\t{name} for roles: {roles!s}\n'.format(
+                    name=node_name,
+                    roles=['{}'.format(node) for node in sorted(node_roles)])
+            text += 'Impossible to continue!'
+            logger.error(text)
+            raise KeyError(list(failed_nodes.keys()))
+
+        if len(nodes_dict) > len(self.environment.d_env.get_nodes()):
+            error_txt = (
+                'Not enough nodes to update:\n'
+                '\tavailable(incl. master) {present}\n'
+                '\trequested to update:    {requested}'.format(
+                    present=len(self.environment.d_env.get_nodes()),
+                    requested=len(nodes_dict)))
+            logger.error(error_txt)
+            raise IndexError(error_txt)
+
         # update nodes in cluster
         nodes_data = []
         nodes_groups = {}
