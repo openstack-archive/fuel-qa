@@ -36,6 +36,10 @@ from fuelweb_test.settings import DISABLE_SSL
 from fuelweb_test.settings import PATH_TO_CERT
 from fuelweb_test.settings import VERIFY_SSL
 
+from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers.ssh_manager import SSHManager
+from fuelweb_test.models.fuel_web_client import FuelWebClient
+
 
 class Common(object):
     """Common."""  # TODO documentation
@@ -235,3 +239,25 @@ class Common(object):
         if exc_type and exc_traceback and exc_value:
             six.reraise(exc_type, exc_value, exc_traceback)
         raise RuntimeError()
+
+    def rebalance_swift_ring(self, devops_node, retry_count=5, sleep=600):
+        """Check swift ring and rebalance it if needed.
+
+        Replication should be performed on primary controller node.
+        Retry check several times. Wait for replication due to LP1498368.
+        """
+        ssh = SSHManager()
+        cmd = "/usr/local/bin/swift-rings-rebalance.sh"
+        _ip = FuelWebClient.get_nailgun_node_by_name(devops_node.name)['ip']
+        for _ in xrange(retry_count):
+            try:
+                checkers.check_swift_ring(_ip)
+                break
+            except AssertionError:
+                result = ssh.execute_on_remote(ip=_ip, cmd=cmd)
+                logger.debug("command execution result is {0}".format(result))
+                if result['exit_code'] == 0:
+
+                    time.sleep(sleep)
+        else:
+            checkers.check_swift_ring(_ip)
