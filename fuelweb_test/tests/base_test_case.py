@@ -12,12 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import time
+
 from proboscis import TestProgram
 from proboscis import SkipTest
 from proboscis import test
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.utils import get_test_method_name
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.helpers.ssh_manager import SSHManager
