@@ -11,6 +11,9 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
+from __future__ import division
+
 import time
 
 from proboscis import SkipTest
@@ -90,8 +93,10 @@ class PrepareActions(object):
     def _finish_case(self):
         """Finish test case"""
         case_time = time.time() - self._start_time
-        minutes = int(round(case_time)) / 60
+        minutes = case_time // 60
+        # pylint: disable=round-builtin
         seconds = int(round(case_time)) % 60
+        # pylint: enable=round-builtin
         name = getattr(self, "__doc__",
                        self.__class__.__name__).splitlines()[0]
         finish_case = "[ FINISH {} CASE TOOK {} min {} sec ]".format(
