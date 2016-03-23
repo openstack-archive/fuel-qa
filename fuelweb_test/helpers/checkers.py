@@ -234,7 +234,8 @@ def enable_feature_group(env, group):
     # update nailgun configs via puppet from that value
     ssh_manager.execute(
         ip=ssh_manager.admin_ip,
-        cmd='puppet apply /etc/puppet/modules/nailgun/examples/nailgun-only.pp'
+        cmd='puppet apply '
+            '/etc/puppet/liberty-9.0/modules/fuel/examples/nailgun.pp'
     )
 
     def check_api_group_enabled():
