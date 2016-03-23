@@ -154,6 +154,7 @@ def import_tests():
     from tests import test_ubuntu_bootstrap  # noqa
     from tests import test_centos_bootstrap  # noqa
     from tests import test_net_templates  # noqa
+    from tests import test_net_templates_multiple_networks  # noqa
     from tests.tests_mirrors import test_create_mirror  # noqa
     from tests.tests_mirrors import test_use_mirror  # noqa
     from system_test.tests import test_create_deploy_ostf  # noqa
