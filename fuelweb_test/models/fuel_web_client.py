@@ -411,8 +411,7 @@ class FuelWebClient(object):
                        mode=DEPLOYMENT_MODE_HA,
                        port=514,
                        release_id=None,
-                       configure_ssl=True,
-                       cgroup_data=None):
+                       configure_ssl=True):
         """Creates a cluster
         :param name:
         :param release_name:
@@ -556,10 +555,6 @@ class FuelWebClient(object):
                 logger.info('Enable Nova quotas')
                 nova_quotas = attributes['editable']['common']['nova_quota']
                 nova_quotas['value'] = True
-
-            if cgroup_data:
-                logger.info('Enable cgroup {0}'.format(cgroup_data))
-                attributes['editable']['cgroups'].update(cgroup_data)
 
             # Updating attributes is needed before updating
             # networking configuration because additional networks
