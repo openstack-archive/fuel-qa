@@ -1171,6 +1171,16 @@ class FuelWebClient(object):
                      update_nodegroups=False, custom_names=None,
                      update_interfaces=True):
 
+        if len(nodes_dict) > len(self.environment.d_env.get_nodes()):
+            error_txt = (
+                'Not enough nodes to update:\n'
+                '\tavailable(incl. master) {present}\n'
+                '\trequested to update:    {requested}'.format(
+                    present=len(self.environment.d_env.get_nodes()),
+                    requested=len(nodes_dict)))
+            logger.error(error_txt)
+            raise IndexError(error_txt)
+
         # update nodes in cluster
         nodes_data = []
         nodes_groups = {}
