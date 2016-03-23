@@ -327,9 +327,9 @@ Test RH-based computes
 .. automodule:: fuelweb_test.tests.test_rh_compute
   :members:
 
-Test deploy services with enabled cgroups
------------------------------------------
-.. automodule:: fuelweb_test.tests.test_cgroup
+Test Daemon Resource Allocation Control
+---------------------------------------
+.. automodule:: fuelweb_test.tests.test_cgroups
   :members:
 
 Gating tests
