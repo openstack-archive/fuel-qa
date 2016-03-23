@@ -15,6 +15,7 @@
 from __future__ import division
 
 import ConfigParser
+import copy
 # pylint: disable=no-name-in-module
 from distutils import version
 # pylint: enable=no-name-in-module
@@ -1063,3 +1064,22 @@ def get_quantity_of_numa(ip):
     else:
         logger.debug("There is {0} NUMA node(s) on {1}".format(numa, ip))
     return numa
+
+
+@logwrap
+def dict_merge(a, b):
+    """ Recursively merges dict's.
+
+    Not just simple a['key'] = b['key'], if both a and b have a key
+    who's value is a dict then dict_merge is called on both values
+    and the result stored in the returned dictionary.
+    """
+    if not isinstance(b, dict):
+        return copy.deepcopy(b)
+    result = copy.deepcopy(a)
+    for k, v in b.iteritems():
+        if k in result and isinstance(result[k], dict):
+            result[k] = dict_merge(result[k], v)
+        else:
+            result[k] = copy.deepcopy(v)
+    return result
