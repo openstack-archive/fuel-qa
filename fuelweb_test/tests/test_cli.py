@@ -66,23 +66,26 @@ class CommandLineMinimal(TestBasic):
             cluster_id,
             {'slave-01': ['controller']}
         )
-        with self.env.d_env.get_admin_remote() as remote:
-            node_id = self.fuel_web.get_nailgun_node_by_devops_node(
-                self.env.d_env.nodes().slaves[0])['id']
-            remote.execute('fuel node --node {0} --provision --env {1}'.format
-                           (node_id, cluster_id))
-            self.fuel_web.provisioning_cluster_wait(cluster_id)
-            remote.execute('fuel node --node {0} --end hiera --env {1}'.format
-                           (node_id, cluster_id))
-            try:
-                wait(lambda: int(
-                    remote.execute(
-                        'fuel task | grep deployment | awk \'{print $9}\'')
-                    ['stdout'][0].rstrip()) == 100, timeout=120)
-            except TimeoutError:
-                raise TimeoutError("hiera manifest was not applied")
-            role = remote.execute('ssh -q node-{0} "hiera role"'
-                                  .format(node_id))['stdout'][0].rstrip()
+        admin_ip = self.ssh_manager.admin_ip
+        node_id = self.fuel_web.get_nailgun_node_by_devops_node(
+            self.env.d_env.nodes().slaves[0])['id']
+        cmd = 'fuel node --node {0} --provision --env {1}'.format(node_id,
+                                                                  cluster_id)
+        self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        self.fuel_web.provisioning_cluster_wait(cluster_id)
+        cmd = 'fuel node --node {0} --end hiera --env {1}'.format(node_id,
+                                                                  cluster_id)
+        self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        cmd = 'fuel task | grep deployment | awk \'{print $9}\''
+        try:
+            wait(lambda: int(
+                self.ssh_manager.execute_on_remote(
+                    admin_ip, cmd)['stdout'][0].rstrip()) == 100, timeout=120)
+        except TimeoutError:
+            raise TimeoutError("hiera manifest was not applied")
+        cmd = 'ssh -q node-{0} "hiera role"'.format(node_id)
+        role = self.ssh_manager.execute_on_remote(
+            admin_ip, cmd)['stdout'][0].rstrip()
         assert_equal(role, 'primary-controller', "node with deployed hiera "
                                                  "was not found")
 
@@ -272,35 +275,32 @@ class CommandLineTest(test_cli_base.CommandLine):
                     slaves[2])['online'], timeout=60 * 6)
         except TimeoutError:
             raise
-        with self.env.d_env.get_admin_remote() as remote:
-            res = remote.execute('fuel node --node-id {0} --delete-from-db'
-                                 .format(node_id))
+        admin_ip = self.ssh_manager.admin_ip
+        cmd = 'fuel node --node-id {0} --delete-from-db'.format(node_id)
+        res = self.ssh_manager.execute_on_remote(admin_ip, cmd)
         assert_true(
             res['exit_code'] == 0,
             "Offline node-{0} was not"
             "deleted from database".format(node_id))
 
-        with self.env.d_env.get_admin_remote() as remote:
-            try:
-                wait(
-                    lambda: not remote.execute(
-                        "fuel node | awk '{{print $1}}' | grep -w '{0}'".
-                        format(node_id))['exit_code'] == 0, timeout=60 * 4)
-            except TimeoutError:
-                raise TimeoutError(
-                    "After deletion node-{0} is found in fuel list".
-                    format(node_id))
-
+        cmd = "fuel node | awk '{{print $1}}' | grep -w '{0}'".format(node_id)
+        try:
+            wait(lambda: not self.ssh_manager.execute_on_remote(
+                admin_ip, cmd)['exit_code'] == 0, timeout=60 * 4)
+        except TimeoutError:
+            raise TimeoutError(
+                "After deletion node-{0} is found in fuel list".format(
+                    node_id))
         is_cobbler_node_exists = check_cobbler_node_exists(
             self.ssh_manager.admin_ip, node_id)
 
         assert_false(is_cobbler_node_exists,
                      "After deletion node-{0} is found in cobbler list".
                      format(node_id))
-
-        with self.env.d_env.get_admin_remote() as remote:
-            cluster_id = ''.join(remote.execute(
-                "fuel env | tail -n 1 | awk {'print $1'}")['stdout']).rstrip()
+        cmd = "fuel env | tail -n 1 | awk {'print $1'}"
+        cluster_id = ''.join(
+            self.ssh_manager.execute_on_remote(
+                admin_ip, cmd)['stdout']).rstrip()
 
         self.fuel_web.verify_network(cluster_id)
 
