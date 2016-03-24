@@ -232,9 +232,9 @@ def enable_feature_group(env, group):
 
     # NOTE(akostrikov) We use FUEL_SETTINGS_YAML as primary source or truth and
     # update nailgun configs via puppet from that value
-    ssh_manager.execute(
+    ssh_manager.check_call(
         ip=ssh_manager.admin_ip,
-        cmd='puppet apply /etc/puppet/modules/nailgun/examples/nailgun-only.pp'
+        cmd='puppet apply /etc/puppet/modules/fuel/examples/nailgun.pp'
     )
 
     def check_api_group_enabled():
