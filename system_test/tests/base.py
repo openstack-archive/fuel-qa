@@ -22,3 +22,4 @@ class ActionTest(base_test_case.TestBasic, ActionsFactory):
     def __init__(self, config_file=None):
         super(ActionTest, self).__init__()
         self.config_file = config_file
+        self.assigned_slaves = set()
