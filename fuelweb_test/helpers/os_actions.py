@@ -624,3 +624,7 @@ class OpenStackActions(common.Common):
             }
         }
         return self.neutron.create_router(router_info)['router']
+
+    def get_keystone_endpoints(self):
+        endpoints = self.keystone.endpoints.list()
+        return endpoints

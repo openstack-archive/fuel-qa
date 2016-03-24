@@ -393,7 +393,8 @@ class EnvironmentModel(object):
     def setup_environment(self, custom=settings.CUSTOM_ENV,
                           build_images=settings.BUILD_IMAGES,
                           iso_connect_as=settings.ADMIN_BOOT_DEVICE,
-                          security=settings.SECURITY_TEST):
+                          security=settings.SECURITY_TEST,
+                          force_ssl=settings.FORCE_HTTPS_MASTER_NODE):
         # Create environment and start the Fuel master node
         admin = self.d_env.nodes().admin
         self.d_env.start([admin])
@@ -514,6 +515,29 @@ class EnvironmentModel(object):
             )
             logger.debug('Offloading settings:\n{0}\n'.format(
                          ''.join(result['stdout'])))
+            if force_ssl:
+                self.enable_force_https(self.ssh_manager.admin_ip)
+
+    @logwrap
+    def enable_force_https(self, admin_node_ip):
+        cmd = """
+        echo -e '"SSL":\n  "force_https": "true"' >> /etc/fuel/astute.yaml
+        """
+        self.ssh_manager.execute_on_remote(admin_node_ip, cmd)
+        cmd = "find / -name \"nginx_services.pp\""
+        puppet_manifest = \
+            self.ssh_manager.execute_on_remote(
+                admin_node_ip, cmd)['stdout'][0].strip()
+        cmd = 'puppet apply {0}'.format(puppet_manifest)
+        self.ssh_manager.execute_on_remote(admin_node_ip, cmd)
+        cmd = """
+        systemctl status nginx.service |
+        awk 'match($0, /\s+Active:.*\((\w+)\)/, a) {print a[1]}'
+        """
+        wait(lambda: (
+             self.ssh_manager.execute_on_remote(
+                 admin_node_ip, cmd)['stdout'][0] != 'dead'), interval=10,
+             timeout=30)
 
     # pylint: disable=no-self-use
     @update_rpm_packages

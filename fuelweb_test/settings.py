@@ -56,6 +56,7 @@ ISO_LABEL = 'Mirantis_Fuel' if ISO_MIRANTIS_FEATURE_GROUP else 'OpenStack_Fuel'
 DNS = os.environ.get('DNS', '8.8.8.8')
 PUBLIC_TEST_IP = os.environ.get('PUBLIC_TEST_IP', '8.8.8.8')
 
+FORCE_HTTPS_MASTER_NODE = get_var_as_bool('FORCE_HTTPS_MASTER_NODE', False)
 DISABLE_SSL = get_var_as_bool('DISABLE_SSL', False)
 VERIFY_SSL = get_var_as_bool('VERIFY_SSL', False)
 SSL_CN = os.environ.get('SSL_CN', 'public.fuel.local')
