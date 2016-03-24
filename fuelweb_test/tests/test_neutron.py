@@ -72,7 +72,6 @@ class NeutronVlan(TestBasic):
 
         cluster = self.fuel_web.client.get_cluster(cluster_id)
         assert_equal(str(cluster['net_provider']), 'neutron')
-        # assert_equal(str(cluster['net_segment_type']), segment_type)
 
         self.fuel_web.verify_network(cluster_id)
 
@@ -207,7 +206,6 @@ class NeutronVlanHa(TestBasic):
         assert_equal(str(cluster['net_provider']), 'neutron')
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
-        # assert_equal(str(cluster['net_segment_type']), segment_type)
         self.fuel_web.check_fixed_network_cidr(
             cluster_id, os_conn)
 
