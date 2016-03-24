@@ -981,24 +981,24 @@ class ServicesReconfiguration(TestBasic):
         """Deploy two clusters with different configs
 
          Scenario:
-         1. Revert snapshot "ready_with_5_slaves"
-         2. Divided the IP ranges into two parts
-         3. Verify network of the first environment
-         4. Verify network of the second environment
-         5. Deploy environment with first ranges
-         6. Run OSTF on the first environment
-         7. Deploy environment with second ranges
-         8. Run OSTF on the second environment
-         9. Apply new CPU overcommit ratio for first environment
-         10. Verify deployment task is finished
-         11. Verify nova-scheduler services uptime
-         12. Verify configuration file on controller
-         13. Boot instances with flavor that occupy all CPU,
-             boot extra instance and catch the error
-         14. Apply old CPU overcommit ratio for each controller
-         15. Verify deployment task is finished
-         16. Verify nova-scheduler services uptime
-         17. Verify configuration file on each controller
+             1. Revert snapshot "ready_with_5_slaves"
+             2. Divided the IP ranges into two parts
+             3. Verify network of the first environment
+             4. Verify network of the second environment
+             5. Deploy environment with first ranges
+             6. Run OSTF on the first environment
+             7. Deploy environment with second ranges
+             8. Run OSTF on the second environment
+             9. Apply new CPU overcommit ratio for first environment
+             10. Verify deployment task is finished
+             11. Verify nova-scheduler services uptime
+             12. Verify configuration file on controller
+             13. Boot instances with flavor that occupy all CPU,
+                 boot extra instance and catch the error
+             14. Apply old CPU overcommit ratio for each controller
+             15. Verify deployment task is finished
+             16. Verify nova-scheduler services uptime
+             17. Verify configuration file on each controller
 
         Snapshot "two_clusters_reconfiguration"
 
