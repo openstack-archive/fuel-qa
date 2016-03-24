@@ -172,13 +172,13 @@ class FailoverGroup1(TestBasic):
         self.show_step(2)
         neutron_agents = [
             {'name': 'neutron-openvswitch-agent',
-             'resource': 'p_neutron-plugin-openvswitch-agent'},
+             'resource': 'neutron-openvswitch-agent'},
             {'name': 'neutron-l3-agent',
-             'resource': 'p_neutron-l3-agent'},
+             'resource': 'neutron-l3-agent'},
             {'name': 'neutron-dhcp-agent',
-             'resource': 'p_neutron-dhcp-agent'},
+             'resource': 'neutron-dhcp-agent'},
             {'name': 'neutron-metadata-agent',
-             'resource': 'p_neutron-metadata-agent'}
+             'resource': 'neutron-metadata-agent'}
         ]
 
         cluster_id = self.fuel_web.get_last_created_cluster()

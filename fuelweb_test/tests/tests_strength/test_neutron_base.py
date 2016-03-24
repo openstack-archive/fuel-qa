@@ -234,7 +234,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
             node_with_l3 = os_conn.get_l3_agent_hosts(router_id)[0]
 
             #   Ban this l3 agent using pacemaker
-            remote.execute("pcs resource ban p_neutron-l3-agent {0}".format(
+            remote.execute("pcs resource ban neutron-l3-agent {0}".format(
                 node_with_l3))
 
         err_msg = "l3 agent wasn't banned, it is still {0}"
@@ -255,7 +255,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
 
         with self.env.d_env.get_ssh_to_remote(_ip) as remote:
             #   Unban banned l3 agent
-            remote.execute("pcs resource clear p_neutron-l3-agent {0}".
+            remote.execute("pcs resource clear neutron-l3-agent {0}".
                            format(node_with_l3))
 
     def neutron_l3_migration_after_reset(self):
