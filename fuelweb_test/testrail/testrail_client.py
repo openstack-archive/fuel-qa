@@ -181,8 +181,8 @@ class TestRailProject(object):
         plans_uri = 'get_plans/{project_id}'.format(
             project_id=self.project['id'])
         if milestone_ids:
-            plans_uri += '&milestone_id' + ','.join([str(m)
-                                                     for m in milestone_ids])
+            plans_uri += '&milestone_id=' + ','.join([str(m)
+                                                      for m in milestone_ids])
         if limit:
             plans_uri += '&limit={0}'.format(limit)
         return self.client.send_get(plans_uri)
