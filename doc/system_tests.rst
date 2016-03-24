@@ -83,17 +83,17 @@ Deploy cluster and check RadosGW
    :members:
 
 Delete cluster after deploy
---------------------------------
+---------------------------
 .. automodule:: system_test.tests.test_delete_after_deploy
    :members:
 
 Redeploy cluster after stop
---------------------------------
+---------------------------
 .. automodule:: system_test.tests.test_redeploy_after_stop
    :members:
 
 Redeploy cluster after reset
---------------------------------
+----------------------------
 .. automodule:: system_test.tests.test_redeploy_after_reset
    :members:
 
@@ -107,7 +107,7 @@ Strength tests
 
 Destroy controllers
 -------------------
-.. automodule:: system_test.tests.strength.destroy_controllers
+.. automodule:: system_test.tests.strength.test_destroy_controllers
    :members:
 
 Fill root and check pacemaker
@@ -117,11 +117,6 @@ Fill root and check pacemaker
 
 Plugin tests
 ============
-
-Plugins Base
-------------
-.. automodule:: system_test.tests.plugins_actions
-    :members:
 
 Example plugin Base
 -------------------

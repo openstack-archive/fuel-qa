@@ -294,7 +294,7 @@ Test Ubuntu bootstrap
 
 Test Ubuntu Cloud Archive
 -------------------------
-.. automodule:: fuelweb_test.tests.test_uca
+.. automodule:: fuelweb_test.tests.tests_uca.test_uca
    :members:
 
 Test Vcenter
@@ -342,22 +342,22 @@ Test Fuel agent
 
 Test Fuel cli
 -------------
-.. automodule:: gates_tests.test_review_in_fuel_client
+.. automodule:: gates_tests.tests.test_review_in_fuel_client
   :members:
 
 Test Fuel astute
 ----------------
-.. automodule:: gates_tests.test_review_in_astute
+.. automodule:: gates_tests.tests.test_review_in_astute
   :members:
 
 Test Fuel nailgun agent
 -----------------------
-.. automodule:: gates_tests.test_nailgun_agent
+.. automodule:: gates_tests.tests.test_nailgun_agent
   :members:
 
 Test Fuel web
 -------------
-.. automodule:: gates_tests.test_review_fuel_web
+.. automodule:: gates_tests.tests.test_review_fuel_web
   :members:
 
 Fuel mirror verification
@@ -477,11 +477,6 @@ Example tests
 .. automodule:: fuelweb_test.tests.plugins.plugin_example.test_fuel_plugin_example
    :members:
 
-Example post deploy plugin install
-----------------------------------
-.. automodule:: fuelweb_test.tests.plugins.plugin_example.test_fuel_plugin_example_postdeploy
-   :members:
-
 Example tests for plugin installation after cluster create
 ----------------------------------------------------------
 .. automodule:: fuelweb_test.tests.plugins.plugin_example.test_fuel_plugin_example_postdeploy
@@ -541,7 +536,7 @@ Security tests
 
 Nessus scan tests
 -----------------
-.. automodule:: fuelweb_test.tests.tests_security_test_run_nessus
+.. automodule:: fuelweb_test.tests.tests_security.test_run_nessus
    :members:
 
 
@@ -676,10 +671,6 @@ Deployment with platform components
 -----------------------------------
 .. automodule:: fuelweb_test.tests.tests_separate_services.test_deploy_platform_components
    :members:
-
-Template based tests
---------------------
-.. automodule:: fuelweb_test.actions_tests
 
 Test for ssl components
 -----------------------
