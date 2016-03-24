@@ -194,7 +194,6 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions):
     base_group = None
     actions_order = None
     cluster_id = None
-    assigned_slaves = set()
     scale_step = 0
 
     def _add_node(self, nodes_list):
