@@ -257,6 +257,9 @@ class AdminActions(BaseActions):
                         "bootstrap image in Fuel settings")
         self.save_fuel_settings(fuel_settings)
 
+        cmd = 'sed -i "49,$d" /etc/fuel/astute.yaml'
+        self.ssh_manager.execute(ip=self.admin_ip, cmd=cmd)
+
     @logwrap
     def upload_packages(self, local_packages_dir, centos_repo_path,
                         ubuntu_repo_path):
