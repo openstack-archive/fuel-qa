@@ -38,9 +38,11 @@ def replace_ubuntu_repos(repos_attr, upstream_host):
     if help_data.EXTRA_DEB_REPOS:
         repos = add_ubuntu_extra_mirrors(repos=repos)
     if help_data.PATCHING_DISABLE_UPDATES:
-        for repo in repos:
-            if repo['name'] in ('mos-updates', 'mos-security'):
-                repos.remove(repo)
+        repos[:] = [repo for repo in repos if repo['name']
+                    in ('mos-updates', 'mos-security', 'mos-holdback')]
+        # for repo in repos:
+        #     if repo['name'] in ('mos-updates', 'mos-security'):
+        #         repos.remove(repo)
 
     return repos
 
