@@ -170,19 +170,26 @@ class SSHManager(object):
         result['stderr_len'] = len(result['stderr'])
 
         if result['exit_code'] not in assert_ec_equal:
-            error_details = {
-                'command': cmd,
-                'host': ip,
-                'stdout': result['stdout'],
-                'stderr': result['stderr'],
-                'exit_code': result['exit_code']}
+            details_log = (
+                "Host:      {host}\n"
+                "Command:   '{cmd}'\n"
+                "Exit code: {code}\n"
+                "STDOUT:\n{stdout}\n"
+                "STDERR:\n{stderr}".format(
+                    host=ip, cmd=cmd, code=result['exit_code'],
+                    stdout=result['stdout_str'], stderr=result['stderr_str']
+                ))
 
-            error_msg = (err_msg or "Unexpected exit_code returned:"
-                                    " actual {0}, expected {1}."
-                         .format(error_details['exit_code'],
-                                 ' '.join(map(str, assert_ec_equal))))
-            log_msg = ("{0}  Command: '{1}'  "
-                       "Details: {2}".format(error_msg, cmd, error_details))
+            error_msg = (
+                err_msg or
+                "Unexpected exit_code returned: actual {0}, expected {1}."
+                "".format(
+                    result['exit_code'],
+                    ' '.join(map(str, assert_ec_equal))))
+            log_msg = (
+                "{0}  Command: '{1}'  "
+                "Details:\n{2}".format(
+                    error_msg, cmd, details_log))
             logger.error(log_msg)
             if raise_on_assert:
                 raise UnexpectedExitCode(cmd,
