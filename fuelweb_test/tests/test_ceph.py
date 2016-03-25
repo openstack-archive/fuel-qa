@@ -701,8 +701,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
         logger.info("Terminate migrated server")
         os.delete_instance(new_srv)
-        assert_true(os.verify_srv_deleted(new_srv),
-                    "Verify server was deleted")
+        os.verify_srv_deleted(new_srv)
 
         self.show_step(11)
         # Check if the dhcp lease for instance still remains
@@ -788,8 +787,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         self.show_step(18)
         logger.info("Terminate migrated server")
         os.delete_instance(new_srv)
-        assert_true(os.verify_srv_deleted(new_srv),
-                    "Verify server was deleted")
+        os.verify_srv_deleted(new_srv)
 
         self.env.make_snapshot(
             "vm_backed_with_ceph_live_migration")

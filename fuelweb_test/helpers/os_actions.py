@@ -13,7 +13,6 @@
 #    under the License.
 
 import random
-import time
 
 from devops.error import TimeoutError
 from devops.helpers import helpers
@@ -163,17 +162,24 @@ class OpenStackActions(common.Common):
                 "Instance do not reach active state, current state"
                 " is {0}".format(self.get_instance_detail(srv).status))
 
-    def verify_srv_deleted(self, srv):
-        try:
-            if self.get_instance_detail(srv.id):
-                logger.info("Try getting server another time.")
-                time.sleep(30)
-                if self.get_instance_detail(srv.id) in \
-                   self.nova.servers.list():
-                    return False
-        except Exception:
+    def is_srv_deleted(self, srv):
+        if srv in self.nova.servers.list():
+            logger.info("Server found in server list")
+            return False
+        else:
             logger.info("Server was successfully deleted")
             return True
+
+    def verify_srv_deleted(self, srv, timeout=150):
+        try:
+            server = self.get_instance_detail(srv.id)
+        except Exception:
+            logger.info("Server was successfully deleted")
+            return
+        helpers.wait(lambda: self.is_srv_deleted(server),
+                     interval=2, timeout=timeout,
+                     timeout_msg="Server wasn't deleted in "
+                                 "{0} seconds".format(timeout))
 
     def assign_floating_ip(self, srv, use_neutron=False):
         if use_neutron:
