@@ -17,7 +17,10 @@ import re
 from fuelweb_test import logger
 import fuelweb_test.settings as help_data
 
+from fuelweb_test import logwrap
 
+
+@logwrap
 def replace_ubuntu_repos(repos_attr, upstream_host):
     # Walk thru repos_attr and replace/add extra Ubuntu mirrors
     if help_data.MIRROR_UBUNTU:
@@ -26,6 +29,8 @@ def replace_ubuntu_repos(repos_attr, upstream_host):
         repos = add_ubuntu_mirrors()
         # Keep other (not upstream) repos, skip previously added ones
         for repo_value in repos_attr['value']:
+            logger.info("repos_attr: '{0} {1}'"
+                        .format(repo_value['name'], repo_value['uri']))
             if upstream_host not in repo_value['uri']:
                 if check_new_ubuntu_repo(repos, repo_value):
                     repos.append(repo_value)
@@ -39,7 +44,11 @@ def replace_ubuntu_repos(repos_attr, upstream_host):
         repos = add_ubuntu_extra_mirrors(repos=repos)
     if help_data.PATCHING_DISABLE_UPDATES:
         for repo in repos:
-            if repo['name'] in ('mos-updates', 'mos-security'):
+            logger.info("Repo: '{0} {1}'"
+                        .format(repo['name'], repo['uri']))
+            if repo['name'] in ('mos-updates', 'mos-security', 'mos-holdback'):
+                logger.info("Removing MOS mirror: '{0} {1}'"
+                            .format(repo['name'], repo['uri']))
                 repos.remove(repo)
 
     return repos
@@ -67,7 +76,7 @@ def replace_centos_repos(repos_attr, upstream_host):
         repos = add_centos_extra_mirrors(repos=repos)
     if help_data.PATCHING_DISABLE_UPDATES:
         for repo in repos:
-            if repo['name'] in ('mos-updates', 'mos-security'):
+            if repo['name'] in ('mos-updates', 'mos-security', 'mos-holdback'):
                 repos.remove(repo)
 
     return repos
@@ -97,6 +106,7 @@ def report_centos_repos(repos):
                     rep['priority']))
 
 
+@logwrap
 def add_ubuntu_mirrors(repos=None, mirrors=help_data.MIRROR_UBUNTU,
                        priority=help_data.MIRROR_UBUNTU_PRIORITY):
     if not repos:
