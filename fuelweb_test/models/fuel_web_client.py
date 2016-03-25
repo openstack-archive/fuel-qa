@@ -748,25 +748,7 @@ class FuelWebClient(object):
         attributes = self.client.get_cluster_attributes(cluster_id)
         return attributes['editable']['repo_setup']['repos']
 
-    @download_packages_json
-    @download_astute_yaml
-    @duration
-    @check_repos_management
-    @custom_repo
-    def deploy_cluster_wait(self, cluster_id, is_feature=False,
-                            timeout=help_data.DEPLOYMENT_TIMEOUT, interval=30,
-                            check_services=True):
-        if not is_feature:
-            logger.info('Deploy cluster %s', cluster_id)
-            task = self.deploy_cluster(cluster_id)
-            self.assert_task_success(task, interval=interval, timeout=timeout)
-        else:
-            logger.info('Provision nodes of a cluster %s', cluster_id)
-            task = self.client.provision_nodes(cluster_id)
-            self.assert_task_success(task, timeout=timeout, interval=interval)
-            logger.info('Deploy nodes of a cluster %s', cluster_id)
-            task = self.client.deploy_nodes(cluster_id)
-            self.assert_task_success(task, timeout=timeout, interval=interval)
+    def check_deploy_state(self, cluster_id, check_services=True):
         if check_services:
             self.assert_ha_services_ready(cluster_id)
             self.assert_os_services_ready(cluster_id)
@@ -800,6 +782,32 @@ class FuelWebClient(object):
 
                 logger.info('Node status: {}'.format(pretty_log(node_status,
                                                                 indent=1)))
+
+    @download_packages_json
+    @download_astute_yaml
+    @duration
+    @check_repos_management
+    @custom_repo
+    def deploy_cluster_wait(self, cluster_id, is_feature=False,
+                            timeout=help_data.DEPLOYMENT_TIMEOUT, interval=30,
+                            check_services=True):
+        if not is_feature and help_data.DEPLOYMENT_RETRIES == 1:
+            logger.info('Deploy cluster %s', cluster_id)
+            task = self.deploy_cluster(cluster_id)
+            self.assert_task_success(task, interval=interval, timeout=timeout)
+            self.check_deploy_state(cluster_id, check_services)
+            return
+
+        logger.info('Provision nodes of a cluster %s', cluster_id)
+        task = self.client.provision_nodes(cluster_id)
+        self.assert_task_success(task, timeout=timeout, interval=interval)
+
+        for retry_number in range(help_data.DEPLOYMENT_RETRIES):
+            logger.info('Deploy nodes of a cluster %s, run: %s',
+                        cluster_id, str(retry_number + 1))
+            task = self.client.deploy_nodes(cluster_id)
+            self.assert_task_success(task, timeout=timeout, interval=interval)
+            self.check_deploy_state(cluster_id, check_services)
 
     def deploy_cluster_wait_progress(self, cluster_id, progress,
                                      return_task=None):
