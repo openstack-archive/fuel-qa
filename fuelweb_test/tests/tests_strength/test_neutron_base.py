@@ -189,7 +189,13 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         router_id = os_conn.get_routers_ids()[0]
         devops_node = self.get_node_with_dhcp(os_conn, net_id)
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
-        node_with_l3 = os_conn.get_l3_agent_hosts(router_id)[0]
+        nodes_with_l3 = os_conn.get_l3_agent_hosts(router_id)
+        if not nodes_with_l3:
+            err_msg = ("Node with l3 agent from router:{r_id} after reset "
+                       "old node with l3 agent not found.")
+            raise NotFound(err_msg.format(router_id))
+        node_with_l3 = nodes_with_l3[0]
+
         instance_keypair = os_conn.create_key(key_name='instancekey')
 
         #   create instance for check neutron migration processes
@@ -297,9 +303,9 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
 
         #   Find node with hosting l3 agent for router
         nodes_with_l3 = os_conn.get_l3_agent_hosts(router_id)
-        err_msg = ("Node with l3 agent from router:{r_id} after reset "
-                   "old node with l3 agent not found.")
         if not nodes_with_l3:
+            err_msg = ("Node with l3 agent from router:{r_id} after reset "
+                       "old node with l3 agent not found.")
             raise NotFound(err_msg.format(router_id))
         node_with_l3 = nodes_with_l3[0]
         new_devops = self.get_node_with_l3(node_with_l3)
