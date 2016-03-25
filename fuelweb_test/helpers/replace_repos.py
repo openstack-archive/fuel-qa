@@ -39,7 +39,11 @@ def replace_ubuntu_repos(repos_attr, upstream_host):
         repos = add_ubuntu_extra_mirrors(repos=repos)
     if help_data.PATCHING_DISABLE_UPDATES:
         for repo in repos:
-            if repo['name'] in ('mos-updates', 'mos-security'):
+            logger.info("Repo: '{0} {1}'"
+                        .format(repo['name'], repo['uri']))
+            if repo['name'] in ('mos-updates', 'mos-security', 'mos-holdback'):
+                logger.info("Removing MOS mirror: '{0} {1}'"
+                            .format(repo['name'], repo['uri']))
                 repos.remove(repo)
 
     return repos
@@ -67,7 +71,7 @@ def replace_centos_repos(repos_attr, upstream_host):
         repos = add_centos_extra_mirrors(repos=repos)
     if help_data.PATCHING_DISABLE_UPDATES:
         for repo in repos:
-            if repo['name'] in ('mos-updates', 'mos-security'):
+            if repo['name'] in ('mos-updates', 'mos-security', 'mos-holdback'):
                 repos.remove(repo)
 
     return repos
