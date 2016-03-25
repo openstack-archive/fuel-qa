@@ -350,16 +350,17 @@ class TestMultipleClusterNets(TestBasic):
         """Add new nodegroup to operational environment
 
         Scenario:
-        1. Revert snapshot with operational cluster
-        2. Create new nodegroup for the environment and configure its networks
-        3. Bootstrap slave node from custom-2 nodegroup
-        4. Add node from new nodegroup to the environment with compute role
-        5. Run network verification
-        6. Deploy changes
-        7. Run network verification
-        8. Run OSTF
-        9. Check that nodes from 'default' nodegroup can reach nodes
-           from new nodegroup via management and storage networks
+            1. Revert snapshot with operational cluster
+            2. Create new nodegroup for the environment and configure
+               it's networks
+            3. Bootstrap slave node from custom-2 nodegroup
+            4. Add node from new nodegroup to the environment with compute role
+            5. Run network verification
+            6. Deploy changes
+            7. Run network verification
+            8. Run OSTF
+            9. Check that nodes from 'default' nodegroup can reach nodes
+               from new nodegroup via management and storage networks
 
         Duration 50m
         Snapshot add_custom_nodegroup
