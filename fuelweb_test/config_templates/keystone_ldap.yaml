@@ -9,7 +9,7 @@ keystone_config:
   ldap/suffix:
     value: DC=example,DC=com
   ldap/use_dumb_member:
-    value: True
+    value: "True"
   ldap/dumb_member:
     value: CN=ldap,OU=Users,DC=example,DC=com
   ldap/user_tree_dn:
@@ -29,17 +29,17 @@ keystone_config:
   ldap/user_enabled_attribute:
     value: userAccountControl
   ldap/user_enabled_mask:
-    value: 2
+    value: "2"
   ldap/user_enabled_default:
-    value: 512
+    value: "512"
   ldap/user_attribute_ignore:
     value: password,tenant_id,tenants
   ldap/user_allow_create:
-    value: False
+    value: "False"
   ldap/user_allow_update:
-    value: False
+    value: "False"
   ldap/user_allow_delete:
-    value: False
+    value: "False"
   ldap/role_tree_dn:
     value: OU=Roles,DC=example,DC=com
   ldap/role_filter:
@@ -55,10 +55,10 @@ keystone_config:
   ldap/role_attribute_ignore:
     ensure: absent
   ldap/role_allow_create:
-    value: True
+    value: "True"
   ldap/role_allow_create:
-    value: True
+    value: "True"
   ldap/role_allow_create:
-    value: True
+    value: "True"
   identity/driver:
     value: keystone.identity.backends.ldap.Identity
