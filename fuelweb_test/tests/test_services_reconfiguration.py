@@ -513,8 +513,8 @@ class ServicesReconfiguration(TestBasic):
             2. Upload a new openstack configuration
             3. Try to apply a new keystone configuration
             4. Wait for failing of deployment task
-            5. Check that reason of failing is impossibility of
-               the connection to LDAP server
+            5. Verify configuration file on each controller
+            6. Check response code of request to keystone
 
         Snapshot: reconfigure_keystone_to_use_ldap
 
@@ -528,6 +528,7 @@ class ServicesReconfiguration(TestBasic):
 
         self.show_step(2)
         config = utils.get_config_template('keystone_ldap')
+        structured_config = get_structured_config_dict(config)
         self.fuel_web.client.upload_configuration(
             config,
             cluster_id)
@@ -546,17 +547,15 @@ class ServicesReconfiguration(TestBasic):
             raise Exception("New configuration was not applied")
 
         self.show_step(5)
-        flag = False
-        for cntrllr in controllers:
-            with self.env.d_env.get_ssh_to_remote(cntrllr['ip']) as remote:
-                log_path = '/var/log/puppet.log'
-                cmd = "grep \"Can't contact LDAP server\" {0}".format(log_path)
-                result = remote.execute(cmd)
-                if result['exit_code'] == 0:
-                    flag = True
-                    break
+        self.check_config_on_remote(controllers, structured_config)
 
-        asserts.assert_true(flag, 'A configuration was not applied')
+        self.show_step(6)
+        endpoint = self.fuel_web.get_public_vip(cluster_id)
+        err_msg = 'New configuration was not applied'
+        expected_code = 500
+        self.check_response_code(expected_code, err_msg,
+                                 os_actions.OpenStackActions,
+                                 endpoint)
 
         self.env.make_snapshot("reconfigure_keystone_to_use_ldap")
 
