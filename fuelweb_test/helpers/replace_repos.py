@@ -38,9 +38,8 @@ def replace_ubuntu_repos(repos_attr, upstream_host):
     if help_data.EXTRA_DEB_REPOS:
         repos = add_ubuntu_extra_mirrors(repos=repos)
     if help_data.PATCHING_DISABLE_UPDATES:
-        for repo in repos:
-            if repo['name'] in ('mos-updates', 'mos-security'):
-                repos.remove(repo)
+        repos[:] = [repo for repo in repos if repo['name']
+                    not in ('mos-updates', 'mos-security')]
 
     return repos
 
@@ -66,9 +65,8 @@ def replace_centos_repos(repos_attr, upstream_host):
     if help_data.EXTRA_RPM_REPOS:
         repos = add_centos_extra_mirrors(repos=repos)
     if help_data.PATCHING_DISABLE_UPDATES:
-        for repo in repos:
-            if repo['name'] in ('mos-updates', 'mos-security'):
-                repos.remove(repo)
+        repos[:] = [repo for repo in repos if repo['name']
+                    not in ('mos-updates', 'mos-security')]
 
     return repos
 
@@ -134,10 +132,10 @@ def add_ubuntu_extra_mirrors(repos=None, prefix='extra',
 
         if repo_value and check_new_ubuntu_repo(repos, repo_value):
             # Remove repos that use the same name
-            for repo in repos:
-                if repo["name"] == repo_value["name"]:
-                    repos.remove(repo)
+            repos[:] = [repo for repo in repos
+                        if repo["name"] != repo_value["name"]]
             repos.append(repo_value)
+
     return repos
 
 
@@ -151,10 +149,10 @@ def add_centos_extra_mirrors(repos=None,
         repo_value = parse_centos_repo(repo_str, priority)
         if repo_value and check_new_centos_repo(repos, repo_value):
             # Remove repos that use the same name
-            for repo in repos:
-                if repo["name"] == repo_value["name"]:
-                    repos.remove(repo)
+            repos[:] = [repo for repo in repos
+                        if repo["name"] != repo_value["name"]]
             repos.append(repo_value)
+
     return repos
 
 
