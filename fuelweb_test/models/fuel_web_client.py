@@ -1478,10 +1478,6 @@ class FuelWebClient(object):
             [{'id': node_id, 'interfaces': interfaces}])
 
     def change_default_network_settings(self):
-        api_version = self.client.get_api_version()
-        if int(api_version["release"][0]) < 6:
-            return
-
         def fetch_networks(networks):
             """Parse response from api/releases/1/networks and return dict with
             networks' settings - need for avoiding hardcode"""
