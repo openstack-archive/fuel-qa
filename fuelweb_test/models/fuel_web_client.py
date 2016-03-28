@@ -14,6 +14,7 @@
 
 from __future__ import division
 
+import logging
 import re
 import time
 import traceback
@@ -165,7 +166,7 @@ class FuelWebClient(object):
         if self.get_cluster_mode(cluster_id) == DEPLOYMENT_MODE_HA:
             logger.info('Waiting {0} sec. for passed OSTF HA tests.'
                         .format(timeout))
-            with QuietLogger():
+            with QuietLogger(logging.ERROR):
                 _wait(lambda: self.run_ostf(cluster_id,
                                             test_sets=['ha'],
                                             should_fail=should_fail),
