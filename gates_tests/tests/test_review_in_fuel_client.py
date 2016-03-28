@@ -189,7 +189,7 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
 
         self.show_step(10)
         with self.env.d_env.get_admin_remote() as remote:
-            res = remote.execute('fuel --env {0} env delete'
+            res = remote.execute('fuel --env {0} env delete --force'
                                  .format(cluster_id))
         asserts.assert_true(
             res['exit_code'] == 0)
