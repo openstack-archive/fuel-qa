@@ -676,10 +676,10 @@ class NodeDiskSizes(TestBasic):
             for disk in node['meta']['disks']:
                 assert_equal(disk['size'], disk_size, 'Disk size')
 
-        # pylint: disable=:round-builtin
+        # pylint: disable=round-builtin
         hdd_size = "{} TB HDD".format(
             round(((disk_size * 3 / (10 ** 9)) / 1000), 3))
-        # pylint: enable=:round-builtin
+        # pylint: enable=round-builtin
         notifications = self.fuel_web.client.get_notifications()
         for node in nailgun_nodes:
             # assert /api/notifications
