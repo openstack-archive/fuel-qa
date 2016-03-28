@@ -335,7 +335,7 @@ class CommandLineTest(test_cli_base.CommandLine):
 
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd='fuel --env {0} env delete'.format(cluster_id)
+            cmd='fuel --env {0} env delete --force'.format(cluster_id)
         )
 
         try:
