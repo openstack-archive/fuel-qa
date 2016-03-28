@@ -65,6 +65,8 @@ def get_structured_config_dict(config):
             helper(key, '/etc/neutron/api-paste.ini')
         if key == 'nova_config':
             helper(key, '/etc/nova/nova.conf')
+        if key == 'keystone_config':
+            helper(key, '/etc/keystone/keystone.conf')
     return structured_conf
 
 
@@ -515,21 +517,23 @@ class ServicesReconfiguration(TestBasic):
             2. Upload a new openstack configuration
             3. Try to apply a new keystone configuration
             4. Wait for failing of deployment task
-            5. Check that reason of failing is impossibility of
-               the connection to LDAP server
+            5. Verify configuration file on primary controller
 
         Snapshot: reconfigure_keystone_to_use_ldap
 
         """
         self.show_step(1, initialize=True)
         self.env.revert_snapshot("basic_env_for_reconfiguration")
-
         cluster_id = self.fuel_web.get_last_created_cluster()
-        controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            cluster_id, ['controller'])
+        devops_pr_controller = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+
+        pr_controller = self.fuel_web.get_nailgun_node_by_devops_node(
+            devops_pr_controller)
 
         self.show_step(2)
         config = utils.get_config_template('keystone_ldap')
+        structured_config = get_structured_config_dict(config)
         self.fuel_web.client.upload_configuration(
             config,
             cluster_id)
@@ -548,17 +552,8 @@ class ServicesReconfiguration(TestBasic):
             raise Exception("New configuration was not applied")
 
         self.show_step(5)
-        flag = False
-        for cntrllr in controllers:
-            with self.env.d_env.get_ssh_to_remote(cntrllr['ip']) as remote:
-                log_path = '/var/log/puppet.log'
-                cmd = "grep \"Can't contact LDAP server\" {0}".format(log_path)
-                result = remote.execute(cmd)
-                if result['exit_code'] == 0:
-                    flag = True
-                    break
-
-        asserts.assert_true(flag, 'A configuration was not applied')
+        self.check_config_on_remote([pr_controller], structured_config)
+        logger.info("New configuration was applied")
 
         self.env.make_snapshot("reconfigure_keystone_to_use_ldap")
 
