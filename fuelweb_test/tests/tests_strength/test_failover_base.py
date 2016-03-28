@@ -39,7 +39,6 @@ from fuelweb_test.helpers.utils import get_file_size
 from fuelweb_test.helpers.utils import RunLimit
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.helpers.pacemaker import get_pacemaker_resource_name
-from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import DNS
 from fuelweb_test.settings import DNS_SUFFIX
@@ -1281,8 +1280,10 @@ class TestHaFailoverBase(TestBasic):
                   '--set-parameter max_rabbitmqctl_timeouts ' \
                   '--parameter-value {}'.format(3 + n)
 
-            with self.fuel_web.get_ssh_for_node(rabbit_master.name) as remote:
-                run_on_remote(remote, cmd)
+            self.ssh_manager.execute_on_remote(
+                self.fuel_web.get_node_ip_by_devops_name(rabbit_master.name),
+                cmd
+            )
             logger.info('Command {} was executed on controller'.format(cmd))
 
             logger.info('Check nodes left RabbitMQ cluster')
@@ -1291,13 +1292,15 @@ class TestHaFailoverBase(TestBasic):
 
             logger.info('Check parameter was changed')
             for node in rabbit_slaves:
-                with self.fuel_web.get_ssh_for_node(node.name) as remote:
-                    cmd = 'crm_resource --resource p_rabbitmq-server' \
-                          ' --get-parameter  max_rabbitmqctl_timeouts'
-                    with RunLimit(seconds=30,
-                                  error_message=error.format(cmd)):
-                        out = int(run_on_remote(remote, cmd=cmd)[0])
-                    assert_equal(out, 3 + n, 'Parameter was not changed')
+                node_ip = self.fuel_web.get_node_ip_by_devops_name(node.name)
+                cmd = 'crm_resource --resource p_rabbitmq-server' \
+                      ' --get-parameter  max_rabbitmqctl_timeouts'
+                with RunLimit(seconds=30,
+                              error_message=error.format(cmd)):
+                    out = int(
+                        self.ssh_manager.execute_on_remote(
+                            node_ip, cmd=cmd)['stdout'][0])
+                assert_equal(out, 3 + n, 'Parameter was not changed')
 
             logger.info('Wait and check nodes back to the RabbitMQ cluster')
             wait(lambda: count_run_rabbit(rabbit_master, all_up=True),
@@ -1312,10 +1315,10 @@ class TestHaFailoverBase(TestBasic):
                 # pylint: enable=undefined-loop-variable
 
             for node in d_ctrls:
-                with self.fuel_web.get_ssh_for_node(node.name) as remote:
-                    cmd = 'rabbitmqctl list_queues'
-                    with RunLimit(seconds=30, error_message=error.format(cmd)):
-                        run_on_remote(remote, cmd)
+                node_ip = self.fuel_web.get_node_ip_by_devops_name(node.name)
+                cmd = 'rabbitmqctl list_queues'
+                with RunLimit(seconds=30, error_message=error.format(cmd)):
+                    self.ssh_manager.execute_on_remote(node_ip, cmd)
 
             self.env.fuel_web.run_ostf(cluster_id, ['ha', 'smoke', 'sanity'])
 
