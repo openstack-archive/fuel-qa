@@ -367,19 +367,37 @@ class FuelWebClient(object):
 
     @logwrap
     def get_rabbit_running_nodes(self, ctrl_node):
+        """
+
+        :param ctrl_node: str
+        :return: list
+        """
         ip = self.get_node_ip_by_devops_name(ctrl_node)
         cmd = 'rabbitmqctl cluster_status'
-        rabbit_status = ''.join(
-            self.ssh_manager.execute(ip, cmd)['stdout']
-        ).strip()
+        # If any rabbitmq nodes failed, we have return(70) from rabbitmqctl
+        # Acceptable list:
+        # 0	 | EX_OK          | Self-explanatory
+        # 69 | EX_UNAVAILABLE | Failed to connect to node
+        # 70 | EX_SOFTWARE    | Any other error discovered when running command
+        #    |                | against live node
+        # 75 | EX_TEMPFAIL    | Temporary failure (e.g. something timed out)
+        rabbit_status = self.ssh_manager.execute_on_remote(
+            ip, cmd, raise_on_assert=False, assert_ec_equal=[0, 69, 70, 75]
+        )['stdout_str']
         rabbit_status = re.sub(r',\n\s*', ',', rabbit_status)
-        rabbit_nodes = re.search(
+        found_nodes = re.search(
             "\{running_nodes,\[([^\]]*)\]\}",
-            rabbit_status).group(1).replace("'", "").split(',')
+            rabbit_status)
+        assert_is_not_none(
+            found_nodes,
+            'No running rabbitmq nodes found on {0}. Status:\n'
+            '{1}'.format(ctrl_node, rabbit_status))
+        rabbit_nodes = found_nodes.group(1).replace("'", "").split(',')
         logger.debug('rabbit nodes are {}'.format(rabbit_nodes))
         nodes = [node.replace('rabbit@', "") for node in rabbit_nodes]
-        hostname_prefix = ''.join(self.ssh_manager.execute(
-            ip, 'hiera node_name_prefix_for_messaging')['stdout']).strip()
+        hostname_prefix = self.ssh_manager.execute_on_remote(
+            ip, 'hiera node_name_prefix_for_messaging', raise_on_assert=False
+        )['stdout_str']
         if hostname_prefix not in ('', 'nil'):
             nodes = [n.replace(hostname_prefix, "") for n in nodes]
         return nodes
