@@ -75,8 +75,13 @@ logwrap = debug(logger)
 class QuietLogger(object):
     """Reduce logging level while context is executed."""
 
+    def __init__(self, upper_log_level=logging.WARNING):
+        self.log_level = upper_log_level
+        self.storage = None
+
     def __enter__(self):
-        console.setLevel(logging.ERROR)
+        self.storage = console.level
+        console.setLevel(self.log_level + 1)
 
     def __exit__(self, exp_type, exp_value, traceback):
-        console.setLevel(logging.INFO)
+        console.setLevel(self.storage)
