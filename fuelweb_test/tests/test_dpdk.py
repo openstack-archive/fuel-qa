@@ -12,17 +12,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from copy import deepcopy
 import random
 
 from devops.helpers import helpers as devops_helpers
 from proboscis.asserts import assert_true
+from proboscis import before_class
 from proboscis import test
-from proboscis import SkipTest
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
+from fuelweb_test.tests.test_bonding_base import BondingTestDPDK
 from fuelweb_test import logger
 from fuelweb_test import settings
 
@@ -33,7 +35,7 @@ class SupportDPDK(TestBasic):
 
     def check_dpdk_instance_connectivity(self, os_conn, cluster_id,
                                          mem_page_size='2048'):
-        """Boot VM and ping 8.8.8.8
+        """Boot VM with HugePages and ping it via floating IP
 
         :param os_conn: an object of connection to openstack services
         :param cluster_id: an integer number of cluster id
@@ -59,20 +61,9 @@ class SupportDPDK(TestBasic):
                                                      flavor=flavor_id)
         os_conn.verify_instance_status(server, 'ACTIVE')
 
-        ip = os_conn.get_nova_instance_ip(server, net_name=net_name,
-                                          addrtype='fixed')
-        logger.info("Instance {0} has IP {1}".format(server.id, ip))
-
         float_ip = os_conn.assign_floating_ip(server)
         logger.info("Floating address {0} associated with instance {1}"
                     .format(float_ip.ip, server.id))
-
-        logger.info("Wait for ping from instance {}".format(server.id))
-        devops_helpers.wait(
-            lambda: devops_helpers.tcp_ping(ip.ip, 22),
-            timeout=300,
-            timeout_msg=("Instance {0} is unreachable for {1} seconds".
-                         format(server.id, 300)))
 
         logger.info("Wait for ping from instance {} "
                     "by floating ip".format(server.id))
@@ -98,15 +89,22 @@ class SupportDPDK(TestBasic):
     def check_dpdk(self, nailgun_node, net='private'):
         compute_net = self.fuel_web.client.get_node_interfaces(
             nailgun_node['id'])
+        dpdk_available = False
+        dpdk_enabled = False
         for interface in compute_net:
-            for ids in interface['assigned_networks']:
-                if ids['name'] == net:
-                    return {
-                        'available': interface['interface_properties']['dpdk'][
-                            'available'],
-                        'enabled': interface['interface_properties']['dpdk'][
-                            'enabled']
-                    }
+            if net not in [n['name'] for n in interface['assigned_networks']]:
+                continue
+            if 'dpdk' not in interface['interface_properties']:
+                continue
+
+            dpdk_available = interface['interface_properties']['dpdk'][
+                'available']
+            if 'enabled' in interface['interface_properties']['dpdk']:
+                dpdk_enabled = interface['interface_properties']['dpdk'][
+                    'enabled']
+            break
+
+        return {'available': dpdk_available, 'enabled': dpdk_enabled }
 
     def enable_dpdk(self, nailgun_node, switch_to=True, net='private'):
         assert_true(self.check_dpdk(nailgun_node, net=net)['available'],
@@ -117,12 +115,26 @@ class SupportDPDK(TestBasic):
         for interface in compute_net:
             for ids in interface['assigned_networks']:
                 if ids['name'] == net:
-                    interface['interface_properties']['dpdk'][
-                        'enabled'] = switch_to
+                    if interface['type'] == 'bond':
+                        interface['bond_properties']['type__'] = 'ovs'
+                        interface['interface_properties']['dpdk'].update(
+                            {'enabled': switch_to})
+                    else:
+                        interface['interface_properties']['dpdk'][
+                            'enabled'] = switch_to
+                    break
+
             self.fuel_web.client.put_node_interfaces(
                 [{'id': nailgun_node['id'], 'interfaces': compute_net}])
 
         return self.check_dpdk(nailgun_node, net=net)['enabled'] == switch_to
+
+    # pylint: disable=no-member
+    @before_class
+    def check_requirements(self):
+        assert_true(settings.KVM_USE,
+                    'Can not start DPDK test without KVM_USE=True!')
+    # pylint: enable=no-member
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_cluster_with_dpdk"])
@@ -142,15 +154,12 @@ class SupportDPDK(TestBasic):
             9. Run OSTF
             10. Reboot compute
             11. Run OSTF
-            12. Run instance on compute with DPDK and check
-                availability via internal and floating ip
+            12. Run instance on compute with DPDK and check its availability
+                via floating IP
 
         Snapshot: deploy_cluster_with_dpdk
 
         """
-        if not settings.KVM_USE:
-            raise SkipTest('Can not start DPDK test without KVM_USE=True')
-
         self.env.revert_snapshot("ready_with_3_slaves")
 
         self.show_step(1)
@@ -223,3 +232,98 @@ class SupportDPDK(TestBasic):
         self.check_dpdk_instance_connectivity(os_conn, cluster_id)
 
         self.env.make_snapshot("deploy_cluster_with_dpdk")
+
+
+@test(groups=["support_dpdk_bond"])
+class SupportDPDKBond(BondingTestDPDK, SupportDPDK):
+    """SupportDPDKBond."""
+
+    @before_class
+    def check_requirements(self):
+        super(SupportDPDKBond, self).check_requirements()
+        assert_true(settings.BONDING, 'Bonding is disabled! Aborting test...')
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["deploy_cluster_with_dpdk_bond"])
+    @log_snapshot_after_test
+    def deploy_cluster_with_dpdk_bond(self):
+        """Deploy cluster with DPDK, active-backup bonding and Neutron VLAN
+
+        Scenario:
+            1. Create cluster with VLAN for Neutron and KVM
+            2. Add 1 node with controller role
+            3. Add 2 nodes with compute and cinder roles
+            4. Setup bonding for all interfaces: 1 for admin, 1 for private
+               and 1 for public/storage/management networks
+            5. Configure HugePages for compute nodes
+            6. Enable DPDK for bond with private network on all computes
+            7. Run network verification
+            8. Deploy the cluster
+            9. Run network verification
+            10. Run OSTF
+            11. Run instance on compute with DPDK and check its availability
+                via floating IP
+
+        Duration 90m
+        Snapshot deploy_cluster_with_dpdk_bond
+        """
+
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        self.show_step(1)
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            settings={
+                "net_segment_type": settings.NEUTRON_SEGMENT['vlan'],
+            }
+        )
+
+        self.show_step(2)
+        self.show_step(3)
+        self.fuel_web.update_nodes(
+            cluster_id, {
+                'slave-01': ['controller'],
+                'slave-02': ['compute', 'cinder'],
+                'slave-03': ['compute', 'cinder']
+            }
+        )
+
+        self.show_step(4)
+        nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        for node in nailgun_nodes:
+            self.fuel_web.update_node_networks(
+                node['id'], interfaces_dict=deepcopy(self.INTERFACES),
+                raw_data=deepcopy(self.BOND_CONFIG)
+            )
+
+        computes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id,
+            roles=['compute'],
+            role_status='pending_roles')
+
+        self.show_step(5)
+        for node in computes:
+            self.setup_hugepages(node, hp_2mb=256, hp_dpdk_mb=128)
+
+        self.show_step(6)
+        for node in computes:
+            self.enable_dpdk(node)
+
+        self.show_step(7)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(8)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(9)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(10)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(11)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+        self.check_dpdk_instance_connectivity(os_conn, cluster_id)
+
+        self.env.make_snapshot("deploy_cluster_with_dpdk_bond")
