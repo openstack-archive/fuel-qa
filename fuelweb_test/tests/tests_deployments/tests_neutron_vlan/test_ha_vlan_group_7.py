@@ -29,20 +29,27 @@ class HaVlanGroup7(TestBasic):
           groups=["ceph_for_images"])
     @log_snapshot_after_test
     def ceph_for_images(self):
-        """Deploy cluster with no volume storage and ceph for images
+        """Deployment with 3 controllers, NeutronVLAN,
+           with no storage for volumes and ceph for images
 
         Scenario:
-            1. Create cluster
-            2. Add 3 node with controller role
-            3. Add 2 node with compute role
-            4. Add 3 nodes with ceph OSD roles
-            5. Change ceph replication factor to 3
-            6. Change disks configuration for ceph nodes
-            7. Change default NTP and DNS
-            8. Verify networks
-            9. Deploy the cluster
-            10. Verify networks
-            11. Run OSTF
+            1. Create new environment
+            2. Choose Neutron, VLAN
+            3. Uncheck cinder for volumes and choose ceph for images
+            4. Add 3 controller
+            5. Add 2 compute
+            6. Add 3 ceph nodes
+            7. Change default disks partitioning for ceph nodes for 'vdc'
+            8. Change default dns server to any 2 public dns servers to the
+               'Host OS DNS Servers' on Settings tab
+            9. Change default ntp servers to any 2 public ntp servers to the
+               'Host OS NTP Servers' on Settings tab
+            10. Untag management and storage networks
+                and move them to separate interfaces
+            11. Verify networks
+            12. Deploy cluster
+            13. Verify networks
+            14. Run OSTF
 
         Duration 180m
         Snapshot ceph_for_images
@@ -104,17 +111,18 @@ class HaVlanGroup7(TestBasic):
           groups=["ha_vlan_operating_system"])
     @log_snapshot_after_test
     def ha_vlan_operating_system(self):
-        """Deploy cluster with cinder/swift and one Operating system node
+        """Deployment with 3 controllers, NeutronVlan, with Operating System
 
         Scenario:
-            1. Create cluster
-            2. Add 3 node with controller role
-            3. Add 2 node with compute role
-            4. Add 1 node with Operating system
-            5. Verify networks
-            6. Deploy the cluster
-            7. Verify networks
-            8. Run OSTF
+            1. Create new environment
+            2. Choose Neutron Vlan
+            3. Add 3 controller
+            4. Add 2 compute
+            5. Add 1 Operating System node
+            6. Verify networks
+            7. Deploy the environment
+            8. Verify networks
+            9. Run OSTF tests
 
         Duration 180m
         Snapshot ceph_for_volumes_swift

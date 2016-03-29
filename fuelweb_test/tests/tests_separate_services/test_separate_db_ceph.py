@@ -33,18 +33,20 @@ class SeparateDbCeph(TestBasic):
           groups=["separate_db_ceph_service"])
     @log_snapshot_after_test
     def separate_db_ceph_service(self):
-        """Deploy cluster with 3 separate database roles and ceph
+        """Deployment with separate db nodes and ceph for all
 
         Scenario:
-            1. Create cluster
-            2. Add 3 nodes with controller role
-            3. Add 3 nodes with database role
-            4. Add 1 compute and 2 ceph nodes
-            5. Choose ceph for volumes, images, ephemeral and objects
-            6. Verify networks
-            7. Deploy the cluster
-            8. Verify networks
-            9. Run OSTF
+            1. Install the plugin on the master node.
+            2. Create Ubuntu, Neutron VXLAN, ceph for all cluster.
+            3. Change ceph replication factor to 2
+            4. Add 3 nodes with contoller role.
+            5. Add 3 nodes with db role.
+            6. Add 1 compute node.
+            7. Add 2 ceph nodes.
+            8. Run network verification.
+            9. Deploy changes.
+            10. Run network verification.
+            11. Run OSTF tests.
 
         Duration 120m
         Snapshot separate_db_ceph_service

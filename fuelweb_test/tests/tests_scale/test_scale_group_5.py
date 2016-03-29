@@ -30,7 +30,7 @@ class HaScaleGroup5(TestBasic):
         """Deployment with 3 controllers, NeutronVxlan, with add, delete,
            add/delete compute+cinder+ceph node
 
-        Scenarion:
+        Scenario:
             1. Deploy cluster 3 controllers, 2 computes + ceph + cinder,
                Neutron VXLAN, cinder for volumes, ceph for images.
             2. Verify networks
@@ -163,7 +163,7 @@ class HaScaleGroup5(TestBasic):
         """Deployment with 3 controllers, NeutronVxlan, with add, delete,
            add/delete controller+cinder+ceph node
 
-        Scenarion:
+        Scenario:
             1. Deploy cluster 3 controller+cinder+ceph, 2 computes,
                Neutron VXLAN, cinder for volumes, ceph for images + Rados GW
             2. Verify networks

@@ -35,10 +35,11 @@ class SSL_Tests(TestBasic):
         """Check cluster creation with SSL is enabled only on Master node
 
         Scenario:
-            1. Revert the snapshot "ready" with forced https
-            2. Check that we cannot connect to master node by http(8000 port)
-            3. Bootstrap slaves nodes and
-            check here that they appears in nailgun
+            1. Create environment using fuel-qa
+            2. Force master node to use https
+            3. Check that we cannot connect to master node by http(8000 port)
+            4. Bootstrap slaves nodes and
+            check here that they appear in nailgun
 
         Duration 30m
         """
@@ -46,12 +47,13 @@ class SSL_Tests(TestBasic):
         self.env.revert_snapshot("ready")
         admin_ip = self.ssh_manager.admin_ip
         self.show_step(2)
+        self.show_step(3)
         connection = http_client.HTTPConnection(admin_ip, 8000)
         connection.request("GET", "/")
         response = connection.getresponse()
         assert_equal(str(response.status), '301',
                      message="HTTP was not disabled for master node")
-        self.show_step(3)
+        self.show_step(4)
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:2])
         nodes = self.fuel_web.client.list_nodes()
         assert_equal(2, len(nodes))
@@ -65,19 +67,24 @@ class SSL_Tests(TestBasic):
         when TLS is disabled
 
         Scenario:
-            1. Revert snapshot "master_node_with_https_only"
+            1. Pre-condition - perform steps
+            from master_node_with_https_only test
             2. Create a new cluster
-            3. Disable TLS for public endpoints
-            4. Deploy cluster
-            5. Run OSTF
-            6. Check that all endpoints link to plain http protocol.
+            3. Go to the Settings tab
+            4. Disable TLS for public endpoints
+            5. Add 1 controller and compute+cinder
+            6. Deploy cluster
+            7. Run OSTF
+            8. Check that all endpoints link to plain http protocol.
 
         Duration 30m
         """
         self.show_step(1)
-        self.env.revert_snapshot("master_node_with_https_only")
         self.show_step(2)
         self.show_step(3)
+        self.show_step(4)
+        self.env.revert_snapshot("master_node_with_https_only")
+        self.show_step(5)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             configure_ssl=False,
@@ -89,13 +96,13 @@ class SSL_Tests(TestBasic):
                 'slave-02': ['compute', 'cinder'],
             }
         )
-        self.show_step(4)
+        self.show_step(6)
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.show_step(5)
+        self.show_step(7)
         # Run OSTF
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['smoke'])
-        self.show_step(6)
+        self.show_step(8)
         # Get controller ip address
         controller_keystone_ip = self.fuel_web.get_public_vip(cluster_id)
         action = OpenStackActions(controller_ip=controller_keystone_ip)
