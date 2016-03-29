@@ -36,17 +36,18 @@ class HaTunGroup1(TestBasic):
           groups=["tun_controller_base_os"])
     @log_snapshot_after_test
     def tun_controller_base_os(self):
-        """Deployment with 3 controllers+Operating System, NeutronTUN
+        """Deployment with 3 controllers, NeutronTUN, with Operating System
 
         Scenario:
-            1. Create cluster using NeutronTUN provider
-            2. Add 3 nodes with controller + operation system role
-            3. Add 2 nodes with compute role
-            4. Add 1 node with cinder role
-            5. Verify networks
-            6. Deploy the cluster
-            7. Verify networks
-            8. Run OSTF
+            1. Create new environment
+            2. Choose Neutron, tunnelling segmentation
+            3. Add 3 controller+operating system
+            4. Add 2 compute
+            5. Add 1 cinder
+            6. Verify networks
+            7. Deploy the environment
+            8. Verify networks
+            9. Run OSTF tests
 
         Duration XXXm
         Snapshot tun_controller_base_os
@@ -89,20 +90,26 @@ class HaTunGroup1(TestBasic):
           groups=["tun_ceph_for_images_and_objects"])
     @log_snapshot_after_test
     def tun_ceph_for_images_and_objects(self):
-        """Deployment with 3 controllers, NeutronTUN, with Ceph for images and
-        Ceph RadosGW for objects
+        """Deployment with 3 controllers, NeutronTUN,
+           with Ceph for images and RadosGW
 
         Scenario:
-            1. Create cluster using NeutronTUN provider and external dns and
-               ntp servers, Ceph for Images and Ceph RadosGW for objects
-            2. Add 3 nodes with controller role
-            3. Add 2 nodes with compute role
-            4. Add 1 node with cinder role
-            5. Add 3 nodes with ceph OSD role
-            6. Verify networks
-            7. Deploy the cluster
-            8. Verify networks
-            9. Run OSTF
+            1. Create new environment
+            2. Choose Neutron VxLAN
+            3. Choose Ceph for images
+            4. Choose Ceph RadosGW for objects
+            5. Add 3 controller
+            6. Add 2 compute
+            7. Add 1 cinder
+            8. Add 3 ceph nodes
+            9. Change default dns server to any 2 public dns servers
+               to the 'Host OS DNS Servers' on Settings tab
+            10. Change default ntp servers to any 2 public ntp servers
+                to the 'Host OS NTP Servers' on Settings tab
+            11. Verify networks
+            12. Deploy the environment
+            13. Verify networks
+            14. Run OSTF tests
 
         Duration XXXm
         Snapshot tun_ceph_images_rados_objects

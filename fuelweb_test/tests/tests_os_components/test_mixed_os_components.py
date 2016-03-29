@@ -33,13 +33,18 @@ class MixedComponents(TestBasic):
 
         Scenario:
             1. Create new environment
-            2. Choose Neutron + TUN, Cinder
-            3. Enable Sahara, Murano and Ceilometer
-            4. Add 3 controller, 1 compute, 1 cinder and 3 mongo nodes
-            5. Verify networks
-            6. Deploy the environment
-            7. Verify networks
-            8. Run OSTF tests
+            2. Choose Neutron, TUN
+            3. Choose Murano
+            4. Choose Sahara
+            5. Choose Ceilometer
+            6. Add 3 controller
+            7. Add 1 compute
+            8. Add 1 cinder
+            9. Add 3 mongo
+            10. Verify networks
+            11. Deploy the environment
+            12. Verify networks
+            13. Run OSTF tests
 
         Duration: 300 min
         Snapshot: mixed_components_murano_sahara_ceilometer
@@ -60,12 +65,17 @@ class MixedComponents(TestBasic):
         self.show_step(1, initialize=True)
         self.show_step(2)
         self.show_step(3)
+        self.show_step(4)
+        self.show_step(5)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             settings=data
         )
 
-        self.show_step(4)
+        self.show_step(6)
+        self.show_step(7)
+        self.show_step(8)
+        self.show_step(9)
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -80,16 +90,16 @@ class MixedComponents(TestBasic):
             }
         )
 
-        self.show_step(5)
+        self.show_step(10)
         self.fuel_web.verify_network(cluster_id)
 
-        self.show_step(6)
+        self.show_step(11)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        self.show_step(7)
+        self.show_step(12)
         self.fuel_web.verify_network(cluster_id)
 
-        self.show_step(8)
+        self.show_step(13)
         self.fuel_web.run_ostf(cluster_id, test_sets=['smoke', 'sanity', 'ha',
                                                       'tests_platform'])
 

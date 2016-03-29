@@ -38,23 +38,28 @@ class HaTunGroup3(TestBasic):
           groups=["tun_no_volumes_ceph_for_images_and_ephemeral"])
     @log_snapshot_after_test
     def tun_no_volumes_ceph_for_images_and_ephemeral(self):
-        """Deployment with 3 controllers, NeutronVxLAN, with no storage for
-        volumes and Ceph for images and ephemeral
+        """Deployment with 3 controllers, NeutronVxLAN,
+           with no storage for volumes and ceph for images and ephemeral
 
         Scenario:
-            1. Create cluster using NeutronTUN provider, external dns and ntp
-               servers, no storage for volumes, Ceph for Images and ephemeral,
-               Ceph replica factor 2
-            2. Add 3 nodes with controller role
-            3. Add 2 nodes with compute role
-            4. Add 2 nodes with ceph OSD role
-            5. Change default partitioning for vdc of Ceph node
-            6. Change public network from /24 to /25
-            7. Verify networks
-            8. Deploy the cluster
-            9. Validate partition on Ceph node
-            10. Verify networks
-            11. Run OSTF
+            1. Create new environment
+            2. Choose Neutron, VxLAN
+            3. Uncheck cinder for volumes and choose ceph for images,
+               ceph for ephemeral
+            4. Change ceph replication factor to 2
+            5. Add 3 controller
+            6. Add 2 compute
+            7. Add 2 ceph nodes
+            8. Change default disks partitioning for ceph nodes for 'vdc'
+            9. Change default dns server to any 2 public dns servers
+               to the 'Host OS DNS Servers' on Settings tab
+            10. Change default ntp servers to any 2 public ntp servers
+                to the 'Host OS NTP Servers' on Settings tab
+            11. Change default public net mask from /24 to /25
+            12. Verify networks
+            13. Deploy cluster
+            14. Verify networks
+            15. Run OSTF
 
         Duration 180m
         Snapshot tun_no_volumes_ceph_for_images_and_ephemeral
@@ -134,22 +139,23 @@ class HaTunGroup3(TestBasic):
           groups=["tun_5_ctrl_ceph_ephemeral"])
     @log_snapshot_after_test
     def tun_5_ctrl_ceph_ephemeral(self):
-        """Deployment with 5 controllers, NeutronTUN, with Ceph RDB for
-        ephemeral volumes
+        """Deployment with 5 controllers, NeutronTUN,
+           with Ceph RBD for ephemeral volumes
 
         Scenario:
-            1. Create cluster using NeutronTUN provider, Ceph RDB for ephemeral
-               volumes
-            2. Add 5 nodes with controller role
-            3. Add 1 nodes with compute role
-            4. Add 3 nodes with ceph OSD role
-            5. Change default partitioning for vdc of Ceph nodes
-            6. Change public network mask from /24 to /25
-            7. Verify networks
-            8. Deploy the cluster
-            9. Validate partition on Ceph node
-            10. Verify networks
-            11. Run OSTF
+            1. Create new environment
+            2. Choose Neutron, tunnelling segmentation
+            3. Choose Ceph RBD for ephemeral volumes
+               and uncheck Cinder LVM over iSCSI for volumes
+            4. Add 5 controllers
+            5. Add 1 compute
+            6. Add 3 ceph
+            7. Change default disks partitioning for ceph nodes for vdc
+            8. Change public default mask from /24 to /25
+            9. Verify networks
+            10. Deploy the environment
+            11. Verify networks
+            12. Run OSTF tests
 
         Duration XXXm
         Snapshot tun_5_ctrl_ceph_ephemeral

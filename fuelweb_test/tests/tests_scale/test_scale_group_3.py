@@ -27,24 +27,27 @@ class HaScaleGroup3(TestBasic):
           groups=["add_delete_compute"])
     @log_snapshot_after_test
     def add_delete_compute(self):
-        """Check add, add/delete, delete compute node
+        """Deployment with 3 controllers, NeutronVLAN, add, add/delete/,
+           delete compute node
 
         Scenario:
-            1. Create cluster
-            2. Add 3 controller node
-            3. Deploy the cluster
-            4. Add 2 compute nodes
-            5. Deploy changes
-            6. Verify network
-            7. Run OSTF
-            8. Add 1 compute node and delete one deployed compute node
-            9. Deploy changes
-            10. Run OSTF
-            11. Verify networks
-            12. Delete one compute node
-            13. Deploy changes
-            14. Verify networks
-            15. Run OSTF
+            1. Create new environment
+            2. Choose Neutron, VLAN
+            3. Add 3 controller
+            4. Deploy the environment
+            5. Add 2 compute
+            6. Verify networks
+            7. Deploy the environment
+            8. Verify networks
+            9. Run OSTF tests
+            10. Add 1 new compute node and delete one deployed compute
+            11. Re-deploy
+            12. Verify networks
+            13. Run OSTF tests
+            14. Delete one compute node
+            15. Re-deploy cluster
+            16. Verify networks
+            17. Run OSTF
 
         Duration 120m
         Snapshot add_delete_compute
@@ -56,6 +59,7 @@ class HaScaleGroup3(TestBasic):
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE)
         self.show_step(2)
+        self.show_step(3)
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -64,24 +68,26 @@ class HaScaleGroup3(TestBasic):
                 'slave-03': ['controller']
             }
         )
-        self.show_step(3)
+        self.show_step(4)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         nodes = {'slave-04': ['compute'],
                  'slave-05': ['compute']}
-        self.show_step(4)
+        self.show_step(5)
         self.fuel_web.update_nodes(
             cluster_id, nodes,
             True, False
         )
-        self.show_step(5)
-        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(6)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(7)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.show_step(8)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(9)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.show_step(8)
+        self.show_step(10)
         nodes = {'slave-06': ['compute']}
         self.fuel_web.update_nodes(
             cluster_id, nodes,
@@ -92,24 +98,24 @@ class HaScaleGroup3(TestBasic):
             cluster_id, nodes,
             False, True
         )
-        self.show_step(9)
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
         self.show_step(11)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.show_step(12)
         self.fuel_web.verify_network(cluster_id)
-        self.show_step(10)
+        self.show_step(13)
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
 
-        self.show_step(12)
+        self.show_step(14)
         nodes = {'slave-04': ['compute']}
         self.fuel_web.update_nodes(
             cluster_id, nodes,
             False, True
         )
-        self.show_step(13)
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
-        self.show_step(14)
-        self.fuel_web.verify_network(cluster_id)
         self.show_step(15)
+        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.show_step(16)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(17)
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
         self.env.make_snapshot("add_delete_compute")
 
@@ -117,10 +123,11 @@ class HaScaleGroup3(TestBasic):
           groups=["add_delete_cinder"])
     @log_snapshot_after_test
     def add_delete_cinder(self):
-        """Check add, add/delete, delete cinder node
+        """Deployment with 3 controllers, NeutronVlan, with add, delete,
+           add/delete cinder node
 
         Scenario:
-            1. Create cluster
+            1. Create cluster: Neutron VLAN, default storages
             2. Add 3 controller and 2 compute node
             3. Deploy the cluster
             4. Add 1 cinder nodes
