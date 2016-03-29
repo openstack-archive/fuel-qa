@@ -95,10 +95,11 @@ class FailoverGroupMongo(TestBasic):
           groups=['kill_mongo_processes'])
     @log_snapshot_after_test
     def kill_mongo_processes(self):
-        """Kill MongoDB processes
+        """Kill mongo processes
 
         Scenario:
-            1. Revert environment with MongoDB nodes
+            1. Create environment using fuel-qa with MongoDB nodes
+               (3 controllers, 3 mongo and NeutronVLAN)
             2. Kill mongodb processes on 1st node
             3. Wait 1 minute
             4. Check new mongodb processes exist on 1st node
@@ -154,11 +155,12 @@ class FailoverGroupMongo(TestBasic):
     @test(depends_on_groups=['deploy_mongo_cluster'],
           groups=['close_connections_for_mongo'])
     def close_connections_for_mongo(self):
-        """Block network connections for 1 MongoDB node
+        """Close connection for Mongo node
 
         Scenario:
-            1. Revert environment with MongoDB nodes
-            2. Close management network for 1 MongoDB node
+            1. Deploy any environment with 3 controllers, 3 mongo, 1 compute,
+               1 Cinder and NeutronTUN or NeutronVLAN
+            2. Close management network for 1 Mongo node
             3. Run OSTF tests
 
         Duration 60m
@@ -192,10 +194,11 @@ class FailoverGroupMongo(TestBasic):
     @test(depends_on_groups=['deploy_mongo_cluster'],
           groups=['shut_down_mongo_node'])
     def shut_down_mongo_node(self):
-        """Shut down MongoDB node
+        """Shut down Mongo node for Neutron
 
         Scenario:
-            1. Revert environment with MongoDB nodes
+            1. Deploy environment with default storages and 3 controllers,
+               3 mongo, 1 compute, 1 cinder and NeutronTUN or NeutronVLAN
             2. Shut down 1 Mongo node
             3. Verify networks
             4. Run OSTF tests

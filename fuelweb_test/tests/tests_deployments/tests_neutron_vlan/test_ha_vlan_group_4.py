@@ -31,18 +31,17 @@ class HaVlanGroup4(TestBasic):
            and other disk configuration
 
         Scenario:
-           1. Create new environment
-           2. Choose Neutron, VLAN
-           3. Add 4 controllers
-           4. Add 2 computes
-           5. Add 3 cinders
-           6. Change disk configuration for all Cinder nodes.
-              Change 'Cinder' volume for vdc
-           7. Verify networks
-           8. Deploy the environment
-           9. Verify networks
-           10. Check disk configuration
-           11. Run OSTF tests
+            1. Create new environment
+            2. Choose Neutron, VLAN
+            3. Add 4 controller
+            4. Add 2 compute
+            5. Add 3 cinder
+            6. Change disk configuration for all Cinder nodes.
+               Change 'Cinder' volume for vdc
+            7. Verify networks
+            8. Deploy the environment
+            9. Verify networks
+            10. Run OSTF tests
 
         Notation: "By default recommended use uneven numbers of controllers,
              but nowhere there is information we cannot deploy with even
@@ -97,11 +96,10 @@ class HaVlanGroup4(TestBasic):
         self.show_step(9)
         self.fuel_web.verify_network(cluster_id)
 
-        self.show_step(10)
         for cinder in cinders:
             checkers.check_cinder_image_size(cinder['ip'], cinder_image_size)
 
-        self.show_step(11)
+        self.show_step(10)
         self.fuel_web.run_ostf(cluster_id)
         self.env.make_snapshot('four_controllers')
 
@@ -109,23 +107,22 @@ class HaVlanGroup4(TestBasic):
           groups=["ceph_rados_gw_no_storage_volumes"])
     @log_snapshot_after_test
     def ceph_rados_gw_no_storage_volumes(self):
-        """Deployment with 3 controllers, NeutronVLAN,
-           with no storage for volumes and ceph for images and Rados GW
+        """Deployment with 3 controllers, NeutronVLAN, with no storage for
+           volumes and ceph for images and Rados GW
 
         Scenario:
-           1. Create new environment
-           2. Choose Neutron, VLAN
-           3. Uncheck cinder storage for volumes and choose ceph for images and
-              Rados GW
-           4. Change openstack username, password, tenant
-           5. Add 3 controller
-           6. Add 2 compute
-           7. Add 3 ceph nodes
-           8. Change storage net mask from /24 to /25
-           9. Verify networks
-           10. Start deployment
-           11. Verify networks
-           12. Run OSTF
+            1. Create new environment
+            2. Choose Neutron, VLAN
+            3. Uncheck cinder storage for volumes and choose ceph
+               for images and Rados GW
+            4. Add 3 controller
+            5. Add 2 compute
+            6. Add 3 ceph nodes
+            7. Change storage net mask /24 to /25
+            8. Verify networks
+            9. Start deployment
+            11. Verify networks
+            12. Run OSTF
 
         Duration: 180 min
         Snapshot: ceph_rados_gw_no_storage_volumes
@@ -145,14 +142,13 @@ class HaVlanGroup4(TestBasic):
         self.show_step(1, initialize=True)
         self.show_step(2)
         self.show_step(3)
-        self.show_step(4)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             settings=data
         )
+        self.show_step(4)
         self.show_step(5)
         self.show_step(6)
-        self.show_step(7)
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -166,18 +162,18 @@ class HaVlanGroup4(TestBasic):
                 'slave-08': ['ceph-osd']
             }
         )
-        self.show_step(8)
+        self.show_step(7)
         self.fuel_web.update_network_cidr(cluster_id, 'storage')
 
-        self.show_step(9)
+        self.show_step(8)
         self.fuel_web.verify_network(cluster_id)
 
-        self.show_step(10)
+        self.show_step(9)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        self.show_step(11)
+        self.show_step(10)
         self.fuel_web.verify_network(cluster_id)
 
-        self.show_step(12)
+        self.show_step(11)
         self.fuel_web.run_ostf(cluster_id)
         self.env.make_snapshot('ceph_rados_gw_no_storage_volumes')

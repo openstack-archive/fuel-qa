@@ -28,18 +28,21 @@ class HaVlanGroup2(TestBasic):
           groups=["cinder_ceph_for_ephemeral"])
     @log_snapshot_after_test
     def cinder_ceph_for_ephemeral(self):
-        """Deploy cluster with cinder and ceph for ephemeral
+        """Deployment with 3 controllers, NeutronVLAN, with Ceph for ephemeral
 
         Scenario:
-            1. Create cluster
-            2. Add 3 node with controller role
-            3. Add 2 node with compute role
-            4. Add 3 nodes with ceph OSD roles
-            5. Add 1 node with cinder
-            6. Verify networks
-            7. Deploy the cluster
+            1. Create new environment
+            2. Choose Neutron, VLAN
+            3. Choose cinder for volumes and Ceph for ephemeral
+            4. Add 3 controller
+            5. Add 2 compute
+            6. Add 1 cinder
+            7. Add 3 ceph
             8. Verify networks
-            9. Run OSTF
+            9. Deploy the environment
+            10. Verify networks
+            11. Run OSTF tests
+            12. Reset cluster
 
         Duration 180m
         Snapshot cinder_ceph_for_ephemeral
@@ -90,18 +93,23 @@ class HaVlanGroup2(TestBasic):
           groups=["cinder_ceph_for_images_ephemeral"])
     @log_snapshot_after_test
     def cinder_ceph_for_images_ephemeral(self):
-        """Deploy cluster with cinder and ceph for images and ephemeral
+        """Deployment with 3 controllers, NeutronVLAN, with Ceph for
+           images and ephemeral
 
         Scenario:
-            1. Create cluster
-            2. Add 3 node with controller role
-            3. Add 2 node with compute role
-            4. Add 3 nodes with ceph OSD roles
-            5. Add 1 node with cinder
-            6. Verify networks
-            7. Deploy the cluster
-            8. Verify networks
-            9. Run OSTF
+            1. Create new environment
+            2. Choose Neutron, VLAN
+            3. Choose Ceph for images and ceph for ephemeral
+            4. Add 3 controller
+            5. Add 2 compute
+            6. Add 1 cinder
+            7. Add 3 ceph
+            8. Untag management and storage networks and move them to separate
+               interfaces
+            9. Verify networks
+            10. Deploy the environment
+            11. Verify networks
+            12. Run OSTF tests
 
         Duration 180m
         Snapshot cinder_ceph_for_images_ephemeral

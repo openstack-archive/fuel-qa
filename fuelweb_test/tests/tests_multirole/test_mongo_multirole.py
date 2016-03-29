@@ -39,12 +39,12 @@ class MongoMultirole(TestBasic):
             4. Add 3 controller
             5. Add 1 compute
             6. Add 3 mongo+cinder
-            7. Move Storage network to eth1 and specify vlan start
-            8. Move Management network to eth2 (it's untagged by default)
+            7. Move Storage network to eth1
+            8. Move Management network to eth2 and untag it
             9. Verify networks
             10. Deploy the environment
             11. Verify networks
-            12. Run OSTF tests
+            13. Run OSTF tests
 
         Duration 180m
         Snapshot ha_ceilometer_untag_network

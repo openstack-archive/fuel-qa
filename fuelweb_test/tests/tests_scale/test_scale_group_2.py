@@ -32,7 +32,7 @@ class HaScaleGroup2(TestBasic):
           groups=["replace_primary_controller"])
     @log_snapshot_after_test
     def replace_primary_controller(self):
-        """Check add 2 controllers with stop deployment
+        """Replace the primary controller in the cluster
 
         Scenario:
             1. Create cluster
@@ -106,7 +106,8 @@ class HaScaleGroup2(TestBasic):
           groups=["remove_controllers"])
     @log_snapshot_after_test
     def remove_controllers(self):
-        """Remove two controllers
+        """Deploy cluster with 3 controllers, remove 2 controllers
+           and re-deploy, check hosts and corosync
 
         Scenario:
             1. Create cluster
@@ -167,6 +168,7 @@ class HaScaleGroup2(TestBasic):
         node = self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.get_node(name='slave-01'))
         self.show_step(8)
+        self.show_step(9)
         for host in hosts:
             result = self.ssh_manager.execute_on_remote(
                 ip=node['ip'], cmd="grep '{}' /etc/hosts".format(host))

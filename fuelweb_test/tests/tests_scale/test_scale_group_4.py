@@ -27,10 +27,12 @@ class HaScaleGroup4(TestBasic):
           groups=["add_delete_ceph"])
     @log_snapshot_after_test
     def add_delete_ceph(self):
-        """Check add, add/delete, delete ceph node
+        """Deployment with 3 controllers, NeutronVlan, with add, delete,
+           add/delete ceph node
 
         Scenario:
-            1. Create cluster
+            1. Create cluster: Neutron VLAN, ceph for volumes and images,
+               ceph for ephemeral and Rados GW
             2. Add 3 controller, 1 compute, 3 ceph nodes
             3. Deploy the cluster
             4. Add 1 ceph node
@@ -132,10 +134,12 @@ class HaScaleGroup4(TestBasic):
           groups=["add_delete_cinder_ceph"])
     @log_snapshot_after_test
     def add_delete_cinder_ceph(self):
-        """Check add, add/delete, delete cinder and ceph node
+        """Deployment with 3 controllers, NeutronVLan, with add, delete,
+           add/delete cinder and ceph node
 
         Scenario:
-            1. Create cluster
+            1. Create cluster: Neutron VLAN, cinder for volumes
+               and ceph for images, ceph for ephemeral and Rados GW
             2. Add 3 controller+ceph, 1 compute and 1 cinder nodes
             3. Deploy the cluster
             4. Add 1 ceph node and 1 cinder node
@@ -144,15 +148,15 @@ class HaScaleGroup4(TestBasic):
             7. Run OSTF
             8. Add 1 cinder node and delete 1 deployed cinder node
             9. Deploy changes
-            10. Run OSTF
-            11. Verify networks
+            10. Verify network
+            11. Run OSTF
             12. Add 1 ceph node and delete 1 deployed ceph node
             13. Deploy changes
-            14. Verify networks
+            14. Verify network
             15. Run OSTF
             16. Delete 1 cinder and 1 ceph node
             17. Deploy changes
-            18. Verify networks
+            18. Verify network
             19. Run OSTF
 
         Duration 120m
@@ -210,9 +214,9 @@ class HaScaleGroup4(TestBasic):
         )
         self.show_step(9)
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.show_step(11)
-        self.fuel_web.verify_network(cluster_id)
         self.show_step(10)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(11)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.show_step(12)

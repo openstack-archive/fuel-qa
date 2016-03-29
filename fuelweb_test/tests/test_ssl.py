@@ -35,7 +35,7 @@ class SSL_Tests(TestBasic):
         """Check cluster creation with SSL is enabled only on Master node
 
         Scenario:
-            1. Revert the snapshot "ready" with forced https
+            1. Create environment using fuel-qa
             2. Check that we cannot connect to master node by http(8000 port)
             3. Bootstrap slaves nodes and
             check here that they appears in nailgun
@@ -65,19 +65,50 @@ class SSL_Tests(TestBasic):
         when TLS is disabled
 
         Scenario:
-            1. Revert snapshot "master_node_with_https_only"
+            1. Create environment using fuel-qa
+               by performing steps from master_node_with_https_only
             2. Create a new cluster
-            3. Disable TLS for public endpoints
-            4. Deploy cluster
-            5. Run OSTF
-            6. Check that all endpoints link to plain http protocol.
+            3. Go to the Settings tab
+            4. Disable TLS for public endpoints
+            5. Add 1 controller and compute+cinder
+            6. Start Deploy
+            7. Run OSTF
+            8, Ssh to the controller node and run:
+                    ./openrc
+                    keystone endpoint-list
+                on local machine,  create openrc, set here public_vip
+                for keystone and public endpoints for other service.
+                Should looks like:
+                #!/bin/sh
+                export LC_ALL=C
+                export OS_NO_CACHE='true'
+                export OS_TENANT_NAME='neutronOneController'
+                export OS_PROJECT_NAME='neutronOneController'
+                export OS_USERNAME='neutronOneController'
+                export OS_PASSWORD='neutronOneController'
+                export OS_AUTH_URL='http://10.109.1.3:5000/v2.0/'
+                export OS_AUTH_STRATEGY='keystone'
+                export OS_REGION_NAME='RegionOne'
+                export CINDER_ENDPOINT_TYPE='publicURL'
+                export GLANCE_ENDPOINT_TYPE='publicURL'
+                export KEYSTONE_ENDPOINT_TYPE='publicURL'
+                export NOVA_ENDPOINT_TYPE='publicURL'
+                export NEUTRON_ENDPOINT_TYPE='publicURL'
+                export OS_ENDPOINT_TYPE='publicURL'
+                export MURANO_REPO_URL='http://storage.apps.openstack.org/'
+
+                then from local machine run :
+                .openrc; nova list and other CRUD action for different services
+            9. Check that all endpoints link to plain http protocol.
 
         Duration 30m
         """
         self.show_step(1)
-        self.env.revert_snapshot("master_node_with_https_only")
         self.show_step(2)
         self.show_step(3)
+        self.show_step(4)
+        self.env.revert_snapshot("master_node_with_https_only")
+        self.show_step(5)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             configure_ssl=False,
@@ -89,13 +120,14 @@ class SSL_Tests(TestBasic):
                 'slave-02': ['compute', 'cinder'],
             }
         )
-        self.show_step(4)
+        self.show_step(6)
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.show_step(5)
+        self.show_step(7)
         # Run OSTF
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['smoke'])
-        self.show_step(6)
+        self.show_step(8)
+        self.show_step(9)
         # Get controller ip address
         controller_keystone_ip = self.fuel_web.get_public_vip(cluster_id)
         action = OpenStackActions(controller_ip=controller_keystone_ip)

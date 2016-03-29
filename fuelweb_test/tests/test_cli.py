@@ -95,23 +95,20 @@ class CommandLineTest(test_cli_base.CommandLine):
           groups=["cli_selected_nodes_deploy"])
     @log_snapshot_after_test
     def cli_selected_nodes_deploy(self):
-        """Create and deploy environment using Fuel CLI
+        """Check CN name is equal to the public name passed via UI
+           (user-owned cert)
 
         Scenario:
-            1. Revert snapshot "ready_with_3_slaves"
-            2. Create a cluster using Fuel CLI
-            3. Add floating ranges for public network
-            4. Provision a controller node using Fuel CLI
-            5. Provision two compute+cinder nodes using Fuel CLI
-            6. Deploy the controller node using Fuel CLI
-            7. Deploy the compute+cinder nodes using Fuel CLI
-            8. Compare floating ranges
-            9. Check that all services work by 'https'
-            10. Check that all services have domain name
-            11. Check CNs for user owned certificate
-            12. Check keypairs for user owned ceritificate
-            13. Run OSTF
-            14. Make snapshot "cli_selected_nodes_deploy"
+            1. Create environment using fuel-qa
+            2. Perform steps 1-6 from 'endpoints_with_disabled_ssl' test
+            3. Find horizon ip and port at the table
+            4. Execute: openssl s_client -connect <ip>:<port> and save output
+            5. Find 'CN' value at the output:
+               CN value is equal to the value specified
+               at certificate provided via Fuel UI
+            6. Find keypair data at the output:
+               Keypair data is equal to the value specified
+               at certificate provided via Fuel UI
 
         Duration 50m
         """

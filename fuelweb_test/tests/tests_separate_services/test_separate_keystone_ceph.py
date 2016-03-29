@@ -33,17 +33,19 @@ class SeparateKeystoneCeph(TestBasic):
           groups=["separate_keystone_ceph_service"])
     @log_snapshot_after_test
     def separate_keystone_ceph_service(self):
-        """Deploy cluster with 3 separate keystone roles and ceph
+        """Deployment with separate keystone task and ceph for all
 
         Scenario:
-            1. Create cluster
-            2. Add 3 nodes with controller role
-            3. Add 3 nodes with keystone+database role
-            4. Add 1 compute and 2 ceph nodes
-            5. Verify networks
-            6. Deploy the cluster
-            7. Verify networks
-            8. Run OSTF
+            1. Install database and keystone plugins on the master node.
+            2. Create Ubuntu, Neutron VXLAN, ceph for all storages cluster.
+            3. Add 3 nodes with contoller role.
+            4. Add 3 nodes with database+keystone role.
+            5. Add 1 compute node.
+            6. Add 2 ceph nodes.
+            7. Run network verification.
+            8. Deploy changes.
+            9. Run network verification.
+            10. Run OSTF tests.
 
         Duration 120m
         Snapshot separate_keystone_ceph_service

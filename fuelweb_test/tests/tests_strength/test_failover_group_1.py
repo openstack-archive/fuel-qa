@@ -96,7 +96,8 @@ class FailoverGroup1(TestBasic):
         """Lock DB access from primary controller
 
         Scenario:
-            1. Revert environment with 3 controller nodes
+            1. Create environment using fuel-qa with 3 controllers and
+               NeutronVLAN
             2. Lock DB access from primary controller
                (emulate non-responsiveness of MySQL from the controller
                where management VIP located)
@@ -153,14 +154,21 @@ class FailoverGroup1(TestBasic):
           groups=['recovery_neutron_agents_after_restart'])
     @log_snapshot_after_test
     def recovery_neutron_agents_after_restart(self):
-        """Recovery of Neutron agents after restart
+        """Recovery of neutron agents after restart
 
         Scenario:
-            1. Revert environment with 3 controller nodes
-            2. Kill Neutron agents at all on one of the controllers.
-               Pacemaker should restart it
-            3. Verify networks
-            4. Run OSTF tests
+        1. Deploy environment with 3 controllers and NeutronTUN or NeutronVLAN,
+           all default storages, 2 compute, 1 cinder node
+        2. Kill neutron agents at all on one of the controllers.
+           Pacemaker should restart it
+            2.1) verify output crm status | grep -A1 "clone_p_neutron-l3-agent"
+                 have failed status for controller
+            2.2) verify neutron-l3-proccess restarted by
+                 ps -aux |grep neutron-l3-agent
+            2.3) verify output crm status | grep -A1 "clone_p_neutron-l3-agent"
+                 have started status for controller
+        3. Verify networks
+        4. Run OSTF tests
 
         Duration 20m
         Snapshot recovery_neutron_agents_after_restart
@@ -239,12 +247,13 @@ class FailoverGroup1(TestBasic):
           groups=['safe_reboot_primary_controller'])
     @log_snapshot_after_test
     def safe_reboot_primary_controller(self):
-        """Safe reboot of primary controller with Cinder for storage
+        """Safe reboot of primary controller
 
         Scenario:
-            1. Revert environment with 3 controller nodes
+            1. Deploy environment with 3 controllers and NeutronTUN or
+               NeutronVLAN, all default storages, 2 compute, 1 cinder node
             2. Safe reboot of primary controller
-            3. Wait up to 10 minutes for HA readiness
+            3. Wait 5-10 minutes
             4. Verify networks
             5. Run OSTF tests
 
@@ -282,12 +291,13 @@ class FailoverGroup1(TestBasic):
           groups=['hard_reset_primary_controller'])
     @log_snapshot_after_test
     def hard_reset_primary_controller(self):
-        """Hard reset of primary controller with Cinder for storage
+        """Hard reset of primary controller
 
         Scenario:
-            1. Revert environment with 3 controller nodes
-            2. Safe reboot of primary controller
-            3. Wait up to 10 minutes for HA readiness
+            1. Deploy environment with 3 controllers and NeutronTUN or
+               NeutronVLAN, all default storages, 2 compute, 1 cinder node
+            2. Hard reset of primary controller
+            3. Wait 5-10 minutes
             4. Verify networks
             5. Run OSTF tests
 
@@ -328,7 +338,7 @@ class FailoverGroup1(TestBasic):
         """Power outage of Neutron vlan, cinder/swift cluster
 
         Scenario:
-            1. Revert environment with 3 controller nodes
+            1. Create environment using fuel-qa with 3 controller nodes
             2. Create 2 instances
             3. Create 2 volumes
             4. Attach volumes to instances
@@ -389,7 +399,7 @@ class FailoverGroup1(TestBasic):
         self.fuel_web.assert_ha_services_ready(cluster_id)
 
         self.show_step(10)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.fuel_web.verify_network(cluster_id)
 
         self.show_step(11)
-        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)

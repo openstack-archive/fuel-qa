@@ -29,21 +29,26 @@ class HaVlanGroup6(TestBasic):
           groups=["ceph_for_images_ephemeral_rados"])
     @log_snapshot_after_test
     def ceph_for_images_ephemeral_rados(self):
-        """Deploy cluster with ceph for images, ephemeral and rados
+        """Deployment with 3 controllers, NeutronVLAN, with no storage for
+           volumes and ceph for images, ephemeral and Rados GW for objects
 
         Scenario:
-            1. Create cluster
-            2. Add 3 node with controller role
-            3. Add 2 node with compute role
-            4. Add 3 nodes with ceph OSD roles
-            5. Change disks configuration for ceph nodes
-            6. Change default dns and NTP values
+            1. Create new environment
+            2. Choose Neutron, VLAN
+            3. Uncheck cinder for volumes and choose ceph for images,
+               ceph for ephemeral and Rados GW for objects
+            4. Add 3 controller
+            5. Add 2 compute
+            6. Add 3 ceph nodes
             7. Verify networks
-            8. Deploy the cluster
-            9. Check ceph status
-            10. Verify networks
-            11. Check partitioning for ceph disks
-            12. Run OSTF
+            8. Change default disks partitioning for ceph nodes for 'vdc'
+            9. Change default dns server to any 2 public dns servers to the
+               'Host OS DNS Servers' on Settings tab
+            10. Change default ntp servers to any 2 public ntp servers to the
+               'Host OS NTP Servers' on Settings tab
+            11. Deploy cluster
+            12. Verify networks
+            13. Run OSTF
 
         Duration 180m
         Snapshot ceph_for_images_ephemeral_rados
@@ -71,6 +76,8 @@ class HaVlanGroup6(TestBasic):
         self.show_step(2)
         self.show_step(3)
         self.show_step(4)
+        self.show_step(5)
+        self.show_step(6)
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -87,8 +94,9 @@ class HaVlanGroup6(TestBasic):
         self.show_step(7)
         self.fuel_web.verify_network(cluster_id)
 
-        self.show_step(5)
-        self.show_step(6)
+        self.show_step(8)
+        self.show_step(9)
+        self.show_step(10)
         ceph_nodes = self.fuel_web.\
             get_nailgun_cluster_nodes_by_roles(cluster_id, ['ceph-osd'],
                                                role_status='pending_roles')
@@ -96,18 +104,16 @@ class HaVlanGroup6(TestBasic):
             ceph_image_size = self.fuel_web.\
                 update_node_partitioning(ceph_node, node_role='ceph')
 
-        self.show_step(8)
+        self.show_step(11)
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.show_step(9)
         self.fuel_web.check_ceph_status(cluster_id)
-        self.show_step(10)
+        self.show_step(12)
         self.fuel_web.verify_network(cluster_id)
 
-        self.show_step(11)
         for ceph in ceph_nodes:
             checkers.check_ceph_image_size(ceph['ip'], ceph_image_size)
 
-        self.show_step(12)
+        self.show_step(13)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("ceph_for_images_ephemeral_rados")
@@ -116,21 +122,23 @@ class HaVlanGroup6(TestBasic):
           groups=["ceph_for_volumes_images_ephemeral"])
     @log_snapshot_after_test
     def ceph_for_volumes_images_ephemeral(self):
-        """Deploy cluster with ceph for volumes and images, ephemeral
+        """Deployment with 5 controllers, NeutronVLAN,
+           with Ceph for volumes and images, ephemeral
 
         Scenario:
-            1. Create cluster
-            2. Add 5 node with controller role
-            3. Add 2 node with compute role
-            4. Add 2 nodes with ceph OSD roles
-            5. Change disks configuration for ceph nodes
-            6. Change management net mask from /24 to /25
-            7. Verify networks
-            8. Deploy the cluster
-            9. Check ceph status
+            1. Create new environment
+            2. Choose Neutron, VLAN
+            3. Choose Ceph for volumes and images, ceph for ephemeral
+            4. Add 5 controller
+            5. Add 2 compute
+            6. Add 2 ceph nodes
+            7. Change ceph replication factor to 2
+            8. Change management net default mask from /24 to /25
+            9. Change default disk partitioning for ceph nodes for vdc
             10. Verify networks
-            11. Check partitioning for ceph nodes
-            12. Run OSTF
+            11. Deploy changes
+            12. Verify networks
+            13. Run OSTF
 
         Duration 180m
         Snapshot ceph_for_volumes_images_ephemeral
@@ -156,6 +164,9 @@ class HaVlanGroup6(TestBasic):
         self.show_step(2)
         self.show_step(3)
         self.show_step(4)
+        self.show_step(5)
+        self.show_step(6)
+        self.show_step(7)
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -170,10 +181,10 @@ class HaVlanGroup6(TestBasic):
                 'slave-09': ['ceph-osd']
             }
         )
-        self.show_step(6)
+        self.show_step(8)
         self.fuel_web.update_network_cidr(cluster_id, 'management')
 
-        self.show_step(5)
+        self.show_step(9)
         ceph_nodes = self.fuel_web.\
             get_nailgun_cluster_nodes_by_roles(cluster_id, ['ceph-osd'],
                                                role_status='pending_roles')
@@ -181,19 +192,17 @@ class HaVlanGroup6(TestBasic):
             ceph_image_size = self.fuel_web.\
                 update_node_partitioning(ceph_node, node_role='ceph')
 
-        self.show_step(7)
-        self.fuel_web.verify_network(cluster_id)
-        self.show_step(8)
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.show_step(9)
-        self.fuel_web.check_ceph_status(cluster_id)
         self.show_step(10)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(11)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.check_ceph_status(cluster_id)
+        self.show_step(12)
+        self.fuel_web.verify_network(cluster_id)
         for ceph in ceph_nodes:
             checkers.check_ceph_image_size(ceph['ip'], ceph_image_size)
 
-        self.show_step(12)
+        self.show_step(13)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("ceph_for_volumes_images_ephemeral")
