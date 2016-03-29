@@ -2463,6 +2463,7 @@ class FuelWebClient(object):
         assert_true(plugin_data is not None, "Plugin {0} version {1} is not "
                     "found".format(plugin_name, version))
         for option, value in data.items():
+            plugin_data = item
             path = option.split("/")
             for p in path[:-1]:
                 plugin_data = plugin_data[p]

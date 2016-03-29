@@ -20,7 +20,7 @@ template:
       glance:
         enable: false
     vmware_dvs:
-      !include cluster_configs/settings/vmware/dvs_main.yaml
+      !include cluster_configs/settings/vmware/dvs/dvs_1cluster.yaml
   nodes:
     - roles:
       - controller
