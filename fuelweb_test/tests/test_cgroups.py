@@ -31,7 +31,8 @@ from fuelweb_test.helpers import utils
 class TestCgroupHa(TestBasic):
     """Tests for verification deployment with enabled cgroup."""
 
-    def generate_attributes(self, cgroups):
+    @staticmethod
+    def generate_attributes(cgroups):
         """Generate cluster attributes structure from cgroups dicts."""
 
         attributes = {}
@@ -54,6 +55,32 @@ class TestCgroupHa(TestBasic):
             cgroup["value"] = json.dumps(cgroup["value"])
 
         return {"editable": {"cgroups": attributes}}
+
+    @staticmethod
+    def check_cgconfig_setup(config, process, controller,
+                             limit=None, value=None):
+        """Check /etc/cgconfig.conf contains properly configured cgroup."""
+
+        actual_limit = config[process][controller]
+
+        if limit is None and value is None:
+            asserts.assert_equal(actual_limit, {},
+                                 "Actual limit is not empty: {}"
+                                 .format(actual_limit))
+        else:
+            asserts.assert_equal(actual_limit[limit], value,
+                                 "Actual value limit is not as expected for "
+                                 "process {}, controller {}, limit {}, "
+                                 "expected value = {}, actual == {}"
+                                 .format(process, controller, limit, value,
+                                         actual_limit[limit]))
+
+    @staticmethod
+    def generate_lscgroups(cgroups):
+        """Generate a list of lscgroups entities from cgroups dicts."""
+
+        return ["{}:/{}".format(cgroup["controller"], cgroup["process"])
+                for cgroup in cgroups]
 
     def apply_cgroups(self, cgroups, node_ids):
         cluster_id = self.fuel_web.get_last_created_cluster()
@@ -133,30 +160,6 @@ class TestCgroupHa(TestBasic):
             cgroups_config = re.sub(pattern, replace, cgroups_config)
 
         return json.loads(cgroups_config)
-
-    def check_cgconfig_setup(self, config, process, controller,
-                             limit=None, value=None):
-        """Check /etc/cgconfig.conf contains properly configured cgroup."""
-
-        actual_limit = config[process][controller]
-
-        if limit is None and value is None:
-            asserts.assert_equal(actual_limit, {},
-                                 "Actual limit is not empty: {}"
-                                 .format(actual_limit))
-        else:
-            asserts.assert_equal(actual_limit[limit], value,
-                                 "Actual value limit is not as expected for "
-                                 "process {}, controller {}, limit {}, "
-                                 "expected value = {}, actual == {}"
-                                 .format(process, controller, limit, value,
-                                         actual_limit[limit]))
-
-    def generate_lscgroups(self, cgroups):
-        """Generate a list of lscgroups entities from cgroups dicts."""
-
-        return ["{}:/{}".format(cgroup["controller"], cgroup["process"])
-                for cgroup in cgroups]
 
     def check_cgroups_on_node(self, nailgun_node, cgroups):
         """Complex validation of cgroups on particular node."""
@@ -407,7 +410,9 @@ class TestCgroupHa(TestBasic):
 
         for cgroup in cgroups:
             if cgroup["limit"] == "memory.soft_limit_in_bytes":
+                # pylint: disable=no-member
                 percent, min_mem, max_mem = cgroup["value"].split(",")
+                # pylint: enable=no-member
                 percent = int(percent.replace("%", "")) * memory / 100
                 min_mem, max_mem = int(min_mem), int(max_mem)
 
