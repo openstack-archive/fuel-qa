@@ -529,8 +529,12 @@ class PuppetLog(AbstractLog):
         """
         if self.enable_sort:
             self.sort_log()
+        previous_log = None
         for record in self.log:
             log = record.get('log', None)
+            if log and not self.enable_sort and previous_log != log:
+                IO.output("Log file: '{0}'".format(log))
+                previous_log = log
             time = record.get('time', None)
             line = record.get('line', None)
             if not (log and time and line):
@@ -726,7 +730,6 @@ class FuelSnapshot(object):
         astute_logs.show_mcagent = show_mcagent
         astute_logs.show_full = show_full
         for astute_log in self.astute_logs():
-            IO.output("Parsing Astute log: '%s'" % astute_log.name)
             self.parse_log(astute_log, astute_logs)
         astute_logs.output()
         astute_logs.clear()
@@ -748,7 +751,6 @@ class FuelSnapshot(object):
         puppet_logs.enable_sort = enable_sort
         puppet_logs.show_full = show_full
         for puppet_log in self.puppet_logs():
-            IO.output("Parsing Puppet log: '%s'" % puppet_log.name)
             puppet_logs.log_name = puppet_log.name
             self.parse_log(puppet_log, puppet_logs)
         puppet_logs.output()
