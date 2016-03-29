@@ -29,20 +29,21 @@ class MultiroleGroup1(TestBasic):
           groups=["controller_ceph_and_compute_cinder"])
     @log_snapshot_after_test
     def controller_ceph_and_compute_cinder(self):
-        """Deploy cluster with controller+ceph and compute+cinder
+        """Deployment with 3 Controllers plus Ceph, Neutron Vxlan
+           and non-default disks partition
 
         Scenario:
-            1. Create cluster
-            2. Choose cinder and ceph for images
-            3. Add 3 node with controller+ceph role
-            4. Add 1 node with compute+cinder role
-            5. Change disks configuration for ceph nodes
+            1. Create new environment
+            2. Choose Neutron Vxlan
+            3. Choose Cinder for volumes and Ceph for images
+            4. Add 3 controller+ceph
+            5. Add 1 compute+cinder
             6. Verify networks
-            7. Deploy the cluster
-            8. Check ceph status
+            7. Change disk configuration for all Ceph nodes.
+               Change 'Ceph' volume for vdc
+            8. Deploy the environment
             9. Verify networks
-            10. Check partitions on ceph nodes
-            11. Run OSTF
+            10. Run OSTF tests
 
         Duration 180m
         Snapshot controller_ceph_and_compute_cinder
@@ -61,12 +62,13 @@ class MultiroleGroup1(TestBasic):
         }
         self.show_step(1, initialize=True)
         self.show_step(2)
+        self.show_step(3)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             settings=data
         )
-        self.show_step(3)
         self.show_step(4)
+        self.show_step(5)
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -79,7 +81,7 @@ class MultiroleGroup1(TestBasic):
         self.show_step(6)
         self.fuel_web.verify_network(cluster_id)
 
-        self.show_step(5)
+        self.show_step(7)
         ceph_nodes = self.fuel_web.\
             get_nailgun_cluster_nodes_by_roles(cluster_id, ['ceph-osd'],
                                                role_status='pending_roles')
@@ -87,18 +89,16 @@ class MultiroleGroup1(TestBasic):
             ceph_image_size = self.fuel_web.\
                 update_node_partitioning(ceph_node, node_role='ceph')
 
-        self.show_step(7)
-        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(8)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.check_ceph_status(cluster_id)
         self.show_step(9)
         self.fuel_web.verify_network(cluster_id)
-        self.show_step(10)
 
         for ceph in ceph_nodes:
             checkers.check_ceph_image_size(ceph['ip'], ceph_image_size)
 
-        self.show_step(11)
+        self.show_step(10)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("controller_ceph_and_compute_cinder")
@@ -107,18 +107,19 @@ class MultiroleGroup1(TestBasic):
           groups=["controller_ceph_cinder_compute_ceph_cinder"])
     @log_snapshot_after_test
     def controller_ceph_cinder_compute_ceph_cinder(self):
-        """Deploy cluster with controller+ceph+cinder and compute+ceph+cinder
+        """Deployment with 3 Controllers plus Ceph plus Cinder, Neutron Vlan,
+           cinder for volumes, ceph for images/ephemeral/objects
 
         Scenario:
-            1. Create cluster
-            2. Choose cinder and ceph for images, ephemeral, objects
-            3. Add 3 node with controller+ceph+cinder role
-            4. Add 1 node with compute+ceph+cinder role
-            5. Verify networks
-            6. Deploy the cluster
-            7. Check ceph status
+            1. Create new environment
+            2. Choose Neutron, Vlan
+            3. Choose cinder for volumes and ceph for images/ephemeral/objects
+            4. Add 3 controllers+ceph+cinder
+            5. Add 1 compute+ceph+cinder
+            6. Verify networks
+            7. Deploy the environment
             8. Verify networks
-            9. Run OSTF
+            9. Run OSTF tests
 
         Duration 180m
         Snapshot controller_ceph_cinder_compute_ceph_cinder
@@ -137,12 +138,13 @@ class MultiroleGroup1(TestBasic):
         }
         self.show_step(1, initialize=True)
         self.show_step(2)
+        self.show_step(3)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             settings=data
         )
-        self.show_step(3)
         self.show_step(4)
+        self.show_step(5)
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -153,11 +155,10 @@ class MultiroleGroup1(TestBasic):
             }
         )
 
-        self.show_step(5)
-        self.fuel_web.verify_network(cluster_id)
         self.show_step(6)
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.verify_network(cluster_id)
         self.show_step(7)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.check_ceph_status(cluster_id)
         self.show_step(8)
         self.fuel_web.verify_network(cluster_id)

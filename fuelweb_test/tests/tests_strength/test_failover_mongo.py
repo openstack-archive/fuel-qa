@@ -95,19 +95,19 @@ class FailoverGroupMongo(TestBasic):
           groups=['kill_mongo_processes'])
     @log_snapshot_after_test
     def kill_mongo_processes(self):
-        """Kill MongoDB processes
+        """Kill mongo processes
 
         Scenario:
-            1. Revert environment with MongoDB nodes
-            2. Kill mongodb processes on 1st node
+            1. Pre-condition - do steps from 'deploy_mongo_cluster' test
+            2. Kill mongo processes on 1st node
             3. Wait 1 minute
-            4. Check new mongodb processes exist on 1st node
-            5. Kill mongodb processes on 2nd node
+            4. Check new mongo processes exist on 1st node
+            5. Kill mongo processes on 2nd node
             6. Wait 1 minute
-            7. Check new mongodb processes exist on 2nd node
-            8. Kill mongodb processes on 3rd node
+            7. Check new mongo processes exist on 2nd node
+            8. Kill mongo processes on 3rd node
             9. Wait 1 minute
-            10. Check new mongodb processes exist on 3rd node
+            10. Check new mongo processes exist on 3rd node
             11. Run OSTF tests
 
         Duration 60m
@@ -154,11 +154,11 @@ class FailoverGroupMongo(TestBasic):
     @test(depends_on_groups=['deploy_mongo_cluster'],
           groups=['close_connections_for_mongo'])
     def close_connections_for_mongo(self):
-        """Block network connections for 1 MongoDB node
+        """Close connection for Mongo node
 
         Scenario:
-            1. Revert environment with MongoDB nodes
-            2. Close management network for 1 MongoDB node
+            1. Pre-condition - do steps from 'deploy_mongo_cluster' test
+            2. Close management network for 1 Mongo node
             3. Run OSTF tests
 
         Duration 60m
@@ -192,10 +192,10 @@ class FailoverGroupMongo(TestBasic):
     @test(depends_on_groups=['deploy_mongo_cluster'],
           groups=['shut_down_mongo_node'])
     def shut_down_mongo_node(self):
-        """Shut down MongoDB node
+        """Shut down Mongo node for Neutron
 
         Scenario:
-            1. Revert environment with MongoDB nodes
+            1. Pre-condition - do steps from 'deploy_mongo_cluster' test
             2. Shut down 1 Mongo node
             3. Verify networks
             4. Run OSTF tests

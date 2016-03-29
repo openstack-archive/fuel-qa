@@ -93,10 +93,10 @@ class FailoverGroup2(TestBasic):
           groups=['safe_reboot_primary_controller_ceph'])
     @log_snapshot_after_test
     def safe_reboot_primary_controller_ceph(self):
-        """Safe reboot of primary controller with Ceph for storage
+        """Safe reboot of primary controller on ceph cluster
 
         Scenario:
-            1. Revert environment with 3 controller nodes
+            1. Pre-condition - do steps from 'deploy_ha_ceph' test
             2. Safe reboot of primary controller
             3. Wait up to 10 minutes for HA readiness
             4. Verify networks
@@ -107,7 +107,7 @@ class FailoverGroup2(TestBasic):
         """
 
         self.show_step(1, initialize=True)
-        self.env.revert_snapshot('deploy_ha_cinder')
+        self.env.revert_snapshot('deploy_ha_ceph')
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
@@ -136,11 +136,11 @@ class FailoverGroup2(TestBasic):
           groups=['hard_reset_primary_controller_ceph'])
     @log_snapshot_after_test
     def hard_reboot_primary_controller_ceph(self):
-        """Hard reset of primary controller with Ceph for storage
+        """Hard reboot of primary controller with Ceph for storage
 
         Scenario:
-            1. Revert environment with 3 controller nodes
-            2. Safe reboot of primary controller
+            1. Pre-condition - do steps from 'deploy_ha_ceph' test
+            2. Hard reboot of primary controller
             3. Wait up to 10 minutes for HA readiness
             4. Verify networks
             5. Run OSTF tests
@@ -160,17 +160,22 @@ class FailoverGroup2(TestBasic):
                      'found {} nodes!'.format(len(controllers)))
 
         self.show_step(2)
+        self.show_step(3)
+        self.show_step(4)
+        self.show_step(5)
+        self.show_step(6)
+        self.show_step(7)
         target_controller = self.fuel_web.get_nailgun_primary_node(
             self.fuel_web.get_devops_node_by_nailgun_node(controllers[0]))
         self.fuel_web.cold_restart_nodes([target_controller])
 
-        self.show_step(3)
+        self.show_step(8)
         self.fuel_web.assert_ha_services_ready(cluster_id, timeout=60 * 10)
 
-        self.show_step(4)
+        self.show_step(9)
         self.fuel_web.verify_network(cluster_id)
 
-        self.show_step(5)
+        self.show_step(10)
         self.fuel_web.run_ostf(cluster_id)
 
         self.env.make_snapshot('safe_reboot_primary_controller_ceph')

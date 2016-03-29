@@ -34,19 +34,21 @@ class HaTunGroup2(TestBasic):
           groups=["tun_ha_ceph_base_os"])
     @log_snapshot_after_test
     def tun_ha_ceph_base_os(self):
-        """Deployment with 3 controllers, NeutronTUN, with Ceph all for all
-        and operating system
+        """Deploy 3 controllers, 1 base_os, 2 computes
+           and 3 ceph nodes with Neutron Tun
 
         Scenario:
-            1. Create cluster using NeutronTUN provider
-            2. Add 3 nodes with controller role
-            3. Add 2 nodes with compute role
-            4. Add 3 node with ceph role
-            5. Add 1 node with operation system role
-            6. Verify networks
-            7. Deploy the cluster
+            1. Create new environment
+            2. Choose Neutron TUN
+            3. Choose Ceph for all
+            4. Add 3 controller
+            5. Add 2 compute
+            6. Add 3 ceph
+            7. Add 1 Operating System nodes
             8. Verify networks
-            9. Run OSTF
+            9. Deploy the environment
+            10. Verify networks
+            11. Run OSTF tests
 
         Duration XXXm
         Snapshot tun_ha_ceph_base_os
@@ -100,21 +102,23 @@ class HaTunGroup2(TestBasic):
           groups=["tun_ceph_all"])
     @log_snapshot_after_test
     def tun_ceph_all(self):
-        """Deployment with 3 controllers, NeutronTUN, with Ceph for volumes,
-        images, ephemeral and Rados GW for objects
+        """Deployment with 3 controllers, NeutronVxLAN,
+           with Ceph for volumes and images, ephemeral and Rados GW for objects
 
         Scenario:
-            1. Create cluster using NeutronTUN provider, Ceph for Images,
-               Volumes, Objects, Ephemeral, non-default OS credentials
-            2. Add 3 nodes with controller role
-            3. Add 2 nodes with compute role
-            4. Add 3 nodes with ceph OSD role
-            5. Untag management and storage networks, assign it to separate
-               interfaces (default behaviour of update_nodes)
-            6. Verify networks
-            7. Deploy the cluster
+            1. Create new environment
+            2. Choose Neutron, VxLAN
+            3. Choose Ceph for volumes and images, ceph for ephemeral
+               and Rados GW for objects
+            4. Add 3 controller
+            5. Add 2 compute
+            6. Add 3 ceph nodes
+            7. Untag management and storage networks
+               and move them to separate interfaces
             8. Verify networks
-            9. Run OSTF
+            9. Start deployment
+            10. Verify networks
+            11. Run OSTF
 
         Duration XXXm
         Snapshot tun_ceph_all

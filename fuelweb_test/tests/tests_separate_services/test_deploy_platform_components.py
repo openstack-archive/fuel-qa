@@ -163,6 +163,11 @@ class TestsDeployPlatformComponents(BaseDeployPlatformComponents):
             }
         )
 
+        self.show_step(7)
+        self.show_step(8)
+        self.show_step(9)
+        self.show_step(10)
+        self.show_step(11)
         self._deploy_and_check(cluster_id=cluster_id)
 
     # TODO: Test is disabled, until Murano plugin is not available.
@@ -230,13 +235,19 @@ class TestsDeployPlatformComponents(BaseDeployPlatformComponents):
             }
         )
 
+        self.show_step(7)
+        self.show_step(8)
+        self.show_step(9)
+        self.show_step(10)
+        self.show_step(11)
         self._deploy_and_check(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["acceptance_deploy_platform_components_ceilometer"])
     @log_snapshot_after_test
     def acceptance_deploy_platform_components_ceilometer(self):
-        """Deploy cluster: detached keystone, rabbitmq, database, ceilometer
+        """Deploy cluster with detached keystone, rabbitmq,
+           database and Ceilometer
 
         Scenario:
             1. Install db, rabbitmq, keystone plugin on the master node.
@@ -298,6 +309,11 @@ class TestsDeployPlatformComponents(BaseDeployPlatformComponents):
             }
         )
 
+        self.show_step(7)
+        self.show_step(8)
+        self.show_step(9)
+        self.show_step(10)
+        self.show_step(11)
         self._deploy_and_check(cluster_id=cluster_id)
 
 
