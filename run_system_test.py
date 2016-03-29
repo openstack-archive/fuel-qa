@@ -121,7 +121,7 @@ def run(**kwargs):
 
     groups_to_run = []
     groups.extend(old_groups or [])
-    for g in groups:
+    for g in set(groups):
         if config_name:
             register_system_test_cases(
                 groups=[g],
