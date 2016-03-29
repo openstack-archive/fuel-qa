@@ -35,7 +35,10 @@ class BondingTest(TestBasic):
                 ],
                 'state': None,
                 'type': 'bond',
-                'assigned_networks': []
+                'assigned_networks': [],
+                'interface_properties': {'dpdk': {'available': True}},
+                'bond_properties': {'mode': 'active-backup',
+                                    'type__': 'linux'},
             },
             {
                 'mac': None,
@@ -47,7 +50,10 @@ class BondingTest(TestBasic):
                 ],
                 'state': None,
                 'type': 'bond',
-                'assigned_networks': []
+                'assigned_networks': [],
+                'interface_properties': {'dpdk': {'available': True}},
+                'bond_properties': {'mode': 'active-backup',
+                                    'type__': 'linux'},
             }
         ]
 
@@ -124,3 +130,65 @@ class BondingTest(TestBasic):
         assert_false(network_settings_changed,
                      "Network settings were changed after environment nodes "
                      "reboot! Please check logs for details!")
+
+
+class BondingTestDPDK(BondingTest):
+    def __init__(self):
+        super(BondingTestDPDK, self).__init__()
+        self.BOND_CONFIG = [
+            {
+                'mac': None,
+                'mode': 'active-backup',
+                'name': 'bond0',
+                'slaves': [
+                    {'name': iface_alias('eth3')},
+                    {'name': iface_alias('eth2')}
+                ],
+                'state': None,
+                'type': 'bond',
+                'assigned_networks': [],
+                'interface_properties': {'dpdk': {'available': True}},
+                'bond_properties': {'mode': 'active-backup',
+                                    'type__': 'linux'},
+            },
+            {
+                'mac': None,
+                'mode': 'active-backup',
+                'name': 'bond1',
+                'slaves': [
+                    {'name': iface_alias('eth1')},
+                    {'name': iface_alias('eth0')}
+                ],
+                'state': None,
+                'type': 'bond',
+                'assigned_networks': [],
+                'interface_properties': {'dpdk': {'available': True}},
+                'bond_properties': {'mode': 'active-backup',
+                                    'type__': 'linux'},
+            },
+            {
+                'mac': None,
+                'mode': 'active-backup',
+                'name': 'bond2',
+                'slaves': [
+                    {'name': iface_alias('eth5')},
+                    {'name': iface_alias('eth4')},
+                ],
+                'state': None,
+                'type': 'bond',
+                'assigned_networks': [],
+                'interface_properties': {'dpdk': {'available': True}},
+                'bond_properties': {'mode': 'active-backup',
+                                    'type__': 'linux'},
+            },
+        ]
+
+        self.INTERFACES = {
+            'bond0': [
+                'public',
+                'management',
+                'storage',
+            ],
+            'bond1': ['fuelweb_admin'],
+            'bond2': ['private'],
+        }
