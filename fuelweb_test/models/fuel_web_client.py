@@ -2465,8 +2465,8 @@ class FuelWebClient(object):
         for option, value in data.items():
             path = option.split("/")
             for p in path[:-1]:
-                plugin_data = plugin_data[p]
-            plugin_data[path[-1]] = value
+                data = plugin_data[p]
+            data[path[-1]] = value
         self.client.update_cluster_attributes(cluster_id, attr)
 
     @staticmethod

@@ -1,0 +1,3 @@
+---
+dvswitch_name: !os_env DVS_NAME, Cluster1:dvSwitch
+dvs_fw_driver: false
