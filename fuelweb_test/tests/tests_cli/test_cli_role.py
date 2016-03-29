@@ -34,12 +34,17 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
         """Update controller role using Fuel CLI
 
         Scenario:
-            1. Revert snapshot "ready_with_3_slaves"
-            2. Download controller role yaml to master
-            3. Remove section "conflicts" under "meta" section
-            4. Upload changes using Fuel CLI
-            5. Create new cluster
-            6. Add new node to cluster with controller+compute
+            1. Setup master node
+            2. SSH to the master node
+            3. Download to file controller role with command:
+               fuel role --rel 2 --role controller --file controller.yaml
+            4. Edit the controller.yaml file,
+               remove section "conflicts" under "meta" section. Save file
+            5. Update role from file with command:
+               fuel role --rel 2 --update --file controller.yaml
+            6. Go to the Fuel UI and try to create a new environment
+            7. Add new node to the environment,
+               choose controller and compute roles for node
 
         Duration 20m
         """
@@ -52,17 +57,18 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
             release_name=OPENSTACK_RELEASE)[0]
 
         self.show_step(2)
+        self.show_step(3)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd='fuel role --rel {} --role controller --file'
                 ' /tmp/controller.yaml'.format(release_id))
 
-        self.show_step(3)
+        self.show_step(4)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd="sed -i '/conflicts/,+1 d' /tmp/controller.yaml")
 
-        self.show_step(4)
+        self.show_step(5)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd='fuel role --rel {} --update --file'
@@ -72,7 +78,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
             nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
         else:
             nst = ''
-        self.show_step(5)
+        self.show_step(6)
         cmd = ('fuel env create --name={0} --release={1} '
                '{2} --json'.format(self.__class__.__name__,
                                    release_id, nst))
@@ -82,7 +88,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
             jsonify=True
         )['stdout_json']
         cluster_id = env_result['id']
-        self.show_step(6)
+        self.show_step(7)
         cmd = ('fuel --env-id={0} node set --node {1} --role=controller,'
                'compute'.format(cluster_id, node_ids[0]))
         result = self.ssh_manager.execute(
@@ -102,12 +108,32 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
         """Create new role using Fuel CLI
 
         Scenario:
-            1. Revert snapshot "ready_with_3_slaves"
-            2. Upload new role yaml to master
-            3. Upload yaml to nailgun using Fuel CLI
-            4. Create new cluster
-            5. Try to create node with new role
-            6. Try to create node with new role and controller, compute
+            1. Create environmant using fuel-qa
+            2. SSH to the master node
+            3. Create new file "role.yaml" and paste the above:
+
+                   meta:
+                       conflicts:
+                           - controller
+                           - compute
+
+                       description: New role
+
+                       has_primary: true
+
+                       name: Test role
+
+                   name: test-role
+                   volumes_roles_mapping:
+                   - allocate_size: min
+
+                     id: os
+
+            4. Create new role with command:
+               fuel role --rel 2 --create --file role.yaml
+            5. Go to the Fuel UI and try to create a new environment
+            6. Add new node to the environment, choose test-role
+               and try to add compute or controller role to the same node
 
         Duration 20m
         """
@@ -126,6 +152,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
             self.ssh_manager.upload_to_remote(self.ssh_manager.admin_ip,
                                               templates_path, '/tmp')
         self.show_step(3)
+        self.show_step(4)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd='fuel role --rel {} --create --file'
@@ -135,7 +162,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
             nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
         else:
             nst = ''
-        self.show_step(4)
+        self.show_step(5)
         cmd = ('fuel env create --name={0} --release={1} '
                '{2} --json'.format(self.__class__.__name__,
                                    release_id, nst))
@@ -145,7 +172,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
             jsonify=True
         )['stdout_json']
         cluster_id = env_result['id']
-        self.show_step(5)
+        self.show_step(6)
         cmd = ('fuel --env-id={0} node set --node {1}'
                ' --role=test-role'.format(cluster_id, node_ids[0]))
         result = self.ssh_manager.execute(
@@ -155,7 +182,6 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
         assert_equal(result['exit_code'], 0,
                      "Can't assign controller and compute node"
                      " to node id {}".format(node_ids[0]))
-        self.show_step(6)
         cmd = ('fuel --env-id={0} node set --node {1}'
                ' --role=test-role,controller,'
                'compute'.format(cluster_id, node_ids[1]))
@@ -172,14 +198,33 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
           groups=["cli_create_role_with_has_primary"])
     @log_snapshot_after_test
     def cli_create_role_with_has_primary(self):
-        """Create new role using Fuel CLI
+        """Create role with 'has_primary==true'
 
         Scenario:
-            1. Revert snapshot "ready_with_3_slaves"
-            2. Upload new role yaml to master
-            3. Upload yaml to nailgun using Fuel CLI
-            4. Create new cluster
-            5. Try to create node with new role
+            1. Create environment using fuel-qa
+            2. SSH to the master node
+            3. Create new file "role.yaml" and paste the following:
+
+                   meta:
+                     conflicts:
+                       - controller
+                       - compute
+
+                     description: New role
+
+                     has_primary: true
+
+                     name: Test role
+
+                   name: test-role
+                   volumes_roles_mapping:
+                   - allocate_size: min
+
+                     id: os
+
+            4. Upload yaml to nailgun using Fuel CLI
+            5. Create new role with command:
+               fuel role --rel 2 --create --file role.yaml
 
         Duration 20m
         """
@@ -194,10 +239,11 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
             '{0}/fuelweb_test/config_templates/'.format(os.environ.get(
                 "WORKSPACE", "./")), 'create_primary_role.yaml')
         self.show_step(2)
+        self.show_step(3)
         if os.path.exists(templates_path):
             self.ssh_manager.upload_to_remote(self.ssh_manager.admin_ip,
                                               templates_path, '/tmp')
-        self.show_step(3)
+        self.show_step(4)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd='fuel role --rel {} --create --file'
@@ -207,7 +253,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
             nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
         else:
             nst = ''
-        self.show_step(4)
+        self.show_step(5)
         cmd = ('fuel env create --name={0} --release={1} '
                '{2} --json'.format(self.__class__.__name__,
                                    release_id, nst))
@@ -217,7 +263,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
             jsonify=True
         )['stdout_json']
         cluster_id = env_result['id']
-        self.show_step(5)
+
         cmd = ('fuel --env-id={0} node set --node {1}'
                ' --role=test-primary-role'.format(cluster_id,
                                                   node_ids[0]))
@@ -237,14 +283,33 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
         """Delete role using Fuel CLI
 
         Scenario:
-            1. Revert snapshot "ready_with_3_slaves"
-            2. Upload new role yaml to master
-            3. Upload yaml to nailgun using Fuel CLI
-            4. Check new role exists
-            5. Create new cluster
-            6. Create node with controller, compute
-            7. Delete new role
-            8. Try to delete controller role and check it's impossible
+            1. Create environment using fuel-qa
+            2. SSH to the master node
+            3. Create new file "role.yaml" and paste the above:
+
+                    meta:
+                        conflicts:
+                            - controller
+                            - compute
+
+                        description: New role
+
+                        name: Test role
+
+                    name: test-role
+                    volumes_roles_mapping:
+                    - allocate_size: min
+
+                        id: os
+
+            4. Create new role with command:
+               fuel role --rel 2 --create --file role.yaml
+            5. Go to the Fuel UI and try to create a new environment
+            6. Check if new role exists in the list of roles
+            7. Add new nodes to the environment: controller, compute
+            8. Go to the console and try to delete roles:
+               fuel role --rel 2 --delete --role <role name from step 3>
+               fuel role --rel 2 --delete --role controller
 
         Duration 20m
         """
@@ -259,10 +324,11 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
             '{0}/fuelweb_test/config_templates/'.format(os.environ.get(
                 "WORKSPACE", "./")), 'create_role.yaml')
         self.show_step(2)
+        self.show_step(3)
         if os.path.exists(templates_path):
             self.ssh_manager.upload_to_remote(self.ssh_manager.admin_ip,
                                               templates_path, '/tmp')
-        self.show_step(3)
+        self.show_step(4)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd='fuel role --rel {} --create --file'
@@ -270,7 +336,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
         result = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd='fuel role --rel {}'.format(release_id))['stdout']
-        self.show_step(4)
+
         roles = [i.strip() for i in result]
         assert_true('test-role' in roles,
                     "role is not in the list {}".format(roles))
@@ -280,6 +346,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
         else:
             nst = ''
         self.show_step(5)
+        self.show_step(6)
         cmd = ('fuel env create --name={0} --release={1} '
                '{2} --json'.format(self.__class__.__name__,
                                    release_id, nst))
@@ -289,7 +356,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
             jsonify=True
         )['stdout_json']
         cluster_id = env_result['id']
-        self.show_step(6)
+        self.show_step(7)
         cmd = ('fuel --env-id={0} node set --node {1}'
                ' --role=controller'.format(cluster_id, node_ids[0]))
         result = self.ssh_manager.execute(
@@ -300,7 +367,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
                      "Can't assign controller and"
                      " compute node to node id {}".format(node_ids[0]))
 
-        self.show_step(7)
+        self.show_step(8)
         cmd = ('fuel role --rel {} --delete'
                ' --role test-role'.format(release_id))
         result = self.ssh_manager.execute(
@@ -322,7 +389,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
             ip=self.ssh_manager.admin_ip,
             cmd=cmd,
         )
-        self.show_step(8)
+
         assert_equal(result['exit_code'], 1,
                      "Controller role shouldn't be able to be deleted")
 
@@ -335,11 +402,17 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
         """Update controller role using Fuel CLI
 
         Scenario:
-            1. Revert snapshot "ready_with_3_slaves"
-            2. Download controller role yaml to master
-            3. Modify "id" section to incorrect value
-            4. Upload changes using Fuel CLI
-            5. Check that error message was got
+            1. Setup master node
+            2. SSH to the master node
+            3. Download to file controller role with command:
+               fuel role --rel 2 --role controller --file controller.yaml
+            4. Modify created file: change "id" value at
+               the "volumes_roles_mapping" to something incorrect,
+               for ex.: "id: blabla"
+            5. Save file and upload it to the nailgun with:
+               fuel role --rel 2 --role controller --update --file
+               controller.yaml
+               There should be an error message and role shouldn't be updated.
 
         Duration 20m
         """
@@ -349,17 +422,17 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
             release_name=OPENSTACK_RELEASE)[0]
 
         self.show_step(2)
+        self.show_step(3)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd='fuel role --rel {} --role controller --file'
                 ' /tmp/controller.yaml'.format(release_id))
 
-        self.show_step(3)
+        self.show_step(4)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd="sed -i -r 's/id: os/id: blabla/' /tmp/controller.yaml")
 
-        self.show_step(4)
         self.show_step(5)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,

@@ -29,7 +29,7 @@ class HaScaleGroup6(TestBasic):
         """Deployment with 3 controllers, NeutronVlan, with add, delete,
            add/delete cinder+ceph node
 
-        Scenarion:
+        Scenario:
             1. Deploy cluster 3 controllers, 1 computes, 2 ceph + cinder,
                Neutron VLAN, cinder for volumes, ceph for images and ephemeral
             2. Verify networks

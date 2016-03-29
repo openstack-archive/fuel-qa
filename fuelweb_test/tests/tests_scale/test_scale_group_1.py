@@ -47,7 +47,8 @@ class HaScaleGroup1(TestBasic):
           groups=["add_controllers_stop"])
     @log_snapshot_after_test
     def add_controllers_stop(self):
-        """Check add 2 controllers with stop deployment
+        """Add 2 controllers, deploy, stop deploy, remove added controllers,
+           add 2 controllers once again
 
         Scenario:
             1. Create cluster
@@ -105,7 +106,7 @@ class HaScaleGroup1(TestBasic):
           groups=["add_ceph_stop"])
     @log_snapshot_after_test
     def add_ceph_stop(self):
-        """Check add 2 ceph nodes with stop deployment
+        """Add 2 ceph-osd, deploy, stop deploy, re-deploy again
 
         Scenario:
             1. Create cluster

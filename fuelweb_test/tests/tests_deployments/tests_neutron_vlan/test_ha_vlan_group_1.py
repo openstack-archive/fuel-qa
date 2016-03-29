@@ -29,19 +29,23 @@ class HaVlanGroup1(TestBasic):
           groups=["cinder_ceph_for_images"])
     @log_snapshot_after_test
     def cinder_ceph_for_images(self):
-        """Deploy cluster with cinder and ceph for images
+        """Deployment with 3 controllers, NeutronVLAN,
+           with Ceph for images and other disk configuration
 
         Scenario:
-            1. Create cluster
-            2. Add 3 node with controller role
-            3. Add 2 node with compute role
-            4. Add 3 nodes with ceph OSD roles
-            5. Add 1 node with cinder
-            6. Change disks configuration for ceph nodes
-            7. Verify networks
-            8. Deploy the cluster
+            1. Create new environment
+            2. Choose Neutron, VLAN
+            3. Choose Ceph for images
+            4. Add 3 controller
+            5. Add 2 compute
+            6. Add 1 cinder
+            7. Add 3 ceph
+            8. Change disk configuration for both Ceph nodes.
+               Change 'Ceph' volume for vdc
             9. Verify networks
-            10. Run OSTF
+            10. Deploy the environment
+            11. Verify networks
+            12. Run OSTF tests
 
         Duration 180m
         Snapshot cinder_ceph_for_images
@@ -101,18 +105,21 @@ class HaVlanGroup1(TestBasic):
           groups=["ceph_for_volumes_swift"])
     @log_snapshot_after_test
     def ceph_for_volumes_swift(self):
-        """Deploy cluster with ceph for volumes and swift
+        """Deployment with 5 controllers, NeutronVLAN, with Ceph for volumes
 
         Scenario:
-            1. Create cluster
-            2. Add 5 node with controller role
-            3. Add 2 node with compute role
-            4. Add 2 nodes with ceph OSD roles
-            5. Change disks configuration for ceph nodes
-            6. Verify networks
-            7. Deploy the cluster
-            8. Verify networks
-            9. Run OSTF
+            1. Create new environment
+            2. Choose Neutron, VLAN
+            3. Choose Ceph for volumes
+            4. Add 5 controller
+            5. Add 2 compute
+            6. Add 2 ceph nodes
+            7. Change default partitioning scheme for both ceph nodes for 'vdc'
+            8. Change ceph replication factor to 2
+            9. Verify networks
+            10. Deploy cluster
+            11. Verify networks
+            12. Run OSTF tests
 
         Duration 180m
         Snapshot ceph_for_volumes_swift

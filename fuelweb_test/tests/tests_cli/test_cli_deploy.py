@@ -28,16 +28,18 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
           groups=["cli_deploy_neutron_tun"])
     @log_snapshot_after_test
     def cli_deploy_neutron_tun(self):
-        """Deploy neutron_tun cluster using Fuel CLI
+        """Deployment with 1 controller, NeutronTUN
 
         Scenario:
-            1. Create cluster
-            2. Add 1 node with controller role
-            3. Add 1 node with compute role
-            4. Add 1 node with cinder role
-            5. Deploy the cluster
-            6. Run network verification
-            7. Run OSTF
+            1. Create new environment using fuel-qa
+            2. Choose Neutron, TUN
+            3. Add 1 controller
+            4. Add 1 compute
+            5. Add 1 cinder
+            6. Verify networks
+            7. Deploy the environment
+            8. Verify networks
+            9. Run OSTF tests
 
         Duration 40m
         """
@@ -50,6 +52,7 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
             release_name=OPENSTACK_RELEASE)[0]
 
         self.show_step(1, initialize=True)
+        self.show_step(2)
         cmd = ('fuel env create --name={0} --release={1} '
                '--nst=tun --json'.format(self.__class__.__name__,
                                          release_id))
@@ -64,15 +67,15 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
         self.update_cli_network_configuration(cluster_id)
 
         self.update_ssl_configuration(cluster_id)
-        self.show_step(2)
         self.show_step(3)
         self.show_step(4)
+        self.show_step(5)
         self.add_nodes_to_cluster(cluster_id, node_ids[0], ['controller'])
         self.add_nodes_to_cluster(cluster_id, node_ids[1], ['compute'])
         self.add_nodes_to_cluster(cluster_id, node_ids[2], ['cinder'])
-
+        self.show_step(6)
         self.fuel_web.verify_network(cluster_id)
-        self.show_step(5)
+        self.show_step(7)
         cmd = 'fuel --env-id={0} deploy-changes --json'.format(cluster_id)
 
         task = self.ssh_manager.execute_on_remote(
@@ -82,10 +85,10 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
         )['stdout_json']
         self.assert_cli_task_success(task, timeout=130 * 60)
 
-        self.show_step(6)
+        self.show_step(8)
         self.fuel_web.verify_network(cluster_id)
 
-        self.show_step(7)
+        self.show_step(9)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'],
             should_fail=1)
@@ -94,16 +97,20 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
           groups=["cli_deploy_tasks"])
     @log_snapshot_after_test
     def cli_deploy_tasks(self):
-        """Deploy neutron_tun cluster using Fuel CLI
+        """Deployment with 3 controllers, NeutronVLAN
 
         Scenario:
             1. Create new environment
-            2. Add 3 nodes with controller role
-            3. Provision 3 controllers
-            4. Start netconfig on second controller
-            5. Deploy the cluster
-            6. Run network verification
-            7. Run OSTF
+            2. Choose Neutron, Vlan
+            3. Add 3 controllers
+            4. Provision 3 controllers
+               (fuel node --node-id x,x,x --provision --env x)
+            5. Start netconfig on second controller
+               (fuel node --node 2 --end netconfig --env x)
+            6. Deploy controller nodes
+               (fuel node --node x,x,x --deploy --env-id x)
+            7. Verify networks
+            8. Run OSTF tests
 
         Duration 50m
         """
@@ -116,6 +123,7 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
             release_name=OPENSTACK_RELEASE)[0]
 
         self.show_step(1)
+        self.show_step(2)
         cmd = ('fuel env create --name={0} --release={1} '
                '--nst=vlan --json'.format(self.__class__.__name__,
                                           release_id))
@@ -125,10 +133,10 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
             jsonify=True
         )['stdout_json']
         cluster_id = env_result['id']
-        self.show_step(2)
+        self.show_step(3)
         self.add_nodes_to_cluster(cluster_id, node_ids[0:3],
                                   ['controller'])
-        self.show_step(3)
+        self.show_step(4)
         cmd = ('fuel node --node-id {0} --provision --env {1} --json'.
                format(','.join(str(n) for n in node_ids), cluster_id))
         task = self.ssh_manager.execute_on_remote(
@@ -137,7 +145,7 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
             jsonify=True
         )['stdout_json']
         self.assert_cli_task_success(task, timeout=20 * 60)
-        self.show_step(4)
+        self.show_step(5)
         cmd = ('fuel node --node {0} --end netconfig --env {1} --json'.
                format(node_ids[1], release_id))
         task = self.ssh_manager.execute_on_remote(
@@ -146,7 +154,7 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
             jsonify=True
         )['stdout_json']
         self.assert_cli_task_success(task, timeout=30 * 60)
-        self.show_step(5)
+        self.show_step(6)
         cmd = 'fuel --env-id={0} deploy-changes --json'.format(cluster_id)
         task = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
@@ -154,9 +162,9 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
             jsonify=True
         )['stdout_json']
         self.assert_cli_task_success(task, timeout=130 * 60)
-        self.show_step(6)
-        self.fuel_web.verify_network(cluster_id)
         self.show_step(7)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(8)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'],
             should_fail=1)
