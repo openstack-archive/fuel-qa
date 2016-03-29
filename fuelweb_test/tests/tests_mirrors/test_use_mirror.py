@@ -61,7 +61,7 @@ class TestUseMirror(TestBasic):
     @test(groups=['fuel-mirror', 'deploy_with_custom_mirror'],
           depends_on=[SetupEnvironment.prepare_slaves_5])
     def deploy_with_custom_mirror(self):
-        """Create mirror for deployment without internet dependencies.
+        """Create mirror using fuel-mirror with ubuntu action
 
         Scenario:
             1. Create cluster with neutron networking

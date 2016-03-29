@@ -463,12 +463,13 @@ class GPGSigningCheck(TestBasic):
           groups=['test_check_rpm_packages_signed'])
     @log_snapshot_after_test
     def check_rpm_packages_signed(self):
-        """ Check that local rpm packages are signed
+        """Check that local rpm packages are signed
 
         Scenario:
-            1. Revert snapshot with installed master
-            2. Import publick mirantis GPG key
-            3. Check all local rpm packet and verify it
+            1. Create environment using fuel-qa
+            2. Import public GPG key for rpm verification by executing:
+               rpm --import gpg-pub-key
+            3. Check all local rpm packets and verify it
 
         Duration: 15 min
         """
@@ -500,15 +501,15 @@ class GPGSigningCheck(TestBasic):
           groups=['test_remote_packages_and_mos_repositories_signed'])
     @log_snapshot_after_test
     def check_remote_packages_and_mos_repositories_signed(self):
-        """ Check that remote packages and MOS repositories are signed
+        """Check that remote packages and MOS repositories are signed
 
         Scenario:
-            1. Revert snapshot with installed master
-            2. Import mirantis publick GPG key for rpm
-            3. Import mirantis publick GPG key for gpg
-            4. Download repomd.xml.asc and repomd.xml and verify they
-            5. Download Release and Releasee.gpg and verify they
-            6. Download randomly choosed .rpm file and verify it
+            1. Create environment using fuel-qa
+            2. Import GPG key for rpm
+            3. Import GPG key for gpg
+            4. Download repomd.xml.asc and repomd.xml and verify them
+            5. Download Release and Releasee.gpg and verify those
+            6. Download randomly chosen .rpm file and verify it
 
         Duration: 15 min
         """

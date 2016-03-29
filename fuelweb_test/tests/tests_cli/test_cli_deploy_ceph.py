@@ -28,16 +28,20 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
           groups=["cli_deploy_ceph_neutron_tun"])
     @log_snapshot_after_test
     def cli_deploy_ceph_neutron_tun(self):
-        """Deploy neutron_tun cluster using Fuel CLI
+        """Deployment with 3 controllers, NeutronTUN, both Ceph
 
         Scenario:
-            1. Create cluster
-            2. Add 3 nodes with controller role
-            3. Add 2 nodes with compute role
-            4. Add 2 nodes with ceph role
-            5. Deploy the cluster
-            6. Run network verification
-            7. Run OSTF
+            1. Create new environment
+            2. Choose Neutron, TUN
+            3. Choose Ceph for volumes and Ceph for images
+            4. Change ceph replication factor to 2
+            5. Add 3 controller
+            6. Add 2 compute
+            7. Add 2 ceph
+            8. Verify networks
+            9. Deploy the environment
+            10. Verify networks
+            11. Run OSTF tests
 
         Duration 40m
         """
@@ -53,6 +57,7 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
             release_name=OPENSTACK_RELEASE)[0]
 
         self.show_step(1, initialize=True)
+        self.show_step(2)
         cmd = ('fuel env create --name={0} --release={1} '
                '--nst=tun --json'.format(self.__class__.__name__,
                                          release_id))
@@ -66,22 +71,23 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
         self.update_cli_network_configuration(cluster_id)
 
         self.update_ssl_configuration(cluster_id)
-
+        self.show_step(3)
         self.use_ceph_for_volumes(cluster_id)
         self.use_ceph_for_images(cluster_id)
         self.change_osd_pool_size(cluster_id, '2')
 
-        self.show_step(2)
-        self.show_step(3)
         self.show_step(4)
+        self.show_step(5)
+        self.show_step(6)
         self.add_nodes_to_cluster(cluster_id, node_ids[0:3],
                                   ['controller'])
         self.add_nodes_to_cluster(cluster_id, node_ids[3:5],
                                   ['compute'])
         self.add_nodes_to_cluster(cluster_id, node_ids[5:7],
                                   ['ceph-osd'])
+        self.show_step(7)
         self.fuel_web.verify_network(cluster_id)
-        self.show_step(5)
+        self.show_step(8)
         cmd = 'fuel --env-id={0} deploy-changes --json'.format(cluster_id)
 
         task = self.ssh_manager.execute_on_remote(
@@ -91,10 +97,10 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
         )['stdout_json']
         self.assert_cli_task_success(task, timeout=130 * 60)
 
-        self.show_step(6)
+        self.show_step(9)
         self.fuel_web.verify_network(cluster_id)
 
-        self.show_step(7)
+        self.show_step(10)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
@@ -102,17 +108,19 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
           groups=["cli_deploy_ceph_neutron_vlan"])
     @log_snapshot_after_test
     def cli_deploy_ceph_neutron_vlan(self):
-        """ Deployment with 3 controlelrs, NeutronVLAN, both Ceph
+        """Deployment with 3 controlelrs, NeutronVLAN, both Ceph
 
         Scenario:
             1. Create new environment
             2. Choose Neutron, VLAN
             3. Choose Ceph for volumes and Ceph for images
-            4. Add 3 controller, 2 compute, 3 ceph
-            5. Verify networks
-            6. Deploy the environment
+            4. Add 3 controller
+            5. Add 2 compute
+            6. Add 3 ceph
             7. Verify networks
-            8. Run OSTF tests
+            8. Deploy the environment
+            9. Verify networks
+            10. Run OSTF tests
 
         Duration: 60 min
         """
@@ -142,13 +150,15 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
         self.use_ceph_for_volumes(cluster['id'])
         self.use_ceph_for_images(cluster['id'])
 
+        self.show_step(4)
+        self.show_step(5)
+        self.show_step(6)
         nodes = {
             'controller': node_ids[0:3],
             'compute': node_ids[3:5],
             'ceph-osd': node_ids[5:8]
         }
 
-        self.show_step(4)
         for role in nodes:
             self.ssh_manager.execute_on_remote(
                 ip=admin_ip,
@@ -158,10 +168,10 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
                         ','.join(map(str, nodes[role])), role)
             )
 
-        self.show_step(5)
+        self.show_step(7)
         self.fuel_web.verify_network(cluster['id'])
 
-        self.show_step(6)
+        self.show_step(8)
         task = self.ssh_manager.execute_on_remote(
             ip=admin_ip,
             cmd='fuel --env-id={0} '
@@ -170,9 +180,9 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
         )['stdout_json']
         self.assert_cli_task_success(task, timeout=130 * 60)
 
-        self.show_step(7)
+        self.show_step(9)
         self.fuel_web.verify_network(cluster['id'])
-        self.show_step(8)
+        self.show_step(10)
         self.fuel_web.run_ostf(
             cluster_id=cluster['id'],
             test_sets=['ha', 'smoke', 'sanity']
