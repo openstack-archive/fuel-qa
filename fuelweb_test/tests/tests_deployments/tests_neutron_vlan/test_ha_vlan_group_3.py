@@ -30,16 +30,16 @@ class HaVlanGroup3(TestBasic):
            NeutronVLAN with no storage for volumes and swift
 
         Scenario:
-           1. Create new environment
-           2. Choose Neutron, VLAN
-           3. Uncheck cinder for volumes
-           4. Add 3 controller
-           5. Add 2 compute
-           6. Change public net mask from /24 to /25
-           7. Verify networks
-           8. Deploy the environment
-           9. Verify networks
-           10. Run OSTF tests
+            1. Create new environment
+            2. Choose Neutron, VLAN
+            3. Uncheck cinder for volumes
+            4. Add 3 controller
+            5. Add 2 compute
+            6. Change public net mask from /24 to /25
+            7. Verify networks
+            8. Deploy the environment
+            9. Verify networks
+            10. Run OSTF tests
 
         Duration: 180 min
         Snapshot: no_storage_for_volumes_swift
@@ -100,18 +100,18 @@ class HaVlanGroup3(TestBasic):
            with Ceph for volumes and ephemeral
 
         Scenario:
-           1. Create new environment
-           2. Choose Neutron, VLAN
-           3. Choose Ceph for volumes and Ceph for ephemeral
-           4. Change openstack username, password, tenant
-           5. Add 3 controller
-           6. Add 2 compute
-           7. Add 3 ceph nodes
-           8. Change default management net mask from /24 to /25
-           9. Verify networks
-           10. Start deployment
-           11. Verify networks
-           12. Run OSTF
+            1. Create new environment
+            2. Choose Neutron, VLAN
+            3. Choose Ceph for volumes and Ceph for ephemeral
+            4. Change openstack username, password, tenant
+            5. Add 3 controller
+            6. Add 2 compute
+            7. Add 3 ceph nodes
+            8. Change default management net mask from /24 to /25
+            9. Verify networks
+            10. Start deployment
+            11. Verify networks
+            12. Run OSTF
 
         Duration: 180m
         Snapshot: ceph_volumes_ephemeral
@@ -132,17 +132,15 @@ class HaVlanGroup3(TestBasic):
         self.show_step(1, initialize=True)
         self.show_step(2)
         self.show_step(3)
-        self.show_step(4)
-        self.show_step(5)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             settings=data
         )
 
+        self.show_step(4)
+        self.show_step(5)
         self.show_step(6)
         self.show_step(7)
-        self.show_step(8)
-
         self.fuel_web.update_nodes(
             cluster_id,
             {
@@ -157,20 +155,20 @@ class HaVlanGroup3(TestBasic):
             }
         )
 
-        self.show_step(9)
+        self.show_step(8)
         self.fuel_web.update_network_cidr(cluster_id, 'management')
 
-        self.show_step(10)
+        self.show_step(9)
         self.fuel_web.verify_network(cluster_id)
 
-        self.show_step(11)
+        self.show_step(10)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        self.show_step(12)
+        self.show_step(11)
         self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.check_ceph_status(cluster_id)
 
-        self.show_step(13)
+        self.show_step(12)
         self.fuel_web.run_ostf(cluster_id)
         self.env.make_snapshot('ceph_volumes_ephemeral')
