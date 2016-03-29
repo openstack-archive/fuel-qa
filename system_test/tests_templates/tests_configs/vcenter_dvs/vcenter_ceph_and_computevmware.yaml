@@ -20,7 +20,8 @@ template:
       glance:
         enable: false
     vmware_dvs:
-      !include cluster_configs/settings/vmware/dvs_main.yaml
+      dvswitch_name: !os_env DVS_NAME, Cluster1:dvSwitch
+      dvs_fw_driver: false
   nodes:
     - roles:
       - controller
