@@ -94,6 +94,50 @@ class ScaleWithVMware(ActionTest, BaseActions, VMwareActions):
         'network_check',
         'deploy_cluster',
         'scale_node',
+        'deploy_changes',
+        'health_check_sanity_smoke_ha'
+    ]
+
+
+@testcase(groups=['system_test',
+                  'system_test.vcenter',
+                  'system_test.vcenter.scale_vcenter_dvs_skipsrvcheck'])
+class ScaleWithVMwareSkipSrvCheck(ActionTest, BaseActions, VMwareActions):
+    """Deploy and scale cluster with vCenter and dvs plugin
+
+    Scenario:
+        1. Upload plugin to the master node
+        2. Install plugin
+        3. Create cluster
+        4. Configure dvs settings (depends on yaml config)
+        5. Add nodes (depends on yaml config)
+        6. Configure vmware settings (depends on yaml config)
+        7. Run network verification
+        8. Deploy the cluster
+        9. Add/Delete nodes
+        10. Redeploy cluster
+        11. Run OSTF
+
+    Duration 3h 00min
+    Snapshot scale_vcenter_dvs
+    """
+
+    plugin_name = "fuel-plugin-vmware-dvs"
+    plugin_path = DVS_PLUGIN_PATH
+    plugin_version = DVS_PLUGIN_VERSION
+    ostf_tests_should_failed = 1
+    failed_test_name = ['Check that required services are running']
+
+    actions_order = [
+        'prepare_env_with_plugin',
+        'create_env',
+        'enable_plugin',
+        'configure_dvs_plugin',
+        'add_nodes',
+        'configure_vcenter',
+        'network_check',
         'deploy_cluster',
+        'scale_node',
+        'deploy_changes',
         'health_check_sanity_smoke_ha'
     ]
