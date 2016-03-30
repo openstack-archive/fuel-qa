@@ -28,6 +28,10 @@ class HealthCheckActions(object):
     health_check_sanity_smoke_ha - run sanity, smoke and ha OSTF tests
     health_check_ha - run ha OSTF tests
     """
+
+    ostf_should_failed = 0
+    ostf_failed_test_name = None
+
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def health_check(self):
@@ -42,8 +46,10 @@ class HealthCheckActions(object):
 
         self.fuel_web.run_ostf(
             cluster_id=self.cluster_id,
-            should_fail=getattr(self, 'ostf_tests_should_failed', 0),
-            failed_test_name=getattr(self, 'failed_test_name', None))
+            should_fail=getattr(self, 'ostf_tests_should_failed',
+                                self.ostf_should_failed),
+            failed_test_name=getattr(self, 'failed_test_name',
+                                     self.ostf_failed_test_name))
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
@@ -60,8 +66,10 @@ class HealthCheckActions(object):
         self.fuel_web.run_ostf(
             cluster_id=self.cluster_id,
             test_sets=['sanity', 'smoke', 'ha'],
-            should_fail=getattr(self, 'ostf_tests_should_failed', 0),
-            failed_test_name=getattr(self, 'failed_test_name', None))
+            should_fail=getattr(self, 'ostf_tests_should_failed',
+                                self.ostf_should_failed),
+            failed_test_name=getattr(self, 'failed_test_name',
+                                     self.ostf_failed_test_name))
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
@@ -78,5 +86,7 @@ class HealthCheckActions(object):
         self.fuel_web.run_ostf(
             cluster_id=self.cluster_id,
             test_sets=['ha'],
-            should_fail=getattr(self, 'ostf_tests_should_failed', 0),
-            failed_test_name=getattr(self, 'failed_test_name', None))
+            should_fail=getattr(self, 'ostf_tests_should_failed',
+                                self.ostf_should_failed),
+            failed_test_name=getattr(self, 'failed_test_name',
+                                     self.ostf_failed_test_name))
