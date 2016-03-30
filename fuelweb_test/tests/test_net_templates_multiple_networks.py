@@ -26,7 +26,7 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.test_net_templates_base import TestNetworkTemplatesBase
 
 
-@test(groups=["network_templates_multiple_networks"])
+@test(groups=["network_templates_multiple_networks", "multiple_cluster_networks_2"])
 class TestNetworkTemplatesMultipleNetworks(TestNetworkTemplatesBase):
     """TestNetworkTemplatesMultipleNetworks."""  # TODO documentation
 
