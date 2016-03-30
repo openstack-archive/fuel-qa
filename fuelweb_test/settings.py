@@ -509,6 +509,8 @@ MIRROR_UBUNTU = os.environ.get('MIRROR_UBUNTU', '')
 MIRROR_UBUNTU_PRIORITY = os.environ.get('MIRROR_UBUNTU_PRIORITY', 1001)
 EXTRA_DEB_REPOS = os.environ.get('EXTRA_DEB_REPOS', '')
 EXTRA_DEB_REPOS_PRIORITY = os.environ.get('EXTRA_DEB_REPOS_PRIORITY', 1050)
+# Redefine MOS ubuntu mirror URI only
+MIRROR_MOS_UBUNTU_URI = os.environ.get('MIRROR_MOS_UBUNTU_URI', '')
 
 # The same for Centos repository:
 MIRROR_CENTOS = os.environ.get('MIRROR_CENTOS', '')
