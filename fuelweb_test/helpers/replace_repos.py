@@ -35,8 +35,17 @@ def replace_ubuntu_repos(repos_attr, upstream_host):
     else:
         # Use defaults from Nailgun if MIRROR_UBUNTU is not set
         repos = repos_attr['value']
+
     if help_data.EXTRA_DEB_REPOS:
         repos = add_ubuntu_extra_mirrors(repos=repos)
+
+    if help_data.MIRROR_MOS_UBUNTU_URI:
+        for repo in repos:
+            if repo['name'] in ('mos-updates',
+                                'mos-holdback',
+                                'mos-security'):
+                repo['uri'] = help_data.MIRROR_MOS_UBUNTU_URI
+
     if help_data.PATCHING_DISABLE_UPDATES:
         for repo in repos:
             if repo['name'] in ('mos-updates', 'mos-security'):
