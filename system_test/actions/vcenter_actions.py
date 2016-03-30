@@ -13,6 +13,7 @@
 #    under the License.
 
 from proboscis.asserts import assert_true
+from proboscis import SkipTest
 from system_test import logger
 
 from system_test import deferred_decorator
@@ -153,3 +154,31 @@ class VMwareActions(object):
                                                               vmware_attr)
 
         logger.debug("Attributes of cluster have been updated")
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def deploy_changes(self):
+        """Deploy environment"""
+        if self.cluster_id is None:
+            raise SkipTest()
+
+        self.fuel_web.deploy_cluster_wait(self.cluster_id,
+                                          check_services=False)
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def health_check_sanity_smoke_ha_skip_srv_check(self):
+        """Run health checker Sanity, Smoke and HA
+
+        Skip action if cluster doesn't exist
+        """
+        if self.cluster_id is None:
+            raise SkipTest(
+                "The cluster_id is not specified, can not run ostf"
+            )
+
+        self.fuel_web.run_ostf(
+            cluster_id=self.cluster_id,
+            test_sets=['sanity', 'smoke', 'ha'],
+            should_fail=1,
+            failed_test_name=['Check that required services are running'])
