@@ -676,8 +676,9 @@ class NodeDiskSizes(TestBasic):
             for disk in node['meta']['disks']:
                 assert_equal(disk['size'], disk_size, 'Disk size')
 
-        hdd_size = "{} TB HDD".format((disk_size * 3 / (10 ** 9)) / 1000)
+        hdd_size = "{0:.3} TB HDD".format((disk_size * 3 / (10 ** 9)) / 1000)
         notifications = self.fuel_web.client.get_notifications()
+
         for node in nailgun_nodes:
             # assert /api/notifications
             for notification in notifications:
@@ -685,13 +686,24 @@ class NodeDiskSizes(TestBasic):
                 current_node = notification['node_id'] == node['id']
                 if current_node and discover and \
                    "discovered" in notification['message']:
-                    assert_true(hdd_size in notification['message'])
+                    assert_true(hdd_size in notification['message'],
+                                '"{size} not found in notification message '
+                                '"{note}" for node {node} '
+                                '(hostname {host})!'.format(
+                                    size=hdd_size,
+                                    note=notification['message'],
+                                    node=node['name'],
+                                    host=node['hostname'])
+                                )
 
             # assert disks
             disks = self.fuel_web.client.get_node_disks(node['id'])
             for disk in disks:
-                assert_equal(disk['size'],
-                             NODE_VOLUME_SIZE * 1024 - 500, 'Disk size')
+                assert_equal(
+                    disk['size'], NODE_VOLUME_SIZE * 1024 - 500,
+                    'Disk size {0} is not equals expected {1}'.format(
+                        disk['size'], NODE_VOLUME_SIZE * 1024 - 500
+                    ))
 
     @test(depends_on=[NodeMultipleInterfaces.deploy_node_multiple_interfaces],
           groups=["check_nodes_disks"])
