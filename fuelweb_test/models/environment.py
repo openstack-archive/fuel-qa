@@ -164,7 +164,7 @@ class EnvironmentModel(object):
                                  settings.DNS_SUFFIX)),
             'nat_interface': self.d_env.nat_interface,
             'nameserver': settings.DNS,
-            'showmenu': 'no',
+            'showmenu': 'yes' if settings.SHOW_FUELMENU else 'no',
             'wait_for_external_config': 'yes',
             'build_images': '1' if build_images else '0'
         }
@@ -408,8 +408,13 @@ class EnvironmentModel(object):
         admin.send_keys(self.get_keys(admin, custom=custom,
                                       build_images=build_images,
                                       iso_connect_as=iso_connect_as))
-        self.wait_for_provisioning()
+        if settings.SHOW_FUELMENU:
+            self.wait_for_fuelmenu()
+        else:
+            self.wait_for_provisioning()
+
         self.set_admin_ssh_password()
+
         self.wait_for_external_config()
         if custom:
             self.setup_customisation()
@@ -556,6 +561,26 @@ class EnvironmentModel(object):
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
             (self.d_env.admin_net), 22), timeout=timeout)
+
+    @logwrap
+    def wait_for_fuelmenu(self,
+                          timeout=settings.WAIT_FOR_PROVISIONING_TIMEOUT):
+
+        def check_ssh_connection():
+            """Try to close fuelmenu and check ssh connection"""
+            try:
+                _tcp_ping(
+                    self.d_env.nodes(
+                    ).admin.get_ip_address_by_network_name
+                    (self.d_env.admin_net), 22)
+            except Exception:
+                #  send F8 trying to exit fuelmenu
+                self.d_env.nodes().admin.send_keys("<F8>\n")
+                return False
+            return True
+
+        wait(check_ssh_connection, interval=30, timeout=timeout,
+             timeout_msg="Fuelmenu hasn't appeared during allocated timeout")
 
     @logwrap
     def wait_for_external_config(self, timeout=120):
