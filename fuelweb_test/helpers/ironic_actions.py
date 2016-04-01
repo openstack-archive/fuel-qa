@@ -105,6 +105,7 @@ class IronicActions(os_actions.OpenStackActions):
             wait(lambda: tcp_ping(srv.networks['baremetal'][0], 22),
                  timeout=60 * 10, timeout_msg='Failed to connect to port 22')
 
+
     def create_ironic_node(self, **kwargs):
         return self.ironic.node.create(**kwargs)
 
