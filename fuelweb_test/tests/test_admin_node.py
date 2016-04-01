@@ -422,7 +422,7 @@ class TestLogrotateBase(TestBasic):
             'free space after '
             'creation {1}'.format(free, free2))
         self.show_step(4)
-        self.execute_logrotate_cmd(admin_ip, force=False)
+        self.execute_logrotate_cmd(admin_ip)
 
         free3 = self.check_free_space(admin_ip, return_as_is=True)
         logger.debug('Free space after first'
