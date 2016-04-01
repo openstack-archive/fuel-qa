@@ -12,12 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
+import os
 import random
 
+from proboscis import asserts
 from proboscis import test
 
-from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.common import Common
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import ironic_actions
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import IRONIC_USER_IMAGE_URL
@@ -508,3 +511,120 @@ class TestIronicDeploy(TestBasic):
         self._boot_check_delete_vm(ironic_conn)
 
         self.env.make_snapshot("deploy_scale_controller_ironic")
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["deploy_scale_controller_ceph_ironic"])
+    @log_snapshot_after_test
+    def deploy_scale_controller_ceph_ironic(self):
+        """Test cluster scaling with Ceph, Controller and Ironic
+
+        Scenario:
+            1. Create cluster
+            2. Bootstrap 4 additional slave nodes
+            3. Add 1 Controller+Ironic node
+            4. Add 3 Ceph OSD nodes
+            5. Deploy the cluster
+            6. Run OSTF tests
+            7. Boot, check connectivity, delete Ironic VM
+            8. Add 2 Controller+Ironic
+            9. Add 2 Ceph OSD nodes
+            10. Redeploy the cluster
+            11. Run OSTF tests
+            12. Boot, check connectivity, delete Ironic VM
+            13. Remove 2 Controller+Ironic nodes
+            14. Remove 2 Ceph OSD nodes
+            15. Redeploy the cluster
+            16. Run OSTF tests
+            17. Boot, check connectivity, delete Ironic VM
+
+        Duration 90m
+        Snapshot deploy_scale_controller_ceph_ironic
+        """
+
+        self.env.revert_snapshot("ready_with_5_slaves")
+        # Deploy 1st part
+        slave_ram_required = 5120
+
+        if int(os.environ["SLAVE_NODE_MEMORY"]) < slave_ram_required:
+            asserts.fail("SLAVE_NODE_MEMORY should be at least {0} Mb"
+                         .format(slave_ram_required))
+
+        data = {
+            'net_provider': 'neutron',
+            'net_segment_type': NEUTRON_SEGMENT['vlan'],
+            'ironic': True,
+            'volumes_ceph': True,
+            'images_ceph': True,
+            'objects_ceph': True,
+            'volumes_lvm': False,
+            'tenant': 'ceph1',
+            'user': 'ceph1',
+            'password': 'ceph1'
+        }
+
+        nodes = {
+            'slave-01': ['controller', 'ironic'],
+            'slave-02': ['ceph-osd'],
+            'slave-03': ['ceph-osd'],
+            'slave-04': ['ceph-osd']
+        }
+
+        self.show_step(1, initialize=True)
+        self.show_step(2)
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[5:8])
+        self.show_step(3)
+        self.show_step(4)
+        self.show_step(5)
+        self.show_step(6)
+        cluster_id = self._deploy_ironic_cluster(settings=data, nodes=nodes)
+
+        self.show_step(7)
+        ironic_conn = ironic_actions.IronicActions(
+            self.fuel_web.get_public_vip(cluster_id))
+        self._create_os_resources(ironic_conn)
+        self._boot_check_delete_vm(ironic_conn)
+
+        self.show_step(8)
+        self.show_step(9)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-05': ['controller', 'ironic'],
+                'slave-06': ['controller', 'ironic'],
+                'slave-07': ['ceph-osd'],
+                'slave-08': ['ceph-osd']
+            }
+        )
+        self.show_step(10)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.show_step(11)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        ironic_conn = ironic_actions.IronicActions(
+            self.fuel_web.get_public_vip(cluster_id))
+        self.show_step(12)
+        self._boot_check_delete_vm(ironic_conn)
+
+        self.show_step(13)
+        self.show_step(14)
+        nodes = {'slave-01': ['controller', 'ironic'],
+                 'slave-02': ['ceph-osd'],
+                 'slave-03': ['ceph-osd']}
+        for node in nodes:
+            with self.fuel_web.get_ssh_for_node(node) as remote_ceph:
+                self.fuel_web.prepare_ceph_to_delete(remote_ceph)
+        self.fuel_web.update_nodes(
+            cluster_id, nodes,
+            pending_addition=False,
+            pending_deletion=True
+        )
+
+        self.show_step(15)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.show_step(16)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.show_step(17)
+        ironic_conn = ironic_actions.IronicActions(
+            self.fuel_web.get_public_vip(cluster_id))
+        self._boot_check_delete_vm(ironic_conn)
+
+        self.env.make_snapshot("deploy_scale_controller_ceph_ironic")
