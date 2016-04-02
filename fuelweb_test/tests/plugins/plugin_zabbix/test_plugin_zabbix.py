@@ -517,15 +517,7 @@ class ZabbixPlugin(TestBasic):
                 remote,
                 plugin=os.path.basename(conf.ZABBIX_PLUGIN_PATH))
 
-        settings = {}
-        if conf.NEUTRON_ENABLE:
-            settings = {
-                "net_provider": "neutron",
-                "net_segment_type": conf.NEUTRON_SEGMENT_TYPE
-            }
-
-        settings.update(
-            {
+        settings = {
                 'volumes_ceph': True,
                 'images_ceph': True,
                 'volumes_lvm': False,
@@ -533,8 +525,7 @@ class ZabbixPlugin(TestBasic):
                 'user': 'cephHA',
                 'password': 'cephHA',
                 'osd_pool_size': "3"
-            }
-        )
+        }
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=conf.DEPLOYMENT_MODE,
