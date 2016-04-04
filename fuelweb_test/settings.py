@@ -102,7 +102,6 @@ HARDWARE = {
     "admin_node_memory": os.environ.get("ADMIN_NODE_MEMORY", 3072),
     "admin_node_cpu": os.environ.get("ADMIN_NODE_CPU", 2),
     "slave_node_cpu": os.environ.get("SLAVE_NODE_CPU", 1),
-    "numa_nodes": os.environ.get("NUMA_NODES", 0),
 }
 if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
     slave_mem_default = 2560
@@ -412,6 +411,14 @@ UBUNTU_REPO_PATH = os.environ.get('UBUNTU_REPO_PATH',
                                   MOS_REPOS + 'ubuntu/8.0/')
 GPG_CENTOS_KEY = os.environ.get('GPG_CENTOS_KEY',
                                 CENTOS_REPO_PATH + 'os/RPM-GPG-KEY-mos8.0')
+MASTER_CENTOS_GPG = os.environ.get(
+    'MASTER_CENTOS_GPG', 'http://packages.fuel-infra.org/repositories'
+                         '/centos/master-centos7/os/RPM-GPG-KEY-'
+)
+PACKAGES_CENTOS = os.environ.get(
+    'PACKAGES_CENTOS',
+    'http://packages.fuel-infra.org/repositories/'
+    'centos/master-centos7/os/x86_64/')
 
 # Release name of local Ubuntu mirror on Fuel master node.
 UBUNTU_RELEASE = os.environ.get('UBUNTU_RELEASE', 'precise')
