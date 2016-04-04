@@ -691,3 +691,8 @@ Test for network outage
 -----------------------
 .. automodule:: fuelweb_test.tests.tests_strength.test_network_outage
    :members:
+
+Test for configDB instalation
+-----------------------------
+.. automodule:: fuelweb_test.tests.tests_configdb.test_configdb
+   :members:
