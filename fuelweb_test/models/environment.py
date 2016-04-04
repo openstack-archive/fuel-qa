@@ -431,6 +431,7 @@ class EnvironmentModel(object):
 
         self.admin_actions.wait_for_fuel_ready()
         time.sleep(10)
+        self.nailgun_actions.set_log_level()  # Set log level to DEBUG
         self.set_admin_keystone_password()
         self.sync_time(['admin'])
         if settings.UPDATE_MASTER:

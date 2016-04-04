@@ -344,6 +344,21 @@ class NailgunActions(BaseActions):
             cmd='echo "{0}" | tee {1}'.format(yaml.dump(ng_settings), cfg_file)
         )
 
+    @logwrap
+    def set_log_level(self, level='DEBUG'):
+        """ Set nailgun log level to the specified level (by default: DEBUG)
+            Nailgun will be restarted on master node.
+
+        :param level: str='DEBUG'
+        :rtype: None
+        """
+        self.update_nailgun_settings_once(settings={'APP_LOGLEVEL': level})
+        self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip,
+            cmd='systemctl restart nailgun'
+        )
+        logger.info('Nailgun log level is set to: {}'.format(level))
+
     def set_collector_address(self, host, port, ssl=False):
         cmd = ("awk '/COLLECTOR.*URL/' /usr/lib/python2.7"
                "/site-packages/nailgun/settings.yaml")
