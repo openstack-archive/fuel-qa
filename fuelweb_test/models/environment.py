@@ -262,6 +262,7 @@ class EnvironmentModel(object):
         self.admin_actions.wait_for_fuel_ready()
 
     def make_snapshot(self, snapshot_name, description="", is_make=False):
+#        return
         if settings.MAKE_SNAPSHOT or is_make:
             self.d_env.suspend()
             time.sleep(10)

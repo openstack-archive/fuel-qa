@@ -50,13 +50,16 @@ aliases:
     volumes:
      - name: system
        capacity: !os_env NODE_VOLUME_SIZE, 55
-       format: qcow2
+#       format: qcow2
+       format: raw
      - name: cinder
        capacity: !os_env NODE_VOLUME_SIZE, 55
-       format: qcow2
+#       format: qcow2
+       format: raw
      - name: swift
        capacity: !os_env NODE_VOLUME_SIZE, 55
-       format: qcow2
+#       format: qcow2
+       format: raw
     interfaces: *rack-01-slave-interfaces
     network_config: *rack-01-slave-network_config
 
