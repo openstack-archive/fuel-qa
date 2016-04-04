@@ -1144,3 +1144,33 @@ def dict_merge(a, b):
         else:
             result[k] = copy.deepcopy(v)
     return result
+
+
+@logwrap
+def install_configdb(master_node_ip):
+    """ Install ConfigDB extension on master node
+
+    :param master_node_ip: string with fuel master ip address
+    :return: None
+    """
+    ip = master_node_ip
+    ssh_manager = SSHManager()
+    cmds = ['yum-config-manager --add-repo http://perestroika-repo-tst.infra.'
+            'mirantis.net/mos-repos/centos/mos-master-centos7/os/x86_64/',
+
+            'yum-config-manager --add-repo http://packages.fuel-infra.org/'
+            'repositories/centos/master-centos7/os/x86_64/',
+
+            'rpm --import http://packages.fuel-infra.org/repositories/'
+            'centos/master-centos7/os/RPM-GPG-KEY-',
+
+            'yum install -y tuning-box'
+            ]
+    for cmd in cmds:
+        ssh_manager.execute_on_remote(ip=ip, cmd=cmd)
+
+    check = "sudo -u postgres psql -c '\dt' nailgun | grep tuning_box"
+    ssh_manager.execute_on_remote(ip=ip, cmd=check, assert_ec_equal=[1])
+    ssh_manager.execute_on_remote(ip=ip, cmd='nailgun_syncdb')
+    ssh_manager.execute_on_remote(ip=ip, cmd=check)
+    ssh_manager.execute_on_remote(ip=ip, cmd='service nailgun restart')
