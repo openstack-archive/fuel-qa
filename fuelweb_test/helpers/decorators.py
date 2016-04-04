@@ -147,6 +147,8 @@ def json_parse(func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         response = func(*args, **kwargs)
+        if isinstance(response, dict):
+            return response
         return json.loads(response.read())
     return wrapped
 
