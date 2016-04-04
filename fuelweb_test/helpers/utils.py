@@ -1144,3 +1144,24 @@ def dict_merge(a, b):
         else:
             result[k] = copy.deepcopy(v)
     return result
+
+@logwrap
+def install_configdb(master_node_ip):
+    """ Install ConfigDB extension on master node
+
+    :param master_node_ip:
+    :return:
+    """
+    ip = master_node_ip
+    ssh_manager = SSHManager()
+    cmds = ['yum install git python-pip python-alembic python-flask -y',
+            'git clone git://git.openstack.org/openstack/tuning-box.git',
+            'pip install -e tuning-box']
+    for cmd in cmds:
+        ssh_manager.execute_on_remote(ip=ip, cmd=cmd)
+
+    check = "sudo -u postgres psql -c '\dt' nailgun | grep tuning_box"
+    ssh_manager.execute_on_remote(ip=ip, cmd=check, assert_ec_equal=[1])
+    ssh_manager.execute_on_remote(ip=ip, cmd='nailgun_syncdb')
+    ssh_manager.execute_on_remote(ip=ip, cmd=check)
+    ssh_manager.execute_on_remote(ip=ip, cmd='service nailgun restart')
