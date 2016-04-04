@@ -688,3 +688,60 @@ class NailgunClient(object):
         """
         url = '/api/v1/nodes/{}/attributes/'.format(node_id)
         return self.client.get(url)
+
+    # ConfigDB Extension
+
+    @logwrap
+    @json_parse
+    def get_components(self):
+        return self.client.get('/api/config/components')
+
+    @logwrap
+    @json_parse
+    def post_components(self, data):
+        return self.client.post('/api/config/components', data)
+
+    @logwrap
+    @json_parse
+    def get_envirionments(self):
+        return self.client.get('/api/config/envirionmens')
+
+    @logwrap
+    @json_parse
+    def post_envirionments(self, data):
+        return self.client.post('/api/config/envirionmens', data)
+
+
+    @logwrap
+    @json_parse
+    def get_global_resource_value(self, env_id, resource_id):
+        endpoint = '/api/config/environment/' \
+                   '{env_id}/resources/{resource_id}' \
+                   '/values'.format(env_id=env_id, resource_id=resource_id)
+        return self.client.get(endpoint)
+
+    @logwrap
+    @json_parse
+    def put_global_resource_value(self, env_id, resource_id, data):
+        endpoint = '/api/config/environment/' \
+                   '{env_id}/resources/{resource_id}' \
+                   '/values'.format(env_id=env_id, resource_id=resource_id)
+        return self.client.put(endpoint, data)
+
+    @logwrap
+    @json_parse
+    def get_node_resource_value(self, env_id, resource_id, fqdn):
+        endpoint = '/api/config/environment/' \
+                   '{env_id}/nodes/{fqdn}/resources/{resource_id}' \
+                   '/values'.format(env_id=env_id, resource_id=resource_id,
+                                    fqdn=fqdn)
+        return self.client.get(endpoint)
+
+    @logwrap
+    @json_parse
+    def put_node_resource_value(self, env_id, resource_id, fqdn, data):
+        endpoint = '/api/config/environment/' \
+                   '{env_id}/nodes/{fqdn}/resources/{resource_id}' \
+                   '/values'.format(env_id=env_id, resource_id=resource_id,
+                                    fqdn=fqdn)
+        return self.client.put(endpoint, data)
