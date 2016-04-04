@@ -432,6 +432,14 @@ UBUNTU_REPO_PATH = os.environ.get(
 GPG_CENTOS_KEY_PATH = os.environ.get(
     'GPG_CENTOS_KEY',
     CENTOS_REPO_PATH + 'os/RPM-GPG-KEY-mos{release_version}')
+MASTER_CENTOS_GPG = os.environ.get(
+    'MASTER_CENTOS_GPG', 'http://packages.fuel-infra.org/repositories'
+                         '/centos/master-centos7/os/RPM-GPG-KEY-'
+)
+PACKAGES_CENTOS = os.environ.get(
+    'PACKAGES_CENTOS',
+    'http://packages.fuel-infra.org/repositories/'
+    'centos/master-centos7/os/x86_64/')
 
 # Release name of local Ubuntu mirror on Fuel master node.
 UBUNTU_RELEASE = os.environ.get('UBUNTU_RELEASE', 'precise')
