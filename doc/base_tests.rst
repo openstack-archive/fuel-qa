@@ -313,7 +313,7 @@ Test Services reconfiguration
   :members:
 
 Test Support HugePages
------------------------------
+----------------------
 .. automodule:: fuelweb_test.tests.test_support_hugepages
   :members:
 
@@ -675,4 +675,9 @@ Deployment with platform components
 Test for ssl components
 -----------------------
 .. automodule:: fuelweb_test.tests.test_ssl
+   :members:
+
+Test for configDB instalation
+-----------------------------
+.. automodule:: fuelweb_test.tests.tests_configdb.test_configdb
    :members:
