@@ -1144,3 +1144,29 @@ def dict_merge(a, b):
         else:
             result[k] = copy.deepcopy(v)
     return result
+
+
+@logwrap
+def install_configdb(master_node_ip):
+    """ Install ConfigDB extension on master node
+
+    :param master_node_ip: string with fuel master ip address
+    :return: None
+    """
+    ip = master_node_ip
+    ssh_manager = SSHManager()
+    cmds = ['yum-config-manager --add-repo '
+            '{}'.format(settings.PERESTROIKA_REPO),
+
+            'yum-config-manager --add-repo {}'.format(
+                settings.PACKAGES_CENTOS),
+
+            'rpm --import {}'.format(settings.MASTER_CENTOS_GPG),
+
+            'yum install -y tuning-box',
+            'nailgun_syncdb',
+            "sudo -u postgres psql -c '\dt' nailgun | grep tuning_box",
+            'service nailgun restart'
+            ]
+    for cmd in cmds:
+        ssh_manager.execute_on_remote(ip=ip, cmd=cmd)
