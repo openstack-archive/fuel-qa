@@ -20,6 +20,7 @@ from keystoneclient import exceptions
 # pylint: disable=import-error
 from six.moves.urllib import request
 from six.moves.urllib.error import HTTPError
+import requests
 # pylint: enable=import-error
 
 from fuelweb_test import logger
@@ -96,6 +97,16 @@ class HTTPClient(object):
         try:
             return self._get_response(req)
         except HTTPError as e:
+            if e.code == 308:
+                logger.info(e.read())
+                url = req.get_full_url()
+                req = requests.get(url, headers={'X-Auth-Token': self.token})
+                if req.status_code in [200]:
+                    # req.json() could be used here but current decision is
+                    # needed for backward compatibility with json_parse
+                    return req.text
+                else:
+                    req.raise_for_status()
             if e.code == 401:
                 logger.warning('Authorization failure: {0}'.format(e.read()))
                 self.authenticate()
