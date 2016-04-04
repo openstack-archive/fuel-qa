@@ -22,7 +22,7 @@ from devops.helpers.helpers import wait
 from six.moves import urllib
 # pylint: enable=import-error
 
-from fuelweb_test.helpers.ssl import change_cluster_ssl_config
+from fuelweb_test.helpers.ssl_helpers import change_cluster_ssl_config
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logwrap
 from fuelweb_test import logger

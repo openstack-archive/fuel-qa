@@ -52,8 +52,8 @@ from fuelweb_test.helpers.decorators import update_fuel
 from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers.security import SecurityChecks
 from fuelweb_test.helpers.ssh_manager import SSHManager
-from fuelweb_test.helpers.ssl import change_cluster_ssl_config
-from fuelweb_test.helpers.ssl import copy_cert_from_master
+from fuelweb_test.helpers.ssl_helpers import change_cluster_ssl_config
+from fuelweb_test.helpers.ssl_helpers import copy_cert_from_master
 from fuelweb_test.helpers.uca import change_cluster_uca_config
 from fuelweb_test.helpers.utils import get_node_hiera_roles
 from fuelweb_test.helpers.utils import node_freemem
