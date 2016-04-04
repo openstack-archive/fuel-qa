@@ -688,3 +688,76 @@ class NailgunClient(object):
         """
         url = '/api/v1/nodes/{}/attributes/'.format(node_id)
         return self.client.get(url)
+
+    # ConfigDB Extension
+
+    @logwrap
+    @json_parse
+    def get_components(self):
+        return self.client.get('/api/config/components')
+
+    @logwrap
+    @json_parse
+    def post_components(self, data):
+        return self.client.post('/api/config/components', data)
+
+    @logwrap
+    @json_parse
+    def get_envirionments(self):
+        return self.client.get('/api/config/environments')
+
+    @logwrap
+    @json_parse
+    def post_envirionments(self, data):
+        return self.client.post('/api/config/environments', data)
+
+
+    @logwrap
+    @json_parse
+    def get_global_resource_value(self, env_id, resource_id, effective=False):
+        endpoint = '/api/config/environments/' \
+                   '{env_id}/resources/{resource_id}' \
+                   '/values'.format(env_id=env_id, resource_id=resource_id)
+        endpoint = endpoint + '?effective' if effective else endpoint
+        return self.client.get(endpoint)
+
+    @logwrap
+    def put_global_resource_value(self, env_id, resource_id, data):
+        endpoint = '/api/config/environments/' \
+                   '{env_id}/resources/{resource_id}' \
+                   '/values'.format(env_id=env_id, resource_id=resource_id)
+        return self.client.put(endpoint, data)
+
+    @logwrap
+    def put_global_resource_override(self, env_id, resource_id, data):
+        endpoint = '/api/config/environments/' \
+                   '{env_id}/resources/{resource_id}' \
+                   '/overrides'.format(env_id=env_id, resource_id=resource_id)
+        return self.client.put(endpoint, data)
+
+    @logwrap
+    @json_parse
+    def get_node_resource_value(self, env_id, resource_id, node_id,
+                                effective=False):
+        endpoint = '/api/config/environments/' \
+                   '{env_id}/nodes/{node_id}/resources/{resource_id}' \
+                   '/values'.format(env_id=env_id, resource_id=resource_id,
+                                    node_id=node_id)
+        endpoint = endpoint + '?effective' if effective else endpoint
+        return self.client.get(endpoint)
+
+    @logwrap
+    def put_node_resource_value(self, env_id, resource_id, node_id, data):
+        endpoint = '/api/config/environments/' \
+                   '{env_id}/nodes/{node_id}/resources/{resource_id}' \
+                   '/values'.format(env_id=env_id, resource_id=resource_id,
+                                    node_id=node_id)
+        return self.client.put(endpoint, data)
+
+    @logwrap
+    def put_node_resource_overrides(self, env_id, resource_id, node_id, data):
+        endpoint = '/api/config/environments/' \
+                   '{env_id}/nodes/{node_id}/resources/{resource_id}' \
+                   '/overrides'.format(env_id=env_id, resource_id=resource_id,
+                                    node_id=node_id)
+        return self.client.put(endpoint, data)
