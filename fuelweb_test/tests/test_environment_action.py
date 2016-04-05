@@ -41,7 +41,8 @@ class EnvironmentAction(base_test_case.TestBasic):
             6. Stop deployment
             7. Add 1 node with cinder role
             8. Re-deploy cluster
-            9. Run OSTF
+            9. Verify network
+            10. Run OSTF
 
         Duration 50m
         Snapshot: deploy_neutron_stop_reset_on_deploying
@@ -84,6 +85,8 @@ class EnvironmentAction(base_test_case.TestBasic):
         asserts.assert_equal(
             3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
 
+        self.fuel_web.verify_network(cluster_id)
+
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
@@ -104,7 +107,8 @@ class EnvironmentAction(base_test_case.TestBasic):
             6. Reset settings
             7. Add 1 node with cinder role
             8. Re-deploy cluster
-            9. Run OSTF
+            9. Verify network
+            10. Run OSTF
 
         Duration 40m
         Snapshot: deploy_neutron_stop_reset_on_deploying
@@ -142,6 +146,8 @@ class EnvironmentAction(base_test_case.TestBasic):
 
         asserts.assert_equal(
             3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
+
+        self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
@@ -218,7 +224,8 @@ class EnvironmentActionOnHA(base_test_case.TestBasic):
             5. Reset settings
             6. Add 2 nodes with compute role
             7. Re-deploy cluster
-            8. Run OSTF
+            8. Verify network
+            9. Run OSTF
 
         Duration 60m
         Snapshot: deploy_stop_reset_on_ha
@@ -284,7 +291,8 @@ class ControllerReplacement(base_test_case.TestBasic):
             4. Deploy cluster
             5. Remove one controller add new controller
             6. Deploy changes
-            7. Run OSTF
+            7. Verify network
+            8. Run OSTF
 
         Duration 90m
         Snapshot: deploy_ha_neutron_tun_ctrl_replacement
@@ -319,6 +327,9 @@ class ControllerReplacement(base_test_case.TestBasic):
         # Disable check services here, according to nova-manage shows
         #  XXX for node that we remove
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+
+        self.fuel_web.verify_network(cluster_id)
+
         self.fuel_web.run_ostf(cluster_id,
                                test_sets=['ha', 'smoke', 'sanity'],
                                should_fail=1)
@@ -338,7 +349,8 @@ class ControllerReplacement(base_test_case.TestBasic):
             4. Deploy cluster
             5. Remove one controller add new controller
             6. Deploy changes
-            7. Run OSTF
+            7. Verify network
+            8. Run OSTF
 
         Duration 90m
         Snapshot: deploy_ha_neutron_vlan_ctrl_replacement
@@ -373,6 +385,9 @@ class ControllerReplacement(base_test_case.TestBasic):
         # Disable check services here, according to nova-manage shows
         #  XXX for node that we remove
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+
+        self.fuel_web.verify_network(cluster_id)
+
         self.fuel_web.run_ostf(cluster_id,
                                test_sets=['ha', 'smoke', 'sanity'],
                                should_fail=1)
@@ -394,7 +409,8 @@ class ControllerReplacement(base_test_case.TestBasic):
             4. Deploy cluster
             5. Remove one controller add new controller
             6. Deploy changes
-            7. Run OSTF
+            7. Verify network
+            8. Run OSTF
 
         Duration 90m
         Snapshot: deploy_ha_nova_ctrl_replacement
@@ -426,6 +442,9 @@ class ControllerReplacement(base_test_case.TestBasic):
         # Disable check services here, according to nova-manage shows
         #  XXX for node that we remove
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+
+        self.fuel_web.verify_network(cluster_id)
+
         self.fuel_web.run_ostf(cluster_id,
                                test_sets=['ha', 'smoke', 'sanity'],
                                should_fail=1)
