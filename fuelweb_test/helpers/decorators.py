@@ -338,6 +338,13 @@ def create_diagnostic_snapshot(env, status, name=""):
         url = "http://{}:8000{}".format(env.get_admin_node_ip(),
                                         task['message'])
 
+    cmd = "shotgun2 report > /var/log/shotgun_report.txt"
+    SSHManager().execute_on_remote(
+        ip=SSHManager().admin_ip,
+        cmd=cmd
+    )
+
+    url = "http://{}:8000{}".format(env.get_admin_node_ip(), task['message'])
     log_file_name = '{status}_{name}-{basename}'.format(
         status=status,
         name=name,
