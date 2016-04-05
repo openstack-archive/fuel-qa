@@ -287,7 +287,9 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions):
         self.cluster_id = self.fuel_web.create_cluster(
             name=self.env_config['name'],
             mode=settings.DEPLOYMENT_MODE,
-            release_name=self.env_config['release'],
+            release_name=settings.OPENSTACK_RELEASE_UBUNTU
+            if self.env_config['release'] == 'ubuntu' 
+            else settings.OPENSTACK_RELEASE,
             settings=cluster_settings)
 
         logger.info("Cluster created with ID:{}".format(self.cluster_id))
