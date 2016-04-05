@@ -12,9 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import time
 import json
+import time
+
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
 
 from devops.error import TimeoutError
 from devops.helpers.helpers import wait
@@ -22,6 +24,9 @@ from devops.helpers.helpers import wait
 from six.moves import urllib
 # pylint: enable=import-error
 
+from fuelweb_test.helpers.checkers import fail_deploy
+from fuelweb_test.helpers.checkers import incomplete_deploy
+from fuelweb_test.helpers.checkers import incomplete_tasks
 from fuelweb_test.helpers.ssl_helpers import change_cluster_ssl_config
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logwrap
@@ -106,6 +111,64 @@ class CommandLine(TestBasic):
                 task['status'], 'ready', name=task["name"]
             )
         )
+
+    @logwrap
+    def get_all_tasks_list(self):
+        return self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='fuel2 task list -f json',
+            jsonify=True)['stdout_json']
+
+    @logwrap
+    def get_deployment_task_hist(self, task_id):
+        return self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='fuel2 task history show {} -f json'.format(task_id),
+            jsonify=True
+        )['stdout_json']
+
+    @logwrap
+    def assert_all_tasks_completed(self, cluster_id=None):
+        cluster_info_template = "\n\tCluster ID: {cluster}{info}\n"
+        all_tasks = sorted(
+            self.get_all_tasks_list(),
+            key=lambda _tsk: _tsk['id'],
+            reverse=True
+        )
+
+        not_ready_tasks, deploy_tasks = incomplete_tasks(
+            all_tasks, cluster_id)
+
+        not_ready_transactions = incomplete_deploy(
+            {
+                cluster: self.get_deployment_task_hist(task_id)
+                for cluster, task_id in deploy_tasks.items()})
+
+        if len(not_ready_tasks) > 0:
+            task_details_template = (
+                "\n"
+                "\t\tTask name: {name}\n"
+                "\t\t\tStatus:    {status}\n"
+                "\t\t\tProgress:  {progress}\n"
+                "\t\t\tResult:    {result}\n"
+                "\t\t\tTask ID:   {id}"
+            )
+
+            task_text = 'Not all tasks completed: {}'.format(
+                ''.join(
+                    cluster_info_template.format(
+                        cluster=cluster,
+                        info="".join(
+                            task_details_template.format(**task)
+                            for task in tasks))
+                    for cluster, tasks in sorted(not_ready_tasks.items())
+                ))
+            logger.error(task_text)
+            if len(not_ready_transactions) == 0:
+                # Else: we will raise assert with detailed info
+                # about deployment
+                assert_true(len(not_ready_tasks) == 0, task_text)
+        fail_deploy(not_ready_transactions)
 
     @staticmethod
     @logwrap
