@@ -194,6 +194,8 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                   cmd,
                                                   jsonify=True)['stdout_json']
         self.assert_cli_task_success(task, timeout=60 * 60)
+
+        self.assert_all_tasks_completed(cluster_id=cluster_id)
         # Deploy the compute nodes
         cmd = ('fuel --env-id={0} node --deploy --node {1},{2} --json'.format(
             cluster_id, node_ids[1], node_ids[2]))
@@ -201,6 +203,8 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                   cmd,
                                                   jsonify=True)['stdout_json']
         self.assert_cli_task_success(task, timeout=30 * 60)
+
+        self.assert_all_tasks_completed(cluster_id=cluster_id)
         # Verify networks
         self.fuel_web.verify_network(cluster_id)
         controller_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
@@ -430,6 +434,8 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                   jsonify=True)['stdout_json']
         self.assert_cli_task_success(task, timeout=60 * 60)
 
+        self.assert_all_tasks_completed(cluster_id=cluster_id)
+
         assert_equal(
             1,
             len(self.fuel_web.get_nailgun_node_by_status('provisioned')),
@@ -450,6 +456,8 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                   cmd,
                                                   jsonify=True)['stdout_json']
         self.assert_cli_task_success(task, timeout=10 * 60)
+
+        self.assert_all_tasks_completed(cluster_id=cluster_id)
 
         assert_equal(
             2,
@@ -472,6 +480,8 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                   jsonify=True)['stdout_json']
         self.assert_cli_task_success(task, timeout=10 * 60)
 
+        self.assert_all_tasks_completed(cluster_id=cluster_id)
+
         assert_equal(
             3,
             len(self.fuel_web.get_nailgun_node_by_status('provisioned')),
@@ -492,6 +502,8 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                   cmd,
                                                   jsonify=True)['stdout_json']
         self.assert_cli_task_success(task, timeout=10 * 60)
+
+        self.assert_all_tasks_completed(cluster_id=cluster_id)
 
         assert_equal(
             4,
@@ -517,6 +529,8 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                   jsonify=True)['stdout_json']
         self.assert_cli_task_success(task, timeout=10 * 60)
 
+        self.assert_all_tasks_completed(cluster_id=cluster_id)
+
         assert_equal(
             6,
             len(self.fuel_web.get_nailgun_node_by_status('provisioned')),
@@ -536,6 +550,8 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                   cmd,
                                                   jsonify=True)['stdout_json']
         self.assert_cli_task_success(task, timeout=10 * 60)
+
+        self.assert_all_tasks_completed(cluster_id=cluster_id)
 
         assert_equal(
             7,
@@ -572,6 +588,8 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                   jsonify=True)['stdout_json']
         self.assert_cli_task_success(task, timeout=60 * 60)
 
+        self.assert_all_tasks_completed(cluster_id=cluster_id)
+
         self.show_step(13, details='for node id {}'.format(node_ids[1]))
         # Deploy the compute node node_ids[1]
         cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
@@ -580,6 +598,8 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                   cmd,
                                                   jsonify=True)['stdout_json']
         self.assert_cli_task_success(task, timeout=30 * 60)
+
+        self.assert_all_tasks_completed(cluster_id=cluster_id)
 
         # Deploy the cinder node node_ids[2]
         self.show_step(14, details='for node id {}'.format(node_ids[2]))
@@ -590,6 +610,8 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                   jsonify=True)['stdout_json']
         self.assert_cli_task_success(task, timeout=60 * 60)
 
+        self.assert_all_tasks_completed(cluster_id=cluster_id)
+
         # Deploy the mongo node node_ids[3]
         self.show_step(15, details='for node id {}'.format(node_ids[3]))
         cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
@@ -598,6 +620,8 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                   cmd,
                                                   jsonify=True)['stdout_json']
         self.assert_cli_task_success(task, timeout=60 * 60)
+
+        self.assert_all_tasks_completed(cluster_id=cluster_id)
 
         # Deploy ceph-osd  nodes node_ids[4] node_ids[5]
         self.show_step(16, details='for node ids {0}, {1}'.format(
@@ -609,6 +633,8 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                   jsonify=True)['stdout_json']
         self.assert_cli_task_success(task, timeout=60 * 60)
 
+        self.assert_all_tasks_completed(cluster_id=cluster_id)
+
         # Deploy the base-os node node_ids[6]
         self.show_step(17, details='for node id {}'.format(node_ids[6]))
         cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
@@ -617,6 +643,8 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                   cmd,
                                                   jsonify=True)['stdout_json']
         self.assert_cli_task_success(task, timeout=60 * 60)
+
+        self.assert_all_tasks_completed(cluster_id=cluster_id)
 
         self.fuel_web.verify_network(cluster_id)
         self.show_step(18)
