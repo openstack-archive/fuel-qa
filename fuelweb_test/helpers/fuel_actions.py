@@ -226,6 +226,7 @@ class AdminActions(BaseActions):
         # Slave nodes should use the gateway of 'admin' network as the default
         # gateway during provisioning and as an additional DNS server.
         fuel_settings = self.get_fuel_settings()
+        fuel_settings['DEBUG'] = True
         fuel_settings['DNS_UPSTREAM'] = router
         fuel_settings['ADMIN_NETWORK']['dhcp_gateway'] = router
 
