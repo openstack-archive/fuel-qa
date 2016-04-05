@@ -50,6 +50,8 @@ from fuelweb_test.helpers.decorators import duration
 from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.decorators import update_fuel
 from fuelweb_test.helpers.decorators import upload_manifests
+from fuelweb_test.helpers.granular_deployment_checkers import incomplete_tasks
+from fuelweb_test.helpers.granular_deployment_checkers import incomplete_deploy
 from fuelweb_test.helpers.security import SecurityChecks
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.ssl_helpers import change_cluster_ssl_config
@@ -341,6 +343,49 @@ class FuelWebClient(object):
                 task['status'], 'error', name=task["name"]
             )
         )
+
+    @logwrap
+    def assert_all_tasks_completed(self, cluster_id=None):
+        cluster_info_template = "\n\tCluster ID: {cluster}{info}\n"
+        all_tasks = sorted(
+            self.client.get_all_tasks_list(),
+            key=lambda _tsk: _tsk['id'],
+            reverse=True
+        )
+
+        not_ready_tasks, deploy_tasks = incomplete_tasks(
+            all_tasks, cluster_id)
+
+        not_ready_deploy = incomplete_deploy(
+            {
+                cluster: self.client.get_deployment_task_hist(task_id)
+                for cluster, task_id in deploy_tasks})
+
+        if len(not_ready_tasks) > 0:
+            task_details_template = (
+                "\n"
+                "\t\tTask name: {name}\n"
+                "\t\t\tStatus:    {status}\n"
+                "\t\t\tProgress:  {progress}\n"
+                "\t\t\tResult:    {result}\n"
+                "\t\t\tMessage:   {message}\n"
+                "\t\t\tTask ID:   {id}"
+            )
+
+            task_text = 'Not all tasks completed: {}'.format(
+                ''.join(
+                    cluster_info_template.format(
+                        cluster=cluster,
+                        info="".join(
+                            task_details_template.format(**task)
+                            for task in tasks))
+                    for cluster, tasks in sorted(not_ready_tasks.items())
+                ))
+            logger.error(task_text)
+            if len(not_ready_deploy) == 0:
+                # Else: we will raise assert with detailed info
+                # about deployment
+                assert_true(len(not_ready_tasks) == 0, task_text)
 
     @logwrap
     def fqdn(self, devops_node):
@@ -768,7 +813,10 @@ class FuelWebClient(object):
         attributes = self.client.get_cluster_attributes(cluster_id)
         return attributes['editable']['repo_setup']['repos']
 
-    def check_deploy_state(self, cluster_id, check_services=True):
+    def check_deploy_state(self, cluster_id, check_services=True,
+                           check_tasks=True):
+        if check_tasks:
+            self.assert_all_tasks_completed(cluster_id=cluster_id)
         if check_services:
             self.assert_ha_services_ready(cluster_id)
             self.assert_os_services_ready(cluster_id)
@@ -810,12 +858,12 @@ class FuelWebClient(object):
     @custom_repo
     def deploy_cluster_wait(self, cluster_id, is_feature=False,
                             timeout=help_data.DEPLOYMENT_TIMEOUT, interval=30,
-                            check_services=True):
+                            check_services=True, check_tasks=True):
         if not is_feature and help_data.DEPLOYMENT_RETRIES == 1:
             logger.info('Deploy cluster %s', cluster_id)
             task = self.deploy_cluster(cluster_id)
             self.assert_task_success(task, interval=interval, timeout=timeout)
-            self.check_deploy_state(cluster_id, check_services)
+            self.check_deploy_state(cluster_id, check_services, check_tasks)
             return
 
         logger.info('Provision nodes of a cluster %s', cluster_id)
@@ -827,7 +875,7 @@ class FuelWebClient(object):
                         cluster_id, str(retry_number + 1))
             task = self.client.deploy_nodes(cluster_id)
             self.assert_task_success(task, timeout=timeout, interval=interval)
-            self.check_deploy_state(cluster_id, check_services)
+            self.check_deploy_state(cluster_id, check_services, check_tasks)
 
     def deploy_cluster_wait_progress(self, cluster_id, progress,
                                      return_task=None):
