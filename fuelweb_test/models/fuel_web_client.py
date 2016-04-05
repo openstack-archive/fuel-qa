@@ -39,6 +39,7 @@ from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test import ostf_test_mapping
 from fuelweb_test import QuietLogger
+from fuelweb_test.error import error
 from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers import replace_repos
@@ -313,23 +314,23 @@ class FuelWebClient(object):
         logger.info('Assert task %s is success', task)
         if not progress:
             task = self.task_wait(task, timeout, interval)
-            assert_equal(
-                task['status'], 'ready',
-                "Task '{0}' has incorrect status. {1} != {2}, '{3}'".format(
-                    task["name"], task['status'], 'ready', _message(task)
-                )
-            )
+            if task['status'] != 'ready':
+                error(task['name'] + '_failed'
+                      "Task '{0}' has incorrect status. {1} != {2}, '{3}'"
+                      .format(task['name'], task['status'], 'ready',
+                              _message(task)))
+
         else:
             logger.info('Start to polling task progress')
             task = self.task_wait_progress(
                 task, timeout=timeout, interval=interval, progress=progress)
-            assert_not_equal(
-                task['status'], 'error',
-                "Task '{0}' has error status. '{1}'"
-                .format(task['status'], _message(task)))
-            assert_true(
-                task['progress'] >= progress,
-                'Task has other progress{0}'.format(task['progress']))
+            if task['status'] == 'error':
+                error(task['name'] + '_failed',
+                      "Task '{0}' has error status. '{1}'"
+                      .format(task['name'], _message(task)))
+            if not (task['progress'] >= progress):
+                error(task['name'] + '_progress_failed',
+                      'Task has other progress {0}'.format(task['progress']))
 
     @logwrap
     def assert_task_failed(self, task, timeout=70 * 60, interval=5):
@@ -1159,9 +1160,9 @@ class FuelWebClient(object):
                 timeout=timeout
             )
         except TimeoutError:
-            raise TimeoutError(
-                "Waiting task \"{task}\" timeout {timeout} sec "
-                "was exceeded: ".format(task=task["name"], timeout=timeout))
+            error(task['name'] + '_failed',
+                  "Waiting task \"{task}\" timeout {timeout} sec "
+                  "was exceeded: ".format(task=task["name"], timeout=timeout))
         took = time.time() - start
         task = self.client.get_task(task['id'])
         logger.info('Task finished. Took {0} seconds. {1}'.format(
@@ -1182,9 +1183,9 @@ class FuelWebClient(object):
                 timeout=timeout
             )
         except TimeoutError:
-            raise TimeoutError(
-                "Waiting task \"{task}\" timeout {timeout} sec "
-                "was exceeded: ".format(task=task["name"], timeout=timeout))
+            error(task['name'] + '_progress_failed',
+                  "Waiting task \"{task}\" timeout {timeout} sec "
+                  "was exceeded: ".format(task=task["name"], timeout=timeout))
 
         return self.client.get_task(task['id'])
 
