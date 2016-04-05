@@ -12,13 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from random import randrange
 from proboscis.asserts import assert_true
 from system_test import logger
-
 from system_test import deferred_decorator
 from system_test import action
-
 from system_test.helpers.decorators import make_snapshot_if_step_fail
+from fuelweb_test.helpers.ssh_manager import SSHManager
 
 
 # pylint: disable=no-member
@@ -153,3 +153,108 @@ class VMwareActions(object):
                                                               vmware_attr)
 
         logger.debug("Attributes of cluster have been updated")
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def set_custom_node_names(self):
+        """Set custom node names"""
+        custom_hostnames = []
+        for node in self.fuel_web.client.list_cluster_nodes(self.cluster_id):
+            custom_hostname = "{0}-{1}".format(
+                node['pending_roles'][0], randrange(0, 0xffff))
+            custom_hostnames.append(custom_hostname)
+            self.fuel_web.client.set_hostname(node['id'], custom_hostname)
+
+    @staticmethod
+    def get_nova_conf_dict(az, nova):
+        """
+        :param az: vcenter az (api), dict
+        :param nova:  nova (api), dict
+        :return: dict
+        """
+        conf_dict = {
+            'host': 'vcenter-{}'.format(nova['service_name']),
+            'cluster_name': nova['vsphere_cluster'],
+            'datastore_regex': nova['datastore_regex'],
+            'host_username': az['vcenter_username'],
+            'host_password': az['vcenter_password'],
+            'host_ip': az['vcenter_host']
+        }
+        return conf_dict
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def check_nova_conf(self):
+        """Verify nova-compute vmware configuration"""
+
+        nodes = self.fuel_web.client.list_cluster_nodes(self.cluster_id)
+        vmware_attr = self.fuel_web.client.get_cluster_vmware_attributes(
+            self.cluster_id)
+        az = vmware_attr['editable']['value']['availability_zones'][0]
+        nova_computes = az['nova_computes']
+
+        data = []
+        ctrl_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            self.cluster_id, ["controller"])
+        for nova in nova_computes:
+            target_node = nova['target_node']['current']['id']
+            if target_node == 'controllers':
+                conf_path = '/etc/nova/nova-compute.d/vmware-vcenter_{0}.' \
+                            'conf'.format(nova['service_name'])
+                for node in ctrl_nodes:
+                    hostname = node['hostname']
+                    ip = node['ip']
+                    conf_dict = self.get_nova_conf_dict(az, nova)
+                    params = [hostname, ip, conf_path, conf_dict]
+                    data.append(params)
+            else:
+                conf_path = '/etc/nova/nova-compute.conf'
+                for node in nodes:
+                    if node['hostname'] == target_node:
+                        hostname = node['hostname']
+                        ip = node['ip']
+                        conf_dict = self.get_nova_conf_dict(az, nova)
+                        params = [hostname, ip, conf_path, conf_dict]
+                        data.append(params)
+
+        for d in data:
+            hostname, ip, conf_path, conf_dict = d
+            logger.info("Check nova conf of {0}".format(hostname))
+            for key in conf_dict.keys():
+                cmd = 'cat {0} | grep {1}={2}'.format(conf_path, key,
+                                                      conf_dict[key])
+                logger.info('CMD: {}'.format(cmd))
+                SSHManager().execute_on_remote(ip, cmd)
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def check_nova_srv(self):
+        """Verify nova-compute service for each vSphere cluster"""
+
+        vmware_attr = self.fuel_web.client.get_cluster_vmware_attributes(
+            self.cluster_id)
+        az = vmware_attr['editable']['value']['availability_zones'][0]
+        nova_computes = az['nova_computes']
+
+        ctrl_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            self.cluster_id, ["controller"])
+        for nova in nova_computes:
+            srv_name = nova['service_name']
+            cmd = '. openrc; nova-manage service describe_resource ' \
+                  'vcenter-{}'.format(srv_name)
+            logger.info('CMD: {}'.format(cmd))
+            SSHManager().execute_on_remote(ctrl_nodes[0]['ip'],
+                                           cmd)
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def check_cinder_vmware_srv(self):
+        """Verify cinder-vmware service"""
+
+        ctrl_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            self.cluster_id, ["controller"])
+        cmd = '. openrc; cinder-manage service list | grep vcenter | ' \
+              'grep ":-)"'
+        logger.info('CMD: {}'.format(cmd))
+        SSHManager().execute_on_remote(ctrl_nodes[0]['ip'],
+                                       cmd)
