@@ -688,3 +688,16 @@ class NailgunClient(object):
         """
         url = '/api/v1/nodes/{}/attributes/'.format(node_id)
         return self.client.get(url)
+
+    @logwrap
+    @json_parse
+    def get_all_tasks_list(self):
+        url = '/api/transactions/'
+        return self.client.get(url)
+
+    @logwrap
+    @json_parse
+    def get_deployment_task_hist(self, task_id):
+        url = '/api/transactions/{task_id}/deployment_history'.format(
+            task_id=task_id)
+        return self.client.get(url)
