@@ -25,6 +25,7 @@ import yaml
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
+from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
 from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
 from fuelweb_test.helpers import replace_repos
@@ -197,6 +198,11 @@ class AdminActions(BaseActions):
     @logwrap
     def wait_for_fuel_ready(self, timeout=300):
         wait(lambda: self.is_fuel_ready, timeout=timeout)
+
+    @logwrap
+    @retry()
+    def ensure_cmd(self, cmd):
+        self.ssh_manager.execute_on_remote(ip=self.admin_ip, cmd=cmd)
 
     @logwrap
     def upload_plugin(self, plugin):
