@@ -27,6 +27,7 @@ from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import SSL_CN
 from fuelweb_test.settings import PATH_TO_PEM
 from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
+from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -352,3 +353,280 @@ class CommandLineTest(test_cli_base.CommandLine):
         assert_false(
             check_cluster_presence(cluster_id, self.env.postgres_actions),
             "cluster {0} is found".format(cluster_id))
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
+          groups=["cli_selected_nodes_deploy_huge"])
+    @log_snapshot_after_test
+    def cli_selected_nodes_deploy_huge(self):
+        """Create and deploy huge environment using Fuel CLI
+
+        Scenario:
+            1. Revert snapshot "ready_with_9_slaves"
+            2. Create a cluster
+            3. Set replication factor 2
+            4. Set ceph usage for images, cinder for volumes
+            5. Provision a controller node using Fuel CLI
+            6. Provision one compute node using Fuel CLI
+            7. Provision one cinder node using Fuel CLI
+            8. Provision one mongo node using Fuel CLI
+            9. Provision two ceph-osd nodes using Fuel CLI
+            10. Provision one base-os node using Fuel CLI
+            11. Leave 2 nodes in discover state
+            12. Deploy the controller node using Fuel CLI
+            13. Deploy the compute node using Fuel CLI
+            14. Deploy the cinder node using Fuel CLI
+            15. Deploy the mongo node using Fuel CLI
+            16. Deploy the ceph-osd nodes using Fuel CLI
+            17. Deploy the base-os node using Fuel CLI
+            18. Check that nodes in discover state stay in it
+            19. Run OSTF
+
+        Duration 50m
+        """
+        self.show_step(1)
+        self.env.revert_snapshot("ready_with_9_slaves")
+        data = {
+            'ceilometer': True,
+            'volumes_ceph': False,
+            'images_ceph': True,
+            'volumes_lvm': True,
+            'objects_ceph': True,
+            'osd_pool_size': '2',
+            'net_provider': 'neutron',
+            'net_segment_type': NEUTRON_SEGMENT['vlan'],
+            'tenant': 'huge_cli',
+            'user': 'huge_cli',
+            'password': 'huge_cli'
+        }
+        self.show_step(2)
+        self.show_step(3)
+        self.show_step(4)
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            settings=data
+        )
+
+        # Get nodes ids
+        node_ids = [self.fuel_web.get_nailgun_node_by_devops_node(
+            self.env.d_env.nodes().slaves[
+                slave_id])['id']for slave_id in xrange(9)]
+        admin_ip = self.ssh_manager.admin_ip
+        # Add and provision a controller node
+        self.show_step(5, 'on node {0}'.format(node_ids[0]))
+
+        cmd = ('fuel --env-id={0} node set --node {1}\
+         --role=controller'.format(cluster_id, node_ids[0]))
+        self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        cmd = ('fuel --env-id={0} node --provision --node={1} --json'.format(
+            cluster_id, node_ids[0]))
+        task = self.ssh_manager.execute_on_remote(admin_ip,
+                                                  cmd,
+                                                  jsonify=True)['stdout_json']
+        self.assert_cli_task_success(task, timeout=60 * 60)
+
+        assert_equal(
+            1,
+            len(self.fuel_web.get_nailgun_node_by_status('provisioned')),
+            'Some unexpected nodes were provisioned,'
+            ' current list of provisioned '
+            'nodes {}'.format(
+                self.fuel_web.get_nailgun_node_by_status('provisioned')))
+
+        # Add and provision 1 compute
+        self.show_step(6, details='using node id {}'.format(node_ids[1]))
+        cmd = ('fuel --env-id={0} node set --node {1}\
+        --role=compute'.format(cluster_id, node_ids[1]))
+        self.ssh_manager.execute_on_remote(admin_ip, cmd)
+
+        cmd = ('fuel --env-id={0} node --provision \
+        --node={1} --json'.format(cluster_id, node_ids[1]))
+        task = self.ssh_manager.execute_on_remote(admin_ip,
+                                                  cmd,
+                                                  jsonify=True)['stdout_json']
+        self.assert_cli_task_success(task, timeout=10 * 60)
+
+        assert_equal(
+            2,
+            len(self.fuel_web.get_nailgun_node_by_status('provisioned')),
+            'Some unexpected nodes were provisioned,'
+            ' current list of provisioned '
+            'nodes {}'.format(
+                self.fuel_web.get_nailgun_node_by_status('provisioned')))
+
+        # Add and provision 1 cinder
+        self.show_step(7, details='using node id {}'.format(node_ids[2]))
+        cmd = ('fuel --env-id={0} node set --node {1}\
+        --role=cinder'.format(cluster_id, node_ids[2]))
+        self.ssh_manager.execute_on_remote(admin_ip, cmd)
+
+        cmd = ('fuel --env-id={0} node --provision \
+        --node={1} --json'.format(cluster_id, node_ids[2]))
+        task = self.ssh_manager.execute_on_remote(admin_ip,
+                                                  cmd,
+                                                  jsonify=True)['stdout_json']
+        self.assert_cli_task_success(task, timeout=10 * 60)
+
+        assert_equal(
+            3,
+            len(self.fuel_web.get_nailgun_node_by_status('provisioned')),
+            'Some unexpected nodes were provisioned,'
+            ' current list of provisioned '
+            'nodes {}'.format(
+                self.fuel_web.get_nailgun_node_by_status('provisioned')))
+
+        # Add and provision 1 mongo
+        self.show_step(8, details='using node id {0}'.format(node_ids[3]))
+        cmd = ('fuel --env-id={0} node set --node {1}\
+        --role=mongo'.format(cluster_id, node_ids[3]))
+        self.ssh_manager.execute_on_remote(admin_ip, cmd)
+
+        cmd = ('fuel --env-id={0} node --provision \
+        --node={1} --json'.format(cluster_id, node_ids[3]))
+        task = self.ssh_manager.execute_on_remote(admin_ip,
+                                                  cmd,
+                                                  jsonify=True)['stdout_json']
+        self.assert_cli_task_success(task, timeout=10 * 60)
+
+        assert_equal(
+            4,
+            len(self.fuel_web.get_nailgun_node_by_status('provisioned')),
+            'Some unexpected nodes were provisioned,'
+            ' current list of provisioned '
+            'nodes {}'.format(
+                self.fuel_web.get_nailgun_node_by_status('provisioned')))
+
+        # Add and provision 2 ceph-osd
+        self.show_step(9, details='using node ids {0}, {1}'.format(
+            node_ids[4], node_ids[5]))
+        cmd = ('fuel --env-id={0} node set --node {1},{2} '
+               '--role=ceph-osd'.format(cluster_id, node_ids[4], node_ids[5]))
+        self.ssh_manager.execute_on_remote(admin_ip, cmd)
+
+        cmd = ('fuel '
+               '--env-id={0} node --provision '
+               '--node {1},{2} '
+               '--json'.format(cluster_id, node_ids[4], node_ids[5]))
+        task = self.ssh_manager.execute_on_remote(admin_ip,
+                                                  cmd,
+                                                  jsonify=True)['stdout_json']
+        self.assert_cli_task_success(task, timeout=10 * 60)
+
+        assert_equal(
+            6,
+            len(self.fuel_web.get_nailgun_node_by_status('provisioned')),
+            'Some unexpected nodes were provisioned,'
+            ' current list of provisioned '
+            'nodes {}'.format(
+                self.fuel_web.get_nailgun_node_by_status('provisioned')))
+        # Add and provision 1 base-os node
+        self.show_step(10, details='using node ids {0}'.format(node_ids[6]))
+        cmd = ('fuel --env-id={0} node set --node {1} '
+               '--role=base-os'.format(cluster_id, node_ids[6]))
+        self.ssh_manager.execute_on_remote(admin_ip, cmd)
+
+        cmd = ('fuel --env-id={0} node --provision '
+               '--node={1} --json'.format(cluster_id, node_ids[6]))
+        task = self.ssh_manager.execute_on_remote(admin_ip,
+                                                  cmd,
+                                                  jsonify=True)['stdout_json']
+        self.assert_cli_task_success(task, timeout=10 * 60)
+
+        assert_equal(
+            7,
+            len(self.fuel_web.get_nailgun_node_by_status('provisioned')),
+            'Some unexpected nodes were provisioned,'
+            ' current list of provisioned '
+            'nodes {}'.format(
+                self.fuel_web.get_nailgun_node_by_status('provisioned')))
+
+        self.show_step(11)
+        # Add 2 compute but do not deploy
+        cmd = ('fuel --env-id={0} node set --node {1},{2} '
+               '--role=compute'.format(cluster_id, node_ids[7], node_ids[8]))
+        self.ssh_manager.execute_on_remote(admin_ip, cmd)
+
+        node_discover = self.fuel_web.get_nailgun_node_by_status('discover')
+        assert_equal(
+            2,
+            len(node_discover),
+            'Some unexpected nodes were provisioned,'
+            ' current list of provisioned '
+            'nodes {}'.format(
+                [node['id'] for node in node_discover]))
+
+        for node in node_discover:
+            assert_true('true' in node['pending_addition'])
+
+        # Deploy the controller node
+        self.show_step(12, details='for node id {}'.format(node_ids[0]))
+        cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
+            cluster_id, node_ids[0]))
+        task = self.ssh_manager.execute_on_remote(admin_ip,
+                                                  cmd,
+                                                  jsonify=True)['stdout_json']
+        self.assert_cli_task_success(task, timeout=60 * 60)
+
+        self.show_step(13, details='for node id {}'.format(node_ids[1]))
+        # Deploy the compute node
+        cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
+            cluster_id, node_ids[1]))
+        task = self.ssh_manager.execute_on_remote(admin_ip,
+                                                  cmd,
+                                                  jsonify=True)['stdout_json']
+        self.assert_cli_task_success(task, timeout=30 * 60)
+
+        # Deploy the cinder node
+        self.show_step(14, details='for node id {}'.format(node_ids[2]))
+        cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
+            cluster_id, node_ids[2]))
+        task = self.ssh_manager.execute_on_remote(admin_ip,
+                                                  cmd,
+                                                  jsonify=True)['stdout_json']
+        self.assert_cli_task_success(task, timeout=60 * 60)
+
+        # Deploy the mongo node
+        self.show_step(15, details='for node id {}'.format(node_ids[3]))
+        cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
+            cluster_id, node_ids[3]))
+        task = self.ssh_manager.execute_on_remote(admin_ip,
+                                                  cmd,
+                                                  jsonify=True)['stdout_json']
+        self.assert_cli_task_success(task, timeout=60 * 60)
+
+        # Deploy ceph-osd  nodes
+        self.show_step(16, details='for node ids {0}, {1}'.format(
+            node_ids[4], node_ids[5]))
+        cmd = ('fuel --env-id={0} node --deploy --node {1},{2} --json'.format(
+            cluster_id, node_ids[4], node_ids[5]))
+        task = self.ssh_manager.execute_on_remote(admin_ip,
+                                                  cmd,
+                                                  jsonify=True)['stdout_json']
+        self.assert_cli_task_success(task, timeout=60 * 60)
+
+        # Deploy the base-os node
+        self.show_step(17, details='for node id {}'.format(node_ids[6]))
+        cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
+            cluster_id, node_ids[6]))
+        task = self.ssh_manager.execute_on_remote(admin_ip,
+                                                  cmd,
+                                                  jsonify=True)['stdout_json']
+        self.assert_cli_task_success(task, timeout=60 * 60)
+
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(18)
+        node_discover_after_deploy = self.fuel_web.get_nailgun_node_by_status(
+            'discover')
+        assert_equal(
+            2,
+            len(node_discover_after_deploy),
+            'Some unexpected nodes were deployed,'
+            ' current list of discover nodes {}'.format(
+                [node['id'] for node in node_discover_after_deploy]))
+
+        for node in node_discover_after_deploy:
+            assert_true('true' in node['pending_addition'])
+        # Run OSTF
+        self.show_step(19)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
+        self.env.make_snapshot("cli_selected_nodes_deploy_huge")
