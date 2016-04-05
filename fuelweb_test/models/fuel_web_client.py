@@ -1067,7 +1067,7 @@ class FuelWebClient(object):
 
     @logwrap
     def get_ssh_for_node(self, node_name):
-        return self.environment.d_env.get_ssh_to_remote(
+        return self.environment.get_ssh_to_remote(
             self.get_node_ip_by_devops_name(node_name))
 
     @logwrap
@@ -1078,7 +1078,7 @@ class FuelWebClient(object):
 
     @logwrap
     def get_ssh_for_nailgun_node(self, nailgun_node):
-        return self.environment.d_env.get_ssh_to_remote(nailgun_node['ip'])
+        return self.environment.get_ssh_to_remote(nailgun_node['ip'])
 
     @logwrap
     def is_node_discovered(self, nailgun_node):
@@ -2062,7 +2062,7 @@ class FuelWebClient(object):
         # Let's find nodes where are a time skew. It can be checked on
         # an arbitrary one.
         logger.debug("Looking up nodes with a time skew and try to fix them")
-        with self.environment.d_env.get_ssh_to_remote(
+        with self.environment.get_ssh_to_remote(
                 online_ceph_nodes[0]['ip']) as remote:
             if ceph.is_clock_skew(remote):
                 skewed = ceph.get_node_fqdns_w_clock_skew(remote)
@@ -2105,8 +2105,7 @@ class FuelWebClient(object):
 
         logger.info('Waiting until Ceph service become up...')
         for node in online_ceph_nodes:
-            with self.environment.d_env\
-                    .get_ssh_to_remote(node['ip']) as remote:
+            with self.environment.get_ssh_to_remote(node['ip']) as remote:
                 try:
                     wait(lambda: ceph.check_service_ready(remote) is True,
                          interval=20, timeout=600)
@@ -2120,7 +2119,7 @@ class FuelWebClient(object):
         self.check_ceph_time_skew(cluster_id, offline_nodes)
 
         node = online_ceph_nodes[0]
-        with self.environment.d_env.get_ssh_to_remote(node['ip']) as remote:
+        with self.environment.get_ssh_to_remote(node['ip']) as remote:
             if not ceph.is_health_ok(remote):
                 if ceph.is_pgs_recovering(remote) and len(offline_nodes) > 0:
                     logger.info('Ceph is being recovered after osd node(s)'

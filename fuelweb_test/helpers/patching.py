@@ -367,7 +367,7 @@ def update_packages_on_slaves(environment, slaves, packages=None,
         # Install all updates
         packages = ' '
     for slave in slaves:
-        with environment.d_env.get_ssh_to_remote(slave['ip']) as remote:
+        with environment.get_ssh_to_remote(slave['ip']) as remote:
             update_packages(environment, remote, packages, exclude_packages)
 
 
@@ -514,7 +514,7 @@ def validate_fix_apply_step(apply_step, environment, slaves):
                                                      apply_step['type']))
         command = apply_step['command']
     # remotes sessions .clear() placed in run_actions()
-    remotes = [environment.d_env.get_ssh_to_remote(ip) for ip in remotes_ips] \
+    remotes = [environment.get_ssh_to_remote(ip) for ip in remotes_ips] \
         if command else []
     devops_nodes = devops_nodes if devops_action else []
     return command, remotes, devops_action, devops_nodes

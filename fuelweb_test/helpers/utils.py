@@ -226,7 +226,7 @@ def store_packages_json(env):
     for nailgun_node in env.fuel_web.client.list_cluster_nodes(cluster_id):
         role = '_'.join(nailgun_node['roles'])
         logger.debug('role is {0}'.format(role))
-        with env.d_env.get_ssh_to_remote(nailgun_node['ip']) as remote:
+        with env.get_ssh_to_remote(nailgun_node['ip']) as remote:
             packages = get_node_packages(remote, func_name, role, packages)
     packages_file = '{0}/packages.json'.format(settings.LOGS_DIR)
     if os.path.isfile(packages_file):

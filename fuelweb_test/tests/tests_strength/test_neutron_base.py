@@ -203,7 +203,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
             os_conn, instance_keypair.name,
             label=net_name).addresses[net_name][0]['addr']
 
-        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+        with self.env.get_ssh_to_remote(_ip) as remote:
             dhcp_namespace = ''.join(remote.execute(
                 'ip netns | grep {0}'.format(net_id))['stdout']).rstrip()
 
@@ -225,7 +225,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         self.reschedule_router_manually(os_conn, router_id)
 
         # Get remote to the controller with running DHCP agent
-        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+        with self.env.get_ssh_to_remote(_ip) as remote:
             dhcp_namespace = ''.join(remote.execute(
                 'ip netns | grep {0}'.format(net_id))['stdout']).rstrip()
 
@@ -249,7 +249,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
              router_id)[0], timeout=60 * 3,
              timeout_msg=err_msg.format(node_with_l3))
 
-        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+        with self.env.get_ssh_to_remote(_ip) as remote:
             #   Check connect to public network from instance after
             # ban old l3 agent for router
             self.check_instance_connectivity(remote, dhcp_namespace,
@@ -259,7 +259,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
 
-        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+        with self.env.get_ssh_to_remote(_ip) as remote:
             #   Unban banned l3 agent
             remote.execute("pcs resource clear p_neutron-l3-agent {0}".
                            format(node_with_l3))
@@ -290,7 +290,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         self.reschedule_router_manually(os_conn, router_id)
 
         #   Get remote to the controller with running DHCP agent
-        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+        with self.env.get_ssh_to_remote(_ip) as remote:
             dhcp_namespace = ''.join(remote.execute(
                 'ip netns | grep {0}'.format(net_id))['stdout']).rstrip()
 
@@ -337,7 +337,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         _ip = self.fuel_web.get_nailgun_node_by_devops_node(devops_node)['ip']
 
         #   Get remote to the controller with running DHCP agent
-        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+        with self.env.get_ssh_to_remote(_ip) as remote:
             #   Check connect to public network from instance after
             # reset controller with l3 agent from this instance
             self.check_instance_connectivity(remote, dhcp_namespace,
@@ -372,7 +372,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         self.reschedule_router_manually(os_conn, router_id)
 
         #   Get remote to the controller with running DHCP agent
-        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+        with self.env.get_ssh_to_remote(_ip) as remote:
             dhcp_namespace = ''.join(remote.execute(
                 'ip netns | grep {0}'.format(net_id))['stdout']).rstrip()
 
@@ -427,7 +427,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
             new_devops_node)['ip']
 
         #   Get remote to the controller with running DHCP agent
-        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+        with self.env.get_ssh_to_remote(_ip) as remote:
             #   Check connect to public network from instance after
             # reset controller with l3 agent from this instance
             self.check_instance_connectivity(remote, dhcp_namespace,
@@ -479,7 +479,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         #   Check ping to instance
         check_ping = ping.format(ip=floating_ip)
         err_msg = 'Instance with ip:{ip} is not reachable by ICMP.'
-        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+        with self.env.get_ssh_to_remote(_ip) as remote:
             wait(lambda: remote.execute(check_ping)['exit_code'] == 0,
                  timeout=120,
                  timeout_msg=err_msg.format(ip=floating_ip))
@@ -490,7 +490,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
                     r"sed -rn 's/.*dev\s+(\S+)\s.*/\1/p')/mtu")
         #   Get MTU on controller
         mtu_cmd = orig_mtu.format(ip=floating_ip)
-        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+        with self.env.get_ssh_to_remote(_ip) as remote:
             ctrl_mtu = ''.join(remote.execute(mtu_cmd)['stdout'])
         logger.info("MTU on controller is equal to {mtu}".format(mtu=ctrl_mtu))
         max_packetsize = int(ctrl_mtu) - ping_header_size
@@ -502,7 +502,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
         new_packetsize = None
         cmd = mtu_ping.format(data=max_packetsize, ip=floating_ip)
         logger.info("Executing command: {0}".format(cmd))
-        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+        with self.env.get_ssh_to_remote(_ip) as remote:
             res = remote.execute(cmd)
             message = (res['stdout'] + res['stderr'])
         if res['exit_code'] == 1:
@@ -520,7 +520,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
             #   Check ping to instance from controller w/ correct MTU
             cmd = mtu_ping.format(data=new_packetsize, ip=floating_ip)
             logger.info("Executing command using new MTU: {0}".format(cmd))
-            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            with self.env.get_ssh_to_remote(_ip) as remote:
                 res = remote.execute(cmd)
                 message = (res['stdout'] + res['stderr'])
 
