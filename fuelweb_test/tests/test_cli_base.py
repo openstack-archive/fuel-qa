@@ -12,9 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import re
 import time
+
 import json
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
 
 from devops.error import TimeoutError
 from devops.helpers.helpers import wait
@@ -106,6 +109,111 @@ class CommandLine(TestBasic):
                 task['status'], 'ready', name=task["name"]
             )
         )
+
+    @logwrap
+    def assert_all_tasks_completed(self, cluster_id=None):
+        _separator = r'\|\s+'
+        checker = re.compile(
+            r'{sep}(?P<id>\d+)\s+'
+            r'{sep}(?P<status>[a-z]+)\s+'
+            r'{sep}(?P<name>[a-z_]+)\s+'
+            r'{sep}(?P<cluster>[a-z0-9]+)\s+'
+            r'{sep}(?P<result>\W+)\s+'
+            r'{sep}(?P<progress>\d+)\s+\|'
+            r''.format(sep=_separator),
+            flags=re.IGNORECASE)
+
+        details_checker = re.compile(
+            r'{sep}(?P<deployment_graph_task_name>[a-z0-9_]+)\s+'
+            r'{sep}(?P<node_id>[a-z0-9_]+)\s+'
+            r'{sep}(?P<status>[a-z]+)\s+'
+            r'{sep}(?P<time_start>[a-z0-9\.:]+)\s+'
+            r'{sep}(?P<time_end>[a-z0-9\.:]+)\s+\|'
+            r''.format(sep=_separator),
+            flags=re.IGNORECASE)
+
+        deploy_tasks = {}
+        not_ready_tasks = {}
+        not_ready_deploy = {}
+        allowed_statuses = {'ready', 'skipped'}
+        cluster_info_template = "\n\tCluster ID: {cluster}{info}\n"
+
+        for task_match in checker.finditer(
+                self.ssh_manager.execute_on_remote(
+                    ip=self.ssh_manager.admin_ip,
+                    cmd='fuel2 task list')):
+            task = task_match.groupdict()
+            if cluster_id is not None and task['cluster'] != str(cluster_id):
+                continue
+            if task['name'] == 'deployment':
+                deploy_tasks[task['cluster']] = task['id']
+            if task['status'] not in allowed_statuses:
+                if task['cluster'] not in not_ready_tasks:
+                    not_ready_tasks[task['cluster']] = []
+                not_ready_tasks[task['cluster']].append(task)
+
+        if len(not_ready_tasks) > 0:
+            task_details_template = (
+                "\n"
+                "\t\tTask name: {name}\n"
+                "\t\t\tStatus:    {status}\n"
+                "\t\t\tProgress:  {progress}\n"
+                "\t\t\tResult:    {result}\n"
+                "\t\t\tTask ID:   {id}\n"
+            )
+            task_text = 'Not all tasks completed: {}'.format(
+                ''.join(
+                    cluster_info_template.format(
+                        cluster=cluster,
+                        info="".join(
+                            task_details_template.format(**task)
+                            for task in tasks))
+                    for cluster, tasks in sorted(not_ready_tasks.items())
+                ))
+            logger.error(task_text)
+            assert_true(len(not_ready_tasks) == 0, task_text)
+
+        for cluster_id, task_id in sorted(deploy_tasks.items()):
+            not_ready_tasks = {}
+            for task_match in details_checker.finditer(
+                    self.ssh_manager.execute_on_remote(
+                        ip=self.ssh_manager.admin_ip,
+                        cmd='fuel2 task history show {}'.format(task_id))):
+                task = task_match.groupdict()
+                if task['status'] not in allowed_statuses:
+                    if task['node_id'] not in not_ready_tasks:
+                        not_ready_tasks[task['node_id']] = []
+                    not_ready_tasks[task['node_id']].append(task)
+            if not_ready_tasks:
+                not_ready_deploy[cluster_id] = not_ready_tasks
+
+        if len(not_ready_deploy) > 0:
+            task_details_template = (
+                "\n"
+                "\t\t\tTask name: {deployment_graph_task_name}\n"
+                "\t\t\t\tStatus: {status}\n"
+                "\t\t\t\tStart:  {time_start}\n"
+                "\t\t\t\tEnd:    {time_end}\n")
+
+            failure_text = 'Not all deployments tasks completed: {}'.format(
+                ''.join(
+                    cluster_info_template.format(
+                        cluster=cluster,
+                        info="".join(
+                            "\n\t\tNode: {node_id}{details}\n".format(
+                                node_id=node_id,
+                                details="".join(
+                                    task_details_template.format(**task)
+                                    for task in sorted(
+                                        tasks,
+                                        key=lambda item: item['status'])
+                                ))
+                            for node_id, tasks in sorted(records.items())
+                        ))
+                    for cluster, records in sorted(not_ready_deploy.items())
+                ))
+            logger.error(failure_text)
+            assert_true(len(not_ready_deploy) == 0, failure_text)
 
     @staticmethod
     @logwrap
