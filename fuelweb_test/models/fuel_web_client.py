@@ -343,6 +343,87 @@ class FuelWebClient(object):
         )
 
     @logwrap
+    def assert_all_tasks_completed(self, cluster_id=None):
+        deploy_tasks = {}
+        not_ready_tasks = {}
+        not_ready_deploy = {}
+        allowed_statuses = {'ready', 'skipped'}
+        cluster_info_template = "\n\tCluster ID: {cluster}{info}\n"
+
+        for task in self.client.get_all_tasks_list():
+            if cluster_id is not None and task['cluster'] != cluster_id:
+                continue
+            if task['name'] == 'deployment':
+                deploy_tasks[task['cluster']] = task['id']
+            if task['status'] not in allowed_statuses:
+                if task['cluster'] not in not_ready_tasks:
+                    not_ready_tasks[task['cluster']] = []
+                not_ready_tasks[task['cluster']].append(task)
+
+        if len(not_ready_tasks) > 0:
+            task_details_template = (
+                "\n"
+                "\t\tTask name: {name}\n"
+                "\t\t\tStatus:    {status}\n"
+                "\t\t\tProgress:  {progress}\n"
+                "\t\t\tResult:    {result}\n"
+                "\t\t\tMessage:   {message}\n"
+                "\t\t\tTask ID:   {id}\n"
+                "\t\t\tTask UUID: {uuid}"
+            )
+
+            task_text = 'Not all tasks completed: {}'.format(
+                ''.join(
+                    cluster_info_template.format(
+                        cluster=cluster,
+                        info="".join(
+                            task_details_template.format(**task)
+                            for task in tasks))
+                    for cluster, tasks in sorted(not_ready_tasks.items())
+                ))
+            logger.error(task_text)
+            assert_true(len(not_ready_tasks) == 0, task_text)
+
+        for cluster_id, task_id in sorted(deploy_tasks.items()):
+            not_ready_tasks = {}
+            for task in self.client.get_deployment_task_hist(task_id):
+                if task['status'] not in allowed_statuses:
+                    if task['node_id'] not in not_ready_tasks:
+                        not_ready_tasks[task['node_id']] = []
+                    not_ready_tasks[task['node_id']].append(task)
+            if not_ready_tasks:
+                not_ready_deploy[cluster_id] = not_ready_tasks
+
+        if len(not_ready_deploy) > 0:
+            task_details_template = (
+                "\n"
+                "\t\t\tTask name: {deployment_graph_task_name}\n"
+                "\t\t\t\tStatus: {status}\n"
+                "\t\t\t\tStart:  {time_start}\n"
+                "\t\t\t\tEnd:    {time_end}\n"
+                "\t\t\t\tCustom: {custom}")
+
+            failure_text = 'Not all deployments tasks completed: {}'.format(
+                ''.join(
+                    cluster_info_template.format(
+                        cluster=cluster,
+                        info="".join(
+                            "\n\t\tNode: {node_id}{details}\n".format(
+                                node_id=node_id,
+                                details="".join(
+                                    task_details_template.format(**task)
+                                    for task in sorted(
+                                        tasks,
+                                        key=lambda item: item['status'])
+                                ))
+                            for node_id, tasks in sorted(records.items())
+                        ))
+                    for cluster, records in sorted(not_ready_deploy.items())
+                ))
+            logger.error(failure_text)
+            assert_true(len(not_ready_deploy) == 0, failure_text)
+
+    @logwrap
     def fqdn(self, devops_node):
         logger.info('Get FQDN of a devops node %s', devops_node.name)
         nailgun_node = self.get_nailgun_node_by_devops_node(devops_node)
@@ -763,7 +844,10 @@ class FuelWebClient(object):
         attributes = self.client.get_cluster_attributes(cluster_id)
         return attributes['editable']['repo_setup']['repos']
 
-    def check_deploy_state(self, cluster_id, check_services=True):
+    def check_deploy_state(self, cluster_id, check_services=True,
+                           check_tasks=True):
+        if check_tasks:
+            self.assert_all_tasks_completed(cluster_id=cluster_id)
         if check_services:
             self.assert_ha_services_ready(cluster_id)
             self.assert_os_services_ready(cluster_id)
@@ -805,12 +889,12 @@ class FuelWebClient(object):
     @custom_repo
     def deploy_cluster_wait(self, cluster_id, is_feature=False,
                             timeout=help_data.DEPLOYMENT_TIMEOUT, interval=30,
-                            check_services=True):
+                            check_services=True, check_tasks=True):
         if not is_feature and help_data.DEPLOYMENT_RETRIES == 1:
             logger.info('Deploy cluster %s', cluster_id)
             task = self.deploy_cluster(cluster_id)
             self.assert_task_success(task, interval=interval, timeout=timeout)
-            self.check_deploy_state(cluster_id, check_services)
+            self.check_deploy_state(cluster_id, check_services, check_tasks)
             return
 
         logger.info('Provision nodes of a cluster %s', cluster_id)
@@ -822,7 +906,7 @@ class FuelWebClient(object):
                         cluster_id, str(retry_number + 1))
             task = self.client.deploy_nodes(cluster_id)
             self.assert_task_success(task, timeout=timeout, interval=interval)
-            self.check_deploy_state(cluster_id, check_services)
+            self.check_deploy_state(cluster_id, check_services, check_tasks)
 
     def deploy_cluster_wait_progress(self, cluster_id, progress,
                                      return_task=None):
