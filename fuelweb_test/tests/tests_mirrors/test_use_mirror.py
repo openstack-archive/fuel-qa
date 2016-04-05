@@ -16,6 +16,7 @@ from proboscis.asserts import assert_false
 from proboscis import test
 from proboscis import SkipTest
 
+from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.utils import pretty_log
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import MIRROR_UBUNTU
@@ -158,7 +159,13 @@ class TestUseMirror(TestBasic):
         self.show_step(9)
         create_cmd = 'fuel-mirror create -P ubuntu -G mos ' \
                      '--log-file /var/log/mos_mirrors_create.log'
-        self.ssh_manager.execute_on_remote(ip=admin_ip, cmd=create_cmd)
+
+        @retry()
+        def create_mirror():
+            self.ssh_manager.execute_on_remote(ip=admin_ip, cmd=create_cmd)
+
+        create_mirror()
+
         self.show_step(10)
         apply_cmd = 'fuel-mirror apply -P ubuntu -G mos'
         self.ssh_manager.execute_on_remote(ip=admin_ip, cmd=apply_cmd)

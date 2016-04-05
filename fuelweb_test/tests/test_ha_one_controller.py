@@ -22,6 +22,7 @@ from proboscis.asserts import assert_true
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.eb_tables import Ebtables
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.settings import DEPLOYMENT_MODE
@@ -465,7 +466,13 @@ class MultiroleMultipleServices(TestBasic):
                                                cmd=replace_cmd)
 
         create_mirror_cmd = 'fuel-mirror create -P ubuntu -G mos ubuntu'
-        self.ssh_manager.execute_on_remote(ip=admin_ip, cmd=create_mirror_cmd)
+
+        @retry()
+        def create_mirror():
+            self.ssh_manager.execute_on_remote(ip=admin_ip,
+                                               cmd=create_mirror_cmd)
+
+        create_mirror()
 
         self.show_step(3)
         cluster_id = self.fuel_web.create_cluster(
