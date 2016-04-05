@@ -194,6 +194,8 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                   cmd,
                                                   jsonify=True)['stdout_json']
         self.assert_cli_task_success(task, timeout=60 * 60)
+
+        self.assert_all_tasks_completed(cluster_id=cluster_id)
         # Deploy the compute nodes
         cmd = ('fuel --env-id={0} node --deploy --node {1},{2} --json'.format(
             cluster_id, node_ids[1], node_ids[2]))
@@ -201,6 +203,8 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                   cmd,
                                                   jsonify=True)['stdout_json']
         self.assert_cli_task_success(task, timeout=30 * 60)
+
+        self.assert_all_tasks_completed(cluster_id=cluster_id)
         # Verify networks
         self.fuel_web.verify_network(cluster_id)
         controller_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(

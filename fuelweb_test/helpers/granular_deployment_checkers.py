@@ -100,3 +100,76 @@ def run_check_from_task(remote, path):
             "Check {0} finishes with non zero exit code, stderr is {1}, "
             "stdout is {2} on remote".format(
                 path, res['stderr'], res['stdout']))
+
+
+def incomplete_tasks(tasks, cluster_id=None):
+    def get_last_tasks():
+        last_tasks = {}
+        for tsk in tasks:
+            if cluster_id is not None and cluster_id != tsk['cluster']:
+                continue
+            if (tsk['cluster'], tsk['name']) not in last_tasks:
+                last_tasks[(tsk['cluster'], tsk['name'])] = tsk
+        return last_tasks
+
+    deploy_tasks = {}
+    not_ready_tasks = {}
+    allowed_statuses = {'ready', 'skipped'}
+
+    for (task_cluster, task_name), task in get_last_tasks().items():
+        if task_name == 'deployment':
+            deploy_tasks[task['cluster']] = task['id']
+        if task['status'] not in allowed_statuses:
+            if task_cluster not in not_ready_tasks:
+                not_ready_tasks[task_cluster] = []
+            not_ready_tasks[task_cluster].append(task)
+
+    return not_ready_tasks, deploy_tasks
+
+
+def incomplete_deploy(deployment_tasks):
+    allowed_statuses = {'ready', 'skipped'}
+    not_ready_deploy = {}
+
+    for cluster_id, task in deployment_tasks.items():
+        not_ready_jobs = {}
+        if task['status'] not in allowed_statuses:
+            if task['node_id'] not in not_ready_jobs:
+                not_ready_jobs[task['node_id']] = []
+                not_ready_jobs[task['node_id']].append(task)
+        if not_ready_jobs:
+            not_ready_deploy[cluster_id] = not_ready_jobs
+
+    return not_ready_deploy
+
+
+def fail_deploy(not_ready_transactions):
+    if len(not_ready_transactions) > 0:
+        cluster_info_template = "\n\tCluster ID: {cluster}{info}\n"
+        task_details_template = (
+            "\n"
+            "\t\t\tTask name: {deployment_graph_task_name}\n"
+            "\t\t\t\tStatus: {status}\n"
+            "\t\t\t\tStart:  {time_start}\n"
+            "\t\t\t\tEnd:    {time_end}\n"
+        )
+
+        failure_text = 'Not all deployments tasks completed: {}'.format(
+            ''.join(
+                cluster_info_template.format(
+                    cluster=cluster,
+                    info="".join(
+                        "\n\t\tNode: {node_id}{details}\n".format(
+                            node_id=node_id,
+                            details="".join(
+                                task_details_template.format(**task)
+                                for task in sorted(
+                                    tasks,
+                                    key=lambda item: item['status'])
+                            ))
+                        for node_id, tasks in sorted(records.items())
+                    ))
+                for cluster, records in sorted(not_ready_transactions.items())
+            ))
+        logger.error(failure_text)
+        assert_true(len(not_ready_transactions) == 0, failure_text)
