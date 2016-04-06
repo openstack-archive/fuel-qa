@@ -40,8 +40,9 @@ class FuelMasterMigrate(ActionTest, BaseActions, FuelMasterActions):
         3. Deploy environment
         4. Run network checker
         5. Migrate Fuel Master to the compute node
-        6. Run network checker
-        7. Run OSTF
+        6. Check that containers are up and running on the Fuel Master
+        7. Run network checker
+        8. Run OSTF
     """
 
     actions_order = [
@@ -56,6 +57,7 @@ class FuelMasterMigrate(ActionTest, BaseActions, FuelMasterActions):
         'network_check',
         'start_fuel_migration',
         'check_migration_status',
+        'check_containers',
         'network_check',
         'health_check'
     ]
@@ -127,6 +129,3 @@ class FuelMasterMigrate(ActionTest, BaseActions, FuelMasterActions):
             wait(lambda: not remote.exists("/notready"),
                  timeout=900,
                  timeout_msg="File wasn't removed in 900 sec")
-
-        self.fuel_web.wait_nodes_get_online_state(
-            self.env.d_env.nodes().slaves[:2])
