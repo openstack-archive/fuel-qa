@@ -137,7 +137,7 @@ class FailoverGroup2(TestBasic):
         self.env.make_snapshot('safe_reboot_primary_controller_ceph')
 
     @test(depends_on_groups=['deploy_ha_ceph'],
-          groups=['hard_reset_primary_controller_ceph'])
+          groups=['hard_reboot_primary_controller_ceph'])
     @log_snapshot_after_test
     def hard_reboot_primary_controller_ceph(self):
         """Hard reboot of primary controller with Ceph for storage
@@ -164,22 +164,17 @@ class FailoverGroup2(TestBasic):
                      'found {} nodes!'.format(len(controllers)))
 
         self.show_step(2)
-        self.show_step(3)
-        self.show_step(4)
-        self.show_step(5)
-        self.show_step(6)
-        self.show_step(7)
         target_controller = self.fuel_web.get_nailgun_primary_node(
             self.fuel_web.get_devops_node_by_nailgun_node(controllers[0]))
         self.fuel_web.cold_restart_nodes([target_controller])
 
-        self.show_step(8)
+        self.show_step(3)
         self.fuel_web.assert_ha_services_ready(cluster_id, timeout=60 * 10)
 
-        self.show_step(9)
+        self.show_step(4)
         self.fuel_web.verify_network(cluster_id)
 
-        self.show_step(10)
+        self.show_step(5)
         self.fuel_web.run_ostf(cluster_id)
 
-        self.env.make_snapshot('safe_reboot_primary_controller_ceph')
+        self.env.make_snapshot('hard_reboot_primary_controller_ceph')
