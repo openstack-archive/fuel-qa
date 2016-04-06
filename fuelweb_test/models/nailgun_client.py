@@ -222,7 +222,13 @@ class NailgunClient(object):
 
     @logwrap
     @json_parse
-    def put_node_interfaces(self, data):
+    def put_node_interfaces(self, data, without_dpdk=False):
+        #TODO: workaround for LP#1564102, remove when the bug is fixed in API
+        if without_dpdk:
+            for iface in data:
+                if 'interface_properties' in iface:
+                    iface['interface_properties'].pop("dpdk", None)
+
         return self.client.put("/api/nodes/interfaces", data)
 
     @logwrap
