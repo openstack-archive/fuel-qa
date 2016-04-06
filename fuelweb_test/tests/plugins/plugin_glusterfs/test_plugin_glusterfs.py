@@ -109,7 +109,7 @@ class GlusterfsPlugin(TestBasic):
 
         for node in ('slave-01', 'slave-03'):
             _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            with self.env.ssh_manager.get_remote(_ip) as remote:
                 self.check_glusterfs_conf(
                     remote=remote,
                     path='/etc/cinder/glusterfs',
@@ -187,7 +187,7 @@ class GlusterfsPlugin(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-03")['ip']
-        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+        with self.env.ssh_manager.get_remote(_ip) as remote:
             self.check_glusterfs_conf(
                 remote=remote,
                 path='/etc/cinder/glusterfs',
@@ -210,7 +210,7 @@ class GlusterfsPlugin(TestBasic):
 
         for node in ('slave-03', 'slave-04', 'slave-05'):
             _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+            with self.env.ssh_manager.get_remote(_ip) as remote:
                 self.check_glusterfs_conf(
                     remote=remote,
                     path='/etc/cinder/glusterfs',

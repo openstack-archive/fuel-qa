@@ -136,7 +136,7 @@ class NeutronGreHa(TestBasic):
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
-        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+        with self.env.ssh_manager.get_remote(_ip) as remote:
             for _ in range(5):
                 try:
                     checkers.check_swift_ring(_ip)
@@ -214,7 +214,7 @@ class NeutronVlanHa(TestBasic):
             self.env.d_env.nodes().slaves[0])
         logger.debug("devops node name is {0}".format(devops_node.name))
         _ip = self.fuel_web.get_nailgun_node_by_name(devops_node.name)['ip']
-        with self.env.d_env.get_ssh_to_remote(_ip) as remote:
+        with self.env.ssh_manager.get_remote(_ip) as remote:
             for _ in range(5):
                 try:
                     checkers.check_swift_ring(_ip)
