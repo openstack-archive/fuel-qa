@@ -342,12 +342,12 @@ class TestHaNeutronFailover(TestHaFailoverBase):
             2. Change max_rabbitmqctl_timeouts parameter on one of
                controllers,after that slaves rabbitmq will be restarted by
                Pacemaker.
-            3. Wait for 1 minute.
+            3. Wait for 3 minutes.
             4. Check RabbitMQ cluster is assembled until success in 10 min
             5. Run OSTF
             6. Repeat two more times steps 2-5
 
-        Duration 50 min
+        Duration 80 min
 
         """
         super(self.__class__, self). \

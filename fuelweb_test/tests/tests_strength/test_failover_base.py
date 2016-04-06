@@ -1287,7 +1287,7 @@ class TestHaFailoverBase(TestBasic):
             logger.info('Command {} was executed on controller'.format(cmd))
 
             logger.info('Check nodes left RabbitMQ cluster')
-            wait(lambda: count_run_rabbit(rabbit_master), timeout=60,
+            wait(lambda: count_run_rabbit(rabbit_master), timeout=180,
                  timeout_msg='All nodes are staying in the cluster')
 
             logger.info('Check parameter was changed')
@@ -1304,11 +1304,11 @@ class TestHaFailoverBase(TestBasic):
 
             logger.info('Wait and check nodes back to the RabbitMQ cluster')
             wait(lambda: count_run_rabbit(rabbit_master, all_up=True),
-                 timeout=600, interval=20,
+                 timeout=600, interval=120,
                  timeout_msg='RabbitMQ cluster was not assembled')
             for node in rabbit_slaves:
                 # pylint: disable=undefined-loop-variable
-                wait(lambda: count_run_rabbit(node, all_up=True), timeout=60,
+                wait(lambda: count_run_rabbit(node, all_up=True), timeout=180,
                      interval=10,
                      timeout_msg='Some nodes did not back to the cluster after'
                                  '10 minutes wait.')
