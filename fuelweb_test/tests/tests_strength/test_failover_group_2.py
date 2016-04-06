@@ -12,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from proboscis import SkipTest
 from proboscis import test
 from proboscis.asserts import assert_equal
-
 
 from fuelweb_test import settings
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -44,6 +44,8 @@ class FailoverGroup2(TestBasic):
 
         """
 
+        if self.env.d_env.has_snapshot('deploy_ha_ceph'):
+            raise SkipTest("Test 'deploy_ha_ceph' already run")
         self.env.revert_snapshot('ready_with_5_slaves')
 
         self.show_step(1, initialize=True)
@@ -53,6 +55,8 @@ class FailoverGroup2(TestBasic):
             'password': 'failover',
             "net_provider": 'neutron',
             "net_segment_type": settings.NEUTRON_SEGMENT['tun'],
+            'ephemeral_ceph': True,
+            'objects_ceph': True,
             'volumes_ceph': True,
             'images_ceph': True,
             'osd_pool_size': '2',
