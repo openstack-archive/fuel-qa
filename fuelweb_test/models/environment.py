@@ -64,8 +64,10 @@ class EnvironmentModel(object):
         self.ssh_manager = SSHManager()
         self.ssh_manager.initialize(
             self.get_admin_node_ip(),
-            login=settings.SSH_CREDENTIALS['login'],
-            password=settings.SSH_CREDENTIALS['password']
+            admin_login=settings.SSH_FUEL_CREDENTIALS['login'],
+            admin_password=settings.SSH_FUEL_CREDENTIALS['password'],
+            slave_login=settings.SSH_SLAVE_CREDENTIALS['login'],
+            slave_password=settings.SSH_SLAVE_CREDENTIALS['password']
         )
         self.admin_actions = AdminActions()
         self.base_actions = BaseActions()
@@ -320,8 +322,8 @@ class EnvironmentModel(object):
         return True
 
     def set_admin_ssh_password(self):
-        new_login = settings.SSH_CREDENTIALS['login']
-        new_password = settings.SSH_CREDENTIALS['password']
+        new_login = settings.SSH_FUEL_CREDENTIALS['login']
+        new_password = settings.SSH_FUEL_CREDENTIALS['password']
         try:
             self.ssh_manager.execute_on_remote(
                 ip=self.ssh_manager.admin_ip,
@@ -333,8 +335,10 @@ class EnvironmentModel(object):
                          ' FAIL, trying to change password from default')
             self.ssh_manager.initialize(
                 admin_ip=self.ssh_manager.admin_ip,
-                login='root',
-                password='r00tme'
+                admin_login='root',
+                admin_password='r00tme',
+                slave_login=settings.SSH_SLAVE_CREDENTIALS['login'],
+                slave_password=settings.SSH_SLAVE_CREDENTIALS['password']
             )
             self.ssh_manager.execute_on_remote(
                 ip=self.ssh_manager.admin_ip,
@@ -343,8 +347,10 @@ class EnvironmentModel(object):
             )
             self.ssh_manager.initialize(
                 admin_ip=self.ssh_manager.admin_ip,
-                login=new_login,
-                password=new_password
+                admin_login=new_login,
+                admin_password=new_password,
+                slave_login=settings.SSH_SLAVE_CREDENTIALS['login'],
+                slave_password=settings.SSH_SLAVE_CREDENTIALS['password']
             )
             self.ssh_manager.update_connection(
                 ip=self.ssh_manager.admin_ip,

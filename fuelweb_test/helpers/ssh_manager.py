@@ -26,6 +26,8 @@ import six
 from fuelweb_test import logger
 from fuelweb_test.helpers.metaclasses import SingletonMeta
 from fuelweb_test.helpers.exceptions import UnexpectedExitCode
+from fuelweb_test.settings import SSH_FUEL_CREDENTIALS
+from fuelweb_test.settings import SSH_SLAVE_CREDENTIALS
 
 
 @six.add_metaclass(SingletonMeta)
@@ -36,14 +38,20 @@ class SSHManager(object):
         self.__connections = {}  # Disallow direct type change and deletion
         self.admin_ip = None
         self.admin_port = None
-        self.login = None
-        self.__password = None
+        self.admin_login = None
+        self.__admin_password = None
+        self.slave_login = None
+        self.__slave_password = None
 
     @property
     def connections(self):
         return self.__connections
 
-    def initialize(self, admin_ip, login, password):
+    def initialize(self, admin_ip,
+                   admin_login=SSH_FUEL_CREDENTIALS['login'],
+                   admin_password=SSH_FUEL_CREDENTIALS['password'],
+                   slave_login=SSH_SLAVE_CREDENTIALS['login'],
+                   slave_password=SSH_SLAVE_CREDENTIALS['password']):
         """ It will be moved to __init__
 
         :param admin_ip: ip address of admin node
@@ -53,8 +61,10 @@ class SSHManager(object):
         """
         self.admin_ip = admin_ip
         self.admin_port = 22
-        self.login = login
-        self.__password = password
+        self.admin_login = admin_login
+        self.__admin_password = admin_password
+        self.slave_login = slave_login
+        self.__slave_password = slave_password
 
     @staticmethod
     def _connect(remote):
@@ -74,13 +84,13 @@ class SSHManager(object):
 
     def _get_keys(self):
         keys = []
-        admin_remote = self._get_remote(self.admin_ip)
+        admin_remote = self.get_remote(self.admin_ip)
         key_string = '/root/.ssh/id_rsa'
         with admin_remote.open(key_string) as f:
             keys.append(RSAKey.from_private_key(f))
         return keys
 
-    def _get_remote(self, ip, port=22):
+    def get_remote(self, ip, port=22):
         """ Function returns remote SSH connection to node by ip address
 
         :param ip: IP of host
@@ -92,14 +102,24 @@ class SSHManager(object):
                          '{ip}:{port}'.format(ip=ip, port=port))
 
             keys = self._get_keys() if ip != self.admin_ip else []
+            if ip == self.admin_ip:
+                username = self.admin_login
+                password = self.__admin_password
+            else:
+                username = self.slave_login
+                password = self.__slave_password
 
-            self.connections[(ip, port)] = SSHClient(
+            ssh_client = SSHClient(
                 host=ip,
                 port=port,
-                username=self.login,
-                password=self.__password,
+                username=username,
+                password=password,
                 private_keys=keys
             )
+
+            if ip != self.admin_ip:
+                ssh_client.sudo_mode = True
+            self.connections[(ip, port)] = ssh_client
         logger.debug('SSH_MANAGER:Return existed connection for '
                      '{ip}:{port}'.format(ip=ip, port=port))
         logger.debug('SSH_MANAGER: Connections {0}'.format(self.connections))
@@ -138,11 +158,11 @@ class SSHManager(object):
                 ip=ip, port=port))
 
     def execute(self, ip, cmd, port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.execute(cmd)
 
     def check_call(self, ip, cmd, port=22, verbose=False):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.check_call(cmd, verbose)
 
     def execute_on_remote(self, ip, cmd, port=22, err_msg=None,
@@ -214,7 +234,7 @@ class SSHManager(object):
         return result
 
     def execute_async_on_remote(self, ip, cmd, port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.execute_async(cmd)
 
     @staticmethod
@@ -238,35 +258,35 @@ class SSHManager(object):
         return obj
 
     def open_on_remote(self, ip, path, mode='r', port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.open(path, mode)
 
     def upload_to_remote(self, ip, source, target, port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.upload(source, target)
 
     def download_from_remote(self, ip, destination, target, port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.download(destination, target)
 
     def exists_on_remote(self, ip, path, port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.exists(path)
 
     def isdir_on_remote(self, ip, path, port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.isdir(path)
 
     def isfile_on_remote(self, ip, path, port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.isfile(path)
 
     def mkdir_on_remote(self, ip, path, port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.mkdir(path)
 
     def rm_rf_on_remote(self, ip, path, port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.rm_rf(path)
 
     def cond_upload(self, ip, source, target, port=22, condition=''):
@@ -280,7 +300,7 @@ class SSHManager(object):
         :return: count of files
         """
 
-        # remote = self._get_remote(ip=ip, port=port)
+        # remote = self.get_remote(ip=ip, port=port)
         # maybe we should use SSHClient function. e.g. remote.isdir(target)
         # we can move this function to some *_actions class
         if self.isdir_on_remote(ip=ip, port=port, path=target):
