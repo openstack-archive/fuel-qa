@@ -26,6 +26,8 @@ import six
 from fuelweb_test import logger
 from fuelweb_test.helpers.metaclasses import SingletonMeta
 from fuelweb_test.helpers.exceptions import UnexpectedExitCode
+from fuelweb_test.settings import SSH_FUEL_CREDENTIALS
+from fuelweb_test.settings import SSH_SLAVE_CREDENTIALS
 
 
 @six.add_metaclass(SingletonMeta)
@@ -36,14 +38,20 @@ class SSHManager(object):
         self.__connections = {}  # Disallow direct type change and deletion
         self.admin_ip = None
         self.admin_port = None
-        self.login = None
-        self.__password = None
+        self.admin_login = None
+        self.__admin_password = None
+        self.slave_login = None
+        self.__slave_password = None
 
     @property
     def connections(self):
         return self.__connections
 
-    def initialize(self, admin_ip, login, password):
+    def initialize(self, admin_ip,
+                   admin_login=SSH_FUEL_CREDENTIALS['login'],
+                   admin_password=SSH_FUEL_CREDENTIALS['password'],
+                   slave_login=SSH_SLAVE_CREDENTIALS['login'],
+                   slave_password=SSH_SLAVE_CREDENTIALS['password']):
         """ It will be moved to __init__
 
         :param admin_ip: ip address of admin node
@@ -53,8 +61,10 @@ class SSHManager(object):
         """
         self.admin_ip = admin_ip
         self.admin_port = 22
-        self.login = login
-        self.__password = password
+        self.admin_login = admin_login
+        self.__admin_password = admin_password
+        self.slave_login = slave_login
+        self.__slave_password = slave_password
 
     @staticmethod
     def _connect(remote):
@@ -92,14 +102,20 @@ class SSHManager(object):
                          '{ip}:{port}'.format(ip=ip, port=port))
 
             keys = self._get_keys() if ip != self.admin_ip else []
+            if ip == self.admin_ip:
+                username = self.admin_login
+                password = self.__admin_password
+            else:
+                username = self.slave_login
+                password = self.slave_password
 
             self.connections[(ip, port)] = SSHClient(
                 host=ip,
                 port=port,
-                username=self.login,
-                password=self.__password,
+                username=username,
+                password=password,
                 private_keys=keys
-            )
+            ).sudo
         logger.debug('SSH_MANAGER:Return existed connection for '
                      '{ip}:{port}'.format(ip=ip, port=port))
         logger.debug('SSH_MANAGER: Connections {0}'.format(self.connections))
