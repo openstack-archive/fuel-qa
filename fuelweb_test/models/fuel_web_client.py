@@ -440,10 +440,11 @@ class FuelWebClient(object):
         found_nodes = re.search(
             "\{running_nodes,\[([^\]]*)\]\}",
             rabbit_status)
-        assert_is_not_none(
-            found_nodes,
-            'No running rabbitmq nodes found on {0}. Status:\n'
-            '{1}'.format(ctrl_node, rabbit_status))
+        if not found_nodes:
+            logger.info(
+                'No running rabbitmq nodes found on {0}. Status:\n {1}'.format(
+                    ctrl_node, rabbit_status))
+            return []
         rabbit_nodes = found_nodes.group(1).replace("'", "").split(',')
         logger.debug('rabbit nodes are {}'.format(rabbit_nodes))
         nodes = [node.replace('rabbit@', "") for node in rabbit_nodes]
