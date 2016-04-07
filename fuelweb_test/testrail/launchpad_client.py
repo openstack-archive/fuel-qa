@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import unicode_literals
+
 from launchpadlib.launchpad import Launchpad
 
 
@@ -26,12 +28,14 @@ class LaunchpadBug(object):
 
     @property
     def targets(self):
-        return [{'project': str(task.bug_target_name).split('/')[0],
-                 'milestone': str(task.milestone).split('/')[-1],
-                 'status': str(task.status),
-                 'importance': str(task.importance),
-                 'title': str(task.title),
-                 } for task in self.bug_tasks]
+        return [
+            {
+                'project': task.bug_target_name.split('/')[0],
+                'milestone': str(task.milestone).split('/')[-1],
+                'status': task.status,
+                'importance': task.importance,
+                'title': task.title,
+            } for task in self.bug_tasks]
 
     def get_duplicate_of(self):
         bug = self.bug
