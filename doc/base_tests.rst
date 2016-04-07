@@ -76,8 +76,13 @@ Test custom hostname
 .. automodule:: fuelweb_test.tests.test_custom_hostname
    :members:
 
+Test custom graph
+-----------------
+.. automodule:: fuelweb_test.tests.tests_custom_graph.test_custom_graph
+   :members:
+
 Test DPDK
---------------------
+---------
 .. automodule:: fuelweb_test.tests.test_dpdk
    :members:
 
