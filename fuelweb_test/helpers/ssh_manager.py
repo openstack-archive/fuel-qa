@@ -107,7 +107,7 @@ class SSHManager(object):
                 password = self.__admin_password
             else:
                 username = self.slave_login
-                password = self.__slave_password
+                password = self.slave_password
 
             self.connections[(ip, port)] = SSHClient(
                 host=ip,
@@ -115,7 +115,7 @@ class SSHManager(object):
                 username=username,
                 password=password,
                 private_keys=keys
-            )
+            ).sudo
         logger.debug('SSH_MANAGER:Return existed connection for '
                      '{ip}:{port}'.format(ip=ip, port=port))
         logger.debug('SSH_MANAGER: Connections {0}'.format(self.connections))
@@ -340,12 +340,3 @@ class SSHManager(object):
                                  "uploading skipped".format(condition,
                                                             local_path))
         return files_count
-
-
-def sudo(func):
-    def sudo_wrapper(remote, *args):
-        with remote.sudo:
-            return_value = func(remote, *args)
-        return return_value
-
-    return sudo_wrapper

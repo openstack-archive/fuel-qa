@@ -182,7 +182,7 @@ class TestNetworkTemplatesBase(TestBasic):
                                                   role=role,
                                                   nodegroup=node_group_name,
                                                   skip_net_roles=skip_roles))
-            with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
+            with self.env.ssh_manager.get_remote(node['ip']) as remote:
                 for network in networks:
                     if network['name'] not in node_networks or \
                             network['group_id'] != node['group_id']:
@@ -364,7 +364,7 @@ class TestNetworkTemplatesBase(TestBasic):
                     role=role,
                     nodegroup=node_group_name))
 
-            with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
+            with self.env.ssh_manager.get_remote(node['ip']) as remote:
                 tcp_listen_stats = get_ip_listen_stats(remote, 'tcp')
                 udp_listen_stats = get_ip_listen_stats(remote, 'udp')
                 for service in services:

@@ -138,7 +138,7 @@ class ServicesReconfiguration(TestBasic):
         nodes = [x['ip'] for x in nodes]
         uptimes = {}
         for node in nodes:
-            with self.env.d_env.get_ssh_to_remote(node) as remote:
+            with self.env.ssh_manager.get_remote(node) as remote:
                 uptimes[node] = \
                     utils.get_process_uptime(remote, service_name)
         return uptimes
@@ -151,7 +151,7 @@ class ServicesReconfiguration(TestBasic):
         """
         nodes = [x['ip'] for x in nodes]
         for node in nodes:
-            with self.env.d_env.get_ssh_to_remote(node) as remote:
+            with self.env.ssh_manager.get_remote(node) as remote:
                 for configpath, params in config.items():
                     result = remote.open(configpath)
                     conf_for_check = utils.get_ini_config(result)
@@ -171,7 +171,7 @@ class ServicesReconfiguration(TestBasic):
         """
         nodes = [x['ip'] for x in nodes]
         for node in nodes:
-            with self.env.d_env.get_ssh_to_remote(node) as remote:
+            with self.env.ssh_manager.get_remote(node) as remote:
                 uptime = utils.get_process_uptime(remote, service_name)
                 asserts.assert_true(uptime <= uptime_before[node],
                                     'Service "{0}" was not '
@@ -234,7 +234,7 @@ class ServicesReconfiguration(TestBasic):
         creds = ("cirros", "cubswin:)")
         controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])[0]['ip']
-        with self.env.d_env.get_ssh_to_remote(controller) as remote:
+        with self.env.ssh_manager.get_remote(controller) as remote:
             res = os_conn.execute_through_host(
                 remote, floating_ip.ip, "mount", creds)
             asserts.assert_true('/mnt type {0}'.format(fs_type)
