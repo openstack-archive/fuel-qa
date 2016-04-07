@@ -691,3 +691,8 @@ Test for network outage
 -----------------------
 .. automodule:: fuelweb_test.tests.tests_strength.test_network_outage
    :members:
+
+Test for save deployment info in database
+-----------------------------------------
+.. automodule:: fuelweb_test.tests.test_deployment_storing
+   :members:
