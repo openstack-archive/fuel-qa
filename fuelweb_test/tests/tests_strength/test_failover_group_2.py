@@ -16,7 +16,12 @@ from proboscis import SkipTest
 from proboscis import test
 from proboscis.asserts import assert_equal
 
+from devops.error import TimeoutError
+from devops.helpers.helpers import tcp_ping
+from devops.helpers.helpers import wait
+from fuelweb_test import logger
 from fuelweb_test import settings
+from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -178,3 +183,76 @@ class FailoverGroup2(TestBasic):
         self.fuel_web.run_ostf(cluster_id)
 
         self.env.make_snapshot('hard_reboot_primary_controller_ceph')
+
+    @test(depends_on_groups=['deploy_ha_ceph'],
+          groups=['shutdown_primary_controller_ceph'])
+    @log_snapshot_after_test
+    def shutdown_primary_controller_ceph(self):
+        """Shutdown primary controller for Neutron on ceph cluster
+
+        Scenario:
+            1. Pre-condition - do steps from 'deploy_ha_ceph' test
+            2. Create 1 instance
+            3. Set floating IP associated with created instance
+            4. Shut down primary controller
+            5. Wait for HA services to be ready
+            6. Verify networks
+            7. Ensure connectivity to external resources from VM
+            8. Run OSTF tests
+
+        Duration: XXX min
+        Snapshot: shutdown_primary_controller_ceph
+        """
+
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot('deploy_ha_ceph')
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, roles=('controller',))
+        assert_equal(len(controllers), 3,
+                     'Environment does not have 3 controller nodes, '
+                     'found {} nodes!'.format(len(controllers)))
+
+        self.show_step(2)
+        os = os_actions.OpenStackActions(
+            controller_ip=self.fuel_web.get_public_vip(cluster_id),
+            user='failover', passwd='failover', tenant='failover')
+        net_name = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+        hypervisors = os.get_hypervisors()
+        hypervisor_name = hypervisors[0].hypervisor_hostname
+        instance_1 = os.create_server_for_migration(
+            neutron=True,
+            availability_zone="nova:{0}".format(hypervisor_name),
+            label=net_name
+        )
+        logger.info("New instance {0} created on {1}"
+                    .format(instance_1.id, hypervisor_name))
+
+        self.show_step(3)
+        floating_ip_1 = os.assign_floating_ip(instance_1)
+        logger.info("Floating address {0} associated with instance {1}"
+                    .format(floating_ip_1.ip, instance_1.id))
+
+        self.show_step(4)
+        target_controller = self.fuel_web.get_nailgun_primary_node(
+            self.fuel_web.get_devops_node_by_nailgun_node(controllers[0]))
+        self.fuel_web.warm_shutdown_nodes([target_controller])
+
+        self.show_step(5)
+        self.fuel_web.assert_ha_services_ready(cluster_id, should_fail=1)
+
+        self.show_step(6)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(7)
+        try:
+            wait(lambda: tcp_ping(floating_ip_1.ip, 22), timeout=120)
+        except TimeoutError:
+            raise TimeoutError('Can not ping instance'
+                               ' by floating ip {0}'.format(floating_ip_1.ip))
+
+        self.show_step(8)
+        self.fuel_web.run_ostf(cluster_id)
+
+        self.env.make_snapshot('shutdown_primary_controller_ceph')
