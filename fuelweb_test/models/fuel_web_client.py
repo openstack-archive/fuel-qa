@@ -823,6 +823,22 @@ class FuelWebClient(object):
             task = self.client.deploy_nodes(cluster_id)
             self.assert_task_success(task, timeout=timeout, interval=interval)
             self.check_deploy_state(cluster_id, check_services)
+        tasks = self.client.get_tasks()
+        for task in tasks:
+            if task['cluster'] == cluster_id and task['name'] == 'deployment':
+                task_id = task['id']
+        self.client.get_deployment_info(task_id)
+        networks = self.client.get_networks(cluster_id)
+        network_configuration = self.client.get_network_configuration(task_id)
+        assert_equal(networks, network_configuration,
+                     message='Network settings from cluster configuration '
+                             'and deployment task are not equal')
+        cluster_attributes = \
+            self.client.get_cluster_attributes(cluster_id)
+        cluster_settings = self.client.get_cluster_settings(task_id)
+        assert_equal(cluster_attributes, cluster_settings,
+                     message='Cluser attributes before deploy are not equal'
+                             ' with cluster settings after deploy')
 
     def deploy_cluster_wait_progress(self, cluster_id, progress,
                                      return_task=None):
