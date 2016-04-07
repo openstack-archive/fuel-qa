@@ -512,6 +512,57 @@ def check_repos_management(func):
         return result
     return wrapper
 
+
+def check_network_settings(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        env = get_current_env(args)
+        networks = env.fuel_web.client.get_networks(
+            env.fuel_web.get_last_created_cluster())
+        result = func(*args, **kwargs)
+        task_id = env.fuel_web.client.get_last_task_id(
+            env.fuel_web.get_last_created_cluster(), 'deployment')
+        network_configuration =\
+            env.fuel_web.client.get_network_configuration(task_id)
+        assert_equal(networks, network_configuration,
+                     message='Network settings from cluster configuration '
+                             'and deployment task are not equal')
+        return result
+    return wrapper
+
+
+def check_cluster_settings(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        env = get_current_env(args)
+        cluster_attributes = env.fuel_web.client.get_cluster_attributes(
+            env.fuel_web.get_last_created_cluster())
+        result = func(*args, **kwargs)
+        task_id = env.fuel_web.client.get_last_task_id(
+            env.fuel_web.get_last_created_cluster(), 'deployment')
+        cluster_settings =\
+            env.fuel_web.client.get_cluster_settings(task_id)
+        assert_equal(cluster_attributes, cluster_settings,
+                     message='Cluser attributes before deploy are not equal'
+                             ' with cluster settings after deploy')
+        return result
+    return wrapper
+
+
+def check_deployment_info_save_in_db(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        try:
+            env = get_current_env(args)
+            task_id = env.fuel_web.client.get_last_task_id(
+                env.fuel_web.get_last_created_cluster(), 'deployment')
+            env.fuel_web.client.get_deployment_info(task_id)
+        except Exception:
+            logger.error("Cannot get infromation about deployment from bd")
+        return result
+    return wrapper
+
 # Setup/Teardown decorators, which is missing in Proboscis.
 # Usage: like in Nose.
 # Python.six is less smart

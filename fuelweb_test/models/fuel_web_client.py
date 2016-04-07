@@ -42,6 +42,9 @@ from fuelweb_test import QuietLogger
 from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers import replace_repos
+from fuelweb_test.helpers.decorators import check_deployment_info_save_in_db
+from fuelweb_test.helpers.decorators import check_cluster_settings
+from fuelweb_test.helpers.decorators import check_network_settings
 from fuelweb_test.helpers.decorators import check_repos_management
 from fuelweb_test.helpers.decorators import custom_repo
 from fuelweb_test.helpers.decorators import download_astute_yaml
@@ -803,6 +806,9 @@ class FuelWebClient(object):
     @duration
     @check_repos_management
     @custom_repo
+    @check_network_settings
+    @check_cluster_settings
+    @check_deployment_info_save_in_db
     def deploy_cluster_wait(self, cluster_id, is_feature=False,
                             timeout=help_data.DEPLOYMENT_TIMEOUT, interval=30,
                             check_services=True):
