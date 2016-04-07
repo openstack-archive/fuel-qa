@@ -245,6 +245,7 @@ def get_test_method_name():
     # Find the name of the current test in the stack. It can be found
     # right under the class name 'NoneType' (when proboscis
     # run the test method with unittest.FunctionTestCase)
+    import ipdb; ipdb.set_trace()  # breakpoint b3496f31 //
     stack = inspect.stack()
     method = ''
     for m in stack:
