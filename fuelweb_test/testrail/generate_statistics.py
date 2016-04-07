@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import unicode_literals
 import json
 import os
 import re
@@ -182,7 +183,7 @@ class TestRunStatistics(object):
 
         for test in self.tests:
             logger.debug('Checking "{0}" test...'.format(
-                test['title'].encode('utf8')))
+                test['title']))
             test_results = sorted(
                 self.project.get_results_for_test(test['id'], self.results),
                 key=lambda x: x['id'], reverse=True)
