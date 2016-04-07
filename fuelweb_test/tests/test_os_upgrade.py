@@ -20,8 +20,8 @@ from fuelweb_test import settings as hlp_data
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
 
 
-@test(groups=["os_upgrade"])
-class TestOSupgrade(base_test_data.TestBasic):
+@test(groups=["prepare_os_upgrade"])
+class PrepareOSupgrade(base_test_data.TestBasic):
 
     @test(depends_on=[base_test_data.SetupEnvironment.prepare_slaves_9],
           groups=["ha_ceph_for_all_ubuntu_neutron_vlan"])
