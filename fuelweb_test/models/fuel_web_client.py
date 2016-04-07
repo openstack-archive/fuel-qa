@@ -1904,6 +1904,25 @@ class FuelWebClient(object):
         self.assert_task_success(task, progress=progress)
 
     @logwrap
+    def deploy_custom_graph_wait(self,
+                                 cluster_id,
+                                 graph_type,
+                                 node_ids=None,
+                                 progress=None):
+        logger.info('Start cluster #{cid} custom type "{type}" '
+                    'graph deployment on nodes: {nodes}. '
+                    'None means on all nodes.'.format(
+                        cid=cluster_id,
+                        type=graph_type,
+                        nodes=node_ids
+                    )
+        )
+        task = self.client.deploy_custom_graph(cluster_id,
+                                               graph_type,
+                                               node_ids)
+        self.assert_task_success(task, progress=progress)
+
+    @logwrap
     def deploy_task_wait(self, cluster_id, progress):
         logger.info('Start cluster #%s deployment', cluster_id)
         task = self.client.deploy_nodes(cluster_id)
