@@ -168,6 +168,15 @@ class NailgunClient(object):
         return self.client.get("/api/tasks")
 
     @logwrap
+    def get_last_task_id(self, cluster_id, task_name):
+        tasks = self.get_tasks
+        tasks_ids = []
+        for task in tasks:
+            if task['cluster'] == cluster_id and task['name'] == task_name:
+                tasks_ids.append(task['id'])
+        return min(tasks_ids)
+
+    @logwrap
     @json_parse
     def get_releases(self):
         return self.client.get("/api/releases/")
@@ -694,3 +703,21 @@ class NailgunClient(object):
         """
         url = '/api/v1/nodes/{}/attributes/'.format(node_id)
         return self.client.get(url)
+
+    @logwrap
+    @json_parse
+    def get_deployment_info(self, task_id):
+        return self.client.get(
+            '/api/transactions/{}/deployment_info'.format(task_id))
+
+    @logwrap
+    @json_parse
+    def get_cluster_settings(self, task_id):
+        return self.client.get(
+            '/api/transactions/{}/settings'.format(task_id))
+
+    @logwrap
+    @json_parse
+    def get_network_configuration(self, task_id):
+        return self.client.get(
+            '/api/transactions/{}/network_configuration/'.format(task_id))
