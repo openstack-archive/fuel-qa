@@ -1067,7 +1067,7 @@ class FuelWebClient(object):
 
     @logwrap
     def get_ssh_for_node(self, node_name):
-        return self.environment.d_env.get_ssh_to_remote(
+        return self.environment.ssh_manager.get_remote(
             self.get_node_ip_by_devops_name(node_name))
 
     @logwrap
@@ -1078,7 +1078,7 @@ class FuelWebClient(object):
 
     @logwrap
     def get_ssh_for_nailgun_node(self, nailgun_node):
-        return self.environment.d_env.get_ssh_to_remote(nailgun_node['ip'])
+        return self.environment.ssh_manager.get_remote(nailgun_node['ip'])
 
     @logwrap
     def is_node_discovered(self, nailgun_node):
@@ -1779,7 +1779,8 @@ class FuelWebClient(object):
         for node in devops_nodes:
             logger.debug('Shutdown node %s', node.name)
             with self.get_ssh_for_node(node.name) as remote:
-                remote.check_call('/sbin/shutdown -Ph now')
+                with remote.sudo:
+                    remote.check_call('/sbin/shutdown -Ph now')
 
         for node in devops_nodes:
             logger.info('Wait a %s node offline status', node.name)
@@ -1893,9 +1894,10 @@ class FuelWebClient(object):
         logger.info('Delete %s ip address of %s interface at %s node',
                     ip, interface, node_name)
         with self.get_ssh_for_node(node_name) as remote:
-            remote.check_call(
-                'ip netns exec {0} ip addr'
-                ' del {1} dev {2}'.format(namespace, ip, interface))
+            with remote.sudo:
+                remote.check_call(
+                    'ip netns exec {0} ip addr'
+                    ' del {1} dev {2}'.format(namespace, ip, interface))
 
     @logwrap
     def provisioning_cluster_wait(self, cluster_id, progress=None):
@@ -1961,6 +1963,7 @@ class FuelWebClient(object):
 
     @logwrap
     def wait_mysql_galera_is_up(self, node_names, timeout=60 * 4):
+        @sudo
         def _get_galera_status(_remote):
             cmd = ("mysql --connect_timeout=5 -sse \"SELECT VARIABLE_VALUE "
                    "FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME"
