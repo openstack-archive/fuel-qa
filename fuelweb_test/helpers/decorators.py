@@ -512,6 +512,7 @@ def check_repos_management(func):
         return result
     return wrapper
 
+
 # Setup/Teardown decorators, which is missing in Proboscis.
 # Usage: like in Nose.
 # Python.six is less smart
