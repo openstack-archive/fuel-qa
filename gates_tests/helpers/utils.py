@@ -443,12 +443,13 @@ def puppet_modules_mapping(modules):
 
         # checking that module from review covered by system_test
         for module in modules.keys():
-            if module not in all_modules:
+            if module.split('.')[0] not in all_modules:
                 logger.warning(
                     "{}:{} module not exist or not covered by system_test"
                     .format(module, modules[module]))
 
         # find test group which has better coverage of modules from review
+        formatted_modules = [module.split('.')[0] for module in modules]
         system_test = "bvt_2"
         max_intersection = 0
         if not ("ceph" in modules and
@@ -456,7 +457,7 @@ def puppet_modules_mapping(modules):
                 set(modules)):
             for test in mapping:
                 test_intersection = len(
-                    set(mapping[test]).intersection(set(modules)))
+                    set(mapping[test]).intersection(set(formatted_modules)))
                 if test_intersection > max_intersection:
                     max_intersection = test_intersection
                     system_test = test

@@ -21,6 +21,7 @@ import re
 from six.moves import xrange
 # pylint: enable=redefined-builtin
 
+from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers.gerrit.gerrit_client import GerritClient
 from fuelweb_test.helpers.gerrit import utils
@@ -35,6 +36,10 @@ class FuelLibraryModulesProvider(object):
         os.path.join(MODULE_ROOT_PATH, OSNAILYFACTER_NAME, 'modular/')
     OSNAILYFACTER_ROLES_PATH = os.path.join(OSNAILYFACTER_PATH, 'roles/')
     TASKS_YAML_PATH = os.path.join(OSNAILYFACTER_ROLES_PATH, 'tasks.yaml')
+    OPENSTACK_TASKS_PATH = os.path.join(MODULE_ROOT_PATH,
+                                        'openstack_tasks/manifests/')
+    OS_TASKS_YAML_PATH = os.path.join(MODULE_ROOT_PATH,
+                                      'openstack_tasks/tasks.yaml')
     PUPPETFILE_PATH = 'deployment/Puppetfile'
 
     def __init__(self, gerrit_review):
@@ -71,6 +76,7 @@ class FuelLibraryModulesProvider(object):
         r = self._request_file_list()
         text = r.text
         files = utils.filter_response_text(text)
+        logger.debug('Changed files list {}'.format(files))
         self._files_list.update(set(filter(lambda x: x != '/COMMIT_MSG',
                                            utils.json_to_dict(files).keys())))
 
@@ -83,21 +89,40 @@ class FuelLibraryModulesProvider(object):
             if f.startswith(FuelLibraryModulesProvider.MODULE_ROOT_PATH):
                 split_path = f.split('/')
                 module = split_path[-1]
+                logger.debug('Process next module {}'.format(module))
                 self._add_module_from_files(module, split_path)
                 self._add_module_from_osnailyfacter(f, split_path)
+                self._add_module_from_openstack_tasks(f, split_path)
 
     def _add_module_from_files(self, module, split_path):
         if module != FuelLibraryModulesProvider.OSNAILYFACTER_NAME:
             module_path = os.path.join(
                 FuelLibraryModulesProvider.PROJECT_ROOT_PATH, *split_path[:3]
             )
+            logger.debug('Add module {0} from files by  path {1}'.format(
+                module, module_path))
+            self._add_module(module, module_path)
+
+    def _add_module_from_openstack_tasks(self, filename, split_path):
+        if filename.startswith(
+                FuelLibraryModulesProvider.OPENSTACK_TASKS_PATH) \
+                and filename != FuelLibraryModulesProvider.OS_TASKS_YAML_PATH:
+            module = split_path[4]
+            module_path = os.path.join(
+                FuelLibraryModulesProvider.PROJECT_ROOT_PATH,
+                *split_path[0:-1])
+            logger.debug('Add module {0} from openstack_tasks '
+                         'by path {1}'.format(module, module_path))
             self._add_module(module, module_path)
 
     def _add_module(self, module, module_path):
+        logger.debug('Changed modules are {}'.format(self.changed_modules))
         if module in self.changed_modules:
+            logger.debug('Add module {} to changed modules'.format(module))
             self.changed_modules[module].add(module_path)
         else:
             self.changed_modules[module] = {module_path}
+            logger.debug('Add module {} to changed modules'.format(module))
 
     def _add_module_from_osnailyfacter(self, filename, split_path):
         if filename.startswith(FuelLibraryModulesProvider.OSNAILYFACTER_PATH) \
@@ -108,6 +133,8 @@ class FuelLibraryModulesProvider(object):
             module_path = os.path.join(
                 FuelLibraryModulesProvider.PROJECT_ROOT_PATH, *split_path[:5]
             )
+            logger.debug('Add module {0} from osnailyfacter '
+                         'by path {1}'.format(module, module_path))
             self._add_module(module, module_path)
 
     def _get_puppetfile_content_as_dict(self):

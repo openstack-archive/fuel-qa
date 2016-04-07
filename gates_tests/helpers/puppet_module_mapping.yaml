@@ -24,8 +24,10 @@ bvt_2:
  - horizon
  - inifile
  - keystone
+ - keystone.pp
  - l23network
  - logging
+ - mon
  - mcollective
  - memcached
  - monit
@@ -62,8 +64,10 @@ bvt_2:
  - vmware
 
 deploy_heat_ha:
+ - adhoc
  - ceilometer
  - ceilometer_ha
+ - cfn_keystone.pp
  - heat
  - heat_ha
  - mongo
@@ -104,6 +108,7 @@ deploy_sahara_ha_tun:
 
 neutron_vlan_ha:
  - swift
+ - proxy
 
 positive_cic_maintenance_mode:
  - umm
@@ -111,3 +116,5 @@ positive_cic_maintenance_mode:
 deploy_ha_cgroup:
  - cgroups
 
+basic_env_for_hugepages:
+ - allocated_hugepages
