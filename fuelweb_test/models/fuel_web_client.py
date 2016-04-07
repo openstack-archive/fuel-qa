@@ -42,6 +42,9 @@ from fuelweb_test import QuietLogger
 from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers import replace_repos
+from fuelweb_test.helpers.decorators import check_deployment_info_save_in_db
+from fuelweb_test.helpers.decorators import check_cluster_settings
+from fuelweb_test.helpers.decorators import check_network_settings
 from fuelweb_test.helpers.decorators import check_repos_management
 from fuelweb_test.helpers.decorators import custom_repo
 from fuelweb_test.helpers.decorators import download_astute_yaml
@@ -803,6 +806,9 @@ class FuelWebClient(object):
     @duration
     @check_repos_management
     @custom_repo
+    @check_network_settings
+    @check_cluster_settings
+    @check_deployment_info_save_in_db
     def deploy_cluster_wait(self, cluster_id, is_feature=False,
                             timeout=help_data.DEPLOYMENT_TIMEOUT, interval=30,
                             check_services=True):
@@ -812,7 +818,9 @@ class FuelWebClient(object):
             self.assert_task_success(task, interval=interval, timeout=timeout)
             self.check_deploy_state(cluster_id, check_services)
             return
-
+        # cluster_attributes = \
+        #     self.client.get_cluster_attributes(cluster_id)
+        # networks = self.client.get_networks(cluster_id)
         logger.info('Provision nodes of a cluster %s', cluster_id)
         task = self.client.provision_nodes(cluster_id)
         self.assert_task_success(task, timeout=timeout, interval=interval)
@@ -823,6 +831,19 @@ class FuelWebClient(object):
             task = self.client.deploy_nodes(cluster_id)
             self.assert_task_success(task, timeout=timeout, interval=interval)
             self.check_deploy_state(cluster_id, check_services)
+        # tasks = self.client.get_tasks()
+        # for task in tasks:
+        #     if task['cluster'] == cluster_id and task['name'] == 'deployment':
+        #         task_id = task['id']
+        # self.client.get_deployment_info(task_id)
+        # network_configuration = self.client.get_network_configuration(task_id)
+        # assert_equal(networks, network_configuration,
+        #              message='Network settings from cluster configuration '
+        #                      'and deployment task are not equal')
+        # cluster_settings = self.client.get_cluster_settings(task_id)
+        # assert_equal(cluster_attributes, cluster_settings,
+        #              message='Cluser attributes before deploy are not equal'
+        #                      ' with cluster settings after deploy')
 
     def deploy_cluster_wait_progress(self, cluster_id, progress,
                                      return_task=None):
