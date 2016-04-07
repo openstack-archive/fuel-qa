@@ -35,6 +35,10 @@ class FuelLibraryModulesProvider(object):
         os.path.join(MODULE_ROOT_PATH, OSNAILYFACTER_NAME, 'modular/')
     OSNAILYFACTER_ROLES_PATH = os.path.join(OSNAILYFACTER_PATH, 'roles/')
     TASKS_YAML_PATH = os.path.join(OSNAILYFACTER_ROLES_PATH, 'tasks.yaml')
+    OPENSTACK_TASKS_PATH = os.path.join(MODULE_ROOT_PATH,
+                                        'openstack_tasks/manifests/')
+    OS_TASKS_YAML_PATH = os.path.join(MODULE_ROOT_PATH,
+                                      'openstack_tasks/tasks.yaml')
     PUPPETFILE_PATH = 'deployment/Puppetfile'
 
     def __init__(self, gerrit_review):
@@ -85,12 +89,23 @@ class FuelLibraryModulesProvider(object):
                 module = split_path[-1]
                 self._add_module_from_files(module, split_path)
                 self._add_module_from_osnailyfacter(f, split_path)
+                self._add_module_from_openstack_tasks(f, split_path)
 
     def _add_module_from_files(self, module, split_path):
         if module != FuelLibraryModulesProvider.OSNAILYFACTER_NAME:
             module_path = os.path.join(
                 FuelLibraryModulesProvider.PROJECT_ROOT_PATH, *split_path[:3]
             )
+            self._add_module(module, module_path)
+
+    def _add_module_from_openstack_tasks(self, filename, split_path):
+        if filename.startswith(
+                FuelLibraryModulesProvider.OPENSTACK_TASKS_PATH) \
+                and filename != FuelLibraryModulesProvider.OS_TASKS_YAML_PATH:
+            module = split_path[4]
+            module_path = os.path.join(
+                FuelLibraryModulesProvider.PROJECT_ROOT_PATH,
+                *split_path[0:-1])
             self._add_module(module, module_path)
 
     def _add_module(self, module, module_path):
