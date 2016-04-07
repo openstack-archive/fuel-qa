@@ -443,7 +443,7 @@ def puppet_modules_mapping(modules):
 
         # checking that module from review covered by system_test
         for module in modules.keys():
-            if module not in all_modules:
+            if module.split('.')[0] not in all_modules:
                 logger.warning(
                     "{}:{} module not exist or not covered by system_test"
                     .format(module, modules[module]))
