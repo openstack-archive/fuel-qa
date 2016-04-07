@@ -266,9 +266,10 @@ class StatisticsGenerator(object):
                 new_description += line + '\n'
             else:
                 break
-        new_description += '\n' + stats
-        return self.project.update_plan(plan_id=self.test_plan['id'],
-                                        description=new_description)
+        new_description += '\n' + stats.decode('utf-8')
+        return self.project.update_plan(
+            plan_id=self.test_plan['id'],
+            description=new_description.encode('utf-8'))
 
     def dump(self, run_id=None):
         stats = dict()

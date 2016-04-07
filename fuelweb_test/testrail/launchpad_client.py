@@ -30,7 +30,7 @@ class LaunchpadBug(object):
                  'milestone': str(task.milestone).split('/')[-1],
                  'status': str(task.status),
                  'importance': str(task.importance),
-                 'title': str(task.title),
+                 'title': str(task.title.encode('utf-8')),
                  } for task in self.bug_tasks]
 
     def get_duplicate_of(self):
