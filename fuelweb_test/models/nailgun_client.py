@@ -694,3 +694,21 @@ class NailgunClient(object):
         """
         url = '/api/v1/nodes/{}/attributes/'.format(node_id)
         return self.client.get(url)
+
+    @logwrap
+    @json_parse
+    def get_deployment_info(self, task_id):
+        return self.client.get(
+            '/api/transactions/{}/deployment_info'.format(task_id))
+
+    @logwrap
+    @json_parse
+    def get_cluster_settings(self, task_id):
+        return self.client.get(
+            '/api/transactions/{}/settings'.format(task_id))
+
+    @logwrap
+    @json_parse
+    def get_network_configuration(self, task_id):
+        return self.client.get(
+            '/api/transactions/{}/network_configuration/'.format(task_id))
