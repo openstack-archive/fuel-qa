@@ -159,6 +159,31 @@ class NailgunClient(object):
 
     @logwrap
     @json_parse
+    def deploy_custom_graph(self, cluster_id, graph_type, node_ids=None):
+        if node_ids is None:
+            nailgun_nodes = self.list_cluster_nodes(cluster_id)
+            node_ids = [str(_node['id']) for _node in nailgun_nodes]
+        return self.client.put(
+            '/api/clusters/{0}/deploy/?graph_type={1}&nodes={2}'.format(
+                cluster_id,
+                graph_type,
+                ','.join(node_ids)))
+
+    @logwrap
+    @json_parse
+    def get_release_tasks(self, release_id):
+        return self.client.get('/api/releases/{rel_id}/deployment_graphs/'
+                               .format(rel_id=release_id))
+
+    @logwrap
+    @json_parse
+    def get_release_tasks_by_type(self, release_id, graph_type):
+        return self.client.get(
+            "/api/releases/{0}/deployment_graphs/{1}".format(release_id,
+                                                             graph_type))
+
+    @logwrap
+    @json_parse
     def get_task(self, task_id):
         return self.client.get("/api/tasks/{}".format(task_id))
 
@@ -449,10 +474,13 @@ class NailgunClient(object):
 
     @logwrap
     @json_parse
-    def get_release_deployment_tasks(self, release_id):
-        """ Get list of all deployment tasks for release."""
+    def get_custom_cluster_deployment_tasks(self, cluster_id, custom_type):
+        """ Get list of all deployment tasks for cluster."""
         return self.client.get(
-            '/api/releases/{}/deployment_tasks'.format(release_id))
+            '/api/clusters/{}/deployment_tasks/?graph_type={}'.format(
+                cluster_id,
+                custom_type
+            ))
 
     @logwrap
     @json_parse
