@@ -1317,7 +1317,8 @@ class TestHaFailoverBase(TestBasic):
             for node in d_ctrls:
                 node_ip = self.fuel_web.get_node_ip_by_devops_name(node.name)
                 cmd = 'rabbitmqctl list_queues'
-                with RunLimit(seconds=30, error_message=error.format(cmd)):
+                with RunLimit(action='rabbitmqctl_list_queues',
+                              seconds=30, error_message=error.format(cmd)):
                     self.ssh_manager.execute_on_remote(node_ip, cmd)
 
             self.env.fuel_web.run_ostf(cluster_id, ['ha', 'smoke', 'sanity'])
