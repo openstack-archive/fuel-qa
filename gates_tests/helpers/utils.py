@@ -157,7 +157,8 @@ def update_ostf():
     ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
     cmd = "service ostf status"
     helpers.wait(lambda: "dead" in ssh.execute_on_remote(
-        ssh.admin_ip, cmd=cmd)['stdout_str'], timeout=60)
+        ssh.admin_ip, cmd=cmd,
+        raise_on_assert=False)['stdout_str'], timeout=60)
     logger.info("OSTF status: inactive")
     cmd = "rpm -e fuel-ostf"
     ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
