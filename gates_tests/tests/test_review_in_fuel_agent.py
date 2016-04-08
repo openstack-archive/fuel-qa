@@ -14,24 +14,40 @@
 
 from proboscis import test
 
-from gates_tests.helpers.utils import patch_and_assemble_ubuntu_bootstrap
-from gates_tests.helpers.utils import replace_fuel_agent_rpm
-
-from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.settings import OPENSTACK_RELEASE
-from fuelweb_test.tests.base_test_case import TestBasic
-
 from fuelweb_test import settings
+from fuelweb_test.helpers.fuel_actions import BaseActions
+from fuelweb_test.helpers import ironic_actions
+from fuelweb_test.helpers.checkers import verify_bootstrap_on_node
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.tests.test_ironic_base import TestIronicDeploy
+
+from gates_tests.helpers import exceptions
+from gates_tests.helpers.utils import replace_rpm_package
+from gates_tests.helpers.utils import \
+    check_package_version_injected_in_bootstraps
 
 
 @test(groups=["review_fuel_agent"])
-class Gate(TestBasic):
+class Gate(TestIronicDeploy, BaseActions):
     """Using in fuel-agent CI-gates
     Update fuel-agent on master node, bootstrap from review,
     build environment images and provision one node"""
 
+    def update_bootstrap_cli_yaml(self):
+        actions = BaseActions()
+        path = "/etc/fuel-bootstrap-cli/fuel_bootstrap_cli.yaml"
+        element = ['repos']
+        new_repo = {'name': 'auxiliary', 'priority': "1200",
+                    'section': 'main restricted',
+                    'suite': 'auxiliary', 'type': 'deb',
+                    'uri': 'http://127.0.0.1:8080/ubuntu/auxiliary/'}
+        repos = actions.get_value_from_remote_yaml(path, element)
+        repos.append(new_repo)
+
+        actions.change_remote_yaml(path, element, repos)
+
     @test(depends_on_groups=['prepare_release'],
-          groups=["review_fuel_agent_one_node_provision"])
+          groups=["review_fuel_agent_ironic_deploy"])
     @log_snapshot_after_test
     def gate_patch_fuel_agent(self):
         """ Revert snapshot, update fuel-agent, bootstrap from review
@@ -39,51 +55,105 @@ class Gate(TestBasic):
 
     Scenario:
         1. Revert snapshot "ready"
-        2. Update fuel-agent on master node
-        3. Update bootstrap
-        4. Bootstrap 1 slave
-        5. Create environment via FUEL CLI
-        6. Assign controller role
-        7. Provisioning node
+        2. Update fuel-agent, fuel-bootstrap-cli on master node
+        3. Update fuel_bootstrap_cli.yaml
+        4. Rebuild bootstrap
+        5. Bootstrap 5 slaves
+        6. Verify Ubuntu bootstrap on slaves
+        7. Add 1 node with controller and ceph roles
+        8. Add 1 node with controller, ironic, ceph roles
+        9. Add 1 node with controller, ironic, ceph roles
+        10. Add 1 node with ironic role
+        11. Add 1 node with compute
+        12. Deploy the cluster
+        13. Verify fuel-agent version in ubuntu and ironic-bootstrap
+        14. Upload image to glance
+        15. Enroll Ironic nodes
+        16. Boot nova instance
+        17. Check Nova instance status
 
+        Snapshot review_fuel_agent_ironic_deploy
         """
         if not settings.UPDATE_FUEL:
-            raise Exception(
-                "{} variable doesn't exist".format(settings.UPDATE_FUEL))
+            raise exceptions.FuelQAVariableNotSet(settings.UPDATE_FUEL, 'true')
+
         self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready")
 
         self.show_step(2)
-        replace_fuel_agent_rpm()
+        replace_rpm_package('fuel-agent')
+        replace_rpm_package('fuel-bootstrap-cli')
 
         self.show_step(3)
-        patch_and_assemble_ubuntu_bootstrap(self.env)
+        self.update_bootstrap_cli_yaml()
 
         self.show_step(4)
-        self.env.bootstrap_nodes(
-            self.env.d_env.nodes().slaves[:1])
-
-        release_id = self.fuel_web.get_releases_list_for_os(
-            release_name=OPENSTACK_RELEASE)[0]
+        uuid, bootstrap_location = \
+            self.env.fuel_bootstrap_actions.build_bootstrap_image()
+        self.env.fuel_bootstrap_actions. \
+            import_bootstrap_image(bootstrap_location)
+        self.env.fuel_bootstrap_actions. \
+            activate_bootstrap_image(uuid)
 
         self.show_step(5)
-        cmd = ('fuel env create --name={0} --release={1} --nst=tun '
-               '--json'.format(self.__class__.__name__, release_id))
-        env_result = self.ssh_manager.execute_on_remote(
-            ip=self.ssh_manager.admin_ip,
-            cmd=cmd, jsonify=True)['stdout_json']
-        cluster_id = env_result['id']
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[:5])
 
         self.show_step(6)
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {
-                'slave-01': ['controller'],
-            }
-        )
+        for node in self.env.d_env.nodes().slaves[:5]:
+            _ip = self.fuel_web.get_nailgun_node_by_devops_node(node)['ip']
+            verify_bootstrap_on_node(_ip, os_type="ubuntu", uuid=uuid)
 
-        cluster_id = self.fuel_web.get_last_created_cluster()
+        data = {
+            'volumes_ceph': True,
+            'images_ceph': True,
+            'objects_ceph': True,
+            'volumes_lvm': False,
+            'tenant': 'ceph1',
+            'user': 'ceph1',
+            'password': 'ceph1',
+            'net_provider': settings.NEUTRON,
+            'net_segment_type': settings.NEUTRON_SEGMENT['vlan'],
+            'ironic': True}
+        nodes = {
+            'slave-01': ['controller', 'ceph-osd'],
+            'slave-02': ['controller', 'ironic', 'ceph-osd'],
+            'slave-03': ['controller', 'ironic', 'ceph-osd'],
+            'slave-04': ['ironic'],
+            'slave-05': ['compute']}
+
         self.show_step(7)
-        self.fuel_web.provisioning_cluster_wait(cluster_id)
+        self.show_step(8)
+        self.show_step(9)
+        self.show_step(10)
+        self.show_step(11)
+        self.show_step(12)
 
-        self.env.make_snapshot("review_fuel_agent_one_node_provision")
+        cluster_id = self._deploy_ironic_cluster(settings=data, nodes=nodes)
+
+        ironic_conn = ironic_actions.IronicActions(
+            self.fuel_web.get_public_vip(cluster_id),
+            user='ceph1',
+            passwd='ceph1',
+            tenant='ceph1')
+
+        self.show_step(13)
+        check_package_version_injected_in_bootstraps("fuel-agent",
+                                                     cluster_id=cluster_id)
+
+        check_package_version_injected_in_bootstraps("fuel-agent",
+                                                     cluster_id=cluster_id,
+                                                     ironic=True)
+
+        self.show_step(14)
+        self.show_step(15)
+        self._create_os_resources(ironic_conn)
+
+        self.show_step(16)
+        self._boot_nova_instances(ironic_conn)
+
+        self.show_step(17)
+        ironic_conn.wait_for_vms(ironic_conn)
+        ironic_conn.verify_vms_connection(ironic_conn)
+
+        self.env.make_snapshot("review_fuel_agent_ironic_deploy")
