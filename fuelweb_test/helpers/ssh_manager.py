@@ -18,7 +18,9 @@ import posixpath
 import re
 import traceback
 
+from devops.helpers.helpers import _tcp_ping
 from devops.helpers.helpers import wait
+from devops.helpers.helpers import _wait
 from devops.models.node import SSHClient
 from paramiko import RSAKey
 import six
@@ -26,6 +28,7 @@ import six
 from fuelweb_test import logger
 from fuelweb_test.helpers.metaclasses import SingletonMeta
 from fuelweb_test.helpers.exceptions import UnexpectedExitCode
+from fuelweb_test.settings import WAIT_FOR_PROVISIONING_TIMEOUT
 
 
 @six.add_metaclass(SingletonMeta)
@@ -324,3 +327,7 @@ class SSHManager(object):
                                  "uploading skipped".format(condition,
                                                             local_path))
         return files_count
+
+    def wait_for_ssh_connection(self, ip, timeout):
+        _wait(lambda: _tcp_ping(self.d_env.nodes().ip, 22),
+              timeout=WAIT_FOR_PROVISIONING_TIMEOUT)
