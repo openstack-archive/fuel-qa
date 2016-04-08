@@ -576,6 +576,11 @@ class FuelWebClient(object):
                 nova_quotas = attributes['editable']['common']['nova_quota']
                 nova_quotas['value'] = True
 
+            if not help_data.TASK_BASED_ENGINE:
+                logger.info('Switch to Granular deploy')
+                attributes['editable']['common']['task_deploy']['value'] =\
+                    False
+
             # Updating attributes is needed before updating
             # networking configuration because additional networks
             # may be created by new components like ironic
