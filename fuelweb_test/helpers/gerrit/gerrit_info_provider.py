@@ -82,7 +82,7 @@ class FuelLibraryModulesProvider(object):
         for f in self._files_list:
             if f.startswith(FuelLibraryModulesProvider.MODULE_ROOT_PATH):
                 split_path = f.split('/')
-                module = split_path[2]
+                module = split_path[-1]
                 self._add_module_from_files(module, split_path)
                 self._add_module_from_osnailyfacter(f, split_path)
 
