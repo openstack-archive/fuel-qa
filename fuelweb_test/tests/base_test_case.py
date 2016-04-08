@@ -12,11 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
+
+from devops.helpers.helpers import wait
+
 from proboscis import TestProgram
 from proboscis import SkipTest
 from proboscis import test
 
 from fuelweb_test import logger
+from fuelweb_test.helpers import cloud_image
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import get_test_method_name
 from fuelweb_test.helpers.utils import TimeStat
@@ -152,6 +157,42 @@ class TestBasic(object):
 
 @test
 class SetupEnvironment(TestBasic):
+    @test(groups=["bootstrap_centos_node"])
+    @log_snapshot_after_test
+    def bootstrap_centos_node(self):
+        """Create environment and bootstrap centos_node
+
+        Snapshot: centos_node
+
+        """
+        self.check_run("centos_node")
+
+        cloud_image_dir_path, \
+            meta_data_path, \
+            user_data_path = cloud_image.prepare_steps()
+        iso_name = "centos_cloud.iso"
+        iso_path = os.path.join(cloud_image_dir_path, iso_name)
+
+        # Generate data for cloud ISO
+        cloud_image.generate_user_data(self.env.d_env, user_data_path)
+        cloud_image.generate_meta_data(self.env.d_env, meta_data_path)
+
+        cloud_image.generate_cloudimage_iso(cloud_image_dir_path,
+                                            iso_name,
+                                            user_data_path,
+                                            meta_data_path)
+
+        with TimeStat("bootstrap_centos_node", is_uniq=True):
+            centos_master = self.d_env.get_nodes(role='fuel_centos_master')[0]
+            centos_master.disk_devices.get(
+                device='cdrom').volume.upload(iso_path)
+            self.d_env.start([centos_master])
+            logger.info("Waiting for Centos node to start up")
+            wait(lambda: centos_master.is_active(), 60)
+
+        self.env.make_snapshot("centos_node", is_make=True)
+        self.current_log_step = 0
+
     @test(groups=["setup"])
     @log_snapshot_after_test
     def setup_master(self):
