@@ -28,102 +28,38 @@ from fuelweb_test import settings
 from gates_tests.helpers import exceptions
 
 
-def replace_fuel_agent_rpm():
-    """Replaced fuel_agent.rpm on master node with fuel_agent.rpm
+def replace_rpm_package(package):
+    """Replaced rpm package.rpm on master node with package.rpm
     from review
     """
     ssh = SSHManager()
-    logger.info("Patching fuel-agent")
+    logger.info("Patching {}".format(package))
     if not settings.UPDATE_FUEL:
         raise exceptions.FuelQAVariableNotSet('UPDATE_FUEL', 'True')
     try:
-        pack_path = '/var/www/nailgun/fuel-agent/'
-        full_pack_path = os.path.join(pack_path, 'fuel-agent*.noarch.rpm')
+        # Upload package
+        package_name = package
+        package_ext = '*.noarch.rpm'
+        target_path = '/var/www/nailgun/{}/'.format(package)
+        pkg_path = os.path.join(target_path,
+                                '{}{}'.format(package_name, package_ext))
+        full_package_name = get_full_filename(wildcard_name=pkg_path)
+        logger.debug('Package name is {0}'.format(full_package_name))
+        full_package_path = os.path.join(os.path.dirname(pkg_path),
+                                         full_package_name)
         ssh.upload_to_remote(
             ip=ssh.admin_ip,
             source=settings.UPDATE_FUEL_PATH.rstrip('/'),
-            target=pack_path)
+            target=target_path)
 
-        # Update fuel-agent on master node
-        cmd = "rpm -q fuel-agent"
-        old_package = ssh.execute_on_remote(ssh.admin_ip, cmd)['stdout_str']
-        cmd = "rpm -qp {0}".format(full_pack_path)
-        new_package = ssh.execute_on_remote(ssh.admin_ip, cmd)['stdout_str']
-        logger.info("Updating package {0} with {1}"
-                    .format(old_package, new_package))
+        # Update package on master node
+        if not does_new_pkg_equal_to_installed_pkg(
+                installed_package=package_name,
+                new_package=full_package_path):
+            update_rpm(path=full_package_path)
 
-        if old_package != new_package:
-            logger.info("Updating fuel-agent package on master node")
-            logger.info('Try to install package {0}'.format(
-                new_package))
-            cmd = "rpm -Uvh --oldpackage {0}".format(full_pack_path)
-            ssh.execute_on_remote(ssh.admin_ip, cmd)
-
-            cmd = "rpm -q fuel-agent"
-            installed_package = ssh.execute_on_remote(
-                ssh.admin_ip, cmd)['stdout_str']
-
-            assert_equal(installed_package, new_package,
-                         "The new package {0} was not installed".
-                         format(new_package))
-
-    except Exception as e:
-        logger.error("Could not upload package {e}".format(e=e))
-        raise
-
-
-def patch_and_assemble_ubuntu_bootstrap(environment):
-    """Replaced initramfs.img in /var/www/nailgun/
-    with newly_builded from review
-    environment - Environment Model object - self.env
-    """
-    logger.info("Update fuel-agent code and assemble new ubuntu bootstrap")
-    ssh = SSHManager()
-    if not settings.UPDATE_FUEL:
-        raise Exception("{} variable don't exist"
-                        .format(settings.UPDATE_FUEL))
-    try:
-        pack_path = '/var/www/nailgun/fuel-agent-review/'
-        ssh.upload_to_remote(
-            ip=ssh.admin_ip,
-            source=settings.FUEL_AGENT_REPO_PATH.rstrip('/'),
-            target=pack_path)
-        # renew code in bootstrap
-
-        # Step 1 - install squashfs-tools
-        cmd = "yum install -y squashfs-tools"
-        ssh.execute_on_remote(ip=ssh.admin_ip, cmd=cmd)
-
-        # Step 2 - unpack bootstrap
-        bootstrap = "/var/www/nailgun/bootstraps/active_bootstrap"
-        bootstrap_var = "/var/root.squashfs"
-
-        cmd = "unsquashfs -d /var/root.squashfs {}/root.squashfs".format(
-            bootstrap)
-        ssh.execute_on_remote(ip=ssh.admin_ip, cmd=cmd)
-
-        # Step 3 - replace fuel-agent code in unpacked bootstrap
-        agent_path = "/usr/lib/python2.7/dist-packages/fuel_agent"
-        bootstrap_file = bootstrap + "/root.squashfs"
-        cmd = ("rsync -r {2}fuel_agent/* {0}{1}/;"
-               "mv {3} /var/root.squashfs.old;"
-               ).format(bootstrap_var, agent_path, pack_path, bootstrap_file)
-        ssh.execute_on_remote(ip=ssh.admin_ip, cmd=cmd)
-
-        # Step 4 - assemble new bootstrap
-        compression = "-comp xz"
-        no_progress_bar = "-no-progress"
-        no_append = "-noappend"
-        image_rebuild = "mksquashfs {0} {1} {2} {3} {4}".format(
-            bootstrap_var,
-            bootstrap_file,
-            compression,
-            no_progress_bar,
-            no_append)
-        ssh.execute_on_remote(ip=ssh.admin_ip, cmd=image_rebuild)
-        checkers.check_file_exists(ssh.admin_ip, '{0}'.format(bootstrap_file))
-    except Exception as e:
-        logger.error("Could not upload package {e}".format(e=e))
+    except Exception:
+        logger.error("Could not upload package")
         raise
 
 
@@ -491,3 +427,62 @@ def map_test_review_in_fuel_library(**kwargs):
         else:
             modules = dict()
         puppet_modules_mapping(modules)
+
+
+def check_package_version_injected_in_bootstraps(
+        self,
+        package,
+        ironic=None):
+
+    ssh = SSHManager()
+    try:
+        pack_path = '/var/www/nailgun/{}/'.format(package)
+        ssh.upload_to_remote(
+            ip=ssh.admin_ip,
+            source=settings.UPDATE_FUEL_PATH.rstrip('/'),
+            target=pack_path)
+    except Exception:
+        logger.exception("Could not upload package")
+        raise
+
+    # Step 1 - unpack active bootstrap
+    logger.info("unpack active bootstrap")
+
+    if ironic:
+        bootstrap = "/var/www/nailgun/bootstrap/ironic/{}".format(
+            self.fuel_web.get_last_created_cluster())
+    else:
+        bootstrap = "/var/www/nailgun/bootstraps/active_bootstrap"
+    bootstrap_var = "/var/root.squashfs"
+
+    cmd = "unsquashfs -d {} {}/root.squashfs".format(
+        bootstrap_var, bootstrap)
+    ssh.execute_on_remote(
+        ip=ssh.admin_ip,
+        cmd=cmd)
+
+    # Step 2 - check package version
+    logger.info(
+        "check package {} version injected in ubuntu bootstrap".format(
+            package))
+
+    cmd = "ls {}|grep {} |grep deb |cut -f 2 -d '_'".format(
+        pack_path, package)
+
+    package_from_review = ssh.execute_on_remote(
+        ip=ssh.admin_ip,
+        cmd=cmd)['stdout_str']
+
+    logger.info("package from review is {}".format(package_from_review))
+
+    awk_pattern = "awk '{print $2}'"
+    cmd = "chroot {}/ /bin/bash -c \"dpkg -s {}\"|grep Version|{}".format(
+        bootstrap_var, package, awk_pattern)
+    installed_package = ssh.execute_on_remote(
+        ip=ssh.admin_ip,
+        cmd=cmd)['stdout_str']
+    logger.info("injected package is {}".format(installed_package))
+
+    assert_equal(installed_package, package_from_review,
+                 "The new package {0} wasn't injected in bootstrap".format(
+                     package_from_review))
