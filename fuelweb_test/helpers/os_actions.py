@@ -70,6 +70,7 @@ class OpenStackActions(common.Common):
             security_groups=None,
             flavor_id=None,
             net_id=None,
+            availability_zone=None,
             timeout=100
     ):
         """ Creates simple server, like in OSTF.
@@ -77,7 +78,8 @@ class OpenStackActions(common.Common):
         :param name: server name, if None -> test-serv + random suffix
         :param security_groups: list, if None -> ssh + icmp v4 & icmp v6
         :param flavor_id: micro_flavor if None
-        :param net_id: network id, could be omitted.
+        :param net_id: network id, could be omitted
+        :param availability_zone: availability zone, could be omitted
         :param timeout: int=100
         :return: Server, in started state
         """
@@ -100,7 +102,8 @@ class OpenStackActions(common.Common):
             image=self._get_cirros_image().id,
             flavor=flavor_id,
             security_groups=[sec_group.name for sec_group in security_groups],
-            nics=nics)
+            nics=nics,
+            availability_zone=availability_zone)
 
         try:
             helpers.wait(
