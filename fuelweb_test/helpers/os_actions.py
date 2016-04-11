@@ -95,7 +95,7 @@ class OpenStackActions(common.Common):
         :param name: server name, if None -> test-serv + random suffix
         :param security_groups: list, if None -> ssh + icmp v4 & icmp v6
         :param flavor_id: micro_flavor if None
-        :param net_id: network id, could be omitted.
+        :param net_id: network id, could be omitted
         :param timeout: int=100
         :param image: TestVM if None.
         :return: Server, in started state
