@@ -90,6 +90,7 @@ from fuelweb_test.settings import VCENTER_DATASTORE
 from fuelweb_test.settings import VCENTER_IP
 from fuelweb_test.settings import VCENTER_PASSWORD
 from fuelweb_test.settings import VCENTER_USERNAME
+from fuelweb_test.settings import VERIFY_NETWORK_TIMEOUT
 
 
 class FuelWebClient(object):
@@ -1390,7 +1391,8 @@ class FuelWebClient(object):
 
     @retry(count=2, delay=20)
     @logwrap
-    def verify_network(self, cluster_id, timeout=60 * 5, success=True):
+    def verify_network(self, cluster_id, timeout=VERIFY_NETWORK_TIMEOUT,
+                       success=True):
         def _report_verify_network_result(task):
             # Report verify_network results using style like on UI
             if task['status'] == 'error' and 'result' in task:
