@@ -260,6 +260,7 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
     actions_order = None
     cluster_id = None
     scale_step = 0
+    power_step = 0
 
     def _add_node(self, nodes_list):
         """Add nodes to Environment"""
@@ -463,7 +464,7 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
               action: add
 
         For remove nodes with role use scale_nodes in yaml with action delete
-        in step:::
+        in step::
 
           scale_nodes:
           - - roles:
@@ -498,8 +499,77 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
                 if 'compute-vmware' in node['roles']:
                     self.del_vmware_nova_compute()
             else:
-                logger.error("Unknow scale action: {}".format(node['action']))
+                logger.error("Unknown scale action: {}".format(node['action']))
         self.scale_step += 1
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def manage_nodes_power(self):
+        """Manage power of node
+
+        To power off node with role use manage_nodes_power in yaml with action
+        power_off in step::
+
+          manage_nodes_power:
+          - - roles:
+              - controller
+              node_number: 0
+              action: power_off
+
+        To power on node with role use manage_nodes_power in yaml with action
+        power_on in step::
+
+          manage_nodes_power:
+          - - roles:
+              - controller
+              node_number: 0
+              action: power_on
+
+        To restart node with role use manage_nodes_power in yaml with action
+        warm_restart or cold_restart in step::
+
+          manage_nodes_power:
+          - - roles:
+              - controller
+              node_number: 0
+              action: warm_restart
+
+        Example of cold restarting two different nodes with the same role::
+
+          manage_nodes_power:
+          - - roles:
+              - controller
+              node_number: 0
+              action: cold_restart
+          - - roles:
+              - controller
+              node_number: 1
+              action: cold_restart
+
+        """
+        power_actions = {
+            'power_off_warm': self.fuel_web.warm_shutdown_nodes,
+            'power_on_warm': self.fuel_web.warm_start_nodes,
+            'reboot_warm': self.fuel_web.warm_restart_nodes,
+            'reboot_cold': self.fuel_web.cold_restart_nodes
+        }
+
+        step_config = self.env_config['manage_nodes_power'][self.power_step]
+        for node in step_config:
+            power_action = power_actions.get(node['action'], None)
+            node_number = node['node_number']
+            if power_action:
+                ng_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+                    cluster_id=self.cluster_id, roles=[node['roles'][0]])
+
+                dev_node = self.fuel_web.get_devops_node_by_nailgun_fqdn(
+                    ng_nodes[node_number]['fqdn'])
+
+                power_action([dev_node])
+            else:
+                logger.error("Unknown power switch action: "
+                             "{}".format(node['action']))
+        self.power_step += 1
 
     def add_vmware_nova_compute(self, nova_computes):
         vmware_attr = \

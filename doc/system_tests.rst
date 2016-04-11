@@ -141,6 +141,11 @@ vCenter/DVS
 .. automodule:: system_test.tests.vcenter.test_vcenter_dvs
     :members:
 
+vCenter/DVS failover
+--------------------
+.. automodule:: system_test.tests.vcenter.test_vcenter_failover
+    :members:
+
 Helpers
 =======
 
