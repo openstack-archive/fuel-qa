@@ -42,6 +42,7 @@ import yaml
 from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test import settings
+from fuelweb_test.error import prod_error
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from gates_tests.helpers import exceptions
 
@@ -718,12 +719,13 @@ def get_node_hiera_roles(remote):
 
 
 class RunLimit(object):
-    def __init__(self, seconds=60, error_message='Timeout'):
+    def __init__(self, action, seconds=60, error_message='Timeout'):
+        self.action = action
         self.seconds = seconds
         self.error_message = error_message
 
     def handle_timeout(self, signum, frame):
-        raise TimeoutException(self.error_message)
+        prod_error(self.action + '_timeout', self.error_message)
 
     def __enter__(self):
         signal.signal(signal.SIGALRM, self.handle_timeout)

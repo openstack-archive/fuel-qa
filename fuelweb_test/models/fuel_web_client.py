@@ -39,6 +39,7 @@ from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test import ostf_test_mapping
 from fuelweb_test import QuietLogger
+from fuelweb_test.error import prod_error
 from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers import replace_repos
@@ -59,6 +60,7 @@ from fuelweb_test.helpers.utils import get_node_hiera_roles
 from fuelweb_test.helpers.utils import node_freemem
 from fuelweb_test.helpers.utils import pretty_log
 from fuelweb_test.helpers.utils import run_on_remote
+from fuelweb_test.helpers.waiters import wait_prod
 from fuelweb_test.models.nailgun_client import NailgunClient
 import fuelweb_test.settings as help_data
 from fuelweb_test.settings import ATTEMPTS
@@ -150,11 +152,13 @@ class FuelWebClient(object):
     def assert_cluster_ready(self, os_conn, smiles_count,
                              networks_count=2, timeout=300):
         logger.info('Assert cluster services are UP')
-        _wait(
+        wait_prod(
             lambda: self.get_cluster_status(
                 os_conn,
                 smiles_count=smiles_count,
                 networks_count=networks_count),
+            action='cluster_ready',
+            expected=AssertionError,
             timeout=timeout)
 
     @logwrap
@@ -313,23 +317,24 @@ class FuelWebClient(object):
         logger.info('Assert task %s is success', task)
         if not progress:
             task = self.task_wait(task, timeout, interval)
-            assert_equal(
-                task['status'], 'ready',
-                "Task '{0}' has incorrect status. {1} != {2}, '{3}'".format(
-                    task["name"], task['status'], 'ready', _message(task)
-                )
-            )
+            if task['status'] != 'ready':
+                prod_error(task['name'] + '_failed'
+                           "Task '{0}' has incorrect status. {1} != {2}, '{3}'"
+                           .format(task['name'], task['status'], 'ready',
+                                   _message(task)))
+
         else:
             logger.info('Start to polling task progress')
             task = self.task_wait_progress(
                 task, timeout=timeout, interval=interval, progress=progress)
-            assert_not_equal(
-                task['status'], 'error',
-                "Task '{0}' has error status. '{1}'"
-                .format(task['status'], _message(task)))
-            assert_true(
-                task['progress'] >= progress,
-                'Task has other progress{0}'.format(task['progress']))
+            if task['status'] == 'error':
+                prod_error(task['name'] + '_failed',
+                           "Task '{0}' has error status. '{1}'"
+                           .format(task['name'], _message(task)))
+            if not (task['progress'] >= progress):
+                prod_error(task['name'] + '_progress_failed',
+                           'Task has other progress {0}'.format(
+                           task['progress']))
 
     @logwrap
     def assert_task_failed(self, task, timeout=70 * 60, interval=5):
@@ -1151,17 +1156,15 @@ class FuelWebClient(object):
         logger.info('Wait for task {0} seconds: {1}'.format(
                     timeout, pretty_log(task, indent=1)))
         start = time.time()
-        try:
-            wait(
-                lambda: (self.client.get_task(task['id'])['status']
-                         not in ('pending', 'running')),
-                interval=interval,
-                timeout=timeout
-            )
-        except TimeoutError:
-            raise TimeoutError(
-                "Waiting task \"{task}\" timeout {timeout} sec "
-                "was exceeded: ".format(task=task["name"], timeout=timeout))
+        wait_prod(
+            lambda: (self.client.get_task(task['id'])['status']
+                     not in ('pending', 'running')),
+            action=task['name'],
+            interval=interval,
+            timeout=timeout,
+            timeout_msg="Waiting task \"{task}\" timeout {timeout} sec "
+                        "was exceeded".format(task=task["name"],
+                                              timeout=timeout))
         took = time.time() - start
         task = self.client.get_task(task['id'])
         logger.info('Task finished. Took {0} seconds. {1}'.format(
@@ -1171,20 +1174,18 @@ class FuelWebClient(object):
 
     @logwrap
     def task_wait_progress(self, task, timeout, interval=5, progress=None):
-        try:
-            logger.info(
-                'start to wait with timeout {0} '
-                'interval {1}'.format(timeout, interval))
-            wait(
-                lambda: self.client.get_task(
-                    task['id'])['progress'] >= progress,
-                interval=interval,
-                timeout=timeout
-            )
-        except TimeoutError:
-            raise TimeoutError(
-                "Waiting task \"{task}\" timeout {timeout} sec "
-                "was exceeded: ".format(task=task["name"], timeout=timeout))
+        logger.info('start to wait with timeout {0} interval {1}'
+                    .format(timeout, interval))
+
+        wait_prod(
+            lambda: self.client.get_task(
+                task['id'])['progress'] >= progress,
+            action=task['name'] + '_progress',
+            interval=interval,
+            timeout=timeout,
+            timeout_msg="Waiting task \"{task}\" timeout {timeout} sec "
+                        "was exceeded".format(task=task["name"],
+                                              timeout=timeout))
 
         return self.client.get_task(task['id'])
 
@@ -1982,7 +1983,8 @@ class FuelWebClient(object):
                     logger.error("MySQL Galera isn't ready on {0}: {1}"
                                  .format(node_name,
                                          _get_galera_status(remote)))
-                    raise TimeoutError(
+                    prod_error(
+                        'mysql_galera_is_up_timeout',
                         "MySQL Galera isn't ready on {0}: {1}".format(
                             node_name, _get_galera_status(remote)))
         return True
@@ -1998,7 +2000,8 @@ class FuelWebClient(object):
                 logger.info("All Cinder services up.")
             except TimeoutError:
                 logger.error("Cinder services not ready.")
-                raise TimeoutError(
+                prod_error(
+                    'cinder_is_up_timeout',
                     "Cinder services not ready. ")
         return True
 
