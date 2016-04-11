@@ -14,22 +14,22 @@
 
 from fuelweb_test.settings import DVS_PLUGIN_PATH
 from fuelweb_test.settings import DVS_PLUGIN_VERSION
-from fuelweb_test.settings import VMWARE_IMG_NAME
-from fuelweb_test.settings import VMWARE_IMG_URL
 from fuelweb_test.settings import VMWARE_IMG_LOGIN
+from fuelweb_test.settings import VMWARE_IMG_NAME
 from fuelweb_test.settings import VMWARE_IMG_PASSWORD
+from fuelweb_test.settings import VMWARE_IMG_URL
 
 from system_test import testcase
-from system_test.tests import ActionTest
 from system_test.actions import BaseActions
 from system_test.actions import VMwareActions
+from system_test.tests import ActionTest
 
 
 @testcase(groups=['system_test',
                   'system_test.vcenter',
                   'system_test.vcenter.deploy_vcenter_dvs_run_ostf'])
 class DeployWithVMware(ActionTest, BaseActions, VMwareActions):
-    """Deploy cluster with vCenter and dvs plugin
+    """Deploy cluster with vCenter and dvs plugin.
 
     Scenario:
         1. Upload plugin to the master node
@@ -64,7 +64,7 @@ class DeployWithVMware(ActionTest, BaseActions, VMwareActions):
                   'system_test.vcenter',
                   'system_test.vcenter.scale_vcenter_dvs'])
 class ScaleWithVMware(ActionTest, BaseActions, VMwareActions):
-    """Deploy and scale cluster with vCenter and dvs plugin
+    """Deploy and scale cluster with vCenter and dvs plugin.
 
     Scenario:
         1. Upload plugin to the master node
@@ -143,7 +143,7 @@ class DeployWithVMwareRunPlatformOSTF(ActionTest, BaseActions, VMwareActions):
                   'system_test.vcenter',
                   'system_test.vcenter.deploy_with_custom_hostname'])
 class DeployWithCustomHostname(ActionTest, BaseActions, VMwareActions):
-    """Deploy cluster with vCenter and custom hostname
+    """Deploy cluster with vCenter and custom hostname.
 
     Scenario:
         1. Upload plugin to the master node
@@ -180,7 +180,7 @@ class DeployWithCustomHostname(ActionTest, BaseActions, VMwareActions):
                   'system_test.vcenter',
                   'system_test.vcenter.check_nova_config'])
 class CheckNovaConfig(ActionTest, BaseActions, VMwareActions):
-    """Deploy cluster with vCenter and custom hostname
+    """Deploy cluster with vCenter and custom hostname.
 
     Scenario:
         1. Upload plugin to the master node
@@ -217,7 +217,7 @@ class CheckNovaConfig(ActionTest, BaseActions, VMwareActions):
                   'system_test.vcenter',
                   'system_test.vcenter.check_nova_srv'])
 class CheckNovaSrv(ActionTest, BaseActions, VMwareActions):
-    """Deploy cluster with vCenter and custom hostname
+    """Deploy cluster with vCenter and custom hostname.
 
     Scenario:
         1. Upload plugin to the master node
@@ -254,7 +254,7 @@ class CheckNovaSrv(ActionTest, BaseActions, VMwareActions):
                   'system_test.vcenter',
                   'system_test.vcenter.check_cinder_srv'])
 class CheckCinderVmwareSrv(ActionTest, BaseActions, VMwareActions):
-    """Deploy cluster with vCenter and custom hostname
+    """Deploy cluster with vCenter and custom hostname.
 
     Scenario:
         1. Upload plugin to the master node
@@ -291,7 +291,7 @@ class CheckCinderVmwareSrv(ActionTest, BaseActions, VMwareActions):
                   'system_test.vcenter',
                   'system_test.vcenter.attach_empty_volume'])
 class AttachEmptyVol(ActionTest, BaseActions, VMwareActions):
-    """Deploy cluster with vCenter and dvs plugin
+    """Deploy cluster with vCenter and dvs plugin.
 
     Scenario:
         1. Upload plugin to the master node
@@ -326,7 +326,7 @@ class AttachEmptyVol(ActionTest, BaseActions, VMwareActions):
                   'system_test.vcenter',
                   'system_test.vcenter.bootable_vol'])
 class BootableVol(ActionTest, BaseActions, VMwareActions):
-    """Deploy cluster with vCenter and dvs plugin
+    """Deploy cluster with vCenter and dvs plugin.
 
     Scenario:
         1. Upload plugin to the master node
@@ -361,7 +361,7 @@ class BootableVol(ActionTest, BaseActions, VMwareActions):
                   'system_test.vcenter',
                   'system_test.vcenter.disable_enable_compute_service'])
 class DisableEnableVMwareServices(ActionTest, BaseActions, VMwareActions):
-    """Deploy cluster with vCenter and dvs plugin
+    """Deploy cluster with vCenter and dvs plugin.
 
     Scenario:
         1. Upload plugin to the master node
@@ -396,7 +396,7 @@ class DisableEnableVMwareServices(ActionTest, BaseActions, VMwareActions):
                   'system_test.vcenter',
                   'system_test.vcenter.upload_image'])
 class UploadImage(ActionTest, BaseActions, VMwareActions):
-    """Deploy cluster with vCenter and dvs plugin
+    """Deploy cluster with vCenter and dvs plugin.
 
     Scenario:
         1. Upload plugin to the master node
@@ -436,7 +436,7 @@ class UploadImage(ActionTest, BaseActions, VMwareActions):
                   'system_test.vcenter',
                   'system_test.vcenter.vmxnet3'])
 class Vmxnet3(ActionTest, BaseActions, VMwareActions):
-    """Deploy cluster with vCenter and dvs plugin
+    """Deploy cluster with vCenter and dvs plugin.
 
     Scenario:
         1. Upload plugin to the master node
@@ -476,7 +476,7 @@ class Vmxnet3(ActionTest, BaseActions, VMwareActions):
                   'system_test.vcenter',
                   'system_test.vcenter.create_batch_of_instances'])
 class CreateBatchInstances(ActionTest, BaseActions, VMwareActions):
-    """Deploy cluster with vCenter and dvs plugin
+    """Deploy cluster with vCenter and dvs plugin.
 
     Scenario:
         1. Upload plugin to the master node
@@ -511,7 +511,7 @@ class CreateBatchInstances(ActionTest, BaseActions, VMwareActions):
                   'system_test.vcenter',
                   'system_test.vcenter.diff_disk_types'])
 class DiffDiskTypes(ActionTest, BaseActions, VMwareActions):
-    """Deploy cluster with vCenter and dvs plugin
+    """Deploy cluster with vCenter and dvs plugin.
 
     Scenario:
         1. Upload plugin to the master node
@@ -546,7 +546,7 @@ class DiffDiskTypes(ActionTest, BaseActions, VMwareActions):
                   'system_test.vcenter',
                   'system_test.vcenter.neutron_public_net'])
 class DeployNeutronPublicNet(ActionTest, BaseActions, VMwareActions):
-    """Deploy cluster with vCenter and dvs plugin
+    """Deploy cluster with vCenter and dvs plugin.
 
     Scenario:
         1. Upload plugin to the master node
