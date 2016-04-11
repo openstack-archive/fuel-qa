@@ -12,10 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from time import sleep
+import itertools
 from random import randrange
+from time import sleep
 
 from devops.helpers import helpers
+
 from proboscis import SkipTest
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
@@ -24,18 +26,25 @@ from proboscis.asserts import assert_true
 from fuelweb_test.helpers.os_actions import OpenStackActions
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.settings import NEUTRON
-from system_test import logger
-from system_test import deferred_decorator
+from fuelweb_test.settings import SERVTEST_PASSWORD
+from fuelweb_test.settings import SERVTEST_TENANT
+from fuelweb_test.settings import SERVTEST_USERNAME
 from system_test import action
+from system_test import deferred_decorator
+from system_test import logger
 from system_test.helpers.decorators import make_snapshot_if_step_fail
 
 
 # pylint: disable=no-member
 # noinspection PyUnresolvedReferences
 class VMwareActions(object):
-    """VMware vCenter/DVS related actions"""
+    """VMware vCenter/DVS related actions."""
 
     plugin_version = None
+    vms_to_ping = []  # instances which should ping each other
+    vip_contr = None  # controller with VIP resources
+    primary_ctlr_ng = None  # nailgun primary controller
+    os_conn = None
     vcenter_az = 'vcenter'
     cinder_az = 'vcenter-cinder'
     vmware_image = 'TestVM-VMDK'
@@ -48,8 +57,7 @@ class VMwareActions(object):
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def configure_dvs_plugin(self):
-        """Configure DVS plugin"""
-
+        """Configure DVS plugin."""
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         assert_true(
             self.fuel_web.check_plugin_exists(
@@ -72,8 +80,7 @@ class VMwareActions(object):
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def configure_vcenter(self):
-        """Configure vCenter settings"""
-
+        """Configure vCenter settings."""
         vmware_vcenter = self.env_settings['vmware_vcenter']
 
         vcenter_value = {
@@ -155,7 +162,7 @@ class VMwareActions(object):
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def set_custom_node_names(self):
-        """Set custom node names"""
+        """Set custom node names."""
         custom_hostnames = []
         for node in self.fuel_web.client.list_cluster_nodes(self.cluster_id):
             custom_hostname = "{0}-{1}".format(
@@ -165,7 +172,8 @@ class VMwareActions(object):
 
     @staticmethod
     def get_nova_conf_dict(az, nova):
-        """
+        """Return nova conf_dict.
+
         :param az: vcenter az (api), dict
         :param nova:  nova (api), dict
         :return: dict
@@ -183,8 +191,7 @@ class VMwareActions(object):
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def check_nova_conf(self):
-        """Verify nova-compute vmware configuration"""
-
+        """Verify nova-compute vmware configuration."""
         nodes = self.fuel_web.client.list_cluster_nodes(self.cluster_id)
         vmware_attr = self.fuel_web.client.get_cluster_vmware_attributes(
             self.cluster_id)
@@ -226,8 +233,7 @@ class VMwareActions(object):
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def check_nova_srv(self):
-        """Verify nova-compute service for each vSphere cluster"""
-
+        """Verify nova-compute service for each vSphere cluster."""
         vmware_attr = self.fuel_web.client.get_cluster_vmware_attributes(
             self.cluster_id)
         az = vmware_attr['editable']['value']['availability_zones'][0]
@@ -246,8 +252,7 @@ class VMwareActions(object):
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def check_cinder_vmware_srv(self):
-        """Verify cinder-vmware service"""
-
+        """Verify cinder-vmware service."""
         ctrl_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             self.cluster_id, ["controller"])
         cmd = '. openrc; cinder-manage service list | grep vcenter | ' \
@@ -258,7 +263,7 @@ class VMwareActions(object):
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def deploy_changes(self):
-        """Deploy environment"""
+        """Deploy environment."""
         if self.cluster_id is None:
             raise SkipTest("The cluster_id is not specified, can not deploy")
 
@@ -267,8 +272,7 @@ class VMwareActions(object):
 
     @action
     def create_and_attach_empty_volume(self):
-        """Create and attach to instance empty volume"""
-
+        """Create and attach to instance empty volume."""
         mount_point = '/dev/sdb'
 
         public_ip = self.fuel_web.get_public_vip(self.cluster_id)
@@ -319,8 +323,7 @@ class VMwareActions(object):
 
     @action
     def create_bootable_volume_and_run_instance(self):
-        """Create bootable volume and launch instance from it"""
-
+        """Create bootable volume and launch instance from it."""
         public_ip = self.fuel_web.get_public_vip(self.cluster_id)
         os_conn = OpenStackActions(public_ip)
 
@@ -345,9 +348,8 @@ class VMwareActions(object):
 
     @action
     def check_vmware_service_actions(self):
-        """Disable vmware host (cluster) and check instance creation
-        on enabled cluster"""
-
+        """Disable vmware host (cluster) and check instance creation on
+        enabled cluster."""
         public_ip = self.fuel_web.get_public_vip(self.cluster_id)
         os_conn = OpenStackActions(public_ip)
 
@@ -378,8 +380,7 @@ class VMwareActions(object):
 
     @action
     def upload_image(self):
-        """Upload vmdk image"""
-
+        """Upload vmdk image."""
         controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             self.cluster_id, ["controller"])[0]
 
@@ -402,8 +403,7 @@ class VMwareActions(object):
 
     @action
     def check_instance_creation(self):
-        """Create instance and check connection"""
-
+        """Create instance and check connection."""
         public_ip = self.fuel_web.get_public_vip(self.cluster_id)
         os_conn = OpenStackActions(public_ip)
 
@@ -428,8 +428,7 @@ class VMwareActions(object):
 
     @action
     def create_instance_with_vmxnet3_adapter(self):
-        """Create instance with vmxnet3 adapter"""
-
+        """Create instance with vmxnet3 adapter."""
         public_ip = self.fuel_web.get_public_vip(self.cluster_id)
         os_conn = OpenStackActions(public_ip)
 
@@ -462,8 +461,7 @@ class VMwareActions(object):
 
     @action
     def check_batch_instance_creation(self):
-        """Create several instance simultaneously"""
-
+        """Create several instance simultaneously."""
         count = 10
         vm_name = 'vcenter_vm'
 
@@ -495,8 +493,7 @@ class VMwareActions(object):
 
     @action
     def create_instance_with_different_disktype(self):
-        """Create instances with different disk type"""
-
+        """Create instances with different disk type."""
         public_ip = self.fuel_web.get_public_vip(self.cluster_id)
         os_conn = OpenStackActions(public_ip)
 
@@ -530,8 +527,7 @@ class VMwareActions(object):
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def check_neutron_public(self):
-        """Check that public network was assigned to all nodes"""
-
+        """Check that public network was assigned to all nodes."""
         cluster = self.fuel_web.client.get_cluster(self.cluster_id)
         assert_equal(str(cluster['net_provider']), NEUTRON)
         os_conn = OpenStackActions(
@@ -542,8 +538,7 @@ class VMwareActions(object):
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def check_gw_on_vmware_nodes(self):
-        """Check that default gw != fuel node ip"""
-
+        """Check that default gw != fuel node ip."""
         vmware_nodes = []
         vmware_nodes.extend(self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             self.cluster_id, ["compute-vmware"]))
@@ -556,3 +551,299 @@ class VMwareActions(object):
             logger.debug('Default gw for node {0} is {1}'.format(
                 node['name'], gw_ip['stdout_str']))
             assert_not_equal(gw_ip['stdout_str'], self.fuel_web.admin_node_ip)
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def config_idatastore(self):
+        """Reconfigure vCenter settings with incorrect regex of Datastore."""
+        vmware_attr = \
+            self.fuel_web.client.get_cluster_vmware_attributes(self.cluster_id)
+        vcenter_data = vmware_attr['editable']
+        vcenter_data['value']['availability_zones'][0]['nova_computes'][0][
+            'datastore_regex'] = '!@#$%^&*()'
+
+        self.fuel_web.client.update_cluster_vmware_attributes(self.cluster_id,
+                                                              vmware_attr)
+        logger.info("Datastore regex settings have been updated")
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def config_idc_glance(self):
+        """Reconfigure vCenter settings with incorrect Glance Datacenter."""
+        vmware_attr = \
+            self.fuel_web.client.get_cluster_vmware_attributes(self.cluster_id)
+        vcenter_data = vmware_attr['editable']
+        vcenter_data['value']['glance']['datacenter'] = '!@#$%^&*()'
+
+        self.fuel_web.client.update_cluster_vmware_attributes(self.cluster_id,
+                                                              vmware_attr)
+        logger.info("Glance datacenter settings have been updated")
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def config_ids_glance(self):
+        """Reconfigure vCenter settings with incorrect Glance Datastore."""
+        vmware_attr = \
+            self.fuel_web.client.get_cluster_vmware_attributes(self.cluster_id)
+        vcenter_data = vmware_attr['editable']
+        vcenter_data['value']['glance']['datastore'] = '!@#$%^&*()'
+
+        self.fuel_web.client.update_cluster_vmware_attributes(self.cluster_id,
+                                                              vmware_attr)
+
+        logger.info("Glance datastore settings have been updated")
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def delete_instances(self):
+        """Delete created instances."""
+        for srv in self.vms_to_ping:
+            logger.info('Started: delete existing VM "{}"'.format(srv.name))
+            self.os_conn.nova.servers.delete(srv)
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def create_instances(self):
+        """Create instances with nova az and vcenter az."""
+        os_ip = self.fuel_web.get_public_vip(self.cluster_id)
+        self.os_conn = OpenStackActions(
+            os_ip, SERVTEST_USERNAME,
+            SERVTEST_PASSWORD,
+            SERVTEST_TENANT
+        )
+        vcenter_az = self.env_settings['vmware_vcenter']['settings']['az']
+        net = self.os_conn.get_network(self.net_name)
+        sec_group = self.os_conn.create_sec_group_for_ssh()
+
+        vc_inst_count = 1  # amount of VMs to create on vcenter
+        vc_inst_name_prefix = 'vcenter-test'
+        vc_image = self.os_conn.get_image('TestVM-VMDK')
+
+        nova_inst_count = 1  # amount of VMs to create on nova
+        nova_inst_name_prefix = 'nova-test'
+        nova_image = self.os_conn.get_image('TestVM')
+
+        logger.info(
+            'Started: create {num} VM(s) with net="{net}", az="{az}", '
+            'image="{image}"'.format(num=vc_inst_count, net=net['name'],
+                                     az=vcenter_az, image='TestVM-VMDK')
+        )
+        self.os_conn.create_server(
+            name=vc_inst_name_prefix,
+            net_id=net['id'],
+            availability_zone=vcenter_az,
+            image=vc_image,
+            timeout=200,
+            security_groups=[sec_group],
+            min_count=vc_inst_count
+        )
+
+        logger.info(
+            'Started: create {num} VM(s) with net="{net}", az="{az}", '
+            'image="{image}"'.format(num=nova_inst_count, net=net['name'],
+                                     az='nova', image='TestVM')
+        )
+        self.os_conn.create_server(
+            name=nova_inst_name_prefix,
+            net_id=net['id'],
+            image=nova_image,
+            security_groups=[sec_group],
+            availability_zone='nova',
+            min_count=nova_inst_count
+        )
+
+        servers = self.os_conn.nova.servers.list()
+        self.vms_to_ping = [srv for srv in servers if
+                            srv.name.startswith(vc_inst_name_prefix) or
+                            srv.name.startswith(nova_inst_name_prefix)]
+
+    def _get_controller_with_vip(self):
+        """Return name of controller with VIPs."""
+        for node in self.env.d_env.nodes().slaves:
+            ng_node = self.env.fuel_web.get_nailgun_node_by_devops_node(node)
+            if ng_node['online']:
+                hosts_vip = self.fuel_web.get_pacemaker_resource_location(
+                    ng_node['devops_name'], 'vip__management')
+                logger.info('Now primary controller is '
+                            '{}'.format(hosts_vip[0].name))
+                return hosts_vip[0].name
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def hard_reset_primary(self):
+        """Hard reboot of primary controller."""
+        self.vip_contr = self._get_controller_with_vip()
+
+        self.primary_ctlr_ng = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+
+        self.fuel_web.cold_restart_nodes([self.primary_ctlr_ng])
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def shutdown_primary(self):
+        """Shut down primary controller."""
+        self.vip_contr = self._get_controller_with_vip()
+
+        self.primary_ctlr_ng = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+
+        self.primary_ctlr_ng.destroy()
+
+        timeout = 60 * 10
+        interval = 5
+        logger.info('Wait offline status for '
+                    '{ctrlr}'.format(ctrlr=self.primary_ctlr_ng.name))
+
+        ng_node = self.env.fuel_web.get_nailgun_node_by_devops_node(
+            self.primary_ctlr_ng)
+
+        while ng_node['online'] and timeout > 0:
+            sleep(interval)
+            timeout -= interval
+            ng_node = self.env.fuel_web.get_nailgun_node_by_devops_node(
+                self.primary_ctlr_ng)
+        assert_true(timeout > 0, 'Primary controller is still online')
+        logger.info('Primary controller is offline')
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def safe_reboot_primary(self):
+        """Safe reboot primary controller."""
+        self.vip_contr = self._get_controller_with_vip()
+
+        self.primary_ctlr_ng = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+
+        self.fuel_web.warm_restart_nodes([self.primary_ctlr_ng])
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def check_up_vips(self):
+        """Ensure that VIPs are moved to another controller."""
+        vip_contr = self._get_controller_with_vip()
+
+        assert_true(vip_contr and vip_contr != self.vip_contr,
+                    'VIPs have not been moved to another controller')
+        logger.info('VIPs have been moved to another controller')
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def turn_on_primary(self):
+        """Turn on primary controller."""
+        self.primary_ctlr_ng.start()
+        logger.info('Started: turn on primary controller '
+                    '{name}'.format(name=self.primary_ctlr_ng.name))
+
+        ng_node = self.env.fuel_web.get_nailgun_node_by_devops_node(
+            self.primary_ctlr_ng)
+
+        timeout = 60 * 10
+        interval = 5
+        logger.info('Wait online status for '
+                    '{name}'.format(name=self.primary_ctlr_ng.name))
+        while not ng_node['online'] and timeout > 0:
+            sleep(interval)
+            timeout -= interval
+            ng_node = self.env.fuel_web.get_nailgun_node_by_devops_node(
+                self.primary_ctlr_ng)
+        assert_true(timeout > 0, 'Primary controller is still offline')
+        logger.info('Primary controller is online')
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def vcenter_ostf(self):
+        """Run vCenter OSTF tests."""
+        self.fuel_web.run_ostf(
+            cluster_id=self.cluster_id,
+            test_sets=['smoke'],
+            should_fail=getattr(self, 'ostf_tests_should_failed', 0),
+            failed_test_name=getattr(self, 'failed_test_name', None))
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def ostf_with_services_fail(self):
+        """Run OSTF tests (one should fail)."""
+        self.env.fuel_web.run_ostf(
+            self.cluster_id, should_fail=1,
+            failed_test_name='Check that required services are running')
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def fail_ostf(self):
+        """Run OSTF tests (must fail)."""
+        try:
+            self.env.fuel_web.run_ostf(
+                self.cluster_id,
+                test_sets=['sanity', 'smoke', 'ha'])
+            failed = False
+        except AssertionError:
+            failed = True
+        assert_true(failed, 'OSTF passed with incorrect parameters')
+        logger.info('OSTF failed')
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def fail_deploy_cluster(self):
+        """Deploy environment (must fail)."""
+        try:
+            self.fuel_web.deploy_cluster_wait(self.cluster_id)
+            failed = False
+        except AssertionError:
+            failed = True
+        assert_true(failed, 'Deploy passed with incorrect parameters')
+        logger.info('Deploy failed')
+
+    def ping_from_instance(self, src_floating_ip, dst_ip, primary,
+                           size=56, count=1):
+        """Verify ping between instances.
+
+        :param src_floating_ip: floating ip address of instance
+        :param dst_ip: destination ip address
+        :param primary: name of the primary controller
+        :param size: number of data bytes to be sent
+        :param count: number of packets to be sent
+        """
+        creds = ("cirros", "cubswin:)")
+
+        with self.fuel_web.get_ssh_for_node(primary) as ssh:
+            command = "ping -s {0} -c {1} {2}".format(size, count,
+                                                      dst_ip)
+            ping = self.os_conn.execute_through_host(ssh, src_floating_ip,
+                                                     command, creds)
+            logger.info("Ping result is {}".format(ping['exit_code']))
+            return 0 == ping['exit_code']
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def check_vm_connect(self):
+        """Ensure connectivity between VMs."""
+        if self.vip_contr:
+            primary_ctrl_name = self._get_controller_with_vip()
+        else:
+            primary_ctrl_name = self.fuel_web.get_nailgun_primary_node(
+                self.env.d_env.nodes().slaves[0]).name
+
+        private_ips = {}
+        floating_ips = {}
+
+        for srv in self.vms_to_ping:
+            floating = self.os_conn.assign_floating_ip(srv)
+            floating_ips[srv] = floating.ip
+            logger.info("Floating address {0} was associated with instance "
+                        "{1}".format(floating_ips[srv], srv.name))
+
+            private_ips[srv] = self.os_conn.get_nova_instance_ip(
+                srv, net_name=self.net_name)
+
+        for vm in itertools.combinations(self.vms_to_ping, 2):
+            logger.info('Try to ping from {src} ({src_vm}) to {dst} '
+                        '({dst_vm})'.format(src=floating_ips[vm[0]],
+                                            dst=private_ips[vm[1]],
+                                            src_vm=vm[0].name,
+                                            dst_vm=vm[1].name))
+
+            assert_true(self.ping_from_instance(floating_ips[vm[0]],
+                                                private_ips[vm[1]],
+                                                primary_ctrl_name),
+                        'Ping between VMs failed')
