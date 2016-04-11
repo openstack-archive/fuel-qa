@@ -1,0 +1,5 @@
+---
+- cluster: Cluster1
+  srv_name: any
+  datastore: '!@#$%^&*()'
+  target_node: controllers

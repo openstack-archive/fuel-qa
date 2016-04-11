@@ -1,0 +1,37 @@
+---
+template:
+ name: 1 node on Neutron/VLAN with DVS plugin
+ slaves: 1
+ cluster_template:
+  name: vcenter_iname_glance_ds
+  release: ubuntu
+  network:
+    !include cluster_configs/networks/neutron_vlan.yaml
+  settings:
+    components:
+      !include cluster_configs/settings/components/wo_components.yaml
+    storages:
+      !include cluster_configs/settings/storages/cinder_only.yaml
+    vmware_vcenter:
+      settings:
+        !include cluster_configs/settings/vmware/vcenter_main.yaml
+      nova-compute:
+        !include cluster_configs/settings/vmware/nova_compute/1cluster_ctrl.yaml
+      glance:
+        !include cluster_configs/settings/vmware/vcenter_glance_incorrect_dc.yaml
+    vmware_dvs:
+      !include cluster_configs/settings/vmware/dvs_main.yaml
+  nodes:
+    - roles:
+      - controller
+      iface: !include cluster_configs/settings/vmware/vcenter_ifaces.yaml
+      count: 3
+    - roles:
+      - compute
+      - cinder
+      iface: !include cluster_configs/settings/vmware/vcenter_ifaces.yaml
+      count: 1
+    - roles:
+      - cinder-vmware
+      iface: !include cluster_configs/settings/vmware/vcenter_ifaces.yaml
+      count: 1
