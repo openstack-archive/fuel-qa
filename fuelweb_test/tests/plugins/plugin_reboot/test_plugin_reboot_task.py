@@ -247,10 +247,6 @@ class RebootPlugin(TestBasic):
         msg = 'Time detection (1 sec) for node reboot has expired'
         cmd = 'grep "{0}" /var/log/astute/astute.log'.format(msg)
         self.show_step(10)
-        with self.env.d_env.get_admin_remote() as admin_remote:
-            result = admin_remote.execute(cmd)['stdout'][0]
-
-        asserts.assert_true(
-            msg in result,
-            'Failed to find reboot plugin warning message in logs'
-        )
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip, cmd=cmd,
+            err_msg='Failed to find reboot plugin warning message in logs')
