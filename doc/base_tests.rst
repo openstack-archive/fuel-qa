@@ -680,6 +680,11 @@ Test for separate keystone service and ceph
 .. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_keystone_ceph
    :members:
 
+Test for separate haproxy service
+---------------------------------
+.. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_haproxy
+   :members:
+
 Test for separate horizon service
 ---------------------------------
 .. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_horizon
