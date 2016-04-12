@@ -1327,7 +1327,7 @@ class FuelWebClient(object):
                  i in all_networks.keys()]
 
         self.client.put_node_interfaces(
-            [{'id': node_id, 'interfaces': interfaces}], without_dpdk=True)
+            [{'id': node_id, 'interfaces': interfaces}])
 
     @logwrap
     def update_node_disk(self, node_id, disks_dict):
@@ -1499,7 +1499,7 @@ class FuelWebClient(object):
                                             new_mode['name'],
                                             interface_to_update))
         self.client.put_node_interfaces(
-            [{'id': node_id, 'interfaces': interfaces}], without_dpdk=True)
+            [{'id': node_id, 'interfaces': interfaces}])
 
     def change_default_network_settings(self):
         def fetch_networks(networks):
