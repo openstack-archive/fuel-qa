@@ -30,13 +30,17 @@ TIME_ZONE = 'UTC'
 ENV_NAME = os.environ.get("ENV_NAME", "fuel_system_test")
 VIRTUAL_ENV = os.environ.get("VIRTUAL_ENV", "")
 
+ACPI_ENABLE = get_var_as_bool('DRIVER_ENABLE_ACPI', False)
+
+nic_name_mask = 'enp0s{}' if not ACPI_ENABLE else 'ens{}'
+
 INTERFACES_DICT = {
-    'eth0': os.environ.get('IFACE_0', 'enp0s3'),
-    'eth1': os.environ.get('IFACE_1', 'enp0s4'),
-    'eth2': os.environ.get('IFACE_2', 'enp0s5'),
-    'eth3': os.environ.get('IFACE_3', 'enp0s6'),
-    'eth4': os.environ.get('IFACE_4', 'enp0s7'),
-    'eth5': os.environ.get('IFACE_5', 'enp0s8'),
+    'eth0': os.environ.get('IFACE_0', nic_name_mask.format(3)),
+    'eth1': os.environ.get('IFACE_1', nic_name_mask.format(4)),
+    'eth2': os.environ.get('IFACE_2', nic_name_mask.format(5)),
+    'eth3': os.environ.get('IFACE_3', nic_name_mask.format(6)),
+    'eth4': os.environ.get('IFACE_4', nic_name_mask.format(7)),
+    'eth5': os.environ.get('IFACE_5', nic_name_mask.format(8)),
 }
 
 
@@ -98,6 +102,7 @@ HARDWARE = {
     "admin_node_memory": os.environ.get("ADMIN_NODE_MEMORY", 3072),
     "admin_node_cpu": os.environ.get("ADMIN_NODE_CPU", 2),
     "slave_node_cpu": os.environ.get("SLAVE_NODE_CPU", 1),
+    "numa_nodes": os.environ.get("NUMA_NODES", 0),
 }
 if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
     slave_mem_default = 2560
