@@ -70,3 +70,9 @@ maintainers:
       - name:   Bartosz Kupidura
         email:  bkupidura@mirantis.com
         IRC:    zynzel
+
+  - fuelweb_test/tests/tests_extra_computes/:
+
+      - name:   Victor Ryzhenkin
+        email:  vryzhenkin@mirantis.com
+        IRC:    freerunner
