@@ -158,7 +158,8 @@ def update_ostf():
     cmd = "service ostf status"
     helpers.wait(lambda: "dead" in ssh.execute_on_remote(
         ssh.admin_ip, cmd=cmd,
-        raise_on_assert=False)['stdout_str'], timeout=60)
+        raise_on_assert=False,
+        assert_ec_equal=[3])['stdout_str'], timeout=60)
     logger.info("OSTF status: inactive")
     cmd = "rpm -e fuel-ostf"
     ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
@@ -182,7 +183,7 @@ def update_ostf():
     cmd = "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8777"
     helpers.wait(
         lambda: "401" in ssh.execute_on_remote(
-            ssh.admin_ip, cmd=cmd)['stdout_str'],
+            ssh.admin_ip, cmd=cmd, raise_on_assert=False)['stdout_str'],
         timeout=60)
     logger.info("OSTF status: RUNNING")
 
