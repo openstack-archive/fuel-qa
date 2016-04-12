@@ -466,9 +466,6 @@ class CephRadosGW(TestBasic):
         Snapshot ceph_rados_gw
 
         """
-        def radosgw_started(remote):
-            return remote.check_call('pkill -0 radosgw')['exit_code'] == 0
-
         self.env.revert_snapshot("ready")
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[:6])
@@ -523,8 +520,9 @@ class CephRadosGW(TestBasic):
                                test_sets=['ha', 'smoke', 'sanity'])
 
         # Check the radosgw daemon is started
-        with self.fuel_web.get_ssh_for_node('slave-01') as remote:
-            assert_true(radosgw_started(remote), 'radosgw daemon started')
+        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
+        assert_true(checkers.check_radosgw_started(_ip),
+                        'radosgw daemon started')
 
         self.env.make_snapshot("ceph_rados_gw")
 
@@ -912,3 +910,188 @@ class CheckCephPartitionsAfterReboot(TestBasic):
             self.show_step(13, node)
             logger.info("Check Ceph health is ok after reboot")
             self.fuel_web.check_ceph_status(cluster_id)
+
+
+@test(groups=["ceph"])
+class RadosGW(TestBasic):
+    """RadosGW."""  # TODO documentation
+
+    @test(depends_on=[SetupEnvironment.prepare_release],
+          groups=["radosgw_without_os_services_usage"])
+    @log_snapshot_after_test
+    def radosgw_without_os_services_usage(self):
+        """Deploy ceph HA with RadosGW for objects
+
+        Scenario:
+            1. Create cluster with RadosGW enabled
+            2. Add 3 nodes with controller role
+            3. Add 2 nodes with compute and ceph-osd role
+            4. Add 2 nodes with ceph-osd role
+            5. Deploy the cluster
+            6. Run OSTF tests
+            7. Check ceph status
+            8. Check the radosgw daemon is started
+            9. Create custom image via glance
+            10.Compare custom image IDs
+            via glance and swift client
+            11.Check S3 API
+
+        Duration 90m
+        Snapshot radosgw_without_os_services_usage
+
+        """
+        self.show_step(1)
+        self.env.revert_snapshot("ready")
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[:7])
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings={
+                'volumes_lvm': True,
+                'volumes_ceph': False,
+                'images_ceph': False,
+                'objects_ceph': True
+            }
+        )
+
+        self.show_step(2)
+        self.show_step(3)
+        self.show_step(4)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute'],
+                'slave-05': ['compute', 'ceph-osd'],
+                'slave-06': ['ceph-osd'],
+                'slave-07': ['ceph-osd']
+            }
+        )
+
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(5)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(6)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
+
+        self.show_step(7)
+        self.fuel_web.check_ceph_status(cluster_id)
+
+        self.show_step(8)
+        devops_node = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+        node = self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
+        assert_true(checkers.check_radosgw_started(node['ip']),
+                    'radosgw daemon has not started')
+
+        self.show_step(9)
+        self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd=". openrc; glance image-create --name"
+                " 'custom-image' --disk-format qcow2"
+                " --protected False --visibility public"
+                " --container-format bare --file"
+                " /usr/share/cirros-testvm/cirros-x86_64-disk.img")
+
+        settings_source = '/etc/glance/glance-api.conf'
+        openrc = '~/openrc'
+        settings_list = (
+            "admin_tenant_name=", "admin_user=", "admin_password=")
+        openrc_settings = (
+            "OS_TENANT_NAME", "OS_PROJECT_NAME", "OS_USERNAME", "OS_PASSWORD")
+
+        settings_value = [
+            self.ssh_manager.execute_on_remote(
+                ip=node['ip'],
+                cmd='grep {0} {1} '.format(
+                    i, settings_source))['stdout'][0].split('=')[1].rstrip()
+            for i in settings_list]
+
+        settings_value.insert(0, settings_value[0])
+        for i in zip(openrc_settings, settings_value):
+                self.ssh_manager.execute_on_remote(
+                    ip=node['ip'],
+                    cmd="sed -ie '/{0}=/ s/admin/{1}/g' {2}".format(
+                        i[0], i[1], openrc))
+        self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd="sed -i 's/5000/5000\/v2.0/g' {0}".format(openrc))
+
+        glance_image_id = self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd=". openrc; glance image-list | "
+                "grep custom-image")['stdout'][0].split("|")[1].strip()
+
+        swift_image_ids = self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd=". openrc; swift list glance")['stdout']
+
+        self.show_step(10)
+        if glance_image_id in [image_id.rstrip()
+                               for image_id in swift_image_ids]:
+            logger.debug(
+                "Glance image {0} was found "
+                "in the swift_image_ids {1}".format(
+                    glance_image_id, swift_image_ids))
+        else:
+            raise Exception(
+                "The glance_image_id {0} was not found "
+                "in the list swift_image_ids {1}".format(
+                    glance_image_id, swift_image_ids))
+
+        self.show_step(11)
+        self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd='radosgw-admin user create --uid="s3_main" '
+                '--display-name="s3_main"')['stdout']
+
+        keys = self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd='radosgw-admin user create '
+                '--uid="s3_mainn" --display-name="s3_mainn"',
+            jsonify=True)['stdout_json']['keys'][0]
+        access_key = keys['access_key']
+        secret_key = keys['secret_key']
+
+        self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd="apt-get install -y git libdigest-hmac-perl")
+
+        self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd="git clone {0} /tmp/tool".format(settings.REPO_S3_TOOL))
+
+        pub_contr_ip = self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd="ip -o -4 addr show br-ex | "
+                "awk {'print $4'}")['stdout'][0].split('/')[0]
+
+        config_path = "/tmp/tool/.s3curl"
+
+        self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd="echo -e '%awsSecretAccessKeys = (rados => "
+                "{{id =>"'"{0}"'",  key =>"'"{1}"'",}},);'"
+                ">{2}".format(access_key, secret_key, config_path))
+
+        self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd="chmod 600 {0}".format(config_path))
+
+        result = self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd="/tmp/tool/s3curl.pl --id=rados --endpoint --head -- -v "
+                "http://{0}:6780".format(pub_contr_ip))
+
+        if 'HTTP/1.1 200 OK' not in ''.join(result['stdout']):
+            raise Exception(
+                "The S3 API call failed: {0}".format(result['stderr']))

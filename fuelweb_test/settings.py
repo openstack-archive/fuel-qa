@@ -661,3 +661,6 @@ GERRIT_PATCHSET_NUMBER = os.environ.get("GERRIT_PATCHSET_NUMBER")
 DOWNLOAD_FACTS = get_var_as_bool("DOWNLOAD_FACTS", False)
 
 TASK_BASED_ENGINE = get_var_as_bool("TASK_BASED_ENGINE", True)
+
+REPO_S3_TOOL = os.environ.get(
+    "REPO_S3_TOOL", "https://github.com/rzarzynski/s3curl.git")
