@@ -834,7 +834,6 @@ master:
   var/log/mcollective-audit.log
   var/log/mcollective.log
   var/log/messages
-  var/log/monit
   var/log/nailgun/api.log
   var/log/nailgun/app.log
   var/log/nailgun/assassind.log
@@ -973,7 +972,6 @@ master:
    ovs-ofctl.log
    ovs-vsctl.log
    pacemaker.log
-   pacemaker_remoted.log
    pacemakerd.log
    pengine.log
    postfix/cleanup.log
@@ -988,7 +986,6 @@ master:
    rabbitmq.log
    rsyslogd.log
    sshd.log
-   stonithd.log
    su.log
    useradd.log
    usermod.log
