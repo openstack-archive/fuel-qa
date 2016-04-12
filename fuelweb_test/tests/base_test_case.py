@@ -27,10 +27,12 @@ from fuelweb_test.helpers.utils import get_test_method_name
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.models.environment import EnvironmentModel
+from fuelweb_test.settings import EXTERNAL_HAPROXY_TEMPLATE
 from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import MULTIPLE_NETWORKS_TEMPLATE
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
+from fuelweb_test.settings import SEPARATE_SERVICE_HAPROXY_PLUGIN_PATH
 from system_test.core.discover import load_yaml
 
 from gates_tests.helpers import exceptions
@@ -345,6 +347,9 @@ class SetupEnvironment(TestBasic):
         # for L3 configuration in tests for multi racks
         if MULTIPLE_NETWORKS:
             self._devops_config = load_yaml(MULTIPLE_NETWORKS_TEMPLATE)
+        if SEPARATE_SERVICE_HAPROXY_PLUGIN_PATH:
+            from system_test.helpers.utils import load_yaml
+            self._devops_config = load_yaml(EXTERNAL_HAPROXY_TEMPLATE)
 
         self.check_run("empty")
 

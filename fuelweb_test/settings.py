@@ -132,6 +132,10 @@ MULTIPLE_NETWORKS_TEMPLATE = os.environ.get(
     'MULTIPLE_NETWORKS_TEMPLATE',
     os.path.join(os.getcwd(),
                  'system_test/tests_templates/tests_configs/multirack.yaml'))
+EXTERNAL_HAPROXY_TEMPLATE = os.environ.get(
+    'EXTERNAL_HAPROXY_TEMPLATE',
+    os.path.join(os.getcwd(),
+                 'system_test/tests_templates/tests_configs/external_haproxy.yaml'))
 
 if MULTIPLE_NETWORKS:
     NODEGROUPS = (
@@ -483,6 +487,10 @@ SEPARATE_SERVICE_HORIZON_PLUGIN_PATH = os.environ.get(
 ETCKEEPER_PLUGIN_REPO = os.environ.get(
     'ETCKEEPER_PLUGIN_REPO',
     'https://github.com/Mirantis/fuel-plugin-etckeeper')
+SEPARATE_SERVICE_HAPROXY_PLUGIN_PATH = os.environ.get(
+    'SEPARATE_SERVICE_HAPROXY_PLUGIN_PATH')
+SEPARATE_SERVICE_BALANCER_PLUGIN_PATH = os.environ.get(
+    'SEPARATE_SERVICE_BALANCER_PLUGIN_PATH')
 
 FUEL_STATS_CHECK = get_var_as_bool('FUEL_STATS_CHECK', False)
 FUEL_STATS_ENABLED = get_var_as_bool('FUEL_STATS_ENABLED', True)
