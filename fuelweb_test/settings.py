@@ -664,3 +664,6 @@ DOWNLOAD_FACTS = get_var_as_bool("DOWNLOAD_FACTS", False)
 TASK_BASED_ENGINE = get_var_as_bool("TASK_BASED_ENGINE", True)
 
 FUEL_RELEASE_PATH = os.environ.get("FUEL_RELEASE_PATH")
+
+REPO_S3_TOOL = os.environ.get(
+    "REPO_S3_TOOL", "https://github.com/rzarzynski/s3curl.git")
