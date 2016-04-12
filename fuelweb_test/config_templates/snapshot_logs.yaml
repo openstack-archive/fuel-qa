@@ -834,7 +834,6 @@ master:
   var/log/mcollective-audit.log
   var/log/mcollective.log
   var/log/messages
-  var/log/monit
   var/log/nailgun/api.log
   var/log/nailgun/app.log
   var/log/nailgun/assassind.log
@@ -903,7 +902,6 @@ master:
    cinder-manage.log
    cinder-scheduler.log
    cinder-volume.log
-   CLOUDINIT.log
    conntrack-tools.log
    corosync.log
    crmd.log
@@ -912,7 +910,6 @@ master:
    dbus.log
    dnsmasq-dhcp.log
    dnsmasq.log
-   ec2.log
    efi.log
    freedos.log
    glance-api.log
@@ -973,13 +970,11 @@ master:
    ovs-ofctl.log
    ovs-vsctl.log
    pacemaker.log
-   pacemaker_remoted.log
    pacemakerd.log
    pengine.log
    postfix/cleanup.log
    postfix/local.log
    postfix/qmgr.log
-   puppet-agent.log
    puppet-apply.log
    qnx.log
    rabbit-fence.log
@@ -988,7 +983,6 @@ master:
    rabbitmq.log
    rsyslogd.log
    sshd.log
-   stonithd.log
    su.log
    useradd.log
    usermod.log
