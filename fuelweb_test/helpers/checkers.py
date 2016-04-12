@@ -1299,3 +1299,10 @@ def check_snapshot_logs(ip, snapshot_name, controller_fqdns, compute_fqdns):
         logger.debug("missed logs are {}".format(absent_logs))
         assert_false(absent_logs, "Next logs aren't present"
                                   " in snapshot logs {}".format(absent_logs))
+
+
+def check_radosgw_started(ip):
+    result = ssh_manager.execute_on_remote(
+        ip=ip,
+        cmd='pkill -0 radosgw', assert_ec_equal=[0,1])
+    return result['exit_code'] == 0
