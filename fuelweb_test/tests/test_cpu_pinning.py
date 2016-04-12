@@ -12,20 +12,99 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import random
+
+from devops.settings import DRIVER_PARAMETERS
 from proboscis import asserts
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers import utils
 from fuelweb_test import logger
+from fuelweb_test import logwrap
 from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
+from gates_tests.helpers import exceptions
 
 
 @test(groups=["numa_cpu_pinning"])
 class NumaCpuPinning(TestBasic):
     """NumaCpuPinning."""
+
+    @staticmethod
+    @logwrap
+    def assert_entry_in_config(conf, conf_name, section, option, value):
+        """Check entry of parameter with a proper value.
+
+        :param conf: a file object
+        :param conf_name: a string of full file path
+        :param section: a string of section name in configuration file
+        :param option: a string of option name in configuration file
+        :param value: a string of value that has entry in configuration file
+        :return:
+        """
+        current_value = conf.get(section, option)
+        asserts.assert_true(value in current_value,
+                            'Expected that the option "{0}" contains value '
+                            '"{1}" in config file "{2}", but actually has '
+                            'value "{3}": FAIL'.format(option,
+                                                       value,
+                                                       conf_name,
+                                                       current_value))
+
+    @staticmethod
+    @logwrap
+    def assert_quantity_in_config(conf, conf_name, section, option,
+                                  value):
+        """Check number of parameters in option section.
+
+        :param conf: a file object
+        :param conf_name: a string of full file path
+        :param section: a string of section name in configuration file
+        :param option: a string of option name in configuration file
+        :param value: an int number of values in specific option
+        :return:
+        """
+        current_value = conf.get(section, option)
+        asserts.assert_equal(len(current_value.split(',')), value,
+                             'Expected that the option "{0}" has "{1}"'
+                             'values in config file {2} but actually has '
+                             'value "{3}": FAIL'.format(option,
+                                                        value,
+                                                        conf_name,
+                                                        current_value))
+
+    @logwrap
+    def create_pinned_instance(self, os_conn, cluster_id,
+                               name, vcpus, hostname, meta):
+        """Boot VM on specific compute with CPU pinning
+
+        :param os_conn: an object of connection to openstack services
+        :param cluster_id: an integer number of cluster id
+        :param name: a string name of flavor and aggregate
+        :param vcpus: an integer number of vcpus for flavor
+        :param hostname: a string fqdn name of compute
+        :param meta: a dict with metadata for aggregate
+        :return:
+        """
+        os_conn.create_aggregate(name, metadata=meta, hosts=[hostname])
+
+        extra_specs = {'aggregate_instance_extra_specs:pinned': 'true',
+                       'hw:cpu_policy': 'dedicated'}
+
+        net_name = self.fuel_web.get_cluster_predefined_networks_name(
+            cluster_id)['private_net']
+        flavor_id = random.randint(10, 10000)
+        os_conn.create_flavor(name=name, ram=64, vcpus=vcpus, disk=1,
+                              flavorid=flavor_id, extra_specs=extra_specs)
+
+        server = os_conn.create_server_for_migration(neutron=True,
+                                                     label=net_name,
+                                                     flavor=flavor_id)
+        os_conn.verify_instance_status(server, 'ACTIVE')
+        os_conn.delete_instance(server)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["numa_cpu_pinning",
@@ -46,14 +125,53 @@ class NumaCpuPinning(TestBasic):
         self.check_run(snapshot_name)
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        self.show_step(1, initialize=True)
+        if not settings.KVM_USE:
+            raise exceptions.FuelQAVariableNotSet(
+                'KVM_USE', 'true')
+
+        elif not settings.HARDWARE['slave_node_cpu'] == 6:
+            raise exceptions.FuelQAVariableNotSet(
+                'SLAVE_NODE_CPU', 6)
+
+        elif not settings.HARDWARE['numa_nodes'] == 2:
+            raise exceptions.FuelQAVariableNotSet(
+                'NUMA_NODES', 2)
+
+        elif not settings.INTERFACES_DICT['eth0'] == 'ens3':
+            raise exceptions.FuelQAVariableNotSet(
+                'IFACE_0', 'ens3')
+
+        elif not settings.INTERFACES_DICT['eth1'] == 'ens4':
+            raise exceptions.FuelQAVariableNotSet(
+                'IFACE_1', 'ens4')
+
+        elif not settings.INTERFACES_DICT['eth2'] == 'ens5':
+            raise exceptions.FuelQAVariableNotSet(
+                'IFACE_2', 'ens5')
+
+        elif not settings.INTERFACES_DICT['eth3'] == 'ens6':
+            raise exceptions.FuelQAVariableNotSet(
+                'IFACE_3', 'ens6')
+
+        elif not settings.INTERFACES_DICT['eth4'] == 'ens7':
+            raise exceptions.FuelQAVariableNotSet(
+                'IFACE_4', 'ens7')
+
+        elif not settings.INTERFACES_DICT['eth5'] == 'ens8':
+            raise exceptions.FuelQAVariableNotSet(
+                'IFACE_5', 'ens8')
+
+        elif not DRIVER_PARAMETERS['DRIVER_ENABLE_ACPI']:
+            raise exceptions.FuelQAVariableNotSet(
+                'DRIVER_ENABLE_ACPI', 'true')
+
+        self.show_step(1)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": settings.NEUTRON_SEGMENT_TYPE,
-                "KVM_USE": True
+                "net_segment_type": settings.NEUTRON_SEGMENT_TYPE
             }
         )
         self.show_step(2)
@@ -95,3 +213,133 @@ class NumaCpuPinning(TestBasic):
                 logger.info("There is {0} NUMA nodes on node {1}".format(
                     numas_on_remote, target_node['ip']))
         self.env.make_snapshot(snapshot_name, is_make=True)
+
+    @test(depends_on_groups=['basic_env_for_numa_cpu_pinning'],
+          groups=["numa_cpu_pinning",
+                  "cpu_pinning_on_two_compute"])
+    @log_snapshot_after_test
+    def cpu_pinning_on_two_compute(self):
+        """Check different amount of pinned CPU
+
+        Scenario:
+            1. Revert snapshot "basic_env_for_numa_cpu_pinning"
+            2. Pin maximum CPU for the nova on the first compute
+            3. Pin minimun CPU for the nova on the second compute
+            4. Verify setting was successfully applied
+            5. Deploy cluster
+            6. Check new filters are enabled in nova.conf at controller
+            7. Check nova.conf contains pinned CPU at compute
+            8. Run OSTF
+            9. Boot VM with pinned CPU on the first compute
+            10. Boot VM with pinned CPU on the second compute
+
+        Snapshot: cpu_pinning_on_two_compute
+        """
+        self.show_step(1)
+        self.env.revert_snapshot("basic_env_for_numa_cpu_pinning")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.show_step(2)
+        first_compute = self.fuel_web.get_nailgun_node_by_name('slave-01')
+        first_compute_cpu = first_compute['meta']['cpu']['total']
+        first_config = self.fuel_web.client.get_node_attributes(
+            first_compute['id'])
+        first_config['cpu_pinning']['nova']['value'] = first_compute_cpu - 1
+        self.fuel_web.client.upload_node_attributes(
+            first_config, first_compute['id'])
+
+        self.show_step(3)
+        second_compute = self.fuel_web.get_nailgun_node_by_name('slave-02')
+        second_config = self.fuel_web.client.get_node_attributes(
+            second_compute['id'])
+        second_config['cpu_pinning']['nova']['value'] = 1
+        self.fuel_web.client.upload_node_attributes(
+            second_config, second_compute['id'])
+
+        self.show_step(4)
+        first_config = self.fuel_web.client.get_node_attributes(
+            first_compute['id'])
+        asserts.assert_equal(
+            first_config['cpu_pinning']['nova']['value'],
+            first_compute_cpu - 1,
+            "CPU pinning wasn't applied on '{0}': "
+            "Expected value '{1}', actual '{2}'"
+            .format(first_compute['ip'], first_compute_cpu - 1,
+                    first_config['cpu_pinning']['nova']['value']))
+
+        second_config = self.fuel_web.client.get_node_attributes(
+            second_compute['id'])
+        asserts.assert_equal(
+            second_config['cpu_pinning']['nova']['value'],
+            1,
+            "CPU pinning wasn't applied on '{0}': "
+            "Expected value '{1}', actual '{2}'"
+            .format(second_compute['ip'], 1,
+                    second_config['cpu_pinning']['nova']['value']))
+
+        self.show_step(5)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(6)
+        controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id,
+            roles=['controller'])
+
+        nova_conf_path = "/etc/nova/nova.conf"
+
+        for controller in controllers:
+            nova_conf = utils.get_ini_config(self.ssh_manager.open_on_remote(
+                ip=controller['ip'],
+                path=nova_conf_path))
+
+            self.assert_entry_in_config(nova_conf,
+                                        nova_conf_path,
+                                        "DEFAULT",
+                                        "scheduler_default_filters",
+                                        "NUMATopologyFilter")
+
+        self.show_step(7)
+
+        nova_conf = utils.get_ini_config(self.ssh_manager.open_on_remote(
+            ip=first_compute['ip'],
+            path=nova_conf_path))
+        self.assert_quantity_in_config(nova_conf,
+                                       nova_conf_path,
+                                       "DEFAULT",
+                                       "vcpu_pin_set",
+                                       first_compute_cpu - 1)
+
+        nova_conf = utils.get_ini_config(self.ssh_manager.open_on_remote(
+            ip=second_compute['ip'],
+            path=nova_conf_path))
+        self.assert_quantity_in_config(nova_conf,
+                                       nova_conf_path,
+                                       "DEFAULT",
+                                       "vcpu_pin_set",
+                                       1)
+
+        self.show_step(8)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(9)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+
+        meta = {'pinned': 'true'}
+
+        self.create_pinned_instance(os_conn=os_conn,
+                                    cluster_id=cluster_id,
+                                    name='cpu_3',
+                                    vcpus=3,
+                                    hostname=first_compute['fqdn'],
+                                    meta=meta)
+        self.show_step(10)
+        self.create_pinned_instance(os_conn=os_conn,
+                                    cluster_id=cluster_id,
+                                    name='cpu_1',
+                                    vcpus=1,
+                                    hostname=second_compute['fqdn'],
+                                    meta=meta)
+
+        self.env.make_snapshot("cpu_pinning_on_two_compute")
