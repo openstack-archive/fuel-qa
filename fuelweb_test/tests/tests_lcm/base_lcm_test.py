@@ -41,6 +41,7 @@ def construct_ruby_sym(loader, node):
 
 
 TASKS_BLACKLIST = [
+    "pre_hiera_config",
     "reboot_provisioned_nodes",
     "hiera",
     "configure_default_route",
@@ -151,7 +152,7 @@ class LCMTestBasic(TestBasic):
                      fixture is loaded
         :return: a dictionary with loaded fixture data
         """
-        subdir = "" if idmp else "ensurability"
+        subdir = "idempotency" if idmp else "ensurability"
         fixture_path = os.path.join(
             os.path.dirname(__file__), "fixtures",
             deployment_type, subdir, "{}.yaml".format(role))
