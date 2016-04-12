@@ -25,8 +25,8 @@ from fuelweb_test import logger
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-class RhBase(TestBasic):
-    """RH-based compute tests base"""
+class ExtraComputesBase(TestBasic):
+    """Extra computes tests base"""
 
     def check_slaves_are_ready(self):
         devops_nodes = [node for node in self.env.d_env.nodes().slaves
@@ -107,12 +107,12 @@ class RhBase(TestBasic):
             logger.info('Node {0} became online.'.format(node.name))
 
     @staticmethod
-    def connect_rh_image(slave):
-        """Upload RH image into a target node.
+    def connect_extra_compute_image(slave):
+        """Upload extra compute image into a target node.
 
         :param slave: Target node name.
         """
-        path = settings.RH_IMAGE_PATH + settings.RH_IMAGE
+        path = settings.EXTRA_COMP_IMAGE_PATH + settings.EXTRA_COMP_IMAGE
 
         def find_system_drive(node):
             drives = node.disk_devices
@@ -131,12 +131,16 @@ class RhBase(TestBasic):
         logger.debug("Volume path: {0}".format(vol_path))
         logger.debug("Image path: {0}".format(path))
 
-    def verify_image_connected(self, ip):
+    def verify_image_connected(self, ip, types='rh'):
         """Check that correct image connected to a target node system volume.
 
         :param ip: Remote node ip to proceed.
+        :param types: rh or ol
         """
-        cmd = "cat /etc/redhat-release"
+        if types is 'rh':
+            cmd = "cat /etc/redhat-release"
+        else:
+            cmd = "cat /etc/enterprise-release"
         self.ssh_manager.execute_on_remote(
             ip, cmd, err_msg="Image doesn't connected")
 
@@ -181,26 +185,34 @@ class RhBase(TestBasic):
             self.ssh_manager.execute_on_remote(
                 ip, cmd, err_msg='RH registration with auto-attaching failed')
 
-    def enable_rh_repos(self, ip):
-        """Enable Red Hat mirrors on a target node.
+    def enable_extra_compute_repos(self, ip, types='rh'):
+        """Enable requested family mirrors on a target node.
 
         :param ip: Remote node ip for proceed.
+        :param types: rh or ol
         """
-        cmd = ("yum-config-manager --enable rhel-{0}-server-optional-rpms && "
-               "yum-config-manager --enable rhel-{0}-server-extras-rpms &&"
-               "yum-config-manager --enable rhel-{0}-server-rh-common-rpms"
-               .format(settings.RH_MAJOR_RELEASE))
+        if types is 'rh':
+            cmd = (
+                "yum-config-manager --enable rhel-{0}-server-optional-rpms &&"
+                " yum-config-manager --enable rhel-{0}-server-extras-rpms &&"
+                " yum-config-manager --enable rhel-{0}-server-rh-common-rpms"
+                .format(settings.RH_MAJOR_RELEASE))
+        else:
+            cmd = ("yum-config-manager --enable ol{0}_addons && "
+                   "yum-config-manager --enable ol{0}_optional_latest"
+                   .format(settings.OL_MAJOR_RELEASE))
 
         self.ssh_manager.execute_on_remote(
-            ip, cmd, err_msg='Enabling RH repos failed')
+            ip, cmd, err_msg='Enabling requested family repos failed')
 
-    def set_hostname(self, ip, host_number=1):
+    def set_hostname(self, ip, types='rh', host_number=1):
         """Set hostname with domain for a target node.
 
         :param host_number: Node index nubmer (1 by default).
+        :param types: rh or ol
         :param ip: Remote node ip for proceed.
         """
-        hostname = "rh-{0}.test.domain.local".format(host_number)
+        hostname = "{0}-{1}.test.domain.local".format(types, host_number)
         cmd = ("sysctl kernel.hostname={0} && "
                "echo '{0}' > /etc/hostname".format(hostname))
 
@@ -379,7 +391,7 @@ class RhBase(TestBasic):
             ip, cmd, err_msg='Can not recover ssh key for node')
 
         cmd = "cd ~/rh_backup-{2} && scp astute.yaml {0}@{1}:/etc/.".format(
-            settings.RH_IMAGE_USER, ip, node)
+            settings.EXTRA_COMP_IMAGE_USER, ip, node)
         logger.debug("Restoring astute.yaml for node with ip {0}".format(ip))
         self.ssh_manager.execute_on_remote(
             remote_admin_ip, cmd, err_msg='Can not restore astute.yaml')
@@ -391,7 +403,7 @@ class RhBase(TestBasic):
 
         cmd = (
             "cd ~/rh_backup-{2} && scp -r nova {0}@{1}:/var/lib/astute/.".
-            format(settings.RH_IMAGE_USER, ip, node)
+            format(settings.EXTRA_COMP_IMAGE_USER, ip, node)
         )
         logger.debug("Restoring nova ssh-keys")
         self.ssh_manager.execute_on_remote(
@@ -400,7 +412,7 @@ class RhBase(TestBasic):
         if ceph:
             cmd = (
                 "cd ~/rh_backup-{2} && scp -r ceph {0}@{1}:/var/lib/astute/."
-                .format(settings.RH_IMAGE_USER, ip, node)
+                .format(settings.EXTRA_COMP_IMAGE_USER, ip, node)
             )
             logger.debug("Restoring ceph ssh-keys")
             self.ssh_manager.execute_on_remote(
@@ -511,8 +523,8 @@ class RhBase(TestBasic):
         :param ip: IP address of a target node where to sync.
         """
         cmd = ("rsync -avz /etc/puppet/modules/* "
-               "{0}@{1}:/etc/puppet/modules/".format(settings.RH_IMAGE_USER,
-                                                     ip))
+               "{0}@{1}:/etc/puppet/modules/".
+               format(settings.EXTRA_COMP_IMAGE_USER, ip))
         self.ssh_manager.execute_on_remote(
             master_node_ip, cmd, err_msg='Rsync puppet modules failed')
 

@@ -625,12 +625,13 @@ RESTART_COUNT = os.environ.get("RESTART_COUNT", 10)
 # RH-related variables
 # Need to update these variables, when image with RH for
 # MOS will be available.
-RH_IMAGE = os.environ.get("RH_IMAGE")
-RH_IMAGE_PATH = os.environ.get("RH_IMAGE_PATH")
-RH_IMAGE_MD5 = os.environ.get("RH_IMAGE_MD5")
+EXTRA_COMP_IMAGE = os.environ.get("EXTRA_COMP_IMAGE")
+EXTRA_COMP_IMAGE_PATH = os.environ.get("EXTRA_COMP_IMAGE_PATH")
+EXTRA_COMP_IMAGE_MD5 = os.environ.get("EXTRA_COMP_IMAGE_MD5")
 COMPUTE_BOOT_STRATEGY = os.environ.get("COMPUTE_BOOT_STRATEGY", "system")
-RH_IMAGE_USER = os.environ.get("RH_IMAGE_USER", "root")
-RH_IMAGE_PASSWORD = os.environ.get("RH_IMAGE_PASSWORD", "r00tme")
+EXTRA_COMP_IMAGE_USER = os.environ.get("EXTRA_COMP_IMAGE_USER", "root")
+EXTRA_COMP_IMAGE_PASSWORD = os.environ.get("EXTRA_COMP_IMAGE_PASSWORD",
+                                           "r00tme")
 RH_LICENSE_USERNAME = os.environ.get("RH_LICENSE_USERNAME")
 RH_LICENSE_PASSWORD = os.environ.get("RH_LICENSE_PASSWORD")
 RH_SERVER_URL = os.environ.get("RH_SERVER_URL")
@@ -638,6 +639,7 @@ RH_REGISTERED_ORG_NAME = os.environ.get("RH_REGISTERED_ORG_NAME")
 RH_ACTIVATION_KEY = os.environ.get("RH_ACTIVATION_KEY")
 RH_RELEASE = os.environ.get("RH_RELEASE")
 RH_MAJOR_RELEASE = os.environ.get("RH_MAJOR_RELEASE", "7")
+OL_MAJOR_RELEASE = os.environ.get("OL_MAJOR_RELEASE", "7")
 CENTOS_DUMMY_DEPLOY = get_var_as_bool("CENTOS_DUMMY_DEPLOY", False)
 PERESTROIKA_REPO = os.environ.get(
     "PERESTROIKA_REPO", "http://perestroika-repo-tst.infra.mirantis.net/"
