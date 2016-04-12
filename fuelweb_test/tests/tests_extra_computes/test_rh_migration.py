@@ -23,11 +23,12 @@ from fuelweb_test.helpers import os_actions
 from fuelweb_test import settings
 from fuelweb_test import logger
 from fuelweb_test.tests.base_test_case import SetupEnvironment
-from fuelweb_test.tests.tests_extra_computes.base_extra_computes import RhBase
+from fuelweb_test.tests.tests_extra_computes.base_extra_computes \
+    import ExtraComputesBase
 
 
 @test(groups=['rh.migration'])
-class RhHAOneControllerMigration(RhBase):
+class RhHAOneControllerMigration(ExtraComputesBase):
     """RH-based compute HA migration test"""
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["check_vm_migration_rh_ha_one_controller_tun"])
@@ -57,9 +58,9 @@ class RhHAOneControllerMigration(RhBase):
         self.show_step(1, initialize=True)
         logger.debug('Check MD5 sum of RH 7 image')
         check_image = checkers.check_image(
-            settings.RH_IMAGE,
-            settings.RH_IMAGE_MD5,
-            settings.RH_IMAGE_PATH)
+            settings.EXTRA_COMP_IMAGE,
+            settings.EXTRA_COMP_IMAGE_MD5,
+            settings.EXTRA_COMP_IMAGE_PATH)
         asserts.assert_true(check_image,
                             'Provided image is incorrect. '
                             'Please, check image path and md5 sum of it.')
@@ -153,8 +154,8 @@ class RhHAOneControllerMigration(RhBase):
         asserts.assert_false(
             target_node_two.driver.node_active(node=target_node_two),
             'Target node still active')
-        self.connect_rh_image(target_node_one)
-        self.connect_rh_image(target_node_two)
+        self.connect_extra_compute_image(target_node_one)
+        self.connect_extra_compute_image(target_node_two)
         target_node_one.start()
         asserts.assert_true(
             target_node_one.driver.node_active(node=target_node_one),
@@ -180,7 +181,7 @@ class RhHAOneControllerMigration(RhBase):
             self.register_rh_subscription(target_node_one_ip)
         self.install_yum_components(target_node_one_ip)
         if not settings.CENTOS_DUMMY_DEPLOY:
-            self.enable_rh_repos(target_node_one_ip)
+            self.enable_extra_compute_repos(target_node_one_ip)
         self.set_repo_for_perestroika(target_node_one_ip)
         self.check_hiera_installation(target_node_one_ip)
         self.install_ruby_puppet(target_node_one_ip)
@@ -191,7 +192,7 @@ class RhHAOneControllerMigration(RhBase):
             self.register_rh_subscription(target_node_two_ip)
         self.install_yum_components(target_node_two_ip)
         if not settings.CENTOS_DUMMY_DEPLOY:
-            self.enable_rh_repos(target_node_two_ip)
+            self.enable_extra_compute_repos(target_node_two_ip)
         self.set_repo_for_perestroika(target_node_two_ip)
         self.check_hiera_installation(target_node_two_ip)
         self.install_ruby_puppet(target_node_two_ip)
