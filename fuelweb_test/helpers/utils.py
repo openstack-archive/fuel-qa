@@ -705,13 +705,15 @@ def generate_floating_ranges(start_ip, end_ip, step):
     return ranges
 
 
-def get_node_hiera_roles(remote):
+def get_node_hiera_roles(remote, fqdn=None):
     """Get hiera roles assigned to host
 
     :param :remote: SSHClient to node
         :rtype: dict host plus role
     """
     cmd = 'hiera roles'
+    if fqdn!=None:
+        cmd = cmd+' fqdn={}'.format(fqdn)
     roles = ''.join(run_on_remote(remote, cmd)).strip()
     # Content string with roles like a ["ceph-osd", "controller"] to list
     return [role.strip('" ') for role in roles.strip("[]").split(',')]
