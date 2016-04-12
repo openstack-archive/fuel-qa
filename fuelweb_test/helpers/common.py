@@ -202,13 +202,21 @@ class Common(object):
         self.nova.servers.delete(server)
 
     def create_flavor(self, name, ram, vcpus, disk, flavorid="auto",
-                      ephemeral=0):
+                      ephemeral=0, extra_specs=None):
         flavor = self.nova.flavors.create(name, ram, vcpus, disk, flavorid,
-                                          ephemeral=ephemeral)
+                                          ephemeral=ephemeral,
+                                          extra_specs=extra_specs)
         return flavor
 
     def delete_flavor(self, flavor):
         return self.nova.flavors.delete(flavor)
+
+    def create_aggregate(self, name, metadata=None, hosts=None):
+        aggregate = self.nova.aggregate.create(
+            name=name, metadata=metadata)
+        for host in hosts or []:
+            aggregate.add_host(host)
+        return aggregate
 
     @staticmethod
     def _get_keystoneclient(username, password, tenant_name, auth_url,
