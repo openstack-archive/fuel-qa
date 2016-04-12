@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import unicode_literals
+
 from fuelweb_test.testrail.settings import logger
 from fuelweb_test.testrail.testrail import APIClient
 from fuelweb_test.testrail.testrail import APIError
