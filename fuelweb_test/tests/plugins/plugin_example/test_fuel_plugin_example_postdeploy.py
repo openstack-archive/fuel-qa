@@ -120,19 +120,10 @@ class ExamplePluginPostDeploy(TestBasic):
 
     def __check_plugin_v4_on_node(self, node="slave-01"):
         logger.debug("Start to check service on node {0}".format(node))
-        check_http_cmd = 'curl localhost:8234'
-        check_process_cmd = 'pgrep -f fuel-simple-service'
 
-        with self.fuel_web.get_ssh_for_node(node) as remote:
-            res_pgrep = remote.execute(check_process_cmd)
-            assert_equal(0, res_pgrep['exit_code'],
-                         'Failed with error {0}'.format(res_pgrep['stderr']))
-            assert_equal(1, len(res_pgrep['stdout']),
-                         'Failed with error {0}'.format(res_pgrep['stderr']))
-            # curl to service
-            res_curl = remote.execute(check_http_cmd)
-            assert_equal(0, res_pgrep['exit_code'],
-                         'Failed with error {0}'.format(res_curl['stderr']))
+        ip = self.fuel_web.get_node_ip_by_devops_name(node)
+        self.ssh_manager.execute_on_remote(ip, 'pgrep -f fuel-simple-service')
+        self.ssh_manager.execute_on_remote(ip, 'curl localhost:8234')
 
     def check_plugin_v4_is_installed(self):
         plugin_name = 'fuel_plugin_example_v4_hotpluggable'
