@@ -346,6 +346,7 @@ Test extra computes
 .. automodule:: fuelweb_test.tests.tests_extra_computes.base_extra_computes
 .. automodule:: fuelweb_test.tests.tests_extra_computes.test_rh_basic_actions
 .. automodule:: fuelweb_test.tests.tests_extra_computes.test_rh_migration
+.. automodule:: fuelweb_test.tests.tests_extra_computes.test_ol_basic_actions
   :members:
 
 Test Daemon Resource Allocation Control
