@@ -1299,3 +1299,7 @@ def check_snapshot_logs(ip, snapshot_name, controller_fqdns, compute_fqdns):
         logger.debug("missed logs are {}".format(absent_logs))
         assert_false(absent_logs, "Next logs aren't present"
                                   " in snapshot logs {}".format(absent_logs))
+
+
+def check_radosgw_started(remote):
+    return remote.check_call('pkill -0 radosgw')['exit_code'] == 0
