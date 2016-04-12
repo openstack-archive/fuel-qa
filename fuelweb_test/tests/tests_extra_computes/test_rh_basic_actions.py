@@ -26,11 +26,12 @@ from fuelweb_test.helpers import os_actions
 from fuelweb_test import settings
 from fuelweb_test import logger
 from fuelweb_test.tests.base_test_case import SetupEnvironment
-from fuelweb_test.tests.tests_extra_computes.base_extra_computes import RhBase
+from fuelweb_test.tests.tests_extra_computes.base_extra_computes \
+    import ExtraComputesBase
 
 
 @test(groups=["rh", "rh.ha_one_controller", "rh.basic"])
-class RhHaOneController(RhBase):
+class RhHaOneController(ExtraComputesBase):
     """RH-based compute HA One Controller basic test"""
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
@@ -60,9 +61,9 @@ class RhHaOneController(RhBase):
         self.show_step(1, initialize=True)
         logger.debug('Check MD5 sum of RH 7 image')
         check_image = checkers.check_image(
-            settings.RH_IMAGE,
-            settings.RH_IMAGE_MD5,
-            settings.RH_IMAGE_PATH)
+            settings.EXTRA_COMP_IMAGE,
+            settings.EXTRA_COMP_IMAGE_MD5,
+            settings.EXTRA_COMP_IMAGE_PATH)
         asserts.assert_true(check_image,
                             'Provided image is incorrect. '
                             'Please, check image path and md5 sum of it.')
@@ -131,7 +132,7 @@ class RhHaOneController(RhBase):
         target_node.destroy()
         asserts.assert_false(target_node.driver.node_active(node=target_node),
                              'Target node still active')
-        self.connect_rh_image(target_node)
+        self.connect_extra_compute_image(target_node)
         target_node.start()
         asserts.assert_true(target_node.driver.node_active(node=target_node),
                             'Target node did not start')
@@ -147,7 +148,7 @@ class RhHaOneController(RhBase):
             self.register_rh_subscription(target_node_ip)
         self.install_yum_components(target_node_ip)
         if not settings.CENTOS_DUMMY_DEPLOY:
-            self.enable_rh_repos(target_node_ip)
+            self.enable_extra_compute_repos(target_node_ip)
         self.set_repo_for_perestroika(target_node_ip)
         self.check_hiera_installation(target_node_ip)
         self.install_ruby_puppet(target_node_ip)
@@ -173,7 +174,7 @@ class RhHaOneController(RhBase):
 
 
 @test(groups=['rh', 'rh.failover_group'])
-class RHFailoverGroup(RhBase):
+class RhFailoverGroup(ExtraComputesBase):
     """Failover tests for RH-based computes"""
 
     @test(depends_on_groups=['deploy_rh_compute_ha_one_controller_tun'],
