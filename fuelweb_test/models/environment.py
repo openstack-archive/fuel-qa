@@ -13,8 +13,8 @@
 #    under the License.
 
 import re
+from time import sleep
 import subprocess
-import time
 
 from devops.error import TimeoutError
 from devops.helpers.helpers import _tcp_ping
@@ -116,7 +116,7 @@ class EnvironmentModel(object):
             node.start()
             # TODO(aglarendil): LP#1317213 temporary sleep
             # remove after better fix is applied
-            time.sleep(5)
+            sleep(5)
 
         with TimeStat("wait_for_nodes_to_start_and_register_in_nailgun"):
             wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
@@ -226,8 +226,15 @@ class EnvironmentModel(object):
         return self._virt_env
 
     def resume_environment(self):
-        self.d_env.resume()
-        admin = self.d_env.nodes().admin
+        _admins = set(self.d_env.get_nodes(role='fuel_master'))
+        slaves = set(self.d_env.get_nodes()) - _admins
+        admins = sorted(_admins, key=lambda node: node.name)
+
+        for node in admins:
+            logger.debug('Resume node: {}'.format(node.name))
+            node.resume()
+
+        admin = admins[0]
 
         self.ssh_manager.clean_all_connections()
 
@@ -238,7 +245,7 @@ class EnvironmentModel(object):
                            "{0}".format(e))
             admin.destroy()
             logger.info('Admin node was destroyed. Wait 10 sec.')
-            time.sleep(10)
+            sleep(10)
 
             admin.start()
             logger.info('Admin node started second time.')
@@ -259,12 +266,35 @@ class EnvironmentModel(object):
                     settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
                 ))
         self.set_admin_ssh_password()
+
+        # Now we have admin nodes and could request data from it
+        controllers = []
+        others = []
+        for node in slaves:
+            ng_node = self.fuel_web.get_nailgun_node_by_devops_node(node)
+
+            # Not found nodes -> new nodes, start with not controllers
+            if ng_node is None or 'controller' not in ng_node['roles']:
+                others.append(node)
+            else:
+                controllers.append(node)
+
+        for node in controllers:
+            logger.debug('Resume node: {}'.format(node.name))
+            node.resume()
+
+        sleep(5)  # wait fow controllers start
+
+        for node in others:
+            logger.debug('Resume node: {}'.format(node.name))
+            node.resume()
+
         self.admin_actions.wait_for_fuel_ready()
 
     def make_snapshot(self, snapshot_name, description="", is_make=False):
         if settings.MAKE_SNAPSHOT or is_make:
             self.d_env.suspend()
-            time.sleep(10)
+            sleep(10)
 
             self.d_env.snapshot(snapshot_name, force=True,
                                 description=description)
@@ -281,7 +311,7 @@ class EnvironmentModel(object):
         devops_nodes = [node for node in self.d_env.nodes().slaves
                         if node.driver.node_active(node)]
         # Bug: 1455753
-        time.sleep(30)
+        sleep(30)
 
         for node in devops_nodes:
             try:
@@ -435,7 +465,7 @@ class EnvironmentModel(object):
                 ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
 
         self.admin_actions.wait_for_fuel_ready()
-        time.sleep(10)
+        sleep(10)
         self.set_admin_keystone_password()
         self.sync_time(['admin'])
         if settings.UPDATE_MASTER:
