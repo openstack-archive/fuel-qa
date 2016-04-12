@@ -15,9 +15,13 @@
 from random import randrange
 
 from proboscis import SkipTest
+from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 
+from fuelweb_test.helpers.os_actions import OpenStackActions
 from fuelweb_test.helpers.ssh_manager import SSHManager
+from fuelweb_test.settings import NEUTRON
 from system_test import logger
 from system_test import deferred_decorator
 from system_test import action
@@ -269,3 +273,33 @@ class VMwareActions(object):
 
         self.fuel_web.deploy_cluster_wait(self.cluster_id,
                                           check_services=False)
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def check_neutron_public(self):
+        """Check that public network was assigned to all nodes"""
+
+        cluster = self.fuel_web.client.get_cluster(self.cluster_id)
+        assert_equal(str(cluster['net_provider']), NEUTRON)
+        os_conn = OpenStackActions(
+            self.fuel_web.get_public_vip(self.cluster_id))
+        self.fuel_web.check_fixed_network_cidr(
+            self.cluster_id, os_conn)
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def check_gw_on_vmware_nodes(self):
+        """Check that default gw != fuel node ip"""
+
+        vmware_nodes = []
+        vmware_nodes.extend(self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            self.cluster_id, ["compute-vmware"]))
+        vmware_nodes.extend(self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            self.cluster_id, ["cinder-vmware"]))
+        logger.debug('Fuel ip is {0}'.format(self.fuel_web.admin_node_ip))
+        for node in vmware_nodes:
+            cmd = "ip route | grep default | awk '{print $3}'"
+            gw_ip = SSHManager().execute_on_remote(node['ip'], cmd)
+            logger.debug('Default gw for node {0} is {1}'.format(
+                node['name'], gw_ip['stdout_str']))
+            assert_not_equal(gw_ip['stdout_str'], self.fuel_web.admin_node_ip)
