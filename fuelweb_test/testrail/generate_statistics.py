@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import unicode_literals
+
 import json
 import os
 import re
@@ -181,8 +183,7 @@ class TestRunStatistics(object):
             self.run['name'], self.run['config'] or 'default config'))
 
         for test in self.tests:
-            logger.debug('Checking "{0}" test...'.format(
-                test['title'].encode('utf8')))
+            logger.debug('Checking "{0}" test...'.format(test['title']))
             test_results = sorted(
                 self.project.get_results_for_test(test['id'], self.results),
                 key=lambda x: x['id'], reverse=True)
@@ -359,7 +360,7 @@ class StatisticsGenerator(object):
             index = 1
             for tid, params in values['tests'].items():
                 if index > 1:
-                    link_text = str(index)
+                    link_text = '{}'.format(index)
                 else:
                     link_text = '{0} on {1}'.format(params['group'],
                                                     params['config'])
@@ -396,7 +397,7 @@ class StatisticsGenerator(object):
             index = 1
             for tid, params in values['tests'].items():
                 if index > 1:
-                    link_text = str(index)
+                    link_text = '{}'.format(index)
                 else:
                     link_text = '{0} on {1}'.format(params['group'],
                                                     params['config'])

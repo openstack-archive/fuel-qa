@@ -23,6 +23,8 @@
 # Copyright Gurock Software GmbH. See license.md for details.
 #
 
+from __future__ import unicode_literals
+
 import base64
 import json
 import time
@@ -114,8 +116,8 @@ class APIClient(object):
         if method == 'POST':
             request.add_data(json.dumps(data))
         auth = base64.encodestring(
-            '%s:%s' % (self.user, self.password)).strip()
-        request.add_header('Authorization', 'Basic %s' % auth)
+            '{0}:{1}'.format(self.user, self.password)).strip()
+        request.add_header('Authorization', 'Basic {}'.format(auth))
         request.add_header('Content-Type', 'application/json')
 
         e = None
