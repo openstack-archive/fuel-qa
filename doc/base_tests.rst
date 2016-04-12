@@ -347,6 +347,11 @@ Test task idempotency
 .. automodule:: fuelweb_test.tests.tests_lcm.test_idempotency
   :members:
 
+Test task coverage by LCM tests
+-------------------------------
+.. automodule:: fuelweb_test.tests.tests_lcm.test_task_coverage
+  :members:
+
 Gating tests
 ============
 
