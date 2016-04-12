@@ -98,6 +98,7 @@ HARDWARE = {
     "admin_node_memory": os.environ.get("ADMIN_NODE_MEMORY", 3072),
     "admin_node_cpu": os.environ.get("ADMIN_NODE_CPU", 2),
     "slave_node_cpu": os.environ.get("SLAVE_NODE_CPU", 1),
+    "numa_nodes": os.environ.get("NUMA_NODES", 0),
 }
 if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
     slave_mem_default = 2560
