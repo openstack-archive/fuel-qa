@@ -336,9 +336,10 @@ Test CPU pinning
 .. automodule:: fuelweb_test.tests.test_cpu_pinning
   :members:
 
-Test RH-based computes
-----------------------
-.. automodule:: fuelweb_test.tests.test_rh_compute
+Test extra computes
+-------------------
+.. automodule:: fuelweb_test.tests.tests_extra_computes.test_rh_basic_actions
+.. automodule:: fuelweb_test.tests.tests_extra_computes.test_rh_migration
   :members:
 
 Test Daemon Resource Allocation Control
