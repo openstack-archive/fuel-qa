@@ -777,7 +777,7 @@ class FuelWebClient(object):
                 node_name = node.name
                 with self.get_ssh_for_node(node_name) as remote:
                     free = node_freemem(remote)
-                    hiera_roles = get_node_hiera_roles(remote)
+                    hiera_roles = get_node_hiera_roles(remote, n['fqdn'])
                 node_status = {
                     node_name:
                     {
