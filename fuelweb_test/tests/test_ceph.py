@@ -13,6 +13,8 @@
 #    under the License.
 from __future__ import unicode_literals
 import time
+from ConfigParser import ConfigParser
+from cStringIO import StringIO
 
 from pkg_resources import parse_version
 from proboscis.asserts import assert_true, assert_false, assert_equal
@@ -912,3 +914,189 @@ class CheckCephPartitionsAfterReboot(TestBasic):
             self.show_step(13, node)
             logger.info("Check Ceph health is ok after reboot")
             self.fuel_web.check_ceph_status(cluster_id)
+
+
+@test(groups=["default_storage_rados_gw", "ceph"])
+class RadosGW(TestBasic):
+    """RadosGW."""  # TODO documentation
+
+    @test(depends_on=[SetupEnvironment.prepare_release],
+          groups=["radosgw_without_os_services_usage"])
+    @log_snapshot_after_test
+    def radosgw_without_os_services_usage(self):
+        """Deploy ceph HA with RadosGW for objects
+
+        Scenario:
+            1. Create cluster with RadosGW enabled
+            2. Add 3 nodes with controller role
+            3. Add 2 nodes with compute and ceph-osd role
+            4. Add 2 nodes with ceph-osd role
+            5. Verify Network
+            6. Deploy the cluster
+            7. Verify Network
+            8. Run OSTF tests
+            9. Check ceph status
+            10. Check the radosgw daemon is started
+            11. Create custom image via glance
+            12. Compare custom image IDs via glance and swift client
+            13. Check S3 API
+
+        Duration 90m
+        Snapshot radosgw_without_os_services_usage
+
+        """
+        self.show_step(1)
+        self.env.revert_snapshot("ready")
+        self.env.bootstrap_nodes(
+            self.env.d_env.nodes().slaves[:7])
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings={
+                'volumes_lvm': True,
+                'volumes_ceph': False,
+                'images_ceph': False,
+                'objects_ceph': True
+            }
+        )
+
+        self.show_step(2)
+        self.show_step(3)
+        self.show_step(4)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute'],
+                'slave-05': ['compute', 'ceph-osd'],
+                'slave-06': ['ceph-osd'],
+                'slave-07': ['ceph-osd']
+            }
+        )
+
+        def radosgw_started(remote):
+            return remote.check_call('pkill -0 radosgw')['exit_code'] == 0
+
+        self.show_step(5)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(6)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(7)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(8)
+        self.fuel_web.run_ostf(cluster_id=cluster_id,
+                               test_sets=['ha', 'smoke', 'sanity'])
+
+        self.show_step(9)
+        self.fuel_web.check_ceph_status(cluster_id)
+
+        self.show_step(10)
+        devops_node = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+        node = self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
+
+        with self.fuel_web.get_ssh_for_node('slave-01') as remote:
+            assert_true(radosgw_started(remote),
+                        'radosgw daemon has not been started')
+
+        self.show_step(11)
+        self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd=". openrc; glance image-create --name"
+                " 'custom-image' --disk-format qcow2"
+                " --protected False --visibility public"
+                " --container-format bare --file"
+                " /usr/share/cirros-testvm/cirros-x86_64-disk.img")
+
+        settings_source = '/etc/glance/glance-api.conf'
+        openrc = '~/openrc'
+        settings_list = (
+            "admin_tenant_name", "admin_user", "admin_password")
+        openrc_settings = (
+            "OS_TENANT_NAME", "OS_PROJECT_NAME", "OS_USERNAME", "OS_PASSWORD")
+
+        glance_config = self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd="cat {0} | egrep -v '^#'".format(
+                settings_source))['stdout_str']
+        glance_config_file = StringIO(glance_config)
+        parser = ConfigParser()
+        parser.readfp(glance_config_file)
+        settings_value = [
+            parser.get('keystone_authtoken', value) for value in settings_list]
+
+        settings_value.insert(0, settings_value[0])
+        for val in zip(openrc_settings, settings_value):
+            self.ssh_manager.execute_on_remote(
+                ip=node['ip'],
+                cmd="sed -ie '/{0}=/ s/admin/{1}/g' {2}".format(
+                    val[0], val[1], openrc))
+        self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd="sed -i 's/5000/5000\/v2.0/g' {0}".format(openrc))
+
+        glance_image_id = self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd=". openrc; glance image-list | "
+                "grep custom-image")['stdout'][0].split("|")[1].strip()
+
+        swift_image_ids = self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd=". openrc; swift list glance")['stdout']
+
+        self.show_step(12)
+        if glance_image_id in [image_id.rstrip()
+                               for image_id in swift_image_ids]:
+            logger.debug(
+                "Glance image {0} was found "
+                "in the swift_image_ids {1}".format(
+                    glance_image_id, swift_image_ids))
+        else:
+            raise Exception(
+                "The glance_image_id {0} was not found "
+                "in the list swift_image_ids {1}".format(
+                    glance_image_id, swift_image_ids))
+
+        self.show_step(13)
+        keys = self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd='radosgw-admin user create '
+                '--uid="s3_main" --display-name="s3_main"',
+            jsonify=True)['stdout_json']['keys'][0]
+        access_key = keys['access_key']
+        secret_key = keys['secret_key']
+
+        self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd="apt-get install -y python-pip")
+        self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd="pip install {0}".format(settings.S3_API_CLIENT))
+
+        pub_contr_ip = self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd="ip -o -4 addr "
+                "show br-ex")['stdout'][0].split()[3].split('/')[0]
+
+        self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd="s3cmd --access_key={0}  --secret_key={1} "
+                "--no-ssl  --host={2}:6780 mb s3://test_bucket".format(
+                    access_key, secret_key, pub_contr_ip))
+
+        result = self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd="{0} --access_key={1}  --secret_key={2} "
+                "--no-ssl  --host={3}:6780 ls".format(
+                    settings.S3_API_CLIENT, access_key, secret_key,
+                    pub_contr_ip))
+
+        if 'test_bucket' not in result['stdout_str']:
+            raise Exception(
+                "The S3 API call failed: {0}".format(result['stderr']))
