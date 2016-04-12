@@ -1374,3 +1374,10 @@ def fail_deploy(not_ready_transactions):
             ))
         logger.error(failure_text)
         assert_true(len(not_ready_transactions) == 0, failure_text)
+
+
+def check_radosgw_started(ip):
+    result = ssh_manager.execute_on_remote(
+        ip=ip,
+        cmd='pkill -0 radosgw', raise_on_assert=False)
+    return result['exit_code'] == 0
