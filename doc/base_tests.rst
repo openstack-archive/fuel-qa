@@ -445,20 +445,6 @@ if a problem is a missing package.
    :members:
 
 
-GD based tests
-==============
-
-Test Neutron
-------------
-.. automodule:: fuelweb_test.tests.gd_based_tests.test_neutron
-   :members:
-
-Test Neutron Vlan Ceph Mongo
-----------------------------
-.. automodule:: fuelweb_test.tests.gd_based_tests.test_neutron_vlan_ceph_mongo
-   :members:
-
-
 Plugins tests
 =============
 

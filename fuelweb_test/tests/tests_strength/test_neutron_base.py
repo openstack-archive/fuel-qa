@@ -22,7 +22,6 @@ from proboscis import SkipTest
 from six.moves import xrange
 # pylint: enable=redefined-builtin
 
-from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.utils import run_on_remote
@@ -165,10 +164,6 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
-
-        for node in ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]:
-            ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            checkers.check_public_ping(ip)
 
         self.env.make_snapshot('deploy_ha_neutron_{}'.format(
             self.segment_type), is_make=True)
