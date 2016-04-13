@@ -14,6 +14,8 @@
 
 from random import randrange
 
+from devops.error import TimeoutError
+from devops.helpers import helpers
 from proboscis import SkipTest
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
@@ -33,6 +35,14 @@ class VMwareActions(object):
     """VMware vCenter/DVS related actions"""
 
     plugin_version = None
+    vcenter_az = 'vcenter'
+    cinder_az = 'vcenter-cinder'
+    vmware_image = 'TestVM-VMDK'
+    net_name = 'admin_internal_net'
+    sg_name = 'default'
+    image_name = None
+    image_url = None
+    image_creds = ('root', 'r00tme')
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
@@ -253,6 +263,254 @@ class VMwareActions(object):
 
         self.fuel_web.deploy_cluster_wait(self.cluster_id,
                                           check_services=False)
+
+    @action
+    def create_and_attach_empty_volume(self):
+        """Create and attach to instance empty volume"""
+        # TO DO check it when bugs #1569874 and #1496009 will be fixed !
+
+        public_ip = self.fuel_web.get_public_vip(self.cluster_id)
+        os_conn = OpenStackActions(public_ip)
+
+        vol = os_conn.create_volume(availability_zone=self.cinder_az)
+
+        image = os_conn.get_image(self.vmware_image)
+        net = os_conn.get_network(self.net_name)
+        sg = os_conn.get_security_group(self.sg_name)
+        vm = os_conn.create_server(image=image,
+                                   availability_zone=self.vcenter_az,
+                                   security_groups=[sg],
+                                   net_id=net['id'])
+        floating_ip = os_conn.assign_floating_ip(vm)
+        helpers.wait(lambda: helpers.tcp_ping(floating_ip.ip, 22), timeout=180,
+                     timeout_msg="Node {ip} is not accessible by SSH.".format(
+                         ip=floating_ip.ip))
+
+        os_conn.attach_volume(vol, vm)
+
+        controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            self.cluster_id, ["controller"])[0]
+        with self.fuel_web.get_ssh_for_node(controller['id']) as remote:
+            cmd = 'sudo fdisk -l'
+            res = os_conn.execute_through_host(remote, floating_ip, cmd)
+            logger.debug('OUTPUT: {}'.format(res))
+
+        os_conn.delete_instance(vm)
+        os_conn.verify_srv_deleted(vm)
+
+    @action
+    def create_bootable_volume_and_run_instance(self):
+        """Create bootable volume and launch instance from it"""
+
+        public_ip = self.fuel_web.get_public_vip(self.cluster_id)
+        os_conn = OpenStackActions(public_ip)
+
+        image = os_conn.get_image(self.vmware_image)
+        vol = os_conn.create_volume(image_id=image.id,
+                                    availability_zone=self.cinder_az)
+        block_device_mapping = {'vda': vol.id}
+
+        net = os_conn.get_network(self.net_name)
+        vm = os_conn.create_server(availability_zone=self.vcenter_az,
+                                   image=False,
+                                   net_id=net['id'],
+                                   block_device_mapping=block_device_mapping)
+        floating_ip = os_conn.assign_floating_ip(vm)
+        helpers.wait(lambda: helpers.tcp_ping(floating_ip.ip, 22), timeout=180,
+                     timeout_msg="Node {ip} is not accessible by SSH.".format(
+                         ip=floating_ip.ip))
+
+        os_conn.delete_instance(vm)
+        os_conn.verify_srv_deleted(vm)
+        os_conn.delete_volume_and_wait(vol)
+
+    @action
+    def check_vmware_service_actions(self):
+        """Disable vmware host (cluster) and check instance creation
+        on enabled cluster"""
+
+        public_ip = self.fuel_web.get_public_vip(self.cluster_id)
+        os_conn = OpenStackActions(public_ip)
+
+        services = os_conn.get_nova_service_list()
+        vmware_services = []
+        for service in services:
+            if service.binary == 'nova-compute' and \
+               service.zone == self.vcenter_az:
+                vmware_services.append(service)
+                os_conn.disable_nova_service(service)
+
+        image = os_conn.get_image(self.vmware_image)
+        sg = os_conn.get_security_group(self.sg_name)
+        net = os_conn.get_network(self.net_name)
+
+        for service in vmware_services:
+            logger.info("Check {}".format(service.host))
+            os_conn.enable_nova_service(service)
+            vm = os_conn.create_server(image=image,
+                                       availability_zone=self.vcenter_az,
+                                       net_id=net['id'], security_groups=[sg])
+            vm_host = getattr(vm, 'OS-EXT-SRV-ATTR:host')
+            assert_true(service.host == vm_host, 'Instance was launched on a'
+                                                 ' disabled vmware cluster')
+            os_conn.delete_instance(vm)
+            os_conn.verify_srv_deleted(vm)
+            os_conn.disable_nova_service(service)
+
+    @action
+    def upload_image(self):
+        """Upload vmdk image"""
+
+        controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            self.cluster_id, ["controller"])[0]
+
+        cmd_add_img = 'glance image-create --name {0!r} --disk-format vmdk ' \
+                      '--container-format bare --file {1!r} ' \
+                      '--property hypervisor_type=vmware ' \
+                      '--property vmware_adaptertype=lsiLogic ' \
+                      '--property vmware_disktype=sparse' \
+                      ''.format(self.image_name, self.image_name)
+        cmd = '. openrc; test -f {0} || (wget -q {1} && {2})'.format(
+            self.image_name, self.image_url, cmd_add_img)
+        SSHManager().execute_on_remote(controller['ip'], cmd)
+
+        public_ip = self.fuel_web.get_public_vip(self.cluster_id)
+        os_conn = OpenStackActions(public_ip)
+        image = os_conn.get_image(self.image_name)
+
+        helpers.wait(lambda: os_conn.get_image(image.name).status == 'active',
+                     timeout=60 * 2, timeout_msg='Image is not active')
+
+    @action
+    def check_instance_creation(self):
+        """Create instance and check connection"""
+
+        public_ip = self.fuel_web.get_public_vip(self.cluster_id)
+        os_conn = OpenStackActions(public_ip)
+
+        flavor = os_conn.get_flavor_by_name('m1.small')
+        if self.image_name:
+            image = os_conn.get_image(self.image_name)
+        else:
+            image = os_conn.get_image(self.vmware_image)
+        sg = os_conn.get_security_group(self.sg_name)
+        net = os_conn.get_network(self.net_name)
+        vm = os_conn.create_server(image=image,
+                                   availability_zone=self.vcenter_az,
+                                   net_id=net['id'], security_groups=[sg],
+                                   flavor_id=flavor.id, timeout=666)
+        floating_ip = os_conn.assign_floating_ip(vm)
+        helpers.wait(lambda: helpers.tcp_ping(floating_ip.ip, 22), timeout=180,
+                     timeout_msg="Node {ip} is not accessible by SSH.".format(
+                         ip=floating_ip.ip))
+
+        os_conn.delete_instance(vm)
+        os_conn.verify_srv_deleted(vm)
+
+    @action
+    def create_instance_with_vmxnet3_adapter(self):
+        """Create instance with vmxnet3 adapter"""
+
+        public_ip = self.fuel_web.get_public_vip(self.cluster_id)
+        os_conn = OpenStackActions(public_ip)
+
+        image = os_conn.get_image(self.image_name)
+        os_conn.update_image(image,
+                             properties={"hw_vif_model": "VirtualVmxnet3"})
+        flavor = os_conn.get_flavor_by_name('m1.small')
+        sg = os_conn.get_security_group(self.sg_name)
+        net = os_conn.get_network(self.net_name)
+        vm = os_conn.create_server(image=image,
+                                   availability_zone=self.vcenter_az,
+                                   net_id=net['id'], security_groups=[sg],
+                                   flavor_id=flavor.id, timeout=666)
+        floating_ip = os_conn.assign_floating_ip(vm)
+        helpers.wait(lambda: helpers.tcp_ping(floating_ip.ip, 22), timeout=180,
+                     timeout_msg="Node {ip} is not accessible by SSH.".format(
+                         ip=floating_ip.ip))
+
+        controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            self.cluster_id, ["controller"])[0]
+        with self.fuel_web.get_ssh_for_nailgun_node(controller) as remote:
+            cmd = '/usr/bin/lshw -class network | grep vmxnet3'
+            res = os_conn.execute_through_host(remote, floating_ip.ip, cmd,
+                                               creds=self.image_creds)
+            logger.debug('OUTPUT: {}'.format(res))
+            assert_equal(res['exit_code'], 0, "VMxnet3 driver did't found")
+
+        os_conn.delete_instance(vm)
+        os_conn.verify_srv_deleted(vm)
+
+    @action
+    def check_batch_instance_creation(self):
+        """Create several instance simultaneously"""
+
+        count = 10
+        timeout = 100
+        vm_name = 'vcenter_vm'
+
+        public_ip = self.fuel_web.get_public_vip(self.cluster_id)
+        os_conn = OpenStackActions(public_ip)
+
+        image = os_conn.get_image(self.vmware_image)
+        net = os_conn.get_network(self.net_name)
+        sg = os_conn.get_security_group(self.sg_name)
+        os_conn.create_server(name=vm_name, image=image,
+                              availability_zone=self.vcenter_az,
+                              net_id=net['id'], security_groups=[sg],
+                              min_count=count)
+
+        vms = os_conn.get_servers()
+        for vm in vms:
+            vm_status = os_conn.get_instance_detail(vm).status
+            try:
+                helpers.wait(
+                    lambda: vm_status == "ACTIVE", timeout=timeout)
+            except TimeoutError:
+                logger.debug("Create server failed by timeout")
+                assert_equal(
+                    vm_status,
+                    "ACTIVE",
+                    "Instance do not reach active state, current state"
+                    " is {0}".format(vm_status))
+
+        for vm in vms:
+            os_conn.delete_instance(vm)
+            os_conn.verify_srv_deleted(vm)
+
+    @action
+    def create_instance_with_different_disktype(self):
+        """Create instances with different disk type"""
+
+        public_ip = self.fuel_web.get_public_vip(self.cluster_id)
+        os_conn = OpenStackActions(public_ip)
+
+        image = os_conn.get_image(self.vmware_image)
+        net = os_conn.get_network(self.net_name)
+
+        os_conn.update_image(image,
+                             properties={"vmware_disktype": "sparse"})
+        vm = os_conn.create_server(image=image,
+                                   availability_zone=self.vcenter_az,
+                                   net_id=net['id'])
+        os_conn.delete_instance(vm)
+        os_conn.verify_srv_deleted(vm)
+
+        os_conn.update_image(image,
+                             properties={"vmware_disktype": "preallocated "})
+        vm = os_conn.create_server(image=image,
+                                   availability_zone=self.vcenter_az,
+                                   net_id=net['id'])
+        os_conn.delete_instance(vm)
+        os_conn.verify_srv_deleted(vm)
+
+        os_conn.update_image(image,
+                             properties={"vmware_disktype": "thin "})
+        vm = os_conn.create_server(image=image,
+                                   availability_zone=self.vcenter_az,
+                                   net_id=net['id'])
+        os_conn.delete_instance(vm)
+        os_conn.verify_srv_deleted(vm)
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
