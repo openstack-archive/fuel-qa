@@ -258,8 +258,7 @@ class RhFailoverGroup(ExtraComputesBase):
           groups=['check_rh_hard_reboot'])
     @log_snapshot_after_test
     def check_rh_hard_reboot(self):
-        """Check that resumed VM is working properly after hard reboot of
-        RH-based compute
+        """Deploy environment with OL computes
 
         Scenario:
             1. Revert environment with RH-compute.
