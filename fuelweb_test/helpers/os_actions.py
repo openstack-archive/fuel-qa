@@ -70,7 +70,9 @@ class OpenStackActions(common.Common):
             security_groups=None,
             flavor_id=None,
             net_id=None,
-            timeout=100
+            timeout=100,
+            image=None,
+            **kwargs
     ):
         """ Creates simple server, like in OSTF.
 
@@ -79,6 +81,7 @@ class OpenStackActions(common.Common):
         :param flavor_id: micro_flavor if None
         :param net_id: network id, could be omitted.
         :param timeout: int=100
+        :param image: TestVM if None.
         :return: Server, in started state
         """
         def find_micro_flavor():
@@ -92,16 +95,19 @@ class OpenStackActions(common.Common):
             security_groups = [self.create_sec_group_for_ssh()]
         if not flavor_id:
             flavor_id = find_micro_flavor().id
+        if not image:
+            image = self._get_cirros_image().id
 
         nics = [{'net-id': net_id}] if net_id else None
 
         srv = self.nova.servers.create(
             name=name,
-            image=self._get_cirros_image().id,
+            image=image,
             flavor=flavor_id,
             security_groups=[sec_group.name for sec_group in security_groups],
-            nics=nics)
-
+            nics=nics,
+            **kwargs)
+        return srv
         try:
             helpers.wait(
                 lambda: self.get_instance_detail(srv).status == "ACTIVE",
@@ -281,8 +287,9 @@ class OpenStackActions(common.Common):
         server = self.get_instance_detail(server.id)
         return server
 
-    def create_volume(self, size=1, image_id=None):
-        volume = self.cinder.volumes.create(size=size, imageRef=image_id)
+    def create_volume(self, size=1, image_id=None, **kwargs):
+        volume = self.cinder.volumes.create(size=size, imageRef=image_id,
+                                            **kwargs)
         helpers.wait(
             lambda: self.cinder.volumes.get(volume.id).status == "available",
             timeout=100)
@@ -452,6 +459,9 @@ class OpenStackActions(common.Common):
     def get_image_list(self):
         return self.glance.images.list()
 
+    def update_image(self, image, **kwargs):
+        self.glance.images.update(image, **kwargs)
+
     def get_image(self, image_name):
         image_list = self.get_image_list()
         for img in image_list:
@@ -461,6 +471,16 @@ class OpenStackActions(common.Common):
 
     def get_image_data(self, image_name):
         return self.glance.images.data(image_name)
+
+    def get_security_group_list(self):
+        return self.nova.security_groups.list()
+
+    def get_security_group(self, sg_name):
+        sg_list = self.get_security_group_list()
+        for sg in sg_list:
+            if sg.name == sg_name:
+                return sg
+        return None
 
     def get_nova_service_list(self):
         return self.nova.services.list()
