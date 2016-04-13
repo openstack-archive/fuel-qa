@@ -507,7 +507,7 @@ class FuelWebClient(object):
                 if option == 'assign_to_all_nodes':
                     section = 'public_network_assignment'
                 if option in ('neutron_l3_ha', 'neutron_dvr',
-                              'neutron_l2_pop'):
+                              'neutron_l2_pop', 'neutron_qos'):
                     section = 'neutron_advanced_configuration'
                 if option in 'dns_list':
                     section = 'external_dns'
