@@ -865,7 +865,9 @@ class HeatHAOneController(TestBasic):
         self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(_ip, service_name='heat-api', count=3)
+        checkers.verify_service(_ip,
+                                service_name='heat-api',
+                                ignore_count_of_proccesses=True)
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         checkers.verify_service(_ip,
@@ -956,7 +958,9 @@ class HeatHA(TestBasic):
 
         for slave in ["slave-01", "slave-02", "slave-03"]:
             _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
-            checkers.verify_service(_ip, service_name='heat-api', count=3)
+            checkers.verify_service(_ip,
+                                    service_name='heat-api',
+                                    ignore_count_of_proccesses=True)
             checkers.verify_service(_ip,
                                     service_name='ceilometer-api',
                                     ignore_count_of_proccesses=True)
