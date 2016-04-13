@@ -282,7 +282,9 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions):
             "neutron_dvr": self.env_config['network'].get(
                 'neutron-dvr', False),
             "neutron_l2_pop": self.env_config['network'].get(
-                'neutron-l2-pop', False)
+                'neutron-l2-pop', False),
+            "neutron_qos": self.env_config['network'].get(
+                'neutron-qos', False),
         }
 
         self.cluster_id = self.fuel_web.create_cluster(

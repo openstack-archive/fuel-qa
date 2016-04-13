@@ -23,6 +23,7 @@ from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
 from devops.models.node import Node
+import dpath.util
 import netaddr
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
@@ -490,32 +491,11 @@ class FuelWebClient(object):
                         pretty_log(settings, indent=1)))
             attributes = self.client.get_cluster_attributes(cluster_id)
 
-            for option in settings:
-                section = ''
-                if option in ('sahara', 'murano', 'ceilometer', 'mongo',
-                              'ironic'):
-                    section = 'additional_components'
-                if option in ('mongo_db_name', 'mongo_replset', 'mongo_user',
-                              'hosts_ip', 'mongo_password'):
-                    section = 'external_mongo'
-                if option in ('volumes_ceph', 'images_ceph', 'ephemeral_ceph',
-                              'objects_ceph', 'osd_pool_size', 'volumes_lvm',
-                              'images_vcenter'):
-                    section = 'storage'
-                if option in ('tenant', 'password', 'user'):
-                    section = 'access'
-                if option == 'assign_to_all_nodes':
-                    section = 'public_network_assignment'
-                if option in ('neutron_l3_ha', 'neutron_dvr',
-                              'neutron_l2_pop'):
-                    section = 'neutron_advanced_configuration'
-                if option in 'dns_list':
-                    section = 'external_dns'
-                if option in 'ntp_list':
-                    section = 'external_ntp'
-                if section:
-                    attributes['editable'][section][option]['value'] =\
-                        settings[option]
+            for option, value in settings.items():
+                dpath.util.set(
+                    attributes,
+                    '/editable/*/{option}/value'.format(option=option),
+                    value)
 
             # we should check DVR limitations
             section = 'neutron_advanced_configuration'
