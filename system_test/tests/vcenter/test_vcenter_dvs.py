@@ -293,3 +293,39 @@ class CheckCinderVmwareSrv(ActionTest, BaseActions, VMwareActions):
         'check_cinder_vmware_srv',
         'health_check_sanity_smoke_ha'
     ]
+
+
+@testcase(groups=['system_test',
+                  'system_test.vcenter',
+                  'system_test.vcenter.os_actions'])
+class OpenStackActions(ActionTest, BaseActions, VMwareActions):
+    """Deploy cluster with vCenter and dvs plugin
+
+    Scenario:
+        1. Upload plugin to the master node
+        2. Install plugin
+        3. Create cluster
+        4. Configure dvs settings (depends on yaml config)
+        5. Add nodes (depends on yaml config)
+        6. Configure vmware settings (depends on yaml config)
+        7. Deploy the cluster
+        8. Check OpenStack actions
+
+    Duration 2h 00min
+    Snapshot deploy_vcenter_dvs
+    """
+
+    plugin_name = "fuel-plugin-vmware-dvs"
+    plugin_path = DVS_PLUGIN_PATH
+    plugin_version = DVS_PLUGIN_VERSION
+
+    actions_order = [
+        'prepare_env_with_plugin',
+        'create_env',
+        'enable_plugin',
+        'configure_dvs_plugin',
+        'add_nodes',
+        'configure_vcenter',
+        'deploy_cluster',
+        'create_batch_of_instances'
+    ]

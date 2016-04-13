@@ -15,13 +15,18 @@
 from random import randrange
 
 from proboscis import SkipTest
+from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 
+from fuelweb_test.helpers.os_actions import OpenStackActions
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from system_test import logger
 from system_test import deferred_decorator
 from system_test import action
 from system_test.helpers.decorators import make_snapshot_if_step_fail
+from devops.helpers import helpers
+from devops.error import TimeoutError
 
 
 # pylint: disable=no-member
@@ -29,6 +34,11 @@ class VMwareActions(object):
     """VMware vCenter/DVS related actions"""
 
     plugin_version = None
+    nova_az = 'vcenter'
+    cinder_az = 'vcenter-cinder'
+    vmware_image = 'TestVM-VMDK'
+    net_name = 'admin_internal_net'
+    sg_name = 'default'
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
@@ -269,3 +279,75 @@ class VMwareActions(object):
 
         self.fuel_web.deploy_cluster_wait(self.cluster_id,
                                           check_services=False)
+
+    @action
+    def create_instance_with_thick_disktype(self):
+        """Create instance with custom disk type"""
+
+        public_ip = self.fuel_web.get_public_vip(self.cluster_id)
+        os_conn = OpenStackActions(public_ip)
+
+        image = os_conn.get_image(self.vmware_image)
+        os_conn.update_image(image, properties={"vmware_disktype": "thick"})
+        net = os_conn.get_network(self.net_name)
+        vm = os_conn.create_server(image=image, availability_zone=self.nova_az,
+                                   net_id=net['id'])
+        logger.warning("Instance {} was successfuly created".format(vm))
+
+        os_conn.delete_instance(vm)
+        os_conn.verify_srv_deleted(vm)
+
+    @action
+    def create_instance_with_vmxnet3_adapter(self):
+        """Create instance with vmxnet3 adapter"""
+
+        public_ip = self.fuel_web.get_public_vip(self.cluster_id)
+        os_conn = OpenStackActions(public_ip)
+
+        image = os_conn.get_image(self.vmware_image)
+        os_conn.update_image(image,
+                             properties={"hw_vif_model": "VirtualVmxnet3"})
+        net = os_conn.get_network(self.net_name)
+        vm = os_conn.create_server(image=image, availability_zone=self.nova_az,
+                                   net_id=net['id'])
+        logger.warning("Instance {} was successfuly created".format(vm))
+
+        os_conn.delete_instance(vm)
+        os_conn.verify_srv_deleted(vm)
+
+    @action
+    def create_batch_of_instances(self):
+        """Create several instance simultaneously"""
+
+        count = 10
+        timeout = 100
+
+        public_ip = self.fuel_web.get_public_vip(self.cluster_id)
+        os_conn = OpenStackActions(public_ip)
+
+        image = os_conn.get_image(self.vmware_image)
+        net = os_conn.get_network(self.net_name)
+        sg = os_conn.get_security_group(self.sg_name)
+        os_conn.create_server(name='vcenter_test', image=image,
+                              availability_zone=self.nova_az,
+                              net_id=net['id'], security_groups=[sg],
+                              min_count=count)
+
+        vms = os_conn.get_servers()
+        for vm in vms:
+            try:
+                helpers.wait(
+                    lambda: os_conn.get_instance_detail(vm).status == "ACTIVE",
+                    timeout=timeout)
+                return os_conn.get_instance_detail(vm.id)
+            except TimeoutError:
+                logger.debug("Create server failed by timeout")
+                assert_equal(
+                    os_conn.get_instance_detail(vm).status,
+                    "ACTIVE",
+                    "Instance do not reach active state, current state"
+                    " is {0}".format(os_conn.get_instance_detail(vm).status))
+
+        for vm in vms:
+            os_conn.delete_instance(vm)
+            os_conn.verify_srv_deleted(vm)
