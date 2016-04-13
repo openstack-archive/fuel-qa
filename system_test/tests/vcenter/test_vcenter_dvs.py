@@ -297,6 +297,233 @@ class CheckCinderVmwareSrv(ActionTest, BaseActions, VMwareActions):
 
 @testcase(groups=['system_test',
                   'system_test.vcenter',
+                  'system_test.vcenter.attach_empty_volume'])
+class OpenStackActions(ActionTest, BaseActions, VMwareActions):
+    """Deploy cluster with vCenter and dvs plugin
+
+    Scenario:
+        1. Upload plugin to the master node
+        2. Install plugin
+        3. Create cluster
+        4. Configure dvs settings (depends on yaml config)
+        5. Add nodes (depends on yaml config)
+        6. Configure vmware settings (depends on yaml config)
+        7. Deploy the cluster
+        8. Create and attach to instance empty volume
+
+    Duration 2h 00min
+    Snapshot deploy_vcenter_dvs
+    """
+
+    plugin_name = "fuel-plugin-vmware-dvs"
+    plugin_path = DVS_PLUGIN_PATH
+    plugin_version = DVS_PLUGIN_VERSION
+
+    actions_order = [
+        'prepare_env_with_plugin',
+        'create_env',
+        'enable_plugin',
+        'configure_dvs_plugin',
+        'add_nodes',
+        'configure_vcenter',
+        'deploy_cluster',
+        'create_and_attach_empty_volume'
+    ]
+
+
+@testcase(groups=['system_test',
+                  'system_test.vcenter',
+                  'system_test.vcenter.bootable_vol'])
+class OpenStackActions(ActionTest, BaseActions, VMwareActions):
+    """Deploy cluster with vCenter and dvs plugin
+
+    Scenario:
+        1. Upload plugin to the master node
+        2. Install plugin
+        3. Create cluster
+        4. Configure dvs settings (depends on yaml config)
+        5. Add nodes (depends on yaml config)
+        6. Configure vmware settings (depends on yaml config)
+        7. Deploy the cluster
+        8. Create bootable volume and launch instance from it
+
+    Duration 2h 00min
+    Snapshot deploy_vcenter_dvs
+    """
+
+    plugin_name = "fuel-plugin-vmware-dvs"
+    plugin_path = DVS_PLUGIN_PATH
+    plugin_version = DVS_PLUGIN_VERSION
+
+    actions_order = [
+        'prepare_env_with_plugin',
+        'create_env',
+        'enable_plugin',
+        'configure_dvs_plugin',
+        'add_nodes',
+        'configure_vcenter',
+        'deploy_cluster',
+        'create_bootable_volume_and_run_instance'
+    ]
+
+
+@testcase(groups=['system_test',
+                  'system_test.vcenter',
+                  'system_test.vcenter.upload_image'])
+class OpenStackActions(ActionTest, BaseActions, VMwareActions):
+    """Deploy cluster with vCenter and dvs plugin
+
+    Scenario:
+        1. Upload plugin to the master node
+        2. Install plugin
+        3. Create cluster
+        4. Configure dvs settings (depends on yaml config)
+        5. Add nodes (depends on yaml config)
+        6. Configure vmware settings (depends on yaml config)
+        7. Deploy the cluster
+        8. Upload ubuntu cloud image
+        9. Launch instance with vmware vmxnet3 adapter
+
+    Duration 2h 00min
+    Snapshot deploy_vcenter_dvs
+    """
+
+    plugin_name = "fuel-plugin-vmware-dvs"
+    plugin_path = DVS_PLUGIN_PATH
+    plugin_version = DVS_PLUGIN_VERSION
+    image_name = 'shaker.vmdk'
+    image_url = 'http://jenkins-tpi.bud.mirantis.net:5000/distr/' \
+                '{}'.format(image_name)
+
+    actions_order = [
+        'prepare_env_with_plugin',
+        'create_env',
+        'enable_plugin',
+        'configure_dvs_plugin',
+        'add_nodes',
+        'configure_vcenter',
+        'deploy_cluster',
+        'upload_image',
+        'create_and_check_instance'
+    ]
+
+
+@testcase(groups=['system_test',
+                  'system_test.vcenter',
+                  'system_test.vcenter.vmxnet3'])
+class OpenStackActions(ActionTest, BaseActions, VMwareActions):
+    """Deploy cluster with vCenter and dvs plugin
+
+    Scenario:
+        1. Upload plugin to the master node
+        2. Install plugin
+        3. Create cluster
+        4. Configure dvs settings (depends on yaml config)
+        5. Add nodes (depends on yaml config)
+        6. Configure vmware settings (depends on yaml config)
+        7. Deploy the cluster
+        8. Upload ubuntu cloud image
+        9. Launch instance with vmware vmxnet3 adapter
+
+    Duration 2h 00min
+    Snapshot deploy_vcenter_dvs
+    """
+
+    plugin_name = "fuel-plugin-vmware-dvs"
+    plugin_path = DVS_PLUGIN_PATH
+    plugin_version = DVS_PLUGIN_VERSION
+    image_name = 'shaker.vmdk'
+    image_url = 'http://jenkins-tpi.bud.mirantis.net:5000/distr/' \
+                '{}'.format(image_name)
+
+    actions_order = [
+        'prepare_env_with_plugin',
+        'create_env',
+        'enable_plugin',
+        'configure_dvs_plugin',
+        'add_nodes',
+        'configure_vcenter',
+        'deploy_cluster',
+        'upload_image',
+        'create_instance_with_vmxnet3_adapter'
+    ]
+
+
+@testcase(groups=['system_test',
+                  'system_test.vcenter',
+                  'system_test.vcenter.create_batch_of_instances'])
+class OpenStackActions(ActionTest, BaseActions, VMwareActions):
+    """Deploy cluster with vCenter and dvs plugin
+
+    Scenario:
+        1. Upload plugin to the master node
+        2. Install plugin
+        3. Create cluster
+        4. Configure dvs settings (depends on yaml config)
+        5. Add nodes (depends on yaml config)
+        6. Configure vmware settings (depends on yaml config)
+        7. Deploy the cluster
+        8. Create several instances simultaneously
+
+    Duration 2h 00min
+    Snapshot deploy_vcenter_dvs
+    """
+
+    plugin_name = "fuel-plugin-vmware-dvs"
+    plugin_path = DVS_PLUGIN_PATH
+    plugin_version = DVS_PLUGIN_VERSION
+
+    actions_order = [
+        'prepare_env_with_plugin',
+        'create_env',
+        'enable_plugin',
+        'configure_dvs_plugin',
+        'add_nodes',
+        'configure_vcenter',
+        'deploy_cluster',
+        'create_batch_of_instances'
+    ]
+
+
+@testcase(groups=['system_test',
+                  'system_test.vcenter',
+                  'system_test.vcenter.launch_vm_with_diff_disk_types'])
+class OpenStackActions(ActionTest, BaseActions, VMwareActions):
+    """Deploy cluster with vCenter and dvs plugin
+
+    Scenario:
+        1. Upload plugin to the master node
+        2. Install plugin
+        3. Create cluster
+        4. Configure dvs settings (depends on yaml config)
+        5. Add nodes (depends on yaml config)
+        6. Configure vmware settings (depends on yaml config)
+        7. Deploy the cluster
+        8. Create instances with different disk type
+
+    Duration 2h 00min
+    Snapshot deploy_vcenter_dvs
+    """
+
+    plugin_name = "fuel-plugin-vmware-dvs"
+    plugin_path = DVS_PLUGIN_PATH
+    plugin_version = DVS_PLUGIN_VERSION
+
+    actions_order = [
+        'prepare_env_with_plugin',
+        'create_env',
+        'enable_plugin',
+        'configure_dvs_plugin',
+        'add_nodes',
+        'configure_vcenter',
+        'deploy_cluster',
+        'create_instance_with_different_disktype'
+    ]
+
+
+
+@testcase(groups=['system_test',
+                  'system_test.vcenter',
                   'system_test.vcenter.neutron_public_net'])
 class DeployNeutronPublicNet(ActionTest, BaseActions, VMwareActions):
     """Deploy cluster with vCenter and dvs plugin
