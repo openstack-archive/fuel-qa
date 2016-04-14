@@ -978,6 +978,19 @@ class FuelWebClient(object):
                 return nailgun_node
 
     @logwrap
+    def get_nailgun_node_by_status(self, status):
+        """Return nailgun nodes with status
+
+        :type status: String
+            :rtype: List
+        """
+        returned_nodes = []
+        for nailgun_node in self.client.list_nodes():
+            if nailgun_node['status'] == status:
+                returned_nodes.append(nailgun_node)
+        return returned_nodes
+
+    @logwrap
     def find_devops_node_by_nailgun_fqdn(self, fqdn, devops_nodes):
         """Return devops node by nailgun fqdn
 
