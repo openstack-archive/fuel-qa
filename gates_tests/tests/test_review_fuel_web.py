@@ -45,7 +45,8 @@ class GateFuelWeb(TestBasic):
         8. Add 1 compute node
         9. Add 1 cinder node
         10. Deploy environment
-        11. Run OSTF
+        11. Run network verify
+        12. Run OSTF
         """
         if not UPDATE_FUEL:
             raise exceptions.FuelQAVariableNotSet('UPDATE_FUEL', 'True')
@@ -82,6 +83,8 @@ class GateFuelWeb(TestBasic):
         self.show_step(10)
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(11)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(12)
         # run only smoke according to sanity and ha ran in deploy_wait()
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['smoke'])
