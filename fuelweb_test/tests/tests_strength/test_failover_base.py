@@ -34,7 +34,6 @@ from fuelweb_test import logwrap
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.checkers import check_mysql
 from fuelweb_test.helpers.checkers import check_ping
-from fuelweb_test.helpers.checkers import check_public_ping
 from fuelweb_test.helpers.utils import get_file_size
 from fuelweb_test.helpers.utils import RunLimit
 from fuelweb_test.helpers.utils import TimeStat
@@ -122,10 +121,6 @@ class TestHaFailoverBase(TestBasic):
         os_conn = os_actions.OpenStackActions(public_vip)
         self.fuel_web.assert_cluster_ready(os_conn, smiles_count=14)
         self.fuel_web.verify_network(cluster_id)
-
-        for node in ['slave-0{0}'.format(slave) for slave in xrange(1, 4)]:
-            ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
-            check_public_ping(ip)
 
         self.env.make_snapshot(self.snapshot_name, is_make=True)
 
