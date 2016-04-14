@@ -56,6 +56,7 @@ class RebootPlugin(TestBasic):
         plugin_path = '/var'
         tasks_path = os.path.dirname(os.path.abspath(__file__))
         tasks_file = 'reboot_tasks.yaml'
+        metadata_file = 'metadata.yaml'
         self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_5_slaves")
         # let's get ssh client for the master node
@@ -72,6 +73,10 @@ class RebootPlugin(TestBasic):
         fpb.fpb_replace_plugin_content(
             os.path.join(tasks_path, tasks_file),
             os.path.join(source_plugin_path, 'tasks.yaml'))
+        # replace metadata.yaml with our file
+        fpb.fpb_replace_plugin_content(
+            os.path.join(tasks_path, metadata_file),
+            os.path.join(source_plugin_path, metadata_file))
         # build plugin
         self.show_step(4)
         packet_name = fpb.fpb_build_plugin(source_plugin_path)
@@ -182,6 +187,7 @@ class RebootPlugin(TestBasic):
         plugin_path = '/var'
         tasks_path = os.path.dirname(os.path.abspath(__file__))
         tasks_file = 'reboot_tasks.yaml'
+        metadata_file = 'metadata.yaml'
         # start reverting snapshot
         self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_3_slaves")
@@ -203,6 +209,10 @@ class RebootPlugin(TestBasic):
         fpb.fpb_replace_plugin_content(
             os.path.join('/tmp/', tasks_file),
             os.path.join(source_plugin_path, 'tasks.yaml'))
+        # replace metadata.yaml with our file
+        fpb.fpb_replace_plugin_content(
+            os.path.join(tasks_path, metadata_file),
+            os.path.join(source_plugin_path, metadata_file))
         # build plugin
         self.show_step(4)
         packet_name = fpb.fpb_build_plugin(source_plugin_path)
