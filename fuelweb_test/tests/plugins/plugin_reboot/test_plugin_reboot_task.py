@@ -69,6 +69,7 @@ class RebootPlugin(TestBasic):
         self.show_step(3)
         fpb.fpb_create_plugin(source_plugin_path)
         # replace plugin tasks with our file
+        fpb.fbp_update_release_in_metadata(source_plugin_path)
         fpb.fpb_replace_plugin_content(
             os.path.join(tasks_path, tasks_file),
             os.path.join(source_plugin_path, 'tasks.yaml'))

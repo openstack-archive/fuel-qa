@@ -483,6 +483,22 @@ class FuelPluginBuilder(BaseActions):
         )['stdout_str']
         return packet_name
 
+    def fbp_update_release_in_metadata(self, path):
+        """Update fuel version and openstack release version
+
+        :param path: path to plugin's dir on master node
+        """
+        metadata_path = os.path.join(path, 'metadata.yaml')
+        output = self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip, cmd="fuel --fuel-release --json",
+            jsonify=True)['stdout_json']
+        fuel_version = output['release']
+        openstack_version = output['openstack_version']
+        self.change_remote_yaml(metadata_path, ['version'], fuel_version)
+        releases = self.get_value_from_remote_yaml(metadata_path, ['releases'])
+        releases[0]['version'] = openstack_version
+        self.put_value_to_remote_yaml(metadata_path, ['version'], releases)
+
     def fpb_validate_plugin(self, path):
         """
         Validates plugin for errors
