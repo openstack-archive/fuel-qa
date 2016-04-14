@@ -141,3 +141,155 @@ class ScaleWithVMwareSkipSrvCheck(ActionTest, BaseActions, VMwareActions):
         'deploy_changes',
         'health_check_sanity_smoke_ha'
     ]
+
+
+@testcase(groups=['system_test',
+                  'system_test.vcenter',
+                  'system_test.vcenter.deploy_with_custom_hostname'])
+class DeployWithCustomHostname(ActionTest, BaseActions, VMwareActions):
+    """Deploy cluster with vCenter and custom hostname
+
+    Scenario:
+        1. Upload plugin to the master node
+        2. Install plugin
+        3. Create cluster
+        4. Configure dvs settings (depends on yaml config)
+        5. Add nodes (depends on yaml config)
+        6. Set custom hostname for nodes
+        7. Configure vmware settings (depends on yaml config)
+        8. Deploy the cluster
+        9. Run OSTF
+
+    Duration 1h 40min
+    Snapshot deploy_vcenter_dvs
+    """
+
+    plugin_name = "fuel-plugin-vmware-dvs"
+    plugin_path = DVS_PLUGIN_PATH
+    plugin_version = DVS_PLUGIN_VERSION
+
+    actions_order = [
+        'prepare_env_with_plugin',
+        'create_env',
+        'enable_plugin',
+        'configure_dvs_plugin',
+        'add_nodes',
+        'set_custom_node_names',
+        'configure_vcenter',
+        'deploy_cluster',
+        'health_check_sanity_smoke_ha'
+    ]
+
+
+@testcase(groups=['system_test',
+                  'system_test.vcenter',
+                  'system_test.vcenter.check_nova_config'])
+class CheckNovaConfig(ActionTest, BaseActions, VMwareActions):
+    """Deploy cluster with vCenter and custom hostname
+
+    Scenario:
+        1. Upload plugin to the master node
+        2. Install plugin
+        3. Create cluster
+        4. Configure dvs settings (depends on yaml config)
+        5. Add nodes (depends on yaml config)
+        6. Configure vmware settings (depends on yaml config)
+        7. Deploy the cluster
+        8. Check nova configuration (vCenter)
+        9. Run OSTF
+
+    Duration 1h 40min
+    Snapshot deploy_vcenter_dvs
+    """
+
+    plugin_name = "fuel-plugin-vmware-dvs"
+    plugin_path = DVS_PLUGIN_PATH
+    plugin_version = DVS_PLUGIN_VERSION
+
+    actions_order = [
+        'prepare_env_with_plugin',
+        'create_env',
+        'enable_plugin',
+        'configure_dvs_plugin',
+        'add_nodes',
+        'configure_vcenter',
+        'deploy_cluster',
+        'check_nova_conf',
+        'health_check_sanity_smoke_ha'
+    ]
+
+
+@testcase(groups=['system_test',
+                  'system_test.vcenter',
+                  'system_test.vcenter.check_nova_srv'])
+class CheckNovaSrv(ActionTest, BaseActions, VMwareActions):
+    """Deploy cluster with vCenter and custom hostname
+
+    Scenario:
+        1. Upload plugin to the master node
+        2. Install plugin
+        3. Create cluster
+        4. Configure dvs settings (depends on yaml config)
+        5. Add nodes (depends on yaml config)
+        6. Configure vmware settings (depends on yaml config)
+        7. Deploy the cluster
+        8. Check nova services (vCenter)
+        9. Run OSTF
+
+    Duration 1h 40min
+    Snapshot deploy_vcenter_dvs
+    """
+
+    plugin_name = "fuel-plugin-vmware-dvs"
+    plugin_path = DVS_PLUGIN_PATH
+    plugin_version = DVS_PLUGIN_VERSION
+
+    actions_order = [
+        'prepare_env_with_plugin',
+        'create_env',
+        'enable_plugin',
+        'configure_dvs_plugin',
+        'add_nodes',
+        'configure_vcenter',
+        'deploy_cluster',
+        'check_nova_srv',
+        'health_check_sanity_smoke_ha'
+    ]
+
+
+@testcase(groups=['system_test',
+                  'system_test.vcenter',
+                  'system_test.vcenter.check_cinder_srv'])
+class CheckCinderVmwareSrv(ActionTest, BaseActions, VMwareActions):
+    """Deploy cluster with vCenter and custom hostname
+
+    Scenario:
+        1. Upload plugin to the master node
+        2. Install plugin
+        3. Create cluster
+        4. Configure dvs settings (depends on yaml config)
+        5. Add nodes (depends on yaml config)
+        6. Configure vmware settings (depends on yaml config)
+        7. Deploy the cluster
+        8. Check vmware cinder service
+        9. Run OSTF
+
+    Duration 1h 40min
+    Snapshot deploy_vcenter_dvs
+    """
+
+    plugin_name = "fuel-plugin-vmware-dvs"
+    plugin_path = DVS_PLUGIN_PATH
+    plugin_version = DVS_PLUGIN_VERSION
+
+    actions_order = [
+        'prepare_env_with_plugin',
+        'create_env',
+        'enable_plugin',
+        'configure_dvs_plugin',
+        'add_nodes',
+        'configure_vcenter',
+        'deploy_cluster',
+        'check_cinder_vmware_srv',
+        'health_check_sanity_smoke_ha'
+    ]
