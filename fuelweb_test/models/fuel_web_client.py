@@ -1922,7 +1922,7 @@ class FuelWebClient(object):
         self.assert_task_success(task, progress=progress)
 
     @logwrap
-    def deploy_task_wait(self, cluster_id, progress):
+    def deploy_task_wait(self, cluster_id, progress=None):
         logger.info('Start cluster #%s deployment', cluster_id)
         task = self.client.deploy_nodes(cluster_id)
         self.assert_task_success(
