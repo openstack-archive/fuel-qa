@@ -113,6 +113,19 @@ HARDWARE["slave_node_memory"] = int(
 NODE_VOLUME_SIZE = int(os.environ.get('NODE_VOLUME_SIZE', 50))
 NODES_COUNT = os.environ.get('NODES_COUNT', 10)
 
+MULTIPATH = get_var_as_bool('MULTIPATH', False)
+SLAVE_MULTIPATH_DISKS_COUNT = int(os.environ.get('SLAVE_MULTIPATH_DISKS_COUNT',
+                                                 '0'))
+MULTIPATH_TEMPLATE = os.environ.get(
+    'MULTIPATH_TEMPLATE',
+    os.path.join(
+        os.getcwd(),
+        'system_test/tests_templates/tests_configs/multipath_3_nodes.yaml'))
+if MULTIPATH and not SLAVE_MULTIPATH_DISKS_COUNT:
+    os.environ.setdefault('SLAVE_MULTIPATH_DISKS_COUNT', '2')
+    SLAVE_MULTIPATH_DISKS_COUNT = int(
+        os.environ.get('SLAVE_MULTIPATH_DISKS_COUNT'))
+
 MULTIPLE_NETWORKS = get_var_as_bool('MULTIPLE_NETWORKS', False)
 MULTIPLE_NETWORKS_TEMPLATE = os.environ.get(
     'MULTIPLE_NETWORKS_TEMPLATE',

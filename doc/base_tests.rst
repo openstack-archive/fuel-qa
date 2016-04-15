@@ -747,3 +747,8 @@ Tests for configDB api
 ----------------------
 .. automodule:: fuelweb_test.tests.tests_configdb.test_configdb_api
    :members:
+
+Test for multipath devices
+--------------------------
+.. automodule:: fuelweb_test.tests.test_multipath_devices
+   :members:
