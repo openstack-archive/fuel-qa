@@ -143,13 +143,13 @@ class SSHManager(object):
             logger.info('SSH_MANAGER:Create new connection for '
                         '{ip}:{port}'.format(ip=ip, port=port))
 
-            self.connections[(ip, port)] = SSHClient(
-                host=ip,
-                port=port,
-                username=login,
-                password=password,
-                private_keys=keys if keys is not None else []
-            )
+        self.connections[(ip, port)] = SSHClient(
+            host=ip,
+            port=port,
+            username=login,
+            password=password,
+            private_keys=keys if keys is not None else []
+        )
 
     def clean_all_connections(self):
         for (ip, port), connection in self.connections.items():
