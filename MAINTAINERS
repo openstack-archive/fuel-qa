@@ -35,6 +35,10 @@ maintainers:
         email:  dtyzhnenko@mirantis.com
         IRC:    t_dmitry
 
+      - name:   Alexey Stepanov
+        email:  astepanov@mirantis.com
+        IRC:    penguinolog
+
   - fuelweb_test/tests/plugins/plugin_elasticsearch: &lma_experts
 
       - name:   Swann Croiset
