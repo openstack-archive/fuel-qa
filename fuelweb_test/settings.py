@@ -113,6 +113,9 @@ HARDWARE["slave_node_memory"] = int(
 NODE_VOLUME_SIZE = int(os.environ.get('NODE_VOLUME_SIZE', 50))
 NODES_COUNT = os.environ.get('NODES_COUNT', 10)
 
+SLAVE_MULTIPATH_DISKS_COUNT = os.environ.get(
+    'SLAVE_MULTIPATH_DISKS_COUNT', None)
+
 MULTIPLE_NETWORKS = get_var_as_bool('MULTIPLE_NETWORKS', False)
 MULTIPLE_NETWORKS_TEMPLATE = os.environ.get(
     'MULTIPLE_NETWORKS_TEMPLATE',
