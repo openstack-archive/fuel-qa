@@ -742,3 +742,13 @@ Test for separate master node deployment
 ----------------------------------------
 .. automodule:: system_test.tests.test_centos_master_deploy_ceph
    :members:
+
+Tests for configDB api
+----------------------
+.. automodule:: fuelweb_test.tests.tests_configdb.test_configdb_api
+   :members:
+
+Test for multipath devices
+--------------------------
+.. automodule:: fuelweb_test.tests.test_multipath_devices
+   :members:
