@@ -1,4 +1,4 @@
-#    Copyright 2013 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -112,6 +112,9 @@ HARDWARE["slave_node_memory"] = int(
     os.environ.get("SLAVE_NODE_MEMORY", slave_mem_default))
 NODE_VOLUME_SIZE = int(os.environ.get('NODE_VOLUME_SIZE', 50))
 NODES_COUNT = os.environ.get('NODES_COUNT', 10)
+
+SLAVE_MULTIPATH_DISKS_COUNT = os.environ.get(
+    'SLAVE_MULTIPATH_DISKS_COUNT', None)
 
 MULTIPLE_NETWORKS = get_var_as_bool('MULTIPLE_NETWORKS', False)
 MULTIPLE_NETWORKS_TEMPLATE = os.environ.get(
