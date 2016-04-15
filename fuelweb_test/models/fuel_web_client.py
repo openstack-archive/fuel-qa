@@ -1,4 +1,4 @@
-#    Copyright 2015 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -1942,7 +1942,7 @@ class FuelWebClient29(object):
         self.assert_task_success(task, progress=progress)
 
     @logwrap
-    def deploy_task_wait(self, cluster_id, progress):
+    def deploy_task_wait(self, cluster_id, progress=None):
         logger.info('Start cluster #%s deployment', cluster_id)
         task = self.client.deploy_nodes(cluster_id)
         self.assert_task_success(

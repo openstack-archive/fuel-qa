@@ -1,4 +1,4 @@
-#    Copyright 2013 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -26,6 +26,7 @@ from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import MULTIPLE_NETWORKS_TEMPLATE
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
+from system_test.core.discover import load_yaml
 
 
 class TestBasic(object):
@@ -165,7 +166,6 @@ class SetupEnvironment(TestBasic):
         # inside 'address_pool', so we can use 'network_pools' section
         # for L3 configuration in tests for multi racks
         if MULTIPLE_NETWORKS:
-            from system_test.core.discover import load_yaml
             self._devops_config = load_yaml(MULTIPLE_NETWORKS_TEMPLATE)
 
         self.check_run("empty")
@@ -264,6 +264,35 @@ class SetupEnvironment(TestBasic):
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:3],
                                  skip_timesync=True)
         self.env.make_snapshot("ready_with_3_slaves", is_make=True)
+        self.current_log_step = 0
+
+    @test(groups=["prepare_slaves_3_multipath"])
+    def prepare_slaves_3_multipath(self):
+        """Bootstrap 3 slave nodes
+
+        Scenario:
+            1. Setup master
+            2. Download the release if needed. Uploads custom manifest.
+            3. Start 3 slave nodes
+
+        Snapshot: ready_with_3_slaves
+
+        """
+        self.show_step(1, initialize=True)
+        if MULTIPLE_NETWORKS:
+            self._devops_config = load_yaml(MULTIPLE_NETWORKS_TEMPLATE)
+
+        with TimeStat("setup_environment", is_uniq=True):
+            self.env.setup_environment()
+
+        self.fuel_web.get_nailgun_version()
+        self.fuel_web.change_default_network_settings()
+        self.show_step(2)
+        if REPLACE_DEFAULT_REPOS and REPLACE_DEFAULT_REPOS_ONLY_ONCE:
+            self.fuel_web.replace_default_repos()
+        self.show_step(3)
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:3],
+                                 skip_timesync=True)
         self.current_log_step = 0
 
     @test(depends_on=[prepare_release],
