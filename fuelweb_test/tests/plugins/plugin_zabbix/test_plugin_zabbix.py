@@ -594,3 +594,77 @@ class ZabbixPlugin(TestBasic):
                                         zabbix_password)
 
         self.env.make_snapshot("deploy_zabbix_ceph_ha")
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["deploy_zabbix_ceph_radosgw_ha"])
+    @log_snapshot_after_test
+    def deploy_zabbix_ceph_radosgw_ha(self):
+        """Deploy cluster in ha mode with zabbix plugin
+
+        Scenario:
+            1. Upload plugin to the master node
+            2. Install plugin
+            3. Create cluster
+            4. Add 3 nodes with controller,ceph-osd roles
+            5. Add 2 node with compute,ceph-osd roles
+            6. Deploy the cluster
+            7. Run network verification
+            8. Run OSTF
+            9. Check zabbix service in pacemaker
+            10. Check login to zabbix dashboard
+
+        Duration 180m
+        Snapshot deploy_zabbix_ceph_radosgw_ha
+
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        utils.upload_tarball(
+            ip=self.ssh_manager.admin_ip,
+            tar_path=settings.ZABBIX_PLUGIN_PATH,
+            tar_target="/var")
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.basename(settings.ZABBIX_PLUGIN_PATH))
+
+        cluster_settings = {
+            "net_provider": "neutron",
+            "net_segment_type": settings.NEUTRON_SEGMENT_TYPE,
+            'objects_ceph': True,
+            'volumes_ceph': True,
+            'images_ceph': True,
+            'volumes_lvm': False,
+            'tenant': 'rados',
+            'user': 'rados',
+            'password': 'rados',
+            'osd_pool_size': "3"
+        }
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings=cluster_settings
+        )
+
+        zabbix_username = 'admin'
+        zabbix_password = 'zabbix'
+        self.setup_zabbix_plugin(cluster_id, zabbix_username, zabbix_password)
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller', 'ceph-osd'],
+                'slave-02': ['controller', 'ceph-osd'],
+                'slave-03': ['controller', 'ceph-osd'],
+                'slave-04': ['compute', 'ceph-osd'],
+                'slave-05': ['compute', 'ceph-osd'],
+            }
+        )
+
+        self.fuel_web.deploy_cluster_wait(cluster_id, timeout=190 * 60)
+        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.check_zabbix_configuration(cluster_id, zabbix_username,
+                                        zabbix_password)
+
+        self.env.make_snapshot("deploy_zabbix_ceph_radosgw_ha")
