@@ -57,3 +57,8 @@ Generate bugs statistics for TestPlan
 -------------------------------------
 .. automodule:: fuelweb_test.testrail.generate_statistics
    :members:
+
+Datetime utils for Testrail
+---------------------------
+.. automodule:: fuelweb_test.testrail.datetime_util
+   :members:
