@@ -2055,8 +2055,10 @@ class FuelWebClient(object):
             return failed_count
 
     def get_nailgun_version(self):
+        response = self.client.get_api_version()
         logger.info("ISO version: {}".format(pretty_log(
-            self.client.get_api_version(), indent=1)))
+            response, indent=1)))
+        return response
 
     @logwrap
     def run_ceph_task(self, cluster_id, offline_nodes):
