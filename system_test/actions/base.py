@@ -26,6 +26,7 @@ from six.moves import xrange
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.utils import TimeStat
+from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test import settings
 
 from system_test import logger
@@ -119,10 +120,25 @@ class PrepareActions(object):
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
-    def config_release(self):
+    def setup_centos_master(self):
+        """Setup master node"""
+        self.check_run("empty_centos")
+        with TimeStat("setup_environment", is_uniq=True):
+            setup = SetupEnvironment()
+            setup.setup_centos_master()
+
+        self.env.make_snapshot("empty_centos", is_make=True)
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def config_release(self, centos=False):
         """Configuration releases"""
         self.check_run("ready")
-        self.env.revert_snapshot("empty", skip_timesync=True)
+
+        if centos:
+            self.env.revert_snapshot("empty_centos", skip_timesync=True)
+        else:
+            self.env.revert_snapshot("empty", skip_timesync=True)
 
         self.fuel_web.get_nailgun_version()
         self.fuel_web.change_default_network_settings()

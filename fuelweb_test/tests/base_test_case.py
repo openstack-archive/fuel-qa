@@ -364,3 +364,55 @@ class SetupEnvironment(TestBasic):
                                  skip_timesync=True)
         self.env.make_snapshot("ready_with_9_slaves", is_make=True)
         self.current_log_step = 0
+
+    @test(depends_on=[bootstrap_centos_master],
+          group=["setup_centos_master"])
+    @log_snapshot_after_test
+    def setup_centos_master(self):
+        """Setup centos master node
+
+        Scenario:
+            1. Revert snapshot "bootstrap_centos_master"
+            2. Download fuel_release from remote repository
+            3. install fuel_setup package
+            4. Install Fuel services by executing bootstrap_admin_node.sh
+            5. check Fuel services
+
+        Snapshot: empty_centos
+
+        """
+        self.check_run("empty_centos")
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot("bootstrap_centos_master", skip_timesync=True)
+
+        # upload fuel-release.rpm to master node
+        logger.info("upload fuel-release packet")
+        if not settings.FUEL_RELEASE_PATH:
+            raise
+        try:
+            ssh = SSHManager()
+            pack_path = '/tmp/'
+            full_pack_path = os.path.join(pack_path,
+                                          'fuel-release*.noarch.rpm')
+            ssh.upload_to_remote(
+                ip=ssh.admin_ip,
+                source=settings.FUEL_RELEASE_PATH.rstrip('/'),
+                target=pack_path)
+
+        except Exception as e:
+            logger.error("Could not upload package {e}".format(e=e))
+            raise
+
+        # install fuel_services
+        cmd = "yum install -y {}".format(full_pack_path)
+        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+
+        cmd = "yum install -y fuel-setup"
+        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+
+        if settings.SHOW_FUELMENU:
+            cmd = "bootstrap_admin_node.sh"
+            ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+            self.admin_actions.wait_for_fuel_ready()
+        self.env.make_snapshot("empty_centos", is_make=True)
+        self.current_log_step = 0
