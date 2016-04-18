@@ -19,6 +19,8 @@ import traceback
 from cinderclient import client as cinderclient
 from glanceclient.v1 import Client as GlanceClient
 import ironicclient.client as ironicclient
+from keystoneauth1.identity import v2
+from keystoneauth1 import session
 from keystoneclient.v2_0 import Client as KeystoneClient
 from keystoneclient.exceptions import ClientException
 from novaclient.v2 import Client as NovaClient
@@ -51,6 +53,9 @@ class Common(object):
                 netloc='{}:{}'.format(
                     self.controller_ip, parse.port)).geturl()
 
+        self.keystone_session = None
+        self.keystone = None
+
         if DISABLE_SSL:
             auth_url = 'http://{0}:5000/v2.0/'.format(self.controller_ip)
             path_to_cert = None
@@ -62,24 +67,31 @@ class Common(object):
 
         logger.debug('Auth URL is {0}'.format(auth_url))
 
-        keystone_args = {'username': user, 'password': password,
-                         'tenant_name': tenant, 'auth_url': auth_url,
-                         'ca_cert': path_to_cert, 'insecure': insecure}
-        self.keystone = self._get_keystoneclient(**keystone_args)
+        self.__keystone_auth = v2.Password(
+            auth_url=auth_url,
+            username=user,
+            password=password,
+            tenant_name=tenant)  # TODO: in v3 project_name
 
-        token = self.keystone.auth_token
+        self.__get_keystoneclient(ca_cert=path_to_cert, insecure=insecure)
+
+        self.keystone_access = self.__keystone_auth.get_access(
+            session=self.keystone_session)
+        service_catalog = self.keystone_access.service_catalog
+
+        token = self.keystone_session.get_token()
         logger.debug('Token is {0}'.format(token))
 
-        neutron_endpoint = self.keystone.service_catalog.url_for(
-            service_type='network', endpoint_type='publicURL')
+        neutron_endpoint = service_catalog.url_for(
+            service_type='network', interface='publicURL')
         neutron_args = {'username': user, 'password': password,
                         'tenant_name': tenant, 'auth_url': auth_url,
                         'ca_cert': path_to_cert, 'insecure': insecure,
                         'endpoint_url': make_endpoint(neutron_endpoint)}
         self.neutron = neutronclient.Client(**neutron_args)
 
-        nova_endpoint = self.keystone.service_catalog.url_for(
-            service_type='compute', endpoint_type='publicURL')
+        nova_endpoint = service_catalog.url_for(
+            service_type='compute', interface='publicURL')
         nova_args = {'username': user, 'api_key': password,
                      'project_id': tenant, 'auth_url': auth_url,
                      'cacert': path_to_cert, 'insecure': insecure,
@@ -87,8 +99,8 @@ class Common(object):
                      'auth_token': token}
         self.nova = NovaClient(**nova_args)
 
-        cinder_endpoint = self.keystone.service_catalog.url_for(
-            service_type='volume', endpoint_type='publicURL')
+        cinder_endpoint = service_catalog.url_for(
+            service_type='volume', interface='publicURL')
         cinder_args = {'version': 1, 'username': user,
                        'api_key': password, 'project_id': tenant,
                        'auth_url': auth_url, 'cacert': path_to_cert,
@@ -96,8 +108,8 @@ class Common(object):
                        'bypass_url': make_endpoint(cinder_endpoint)}
         self.cinder = cinderclient.Client(**cinder_args)
 
-        glance_endpoint = self.keystone.service_catalog.url_for(
-            service_type='image', endpoint_type='publicURL')
+        glance_endpoint = service_catalog.url_for(
+            service_type='image', interface='publicURL')
         logger.debug('Glance endpoint is {0}'.format(
             make_endpoint(glance_endpoint)))
         glance_args = {'endpoint': make_endpoint(glance_endpoint),
@@ -107,9 +119,9 @@ class Common(object):
         self.glance = GlanceClient(**glance_args)
 
         try:
-            ironic_endpoint = self.keystone.service_catalog.url_for(
+            ironic_endpoint = service_catalog.url_for(
                 service_type='baremetal',
-                endpoint_type='publicURL')
+                interface='publicURL')
             self.ironic = ironicclient.get_client(
                 api_version=1,
                 os_auth_token=token,
@@ -222,25 +234,22 @@ class Common(object):
             aggregate.set_metadata(metadata)
         return aggregate
 
-    @staticmethod
-    def _get_keystoneclient(username, password, tenant_name, auth_url,
-                            retries=3, ca_cert=None, insecure=False):
+    def __get_keystoneclient(self, retries=3, ca_cert=None, insecure=False):
         exc_type, exc_value, exc_traceback = None, None, None
         for i in xrange(retries):
             try:
-                if ca_cert:
-                    return KeystoneClient(username=username,
-                                          password=password,
-                                          tenant_name=tenant_name,
-                                          auth_url=auth_url,
-                                          cacert=ca_cert,
-                                          insecure=insecure)
-
+                if insecure:
+                    self.keystone_session = session.Session(
+                        auth=self.__keystone_auth, verify=False)
+                elif ca_cert:
+                    self.keystone_session = session.Session(
+                        auth=self.__keystone_auth, verify=ca_cert)
                 else:
-                    return KeystoneClient(username=username,
-                                          password=password,
-                                          tenant_name=tenant_name,
-                                          auth_url=auth_url)
+                    self.keystone_session = session.Session(
+                        auth=self.__keystone_auth)
+                self.keystone = KeystoneClient(session=self.keystone_session)
+                return
+
             except ClientException as exc:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 err = "Try nr {0}. Could not get keystone client, error: {1}"
