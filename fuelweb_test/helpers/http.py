@@ -15,8 +15,10 @@
 import json
 import traceback
 
+from keystoneauth1 import exceptions
+from keystoneauth1.identity import V2Password as KeystoneAuthPassword
+from keystoneauth1.session import Session as KeystoneSession
 from keystoneclient.v2_0 import Client as KeystoneClient
-from keystoneclient import exceptions
 # pylint: disable=import-error
 from six.moves.urllib import request
 from six.moves.urllib.error import HTTPError
@@ -35,17 +37,21 @@ class HTTPClient(object):
         self.keystone_url = keystone_url
         self.creds = dict(credentials, **kwargs)
         self.keystone = None
+        self.session = None
         self.opener = request.build_opener(request.HTTPHandler)
 
     def authenticate(self):
         try:
             logger.info('Initialize keystoneclient with url %s',
                         self.keystone_url)
-            self.keystone = KeystoneClient(
-                auth_url=self.keystone_url, **self.creds)
-            # it depends on keystone version, some versions doing auth
-            # explicitly some don't, but we are making it explicitly always
-            self.keystone.authenticate()
+            auth = KeystoneAuthPassword(
+                auth_url=self.keystone_url,
+                username=self.creds['username'],
+                password=self.creds['password'],
+                tenant_name=self.creds['tenant_name'])
+            # TODO: in v3 project_name
+            self.session = KeystoneSession(auth=auth, verify=False)
+            self.keystone = KeystoneClient(session=self.session)
             logger.debug('Authorization token is successfully updated')
         except exceptions.AuthorizationFailure:
             logger.warning(
@@ -56,7 +62,7 @@ class HTTPClient(object):
     def token(self):
         if self.keystone is not None:
             try:
-                return self.keystone.auth_token
+                return self.session.get_token()
             except exceptions.AuthorizationFailure:
                 logger.warning(
                     'Cant establish connection to keystone with url %s',
@@ -65,7 +71,7 @@ class HTTPClient(object):
                 logger.warning("Keystone returned unauthorized error, trying "
                                "to pass authentication.")
                 self.authenticate()
-                return self.keystone.auth_token
+                return self.session.get_token()
         return None
 
     def get(self, endpoint):
