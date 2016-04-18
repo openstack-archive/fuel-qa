@@ -128,9 +128,9 @@ class OpenStackActions(common.Common):
             logger.info("Error opening file: {:s}".format(exc))
             raise Exception()
         image_id = self._get_cirros_image().id
-        security_group[self.keystone.tenant_id] =\
+        security_group[self.keystone_access.tenant_id] =\
             self.create_sec_group_for_ssh()
-        security_groups = [security_group[self.keystone.tenant_id].name]
+        security_groups = [security_group[self.keystone_access.tenant_id].name]
 
         if neutron:
             net_label = label if label else 'net04'
