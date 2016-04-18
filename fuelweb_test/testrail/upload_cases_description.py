@@ -12,8 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, division
 
+import datetime
 import re
 
 from logging import DEBUG
@@ -32,6 +33,10 @@ from system_test import register_system_test_cases
 from system_test import tests_directory
 from system_test import get_basepath
 from system_test.tests.base import ActionTest
+
+
+MINUTE = 60
+HOUR = MINUTE ** 2
 
 
 def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
@@ -130,12 +135,13 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
 
 def upload_tests_descriptions(testrail_project, section_id,
                               tests, check_all_sections):
+    group_name = 'custom_test_group'
     tests_suite = testrail_project.get_suite_by_name(
         TestRailSettings.tests_suite)
     check_section = None if check_all_sections else section_id
-    existing_cases = [case['custom_test_group'] for case in
-                      testrail_project.get_cases(suite_id=tests_suite['id'],
-                                                 section_id=check_section)]
+    cases = testrail_project.get_cases(suite_id=tests_suite['id'],
+                                       section_id=check_section)
+    existing_cases = [case[group_name] for case in cases]
     custom_cases_fields = {}
     for field in testrail_project.get_case_fields():
         for config in field['configs']:
@@ -153,24 +159,59 @@ def upload_tests_descriptions(testrail_project, section_id,
                     custom_cases_fields[field['system_name']] = 1
 
     for test_case in tests:
-        if test_case['custom_test_group'] in existing_cases:
-            logger.debug('Skipping uploading "{0}" test case because it '
-                         'already exists in "{1}" tests section.'.format(
-                             test_case['custom_test_group'],
-                             TestRailSettings.tests_suite))
-            continue
+        if test_case[group_name] in existing_cases:
+            testrail_case = \
+                next((case for case in cases
+                      if case[group_name] == test_case[group_name]))
 
-        for case_field, default_value in custom_cases_fields.items():
-            if case_field not in test_case:
-                test_case[case_field] = default_value
+            fields_to_update = {}
 
-        logger.debug('Uploading test "{0}" to TestRail project "{1}", '
-                     'suite "{2}", section "{3}"'.format(
-                         test_case["custom_test_group"],
-                         TestRailSettings.project,
-                         TestRailSettings.tests_suite,
-                         TestRailSettings.tests_section))
-        testrail_project.add_case(section_id=section_id, case=test_case)
+            for field in ('title', 'estimate', 'custom_test_case_description',
+                          'custom_test_case_steps'):
+                if test_case[field] and \
+                        test_case[field] != testrail_case[field]:
+                    if field == 'estimate':
+                        testcase_estimate_raw = int(test_case[field][:-1])
+                        testcase_estimate = \
+                            _duration_to_testrail_estimate(
+                                testcase_estimate_raw)
+                        if testrail_case[field] == testcase_estimate:
+                            continue
+                    elif field == 'custom_test_case_description' and \
+                        test_case[field] == \
+                            testrail_case[field].replace('\r', ''):
+                        continue
+                    fields_to_update[field] = test_case[field]
+
+            if fields_to_update:
+                logger.debug('Updating test "{0}" in TestRail project "{1}", '
+                             'suite "{2}", section "{3}". Updated fields: {4}'
+                             .format(
+                                 test_case[group_name],
+                                 TestRailSettings.project,
+                                 TestRailSettings.tests_suite,
+                                 TestRailSettings.tests_section,
+                                 ', '.join(fields_to_update.keys())))
+                testrail_project.update_case(case_id=testrail_case['id'],
+                                             fields=fields_to_update)
+            else:
+                logger.debug('Skipping "{0}" test case uploading because '
+                             'it is up-to-date in "{1}" suite'
+                             .format(test_case[group_name],
+                                     TestRailSettings.tests_suite))
+
+        else:
+            for case_field, default_value in custom_cases_fields.items():
+                if case_field not in test_case:
+                    test_case[case_field] = default_value
+
+            logger.debug('Uploading test "{0}" to TestRail project "{1}", '
+                         'suite "{2}", section "{3}"'.format(
+                             test_case[group_name],
+                             TestRailSettings.project,
+                             TestRailSettings.tests_suite,
+                             TestRailSettings.tests_section))
+            testrail_project.add_case(section_id=section_id, case=test_case)
 
 
 def get_tests_groups_from_jenkins(runner_name, build_number, distros):
@@ -208,6 +249,11 @@ def get_tests_groups_from_jenkins(runner_name, build_number, distros):
             job_suffix = job_name.split('.')[-1]
         res[job_suffix] = test_group
     return res
+
+
+def _duration_to_testrail_estimate(duration):
+    t = datetime.timedelta(minutes=duration)
+    return '{0}h {1}m'.format(t.seconds / HOUR, t.seconds % HOUR / MINUTE)
 
 
 def main():
