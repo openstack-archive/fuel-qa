@@ -458,6 +458,20 @@ class TestLogrotateBase(TestBasic):
 @test(groups=["tests_gpg_singing_check"])
 class GPGSigningCheck(TestBasic):
     """ Tests for checking GPG signing """
+    def __init__(self):
+        super(GPGSigningCheck, self).__init__()
+        self.release_version = self.fuel_web.get_nailgun_version().get(
+            'release')
+        self.gpg_name = settings.GPG_CENTOS_KEY_PATH.split('/')[-1].format(
+            release_version=self.release_version)
+        self.gpg_centos_key_path = settings.GPG_CENTOS_KEY_PATH.format(
+            release_version=self.release_version)
+        self.centos_repo_path = settings.CENTOS_REPO_PATH.format(
+            release_version=self.release_version)
+        self.ubuntu_repo_path = settings.UBUNTU_REPO_PATH.format(
+            release_version=self.release_version)
+        self.gpg_centos_key_path = settings.GPG_CENTOS_KEY_PATH.format(
+            release_version=self.release_version)
 
     @test(depends_on=[SetupEnvironment.setup_master],
           groups=['test_check_rpm_packages_signed'])
@@ -478,12 +492,11 @@ class GPGSigningCheck(TestBasic):
         self.env.revert_snapshot('empty')
 
         path_to_repos = '/var/www/nailgun/mos-centos/x86_64/Packages/'
-        gpg_name = settings.GPG_CENTOS_KEY.split('/')[-1]
 
         self.show_step(2)
         cmds = [
-            'wget {link}'.format(link=settings.GPG_CENTOS_KEY),
-            'rpm --import {gpg_pub_key}'.format(gpg_pub_key=gpg_name)
+            'wget {link}'.format(link=self.gpg_centos_key_path),
+            'rpm --import {gpg_pub_key}'.format(gpg_pub_key=self.gpg_name)
         ]
         for cmd in cmds:
             self.ssh_manager.execute_on_remote(
@@ -516,24 +529,25 @@ class GPGSigningCheck(TestBasic):
         self.show_step(1)
         self.env.revert_snapshot('empty')
 
-        gpg_name = settings.GPG_CENTOS_KEY.split('/')[-1]
-
         self.show_step(2)
         self.show_step(3)
         self.show_step(4)
         self.show_step(5)
         cmds = [
-            'wget {link}'.format(link=settings.GPG_CENTOS_KEY),
-            'rpm --import {gpg_pub_key}'.format(gpg_pub_key=gpg_name),
-            'gpg --import {gpg_pub_key}'.format(gpg_pub_key=gpg_name),
-            'wget {}os/x86_64/repodata/repomd.xml.asc'.format(
-                settings.CENTOS_REPO_PATH),
-            'wget {}os/x86_64/repodata/repomd.xml'.format(
-                settings.CENTOS_REPO_PATH),
+            'wget {link}'.format(link=self.gpg_centos_key_path),
+            'rpm --import {gpg_pub_key}'.format(gpg_pub_key=self.gpg_name),
+            'gpg --import {gpg_pub_key}'.format(gpg_pub_key=self.gpg_name),
+            'wget {repo_path}os/x86_64/repodata/repomd.xml.asc'.format(
+                repo_path=self.centos_repo_path),
+            'wget {repo_path}os/x86_64/repodata/repomd.xml'.format(
+                repo_path=self.centos_repo_path),
             'gpg --verify repomd.xml.asc repomd.xml',
-            'wget {}dists/mos8.0/Release'.format(settings.UBUNTU_REPO_PATH),
-            'wget {}dists/mos8.0/Release.gpg'.format(
-                settings.UBUNTU_REPO_PATH),
+            'wget {repo_path}dists/mos{release_version}/Release'.format(
+                repo_path=self.ubuntu_repo_path,
+                release_version=self.release_version),
+            'wget {repo_path}dists/mos{release_version}/Release.gpg'.format(
+                repo_path=self.ubuntu_repo_path,
+                release_version=self.release_version),
             'gpg --verify Release.gpg Release'
         ]
         for cmd in cmds:
@@ -544,7 +558,7 @@ class GPGSigningCheck(TestBasic):
 
         self.show_step(6)
         response = urlopen(
-            '{}/os/x86_64/Packages/'.format(settings.CENTOS_REPO_PATH)
+            '{}/os/x86_64/Packages/'.format(self.centos_repo_path)
         )
         source = response.read()
         rpms = re.findall(r'href="(.*.rpm)"', source)
@@ -552,8 +566,9 @@ class GPGSigningCheck(TestBasic):
 
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd='wget {}os/x86_64/Packages/{}'.format(settings.
-                                                      CENTOS_REPO_PATH, rpm)
+            cmd='wget {}os/x86_64/Packages/{}'.format(
+                self.centos_repo_path,
+                rpm)
         )
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
