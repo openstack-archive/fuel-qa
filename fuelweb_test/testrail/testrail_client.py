@@ -173,6 +173,9 @@ class TestRailProject(object):
         add_case_uri = 'add_case/{section_id}'.format(section_id=section_id)
         return self.client.send_post(add_case_uri, case)
 
+    def update_case(self, case_id, fields):
+        return self.client.send_post('update_case/{0}'.format(case_id), fields)
+
     def delete_case(self, case_id):
         return self.client.send_post('delete_case/' + str(case_id), None)
 
