@@ -14,10 +14,19 @@
 
 import json
 import traceback
-import urllib2
 
+from keystoneauth1 import exceptions
+from keystoneauth1.identity import V2Password
+from keystoneauth1.session import Session as KeystoneSession
 from keystoneclient.v2_0 import Client as KeystoneClient
-from keystoneclient import exceptions
+# pylint: disable=import-error
+# noinspection PyUnresolvedReferences
+from six.moves.urllib import request
+# noinspection PyUnresolvedReferences
+from six.moves.urllib.error import HTTPError
+# pylint: enable=import-error
+import requests
+
 from fuelweb_test import logger
 
 
@@ -30,17 +39,21 @@ class HTTPClient(object):
         self.keystone_url = keystone_url
         self.creds = dict(credentials, **kwargs)
         self.keystone = None
-        self.opener = urllib2.build_opener(urllib2.HTTPHandler)
+        self.session = None
+        self.opener = request.build_opener(request.HTTPHandler)
 
     def authenticate(self):
         try:
             logger.info('Initialize keystoneclient with url %s',
                         self.keystone_url)
-            self.keystone = KeystoneClient(
-                auth_url=self.keystone_url, **self.creds)
-            # it depends on keystone version, some versions doing auth
-            # explicitly some don't, but we are making it explicitly always
-            self.keystone.authenticate()
+            auth = V2Password(
+                auth_url=self.keystone_url,
+                username=self.creds['username'],
+                password=self.creds['password'],
+                tenant_name=self.creds['tenant_name'])
+            # TODO: in v3 project_name
+            self.session = KeystoneSession(auth=auth, verify=False)
+            self.keystone = KeystoneClient(session=self.session)
             logger.debug('Authorization token is successfully updated')
         except exceptions.AuthorizationFailure:
             logger.warning(
@@ -51,7 +64,7 @@ class HTTPClient(object):
     def token(self):
         if self.keystone is not None:
             try:
-                return self.keystone.auth_token
+                return self.session.get_token()
             except exceptions.AuthorizationFailure:
                 logger.warning(
                     'Cant establish connection to keystone with url %s',
@@ -60,37 +73,45 @@ class HTTPClient(object):
                 logger.warning("Keystone returned unauthorized error, trying "
                                "to pass authentication.")
                 self.authenticate()
-                return self.keystone.auth_token
+                return self.session.get_token()
         return None
 
     def get(self, endpoint):
-        req = urllib2.Request(self.url + endpoint)
+        req = request.Request(self.url + endpoint)
         return self._open(req)
 
     def post(self, endpoint, data=None, content_type="application/json"):
         if not data:
             data = {}
-        req = urllib2.Request(self.url + endpoint, data=json.dumps(data))
+        req = request.Request(self.url + endpoint, data=json.dumps(data))
         req.add_header('Content-Type', content_type)
         return self._open(req)
 
     def put(self, endpoint, data=None, content_type="application/json"):
         if not data:
             data = {}
-        req = urllib2.Request(self.url + endpoint, data=json.dumps(data))
+        req = request.Request(self.url + endpoint, data=json.dumps(data))
         req.add_header('Content-Type', content_type)
         req.get_method = lambda: 'PUT'
         return self._open(req)
 
     def delete(self, endpoint):
-        req = urllib2.Request(self.url + endpoint)
+        req = request.Request(self.url + endpoint)
         req.get_method = lambda: 'DELETE'
         return self._open(req)
 
     def _open(self, req):
         try:
             return self._get_response(req)
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
+            if e.code == 308:
+                logger.info(e.read())
+                url = req.get_full_url()
+                req = requests.get(url, headers={'X-Auth-Token': self.token})
+                if req.status_code in [200]:
+                    return req.json()
+                else:
+                    req.raise_for_status()
             if e.code == 401:
                 logger.warning('Authorization failure: {0}'.format(e.read()))
                 self.authenticate()
@@ -121,10 +142,10 @@ class HTTPClientZabbix(object):
 
     def __init__(self, url):
         self.url = url
-        self.opener = urllib2.build_opener(urllib2.HTTPHandler)
+        self.opener = request.build_opener(request.HTTPHandler)
 
     def get(self, endpoint=None, cookie=None):
-        req = urllib2.Request(self.url + endpoint)
+        req = request.Request(self.url + endpoint)
         if cookie:
             req.add_header('cookie', cookie)
         return self.opener.open(req)
@@ -133,7 +154,7 @@ class HTTPClientZabbix(object):
              cookie=None):
         if not data:
             data = {}
-        req = urllib2.Request(self.url + endpoint, data=json.dumps(data))
+        req = request.Request(self.url + endpoint, data=json.dumps(data))
         req.add_header('Content-Type', content_type)
         if cookie:
             req.add_header('cookie', cookie)
