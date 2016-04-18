@@ -19,6 +19,8 @@ import traceback
 from cinderclient import client as cinderclient
 from glanceclient.v1 import Client as GlanceClient
 import ironicclient.client as ironicclient
+from keystoneauth1.identity import v2
+from keystoneauth1 import session
 from keystoneclient.v2_0 import Client as KeystoneClient
 from keystoneclient.exceptions import ClientException
 from novaclient.v2 import Client as NovaClient
@@ -226,21 +228,20 @@ class Common(object):
     def _get_keystoneclient(username, password, tenant_name, auth_url,
                             retries=3, ca_cert=None, insecure=False):
         exc_type, exc_value, exc_traceback = None, None, None
+        auth = v2.Password(auth_url=auth_url,
+                           username=username,
+                           password=password,
+                           tenant_name=tenant_name)  # TODO: in v3 project_name
         for i in xrange(retries):
             try:
-                if ca_cert:
-                    return KeystoneClient(username=username,
-                                          password=password,
-                                          tenant_name=tenant_name,
-                                          auth_url=auth_url,
-                                          cacert=ca_cert,
-                                          insecure=insecure)
-
+                if insecure:
+                    sess = session.Session(auth=auth, verify=False)
+                elif ca_cert:
+                    sess = session.Session(auth=auth, verify=ca_cert)
                 else:
-                    return KeystoneClient(username=username,
-                                          password=password,
-                                          tenant_name=tenant_name,
-                                          auth_url=auth_url)
+                    sess = session.Session(auth=auth)
+                return KeystoneClient(session=sess)
+
             except ClientException as exc:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 err = "Try nr {0}. Could not get keystone client, error: {1}"
