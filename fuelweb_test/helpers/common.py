@@ -16,13 +16,15 @@ import sys
 import time
 import traceback
 
-from cinderclient import client as cinderclient
+from cinderclient.client import Client as CinderClient
 from glanceclient.v1 import Client as GlanceClient
-import ironicclient.client as ironicclient
+from ironicclient.client import Client as IronicClient
+from keystoneauth1.exceptions import ClientException
+from keystoneauth1.identity import V2Password as KeystoneAuthPassword
+from keystoneauth1.session import Session as KeystoneSession
 from keystoneclient.v2_0 import Client as KeystoneClient
-from keystoneclient.exceptions import ClientException
-from novaclient.v2 import Client as NovaClient
-import neutronclient.v2_0.client as neutronclient
+from novaclient.client import Client as NovaClient
+from neutronclient.v2_0.client import Client as NeutronClient
 from proboscis.asserts import assert_equal
 import six
 # pylint: disable=redefined-builtin
@@ -42,14 +44,16 @@ from fuelweb_test.settings import VERIFY_SSL
 class Common(object):
     """Common."""  # TODO documentation
 
+    def __make_endpoint(self, endpoint):
+        parse = urllib.parse.urlparse(endpoint)
+        return parse._replace(
+            netloc='{}:{}'.format(
+                self.controller_ip, parse.port)).geturl()
+
     def __init__(self, controller_ip, user, password, tenant):
         self.controller_ip = controller_ip
 
-        def make_endpoint(endpoint):
-            parse = urllib.parse.urlparse(endpoint)
-            return parse._replace(
-                netloc='{}:{}'.format(
-                    self.controller_ip, parse.port)).geturl()
+        self.keystone_session = None
 
         if DISABLE_SSL:
             auth_url = 'http://{0}:5000/v2.0/'.format(self.controller_ip)
@@ -62,60 +66,82 @@ class Common(object):
 
         logger.debug('Auth URL is {0}'.format(auth_url))
 
-        keystone_args = {'username': user, 'password': password,
-                         'tenant_name': tenant, 'auth_url': auth_url,
-                         'ca_cert': path_to_cert, 'insecure': insecure}
-        self.keystone = self._get_keystoneclient(**keystone_args)
+        self.__keystone_auth = KeystoneAuthPassword(
+            auth_url=auth_url,
+            username=user,
+            password=password,
+            tenant_name=tenant)  # TODO: in v3 project_name
 
-        token = self.keystone.auth_token
-        logger.debug('Token is {0}'.format(token))
+        self.__start_keystone_session(ca_cert=path_to_cert, insecure=insecure)
 
-        neutron_endpoint = self.keystone.service_catalog.url_for(
-            service_type='network', endpoint_type='publicURL')
-        neutron_args = {'username': user, 'password': password,
-                        'tenant_name': tenant, 'auth_url': auth_url,
-                        'ca_cert': path_to_cert, 'insecure': insecure,
-                        'endpoint_url': make_endpoint(neutron_endpoint)}
-        self.neutron = neutronclient.Client(**neutron_args)
+    @property
+    def keystone(self):
+        return KeystoneClient(session=self.keystone_session)
 
-        nova_endpoint = self.keystone.service_catalog.url_for(
-            service_type='compute', endpoint_type='publicURL')
-        nova_args = {'username': user, 'api_key': password,
-                     'project_id': tenant, 'auth_url': auth_url,
-                     'cacert': path_to_cert, 'insecure': insecure,
-                     'bypass_url': make_endpoint(nova_endpoint),
-                     'auth_token': token}
-        self.nova = NovaClient(**nova_args)
+    @property
+    def glance(self):
+        endpoint = self.__make_endpoint(
+            self._get_url_for_svc(service_type='image'))
+        return GlanceClient(
+            session=self.keystone_session,
+            endpoint=endpoint,
+            endpoint_override=endpoint)
 
-        cinder_endpoint = self.keystone.service_catalog.url_for(
-            service_type='volume', endpoint_type='publicURL')
-        cinder_args = {'version': 1, 'username': user,
-                       'api_key': password, 'project_id': tenant,
-                       'auth_url': auth_url, 'cacert': path_to_cert,
-                       'insecure': insecure,
-                       'bypass_url': make_endpoint(cinder_endpoint)}
-        self.cinder = cinderclient.Client(**cinder_args)
+    @property
+    def neutron(self):
+        endpoint = self.__make_endpoint(
+            self._get_url_for_svc(service_type='network'))
+        return NeutronClient(
+            session=self.keystone_session,
+            endpoint_override=endpoint)
 
-        glance_endpoint = self.keystone.service_catalog.url_for(
-            service_type='image', endpoint_type='publicURL')
-        logger.debug('Glance endpoint is {0}'.format(
-            make_endpoint(glance_endpoint)))
-        glance_args = {'endpoint': make_endpoint(glance_endpoint),
-                       'token': token,
-                       'cacert': path_to_cert,
-                       'insecure': insecure}
-        self.glance = GlanceClient(**glance_args)
+    @property
+    def nova(self):
+        endpoint = self.__make_endpoint(
+            self._get_url_for_svc(service_type='compute'))
+        return NovaClient(
+            version='2',
+            session=self.keystone_session,
+            endpoint_override=endpoint)
 
+    @property
+    def cinder(self):
+        endpoint = self.__make_endpoint(
+            self._get_url_for_svc(service_type='volume'))
+        return CinderClient(
+            version='1',
+            session=self.keystone_session,
+            endpoint_override=endpoint)
+
+    @property
+    def ironic(self):
         try:
-            ironic_endpoint = self.keystone.service_catalog.url_for(
-                service_type='baremetal',
-                endpoint_type='publicURL')
-            self.ironic = ironicclient.get_client(
-                api_version=1,
-                os_auth_token=token,
-                ironic_url=make_endpoint(ironic_endpoint), insecure=True)
+            endpoint = self.__make_endpoint(
+                self._get_url_for_svc(service_type='baremetal'))
+            return IronicClient(
+                version='1',
+                session=self.keystone_session,
+                insecure=True,
+                endpoint_override=endpoint
+            )
         except ClientException as e:
             logger.warning('Could not initialize ironic client {0}'.format(e))
+            raise
+
+    @property
+    def keystone_access(self):
+        return self.__keystone_auth.get_access(session=self.keystone_session)
+
+    def _get_url_for_svc(
+            self, service_type=None, interface='public',
+            region_name=None, service_name=None,
+            service_id=None, endpoint_id=None
+    ):
+        return self.keystone_access.service_catalog.url_for(
+            service_type=service_type, interface=interface,
+            region_name=region_name, service_name=service_name,
+            service_id=service_id, endpoint_id=endpoint_id
+        )
 
     def goodbye_security(self):
         secgroup_list = self.nova.security_groups.list()
@@ -150,6 +176,7 @@ class Common(object):
         logger.debug('Try to create instance')
 
         start_time = time.time()
+        exc_type, exc_value, exc_traceback = None, None, None
         while time.time() - start_time < 100:
             try:
                 if image_name:
@@ -159,9 +186,12 @@ class Common(object):
                     image = [i.id for i in self.nova.images.list()]
                 break
             except Exception as e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
                 logger.warning('Ignoring exception: {!r}'.format(e))
                 logger.debug(traceback.format_exc())
         else:
+            if all((exc_type, exc_traceback, exc_value)):
+                six.reraise(exc_type, exc_value, exc_traceback)
             raise Exception('Can not get image')
 
         kwargs = {}
@@ -227,28 +257,26 @@ class Common(object):
             self.nova.aggregates.remove_host(aggregate, host)
         return self.nova.aggregates.delete(aggregate)
 
-    @staticmethod
-    def _get_keystoneclient(username, password, tenant_name, auth_url,
-                            retries=3, ca_cert=None, insecure=False):
+    def __start_keystone_session(
+            self, retries=3, ca_cert=None, insecure=not VERIFY_SSL):
         exc_type, exc_value, exc_traceback = None, None, None
         for i in xrange(retries):
             try:
-                if ca_cert:
-                    return KeystoneClient(username=username,
-                                          password=password,
-                                          tenant_name=tenant_name,
-                                          auth_url=auth_url,
-                                          cacert=ca_cert,
-                                          insecure=insecure)
-
+                if insecure:
+                    self.keystone_session = KeystoneSession(
+                        auth=self.__keystone_auth, verify=False)
+                elif ca_cert:
+                    self.keystone_session = KeystoneSession(
+                        auth=self.__keystone_auth, verify=ca_cert)
                 else:
-                    return KeystoneClient(username=username,
-                                          password=password,
-                                          tenant_name=tenant_name,
-                                          auth_url=auth_url)
+                    self.keystone_session = KeystoneSession(
+                        auth=self.__keystone_auth)
+                self.keystone_session.get_token()
+                return
+
             except ClientException as exc:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                err = "Try nr {0}. Could not get keystone client, error: {1}"
+                err = "Try nr {0}. Could not get keystone token, error: {1}"
                 logger.warning(err.format(i + 1, exc))
                 time.sleep(5)
         if exc_type and exc_traceback and exc_value:
