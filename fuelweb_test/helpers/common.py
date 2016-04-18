@@ -222,6 +222,11 @@ class Common(object):
             aggregate.set_metadata(metadata)
         return aggregate
 
+    def delete_aggregate(self, aggregate, hosts=None):
+        for host in hosts or []:
+            self.nova.aggregates.remove_host(host)
+        return self.nova.aggregates.delete(aggregate)
+
     @staticmethod
     def _get_keystoneclient(username, password, tenant_name, auth_url,
                             retries=3, ca_cert=None, insecure=False):

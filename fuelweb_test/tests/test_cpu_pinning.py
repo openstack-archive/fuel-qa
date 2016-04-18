@@ -88,7 +88,10 @@ class NumaCpuPinning(TestBasic):
         :param meta: a dict with metadata for aggregate
         :return:
         """
-        os_conn.create_aggregate(name, metadata=meta, hosts=[hostname])
+        aggregate_name = name + str(random.randint(0, 1000))
+        aggregate = os_conn.create_aggregate(aggregate_name,
+                                             metadata=meta,
+                                             hosts=[hostname])
 
         extra_specs = {'aggregate_instance_extra_specs:pinned': 'true',
                        'hw:cpu_policy': 'dedicated'}
@@ -106,6 +109,7 @@ class NumaCpuPinning(TestBasic):
         os_conn.verify_instance_status(server, 'ACTIVE')
         os_conn.delete_instance(server)
         os_conn.delete_flavor(flavor)
+        os_conn.delete_aggregate(aggregate, hosts=[hostname])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["numa_cpu_pinning",
@@ -236,6 +240,9 @@ class NumaCpuPinning(TestBasic):
 
         Snapshot: cpu_pinning_on_two_compute
         """
+        snapshot_name = 'cpu_pinning_on_two_compute'
+        self.check_run(snapshot_name)
+
         self.show_step(1)
         self.env.revert_snapshot("basic_env_for_numa_cpu_pinning")
 
@@ -331,16 +338,181 @@ class NumaCpuPinning(TestBasic):
 
         self.create_pinned_instance(os_conn=os_conn,
                                     cluster_id=cluster_id,
-                                    name='cpu_3',
+                                    name='cpu_3_',
                                     vcpus=3,
                                     hostname=first_compute['fqdn'],
                                     meta=meta)
         self.show_step(10)
         self.create_pinned_instance(os_conn=os_conn,
                                     cluster_id=cluster_id,
-                                    name='cpu_1',
+                                    name='cpu_1_',
                                     vcpus=1,
                                     hostname=second_compute['fqdn'],
                                     meta=meta)
 
-        self.env.make_snapshot("cpu_pinning_on_two_compute")
+        self.env.make_snapshot(snapshot_name, is_make=True)
+
+    @test(depends_on_groups=['basic_env_for_numa_cpu_pinning'],
+          groups=["cpu_pinning_with_other_role"])
+    @log_snapshot_after_test
+    def cpu_pinning_with_other_role(self):
+        """Check pinned CPU on compute,cinder node
+
+        Scenario:
+            1. Revert snapshot "basic_env_for_numa_cpu_pinning"
+            2. Add cinder role for compute nodes
+            3. Pin maximum CPU for the nova on the computes
+            4. Verify setting was successfully applied
+            5. Deploy cluster
+            6. Check new filters are enabled in nova.conf at controller
+            7. Check nova.conf contains pinned CPU at computes
+            8. Run OSTF
+            9. Boot VMs with pinned CPU on each compute, cinder node
+
+        Snapshot: cpu_pinning_with_other_role
+        """
+        self.show_step(1)
+        self.env.revert_snapshot("basic_env_for_numa_cpu_pinning")
+
+        self.show_step(2)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        nodes = {'slave-01': ['compute', 'cinder'],
+                 'slave-02': ['compute', 'cinder']}
+
+        self.fuel_web.update_nodes(cluster_id, nodes)
+
+        self.show_step(3)
+        target_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute', 'cinder'], role_status='pending_roles')
+        for compute in target_nodes:
+            compute_cpu = compute['meta']['cpu']['total']
+            compute_config = self.fuel_web.client.get_node_attributes(
+                compute['id'])
+            compute_config['cpu_pinning']['nova']['value'] = compute_cpu - 1
+            self.fuel_web.client.upload_node_attributes(
+                compute_config, compute['id'])
+
+        self.show_step(4)
+        for compute in target_nodes:
+            compute_cpu = compute['meta']['cpu']['total']
+            compute_config = self.fuel_web.client.get_node_attributes(
+                compute['id'])
+            asserts.assert_equal(
+                compute_config['cpu_pinning']['nova']['value'],
+                compute_cpu - 1,
+                "CPU pinning wasn't applied on '{0}': "
+                "Expected value '{1}', actual '{2}'"
+                .format(compute['ip'], compute_cpu - 1,
+                        compute_config['cpu_pinning']['nova']['value']))
+
+        self.show_step(5)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(6)
+        controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id,
+            roles=['controller'])
+
+        nova_conf_path = "/etc/nova/nova.conf"
+
+        for controller in controllers:
+            nova_conf = utils.get_ini_config(self.ssh_manager.open_on_remote(
+                ip=controller['ip'],
+                path=nova_conf_path))
+
+            self.assert_entry_in_config(nova_conf,
+                                        nova_conf_path,
+                                        "DEFAULT",
+                                        "scheduler_default_filters",
+                                        "NUMATopologyFilter")
+
+        self.show_step(7)
+        for compute in target_nodes:
+            compute_cpu = compute['meta']['cpu']['total']
+            nova_conf = utils.get_ini_config(self.ssh_manager.open_on_remote(
+                ip=compute['ip'],
+                path=nova_conf_path))
+            self.assert_quantity_in_config(nova_conf,
+                                           nova_conf_path,
+                                           "DEFAULT",
+                                           "vcpu_pin_set",
+                                           compute_cpu - 1)
+
+        self.show_step(8)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(9)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+
+        meta = {'pinned': 'true'}
+
+        for compute in target_nodes:
+            self.create_pinned_instance(os_conn=os_conn,
+                                        cluster_id=cluster_id,
+                                        name='cpu_role_',
+                                        vcpus=2,
+                                        hostname=compute['fqdn'],
+                                        meta=meta)
+
+        self.env.make_snapshot("cpu_pinning_with_other_role")
+
+    @test(depends_on_groups=['cpu_pinning_on_two_compute'],
+          groups=["reboot_cpu_pinning_compute"])
+    @log_snapshot_after_test
+    def reboot_cpu_pinning_compute(self):
+        """Check compute with pinned CPU after reboot
+
+        Scenario:
+            1. Revert snapshot "cpu_pinning_on_two_compute"
+            2. Reboot the first compute with CPU pinning
+            3. Run OSTF
+            4. Boot VM with pinned CPU on the first compute
+            5. Reboot the second compute with CPU pinning
+            6. Run OSTF
+            7. Boot VM with pinned CPU on the second compute
+
+        Snapshot: reboot_cpu_pinning_compute
+        """
+        self.show_step(1)
+        self.env.revert_snapshot("cpu_pinning_on_two_compute")
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.show_step(2)
+        first_compute = self.fuel_web.get_nailgun_node_by_name('slave-01')
+        second_compute = self.fuel_web.get_nailgun_node_by_name('slave-02')
+        self.fuel_web.warm_restart_nodes(
+            self.fuel_web.get_devops_nodes_by_nailgun_nodes([first_compute]))
+
+        self.show_step(3)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(4)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+
+        meta = {'pinned': 'true'}
+
+        self.create_pinned_instance(os_conn=os_conn,
+                                    cluster_id=cluster_id,
+                                    name='cpu_3_',
+                                    vcpus=3,
+                                    hostname=first_compute['fqdn'],
+                                    meta=meta)
+        self.show_step(5)
+        self.fuel_web.warm_restart_nodes(
+            self.fuel_web.get_devops_nodes_by_nailgun_nodes([second_compute]))
+
+        self.show_step(6)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(7)
+        self.create_pinned_instance(os_conn=os_conn,
+                                    cluster_id=cluster_id,
+                                    name='cpu_1_',
+                                    vcpus=1,
+                                    hostname=second_compute['fqdn'],
+                                    meta=meta)
+
+        self.env.make_snapshot('reboot_cpu_pinning_compute')
