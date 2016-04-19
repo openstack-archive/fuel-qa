@@ -458,7 +458,7 @@ class FuelWebClient(object):
         if not cluster_id:
             data = {
                 "name": name,
-                "release": str(release_id),
+                "release": release_id,
                 "mode": mode
             }
 
