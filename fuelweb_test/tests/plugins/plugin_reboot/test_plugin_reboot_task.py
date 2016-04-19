@@ -68,6 +68,7 @@ class RebootPlugin(TestBasic):
         # create plugin template on the master node
         self.show_step(3)
         fpb.fpb_create_plugin(source_plugin_path)
+        fpb.fpb_update_release_in_metadata(source_plugin_path)
         # replace plugin tasks with our file
         fpb.fpb_replace_plugin_content(
             os.path.join(tasks_path, tasks_file),
@@ -199,6 +200,7 @@ class RebootPlugin(TestBasic):
         self.show_step(3)
         # create plugin template on the master node
         fpb.fpb_create_plugin(source_plugin_path)
+        fpb.fpb_update_release_in_metadata(source_plugin_path)
         # replace plugin tasks with our file
         fpb.fpb_replace_plugin_content(
             os.path.join('/tmp/', tasks_file),
