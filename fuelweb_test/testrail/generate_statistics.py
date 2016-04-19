@@ -27,6 +27,8 @@ from collections import OrderedDict
 from logging import CRITICAL
 from logging import DEBUG
 
+import six
+
 from fuelweb_test.testrail.builds import Build
 from fuelweb_test.testrail.launchpad_client import LaunchpadBug
 from fuelweb_test.testrail.report import get_version
@@ -425,7 +427,10 @@ def save_stats_to_file(stats, file_name, html=''):
         html_file_path = '{}.html'.format(file_name)
         warn_file_exists(html_file_path)
         with open(html_file_path, 'w+') as f:
-            f.write(html)
+            if isinstance(html, six.binary_type):
+                f.write(html)
+            else:
+                f.write(html.encode('utf-8', errors='xmlcharrefreplace'))
 
 
 def main():
