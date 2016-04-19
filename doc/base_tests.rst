@@ -196,6 +196,11 @@ Test jumbo frames
 .. automodule:: fuelweb_test.tests.test_jumbo_frames
    :members:
 
+Test manual VIP allocation
+--------------------------
+.. automodule:: fuelweb_test.tests.test_manual_vip_allocation
+   :members:
+
 Test Multiple Networks
 ----------------------
 .. automodule:: fuelweb_test.tests.test_multiple_networks
@@ -211,10 +216,14 @@ Test network templates base
 .. automodule:: fuelweb_test.tests.test_net_templates_base
    :members:
 
-
 Test network templates
 ----------------------
 .. automodule:: fuelweb_test.tests.test_net_templates
+   :members:
+
+Test multiple networks templates
+--------------------------------
+.. automodule:: fuelweb_test.tests.test_net_templates_multiple_networks
    :members:
 
 Test Neutron

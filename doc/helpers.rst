@@ -1,7 +1,10 @@
 .. index:: Helpers
 
 Helpers
-=======
+*******
+
+General Helpers
+===============
 
 Ceph
 ----
@@ -51,6 +54,11 @@ Granular Deployment Checkers
 Http
 ----
 .. automodule:: fuelweb_test.helpers.http
+   :members:
+
+Ironic Actions
+--------------
+.. automodule:: fuelweb_test.helpers.ironic_actions
    :members:
 
 Log Server
@@ -108,9 +116,19 @@ Security
 .. automodule:: fuelweb_test.helpers.security
    :members:
 
+SSH Manager
+-----------
+.. automodule:: fuelweb_test.helpers.ssh_manager
+   :members:
+
 Ssl
 ---
-.. automodule:: fuelweb_test.helpers.ssl
+.. automodule:: fuelweb_test.helpers.ssl_helpers
+   :members:
+
+UCA
+---
+.. automodule:: fuelweb_test.helpers.uca
    :members:
 
 Utils
@@ -118,12 +136,20 @@ Utils
 .. automodule:: fuelweb_test.helpers.utils
    :members:
 
-SSH Manager
------------
-.. automodule:: fuelweb_test.helpers.ssh_manager
+Gerrit
+======
+
+Client
+------
+.. automodule:: fuelweb_test.helpers.gerrit.gerrit_client
    :members:
 
-Ironic Actions
---------------
-.. automodule:: fuelweb_test.helpers.ironic_actions
+Info provider
+-------------
+.. automodule:: fuelweb_test.helpers.gerrit.gerrit_info_provider
+   :members:
+
+Utils
+-----
+.. automodule:: fuelweb_test.helpers.gerrit.utils
    :members:
