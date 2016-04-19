@@ -148,11 +148,9 @@ class TestJumboFrames(base_test_case.TestBasic):
 
         Scenario:
             1. Boot two instances on different compute hosts
-            2. Ping one from another with 1472 bytes package
-            3. Ping one from another with 8972 bytes package
-            4. Ping one from another with 8973 bytes package
-            5. Ping one from another with 14472 bytes package
-            6. Delete instances
+            2. Ping one from another with 1500 bytes packet
+            3. Ping one from another with 9000 bytes packet
+            4. Delete instances
 
         """
         cluster_id = self.fuel_web.get_last_created_cluster()
@@ -191,22 +189,14 @@ class TestJumboFrames(base_test_case.TestBasic):
             timeout_msg=("Instance {0} is unreachable for 600 seconds".
                          format(destination_instance.id)))
 
-        for mtu in [1500, 9000, 9001]:
-            size = mtu - 28 - mtu_offset
-            if mtu <= 9000:
-                asserts.assert_true(
-                    self.ping_instance_from_instance(
-                        source_instance, destination_instance, net_name,
-                        net_destination, size=size, count=3),
-                    "Ping response was not received for "
-                    "{} bytes package".format(mtu))
-            else:
-                asserts.assert_false(
-                    self.ping_instance_from_instance(
-                        source_instance, destination_instance, net_name,
-                        net_destination, size=size, count=3),
-                    "Ping response was not received for "
-                    "{} bytes package".format(mtu))
+        for mtu in [1500, 9000]:
+            size = mtu - 28 - mtu_offset #MTU - IP / ICMP / underlay header
+            asserts.assert_true(
+                self.ping_instance_from_instance(
+                    source_instance, destination_instance, net_name,
+                    net_destination, size=size, count=3),
+                "Ping response was not received for "
+                "{} bytes package".format(mtu))
 
         for instance in [source_instance, destination_instance]:
             self.os_conn.delete_instance(instance)
