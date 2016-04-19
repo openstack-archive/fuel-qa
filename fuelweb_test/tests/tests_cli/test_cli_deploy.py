@@ -36,10 +36,11 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
             3. Add 1 controller
             4. Add 1 compute
             5. Add 1 cinder
-            6. Verify networks
-            7. Deploy the environment
-            8. Verify networks
-            9. Run OSTF tests
+            6. Update nodes interfaces
+            7. Verify networks
+            8. Deploy the environment
+            9. Verify networks
+            10. Run OSTF tests
 
         Duration 40m
         """
@@ -74,8 +75,11 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
         self.add_nodes_to_cluster(cluster_id, node_ids[1], ['compute'])
         self.add_nodes_to_cluster(cluster_id, node_ids[2], ['cinder'])
         self.show_step(6)
-        self.fuel_web.verify_network(cluster_id)
+        for node_id in node_ids:
+            self.update_node_interfaces(node_id)
         self.show_step(7)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(8)
         cmd = 'fuel --env-id={0} deploy-changes --json'.format(cluster_id)
 
         task = self.ssh_manager.execute_on_remote(
@@ -85,10 +89,10 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
         )['stdout_json']
         self.assert_cli_task_success(task, timeout=130 * 60)
 
-        self.show_step(8)
+        self.show_step(9)
         self.fuel_web.verify_network(cluster_id)
 
-        self.show_step(9)
+        self.show_step(10)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'],
             should_fail=1)
@@ -103,14 +107,15 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
             1. Create new environment
             2. Choose Neutron, Vlan
             3. Add 3 controllers
-            4. Provision 3 controllers
+            4. Update nodes interfaces
+            5. Provision 3 controllers
                (fuel node --node-id x,x,x --provision --env x)
-            5. Start netconfig on second controller
+            6. Start netconfig on second controller
                (fuel node --node 2 --end netconfig --env x)
-            6. Deploy controller nodes
+            7. Deploy controller nodes
                (fuel node --node x,x,x --deploy --env-id x)
-            7. Verify networks
-            8. Run OSTF tests
+            8. Verify networks
+            9. Run OSTF tests
 
         Duration 50m
         """
@@ -137,6 +142,9 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
         self.add_nodes_to_cluster(cluster_id, node_ids[0:3],
                                   ['controller'])
         self.show_step(4)
+        for node_id in node_ids:
+            self.update_node_interfaces(node_id)
+        self.show_step(5)
         cmd = ('fuel node --node-id {0} --provision --env {1} --json'.
                format(','.join(str(n) for n in node_ids), cluster_id))
         task = self.ssh_manager.execute_on_remote(
@@ -145,7 +153,7 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
             jsonify=True
         )['stdout_json']
         self.assert_cli_task_success(task, timeout=20 * 60)
-        self.show_step(5)
+        self.show_step(6)
         cmd = ('fuel node --node {0} --end netconfig --env {1} --json'.
                format(node_ids[1], release_id))
         task = self.ssh_manager.execute_on_remote(
@@ -154,7 +162,7 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
             jsonify=True
         )['stdout_json']
         self.assert_cli_task_success(task, timeout=30 * 60)
-        self.show_step(6)
+        self.show_step(7)
         cmd = 'fuel --env-id={0} deploy-changes --json'.format(cluster_id)
         task = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
@@ -162,9 +170,9 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
             jsonify=True
         )['stdout_json']
         self.assert_cli_task_success(task, timeout=130 * 60)
-        self.show_step(7)
-        self.fuel_web.verify_network(cluster_id)
         self.show_step(8)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(9)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'],
             should_fail=1)
