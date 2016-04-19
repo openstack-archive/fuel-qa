@@ -37,11 +37,12 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
             4. Change ceph replication factor to 2
             5. Add 3 controller
             6. Add 2 compute
-            7. Add 2 ceph
-            8. Verify networks
-            9. Deploy the environment
-            10. Verify networks
-            11. Run OSTF tests
+            7. Add 2 cephi
+            8. Update nodes interfaces
+            9. Verify networks
+            10. Deploy the environment
+            11. Verify networks
+            12. Run OSTF tests
 
         Duration 40m
         """
@@ -79,15 +80,19 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
         self.show_step(4)
         self.show_step(5)
         self.show_step(6)
+        self.show_step(7)
         self.add_nodes_to_cluster(cluster_id, node_ids[0:3],
                                   ['controller'])
         self.add_nodes_to_cluster(cluster_id, node_ids[3:5],
                                   ['compute'])
         self.add_nodes_to_cluster(cluster_id, node_ids[5:7],
                                   ['ceph-osd'])
-        self.show_step(7)
-        self.fuel_web.verify_network(cluster_id)
         self.show_step(8)
+        for node_id in node_ids:
+            self.update_node_interfaces(node_id)
+        self.show_step(9)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(10)
         cmd = 'fuel --env-id={0} deploy-changes --json'.format(cluster_id)
 
         task = self.ssh_manager.execute_on_remote(
@@ -97,10 +102,10 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
         )['stdout_json']
         self.assert_cli_task_success(task, timeout=130 * 60)
 
-        self.show_step(9)
+        self.show_step(11)
         self.fuel_web.verify_network(cluster_id)
 
-        self.show_step(10)
+        self.show_step(12)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
@@ -117,10 +122,11 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
             4. Add 3 controller
             5. Add 2 compute
             6. Add 3 ceph
-            7. Verify networks
-            8. Deploy the environment
-            9. Verify networks
-            10. Run OSTF tests
+            7. Update nodes interfaces
+            8. Verify networks
+            9. Deploy the environment
+            10. Verify networks
+            11. Run OSTF tests
 
         Duration: 60 min
         """
@@ -167,11 +173,13 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
                         cluster['id'],
                         ','.join(map(str, nodes[role])), role)
             )
-
         self.show_step(7)
+        for node_id in node_ids:
+            self.update_node_interfaces(node_id)
+        self.show_step(8)
         self.fuel_web.verify_network(cluster['id'])
 
-        self.show_step(8)
+        self.show_step(9)
         task = self.ssh_manager.execute_on_remote(
             ip=admin_ip,
             cmd='fuel --env-id={0} '
@@ -180,9 +188,9 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
         )['stdout_json']
         self.assert_cli_task_success(task, timeout=130 * 60)
 
-        self.show_step(9)
-        self.fuel_web.verify_network(cluster['id'])
         self.show_step(10)
+        self.fuel_web.verify_network(cluster['id'])
+        self.show_step(11)
         self.fuel_web.run_ostf(
             cluster_id=cluster['id'],
             test_sets=['ha', 'smoke', 'sanity']
