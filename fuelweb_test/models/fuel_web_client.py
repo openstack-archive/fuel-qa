@@ -954,8 +954,8 @@ class FuelWebClient(object):
                 time.sleep(TIMEOUT)
         logger.debug('Look for nailgun node by macs %s', d_macs)
         for nailgun_node in nodes:
-            macs = {netaddr.EUI(i['mac']) for i in
-                    nailgun_node['meta']['interfaces']}
+            node_nics = self.client.get_node_interfaces(nailgun_node['id'])
+            macs = {netaddr.EUI(i['mac']) for i in node_nics}
             logger.debug('Look for macs returned by nailgun {0}'.format(macs))
             # Because our HAproxy may create some interfaces
             if d_macs.issubset(macs):
