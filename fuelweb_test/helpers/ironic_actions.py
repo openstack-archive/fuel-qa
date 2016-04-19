@@ -90,7 +90,8 @@ class IronicActions(os_actions.OpenStackActions):
             return False
 
         wait(_wait_for_ironic_hypervisor,
-             timeout=60 * 5, timeout_msg='Failed to update hypervisor details')
+             timeout=60 * 15,
+             timeout_msg='Failed to update hypervisor details')
 
     def wait_for_vms(self, ironic_conn):
         srv_list = ironic_conn.get_servers()
