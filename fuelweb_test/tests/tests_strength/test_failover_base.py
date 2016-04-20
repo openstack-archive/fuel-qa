@@ -394,7 +394,10 @@ class TestHaFailoverBase(TestBasic):
                     )
                     return ret['exit_code'] == 0
 
-                wait(haproxy_started, timeout=20)
+                wait(
+                    haproxy_started,
+                    timeout=60,
+                    timeout_msg='Waiting 60 sec for haproxy timed out')
                 assert_true(haproxy_started(), 'haproxy restarted')
 
         cluster_id = self.fuel_web.client.get_cluster_id(
