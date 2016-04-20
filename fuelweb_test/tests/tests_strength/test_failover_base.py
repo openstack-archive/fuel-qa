@@ -385,22 +385,28 @@ class TestHaFailoverBase(TestBasic):
             self.__class__.__name__)
         n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])
-        d_ctrls = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_ctrls)
 
-        for devops_node in d_ctrls:
-            with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
-                remote.check_call('kill -9 $(pidof haproxy)')
+        def haproxy_started(ip):
+            pid_path = '/var/run/resource-agents/ns_haproxy/ns_haproxy.pid'
+            cmd = '[ -f {pid_path} ] && ' \
+                  '[ "$(ps -p $(cat {pid_path}) -o pid=)" ' \
+                  '== "$(pidof haproxy)" ]'.format(pid_path=pid_path)
+            result = self.ssh_manager.execute_on_remote(
+                ip,
+                cmd,
+                raise_on_assert=False)
+            return result['exit_code'] == 0
 
-                def haproxy_started():
-                    ret = remote.execute(
-                        '[ -f /var/run/haproxy.pid ] && '
-                        '[ "$(ps -p $(cat /var/run/haproxy.pid) -o pid=)" == '
-                        '"$(pidof haproxy)" ]'
-                    )
-                    return ret['exit_code'] == 0
-
-                wait(haproxy_started, timeout=20)
-                assert_true(haproxy_started(), 'haproxy restarted')
+        for nailgun_node in n_ctrls:
+            ip = nailgun_node['ip']
+            cmd = 'kill -9 $(pidof haproxy)'
+            self.ssh_manager.execute_on_remote(
+                ip,
+                cmd=cmd)
+            wait(lambda: haproxy_started(ip),
+                 timeout=20,
+                 timeout_msg='Waiting 20 sec for haproxy timed out')
+            assert_true(haproxy_started(ip), 'haproxy was not started')
 
         cluster_id = self.fuel_web.client.get_cluster_id(
             self.__class__.__name__)
