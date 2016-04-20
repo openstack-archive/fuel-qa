@@ -179,7 +179,7 @@ class TestRailProject(object):
     def get_case_fields(self):
         return self.client.send_get('get_case_fields')
 
-    def get_plans(self, milestone_ids=None, limit=None):
+    def get_plans(self, milestone_ids=None, limit=None, offset=None):
         plans_uri = 'get_plans/{project_id}'.format(
             project_id=self.project['id'])
         if milestone_ids:
@@ -187,6 +187,8 @@ class TestRailProject(object):
                                                       for m in milestone_ids])
         if limit:
             plans_uri += '&limit={0}'.format(limit)
+        if offset:
+            plans_uri += '&offset={0}'.format(offset)
         return self.client.send_get(plans_uri)
 
     def get_plan(self, plan_id):
@@ -256,14 +258,26 @@ class TestRailProject(object):
                 return self.get_run(run_id=run['id'])
 
     def get_previous_runs(self, milestone_id, suite_id, config_id, limit=None):
-        all_runs = []
-        for plan in self.get_plans(milestone_ids=[milestone_id], limit=limit):
-            for entry in self.get_plan(plan['id'])['entries']:
-                if entry['suite_id'] == suite_id:
-                    run_ids = [run for run in entry['runs'] if
-                               config_id in run['config_ids']]
-                    all_runs.extend(run_ids)
-        return all_runs
+        previous_runs = []
+        offset = 0
+
+        while len(previous_runs) < limit:
+            existing_plans = self.get_plans(milestone_ids=[milestone_id],
+                                            limit=limit,
+                                            offset=offset)
+            if not existing_plans:
+                break
+
+            for plan in existing_plans:
+                for entry in self.get_plan(plan['id'])['entries']:
+                    if entry['suite_id'] == suite_id:
+                        run_ids = [run for run in entry['runs'] if
+                                   config_id in run['config_ids']]
+                        previous_runs.extend(run_ids)
+
+            offset += limit
+
+        return previous_runs
 
     def add_run(self, new_run):
         add_run_uri = 'add_run/{project_id}'.format(

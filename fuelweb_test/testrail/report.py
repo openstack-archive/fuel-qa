@@ -361,6 +361,8 @@ def publish_results(project, milestone_id, test_plan,
         suite_id=suite_id,
         config_id=config_id,
         limit=TestRailSettings.previous_results_depth)
+    logger.debug('Found next test runs: {0}'.format(
+        [test_run['description'] for test_run in previous_tests_runs]))
     cases = project.get_cases(suite_id=suite_id)
     tests = project.get_tests(run_id=test_run_ids[0])
     results_to_publish = []
