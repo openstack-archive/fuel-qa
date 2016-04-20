@@ -14,8 +14,11 @@
 
 from __future__ import division
 
+import os
 import time
 import itertools
+
+from devops.helpers.helpers import wait
 
 from proboscis import SkipTest
 from proboscis.asserts import assert_equal
@@ -25,6 +28,8 @@ from six.moves import xrange
 # pylint: enable=redefined-builtin
 
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers.cloud_image import generate_cloud_image_settings
+from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test import settings
 
@@ -119,10 +124,115 @@ class PrepareActions(object):
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
-    def config_release(self):
+    def bootstrap_centos_master(self):
+        """Create environment and bootstrap centos_master
+
+        Snapshot: bootstrap_centos_master
+
+        """
+        self.check_run("bootstrap_centos_master")
+        import fuelweb_test
+        cloud_image_settings_path = os.path.join(
+            os.path.dirname(fuelweb_test.__file__),
+            'cloud_image_settings/cloud_settings.iso')
+
+        admin_net_object = self.d_env.get_network(name=self.d_env.admin_net)
+        admin_network = admin_net_object.ip.network
+        admin_netmask = admin_net_object.ip.netmask
+        admin_ip = str(self.d_env.nodes(
+        ).admin.get_ip_address_by_network_name(self.d_env.admin_net))
+        interface_name = settings.iface_alias("eth0")
+        gateway = self.d_env.router()
+        dns = settings.DNS
+        dns_ext = settings.EXTERNAL_DNS
+        hostname = settings.FUEL_MASTER_HOSTNAME
+        user = settings.SSH_CREDENTIALS['login']
+        password = settings.SSH_CREDENTIALS['password']
+
+        generate_cloud_image_settings(cloud_image_settings_path, admin_network,
+                                      interface_name, admin_ip, admin_netmask,
+                                      gateway, dns, dns_ext,
+                                      hostname, user, password)
+
+        with TimeStat("bootstrap_centos_node", is_uniq=True):
+            admin = self.d_env.nodes().admin
+            admin.disk_devices.get(
+                device='cdrom').volume.upload(cloud_image_settings_path)
+            self.d_env.start([admin])
+            logger.info("Waiting for Centos node to start up")
+            wait(lambda: admin.is_active(), 60)
+            logger.info("Waiting for Centos node ssh ready")
+            ssh = SSHManager()
+            ssh.wait_for_ssh_connection(self.env.get_admin_node_ip())
+
+        self.env.make_snapshot("bootstrap_centos_master", is_make=True)
+        self.current_log_step = 0
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def setup_centos_master(self):
+        """Setup centos master node
+
+        Scenario:
+            1. Revert snapshot "bootstrap_centos_master"
+            2. Download fuel_release from remote repository
+            3. install fuel_setup package
+            4. Install Fuel services by executing bootstrap_admin_node.sh
+            5. check Fuel services
+
+        Snapshot: empty_centos
+
+        """
+        self.check_run("empty_centos")
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot("bootstrap_centos_master", skip_timesync=True)
+
+        # upload fuel-release.rpm to master node
+        logger.info("upload fuel-release packet")
+        if not settings.FUEL_RELEASE_PATH:
+            raise
+        try:
+            ssh = SSHManager()
+            pack_path = '/tmp/'
+            full_pack_path = os.path.join(pack_path,
+                                          'fuel-release*.noarch.rpm')
+            ssh.upload_to_remote(
+                ip=ssh.admin_ip,
+                source=settings.FUEL_RELEASE_PATH.rstrip('/'),
+                target=pack_path)
+
+        except Exception as e:
+            logger.error("Could not upload package {e}".format(e=e))
+            raise
+
+        # set mos repos
+        cmd = "yum install -y {}".format(full_pack_path)
+        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+
+        cmd = "yum install -y fuel-setup"
+        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+
+        # no fuelmenu
+        cmd = "export showmenu=no"
+        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+
+        # install fuel services
+        cmd = "bootstrap_admin_node.sh"
+        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+        self.admin_actions.wait_for_fuel_ready()
+        self.env.make_snapshot("empty_centos", is_make=True)
+        self.current_log_step = 0
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def config_release(self, centos=False):
         """Configuration releases"""
         self.check_run("ready")
-        self.env.revert_snapshot("empty", skip_timesync=True)
+
+        if centos:
+            self.env.revert_snapshot("empty_centos", skip_timesync=True)
+        else:
+            self.env.revert_snapshot("empty", skip_timesync=True)
 
         self.fuel_web.get_nailgun_version()
         self.fuel_web.change_default_network_settings()
