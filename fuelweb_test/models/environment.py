@@ -415,6 +415,12 @@ class EnvironmentModel(object):
 
         self.set_admin_ssh_password()
 
+        cmd = "yum install -y http://172.18.10.67/kmod-e1000-7.3.21_mos-1.el7.centos.x86_64.rpm"
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd
+        )
+
         self.wait_for_external_config()
         if custom:
             self.setup_customisation()
