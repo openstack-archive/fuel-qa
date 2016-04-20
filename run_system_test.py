@@ -3,6 +3,8 @@
 import sys
 import argparse
 
+import pytest
+
 from proboscis import TestProgram
 from proboscis import register
 
@@ -40,7 +42,7 @@ def print_explain(names):
     print(pretty_log(out))
 
 
-def clean_argv():
+def clean_argv_proboscis():
     """Removing argv params unused by Proboscis"""
     argv = sys.argv
     if '--with-config' in argv:
@@ -52,6 +54,21 @@ def clean_argv():
         argv.pop(idx)
 
     return argv
+
+
+def group_in_pytest(group):
+    from _pytest.config import _prepareconfig
+    from _pytest.main import Session
+    from _pytest.python import FixtureManager
+    from _pytest.mark import MarkMapping
+    config = _prepareconfig(args="")
+    session = Session(config)
+    session._fixturemanager = FixtureManager(session)
+    l = [list(MarkMapping(i.keywords)._mymarks) for i
+         in session.perform_collect()]
+    groups = set([item for sublist in l for item in sublist])
+
+    return group in groups
 
 
 def cli():
@@ -122,6 +139,8 @@ def run(**kwargs):
     groups_to_run = []
     groups.extend(old_groups or [])
     for g in set(groups):
+        if group_in_pytest(g):
+            sys.exit(pytest.main('-m {}'.format(g)))
         if config_name:
             register_system_test_cases(
                 groups=[g],
@@ -139,7 +158,7 @@ def run(**kwargs):
     else:
         register(groups=["run_system_test"], depends_on_groups=groups_to_run)
         TestProgram(groups=['run_system_test'],
-                    argv=clean_argv()).run_and_exit()
+                    argv=clean_argv_proboscis()).run_and_exit()
 
 
 def explain_group(**kwargs):
