@@ -411,11 +411,10 @@ class ContrailPlugin(TestBasic):
 
         self.fuel_web.run_ostf(
             cluster_id=self.cluster_id,
-            should_fail=3,
+            should_fail=2,
             failed_test_name=[('Check network connectivity '
                                'from instance via floating IP'),
-                              'Launch instance with file injection',
-                              'Check that required services are running']
+                              'Launch instance with file injection']
         )
 
         logger.info(self._ostf_msg)
@@ -614,11 +613,10 @@ class ContrailPlugin(TestBasic):
 
         self.fuel_web.run_ostf(
             cluster_id=self.cluster_id,
-            should_fail=3,
+            should_fail=2,
             failed_test_name=[('Check network connectivity '
                                'from instance via floating IP'),
-                              'Launch instance with file injection',
-                              'Check that required services are running']
+                              'Launch instance with file injection']
         )
 
         logger.info(self._ostf_msg)
@@ -790,9 +788,8 @@ class ContrailPlugin(TestBasic):
 
         self.fuel_web.run_ostf(
             cluster_id=self.cluster_id,
-            should_fail=3,
+            should_fail=2,
             failed_test_name=[('Check network connectivity '
                                'from instance via floating IP'),
-                              'Launch instance with file injection',
-                              'Check that required services are running']
+                              'Launch instance with file injection']
         )

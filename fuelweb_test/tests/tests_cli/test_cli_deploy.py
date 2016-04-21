@@ -90,8 +90,7 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
 
         self.show_step(9)
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'],
-            should_fail=1)
+            cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["cli_deploy_tasks"])
@@ -166,5 +165,4 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
         self.fuel_web.verify_network(cluster_id)
         self.show_step(8)
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'],
-            should_fail=1)
+            cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'])

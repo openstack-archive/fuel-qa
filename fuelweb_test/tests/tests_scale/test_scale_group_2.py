@@ -95,11 +95,11 @@ class HaScaleGroup2(TestBasic):
             True, False
         )
         self.show_step(8)
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(10)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(9)
-        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
         self.env.make_snapshot("replace_primary_controller")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
@@ -159,11 +159,11 @@ class HaScaleGroup2(TestBasic):
             False, True
         )
         self.show_step(5)
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(7)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(6)
-        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         node = self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.get_node(name='slave-01'))
