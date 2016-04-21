@@ -243,14 +243,12 @@ class SaharaHA(TestBasic):
         self.env.make_snapshot("deploy_sahara_ha_tun")
 
 
-@test(enabled=False,
-      groups=["services", "services.murano", "services_ha_one_controller"])
+@test(groups=["services", "services.murano", "services_ha_one_controller"])
 class MuranoHAOneController(TestBasic):
     """Murano HA with 1 controller tests.
     Don't recommend to start tests without kvm.
     """
-    # TODO (tleontovich) Update tests with Murano Plugin
-    @test(enabled=False, depends_on=[SetupEnvironment.prepare_slaves_3],
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_murano_ha_one_controller_tun"])
     @log_snapshot_after_test
     def deploy_murano_ha_one_controller_tun(self):
@@ -331,13 +329,12 @@ class MuranoHAOneController(TestBasic):
         self.env.make_snapshot("deploy_murano_ha_one_controller_tun")
 
 
-@test(enabled=False, groups=["services", "services.murano", "services_ha"])
+@test(groups=["services", "services.murano", "services_ha"])
 class MuranoHA(TestBasic):
     """Murano HA tests.
     Don't recommend to start tests without kvm.
     """
-    # TODO (tleontovich) Update test with Murano Plugin
-    @test(enabled=False, depends_on=[SetupEnvironment.prepare_slaves_5],
+    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_murano_ha_with_tun"])
     @log_snapshot_after_test
     def deploy_murano_ha_with_tun(self):

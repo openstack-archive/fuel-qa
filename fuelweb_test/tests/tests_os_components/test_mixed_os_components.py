@@ -23,8 +23,8 @@ from fuelweb_test.tests.base_test_case import TestBasic
 @test(groups=["mixed_os_components", "additional_components"])
 class MixedComponents(TestBasic):
     """MixedComponents"""  # TODO documentation
-    # TODO (tleontovich) Update test with Murano Plugin
-    @test(enabled=False, depends_on=[SetupEnvironment.prepare_slaves_9],
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["mixed_components_murano_sahara_ceilometer"])
     @log_snapshot_after_test
     def mixed_components_murano_sahara_ceilometer(self):
@@ -46,6 +46,7 @@ class MixedComponents(TestBasic):
         """
 
         self.env.revert_snapshot('ready_with_9_slaves')
+
         data = {
             'murano': True,
             'sahara': True,
