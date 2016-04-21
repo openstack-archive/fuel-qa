@@ -99,11 +99,11 @@ class HaScaleGroup3(TestBasic):
             False, True
         )
         self.show_step(11)
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(12)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(13)
-        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.show_step(14)
         nodes = {'slave-04': ['compute']}
@@ -112,11 +112,11 @@ class HaScaleGroup3(TestBasic):
             False, True
         )
         self.show_step(15)
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(16)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(17)
-        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
         self.env.make_snapshot("add_delete_compute")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],

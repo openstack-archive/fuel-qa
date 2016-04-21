@@ -146,8 +146,7 @@ class HugeEnvironments(base_test_case.TestBasic):
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
-            test_sets=['ha', 'smoke', 'sanity'],
-            should_fail=1)
+            test_sets=['ha', 'smoke', 'sanity'])
 
 
 @test(groups=["huge_environments", "huge_ha_neutron", "huge_scale"])
