@@ -721,3 +721,9 @@ Test for multipath devices
 --------------------------
 .. automodule:: fuelweb_test.tests.test_multipath_devices
    :members:
+
+Test for Image Based Provisioning
+---------------------------------
+.. automodule:: fuelweb_test.tests.tests_ibp.test_ibp
+      :members:
+
