@@ -2637,6 +2637,12 @@ class FuelWebClient(object):
         return components
 
     @logwrap
+    def get_cluster_ibp_packages(self, cluster_id):
+        attributes = self.client.get_cluster_attributes(cluster_id)
+        pkgs = attributes['editable']['provision']['packages']['value']
+        return pkgs.splitlines()
+
+    @logwrap
     def spawn_vms_wait(self, cluster_id, timeout=60 * 60, interval=30):
         logger.info('Spawn VMs of a cluster %s', cluster_id)
         task = self.client.spawn_vms(cluster_id)
