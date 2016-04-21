@@ -162,7 +162,7 @@ class ExamplePluginPostDeploy(TestBasic):
             nodes_dict={node: ['controller'] for node in nodes},
             pending_addition=False, pending_deletion=True
         )
-        self.deploy_cluster_wait(check_services=False)
+        self.deploy_cluster_wait(check_services=True)
 
         self.fuel_web.verify_network(cluster_id=self.cluster_id)
 

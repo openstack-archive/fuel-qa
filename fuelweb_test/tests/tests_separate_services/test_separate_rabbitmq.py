@@ -207,11 +207,9 @@ class SeparateRabbitFailover(TestBasic):
             controller)['online'], timeout=60 * 5)
 
         self.fuel_web.assert_ha_services_ready(cluster_id, should_fail=1)
-        self.fuel_web.assert_os_services_ready(cluster_id, timeout=15 * 60,
-                                               should_fail=1)
+        self.fuel_web.assert_os_services_ready(cluster_id, timeout=15 * 60)
 
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id, should_fail=1)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
     @test(depends_on=[SeparateRabbit.separate_rabbit_service],
           groups=["separate_rabbit_service_add_delete_node"])
@@ -264,7 +262,7 @@ class SeparateRabbitFailover(TestBasic):
                                                   False, True)
         nodes = [_node for _node in nailgun_node
                  if _node["pending_deletion"] is True]
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         wait(lambda: self.fuel_web.is_node_discovered(nodes[0]),
              timeout=6 * 60)
         self.fuel_web.verify_network(cluster_id)

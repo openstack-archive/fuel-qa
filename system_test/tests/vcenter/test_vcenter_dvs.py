@@ -125,8 +125,6 @@ class ScaleWithVMwareSkipSrvCheck(ActionTest, BaseActions, VMwareActions):
     plugin_name = "fuel-plugin-vmware-dvs"
     plugin_path = DVS_PLUGIN_PATH
     plugin_version = DVS_PLUGIN_VERSION
-    ostf_tests_should_failed = 1
-    failed_test_name = ['Check that required services are running']
 
     actions_order = [
         'prepare_env_with_plugin',
