@@ -240,7 +240,7 @@ class FailoverGroup2(TestBasic):
         self.fuel_web.warm_shutdown_nodes([target_controller])
 
         self.show_step(5)
-        self.fuel_web.assert_ha_services_ready(cluster_id, should_fail=1)
+        self.fuel_web.assert_ha_services_ready(cluster_id)
 
         self.show_step(6)
         self.fuel_web.verify_network(cluster_id)

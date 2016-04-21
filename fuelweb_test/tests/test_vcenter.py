@@ -1169,13 +1169,11 @@ class VcenterDeploy(TestBasic):
             cluster_id,
             {'slave-04': ['controller'], }, False, True)
 
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         # TODO: Fix the function when bug #1457515 will be fixed.
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'],
-            should_fail=1,
-            failed_test_name=['Check that required services are running'])
+            cluster_id=cluster_id, test_sets=['smoke', 'sanity', 'ha'])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_ha_nova_flat_multiple_clusters"])
