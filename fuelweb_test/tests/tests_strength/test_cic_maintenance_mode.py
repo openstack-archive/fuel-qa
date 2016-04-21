@@ -15,15 +15,11 @@ import time
 
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
-from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_false
-from proboscis.asserts import assert_true
+from proboscis import asserts
 from proboscis import test
 
-from fuelweb_test.helpers.checkers import check_auto_mode
-from fuelweb_test.helpers.checkers import check_available_mode
+from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import logger
 from fuelweb_test import ostf_test_mapping
@@ -34,7 +30,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 @test(groups=["cic_maintenance_mode"])
 class CICMaintenanceMode(TestBasic):
-    """CICMaintenanceMode."""  # TODO documentation
+    """CICMaintenanceMode."""
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["cic_maintenance_mode_env"])
@@ -110,15 +106,16 @@ class CICMaintenanceMode(TestBasic):
         for devops_node in d_ctrls:
             _ip = self.fuel_web.get_nailgun_node_by_name(
                 devops_node.name)['ip']
-            with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
-                assert_true('True' in check_available_mode(_ip),
-                            "Maintenance mode is not available")
+            logger.info('Maintenance mode for node %s', devops_node.name)
+            asserts.assert_true('True' in checkers.check_available_mode(_ip),
+                                "Maintenance mode is not available")
+            self.ssh_manager.execute_on_remote(
+                ip=_ip,
+                cmd="umm on",
+                assert_ec_equal=0,
+                err_msg="Failed to execute umm on remote IP: {0}"
+                        .format(_ip))
 
-                logger.info('Maintenance mode for node %s', devops_node.name)
-                result = remote.execute('umm on')
-                assert_equal(result['exit_code'], 0,
-                             'Failed to execute "{0}" on remote host: {1}'.
-                             format('umm on', result))
             logger.info('Wait a %s node offline status after switching '
                         'maintenance mode ', devops_node.name)
             try:
@@ -127,7 +124,7 @@ class CICMaintenanceMode(TestBasic):
                     self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
                     ['online'], timeout=60 * 10)
             except TimeoutError:
-                assert_false(
+                asserts.assert_false(
                     self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
                     ['online'],
                     'Node {0} has not become offline after'
@@ -138,15 +135,20 @@ class CICMaintenanceMode(TestBasic):
 
             _ip = self.fuel_web.get_nailgun_node_by_name(
                 devops_node.name)['ip']
-            wait(lambda: tcp_ping(_ip, 22), timeout=60 * 10)
-            with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
-                assert_true('True' in check_auto_mode(_ip),
-                            "Maintenance mode is not switch")
+            asserts.assert_true(
+                checkers.check_ping(self.env.get_admin_node_ip(),
+                                    _ip,
+                                    deadline=600))
 
-                result = remote.execute('umm off')
-                assert_equal(result['exit_code'], 0,
-                             'Failed to execute "{0}" on remote host: {1}'.
-                             format('umm off', result))
+            asserts.assert_true('True' in checkers.check_auto_mode(_ip),
+                                "Maintenance mode is not switch")
+
+            self.ssh_manager.execute_on_remote(
+                ip=_ip,
+                cmd="umm off",
+                assert_ec_equal=0,
+                err_msg="Failed to execute umm off remote IP: {0}"
+                        .format(_ip))
 
             logger.info('Wait a %s node online status', devops_node.name)
             try:
@@ -155,7 +157,7 @@ class CICMaintenanceMode(TestBasic):
                     self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
                     ['online'], timeout=60 * 10)
             except TimeoutError:
-                assert_true(
+                asserts.assert_true(
                     self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
                     ['online'],
                     'Node {0} has not become online after '
@@ -221,26 +223,36 @@ class CICMaintenanceMode(TestBasic):
         for devops_node in d_ctrls:
             _ip = self.fuel_web.get_nailgun_node_by_name(
                 devops_node.name)['ip']
-            with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
-                assert_true('True' in check_available_mode(_ip),
-                            "Maintenance mode is not available")
 
-                logger.info('Change UMM.CONF on node %s', devops_node.name)
-                command1 = ("echo -e 'UMM=yes\nREBOOT_COUNT=0\n"
-                            "COUNTER_RESET_TIME=10' > /etc/umm.conf")
+            asserts.assert_true('True' in checkers.check_available_mode(_ip),
+                                "Maintenance mode is not available")
 
-                result = remote.execute(command1)
-                assert_equal(result['exit_code'], 0,
-                             'Failed to execute "{0}" on remote host: {1}'.
-                             format(command1, result))
+            command1 = ("echo -e 'UMM=yes\nREBOOT_COUNT=0\n"
+                        "COUNTER_RESET_TIME=10' > /etc/umm.conf")
 
-                logger.info('Unexpected reboot on node %s', devops_node.name)
-                command2 = 'reboot --force >/dev/null & '
-                result = remote.execute(command2)
-                assert_equal(result['exit_code'], 0,
-                             'Failed to execute "{0}" on remote host: {1}'.
-                             format(command2, result))
-                wait(lambda: not tcp_ping(_ip, 22), timeout=60 * 10)
+            self.ssh_manager.execute_on_remote(ip=_ip, cmd=command1,
+                                               assert_ec_equal=0,
+                                               err_msg="Failed to execute {0}"
+                                               "on remote IP: {1}"
+                                               .format(command1, _ip))
+
+            logger.info('Change UMM.CONF on node %s', devops_node.name)
+
+            logger.info('Unexpected reboot on node %s', devops_node.name)
+
+            command2 = 'reboot --force >/dev/null & '
+
+            self.ssh_manager.execute_on_remote(
+                ip=_ip,
+                cmd=command2,
+                assert_ec_equal=0,
+                err_msg="Failed to execute {0} on remote IP: {1}"
+                        .format(command2, _ip))
+
+            asserts.assert_false(
+                checkers.check_ping(self.env.get_admin_node_ip(),
+                                    _ip,
+                                    deadline=600))
 
             logger.info('Wait a %s node offline status after unexpected '
                         'reboot', devops_node.name)
@@ -250,7 +262,7 @@ class CICMaintenanceMode(TestBasic):
                     self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
                     ['online'], timeout=60 * 10)
             except TimeoutError:
-                assert_false(
+                asserts.assert_false(
                     self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
                     ['online'],
                     'Node {0} has not become offline after unexpected'
@@ -259,23 +271,32 @@ class CICMaintenanceMode(TestBasic):
             logger.info('Check that %s node in maintenance mode after'
                         ' unexpected reboot', devops_node.name)
 
-            wait(lambda: tcp_ping(_ip, 22), timeout=60 * 10)
-            with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
-                assert_true('True' in check_auto_mode(_ip),
-                            "Maintenance mode is not switch")
+            asserts.assert_true(
+                checkers.check_ping(self.env.get_admin_node_ip(),
+                                    _ip,
+                                    deadline=600))
 
-                result = remote.execute('umm off')
-                assert_equal(result['exit_code'], 0,
-                             'Failed to execute "{0}" on remote host: {1}'.
-                             format('umm off', result))
-                # Wait umm stops
-                time.sleep(30)
-                command3 = ("echo -e 'UMM=yes\nREBOOT_COUNT=2\n"
-                            "COUNTER_RESET_TIME=10' > /etc/umm.conf")
-                result = remote.execute(command3)
-                assert_equal(result['exit_code'], 0,
-                             'Failed to execute "{0}" on remote host: {1}'.
-                             format(command3, result))
+            asserts.assert_true('True' in checkers.check_auto_mode(_ip),
+                                "Maintenance mode is not switch")
+
+            self.ssh_manager.execute_on_remote(
+                ip=_ip,
+                cmd="umm off",
+                assert_ec_equal=0,
+                err_msg="Failed to execute umm off remote IP: {0}"
+                        .format(_ip))
+
+            time.sleep(30)
+
+            command3 = ("echo -e 'UMM=yes\nREBOOT_COUNT=2\n"
+                        "COUNTER_RESET_TIME=10' > /etc/umm.conf")
+
+            self.ssh_manager.execute_on_remote(
+                ip=_ip,
+                cmd=command3,
+                assert_ec_equal=0,
+                err_msg="Failed to execute {0} on remote IP: {1}"
+                        .format(command2, _ip))
 
             logger.info('Wait a %s node online status', devops_node.name)
             try:
@@ -284,7 +305,7 @@ class CICMaintenanceMode(TestBasic):
                     self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
                     ['online'], timeout=90 * 10)
             except TimeoutError:
-                assert_true(
+                asserts.assert_true(
                     self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
                     ['online'],
                     'Node {0} has not become online after umm off'.format(
@@ -350,31 +371,32 @@ class CICMaintenanceMode(TestBasic):
         for devops_node in d_ctrls:
             _ip = self.fuel_web.get_nailgun_node_by_name(
                 devops_node.name)['ip']
-            with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
-                assert_true('True' in check_available_mode(_ip),
-                            "Maintenance mode is not available")
+            asserts.assert_true('True' in checkers.check_available_mode(_ip),
+                                "Maintenance mode is not available")
+            self.ssh_manager.execute_on_remote(
+                ip=_ip,
+                cmd="umm disable",
+                assert_ec_equal=0,
+                err_msg="Failed to execute umm disable remote IP: {1}"
+                        .format(_ip))
 
-                logger.info('Maintenance mode for node %s is disable',
-                            devops_node.name)
-                result = remote.execute('umm disable')
-                assert_equal(result['exit_code'], 0,
-                             'Failed to execute "{0}" on remote host: {1}'.
-                             format('umm disable', result))
+            asserts.assert_false('True' in checkers.check_available_mode(_ip),
+                                 "Maintenance mode should not be available")
 
-                assert_false('True' in check_available_mode(_ip),
-                             "Maintenance mode should not be available")
+            logger.info('Try to execute maintenance mode for node %s',
+                        devops_node.name)
 
-                logger.info('Try to execute maintenance mode for node %s',
-                            devops_node.name)
-                result = remote.execute('umm on')
-                assert_equal(result['exit_code'], 1,
-                             'Failed to execute "{0}" on remote host: {1}'.
-                             format('umm on', result))
+            self.ssh_manager.execute_on_remote(
+                ip=_ip,
+                cmd="umm on",
+                assert_ec_equal=1,
+                err_msg="Failed to execute umm on remote IP: {1}"
+                        .format(_ip))
 
             # If we don't disable maintenance mode,
             # the node would have gone to reboot, so we just expect
             time.sleep(30)
-            assert_true(
+            asserts.assert_true(
                 self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
                 ['online'],
                 'Node {0} should be online after command "umm on"'.
@@ -420,50 +442,64 @@ class CICMaintenanceMode(TestBasic):
         for devops_node in d_ctrls:
             _ip = self.fuel_web.get_nailgun_node_by_name(
                 devops_node.name)['ip']
-            with self.fuel_web.get_ssh_for_node(devops_node.name) as remote:
-                assert_true('True' in check_available_mode(_ip),
-                            "Maintenance mode is not available")
+            asserts.assert_true('True' in checkers.check_available_mode(_ip),
+                                "Maintenance mode is not available")
+            logger.info('Change UMM.CONF on node %s', devops_node.name)
 
-                logger.info('Change UMM.CONF on node %s', devops_node.name)
-                command1 = ("echo -e 'UMM=yes\nREBOOT_COUNT=0\n"
-                            "COUNTER_RESET_TIME=10' > /etc/umm.conf")
+            command1 = ("echo -e 'UMM=yes\nREBOOT_COUNT=0\n"
+                        "COUNTER_RESET_TIME=10' > /etc/umm.conf")
+            self.ssh_manager.execute_on_remote(
+                ip=_ip,
+                cmd=command1,
+                assert_ec_equal=0,
+                err_msg="Failed to execute {0} on remote IP: {1}"
+                        .format(command1, _ip))
 
-                result = remote.execute(command1)
-                assert_equal(result['exit_code'], 0,
-                             'Failed to execute "{0}" on remote host: {1}'.
-                             format(command1, result))
+            self.ssh_manager.execute_on_remote(
+                ip=_ip,
+                cmd="umm disable",
+                assert_ec_equal=0,
+                err_msg="Failed to execute umm disable remote IP: {1}"
+                        .format(_ip))
 
-                result = remote.execute('umm disable')
-                assert_equal(result['exit_code'], 0,
-                             'Failed to execute "{0}" on remote host: {1}'.
-                             format('umm disable', result))
+            asserts.assert_false('True' in checkers.check_available_mode(_ip),
+                                 "Maintenance mode should not be available")
 
-                assert_false('True' in check_available_mode(_ip),
-                             "Maintenance mode should not be available")
+            command2 = 'reboot --force >/dev/null & '
 
-                logger.info('Unexpected reboot on node %s', devops_node.name)
-                command2 = 'reboot --force >/dev/null & '
-                result = remote.execute(command2)
-                assert_equal(result['exit_code'], 0,
-                             'Failed to execute "{0}" on remote host: {1}'.
-                             format(command2, result))
-                wait(lambda: not tcp_ping(_ip, 22), timeout=60 * 10)
+            logger.info('Unexpected reboot on node %s', devops_node.name)
+
+            self.ssh_manager.execute_on_remote(
+                ip=_ip,
+                cmd=command2,
+                assert_ec_equal=0,
+                err_msg="Failed to execute {0} on remote IP: {1}"
+                        .format(command1, _ip))
+
+            asserts.assert_false(
+                checkers.check_ping(self.env.get_admin_node_ip(),
+                                    _ip,
+                                    deadline=600))
 
             # Node don't have enough time for set offline status
             # after reboot --force
             # Just waiting
 
-            wait(lambda: tcp_ping(_ip, 22), timeout=60 * 10)
+            asserts.assert_true(
+                checkers.check_ping(self.env.get_admin_node_ip(),
+                                    _ip,
+                                    deadline=600))
 
             logger.info('Wait a %s node online status after unexpected '
                         'reboot', devops_node.name)
+
             self.fuel_web.wait_nodes_get_online_state([devops_node])
 
             logger.info('Check that %s node not in maintenance mode after'
                         ' unexpected reboot', devops_node.name)
 
-            assert_false('True' in check_auto_mode(_ip),
-                         "Maintenance mode should not switched")
+            asserts.assert_false('True' in checkers.check_auto_mode(_ip),
+                                 "Maintenance mode should not switched")
 
             # Wait until MySQL Galera is UP on some controller
             self.fuel_web.wait_mysql_galera_is_up(
