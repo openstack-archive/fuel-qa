@@ -722,3 +722,8 @@ Test for network outage
 -----------------------
 .. automodule:: fuelweb_test.tests.tests_strength.test_network_outage
    :members:
+   
+Test for Image Based Provisioning
+---------------------------------
+.. automodule:: fuelweb_test.tests.tests_ibp.test_ibp
+      :members:
