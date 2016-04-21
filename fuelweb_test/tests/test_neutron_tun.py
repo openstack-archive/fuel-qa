@@ -210,12 +210,11 @@ class TestHaNeutronAddCompute(TestBasic):
             cluster_id,
             {'slave-07': ['controller', 'cinder']})
 
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
-            test_sets=['ha', 'smoke', 'sanity'],
-            should_fail=1)
+            test_sets=['ha', 'smoke', 'sanity'])
 
 
 @test(groups=["ha", "ha_neutron_tun_scale"])
@@ -392,7 +391,7 @@ class TestHaNeutronScalability(TestBasic):
         )
 
         # Step 14. Deploy changes
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])
@@ -416,6 +415,6 @@ class TestHaNeutronScalability(TestBasic):
         # Step 16-17. Run OSTF and sync time
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
-            test_sets=['sanity', 'smoke', 'ha'], should_fail=1)
+            test_sets=['sanity', 'smoke', 'ha'])
         self.env.sync_time()
         self.env.make_snapshot("neutron_vlan_ha_scalability")

@@ -137,8 +137,7 @@ class CephRestart(TestBasic):
         self.fuel_web.delete_node(nailgun_node_id)
         self.fuel_web.check_ceph_status(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id,
-                               test_sets=['sanity', 'smoke', 'ha'],
-                               should_fail=1)
+                               test_sets=['sanity', 'smoke', 'ha'])
         # Destroy and remove compute node
         logger.info("Destroy and remove slave-05")
         with self.fuel_web.get_ssh_for_node('slave-05') as remote_ceph:
@@ -154,7 +153,7 @@ class CephRestart(TestBasic):
         self.fuel_web.delete_node(nailgun_node_id)
         self.fuel_web.check_ceph_status(cluster_id)
 
-        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         # Cold restart
         self.fuel_web.cold_restart_nodes(
@@ -167,10 +166,8 @@ class CephRestart(TestBasic):
         # Wait for HA services ready
         self.fuel_web.assert_ha_services_ready(cluster_id)
 
-        # Wait until OpenStack services are UP, should fail 2 services
-        # because slave-05 (compute+ceph-osd) destroyed. We ignore
-        # expect fail a test - 'Check openstack services are running'
-        self.fuel_web.assert_os_services_ready(cluster_id, should_fail=1)
+        # Wait until OpenStack services are UP
+        self.fuel_web.assert_os_services_ready(cluster_id)
 
         self.fuel_web.check_ceph_status(cluster_id)
 
@@ -195,7 +192,7 @@ class CephRestart(TestBasic):
                 test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
                     'Create volume and attach it to instance'))
 
-        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("ceph_ha_restart")
 
