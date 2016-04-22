@@ -31,7 +31,8 @@ tasks:
   - plugins_setup_repositories: null
   - upload_provision_data:
       type: false
-  - ceph-compute: null
+  - ceph-compute:
+      no_puppet_run: true
   - ssl-keys-saving: null
   - sriov_iommu_check:
       skip:
