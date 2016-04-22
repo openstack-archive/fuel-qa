@@ -16,7 +16,9 @@ import json
 import os
 import posixpath
 import re
+import sys
 import traceback
+import yaml
 
 from devops.helpers.helpers import wait
 from devops.models.node import SSHClient
@@ -147,20 +149,25 @@ class SSHManager(object):
 
     def execute_on_remote(self, ip, cmd, port=22, err_msg=None,
                           jsonify=False, assert_ec_equal=None,
-                          raise_on_assert=True):
+                          raise_on_assert=True, yamlify=False):
         """Execute ``cmd`` on ``remote`` and return result.
 
         :param ip: ip of host
         :param port: ssh port
         :param cmd: command to execute on remote host
         :param err_msg: custom error message
+        :param jsonify: bool, conflicts with yamlify
         :param assert_ec_equal: list of expected exit_code
         :param raise_on_assert: Boolean
+        :param yamlify: bool, conflicts with jsonify
         :return: dict
         :raise: Exception
         """
         if assert_ec_equal is None:
             assert_ec_equal = [0]
+
+        if yamlify and jsonify:
+            raise ValueError('Conflicting arguments: yamlify an jsonify!')
 
         result = self.execute(ip=ip, port=port, cmd=cmd)
 
@@ -205,11 +212,23 @@ class SSHManager(object):
                 result['stdout_json'] = \
                     self._json_deserialize(result['stdout_str'])
             except Exception:
+                _, _, exc_traceback = sys.exc_info()
                 error_msg = (
                     "Unable to deserialize output of command"
                     " '{0}' on host {1}".format(cmd, ip))
                 logger.error(error_msg)
-                raise Exception(error_msg)
+                six.reraise(TypeError, TypeError(error_msg), exc_traceback)
+        elif yamlify:
+            try:
+                result['stdout_yaml'] = \
+                    self._yaml_deserialize(result['stdout_str'])
+            except Exception:
+                _, _, exc_traceback = sys.exc_info()
+                error_msg = (
+                    "Unable to deserialize output of command"
+                    " '{0}' on host {1}".format(cmd, ip))
+                logger.error(error_msg)
+                six.reraise(TypeError, TypeError(error_msg), exc_traceback)
 
         return result
 
@@ -226,15 +245,35 @@ class SSHManager(object):
         :raise: Exception
         """
         if isinstance(json_string, list):
-            json_string = ''.join(json_string)
+            json_string = ''.join(json_string).strip()
 
         try:
             obj = json.loads(json_string)
         except Exception:
-            log_msg = "Unable to deserialize"
-            logger.error("{0}. Actual string:\n{1}".format(log_msg,
-                                                           json_string))
-            raise Exception(log_msg)
+            logger.error(
+                "Unable to deserialize. Actual string:\n"
+                "{}".format(json_string))
+            raise
+        return obj
+
+    @staticmethod
+    def _yaml_deserialize(yaml_string):
+        """ Deserialize yaml_string and return object
+
+        :param yaml_string: string or list with yaml
+        :return: obj
+        :raise: Exception
+        """
+        if isinstance(yaml_string, list):
+            yaml_string = ''.join(yaml_string).strip()
+
+        try:
+            obj = yaml.safe_load(yaml_string)
+        except Exception:
+            logger.error(
+                "Unable to deserialize. Actual string:\n"
+                "{}".format(yaml_string))
+            raise
         return obj
 
     def open_on_remote(self, ip, path, mode='r', port=22):
