@@ -17,6 +17,7 @@ import os
 import posixpath
 import re
 import traceback
+import yaml
 
 from devops.helpers.helpers import wait
 from devops.models.node import SSHClient
@@ -147,7 +148,7 @@ class SSHManager(object):
 
     def execute_on_remote(self, ip, cmd, port=22, err_msg=None,
                           jsonify=False, assert_ec_equal=None,
-                          raise_on_assert=True):
+                          raise_on_assert=True, yamlfy=False):
         """Execute ``cmd`` on ``remote`` and return result.
 
         :param ip: ip of host
@@ -211,6 +212,17 @@ class SSHManager(object):
                 logger.error(error_msg)
                 raise Exception(error_msg)
 
+        if yamlfy:
+            try:
+                result['stdout_yaml'] = \
+                    self._yaml_deserialize(result['stdout_str'])
+            except Exception:
+                error_msg = (
+                    "Unable to deserialize output of command"
+                    " '{0}' on host {1}".format(cmd, ip))
+                logger.error(error_msg)
+                raise Exception(error_msg)
+
         return result
 
     def execute_async_on_remote(self, ip, cmd, port=22):
@@ -234,6 +246,26 @@ class SSHManager(object):
             log_msg = "Unable to deserialize"
             logger.error("{0}. Actual string:\n{1}".format(log_msg,
                                                            json_string))
+            raise Exception(log_msg)
+        return obj
+
+    @staticmethod
+    def _yaml_deserialize(yaml_string):
+        """ Deserialize yaml_string and return object
+
+        :param yaml_string: string or list with yaml
+        :return: obj
+        :raise: Exception
+        """
+        if isinstance(yaml_string, list):
+            yaml_string = ''.join(yaml_string)
+
+        try:
+            obj = yaml.load(yaml_string)
+        except Exception:
+            log_msg = "Unable to deserialize"
+            logger.error("{0}. Actual string:\n{1}".format(log_msg,
+                                                           yaml_string))
             raise Exception(log_msg)
         return obj
 
