@@ -476,16 +476,21 @@ class NailgunClient(object):
 
     @logwrap
     @json_parse
-    def put_deployment_tasks_for_cluster(self, cluster_id, data, node_id):
-        """ Put  task to be executed on the nodes from cluster.:
-        Params:
-        cluster_id : Cluster id,
-        node_id: Node ids where task should be run, can be node_id=1,
-        or node_id =1,2,3,
-        data: tasks ids"""
+    def put_deployment_tasks_for_cluster(self, cluster_id, data, node_id,
+                                         force=False):
+        """Put  task to be executed on the nodes from cluster
+
+        :param cluster_id: int, cluster id
+        :param data: list, tasks ids
+        :param node_id: str, Node ids where task should be run,
+               can be node_id=1, or node_id =1,2,3,
+        :param force: bool, run particular task on nodes and do not care
+               if there were changes or not
+        :return:
+        """
         return self.client.put(
-            '/api/clusters/{0}/deploy_tasks?nodes={1}'.format(
-                cluster_id, node_id), data)
+            '/api/clusters/{0}/deploy_tasks?nodes={1}{2}'.format(
+                cluster_id, node_id, '&force=1' if force else ''), data)
 
     @logwrap
     @json_parse
