@@ -507,3 +507,116 @@ class SetupLCMEnvironment(LCMTestBasic):
             self.generate_fixture(node_refs, cluster_id, slave_nodes)
             raise DeprecatedFixture
         self.env.make_snapshot(snapshotname, is_make=True)
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=['lcm_deploy_1_ctrl_1_cmp_sahara'])
+    @log_snapshot_after_test
+    def lcm_deploy_1_ctrl_1_cmp_sahara(self):
+        """Create cluster with Sahara
+
+          Scenario:
+            1. Revert snapshot "ready_with_3_slaves"
+            2. Create cluster with Sahara
+            3. Add 1 controller
+            4. Add 1 compute node
+            5. Deploy cluster
+            6. Check extra deployment tasks
+            8. Generate fixtures
+
+        Snapshot: "lcm_deploy_1_ctrl_1_cmp_sahara"
+        """
+        deployment = '1_ctrl_1_cmp_sahara'
+        snapshotname = 'lcm_deploy_{}'.format(deployment)
+        self.check_run(snapshotname)
+        self.show_step(1)
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        self.show_step(2)
+        segment_type = NEUTRON_SEGMENT['tun']
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "sahara": True,
+                "net_provider": NEUTRON,
+                "net_segment_type": segment_type
+            }
+        )
+        self.show_step(3)
+        self.show_step(4)
+        self.show_step(5)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['compute'],
+            }
+        )
+
+        self.show_step(6)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.show_step(7)
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        node_refs = self.check_extra_tasks(slave_nodes, deployment)
+        if node_refs:
+            logger.info('Generating a new fixture . . .')
+            self.generate_fixture(node_refs, cluster_id, slave_nodes)
+            raise DeprecatedFixture
+        self.env.make_snapshot(snapshotname, is_make=True)
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=['lcm_deploy_1_ctrl_1_cmp_1_ironic'])
+    @log_snapshot_after_test
+    def lcm_deploy_1_ctrl_1_cmp_1_ironic(self):
+        """Create cluster with ironic
+
+          Scenario:
+            1. Revert snapshot "ready_with_3_slaves"
+            2. Create cluster
+            3. Add 1 controller
+            4. Add 1 compute node
+            5. Add 1 ironic node
+            6. Deploy cluster
+            7. Check extra deployment tasks
+
+        Snapshot: "lcm_deploy_1_ctrl_1_cmp_1_ironic"
+        """
+        deployment = '1_ctrl_1_cmp_1_ironic'
+        snapshotname = 'lcm_deploy_{}'.format(deployment)
+        self.check_run(snapshotname)
+        self.show_step(1)
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        self.show_step(2)
+        segment_type = NEUTRON_SEGMENT['tun']
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "ironic": True,
+                "net_provider": NEUTRON,
+                "net_segment_type": segment_type
+            }
+        )
+        self.show_step(3)
+        self.show_step(4)
+        self.show_step(5)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['compute'],
+                'slave-03': ['ironic']
+            }
+        )
+
+        self.show_step(6)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.show_step(7)
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        node_refs = self.check_extra_tasks(slave_nodes, deployment)
+        if node_refs:
+            logger.info('Generating a new fixture . . .')
+            self.generate_fixture(node_refs, cluster_id, slave_nodes)
+            raise DeprecatedFixture
+        self.env.make_snapshot(snapshotname, is_make=True)
