@@ -22,7 +22,6 @@ import yaml
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.ssh_manager import SSHManager
-from fuelweb_test.settings import NEUTRON
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -46,6 +45,7 @@ TASKS_BLACKLIST = [
     "configure_default_route",
     "netconfig",
     "upload_provision_data"]
+
 
 SETTINGS_SKIPLIST = (
     "dns_list",
@@ -151,7 +151,7 @@ class LCMTestBasic(TestBasic):
                      fixture is loaded
         :return: a dictionary with loaded fixture data
         """
-        subdir = "" if idmp else "ensurability"
+        subdir = "idempotency" if idmp else "ensurability"
         fixture_path = os.path.join(
             os.path.dirname(__file__), "fixtures",
             deployment_type, subdir, "{}.yaml".format(role))
@@ -210,7 +210,19 @@ class LCMTestBasic(TestBasic):
 
         return extra_actual_tasks, extra_fixture_tasks, wrong_types
 
-    def check_extra_tasks(self, slave_nodes, deployment, idmp=True):
+    def define_pr_ctrl(self):
+        """Define primary controller
+
+        :return: dict, node info
+        """
+        devops_pr_controller = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+
+        pr_ctrl = self.fuel_web.get_nailgun_node_by_devops_node(
+            devops_pr_controller)
+        return pr_ctrl
+
+    def check_extra_tasks(self, slave_nodes, deployment, idmp=True, ha=False):
         """Check existing extra tasks regarding to fixture and actual task
            or tasks with a wrong type
 
@@ -218,6 +230,7 @@ class LCMTestBasic(TestBasic):
         :param deployment: a string, name of the deployment kind
         :param idmp: bool, indicates whether idempotency or ensurability
                      fixture is checked
+        :param ha: bool, indicates ha mode is enabled or disabled
         :return: a list with nodes for which extra tasks regarding to fixture
                  and actual task or tasks with a wrong type were found
         """
@@ -225,8 +238,12 @@ class LCMTestBasic(TestBasic):
                   'extra_fixture_tasks': {},
                   'wrong_types': {},
                   'failed_tasks': {}}
+
+        pr_ctrl = self.define_pr_ctrl() if ha else None
         for node in slave_nodes:
             node_roles = self.node_roles(node)
+            if node == pr_ctrl:
+                node_roles = 'primary-' + node_roles
             node_ref = "{}_{}".format(node["id"], node_roles)
             fixture = self.load_fixture(deployment, node_roles, idmp)
             node_tasks = self.get_nodes_tasks(node["id"])
@@ -248,17 +265,21 @@ class LCMTestBasic(TestBasic):
                         if failed_tasks]
         return failed_nodes
 
-    def generate_fixture(self, node_refs, cluster_id, slave_nodes):
+    def generate_fixture(self, node_refs, cluster_id, slave_nodes, ha=False):
         """Generate fixture with description of task idempotency
 
         :param node_refs: a string, refs to nailgun node
         :param cluster_id: an integer, number of cluster id
         :param slave_nodes: a list of nailgun nodes
+        :param ha: bool, indicates ha mode is enabled or disabled
         :return: None
         """
         result = {}
+        pr_ctrl = self.define_pr_ctrl() if ha else None
         for node in slave_nodes:
             node_roles = self.node_roles(node)
+            if node == pr_ctrl:
+                node_roles = 'primary-' + node_roles
             node_ref = "{}_{}".format(node["id"], node_roles)
             if node_ref not in node_refs:
                 logger.debug('Node {!r} was skipped because the current '
@@ -544,7 +565,6 @@ class SetupLCMEnvironment(LCMTestBasic):
             5. Add 1 cinder node
             6. Deploy cluster
             7. Check extra deployment tasks
-            8. Generate fixtures
 
         Snapshot: "lcm_deploy_1_ctrl_1_cmp_1_cinder"
         """
@@ -560,7 +580,6 @@ class SetupLCMEnvironment(LCMTestBasic):
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
             settings={
-                "net_provider": NEUTRON,
                 "net_segment_type": segment_type
             }
         )
@@ -582,7 +601,7 @@ class SetupLCMEnvironment(LCMTestBasic):
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         node_refs = self.check_extra_tasks(slave_nodes, deployment)
         if node_refs:
-            self.show_step(8)
+            logger.info('Generating a new fixture . . .')
             self.generate_fixture(node_refs, cluster_id, slave_nodes)
             msg = ('Please update idempotency fixtures in the repo '
                    'according to generated fixtures')
@@ -603,7 +622,6 @@ class SetupLCMEnvironment(LCMTestBasic):
             5. Add 1 mongo node
             6. Deploy cluster
             7. Check extra deployment tasks
-            8. Generate fixtures
 
         Snapshot: "lcm_deploy_1_ctrl_1_cmp_1_mongo"
         """
@@ -620,7 +638,6 @@ class SetupLCMEnvironment(LCMTestBasic):
             mode=DEPLOYMENT_MODE,
             settings={
                 'ceilometer': True,
-                'net_provider': NEUTRON,
                 'net_segment_type': segment_type
             }
         )
@@ -642,7 +659,7 @@ class SetupLCMEnvironment(LCMTestBasic):
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         node_refs = self.check_extra_tasks(slave_nodes, deployment)
         if node_refs:
-            self.show_step(8)
+            logger.info('Generating a new fixture . . .')
             self.generate_fixture(node_refs, cluster_id, slave_nodes)
             msg = ('Please update idempotency fixtures in the repo '
                    'according to generated fixtures')
@@ -663,7 +680,6 @@ class SetupLCMEnvironment(LCMTestBasic):
             5. Add 3 ceph-osd nodes
             6. Deploy cluster
             7. Check extra deployment tasks
-            8. Generate fixtures
 
         Snapshot: "lcm_deploy_1_ctrl_1_cmp_3_ceph"
         """
@@ -683,7 +699,6 @@ class SetupLCMEnvironment(LCMTestBasic):
                 'volumes_ceph': True,
                 'images_ceph': True,
                 'objects_ceph': True,
-                'net_provider': NEUTRON,
                 'net_segment_type': segment_type
             }
         )
@@ -707,9 +722,71 @@ class SetupLCMEnvironment(LCMTestBasic):
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         node_refs = self.check_extra_tasks(slave_nodes, deployment)
         if node_refs:
-            self.show_step(8)
+            logger.info('Generating a new fixture . . .')
             self.generate_fixture(node_refs, cluster_id, slave_nodes)
             msg = ('Please update idempotency fixtures in the repo '
                    'according to generated fixtures')
             raise DeprecatedFixture(msg)
+        self.env.make_snapshot(snapshotname, is_make=True)
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
+          groups=['lcm_deploy_3_ctrl_3_cmp_ceph_sahara'])
+    @log_snapshot_after_test
+    def lcm_deploy_3_ctrl_3_cmp_ceph_sahara(self):
+        """Create cluster with Sahara, Ceilometer, Ceph in HA mode
+
+          Scenario:
+            1. Revert snapshot "ready_with_9_slaves"
+            2. Create cluster
+            3. Add 3 controllers with mongo role
+            4. Add 3 compute node with ceph-osd role
+            5. Deploy cluster
+            6. Check extra deployment tasks
+
+        Snapshot: "lcm_deploy_1_ctrl_1_cmp_sahara"
+        """
+        deployment = '3_ctrl_3_cmp_ceph_sahara'
+        snapshotname = 'lcm_deploy_{}'.format(deployment)
+        self.check_run(snapshotname)
+        self.show_step(1)
+        self.env.revert_snapshot("ready_with_9_slaves")
+
+        self.show_step(2)
+        segment_type = NEUTRON_SEGMENT['tun']
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                'ceilometer': True,
+                "sahara": True,
+                'volumes_lvm': False,
+                'volumes_ceph': True,
+                'images_ceph': True,
+                'objects_ceph': True,
+                "net_segment_type": segment_type
+            }
+        )
+        self.show_step(3)
+        self.show_step(4)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller', 'mongo'],
+                'slave-02': ['controller', 'mongo'],
+                'slave-03': ['controller', 'mongo'],
+                'slave-04': ['compute', 'ceph-osd'],
+                'slave-05': ['compute', 'ceph-osd'],
+                'slave-06': ['compute', 'ceph-osd']
+            }
+        )
+
+        self.show_step(5)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.show_step(6)
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        node_refs = self.check_extra_tasks(slave_nodes, deployment)
+        if node_refs:
+            logger.info('Generating a new fixture . . .')
+            self.generate_fixture(node_refs, cluster_id, slave_nodes)
+            raise DeprecatedFixture
         self.env.make_snapshot(snapshotname, is_make=True)
