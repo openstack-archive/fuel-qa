@@ -16,6 +16,9 @@ import random
 
 from proboscis import asserts
 from proboscis import test
+# pylint: disable=import-error
+from six.moves.urllib.error import HTTPError
+# pylint: enable=import-error
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
@@ -524,3 +527,57 @@ class NumaCpuPinning(TestBasic):
                                     meta=meta)
 
         self.env.make_snapshot('reboot_cpu_pinning_compute')
+
+    @test(depends_on_groups=['basic_env_for_numa_cpu_pinning'],
+          groups=["cpu_pinning_allocation"])
+    @log_snapshot_after_test
+    def cpu_pinning_allocation(self):
+        """Check errors for allocation of CPU for nova
+
+        Scenario:
+            1. Revert snapshot "basic_env_for_numa_cpu_pinning"
+            2. Pin all node CPU and twice of it for the nova
+            3. Check status code: 400
+
+        Snapshot: cpu_pinning_allocation
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot("basic_env_for_numa_cpu_pinning")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.show_step(2)
+        self.show_step(3)
+        target_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute'], role_status='pending_roles')
+
+        for compute in target_nodes:
+            compute_cpu = compute['meta']['cpu']['total']
+            compute_config = self.fuel_web.client.get_node_attributes(
+                compute['id'])
+            compute_config['cpu_pinning']['nova']['value'] = compute_cpu
+
+            try:
+                self.fuel_web.client.upload_node_attributes(
+                    compute_config, compute['id'])
+            except HTTPError as e:
+                asserts.assert_equal(400, e.code)
+            else:
+                asserts.fail("Pinned all CPU on {0}, while expecting HTTP "
+                             "error on CPU value {1}"
+                             .format(compute['ip'], compute_cpu))
+
+            compute_config['cpu_pinning']['nova']['value'] = compute_cpu * 2
+
+            try:
+                self.fuel_web.client.upload_node_attributes(
+                    compute_config, compute['id'])
+            except HTTPError as e:
+                asserts.assert_equal(400, e.code)
+            else:
+                asserts.fail("Pinned all CPU on {0}, while expecting HTTP "
+                             "400 error on CPU value {1}"
+                             .format(compute['ip'], compute_cpu * 2))
+
+        self.env.make_snapshot('cpu_pinning_allocation')
