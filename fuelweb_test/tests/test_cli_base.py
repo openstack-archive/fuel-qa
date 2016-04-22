@@ -43,6 +43,23 @@ class CommandLine(TestBasic):
         return tasks[0]
 
     @logwrap
+    def get_tasks(self):
+        tasks = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='fuel task --json',
+            jsonify=True)['stdout_json']
+        return tasks
+
+    @logwrap
+    def get_first_task_id_by_name(self, cluster_id, task_name):
+        tasks = self.get_tasks()
+        tasks_ids = []
+        for task in tasks:
+            if task['cluster'] == cluster_id and task['name'] == task_name:
+                tasks_ids.append(task['id'])
+        return min(tasks_ids)
+
+    @logwrap
     def get_network_filename(self, cluster_id):
         cmd = ('fuel --env {0} network --download --dir /tmp --json'
                .format(cluster_id))
@@ -297,3 +314,48 @@ class CommandLine(TestBasic):
                                  'domain': url.hostname}
                 endpoints.append(endpoint_info)
         return endpoints
+
+    @logwrap
+    def get_net_config_from_db(self, task_id):
+        cmd = 'fuel2 task network-configuration download {0}'.format(task_id)
+        out = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd
+        )['stdout']
+        settings_download = ''.join(out)
+        settings_file = settings_download.split()[-1]
+        out = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='cat {0}'.format(settings_file),
+            yamlfy=True)['stdout_yaml']
+        return out
+
+    @logwrap
+    def get_cluster_config_from_db(self, task_id):
+        cmd = 'fuel2 task settings download {0}'.format(task_id)
+        out = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd
+        )['stdout']
+        settings_download = ''.join(out)
+        settings_file = settings_download.split()[-1]
+        out = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='cat {0}'.format(settings_file),
+            yamlfy=True)['stdout_yaml']
+        return out
+
+    @logwrap
+    def get_deployment_info_from_db(self, task_id):
+        cmd = 'fuel2 task deployment-info download {0}'.format(task_id)
+        out = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd
+        )['stdout']
+        settings_download = ''.join(out)
+        settings_file = settings_download.split()[-1]
+        out = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='cat {0}'.format(settings_file),
+            yamlfy=True)['stdout_yaml']
+        return out
