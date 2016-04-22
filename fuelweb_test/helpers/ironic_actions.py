@@ -78,7 +78,7 @@ class IronicActions(os_actions.OpenStackActions):
     def wait_for_ironic_hypervisors(ironic_conn, ironic_slaves):
 
         def _wait_for_ironic_hypervisor():
-            hypervisors = ironic_conn.get_hypervisors()
+            hypervisors = ironic_conn.get_hypervisors() or []
             ironic_hypervisors = [h for h in hypervisors if
                                   h.hypervisor_type == 'ironic']
 
