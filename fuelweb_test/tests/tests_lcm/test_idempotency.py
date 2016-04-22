@@ -161,3 +161,26 @@ class TaskIdempotency(LCMTestBasic):
                             'There are non-idempotent tasks. '
                             'Please take a look at the output above!')
         self.env.make_snapshot('idempotency_{}'.format(deployment))
+
+    @test(depends_on=[SetupLCMEnvironment.lcm_deploy_3_ctrl_3_cmp_ceph_sahara],
+          groups=['idempotency',
+                  'idempotency_3_ctrl_3_cmp_ceph_sahara'])
+    @log_snapshot_after_test
+    def idempotency_3_ctrl_3_cmp_ceph_sahara(self):
+        """Test idempotency for cluster with Sahara, Ceilometer,
+        Ceph in HA mode
+
+          Scenario:
+            1. Revert snapshot "lcm_deploy_3_ctrl_3_cmp_ceph_sahara"
+            2. Check task idempotency
+
+        Snapshot: "idempotency_3_ctrl_3_cmp_ceph_sahara"
+        """
+        self.show_step(1)
+        deployment = "3_ctrl_3_cmp_ceph_sahara"
+        self.env.revert_snapshot('lcm_deploy_{}'.format(deployment))
+        self.show_step(2)
+        asserts.assert_true(self.check_idempotency(deployment),
+                            'There are non-idempotent tasks. '
+                            'Please take a look at the output above!')
+        self.env.make_snapshot('idempotency_{}'.format(deployment))
