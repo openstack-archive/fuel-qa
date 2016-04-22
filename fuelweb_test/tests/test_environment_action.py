@@ -115,7 +115,7 @@ class EnvironmentAction(base_test_case.TestBasic):
             11. Run OSTF
 
         Duration 40m
-        Snapshot: deploy_neutron_stop_reset_on_deploying
+        Snapshot: deploy_neutron_stop_reset_on_provisioning
 
         """
         self.env.revert_snapshot("ready_with_3_slaves")
@@ -138,6 +138,8 @@ class EnvironmentAction(base_test_case.TestBasic):
             cluster_id=cluster_id, progress=20)
 
         self.fuel_web.stop_deployment_wait(cluster_id)
+
+        self.fuel_web.stop_reset_env_wait(cluster_id)
 
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:2], timeout=10 * 60)
