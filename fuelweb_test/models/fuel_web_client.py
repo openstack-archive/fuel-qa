@@ -2829,14 +2829,17 @@ class FuelWebClient(object):
         self.assert_task_success(task, interval=interval, timeout=timeout)
 
     def execute_task_on_node(self, task_name, node_id,
-                             cluster_id, force_exc=False):
+                             cluster_id, force_exception=False,
+                             force_execution=True):
         """Execute deployment task against the corresponding node
 
         :param task_name: str, name of a task to execute
         :param node_id: int, node ID to execute task on
         :param cluster_id: int, cluster ID
-        :param force_exc: bool, indication whether exceptions on task
+        :param force_exception: bool, indication whether exceptions on task
                execution are ignored
+        :param force_execution: bool, run particular task on nodes
+               and do not care if there were changes or not
         :return: None
         """
         try:
@@ -2845,9 +2848,10 @@ class FuelWebClient(object):
             task = self.client.put_deployment_tasks_for_cluster(
                 cluster_id=cluster_id,
                 data=[task_name],
-                node_id=node_id)
+                node_id=node_id,
+                force=force_execution)
             self.assert_task_success(task, timeout=30 * 60)
         except (AssertionError, TimeoutError):
             logger.exception("Failed to run task {!r}".format(task_name))
-            if force_exc:
+            if force_exception:
                 raise
