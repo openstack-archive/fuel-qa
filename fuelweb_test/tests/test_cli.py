@@ -106,21 +106,28 @@ class CommandLineTest(test_cli_base.CommandLine):
             1. Create environment using fuel-qa
             2. Create a cluster using Fuel CLI
             3. Add floating ranges for public network
-            4. Provision a controller node using Fuel CLI
-            5. Provision two compute+cinder nodes using Fuel CLI
-            6. Deploy the controller node using Fuel CLI
-            7. Deploy the compute+cinder nodes using Fuel CLI
-            8. Verify network
-            9. Compare floating ranges
-            10. Check that all services work by 'https'
-            11. Check that all services have domain name
-            12. Find 'CN' value at the output:
+            4. Get cluster settings
+            5. Get network settings
+            6. Provision a controller node using Fuel CLI
+            7. Provision two compute+cinder nodes using Fuel CLI
+            8. Deploy the controller node using Fuel CLI
+            9. Deploy the compute+cinder nodes using Fuel CLI
+            10. Verify network
+            11. Compare floating ranges
+            12. Check that all services work by 'https'
+            13. Check that all services have domain name
+            14. Find 'CN' value at the output:
                 CN value is equal to the value specified
                 at certificate provided via Fuel UI
-            13. Find keypair data at the output:
+            15. Find keypair data at the output:
                 Keypair data is equal to the value specified
                 at certificate provided via Fuel UI
-            14. Run OSTF
+            16. Run OSTF
+            17. Get deployment-info
+            18. Get cluster settings after deploy
+            19. Compare cluster settings after deploy and before deploy
+            20. Get network settings after deploy
+            21. Compare network settings after deploy and before deploy
 
         Duration 50m
         """
@@ -131,17 +138,19 @@ class CommandLineTest(test_cli_base.CommandLine):
         release_id = self.fuel_web.get_releases_list_for_os(
             release_name=OPENSTACK_RELEASE)[0]
         admin_ip = self.ssh_manager.admin_ip
-        # Create an environment
+        self.show_step(1)
         if NEUTRON_SEGMENT_TYPE:
             nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
         else:
             nst = ''
+        self.show_step(2)
         cmd = ('fuel env create --name={0} --release={1} {2} --json'.format(
             self.__class__.__name__, release_id, nst))
         env_result =\
             self.ssh_manager.execute_on_remote(admin_ip, cmd,
                                                jsonify=True)['stdout_json']
         cluster_id = env_result['id']
+        self.show_step(3)
         # Update network parameters
         self.update_cli_network_configuration(cluster_id)
         # Change floating ranges
@@ -160,7 +169,12 @@ class CommandLineTest(test_cli_base.CommandLine):
         self.change_floating_ranges(cluster_id, new_floating_range)
         # Update SSL configuration
         self.update_ssl_configuration(cluster_id)
-
+        self.show_step(4)
+        # Get network settings before deploy
+        network_settings = self.get_networks(cluster_id)
+        # Get cluster settings before deploy
+        self.show_step(5)
+        cluster_settings = self.download_settings(cluster_id)
         # Add and provision a controller node
         logger.info("Add to the cluster \
         and start provisioning a controller node [{0}]".format(node_ids[0]))
@@ -187,6 +201,10 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                   cmd,
                                                   jsonify=True)['stdout_json']
         self.assert_cli_task_success(task, timeout=10 * 60)
+        # Get cluster settings
+
+        # Get network settings
+
         # Deploy the controller node
         cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
             cluster_id, node_ids[0]))
@@ -203,6 +221,7 @@ class CommandLineTest(test_cli_base.CommandLine):
         self.assert_cli_task_success(task, timeout=30 * 60)
         # Verify networks
         self.fuel_web.verify_network(cluster_id)
+
         controller_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])
         # Get controller ip address
@@ -243,10 +262,30 @@ class CommandLineTest(test_cli_base.CommandLine):
             actual_floating_ranges))
         assert_equal(actual_floating_ranges, new_floating_range,
                      message="Floating ranges are not equal")
+        # Get deployment task id
+        task_id = self.get_last_task_id(cluster_id, 'deployment')
+        # Get cluster settings after deploy
+        cluster_config = self.get_cluster_config_from_db(task_id)
+        # Compare cluster settings
+        assert_equal(cluster_settings,
+                     cluster_config,
+                     message='Cluster settings are not equal before'
+                             ' and after deploy')
+        # Get network setting after deploy
+        network_configuration = self.get_net_config_from_db(task_id)
+        # Compare network settings
+        assert_equal(network_settings,
+                     network_configuration,
+                     message='Network settings are not equal before'
+                             ' and after deploy')
+        # Get deployment info
+        self.get_deployment_info_from_db(task_id)
         # Run OSTF
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['ha', 'smoke', 'sanity'])
         self.env.make_snapshot("cli_selected_nodes_deploy", is_make=True)
+
+
 
     @test(depends_on_groups=['cli_selected_nodes_deploy'],
           groups=["cli_node_deletion_check"])
