@@ -84,7 +84,7 @@ class TestIronicBase(TestBasic):
         self.env.make_snapshot("ironic_base")
 
 
-@test(groups=["ironic_deploy", "ironic"])
+@test(groups=["ironic_deploy"])
 class TestIronicDeploy(TestBasic):
     """Test ironic provisioning on VM"""
 
