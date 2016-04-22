@@ -106,21 +106,28 @@ class CommandLineTest(test_cli_base.CommandLine):
             1. Create environment using fuel-qa
             2. Create a cluster using Fuel CLI
             3. Add floating ranges for public network
-            4. Provision a controller node using Fuel CLI
-            5. Provision two compute+cinder nodes using Fuel CLI
-            6. Deploy the controller node using Fuel CLI
-            7. Deploy the compute+cinder nodes using Fuel CLI
-            8. Verify network
-            9. Compare floating ranges
-            10. Check that all services work by 'https'
-            11. Check that all services have domain name
-            12. Find 'CN' value at the output:
+            4. Get cluster settings
+            5. Provision a controller node using Fuel CLI
+            6. Provision two compute+cinder nodes using Fuel CLI
+            7. Deploy the controller node using Fuel CLI
+            8. Compare network settings after controller deployment task
+            9. Deploy the compute+cinder nodes using Fuel CLI
+            10. Compare network settings after compute deployment task
+            11. Verify network
+            12. Check that all services work by 'https'
+            13. Check that all services have domain name
+            14. Find 'CN' value at the output:
                 CN value is equal to the value specified
                 at certificate provided via Fuel UI
-            13. Find keypair data at the output:
+            15. Find keypair data at the output:
                 Keypair data is equal to the value specified
                 at certificate provided via Fuel UI
-            14. Run OSTF
+            16. Compare floating ranges
+            17. Get deployment-info
+            18. Get cluster settings after deployment task
+            19. Compare cluster settings after deploy and before deploy
+            20. Run OSTF
+
 
         Duration 50m
         """
@@ -132,16 +139,19 @@ class CommandLineTest(test_cli_base.CommandLine):
             release_name=OPENSTACK_RELEASE)[0]
         admin_ip = self.ssh_manager.admin_ip
         # Create an environment
+        self.show_step(1)
         if NEUTRON_SEGMENT_TYPE:
             nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
         else:
             nst = ''
+        self.show_step(2)
         cmd = ('fuel env create --name={0} --release={1} {2} --json'.format(
             self.__class__.__name__, release_id, nst))
         env_result =\
             self.ssh_manager.execute_on_remote(admin_ip, cmd,
                                                jsonify=True)['stdout_json']
         cluster_id = env_result['id']
+        self.show_step(3)
         # Update network parameters
         self.update_cli_network_configuration(cluster_id)
         # Change floating ranges
@@ -161,6 +171,10 @@ class CommandLineTest(test_cli_base.CommandLine):
         # Update SSL configuration
         self.update_ssl_configuration(cluster_id)
 
+        # Get cluster settings before deploy
+        self.show_step(4)
+        cluster_settings = self.download_settings(cluster_id)
+        self.show_step(5)
         # Add and provision a controller node
         logger.info("Add to the cluster \
         and start provisioning a controller node [{0}]".format(node_ids[0]))
@@ -173,7 +187,7 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                   cmd,
                                                   jsonify=True)['stdout_json']
         self.assert_cli_task_success(task, timeout=30 * 60)
-
+        self.show_step(6)
         # Add and provision 2 compute+cinder
         logger.info("Add to the cluster and start provisioning two "
                     "compute+cinder nodes [{0},{1}]".format(node_ids[1],
@@ -187,21 +201,37 @@ class CommandLineTest(test_cli_base.CommandLine):
                                                   cmd,
                                                   jsonify=True)['stdout_json']
         self.assert_cli_task_success(task, timeout=10 * 60)
+        self.show_step(7)
         # Deploy the controller node
         cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
             cluster_id, node_ids[0]))
         task = self.ssh_manager.execute_on_remote(admin_ip,
                                                   cmd,
                                                   jsonify=True)['stdout_json']
+        network_settings = self.get_networks(cluster_id)
         self.assert_cli_task_success(task, timeout=60 * 60)
+        self.show_step(8)
+        network_configuration = self.get_net_config_cli(task['id'])
+        assert_equal(network_settings,
+                     network_configuration,
+                     message='Network settings are not equal before'
+                             ' and after deploy')
+        self.show_step(9)
         # Deploy the compute nodes
         cmd = ('fuel --env-id={0} node --deploy --node {1},{2} --json'.format(
             cluster_id, node_ids[1], node_ids[2]))
         task = self.ssh_manager.execute_on_remote(admin_ip,
                                                   cmd,
                                                   jsonify=True)['stdout_json']
+        network_settings = self.get_networks(cluster_id)
         self.assert_cli_task_success(task, timeout=30 * 60)
-        # Verify networks
+        self.show_step(10)
+        network_configuration = self.get_net_config_cli(task['id'])
+        assert_equal(network_settings,
+                     network_configuration,
+                     message='Network settings are not equal before'
+                             ' and after deploy')
+        self.show_step(11)
         self.fuel_web.verify_network(cluster_id)
         controller_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])
@@ -211,6 +241,8 @@ class CommandLineTest(test_cli_base.CommandLine):
         endpoint_list = self.get_endpoints(controller_node)
         logger.info(endpoint_list)
         # Check protocol and domain names for endpoints
+        self.show_step(12)
+        self.show_step(13)
         for endpoint in endpoint_list:
             logger.debug(("Endpoint {0} use protocol {1}\
             and have domain name {2}".format(endpoint['service_name'],
@@ -222,12 +254,12 @@ class CommandLineTest(test_cli_base.CommandLine):
             assert_equal(endpoint['domain'], SSL_CN, message=(
                 "{0} domain name not equal {1}.".format(
                     endpoint['service_name'], SSL_CN)))
-        # Check SSL CNs
+        self.show_step(14)
         current_ssl_cn = self.get_current_ssl_cn(controller_node)
         logger.info(("CN before cluster deploy {0} \
         and after deploy {1}".format(SSL_CN, current_ssl_cn)))
         assert_equal(SSL_CN, current_ssl_cn, message="SSL CNs are not equal")
-        # Check SSL certificate keypairs
+        self.show_step(15)
         with open(PATH_TO_PEM) as pem_file:
             old_ssl_keypair = pem_file.read().strip()
             current_ssl_keypair = self.get_current_ssl_keypair(controller_node)
@@ -237,12 +269,27 @@ class CommandLineTest(test_cli_base.CommandLine):
                          ))
             assert_equal(old_ssl_keypair, current_ssl_keypair,
                          message="SSL keypairs are not equal")
-            # Check floating ranges are equal after cluster deploy
+        self.show_step(16)
         actual_floating_ranges = self.hiera_floating_ranges(controller_node)
         logger.info("Current floating ranges: {0}".format(
             actual_floating_ranges))
         assert_equal(actual_floating_ranges, new_floating_range,
                      message="Floating ranges are not equal")
+        # Get deployment task id
+        task_id = self.get_first_task_id_by_name(cluster_id, 'deployment')
+        self.show_step(17)
+        # Get deployment info
+        self.get_deployment_info_cli(task_id)
+        self.show_step(18)
+        # Get cluster settings after deploy
+        cluster_config = self.get_cluster_config_cli(task_id)
+        self.show_step(19)
+        # Compare cluster settings
+        assert_equal(cluster_settings,
+                     cluster_config,
+                     message='Cluster settings are not equal before'
+                             ' and after deploy')
+        self.show_step(20)
         # Run OSTF
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['ha', 'smoke', 'sanity'])
