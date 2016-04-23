@@ -136,7 +136,7 @@ GlobalVariables() {
 }
 
 GetoptsVariables() {
-  while getopts ":w:j:i:t:o:a:A:m:U:r:b:V:l:LdkKe:v:h" opt; do
+  while getopts ":w:j:i:t:o:a:A:m:U:r:b:V:l:LdkKe:vh" opt; do
     case $opt in
       w)
         WORKSPACE="${OPTARG}"
