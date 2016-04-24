@@ -14,6 +14,7 @@
 
 from __future__ import division
 
+import os
 import time
 import itertools
 
@@ -24,9 +25,15 @@ from proboscis.asserts import assert_true
 from six.moves import xrange
 # pylint: enable=redefined-builtin
 
+from devops.helpers.helpers import wait
+
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers.cloud_image import generate_cloud_image_settings
+from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test import settings
+
+from gates_tests.helpers import exceptions
 
 from system_test import logger
 from system_test import action
@@ -119,10 +126,209 @@ class PrepareActions(object):
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
-    def config_release(self):
+    def setup_centos_master(self):
+        """Create environment, bootstrap centos_master
+        and install fuel services
+
+        Snapshot "empty_centos"
+
+            1. bootstrap_centos_master
+            2. Download fuel_release from remote repository
+            3. install fuel_setup package
+            4. Install Fuel services by executing bootstrap_admin_node.sh
+            5. check Fuel services
+
+
+        """
+        self.check_run("empty_centos")
+        self.show_step(1, initialize=True)
+
+        import fuelweb_test
+        cloud_image_settings_path = os.path.join(
+            os.path.dirname(fuelweb_test.__file__),
+            'cloud_image_settings/cloud_settings.iso')
+
+        admin_net_object = self.env.d_env.get_network(
+            name=self.env.d_env.admin_net)
+        admin_network = admin_net_object.ip.network
+        admin_netmask = admin_net_object.ip.netmask
+        admin_ip = str(self.env.d_env.nodes(
+        ).admin.get_ip_address_by_network_name(self.env.d_env.admin_net))
+        interface_name = settings.iface_alias("eth0")
+        gateway = self.env.d_env.router()
+        dns = settings.DNS
+        dns_ext = ''.join(settings.EXTERNAL_DNS)
+        hostname = settings.FUEL_MASTER_HOSTNAME
+        user = settings.SSH_CREDENTIALS['login']
+        password = settings.SSH_CREDENTIALS['password']
+        generate_cloud_image_settings(cloud_image_settings_path, admin_network,
+                                      interface_name, admin_ip, admin_netmask,
+                                      gateway, dns, dns_ext,
+                                      hostname, user, password)
+
+        with TimeStat("bootstrap_centos_node", is_uniq=True):
+            admin = self.env.d_env.nodes().admin
+            logger.info(cloud_image_settings_path)
+            admin.disk_devices.get(
+                device='cdrom').volume.upload(cloud_image_settings_path)
+            self.env.d_env.start([admin])
+            logger.info("Waiting for Centos node to start up")
+            wait(lambda: admin.driver.node_active(admin), 60)
+            logger.info("Waiting for Centos node ssh ready")
+            self.env.wait_for_provisioning()
+
+        logger.info("upload fuel-release packet")
+        if not settings.FUEL_RELEASE_PATH:
+            raise exceptions.FuelQAVariableNotSet('FUEL_RELEASE_PATH', '/path')
+        try:
+            ssh = SSHManager()
+            pack_path = '/tmp/'
+            full_pack_path = os.path.join(pack_path,
+                                          'fuel-release*.noarch.rpm')
+            ssh.upload_to_remote(
+                ip=ssh.admin_ip,
+                source=settings.FUEL_RELEASE_PATH.rstrip('/'),
+                target=pack_path)
+
+        except Exception:
+            logger.exception("Could not upload package")
+
+        logger.info("setup MOS repositories")
+        cmd = "rpm -ivh {}".format(full_pack_path)
+        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+
+        cmd = "yum install -y fuel-setup"
+        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+
+        cmd = "yum install -y screen"
+        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+
+        logger.info("Install Fuel services")
+
+        cmd = "screen -dm bash -c 'showmenu=no wait_for_external_config=yes " \
+              "bootstrap_admin_node.sh'"
+        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+
+        wait(lambda: SSHManager().exists_on_remote(
+            ssh.admin_ip,
+            '/var/lock/wait_for_external_config'),
+            timeout=600)
+
+        self.env.wait_for_external_config()
+        self.env.admin_actions.modify_configs(self.env.d_env.router())
+        self.env.kill_wait_for_external_config()
+
+        self.env.wait_bootstrap()
+
+        if settings.UPDATE_FUEL:
+            # Update Ubuntu packages
+            self.env.admin_actions.upload_packages(
+                local_packages_dir=settings.UPDATE_FUEL_PATH,
+                centos_repo_path=None,
+                ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
+
+        self.env.admin_actions.wait_for_fuel_ready()
+        time.sleep(10)
+        self.env.set_admin_keystone_password()
+        self.env.sync_time(['admin'])
+        if settings.UPDATE_MASTER:
+            if settings.UPDATE_FUEL_MIRROR:
+                for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
+                    conf_file = '/etc/yum.repos.d/temporary-{}.repo'.format(i)
+                    cmd = ("echo -e"
+                           " '[temporary-{0}]\nname="
+                           "temporary-{0}\nbaseurl={1}/"
+                           "\ngpgcheck=0\npriority="
+                           "1' > {2}").format(i, url, conf_file)
+
+                    ssh.execute(
+                        ip=ssh.admin_ip,
+                        cmd=cmd
+                    )
+            self.env.admin_install_updates()
+        if settings.MULTIPLE_NETWORKS:
+            self.env.describe_other_admin_interfaces(admin)
+        if settings.FUEL_STATS_HOST:
+            self.env.nailgun_actions.set_collector_address(
+                settings.FUEL_STATS_HOST,
+                settings.FUEL_STATS_PORT,
+                settings.FUEL_STATS_SSL)
+            # Restart statsenderd to apply settings(Collector address)
+            self.env.nailgun_actions.force_fuel_stats_sending()
+        if settings.FUEL_STATS_ENABLED and settings.FUEL_STATS_HOST:
+            self.env.fuel_web.client.send_fuel_stats(enabled=True)
+            logger.info('Enabled sending of statistics to {0}:{1}'.format(
+                settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
+            ))
+        if settings.PATCHING_DISABLE_UPDATES:
+            cmd = "find /etc/yum.repos.d/ -type f -regextype posix-egrep" \
+                  " -regex '.*/mos[0-9,\.]+\-(updates|security).repo' | " \
+                  "xargs -n1 -i sed '$aenabled=0' -i {}"
+            ssh.execute_on_remote(
+                ip=ssh.admin_ip,
+                cmd=cmd
+            )
+        if settings.DISABLE_OFFLOADING:
+            logger.info(
+                '========================================'
+                'Applying workaround for bug #1526544'
+                '========================================'
+            )
+            # Disable TSO offloading for every network interface
+            # that is not virtual (loopback, bridges, etc)
+            ifup_local = (
+                """#!/bin/bash\n"""
+                """if [[ -z "${1}" ]]; then\n"""
+                """  exit\n"""
+                """fi\n"""
+                """devpath=$(readlink -m /sys/class/net/${1})\n"""
+                """if [[ "${devpath}" == /sys/devices/virtual/* ]]; then\n"""
+                """  exit\n"""
+                """fi\n"""
+                """ethtool -K ${1} tso off\n"""
+            )
+            cmd = (
+                "echo -e '{0}' | sudo tee /sbin/ifup-local;"
+                "sudo chmod +x /sbin/ifup-local;"
+            ).format(ifup_local)
+            ssh.execute_on_remote(
+                ip=ssh.admin_ip,
+                cmd=cmd
+            )
+            cmd = (
+                'for ifname in $(ls /sys/class/net); do '
+                'sudo /sbin/ifup-local ${ifname}; done'
+            )
+            ssh.execute_on_remote(
+                ip=ssh.admin_ip,
+                cmd=cmd
+            )
+            # Log interface settings
+            cmd = (
+                'for ifname in $(ls /sys/class/net); do '
+                '([[ $(readlink -e /sys/class/net/${ifname}) == '
+                '/sys/devices/virtual/* ]] '
+                '|| ethtool -k ${ifname}); done'
+            )
+            result = ssh.execute_on_remote(
+                ip=ssh.admin_ip,
+                cmd=cmd
+            )
+            logger.debug('Offloading settings:\n{0}\n'.format(
+                         ''.join(result['stdout'])))
+
+        self.env.make_snapshot("empty_centos", is_make=True)
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def config_release(self, centos=False):
         """Configuration releases"""
         self.check_run("ready")
-        self.env.revert_snapshot("empty", skip_timesync=True)
+
+        if not centos:
+            self.env.revert_snapshot("empty", skip_timesync=True)
+        else:
+            self.env.revert_snapshot("empty_centos", skip_timesync=True)
 
         self.fuel_web.get_nailgun_version()
         self.fuel_web.change_default_network_settings()
