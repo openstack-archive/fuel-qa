@@ -11,3 +11,4 @@ Documentation for the QA test code repo
     base_tests.rst
     testrail.rst
     system_tests.rst
+    fuel_tests.rst
