@@ -476,6 +476,12 @@ class EnvironmentModel(object):
 
     @logwrap
     def wait_for_external_config(self, timeout=120):
+
+        wait(lambda: self.ssh_manager.exists_on_remote(
+            self.ssh_manager.admin_ip,
+            '/var/lock/wait_for_external_config'),
+            timeout=600)
+
         check_cmd = 'pkill -0 -f wait_for_external_config'
 
         wait(
