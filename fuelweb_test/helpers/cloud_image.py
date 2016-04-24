@@ -30,9 +30,9 @@ def generate_cloud_image_settings(cloud_image_settings_path, admin_network,
         os.makedirs(dir_path)
 
     meta_data_path = os.path.join(dir_path,
-                                  "meta_data")
+                                  "meta-data")
     user_data_path = os.path.join(dir_path,
-                                  "user_data")
+                                  "user-data")
 
     # create meta_data and user_data
 
@@ -71,12 +71,12 @@ def generate_cloud_image_settings(cloud_image_settings_path, admin_network,
         "password": password
     }
 
-    user_data_content = ("#cloud-config\n"
+    user_data_content = ("\n#cloud-config\n"
                          "ssh_pwauth: True\n"
                          "chpasswd:\n"
-                         "list: |\n"
-                         " {user}:{password}\n"
-                         "expire: False \n\n"
+                         " list: |\n"
+                         "  {user}:{password}\n"
+                         " expire: False \n\n"
                          "runcmd:\n"
                          " - sudo ifup {interface_name}\n"
                          " - sudo sed -i -e '/^PermitRootLogin/s/^"
