@@ -12,7 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import time
+
+from devops.helpers.helpers import wait
 
 from proboscis import TestProgram
 from proboscis import SkipTest
@@ -30,6 +33,8 @@ from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import MULTIPLE_NETWORKS_TEMPLATE
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
+
+from gates_tests.helpers import exceptions
 
 
 class TestBasic(object):
@@ -263,6 +268,66 @@ class TestBasic(object):
         self.env.d_env.nodes().admin.destroy()
         self.env.insert_cdrom_tray()
         self.env.setup_environment()
+        self.fuel_post_install_actions()
+
+    def packetary_setup_fuel(self, hostname):
+        logger.info("upload fuel-release packet")
+        if not settings.FUEL_RELEASE_PATH:
+            raise exceptions.FuelQAVariableNotSet('FUEL_RELEASE_PATH', '/path')
+        try:
+            ssh = SSHManager()
+            pack_path = '/tmp/'
+            full_pack_path = os.path.join(pack_path,
+                                          'fuel-release*.noarch.rpm')
+            ssh.upload_to_remote(
+                ip=ssh.admin_ip,
+                source=settings.FUEL_RELEASE_PATH.rstrip('/'),
+                target=pack_path)
+
+        except Exception:
+            logger.exception("Could not upload package")
+
+        logger.info("Update host information")
+        cmd = "echo HOSTNAME={} >> /etc/sysconfig/network".format(hostname)
+        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+
+        cmd = "echo {0} {1} {2} >> /etc/hosts".format(
+            ssh.admin_ip,
+            hostname,
+            settings.FUEL_MASTER_HOSTNAME)
+
+        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+
+        cmd = "hostname {}".format(hostname)
+        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+
+        logger.info("setup MOS repositories")
+        cmd = "rpm -ivh {}".format(full_pack_path)
+        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+
+        cmd = "yum install -y fuel-setup"
+        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+
+        cmd = "yum install -y screen"
+        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+
+        logger.info("Install Fuel services")
+
+        cmd = "screen -dm bash -c 'showmenu=no wait_for_external_config=yes " \
+              "bootstrap_admin_node.sh'"
+        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+
+        wait(lambda: SSHManager().exists_on_remote(
+            ssh.admin_ip,
+            '/var/lock/wait_for_external_config'),
+            timeout=600)
+
+        self.env.wait_for_external_config()
+        self.env.admin_actions.modify_configs(self.env.d_env.router())
+        self.env.kill_wait_for_external_config()
+
+        self.env.wait_bootstrap()
+        self.env.admin_actions.wait_for_fuel_ready()
         self.fuel_post_install_actions()
 
 
