@@ -260,7 +260,7 @@ class AdminActions(BaseActions):
 
     @logwrap
     def upload_packages(self, local_packages_dir, centos_repo_path,
-                        ubuntu_repo_path):
+                        ubuntu_repo_path, clear_target=False):
         logger.info("Upload fuel's packages from directory {0}."
                     .format(local_packages_dir))
 
@@ -272,7 +272,8 @@ class AdminActions(BaseActions):
                 ip=self.admin_ip,
                 source=local_packages_dir,
                 target=os.path.join(centos_repo_path, 'Packages'),
-                condition="(?i).*\.rpm$"
+                condition="(?i).*\.rpm$",
+                clear_target=clear_target
             )
             if centos_files_count > 0:
                 regenerate_centos_repo(centos_repo_path)
@@ -282,7 +283,8 @@ class AdminActions(BaseActions):
                 ip=self.admin_ip,
                 source=local_packages_dir,
                 target=os.path.join(ubuntu_repo_path, 'pool/main'),
-                condition="(?i).*\.deb$"
+                condition="(?i).*\.deb$",
+                clear_target=clear_target
             )
             if ubuntu_files_count > 0:
                 regenerate_ubuntu_repo(ubuntu_repo_path)
