@@ -361,6 +361,11 @@ Test task idempotency
 .. automodule:: fuelweb_test.tests.tests_lcm.test_idempotency
   :members:
 
+Test task ensurability
+---------------------
+.. automodule:: fuelweb_test.tests.tests_lcm.test_ensurability
+  :members:
+
 Gating tests
 ============
 
