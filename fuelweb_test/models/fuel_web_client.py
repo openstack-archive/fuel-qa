@@ -498,27 +498,42 @@ class FuelWebClient29(object):
                 if option in ('sahara', 'murano', 'ceilometer', 'mongo',
                               'ironic'):
                     section = 'additional_components'
-                if option in ('mongo_db_name', 'mongo_replset', 'mongo_user',
-                              'hosts_ip', 'mongo_password'):
+                elif option in {'mongo_db_name', 'mongo_replset', 'mongo_user',
+                                'hosts_ip', 'mongo_password'}:
                     section = 'external_mongo'
-                if option in ('volumes_ceph', 'images_ceph', 'ephemeral_ceph',
-                              'objects_ceph', 'osd_pool_size', 'volumes_lvm',
-                              'images_vcenter'):
+                elif option in {'volumes_ceph', 'images_ceph',
+                                'ephemeral_ceph', 'objects_ceph',
+                                'osd_pool_size', 'volumes_lvm',
+                                'images_vcenter'}:
                     section = 'storage'
-                if option in ('tenant', 'password', 'user'):
+                elif option in {'tenant', 'password', 'user'}:
                     section = 'access'
-                if option == 'assign_to_all_nodes':
+                elif option == 'assign_to_all_nodes':
                     section = 'public_network_assignment'
-                if option in ('neutron_l3_ha', 'neutron_dvr',
-                              'neutron_l2_pop'):
+                elif option in {'neutron_l3_ha', 'neutron_dvr',
+                                'neutron_l2_pop'}:
                     section = 'neutron_advanced_configuration'
-                if option in 'dns_list':
+                elif option in {'dns_list'}:
                     section = 'external_dns'
-                if option in 'ntp_list':
+                elif option in {'ntp_list'}:
                     section = 'external_ntp'
+                elif option in {'propagate_task_deploy'}:
+                    section = 'common'
                 if section:
-                    attributes['editable'][section][option]['value'] =\
-                        settings[option]
+                    try:
+                        attributes['editable'][section][option]['value'] =\
+                            settings[option]
+                    except KeyError:
+                        if section not in attributes['editable']:
+                            raise KeyError(
+                                "Section '{0}' not in "
+                                "attributes['editable']: {1}".format(
+                                    section, attributes['editable'].keys()))
+                        raise KeyError(
+                            "Option {0} not in attributes['editable'][{1}]: "
+                            "{2}".format(
+                                option, section,
+                                attributes['editable'][section].keys()))
 
             # we should check DVR limitations
             section = 'neutron_advanced_configuration'
