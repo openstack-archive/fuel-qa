@@ -80,6 +80,7 @@ class ExamplePlugin(TestBasic):
             settings={
                 "net_provider": 'neutron',
                 "net_segment_type": segment_type,
+                "propagate_task_deploy": True
             }
         )
 
@@ -167,6 +168,7 @@ class ExamplePlugin(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
+            settings={"propagate_task_deploy": True}
         )
 
         plugin_name = 'fuel_plugin_example_v3'
@@ -304,6 +306,7 @@ class ExamplePlugin(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
+            settings={"propagate_task_deploy": True}
         )
 
         plugin_name = 'fuel_plugin_example'
@@ -402,6 +405,7 @@ class ExamplePlugin(TestBasic):
             settings={
                 "net_provider": 'neutron',
                 "net_segment_type": NEUTRON_SEGMENT['tun'],
+                "propagate_task_deploy": True
             }
         )
 
