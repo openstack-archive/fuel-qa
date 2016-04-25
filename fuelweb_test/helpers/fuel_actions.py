@@ -31,6 +31,7 @@ from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
 from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
 from fuelweb_test.helpers.utils import cond_upload
+from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
 from fuelweb_test import settings as hlp_data
@@ -427,6 +428,34 @@ class FuelPluginBuilder(BaseActions):
         """
         self.execute_in_container("fpb --build {0}".format(
             path), self.container, 0)
+
+    def fpb_update_release_in_metadata(self, path):
+        """Update fuel version and openstack release version
+
+        :param path: path to plugin's dir on master node
+        """
+        metadata_path = os.path.join(path, 'metadata.yaml')
+        output = run_on_remote_get_results(
+            self.admin_remote,
+            "fuel --fuel-version --json",
+            jsonify=True)['stdout_json']
+        fuel_version = [str(output['release'])]
+        openstack_version = str(output['openstack_version'])
+        self.change_yaml_file_in_container(metadata_path,
+                                           ['fuel_version'], fuel_version)
+
+        temp_file = '/tmp/temp_file.yaml'
+
+        self.copy_between_node_and_container(
+            '{0}:{1}'.format(self.container, metadata_path), temp_file)
+        with self.admin_remote.open(temp_file, 'r') as f:
+            content = yaml.load(f.read())
+        content['releases'][0]['version'] = openstack_version
+        with self.admin_remote.open(temp_file, 'w') as f:
+            yaml.dump(content, f)
+        self.copy_between_node_and_container(temp_file,
+                                             '{0}:{1}'.format(self.container,
+                                                              metadata_path))
 
     def fpb_validate_plugin(self, path):
         """
