@@ -701,3 +701,18 @@ class NailgunClient(object):
         url = '/api/transactions/{task_id}/deployment_history'.format(
             task_id=task_id)
         return self.client.get(url)
+
+    @logwrap
+    @json_parse
+    def redeploy_cluster_changes(self, cluster_id, data=None):
+        """Deploy the changes of cluster settings
+
+        :param cluster_id: int, target cluster ID
+        :param data: dict, updated cluster attributes (if empty, the already
+                     uploaded attributes will be (re)applied)
+        :return: a decoded JSON response
+        """
+        if data is None:
+            data = dict()
+        return self.client.put(
+            "/api/clusters/{}/changes/redeploy".format(cluster_id), data)

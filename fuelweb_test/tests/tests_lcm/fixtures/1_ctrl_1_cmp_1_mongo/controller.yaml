@@ -152,8 +152,6 @@ tasks:
   - enable_quorum:
       type: shell
   - openstack-haproxy-nova: null
-  - upload_provision_data:
-      type: false
   - openstack-network-server-config: null
   - primary-database:
       skip:
