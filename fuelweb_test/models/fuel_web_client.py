@@ -2714,6 +2714,46 @@ class FuelWebClient29(object):
         self.assert_task_success(latest_task, interval=interval,
                                  timeout=timeout)
 
+    def deploy_cluster_changes_wait(
+            self, cluster_id, data=None,
+            timeout=help_data.DEPLOYMENT_TIMEOUT,
+            interval=30):
+        """Redeploy cluster to apply changes in its settings
+
+        :param cluster_id: int, env ID to apply changes for
+        :param data: dict, changed env settings
+        :param timeout: int, time (in seconds) to wait for deployment end
+        :param interval: int, time (in seconds) between deployment
+                              status queries
+        :return:
+        """
+        logger.info('Re-deploy cluster {} to apply the changed '
+                    'settings'.format(cluster_id))
+        if data is None:
+            data = dict()
+        task = self.client.redeploy_cluster_changes(cluster_id, data)
+        self.assert_task_success(task, interval=interval, timeout=timeout)
+
+    def execute_task_on_node(self, task, node_id, cluster_id):
+        """Execute deployment task against the corresponding node
+
+        :param task: str, name of a task to execute
+        :param node_id: int, node ID to execute task on
+        :param cluster_id: int, cluster ID
+        :return: None
+        """
+        try:
+            logger.info("Trying to execute {!r} task on node {!r}"
+                        .format(task, node_id))
+            tsk = self.client.put_deployment_tasks_for_cluster(
+                cluster_id=cluster_id,
+                data=[task],
+                node_id=node_id)
+            self.assert_task_success(tsk, timeout=30 * 60)
+        except (AssertionError, TimeoutError) as e:
+            logger.exception("Failed to run task {!r}\n"
+                             "Exception:\n{}".format(task, e))
+
 
 class FuelWebClient30(FuelWebClient29):
     """FuelWebClient that works with fuel-devops 3.0

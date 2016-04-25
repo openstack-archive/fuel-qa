@@ -688,3 +688,9 @@ class NailgunClient(object):
         """
         url = '/api/v1/nodes/{}/attributes/'.format(node_id)
         return self.client.get(url)
+
+    @logwrap
+    @json_parse
+    def redeploy_cluster_changes(self, cluster_id, data):
+        return self.client.put(
+            "/api/clusters/{}/changes/redeploy".format(cluster_id), data)

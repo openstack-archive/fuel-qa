@@ -15,7 +15,6 @@
 import fileinput
 import os
 
-from devops.helpers.helpers import TimeoutError
 from proboscis import asserts
 from proboscis import test
 import yaml
@@ -47,11 +46,18 @@ TASKS_BLACKLIST = [
     "configure_default_route",
     "netconfig"]
 
+SETTINGS_SKIPLIST = (
+    "dns_list",
+    "ntp_list",
+    "repo_setup"
+)
+
 
 class DeprecatedFixture(Exception):
-    def __init__(self):
-        msg = ('Please update fixtires in the fuel-qa repo with '
-               'according to generated fixtures')
+    def __init__(self, msg=None):
+        if not msg:
+            msg = ('Please update fixtures in the fuel-qa repo with '
+                   'according to generated fixtures')
         super(DeprecatedFixture, self).__init__(msg)
 
 
@@ -230,26 +236,6 @@ class LCMTestBasic(TestBasic):
                         if failed_tasks]
         return failed_nodes
 
-    def execute_task_on_node(self, task, node, cluster_id):
-        """Execute deployment task against the corresponding node
-
-        :param task: a string of task name
-        :param node: a dictionary with node description
-        :param cluster_id: an integer, number of cluster id
-        :return: None
-        """
-        try:
-            logger.info("Trying to execute {!r} task on node {!r}"
-                        .format(task, node['id']))
-            tsk = self.fuel_web.client.put_deployment_tasks_for_cluster(
-                cluster_id=cluster_id,
-                data=[task],
-                node_id=node['id'])
-            self.fuel_web.assert_task_success(tsk, timeout=30 * 60)
-        except (AssertionError, TimeoutError) as e:
-            logger.exception("Failed to run task {!r}\n"
-                             "Exception:\n{}".format(task, e))
-
     def generate_fixture(self, node_refs, cluster_id, slave_nodes):
         """Generate fixture with description of task idempotency
 
@@ -279,7 +265,8 @@ class LCMTestBasic(TestBasic):
                     tasks.append({task: {"type": task_type}})
                     continue
 
-                self.execute_task_on_node(task, node, cluster_id)
+                self.fuel_web.execute_task_on_node(task, node["id"],
+                                                   cluster_id)
 
                 try:
                     report = self.get_puppet_report(node)
@@ -327,6 +314,196 @@ class LCMTestBasic(TestBasic):
         logger.info("Generated fixture:\n{}"
                     .format(yaml.dump(result, default_flow_style=False)))
 
+    def _parse_settings(self, settings):
+        """Select only values and their types from settings
+
+        :param settings: dict, (env or node) settings
+        :return: dict, settings in short format
+        """
+        parsed = {}
+        for group in settings:
+            if group in SETTINGS_SKIPLIST:
+                continue
+            parsed[group] = {}
+            for attr, params in settings[group].iteritems():
+                if attr in SETTINGS_SKIPLIST:
+                    continue
+                try:
+                    parsed[group][attr] = dict(value=params['value'],
+                                               type=params['type'])
+                except KeyError:
+                    pass
+            # Do not include setting(s) or group(s) that doesn't have values
+            # (e.g. metadata)
+            if not parsed[group]:
+                del parsed[group]
+        return parsed
+
+    def _get_settings_difference(self, set1, set2):
+        """Select values and/or groups of set1 that are not present in set2
+
+        :param set1: set, set of dicts
+        :param set2: set, set of dicts
+        :return: dict, set1 items not present in set2
+        """
+        diff = {}
+        new_groups = set(set1) - set(set2)
+        if new_groups:
+            diff.update([(g, set1[g]) for g in new_groups])
+        for group in set1:
+            if group in new_groups:
+                continue
+            new_params = set(set1[group]) - set(set2[group])
+            if new_params:
+                diff[group] = {}
+                diff[group].update(
+                    [(s, set1[group][s]) for s in new_params])
+        return diff
+
+    def _cmp_settings(self, settings, fixtures):
+        """Compare current and stored settings
+
+        Return values and/or groups of settings that are new, comparing to
+        what is stored in fixtures.
+        Return values and/or groups of settings in fixtures that are outdated,
+        comparing to what is available in the cluster under test.
+
+        :param settings: dict, current settings in short format
+        :param fixtures: dict, stored settings in short format
+        :return: tuple, (new settings, outdated settings) pair
+        """
+        new_s = self._get_settings_difference(settings, fixtures)
+        outdated_f = self._get_settings_difference(fixtures, settings)
+        return new_s, outdated_f
+
+    def get_cluster_settings(self, cluster_id):
+        """Get cluster settings and return them in short format
+
+        :param cluster_id: int, ID of the cluster under test
+        :return: dict, cluster settings in short format
+        """
+        settings = self.fuel_web.client.get_cluster_attributes(
+            cluster_id)['editable']
+        return self._parse_settings(settings)
+
+    def get_nodes_settings(self, cluster_id):
+        """Get node settings and return them in short format
+
+        :param cluster_id: int, ID of the cluster under test
+        :return: dict, node settings in short format
+        """
+        nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+
+        node_settings = {}
+        for node in nodes:
+            node_attrs = self.fuel_web.client.get_node_attributes(node['id'])
+            roles = "_".join(sorted(node["roles"]))
+            node_settings[roles] = self._parse_settings(node_attrs)
+        return node_settings
+
+    def load_settings_fixtures(self, deployment):
+        """Load stored settings for the given cluster configuration
+
+        :param deployment: str, name of cluster configuration
+                          (e.g. 1_ctrl_1_cmp_1_cinder)
+        :return: tuple, (cluster, nodes) pair of stored settings
+        """
+        f_path = os.path.join(
+            os.path.dirname(__file__), "fixtures", deployment, "{}")
+
+        with open(f_path.format("cluster_settings.yaml")) as f:
+            cluster_fixture = yaml.load(f)
+        with open(f_path.format("nodes_settings.yaml")) as f:
+            nodes_fixture = yaml.load(f)
+
+        return cluster_fixture, nodes_fixture
+
+    def check_cluster_settings_consistency(self, settings, fixtures):
+        """Check if stored cluster settings require update
+
+        :param settings: dict, settings of the cluster under test
+        :param fixtures: dict, stored cluster settings
+        :return: tuple, (new settings, outdated settings) pair; this indicates
+                 whether fixtures require update
+        """
+        return self._cmp_settings(settings, fixtures)
+
+    def check_nodes_settings_consistency(self, settings, fixtures):
+        """Check if stored node settings require update
+
+        :param settings: dict, node settings of the cluster under test
+        :param fixtures: dict, stored node settings
+        :return: tuple, (new settings, outdated settings) pair; this indicates
+                 whether fixtures require update
+        """
+        new_settings = {}
+        outdated_fixtures = {}
+        for node in fixtures:
+            new_s, outdated_f = self._cmp_settings(
+                settings[node], fixtures[node])
+            if new_s:
+                new_settings[node] = dict(settings=new_s)
+            if outdated_f:
+                outdated_fixtures[node] = dict(settings=outdated_f)
+        return new_settings, outdated_fixtures
+
+    def check_settings_consistency(self, cluster_id, deployment):
+        """Check if settings fixtures are up to date.
+
+        :param cluster_id: int, env under test
+        :param deployment: str, name of env configuration under test
+        :return: None
+        """
+        cluster_f, nodes_f = self.load_settings_fixtures(deployment)
+        cluster_s = self.get_cluster_settings(cluster_id)
+        nodes_s = self.get_nodes_settings(cluster_id)
+
+        consistency = {}
+        new_cluster_s, old_cluster_f = \
+            self.check_cluster_settings_consistency(cluster_s, cluster_f)
+        new_nodes_s, old_nodes_f = \
+            self.check_nodes_settings_consistency(nodes_s, nodes_f)
+
+        consistency["fixtures"] = dict(
+            old_cluster_fixtures=old_cluster_f,
+            old_nodes_fixtures=old_nodes_f)
+        consistency["settings"] = dict(
+            new_cluster_settings=new_cluster_s,
+            new_nodes_settings=new_nodes_s)
+
+        if new_cluster_s or any([n['settings'] for n in new_nodes_s.values()]):
+            logger.info(
+                "Settings fixtures require update as new options are "
+                "available now for configuring an environment\n{}".format(
+                    yaml.safe_dump(consistency["settings"],
+                                   default_flow_style=False))
+            )
+        if old_cluster_f or any([n['settings'] for n in old_nodes_f.values()]):
+            logger.info(
+                "Settings fixtures require update as some options are no "
+                "longer available for configuring an environment\n{}".format(
+                    yaml.safe_dump(consistency["fixtures"],
+                                   default_flow_style=False))
+            )
+        if any([new_cluster_s, old_cluster_f]):
+            self.generate_settings_fixture(cluster_id)
+            msg = ('Please update setting fixtures in the fuel-qa repo '
+                   'according to generated data')
+            raise DeprecatedFixture(msg)
+
+    def generate_settings_fixture(self, cluster_id):
+        """Get environment and nodes settings, and print them to console.
+
+        :return: None
+        """
+        cluster_s = self.get_cluster_settings(cluster_id)
+        nodes_s = self.get_nodes_settings(cluster_id)
+
+        logger.info("Generated environment settings fixture:\n{}".format(
+            yaml.safe_dump(cluster_s, default_flow_style=False)))
+        logger.info("Generated nodes settings fixture:\n{}".format(
+            yaml.safe_dump(nodes_s, default_flow_style=False)))
+
 
 @test(groups=['deploy_lcm_environment'])
 class SetupLCMEnvironment(LCMTestBasic):
@@ -349,7 +526,8 @@ class SetupLCMEnvironment(LCMTestBasic):
         Snapshot: "lcm_deploy_1_ctrl_1_cmp_1_cinder"
         """
         deployment = '1_ctrl_1_cmp_1_cinder'
-        snapshotname = 'lcm_deploy_{}'.format(deployment)
+        snapshotname = 'deploy_{}'.format(deployment)
+        # snapshotname = 'lcm_deploy_{}'.format(deployment)
         self.check_run(snapshotname)
         self.show_step(1)
         self.env.revert_snapshot("ready_with_3_slaves")
