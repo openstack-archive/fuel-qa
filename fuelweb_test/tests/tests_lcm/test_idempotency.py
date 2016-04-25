@@ -56,7 +56,8 @@ class TaskIdempotency(LCMTestBasic):
                                 .format(task_name))
                     continue
 
-                self.execute_task_on_node(task_name, node, cluster_id)
+                self.fuel_web.execute_task_on_node(task_name, node["id"],
+                                                   cluster_id)
 
                 try:
                     report = self.get_puppet_report(node)
