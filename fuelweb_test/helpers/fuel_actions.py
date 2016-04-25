@@ -14,17 +14,17 @@
 
 import os
 import re
-import yaml
+from six.moves import cStringIO
 
 from devops.helpers.helpers import wait
 from devops.models import DiskDevice
 from devops.models import Node
 from devops.models import Volume
 from proboscis.asserts import assert_equal
+import yaml
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
-
 from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
 from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
 from fuelweb_test.helpers import replace_repos
@@ -323,6 +323,19 @@ class AdminActions(BaseActions):
         )
         assert_equal(result['exit_code'], 0,
                      "Saving Fuel settings failed: {0}!".format(result))
+
+    @logwrap
+    def get_tasks_description(self, release=None):
+        """Get tasks description
+
+        :param release: a string with release name
+        :return: a dictionary of tasks description
+        """
+        if not release:
+            release = ''
+        cmd = "cat `find /etc/puppet/{} -name tasks.yaml`".format(release)
+        data = self.ssh_manager.execute_on_remote(self.admin_ip, cmd)
+        return yaml.load(cStringIO(''.join(data['stdout'])))
 
 
 class NailgunActions(BaseActions):
