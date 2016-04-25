@@ -3,7 +3,7 @@ roles:
 tasks:
   - update_hosts: null
   - clear_nodes_info:
-      type: shell
+      type: skipped
   - copy_keys_ceph:
       type: copy_files
   - globals: null
@@ -21,8 +21,6 @@ tasks:
   - dns-client: null
   - allocate_hugepages: null
   - plugins_setup_repositories: null
-  - upload_provision_data:
-      type: false
   - ssl-keys-saving: null
   - upload_configuration:
       type: upload_file
