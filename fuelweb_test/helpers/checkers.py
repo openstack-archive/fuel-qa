@@ -23,6 +23,7 @@ from time import sleep
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
+
 from netaddr import IPAddress
 from netaddr import IPNetwork
 from proboscis.asserts import assert_equal
@@ -32,6 +33,9 @@ from proboscis.asserts import assert_true
 from six.moves.urllib.error import HTTPError
 from six.moves.urllib.error import URLError
 # pylint: enable=import-error
+# pylint: disable=redefined-builtin
+from six.moves import xrange
+# pylint: enable=redefined-builtin
 import yaml
 
 from fuelweb_test import logger
@@ -1374,3 +1378,93 @@ def fail_deploy(not_ready_transactions):
             ))
         logger.error(failure_text)
         assert_true(len(not_ready_transactions) == 0, failure_text)
+
+
+def check_free_space_admin(env, min_disk_admin=50, disk_id=0):
+    """Calculate available free space on /var and /var/log/ disk partitions
+
+    :param env: environment model object
+    :param min_disk_admin: minimal disk size of admin node
+    :param disk_id: id of disk in the admin node's list of disks
+    """
+    disk_size_admin = env.d_env.nodes().admin.disk_devices[
+        disk_id].volume.get_capacity()
+    min_disk_admin = min_disk_admin * 1024 ** 3
+    if disk_size_admin < min_disk_admin:
+        raise ValueError(
+            "The minimal disk size should be {0}, current {1}".format(
+                min_disk_admin, disk_size_admin))
+    admin_ip = env.ssh_manager.admin_ip
+    var_free_space = ssh_manager.check_call(
+        ip=admin_ip,
+        cmd="df -h /var")['stdout'][1].split()[3][:-1]
+    system_dirs = ['/boot/efi', '/boot$', 'docker-docker--pool', 'SWAP',
+                   'os-root']
+    system_dirs_size = 0
+    for sys_dir in system_dirs:
+        system_dir = ssh_manager.check_call(
+            ip=admin_ip,
+            cmd="lsblk -b | grep -we  {0}  | tail -1".format(
+                sys_dir))['stdout'][0]
+        system_dir = int(re.findall(r"\D(\d{9,12})\D", system_dir)[0])
+        system_dirs_size += system_dir
+    system_files_var = int(ssh_manager.check_call(
+        ip=admin_ip,
+        cmd="df -B1 /var")['stdout'][1].split()[2])
+    init_size = (min_disk_admin - system_dirs_size)
+    min_var_free_space = (init_size * 0.4 - system_files_var) / 1024 ** 3
+    if var_free_space < min_var_free_space:
+        raise ValueError(
+            "The minimal /var size should be {0}, current {1}".format(
+                min_var_free_space, var_free_space))
+    system_files_log = int(ssh_manager.check_call(
+        ip=admin_ip,
+        cmd="df -B1 /var/log")['stdout'][1].split()[2])
+    min_log_free_space = (init_size * 0.6 - system_files_log) / 1024 ** 3
+    log_free_space = ssh_manager.check_call(
+        ip=admin_ip,
+        cmd="df -h /var/log")['stdout'][1].split()[3][:-1]
+    if log_free_space < min_log_free_space:
+        raise ValueError(
+            "The minimal /var/log size should be {0}, current {1}".format(
+                min_log_free_space, log_free_space))
+
+
+def check_free_space_slave(env, min_disk_slave=150):
+    """Calculate available free space on /var/lib/nova disk partition
+
+    :param env: environment model object
+    :param min_disk_slave: minimal disk size of slave node
+    """
+    min_disk_slave = min_disk_slave * 1024 ** 3
+    disk_size_slave = 0
+    active_nodes = []
+    for node in env.d_env.nodes().slaves:
+        if node.driver.node_active(node):
+            active_nodes.append(node)
+    for slave_id in xrange(len(active_nodes)):
+        volume_slave_numb = len(
+            env.d_env.nodes().slaves[slave_id].disk_devices)
+        for disk_id in xrange(volume_slave_numb):
+            volume_size = env.d_env.nodes().slaves[slave_id].disk_devices[
+                disk_id].volume.get_capacity()
+            disk_size_slave += volume_size
+        if disk_size_slave < min_disk_slave:
+            raise ValueError(
+                "The minimal disk size should be {0}, current {1}".format(
+                    min_disk_slave, disk_size_slave))
+    cluster_id = env.fuel_web.get_last_created_cluster()
+    compute_ip = [compute['ip'] for compute in
+                  env.fuel_web.get_nailgun_cluster_nodes_by_roles(
+                      cluster_id, ['compute'])]
+    if compute_ip:
+        small_flavor_disk = 20
+        for ip in compute_ip:
+            vm_storage_free_space = ssh_manager.check_call(
+                ip=ip,
+                cmd="df -h /var/lib/nova")['stdout'][1].split()[3][:-1]
+            if vm_storage_free_space < 4 * small_flavor_disk:
+                raise ValueError(
+                    "The minimal vm-nova storage size should be {0}, "
+                    "current {1}".format(
+                        vm_storage_free_space, 4 * small_flavor_disk))
