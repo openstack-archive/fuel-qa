@@ -57,3 +57,8 @@ Generate bugs statistics for TestPlan
 -------------------------------------
 .. automodule:: fuelweb_test.testrail.generate_statistics
    :members:
+
+Generate failure statistics for TestPlan
+-------------------------------------
+.. automodule:: fuelweb_test.testrail.generate_failure_group_statistics
+   :members:
