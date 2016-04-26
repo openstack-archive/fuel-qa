@@ -269,7 +269,8 @@ class SSHManager(object):
         remote = self._get_remote(ip=ip, port=port)
         return remote.rm_rf(path)
 
-    def cond_upload(self, ip, source, target, port=22, condition=''):
+    def cond_upload(self, ip, source, target, port=22, condition='',
+                    clean_target=False):
         """ Upload files only if condition in regexp matches filenames
 
         :param ip: host ip
@@ -285,6 +286,10 @@ class SSHManager(object):
         # we can move this function to some *_actions class
         if self.isdir_on_remote(ip=ip, port=port, path=target):
             target = posixpath.join(target, os.path.basename(source))
+
+        if clean_target:
+            self.rm_rf_on_remote(ip=ip, port=port, path=target)
+            self.mkdir_on_remote(ip=ip, port=port, path=target)
 
         source = os.path.expanduser(source)
         if not os.path.isdir(source):
