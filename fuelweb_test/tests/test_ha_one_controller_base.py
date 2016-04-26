@@ -15,6 +15,7 @@
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.tests.base_test_case import TestBasic
+from fuelweb_test.helpers.checkers import check_free_space
 
 
 class HAOneControllerNeutronBase(TestBasic):
@@ -42,7 +43,11 @@ class HAOneControllerNeutronBase(TestBasic):
                 'slave-02': ['compute']
             }
         )
+        check_free_space(self.env, 'admin')
+
         self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        check_free_space(self.env, 'slave')
 
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id),
