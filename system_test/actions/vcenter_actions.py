@@ -269,7 +269,7 @@ class VMwareActions(object):
     def deploy_changes(self):
         """Deploy environment"""
         if self.cluster_id is None:
-            raise SkipTest()
+            raise SkipTest("The cluster_id is not specified, can not deploy")
 
         self.fuel_web.deploy_cluster_wait(self.cluster_id,
                                           check_services=False)
