@@ -29,8 +29,7 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["fuel_plugins", "fuel_plugin_example",
-              "install_plugin_after_cluster_create"])
+@test(groups=["fuel_plugins", "install_plugin_after_cluster_create"])
 class ExamplePluginPostDeploy(TestBasic):
     """ExamplePlugin."""  # TODO documentation
 
