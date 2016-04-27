@@ -76,7 +76,7 @@ class TestMultipleClusterNets(TestNetworkTemplatesBase):
         """
 
         if not MULTIPLE_NETWORKS:
-            raise SkipTest()
+            raise SkipTest('MULTIPLE_NETWORKS not enabled')
 
         self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready")
@@ -413,7 +413,7 @@ class TestMultipleClusterNets(TestNetworkTemplatesBase):
         """
 
         if not MULTIPLE_NETWORKS:
-            raise SkipTest()
+            raise SkipTest('MULTIPLE_NETWORKS not enabled')
 
         self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready")
@@ -528,7 +528,7 @@ class TestMultipleClusterNets(TestNetworkTemplatesBase):
         """
 
         if not MULTIPLE_NETWORKS:
-            raise SkipTest()
+            raise SkipTest('MULTIPLE_NETWORKS not enabled')
 
         self.show_step(1, initialize=True)
         self.check_run("deploy_controllers_from_custom_nodegroup")

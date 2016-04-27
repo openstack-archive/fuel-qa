@@ -115,7 +115,7 @@ class GateOstf(TestBasic):
         self.show_step(1, initialize=True)
         if not self.env.revert_snapshot(
                 'gate_ostf_ceph_ha'):
-            raise SkipTest()
+            raise SkipTest('Snapshot gate_ostf_ceph_ha not found')
         self.show_step(2)
         update_ostf()
         cluster_id = self.fuel_web.get_last_created_cluster()
