@@ -214,8 +214,6 @@ class SeparateAllFailover(TestBasic):
             controller)['online'], timeout=60 * 5)
 
         self.fuel_web.assert_ha_services_ready(cluster_id, should_fail=1)
-        self.fuel_web.assert_os_services_ready(cluster_id, timeout=15 * 60,
-                                               should_fail=1)
+        self.fuel_web.assert_os_services_ready(cluster_id, timeout=15 * 60)
 
-        self.fuel_web.run_ostf(
-            cluster_id=cluster_id, should_fail=1)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)

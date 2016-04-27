@@ -126,13 +126,13 @@ class HaScaleGroup5(TestBasic):
         )
 
         self.show_step(8)
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.show_step(9)
         self.fuel_web.verify_network(cluster_id)
 
         self.show_step(10)
-        self.fuel_web.run_ostf(cluster_id, should_fail=1)
+        self.fuel_web.run_ostf(cluster_id)
 
         self.show_step(11)
         with self.fuel_web.get_ssh_for_node('slave-07') as remote_ceph:
@@ -146,13 +146,13 @@ class HaScaleGroup5(TestBasic):
             pending_deletion=True
         )
         self.show_step(12)
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.show_step(13)
         self.fuel_web.verify_network(cluster_id)
 
         self.show_step(14)
-        self.fuel_web.run_ostf(cluster_id, should_fail=1)
+        self.fuel_web.run_ostf(cluster_id)
 
         self.env.make_snapshot('add_delete_compute_cinder_ceph')
 
@@ -260,13 +260,13 @@ class HaScaleGroup5(TestBasic):
         )
 
         self.show_step(9)
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.show_step(10)
         self.fuel_web.verify_network(cluster_id)
 
         self.show_step(11)
-        self.fuel_web.run_ostf(cluster_id, should_fail=1)
+        self.fuel_web.run_ostf(cluster_id)
 
         self.show_step(12)
         with self.fuel_web.get_ssh_for_node('slave-03') as remote_ceph:
@@ -281,12 +281,12 @@ class HaScaleGroup5(TestBasic):
         )
 
         self.show_step(13)
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.show_step(14)
         self.fuel_web.verify_network(cluster_id)
 
         self.show_step(15)
-        self.fuel_web.run_ostf(cluster_id, should_fail=1)
+        self.fuel_web.run_ostf(cluster_id)
 
         self.env.make_snapshot('add_delete_controller_cinder_ceph')

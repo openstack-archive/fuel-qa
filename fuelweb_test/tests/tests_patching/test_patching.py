@@ -216,9 +216,8 @@ class PatchingTests(TestBasic):
             self.fuel_web.deploy_cluster_wait(cluster_id,
                                               check_services=False)
             self.fuel_web.verify_network(cluster_id)
-            # sanity set isn't running due to LP1457515
             self.fuel_web.run_ostf(cluster_id=cluster_id,
-                                   test_sets=['smoke', 'ha'])
+                                   test_sets=['sanity', 'smoke', 'ha'])
 
             if "ceph-osd" in roles:
                 with self.fuel_web.get_ssh_for_node(
@@ -376,9 +375,9 @@ class PatchingMasterTests(TestBasic):
                 self.fuel_web.deploy_cluster_wait(cluster_id,
                                                   check_services=False)
                 self.fuel_web.verify_network(cluster_id)
-                # sanity set isn't running due to LP1457515
+
                 self.fuel_web.run_ostf(cluster_id=cluster_id,
-                                       test_sets=['smoke', 'ha'])
+                                       test_sets=['sanity', 'smoke', 'ha'])
 
                 if "ceph-osd" in roles:
                     with self.fuel_web.get_ssh_for_node(

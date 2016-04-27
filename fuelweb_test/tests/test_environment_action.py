@@ -341,15 +341,12 @@ class ControllerReplacement(base_test_case.TestBasic):
         self.fuel_web.update_nodes(
             cluster_id, {'slave-01': ['controller']}, False, True)
 
-        # Disable check services here, according to nova-manage shows
-        #  XXX for node that we remove
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(cluster_id,
-                               test_sets=['ha', 'smoke', 'sanity'],
-                               should_fail=1)
+                               test_sets=['ha', 'smoke', 'sanity'])
 
         self.env.make_snapshot("deploy_ha_neutron_tun_ctrl_replacement")
 
@@ -402,15 +399,12 @@ class ControllerReplacement(base_test_case.TestBasic):
         self.fuel_web.update_nodes(
             cluster_id, {'slave-01': ['controller']}, False, True)
 
-        # Disable check services here, according to nova-manage shows
-        #  XXX for node that we remove
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(cluster_id,
-                               test_sets=['ha', 'smoke', 'sanity'],
-                               should_fail=1)
+                               test_sets=['ha', 'smoke', 'sanity'])
 
         self.env.make_snapshot("deploy_ha_neutron_vlan_ctrl_replacement")
 
@@ -462,14 +456,11 @@ class ControllerReplacement(base_test_case.TestBasic):
         self.fuel_web.update_nodes(
             cluster_id, {'slave-01': ['controller']}, False, True)
 
-        # Disable check services here, according to nova-manage shows
-        #  XXX for node that we remove
-        self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(cluster_id,
-                               test_sets=['ha', 'smoke', 'sanity'],
-                               should_fail=1)
+                               test_sets=['ha', 'smoke', 'sanity'])
 
         self.env.make_snapshot("deploy_ha_nova_ctrl_replacement")
