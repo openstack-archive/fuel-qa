@@ -58,6 +58,7 @@ class ExamplePluginPostDeploy(TestBasic):
             settings={
                 "net_provider": 'neutron',
                 "net_segment_type": NEUTRON_SEGMENT['vlan'],
+                'propagate_task_deploy': True
             }
         )
 
