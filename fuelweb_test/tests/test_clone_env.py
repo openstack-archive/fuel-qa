@@ -28,6 +28,8 @@ from fuelweb_test.tests.test_os_upgrade import TestOSupgrade
 @test(groups=["clone_env_for_os_upgrade", "os_upgrade"])
 class TestCloneEnv(base_test_case.TestBasic):
 
+    snapshot='upgrade_ha_ceph_for_all_ubuntu_neutron_vlan'
+
     @test(
         depends_on=[TestOSupgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan],
         groups=["test_clone_environment"])
@@ -42,11 +44,9 @@ class TestCloneEnv(base_test_case.TestBasic):
 
         """
 
-        if not self.env.d_env.has_snapshot(
-                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
-            raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan",
-                                 skip_timesync=True)
+        if not self.env.d_env.has_snapshot(self.snapshot):
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot))
+        self.env.revert_snapshot(self.snapshot, skip_timesync=True)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         cluster = self.fuel_web.client.get_cluster(cluster_id)
@@ -127,11 +127,9 @@ class TestCloneEnv(base_test_case.TestBasic):
             3. Check status code
 
         """
-        if not self.env.d_env.has_snapshot(
-                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
-            raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan",
-                                 skip_timesync=True)
+        if not self.env.d_env.has_snapshot(self.snapshot):
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot))
+        self.env.revert_snapshot(self.snapshot, skip_timesync=True)
 
         data = {
             "name": "new_test_cluster",
@@ -156,11 +154,9 @@ class TestCloneEnv(base_test_case.TestBasic):
             3. Check status code
 
         """
-        if not self.env.d_env.has_snapshot(
-                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
-            raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan",
-                                 skip_timesync=True)
+        if not self.env.d_env.has_snapshot(self.snapshot):
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot))
+        self.env.revert_snapshot(self.snapshot, skip_timesync=True)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         cluster = self.fuel_web.client.get_cluster(cluster_id)
@@ -190,11 +186,9 @@ class TestCloneEnv(base_test_case.TestBasic):
             3. Check status code
 
         """
-        if not self.env.d_env.has_snapshot(
-                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
-            raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan",
-                                 skip_timesync=True)
+        if not self.env.d_env.has_snapshot(self.snapshot):
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot))
+        self.env.revert_snapshot(self.snapshot, skip_timesync=True)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -221,11 +215,9 @@ class TestCloneEnv(base_test_case.TestBasic):
             3. Check status code
 
         """
-        if not self.env.d_env.has_snapshot(
-                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
-            raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan",
-                                 skip_timesync=True)
+        if not self.env.d_env.has_snapshot(self.snapshot):
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot))
+        self.env.revert_snapshot(self.snapshot, skip_timesync=True)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -249,11 +241,9 @@ class TestCloneEnv(base_test_case.TestBasic):
             3. Check status code
 
         """
-        if not self.env.d_env.has_snapshot(
-                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
-            raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan",
-                                 skip_timesync=True)
+        if not self.env.d_env.has_snapshot(self.snapshot):
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot))
+        self.env.revert_snapshot(self.snapshot, skip_timesync=True)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -282,11 +272,9 @@ class TestCloneEnv(base_test_case.TestBasic):
             3. Check status code
 
         """
-        if not self.env.d_env.has_snapshot(
-                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
-            raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan",
-                                 skip_timesync=True)
+        if not self.env.d_env.has_snapshot(self.snapshot):
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot))
+        self.env.revert_snapshot(self.snapshot, skip_timesync=True)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -316,11 +304,9 @@ class TestCloneEnv(base_test_case.TestBasic):
 
         """
 
-        if not self.env.d_env.has_snapshot(
-                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
-            raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan",
-                                 skip_timesync=True)
+        if not self.env.d_env.has_snapshot(self.snapshot):
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot))
+        self.env.revert_snapshot(self.snapshot, skip_timesync=True)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         cluster = self.fuel_web.client.get_cluster(cluster_id)
