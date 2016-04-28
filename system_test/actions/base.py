@@ -26,6 +26,7 @@ from six.moves import xrange
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.utils import TimeStat
+from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import settings
 
 from system_test import logger
@@ -114,6 +115,7 @@ class PrepareActions(object):
         self.check_run("empty")
         with TimeStat("setup_environment", is_uniq=True):
             self.env.setup_environment()
+            self.fuel_post_install_actions()
 
         self.env.make_snapshot("empty", is_make=True)
 
