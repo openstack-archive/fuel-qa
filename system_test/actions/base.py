@@ -114,6 +114,7 @@ class PrepareActions(object):
         self.check_run("empty")
         with TimeStat("setup_environment", is_uniq=True):
             self.env.setup_environment()
+            self.fuel_post_install_actions()
 
         self.env.make_snapshot("empty", is_make=True)
 

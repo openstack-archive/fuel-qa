@@ -45,6 +45,7 @@ from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.helpers import multiple_networks_hacks
 from fuelweb_test.models.fuel_web_client import FuelWebClient
 from fuelweb_test.models.collector_client import CollectorClient
+from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import settings
 from fuelweb_test.settings import iface_alias
 from fuelweb_test import logwrap
@@ -73,6 +74,7 @@ class EnvironmentModel(object):
         self.nailgun_actions = NailgunActions()
         self.postgres_actions = PostgresActions()
         self.fuel_bootstrap_actions = FuelBootstrapCliActions()
+        self.test_basic = TestBasic()
 
     @property
     def fuel_web(self):
@@ -391,12 +393,12 @@ class EnvironmentModel(object):
         self.d_env.nodes().admin.destroy()
         self.insert_cdrom_tray()
         self.setup_environment()
+        self.test_basic.fuel_post_install_actions()
 
     def setup_environment(self, custom=settings.CUSTOM_ENV,
                           build_images=settings.BUILD_IMAGES,
                           iso_connect_as=settings.ADMIN_BOOT_DEVICE,
-                          security=settings.SECURITY_TEST,
-                          force_ssl=settings.FORCE_HTTPS_MASTER_NODE):
+                          security=settings.SECURITY_TEST):
         # Create environment and start the Fuel master node
         admin = self.d_env.nodes().admin
         self.d_env.start([admin])
@@ -426,105 +428,6 @@ class EnvironmentModel(object):
         self.admin_actions.modify_configs(self.d_env.router())
         self.kill_wait_for_external_config()
         self.wait_bootstrap()
-
-        if settings.UPDATE_FUEL:
-            # Update Ubuntu packages
-            self.admin_actions.upload_packages(
-                local_packages_dir=settings.UPDATE_FUEL_PATH,
-                centos_repo_path=None,
-                ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
-
-        self.admin_actions.wait_for_fuel_ready()
-        time.sleep(10)
-        self.set_admin_keystone_password()
-        self.sync_time(['admin'])
-        if settings.UPDATE_MASTER:
-            if settings.UPDATE_FUEL_MIRROR:
-                for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
-                    conf_file = '/etc/yum.repos.d/temporary-{}.repo'.format(i)
-                    cmd = ("echo -e"
-                           " '[temporary-{0}]\nname="
-                           "temporary-{0}\nbaseurl={1}/"
-                           "\ngpgcheck=0\npriority="
-                           "1' > {2}").format(i, url, conf_file)
-
-                    self.ssh_manager.execute(
-                        ip=self.ssh_manager.admin_ip,
-                        cmd=cmd
-                    )
-            self.admin_install_updates()
-        if settings.MULTIPLE_NETWORKS:
-            self.describe_other_admin_interfaces(admin)
-        if settings.FUEL_STATS_HOST:
-            self.nailgun_actions.set_collector_address(
-                settings.FUEL_STATS_HOST,
-                settings.FUEL_STATS_PORT,
-                settings.FUEL_STATS_SSL)
-            # Restart statsenderd to apply settings(Collector address)
-            self.nailgun_actions.force_fuel_stats_sending()
-        if settings.FUEL_STATS_ENABLED and settings.FUEL_STATS_HOST:
-            self.fuel_web.client.send_fuel_stats(enabled=True)
-            logger.info('Enabled sending of statistics to {0}:{1}'.format(
-                settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
-            ))
-        if settings.PATCHING_DISABLE_UPDATES:
-            cmd = "find /etc/yum.repos.d/ -type f -regextype posix-egrep" \
-                  " -regex '.*/mos[0-9,\.]+\-(updates|security).repo' | " \
-                  "xargs -n1 -i sed '$aenabled=0' -i {}"
-            self.ssh_manager.execute_on_remote(
-                ip=self.ssh_manager.admin_ip,
-                cmd=cmd
-            )
-        if settings.DISABLE_OFFLOADING:
-            logger.info(
-                '========================================'
-                'Applying workaround for bug #1526544'
-                '========================================'
-            )
-            # Disable TSO offloading for every network interface
-            # that is not virtual (loopback, bridges, etc)
-            ifup_local = (
-                """#!/bin/bash\n"""
-                """if [[ -z "${1}" ]]; then\n"""
-                """  exit\n"""
-                """fi\n"""
-                """devpath=$(readlink -m /sys/class/net/${1})\n"""
-                """if [[ "${devpath}" == /sys/devices/virtual/* ]]; then\n"""
-                """  exit\n"""
-                """fi\n"""
-                """ethtool -K ${1} tso off\n"""
-            )
-            cmd = (
-                "echo -e '{0}' | sudo tee /sbin/ifup-local;"
-                "sudo chmod +x /sbin/ifup-local;"
-            ).format(ifup_local)
-            self.ssh_manager.execute_on_remote(
-                ip=self.ssh_manager.admin_ip,
-                cmd=cmd
-            )
-            cmd = (
-                'for ifname in $(ls /sys/class/net); do '
-                'sudo /sbin/ifup-local ${ifname}; done'
-            )
-            self.ssh_manager.execute_on_remote(
-                ip=self.ssh_manager.admin_ip,
-                cmd=cmd
-            )
-            # Log interface settings
-            cmd = (
-                'for ifname in $(ls /sys/class/net); do '
-                '([[ $(readlink -e /sys/class/net/${ifname}) == '
-                '/sys/devices/virtual/* ]] '
-                '|| ethtool -k ${ifname}); done'
-            )
-            result = self.ssh_manager.execute_on_remote(
-                ip=self.ssh_manager.admin_ip,
-                cmd=cmd
-            )
-            logger.debug('Offloading settings:\n{0}\n'.format(
-                         ''.join(result['stdout'])))
-            if force_ssl:
-                self.enable_force_https(self.ssh_manager.admin_ip)
 
     @logwrap
     def enable_force_https(self, admin_node_ip):
