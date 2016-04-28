@@ -172,6 +172,7 @@ class SetupEnvironment(TestBasic):
 
         with TimeStat("setup_environment", is_uniq=True):
             self.env.setup_environment()
+            self.env.post_install_actions()
         self.env.make_snapshot("empty", is_make=True)
         self.current_log_step = 0
 
@@ -192,6 +193,7 @@ class SetupEnvironment(TestBasic):
         self.show_step(1, initialize=True)
         self.show_step(2)
         self.env.setup_environment(custom=True, build_images=True)
+        self.env.post_install_actions()
         self.show_step(3)
         if REPLACE_DEFAULT_REPOS and REPLACE_DEFAULT_REPOS_ONLY_ONCE:
             self.fuel_web.replace_default_repos()

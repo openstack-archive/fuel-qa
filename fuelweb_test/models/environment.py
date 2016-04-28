@@ -391,12 +391,12 @@ class EnvironmentModel(object):
         self.d_env.nodes().admin.destroy()
         self.insert_cdrom_tray()
         self.setup_environment()
+        self.post_install_actions()
 
     def setup_environment(self, custom=settings.CUSTOM_ENV,
                           build_images=settings.BUILD_IMAGES,
                           iso_connect_as=settings.ADMIN_BOOT_DEVICE,
-                          security=settings.SECURITY_TEST,
-                          force_ssl=settings.FORCE_HTTPS_MASTER_NODE):
+                          security=settings.SECURITY_TEST):
         # Create environment and start the Fuel master node
         admin = self.d_env.nodes().admin
         self.d_env.start([admin])
@@ -427,6 +427,7 @@ class EnvironmentModel(object):
         self.kill_wait_for_external_config()
         self.wait_bootstrap()
 
+    def post_install_actions(self, force_ssl=settings.FORCE_HTTPS_MASTER_NODE):
         if settings.UPDATE_FUEL:
             # Update Ubuntu packages
             self.admin_actions.upload_packages(
@@ -454,7 +455,7 @@ class EnvironmentModel(object):
                     )
             self.admin_install_updates()
         if settings.MULTIPLE_NETWORKS:
-            self.describe_other_admin_interfaces(admin)
+            self.describe_other_admin_interfaces(self.d_env.nodes().admin)
         if settings.FUEL_STATS_HOST:
             self.nailgun_actions.set_collector_address(
                 settings.FUEL_STATS_HOST,

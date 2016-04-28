@@ -193,6 +193,7 @@ class Manager(Basic):
         else:
             with TimeStat("setup_environment", is_uniq=True):
                 self.env.setup_environment()
+                self.env.post_install_actions()
 
             self.env.make_snapshot("empty", is_make=True)
             self.env.resume_environment()
