@@ -23,6 +23,7 @@ import json
 import os
 import posixpath
 import re
+import subprocess
 import signal
 import time
 import traceback
@@ -1144,3 +1145,14 @@ def dict_merge(a, b):
         else:
             result[k] = copy.deepcopy(v)
     return result
+
+@logwrap
+def get_iso_label(iso_path):
+    out = subprocess.check_output(
+        ['file --dereference --keep-going {}'.format(iso_path)],
+        shell=True)
+    iso_label = re.search("(?<=').*(?=')", out).group(0)
+    logger.info(
+        'ISO label {0} extracted from ISO file {1}'.format(
+            iso_label, settings.ISO_PATH))
+    return iso_label

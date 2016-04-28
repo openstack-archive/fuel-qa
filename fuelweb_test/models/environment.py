@@ -41,6 +41,7 @@ from fuelweb_test.helpers.fuel_actions import NessusActions
 from fuelweb_test.helpers.fuel_actions import FuelBootstrapCliActions
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import erase_data_from_hdd
+from fuelweb_test.helpers.utils import get_iso_label
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.helpers import multiple_networks_hacks
 from fuelweb_test.models.fuel_web_client import FuelWebClient
@@ -153,7 +154,7 @@ class EnvironmentModel(object):
     def get_keys(self, node, custom=None, build_images=None,
                  iso_connect_as='cdrom'):
         params = {
-            'device_label': settings.ISO_LABEL,
+            'device_label': get_iso_label(settings.ISO_PATH),
             'iface': iface_alias('eth0'),
             'ip': node.get_ip_address_by_network_name(
                 self.d_env.admin_net),
