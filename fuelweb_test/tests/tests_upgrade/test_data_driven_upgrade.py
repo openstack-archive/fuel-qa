@@ -509,7 +509,7 @@ class UpgradeRollback(DataDrivenUpgradeBase):
             "{!r} does not exists".format(self.source_snapshot_name))
         self.show_step(2)
         old_cluster_id = self.fuel_web.get_last_created_cluster()
-        self.env.reinstall_master_node()
+        self.reinstall_master_node()
         self.show_step(3)
         self.do_restore(self.backup_path, self.local_path,
                         self.repos_backup_path, self.repos_local_path)
@@ -695,7 +695,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
             "The test can not use given environment - snapshot "
             "{!r} does not exists".format(self.source_snapshot_name))
         self.show_step(2)
-        self.env.reinstall_master_node()
+        self.reinstall_master_node()
         self.show_step(3)
         self.show_step(4)
         self.show_step(5)
@@ -960,7 +960,7 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         self.show_step(2)
-        self.env.reinstall_master_node()
+        self.reinstall_master_node()
         self.show_step(3)
         self.show_step(4)
         self.show_step(5)
@@ -1076,7 +1076,7 @@ class UpgradeDetach_Plugin(DataDrivenUpgradeBase):
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         self.show_step(2)
-        self.env.reinstall_master_node()
+        self.reinstall_master_node()
         self.show_step(3)
         self.show_step(4)
         self.show_step(5)
