@@ -153,7 +153,7 @@ class EnvironmentModel(object):
     def get_keys(self, node, custom=None, build_images=None,
                  iso_connect_as='cdrom'):
         params = {
-            'device_label': settings.ISO_LABEL,
+            'device_label': self.get_iso_label(),
             'iface': iface_alias('eth0'),
             'ip': node.get_ip_address_by_network_name(
                 self.d_env.admin_net),
@@ -382,6 +382,17 @@ class EnvironmentModel(object):
         cmd = """EDITOR="sed -i s/tray=\\'open\\'//" virsh edit {}""".format(
             name)
         subprocess.check_call(cmd, shell=True)
+
+    @staticmethod
+    def get_iso_label(self):
+        out = subprocess.check_output(
+            ['file --dereference --keep-going {}'.format(settings.ISO_PATH)],
+            shell=True)
+        iso_label = re.search("(?<=').*(?=')", out).group(0)
+        logger.info(
+            'ISO label {0} extracted from ISO file {1}'.format(
+                iso_label, settings.ISO_PATH))
+        return iso_label
 
     def reinstall_master_node(self):
         """Erase boot sector and run setup_environment"""
