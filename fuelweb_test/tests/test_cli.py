@@ -167,6 +167,7 @@ class CommandLineTest(test_cli_base.CommandLine):
         cmd = ('fuel --env-id={0} node set --node {1}\
          --role=controller'.format(cluster_id, node_ids[0]))
         self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        self.update_node_interfaces(node_ids[0])
         cmd = ('fuel --env-id={0} node --provision --node={1} --json'.format(
             cluster_id, node_ids[0]))
         task = self.ssh_manager.execute_on_remote(admin_ip,
@@ -181,6 +182,8 @@ class CommandLineTest(test_cli_base.CommandLine):
         cmd = ('fuel --env-id={0} node set --node {1},{2} \
         --role=compute,cinder'.format(cluster_id, node_ids[1], node_ids[2]))
         self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        for node_id in (node_ids[1], node_ids[2]):
+            self.update_node_interfaces(node_id)
         cmd = ('fuel --env-id={0} node --provision \
         --node={1},{2} --json'.format(cluster_id, node_ids[1], node_ids[2]))
         task = self.ssh_manager.execute_on_remote(admin_ip,
@@ -427,6 +430,7 @@ class CommandLineTest(test_cli_base.CommandLine):
         cmd = ('fuel --env-id={0} node set --node {1}\
          --role=controller'.format(cluster_id, node_ids[0]))
         self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        self.update_node_interfaces(node_ids[0])
         cmd = ('fuel --env-id={0} node --provision --node={1} --json'.format(
             cluster_id, node_ids[0]))
         task = self.ssh_manager.execute_on_remote(admin_ip,
@@ -449,6 +453,7 @@ class CommandLineTest(test_cli_base.CommandLine):
         cmd = ('fuel --env-id={0} node set --node {1}\
         --role=compute'.format(cluster_id, node_ids[1]))
         self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        self.update_node_interfaces(node_ids[1])
 
         cmd = ('fuel --env-id={0} node --provision \
         --node={1} --json'.format(cluster_id, node_ids[1]))
@@ -472,6 +477,7 @@ class CommandLineTest(test_cli_base.CommandLine):
         cmd = ('fuel --env-id={0} node set --node {1}\
         --role=cinder'.format(cluster_id, node_ids[2]))
         self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        self.update_node_interfaces(node_ids[2])
 
         cmd = ('fuel --env-id={0} node --provision \
         --node={1} --json'.format(cluster_id, node_ids[2]))
@@ -495,6 +501,7 @@ class CommandLineTest(test_cli_base.CommandLine):
         cmd = ('fuel --env-id={0} node set --node {1}\
         --role=mongo'.format(cluster_id, node_ids[3]))
         self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        self.update_node_interfaces(node_ids[3])
 
         cmd = ('fuel --env-id={0} node --provision \
         --node={1} --json'.format(cluster_id, node_ids[3]))
@@ -519,6 +526,8 @@ class CommandLineTest(test_cli_base.CommandLine):
         cmd = ('fuel --env-id={0} node set --node {1},{2} '
                '--role=ceph-osd'.format(cluster_id, node_ids[4], node_ids[5]))
         self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        for node_id in (node_ids[4], node_ids[5]):
+            self.update_node_interfaces(node_id)
 
         cmd = ('fuel '
                '--env-id={0} node --provision '
@@ -543,6 +552,7 @@ class CommandLineTest(test_cli_base.CommandLine):
         cmd = ('fuel --env-id={0} node set --node {1} '
                '--role=base-os'.format(cluster_id, node_ids[6]))
         self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        self.update_node_interfaces(node_ids[6])
 
         cmd = ('fuel --env-id={0} node --provision '
                '--node={1} --json'.format(cluster_id, node_ids[6]))

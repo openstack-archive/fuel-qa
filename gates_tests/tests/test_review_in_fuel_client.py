@@ -182,6 +182,7 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
             cmd = ('fuel --env-id={0} node set --node {1} --role=controller'
                    .format(cluster_id, node_id[0]))
             remote.execute(cmd)
+            self.update_node_interfaces(node_id[0])
             cmd = ('fuel --env-id={0} node --provision --node={1} --json'
                    .format(cluster_id, node_id[0]))
             task = run_on_remote(remote, cmd, jsonify=True)
