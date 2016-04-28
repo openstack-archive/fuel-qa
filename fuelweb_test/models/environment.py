@@ -153,7 +153,7 @@ class EnvironmentModel(object):
     def get_keys(self, node, custom=None, build_images=None,
                  iso_connect_as='cdrom'):
         params = {
-            'device_label': settings.ISO_LABEL,
+            'device_label': 'OpenStack_Fuel',
             'iface': iface_alias('eth0'),
             'ip': node.get_ip_address_by_network_name(
                 self.d_env.admin_net),
