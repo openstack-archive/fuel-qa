@@ -119,14 +119,14 @@ class TestRunStatistics(object):
     def handle_blocked(self, test, result):
         if result['custom_launchpad_bug']:
             return False
-        m = re.search(r'Blocked by "(\S+)" test.', result['comment'])
+        m = re.search(r'Blocked by "(\S+)" test.', result['comment'] or '')
         if m:
             blocked_test_group = m.group(1)
         else:
-            logger.debug('Blocked result #{0} for test {1} does '
-                         'not have upstream test name in its '
-                         'comments!'.format(result['id'],
-                                            test['custom_test_group']))
+            logger.warning('Blocked result #{0} for test {1} does '
+                           'not have upstream test name in its '
+                           'comments!'.format(result['id'],
+                                              test['custom_test_group']))
             return False
 
         if not result['version']:
