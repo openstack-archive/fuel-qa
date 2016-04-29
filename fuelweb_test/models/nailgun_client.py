@@ -716,3 +716,27 @@ class NailgunClient(object):
             data = {}
         return self.client.put(
             "/api/clusters/{}/changes/redeploy".format(cluster_id), data)
+
+    @logwrap
+    def assign_ip_address_before_deploy_start(self, cluster_id):
+        self.client.get(
+            '/api/clusters/{}/orchestrator/deployment/defaults/'.format(
+                cluster_id))
+
+    @logwrap
+    @json_parse
+    def get_deployment_info_for_task(self, task_id):
+        return self.client.get(
+            '/api/transactions/{}/deployment_info'.format(task_id))
+
+    @logwrap
+    @json_parse
+    def get_cluster_settings_for_deployment_task(self, task_id):
+        return self.client.get(
+            '/api/transactions/{}/settings'.format(task_id))
+
+    @logwrap
+    @json_parse
+    def get_network_configuration_for_deployment_task(self, task_id):
+        return self.client.get(
+            '/api/transactions/{}/network_configuration/'.format(task_id))
