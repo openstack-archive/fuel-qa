@@ -12,12 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import time
+
 from proboscis import TestProgram
 from proboscis import SkipTest
 from proboscis import test
 
 from fuelweb_test import logger
+from fuelweb_test import settings
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers.utils import erase_data_from_hdd
 from fuelweb_test.helpers.utils import get_test_method_name
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.helpers.ssh_manager import SSHManager
@@ -150,6 +154,117 @@ class TestBasic(object):
             return True
         return False
 
+    def fuel_post_install_actions(self,
+                                  force_ssl=settings.FORCE_HTTPS_MASTER_NODE
+                                  ):
+        if settings.UPDATE_FUEL:
+            # Update Ubuntu packages
+            self.env.admin_actions.upload_packages(
+                local_packages_dir=settings.UPDATE_FUEL_PATH,
+                centos_repo_path=None,
+                ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
+        time.sleep(10)
+        self.env.set_admin_keystone_password()
+        self.env.sync_time(['admin'])
+        if settings.UPDATE_MASTER:
+            if settings.UPDATE_FUEL_MIRROR:
+                for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
+                    conf_file = '/etc/yum.repos.d/temporary-{}.repo'.format(i)
+                    cmd = ("echo -e"
+                           " '[temporary-{0}]\nname="
+                           "temporary-{0}\nbaseurl={1}/"
+                           "\ngpgcheck=0\npriority="
+                           "1' > {2}").format(i, url, conf_file)
+
+                    self.ssh_manager.execute(
+                        ip=self.ssh_manager.admin_ip,
+                        cmd=cmd
+                    )
+            self.env.admin_install_updates()
+        if settings.MULTIPLE_NETWORKS:
+            self.env.describe_other_admin_interfaces(
+                self.env.d_env.nodes().admin)
+        if settings.FUEL_STATS_HOST:
+            self.env.nailgun_actions.set_collector_address(
+                settings.FUEL_STATS_HOST,
+                settings.FUEL_STATS_PORT,
+                settings.FUEL_STATS_SSL)
+            # Restart statsenderd to apply settings(Collector address)
+            self.env.nailgun_actions.force_fuel_stats_sending()
+        if settings.FUEL_STATS_ENABLED and settings.FUEL_STATS_HOST:
+            self.fuel_web.client.send_fuel_stats(enabled=True)
+            logger.info('Enabled sending of statistics to {0}:{1}'.format(
+                settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
+            ))
+        if settings.PATCHING_DISABLE_UPDATES:
+            cmd = "find /etc/yum.repos.d/ -type f -regextype posix-egrep" \
+                  " -regex '.*/mos[0-9,\.]+\-(updates|security).repo' | " \
+                  "xargs -n1 -i sed '$aenabled=0' -i {}"
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
+        if settings.DISABLE_OFFLOADING:
+            logger.info(
+                '========================================'
+                'Applying workaround for bug #1526544'
+                '========================================'
+            )
+            # Disable TSO offloading for every network interface
+            # that is not virtual (loopback, bridges, etc)
+            ifup_local = (
+                """#!/bin/bash\n"""
+                """if [[ -z "${1}" ]]; then\n"""
+                """  exit\n"""
+                """fi\n"""
+                """devpath=$(readlink -m /sys/class/net/${1})\n"""
+                """if [[ "${devpath}" == /sys/devices/virtual/* ]]; then\n"""
+                """  exit\n"""
+                """fi\n"""
+                """ethtool -K ${1} tso off\n"""
+            )
+            cmd = (
+                "echo -e '{0}' | sudo tee /sbin/ifup-local;"
+                "sudo chmod +x /sbin/ifup-local;"
+            ).format(ifup_local)
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
+            cmd = (
+                'for ifname in $(ls /sys/class/net); do '
+                'sudo /sbin/ifup-local ${ifname}; done'
+            )
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
+            # Log interface settings
+            cmd = (
+                'for ifname in $(ls /sys/class/net); do '
+                '([[ $(readlink -e /sys/class/net/${ifname}) == '
+                '/sys/devices/virtual/* ]] '
+                '|| ethtool -k ${ifname}); done'
+            )
+            result = self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
+            logger.debug('Offloading settings:\n{0}\n'.format(
+                         ''.join(result['stdout'])))
+            if force_ssl:
+                self.env.enable_force_https(self.ssh_manager.admin_ip)
+
+    def reinstall_master_node(self):
+        """Erase boot sector and run setup_environment"""
+        with self.env.d_env.get_admin_remote() as remote:
+            erase_data_from_hdd(remote, mount_point='/boot')
+            remote.execute("/sbin/shutdown")
+        self.env.d_env.nodes().admin.destroy()
+        self.env.insert_cdrom_tray()
+        self.env.setup_environment()
+        self.fuel_post_install_actions()
+
 
 @test
 class SetupEnvironment(TestBasic):
@@ -173,6 +288,7 @@ class SetupEnvironment(TestBasic):
 
         with TimeStat("setup_environment", is_uniq=True):
             self.env.setup_environment()
+            self.fuel_post_install_actions()
         self.env.make_snapshot("empty", is_make=True)
         self.current_log_step = 0
 
@@ -196,6 +312,7 @@ class SetupEnvironment(TestBasic):
         self.show_step(3)
         if REPLACE_DEFAULT_REPOS and REPLACE_DEFAULT_REPOS_ONLY_ONCE:
             self.fuel_web.replace_default_repos()
+            self.fuel_post_install_actions()
         self.env.make_snapshot("empty_custom_manifests", is_make=True)
         self.current_log_step = 0
 

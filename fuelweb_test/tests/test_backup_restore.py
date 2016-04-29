@@ -420,7 +420,7 @@ class BackupReinstallRestoreHA(NeutronTunHaBase):
             assert_true(os.path.exists(local_backup),
                         "Backup file wasn't downloaded!")
 
-        self.env.reinstall_master_node()
+        self.reinstall_master_node()
 
         with self.env.d_env.get_admin_remote() as remote:
             remote.execute('mkdir -p {}'.format(os.path.dirname(backup)))
