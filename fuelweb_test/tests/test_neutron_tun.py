@@ -248,7 +248,6 @@ class TestHaNeutronScalability(TestBasic):
             15. Check swift, and invoke swift-rings-rebalance.sh
                 on all the controllers
             16. Run OSTF
-            17. Run sync_time() to check that NTPD daemon is operational
 
         Duration 160m
         Snapshot neutron_tun_scalability
@@ -412,9 +411,8 @@ class TestHaNeutronScalability(TestBasic):
 
         _check_swift(primary_node_s14)
 
-        # Step 16-17. Run OSTF and sync time
+        # Step 16. Run OSTF
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
             test_sets=['sanity', 'smoke', 'ha'])
-        self.env.sync_time()
         self.env.make_snapshot("neutron_vlan_ha_scalability")
