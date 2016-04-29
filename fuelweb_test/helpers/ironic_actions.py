@@ -90,13 +90,14 @@ class IronicActions(os_actions.OpenStackActions):
             return False
 
         wait(_wait_for_ironic_hypervisor,
-             timeout=60 * 5, timeout_msg='Failed to update hypervisor details')
+             timeout=60 * 10,
+             timeout_msg='Failed to update hypervisor details')
 
     def wait_for_vms(self, ironic_conn):
         srv_list = ironic_conn.get_servers()
         for srv in srv_list:
             wait(lambda: self.get_instance_detail(srv).status == "ACTIVE",
-                 timeout=60 * 15, timeout_msg='Server didn\'t became active')
+                 timeout=60 * 30, timeout_msg='Server didn\'t became active')
 
     @staticmethod
     def verify_vms_connection(ironic_conn):
