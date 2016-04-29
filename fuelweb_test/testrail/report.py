@@ -275,7 +275,33 @@ def get_tests_results(systest_build, os):
 
     for klass in test_classes:
         klass_result = test_classes[klass]
-        if len(klass_result['child']) == 1:
+        fuel_tests_results = []
+        if klass.startswith('fuel_tests.'):
+            for one in klass_result['child']:
+                test_name = one['name']
+                test_package, _, test_class = one['className'].rpartition('.')
+                test_result = TestResult(
+                    name=test_name,
+                    group=expand_test_group(one['name'],
+                                            systest_build['name'],
+                                            os),
+                    status=one['status'].lower(),
+                    duration='{0}s'.format(int(one['duration']) + 1),
+                    url='{0}testReport/{1}/{2}/{3}'.format(
+                        test_build.url,
+                        test_package,
+                        test_class,
+                        test_name),
+                    version='_'.join(
+                        [test_build.build_data["id"]] + (
+                            test_build.build_data["description"] or
+                            test_name).split()),
+                    description=(test_build.build_data["description"] or
+                                 test_name),
+                    comments=one['skippedMessage'],
+                )
+                fuel_tests_results.append(test_result)
+        elif len(klass_result['child']) == 1:
             test = klass_result['child'][0]
             if check_untested(test):
                 continue
@@ -344,7 +370,10 @@ def get_tests_results(systest_build, os):
                 comments=test_comments,
                 steps=case_steps,
             )
-        tests_results.append(test_result)
+        if fuel_tests_results:
+            tests_results.extend(fuel_tests_results)
+        else:
+            tests_results.append(test_result)
     return tests_results
 
 
