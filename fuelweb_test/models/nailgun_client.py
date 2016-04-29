@@ -701,3 +701,36 @@ class NailgunClient(object):
         url = '/api/transactions/{task_id}/deployment_history'.format(
             task_id=task_id)
         return self.client.get(url)
+
+    @logwrap
+    def generate_ip_address_before_deploy_start(self, cluster_id):
+        self.client.get(
+            '/api/v1/clusters/{}/orchestrator/deployment/defaults/'.format(
+                cluster_id))
+
+    @logwrap
+    def get_last_task_id(self, cluster_id, task_name):
+        tasks = self.get_tasks()
+        tasks_ids = []
+        for task in tasks:
+            if task['cluster'] == cluster_id and task['name'] == task_name:
+                tasks_ids.append(task['id'])
+        return min(tasks_ids)
+
+    @logwrap
+    @json_parse
+    def get_deployment_info(self, task_id):
+        return self.client.get(
+            '/api/transactions/{}/deployment_info'.format(task_id))
+
+    @logwrap
+    @json_parse
+    def get_cluster_settings(self, task_id):
+        return self.client.get(
+            '/api/transactions/{}/settings'.format(task_id))
+
+    @logwrap
+    @json_parse
+    def get_network_configuration(self, task_id):
+        return self.client.get(
+            '/api/transactions/{}/network_configuration/'.format(task_id))
