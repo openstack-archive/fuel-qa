@@ -885,7 +885,9 @@ class FuelWebClient(object):
                     'until bugs LP#1578218 and LP#1578257 fixed')
         logger.warning(warn_txt)
         warn(warn_txt, UserWarning)
-
+        cluster_attributes = self.client.get_cluster_attributes(cluster_id)
+        self.client.assign_ip_address_before_deploy_start(cluster_id)
+        network_settings = self.client.get_networks(cluster_id)
         if not is_feature and help_data.DEPLOYMENT_RETRIES == 1:
             logger.info('Deploy cluster %s', cluster_id)
             task = self.deploy_cluster(cluster_id)
@@ -903,6 +905,54 @@ class FuelWebClient(object):
             task = self.client.deploy_nodes(cluster_id)
             self.assert_task_success(task, timeout=timeout, interval=interval)
             self.check_deploy_state(cluster_id, check_services, check_tasks)
+        self.check_cluster_settings(cluster_id, cluster_attributes)
+        self.check_network_settings(cluster_id, network_settings)
+        self.check_deployment_info_save_for_task(cluster_id)
+
+    @logwrap
+    def check_cluster_settings(self, cluster_id, cluster_attributes):
+        task_id = self.get_last_task_id(cluster_id, 'deployment')
+        cluster_settings = \
+            self.client.get_cluster_settings_for_deployment_task(task_id)
+        logger.debug('Cluster settings before deploy {}'.format(
+            cluster_attributes))
+        logger.debug('Cluster settings after deploy {}'.format(
+            cluster_settings))
+        assert_equal(cluster_attributes, cluster_settings,
+                     message='Cluster attributes before deploy are not equal'
+                             ' with cluster settings after deploy')
+
+    @logwrap
+    def check_network_settings(self, cluster_id, network_settings):
+        task_id = self.get_last_task_id(cluster_id, 'deployment')
+        network_configuration = \
+            self.client.get_network_configuration_for_deployment_task(task_id)
+        logger.debug('Network settings before deploy {}'.format(
+            network_settings))
+        logger.debug('Network settings after deploy {}'.format(
+            network_configuration))
+        assert_equal(network_settings, network_configuration,
+                     message='Network settings from cluster configuration '
+                             'and deployment task are not equal')
+
+    @logwrap
+    def check_deployment_info_save_for_task(self, cluster_id):
+        try:
+            task_id = self.get_last_task_id(cluster_id, 'deployment')
+            self.client.get_deployment_info_for_task(task_id)
+        except Exception:
+            logger.error(
+                "Cannot get information about deployment for task {}".format(
+                    task_id))
+
+    @logwrap
+    def get_last_task_id(self, cluster_id, task_name):
+        tasks = self.client.get_tasks()
+        tasks_ids = []
+        for task in tasks:
+            if task['cluster'] == cluster_id and task['name'] == task_name:
+                tasks_ids.append(task['id'])
+        return min(tasks_ids)
 
     def deploy_cluster_wait_progress(self, cluster_id, progress,
                                      return_task=None):
@@ -2829,17 +2879,14 @@ class FuelWebClient(object):
         self.assert_task_success(task, interval=interval, timeout=timeout)
 
     def execute_task_on_node(self, task_name, node_id,
-                             cluster_id, force_exception=False,
-                             force_execution=True):
+                             cluster_id, force_exc=False):
         """Execute deployment task against the corresponding node
 
         :param task_name: str, name of a task to execute
         :param node_id: int, node ID to execute task on
         :param cluster_id: int, cluster ID
-        :param force_exception: bool, indication whether exceptions on task
+        :param force_exc: bool, indication whether exceptions on task
                execution are ignored
-        :param force_execution: bool, run particular task on nodes
-               and do not care if there were changes or not
         :return: None
         """
         try:
@@ -2848,10 +2895,9 @@ class FuelWebClient(object):
             task = self.client.put_deployment_tasks_for_cluster(
                 cluster_id=cluster_id,
                 data=[task_name],
-                node_id=node_id,
-                force=force_execution)
+                node_id=node_id)
             self.assert_task_success(task, timeout=30 * 60)
         except (AssertionError, TimeoutError):
             logger.exception("Failed to run task {!r}".format(task_name))
-            if force_exception:
+            if force_exc:
                 raise
