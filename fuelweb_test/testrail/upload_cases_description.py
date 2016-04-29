@@ -35,11 +35,36 @@ from system_test import tests_directory
 from system_test import get_basepath
 from system_test.tests.base import ActionTest
 
+import pytest
+from _pytest.config import _prepareconfig
+from _pytest.python import FixtureManager
+from _pytest.mark import MarkMapping
 
 GROUP_FIELD = 'custom_test_group'
 
 STEP_NUM_PATTERN = re.compile(r'^(\d{1,3})[.].+')
 DURATION_PATTERN = re.compile(r'Duration:?\s+(\d+(?:[sm]|\s?m))(?:in)?\b')
+
+
+def get_cases_from_pytest(group):
+    config = _prepareconfig(args=str(""))
+    session = pytest.Session(config)
+    session._fixturemanager = FixtureManager(session)
+    ret = [i for i
+           in session.perform_collect() if
+           group in list(MarkMapping(i.keywords)._mymarks)]
+    return ret
+
+
+def group_in_pytest(group):
+    config = _prepareconfig(args=str(""))
+    session = pytest.Session(config)
+    session._fixturemanager = FixtureManager(session)
+    l = [list(MarkMapping(i.keywords)._mymarks) for i
+         in session.perform_collect()]
+    groups = set([item for sublist in l for item in sublist])
+
+    return group in groups
 
 
 def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
@@ -51,50 +76,71 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
 
     for jenkins_suffix in groups:
         group = groups[jenkins_suffix]
-        plan.filter(group_names=[group])
-        for case in plan.tests:
-            if not _is_case_processable(case=case, tests=tests):
-                continue
+        if group_in_pytest(group):
+            for case in get_cases_from_pytest(group):
+                docstring = case.obj.__doc__ or ''
 
-            case_name = test_group = _get_test_case_name(case)
+                title, steps, duration = _parse_docstring(docstring, case)
 
-            if _is_not_included(case_name, tests_include) or \
-                    _is_excluded(case_name, tests_exclude):
-                continue
+                test_group = case.obj.__name__
 
-            docstring = _get_docstring(parent_home=case.entry.parent.home,
-                                       case_state=case.state,
-                                       home=case.entry.home)
-
-            title, steps, duration = _parse_docstring(docstring, case)
-
-            if case.entry.home.func_name in GROUPS_TO_EXPAND:
-                """Expand specified test names with the group names that are
-                   used in jenkins jobs where this test is started.
-                """
-                title = ' - '.join([title, jenkins_suffix])
-                test_group = '_'.join([case.entry.home.func_name,
-                                       jenkins_suffix])
-
-            test_case = {
-                "title": title,
-                "type_id": 1,
-                "milestone_id": milestone_id,
-                "priority_id": default_test_priority,
-                "estimate": duration,
-                "refs": "",
-                "custom_test_group": test_group,
-                "custom_test_case_description": docstring or " ",
-                "custom_test_case_steps": steps
-            }
-
-            if not any([x[GROUP_FIELD] == test_group for x in tests]):
+                test_case = {
+                    "title": title,
+                    "type_id": 1,
+                    "milestone_id": milestone_id,
+                    "priority_id": default_test_priority,
+                    "estimate": duration,
+                    "refs": "",
+                    "custom_test_group": test_group,
+                    "custom_test_case_description": docstring or " ",
+                    "custom_test_case_steps": steps
+                }
                 tests.append(test_case)
-            else:
-                logger.warning("Testcase '{0}' run in multiple Jenkins jobs!"
-                               .format(test_group))
+        else:
+            plan.filter(group_names=[group])
+            for case in plan.tests:
+                if not _is_case_processable(case=case, tests=tests):
+                    continue
 
-        plan.tests = all_plan_tests[:]
+                case_name = test_group = _get_test_case_name(case)
+
+                if _is_not_included(case_name, tests_include) or \
+                        _is_excluded(case_name, tests_exclude):
+                    continue
+
+                docstring = _get_docstring(parent_home=case.entry.parent.home,
+                                           case_state=case.state,
+                                           home=case.entry.home)
+
+                title, steps, duration = _parse_docstring(docstring, case)
+
+                if case.entry.home.func_name in GROUPS_TO_EXPAND:
+                    """Expand specified test names with the group names that are
+                       used in jenkins jobs where this test is started.
+                    """
+                    title = ' - '.join([title, jenkins_suffix])
+                    test_group = '_'.join([case.entry.home.func_name,
+                                           jenkins_suffix])
+
+                test_case = {
+                    "title": title,
+                    "type_id": 1,
+                    "milestone_id": milestone_id,
+                    "priority_id": default_test_priority,
+                    "estimate": duration,
+                    "refs": "",
+                    "custom_test_group": test_group,
+                    "custom_test_case_description": docstring or " ",
+                    "custom_test_case_steps": steps
+                }
+
+                if not any([x[GROUP_FIELD] == test_group for x in tests]):
+                    tests.append(test_case)
+                else:
+                    logger.warning("Testcase '{0}' run in multiple "
+                                   "Jenkins jobs!".format(test_group))
+
+            plan.tests = all_plan_tests[:]
 
     return tests
 
@@ -410,6 +456,7 @@ def main():
         groups=tests_groups,
         default_test_priority=testrail_default_test_priority
     )
+    import ipdb; ipdb.set_trace()  # breakpoint e517e4f6 //
 
     upload_tests_descriptions(testrail_project=project,
                               section_id=testrail_section['id'],
