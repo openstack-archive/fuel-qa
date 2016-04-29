@@ -20,6 +20,7 @@ from devops.models import DiskDevice
 from devops.models import Node
 from devops.models import Volume
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
 # noinspection PyUnresolvedReferences
 from six.moves import cStringIO
 import yaml
@@ -56,10 +57,11 @@ class BaseActions(object):
             obj_id=obj_id)
 
     def restart_service(self, service):
-        result = self.ssh_manager.execute(
+        self.ssh_manager.execute_on_remote(
             ip=self.admin_ip,
-            cmd="systemctl restart {0}".format(service))
-        return result['exit_code'] == 0
+            cmd="systemctl restart {0}".format(service),
+            err_msg="Failed to restart service {!r}, please inspect logs for "
+                    "details".format(service))
 
 
 class AdminActions(BaseActions):
@@ -237,78 +239,64 @@ class AdminActions(BaseActions):
 class NailgunActions(BaseActions):
     """NailgunActions."""  # TODO documentation
 
-    def update_nailgun_settings_once(self, settings):
-        # temporary change Nailgun settings (until next container restart)
+    def update_nailgun_settings(self, settings):
         cfg_file = '/etc/nailgun/settings.yaml'
-        ng_settings = yaml.load(
-            self.ssh_manager.execute_on_remote(
-                ip=self.admin_ip,
-                cmd='cat {0}'.format(cfg_file))['stdout_str']
-        )
+        with self.ssh_manager.open_on_remote(self.admin_ip, cfg_file) as f:
+            ng_settings = yaml.load(f)
 
         ng_settings.update(settings)
-        logger.debug('Uploading new nailgun settings: {}'.format(
+        logger.debug('Uploading new nailgun settings: {!r}'.format(
             ng_settings))
-        self.ssh_manager.execute_on_remote(
-            ip=self.admin_ip,
-            cmd='echo "{0}" | tee {1}'.format(yaml.dump(ng_settings), cfg_file)
-        )
+        with self.ssh_manager.open_on_remote(
+                self.admin_ip, cfg_file, "w") as f:
+            yaml.dump(ng_settings, f)
+        self.restart_service("nailgun")
 
     def set_collector_address(self, host, port, ssl=False):
-        cmd = ("awk '/COLLECTOR.*URL/' /usr/lib/python2.7"
-               "/site-packages/nailgun/settings.yaml")
-        protocol = 'http' if not ssl else 'https'
-        parameters = {}
-        for p in self.ssh_manager.execute_on_remote(
-                ip=self.admin_ip,
-                cmd=cmd)['stdout_str'].split('\n'):
-            parameters[p.split(': ')[0]] = re.sub(
-                r'https?://\{collector_server\}',
-                '{0}://{1}:{2}'.format(protocol, host, port),
-                p.split(': ')[1])[1:-1]
-        parameters['OSWL_COLLECT_PERIOD'] = 0
-        logger.debug('Custom collector parameters: {0}'.format(parameters))
-        self.update_nailgun_settings_once(parameters)
-        if ssl:
-            # if test collector server doesn't have trusted SSL cert
-            # installed we have to use this hack in order to disable cert
-            # verification and allow using of self-signed SSL certificate
-            cmd = ("sed -i '/elf.verify/ s/True/False/' /usr/lib/python2.6"
-                   "/site-packages/requests/sessions.py")
-            self.ssh_manager.execute_on_remote(ip=self.admin_ip, cmd=cmd)
+        base_cfg_file = ('/usr/lib/python2.7/site-packages/'
+                         'nailgun/settings.yaml')
+        assert_true(
+            self.ssh_manager.exists_on_remote(
+                self.ssh_manager.admin_ip, base_cfg_file),
+            "Nailgun config file was not found at {!r}".format(base_cfg_file))
+
+        server = "{!s}:{!s}".format(host, port)
+        parameters = {'COLLECTOR_SERVER': server,
+                      'OSWL_COLLECT_PERIOD': 0}
+        if not ssl:
+            # replace https endpoints to http endpoints
+            with self.ssh_manager.open_on_remote(self.admin_ip,
+                                                 base_cfg_file) as f:
+                data = yaml.load(f)
+            for key, value in data.items():
+                if (isinstance(key, str) and key.startswith("COLLECTOR") and
+                        key.endswith("URL") and value.startswith("https")):
+                    parameters[key] = "http" + value[len("https"):]
+        logger.debug('Custom collector parameters: {!r}'.format(parameters))
+        self.update_nailgun_settings(parameters)
 
     def force_fuel_stats_sending(self):
         log_file = '/var/log/nailgun/statsenderd.log'
         # Rotate logs on restart in order to get rid of old errors
-        cmd = 'cp {0}{{,.backup_$(date +%s)}}'.format(log_file)
+        cmd = 'mv {0}{{,.backup_$(date +%s)}}'.format(log_file)
         self.ssh_manager.execute_on_remote(
             ip=self.admin_ip, cmd=cmd, raise_on_assert=False)
-        cmd = "bash -c 'echo > /var/log/nailgun/statsenderd.log'"
-        self.ssh_manager.execute_on_remote(
-            ip=self.admin_ip, cmd=cmd, raise_on_assert=False)
-        cmd = 'systemctl restart statsenderd'
-        self.ssh_manager.execute_on_remote(ip=self.admin_ip, cmd=cmd)
+        self.restart_service('statsenderd')
+
+        wait(lambda: self.ssh_manager.exists_on_remote(self.admin_ip,
+                                                       log_file),
+             timeout=10)
         cmd = 'grep -sw "ERROR" {0}'.format(log_file)
-        try:
-            self.ssh_manager.execute_on_remote(
-                ip=self.admin_ip,
-                cmd=cmd,
-                assert_ec_equal=[1]
-            )
-        except Exception:
-            logger.error(("Fuel stats were sent with errors! Check its log"
-                         "s in {0} for details.").format(log_file))
-            raise
+        self.ssh_manager.execute_on_remote(
+            ip=self.admin_ip, cmd=cmd, assert_ec_equal=[1],
+            err_msg=("Fuel stats were sent with errors! Check its logs"
+                     " in {0} for details.").format(log_file))
 
     def force_oswl_collect(self, resources=None):
-        if resources is None:
-            resources = [
-                'vm', 'flavor', 'volume', 'image', 'tenant', 'keystone_user'
-            ]
+        resources = resources or ['vm', 'flavor', 'volume', 'image', 'tenant',
+                                  'keystone_user']
         for resource in resources:
-            cmd = 'systemctl restart oswl' \
-                  '_{0}_collectord'.format(resource)
-            self.ssh_manager.execute_on_remote(ip=self.admin_ip, cmd=cmd)
+            self.restart_service("oswl_{}_collectord".format(resource))
 
 
 class PostgresActions(BaseActions):
