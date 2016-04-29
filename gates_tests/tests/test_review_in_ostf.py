@@ -83,12 +83,9 @@ class GateOstf(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         all_test_suits = self.fuel_web.get_all_ostf_set_names(cluster_id)
-        # Temporary do not execute platform
-        # test until https://bugs.launchpad.net/fuel/+bug/1544179 fixed
-        # TODO(tleontovich) enable platform test after fix LP1544179
         test_to_execute = [
             suite for suite in all_test_suits
-            if suite not in ['configuration', 'tests_platform']]
+            if suite not in ['configuration']]
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
             test_sets=test_to_execute)
@@ -104,7 +101,8 @@ class GateOstf(TestBasic):
         Scenario:
             1. Revert snapshot "gate_ostf_ceph_ha"
             2. Update ostf
-            3. Run ostf
+            3. Check ceph cluster health
+            4. Run ostf
 
         Duration 35m
 
@@ -120,10 +118,9 @@ class GateOstf(TestBasic):
         update_ostf()
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.show_step(3)
+        self.fuel_web.check_ceph_status(cluster_id, recovery_timeout=500)
+        self.show_step(4)
         all_test_suits = self.fuel_web.get_all_ostf_set_names(cluster_id)
-        # Temporary do not execute platform
-        # test until https://bugs.launchpad.net/fuel/+bug/1544179 fixed
-        # TODO(tleontovich) enable platform test after fix LP1544179
         test_to_execute = [
             suite for suite in all_test_suits
             if suite not in ['configuration', 'tests_platform']]
