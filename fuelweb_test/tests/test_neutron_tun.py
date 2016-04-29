@@ -412,9 +412,8 @@ class TestHaNeutronScalability(TestBasic):
 
         _check_swift(primary_node_s14)
 
-        # Step 16-17. Run OSTF and sync time
+        # Step 16-17. Run OSTF
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
             test_sets=['sanity', 'smoke', 'ha'])
-        self.env.sync_time()
         self.env.make_snapshot("neutron_vlan_ha_scalability")
