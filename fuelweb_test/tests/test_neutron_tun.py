@@ -416,5 +416,4 @@ class TestHaNeutronScalability(TestBasic):
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
             test_sets=['sanity', 'smoke', 'ha'])
-        self.env.sync_time()
         self.env.make_snapshot("neutron_vlan_ha_scalability")
