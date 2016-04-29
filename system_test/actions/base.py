@@ -306,7 +306,9 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions):
 
         """
         if self.cluster_id is None:
-            raise SkipTest()
+            raise SkipTest(
+                "The cluster_id is not specified, can not add node to cluster"
+            )
 
         self._add_node(self.env_config['nodes'])
 
@@ -319,7 +321,9 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions):
 
         """
         if self.cluster_id is None:
-            raise SkipTest()
+            raise SkipTest(
+                "The cluster_id is not specified, can not run the deploy"
+            )
 
         self.fuel_web.deploy_cluster_wait(self.cluster_id)
 
@@ -328,7 +332,9 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions):
     def stop_on_deploy(self):
         """Stop environment deploying and wait while slave bacame online"""
         if self.cluster_id is None:
-            raise SkipTest()
+            raise SkipTest(
+                "The cluster_id is not specified, can not stop the deploy"
+            )
 
         cluster_id = self.cluster_id
         self.fuel_web.deploy_cluster_wait_progress(cluster_id, progress=60)
@@ -346,7 +352,8 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions):
 
         """
         if self.cluster_id is None:
-            raise SkipTest()
+            raise SkipTest("The cluster_id is not specified, "
+                           "can not run network verification")
 
         self.fuel_web.verify_network(self.cluster_id)
 

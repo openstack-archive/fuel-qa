@@ -48,7 +48,7 @@ class PrepareOSupgrade(base_test_case.TestBasic):
         Snapshot ha_ceph_for_all_ubuntu_neutron_vlan
         """
         if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
-            raise SkipTest()
+            raise SkipTest('Openstack release is not Ubuntu')
 
         self.check_run('ha_ceph_for_all_ubuntu_neutron_vlan')
         self.env.revert_snapshot("ready_with_9_slaves")
@@ -103,7 +103,7 @@ class TestOSupgrade(base_test_case.TestBasic):
 
         """
         if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
-            raise SkipTest()
+            raise SkipTest('Openstack release is not Ubuntu')
 
         self.check_run('upgrade_ha_ceph_for_all_ubuntu_neutron_vlan')
         self.env.revert_snapshot('ha_ceph_for_all_ubuntu_neutron_vlan')
@@ -140,7 +140,7 @@ class TestOSupgrade(base_test_case.TestBasic):
 
         """
         if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
-            raise SkipTest()
+            raise SkipTest('Openstack release is not Ubuntu')
 
         self.check_run('prepare_before_os_upgrade')
         self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan")
@@ -171,7 +171,7 @@ class TestOSupgrade(base_test_case.TestBasic):
 
         """
         if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
-            raise SkipTest()
+            raise SkipTest('Openstack release is not Ubuntu')
 
         self.check_run('os_upgrade_env')
         self.env.revert_snapshot("prepare_before_os_upgrade")
@@ -203,7 +203,7 @@ class TestOSupgrade(base_test_case.TestBasic):
 
         """
         if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
-            raise SkipTest()
+            raise SkipTest('Openstack release is not Ubuntu')
 
         self.check_run('upgrade_first_cic')
         self.env.revert_snapshot("os_upgrade_env")
@@ -246,7 +246,7 @@ class TestOSupgrade(base_test_case.TestBasic):
         """
 
         if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
-            raise SkipTest()
+            raise SkipTest('Openstack release is not Ubuntu')
 
         self.check_run('upgrade_db')
         self.env.revert_snapshot("upgrade_first_cic")
@@ -330,7 +330,7 @@ class TestOSupgrade(base_test_case.TestBasic):
         """
 
         if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
-            raise SkipTest()
+            raise SkipTest('Openstack release is not Ubuntu')
 
         self.check_run('upgrade_ceph')
         self.env.revert_snapshot("upgrade_db")
@@ -374,7 +374,7 @@ class TestOSupgrade(base_test_case.TestBasic):
         """
 
         if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
-            raise SkipTest()
+            raise SkipTest('Openstack release is not Ubuntu')
 
         self.check_run('upgrade_control_plane')
         self.env.revert_snapshot("upgrade_ceph")

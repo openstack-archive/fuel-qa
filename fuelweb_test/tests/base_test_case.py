@@ -85,7 +85,8 @@ class TestBasic(object):
         """
         if snapshot_name:
             if self.env.d_env.has_snapshot(snapshot_name):
-                raise SkipTest()
+                raise SkipTest('Snapshot {} already exist'.format(
+                    snapshot_name))
 
     def show_step(self, step, details='', initialize=False):
         """Show a description of the step taken from docstring

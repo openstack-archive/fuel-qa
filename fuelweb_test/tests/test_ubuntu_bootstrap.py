@@ -333,7 +333,7 @@ class UbuntuBootstrap(base_test_case.TestBasic):
         Duration 45m
         """
         if not self.env.revert_snapshot('ready'):
-            raise SkipTest()
+            raise SkipTest('Required snapshot not found')
 
         uuid = self.env.fuel_bootstrap_actions.get_active_bootstrap_uuid()
 
@@ -410,7 +410,7 @@ class UbuntuBootstrap(base_test_case.TestBasic):
         """
 
         if not self.env.revert_snapshot('ready_with_3_slaves'):
-            raise SkipTest()
+            raise SkipTest('Required snapshot not found')
 
         def check_node(ssh_manager_executor, ip):
             cmd = 'grep bootstrap /etc/hostname'
@@ -514,7 +514,7 @@ class UbuntuBootstrap(base_test_case.TestBasic):
 
         if not self.env.revert_snapshot(
                 'deploy_stop_on_deploying_ubuntu_bootstrap'):
-            raise SkipTest()
+            raise SkipTest('Required snapshot not found')
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -555,7 +555,7 @@ class UbuntuBootstrap(base_test_case.TestBasic):
         """
         if not self.env.revert_snapshot(
                 'deploy_stop_on_deploying_ubuntu_bootstrap'):
-            raise SkipTest()
+            raise SkipTest('Required snapshot not found')
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -595,7 +595,7 @@ class UbuntuBootstrap(base_test_case.TestBasic):
         """
         if not self.env.revert_snapshot(
                 'deploy_stop_on_deploying_ubuntu_bootstrap'):
-            raise SkipTest()
+            raise SkipTest('Required snapshot not found')
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
