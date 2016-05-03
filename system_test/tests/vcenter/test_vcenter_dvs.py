@@ -48,7 +48,6 @@ class DeployWithVMware(ActionTest, BaseActions, VMwareActions):
     actions_order = [
         'prepare_env_with_plugin',
         'create_env',
-        'enable_plugin',
         'configure_dvs_plugin',
         'add_nodes',
         'configure_vcenter',
@@ -87,7 +86,6 @@ class ScaleWithVMware(ActionTest, BaseActions, VMwareActions):
     actions_order = [
         'prepare_env_with_plugin',
         'create_env',
-        'enable_plugin',
         'configure_dvs_plugin',
         'add_nodes',
         'configure_vcenter',
@@ -131,7 +129,6 @@ class ScaleWithVMwareSkipSrvCheck(ActionTest, BaseActions, VMwareActions):
     actions_order = [
         'prepare_env_with_plugin',
         'create_env',
-        'enable_plugin',
         'configure_dvs_plugin',
         'add_nodes',
         'configure_vcenter',
@@ -171,7 +168,6 @@ class DeployWithCustomHostname(ActionTest, BaseActions, VMwareActions):
     actions_order = [
         'prepare_env_with_plugin',
         'create_env',
-        'enable_plugin',
         'configure_dvs_plugin',
         'add_nodes',
         'set_custom_node_names',
@@ -209,7 +205,6 @@ class CheckNovaConfig(ActionTest, BaseActions, VMwareActions):
     actions_order = [
         'prepare_env_with_plugin',
         'create_env',
-        'enable_plugin',
         'configure_dvs_plugin',
         'add_nodes',
         'configure_vcenter',
@@ -247,7 +242,6 @@ class CheckNovaSrv(ActionTest, BaseActions, VMwareActions):
     actions_order = [
         'prepare_env_with_plugin',
         'create_env',
-        'enable_plugin',
         'configure_dvs_plugin',
         'add_nodes',
         'configure_vcenter',
@@ -285,7 +279,6 @@ class CheckCinderVmwareSrv(ActionTest, BaseActions, VMwareActions):
     actions_order = [
         'prepare_env_with_plugin',
         'create_env',
-        'enable_plugin',
         'configure_dvs_plugin',
         'add_nodes',
         'configure_vcenter',
@@ -322,7 +315,6 @@ class DeployNeutronPublicNet(ActionTest, BaseActions, VMwareActions):
     actions_order = [
         'prepare_env_with_plugin',
         'create_env',
-        'enable_plugin',
         'configure_dvs_plugin',
         'add_nodes',
         'configure_vcenter',
