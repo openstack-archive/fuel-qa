@@ -36,27 +36,6 @@ class VMwareActions(object):
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
-    def enable_plugin(self):
-        """Enable plugin for Fuel"""
-        assert_true(self.plugin_name, "plugin_name is not specified")
-
-        msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
-        assert_true(
-            self.fuel_web.check_plugin_exists(
-                self.cluster_id,
-                self.plugin_name),
-            msg)
-
-        plugin_data = self.fuel_web.get_plugin_data(self.cluster_id,
-                                                    self.plugin_name,
-                                                    self.plugin_version)
-        options = {'metadata/enabled': True,
-                   'metadata/chosen_id': plugin_data['metadata']['plugin_id']}
-        self.fuel_web.update_plugin_data(self.cluster_id,
-                                         self.plugin_name, options)
-
-    @deferred_decorator([make_snapshot_if_step_fail])
-    @action
     def configure_dvs_plugin(self):
         """Configure DVS plugin"""
 
@@ -76,7 +55,8 @@ class VMwareActions(object):
                 'dvswitch_name']
         }
         self.fuel_web.update_plugin_settings(
-            self.cluster_id, self.plugin_name, self.plugin_version, options)
+            self.cluster_id, self.plugin_name, self.plugin_version, options,
+            enabled=True)
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
