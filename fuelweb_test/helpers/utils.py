@@ -22,8 +22,10 @@ import inspect
 import json
 import os
 import posixpath
+import random
 import re
 import signal
+import string
 import time
 import traceback
 
@@ -1181,3 +1183,305 @@ def install_configdb(master_node_ip):
             ]
     for cmd in cmds:
         ssh_manager.execute_on_remote(ip=ip, cmd=cmd)
+
+
+# pylint: disable=eval-used
+class SettingsChanger(object):
+    """
+    Class for changing cluster settings
+    """
+
+    SKIPPED_FIELDS_LIST = [
+        'additional_components.mongo', 'storage.osd_pool_size',
+        'syslog.syslog_port', 'murano_settings.murano_repo_url',
+        'external_mongo.hosts_ip', 'kernel_params.kernel', 'corosync.port',
+        'repo_setup.uca_openstack_release', 'repo_setup.uca_repo_url',
+        'public_ssl.cert_source', 'public_ssl.hostname',
+        'operator_user.homedir', 'access.email', 'common.libvirt_type',
+        'storage.images_vcenter', 'additional_components.ironic',
+        'additional_components.ceilometer', 'workloads_collector.tenant',
+        'access.user', 'workloads_collector.user', 'operator_user.name']
+
+    def __init__(self, attrs=None):
+        self._attrs = attrs['editable'] if attrs else None
+        self._types = ['checkbox', 'radio', 'text', 'textarea']
+        self.options = None
+
+    @staticmethod
+    def _gen_random(length=10):
+        return ''.join(random.choice(string.lowercase) for _ in range(length))
+
+    @staticmethod
+    def _get_condition(restriction):
+        rst = re.findall(
+            'settings:(.+?).value ([=!]+) (true|false|\'.+\')',
+            restriction)
+        cmd = []
+        keys = []
+        for r in rst:
+            cmd.append("self.options['{opt}'][2] {oper} {sign}".format(
+                opt=r[0],
+                oper=r[1],
+                sign=True
+                if r[2] == 'true'
+                else False if r[2] == 'false' else r[2]))
+            keys.append(r[0])
+        if ' and ' in restriction:
+            expression = ' and '.join(cmd)
+        elif ' or ' in restriction:
+            expression = ' or '.join(cmd)
+        else:
+            expression = ' '.join(cmd)
+        return expression, keys
+
+    def __change_check_box(self, key, opt, keys=None):
+        opt['value'] = not self.options[key][2]
+        self.options[key][2] = opt['value']
+        if keys:
+            for k in keys:
+                self.options[k][5] = False
+        logger.info('`{0}` was changed to `{1}`'.format(key, opt['value']))
+
+    def __change_radio(self, key, opt, keys=None):
+        values = self.options[key][3]
+        current_val = self.options[key][2]
+        for val in values:
+            if val['data'] != current_val:
+                opt['value'] = val['data']
+                self.options[key][2] = opt['value']
+                if keys:
+                    for k in keys:
+                        self.options[k][5] = False
+                logger.info(
+                    '`{0}` was changed to `{1}`'.format(
+                        key, val['data']))
+                break
+        else:
+            logger.debug(
+                'Failed to set radio {}'.format(self.options[key][0]))
+
+    def __change_check_box_restr(self, condition, keys, key, opt):
+        try:
+            if not eval(condition) and self.options[key][5]:
+                self.__change_check_box(key, opt, keys)
+            else:
+                logger.info(
+                    "Value `{}` couldn't be changed to `{}` due "
+                    "to restrictions".format(key, not self.options[key][2]))
+        except KeyError as e:
+            logger.debug('Value was not found {}'.format(e))
+
+    def __change_radio_restr(self, condition, keys, key, opt):
+        try:
+            if not eval(condition) and self.options[key][5]:
+                self.__change_radio(key, opt, keys)
+        except KeyError as e:
+            logger.debug('Value was not found {}'.format(e))
+
+    def _make_change_wo_restr(self, key, opt):
+        tp = opt.get('type')
+        if tp == 'checkbox':
+            self.__change_check_box(key, opt)
+        elif tp == 'radio':
+            self.__change_radio(key, opt)
+        elif tp == 'text':
+            opt['value'] = self._gen_random()
+            self.options[key][2] = opt['value']
+            logger.info('`{0}` was changed to `{1}`'.format(key, opt['value']))
+
+    def _make_change_with_restr(self, key, opt):
+        restrictions = self.options[key][4]
+        tp = opt.get('type')
+        if not restrictions:
+            return
+        for rest in restrictions:
+            condition, keys = self._get_condition(rest)
+            if tp == 'checkbox':
+                self.__change_check_box_restr(condition, keys, key, opt)
+            elif tp == 'radio':
+                self.__change_radio_restr(condition, keys, key, opt)
+            elif tp == 'text':
+                logger.debug('Did you forget me `{}`?'.format(key))
+
+    def _change_options(self, options, restr=False, ensure=False):
+        if not (restr or ensure):
+            change_func = self._make_change_wo_restr
+        elif restr and not ensure:
+            change_func = self._make_change_with_restr
+        else:
+            change_func = self._ensure_options_correct
+
+        for attr in self._attrs:
+            for option in self._attrs[attr]:
+                key = '.'.join([attr, option])
+                if key not in options:
+                    continue
+                # skip some values
+                if key in self.SKIPPED_FIELDS_LIST:
+                    logger.debug("Skipped option `{}`".format(key))
+                    continue
+                opt = self._attrs[attr][option]
+                change_func(key, opt)
+
+    def _ensure_options_correct(self, key, opt):
+        restrictions = self.options[key][4]
+        tp = opt.get('type')
+        if not restrictions:
+            return
+        for rest in restrictions:
+            condition, _ = self._get_condition(rest)
+            if tp == 'checkbox':
+                try:
+                    if eval(condition) and self.options[key][2]:
+                        self.__change_check_box(key, opt)
+                except KeyError as e:
+                    logger.debug('Value was not found {}'.format(e))
+            elif tp == 'radio':
+                logger.info('Radio `{0}` has value `{1}` when restriction '
+                            'is: {2}'.format(key, opt['value'], condition))
+            elif tp == 'text':
+                logger.info('Do I rely on anything `{}`?'.format(key))
+
+    @staticmethod
+    def _calculate_options(options, randomize=None):
+        if randomize:
+            count = randomize if randomize < len(options) else len(options) - 1
+            random_keys = random.sample(options.keys(), count)
+            options_wo_restr = \
+                {opt: options[opt]
+                 for opt in options
+                 if opt in random_keys and options[opt][4] is None}
+            options_with_restr = \
+                {opt: options[opt]
+                 for opt in options
+                 if opt in random_keys and options[opt][4] is not None}
+        else:
+            options_wo_restr = \
+                {opt: options[opt]
+                 for opt in options if options[opt][4] is None}
+            options_with_restr = \
+                {opt: options[opt]
+                 for opt in options if options[opt][4] is not None}
+
+        return options_wo_restr, options_with_restr
+
+    def make_changes(self, attrs=None, options=None, randomize=None):
+        """
+        Function makes changes in cluster settings in paramsters
+        which are presented in options list
+        :param attrs: cluster attributes
+        :param options: dict with options provided by parser
+        :param randomize: specify if random changing is needed
+        :return: changed cluster attributes without ['editable']
+        """
+        if attrs:
+            self.attrs = attrs
+        # Create two dicts with options without restrictions and with them
+        self.options = options if options else self.parse_settings()
+        opt_wo_restr, opt_with_restr = \
+            self._calculate_options(self.options, randomize)
+        # First of all lets modify values without restrictions
+        logger.info("Changing options without restrictions")
+        self._change_options(opt_wo_restr, False)
+        self.options.update(opt_wo_restr)
+        # iterate through options with restrictions
+        logger.info("Changing options with restrictions")
+        self._change_options(opt_with_restr, True)
+        logger.info("Check options for invalid due to restrictions "
+                    "and modify it if it's necessary")
+        self.options.update(opt_with_restr)
+        self._change_options(self.options, True, True)
+        return self.attrs
+
+    def load_settings_from_file(self, file_name, file_type='json'):
+        """
+        Function loads settings from file
+        :param file_name: file to load from
+        :param file_type: file format `json` or `yaml`
+        :return: nothing
+        """
+        try:
+            with open(file_name, 'r') as f:
+                if file_type == 'json':
+                    self.attrs = json.load(f)
+                else:
+                    self.attrs = yaml.load(f)
+        except ValueError:
+            logger.error("Check settings file for consistency")
+            raise
+        except IOError:
+            logger.error("Check settings file existence")
+            raise
+        else:
+            logger.info('Settings were loaded from file {}'.format(file_name))
+
+    def save_settings_to_file(self, file_name, file_type='json'):
+        """
+        Function saves settings to file
+        :param file_name: file to save to
+        :param file_type: file format `json` or `yaml`
+        :return: nothing
+        """
+        with open(file_name, 'w') as f:
+            if file_type == 'json':
+                json.dump(self.attrs, f)
+            else:
+                yaml.dump(self.attrs, f)
+        logger.info('Settings were saved to file {}'.format(file_name))
+
+    # pylint: disable=too-many-nested-blocks
+    def parse_settings(self, attrs=None):
+        """
+        Function parses attributes by its type
+        :param attrs: a cluster attributes
+        :return: a dict with options
+        """
+        attrs = attrs['editable'] if attrs else self._attrs
+        self.options = {}
+        for attr in attrs:
+            for option in attrs[attr]:
+                key = '.'.join([attr, option])
+                opt = attrs[attr][option]
+                tp = opt.get('type')
+                label = opt.get('label')
+                value = opt.get('value')
+                values = opt.get('values')
+                restrictions = opt.get('restrictions', None)
+                if tp not in self._types:
+                    continue
+                if key in self.options:
+                    logger.debug('`{0}` has duplicates'.format(key))
+                    continue
+                restr = None
+                if restrictions:
+                    restr = []
+                    for rest in restrictions:
+                        if isinstance(rest, dict):
+                            if rest.get('condition') \
+                                    and 'value' in rest['condition']:
+                                restr.append(rest['condition'])
+                            elif 'value' in rest.keys()[0]:
+                                restr.append(rest.keys()[0])
+                            elif 'value' in rest:
+                                restr.append(rest)
+                        else:
+                            restr.append(rest)
+                self.options[key] = \
+                    [label, tp, value, values,
+                     restr if restr else None, True]
+                logger.debug(
+                    'Option {0} has been added with {1}'.format(
+                        key, self.options[key]))
+        return self.options
+    # pylint: enable=too-many-nested-blocks
+
+    @property
+    def attrs(self):
+        dct = dict()
+        dct['editable'] = self._attrs
+        return dct
+
+    @attrs.setter
+    def attrs(self, attrs):
+        self._attrs = attrs['editable']
+# pylint: enable=eval-used
