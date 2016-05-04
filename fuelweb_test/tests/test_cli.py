@@ -434,15 +434,15 @@ class CommandLineTest(test_cli_base.CommandLine):
             10. Provision two ceph-osd nodes using Fuel CLI
             11. Provision one base-os node using Fuel CLI
             12. Leave 2 nodes in discover state
-            13. Deploy the controller node using Fuel CLI
+            13. Deploy the ceph-osd nodes using Fuel CLI
             14. Compare network settings after controller deployment task
-            15. Deploy the compute node using Fuel CLI
+            15. Deploy the mongo node using Fuel CLI
             16. Compare network settings after compute deployment task
-            17. Deploy the cinder node using Fuel CLI
+            17. Deploy the controller node using Fuel CLI
             18. Compare network settings after cinder deployment task
-            19. Deploy the mongo node using Fuel CLI
+            19. Deploy the cinder node using Fuel CLI
             20. Compare network settings after mongo deployment task
-            21. Deploy the ceph-osd nodes using Fuel CLI
+            21. Deploy the compute node using Fuel CLI
             22. Compare network settings after ceph-osd deployment task
             23. Deploy the base-os node using Fuel CLI
             24. Compare network settings after base-os deployment task
@@ -452,7 +452,7 @@ class CommandLineTest(test_cli_base.CommandLine):
             28. Compare cluster settings after deploy and before deploy
             29. Run OSTF
 
-        Duration 50m
+        Duration 60m
         """
         self.show_step(1)
         self.env.revert_snapshot("ready_with_9_slaves")
@@ -494,7 +494,7 @@ class CommandLineTest(test_cli_base.CommandLine):
         task = self.ssh_manager.execute_on_remote(admin_ip,
                                                   cmd,
                                                   jsonify=True)['stdout_json']
-        self.assert_cli_task_success(task, timeout=60 * 60)
+        self.assert_cli_task_success(task, timeout=80 * 60)
 
         self.assert_all_tasks_completed(cluster_id=cluster_id)
 
@@ -646,48 +646,39 @@ class CommandLineTest(test_cli_base.CommandLine):
 
         for node in node_discover:
             assert_true(node['pending_addition'])
-
-        # Deploy the controller node node_ids[0]
-        self.show_step(13, details='for node id {}'.format(node_ids[0]))
-        cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
-            cluster_id, node_ids[0]))
-        task = self.ssh_manager.execute_on_remote(admin_ip,
-                                                  cmd,
-                                                  jsonify=True)['stdout_json']
+        # Deploy ceph-osd  nodes node_ids[4] node_ids[5]
+        self.show_step(13, details='for node ids {0}, {1}'.format(
+            node_ids[4], node_ids[5]))
+        cmd = ('fuel --env-id={0} node --deploy --node {1},{2} --json'.format(
+            cluster_id, node_ids[4], node_ids[5]))
+        task = self.ssh_manager.execute_on_remote(
+            admin_ip, cmd, jsonify=True)['stdout_json']
         network_settings = self.get_networks(cluster_id)
         self.assert_cli_task_success(task, timeout=60 * 60)
         self.show_step(14)
         network_configuration = self.get_net_config_cli(task['id'])
-        assert_equal(network_settings,
-                     network_configuration,
+        assert_equal(network_settings, network_configuration,
                      message='Network settings are not equal before'
                              ' and after deploy')
-
         self.assert_all_tasks_completed(cluster_id=cluster_id)
-
-        self.show_step(13, details='for node id {}'.format(node_ids[1]))
-        self.show_step(15, details='for node id {}'.format(node_ids[1]))
-        # Deploy the compute node node_ids[1]
+        # Deploy the mongo node node_ids[3]
+        self.show_step(15, details='for node id {}'.format(node_ids[3]))
         cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
-            cluster_id, node_ids[1]))
-        task = self.ssh_manager.execute_on_remote(admin_ip,
-                                                  cmd,
-                                                  jsonify=True)['stdout_json']
+            cluster_id, node_ids[3]))
+        task = self.ssh_manager.execute_on_remote(
+            admin_ip, cmd, jsonify=True)['stdout_json']
         network_settings = self.get_networks(cluster_id)
-        self.assert_cli_task_success(task, timeout=30 * 60)
+        self.assert_cli_task_success(task, timeout=60 * 60)
         self.show_step(16)
         network_configuration = self.get_net_config_cli(task['id'])
-        assert_equal(network_settings,
-                     network_configuration,
-                     message='Network settings are not equal before'
-                             ' and after deploy')
-
+        assert_equal(network_settings, network_configuration,
+                     message='Network settings are not equal before '
+                             'and after deploy')
         self.assert_all_tasks_completed(cluster_id=cluster_id)
-
-        # Deploy the cinder node node_ids[2]
-        self.show_step(17, details='for node id {}'.format(node_ids[2]))
+        # Deploy the controller node node_ids[0]
+        self.show_step(17, details='for node id {}'.format(node_ids[0]))
         cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
-            cluster_id, node_ids[2]))
+            cluster_id, node_ids[0]))
         task = self.ssh_manager.execute_on_remote(admin_ip,
                                                   cmd,
                                                   jsonify=True)['stdout_json']
@@ -699,13 +690,11 @@ class CommandLineTest(test_cli_base.CommandLine):
                      network_configuration,
                      message='Network settings are not equal before'
                              ' and after deploy')
-
         self.assert_all_tasks_completed(cluster_id=cluster_id)
-
-        # Deploy the mongo node node_ids[3]
-        self.show_step(19, details='for node id {}'.format(node_ids[3]))
+        # Deploy the cinder node node_ids[2]
+        self.show_step(19, details='for node id {}'.format(node_ids[2]))
         cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
-            cluster_id, node_ids[3]))
+            cluster_id, node_ids[2]))
         task = self.ssh_manager.execute_on_remote(admin_ip,
                                                   cmd,
                                                   jsonify=True)['stdout_json']
@@ -719,17 +708,15 @@ class CommandLineTest(test_cli_base.CommandLine):
                              ' and after deploy')
 
         self.assert_all_tasks_completed(cluster_id=cluster_id)
-
-        # Deploy ceph-osd  nodes node_ids[4] node_ids[5]
-        self.show_step(21, details='for node ids {0}, {1}'.format(
-            node_ids[4], node_ids[5]))
-        cmd = ('fuel --env-id={0} node --deploy --node {1},{2} --json'.format(
-            cluster_id, node_ids[4], node_ids[5]))
+        # Deploy the compute node node_ids[1]
+        self.show_step(21, details='for node id {}'.format(node_ids[1]))
+        cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
+            cluster_id, node_ids[1]))
         task = self.ssh_manager.execute_on_remote(admin_ip,
                                                   cmd,
                                                   jsonify=True)['stdout_json']
         network_settings = self.get_networks(cluster_id)
-        self.assert_cli_task_success(task, timeout=60 * 60)
+        self.assert_cli_task_success(task, timeout=30 * 60)
         self.show_step(22)
         network_configuration = self.get_net_config_cli(task['id'])
         assert_equal(network_settings,
@@ -738,7 +725,6 @@ class CommandLineTest(test_cli_base.CommandLine):
                              ' and after deploy')
 
         self.assert_all_tasks_completed(cluster_id=cluster_id)
-
         # Deploy the base-os node node_ids[6]
         self.show_step(23, details='for node id {}'.format(node_ids[6]))
         cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
@@ -754,9 +740,7 @@ class CommandLineTest(test_cli_base.CommandLine):
                      network_configuration,
                      message='Network settings are not equal before'
                              ' and after deploy')
-
         self.assert_all_tasks_completed(cluster_id=cluster_id)
-
         self.fuel_web.verify_network(cluster_id)
         self.show_step(25)
         node_discover_after_deploy = self.fuel_web.get_nailgun_node_by_status(
