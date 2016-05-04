@@ -363,6 +363,11 @@ Test task idempotency
 .. automodule:: fuelweb_test.tests.tests_lcm.test_idempotency
   :members:
 
+Test unlock settings tab
+---------------------
+.. automodule:: fuelweb_test.tests.test_unlock_settings_tab
+  :members:
+
 Test task ensurability
 ----------------------
 .. automodule:: fuelweb_test.tests.tests_lcm.test_ensurability
