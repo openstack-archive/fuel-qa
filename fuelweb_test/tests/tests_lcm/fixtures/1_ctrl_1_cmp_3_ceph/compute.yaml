@@ -6,7 +6,7 @@ tasks:
       type: skipped
   - openstack-network-common-config: null
   - clear_nodes_info:
-      type: shell
+      type: skipped
   - openstack-network-agents-sriov: null
   - copy_keys_ceph:
       type: copy_files
@@ -29,8 +29,6 @@ tasks:
   - openstack-network-plugins-l2: null
   - allocate_hugepages: null
   - plugins_setup_repositories: null
-  - upload_provision_data:
-      type: false
   - ceph-compute: null
   - ssl-keys-saving: null
   - sriov_iommu_check: null

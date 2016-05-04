@@ -132,7 +132,7 @@ tasks:
   - openstack-network-start:
       type: skipped
   - clear_nodes_info:
-      type: shell
+      type: skipped
   - murano-db:
       no_puppet_run: true
   - copy_keys_ceph:
@@ -152,8 +152,6 @@ tasks:
   - enable_quorum:
       type: shell
   - openstack-haproxy-nova: null
-  - upload_provision_data:
-      type: false
   - openstack-network-server-config: null
   - primary-database:
       skip:

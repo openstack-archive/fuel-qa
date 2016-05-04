@@ -675,7 +675,7 @@ class NailgunClient(object):
         :param node_id: an integer number of node id.
         :return: a decoded JSON response.
         """
-        url = '/api/v1/nodes/{}/attributes/'.format(node_id)
+        url = '/api/nodes/{}/attributes/'.format(node_id)
         return self.client.put(url, data=attributes)
 
     @logwrap
@@ -686,7 +686,7 @@ class NailgunClient(object):
         :param node_id: an integer number of node id.
         :return: a decoded JSON response.
         """
-        url = '/api/v1/nodes/{}/attributes/'.format(node_id)
+        url = '/api/nodes/{}/attributes/'.format(node_id)
         return self.client.get(url)
 
     @logwrap
@@ -701,3 +701,18 @@ class NailgunClient(object):
         url = '/api/transactions/{task_id}/deployment_history'.format(
             task_id=task_id)
         return self.client.get(url)
+
+    @logwrap
+    @json_parse
+    def redeploy_cluster_changes(self, cluster_id, data=None):
+        """Deploy the changes of cluster settings
+
+        :param cluster_id: int, target cluster ID
+        :param data: dict, updated cluster attributes (if empty, the already
+                     uploaded attributes will be (re)applied)
+        :return: a decoded JSON response
+        """
+        if data is None:
+            data = {}
+        return self.client.put(
+            "/api/clusters/{}/changes/redeploy".format(cluster_id), data)
