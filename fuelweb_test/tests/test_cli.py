@@ -595,7 +595,7 @@ class CommandLineTest(test_cli_base.CommandLine):
         task = self.ssh_manager.execute_on_remote(admin_ip,
                                                   cmd,
                                                   jsonify=True)['stdout_json']
-        self.assert_cli_task_success(task, timeout=60 * 60)
+        self.assert_cli_task_success(task, timeout=80 * 60)
 
         self.assert_all_tasks_completed(cluster_id=cluster_id)
 
