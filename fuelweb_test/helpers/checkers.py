@@ -1328,8 +1328,10 @@ def incomplete_tasks(tasks, cluster_id=None):
     return not_ready_tasks, deploy_tasks
 
 
-def incomplete_deploy(deployment_tasks):
+def incomplete_deploy(deployment_tasks, failed=False):
     allowed_statuses = {'ready', 'skipped'}
+    if failed:
+        allowed_statuses.add('pending', 'running')
     not_ready_deploy = {}
 
     for cluster_id, tasks in deployment_tasks.items():

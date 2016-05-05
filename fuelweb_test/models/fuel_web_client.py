@@ -314,19 +314,45 @@ class FuelWebClient29(object):
             else:
                 return ''
 
+        def _failed_deploy():
+            fail_text = (
+                "Failed deployment task on cluster '{cluster}':\n"
+                "\tTask name: {name}\n"
+                "\t\tStatus:   {status}\n"
+                "\t\tProgress: {progress}\n"
+                "\t\tResult:   {result}\n"
+                "\t\tMessage:  {message}\n"
+                "\t\tTask ID:  {id}".format(**task))
+            if task['status'] != 'ready':
+                logger.error(fail_text)
+            not_ready_transactions = checkers.incomplete_deploy({
+                task['cluster']:
+                    self.client.get_deployment_task_hist(task['id'])},
+                failed=task['status'] != 'ready'
+            )
+            checkers.fail_deploy(not_ready_transactions)
+            if task['status'] != 'ready':
+                raise AssertionError(fail_text)
+
         logger.info('Assert task %s is success', task)
         if not progress:
             task = self.task_wait(task, timeout, interval)
-            assert_equal(
-                task['status'], 'ready',
-                "Task '{0}' has incorrect status. {1} != {2}, '{3}'".format(
-                    task["name"], task['status'], 'ready', _message(task)
+            if task['name'] != 'deployment':
+                assert_equal(
+                    task['status'], 'ready',
+                    "Task '{0}' has incorrect status. "
+                    "{1} != {2}, '{3}'".format(
+                        task["name"], task['status'], 'ready', _message(task)
+                    )
                 )
-            )
+            else:
+                _failed_deploy()
         else:
             logger.info('Start to polling task progress')
             task = self.task_wait_progress(
                 task, timeout=timeout, interval=interval, progress=progress)
+            if task['name'] == 'deployment' and task['status'] == 'error':
+                _failed_deploy()
             assert_not_equal(
                 task['status'], 'error',
                 "Task '{0}' has error status. '{1}'"
