@@ -12,6 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+# pylint: disable=redefined-builtin
+from six.moves import xrange
+# pylint: enable=redefined-builtin
+
 from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers.decorators import create_diagnostic_snapshot
@@ -36,6 +40,7 @@ class Manager(Basic):
         if config_file:
             self._load_config()
         self._context = cls
+        self.assigned_slaves = set()
 
     def _cluster_from_template(self):
         """Create cluster from template file."""
@@ -241,12 +246,10 @@ class Manager(Basic):
             self.env.make_snapshot(snapshot_name, is_make=True)
             self.env.resume_environment()
             return True
-        else:
-            logger.error("Can't bootstrap nodes because release "
-                         "snapshot didn't revert")
-            return False
-            raise RuntimeError("Can't bootstrap nodes because release "
-                               "snapshot didn't revert")
+        logger.error(
+            "Can't bootstrap nodes because release snapshot didn't revert")
+        raise RuntimeError(
+            "Can't bootstrap nodes because release snapshot didn't revert")
 
     def get_ready_cluster(self, config=None):
         """Create and deploy cluster."""

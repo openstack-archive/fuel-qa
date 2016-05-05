@@ -21,6 +21,9 @@ from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.ssh_manager import SSHManager
 
 
+# pylint: disable=no-member
+
+
 ssh_manager = SSHManager()
 
 
