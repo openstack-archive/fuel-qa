@@ -11,6 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from __future__ import division
 
 import time
 
@@ -22,6 +23,9 @@ from fuelweb_test import logger
 from fuelweb_test import settings
 
 from system_test.core.discover import config_filter
+
+
+# pylint: disable=no-member
 
 
 @pytest.fixture(scope='session')
@@ -126,7 +130,9 @@ def pytest_runtest_teardown(item):
     step_name = item.function.__name__
     spent_time = time.time() - item._start_time
     minutes = spent_time // 60
+    # pylint: disable=round-builtin
     seconds = int(round(spent_time)) % 60
+    # pylint: enable=round-builtin
     finish_step = "FINISH {} STEP TOOK {} min {} sec".format(
         step_name, minutes, seconds)
     foot = "\n" + "<" * 5 + "#" * 30 + "[ {} ]" + "#" * 30 + ">" * 5
