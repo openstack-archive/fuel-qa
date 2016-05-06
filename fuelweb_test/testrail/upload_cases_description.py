@@ -203,6 +203,14 @@ def _is_case_processable(case, tests):
             any([test[GROUP_FIELD] == parent_home.__name__ for test in tests]):
         return False
 
+    # Skip @before_class methods without doc strings:
+    # they are just pre-checks, not separate tests cases
+    if case.entry.info.before_class:
+        if case.entry.home.func_doc is None:
+            logger.debug('Skipping method "{0}", because it is not a '
+                         'test case'.format(case.entry.home.func_name))
+            return False
+
     return True
 
 
