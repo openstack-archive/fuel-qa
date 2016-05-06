@@ -242,10 +242,37 @@ def check_untested(test):
     return False
 
 
+def get_test_build(build_name, build_number, check_rebuild=False):
+    """Get test data from Jenkins job build
+    :param build_name: string
+    :param build_number: string
+    :param check_rebuild: bool, if True then look for newer job rebuild(s)
+    :return: dict
+    """
+    test_build = Build(build_name, build_number)
+    if test_build.test_data()['suites'][0]['cases'].pop()['name'] == 'jenkins':
+        if not check_rebuild:
+            return test_build
+        iso_magnet = get_job_parameter(test_build.build_data, 'MAGNET_LINK')
+        if not iso_magnet:
+            return test_build
+        latest_build_number = Build(build_name, 'latest').number
+        for n in range(build_number, latest_build_number):
+            test_rebuild = Build(build_name, n + 1)
+            if get_job_parameter(test_rebuild.build_data, 'MAGNET_LINK') \
+                    == iso_magnet:
+                logger.debug("Found test job rebuild: "
+                             "{0}".format(test_rebuild.url))
+                return test_rebuild
+    return test_build
+
+
 @retry(count=3)
 def get_tests_results(systest_build, os):
     tests_results = []
-    test_build = Build(systest_build['name'], systest_build['number'])
+    test_build = get_test_build(systest_build['name'],
+                                systest_build['number'],
+                                check_rebuild=True)
     run_test_data = test_build.test_data()
     test_classes = {}
     for one in run_test_data['suites'][0]['cases']:
