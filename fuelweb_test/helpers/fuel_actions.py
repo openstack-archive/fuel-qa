@@ -14,13 +14,14 @@
 
 import os
 import re
-from six.moves import cStringIO
+from warnings import warn
 
 from devops.helpers.helpers import wait
 from devops.models import DiskDevice
 from devops.models import Node
 from devops.models import Volume
 from proboscis.asserts import assert_equal
+from six.moves import cStringIO
 import yaml
 
 from fuelweb_test import logger
@@ -35,6 +36,7 @@ from fuelweb_test.settings import MIRROR_UBUNTU
 from fuelweb_test.settings import PLUGIN_PACKAGE_VERSION
 from fuelweb_test.settings import FUEL_SETTINGS_YAML
 from fuelweb_test.settings import NESSUS_IMAGE_PATH
+from fuelweb_test.helpers.utils import YamlEditor
 
 
 class BaseActions(object):
@@ -68,18 +70,12 @@ class BaseActions(object):
         to identify which element should be used
         :return: nothing
         """
-
-        with open(old_file, 'r') as f_old:
-            yaml_dict = yaml.load(f_old)
-
-        origin_yaml = yaml_dict
-        for k in element[:-1]:
-            yaml_dict = yaml_dict[k]
-        yaml_dict[element[-1]] = value
-
-        with open(new_file, 'w') as f_new:
-            yaml.dump(origin_yaml, f_new, default_flow_style=False,
-                      default_style='"')
+        warn("Function is deprecated, use utils.YamlEditor instead",
+             DeprecationWarning)
+        old_content = YamlEditor(old_file).get_content()
+        with YamlEditor(new_file) as editor:
+            editor.content = old_content
+            editor.change_value(element, value)
 
     @staticmethod
     def get_value_from_local_yaml(yaml_file, element):
@@ -93,44 +89,23 @@ class BaseActions(object):
                to identify which element should be used
            :return obj: value
         """
-        with open(yaml_file, 'r') as f_old:
-            yaml_dict = yaml.load(f_old)
+        warn("Function is deprecated, use utils.YamlEditor instead",
+             DeprecationWarning)
+        return YamlEditor(yaml_file).get_value(element)
 
-        for i, k in enumerate(element):
-            try:
-                yaml_dict = yaml_dict[k]
-            except IndexError:
-                raise IndexError("Element {0} not found in the file {1}"
-                                 .format(element[: i + 1], f_old))
-            except KeyError:
-                raise KeyError("Element {0} not found in the file {1}"
-                               .format(element[: i + 1], f_old))
-        return yaml_dict
-
-    def change_remote_yaml(self, path_to_file, element, value):
+    def change_remote_yaml(self, path_to_file, element, value, ip=None):
         """Changes values in the yaml file stored
         There is no need to copy file manually
         :param path_to_file: absolute path to the file
         :param element: list with path to the element be changed
         :param value: new value for element
+        :param ip: ip of remote node, default is fuel master's ip
         :return: Nothing
         """
-        old_file = '/tmp/temp_file_{0}.old.yaml'.format(str(os.getpid()))
-        new_file = '/tmp/temp_file_{0}.new.yaml'.format(str(os.getpid()))
-
-        self.ssh_manager.download_from_remote(
-            ip=self.admin_ip,
-            destination=path_to_file,
-            target=old_file
-        )
-        self.put_value_to_local_yaml(old_file, new_file, element, value)
-        self.ssh_manager.upload_to_remote(
-            ip=self.admin_ip,
-            source=new_file,
-            target=path_to_file
-        )
-        os.remove(old_file)
-        os.remove(new_file)
+        warn("Function is deprecated, use utils.YamlEditor instead",
+             DeprecationWarning)
+        with YamlEditor(path_to_file, self.admin_ip) as editor:
+            editor.change_value(element, value)
 
     def get_value_from_remote_yaml(self, path_to_file, element):
         """Get a value from the yaml file stored
@@ -138,43 +113,12 @@ class BaseActions(object):
 
         :param str path_to_file: absolute path to the file
         :param list element: list with path to the element
+        :param ip: ip of remote node, default is fuel master's ip
         :return obj: value
         """
-
-        host_tmp_file = '/tmp/temp_file_{0}.yaml'.format(str(os.getpid()))
-        self.ssh_manager.download_from_remote(
-            ip=self.admin_ip,
-            destination=path_to_file,
-            target=host_tmp_file
-        )
-        value = self.get_value_from_local_yaml(host_tmp_file, element)
-        os.remove(host_tmp_file)
-        return value
-
-    def put_value_to_remote_yaml(self, path_to_file, element, value):
-        """Put a value to the yaml file stored
-           on the master node
-
-        :param str path_to_file: absolute path to the file
-        :param list element: list with path to the element be changed
-        :param value: new value for element
-        :return: None
-        """
-
-        host_tmp_file = '/tmp/temp_file_{0}.yaml'.format(str(os.getpid()))
-        self.ssh_manager.download_from_remote(
-            ip=self.admin_ip,
-            destination=path_to_file,
-            target=host_tmp_file
-        )
-        self.put_value_to_local_yaml(host_tmp_file, host_tmp_file,
-                                     element, value)
-        self.ssh_manager.upload_to_remote(
-            ip=self.admin_ip,
-            source=host_tmp_file,
-            target=path_to_file
-        )
-        os.remove(host_tmp_file)
+        warn("Function is deprecated, use utils.YamlEditor instead",
+             DeprecationWarning)
+        return YamlEditor(path_to_file, self.admin_ip).get_value(element)
 
 
 class AdminActions(BaseActions):
@@ -512,7 +456,7 @@ class FuelPluginBuilder(BaseActions):
         self.change_remote_yaml(metadata_path, ['fuel_version'], fuel_version)
         releases = self.get_value_from_remote_yaml(metadata_path, ['releases'])
         releases[0]['version'] = openstack_version
-        self.put_value_to_remote_yaml(metadata_path, ['releases'], releases)
+        self.change_remote_yaml(metadata_path, ['releases'], releases)
 
     def fpb_validate_plugin(self, path):
         """
