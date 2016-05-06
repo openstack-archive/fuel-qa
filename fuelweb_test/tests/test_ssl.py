@@ -15,7 +15,9 @@
 from proboscis import test
 from proboscis.asserts import assert_equal
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves import http_client
+# noinspection PyUnresolvedReferences
 from six.moves import urllib
 # pylint: enable=import-error
 

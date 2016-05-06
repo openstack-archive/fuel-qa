@@ -39,7 +39,7 @@ def make_snapshot_if_step_fail(func):
         try:
             result = func(*args, **kwargs)
         except SkipTest:
-            raise SkipTest()
+            raise
         except Exception:
             name = 'error_%s' % func.__name__
             case_name = getattr(func, '_base_class', None)

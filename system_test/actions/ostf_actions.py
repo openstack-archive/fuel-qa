@@ -21,6 +21,7 @@ from system_test.helpers.decorators import make_snapshot_if_step_fail
 
 
 # pylint: disable=no-member
+# noinspection PyUnresolvedReferences
 class HealthCheckActions(object):
     """Basic actions for OSTF tests
 

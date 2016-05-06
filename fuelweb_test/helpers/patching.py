@@ -26,7 +26,9 @@ from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 # pylint: disable=import-error,wrong-import-order
+# noinspection PyUnresolvedReferences
 from six.moves.urllib.request import urlopen
+# noinspection PyUnresolvedReferences
 from six.moves.urllib.parse import urlparse
 # pylint: enable=import-error,wrong-import-order
 import yaml

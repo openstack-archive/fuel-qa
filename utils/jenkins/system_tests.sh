@@ -137,7 +137,7 @@ GlobalVariables() {
 
 GetoptsVariables() {
   while getopts ":w:j:i:t:o:a:A:m:U:r:b:V:l:LdkKe:v:h" opt; do
-    case $opt in
+    case ${opt} in
       w)
         WORKSPACE="${OPTARG}"
         ;;
@@ -202,12 +202,12 @@ GetoptsVariables() {
       \?)
         echo "Invalid option: -$OPTARG"
         ShowHelp
-        exit $INVALIDOPTS_ERR
+        exit ${INVALIDOPTS_ERR}
         ;;
       :)
         echo "Option -$OPTARG requires an argument."
         ShowHelp
-        exit $INVALIDOPTS_ERR
+        exit ${INVALIDOPTS_ERR}
         ;;
     esac
   done
@@ -217,22 +217,22 @@ CheckVariables() {
 
   if [ -z "${JOB_NAME}" ]; then
     echo "Error! JOB_NAME is not set!"
-    exit $NOJOBNAME_ERR
+    exit ${NOJOBNAME_ERR}
   fi
 
   if [ -z "${ISO_PATH}" ]; then
     echo "Error! ISO_PATH is not set!"
-    exit $NOISOPATH_ERR
+    exit ${NOISOPATH_ERR}
   fi
 
   if [ -z "${TASK_NAME}" ]; then
     echo "Error! TASK_NAME is not set!"
-    exit $NOTASKNAME_ERR
+    exit ${NOTASKNAME_ERR}
   fi
 
   if [ -z "${WORKSPACE}" ]; then
     echo "Error! WORKSPACE is not set!"
-    exit $NOWORKSPACE_ERR
+    exit ${NOWORKSPACE_ERR}
   fi
 }
 
@@ -249,7 +249,7 @@ MakeISO() {
 
   if [ "${ec}" -gt "0" ]; then
     echo "Error! Deep clean failed!"
-    exit $DEEPCLEAN_ERR
+    exit ${DEEPCLEAN_ERR}
   fi
 
   # create ISO file
@@ -263,7 +263,7 @@ MakeISO() {
 
   if [ "${ec}" -gt "0" ]; then
     echo "Error making ISO!"
-    exit $MAKEISO_ERR
+    exit ${MAKEISO_ERR}
   fi
 
   if [ "${DRY_RUN}" = "yes" ]; then
@@ -273,7 +273,7 @@ MakeISO() {
     # check that ISO file exists
     if [ ! -f "${ISO}" ]; then
       echo "Error! ISO file not found!"
-      exit $NOISOFOUND_ERR
+      exit ${NOISOFOUND_ERR}
     fi
   fi
 
@@ -294,7 +294,7 @@ MakeISO() {
 
     if [ "${ec}" -gt "0" ]; then
       echo "Error! Copy ${ISO} to ${NEW_BUILD_ISO_PATH} failed!"
-      exit $COPYISO_ERR
+      exit ${COPYISO_ERR}
     fi
 
     # create symlink to the last built ISO file
@@ -307,7 +307,7 @@ MakeISO() {
 
     if [ "${ec}" -gt "0" ]; then
       echo "Error! Create symlink from ${NEW_BUILD_ISO_PATH} to ${ISO_PATH} failed!"
-      exit $SYMLINKISO_ERR
+      exit ${SYMLINKISO_ERR}
     fi
   else
     # just copy file to shared dir
@@ -320,13 +320,13 @@ MakeISO() {
 
     if [ "${ec}" -gt "0" ]; then
       echo "Error! Copy ${ISO} to ${ISO_PATH} failed!"
-      exit $COPYISO_ERR
+      exit ${COPYISO_ERR}
     fi
   fi
 
   if [ "${ec}" -gt "0" ]; then
     echo "Error! Copy ISO from ${ISO} to ${ISO_PATH} failed!"
-    exit $COPYISO_ERR
+    exit ${COPYISO_ERR}
   fi
   echo "Finished building ISO: ${ISO_PATH}"
   exit 0
@@ -340,7 +340,7 @@ CdWorkSpace() {
 
         if [ "${ec}" -gt "0" ]; then
             echo "Error! Cannot cd to WORKSPACE!"
-            exit $CDWORKSPACE_ERR
+            exit ${CDWORKSPACE_ERR}
         fi
     else
         echo cd "${WORKSPACE}"
@@ -354,7 +354,7 @@ RunTest() {
     if [ ! -f "${ISO_PATH}" ]; then
         if [ -z "${ISO_URL}" -a "${DRY_RUN}" != "yes" ]; then
             echo "Error! File ${ISO_PATH} not found and no ISO_URL (-U key) for downloading!"
-            exit $NOISOFOUND_ERR
+            exit ${NOISOFOUND_ERR}
         else
             if [ "${DRY_RUN}" = "yes" ]; then
                 echo wget -c ${ISO_URL} -O ${ISO_PATH}
@@ -362,9 +362,9 @@ RunTest() {
                 echo "No ${ISO_PATH} found. Trying to download file."
                 wget -c ${ISO_URL} -O ${ISO_PATH}
                 rc=$?
-                if [ $rc -ne 0 ]; then
+                if [ ${rc} -ne 0 ]; then
                     echo "Failed to fetch ISO from ${ISO_URL}"
-                    exit $ISODOWNLOAD_ERR
+                    exit ${ISODOWNLOAD_ERR}
                 fi
             fi
         fi
@@ -377,9 +377,9 @@ RunTest() {
     # run python virtualenv
     if [ "${VENV}" = "yes" ]; then
         if [ "${DRY_RUN}" = "yes" ]; then
-            echo . $VENV_PATH/bin/activate
+            echo . ${VENV_PATH}/bin/activate
         else
-            . $VENV_PATH/bin/activate
+            . ${VENV_PATH}/bin/activate
         fi
     fi
 
@@ -392,7 +392,7 @@ RunTest() {
     fi
 
     if [ ! -f "$LOGS_DIR" ]; then
-      mkdir -p $LOGS_DIR
+      mkdir -p ${LOGS_DIR}
     fi
 
     export ENV_NAME
@@ -468,7 +468,7 @@ RouteTasks() {
     ;;
   *)
     echo "Unknown task: ${TASK_NAME}!"
-    exit $INVALIDTASK_ERR
+    exit ${INVALIDTASK_ERR}
     ;;
   esac
   exit 0

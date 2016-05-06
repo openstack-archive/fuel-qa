@@ -30,9 +30,10 @@ def cached_add_group(yamls):
             validate_config=True):
         """Add user friendly group
 
-        :type group_name: str
+        :type group: str
         :type systest_group: str
         :type config_name: str
+        :type validate_config: bool
 
         """
         if validate_config and config_name not in yamls:

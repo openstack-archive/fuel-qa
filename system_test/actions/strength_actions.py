@@ -31,6 +31,7 @@ from system_test.helpers.decorators import make_snapshot_if_step_fail
 
 
 # pylint: disable=no-member
+# noinspection PyUnresolvedReferences
 class StrengthActions(object):
 
     destroyed_devops_nodes = []
@@ -110,6 +111,7 @@ class StrengthActions(object):
                 self.destroyed_devops_nodes)
 
 
+# noinspection PyUnresolvedReferences
 class FillRootActions(object):
 
     ostf_tests_should_failed = 0

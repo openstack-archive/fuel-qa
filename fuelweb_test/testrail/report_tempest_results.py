@@ -20,6 +20,7 @@ import optparse
 from xml.etree import ElementTree
 
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves import urllib
 # pylint: enable=import-error
 
