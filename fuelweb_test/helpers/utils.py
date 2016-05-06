@@ -1146,3 +1146,69 @@ def dict_merge(a, b):
         else:
             result[k] = copy.deepcopy(v)
     return result
+
+
+class YamlEditor(object):
+    """Manipulations with local or remote .yaml files.
+    Usage:
+
+    with YamlEditor("tasks.yaml") as editor:
+        editor.content[key] = "value"
+
+    with YamlEditor("astute.yaml", ip=self.admin_ip) as editor:
+        editor.content[key] = "value"
+    """
+
+    def __init__(self, file_path, ip=None):
+        self.file_path = file_path
+        self.ip = ip
+        self.content = None
+        self.original_content = None
+
+    def __get_file(self, mode="r"):
+        if self.ip:
+            return SSHManager().open_on_remote(self.ip, self.file_path, mode)
+        else:
+            return open(self.file_path, mode)
+
+    def get_content(self):
+        with self.__get_file() as file_obj:
+            return yaml.safe_load(file_obj)
+
+    def write_content(self, content=None):
+        if content:
+           self.content = content
+        with self.__get_file("w") as file_obj:
+            yaml.dump(self.content, file_obj,
+                      default_flow_style=False,
+                      default_style='"')
+
+    def __enter__(self):
+        self.content = self.get_content()
+        self.original_content = copy.deepcopy(self.content)
+
+    def change_value(self, element, value):
+        """Change 'value' of 'element' (backward compatibility)"""
+        result_dict = copy.deepcopy(self.content)
+        for k in element[:-1]:
+            result_dict = result_dict[k]
+        result_dict[element[-1]] = value
+        self.content = result_dict
+        return self.content
+
+    def get_value(self, element):
+        """Return 'value' of 'element' (backward compatibility)"""
+        temp = self.content
+        for k in element[:-1]:
+            try:
+                temp = temp[k]
+            except Exception:
+                logger.error("Element {0!r} was not found in the config:\n"
+                             "{1!r}".format(k, self.content))
+                raise
+        return temp[element[-1]]
+
+    def __exit__(self, x, y, z):
+        if self.content == self.original_content:
+            return
+        self.write_content()
