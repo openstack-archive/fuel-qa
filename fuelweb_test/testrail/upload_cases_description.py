@@ -272,7 +272,12 @@ def _unpack_list(title, steps, duration, *other):
 
 
 def _parse_title(s, case):
-    title = ' '.join(map(string.strip, s.split('\n')))
+    title = None
+    if isinstance(s, basestring):
+        title = ' '.join(map(string.strip, s.split('\n')))
+    elif isinstance(s, list):
+        title = ''.join([' '.join(map(
+            string.strip, el.split('\n'))) for el in s])
     return title if title else case.entry.home.func_name
 
 
