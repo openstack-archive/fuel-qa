@@ -394,6 +394,11 @@ Test Fuel web
 .. automodule:: gates_tests.tests.test_review_fuel_web
   :members:
 
+Test Fuel fuelmenu
+------------------
+.. automodule:: gates_tests.tests.test_review_in_fuel_menu
+  :members:
+
 Fuel mirror verification
 ========================
 
