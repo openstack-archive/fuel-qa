@@ -17,6 +17,7 @@ import time
 from proboscis import test
 from proboscis.asserts import assert_true
 # pylint: disable=redefined-builtin
+# noinspection PyUnresolvedReferences
 from six.moves import xrange
 # pylint: enable=redefined-builtin
 

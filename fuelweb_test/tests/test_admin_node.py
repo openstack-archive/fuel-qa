@@ -24,7 +24,9 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import test
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves.urllib.request import urlopen
+# noinspection PyUnresolvedReferences
 from six.moves.xmlrpc_client import ServerProxy
 # pylint: enable=import-error
 

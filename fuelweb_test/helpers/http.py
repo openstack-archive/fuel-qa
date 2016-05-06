@@ -18,7 +18,9 @@ import traceback
 from keystoneclient.v2_0 import Client as KeystoneClient
 from keystoneclient import exceptions
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves.urllib import request
+# noinspection PyUnresolvedReferences
 from six.moves.urllib.error import HTTPError
 # pylint: enable=import-error
 

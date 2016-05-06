@@ -29,7 +29,9 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves.urllib.error import HTTPError
+# noinspection PyUnresolvedReferences
 from six.moves.urllib.error import URLError
 # pylint: enable=import-error
 import yaml
@@ -923,7 +925,7 @@ def check_neutron_dhcp_lease(ip, instance_ip, instance_mac,
                              dhcp_server_ip, dhcp_port_tag):
     """Check if the DHCP server offers a lease for a client with the specified
        MAC address
-       :param SSHClient remote: fuel-devops.helpers.helpers object
+       :param ip: remote IP
        :param str instance_ip: IP address of instance
        :param str instance_mac: MAC address that will be checked
        :param str dhcp_server_ip: IP address of DHCP server for request a lease

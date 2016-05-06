@@ -83,7 +83,7 @@ class ActionsFactory(object):
         actions_method = cls.get_actions()
         linear_order = []
         # pylint: disable=no-member
-
+        # noinspection PyUnresolvedReferences
         for action in cls.actions_order:
             try:
                 action_method = actions_method[action]
@@ -98,6 +98,7 @@ class ActionsFactory(object):
                           for (n, l) in cutted]
                 cutted = ["Line {line_num:04d}: {line}".format(
                     line_num=n, line=l) for (n, l) in cutted]
+                # noinspection PyUnresolvedReferences
                 raise LookupError("Class {} orders to run '{}' action as {} "
                                   "step,\n\tbut action method doesn't exist "
                                   "in class.\nLook at '{}':\n\n{}".format(
@@ -206,7 +207,9 @@ class ActionsFactory(object):
 
         # Generate test case groups
         # pylint: disable=no-member
+        # noinspection PyUnresolvedReferences
         groups = ['{}({})'.format(g, case_group) for g in cls._base_groups]
+        # noinspection PyUnresolvedReferences
         groups = cls._base_groups + groups
         # pylint: enable=no-member
 

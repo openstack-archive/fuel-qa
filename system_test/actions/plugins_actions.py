@@ -26,11 +26,13 @@ from system_test.helpers.decorators import make_snapshot_if_step_fail
 
 
 # pylint: disable=no-member
+# noinspection PyUnresolvedReferences
 class PluginsActions(object):
 
     plugin_name = None
     plugin_path = None
 
+    # noinspection PyMethodParameters
     @nested_action
     def prepare_env_with_plugin():
         return [

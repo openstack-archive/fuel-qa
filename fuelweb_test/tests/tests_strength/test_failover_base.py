@@ -25,6 +25,7 @@ from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 from proboscis import SkipTest
 # pylint: disable=redefined-builtin
+# noinspection PyUnresolvedReferences
 from six.moves import xrange
 # pylint: enable=redefined-builtin
 import yaml

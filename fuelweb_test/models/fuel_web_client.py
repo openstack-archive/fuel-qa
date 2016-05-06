@@ -34,6 +34,7 @@ from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves.urllib.error import HTTPError
 # pylint: enable=import-error
 import yaml
@@ -340,8 +341,8 @@ class FuelWebClient29(object):
         task = self.task_wait(task, timeout, interval)
         assert_equal(
             'error', task['status'],
-            "Task '{name}' has incorrect status. {} != {}".format(
-                task['status'], 'error', name=task["name"]
+            "Task '{name}' has incorrect status. {status} != {exp}".format(
+                status=task['status'], exp='error', name=task["name"]
             )
         )
 
@@ -487,7 +488,7 @@ class FuelWebClient29(object):
         :param settings:
         :param port:
         :param configure_ssl:
-        :param cgroup_data:
+        :param release_id:
         :return: cluster_id
         """
         logger.info('Create cluster with name %s', name)
@@ -1969,7 +1970,7 @@ class FuelWebClient29(object):
                 cmd = 'ip netns exec {0} ip -4 ' \
                       '-o address show {1}'.format(namespace, interface)
             else:
-                cmd = 'ip -4 -o address show {1}'.format(interface)
+                cmd = 'ip -4 -o address show {0}'.format(interface)
 
             with self.get_ssh_for_node(node_name) as remote:
                 ret = remote.check_call(cmd)
@@ -2843,14 +2844,17 @@ class FuelWebClient30(FuelWebClient29):
                   self.environment.d_env.get_groups()}
             ng_nets = []
             for rack in self.environment.d_env.get_groups():
-                nets = {'name': rack.name}
-                nets['networks'] = {r.name: r.address_pool.name for
-                                    r in rack.get_network_pools(
-                                        name__in=['fuelweb_admin',
-                                                  'public',
-                                                  'management',
-                                                  'storage',
-                                                  'private'])}
+                nets = {
+                    'name': rack.name,
+                    'networks': {
+                        r.name: r.address_pool.name
+                        for r in rack.get_network_pools(
+                            name__in=[
+                                'fuelweb_admin',
+                                'public',
+                                'management',
+                                'storage',
+                                'private'])}}
                 ng_nets.append(nets)
             self.update_nodegroups(cluster_id=cluster_id,
                                    node_groups=ng)
@@ -3087,6 +3091,7 @@ class FuelWebClient30(FuelWebClient29):
 
 # TODO(ddmitriev): this code will be removed after moving to fuel-devops3.0
 # pylint: disable=no-member
+# noinspection PyUnresolvedReferences
 if (distutils.version.LooseVersion(devops.__version__) <
         distutils.version.LooseVersion('3')):
     logger.info("Use FuelWebClient compatible to fuel-devops 2.9")

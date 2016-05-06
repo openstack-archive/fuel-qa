@@ -21,6 +21,7 @@ import json
 from logging import DEBUG
 from optparse import OptionParser
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves.urllib.request import urlopen
 # pylint: enable=import-error
 

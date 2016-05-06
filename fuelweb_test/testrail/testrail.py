@@ -30,8 +30,11 @@ import json
 import time
 
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves.urllib.request import urlopen
+# noinspection PyUnresolvedReferences
 from six.moves.urllib.request import Request
+# noinspection PyUnresolvedReferences
 from six.moves.urllib.error import HTTPError
 # pylint: enable=import-error
 

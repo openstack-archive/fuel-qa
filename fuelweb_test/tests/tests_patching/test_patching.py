@@ -19,6 +19,7 @@ from proboscis import test
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_true
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves.urllib.request import urlopen
 # pylint: enable=import-error
 

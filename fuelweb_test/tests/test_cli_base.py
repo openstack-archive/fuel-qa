@@ -21,6 +21,7 @@ from proboscis.asserts import assert_true
 from devops.error import TimeoutError
 from devops.helpers.helpers import wait
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves import urllib
 # pylint: enable=import-error
 
@@ -108,8 +109,8 @@ class CommandLine(TestBasic):
                     .format(took=took, task=task))
         assert_equal(
             task['status'], 'ready',
-            "Task '{name}' has incorrect status. {} != {}".format(
-                task['status'], 'ready', name=task["name"]
+            "Task '{name}' has incorrect status. {status} != {exp}".format(
+                status=task['status'], exp='ready', name=task["name"]
             )
         )
 
