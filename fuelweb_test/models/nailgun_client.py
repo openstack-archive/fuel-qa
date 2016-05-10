@@ -691,6 +691,25 @@ class NailgunClient(object):
 
     @logwrap
     @json_parse
+    def get_deployed_cluster_attributes(self, cluster_id):
+        url = '/api/clusters/{}/attributes/deployed/'.format(cluster_id)
+        return self.client.get(url)
+
+    @logwrap
+    @json_parse
+    def get_deployed_network_configuration(self, cluster_id):
+        url = '/api/clusters/{}/network_configuration/deployed'.format(
+            cluster_id)
+        return self.client.get(url)
+
+    @logwrap
+    @json_parse
+    def get_default_cluster_settings(self, cluster_id):
+        url = '/api/clusters/{}/attributes/defaults'.format(cluster_id)
+        return self.client.get(url)
+
+    @logwrap
+    @json_parse
     def get_all_tasks_list(self):
         url = '/api/transactions/'
         return self.client.get(url)
