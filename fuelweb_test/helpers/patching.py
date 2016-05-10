@@ -253,15 +253,16 @@ def get_packages_tests(packages, distro, target):
     return packages_tests
 
 
-def mirror_remote_repository(admin_remote, remote_repo_url, local_repo_path):
+def mirror_remote_repository(admin_ip, remote_repo_url, local_repo_path):
     repo_url = urlparse(remote_repo_url)
     cut_dirs = len(repo_url.path.strip('/').split('/'))
+    ssh_manager = SSHManager()
     download_cmd = ('wget --recursive --no-parent --no-verbose --reject "index'
                     '.html*,*.gif" --exclude-directories "{pwd}/repocache" '
                     '--directory-prefix {path} -nH --cut-dirs={cutd} {url}').\
         format(pwd=repo_url.path.rstrip('/'), path=local_repo_path,
                cutd=cut_dirs, url=repo_url.geturl())
-    result = admin_remote.execute(download_cmd)
+    result = ssh_manager.execute(admin_ip, download_cmd)
     assert_equal(result['exit_code'], 0, 'Mirroring of remote packages '
                                          'repository failed: {0}'.format(
                                              result))
@@ -269,15 +270,15 @@ def mirror_remote_repository(admin_remote, remote_repo_url, local_repo_path):
 
 def add_remote_repositories(environment, mirrors, prefix_name='custom_repo'):
     repositories = set()
+    ssh_manager = SSHManager()
     for mir in mirrors:
         name = '{0}_{1}'.format(prefix_name, mirrors.index(mir))
         local_repo_path = '/'.join([settings.PATCHING_WEB_DIR, name])
         remote_repo_url = mir
-        with environment.d_env.get_admin_remote() as remote:
-            mirror_remote_repository(
-                admin_remote=remote,
-                remote_repo_url=remote_repo_url,
-                local_repo_path=local_repo_path)
+        mirror_remote_repository(
+            admin_ip=ssh_manager.admin_ip,
+            remote_repo_url=remote_repo_url,
+            local_repo_path=local_repo_path)
         repositories.add(name)
     return repositories
 
@@ -341,7 +342,8 @@ def connect_admin_to_repo(environment, repo_name):
         )
 
 
-def update_packages(environment, remote, packages, exclude_packages=None):
+def update_packages(environment, ip, packages, exclude_packages=None):
+    ssh_manager = SSHManager()
     if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_UBUNTU:
         cmds = [
             'apt-get -o Dpkg::Options::="--force-confdef" '
@@ -358,7 +360,7 @@ def update_packages(environment, remote, packages, exclude_packages=None):
                 ' '.join(packages), ','.join(exclude_packages or []))
         ]
     for cmd in cmds:
-        environment.execute_remote_cmd(remote, cmd, exit_code=0)
+        ssh_manager.execute(ip, cmd, exit_code=0)
 
 
 def update_packages_on_slaves(environment, slaves, packages=None,
@@ -367,8 +369,7 @@ def update_packages_on_slaves(environment, slaves, packages=None,
         # Install all updates
         packages = ' '
     for slave in slaves:
-        with environment.d_env.get_ssh_to_remote(slave['ip']) as remote:
-            update_packages(environment, remote, packages, exclude_packages)
+        update_packages(environment, slave['ip'], packages, exclude_packages)
 
 
 def get_slaves_ips_by_role(slaves, role=None):
@@ -514,10 +515,8 @@ def validate_fix_apply_step(apply_step, environment, slaves):
                                                      apply_step['type']))
         command = apply_step['command']
     # remotes sessions .clear() placed in run_actions()
-    remotes = [environment.d_env.get_ssh_to_remote(ip) for ip in remotes_ips] \
-        if command else []
     devops_nodes = devops_nodes if devops_action else []
-    return command, remotes, devops_action, devops_nodes
+    return command, remotes_ips, devops_action, devops_nodes
 
 
 def get_errata(path, bug_id):
@@ -554,9 +553,10 @@ def run_actions(environment, target, slaves, action_type='patch-scenario'):
                 "for bug #{1}!".format(target, settings.PATCHING_BUG_ID))
     scenario = sorted(target_scenarios[0][action_type][distro],
                       key=lambda k: k['id'])
+    ssh_manager = SSHManager()
 
     for step in scenario:
-        command, remotes, devops_action, devops_nodes = \
+        command, remotes_ips, devops_action, devops_nodes = \
             validate_fix_apply_step(step, environment, slaves)
         if 'UPLOAD' in command:
             file_name = command[1]
@@ -568,8 +568,9 @@ def run_actions(environment, target, slaves, action_type='patch-scenario'):
             assert_true(os.path.exists(source_path),
                         'File for uploading "{0}" doesn\'t exist!'.format(
                             source_path))
-            for remote in remotes:
-                remote.upload(source_path, upload_path)
+            for ip in remotes_ips:
+                ssh_manager.upload_to_remote(ip, source_path, upload_path,
+                                             sudo_mode=True)
             continue
         elif 'RUN_TASKS' in command:
             nodes_ids = command[1]
@@ -588,18 +589,14 @@ def run_actions(environment, target, slaves, action_type='patch-scenario'):
             environment.fuel_web.wait_deployment_tasks(cluster_id, nodes_ids,
                                                        tasks, timeout)
             continue
-        for remote in remotes:
-            environment.execute_remote_cmd(remote, command)
+        for ip in remotes_ips:
+            ssh_manager.execute(ip, command, sudo_mode=True)
         if devops_action == 'down':
             environment.fuel_web.warm_shutdown_nodes(devops_nodes)
         elif devops_action == 'up':
             environment.fuel_web.warm_start_nodes(devops_nodes)
         elif devops_action == 'reboot':
             environment.fuel_web.warm_restart_nodes(devops_nodes)
-
-        # clear connections
-        for remote in remotes:
-            remote.clear()
 
 
 def apply_patches(environment, target, slaves=None):
