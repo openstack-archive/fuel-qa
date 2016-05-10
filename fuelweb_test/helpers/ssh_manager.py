@@ -90,7 +90,7 @@ class SSHManager(object):
             keys.append(RSAKey.from_private_key(f))
         return keys
 
-    def get_remote(self, ip, port=22):
+    def get_remote(self, ip, port=22, sudo=None):
         """ Function returns remote SSH connection to node by ip address
 
         :param ip: IP of host
@@ -105,9 +105,11 @@ class SSHManager(object):
             if ip == self.admin_ip:
                 username = self.admin_login
                 password = self.__admin_password
+                sudo_mode = sudo or SSH_FUEL_CREDENTIALS['sudo']
             else:
                 username = self.slave_login
                 password = self.__slave_password
+                sudo_mode = sudo or SSH_SLAVE_CREDENTIALS['sudo']
 
             ssh_client = SSHClient(
                 host=ip,
@@ -117,12 +119,11 @@ class SSHManager(object):
                 private_keys=keys
             )
 
-            if ip != self.admin_ip:
-                ssh_client.sudo_mode = True
             self.connections[(ip, port)] = ssh_client
         logger.debug('SSH_MANAGER:Return existed connection for '
                      '{ip}:{port}'.format(ip=ip, port=port))
         logger.debug('SSH_MANAGER: Connections {0}'.format(self.connections))
+        self.connections[(ip, port)].sudo_mode = sudo_mode
         return self._connect(self.connections[(ip, port)])
 
     def update_connection(self, ip, login=None, password=None,
@@ -157,17 +158,17 @@ class SSHManager(object):
             logger.info('SSH_MANAGER:Close connection for {ip}:{port}'.format(
                 ip=ip, port=port))
 
-    def execute(self, ip, cmd, port=22):
-        remote = self.get_remote(ip=ip, port=port)
+    def execute(self, ip, cmd, port=22, sudo=None):
+        remote = self.get_remote(ip=ip, port=port, sudo=sudo)
         return remote.execute(cmd)
 
-    def check_call(self, ip, cmd, port=22, verbose=False):
-        remote = self.get_remote(ip=ip, port=port)
+    def check_call(self, ip, cmd, port=22, verbose=False, sudo=None):
+        remote = self.get_remote(ip=ip, port=port, sudo=sudo)
         return remote.check_call(cmd, verbose)
 
     def execute_on_remote(self, ip, cmd, port=22, err_msg=None,
                           jsonify=False, assert_ec_equal=None,
-                          raise_on_assert=True):
+                          raise_on_assert=True, sudo=None):
         """Execute ``cmd`` on ``remote`` and return result.
 
         :param ip: ip of host
@@ -182,7 +183,7 @@ class SSHManager(object):
         if assert_ec_equal is None:
             assert_ec_equal = [0]
 
-        result = self.execute(ip=ip, port=port, cmd=cmd)
+        result = self.execute(ip=ip, port=port, cmd=cmd, sudo=sudo)
 
         result['stdout_str'] = ''.join(result['stdout']).strip()
         result['stdout_len'] = len(result['stdout'])
@@ -233,8 +234,8 @@ class SSHManager(object):
 
         return result
 
-    def execute_async_on_remote(self, ip, cmd, port=22):
-        remote = self.get_remote(ip=ip, port=port)
+    def execute_async_on_remote(self, ip, cmd, port=22, sudo=None):
+        remote = self.get_remote(ip=ip, port=port, sudo=sudo)
         return remote.execute_async(cmd)
 
     @staticmethod
@@ -257,40 +258,41 @@ class SSHManager(object):
             raise Exception(log_msg)
         return obj
 
-    def open_on_remote(self, ip, path, mode='r', port=22):
-        remote = self.get_remote(ip=ip, port=port)
+    def open_on_remote(self, ip, path, mode='r', port=22, sudo=None):
+        remote = self.get_remote(ip=ip, port=port, sudo=sudo)
         return remote.open(path, mode)
 
-    def upload_to_remote(self, ip, source, target, port=22):
-        remote = self.get_remote(ip=ip, port=port)
+    def upload_to_remote(self, ip, source, target, port=22, sudo=None):
+        remote = self.get_remote(ip=ip, port=port, sudo=sudo)
         return remote.upload(source, target)
 
-    def download_from_remote(self, ip, destination, target, port=22):
-        remote = self.get_remote(ip=ip, port=port)
+    def download_from_remote(self, ip, destination, target, port=22,
+                             sudo=None):
+        remote = self.get_remote(ip=ip, port=port, sudo=sudo)
         return remote.download(destination, target)
 
-    def exists_on_remote(self, ip, path, port=22):
-        remote = self.get_remote(ip=ip, port=port)
+    def exists_on_remote(self, ip, path, port=22, sudo=None):
+        remote = self.get_remote(ip=ip, port=port, sudo=sudo)
         return remote.exists(path)
 
-    def isdir_on_remote(self, ip, path, port=22):
-        remote = self.get_remote(ip=ip, port=port)
+    def isdir_on_remote(self, ip, path, port=22, sudo=None):
+        remote = self.get_remote(ip=ip, port=port, sudo=sudo)
         return remote.isdir(path)
 
-    def isfile_on_remote(self, ip, path, port=22):
-        remote = self.get_remote(ip=ip, port=port)
+    def isfile_on_remote(self, ip, path, port=22, sudo=None):
+        remote = self.get_remote(ip=ip, port=port, sudo=sudo)
         return remote.isfile(path)
 
-    def mkdir_on_remote(self, ip, path, port=22):
-        remote = self.get_remote(ip=ip, port=port)
+    def mkdir_on_remote(self, ip, path, port=22, sudo=None):
+        remote = self.get_remote(ip=ip, port=port, sudo=sudo)
         return remote.mkdir(path)
 
-    def rm_rf_on_remote(self, ip, path, port=22):
-        remote = self.get_remote(ip=ip, port=port)
+    def rm_rf_on_remote(self, ip, path, port=22, sudo=None):
+        remote = self.get_remote(ip=ip, port=port, sudo=sudo)
         return remote.rm_rf(path)
 
     def cond_upload(self, ip, source, target, port=22, condition='',
-                    clean_target=False):
+                    clean_target=False, sudo=None):
         """ Upload files only if condition in regexp matches filenames
 
         :param ip: host ip
@@ -304,18 +306,22 @@ class SSHManager(object):
         # remote = self.get_remote(ip=ip, port=port)
         # maybe we should use SSHClient function. e.g. remote.isdir(target)
         # we can move this function to some *_actions class
-        if self.isdir_on_remote(ip=ip, port=port, path=target):
+        if self.isdir_on_remote(ip=ip, port=port, path=target,
+                                sudo=sudo):
             target = posixpath.join(target, os.path.basename(source))
 
         if clean_target:
-            self.rm_rf_on_remote(ip=ip, port=port, path=target)
-            self.mkdir_on_remote(ip=ip, port=port, path=target)
+            self.rm_rf_on_remote(ip=ip, port=port, path=target,
+                                 sudo=sudo)
+            self.mkdir_on_remote(ip=ip, port=port, path=target,
+                                 sudo=sudo)
 
         source = os.path.expanduser(source)
         if not os.path.isdir(source):
             if re.match(condition, source):
                 self.upload_to_remote(ip=ip, port=port,
-                                      source=source, target=target)
+                                      source=source, target=target,
+                                      sudo=sudo)
                 logger.debug("File '{0}' uploaded to the remote folder"
                              " '{1}'".format(source, target))
                 return 1
@@ -331,7 +337,8 @@ class SSHManager(object):
                     target,
                     os.path.relpath(rootdir, source))).replace("\\", "/")
 
-            self.mkdir_on_remote(ip=ip, port=port, path=targetdir)
+            self.mkdir_on_remote(ip=ip, port=port, path=targetdir,
+                                 sudo=sudo)
 
             for entry in files:
                 local_path = os.path.join(rootdir, entry)
@@ -340,7 +347,8 @@ class SSHManager(object):
                     self.upload_to_remote(ip=ip,
                                           port=port,
                                           source=local_path,
-                                          target=remote_path)
+                                          target=remote_path,
+                                          sudo=sudo)
                     files_count += 1
                     logger.debug("File '{0}' uploaded to the "
                                  "remote folder '{1}'".format(source, target))
