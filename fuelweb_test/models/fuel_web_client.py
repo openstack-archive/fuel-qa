@@ -961,6 +961,17 @@ class FuelWebClient(object):
         if return_task:
             return task
 
+    def redeploy_cluster_changes_wait_progress(self, cluster_id, progress,
+                                               data=None, return_task=None):
+        logger.info('Re-deploy cluster {}'
+                    ' to apply the changed settings'.format(cluster_id))
+        if data is None:
+            data = {}
+        task = self.client.redeploy_cluster_changes(cluster_id, data)
+        self.assert_task_success(task, interval=30, progress=progress)
+        if return_task:
+            return task
+
     @logwrap
     def deploy_cluster(self, cluster_id):
         """Return hash with task description."""
