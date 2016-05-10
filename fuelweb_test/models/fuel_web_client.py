@@ -917,7 +917,7 @@ class FuelWebClient29(object):
 
     @logwrap
     def check_cluster_settings(self, cluster_id, cluster_attributes):
-        task_id = self.get_last_task_id(cluster_id, 'deployment')
+        task_id = self.get_first_task_id(cluster_id, 'deployment')
         cluster_settings = \
             self.client.get_cluster_settings_for_deployment_task(task_id)
         logger.debug('Cluster settings before deploy {}'.format(
@@ -930,7 +930,7 @@ class FuelWebClient29(object):
 
     @logwrap
     def check_network_settings(self, cluster_id, network_settings):
-        task_id = self.get_last_task_id(cluster_id, 'deployment')
+        task_id = self.get_first_task_id(cluster_id, 'deployment')
         network_configuration = \
             self.client.get_network_configuration_for_deployment_task(task_id)
         logger.debug('Network settings before deploy {}'.format(
@@ -944,12 +944,21 @@ class FuelWebClient29(object):
     @logwrap
     def check_deployment_info_save_for_task(self, cluster_id):
         try:
-            task_id = self.get_last_task_id(cluster_id, 'deployment')
+            task_id = self.get_first_task_id(cluster_id, 'deployment')
             self.client.get_deployment_info_for_task(task_id)
         except Exception:
             logger.error(
                 "Cannot get information about deployment for task {}".format(
                     task_id))
+
+    @logwrap
+    def get_first_task_id(self, cluster_id, task_name):
+        tasks = self.client.get_tasks()
+        tasks_ids = []
+        for task in tasks:
+            if task['cluster'] == cluster_id and task['name'] == task_name:
+                tasks_ids.append(task['id'])
+        return min(tasks_ids)
 
     @logwrap
     def get_last_task_id(self, cluster_id, task_name):
@@ -958,7 +967,7 @@ class FuelWebClient29(object):
         for task in tasks:
             if task['cluster'] == cluster_id and task['name'] == task_name:
                 tasks_ids.append(task['id'])
-        return min(tasks_ids)
+        return max(tasks_ids)
 
     def deploy_cluster_wait_progress(self, cluster_id, progress,
                                      return_task=None):
