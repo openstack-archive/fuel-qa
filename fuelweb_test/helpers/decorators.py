@@ -78,9 +78,8 @@ def store_error_details(name, env):
             logger.debug("Fetching of diagnostic snapshot failed: {0}".
                          format(traceback.format_exc()))
             try:
-                with env.d_env.get_admin_remote()\
-                        as admin_remote:
-                    pull_out_logs_via_ssh(admin_remote, name)
+                admin_ip = env.ssh_manager.admin_ip
+                pull_out_logs_via_ssh(admin_ip, name)
             except:
                 logger.error("Fetching of raw logs failed: {0}".format(
                     traceback.format_exception_only(sys.exc_info()[0],
@@ -155,6 +154,7 @@ def upload_manifests(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
+        ssh_manager = SSHManager()
         try:
             if settings.UPLOAD_MANIFESTS:
                 logger.info(
@@ -165,18 +165,22 @@ def upload_manifests(func):
                     logger.warning("Can't upload manifests: method of "
                                    "unexpected class is decorated.")
                     return result
-                with environment.d_env.get_admin_remote() as remote:
-                    remote.execute('rm -rf /etc/puppet/modules/*')
-                    remote.upload(settings.UPLOAD_MANIFESTS_PATH,
-                                  '/etc/puppet/modules/')
-                    logger.info(
-                        "Copying new site.pp from "
-                        "{:s}".format(settings.SITEPP_FOR_UPLOAD))
-                    remote.execute("cp %s /etc/puppet/manifests" %
-                                   settings.SITEPP_FOR_UPLOAD)
-                    if settings.SYNC_DEPL_TASKS:
-                        remote.execute("fuel release --sync-deployment-tasks"
-                                       " --dir /etc/puppet/")
+                admin_ip = ssh_manager.admin_ip
+                ssh_manager.execute(admin_ip,
+                                    'rm -rf /etc/puppet/modules/*')
+                ssh_manager.upload(admin_ip,
+                                   settings.UPLOAD_MANIFESTS_PATH,
+                                   '/etc/puppet/modules/')
+                logger.info(
+                    "Copying new site.pp from "
+                    "{:s}".format(settings.SITEPP_FOR_UPLOAD))
+                ssh_manager.execute(admin_ip,
+                                    "cp %s /etc/puppet/manifests" %
+                                    settings.SITEPP_FOR_UPLOAD)
+                if settings.SYNC_DEPL_TASKS:
+                    ssh_manager.execute(admin_ip,
+                                        "fuel release --sync-deployment-tasks"
+                                        " --dir /etc/puppet/")
         except Exception:
             logger.error("Could not upload manifests")
             raise
@@ -258,6 +262,7 @@ def update_fuel(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
+        ssh_manager = SSHManager()
         if settings.UPDATE_FUEL:
             logger.info("Update fuel's packages from directory {0}."
                         .format(settings.UPDATE_FUEL_PATH))
@@ -278,11 +283,11 @@ def update_fuel(func):
             cluster_id = environment.fuel_web.get_last_created_cluster()
 
             if centos_files_count > 0:
-                with environment.d_env.get_admin_remote() as remote:
-                    # Update packages on master node
-                    remote.execute(
-                        'yum -y install yum-plugin-priorities;'
-                        'yum clean expire-cache; yum update -y')
+                # Update packages on master node
+                ssh_manager.execute(
+                    ssh_manager.admin_ip,
+                    'yum -y install yum-plugin-priorities;'
+                    'yum clean expire-cache; yum update -y')
 
                 # Add auxiliary repository to the cluster attributes
                 if settings.OPENSTACK_RELEASE_UBUNTU not in \
@@ -304,9 +309,10 @@ def update_fuel(func):
                                  " because of deploying wrong release!"
                                  .format(ubuntu_files_count))
             if settings.SYNC_DEPL_TASKS:
-                with environment.d_env.get_admin_remote() as remote:
-                    remote.execute("fuel release --sync-deployment-tasks"
-                                   " --dir /etc/puppet/")
+                ssh_manager.execute(
+                    ssh_manager.admin_ip,
+                    "fuel release --sync-deployment-tasks"
+                    " --dir /etc/puppet/")
         return result
     return wrapper
 
