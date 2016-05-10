@@ -54,9 +54,8 @@ def make_snapshot_if_step_fail(func):
                     logger.error("Fetching of diagnostic snapshot failed: {0}".
                                  format(traceback.format_exc()))
                     try:
-                        with args[0].env.d_env.get_admin_remote()\
-                                as admin_remote:
-                            pull_out_logs_via_ssh(admin_remote, name)
+                        admin_ip = args[0].env.ssh_manager.admin_ip
+                        pull_out_logs_via_ssh(admin_ip, name)
                     except:
                         logger.error("Fetching of raw logs failed: {0}".
                                      format(traceback.format_exc()))
