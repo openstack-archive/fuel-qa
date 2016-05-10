@@ -14,7 +14,6 @@
 
 from random import randrange
 
-from proboscis.asserts import assert_equal
 
 from fuelweb_test import logwrap
 from fuelweb_test import logger
@@ -38,18 +37,18 @@ class SecurityChecks(object):
             cmd = '/usr/bin/apt-get install -y {pkg}'.format(pkg='socat')
         else:
             cmd = '/usr/bin/yum install -y {pkg}'.format(pkg='socat')
-        with self.environment.d_env.get_ssh_to_remote(ip_address) as remote:
-            result = remote.execute(cmd)
-        if not result['exit_code'] == 0:
-            raise Exception('Could not install package: {0}\n{1}'.
-                            format(result['stdout'], result['stderr']))
+        err_msg = 'Could not install package: {pkg}'.\
+            format(pkg='socat')
+        result = self.environment.ssh_manager.execute_on_remote(
+            ip_address, cmd, err_msg=err_msg
+        )
         # Get all used ports
         cmd = ('netstat -A inet -ln --{proto} | awk \'$4 ~ /^({ip}'
                '|0\.0\.0\.0):[0-9]+/ {{split($4,port,":"); print '
                'port[2]}}\'').format(ip=ip_address, proto=protocol)
-        with self.environment.d_env.get_ssh_to_remote(ip_address) as remote:
-            used_ports = [int(p.strip())
-                          for p in remote.execute(cmd)['stdout']]
+        result = self.environment.ssh_manager.execute(ip_address, cmd)
+        used_ports = [int(p.strip())
+                      for p in result['stdout']]
 
         # Get list of opened ports
         cmd = ('iptables -t filter -S INPUT | sed -rn -e \'s/^.*\s\-p\s+'
@@ -58,9 +57,9 @@ class SecurityChecks(object):
                ' while read ports; do if [[ "$ports" =~ [[:digit:]]'
                '[[:blank:]][[:digit:]] ]]; then seq $ports; else echo '
                '"$ports";fi; done').format(proto=protocol)
-        with self.environment.d_env.get_ssh_to_remote(ip_address) as remote:
-            allowed_ports = [int(p.strip())
-                             for p in remote.execute(cmd)['stdout']]
+        result = self.environment.ssh_manager.execute(ip_address, cmd)
+        allowed_ports = [int(p.strip())
+                         for p in result['stdout']]
 
         test_port = randrange(10000)
         while test_port in used_ports or test_port in allowed_ports:
@@ -68,24 +67,22 @@ class SecurityChecks(object):
 
         # Create dump of iptables rules
         cmd = 'iptables-save > {0}.dump'.format(tmp_file_path)
-        with self.environment.d_env.get_ssh_to_remote(ip_address) as remote:
-            result = remote.execute(cmd)
-        assert_equal(result['exit_code'], 0,
-                     'Dumping of iptables rules failed on {0}: {1}; {2}'.
-                     format(ip_address, result['stdout'], result['stderr']))
+        err_msg = 'Dumping of iptables rules failed on {0}'.\
+            format(ip_address)
+        result = self.environment.ssh_manager.execute_on_remote(
+            ip_address, cmd, err_msg=err_msg
+        )
 
         # Start listening for connections on test_port
         cmd = ('socat {proto}4-LISTEN:{port},bind={ip} {file} '
                '&>/dev/null & pid=$! ; disown; sleep 1; kill -0 $pid').\
             format(proto=protocol, ip=ip_address, file=tmp_file_path,
                    port=test_port)
-        with self.environment.d_env.get_ssh_to_remote(ip_address) as remote:
-            result = remote.execute(cmd)
-
-        assert_equal(result['exit_code'], 0,
-                     'Listening on {0}:{1}/{2} port failed: {3}'.
-                     format(ip_address, test_port, protocol,
-                            result['stderr']))
+        err_msg = 'Listening on {0}:{1}/{2} port failed'.\
+            format(ip_address, test_port, protocol)
+        result = self.environment.ssh_manager.execute_on_remote(
+            ip_address, cmd, err_msg=err_msg
+        )
         return test_port
 
     @retry()
@@ -98,6 +95,7 @@ class SecurityChecks(object):
         cluster_nodes = self.client.list_cluster_nodes(cluster_id)
         tmp_file_path = '/var/tmp/iptables_check_file'
         check_string = 'FirewallHole'
+        admin_ip = self.environment.ssh_manager.admin_ip
 
         for node in cluster_nodes:
             protocols_to_check = ['tcp', 'udp']
@@ -112,13 +110,13 @@ class SecurityChecks(object):
                 cmd = 'echo {string} | nc {opts} {ip} {port}'.\
                     format(opts=nc_opts, string=check_string, ip=node['ip'],
                            port=port)
-                with self.environment.d_env.get_admin_remote() as admin_remote:
-                    admin_remote.execute(cmd)
-                with self.environment.d_env\
-                        .get_ssh_to_remote(node['ip']) as remote:
-                    cmd = 'cat {0}; mv {0}{{,.old}}'.format(tmp_file_path)
-                    result = remote.execute(cmd)
-                if ''.join(result['stdout']).strip() == check_string:
+                self.environment.ssh_manager.execute(admin_ip, cmd)
+                cmd = 'cat {0}; mv {0}{{,.old}}'.format(tmp_file_path)
+                result = self.environment.ssh_manager.execute_on_remote(
+                    node['ip'],
+                    cmd
+                )
+                if result['stdout_str'] == check_string:
                     msg = ('Firewall vulnerability detected. Unused port '
                            '{0}/{1} can be accessed on {2} (node-{3}) node. '
                            'Check {4}.old and {4}.dump files on the node for '

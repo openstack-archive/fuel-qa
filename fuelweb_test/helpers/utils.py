@@ -50,6 +50,9 @@ from fuelweb_test.helpers.ssh_manager import SSHManager
 from gates_tests.helpers import exceptions
 
 
+ssh_manager = SSHManager()
+
+
 @logwrap
 def get_yaml_to_json(node_ssh, filename):
     cmd = ("python -c 'import sys, yaml, json; json.dump("
@@ -103,16 +106,14 @@ def check_if_service_restarted(node_ssh, services_list=None,
 
 
 @logwrap
-def pull_out_logs_via_ssh(admin_remote, name,
+def pull_out_logs_via_ssh(admin_ip, name,
                           logs_dirs=('/var/log/', '/root/', '/etc/fuel/')):
     def _compress_logs(_dirs, _archive_path):
         cmd = 'tar --absolute-names --warning=no-file-changed -czf {t} {d}'.\
             format(t=_archive_path, d=' '.join(_dirs))
-        result = admin_remote.execute(cmd)
-        if result['exit_code'] != 0:
-            logger.error("Compressing of logs on master node failed: {0}".
-                         format(result))
-            return False
+        err_msg = 'Compressing of logs on master node failed'
+        ssh_manager.execute_on_remote(admin_ip, cmd, err_msg=err_msg)
+        # If couldn't compress logs, it'll raise an exception
         return True
 
     archive_path = '/var/tmp/fail_{0}_diagnostic-logs_{1}.tgz'.format(
@@ -120,7 +121,8 @@ def pull_out_logs_via_ssh(admin_remote, name,
 
     try:
         if _compress_logs(logs_dirs, archive_path):
-            if not admin_remote.download(archive_path, settings.LOGS_DIR):
+            if not ssh_manager.download_from_remote(admin_ip, archive_path,
+                                                    settings.LOGS_DIR):
                 logger.error(("Downloading of archive with logs failed, file"
                               "wasn't saved on local host"))
     except Exception:
@@ -133,7 +135,6 @@ def store_astute_yaml(env):
     nailgun_nodes = env.fuel_web.client.list_nodes()
 
     def store_astute_yaml_for_one_node(nailgun_node):
-        ssh_manager = SSHManager()
         if 'roles' not in nailgun_node:
             return None
         errmsg = 'Downloading "{0}.yaml" from the {1} failed'
@@ -174,7 +175,6 @@ def store_astute_yaml(env):
 
 @logwrap
 def generate_facts(ip):
-    ssh_manager = SSHManager()
     facter_dir = '/var/lib/puppet/lib/facter'
     exluded_facts = ['naily.rb']
 
@@ -389,7 +389,6 @@ def install_pkg_2(ip, pkg_name, port=22):
     :param port: ssh port
     :return: exit code of installation
     """
-    ssh_manager = SSHManager()
     remote_status = ssh_manager.execute(
         ip=ip,
         port=port,

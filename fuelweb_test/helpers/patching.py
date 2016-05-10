@@ -21,7 +21,6 @@ from xml.dom.minidom import parseString
 
 from proboscis import register
 from proboscis import TestProgram
-from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
@@ -81,6 +80,8 @@ patching_validation_schema = {
         'data_type': int
     },
 }
+
+ssh_manager = SSHManager()
 
 
 def map_test(target):
@@ -255,7 +256,7 @@ def get_packages_tests(packages, distro, target):
     return packages_tests
 
 
-def mirror_remote_repository(admin_remote, remote_repo_url, local_repo_path):
+def mirror_remote_repository(admin_ip, remote_repo_url, local_repo_path):
     repo_url = urlparse(remote_repo_url)
     cut_dirs = len(repo_url.path.strip('/').split('/'))
     download_cmd = ('wget --recursive --no-parent --no-verbose --reject "index'
@@ -263,10 +264,10 @@ def mirror_remote_repository(admin_remote, remote_repo_url, local_repo_path):
                     '--directory-prefix {path} -nH --cut-dirs={cutd} {url}').\
         format(pwd=repo_url.path.rstrip('/'), path=local_repo_path,
                cutd=cut_dirs, url=repo_url.geturl())
-    result = admin_remote.execute(download_cmd)
-    assert_equal(result['exit_code'], 0, 'Mirroring of remote packages '
-                                         'repository failed: {0}'.format(
-                                             result))
+    err_msg = 'Mirroring of remote packages repository failed'
+    ssh_manager.execute_on_remote(admin_ip,
+                                  download_cmd,
+                                  err_msg=err_msg)
 
 
 def add_remote_repositories(environment, mirrors, prefix_name='custom_repo'):
@@ -275,11 +276,10 @@ def add_remote_repositories(environment, mirrors, prefix_name='custom_repo'):
         name = '{0}_{1}'.format(prefix_name, mirrors.index(mir))
         local_repo_path = '/'.join([settings.PATCHING_WEB_DIR, name])
         remote_repo_url = mir
-        with environment.d_env.get_admin_remote() as remote:
-            mirror_remote_repository(
-                admin_remote=remote,
-                remote_repo_url=remote_repo_url,
-                local_repo_path=local_repo_path)
+        mirror_remote_repository(
+            admin_ip=ssh_manager.admin_ip,
+            remote_repo_url=remote_repo_url,
+            local_repo_path=local_repo_path)
         repositories.add(name)
     return repositories
 
@@ -343,7 +343,7 @@ def connect_admin_to_repo(environment, repo_name):
         )
 
 
-def update_packages(environment, remote, packages, exclude_packages=None):
+def update_packages(environment, ip, packages, exclude_packages=None):
     if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_UBUNTU:
         cmds = [
             'apt-get -o Dpkg::Options::="--force-confdef" '
@@ -360,7 +360,7 @@ def update_packages(environment, remote, packages, exclude_packages=None):
                 ' '.join(packages), ','.join(exclude_packages or []))
         ]
     for cmd in cmds:
-        environment.execute_remote_cmd(remote, cmd, exit_code=0)
+        ssh_manager.execute_on_remote(ip, cmd, assert_ec_equal=0)
 
 
 def update_packages_on_slaves(environment, slaves, packages=None,
@@ -369,8 +369,7 @@ def update_packages_on_slaves(environment, slaves, packages=None,
         # Install all updates
         packages = ' '
     for slave in slaves:
-        with environment.d_env.get_ssh_to_remote(slave['ip']) as remote:
-            update_packages(environment, remote, packages, exclude_packages)
+        update_packages(environment, slave['ip'], packages, exclude_packages)
 
 
 def get_slaves_ips_by_role(slaves, role=None):
@@ -516,10 +515,8 @@ def validate_fix_apply_step(apply_step, environment, slaves):
                                                      apply_step['type']))
         command = apply_step['command']
     # remotes sessions .clear() placed in run_actions()
-    remotes = [environment.d_env.get_ssh_to_remote(ip) for ip in remotes_ips] \
-        if command else []
     devops_nodes = devops_nodes if devops_action else []
-    return command, remotes, devops_action, devops_nodes
+    return command, remotes_ips, devops_action, devops_nodes
 
 
 def get_errata(path, bug_id):
@@ -558,7 +555,7 @@ def run_actions(environment, target, slaves, action_type='patch-scenario'):
                       key=lambda k: k['id'])
 
     for step in scenario:
-        command, remotes, devops_action, devops_nodes = \
+        command, remotes_ips, devops_action, devops_nodes = \
             validate_fix_apply_step(step, environment, slaves)
         if 'UPLOAD' in command:
             file_name = command[1]
@@ -570,8 +567,8 @@ def run_actions(environment, target, slaves, action_type='patch-scenario'):
             assert_true(os.path.exists(source_path),
                         'File for uploading "{0}" doesn\'t exist!'.format(
                             source_path))
-            for remote in remotes:
-                remote.upload(source_path, upload_path)
+            for ip in remotes_ips:
+                ssh_manager.upload_to_remote(ip, source_path, upload_path)
             continue
         elif 'RUN_TASKS' in command:
             nodes_ids = command[1]
@@ -590,18 +587,14 @@ def run_actions(environment, target, slaves, action_type='patch-scenario'):
             environment.fuel_web.wait_deployment_tasks(cluster_id, nodes_ids,
                                                        tasks, timeout)
             continue
-        for remote in remotes:
-            environment.execute_remote_cmd(remote, command)
+        for ip in remotes_ips:
+            ssh_manager.execute(ip, command)
         if devops_action == 'down':
             environment.fuel_web.warm_shutdown_nodes(devops_nodes)
         elif devops_action == 'up':
             environment.fuel_web.warm_start_nodes(devops_nodes)
         elif devops_action == 'reboot':
             environment.fuel_web.warm_restart_nodes(devops_nodes)
-
-        # clear connections
-        for remote in remotes:
-            remote.clear()
 
 
 def apply_patches(environment, target, slaves=None):
