@@ -13,6 +13,7 @@
 #    under the License.
 
 
+from distutils.util import strtobool
 import os
 import time
 
@@ -572,11 +573,13 @@ KEYSTONE_CREDS = {'username': os.environ.get('KEYSTONE_USERNAME', 'admin'),
 # Default SSH password 'ENV_FUEL_PASSWORD' can be changed on Fuel master node
 SSH_FUEL_CREDENTIALS = {
     'login': os.environ.get('ENV_FUEL_LOGIN', 'root'),
-    'password': os.environ.get('ENV_FUEL_PASSWORD', 'r00tme')}
+    'password': os.environ.get('ENV_FUEL_PASSWORD', 'r00tme'),
+    'sudo': strtobool(os.environ.get('ENV_FUEL_SUDO', 'False'))}
 
 SSH_SLAVE_CREDENTIALS = {
     'login': os.environ.get('ENV_SLAVE_LOGIN', 'fuel'),
-    'password': os.environ.get('ENV_SLAVE_PASSWORD', 'fuel')}
+    'password': os.environ.get('ENV_SLAVE_PASSWORD', 'fuel'),
+    'sudo': strtobool(os.environ.get('ENV_SLAVE_SUDO', 'True'))}
 
 ###############################################################################
 
