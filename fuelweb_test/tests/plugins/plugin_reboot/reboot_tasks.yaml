@@ -9,7 +9,7 @@
   stage: pre_deployment
   type: reboot
   parameters:
-      timeout: 60
+      timeout: 180
 
 - role: ['controller', 'ceph-osd']
   stage: pre_deployment
