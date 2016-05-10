@@ -1146,3 +1146,23 @@ def dict_merge(a, b):
         else:
             result[k] = copy.deepcopy(v)
     return result
+
+
+@logwrap
+def kill_process_on_remote_node(ip, namepattern, prms=None, **kwargs):
+    """Kill process on remote node
+
+    :param ip: str, ip address of remote node
+    :param namepattern: str, name pattern
+    :param prms: dict, a suite of keys and values of utility 'pkill'
+    :param kwargs: a suite of parameters of SSHManager().execute_on_remote()
+    :return:
+    """
+    ssh = SSHManager()
+    if prms:
+        str_prms = ' '.join(
+            ['{} {}'.format(k, v) for k, v in prms.iteritems()])
+    cmd = 'pkill {str_prms} "{namepattern}"'.format(
+        str_prms=str_prms if prms else '',
+        namepattern=namepattern)
+    ssh.execute_on_remote(ip, cmd, **kwargs)

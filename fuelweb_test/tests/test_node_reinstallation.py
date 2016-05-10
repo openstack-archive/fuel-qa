@@ -13,15 +13,17 @@
 #    under the License.
 
 from cinderclient.exceptions import NotFound
+from devops.error import TimeoutError
 from devops.helpers import helpers as devops_helpers
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import test
 import yaml
 
+from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
-from fuelweb_test import logger
+from fuelweb_test.helpers import utils
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -95,6 +97,7 @@ class NodeReinstallationEnv(TestBasic):
 
         Duration 25m
         """
+        self.check_run("failed_node_reinstallation_env")
         self.env.revert_snapshot("ready_with_5_slaves")
 
         cluster_id = self.fuel_web.create_cluster(
@@ -312,6 +315,54 @@ class FullClusterReinstallation(TestBasic):
 class ErrorNodeReinstallation(TestBasic):
     """ErrorNodeReinstallation."""  # TODO documentation
 
+    def _fail_deployment_task(self, node, task):
+        """Fail deployment on corresponding node
+
+        :param node: dict, node attributes
+        :param task: dict, task attributes
+        :return: a boolean, True if deployment was failed else False
+        """
+        logger.info('Try to fail deployment on {}'.format(node['name']))
+        utils.kill_process_on_remote_node(node['ip'],
+                                          namepattern='/usr/bin/puppet',
+                                          prms={'-9': '', '-f': ''},
+                                          raise_on_assert=False)
+        return 'error' == self.fuel_web.client.get_task(task['id'])['status']
+
+    def _wait_for_failed_deployment(self, node, task, timeout=60 * 60):
+        """Wait for failed deployment on corresponding node
+
+        :param node: dict, node attributes
+        :param task: dict, task attributes
+        :param timeout: int, timeout of waiting
+        :return:
+        """
+        try:
+            devops_helpers.wait(
+                lambda: self._fail_deployment_task(node, task),
+                interval=10,
+                timeout=timeout
+            )
+        except TimeoutError:
+            raise TimeoutError(
+                "Waiting for the fail of task \"{task}\" timeout {timeout} sec"
+                " was exceeded: ".format(task=task["name"], timeout=timeout))
+
+    def _get_failed_deployment(self, cluster_id, node):
+        """Fall deployment to get cluster in the error state
+
+        :param cluster_id: int, number of cluster id
+        :param node: dict, node attributes
+        :return:
+        """
+
+        # Start deployment for corresponding node
+        task = self.fuel_web.client.deploy_nodes(
+            cluster_id,
+            [str(node['id'])])
+        # kill puppet process util cluster will be in error state
+        self._wait_for_failed_deployment(node, task)
+
     @test(depends_on=[NodeReinstallationEnv.failed_node_reinstallation_env],
           groups=["reinstall_failed_primary_controller_deployment"])
     @log_snapshot_after_test
@@ -328,23 +379,22 @@ class ErrorNodeReinstallation(TestBasic):
 
         Duration: 145m
         """
+        self.show_step(1)
         self.env.revert_snapshot("failed_node_reinstallation_env")
 
+        self.show_step(2)
         cluster_id = self.fuel_web.get_last_created_cluster()
-
         # Get the primary controller
-        primary_ctrl = self.fuel_web.get_nailgun_node_by_name('slave-01')
+        pr_controller = self.fuel_web.get_nailgun_node_by_name('slave-01')
+        self._get_failed_deployment(cluster_id, pr_controller)
 
-        # Start deployment; for primary controller put inappropriate task
-        # to be executed to cause a failure on deployment
-        task = self.fuel_web.client.put_deployment_tasks_for_cluster(
-            cluster_id, data=['hiera'],
-            node_id=primary_ctrl['id'])
-        self.fuel_web.assert_task_failed(task)
-
+        self.show_step(3)
         NodeReinstallationEnv._reinstall_nodes(self.fuel_web, cluster_id)
 
+        self.show_step(4)
         self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(5)
         self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
     @test(depends_on=[NodeReinstallationEnv.failed_node_reinstallation_env],
@@ -363,23 +413,22 @@ class ErrorNodeReinstallation(TestBasic):
 
         Duration: 145m
         """
+        self.show_step(1)
         self.env.revert_snapshot("failed_node_reinstallation_env")
 
+        self.show_step(2)
         cluster_id = self.fuel_web.get_last_created_cluster()
-
         # Get a regular controller
         regular_ctrl = self.fuel_web.get_nailgun_node_by_name('slave-02')
+        self._get_failed_deployment(cluster_id, regular_ctrl)
 
-        # Start deployment; for  a regular controller put inappropriate task
-        # to be executed to cause a failure on deployment
-        task = self.fuel_web.client.put_deployment_tasks_for_cluster(
-            cluster_id, data=['hiera'],
-            node_id=regular_ctrl['id'])
-        self.fuel_web.assert_task_failed(task)
-
+        self.show_step(3)
         NodeReinstallationEnv._reinstall_nodes(self.fuel_web, cluster_id)
 
+        self.show_step(4)
         self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(5)
         self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
     @test(depends_on=[NodeReinstallationEnv.failed_node_reinstallation_env],
@@ -398,26 +447,24 @@ class ErrorNodeReinstallation(TestBasic):
 
         Duration: 45m
         """
+        self.show_step(1)
         self.env.revert_snapshot("failed_node_reinstallation_env")
 
+        self.show_step(2)
         cluster_id = self.fuel_web.get_last_created_cluster()
-
         # Get nailgun nodes
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         cmps_nailgun = [n for n in nailgun_nodes
                         if 'compute' in n['pending_roles']]
-        cmp_node_id = str(cmps_nailgun[0]['id'])
+        self._get_failed_deployment(cluster_id, cmps_nailgun[0])
 
-        # Start deployment; for one of computes put inappropriate task
-        # to be executed to cause a failure on deployment
-        task = self.fuel_web.client.put_deployment_tasks_for_cluster(
-            cluster_id, data=['hiera'],
-            node_id=cmp_node_id)
-        self.fuel_web.assert_task_failed(task)
-
+        self.show_step(3)
         NodeReinstallationEnv._reinstall_nodes(self.fuel_web, cluster_id)
 
+        self.show_step(4)
         self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(5)
         self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
 
