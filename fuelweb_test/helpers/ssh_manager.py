@@ -21,6 +21,7 @@ import traceback
 from devops.helpers.helpers import wait
 from devops.models.node import SSHClient
 from paramiko import RSAKey
+from paramiko.ssh_exception import BadAuthenticationType
 import six
 import yaml
 
@@ -42,6 +43,7 @@ class SSHManager(object):
         self.admin_login = None
         self.__admin_password = None
         self.slave_login = None
+        self.slave_fallback_login = 'root'
         self.__slave_password = None
 
     @property
@@ -106,21 +108,30 @@ class SSHManager(object):
 
             keys = self._get_keys() if ip != self.admin_ip else []
             if ip == self.admin_ip:
-                username = self.admin_login
-                password = self.__admin_password
+                ssh_client = SSHClient(
+                    host=ip,
+                    port=port,
+                    username=self.admin_login,
+                    password=self.__admin_password,
+                    private_keys=keys
+                )
             else:
-                username = self.slave_login
-                password = self.__slave_password
-
-            ssh_client = SSHClient(
-                host=ip,
-                port=port,
-                username=username,
-                password=password,
-                private_keys=keys
-            )
-
-            if ip != self.admin_ip:
+                try:
+                    ssh_client = SSHClient(
+                        host=ip,
+                        port=port,
+                        username=self.slave_login,
+                        password=self.__slave_password,
+                        private_keys=keys
+                    )
+                except BadAuthenticationType:
+                    ssh_client = SSHClient(
+                        host=ip,
+                        port=port,
+                        username=self.slave_fallback_login,
+                        password=self.__slave_password,
+                        private_keys=keys
+                    )
                 ssh_client.sudo_mode = True
             self.connections[(ip, port)] = ssh_client
         logger.debug('SSH_MANAGER:Return existed connection for '
