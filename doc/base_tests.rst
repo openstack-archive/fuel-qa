@@ -729,6 +729,11 @@ Test for Image Based Provisioning
 .. automodule:: fuelweb_test.tests.tests_ibp.test_ibp
       :members:
 
+Test for unlock settings tab feature
+-------------------------------------
+.. automodule:: fuelweb_test.tests.test_unlock_settings_tab
+   :members:
+
 Tests for configDB api
 ----------------------
 .. automodule:: fuelweb_test.tests.tests_configdb.test_configdb_api
