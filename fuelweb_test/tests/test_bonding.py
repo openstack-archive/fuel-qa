@@ -15,13 +15,13 @@
 from copy import deepcopy
 
 from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_raises
 from proboscis import test
 # pylint: disable=import-error
 # noinspection PyUnresolvedReferences
 from six.moves.urllib.error import HTTPError
 # pylint: enable=import-error
 
+from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NEUTRON_SEGMENT
@@ -210,12 +210,39 @@ class BondingHAOneController(BondingTest):
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         invalid_bond_conf = deepcopy(self.BOND_CONFIG)
         invalid_bond_conf[1]['mode'] = '802.3ad'
-        assert_raises(
-            HTTPError,
-            self.fuel_web.update_node_networks,
-            nailgun_nodes[0]['id'],
-            interfaces_dict=deepcopy(self.INTERFACES),
-            raw_data=invalid_bond_conf)
+        invalid_bond_conf[1]['bond_properties']['mode'] = '802.3ad'
+        interfaces_dict = deepcopy(self.INTERFACES)
+
+        exp_code = 400
+        exp_msg = (
+            "Node '1': there is no interface 'enp0s8' found "
+            "for bond 'bond0' in DB")
+        exp_err = (
+            '{exp!s} with code={code} and reason={reason}'.format(
+                exp=HTTPError.__class__, code=400,
+                reason="Node '1': there is no interface 'enp0s8' found "
+                       "for bond 'bond0' in DB"))
+        try:
+            self.fuel_web.update_node_networks(
+                nailgun_nodes[0]['id'],
+                interfaces_dict=interfaces_dict,
+                raw_data=invalid_bond_conf)
+        except HTTPError as exc:
+            if exc.code != exp_code or exc.reason != exp_msg:
+                logger.error(
+                    'Raised:   {exc!s},\n'
+                    'Expected: {exp}'.format(exc=exc, exp=exp_err))
+                raise
+
+            logger.info('Test PASS: expected exception raised')
+            return
+        except BaseException as exc:
+            logger.error(
+                'Raised:   {exc!s},\n'
+                'Expected: {exp}'.format(exc=exc, exp=exp_err))
+            raise
+        raise AssertionError(
+            'Not raised any exception, while expected {}'.format(exp_err))
 
 
 @test(groups=["bonding_neutron", "bonding_ha", "bonding"])
