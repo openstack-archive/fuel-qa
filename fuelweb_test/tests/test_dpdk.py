@@ -16,9 +16,13 @@ from copy import deepcopy
 import random
 
 from devops.helpers import helpers as devops_helpers
+from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
 from proboscis import before_class
 from proboscis import test
+# pylint: disable=import-error
+from six.moves.urllib.error import HTTPError
+# pylint: enable=import-error
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
@@ -106,9 +110,11 @@ class SupportDPDK(TestBasic):
 
         return {'available': dpdk_available, 'enabled': dpdk_enabled}
 
-    def enable_dpdk(self, nailgun_node, switch_to=True, net='private'):
-        assert_true(self.check_dpdk(nailgun_node, net=net)['available'],
-                    'DPDK not available on selected interface')
+    def enable_dpdk(self, nailgun_node, switch_to=True, net='private',
+                    forceEnable=False):
+        if not forceEnable:
+            assert_true(self.check_dpdk(nailgun_node, net=net)['available'],
+                        'DPDK not available on selected interface')
 
         compute_net = self.fuel_web.client.get_node_interfaces(
             nailgun_node['id'])
@@ -232,6 +238,105 @@ class SupportDPDK(TestBasic):
         self.check_dpdk_instance_connectivity(os_conn, cluster_id)
 
         self.env.make_snapshot("deploy_cluster_with_dpdk")
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["check_can_not_enable_dpdk_with_tun"])
+    @log_snapshot_after_test
+    def check_can_not_enable_dpdk_with_tun(self):
+        """Check can not enable DPDK on tun network
+
+        Scenario:
+            1. Create new environment with VXLAN segmentation for Neutron
+            2. Set KVM as Hypervisor
+            3. Add controller and compute nodes
+            4. Configure HugePages for compute nodes
+            5. Try configure private network in DPDK mode
+        """
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        self.show_step(1)
+        self.show_step(2)
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": "tun",
+                "KVM_USE": True
+            }
+        )
+
+        self.show_step(3)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['compute'],
+                'slave-03': ['cinder']
+            })
+
+        compute = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute'], role_status='pending_roles')[0]
+
+        self.show_step(4)
+        self.setup_hugepages(compute, hp_2mb=256, hp_dpdk_mb=128)
+
+        self.show_step(5)
+        assert_raises(HTTPError, self.enable_dpdk, compute, forceEnable=True)
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["check_can_not_enable_dpdk_on_non_dedicated_iface"])
+    @log_snapshot_after_test
+    def check_can_not_enable_dpdk_on_non_dedicated_iface(self):
+        """Check can not enable DPDK on non-dedicated interface
+
+        Scenario:
+            1. Create new environment with VLAN segmentation for Neutron
+            2. Set KVM as Hypervisor
+            3. Add controller and compute nodes
+            4. Configure HugePages for compute nodes
+            5. Add private and storage networks to iface and try enable DPDK mode
+        """
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        self.show_step(1)
+        self.show_step(2)
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": "vlan",
+                "KVM_USE": True
+            }
+        )
+
+        self.show_step(3)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['compute'],
+                'slave-03': ['cinder']
+            })
+
+        compute = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute'], role_status='pending_roles')[0]
+
+        self.show_step(4)
+        self.setup_hugepages(compute, hp_2mb=256, hp_dpdk_mb=128)
+
+        self.show_step(5)
+        assigned_networks = {
+            settings.iface_alias('eth0'): ['fuelweb_admin'],
+            settings.iface_alias('eth1'): ['public'],
+            settings.iface_alias('eth2'): ['management'],
+            settings.iface_alias('eth3'): ['private', 'storage'],
+            settings.iface_alias('eth4'): []
+        }
+        self.fuel_web.update_node_networks(compute['id'],
+                                           interfaces_dict=assigned_networks)
+        assert_raises(HTTPError, self.enable_dpdk, compute, forceEnable=True)
 
 
 @test(groups=["support_dpdk_bond"])
