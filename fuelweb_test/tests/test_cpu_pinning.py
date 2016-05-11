@@ -581,3 +581,78 @@ class NumaCpuPinning(TestBasic):
                              .format(compute['ip'], compute_cpu * 2))
 
         self.env.make_snapshot('cpu_pinning_allocation')
+
+    @test(depends_on_groups=['cpu_pinning_on_two_compute'],
+          groups=["change_pinned_cpu_and_redeploy"])
+    @log_snapshot_after_test
+    def change_pinned_cpu_and_redeploy(self):
+        """Unpinned CPU and redeploy cluster
+
+        Scenario:
+            1. Revert snapshot "cpu_pinning_on_two_compute"
+            2. Unpinned CPU on the first compute
+            3. Deploy changes
+            4. Verify changes were applied
+            5. Check nova.conf doesn't contain pinned CPU at the first compute
+            5. Run OSTF
+            6. Boot VM with pinned CPU on the second compute
+
+        Snapshot: change_pinned_cpu_and_redeploy
+        """
+        self.show_step(1)
+        self.env.revert_snapshot("cpu_pinning_on_two_compute")
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.show_step(2)
+        first_compute = self.fuel_web.get_nailgun_node_by_name('slave-01')
+        first_config = self.fuel_web.client.get_node_attributes(
+            first_compute['id'])
+        first_config['cpu_pinning']['nova']['value'] = 0
+        self.fuel_web.client.upload_node_attributes(
+            first_config, first_compute['id'])
+
+        self.show_step(3)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(4)
+        compute_config = self.fuel_web.client.get_node_attributes(
+            first_compute['id'])
+        asserts.assert_equal(
+            compute_config['cpu_pinning']['nova']['value'],
+            0,
+            "CPU wasn't unpinned on '{0}': "
+            "Expected value 0, actual '{1}'"
+            .format(first_compute['ip'],
+                    compute_config['cpu_pinning']['nova']['value']))
+
+        self.show_step(5)
+
+        nova_conf_path = "/etc/nova/nova.conf"
+        with self.ssh_manager.open_on_remote(
+                ip=first_compute['ip'],
+                path=nova_conf_path) as f:
+
+            nova_conf = utils.get_ini_config(f)
+            utils.check_config(nova_conf,
+                               nova_conf_path,
+                               "DEFAULT",
+                               "vcpu_pin_set",
+                               None)
+
+        self.show_step(6)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(7)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+
+        second_compute = self.fuel_web.get_nailgun_node_by_name('slave-02')
+        meta = {'pinned': 'true'}
+        self.create_pinned_instance(os_conn=os_conn,
+                                    cluster_id=cluster_id,
+                                    name='cpu_1_',
+                                    vcpus=1,
+                                    hostname=second_compute['fqdn'],
+                                    meta=meta)
+
+        self.env.make_snapshot('change_pinned_cpu_and_redeploy')
