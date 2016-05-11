@@ -28,7 +28,7 @@ class ChangeVipManually(TestBasic):
     Contains tests on manual vip allocation
     """
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["change_public_vip"])
     @log_snapshot_after_test
     def change_public_vip(self):
@@ -49,7 +49,7 @@ class ChangeVipManually(TestBasic):
         Snapshot change_public_vip
         """
 
-        self.env.revert_snapshot("ready_with_9_slaves")
+        self.env.revert_snapshot("ready_with_3_slaves")
 
         data = {
             'tenant': 'manualvip',
@@ -67,27 +67,23 @@ class ChangeVipManually(TestBasic):
             cluster_id,
             {
                 'slave-01': ['controller'],
-                'slave-02': ['controller'],
-                'slave-03': ['controller'],
-                'slave-04': ['compute'],
-                'slave-05': ['compute'],
-                'slave-06': ['cinder'],
+                'slave-02': ['compute'],
+                'slave-03': ['cinder'],
             }
         )
         self.show_step(4)
 
+        ip_to_set = str(
+            self.env.d_env.get_network(name='public').ip.subnet()[0][5])
+        logger.debug("piblic vip is going to be set to {}".format(ip_to_set))
+        public_vip_data = {'network': 2,
+                           'vip_name': 'public',
+                           'vip_namespace': 'haproxy',
+                           'ip_addr': ip_to_set}
+
         # TODO(ddmitriev): remove this 'disable' after moving to fuel-devops3.0
         # pylint: disable=no-member
-        ip = netaddr.IPAddress(
-            self.fuel_web.get_vip_info(cluster_id)['ip_addr'])
-        # pylint: enable=no-member
-
-        ip_to_set = str(ip + 1)
-        logger.debug('ip to be set is {}'.format(ip_to_set))
-
-        # TODO(ddmitriev): remove this 'disable' after moving to fuel-devops3.0
-        # pylint: disable=no-member
-        self.fuel_web.update_vip_ip(cluster_id, ip_to_set)
+        self.fuel_web.client.update_vip_ip(cluster_id, public_vip_data)
         # pylint: enable=no-member
 
         self.show_step(5)
@@ -106,7 +102,7 @@ class ChangeVipManually(TestBasic):
 
         self.env.make_snapshot("change_public_vip")
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["change_public_vip_outside_range"])
     @log_snapshot_after_test
     def change_public_vip_outside_range(self):
@@ -129,7 +125,7 @@ class ChangeVipManually(TestBasic):
         Snapshot change_public_vip_outside_range
         """
 
-        self.env.revert_snapshot("ready_with_9_slaves")
+        self.env.revert_snapshot("ready_with_3_slaves")
 
         data = {
             'tenant': 'outsiderangevip',
@@ -151,14 +147,9 @@ class ChangeVipManually(TestBasic):
         self.fuel_web.update_nodes(
             cluster_id,
             {
-                'slave-01': ['controller'],
-                'slave-02': ['controller'],
-                'slave-03': ['controller'],
-                'slave-04': ['compute'],
-                'slave-05': ['compute'],
-                'slave-06': ['ceph-osd'],
-                'slave-07': ['ceph-osd'],
-                'slave-08': ['ceph-osd'],
+                'slave-01': ['controller', 'ceph-osd'],
+                'slave-02': ['compute', 'ceph-osd'],
+                'slave-03': ['ceph-osd']
             }
         )
         self.show_step(4)
@@ -176,10 +167,14 @@ class ChangeVipManually(TestBasic):
         self.show_step(5)
         ip_to_set = str(floating_upper_range + 1)
         logger.debug('ip to be set is {}'.format(ip_to_set))
+        public_vip_data = {'network': 2,
+                           'vip_name': 'public',
+                           'vip_namespace': 'haproxy',
+                           'ip_addr': ip_to_set}
 
         # TODO(ddmitriev): remove this 'disable' after moving to fuel-devops3.0
         # pylint: disable=no-member
-        self.fuel_web.update_vip_ip(cluster_id, ip_to_set)
+        self.fuel_web.client.update_vip_ip(cluster_id, public_vip_data)
         # pylint: enable=no-member
 
         self.show_step(6)
