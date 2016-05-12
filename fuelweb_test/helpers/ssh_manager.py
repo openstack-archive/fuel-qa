@@ -55,8 +55,10 @@ class SSHManager(object):
         """ It will be moved to __init__
 
         :param admin_ip: ip address of admin node
-        :param login: user name
-        :param password: password for user
+        :param admin_login: user name
+        :param admin_password: password for user
+        :param slave_login: user name
+        :param slave_password: password for user
         :return: None
         """
         self.admin_ip = admin_ip

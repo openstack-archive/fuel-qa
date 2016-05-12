@@ -16,7 +16,9 @@ import os
 from proboscis import asserts
 from proboscis import test
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves import configparser
+# noinspection PyUnresolvedReferences
 from six.moves import cStringIO
 # pylint: enable=import-error
 

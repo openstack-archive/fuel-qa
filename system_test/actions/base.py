@@ -24,6 +24,7 @@ from proboscis import SkipTest
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 # pylint: disable=redefined-builtin
+# noinspection PyUnresolvedReferences
 from six.moves import xrange
 # pylint: enable=redefined-builtin
 
@@ -46,6 +47,7 @@ from system_test.helpers.decorators import make_snapshot_if_step_fail
 
 
 # pylint: disable=no-member
+# noinspection PyUnresolvedReferences
 class PrepareActions(object):
     """Base class with prepare actions
 
@@ -157,8 +159,8 @@ class PrepareActions(object):
         dns_ext = ''.join(settings.EXTERNAL_DNS)
         hostname = ''.join((settings.FUEL_MASTER_HOSTNAME,
                             settings.DNS_SUFFIX))
-        user = settings.SSH_CREDENTIALS['login']
-        password = settings.SSH_CREDENTIALS['password']
+        user = settings.SSH_FUEL_CREDENTIALS['login']
+        password = settings.SSH_FUEL_CREDENTIALS['password']
         generate_cloud_image_settings(cloud_image_settings_path, admin_network,
                                       interface_name, admin_ip, admin_netmask,
                                       gateway, dns, dns_ext,
@@ -225,6 +227,7 @@ class PrepareActions(object):
         snapshot_name = "ready_with_{}_slaves".format(slaves)
         self.env.revert_snapshot(snapshot_name)
 
+    # noinspection PyMethodParameters
     @nested_action
     def prepare_admin_node_with_slaves():
         """Combine preparation steps in alias"""
@@ -236,6 +239,7 @@ class PrepareActions(object):
         ]
 
 
+# noinspection PyUnresolvedReferences
 class BaseActions(PrepareActions, HealthCheckActions, PluginsActions):
     """Basic actions for acceptance cases
 

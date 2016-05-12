@@ -21,6 +21,7 @@ import netaddr
 from proboscis import asserts
 from proboscis import test
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves.urllib.error import HTTPError
 # pylint: enable=import-error
 
@@ -118,6 +119,7 @@ class ServicesReconfiguration(TestBasic):
             else:
                 new_range = [default_range[0] + number_excluded_ips + 1,
                              default_range[1]]
+            # noinspection PyUnresolvedReferences
             default_network["ip_ranges"][0] = [str(ip)
                                                for ip in new_range]
 

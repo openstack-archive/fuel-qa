@@ -5,6 +5,7 @@ from devops.helpers.helpers import wait
 from proboscis import asserts
 import requests
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves import urllib
 # pylint: enable=import-error
 

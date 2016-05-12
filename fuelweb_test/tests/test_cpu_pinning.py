@@ -17,6 +17,7 @@ import random
 from proboscis import asserts
 from proboscis import test
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves.urllib.error import HTTPError
 # pylint: enable=import-error
 

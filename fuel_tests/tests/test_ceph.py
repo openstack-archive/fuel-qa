@@ -26,6 +26,7 @@ from fuelweb_test.helpers.ssh_manager import SSHManager
 ssh_manager = SSHManager()
 
 
+# noinspection PyUnresolvedReferences
 class TestCephRadosGW(object):
     """Test class consits the tests for clustre with Ceph and RadosGW"""
 

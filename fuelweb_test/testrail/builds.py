@@ -18,6 +18,7 @@ import json
 import re
 
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves.urllib import request
 # pylint: enable=import-error
 

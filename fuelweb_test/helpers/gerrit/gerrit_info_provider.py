@@ -18,6 +18,7 @@ import os
 import re
 
 # pylint: disable=redefined-builtin
+# noinspection PyUnresolvedReferences
 from six.moves import xrange
 # pylint: enable=redefined-builtin
 

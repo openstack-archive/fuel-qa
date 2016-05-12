@@ -26,6 +26,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 import requests
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves import urllib
 # pylint: enable=import-error
 
@@ -119,7 +120,7 @@ def log_snapshot_after_test(func):
         try:
             result = func(*args, **kwargs)
         except SkipTest:
-            raise SkipTest()
+            raise
         except Exception:
             name = 'error_{:s}'.format(func.__name__)
             store_error_details(name, args[0].env)
@@ -522,6 +523,7 @@ def __getcallargs(func, *positional, **named):
     if sys.version_info.major < 3:
         return inspect.getcallargs(func, *positional, **named)
     else:
+        # noinspection PyUnresolvedReferences
         return inspect.signature(func).bind(*positional, **named).arguments
 
 
@@ -546,6 +548,7 @@ def __get_arg_names(func):
     if sys.version_info.major < 3:
         return [arg for arg in inspect.getargspec(func=func).args]
     else:
+        # noinspection PyUnresolvedReferences
         return list(inspect.signature(obj=func).parameters.keys())
 # pylint:enable=no-member
 

@@ -32,9 +32,11 @@ from proboscis import asserts
 from proboscis.asserts import assert_true
 from proboscis.asserts import assert_equal
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves import configparser
 # pylint: enable=import-error
 # pylint: disable=redefined-builtin
+# noinspection PyUnresolvedReferences
 from six.moves import xrange
 # pylint: enable=redefined-builtin
 import yaml
@@ -1113,7 +1115,7 @@ def get_file_size(ip, file_name, file_path):
 def get_quantity_of_numa(ip):
     """Get number of NUMA nodes that are contained on remote node
 
-    :param remote: node IP
+    :param ip: node IP
     :return: int, count of available NUMA nodes on the node
     """
 
@@ -1140,7 +1142,7 @@ def dict_merge(a, b):
     if not isinstance(b, dict):
         return copy.deepcopy(b)
     result = copy.deepcopy(a)
-    for k, v in b.iteritems():
+    for k, v in b.items():
         if k in result and isinstance(result[k], dict):
             result[k] = dict_merge(result[k], v)
         else:

@@ -26,9 +26,11 @@ import neutronclient.v2_0.client as neutronclient
 from proboscis.asserts import assert_equal
 import six
 # pylint: disable=redefined-builtin
+# noinspection PyUnresolvedReferences
 from six.moves import xrange
 # pylint: enable=redefined-builtin
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves import urllib
 # pylint: enable=import-error
 

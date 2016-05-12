@@ -20,8 +20,11 @@ import zlib
 
 from proboscis.asserts import assert_equal
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves.urllib.request import urlopen
+# noinspection PyUnresolvedReferences
 from six.moves.urllib.error import HTTPError
+# noinspection PyUnresolvedReferences
 from six.moves.urllib.error import URLError
 # pylint: enable=import-error
 
