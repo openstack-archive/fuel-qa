@@ -450,10 +450,9 @@ class MultiroleMultipleServices(TestBasic):
 
         Duration 140m
         """
-        self.show_step(1, initialize=True)
+        self.show_step(1)
         self.env.revert_snapshot('ready_with_5_slaves')
 
-        # TODO(akostrikov):Enable debug
         self.show_step(2)
         admin_ip = self.ssh_manager.admin_ip
         if MIRROR_UBUNTU != '':
@@ -466,7 +465,7 @@ class MultiroleMultipleServices(TestBasic):
                                                cmd=replace_cmd)
 
         create_mirror_cmd = 'fuel-mirror create -P ubuntu -G mos ubuntu'
-        self.ssh_manager.execute_on_remote(ip=admin_ip, cmd=create_mirror_cmd)
+        self.env.admin_actions.ensure_cmd(create_mirror_cmd)
 
         self.show_step(3)
         cluster_id = self.fuel_web.create_cluster(
