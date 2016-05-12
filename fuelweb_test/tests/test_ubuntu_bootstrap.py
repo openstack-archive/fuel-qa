@@ -14,6 +14,7 @@
 import tempfile
 import textwrap
 
+from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
@@ -528,6 +529,10 @@ class UbuntuBootstrap(base_test_case.TestBasic):
         self.fuel_web.wait_nodes_get_online_state(nodes, timeout=10 * 60)
         for node in nodes:
             _ip = self.fuel_web.get_nailgun_node_by_devops_node(node)['ip']
+            wait(lambda: tcp_ping(_ip, 22),
+                 timeout=300,
+                 timeout_msg=("Node {0} is still unreachable after {1} "
+                              "seconds".format(node['name'], 300)))
             checkers.verify_bootstrap_on_node(_ip, os_type="ubuntu")
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
