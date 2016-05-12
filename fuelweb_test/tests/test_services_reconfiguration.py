@@ -1066,8 +1066,14 @@ class ServicesReconfiguration(TestBasic):
             timeout_msg="Timeout exceeded while waiting for task "
                         "'update_dnsmasq' is finished!")
         floating_list = [self.fuel_web.get_floating_ranges()[0][1]]
+
+        vlan_range_1 = self.fuel_web.client.get_networks(
+            cluster_id_1)["networking_parameters"]["vlan_range"]
+        vlan_range_2 = [vlan_range_1[-1] + 1, vlan_range_1[-1] + 31]
+
         networking_parameters = {
-            "floating_ranges": floating_list}
+            "floating_ranges": floating_list,
+            "vlan_range": vlan_range_2}
         self.fuel_web.client.update_network(
             cluster_id_2,
             networks=networks_2,
