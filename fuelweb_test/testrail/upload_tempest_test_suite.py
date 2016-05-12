@@ -22,9 +22,9 @@ from fuelweb_test.testrail.settings import TestRailSettings
 from fuelweb_test.testrail.testrail_client import TestRailProject
 
 
-TEST_GROUPS = ["API", "CLI", "Scenario", "ThirdParty"]
+TEST_GROUPS = ["API", "Scenario"]
 TEST_SECTIONS = ["Ceilometer", "Cinder", "Glance", "Heat", "Ironic",
-                 "Keystone", "Network", "Nova", "Sahara", "Swift", "Other"]
+                 "Keystone", "Network", "Nova", "Sahara", "Swift", "Trove"]
 
 
 def generate_groups(line):
@@ -39,7 +39,9 @@ def generate_groups(line):
                   {"names": [".network.", ], "tag": "Network"},
                   {"names": [".compute.", ], "tag": "Nova"},
                   {"names": [".data_processing.", ], "tag": "Sahara"},
-                  {"names": [".object_storage.", ], "tag": "Swift"}]:
+                  {"names": [".object_storage.", ], "tag": "Swift"},
+                  {"names": [".database.", ], "tag": "Trove"}]:
+
         for name in group["names"]:
             if name in line:
                 section = group["tag"]
@@ -53,7 +55,8 @@ def generate_groups(line):
 
 def get_tests_descriptions(milestone_id, tests_include, tests_exclude):
     # To get the Tempest tests list, need to execute the following commands:
-    # git clone https://github.com/openstack/tempest & cd tempest & tox -venv
+    # git clone https://github.com/openstack/tempest & \\
+    # cd tempest & tox -e venv
     get_tempest_tests = """cd tempest && .tox/venv/bin/nosetests \\
         --collect-only tempest/{0} -v 2>&1 | grep 'id-.*'"""
 
@@ -79,13 +82,15 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude):
                 test_case = {
                     "title": title,
                     "type_id": 1,
-                    "priority_id": 5,
+                    "priority_id": 4,
+                    "custom_qa_team": 4,
                     "estimate": "1m",
                     "refs": "",
                     "milestone_id": milestone_id,
                     "custom_test_group": ".".join(test_class),
                     "custom_test_case_description": title,
                     "custom_test_case_steps": steps,
+                    "custom_report_label": title.split('id-')[1][:-1],
                     "section": section
                 }
                 tests.append(test_case)
@@ -122,10 +127,10 @@ def upload_tests_descriptions(testrail_project, tests):
     for section in TEST_SECTIONS:
         testrail_project.create_section(suite["id"], section, api_group["id"])
 
-    # add test cases to test suite in 100 parallel threads
-    Parallel(n_jobs=100)(delayed(add_case)
-                         (testrail_project, test_suite, test_case)
-                         for test_case in tests)
+    # add test cases to test suite in 10 parallel threads
+    Parallel(n_jobs=10)(delayed(add_case)
+                        (testrail_project, test_suite, test_case)
+                        for test_case in tests)
 
 
 def main():
