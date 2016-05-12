@@ -137,10 +137,12 @@ class FillRootActions(object):
         self.primary_controller_fqdn = str(
             self.fuel_web.fqdn(self.primary_controller))
 
+        primary_ctrl = \
+            self.primary_controller.get_ip_address_by_network_name('admin')
+        pcs_status = parse_pcs_status_xml(primary_ctrl)
+
         with self.fuel_web.get_ssh_for_node(
                 self.primary_controller.name) as remote:
-
-            pcs_status = parse_pcs_status_xml(remote)
 
             root_free = run_on_remote_get_results(
                 remote, 'cibadmin --query --scope status')['stdout_str']
@@ -271,7 +273,12 @@ class FillRootActions(object):
                 logger.info(
                     "Checking for 'running_resources "
                     "attribute have '0' value")
-                pcs_status = parse_pcs_status_xml(remote)
+
+                primary_ctrl = \
+                    self.primary_controller.get_ip_address_by_network_name(
+                        'admin')
+                pcs_status = parse_pcs_status_xml(primary_ctrl)
+
                 pcs_attribs = get_pcs_nodes(pcs_status)
                 return pcs_attribs[self.primary_controller_fqdn][
                     'resources_running'] == '0'
@@ -345,7 +352,12 @@ class FillRootActions(object):
                     "have {} value on node {}".format(
                         self.slave_node_running_resources,
                         self.primary_controller_fqdn))
-                pcs_status = parse_pcs_status_xml(remote)
+
+                primary_ctrl = \
+                    self.primary_controller.get_ip_address_by_network_name(
+                        'admin')
+                pcs_status = parse_pcs_status_xml(primary_ctrl)
+
                 pcs_attribs = get_pcs_nodes(pcs_status)
                 return pcs_attribs[self.primary_controller_fqdn][
                     'resources_running'] == self.slave_node_running_resources
