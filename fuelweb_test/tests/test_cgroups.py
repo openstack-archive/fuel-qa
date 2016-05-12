@@ -89,7 +89,7 @@ class TestCgroupHa(TestBasic):
             cluster_id, self.generate_attributes(cgroups))
         task = self.fuel_web.client.put_deployment_tasks_for_cluster(
             cluster_id=cluster_id,
-            data=["cgroups"],
+            data=["hiera", "cgroups"],
             node_id=node_ids)
         self.fuel_web.assert_task_success(task)
 
