@@ -14,6 +14,7 @@
 import tempfile
 import textwrap
 
+from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
@@ -496,7 +497,7 @@ class UbuntuBootstrap(base_test_case.TestBasic):
             "deploy_stop_on_deploying_ubuntu_bootstrap",
             is_make=True)
 
-    @test(depends_on_groups=['deploy_stop_on_deploying_ubuntu_bootstrap'],
+    @test(depends_on_groups=[deploy_stop_on_deploying_ubuntu_bootstrap],
           groups=["deploy_reset_on_ready_ubuntu_bootstrap"])
     @log_snapshot_after_test
     def reset_on_ready_ubuntu_bootstrap(self):
@@ -527,8 +528,17 @@ class UbuntuBootstrap(base_test_case.TestBasic):
 
         self.fuel_web.wait_nodes_get_online_state(nodes, timeout=10 * 60)
         for node in nodes:
-            _ip = self.fuel_web.get_nailgun_node_by_devops_node(node)['ip']
-            checkers.verify_bootstrap_on_node(_ip, os_type="ubuntu")
+            nailgun_node = self.fuel_web.get_nailgun_node_by_devops_node(node)
+            wait(lambda: tcp_ping(nailgun_node['ip'], 22),
+                 timeout=300,
+                 timeout_msg=("Node {0} is still unreachable after {1} "
+                              "seconds".format(nailgun_node['name'], 300)))
+            self.ssh_manager.initialize(
+                self.ssh_manager.admin_ip,
+                slave_login=settings.SSH_FUEL_CREDENTIALS['login'],
+                slave_password=settings.SSH_FUEL_CREDENTIALS['password'])
+            checkers.verify_bootstrap_on_node(
+                nailgun_node['ip'], os_type="ubuntu")
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
