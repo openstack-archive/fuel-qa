@@ -411,7 +411,7 @@ class ServicesReconfiguration(TestBasic):
         task = self.fuel_web.client.apply_configuration(cluster_id)
 
         self.show_step(5)
-        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+        self.fuel_web.assert_task_success(task, timeout=8*60, interval=5)
 
         self.show_step(6)
         self.check_service_was_restarted(controllers, uptimes, service_name)
