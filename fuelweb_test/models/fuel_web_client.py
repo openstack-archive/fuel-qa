@@ -2491,8 +2491,9 @@ class FuelWebClient(object):
         with self.get_ssh_for_node(slave.name) as remote:
             data = yaml.load(''.join(
                 remote.execute('cat /etc/astute.yaml')['stdout']))
-        node_name = [node['fqdn'] for node in data['nodes']
-                     if node['role'] == role][0]
+        nodes = data['network_metadata']['nodes']
+        node_name = [node['fqdn'] for node in nodes.values()
+                     if role in node['node_roles']][0]
         logger.debug("node name is {0}".format(node_name))
         fqdn = self.get_fqdn_by_hostname(node_name)
         devops_node = self.get_devops_node_by_nailgun_fqdn(fqdn)
