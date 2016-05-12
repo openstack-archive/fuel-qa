@@ -108,8 +108,7 @@ class ServicesReconfiguration(TestBasic):
         :return:
         """
         for default_network in filter(
-                lambda x: ((x['name'] != 'fuelweb_admin')and
-                           (x['name'] != 'private')),
+                lambda x: (x['name'] != 'fuelweb_admin'),
                 networks):
             default_range = [netaddr.IPAddress(str(ip)) for ip
                              in default_network["ip_ranges"][0]]
