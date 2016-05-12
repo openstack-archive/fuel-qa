@@ -729,3 +729,8 @@ Test for Image Based Provisioning
 .. automodule:: fuelweb_test.tests.tests_ibp.test_ibp
       :members:
 
+Test for tracking /etc dir by etckeeper plugin
+----------------------------------------------
+.. automodule:: fuelweb_test.tests.plugins.plugin_etckeeper.test_plugin_etckeeper
+   :members:
+
