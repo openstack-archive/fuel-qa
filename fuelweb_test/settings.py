@@ -350,7 +350,10 @@ VCENTER_USERNAME = os.environ.get('VCENTER_USERNAME')
 VCENTER_PASSWORD = os.environ.get('VCENTER_PASSWORD')
 VCENTER_DATACENTER = os.environ.get('VC_DATACENTER')
 VCENTER_DATASTORE = os.environ.get('VC_DATASTORE')
-
+VMWARE_IMG_URL = os.environ.get('VMWARE_IMG_URL')
+VMWARE_IMG_NAME = os.environ.get('VMWARE_IMG_NAME')
+VMWARE_IMG_LOGIN = os.environ.get('VMWARE_IMG_LOGIN')
+VMWARE_IMG_PASSWORD = os.environ.get('VMWARE_IMG_PASSWORD')
 
 # Services tests
 SERVTEST_LOCAL_PATH = os.environ.get('SERVTEST_LOCAL_PATH', '/tmp')
