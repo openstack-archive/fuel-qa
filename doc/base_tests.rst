@@ -723,3 +723,9 @@ Test for multipath devices
 --------------------------
 .. automodule:: fuelweb_test.tests.test_multipath_devices
    :members:
+
+Test for tracking /etc dir by etckeeper plugin
+----------------------------------------------
+.. automodule:: fuelweb_test.tests.plugins.plugin_etckeeper.test_plugin_etckeeper
+   :members:
+
