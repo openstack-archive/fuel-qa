@@ -17,7 +17,6 @@ import random
 
 from devops.helpers import helpers as devops_helpers
 from proboscis.asserts import assert_true
-from proboscis import before_class
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -29,9 +28,13 @@ from fuelweb_test import logger
 from fuelweb_test import settings
 
 
-@test(groups=["support_dpdk"])
-class SupportDPDK(TestBasic):
-    """SupportDPDK."""
+class TestDPDK(TestBasic):
+    """TestDPDK."""
+
+    @staticmethod
+    def check_requirements():
+        assert_true(settings.KVM_USE,
+                    'Can not start DPDK test without KVM_USE=True!')
 
     def check_dpdk_instance_connectivity(self, os_conn, cluster_id,
                                          mem_page_size='2048'):
@@ -129,12 +132,10 @@ class SupportDPDK(TestBasic):
 
         return self.check_dpdk(nailgun_node, net=net)['enabled'] == switch_to
 
-    # pylint: disable=no-self-use
-    @before_class
-    def check_requirements(self):
-        assert_true(settings.KVM_USE,
-                    'Can not start DPDK test without KVM_USE=True!')
-    # pylint: enable=no-self-use
+
+@test(groups=["support_dpdk"])
+class SupportDPDK(TestDPDK):
+    """SupportDPDK."""
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_cluster_with_dpdk"])
@@ -160,6 +161,7 @@ class SupportDPDK(TestBasic):
         Snapshot: deploy_cluster_with_dpdk
 
         """
+        self.check_requirements()
         self.env.revert_snapshot("ready_with_3_slaves")
 
         self.show_step(1)
@@ -235,12 +237,12 @@ class SupportDPDK(TestBasic):
 
 
 @test(groups=["support_dpdk_bond"])
-class SupportDPDKBond(BondingTestDPDK, SupportDPDK):
+class SupportDPDKBond(BondingTestDPDK, TestDPDK):
     """SupportDPDKBond."""
 
-    @before_class
-    def check_requirements(self):
-        super(SupportDPDKBond, self).check_requirements()
+    @staticmethod
+    def check_requirements():
+        super(SupportDPDKBond).check_requirements()
         assert_true(settings.BONDING, 'Bonding is disabled! Aborting test...')
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
@@ -268,6 +270,7 @@ class SupportDPDKBond(BondingTestDPDK, SupportDPDK):
         Snapshot deploy_cluster_with_dpdk_bond
         """
 
+        self.check_requirements()
         self.env.revert_snapshot("ready_with_3_slaves")
 
         self.show_step(1)
