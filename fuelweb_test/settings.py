@@ -480,6 +480,9 @@ SEPARATE_SERVICE_KEYSTONE_PLUGIN_PATH = os.environ.get(
     'SEPARATE_SERVICE_KEYSTONE_PLUGIN_PATH')
 SEPARATE_SERVICE_HORIZON_PLUGIN_PATH = os.environ.get(
     'SEPARATE_SERVICE_HORIZON_PLUGIN_PATH')
+ETCKEEPER_PLUGIN_REPO = os.environ.get(
+    'ETCKEEPER_PLUGIN_REPO',
+    'https://github.com/Mirantis/fuel-plugin-etckeeper')
 
 FUEL_STATS_CHECK = get_var_as_bool('FUEL_STATS_CHECK', False)
 FUEL_STATS_ENABLED = get_var_as_bool('FUEL_STATS_ENABLED', True)
