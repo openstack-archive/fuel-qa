@@ -62,3 +62,8 @@ Datetime utils for Testrail
 ---------------------------
 .. automodule:: fuelweb_test.testrail.datetime_util
    :members:
+
+Generate failure statistics for TestPlan
+-------------------------------------
+.. automodule:: fuelweb_test.testrail.generate_failure_group_statistics
+   :members:
