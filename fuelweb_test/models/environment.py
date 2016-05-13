@@ -22,7 +22,7 @@ from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
 from devops.helpers.ntp import sync_time
 from devops.models import Environment
-from keystoneclient import exceptions
+from keystoneauth1 import exceptions
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 import six
@@ -310,12 +310,18 @@ class EnvironmentModel(object):
         if not skip_timesync:
             self.sync_time()
         try:
-            _wait(self.fuel_web.client.get_releases,
-                  expected=EnvironmentError, timeout=300)
+            _wait(
+                self.fuel_web.client.get_releases,
+                expected=(
+                    exceptions.RetriableConnectionFailure,
+                    exceptions.UnknownConnectionError),
+                timeout=300)
         except exceptions.Unauthorized:
             self.set_admin_keystone_password()
             self.fuel_web.get_nailgun_version()
-
+        except BaseException as e:
+            logger.exception(
+                'Unexpected exception while tried to get releases', e)
         if not skip_slaves_check:
             _wait(lambda: self.check_slaves_are_ready(), timeout=60 * 6)
         return True
