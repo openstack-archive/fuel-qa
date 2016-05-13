@@ -24,8 +24,8 @@ import traceback
 from proboscis import SkipTest
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
-import requests
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves import urllib
 # pylint: enable=import-error
 
@@ -47,13 +47,10 @@ from fuelweb_test.helpers.utils import TimeStat
 from gates_tests.helpers.exceptions import ConfigurationException
 
 
-def save_logs(url, path, auth_token=None, chunk_size=1024):
+def save_logs(session, url, path, chunk_size=1024):
     logger.info('Saving logs to "%s" file', path)
-    headers = {}
-    if auth_token is not None:
-        headers['X-Auth-Token'] = auth_token
 
-    stream = requests.get(url, headers=headers, stream=True, verify=False)
+    stream = session.get(url, stream=True, verify=False)
     if stream.status_code != 200:
         logger.error("%s %s: %s", stream.status_code, stream.reason,
                      stream.content)
@@ -119,7 +116,7 @@ def log_snapshot_after_test(func):
         try:
             result = func(*args, **kwargs)
         except SkipTest:
-            raise SkipTest()
+            raise
         except Exception:
             name = 'error_{:s}'.format(func.__name__)
             store_error_details(name, args[0].env)
@@ -346,8 +343,10 @@ def create_diagnostic_snapshot(env, status, name="",
         status=status,
         name=name,
         basename=os.path.basename(task['message']))
-    save_logs(url, os.path.join(settings.LOGS_DIR, log_file_name),
-              auth_token=env.fuel_web.client.client.token)
+    save_logs(
+        session=env.fuel_web.client.session,
+        url=url,
+        path=os.path.join(settings.LOGS_DIR, log_file_name))
 
 
 def retry(count=3, delay=30):
@@ -525,6 +524,7 @@ def __getcallargs(func, *positional, **named):
     if sys.version_info.major < 3:
         return inspect.getcallargs(func, *positional, **named)
     else:
+        # noinspection PyUnresolvedReferences
         return inspect.signature(func).bind(*positional, **named).arguments
 
 
@@ -549,6 +549,7 @@ def __get_arg_names(func):
     if sys.version_info.major < 3:
         return [arg for arg in inspect.getargspec(func=func).args]
     else:
+        # noinspection PyUnresolvedReferences
         return list(inspect.signature(obj=func).parameters.keys())
 # pylint:enable=no-member
 
