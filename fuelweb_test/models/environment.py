@@ -22,7 +22,7 @@ from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
 from devops.helpers.ntp import sync_time
 from devops.models import Environment
-from keystoneclient import exceptions
+from keystoneauth1 import exceptions
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 import six
@@ -311,7 +311,7 @@ class EnvironmentModel(object):
             self.sync_time()
         try:
             _wait(self.fuel_web.client.get_releases,
-                  expected=EnvironmentError, timeout=300)
+                  expected=EnvironmentError, timeout=360)
         except exceptions.Unauthorized:
             self.set_admin_keystone_password()
             self.fuel_web.get_nailgun_version()
