@@ -32,7 +32,12 @@ os.environ["ISO_PATH"] = "./fuel.iso"
 JENKINS = {
     'url': os.environ.get('JENKINS_URL', 'http://localhost/'),
     'magnet_link_artifact': os.environ.get('JENKINS_MAGNET_LINK_ARTIFACT',
-                                           'magnet_link.txt')
+                                           'magnet_link.txt'),
+    'username': os.environ.get('JENKINS_USER', None),
+    'password': os.environ.get('JENKINS_PASS', None),
+    'job_name': os.environ.get('TEST_RUNNER_JOB_NAME', '9.0.swarm.runner'),
+    'xml_testresult_file_name': os.environ.get('TEST_XML_RESULTS',
+                                               'nosetests.xml')
 }
 
 GROUPS_TO_EXPAND = [
@@ -49,6 +54,12 @@ class LaunchpadSettings(object):
         os.environ.get('LAUNCHPAD_RELEASED_STATUS', 'Fix Released'),
         os.environ.get('LAUNCHPAD_INVALID_STATUS', 'Invalid')
     ]
+    open_statuses = [
+        os.environ.get('LAUNCHPAD_CONFIRMED_STATUS', 'Confirmed'),
+        os.environ.get('LAUNCHPAD_INPROGRESS_STATUS', 'In Progress'),
+        os.environ.get('LAUNCHPAD_NEW_STATUS', 'New'),
+        os.environ.get('LAUNCHPAD_TRIAGET_STATUS', 'Triaged')]
+    tags = os.environ.get('LAUNCHPAD_TAGS', ['swarm-blocker'])
 
 
 class TestRailSettings(object):
