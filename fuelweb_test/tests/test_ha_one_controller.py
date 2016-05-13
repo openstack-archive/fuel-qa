@@ -60,7 +60,7 @@ class OneNodeDeploy(TestBasic):
 
         """
         self.env.revert_snapshot("ready")
-        self.fuel_web.client.get_root()
+        self.fuel_web.client.list_nodes()
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[:1])
 
