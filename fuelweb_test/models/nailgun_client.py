@@ -12,10 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from warnings import warn
+
+from keystoneauth1.identity import V2Password
+from keystoneauth1.session import Session as KeystoneSession
+
 from fuelweb_test import logwrap
 from fuelweb_test import logger
-from fuelweb_test.helpers.decorators import json_parse
-from fuelweb_test.helpers.http import HTTPClient
 from fuelweb_test.settings import FORCE_HTTPS_MASTER_NODE
 from fuelweb_test.settings import KEYSTONE_CREDS
 from fuelweb_test.settings import OPENSTACK_RELEASE
@@ -24,16 +27,35 @@ from fuelweb_test.settings import OPENSTACK_RELEASE
 class NailgunClient(object):
     """NailgunClient"""  # TODO documentation
 
-    def __init__(self, admin_node_ip, **kwargs):
-        if FORCE_HTTPS_MASTER_NODE:
-            url = "https://{0}:8443".format(admin_node_ip)
+    def __init__(self, admin_node_ip=None, session=None, **kwargs):
+        if session:
+            logger.info(
+                'Initialization of NailgunClient using shared session \n'
+                '(auth_url={})'.format(session.auth.auth_url))
+            self.session = session
         else:
-            url = "http://{0}:8000".format(admin_node_ip)
-        logger.info('Initiate Nailgun client with url %s', url)
-        self.keystone_url = "http://{0}:5000/v2.0".format(admin_node_ip)
-        self._client = HTTPClient(url=url, keystone_url=self.keystone_url,
-                                  credentials=KEYSTONE_CREDS, **kwargs)
-        super(NailgunClient, self).__init__()
+            warn(
+                'Initialization of NailgunClient by IP is deprecated, '
+                'please use keystonesession1.session.Session',
+                DeprecationWarning)
+
+            if FORCE_HTTPS_MASTER_NODE:
+                url = "https://{0}:8443".format(admin_node_ip)
+            else:
+                url = "http://{0}:8000".format(admin_node_ip)
+            logger.info('Initiate Nailgun client with url %s', url)
+            keystone_url = "http://{0}:5000/v2.0".format(admin_node_ip)
+
+            creds = dict(KEYSTONE_CREDS, **kwargs)
+
+            auth = V2Password(
+                auth_url=keystone_url,
+                username=creds['username'],
+                password=creds['password'],
+                tenant_name=creds['tenant_name'])
+            # TODO: in v3 project_name
+
+            self.session = KeystoneSession(auth=auth, verify=False)
 
     def __repr__(self):
         klass, obj_id = type(self), hex(id(self))
@@ -42,160 +64,140 @@ class NailgunClient(object):
                                                        obj_id=obj_id,
                                                        url=url)
 
-    @property
-    def client(self):
-        return self._client
+    def _get(self, url, **kwargs):
+        if 'endpoint_filter' not in kwargs:
+            kwargs.update(endpoint_filter={'service_type': 'fuel'})
+        return self.session.get(url=url, **kwargs)
 
-    @logwrap
-    def get_root(self):
-        return self.client.get("/")
+    def _delete(self, url, **kwargs):
+        if 'endpoint_filter' not in kwargs:
+            kwargs.update(endpoint_filter={'service_type': 'fuel'})
+        return self.session.delete(url=url, **kwargs)
 
-    @json_parse
+    def _post(self, url, **kwargs):
+        if 'endpoint_filter' not in kwargs:
+            kwargs.update(endpoint_filter={'service_type': 'fuel'})
+        return self.session.post(url=url, **kwargs)
+
+    def _put(self, url, **kwargs):
+        if 'endpoint_filter' not in kwargs:
+            kwargs.update(endpoint_filter={'service_type': 'fuel'})
+        return self.session.put(url=url, **kwargs)
+
     def list_nodes(self):
-        return self.client.get("/api/nodes/")
+        return self._get(url="/nodes/").json()
 
-    @json_parse
     def list_cluster_nodes(self, cluster_id):
-        return self.client.get("/api/nodes/?cluster_id={}".format(cluster_id))
+        return self._get(url="/nodes/?cluster_id={}".format(cluster_id)).json()
 
     @logwrap
-    @json_parse
     def get_networks(self, cluster_id):
         net_provider = self.get_cluster(cluster_id)['net_provider']
-        return self.client.get(
-            "/api/clusters/{}/network_configuration/{}".format(
+        return self._get(
+            url="/clusters/{}/network_configuration/{}".format(
                 cluster_id, net_provider
-            )
-        )
+            )).json()
 
     @logwrap
-    @json_parse
     def verify_networks(self, cluster_id):
         net_provider = self.get_cluster(cluster_id)['net_provider']
-        return self.client.put(
-            "/api/clusters/{}/network_configuration/{}/verify/".format(
+        return self._put(
+            "/clusters/{}/network_configuration/{}/verify/".format(
                 cluster_id, net_provider
             ),
-            data=self.get_networks(cluster_id)
-        )
+            json=self.get_networks(cluster_id)
+        ).json()
 
-    @json_parse
     def get_cluster_attributes(self, cluster_id):
-        return self.client.get(
-            "/api/clusters/{}/attributes/".format(cluster_id)
-        )
+        return self._get(
+            url="/clusters/{}/attributes/".format(cluster_id)).json()
 
-    @json_parse
     def get_cluster_vmware_attributes(self, cluster_id):
-        return self.client.get(
-            "/api/clusters/{}/vmware_attributes/".format(cluster_id)
-        )
+        return self._get(
+            url="/clusters/{}/vmware_attributes/".format(cluster_id),
+        ).json()
 
     @logwrap
-    @json_parse
     def update_cluster_attributes(self, cluster_id, attrs):
-        return self.client.put(
-            "/api/clusters/{}/attributes/".format(cluster_id),
-            attrs
-        )
+        return self._put(
+            "/clusters/{}/attributes/".format(cluster_id),
+            json=attrs
+        ).json()
 
     @logwrap
-    @json_parse
     def update_cluster_vmware_attributes(self, cluster_id, attrs):
-        return self.client.put(
-            "/api/clusters/{}/vmware_attributes/".format(cluster_id),
-            attrs
-        )
+        return self._put(
+            "/clusters/{}/vmware_attributes/".format(cluster_id),
+            json=attrs
+        ).json()
 
     @logwrap
-    @json_parse
     def get_cluster(self, cluster_id):
-        return self.client.get(
-            "/api/clusters/{}".format(cluster_id)
-        )
+        return self._get(url="/clusters/{}".format(cluster_id)).json()
 
     @logwrap
-    @json_parse
     def update_cluster(self, cluster_id, data):
-        return self.client.put(
-            "/api/clusters/{}/".format(cluster_id),
-            data
-        )
+        return self._put(
+            "/clusters/{}/".format(cluster_id),
+            json=data
+        ).json()
 
     @logwrap
-    @json_parse
     def delete_cluster(self, cluster_id):
-        return self.client.delete(
-            "/api/clusters/{}/".format(cluster_id)
-        )
+        return self._delete(url="/clusters/{}/".format(cluster_id)).json()
 
     @logwrap
-    @json_parse
     def update_node(self, node_id, data):
-        return self.client.put(
-            "/api/nodes/{}/".format(node_id), data
-        )
+        return self._put(
+            "/nodes/{}/".format(node_id), json=data
+        ).json()
 
     @logwrap
-    @json_parse
     def update_nodes(self, data):
-        return self.client.put(
-            "/api/nodes", data
-        )
+        return self._put(url="/nodes", json=data).json()
 
     @logwrap
-    @json_parse
     def delete_node(self, node_id):
-        return self.client.delete(
-            "/api/nodes/{}/".format(node_id)
-        )
+        return self._delete(url="/nodes/{}/".format(node_id)).json()
 
     @logwrap
-    @json_parse
     def deploy_cluster_changes(self, cluster_id):
-        return self.client.put(
-            "/api/clusters/{}/changes/".format(cluster_id)
-        )
+        return self._put(url="/clusters/{}/changes/".format(cluster_id)).json()
 
     @logwrap
-    @json_parse
     def get_task(self, task_id):
-        return self.client.get("/api/tasks/{}".format(task_id))
+        return self._get(url="/tasks/{}".format(task_id)).json()
 
     @logwrap
-    @json_parse
     def get_tasks(self):
-        return self.client.get("/api/tasks")
+        return self._get(url="/tasks").json()
 
     @logwrap
-    @json_parse
     def get_releases(self):
-        return self.client.get("/api/releases/")
+        return self._get(url="/releases/").json()
 
     @logwrap
-    @json_parse
     def get_release(self, release_id):
-        return self.client.get("/api/releases/{}".format(release_id))
+        return self._get(url="/releases/{}".format(release_id)).json()
 
     @logwrap
-    @json_parse
     def put_release(self, release_id, data):
-        return self.client.put("/api/releases/{}".format(release_id), data)
+        return self._put(
+            url="/releases/{}".format(release_id), json=data).json()
 
     @logwrap
-    @json_parse
     def get_releases_details(self, release_id):
-        return self.client.get("/api/releases/{}".format(release_id))
+        warn('get_releases_details is deprecated in favor of get_release')
+        return self._get(url="/releases/{}".format(release_id)).json()
 
     @logwrap
-    @json_parse
     def get_node_disks(self, node_id):
-        return self.client.get("/api/nodes/{}/disks".format(node_id))
+        return self._get(url="/nodes/{}/disks".format(node_id)).json()
 
     @logwrap
-    @json_parse
     def put_node_disks(self, node_id, data):
-        return self.client.put("/api/nodes/{}/disks".format(node_id), data)
+        return self._put(
+            url="/nodes/{}/disks".format(node_id), json=data).json()
 
     @logwrap
     def get_release_id(self, release_name=OPENSTACK_RELEASE):
@@ -204,72 +206,69 @@ class NailgunClient(object):
                 return release["id"]
 
     @logwrap
-    @json_parse
     def get_release_default_net_settings(self, release_id):
-        return self.client.get("/api/releases/{}/networks".format(
-            release_id))
+        return self._get(url="/releases/{}/networks".format(release_id)).json()
 
     @logwrap
-    @json_parse
     def put_release_default_net_settings(self, release_id, data):
-        return self.client.put(
-            "/api/releases/{}/networks".format(release_id), data)
+        return self._put(
+            "/releases/{}/networks".format(release_id),
+            json=data).json()
 
     @logwrap
-    @json_parse
     def get_node_interfaces(self, node_id):
-        return self.client.get("/api/nodes/{}/interfaces".format(node_id))
+        return self._get(url="/nodes/{}/interfaces".format(node_id)).json()
 
     @logwrap
-    @json_parse
     def put_node_interfaces(self, data):
-        return self.client.put("/api/nodes/interfaces", data)
+        return self._put(url="/nodes/interfaces", json=data).json()
 
     @logwrap
-    @json_parse
     def list_clusters(self):
-        return self.client.get("/api/clusters/")
+        return self._get(url="/clusters/").json()
 
     @logwrap
-    @json_parse
     def clone_environment(self, environment_id, data):
-        return self.client.post(
-            "/api/clusters/{}/upgrade/clone".format(environment_id),
-            data=data)
+        return self._post(
+            "/clusters/{}/upgrade/clone".format(environment_id),
+            json=data
+        ).json()
 
     @logwrap
-    @json_parse
     def reassign_node(self, cluster_id, data):
-        return self.client.post(
-            "/api/clusters/{}/upgrade/assign".format(cluster_id),
-            data=data
-        )
+        return self._post(
+            "/clusters/{}/upgrade/assign".format(cluster_id),
+            json=data
+        ).json()
 
     @logwrap
-    @json_parse
     def create_cluster(self, data):
         logger.info('Before post to nailgun')
-        return self.client.post(
-            "/api/clusters",
-            data=data)
+        return self._post(url="/clusters", json=data).json()
 
+    # ## OSTF ###
     @logwrap
-    @json_parse
     def get_ostf_test_sets(self, cluster_id):
-        return self.client.get("/ostf/testsets/{}".format(cluster_id))
+        return self._get(
+            url="/testsets/{}".format(cluster_id),
+            endpoint_filter={'service_type': 'ostf'}
+        ).json()
 
     @logwrap
-    @json_parse
     def get_ostf_tests(self, cluster_id):
-        return self.client.get("/ostf/tests/{}".format(cluster_id))
+        return self._get(
+            url="/tests/{}".format(cluster_id),
+            endpoint_filter={'service_type': 'ostf'}
+        ).json()
 
     @logwrap
-    @json_parse
     def get_ostf_test_run(self, cluster_id):
-        return self.client.get("/ostf/testruns/last/{}".format(cluster_id))
+        return self._get(
+            url="/testruns/last/{}".format(cluster_id),
+            endpoint_filter={'service_type': 'ostf'}
+        ).json()
 
     @logwrap
-    @json_parse
     def ostf_run_tests(self, cluster_id, test_sets_list):
         logger.info('Run OSTF tests at cluster #%s: %s',
                     cluster_id, test_sets_list)
@@ -283,10 +282,12 @@ class NailgunClient(object):
             )
         # get tests otherwise 500 error will be thrown
         self.get_ostf_tests(cluster_id)
-        return self.client.post("/ostf/testruns", data)
+        return self._post(
+            "/testruns",
+            json=data,
+            endpoint_filter={'service_type': 'ostf'})
 
     @logwrap
-    @json_parse
     def ostf_run_singe_test(self, cluster_id, test_sets_list, test_name):
         # get tests otherwise 500 error will be thrown
         self.get_ostf_tests(cluster_id)
@@ -300,10 +301,13 @@ class NailgunClient(object):
                     'testset': test_set
                 }
             )
-        return self.client.post("/ostf/testruns", data)
+        return self._post(
+            "/testruns",
+            json=data,
+            endpoint_filter={'service_type': 'ostf'}).json()
+    # ## /OSTF ###
 
     @logwrap
-    @json_parse
     def update_network(self, cluster_id, networking_parameters=None,
                        networks=None):
         nc = self.get_networks(cluster_id)
@@ -314,12 +318,13 @@ class NailgunClient(object):
             nc["networks"] = networks
 
         net_provider = self.get_cluster(cluster_id)['net_provider']
-        return self.client.put(
-            "/api/clusters/{}/network_configuration/{}".format(
+        return self._put(
+            "/clusters/{}/network_configuration/{}".format(
                 cluster_id, net_provider
             ),
-            nc
-        )
+            json=nc,
+
+        ).json()
 
     @logwrap
     def get_cluster_id(self, name):
@@ -348,14 +353,12 @@ class NailgunClient(object):
         return cluster_vlans
 
     @logwrap
-    @json_parse
     def get_notifications(self):
-        return self.client.get("/api/notifications")
+        return self._get(url="/notifications").json()
 
     @logwrap
-    @json_parse
     def generate_logs(self):
-        return self.client.put("/api/logs/package")
+        return self._put(url="/logs/package").json()
 
     @logwrap
     def provision_nodes(self, cluster_id, node_ids=None):
@@ -375,62 +378,54 @@ class NailgunClient(object):
         return self.do_stop_reset_actions(cluster_id, action="reset")
 
     @logwrap
-    @json_parse
     def do_cluster_action(self, cluster_id, node_ids=None, action="provision"):
         if not node_ids:
             nailgun_nodes = self.list_cluster_nodes(cluster_id)
             # pylint: disable=map-builtin-not-iterating
             node_ids = map(lambda _node: str(_node['id']), nailgun_nodes)
             # pylint: enable=map-builtin-not-iterating
-        return self.client.put(
-            "/api/clusters/{0}/{1}?nodes={2}".format(
+        return self._put(
+            "/clusters/{0}/{1}?nodes={2}".format(
                 cluster_id,
                 action,
                 ','.join(node_ids))
-        )
+        ).json()
 
     @logwrap
-    @json_parse
     def do_stop_reset_actions(self, cluster_id, action="stop_deployment"):
-        return self.client.put(
-            "/api/clusters/{0}/{1}/".format(str(cluster_id), action))
+        return self._put(
+            "/clusters/{0}/{1}/".format(str(cluster_id), action)).json()
 
     @logwrap
-    @json_parse
     def get_api_version(self):
-        return self.client.get("/api/version")
+        return self._get(url="/version").json()
 
     @logwrap
-    @json_parse
     def run_update(self, cluster_id):
-        return self.client.put(
-            "/api/clusters/{0}/update/".format(str(cluster_id)))
+        return self._put(
+            "/clusters/{0}/update/".format(str(cluster_id))).json()
 
     @logwrap
-    @json_parse
     def create_nodegroup(self, cluster_id, group_name):
         data = {"cluster_id": cluster_id, "name": group_name}
-        return self.client.post("/api/nodegroups/", data=data)
+        return self._post(url="/nodegroups/", json=data).json()
 
     @logwrap
-    @json_parse
     def get_nodegroups(self):
-        return self.client.get("/api/nodegroups/")
+        return self._get(url="/nodegroups/").json()
 
     @logwrap
-    @json_parse
     def assign_nodegroup(self, group_id, nodes):
         data = [{"group_id": group_id, "id": n["id"]} for n in nodes]
-        return self.client.put("/api/nodes/", data)
+        return self._put(url="/nodes/", json=data).json()
 
     @logwrap
     def delete_nodegroup(self, group_id):
-        return self.client.delete("/api/nodegroups/{0}/".format(group_id))
+        return self._delete(url="/nodegroups/{0}/".format(group_id))
 
     @logwrap
-    @json_parse
     def update_settings(self, data=None):
-        return self.client.put("/api/settings", data=data)
+        return self._put(url="/settings", json=data).json()
 
     @logwrap
     def send_fuel_stats(self, enabled=False):
@@ -441,41 +436,41 @@ class NailgunClient(object):
         self.update_settings(data=settings)
 
     @logwrap
-    @json_parse
     def get_cluster_deployment_tasks(self, cluster_id):
         """ Get list of all deployment tasks for cluster."""
-        return self.client.get(
-            '/api/clusters/{}/deployment_tasks'.format(cluster_id))
+        return self._get(
+            url='/clusters/{}/deployment_tasks'.format(cluster_id),
+        ).json()
 
     @logwrap
-    @json_parse
     def get_release_deployment_tasks(self, release_id):
         """ Get list of all deployment tasks for release."""
-        return self.client.get(
-            '/api/releases/{}/deployment_tasks'.format(release_id))
+        return self._get(
+            url='/releases/{}/deployment_tasks'.format(release_id),
+        ).json()
 
     @logwrap
-    @json_parse
     def get_end_deployment_tasks(self, cluster_id, end, start=None):
         """ Get list of all deployment tasks for cluster with end parameter.
         If  end=netconfig, return all tasks from the graph included netconfig
         """
         if not start:
-            return self.client.get(
-                '/api/clusters/{0}/deployment_tasks?end={1}'.format(
-                    cluster_id, end))
-        return self.client.get(
-            '/api/clusters/{0}/deployment_tasks?start={1}&end={2}'.format(
-                cluster_id, start, end))
+            return self._get(
+                url='/clusters/{0}/deployment_tasks?end={1}'.format(
+                    cluster_id, end)
+            ).json()
+        return self._get(
+            url='/clusters/{0}/deployment_tasks?start={1}&end={2}'.format(
+                cluster_id, start, end),
+        ).json()
 
     @logwrap
-    @json_parse
     def get_orchestrator_deployment_info(self, cluster_id):
-        return self.client.get(
-            '/api/clusters/{}/orchestrator/deployment'.format(cluster_id))
+        return self._get(
+            url='/clusters/{}/orchestrator/deployment'.format(cluster_id),
+        ).json()
 
     @logwrap
-    @json_parse
     def put_deployment_tasks_for_cluster(self, cluster_id, data, node_id):
         """ Put  task to be executed on the nodes from cluster.:
         Params:
@@ -483,85 +478,76 @@ class NailgunClient(object):
         node_id: Node ids where task should be run, can be node_id=1,
         or node_id =1,2,3,
         data: tasks ids"""
-        return self.client.put(
-            '/api/clusters/{0}/deploy_tasks?nodes={1}'.format(
-                cluster_id, node_id), data)
+        return self._put(
+            '/clusters/{0}/deploy_tasks?nodes={1}'.format(
+                cluster_id, node_id), json=data).json()
 
     @logwrap
-    @json_parse
     def put_deployment_tasks_for_release(self, release_id, data):
-        return self.client.put(
-            '/api/releases/{}/deployment_tasks'.format(release_id), data)
+        return self._put(
+            '/releases/{}/deployment_tasks'.format(release_id),
+            json=data).json()
 
     @logwrap
-    @json_parse
     def set_hostname(self, node_id, new_hostname):
         """ Set a new hostname for the node"""
         data = dict(hostname=new_hostname)
-        return self.client.put('/api/nodes/{0}/'.format(node_id), data)
+        return self._put(url='/nodes/{0}/'.format(node_id), json=data).json()
 
     @logwrap
-    @json_parse
     def get_network_template(self, cluster_id):
-        return self.client.get(
-            '/api/clusters/{}/network_configuration/template'.format(
-                cluster_id))
+        return self._get(
+            url='/clusters/{}/network_configuration/template'.format(
+                cluster_id),
+        ).json()
 
     @logwrap
-    @json_parse
     def upload_network_template(self, cluster_id, network_template):
-        return self.client.put(
-            '/api/clusters/{}/network_configuration/template'.format(
-                cluster_id), network_template)
+        return self._put(
+            '/clusters/{}/network_configuration/template'.format(cluster_id),
+            json=network_template).json()
 
     @logwrap
-    @json_parse
     def delete_network_template(self, cluster_id):
-        return self.client.delete(
-            '/api/clusters/{}/network_configuration/template'.format(
-                cluster_id))
+        return self._delete(
+            url='/clusters/{}/network_configuration/template'.format(
+                cluster_id),
+        ).json()
 
     @logwrap
-    @json_parse
     def get_network_groups(self):
-        return self.client.get('/api/networks/')
+        return self._get(url='/networks/').json()
 
     @logwrap
-    @json_parse
     def get_network_group(self, network_id):
-        return self.client.get('/api/networks/{0}/'.format(network_id))
+        return self._get(url='/networks/{0}/'.format(network_id)).json()
 
     @logwrap
-    @json_parse
     def add_network_group(self, network_data):
-        return self.client.post('/api/networks/', data=network_data)
+        return self._post(url='/networks/', json=network_data).json()
 
     @logwrap
     def del_network_group(self, network_id):
-        return self.client.delete('/api/networks/{0}/'.format(network_id))
+        return self._delete(url='/networks/{0}/'.format(network_id))
 
     @logwrap
-    @json_parse
     def update_network_group(self, network_id, network_data):
-        return self.client.put('/api/networks/{0}/'.format(network_id),
-                               data=network_data)
+        return self._put(url='/networks/{0}/'.format(network_id),
+                         json=network_data).json()
 
     @logwrap
-    @json_parse
     def create_vm_nodes(self, node_id, data):
         logger.info("Uploading VMs configuration to node {0}: {1}".
                     format(node_id, data))
-        url = "/api/nodes/{0}/vms_conf/".format(node_id)
-        return self.client.put(url, {'vms_conf': data})
+        url = "/nodes/{0}/vms_conf/".format(node_id)
+        return self._put(url, json={'vms_conf': data}).json()
 
     @logwrap
-    @json_parse
     def spawn_vms(self, cluster_id):
-        url = '/api/clusters/{0}/spawn_vms/'.format(cluster_id)
-        return self.client.put(url)
+        url = '/clusters/{0}/spawn_vms/'.format(cluster_id)
+        return self._put(url).json()
 
     @logwrap
-    @json_parse
     def upload_configuration(self, config, cluster_id, role=None,
                              node_id=None, node_ids=None):
         """Upload configuration.
@@ -580,22 +566,21 @@ class NailgunClient(object):
             data['node_id'] = node_id
         if node_ids is not None:
             data['node_ids'] = node_ids
-        url = '/api/openstack-config/'
-        return self.client.post(url, data=data)
+        url = '/openstack-config/'
+        return self._post(url, json=data).json()
 
     @logwrap
-    @json_parse
     def get_configuration(self, configuration_id):
         """Get uploaded configuration by id.
 
         :param configuration_id: An integer number of configuration id.
         :return: a decoded JSON response.
         """
-        url = '/api/openstack-config/{0}'.format(configuration_id)
-        return self.client.get(url)
+        return self._get(
+            url='/openstack-config/{0}'.format(configuration_id),
+        ).json()
 
     @logwrap
-    @json_parse
     def list_configuration(self, cluster_id, role=None, node_id=None):
         """Get filtered list of configurations.
 
@@ -604,12 +589,12 @@ class NailgunClient(object):
         :param node_id: An integer number of node id.
         :return: a decoded JSON response.
         """
-        url = '/api/openstack-config/?cluster_id={0}'.format(cluster_id)
+        url = '/openstack-config/?cluster_id={0}'.format(cluster_id)
         if role is not None:
             url += '&node_role={0}'.format(role)
         if node_id is not None:
             url += '&node_id={0}'.format(node_id)
-        return self.client.get(url)
+        return self._get(url=url).json()
 
     @logwrap
     def delete_configuration(self, configuration_id):
@@ -618,11 +603,10 @@ class NailgunClient(object):
         :param configuration_id: An integer number of configuration id.
         :return: urllib2's object of response.
         """
-        url = '/api/openstack-config/{0}'.format(configuration_id)
-        return self.client.delete(url)
+        url = '/openstack-config/{0}'.format(configuration_id)
+        return self._delete(url=url)
 
     @logwrap
-    @json_parse
     def apply_configuration(self, cluster_id, role=None, node_id=None):
         """Apply configuration.
 
@@ -636,19 +620,20 @@ class NailgunClient(object):
             data['node_role'] = role
         if node_id is not None:
             data['node_id'] = node_id
-        url = '/api/openstack-config/execute/'
-        return self.client.put(url, data=data)
+        url = '/openstack-config/execute/'
+        return self._put(url, json=data).json()
 
     @logwrap
-    @json_parse
     def get_vip_info(self, cluster_id):
         """Get all available vips.
 
         :param cluster_id: Id of cluster.
         :return: a decoded JSON response.
         """
-        return self.client.get("/api/clusters/{}/network_configuration/"
-                               "ips/vips".format(cluster_id))
+        return self._get(
+            url="/clusters/{}/network_configuration/ips/vips".format(
+                cluster_id),
+        ).json()
 
     @logwrap
     def get_vip_info_by_name(self, cluster_id, name):
@@ -664,13 +649,12 @@ class NailgunClient(object):
         return vip_data
 
     @logwrap
-    @json_parse
     def update_vip_ip(self, cluster_id, vip_id, data):
-        return self.client.put("/api/clusters/{0}/network_configuration/ips/"
-                               "{1}/vips".format(cluster_id, vip_id), data)
+        return self._put(
+            "/clusters/{0}/network_configuration/ips/"
+            "{1}/vips".format(cluster_id, vip_id), json=data).json()
 
     @logwrap
-    @json_parse
     def upload_node_attributes(self, attributes, node_id):
         """Upload node attributes for specified node.
 
@@ -678,35 +662,31 @@ class NailgunClient(object):
         :param node_id: an integer number of node id.
         :return: a decoded JSON response.
         """
-        url = '/api/nodes/{}/attributes/'.format(node_id)
-        return self.client.put(url, data=attributes)
+        url = '/nodes/{}/attributes/'.format(node_id)
+        return self._put(url, json=attributes).json()
 
     @logwrap
-    @json_parse
     def get_node_attributes(self, node_id):
         """Get attributes for specified node.
 
         :param node_id: an integer number of node id.
         :return: a decoded JSON response.
         """
-        url = '/api/nodes/{}/attributes/'.format(node_id)
-        return self.client.get(url)
+        return self._get(url='/nodes/{}/attributes/'.format(node_id)).json()
 
     @logwrap
-    @json_parse
     def get_all_tasks_list(self):
-        url = '/api/transactions/'
-        return self.client.get(url)
+        return self._get(url='/transactions/').json()
 
     @logwrap
-    @json_parse
     def get_deployment_task_hist(self, task_id):
-        url = '/api/transactions/{task_id}/deployment_history'.format(
+        url = '/transactions/{task_id}/deployment_history'.format(
             task_id=task_id)
-        return self.client.get(url)
+        return self._get(
+            url=url,
+        ).json()
 
     @logwrap
-    @json_parse
     def redeploy_cluster_changes(self, cluster_id, data=None):
         """Deploy the changes of cluster settings
 
@@ -717,83 +697,80 @@ class NailgunClient(object):
         """
         if data is None:
             data = {}
-        return self.client.put(
-            "/api/clusters/{}/changes/redeploy".format(cluster_id), data)
+        return self._put(
+            "/clusters/{}/changes/redeploy".format(cluster_id),
+            json=data).json()
 
     @logwrap
     def assign_ip_address_before_deploy_start(self, cluster_id):
-        self.client.get(
-            '/api/clusters/{}/orchestrator/deployment/defaults/'.format(
-                cluster_id))
+        return self._get(
+            url='/clusters/{}/orchestrator/deployment/defaults/'.format(
+                cluster_id)
+        )
 
     @logwrap
-    @json_parse
     def get_deployment_info_for_task(self, task_id):
-        return self.client.get(
-            '/api/transactions/{}/deployment_info'.format(task_id))
+        return self._get(
+            url='/transactions/{}/deployment_info'.format(task_id),
+        ).json()
 
     @logwrap
-    @json_parse
     def get_cluster_settings_for_deployment_task(self, task_id):
-        return self.client.get(
-            '/api/transactions/{}/settings'.format(task_id))
+        return self._get(
+            url='/transactions/{}/settings'.format(task_id),
+        ).json()
 
     @logwrap
-    @json_parse
     def get_network_configuration_for_deployment_task(self, task_id):
-        return self.client.get(
-            '/api/transactions/{}/network_configuration/'.format(task_id))
+        return self._get(
+            url='/transactions/{}/network_configuration/'.format(task_id),
+        ).json()
 
     # ConfigDB Extension
 
     @logwrap
-    @json_parse
     def get_components(self, comp_id=None):
         """Get all existing components
 
         :param comp_id: component id
         :return: components data
         """
-        endpoint = '/api/config/components'
+        endpoint = '/config/components'
         endpoint = '{path}/{component_id}'.format(
             path=endpoint, component_id=comp_id) if comp_id else endpoint
-        return self.client.get(endpoint)
+        return self._get(endpoint).json()
 
     @logwrap
-    @json_parse
     def create_component(self, data):
         """ Create component with specified data
 
         :param data:
         :return:
         """
-        return self.client.post('/api/config/components', data)
+        return self._post('/config/components', json=data).json()
 
     @logwrap
-    @json_parse
     def get_environments(self, env_id=None):
         """Get all existing environments
 
         :param env_id: environment id
         :return: env data
         """
-        endpoint = '/api/config/environments'
+        endpoint = '/config/environments'
         endpoint = '{path}/{env_id}'.format(
             env_id=env_id, path=endpoint) if env_id else endpoint
-        return self.client.get(endpoint)
+        return self._get(endpoint).json()
 
     @logwrap
-    @json_parse
     def create_environment(self, data):
         """ Create env with specified data
 
         :param data:
         :return:
         """
-        return self.client.post('/api/config/environments', data)
+        return self._post('/config/environments', json=data).json()
 
     @logwrap
-    @json_parse
     def get_global_resource_id_value(self, env_id, resource_id,
                                      effective=False):
         """ Get global resource value for specified env and resource
@@ -803,11 +780,11 @@ class NailgunClient(object):
         :param effective: true or false
         :return: global resource value
         """
-        endpoint = '/api/config/environments/' \
+        endpoint = '/config/environments/' \
                    '{env_id}/resources/{resource}' \
                    '/values'.format(env_id=env_id, resource=resource_id)
         endpoint = endpoint + '?effective' if effective else endpoint
-        return self.client.get(endpoint)
+        return self._get(endpoint).json()
 
     @logwrap
     def get_global_resource_name_value(self, env_id, resource_name,
@@ -819,11 +796,11 @@ class NailgunClient(object):
         :param effective: true or false
         :return: global resource value
         """
-        endpoint = '/api/config/environments/' \
+        endpoint = '/config/environments/' \
                    '{env_id}/resources/{resource}' \
                    '/values'.format(env_id=env_id, resource=resource_name)
         endpoint = endpoint + '?effective' if effective else endpoint
-        return self.client.get(endpoint)
+        return self._get(endpoint)
 
     @logwrap
     def put_global_resource_value(self, env_id, resource, data):
@@ -833,10 +810,10 @@ class NailgunClient(object):
         :param resource: name or id
         :param data: data in dict format
         """
-        endpoint = '/api/config/environments/' \
+        endpoint = '/config/environments/' \
                    '{env_id}/resources/{resource}' \
                    '/values'.format(env_id=env_id, resource=resource)
-        return self.client.put(endpoint, data)
+        return self._put(endpoint, json=data)
 
     @logwrap
     def put_global_resource_override(self, env_id, resource, data):
@@ -846,13 +823,12 @@ class NailgunClient(object):
         :param resource: name or id
         :param data: data in dict format
         """
-        endpoint = '/api/config/environments/' \
+        endpoint = '/config/environments/' \
                    '{env_id}/resources/{resource}' \
                    '/overrides'.format(env_id=env_id, resource=resource)
-        return self.client.put(endpoint, data)
+        return self._put(endpoint, json=data)
 
     @logwrap
-    @json_parse
     def get_node_resource_id_value(self, env_id, resource_id, node_id,
                                    effective=False):
         """ Get node level resource value for specified env, resource and node
@@ -863,13 +839,13 @@ class NailgunClient(object):
         :param effective: true or false
         :return: node resource value
         """
-        endpoint = '/api/config/environments/' \
+        endpoint = '/config/environments/' \
                    '{env_id}/nodes/{node_id}/resources/{resource}' \
                    '/values'.format(env_id=env_id, resource=resource_id,
                                     node_id=node_id)
         endpoint = endpoint + '?effective' if effective else endpoint
 
-        return self.client.get(endpoint)
+        return self._get(endpoint)
 
     @logwrap
     def get_node_resource_name_value(self, env_id, resource_name, node_id,
@@ -882,13 +858,13 @@ class NailgunClient(object):
         :param effective: true or false
         :return: node resource value
         """
-        endpoint = '/api/config/environments/' \
+        endpoint = '/config/environments/' \
                    '{env_id}/nodes/{node_id}/resources/{resource}' \
                    '/values'.format(env_id=env_id, resource=resource_name,
                                     node_id=node_id)
         endpoint = endpoint + '?effective' if effective else endpoint
 
-        return self.client.get(endpoint)
+        return self._get(endpoint)
 
     @logwrap
     def put_node_resource_value(self, env_id, resource, node_id, data):
@@ -899,11 +875,11 @@ class NailgunClient(object):
         :param node_id: str or int
         :param data: data in dict format
         """
-        endpoint = '/api/config/environments/' \
+        endpoint = '/config/environments/' \
                    '{env_id}/nodes/{node_id}/resources/{resource}' \
                    '/values'.format(env_id=env_id, resource=resource,
                                     node_id=node_id)
-        return self.client.put(endpoint, data)
+        return self._put(endpoint, json=data)
 
     @logwrap
     def put_node_resource_overrides(self, env_id, resource, node_id, data):
@@ -914,8 +890,8 @@ class NailgunClient(object):
         :param node_id: str or int
         :param data: data in dict format
         """
-        endpoint = '/api/config/environments/' \
+        endpoint = '/config/environments/' \
                    '{env_id}/nodes/{node_id}/resources/{resource}' \
                    '/overrides'.format(env_id=env_id, resource=resource,
                                        node_id=node_id)
-        return self.client.put(endpoint, data)
+        return self._put(endpoint, json=data)
