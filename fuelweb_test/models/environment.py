@@ -12,11 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
 import re
 import time
 
-from devops.helpers.helpers import _tcp_ping
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import tcp_ping_
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 from devops.helpers.ntp import sync_time
 from devops.models import Environment
@@ -46,8 +47,8 @@ from fuelweb_test.models.collector_client import CollectorClient
 from fuelweb_test import settings
 from fuelweb_test.settings import iface_alias
 from fuelweb_test import logwrap
-from fuelweb_test import logger
 from fuelweb_test import QuietLogger
+from fuelweb_test import logger
 
 
 @six.add_metaclass(SingletonMeta)
@@ -305,9 +306,9 @@ class EnvironmentModel(object):
         if not skip_timesync:
             self.sync_time()
         try:
-            with QuietLogger():
+            with QuietLogger(upper_log_level=logging.CRITICAL):
                 # TODO(astudenov): add timeout_msg
-                _wait(
+                wait_pass(
                     self.fuel_web.client.get_releases,
                     expected=(
                         exceptions.RetriableConnectionFailure,
@@ -319,7 +320,7 @@ class EnvironmentModel(object):
 
         if not skip_slaves_check:
             # TODO(astudenov): add timeout_msg
-            _wait(lambda: self.check_slaves_are_ready(), timeout=60 * 6)
+            wait_pass(lambda: self.check_slaves_are_ready(), timeout=60 * 6)
         return True
 
     def set_admin_ssh_password(self):
@@ -461,7 +462,7 @@ class EnvironmentModel(object):
     def wait_for_provisioning(self,
                               timeout=settings.WAIT_FOR_PROVISIONING_TIMEOUT):
         # TODO(astudenov): add timeout_msg
-        _wait(lambda: _tcp_ping(
+        wait_pass(lambda: tcp_ping_(
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
             (self.d_env.admin_net), 22), timeout=timeout)
@@ -473,7 +474,7 @@ class EnvironmentModel(object):
         def check_ssh_connection():
             """Try to close fuelmenu and check ssh connection"""
             try:
-                _tcp_ping(
+                tcp_ping_(
                     self.d_env.nodes(
                     ).admin.get_ip_address_by_network_name
                     (self.d_env.admin_net), 22)
