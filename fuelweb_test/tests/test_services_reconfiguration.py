@@ -1404,3 +1404,64 @@ class ServicesReconfiguration(TestBasic):
         self.show_step(11)
         self.check_config_on_remote(computes, structured_config)
         self.env.make_snapshot("reconfigure_with_new_fields")
+
+    @test(depends_on_groups=['basic_env_for_reconfiguration'],
+          groups=["services_reconfiguration_thread_1",
+                  "reconfigure_ml2_vlan_range_for_suite_of_nodes"])
+    @log_snapshot_after_test
+    def reconfigure_ml2_vlan_range_for_suite_of_nodes(self):
+        """Reconfigure neutron ml2 VLAN range for suite of controller nodes
+
+        Scenario:
+            1. Revert snapshot "basic_env_for_reconfiguration"
+            2. Upload a new VLAN range(minimal range) for suite of controller
+               nodes
+            3. Get uptime of process "neutron-server" on each controller
+            4. Apply a new openstack configuration to all controller nodes
+            5. Wait for configuration applying
+            6. Check that service "neutron-server" was restarted
+            7. Verify ml2 plugin settings
+            8. Try to create two private networks, check that the second
+               network is failed to create
+
+        Snapshot: reconfigure_ml2_vlan_range_for_suite_of_nodes
+
+        """
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot("basic_env_for_reconfiguration")
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])
+
+        controller_ids = [int(ctrl['id']) for ctrl in controllers]
+
+        self.show_step(2)
+        config = utils.get_config_template('neutron')
+        structured_config = get_structured_config_dict(config)
+        self.fuel_web.client.upload_configuration(config,
+                                                  cluster_id,
+                                                  node_ids=controller_ids)
+
+        self.show_step(3)
+        service_name = 'neutron-server'
+        uptimes = self.get_service_uptime(controllers, service_name)
+
+        self.show_step(4)
+        task = self.fuel_web.client.apply_configuration(cluster_id)
+
+        self.show_step(5)
+        self.fuel_web.assert_task_success(task, timeout=480, interval=5)
+
+        self.show_step(6)
+        self.check_service_was_restarted(controllers, uptimes, service_name)
+
+        self.show_step(7)
+        self.check_config_on_remote(controllers, structured_config)
+
+        self.show_step(8)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+        self.check_ml2_vlan_range(os_conn)
+
+        snapshotname = "reconfigure_ml2_vlan_range_for_suite_of_nodes"
+        self.env.make_snapshot(snapshotname)

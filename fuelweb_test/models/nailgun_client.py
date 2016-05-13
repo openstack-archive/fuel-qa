@@ -563,13 +563,14 @@ class NailgunClient(object):
     @logwrap
     @json_parse
     def upload_configuration(self, config, cluster_id, role=None,
-                             node_id=None):
+                             node_id=None, node_ids=None):
         """Upload configuration.
 
         :param config: a dictionary of configuration to upload.
         :param cluster_id: An integer number of cluster id.
         :param role: a string of role name.
         :param node_id: An integer number of node id.
+        :param node_ids: a list of node ids
         :return: a decoded JSON response.
         """
         data = {'cluster_id': cluster_id, 'configuration': config}
@@ -577,6 +578,8 @@ class NailgunClient(object):
             data['node_role'] = role
         if node_id is not None:
             data['node_id'] = node_id
+        if node_ids is not None:
+            data['node_ids'] = node_ids
         url = '/api/openstack-config/'
         return self.client.post(url, data=data)
 
