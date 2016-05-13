@@ -14,6 +14,7 @@
 
 import json
 import traceback
+from warnings import warn
 
 from keystoneauth1 import exceptions
 from keystoneauth1.identity import V2Password
@@ -34,6 +35,9 @@ class HTTPClient(object):
     # TODO: Rewrite using requests library?
 
     def __init__(self, url, keystone_url, credentials, **kwargs):
+        warn(
+            'HTTPClient is deprecated and planned to remove later',
+            DeprecationWarning)
         logger.info('Initiate HTTPClient with url %s', url)
         self.url = url
         self.keystone_url = keystone_url
