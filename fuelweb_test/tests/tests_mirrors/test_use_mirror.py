@@ -158,7 +158,8 @@ class TestUseMirror(TestBasic):
         self.show_step(9)
         create_cmd = 'fuel-mirror create -P ubuntu -G mos ' \
                      '--log-file /var/log/mos_mirrors_create.log'
-        self.ssh_manager.execute_on_remote(ip=admin_ip, cmd=create_cmd)
+        self.env.admin_actions.ensure_cmd(create_cmd)
+
         self.show_step(10)
         apply_cmd = 'fuel-mirror apply -P ubuntu -G mos'
         self.ssh_manager.execute_on_remote(ip=admin_ip, cmd=apply_cmd)
