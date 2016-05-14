@@ -84,7 +84,7 @@ def log_snapshot_after_test(func):
             exc_trace = sys.exc_traceback
             name = 'error_%s' % func.__name__
             description = "Failed in method '%s'." % func.__name__
-            if args[0].env is not None:
+            if args[0].env is not None and args[0].save_env:
                 try:
                     create_diagnostic_snapshot(args[0].env,
                                                "fail", name)
@@ -106,6 +106,7 @@ def log_snapshot_after_test(func):
                     except:
                         logger.error("Error making the environment snapshot:"
                                      " {0}".format(traceback.format_exc()))
+            args[0].save_env = False
             raise test_exception, None, exc_trace
         else:
             if settings.ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT:

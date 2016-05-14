@@ -14,6 +14,7 @@
 
 from proboscis import SkipTest
 from proboscis import test
+from proboscis.asserts import assert_raises
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -32,6 +33,7 @@ class TestBasic(object):
     """
     def __init__(self):
         self.env = EnvironmentModel()
+        self.save_env = True
         self.fuel_web = self.env.fuel_web
 
     def check_run(self, snapshot_name):
@@ -67,6 +69,11 @@ class TestBasic(object):
         else:
             logger.info("\n" + " " * 55 + "<<< {0}. (no step description "
                         "in scenario) {1}>>>".format(str(step), details_msg))
+
+    def raise_error(self, cond, message, save_env=False, excep=None):
+        if cond:
+            self.save_env = save_env
+            assert_raises(excep, logger.error, message)
 
 
 @test
