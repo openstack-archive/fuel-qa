@@ -1485,3 +1485,25 @@ class SettingsChanger(object):
     def attrs(self, attrs):
         self._attrs = attrs['editable']
 # pylint: enable=eval-used
+
+
+@logwrap
+def install_lynis_master(master_node_ip):
+    """ Install Lynis package on master node
+
+    :return: None
+    """
+    ssh_manager = SSHManager()
+    asserts.assert_is_not_none(
+        settings.PERESTROIKA_REPO,
+        message='PERESTROIKA_REPO is empty, please set it to correct path'
+    )
+    cmds = ['yum-config-manager --add-repo '
+            '{}'.format(settings.PERESTROIKA_REPO),
+
+            'rpm --import {}'.format(settings.MASTER_CENTOS_GPG),
+
+            'yum install -y lynis'
+            ]
+    for cmd in cmds:
+        ssh_manager.execute_on_remote(ip=master_node_ip, cmd=cmd)
