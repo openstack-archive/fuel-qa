@@ -80,3 +80,21 @@ class HealthCheckActions(object):
             test_sets=['ha'],
             should_fail=getattr(self, 'ostf_tests_should_failed', 0),
             failed_test_name=getattr(self, 'failed_test_name', None))
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def health_check_platform(self):
+        """Run health checker Platform
+
+        Skip action if cluster doesn't exist
+        """
+        if self.cluster_id is None:
+            raise SkipTest(
+                "The cluster_id is not specified, can not run ostf"
+            )
+
+        self.fuel_web.run_ostf(
+            cluster_id=self.cluster_id,
+            test_sets=['tests_platform'],
+            should_fail=getattr(self, 'ostf_tests_should_failed', 0),
+            failed_test_name=getattr(self, 'failed_test_name', None))

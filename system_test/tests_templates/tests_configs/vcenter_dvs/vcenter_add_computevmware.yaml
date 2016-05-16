@@ -45,3 +45,6 @@ template:
             srv_name: srv_cluster2
             datastore: .*
             target_node: compute-vmware
+      vmware_dvs:
+        dvswitch_name: !os_env DVS_NAME, Cluster1:dvSwitch;Cluster2:dvSwitch
+        dvs_fw_driver: false

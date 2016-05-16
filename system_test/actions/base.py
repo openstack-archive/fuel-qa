@@ -40,6 +40,7 @@ from system_test import deferred_decorator
 
 from system_test.actions.ostf_actions import HealthCheckActions
 from system_test.actions.plugins_actions import PluginsActions
+from system_test.actions.vcenter_actions import VMwareActions
 
 from system_test.core.discover import load_yaml
 from system_test.helpers.decorators import make_snapshot_if_step_fail
@@ -236,7 +237,9 @@ class PrepareActions(object):
         ]
 
 
-class BaseActions(PrepareActions, HealthCheckActions, PluginsActions):
+# noinspection PyUnresolvedReferences
+class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
+                  VMwareActions):
     """Basic actions for acceptance cases
 
     For choosing action order use actions_order variable, set list of actions
@@ -488,7 +491,9 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions):
                 self._add_node([node])
                 if node.get('vmware_vcenter'):
                     nova_computes = node['vmware_vcenter']['nova-compute']
+                    dvs_settings = node['vmware_dvs']
                     self.add_vmware_nova_compute(nova_computes)
+                    self.update_dvs_plugin_settings(dvs_settings)
             elif node['action'] == 'delete':
                 self._del_node([node])
                 if 'compute-vmware' in node['roles']:
@@ -540,8 +545,9 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions):
             0]["nova_computes"]
 
         comp_vmware_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            self.cluster_id, ['compute-vmware'],
-            role_status='pending_deletion')
+            self.cluster_id, ['compute-vmware'])
+        comp_vmware_nodes = [node for node in comp_vmware_nodes if
+                             node['pending_deletion'] is True]
 
         for node, nova_comp in itertools.product(comp_vmware_nodes,
                                                  vcenter_data):

@@ -56,14 +56,20 @@ class VMwareActions(object):
                 self.plugin_name),
             msg)
 
+        dvs_settings = self.full_config['template']['cluster_template'][
+            'settings']['vmware_dvs']
+        self.update_dvs_plugin_settings(dvs_settings)
+
+    def update_dvs_plugin_settings(self, dvs_settings):
+        """Update plugin settings
+        :param dvs_settings: dict
+        """
+
         options = {
-            'vmware_dvs_fw_driver/value': self.full_config[
-                'template']['cluster_template']['settings']['vmware_dvs'][
-                'dvs_fw_driver'],
-            'vmware_dvs_net_maps/value': self.full_config[
-                'template']['cluster_template']['settings']['vmware_dvs'][
-                'dvswitch_name']
+            'vmware_dvs_fw_driver/value': dvs_settings['dvs_fw_driver'],
+            'vmware_dvs_net_maps/value': dvs_settings['dvswitch_name']
         }
+
         self.fuel_web.update_plugin_settings(
             self.cluster_id, self.plugin_name, self.plugin_version, options,
             enabled=True)
