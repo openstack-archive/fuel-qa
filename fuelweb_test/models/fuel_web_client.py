@@ -1513,7 +1513,13 @@ class FuelWebClient(object):
                            '"multiple cluster networks" feature is used')
             return
         try:
+            import subprocess
+            tcpdump = subprocess.Popen(
+                'tcpdump -i any -w /tmp/1575064-dump.pcap', shell=True)
             task = self.run_network_verify(cluster_id)
+            tcpdump.terminate()
+            #import os
+            #os.remove('/tmp/1575064-dump.pcap')
             with QuietLogger():
                 if success:
                     self.assert_task_success(task, timeout, interval=10)
