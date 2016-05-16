@@ -116,7 +116,7 @@ class SupportDPDK(TestBasic):
             for ids in interface['assigned_networks']:
                 if ids['name'] == net:
                     if interface['type'] == 'bond':
-                        interface['bond_properties']['type__'] = 'ovs'
+                        interface['bond_properties']['type__'] = 'dpdkovs'
                         interface['interface_properties']['dpdk'].update(
                             {'enabled': switch_to})
                     else:
