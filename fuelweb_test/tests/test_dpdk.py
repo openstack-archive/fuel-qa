@@ -202,16 +202,7 @@ class SupportDPDK(TestBasic):
         self.fuel_web.verify_network(cluster_id)
 
         self.show_step(9)
-        should_fail = ['Create volume and boot instance from it',
-                       'Launch instance, create snapshot, launch instance from'
-                       ' snapshot',
-                       'Launch instance with file injection',
-                       'Launch instance',
-                       'Create volume and attach it to instance',
-                       'Check network connectivity from instance via'
-                       ' floating IP']
-        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=6,
-                               failed_test_name=should_fail)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.show_step(10)
         # reboot compute
@@ -222,8 +213,7 @@ class SupportDPDK(TestBasic):
         self.fuel_web.assert_os_services_ready(cluster_id)
 
         self.show_step(11)
-        self.fuel_web.run_ostf(cluster_id=cluster_id,
-                               failed_test_name=should_fail)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.show_step(12)
         os_conn = os_actions.OpenStackActions(
