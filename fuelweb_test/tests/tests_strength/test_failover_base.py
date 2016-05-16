@@ -185,7 +185,7 @@ class TestHaFailoverBase(TestBasic):
             # Wait for HA services ready
             self.fuel_web.assert_ha_services_ready(cluster_id, should_fail=1)
             # Wait until OpenStack services are UP
-            self.fuel_web.assert_os_services_ready(cluster_id, should_fail=1)
+            self.fuel_web.assert_os_services_ready(cluster_id)
 
             logger.info("Waiting 300 sec before MySQL Galera will up, "
                         "then run OSTF")
@@ -197,11 +197,11 @@ class TestHaFailoverBase(TestBasic):
 
             # STEP: Run OSTF
             self.show_step([4, 8][num])
-            # should fail 2 according to haproxy backends marked as fail
+            # should fail 1 according to one haproxy backend marked as fail
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
                 test_sets=['ha', 'smoke', 'sanity'],
-                should_fail=2)
+                should_fail=1)
 
     def ha_disconnect_controllers(self):
         if not self.env.revert_snapshot(self.snapshot_name):
@@ -1075,8 +1075,7 @@ class TestHaFailoverBase(TestBasic):
 
         # Run sanity and smoke tests to see if cluster operable
 
-        self.fuel_web.run_ostf(cluster_id=cluster_id,
-                               should_fail=1)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         n_ctrls = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])
@@ -1468,8 +1467,7 @@ class TestHaFailoverBase(TestBasic):
 
             # Run sanity and smoke tests to see if cluster operable
             self.show_step(11)
-            self.fuel_web.run_ostf(cluster_id=cluster_id,
-                                   should_fail=1)
+            self.fuel_web.run_ostf(cluster_id=cluster_id)
 
             # turn on destroyed node
             self.show_step(12)

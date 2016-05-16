@@ -320,8 +320,7 @@ class CommandLineTest(test_cli_base.CommandLine):
         self.fuel_web.verify_network(cluster_id)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'],
-            should_fail=1)
+            cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
     @test(depends_on_groups=['cli_selected_nodes_deploy'],
           groups=["cli_cluster_deletion"])

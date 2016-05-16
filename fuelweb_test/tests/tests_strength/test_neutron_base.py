@@ -446,9 +446,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
-            test_sets=['sanity'],
-            should_fail=1,
-            failed_test_name=['Check that required services are running'])
+            test_sets=['sanity'])
 
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
