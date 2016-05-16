@@ -1205,10 +1205,11 @@ class FuelWebClient29(object):
         """
         # TODO: This method should be part of fuel-devops
         # pylint: disable=no-member
-        try:
-            node = self.get_nailgun_node_by_devops_node(
-                self.environment.d_env.get_node(name=node_name))
-        except Node.DoesNotExist:
+        nodes = self.environment.d_env.get_nodes(name=node_name)
+
+        if len(nodes):
+            node = self.get_nailgun_node_by_devops_node(nodes[0])
+        else:
             node = self.get_nailgun_node_by_fqdn(node_name)
         # pylint: enable=no-member
         assert_true(node is not None,
@@ -1360,9 +1361,8 @@ class FuelWebClient29(object):
         failed_nodes = {}
         for node_name, node_roles in nodes_dict.items():
             # pylint: disable=no-member
-            try:
-                self.environment.d_env.get_node(name=node_name)
-            except Node.DoesNotExist:
+            nodes = self.environment.d_env.get_nodes(name=node_name)
+            if not len(nodes):
                 failed_nodes[node_name] = node_roles
             # pylint: enable=no-member
         if failed_nodes:
