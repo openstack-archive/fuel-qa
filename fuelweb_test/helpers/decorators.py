@@ -16,7 +16,7 @@ import functools
 import inspect
 import json
 import os
-from subprocess import call
+from subprocess import call, Popen
 import sys
 import time
 import traceback
@@ -873,4 +873,22 @@ def check_fuel_snapshot(func):
         except Exception:
             logger.error(traceback.format_exc())
             raise
+    return wrapper
+
+
+def tcpdump(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        cmd = ("_term() {\n"
+               "sudo kill $child\n"
+               "}\n"
+               "trap _term EXIT\n"
+               "sudo tcpdump -i any &\n"
+               "child=$!\n"
+               "wait \"$child\"")
+        proc = Popen(cmd, executable='/bin/bash',
+                     stdout=open('/tmp/dump.pcap', 'w'), shell=True)
+        result = func(*args, **kwargs)
+        proc.terminate()
+        return result
     return wrapper

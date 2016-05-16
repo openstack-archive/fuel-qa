@@ -59,6 +59,7 @@ from fuelweb_test.helpers.decorators import download_astute_yaml
 from fuelweb_test.helpers.decorators import download_packages_json
 from fuelweb_test.helpers.decorators import duration
 from fuelweb_test.helpers.decorators import retry
+from fuelweb_test.helpers.decorators import tcpdump
 from fuelweb_test.helpers.decorators import update_fuel
 from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers.security import SecurityChecks
@@ -1242,6 +1243,7 @@ class FuelWebClient29(object):
                 node['status'] == 'discover', self.client.list_nodes()))
 
     @logwrap
+    @tcpdump
     def run_network_verify(self, cluster_id):
         logger.info('Run network verification on the cluster %s', cluster_id)
         return self.client.verify_networks(cluster_id)
@@ -1586,6 +1588,8 @@ class FuelWebClient29(object):
             return
         try:
             task = self.run_network_verify(cluster_id)
+            #import os
+            #os.remove('/tmp/1575064-dump.pcap')
             with QuietLogger():
                 if success:
                     self.assert_task_success(task, timeout, interval=10)
