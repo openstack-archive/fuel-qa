@@ -19,7 +19,7 @@ from fuelweb_test.helpers.fuel_actions import BaseActions
 from fuelweb_test.helpers import ironic_actions
 from fuelweb_test.helpers.checkers import verify_bootstrap_on_node
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.tests.test_ironic_base import TestIronicDeploy
+from fuelweb_test.tests.test_ironic_base import IronicDeploy
 
 from gates_tests.helpers import exceptions
 from gates_tests.helpers.utils import replace_rpm_package
@@ -28,7 +28,7 @@ from gates_tests.helpers.utils import \
 
 
 @test(groups=["review_fuel_agent"])
-class Gate(TestIronicDeploy):
+class Gate(IronicDeploy):
     """Using in fuel-agent CI-gates
     Update fuel-agent on master node, bootstrap from review,
     build environment images and provision one node"""

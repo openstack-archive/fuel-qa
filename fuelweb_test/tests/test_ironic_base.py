@@ -27,8 +27,8 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 
 @test(groups=["ironic"])
-class TestIronicBase(TestBasic):
-    """TestIronicBase"""  # TODO documentation
+class IronicBase(TestBasic):
+    """IronicBase"""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ironic_base"])
@@ -87,9 +87,8 @@ class TestIronicBase(TestBasic):
         self.env.make_snapshot("ironic_base")
 
 
-@test(groups=["ironic_deploy", "ironic"])
-class TestIronicDeploy(TestBasic):
-    """Test ironic provisioning on VM."""
+class IronicDeploy(TestBasic):
+    """Check ironic provisioning on VM."""
 
     def _deploy_ironic_cluster(self, **kwargs):
         default_settings = {
