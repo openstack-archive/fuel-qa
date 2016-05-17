@@ -140,7 +140,7 @@ class UCATest(TestBasic):
         self.show_step(8)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("uca_neutron_ha")
+        self.env.make_snapshot("uca_neutron_ha", is_make=True)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["uca_neutron_tun_ceph"])
@@ -294,3 +294,47 @@ class UCATest(TestBasic):
 
         self.show_step(9)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+    @test(depends_on=[uca_neutron_ha], groups=['uca_shutdown_cluster'])
+    @log_snapshot_after_test
+    def uca_shutdown_cluster(self):
+        """Graceful shutdown of cluster deployed from UCA
+
+        Scenario:
+        1. Revert "uca_neutron_ha" snapshot
+        2. Warm power off compute+cinder nodes
+        3. Warm power off controller nodes
+        4. Start compute+cinder nodes
+        5. Start controller nodes nodes
+        6. Wait until ha services is ok
+        7. Run OSTF
+
+        Duration: 20m
+        """
+        self.show_step(1)
+        self.env.revert_snapshot("uca_neutron_ha")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])
+        other = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute'])
+        d_controllers = self.fuel_web.get_devops_nodes_by_nailgun_nodes(
+            controllers)
+        d_other = self.fuel_web.get_devops_nodes_by_nailgun_nodes(other)
+
+        self.show_step(2)
+        self.fuel_web.warm_shutdown_nodes(d_other)
+        self.show_step(3)
+        self.fuel_web.warm_shutdown_nodes(d_controllers)
+
+        self.show_step(4)
+        self.fuel_web.warm_start_nodes(d_other)
+        self.show_step(5)
+        self.fuel_web.warm_start_nodes(d_controllers)
+
+        self.show_step(6)
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
+        self.show_step(7)
+        self.fuel_web.run_ostf(cluster_id)
