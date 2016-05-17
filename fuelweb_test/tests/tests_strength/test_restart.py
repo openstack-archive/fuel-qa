@@ -197,14 +197,24 @@ class CephRestart(TestBasic):
         self.env.make_snapshot("ceph_ha_restart")
 
 
-@test(groups=["thread_1"])
+@test(enabled=False, groups=["thread_1"])
 class HAOneControllerNeutronRestart(TestBasic):
+    """HAOneControllerNeutronRestart
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+    Test disabled and move to fuel_tests suite:
+        fuel_tests.test.test_restart
+
+    """
+
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ha_one_controller_neutron_warm_restart"])
     @log_snapshot_after_test
     def ha_one_controller_neutron_warm_restart(self):
         """Warm restart for ha one controller environment
+
+        Test disabled and move to fuel_tests suite:
+            fuel_tests.test.test_restart.TestHAOneControllerNeutronRestart
 
         Scenario:
             1. Create cluster

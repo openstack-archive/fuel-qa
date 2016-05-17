@@ -25,16 +25,25 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["thread_1", "neutron"])
+@test(enabled=False, groups=["thread_1", "neutron"])
 class NeutronVlan(TestBasic):
-    """NeutronVlan."""  # TODO documentation
+    """NeutronVlan.
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+    Test disabled and move to fuel_tests suite:
+        fuel_tests.test.test_neutron
+
+    """  # TODO documentation
+
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_neutron_vlan", "ha_one_controller_neutron_vlan",
                   "deployment", "nova", "nova-compute"])
     @log_snapshot_after_test
     def deploy_neutron_vlan(self):
         """Deploy cluster in ha mode with 1 controller and Neutron VLAN
+
+        Test disabled and move to fuel_tests suite:
+            fuel_tests.test.test_neutron.TestNeutronVlan
 
         Scenario:
             1. Create cluster
@@ -82,15 +91,25 @@ class NeutronVlan(TestBasic):
         self.env.make_snapshot("deploy_neutron_vlan", is_make=True)
 
 
-@test(groups=["neutron", "ha", "ha_neutron", "classic_provisioning"])
+@test(enabled=False,
+      groups=["neutron", "ha", "ha_neutron", "classic_provisioning"])
 class NeutronGreHa(TestBasic):
-    """NeutronGreHa."""  # TODO documentation
+    """NeutronGreHa.
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+    Test disabled and move to fuel_tests suite:
+        fuel_tests.test.test_neutron
+
+    """  # TODO documentation
+
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_gre_ha", "ha_neutron_gre"])
     @log_snapshot_after_test
     def deploy_neutron_gre_ha(self):
         """Deploy cluster in HA mode with Neutron GRE (DEPRECATED)
+
+        Test disabled and move to fuel_tests suite:
+            fuel_tests.test.test_neutron.TestNeutronTunHa
 
         Scenario:
             1. Create cluster
@@ -147,15 +166,24 @@ class NeutronGreHa(TestBasic):
         self.env.make_snapshot("deploy_neutron_gre_ha")
 
 
-@test(groups=["neutron", "ha", "ha_neutron"])
+@test(enabled=False, groups=["neutron", "ha", "ha_neutron"])
 class NeutronVlanHa(TestBasic):
-    """NeutronVlanHa."""  # TODO documentation
+    """NeutronVlanHa.
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+    Test disabled and move to fuel_tests suite:
+        fuel_tests.test.test_neutron
+
+    """  # TODO documentation
+
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_vlan_ha", "neutron_vlan_ha"])
     @log_snapshot_after_test
     def deploy_neutron_vlan_ha(self):
         """Deploy cluster in HA mode with Neutron VLAN
+
+        Test disabled and move to fuel_tests suite:
+            fuel_tests.test.test_neutron.TestNeutronVlanHa
 
         Scenario:
             1. Create cluster

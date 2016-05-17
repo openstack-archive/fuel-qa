@@ -594,15 +594,22 @@ class FloatingIPs(TestBasic):
         self.env.make_snapshot("deploy_floating_ips")
 
 
-@test(groups=["thread_1"])
+@test(enabled=False, groups=["thread_1"])
 class NodeMultipleInterfaces(TestBasic):
-    """NodeMultipleInterfaces."""  # TODO documentation
+    """NodeMultipleInterfaces.
+
+    Test disabled and move to fuel_tests suite:
+        fuel_tests.test.test_l2_network_config
+    """  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_node_multiple_interfaces"])
     @log_snapshot_after_test
     def deploy_node_multiple_interfaces(self):
         """Deploy cluster with networks allocated on different interfaces
+
+        Test disabled and move to fuel_tests suite:
+            fuel_tests.test.test_l2_network_config.TestL2NetworkConfig
 
         Scenario:
             1. Create cluster in Ha mode
@@ -650,15 +657,23 @@ class NodeMultipleInterfaces(TestBasic):
         self.env.make_snapshot("deploy_node_multiple_interfaces", is_make=True)
 
 
-@test(groups=["thread_1"])
+@test(enabled=False, groups=["thread_1"])
 class NodeDiskSizes(TestBasic):
-    """NodeDiskSizes."""  # TODO documentation
+    """NodeDiskSizes.
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+    Test disabled and move to fuel_tests suite:
+        fuel_tests.test.test_discovery_slave
+
+    """  # TODO documentation
+
+    @test(enabled=False, depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["check_nodes_notifications"])
     @log_snapshot_after_test
     def check_nodes_notifications(self):
         """Verify nailgun notifications for discovered nodes
+
+        Test disabled and move to fuel_tests suite:
+            fuel_tests.test.test_discovery_slave.TestNodeDiskSizes
 
         Scenario:
             1. Revert snapshot "ready_with_3_slaves"
@@ -706,11 +721,15 @@ class NodeDiskSizes(TestBasic):
                         disk['size'], NODE_VOLUME_SIZE * 1024 - 500
                     ))
 
-    @test(depends_on=[NodeMultipleInterfaces.deploy_node_multiple_interfaces],
+    @test(enabled=False,
+          depends_on=[NodeMultipleInterfaces.deploy_node_multiple_interfaces],
           groups=["check_nodes_disks"])
     @log_snapshot_after_test
     def check_nodes_disks(self):
         """Verify hard drive sizes for deployed nodes
+
+        Test disabled and move to fuel_tests suite:
+            fuel_tests.test.test_discovery_slave.TestNodeDiskSizes
 
         Scenario:
             1. Revert snapshot "deploy_node_multiple_interfaces"
@@ -759,15 +778,24 @@ class NodeDiskSizes(TestBasic):
                 ))
 
 
-@test(groups=["thread_1"])
+@test(enabled=False, groups=["thread_1"])
 class MultinicBootstrap(TestBasic):
-    """MultinicBootstrap."""  # TODO documentation
+    """MultinicBootstrap.
 
-    @test(depends_on=[SetupEnvironment.prepare_release],
+    Test disabled and move to fuel_tests suite:
+        fuel_tests.test.test_discovery_slave
+
+    """  # TODO documentation
+
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_release],
           groups=["multinic_bootstrap_booting"])
     @log_snapshot_after_test
     def multinic_bootstrap_booting(self):
         """Verify slaves booting with blocked mac address
+
+        Test disabled and move to fuel_tests suite:
+            fuel_tests.test.test_discovery_slave.TestMultinicBootstrap
 
         Scenario:
             1. Revert snapshot "ready"
@@ -798,9 +826,14 @@ class MultinicBootstrap(TestBasic):
                 Ebtables.restore_mac(mac)
 
 
-@test(groups=["thread_1"])
+@test(enabled=False, groups=["thread_1"])
 class UntaggedNetworksNegative(TestBasic):
-    """UntaggedNetworksNegative."""  # TODO documentation
+    """UntaggedNetworksNegative.
+
+    Test disabled and move to fuel_tests suite:
+        fuel_tests.test.test_l2_network_config.TestL2NetworkConfig
+
+    """  # TODO documentation
 
     @test(
         depends_on=[SetupEnvironment.prepare_slaves_3],
@@ -809,6 +842,9 @@ class UntaggedNetworksNegative(TestBasic):
     @log_snapshot_after_test
     def untagged_networks_negative(self):
         """Verify network verification fails with untagged network on eth0
+
+        Test disabled and move to fuel_tests suite:
+            fuel_tests.test.test_l2_network_config.TestL2NetworkConfig
 
         Scenario:
             1. Create cluster in ha mode
