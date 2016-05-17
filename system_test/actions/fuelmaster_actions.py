@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from devops.helpers.helpers import wait
+
 from system_test import action
 from system_test import deferred_decorator
 from system_test import logger
@@ -34,3 +36,10 @@ class FuelMasterActions(object):
         """Check that containers are up and running"""
         logger.info("Check containers")
         self.env.docker_actions.wait_for_ready_containers(timeout=60 * 30)
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def nailgun_check(self):
+        """Check status for Nailgun"""
+        wait(self.fuel_web.is_nailgun_api_available, timeout=60 * 15,
+             timeout_msg="Nailgun unavailable")
