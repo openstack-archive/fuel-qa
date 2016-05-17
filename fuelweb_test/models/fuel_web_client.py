@@ -1933,6 +1933,10 @@ class FuelWebClient29(object):
 
         return ip_ranges, expected_ips
 
+    def is_devops_node_online_in_nailgun(self, node):
+        return self.is_node_online(
+            self.get_nailgun_node_by_devops_node(node))
+
     def warm_shutdown_nodes(self, devops_nodes):
         logger.info('Shutting down (warm) nodes %s',
                     [n.name for n in devops_nodes])
@@ -1944,12 +1948,11 @@ class FuelWebClient29(object):
         for node in devops_nodes:
             logger.info('Wait a %s node offline status', node.name)
             try:
-                wait(
-                    lambda: not self.get_nailgun_node_by_devops_node(node)[
-                        'online'], timeout=60 * 10)
+                wait(lambda: not self.is_devops_node_online_in_nailgun(node),
+                     timeout=60 * 10)
             except TimeoutError:
                 assert_false(
-                    self.get_nailgun_node_by_devops_node(node)['online'],
+                    self.is_devops_node_online_in_nailgun(node),
                     'Node {0} has not become '
                     'offline after warm shutdown'.format(node.name))
             node.destroy()
@@ -1960,12 +1963,11 @@ class FuelWebClient29(object):
             node.create()
         for node in devops_nodes:
             try:
-                wait(
-                    lambda: self.get_nailgun_node_by_devops_node(
-                        node)['online'], timeout=60 * 10)
+                wait(lambda: self.is_devops_node_online_in_nailgun(node),
+                     timeout=60 * 10)
             except TimeoutError:
                 assert_true(
-                    self.get_nailgun_node_by_devops_node(node)['online'],
+                    self.is_devops_node_online_in_nailgun(node),
                     'Node {0} has not become online '
                     'after warm start'.format(node.name))
             logger.debug('Node {0} became online.'.format(node.name))
@@ -2118,6 +2120,18 @@ class FuelWebClient29(object):
             node = self.get_nailgun_node_by_devops_node(node)
             assert_true(node['online'],
                         'Node {0} is online'.format(node['mac']))
+
+    @logwrap
+    def is_node_online(self, node):
+        return self.client.get_node_by_id(node['id'])['online']
+
+    @logwrap
+    def wait_cluster_nodes_get_online_state(self, cluster_id,
+                                            node_timeout=4 * 60):
+        for node in self.client.list_cluster_nodes(cluster_id):
+            wait(lambda: self.is_node_online(node), timeout=node_timeout,
+                 timeout_msg='Node {0} has not become'
+                             ' online'.format(node['name']))
 
     @logwrap
     def wait_mysql_galera_is_up(self, node_names, timeout=60 * 4):
@@ -2397,6 +2411,14 @@ class FuelWebClient29(object):
         info = self.client.get_api_version()
         os_version = info["openstack_version"]
         assert_true(os_version, 'api version returned empty data')
+
+    @logwrap
+    def is_nailgun_api_available(self):
+        try:
+            self.client.get_api_version()
+        except HTTPError:
+            return False
+        return True
 
     @logwrap
     def get_nailgun_cidr_nova(self, cluster_id):
@@ -2834,6 +2856,15 @@ class FuelWebClient29(object):
             else:
                 network['ip_ranges'] = self.get_range(new_cidr, ip_range=0)
         self.client.update_network(cluster_id, params, networks)
+
+    @logwrap
+    def mcollective_nodes_online(self, cluster_id):
+        nodes_uids = set([str(n['id']) for n in
+                          self.client.list_cluster_nodes(cluster_id)])
+        out = self.ssh_manager.execute_on_remote(
+            self.ssh_manager.admin_ip, 'mco find')['stdout_str']
+        ready_nodes_uids = set(out.split('\n'))
+        return not nodes_uids - ready_nodes_uids
 
     @logwrap
     def wait_task_success(self, task_name='', interval=30,
