@@ -1933,48 +1933,50 @@ class FuelWebClient29(object):
 
         return ip_ranges, expected_ips
 
-    def warm_shutdown_nodes(self, devops_nodes):
+    def warm_shutdown_nodes(self, devops_nodes, wait_offline=True):
         logger.info('Shutting down (warm) nodes %s',
                     [n.name for n in devops_nodes])
         for node in devops_nodes:
             logger.debug('Shutdown node %s', node.name)
             with self.get_ssh_for_node(node.name) as remote:
                 remote.check_call('/sbin/shutdown -Ph now')
+        if wait_offline:
+            for node in devops_nodes:
+                logger.info('Wait a %s node offline status', node.name)
+                try:
+                    wait(
+                        lambda: not self.get_nailgun_node_by_devops_node(
+                            node)['online'], timeout=60 * 10)
+                except TimeoutError:
+                    assert_false(
+                        self.get_nailgun_node_by_devops_node(node)['online'],
+                        'Node {0} has not become '
+                        'offline after warm shutdown'.format(node.name))
+                node.destroy()
 
-        for node in devops_nodes:
-            logger.info('Wait a %s node offline status', node.name)
-            try:
-                wait(
-                    lambda: not self.get_nailgun_node_by_devops_node(node)[
-                        'online'], timeout=60 * 10)
-            except TimeoutError:
-                assert_false(
-                    self.get_nailgun_node_by_devops_node(node)['online'],
-                    'Node {0} has not become '
-                    'offline after warm shutdown'.format(node.name))
-            node.destroy()
-
-    def warm_start_nodes(self, devops_nodes):
+    def warm_start_nodes(self, devops_nodes, wait_online=True):
         logger.info('Starting nodes %s', [n.name for n in devops_nodes])
         for node in devops_nodes:
             node.create()
-        for node in devops_nodes:
-            try:
-                wait(
-                    lambda: self.get_nailgun_node_by_devops_node(
-                        node)['online'], timeout=60 * 10)
-            except TimeoutError:
-                assert_true(
-                    self.get_nailgun_node_by_devops_node(node)['online'],
-                    'Node {0} has not become online '
-                    'after warm start'.format(node.name))
-            logger.debug('Node {0} became online.'.format(node.name))
+        if wait_online:
+            for node in devops_nodes:
+                try:
+                    wait(
+                        lambda: self.get_nailgun_node_by_devops_node(
+                            node)['online'], timeout=60 * 10)
+                except TimeoutError:
+                    assert_true(
+                        self.get_nailgun_node_by_devops_node(node)['online'],
+                        'Node {0} has not become online '
+                        'after warm start'.format(node.name))
+                logger.debug('Node {0} became online.'.format(node.name))
 
-    def warm_restart_nodes(self, devops_nodes):
+    def warm_restart_nodes(self, devops_nodes, wait_offline=True,
+                           wait_online=True):
         logger.info('Reboot (warm restart) nodes %s',
                     [n.name for n in devops_nodes])
-        self.warm_shutdown_nodes(devops_nodes)
-        self.warm_start_nodes(devops_nodes)
+        self.warm_shutdown_nodes(devops_nodes, wait_offline)
+        self.warm_start_nodes(devops_nodes, wait_online)
 
     def cold_restart_nodes(self, devops_nodes,
                            wait_offline=True, wait_online=True,
@@ -2397,6 +2399,14 @@ class FuelWebClient29(object):
         info = self.client.get_api_version()
         os_version = info["openstack_version"]
         assert_true(os_version, 'api version returned empty data')
+
+    @logwrap
+    def is_nailgun_api_available(self):
+        try:
+            self.client.get_api_version()
+        except HTTPError:
+            return False
+        return True
 
     @logwrap
     def get_nailgun_cidr_nova(self, cluster_id):
