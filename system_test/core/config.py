@@ -87,10 +87,15 @@ def define_custom_groups():
     add_group(group="fuel_master_migrate",
               systest_group="system_test.fuel_migration",
               config_name="1ctrl_1comp_neutronVLAN")
-
     add_group(group="fuel_master_migrate",
               systest_group="system_test.fuel_migration",
               config_name="1ctrl_1comp_neutronTUN")
+    add_group(group="hard_restart_after_migration",
+              systest_group="system_test.hard_restart_after_migration",
+              config_name="1ctrl_1comp_neutronVLAN")
+    add_group(group="warm_restart_after_migration",
+              systest_group="system_test.warm_restart_after_migration",
+              config_name="1ctrl_1comp_neutronVLAN")
 
     add_group(group="system_test.deploy_centos_master",
               systest_group="system_test.centos_deploy_and_check_radosgw",
