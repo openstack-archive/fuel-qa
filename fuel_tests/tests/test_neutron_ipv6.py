@@ -12,38 +12,51 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from proboscis.asserts import assert_equal
-from proboscis import test
+import pytest
 from paramiko import ChannelException
 
 from devops.helpers.helpers import wait
 from devops.error import TimeoutError
 
-from fuelweb_test.helpers import os_actions
-from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
+from fuelweb_test import settings
+from fuelweb_test.helpers import os_actions
+
+# pylint: disable=no-member
 
 
-@test(enabled=False, groups=["thread_1", "neutron"])
-class TestNeutronIPv6(TestBasic):
-    """NeutronIPv6.
+@pytest.mark.get_logs
+@pytest.mark.fail_snapshot
+@pytest.mark.need_ready_cluster
+@pytest.mark.neutron
+@pytest.mark.thread_1
+class TestNeutronIPv6(object):
+    """NeutronIPv6."""
 
-    Test disabled and move to fuel_tests suite:
-        fuel_tests.test.test_neutron_ipv6
+    cluster_config = {
+        "name": "NeutronVlan",
+        "mode": settings.DEPLOYMENT_MODE,
+        "settings": {
+            "net_provider": settings.NEUTRON,
+            "net_segment_type": settings.NEUTRON_SEGMENT['vlan'],
+            'tenant': 'simpleVlan',
+            'user': 'simpleVlan',
+            'password': 'simpleVlan'
+        },
+        "nodes": {
+            'slave-01': ['controller'],
+            'slave-02': ['compute'],
+            'slave-03': ['compute']
+        }
+    }
 
-    """
-
-    @test(enabled=False,
-          depends_on_groups=['deploy_neutron_vlan'],
-          groups=['deploy_neutron_ip_v6',
-                  "nova", "nova-compute", "neutron_ipv6"])
-    @log_snapshot_after_test
-    def deploy_neutron_ip_v6(self):
+    @pytest.mark.deploy_neutron_ip_v6
+    @pytest.mark.nova
+    @pytest.mark.nova_compute
+    @pytest.mark.neutron_ipv6
+    @pytest.mark.deploy_neutron_ip_v6
+    def test_deploy_neutron_ip_v6(self):
         """Check IPv6 only functionality for Neutron VLAN
-
-        Test disabled and move to fuel_tests suite:
-            fuel_tests.test.test_neutron_ipv6.TestNeutronIPv6
 
         Scenario:
             1. Revert deploy_neutron_vlan snapshot
@@ -63,11 +76,10 @@ class TestNeutronIPv6(TestBasic):
         Snapshot deploy_neutron_ip_v6
 
         """
-        self.show_step(1, initialize=True)
-        self.env.revert_snapshot("deploy_neutron_vlan")
-
-        cluster_id = self.fuel_web.get_last_created_cluster()
-        public_vip = self.fuel_web.get_public_vip(cluster_id)
+        self.manager.show_step(1, initialize=True)
+        cluster_id = self._storage['cluster_id']
+        fuel_web = self.manager.fuel_web
+        public_vip = fuel_web.get_public_vip(cluster_id)
         logger.info('Public vip is %s', public_vip)
 
         os_conn = os_actions.OpenStackActions(
@@ -79,7 +91,7 @@ class TestNeutronIPv6(TestBasic):
 
         tenant = os_conn.get_tenant('simpleVlan')
 
-        self.show_step(2)
+        self.manager.show_step(2)
         net1 = os_conn.create_network(
             network_name='net1',
             tenant_id=tenant.id)['network']
@@ -117,10 +129,10 @@ class TestNeutronIPv6(TestBasic):
             ipv6_ra_mode="slaac",
             ipv6_address_mode="slaac")
 
-        self.show_step(3)
+        self.manager.show_step(3)
         router = os_conn.create_router('test_router', tenant=tenant)
 
-        self.show_step(4)
+        self.manager.show_step(4)
         os_conn.add_router_interface(
             router_id=router["id"],
             subnet_id=subnet_1_v4["id"])
@@ -137,10 +149,10 @@ class TestNeutronIPv6(TestBasic):
             router_id=router["id"],
             subnet_id=subnet_2_v6["id"])
 
-        self.show_step(5)
+        self.manager.show_step(5)
         security_group = os_conn.create_sec_group_for_ssh()
 
-        self.show_step(6)
+        self.manager.show_step(6)
         instance1 = os_conn.create_server(
             name='instance1',
             security_groups=[security_group],
@@ -153,12 +165,12 @@ class TestNeutronIPv6(TestBasic):
             net_id=net2['id'],
         )
 
-        self.show_step(7)
-        self.show_step(8)
+        self.manager.show_step(7)
+        self.manager.show_step(8)
         floating_ip = os_conn.assign_floating_ip(instance1)
         floating_ip2 = os_conn.assign_floating_ip(instance2)
 
-        self.show_step(9)
+        self.manager.show_step(9)
 
         instance1_ipv6 = [
             addr['addr'] for addr in instance1.addresses[net1['name']]
@@ -181,7 +193,7 @@ class TestNeutronIPv6(TestBasic):
                 ip=floating_ip2.ip,
                 ipv6=instance2_ipv6))
 
-        with self.fuel_web.get_ssh_for_node("slave-01") as remote:
+        with fuel_web.get_ssh_for_node("slave-01") as remote:
             def ssh_ready(vm_host):
                 try:
                     os_conn.execute_through_host(
@@ -224,15 +236,12 @@ class TestNeutronIPv6(TestBasic):
             )
             logger.info('Ping results: \n\t{res:s}'.format(res=res['stdout']))
 
-            assert_equal(
-                res['exit_code'],
-                0,
+            assert res['exit_code'] == 0, (
                 'Ping failed with error code: {code:d}\n'
                 '\tSTDOUT: {stdout:s}\n'
                 '\tSTDERR: {stderr:s}'.format(
                     code=res['exit_code'],
                     stdout=res['stdout'],
-                    stderr=res['stderr'],
-                ))
+                    stderr=res['stderr']))
 
         self.env.make_snapshot('deploy_neutron_ip_v6')
