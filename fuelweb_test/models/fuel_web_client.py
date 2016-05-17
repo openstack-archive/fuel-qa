@@ -2032,6 +2032,7 @@ class FuelWebClient29(object):
             # TODO: LP1620680
             self.ssh_manager.check_call(ip=nailgun_node['ip'], sudo=True,
                                         command='sudo shutdown +1')
+
         for node in devops_nodes:
             self.wait_node_is_offline(node, timeout=timeout)
             node.destroy()
@@ -2047,6 +2048,12 @@ class FuelWebClient29(object):
                     [n.name for n in devops_nodes])
         self.warm_shutdown_nodes(devops_nodes, timeout=timeout)
         self.warm_start_nodes(devops_nodes, timeout=timeout)
+
+    def warm_reboot_ips(self, ips):
+        for ip in ips:
+            logger.debug('Reboot (warm restart) ip {0}'.format(ip))
+            self.ssh_manager.execute_on_remote(ip=ip,
+                                               cmd='/sbin/shutdown -r now')
 
     def cold_restart_nodes(self, devops_nodes,
                            wait_offline=True, wait_online=True,
