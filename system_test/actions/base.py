@@ -14,8 +14,11 @@
 
 from __future__ import division
 
+import os
 import time
 import itertools
+
+from devops.helpers.helpers import wait
 
 from proboscis import SkipTest
 from proboscis.asserts import assert_equal
@@ -24,7 +27,9 @@ from proboscis.asserts import assert_true
 from six.moves import xrange
 # pylint: enable=redefined-builtin
 
+import fuelweb_test
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers.cloud_image import generate_cloud_image_settings
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test import settings
 
@@ -115,6 +120,62 @@ class PrepareActions(object):
         with TimeStat("setup_environment", is_uniq=True):
             self.env.setup_environment()
             self.fuel_post_install_actions()
+
+        self.env.make_snapshot("empty", is_make=True)
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def setup_centos_master(self):
+        """Create environment, bootstrap centos_master
+        and install fuel services
+
+        Snapshot "empty_centos"
+
+            1. bootstrap_centos_master
+            2. Download fuel_release from remote repository
+            3. install fuel_setup package
+            4. Install Fuel services by executing bootstrap_admin_node.sh
+            5. check Fuel services
+
+
+        """
+        self.check_run("empty_centos")
+        self.show_step(1, initialize=True)
+        cloud_image_settings_path = os.path.join(
+            os.path.dirname(fuelweb_test.__file__),
+            'cloud_image_settings/cloud_settings.iso')
+
+        admin_net_object = self.env.d_env.get_network(
+            name=self.env.d_env.admin_net)
+        admin_network = admin_net_object.ip.network
+        admin_netmask = admin_net_object.ip.netmask
+        admin_ip = str(self.env.d_env.nodes(
+        ).admin.get_ip_address_by_network_name(self.env.d_env.admin_net))
+        interface_name = settings.iface_alias("eth0")
+        gateway = self.env.d_env.router()
+        dns = settings.DNS
+        dns_ext = ''.join(settings.EXTERNAL_DNS)
+        hostname = ''.join((settings.FUEL_MASTER_HOSTNAME,
+                            settings.DNS_SUFFIX))
+        user = settings.SSH_CREDENTIALS['login']
+        password = settings.SSH_CREDENTIALS['password']
+        generate_cloud_image_settings(cloud_image_settings_path, admin_network,
+                                      interface_name, admin_ip, admin_netmask,
+                                      gateway, dns, dns_ext,
+                                      hostname, user, password)
+
+        with TimeStat("bootstrap_centos_node", is_uniq=True):
+            admin = self.env.d_env.nodes().admin
+            logger.info(cloud_image_settings_path)
+            admin.disk_devices.get(
+                device='cdrom').volume.upload(cloud_image_settings_path)
+            self.env.d_env.start([admin])
+            logger.info("Waiting for Centos node to start up")
+            wait(lambda: admin.driver.node_active(admin), 60)
+            logger.info("Waiting for Centos node ssh ready")
+            self.env.wait_for_provisioning()
+
+        self.centos_setup_fuel(hostname)
 
         self.env.make_snapshot("empty", is_make=True)
 

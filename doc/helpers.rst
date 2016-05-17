@@ -16,6 +16,11 @@ Checkers
 .. automodule:: fuelweb_test.helpers.checkers
    :members:
 
+Cloud-image
+-----------
+.. automodule:: fuelweb_test.helpers.cloud_image
+   :members:
+
 Common
 ------
 .. automodule:: fuelweb_test.helpers.common
@@ -153,3 +158,4 @@ Utils
 -----
 .. automodule:: fuelweb_test.helpers.gerrit.utils
    :members:
+
