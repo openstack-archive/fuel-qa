@@ -26,12 +26,14 @@ from system_test import deferred_decorator
 from system_test.tests import ActionTest
 from system_test.actions import BaseActions
 from system_test.actions import FuelMasterActions
+from system_test.actions import StrengthActions
 
 from system_test.helpers.decorators import make_snapshot_if_step_fail
 
 
 @testcase(groups=['system_test', 'system_test.fuel_migration'])
-class FuelMasterMigrate(ActionTest, BaseActions, FuelMasterActions):
+class FuelMasterMigrate(ActionTest, BaseActions, FuelMasterActions,
+                        StrengthActions):
     """Fuel master migration to VM
 
     Scenario:
@@ -43,6 +45,8 @@ class FuelMasterMigrate(ActionTest, BaseActions, FuelMasterActions):
         6. Run network checker
         7. Run OSTF
     """
+
+    compute = None
 
     actions_order = [
         'setup_master',
@@ -56,7 +60,11 @@ class FuelMasterMigrate(ActionTest, BaseActions, FuelMasterActions):
         'network_check',
         'start_fuel_migration',
         'check_migration_status',
+        'wait_mcollective_nodes',
+        'wait_nailgun_nodes',
+        'stop_nailgun_agent_on_compute',
         'network_check',
+        'start_nailgun_agent_on_compute',
         'health_check'
     ]
 
@@ -67,15 +75,15 @@ class FuelMasterMigrate(ActionTest, BaseActions, FuelMasterActions):
 
         # Get a compute to migrate Fuel Master to
         cluster_id = self.fuel_web.get_last_created_cluster()
-        compute = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+        self.compute = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['compute'])[0]
         logger.info(
             'Fuel Master will be migrated to {0} '
-            'compute'.format(compute['name']))
+            'compute'.format(self.compute['name']))
 
         # Start migrating Fuel Master
         with self.env.d_env.get_admin_remote() as remote:
-            slave_name = compute['name'].split('_')[0]
+            slave_name = self.compute['name'].split('_')[0]
             slave_ip = self.fuel_web.get_nailgun_node_by_name(slave_name)['ip']
             result = remote.execute(
                 'fuel-migrate {0} >/dev/null &'.format(slave_ip))
@@ -94,12 +102,7 @@ class FuelMasterMigrate(ActionTest, BaseActions, FuelMasterActions):
         logger.info(
             'Rebooting to begin the data sync process for fuel migrate')
 
-        wait(lambda: not icmp_ping(self.env.get_admin_node_ip()),
-             timeout=60 * 15, timeout_msg='Master node has not become offline '
-                                          'after starting reboot')
-        wait(lambda: icmp_ping(self.env.get_admin_node_ip()),
-             timeout=60 * 15, timeout_msg='Master node has not become online '
-                                          'after rebooting')
+        self.nodes_rebooted([self.env.get_admin_node_ip()])
         self.env.d_env.nodes().admin.await(
             network_name=self.env.d_env.admin_net,
             timeout=60 * 15)
@@ -110,15 +113,7 @@ class FuelMasterMigrate(ActionTest, BaseActions, FuelMasterActions):
             log_path='/var/log/fuel-migrate.log')
         logger.info('Shutting down network')
 
-        wait(lambda: not icmp_ping(self.env.get_admin_node_ip()),
-             timeout=60 * 15, interval=0.1,
-             timeout_msg='Master node has not become offline on '
-                         'shutting network down')
-        wait(lambda: icmp_ping(self.env.get_admin_node_ip()),
-             timeout=60 * 15,
-             timeout_msg='Master node has not become online after '
-                         'shutting network down')
-
+        self.nodes_rebooted([self.env.get_admin_node_ip()])
         self.env.d_env.nodes().admin.await(
             network_name=self.env.d_env.admin_net,
             timeout=60 * 10)
@@ -128,5 +123,127 @@ class FuelMasterMigrate(ActionTest, BaseActions, FuelMasterActions):
                  timeout=900,
                  timeout_msg="File wasn't removed in 900 sec")
 
-        self.fuel_web.wait_nodes_get_online_state(
-            self.env.d_env.nodes().slaves[:2])
+    @staticmethod
+    def nodes_rebooted(ips):
+        for ip in ips:
+            wait(lambda: not icmp_ping(ip), timeout=60 * 15,
+                 timeout_msg=("Node with ip: {} has not become offline after "
+                              "starting reboot").format(ip))
+            wait(lambda: icmp_ping(ip), timeout=60 * 15,
+                 timeout_msg="Node with ip: {} has not become online "
+                             "after reboot".format(ip))
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def wait_nailgun_nodes(self):
+        """Wait for cluster nodes online state in nailgun"""
+        self.fuel_web.wait_cluster_nodes_get_online_state(self.cluster_id)
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def stop_nailgun_agent_on_compute(self):
+        """Disable nailgun agent on compute and waits its online state"""
+        with self.fuel_web.get_ssh_for_nailgun_node(self.compute) as remote:
+            remote.execute("service cron stop")
+        wait(lambda: not self.fuel_web.is_node_online(self.compute),
+             timeout=60 * 10,
+             timeout_msg='Compute node {0} has not become'
+                         ' offline'.format(self.compute['name']))
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def start_nailgun_agent_on_compute(self):
+        """Enable nailgun agent on compute and waits its offline state"""
+        with self.fuel_web.get_ssh_for_nailgun_node(self.compute) as remote:
+            remote.execute("service cron start")
+        wait(lambda: self.fuel_web.is_node_online(self.compute),
+             timeout=60 * 10,
+             timeout_msg='Compute node {0} has not become'
+                         ' online'.format(self.compute['name']))
+
+
+@testcase(groups=['system_test', 'system_test.warm_restart_after_migration'])
+class WarmComputeRestartAfterFuelMasterMigrate(FuelMasterMigrate):
+    """Check Fuel Master node functionality after warm restart of the compute
+       where Fuel Master node is located
+
+    Scenario:
+        1. Deploy cluster with two computes and three controllers
+        2. Migrate Fuel Master
+        3. Warm restart for compute node where fuel-master node was
+           migrated to
+        4. Reconnect to Fuel Master
+        5. Check status for master's services
+        6. Run OSTF
+    """
+
+    actions_order = FuelMasterMigrate.actions_order[:]
+    actions_order.extend([
+        'compute_warm_restart',
+        'nodes_up_after_restart',
+        'nailgun_check',
+        'wait_mcollective_nodes',
+        'wait_nailgun_nodes',
+        'stop_nailgun_agent_on_compute',
+        'network_check',
+        'start_nailgun_agent_on_compute',
+        'health_check'
+    ])
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def compute_warm_restart(self):
+        """Warm restart compute with Fuel Master node"""
+        self.fuel_web.warm_reboot_nodes(
+            [self.fuel_web.get_devops_node_by_nailgun_node(self.compute)]
+        )
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def nodes_up_after_restart(self):
+        """Check nodes up after restart"""
+        self.nodes_rebooted([self.env.get_admin_node_ip()])
+
+
+@testcase(groups=['system_test', 'system_test.hard_restart_after_migration'])
+class HardComputeRestartAfterFuelMasterMigrate(FuelMasterMigrate):
+    """Check Fuel Master node functionality after hard restart of the compute
+       where Fuel Master node is located
+
+    Scenario:
+        1. Deploy cluster with two computes and three controllers
+        2. Migrate Fuel Master
+        3. Hard restart for compute node where Fuel Master node was
+           migrated
+        4. Reconnect to Fuel Master
+        5. Check status for master's services
+        6. Run OSTF
+    """
+
+    actions_order = FuelMasterMigrate.actions_order[:]
+    actions_order.extend([
+        'compute_hard_restart',
+        'nodes_up_after_restart',
+        'nailgun_check',
+        'wait_mcollective_nodes',
+        'wait_nailgun_nodes',
+        'stop_nailgun_agent_on_compute',
+        'network_check',
+        'start_nailgun_agent_on_compute',
+        'health_check'
+    ])
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def compute_hard_restart(self):
+        """Hard restart compute with Fuel Master node"""
+        self.fuel_web.cold_restart_nodes(
+            [self.fuel_web.get_devops_node_by_nailgun_node(self.compute)],
+            wait_offline=False, wait_online=False, wait_after_destroy=5
+        )
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def nodes_up_after_restart(self):
+        """Check nodes up after restart"""
+        self.nodes_rebooted([self.env.get_admin_node_ip()])
