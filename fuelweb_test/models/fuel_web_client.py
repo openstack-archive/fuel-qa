@@ -24,9 +24,15 @@ import distutils
 import devops
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
+try:
+    from devops.error import DevopsObjNotFound
+except ImportError:
+    from devops.models.node import Node
+    # pylint: disable=no-member
+    DevopsObjNotFound = Node.DoesNotExist
+    # pylint: enable=no-member
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
-from devops.models.node import Node
 import netaddr
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
@@ -1204,13 +1210,11 @@ class FuelWebClient29(object):
         :return: str
         """
         # TODO: This method should be part of fuel-devops
-        # pylint: disable=no-member
         try:
             node = self.get_nailgun_node_by_devops_node(
                 self.environment.d_env.get_node(name=node_name))
-        except Node.DoesNotExist:
+        except DevopsObjNotFound:
             node = self.get_nailgun_node_by_fqdn(node_name)
-        # pylint: enable=no-member
         assert_true(node is not None,
                     'Node with name "{0}" not found!'.format(node_name))
         return node['ip']
@@ -1359,12 +1363,10 @@ class FuelWebClient29(object):
 
         failed_nodes = {}
         for node_name, node_roles in nodes_dict.items():
-            # pylint: disable=no-member
             try:
                 self.environment.d_env.get_node(name=node_name)
-            except Node.DoesNotExist:
+            except DevopsObjNotFound:
                 failed_nodes[node_name] = node_roles
-            # pylint: enable=no-member
         if failed_nodes:
             text = 'Some nodes is inaccessible:\n'
             for node_name, node_roles in sorted(failed_nodes.items()):
