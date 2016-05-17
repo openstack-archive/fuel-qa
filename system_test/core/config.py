@@ -88,6 +88,12 @@ def define_custom_groups():
     add_group(group="fuel_master_migrate",
               systest_group="system_test.fuel_migration",
               config_name="1ctrl_1comp_neutronVLAN")
+    add_group(group="fuel_master_migrate",
+              systest_group="system_test.hard_restart_after_migration",
+              config_name="3ctrl_2comp_neutronVLAN")
+    add_group(group="fuel_master_migrate",
+              systest_group="system_test.warm_restart_after_migration",
+              config_name="3ctrl_2comp_neutronVLAN")
 
     add_group(group="fuel_master_migrate",
               systest_group="system_test.fuel_migration",

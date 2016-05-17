@@ -70,6 +70,14 @@ class StrengthActions(object):
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
+    def wait_mcollective_nodes(self):
+        """Wait for mcollective online status of cluster nodes"""
+        wait(lambda: self.fuel_web.mcollective_nodes_online(self.cluster_id),
+             timeout=60 * 5, timeout_msg="Cluster nodes don't become available"
+                                         " via mcollective in allotted time.")
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
     def check_ha_service_ready(self):
         """Wait for HA services ready"""
         self.fuel_web.assert_ha_services_ready(self.cluster_id)

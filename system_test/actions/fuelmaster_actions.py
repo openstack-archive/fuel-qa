@@ -12,6 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+# pylint: disable=import-error
+# noinspection PyUnresolvedReferences
+from six.moves.urllib.error import URLError
+
+from devops.helpers.helpers import _wait
+
 from system_test import action
 from system_test import deferred_decorator
 from system_test import logger
@@ -26,6 +32,7 @@ class FuelMasterActions(object):
 
     check_containers - check that docker containers are up
         and running
+    wait_nailgun_available - check that nailgun api is available
     """
 
     @deferred_decorator([make_snapshot_if_step_fail])
@@ -34,3 +41,10 @@ class FuelMasterActions(object):
         """Check that containers are up and running"""
         logger.info("Check containers")
         self.env.docker_actions.wait_for_ready_containers(timeout=60 * 30)
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def wait_nailgun_available(self):
+        """Check status for Nailgun"""
+        _wait(self.fuel_web.get_nailgun_version, expected=URLError,
+              timeout=60 * 20)
