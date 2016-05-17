@@ -234,7 +234,14 @@ class Manager(Basic):
         """Bootstrap slave nodes."""
 
         logger.info("Getting ready slaves")
-        slaves = slaves or int(self.full_config['template']['slaves'])
+        if not slaves:
+            if hasattr(self._context, 'cluster_config'):
+                slaves = len(self._context.cluster_config.get('nodes'))
+            elif self.full_config:
+                slaves = int(self.full_config['template']['slaves'])
+            else:
+                logger.error("Unable to count slaves")
+                raise RuntimeError("Unable to count slaves")
         snapshot_name = "ready_with_{}_slaves".format(slaves)
         if self.check_run(snapshot_name):
             self.env.revert_snapshot(snapshot_name)

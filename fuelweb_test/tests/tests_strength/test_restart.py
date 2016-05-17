@@ -12,9 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import time
+from warnings import warn
 
 from devops.helpers.helpers import wait
 from proboscis import test
+from proboscis import SkipTest
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import logger
@@ -197,14 +199,24 @@ class CephRestart(TestBasic):
         self.env.make_snapshot("ceph_ha_restart")
 
 
-@test(groups=["thread_1"])
+@test(enabled=False, groups=["thread_1"])
 class HAOneControllerNeutronRestart(TestBasic):
+    """HAOneControllerNeutronRestart
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+    Test disabled and move to fuel_tests suite:
+        fuel_tests.test.test_restart
+
+    """
+
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ha_one_controller_neutron_warm_restart"])
     @log_snapshot_after_test
     def ha_one_controller_neutron_warm_restart(self):
         """Warm restart for ha one controller environment
+
+        Test disabled and move to fuel_tests suite:
+            fuel_tests.test.test_restart.TestHAOneControllerNeutronRestart
 
         Scenario:
             1. Create cluster
@@ -224,6 +236,9 @@ class HAOneControllerNeutronRestart(TestBasic):
         Duration 30m
 
         """
+        warn("Test disabled and move to fuel_tests suite", DeprecationWarning)
+        raise SkipTest("Test disabled and move to fuel_tests suite")
+
         self.env.revert_snapshot("ready_with_3_slaves")
 
         self.show_step(1, initialize=True)

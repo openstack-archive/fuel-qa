@@ -13,6 +13,7 @@
 #    under the License.
 
 from __future__ import division
+from warnings import warn
 
 import datetime
 import random
@@ -23,6 +24,7 @@ from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import test
+from proboscis import SkipTest
 # pylint: disable=import-error
 # noinspection PyUnresolvedReferences
 from six.moves.urllib.request import urlopen
@@ -37,15 +39,22 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["thread_1"])
+@test(enabled=False, groups=["thread_1"])
 class TestAdminNode(TestBasic):
-    """TestAdminNode."""  # TODO documentation
+    """TestAdminNode.
 
-    @test(depends_on=[SetupEnvironment.setup_master],
+    Test disabled and move to fuel_tests suite:
+        fuel_tests.test.test_admin_node
+    """  # TODO documentation
+
+    @test(enabled=False, depends_on=[SetupEnvironment.setup_master],
           groups=["test_cobbler_alive"])
     @log_snapshot_after_test
     def test_cobbler_alive(self):
         """Test current installation has correctly setup cobbler
+
+        Test disabled and move to fuel_tests suite:
+            fuel_tests.test.test_admin_node.TestAdminNode
 
         API and cobbler HTTP server are alive
 
@@ -56,6 +65,9 @@ class TestAdminNode(TestBasic):
         Duration 1m
 
         """
+        warn("Test disabled and move to fuel_tests suite", DeprecationWarning)
+        raise SkipTest("Test disabled and move to fuel_tests suite")
+
         self.env.revert_snapshot("empty")
         wait(
             lambda: http(host=self.env.get_admin_node_ip(), url='/cobbler_api',
@@ -72,11 +84,14 @@ class TestAdminNode(TestBasic):
         # raises an error if something isn't right
         server.login(username, password)
 
-    @test(depends_on=[SetupEnvironment.setup_master],
+    @test(enabled=False, depends_on=[SetupEnvironment.setup_master],
           groups=["test_astuted_alive"])
     @log_snapshot_after_test
     def test_astuted_alive(self):
         """Test astute master and worker processes are alive on master node
+
+        Test disabled and move to fuel_tests suite:
+            fuel_tests.test.test_admin_node.TestAdminNode
 
         Scenario:
             1. Revert snapshot "empty"
@@ -85,6 +100,9 @@ class TestAdminNode(TestBasic):
         Duration 1m
 
         """
+        warn("Test disabled and move to fuel_tests suite", DeprecationWarning)
+        raise SkipTest("Test disabled and move to fuel_tests suite")
+
         self.env.revert_snapshot("empty")
         ps_output = self.ssh_manager.execute(
             self.ssh_manager.admin_ip, 'ps ax')['stdout']
