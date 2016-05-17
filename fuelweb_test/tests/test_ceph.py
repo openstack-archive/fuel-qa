@@ -529,6 +529,23 @@ class CephRadosGW(TestBasic):
         self.env.make_snapshot("ceph_rados_gw")
 
 
+@test(groups=["ceph_rados_repeat"])
+class CephRadosGWRepeat(CephRadosGW):
+
+    def ceph_rados_gw_repeat(self):
+
+        def has_deadlock(remote):
+            cmd = 'grep ShareLock /var/log/nailgun/receiverd.log'
+            return remote.check_call(cmd)['exit_code'] == 0
+
+        for _ in xrange(10):
+            super(CephRadosGWRepeat, self).ceph_rados_gw()
+
+            # Check the radosgw daemon is started
+            with self.fuel_web.get_ssh_for_node('master') as master:
+                assert_false(has_deadlock(master), 'deadlock found')
+
+
 @test(groups=["ceph_ha_one_controller", "ceph_migration"])
 class VmBackedWithCephMigrationBasic(TestBasic):
     """VmBackedWithCephMigrationBasic."""  # TODO documentation
