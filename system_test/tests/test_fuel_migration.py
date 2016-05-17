@@ -110,10 +110,6 @@ class FuelMasterMigrate(ActionTest, BaseActions, FuelMasterActions):
             log_path='/var/log/fuel-migrate.log')
         logger.info('Shutting down network')
 
-        wait(lambda: not icmp_ping(self.env.get_admin_node_ip()),
-             timeout=60 * 15, interval=0.1,
-             timeout_msg='Master node has not become offline on '
-                         'shutting network down')
         wait(lambda: icmp_ping(self.env.get_admin_node_ip()),
              timeout=60 * 15,
              timeout_msg='Master node has not become online after '
@@ -124,9 +120,9 @@ class FuelMasterMigrate(ActionTest, BaseActions, FuelMasterActions):
             timeout=60 * 10)
 
         with self.env.d_env.get_admin_remote() as remote:
-            wait(lambda: not remote.exists("/notready"),
+            wait(lambda: not remote.exists("/tmp/migration-done"),
                  timeout=900,
-                 timeout_msg="File wasn't removed in 900 sec")
+                 timeout_msg="File wasn't appeared in 900 sec")
 
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:2])
