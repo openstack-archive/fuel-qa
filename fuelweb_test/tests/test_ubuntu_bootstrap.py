@@ -609,12 +609,12 @@ class UbuntuBootstrap(base_test_case.TestBasic):
             pending_deletion=True
         )
 
-        self.fuel_web.run_network_verify(cluster_id)
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
 
         # wait for nodes to appear after bootstrap
         wait(lambda: len(self.fuel_web.client.list_nodes()) == 3,
              timeout=10 * 60)
+        self.fuel_web.run_network_verify(cluster_id)
 
         node = self.fuel_web.get_nailgun_node_by_name("slave-03")
         checkers.verify_bootstrap_on_node(node['ip'], os_type="ubuntu")
