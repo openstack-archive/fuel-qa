@@ -25,11 +25,12 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["thread_1", "neutron"])
+@test(enabled=False, groups=["thread_1", "neutron"])
 class NeutronVlan(TestBasic):
     """NeutronVlan."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_neutron_vlan", "ha_one_controller_neutron_vlan",
                   "deployment", "nova", "nova-compute"])
     @log_snapshot_after_test
@@ -82,11 +83,13 @@ class NeutronVlan(TestBasic):
         self.env.make_snapshot("deploy_neutron_vlan", is_make=True)
 
 
-@test(groups=["neutron", "ha", "ha_neutron", "classic_provisioning"])
+@test(enabled=False,
+      groups=["neutron", "ha", "ha_neutron", "classic_provisioning"])
 class NeutronGreHa(TestBasic):
     """NeutronGreHa."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_gre_ha", "ha_neutron_gre"])
     @log_snapshot_after_test
     def deploy_neutron_gre_ha(self):
@@ -147,11 +150,12 @@ class NeutronGreHa(TestBasic):
         self.env.make_snapshot("deploy_neutron_gre_ha")
 
 
-@test(groups=["neutron", "ha", "ha_neutron"])
+@test(enabled=False, groups=["neutron", "ha", "ha_neutron"])
 class NeutronVlanHa(TestBasic):
     """NeutronVlanHa."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_vlan_ha", "neutron_vlan_ha"])
     @log_snapshot_after_test
     def deploy_neutron_vlan_ha(self):

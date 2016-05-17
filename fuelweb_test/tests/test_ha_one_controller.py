@@ -594,7 +594,7 @@ class FloatingIPs(TestBasic):
         self.env.make_snapshot("deploy_floating_ips")
 
 
-@test(groups=["thread_1"])
+@test(enabled=False, groups=["thread_1"])
 class NodeMultipleInterfaces(TestBasic):
     """NodeMultipleInterfaces."""  # TODO documentation
 
@@ -650,11 +650,11 @@ class NodeMultipleInterfaces(TestBasic):
         self.env.make_snapshot("deploy_node_multiple_interfaces", is_make=True)
 
 
-@test(groups=["thread_1"])
+@test(enabled=False, groups=["thread_1"])
 class NodeDiskSizes(TestBasic):
     """NodeDiskSizes."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+    @test(enabled=False, depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["check_nodes_notifications"])
     @log_snapshot_after_test
     def check_nodes_notifications(self):
@@ -706,7 +706,8 @@ class NodeDiskSizes(TestBasic):
                         disk['size'], NODE_VOLUME_SIZE * 1024 - 500
                     ))
 
-    @test(depends_on=[NodeMultipleInterfaces.deploy_node_multiple_interfaces],
+    @test(enabled=False,
+          depends_on=[NodeMultipleInterfaces.deploy_node_multiple_interfaces],
           groups=["check_nodes_disks"])
     @log_snapshot_after_test
     def check_nodes_disks(self):
@@ -759,11 +760,12 @@ class NodeDiskSizes(TestBasic):
                 ))
 
 
-@test(groups=["thread_1"])
+@test(enabled=False, groups=["thread_1"])
 class MultinicBootstrap(TestBasic):
     """MultinicBootstrap."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_release],
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_release],
           groups=["multinic_bootstrap_booting"])
     @log_snapshot_after_test
     def multinic_bootstrap_booting(self):
@@ -798,7 +800,7 @@ class MultinicBootstrap(TestBasic):
                 Ebtables.restore_mac(mac)
 
 
-@test(groups=["thread_1"])
+@test(enabled=False, groups=["thread_1"])
 class UntaggedNetworksNegative(TestBasic):
     """UntaggedNetworksNegative."""  # TODO documentation
 
