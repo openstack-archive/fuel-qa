@@ -223,7 +223,7 @@ class SupportDPDK(TestDPDK):
         self.show_step(10)
         # reboot compute
         self.fuel_web.warm_restart_nodes(
-            self.fuel_web.get_devops_node_by_nailgun_node(compute))
+            [self.fuel_web.get_devops_node_by_nailgun_node(compute)])
 
         # Wait until OpenStack services are UP
         self.fuel_web.assert_os_services_ready(cluster_id)
