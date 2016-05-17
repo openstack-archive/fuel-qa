@@ -1933,23 +1933,31 @@ class FuelWebClient29(object):
 
         return ip_ranges, expected_ips
 
+    @logwrap
+    def get_nailgun_node_online_status(self, node):
+        return self.client.get_node_by_id(node['id'])['online']
+
+    def get_devops_node_online_in_nailgun(self, node):
+        return self.get_nailgun_node_online_status(
+            self.get_nailgun_node_by_devops_node(node))
+
     def warm_shutdown_nodes(self, devops_nodes):
         logger.info('Shutting down (warm) nodes %s',
                     [n.name for n in devops_nodes])
         for node in devops_nodes:
             logger.debug('Shutdown node %s', node.name)
-            with self.get_ssh_for_node(node.name) as remote:
-                remote.check_call('/sbin/shutdown -Ph now')
+            nailgun_node = self.get_nailgun_node_by_devops_node(node)
+            self.ssh_manager.execute_on_remote(ip=nailgun_node['ip'],
+                                               cmd='/sbin/shutdown -Ph now')
 
         for node in devops_nodes:
             logger.info('Wait a %s node offline status', node.name)
             try:
-                wait(
-                    lambda: not self.get_nailgun_node_by_devops_node(node)[
-                        'online'], timeout=60 * 10)
+                wait(lambda: not self.get_devops_node_online_in_nailgun(node),
+                     timeout=60 * 10)
             except TimeoutError:
                 assert_false(
-                    self.get_nailgun_node_by_devops_node(node)['online'],
+                    self.get_devops_node_online_in_nailgun(node),
                     'Node {0} has not become '
                     'offline after warm shutdown'.format(node.name))
             node.destroy()
@@ -1960,12 +1968,11 @@ class FuelWebClient29(object):
             node.create()
         for node in devops_nodes:
             try:
-                wait(
-                    lambda: self.get_nailgun_node_by_devops_node(
-                        node)['online'], timeout=60 * 10)
+                wait(lambda: self.get_devops_node_online_in_nailgun(node),
+                     timeout=60 * 10)
             except TimeoutError:
                 assert_true(
-                    self.get_nailgun_node_by_devops_node(node)['online'],
+                    self.get_devops_node_online_in_nailgun(node),
                     'Node {0} has not become online '
                     'after warm start'.format(node.name))
             logger.debug('Node {0} became online.'.format(node.name))
@@ -1975,6 +1982,12 @@ class FuelWebClient29(object):
                     [n.name for n in devops_nodes])
         self.warm_shutdown_nodes(devops_nodes)
         self.warm_start_nodes(devops_nodes)
+
+    def warm_reboot_ips(self, ips):
+        for ip in ips:
+            logger.debug('Reboot (warm restart) ip {0}'.format(ip))
+            self.ssh_manager.execute_on_remote(ip=ip,
+                                               cmd='/sbin/shutdown -r now')
 
     def cold_restart_nodes(self, devops_nodes,
                            wait_offline=True, wait_online=True,
@@ -2143,6 +2156,14 @@ class FuelWebClient29(object):
             node = self.get_nailgun_node_by_devops_node(node)
             assert_true(node['online'],
                         'Node {0} is online'.format(node['mac']))
+
+    @logwrap
+    def wait_cluster_nodes_get_online_state(self, cluster_id,
+                                            timeout=4 * 60):
+        for node in self.client.list_cluster_nodes(cluster_id):
+            wait(lambda: self.get_nailgun_node_online_status(node),
+                 timeout=timeout, timeout_msg='Node {0} has not become'
+                                              ' online'.format(node['name']))
 
     @logwrap
     def wait_mysql_galera_is_up(self, node_names, timeout=60 * 4):
@@ -2859,6 +2880,20 @@ class FuelWebClient29(object):
             else:
                 network['ip_ranges'] = self.get_range(new_cidr, ip_range=0)
         self.client.update_network(cluster_id, params, networks)
+
+    @logwrap
+    def mcollective_nodes_online(self, cluster_id):
+        nodes_uids = set([str(n['id']) for n in
+                          self.client.list_cluster_nodes(cluster_id)])
+        # 'mco ping' returns '1' exit code if rabbitmq is not ready
+        out = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='mco find', assert_ec_equal=[0, 1])['stdout_str']
+        ready_nodes_uids = set(out.split('\n'))
+        unavailable_nodes = nodes_uids - ready_nodes_uids
+        logger.debug('Nodes {0} are not reacheable via'
+                     ' mcollective'.format(unavailable_nodes))
+        return not unavailable_nodes
 
     @logwrap
     def wait_task_success(self, task_name='', interval=30,
