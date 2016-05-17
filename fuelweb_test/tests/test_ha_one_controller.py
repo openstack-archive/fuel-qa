@@ -594,7 +594,7 @@ class FloatingIPs(TestBasic):
         self.env.make_snapshot("deploy_floating_ips")
 
 
-@test(groups=["thread_1"])
+@test(enable=False, groups=["thread_1"])
 class NodeMultipleInterfaces(TestBasic):
     """NodeMultipleInterfaces."""  # TODO documentation
 
@@ -650,7 +650,7 @@ class NodeMultipleInterfaces(TestBasic):
         self.env.make_snapshot("deploy_node_multiple_interfaces", is_make=True)
 
 
-@test(groups=["thread_1"])
+@test(enable=False, groups=["thread_1"])
 class NodeDiskSizes(TestBasic):
     """NodeDiskSizes."""  # TODO documentation
 
@@ -759,7 +759,7 @@ class NodeDiskSizes(TestBasic):
                 ))
 
 
-@test(groups=["thread_1"])
+@test(enable=False, groups=["thread_1"])
 class MultinicBootstrap(TestBasic):
     """MultinicBootstrap."""  # TODO documentation
 
@@ -798,7 +798,7 @@ class MultinicBootstrap(TestBasic):
                 Ebtables.restore_mac(mac)
 
 
-@test(groups=["thread_1"])
+@test(enable=False, groups=["thread_1"])
 class UntaggedNetworksNegative(TestBasic):
     """UntaggedNetworksNegative."""  # TODO documentation
 

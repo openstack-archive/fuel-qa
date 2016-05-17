@@ -54,7 +54,19 @@ def manager(request, config_file):
 
 @pytest.fixture(scope='function', autouse=True)
 def snapshot(request):
-    """Fixture which provide getting of artifacs after test."""
+    """Fixture which provide getting of artifacs after test.
+
+    Markers:
+        get_logs - create snapshot with logs
+        fail_snapshot - create environment snapshot
+
+    Example:
+
+        @pytest.mark.get_logs
+        @pytest.mark.fail_snapshot
+        def test_ha_deploy():
+            pass
+    """
     get_logs = request.keywords.get('get_logs', None)
     fail_snapshot = request.keywords.get('fail_snapshot', None)
 
@@ -91,14 +103,32 @@ def prepare(request):
     Provided two marker behaviour:
         need_ready_cluster marker if test need already deployed cluster
         need_ready_slaves marker if test need already provisioned slaves
+        need_ready_release marker if test need already provisioned slaves
+        need_ready_master marker if test need already provisioned slaves
+
+    Example:
+
+        @pytest.mark.need_ready_cluster
+        def test_ha_deploy():
+            pass
+
+        @pytest.mark.need_ready_slaves
+        def test_ha_deploy():
+            pass
 
     """
     need_ready_cluster = request.keywords.get('need_ready_cluster', None)
     need_ready_slaves = request.keywords.get('need_ready_slaves', None)
+    need_ready_release = request.keywords.get('need_ready_release', None)
+    need_ready_master = request.keywords.get('need_ready_master', None)
     if need_ready_cluster:
         request.instance.manager.get_ready_cluster()
-    if need_ready_slaves:
+    elif need_ready_slaves:
         request.instance.manager.get_ready_slaves()
+    elif need_ready_release:
+        request.instance.manager.get_ready_release()
+    elif need_ready_master:
+        request.instance.manager.get_ready_setup()
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)

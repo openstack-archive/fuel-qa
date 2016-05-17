@@ -197,7 +197,7 @@ class CephRestart(TestBasic):
         self.env.make_snapshot("ceph_ha_restart")
 
 
-@test(groups=["thread_1"])
+@test(enable=False, groups=["thread_1"])
 class HAOneControllerNeutronRestart(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],

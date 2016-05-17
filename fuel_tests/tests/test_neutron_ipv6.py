@@ -12,28 +12,48 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from proboscis.asserts import assert_equal
-from proboscis import test
+import pytest
 from paramiko import ChannelException
 
 from devops.helpers.helpers import wait
 from devops.error import TimeoutError
 
-from fuelweb_test.helpers import os_actions
-from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
+from fuelweb_test import settings
+from fuelweb_test.helpers import os_actions
 
 
-@test(enable=False, groups=["thread_1", "neutron"])
-class TestNeutronIPv6(TestBasic):
+@pytest.mark.get_logs
+@pytest.mark.fail_snapshot
+@pytest.mark.need_ready_cluster
+@pytest.mark.neutron
+@pytest.mark.thread_1
+class TestNeutronIPv6(object):
     """NeutronIPv6."""
 
-    @test(depends_on_groups=['deploy_neutron_vlan'],
-          groups=['deploy_neutron_ip_v6',
-                  "nova", "nova-compute", "neutron_ipv6"])
-    @log_snapshot_after_test
-    def deploy_neutron_ip_v6(self):
+    cluster_config = {
+        "name": "NeutronVlan",
+        "mode": settings.DEPLOYMENT_MODE,
+        "settings": {
+            "net_provider": settings.NEUTRON,
+            "net_segment_type": settings.NEUTRON_SEGMENT['vlan'],
+            'tenant': 'simpleVlan',
+            'user': 'simpleVlan',
+            'password': 'simpleVlan'
+        },
+        "nodes": {
+            'slave-01': ['controller'],
+            'slave-02': ['compute'],
+            'slave-03': ['compute']
+        }
+    }
+
+    @pytest.mark.deploy_neutron_ip_v6
+    @pytest.mark.nova
+    @pytest.mark.nova_compute
+    @pytest.mark.neutron_ipv6
+    @pytest.mark.deploy_neutron_ip_v6
+    def test_deploy_neutron_ip_v6(self):
         """Check IPv6 only functionality for Neutron VLAN
 
         Scenario:
@@ -55,10 +75,9 @@ class TestNeutronIPv6(TestBasic):
 
         """
         self.manager.show_step(1, initialize=True)
-        self.env.revert_snapshot("deploy_neutron_vlan")
-
-        cluster_id = self.fuel_web.get_last_created_cluster()
-        public_vip = self.fuel_web.get_public_vip(cluster_id)
+        cluster_id = self._storage['cluster_id']
+        fuel_web = self.manager.fuel_web
+        public_vip = fuel_web.get_public_vip(cluster_id)
         logger.info('Public vip is %s', public_vip)
 
         os_conn = os_actions.OpenStackActions(
@@ -172,7 +191,7 @@ class TestNeutronIPv6(TestBasic):
                 ip=floating_ip2.ip,
                 ipv6=instance2_ipv6))
 
-        with self.fuel_web.get_ssh_for_node("slave-01") as remote:
+        with fuel_web.get_ssh_for_node("slave-01") as remote:
             def ssh_ready(vm_host):
                 try:
                     os_conn.execute_through_host(
@@ -215,15 +234,12 @@ class TestNeutronIPv6(TestBasic):
             )
             logger.info('Ping results: \n\t{res:s}'.format(res=res['stdout']))
 
-            assert_equal(
-                res['exit_code'],
-                0,
+            assert res['exit_code'] == 0, (
                 'Ping failed with error code: {code:d}\n'
                 '\tSTDOUT: {stdout:s}\n'
                 '\tSTDERR: {stderr:s}'.format(
                     code=res['exit_code'],
                     stdout=res['stdout'],
-                    stderr=res['stderr'],
-                ))
+                    stderr=res['stderr']))
 
         self.env.make_snapshot('deploy_neutron_ip_v6')

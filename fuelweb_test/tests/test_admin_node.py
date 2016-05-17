@@ -37,7 +37,7 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["thread_1"])
+@test(enable=False, groups=["thread_1"])
 class TestAdminNode(TestBasic):
     """TestAdminNode."""  # TODO documentation
 

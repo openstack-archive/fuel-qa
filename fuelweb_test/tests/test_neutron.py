@@ -24,7 +24,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
 
 
-@test(groups=["thread_1", "neutron"])
+@test(enable=False, groups=["thread_1", "neutron"])
 class NeutronVlan(TestBasic):
     """NeutronVlan."""  # TODO documentation
 
@@ -81,7 +81,8 @@ class NeutronVlan(TestBasic):
         self.env.make_snapshot("deploy_neutron_vlan", is_make=True)
 
 
-@test(groups=["neutron", "ha", "ha_neutron", "classic_provisioning"])
+@test(enable=False,
+      groups=["neutron", "ha", "ha_neutron", "classic_provisioning"])
 class NeutronGreHa(TestBasic):
     """NeutronGreHa."""  # TODO documentation
 
@@ -156,7 +157,7 @@ class NeutronGreHa(TestBasic):
         self.env.make_snapshot("deploy_neutron_gre_ha")
 
 
-@test(groups=["neutron", "ha", "ha_neutron"])
+@test(enable=False, groups=["neutron", "ha", "ha_neutron"])
 class NeutronVlanHa(TestBasic):
     """NeutronVlanHa."""  # TODO documentation
 
