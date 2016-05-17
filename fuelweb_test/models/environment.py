@@ -164,7 +164,7 @@ class EnvironmentModel(object):
             'hostname': ''.join((settings.FUEL_MASTER_HOSTNAME,
                                  settings.DNS_SUFFIX)),
             'nat_interface': self.d_env.nat_interface,
-            'nameserver': settings.DNS,
+            'nameserver': settings.DNS or self.d_env.router(),
             'showmenu': 'yes' if settings.SHOW_FUELMENU else 'no',
             'wait_for_external_config': 'yes',
             'build_images': '1' if build_images else '0'

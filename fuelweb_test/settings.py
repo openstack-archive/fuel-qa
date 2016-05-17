@@ -59,7 +59,7 @@ ISO_MIRANTIS_FEATURE_GROUP = get_var_as_bool(
     False)
 ISO_LABEL = 'Mirantis_Fuel' if ISO_MIRANTIS_FEATURE_GROUP else 'OpenStack_Fuel'
 SHOW_FUELMENU = get_var_as_bool('SHOW_FUELMENU', False)
-DNS = os.environ.get('DNS', '8.8.8.8')
+DNS = os.environ.get('DNS')
 PUBLIC_TEST_IP = os.environ.get('PUBLIC_TEST_IP', '8.8.8.8')
 
 FORCE_HTTPS_MASTER_NODE = get_var_as_bool('FORCE_HTTPS_MASTER_NODE', False)
