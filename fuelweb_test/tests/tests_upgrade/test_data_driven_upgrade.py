@@ -32,7 +32,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 class DataDrivenUpgradeBase(TestBasic):
     OCTANE_COMMANDS = {
         'backup': 'octane fuel-backup --to {path}',
-        'repo-backup': 'octane fuel-repo-backup --to {path}',
+        'repo-backup': 'octane fuel-repo-backup --to {path} --full',
         'restore': 'octane fuel-restore --from {path} --admin-password {pwd}',
         'repo-restore': 'octane fuel-repo-restore --from {path}',
         'update-bootstrap-centos': 'octane update-bootstrap-centos'
@@ -111,6 +111,14 @@ class DataDrivenUpgradeBase(TestBasic):
 
         run_on_remote(self.admin_remote, "yum install -y fuel-octane")
 
+        # XXX patchs octane
+        cmds = [
+          "cd /usr/lib/python2.6/site-packages",
+          "echo -n 310030/revisions/7ec68589ef0abb67a49efabf7a6226707302284c 310032/revisions/605fd626764d68ee5be8e703790c38b89e8e0b9b | xargs -I% -td' ' sh -c 'curl -s https://review.openstack.org/changes/%/patch?download | base64 -d | patch -p1'"
+        ]
+
+        run_on_remote(self.admin_remote, " && ".join(cmds))
+
         if settings.FUEL_PROPOSED_REPO_URL:
             # pylint: disable=no-member
             self.admin_remote.rm_rf(conf_file)
@@ -146,6 +154,9 @@ class DataDrivenUpgradeBase(TestBasic):
         assert_equal(bool(repos_backup_path), bool(repos_local_path),
                      "Both repos arguments should be specified")
         self.install_octane()
+
+        cmd = "fuel-createmirror -p {} -M".format(settings.KEYSTONE_CREDS['password'])
+        run_on_remote(self.admin_remote, cmd)
 
         cmd = "mkdir -p {}".format(self.remote_dir_for_backups)
         run_on_remote(self.admin_remote, cmd)
@@ -255,30 +266,30 @@ class DataDrivenUpgradeBase(TestBasic):
 
         self.check_run("upgrade_smoke_backup")
         self.env.revert_snapshot("ready", skip_timesync=True)
-        intermediate_snapshot = "prepare_upgrade_smoke_before_backup"
 
-        assert_not_equal(
-            settings.KEYSTONE_CREDS['password'], 'admin',
-            "Admin password was not changed, aborting execution")
+        run_on_remote(
+            self.admin_remote,
+            "yum -y install git python-pip createrepo dpkg-devel dpkg-dev rpm "
+            "rpm-build && pip install fuel-plugin-builder")
 
-        cluster_settings = {
-            'net_provider': settings.NEUTRON,
-            'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
-        }
-        cluster_settings.update(self.cluster_creds)
+        run_on_remote(
+            self.admin_remote,
+            "git clone https://github.com/"
+            "openstack/fuel-plugin-detach-database")
 
-        if not self.env.d_env.has_snapshot(intermediate_snapshot):
-            self.deploy_cluster(
-                {'name': self.prepare_upgrade_smoke.__name__,
-                 'settings': cluster_settings,
-                 'nodes': {'slave-01': ['controller'],
-                           'slave-02': ['compute', 'cinder']}
-                 }
-            )
-            self.env.make_snapshot(intermediate_snapshot)
+        cmds = [
+            "cd fuel-plugin-detach-database", "git checkout stable/{}".format(
+                settings.UPGRADE_FUEL_FROM),
+            "fpb --build . ",
+            "fuel plugins --install *.rpm "
+            "--user {user} --password {pwd}".format(
+                user=settings.KEYSTONE_CREDS['username'],
+                pwd=settings.KEYSTONE_CREDS['password'])
+        ]
 
-        # revert_snapshot will do nothing if there is no snapshot
-        self.env.revert_snapshot(intermediate_snapshot)
+        run_on_remote(self.admin_remote, " && ".join(cmds))
+
+
 
         self.do_backup(self.backup_path, self.local_path,
                        self.repos_backup_path, self.repos_local_path)
