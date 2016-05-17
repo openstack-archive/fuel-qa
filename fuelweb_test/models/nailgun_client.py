@@ -131,6 +131,11 @@ class NailgunClient(object):
 
     @logwrap
     @json_parse
+    def get_node_by_id(self, node_id):
+        return self.client.get("/api/nodes/{}".format(node_id))
+
+    @logwrap
+    @json_parse
     def update_node(self, node_id, data):
         return self.client.put(
             "/api/nodes/{}/".format(node_id), data
