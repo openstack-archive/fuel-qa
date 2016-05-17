@@ -20,10 +20,7 @@ from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.ssh_manager import SSHManager
 
-
 # pylint: disable=no-member
-
-
 ssh_manager = SSHManager()
 
 
@@ -197,3 +194,68 @@ class TestNeutronVlanHa(object):
         self.manager.show_step(6)
         fuel_web.run_ostf(
             cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'])
+
+
+@pytest.mark.get_logs
+@pytest.mark.fail_snapshot
+@pytest.mark.need_ready_cluster
+@pytest.mark.thread_1
+@pytest.mark.neutron
+class NeutronVlan(object):
+    """NeutronVlan."""  # TODO documentation
+
+    cluster_config = {
+        "name": "NeutronVlan",
+        "mode": settings.DEPLOYMENT_MODE,
+        "settings": {
+            "net_provider": settings.NEUTRON,
+            "net_segment_type": settings.NEUTRON_SEGMENT['vlan'],
+            'tenant': 'simpleVlan',
+            'user': 'simpleVlan',
+            'password': 'simpleVlan'
+        },
+        "nodes": {
+            'slave-01': ['controller'],
+            'slave-02': ['compute'],
+            'slave-03': ['compute']
+        }
+    }
+
+    @pytest.mark.deploy_neutron_vlan
+    @pytest.mark.ha_one_controller_neutron_vlan
+    @pytest.mark.deployment
+    @pytest.mark.nova
+    @pytest.mark.nova_compute
+    def test_deploy_neutron_vlan(self):
+        """Deploy cluster in ha mode with 1 controller and Neutron VLAN
+
+        Scenario:
+            1. Create cluster
+            2. Add 1 node with controller role
+            3. Add 2 nodes with compute role
+            4. Deploy the cluster
+            5. Run network verification
+            6. Run OSTF
+
+        Duration 35m
+        Snapshot deploy_neutron_vlan
+
+        """
+        self.manager.show_step(1)
+        self.manager.show_step(2)
+        self.manager.show_step(3)
+
+        cluster_id = self._storage['cluster_id']
+        fuel_web = self.manager.fuel_web
+
+        cluster = fuel_web.client.get_cluster(cluster_id)
+        assert str(cluster['net_provider']) == settings.NEUTRON
+
+        self.manager.show_step(4)
+        fuel_web.verify_network(cluster_id)
+
+        self.manager.show_step(5)
+        fuel_web.run_ostf(
+            cluster_id=cluster_id)
+
+        self.env.make_snapshot("deploy_neutron_vlan", is_make=True)
