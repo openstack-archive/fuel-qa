@@ -87,16 +87,13 @@ class FuelMasterMigrate(ActionTest, BaseActions, FuelMasterActions):
     def check_migration_status(self):
         """Check periodically the status of Fuel Master migration process"""
 
-        checkers.wait_phrase_in_log(
-            self.env.get_admin_node_ip(), 60 * 60, interval=0.2,
-            phrase='Rebooting to begin the data sync process',
-            log_path='/var/log/fuel-migrate.log')
         logger.info(
             'Rebooting to begin the data sync process for fuel migrate')
+        checkers.wait_phrase_in_log(
+            self.env.get_admin_node_ip(), 60 * 90, interval=0.1,
+            phrase='Rebooting to begin the data sync process',
+            log_path='/var/log/fuel-migrate.log')
 
-        wait(lambda: not icmp_ping(self.env.get_admin_node_ip()),
-             timeout=60 * 15, timeout_msg='Master node has not become offline '
-                                          'after starting reboot')
         wait(lambda: icmp_ping(self.env.get_admin_node_ip()),
              timeout=60 * 15, timeout_msg='Master node has not become online '
                                           'after rebooting')
@@ -110,23 +107,23 @@ class FuelMasterMigrate(ActionTest, BaseActions, FuelMasterActions):
             log_path='/var/log/fuel-migrate.log')
         logger.info('Shutting down network')
 
-        wait(lambda: not icmp_ping(self.env.get_admin_node_ip()),
-             timeout=60 * 15, interval=0.1,
-             timeout_msg='Master node has not become offline on '
-                         'shutting network down')
+        logger.info("Wait for icmp_ping from Master")
         wait(lambda: icmp_ping(self.env.get_admin_node_ip()),
              timeout=60 * 15,
              timeout_msg='Master node has not become online after '
                          'shutting network down')
 
+        logger.info("Wait for Master become online")
         self.env.d_env.nodes().admin.await(
             network_name=self.env.d_env.admin_net,
-            timeout=60 * 10)
+            timeout=60 * 20)
 
+        logger.info("Wait for file 'migration-done' appears")
         with self.env.d_env.get_admin_remote() as remote:
-            wait(lambda: not remote.exists("/notready"),
-                 timeout=900,
-                 timeout_msg="File wasn't removed in 900 sec")
+            wait(lambda: not remote.exists("/tmp/migration-done"),
+                 timeout=60 * 30,
+                 timeout_msg="File wasn't appeared in 900 sec")
 
+        logger.info("Wait for nodes become online")
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.d_env.nodes().slaves[:2])
+            self.env.d_env.nodes().slaves[:2], timeout=60 * 20)
