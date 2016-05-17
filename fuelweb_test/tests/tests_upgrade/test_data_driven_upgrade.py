@@ -214,7 +214,7 @@ class DataDrivenUpgradeBase(TestBasic):
             with self.fuel_web.get_ssh_for_node(node_name=node.name) as remote:
                 run_on_remote(remote, "service mcollective restart")
 
-    def deploy_cluster(self, cluster_settings):
+    def deploy_cluster(self, cluster_settings, cluster_release_id = None):
         slaves_count = len(cluster_settings['nodes'])
         slaves = self.env.d_env.nodes().slaves[:slaves_count]
         for chunk in [slaves[x:x + 5] for x in range(0, slaves_count, 5)]:
@@ -222,7 +222,8 @@ class DataDrivenUpgradeBase(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=cluster_settings['name'],
             mode=settings.DEPLOYMENT_MODE,
-            settings=cluster_settings['settings']
+            settings=cluster_settings['settings'],
+            release_id = cluster_release_id
         )
         if cluster_settings.get('plugin'):
             plugin_name = cluster_settings['plugin']['name']
@@ -356,6 +357,8 @@ class DataDrivenUpgradeBase(TestBasic):
         ]
 
         run_on_remote(self.admin_remote, " && ".join(cmds))
+
+        run_on_remote(self.admin_remote, "dockerctl shell postgres sudo -u postgres psql nailgun -c \"update releases set state = 'available' where name = 'Kilo on Ubuntu 14.04'\"")
 
         cluster_settings = {
             'net_provider': settings.NEUTRON,
@@ -703,29 +706,29 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
                         self.repos_backup_path, self.repos_local_path)
         # Check nailgun api is available
         self.show_step(6)
-        self.fuel_web.change_default_network_settings()
 
-        cluster_id = self.fuel_web.get_last_created_cluster()
+        cluster_settings = {
+            'net_provider': settings.NEUTRON,
+            'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
+        }
+        cluster_settings.update(self.cluster_creds)
 
-        self.show_step(7)
-        for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
-            checkers.check_cobbler_node_exists(self.admin_remote, node['id'])
+        self.deploy_cluster({
+            'name': "detach plugin",
+            'settings': cluster_settings,
+            'plugin':
+                {'name': 'detach-database',
+                 'data': {'metadata/enabled': True}},
+            'nodes':
+                {'slave-01': ['controller'],
+                 'slave-02': ['compute', 'cinder']}
+        }, 2)
 
-        # Check non-default parameters of the cluster
-        creds = self.fuel_web.get_cluster_credentials(cluster_id)
-        assert_equal(sorted(creds.values()),
-                     sorted(self.cluster_creds.values()))
+        self.do_backup(self.backup_path, self.local_path,
+                       self.repos_backup_path, self.repos_local_path)
+        self.env.make_snapshot("upgrade_detach_plugin_backup", is_make=True)
 
-        self.show_step(8)
-        slave_03 = self.env.d_env.get_node(name="slave-03")
-        self.env.bootstrap_nodes([slave_03])
-        with self.fuel_web.get_ssh_for_node(slave_03.name) as slave_remote:
-            checkers.verify_bootstrap_on_node(slave_remote, "ubuntu")
 
-        self.show_step(9)
-        self.fuel_web.verify_network(cluster_id)
-        self.show_step(10)
-        self.fuel_web.run_ostf(cluster_id)
 
         self.env.make_snapshot("upgrade_smoke_restore", is_make=True)
         self.cleanup()
