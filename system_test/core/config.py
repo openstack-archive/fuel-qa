@@ -96,3 +96,7 @@ def define_custom_groups():
     add_group(group="system_test.deploy_centos_master",
               systest_group="system_test.centos_deploy_and_check_radosgw",
               config_name="centos_master_ceph_all_on_neutron_vlan")
+
+    add_group(group="hard_compute_restart_after_fuel_master_migration",
+              systest_group="system_test.hard_restart_after_migration",
+              config_name="3ctrl_2comp_neutronVLAN")
