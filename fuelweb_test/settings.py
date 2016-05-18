@@ -94,16 +94,16 @@ BOOTSTRAP_TIMEOUT = int(os.environ.get("BOOTSTRAP_TIMEOUT", 900))
 WAIT_FOR_PROVISIONING_TIMEOUT = int(os.environ.get(
     "WAIT_FOR_PROVISIONING_TIMEOUT", 1200))
 
-ADMIN_NODE_SETUP_TIMEOUT = os.environ.get("ADMIN_NODE_SETUP_TIMEOUT", 30)
-ADMIN_NODE_BOOTSTRAP_TIMEOUT = os.environ.get(
-    "ADMIN_NODE_BOOTSTRAP_TIMEOUT", 3600)
+ADMIN_NODE_SETUP_TIMEOUT = int(os.environ.get("ADMIN_NODE_SETUP_TIMEOUT", 30))
+ADMIN_NODE_BOOTSTRAP_TIMEOUT = int(os.environ.get(
+    "ADMIN_NODE_BOOTSTRAP_TIMEOUT", 3600))
 
 
 HARDWARE = {
-    "admin_node_memory": os.environ.get("ADMIN_NODE_MEMORY", 3072),
-    "admin_node_cpu": os.environ.get("ADMIN_NODE_CPU", 2),
-    "slave_node_cpu": os.environ.get("SLAVE_NODE_CPU", 1),
-    "numa_nodes": os.environ.get("NUMA_NODES", 0),
+    "admin_node_memory": int(os.environ.get("ADMIN_NODE_MEMORY", 3072)),
+    "admin_node_cpu": int(os.environ.get("ADMIN_NODE_CPU", 2)),
+    "slave_node_cpu": int(os.environ.get("SLAVE_NODE_CPU", 1)),
+    "numa_nodes": int(os.environ.get("NUMA_NODES", 0)),
 }
 if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
     slave_mem_default = 2560
@@ -112,18 +112,18 @@ else:
 HARDWARE["slave_node_memory"] = int(
     os.environ.get("SLAVE_NODE_MEMORY", slave_mem_default))
 NODE_VOLUME_SIZE = int(os.environ.get('NODE_VOLUME_SIZE', 50))
-NODES_COUNT = os.environ.get('NODES_COUNT', 10)
+NODES_COUNT = int(os.environ.get('NODES_COUNT', 10))
 
 MULTIPATH = get_var_as_bool('MULTIPATH', False)
 SLAVE_MULTIPATH_DISKS_COUNT = int(os.environ.get('SLAVE_MULTIPATH_DISKS_COUNT',
-                                                 '0'))
+                                                 0))
 MULTIPATH_TEMPLATE = os.environ.get(
     'MULTIPATH_TEMPLATE',
     os.path.join(
         os.getcwd(),
         'system_test/tests_templates/tests_configs/multipath_3_nodes.yaml'))
 if MULTIPATH and not SLAVE_MULTIPATH_DISKS_COUNT:
-    os.environ.setdefault('SLAVE_MULTIPATH_DISKS_COUNT', '2')
+    os.environ.setdefault('SLAVE_MULTIPATH_DISKS_COUNT', 2)
     SLAVE_MULTIPATH_DISKS_COUNT = int(
         os.environ.get('SLAVE_MULTIPATH_DISKS_COUNT'))
 
@@ -444,7 +444,7 @@ PACKAGES_CENTOS = os.environ.get(
 # Release name of local Ubuntu mirror on Fuel master node.
 UBUNTU_RELEASE = os.environ.get('UBUNTU_RELEASE', 'precise')
 
-UPDATE_TIMEOUT = os.environ.get('UPDATE_TIMEOUT', 3600)
+UPDATE_TIMEOUT = int(os.environ.get('UPDATE_TIMEOUT', 3600))
 
 PLUGIN_PACKAGE_VERSION = os.environ.get('PLUGIN_PACKAGE_VERSION', '')
 
@@ -543,19 +543,20 @@ LOCAL_MIRROR_CENTOS = os.environ.get('LOCAL_MIRROR_CENTOS',
 # and use sections 'main universe multiverse'.
 # Repos from EXTRA_DEB_REPOS will be appended to the list of repositories.
 MIRROR_UBUNTU = os.environ.get('MIRROR_UBUNTU', '')
-MIRROR_UBUNTU_PRIORITY = os.environ.get('MIRROR_UBUNTU_PRIORITY', 1001)
+MIRROR_UBUNTU_PRIORITY = int(os.environ.get('MIRROR_UBUNTU_PRIORITY', 1001))
 EXTRA_DEB_REPOS = os.environ.get('EXTRA_DEB_REPOS', '')
-EXTRA_DEB_REPOS_PRIORITY = os.environ.get('EXTRA_DEB_REPOS_PRIORITY', 1050)
+EXTRA_DEB_REPOS_PRIORITY = int(os.environ.get('EXTRA_DEB_REPOS_PRIORITY',
+                                              1050))
 
 # The same for Centos repository:
 MIRROR_CENTOS = os.environ.get('MIRROR_CENTOS', '')
-MIRROR_CENTOS_PRIORITY = os.environ.get('MIRROR_CENTOS_PRIORITY', 50)
+MIRROR_CENTOS_PRIORITY = int(os.environ.get('MIRROR_CENTOS_PRIORITY', 50))
 EXTRA_RPM_REPOS = os.environ.get('EXTRA_RPM_REPOS', '')
-EXTRA_RPM_REPOS_PRIORITY = os.environ.get('EXTRA_RPM_REPOS_PRIORITY', 20)
+EXTRA_RPM_REPOS_PRIORITY = int(os.environ.get('EXTRA_RPM_REPOS_PRIORITY', 20))
 
 # Auxiliary repository priority will be set for a cluster if UPDATE_FUEL=true
-AUX_DEB_REPO_PRIORITY = os.environ.get('AUX_DEB_REPO_PRIORITY', 1150)
-AUX_RPM_REPO_PRIORITY = os.environ.get('AUX_RPM_REPO_PRIORITY', 15)
+AUX_DEB_REPO_PRIORITY = int(os.environ.get('AUX_DEB_REPO_PRIORITY', 1150))
+AUX_RPM_REPO_PRIORITY = int(os.environ.get('AUX_RPM_REPO_PRIORITY', 15))
 
 # True: replace the default list of repositories in Nailgun
 # False: keep original list of repositories in Nailgun
@@ -646,11 +647,11 @@ NESSUS_SSL_VERIFY = get_var_as_bool("NESSUS_SSL_VERIFY", False)
 
 # is using in stability rabbit test to get
 # possibility to change count of repeats failures
-REPEAT_COUNT = os.environ.get("REPEAT_COUNT", 2)
+REPEAT_COUNT = int(os.environ.get("REPEAT_COUNT", 2))
 
 # The number of cold restarts
 # in the 'repetitive_restart' test group
-RESTART_COUNT = os.environ.get("RESTART_COUNT", 10)
+RESTART_COUNT = int(os.environ.get("RESTART_COUNT", 10))
 
 # RH-related variables
 # Need to update these variables, when image with RH for
