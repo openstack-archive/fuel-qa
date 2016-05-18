@@ -15,11 +15,12 @@
 from __future__ import unicode_literals
 
 import subprocess
-
+from optparse import OptionParser
 from joblib import Parallel, delayed
 
 from fuelweb_test.testrail.settings import TestRailSettings
 from fuelweb_test.testrail.testrail_client import TestRailProject
+from fuelweb_test.testrail.upload_cases_description import _get_custom_cases_fields
 
 
 TEST_GROUPS = ["API", "CLI", "Scenario", "ThirdParty"]
@@ -51,11 +52,11 @@ def generate_groups(line):
     return section
 
 
-def get_tests_descriptions(milestone_id, tests_include, tests_exclude):
+def get_tests_descriptions(milestone_id, testrail_default_test_priority):
     # To get the Tempest tests list, need to execute the following commands:
     # git clone https://github.com/openstack/tempest & cd tempest & tox -venv
-    get_tempest_tests = """cd tempest && .tox/venv/bin/nosetests \\
-        --collect-only tempest/{0} -v 2>&1 | grep 'id-.*'"""
+    get_tempest_tests = ("cd tempest && .tox/venv/bin/nosetests "
+                         "--collect-only tempest/{0} -v 2>&1 | grep 'id-.*'")
 
     tests = []
 
@@ -64,31 +65,31 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude):
                              shell=True, stdout=subprocess.PIPE)
 
         for line in iter(p.stdout.readline, b''):
-            if "id-" in line:
-                section = generate_groups(line) if group == "API" else group
+            section = generate_groups(line) if group == "API" else group
 
-                test_class = []
-                for r in line.split("."):
-                    if "id-" in r:
-                        title = r.strip()
-                        break
-                    else:
-                        test_class.append(r)
+            test_class = []
+            for r in line.split("."):
+                if "id-" in r:
+                    title = r.strip()
+                    break
+                else:
+                    test_class.append(r)
 
-                steps = [{"run this tempest test": "passed"}, ]
-                test_case = {
-                    "title": title,
-                    "type_id": 1,
-                    "priority_id": 5,
-                    "estimate": "1m",
-                    "refs": "",
-                    "milestone_id": milestone_id,
-                    "custom_test_group": ".".join(test_class),
-                    "custom_test_case_description": title,
-                    "custom_test_case_steps": steps,
-                    "section": section
-                }
-                tests.append(test_case)
+            steps = [{"run this tempest test": "passed"}, ]
+
+            test_case = {
+                "title": title,
+                "type_id": 1,
+                "milestone_id": milestone_id,
+                "priority_id": testrail_default_test_priority,
+                "estimate": "1m",
+                "refs": "",
+                "custom_test_group": ".".join(test_class),
+                "custom_test_case_description": title,
+                "custom_test_case_steps": steps,
+                "section": section
+            }
+            tests.append(test_case)
 
     return tests
 
@@ -101,10 +102,16 @@ def add_case(testrail_project, test_suite, test_case):
     suite = testrail_project.get_suite_by_name(test_suite)
     section = testrail_project.get_section_by_name(
         suite_id=suite['id'], section_name=test_case["section"])
+    custom_cases_fields = _get_custom_cases_fields(
+        case_fields=testrail_project.get_case_fields(),
+        project_id=testrail_project.project['id'])
+    for case_field, default_value in custom_cases_fields.items():
+        if case_field not in test_case:
+            test_case[case_field] = default_value
     testrail_project.add_case(section_id=section["id"], case=test_case)
 
 
-def upload_tests_descriptions(testrail_project, tests):
+def rewrite_tests_descriptions(testrail_project, tests):
     test_suite = TestRailSettings.tests_suite
     suite = testrail_project.get_suite_by_name(test_suite)
 
@@ -129,6 +136,16 @@ def upload_tests_descriptions(testrail_project, tests):
 
 
 def main():
+
+    parser = OptionParser(
+        description="Upload tests cases to TestRail. "
+                    "See settings.py for configuration."
+    )
+    parser.add_option("-r", "--rewrite", dest="rewrite", default=False,
+                      help="Rewrite all suite")
+
+    (options, _) = parser.parse_args()
+
     testrail_project = TestRailProject(
         url=TestRailSettings.url,
         user=TestRailSettings.user,
@@ -139,14 +156,16 @@ def main():
     testrail_milestone = testrail_project.get_milestone_by_name(
         name=TestRailSettings.milestone)
 
-    tests_descriptions = get_tests_descriptions(
-        milestone_id=testrail_milestone['id'],
-        tests_include=TestRailSettings.tests_include,
-        tests_exclude=TestRailSettings.tests_exclude
-    )
+    testrail_default_test_priority = [priority['id'] for priority in
+                                      testrail_project.get_priorities() if
+                                      priority['is_default'] is True][0]
 
-    upload_tests_descriptions(testrail_project=testrail_project,
-                              tests=tests_descriptions)
+    tests_descriptions = get_tests_descriptions(testrail_milestone['id'],
+                                                testrail_default_test_priority)
+
+    if options.rewrite:
+        rewrite_tests_descriptions(testrail_project=testrail_project,
+                                   tests=tests_descriptions)
 
 
 if __name__ == '__main__':
