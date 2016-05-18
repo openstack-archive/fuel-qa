@@ -61,3 +61,5 @@ tasks:
   - ntp-client: null
   - ssl-add-trust-chain: null
   - reserved_ports: null
+  - copy_deleted_nodes:
+      type: copy_files

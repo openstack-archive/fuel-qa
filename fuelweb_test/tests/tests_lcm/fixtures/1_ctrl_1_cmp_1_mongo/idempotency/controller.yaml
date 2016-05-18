@@ -85,7 +85,6 @@ tasks:
   - ironic-keystone:
       no_puppet_run: true
   - connectivity_tests: null
-  - swift-storage: null
   - primary-heat: null
   - conntrackd: null
   - sahara-db:
@@ -176,6 +175,6 @@ tasks:
   - openstack-network-server-nova: null
   - copy_haproxy_keys:
       type: copy_files
-  - primary-swift-proxy: null
+  - swift-proxy_storage: null
   - openstack-network-networks: null
   - ssl-add-trust-chain: null
