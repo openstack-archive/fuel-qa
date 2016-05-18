@@ -1,0 +1,269 @@
+tasks:
+- ironic_post_swift_key:
+    type: shell
+- openstack-haproxy-mysqld:
+    no_puppet_run: true
+- top-role-primary-mongo:
+    no_puppet_run: true
+- cinder-db:
+    no_puppet_run: true
+- dump_rabbitmq_definitions:
+    no_puppet_run: true
+- rsync_core_puppet:
+    type: sync
+- create-cinder-types:
+    no_puppet_run: true
+- ceilometer-controller:
+    no_puppet_run: true
+- override_configuration:
+    no_puppet_run: true
+- ceilometer-keystone:
+    no_puppet_run: true
+- ceph_create_pools:
+    no_puppet_run: true
+- workloads_collector_add:
+    no_puppet_run: true
+- primary-openstack-network-plugins-l2:
+    no_puppet_run: true
+- radosgw-keystone:
+    no_puppet_run: true
+- virtual_ips:
+    no_puppet_run: true
+- primary-dns-server:
+    no_puppet_run: true
+- openstack-haproxy-murano:
+    no_puppet_run: true
+- openstack-network-end:
+    type: skipped
+- openstack-haproxy-radosgw:
+    no_puppet_run: true
+- openstack-haproxy-swift:
+    no_puppet_run: true
+- heat-db:
+    no_puppet_run: true
+- openstack-haproxy-neutron:
+    no_puppet_run: true
+- updatedb:
+    no_puppet_run: true
+- ironic-db:
+    no_puppet_run: true
+- plugins_rsync:
+    no_puppet_run: true
+- ceilometer-radosgw-user:
+    no_puppet_run: true
+- openstack-haproxy-keystone:
+    no_puppet_run: true
+- hosts:
+    no_puppet_run: true
+- primary-rabbitmq:
+    no_puppet_run: true
+- ntp-client:
+    no_puppet_run: true
+- openstack-network-routers:
+    no_puppet_run: true
+- reserved_ports:
+    no_puppet_run: true
+- controller_remaining_tasks:
+    no_puppet_run: true
+- glance-keystone:
+    no_puppet_run: true
+- openstack-haproxy-aodh:
+    no_puppet_run: true
+- murano-cfapi:
+    no_puppet_run: true
+- vmware-vcenter:
+    no_puppet_run: true
+- ironic-compute:
+    no_puppet_run: true
+- primary-openstack-network-agents-metadata:
+    no_puppet_run: true
+- cinder-keystone:
+    no_puppet_run: true
+- copy_keys:
+    type: copy_files
+- enable_rados:
+    no_puppet_run: true
+- ntp-check:
+    no_puppet_run: true
+- aodh-db:
+    no_puppet_run: true
+- disable_keystone_service_token:
+    no_puppet_run: true
+- umm:
+    no_puppet_run: true
+- memcached:
+    no_puppet_run: true
+- allocate_hugepages:
+    no_puppet_run: true
+- openrc-delete:
+    no_puppet_run: true
+- plugins_setup_repositories:
+    no_puppet_run: true
+- sahara-keystone:
+    no_puppet_run: true
+- openstack-haproxy-sahara:
+    no_puppet_run: true
+- ssl-keys-saving:
+    no_puppet_run: true
+- primary-cluster:
+    no_puppet_run: true
+- upload_cirros:
+    type: shell
+- primary-keystone:
+    no_puppet_run: true
+- primary-openstack-network-agents-l3:
+    no_puppet_run: true
+- upload_configuration:
+    type: upload_file
+- ssl-dns-setup:
+    no_puppet_run: true
+- neutron-keystone:
+    no_puppet_run: true
+- logging:
+    no_puppet_run: true
+- primary-cluster-haproxy:
+    no_puppet_run: true
+- nova-keystone:
+    no_puppet_run: true
+- update_hosts:
+    no_puppet_run: true
+- ironic-keystone:
+    no_puppet_run: true
+- connectivity_tests:
+    no_puppet_run: true
+- swift-storage:
+    no_puppet_run: true
+- primary-heat:
+    no_puppet_run: true
+- conntrackd:
+    no_puppet_run: true
+- sahara-db:
+    no_puppet_run: true
+- horizon:
+    no_puppet_run: true
+- openstack-haproxy-ceilometer:
+    no_puppet_run: true
+- openstack-network-common-config:
+    no_puppet_run: true
+- firewall:
+    no_puppet_run: true
+- apache:
+    no_puppet_run: true
+- globals:
+    no_puppet_run: true
+- aodh-keystone:
+    no_puppet_run: true
+- glance:
+    no_puppet_run: true
+- tools:
+    no_puppet_run: true
+- openstack-haproxy:
+    no_puppet_run: true
+- cgroups:
+    no_puppet_run: true
+- murano-cfapi-keystone:
+    no_puppet_run: true
+- aodh:
+    no_puppet_run: true
+- nova-db:
+    no_puppet_run: true
+- openstack-haproxy-ironic:
+    no_puppet_run: true
+- setup_repositories:
+    no_puppet_run: true
+- openstack-network-routers-ha:
+    no_puppet_run: true
+- glance-db:
+    no_puppet_run: true
+- neutron-db:
+    no_puppet_run: true
+- ironic_upload_images:
+    type: shell
+- swift-rebalance-cron:
+    no_puppet_run: true
+- primary-ceph-mon:
+    no_puppet_run: true
+- openstack-haproxy-stats:
+    no_puppet_run: true
+- ironic-api:
+    no_puppet_run: true
+- primary-ceph-radosgw:
+    no_puppet_run: true
+- dns-client:
+    no_puppet_run: true
+- cluster-vrouter:
+    no_puppet_run: true
+- murano-rabbitmq:
+    no_puppet_run: true
+- api-proxy:
+    no_puppet_run: true
+- cluster_health:
+    no_puppet_run: true
+- heat-keystone:
+    no_puppet_run: true
+- openstack-haproxy-horizon:
+    no_puppet_run: true
+- openstack-network-start:
+    type: skipped
+- clear_nodes_info:
+    type: skipped
+- murano-db:
+    no_puppet_run: true
+- copy_keys_ceph:
+    type: copy_files
+- sahara:
+    no_puppet_run: true
+- fuel_pkgs:
+    no_puppet_run: true
+- swift-keystone:
+    no_puppet_run: true
+- public_vip_ping:
+    no_puppet_run: true
+- upload_nodes_info:
+    type: skipped
+- openstack-haproxy-glance:
+    no_puppet_run: true
+- murano:
+    no_puppet_run: true
+- ceph_ready_check:
+    type: shell
+- enable_quorum:
+    type: shell
+- openstack-haproxy-nova:
+    no_puppet_run: true
+- openstack-network-server-config:
+    no_puppet_run: true
+- primary-database:
+    no_puppet_run: true
+- vcenter_compute_zones_create:
+    type: shell
+- openstack-haproxy-cinder:
+    no_puppet_run: true
+- ntp-server:
+    no_puppet_run: true
+- murano-keystone:
+    no_puppet_run: true
+- primary-openstack-network-agents-dhcp:
+    no_puppet_run: true
+- openstack-haproxy-heat:
+    no_puppet_run: true
+- primary-openstack-controller:
+    no_puppet_run: true
+- openstack-cinder:
+    no_puppet_run: true
+- keystone-db:
+    no_puppet_run: true
+- sync_time:
+    type: shell
+- configuration_symlink:
+    type: shell
+- openstack-network-server-nova:
+    no_puppet_run: true
+- copy_haproxy_keys:
+    type: copy_files
+- primary-swift-proxy:
+    no_puppet_run: true
+- openstack-network-networks:
+    no_puppet_run: true
+- ssl-add-trust-chain:
+    no_puppet_run: true

@@ -1,0 +1,87 @@
+tasks:
+- plugins_rsync:
+    no_puppet_run: true
+- openstack-network-start:
+    type: skipped
+- openstack-network-common-config:
+    no_puppet_run: true
+- clear_nodes_info:
+    type: skipped
+- openstack-network-agents-sriov:
+    no_puppet_run: true
+- ceilometer-compute:
+    no_puppet_run: true
+- globals:
+    no_puppet_run: true
+- fuel_pkgs:
+    no_puppet_run: true
+- openstack-network-agents-l3:
+    no_puppet_run: true
+- configuration_symlink:
+    type: shell
+- tools:
+    no_puppet_run: true
+- rsync_core_puppet:
+    type: sync
+- enable_nova_compute_service:
+    no_puppet_run: true
+- cgroups:
+    no_puppet_run: true
+- upload_nodes_info:
+    type: skipped
+- copy_keys:
+    type: copy_files
+- sync_time:
+    type: shell
+- override_configuration:
+    no_puppet_run: true
+- setup_repositories:
+    no_puppet_run: true
+- openstack-network-plugins-l2:
+    no_puppet_run: true
+- allocate_hugepages:
+    no_puppet_run: true
+- plugins_setup_repositories:
+    no_puppet_run: true
+- connectivity_tests:
+    no_puppet_run: true
+- ceph-compute:
+    no_puppet_run: true
+- ssl-keys-saving:
+    no_puppet_run: true
+- sriov_iommu_check:
+    no_puppet_run: true
+- openstack-network-end:
+    type: skipped
+- copy_keys_ceph:
+    type: copy_files
+- upload_configuration:
+    type: upload_file
+- firewall:
+    no_puppet_run: true
+- top-role-ceph-osd:
+    no_puppet_run: true
+- logging:
+    no_puppet_run: true
+- updatedb:
+    no_puppet_run: true
+- top-role-compute:
+    no_puppet_run: true
+- openstack-network-compute-nova:
+    no_puppet_run: true
+- update_hosts:
+    no_puppet_run: true
+- dns-client:
+    no_puppet_run: true
+- openstack-network-agents-metadata:
+    no_puppet_run: true
+- hosts:
+    no_puppet_run: true
+- copy_haproxy_keys:
+    type: copy_files
+- ntp-client:
+    no_puppet_run: true
+- ssl-add-trust-chain:
+    no_puppet_run: true
+- reserved_ports:
+    no_puppet_run: true

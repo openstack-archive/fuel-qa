@@ -1,0 +1,201 @@
+tasks:
+- openstack-haproxy-mysqld:
+    no_puppet_run: true
+- openstack-network-agents-l3:
+    no_puppet_run: true
+- dump_rabbitmq_definitions:
+    no_puppet_run: true
+- rsync_core_puppet:
+    type: sync
+- ssl-dns-setup:
+    no_puppet_run: true
+- ceilometer-controller:
+    no_puppet_run: true
+- override_configuration:
+    no_puppet_run: true
+- ceph_create_pools:
+    no_puppet_run: true
+- virtual_ips:
+    no_puppet_run: true
+- openstack-haproxy-murano:
+    no_puppet_run: true
+- openstack-network-end:
+    type: skipped
+- openstack-haproxy-radosgw:
+    no_puppet_run: true
+- openstack-haproxy-swift:
+    no_puppet_run: true
+- openstack-haproxy-neutron:
+    no_puppet_run: true
+- updatedb:
+    no_puppet_run: true
+- plugins_rsync:
+    no_puppet_run: true
+- openstack-controller:
+    no_puppet_run: true
+- ceilometer-radosgw-user:
+    no_puppet_run: true
+- openstack-haproxy-keystone:
+    no_puppet_run: true
+- hosts:
+    no_puppet_run: true
+- ntp-client:
+    no_puppet_run: true
+- reserved_ports:
+    no_puppet_run: true
+- controller_remaining_tasks:
+    no_puppet_run: true
+- openstack-haproxy-aodh:
+    no_puppet_run: true
+- murano-cfapi:
+    no_puppet_run: true
+- vmware-vcenter:
+    no_puppet_run: true
+- rabbitmq:
+    no_puppet_run: true
+- ironic-compute:
+    no_puppet_run: true
+- dns-server:
+    no_puppet_run: true
+- copy_keys:
+    type: copy_files
+- enable_rados:
+    no_puppet_run: true
+- ntp-check:
+    no_puppet_run: true
+- keystone:
+    no_puppet_run: true
+- disable_keystone_service_token:
+    no_puppet_run: true
+- umm:
+    no_puppet_run: true
+- ceph-mon:
+    no_puppet_run: true
+- memcached:
+    no_puppet_run: true
+- allocate_hugepages:
+    no_puppet_run: true
+- openrc-delete:
+    no_puppet_run: true
+- plugins_setup_repositories:
+    no_puppet_run: true
+- ceph-radosgw:
+    no_puppet_run: true
+- openstack-haproxy-sahara:
+    no_puppet_run: true
+- ssl-keys-saving:
+    no_puppet_run: true
+- apache:
+    no_puppet_run: true
+- upload_configuration:
+    type: upload_file
+- logging:
+    no_puppet_run: true
+- update_hosts:
+    no_puppet_run: true
+- connectivity_tests:
+    no_puppet_run: true
+- openstack-network-agents-metadata:
+    no_puppet_run: true
+- swift-storage:
+    no_puppet_run: true
+- conntrackd:
+    no_puppet_run: true
+- horizon:
+    no_puppet_run: true
+- openstack-haproxy-ceilometer:
+    no_puppet_run: true
+- openstack-network-common-config:
+    no_puppet_run: true
+- firewall:
+    no_puppet_run: true
+- cluster-haproxy:
+    no_puppet_run: true
+- globals:
+    no_puppet_run: true
+- glance:
+    no_puppet_run: true
+- tools:
+    no_puppet_run: true
+- openstack-haproxy:
+    no_puppet_run: true
+- cgroups:
+    no_puppet_run: true
+- aodh:
+    no_puppet_run: true
+- openstack-haproxy-ironic:
+    no_puppet_run: true
+- setup_repositories:
+    no_puppet_run: true
+- swift-rebalance-cron:
+    no_puppet_run: true
+- heat:
+    no_puppet_run: true
+- openstack-haproxy-stats:
+    no_puppet_run: true
+- ironic-api:
+    no_puppet_run: true
+- cluster:
+    no_puppet_run: true
+- top-role-mongo:
+    no_puppet_run: true
+- dns-client:
+    no_puppet_run: true
+- cluster-vrouter:
+    no_puppet_run: true
+- murano-rabbitmq:
+    no_puppet_run: true
+- api-proxy:
+    no_puppet_run: true
+- cluster_health:
+    no_puppet_run: true
+- openstack-haproxy-horizon:
+    no_puppet_run: true
+- openstack-network-start:
+    type: skipped
+- clear_nodes_info:
+    type: skipped
+- copy_keys_ceph:
+    type: copy_files
+- swift-proxy:
+    no_puppet_run: true
+- sahara:
+    no_puppet_run: true
+- fuel_pkgs:
+    no_puppet_run: true
+- public_vip_ping:
+    no_puppet_run: true
+- upload_nodes_info:
+    type: skipped
+- openstack-haproxy-glance:
+    no_puppet_run: true
+- murano:
+    no_puppet_run: true
+- openstack-network-plugins-l2:
+    no_puppet_run: true
+- openstack-network-agents-dhcp:
+    no_puppet_run: true
+- openstack-haproxy-nova:
+    no_puppet_run: true
+- openstack-network-server-config:
+    no_puppet_run: true
+- openstack-haproxy-cinder:
+    no_puppet_run: true
+- ntp-server:
+    no_puppet_run: true
+- openstack-haproxy-heat:
+    no_puppet_run: true
+- openstack-cinder:
+    no_puppet_run: true
+- sync_time:
+    type: shell
+- database:
+    no_puppet_run: true
+- configuration_symlink:
+    type: shell
+- openstack-network-server-nova:
+    no_puppet_run: true
+- copy_haproxy_keys:
+    type: copy_files
+- ssl-add-trust-chain:
+    no_puppet_run: true
