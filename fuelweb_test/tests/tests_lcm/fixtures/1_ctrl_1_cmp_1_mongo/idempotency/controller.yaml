@@ -18,14 +18,16 @@ tasks:
   - radosgw-keystone: null
   - virtual_ips: null
   - primary-dns-server: null
-  - openstack-haproxy-murano: null
+  - openstack-haproxy-murano:
+      no_puppet_run: true
   - openstack-network-end:
       type: skipped
   - openstack-haproxy-radosgw: null
   - openstack-haproxy-swift: null
   - heat-db: null
   - openstack-haproxy-neutron: null
-  - updatedb: null
+  - updatedb:
+      no_puppet_run: true
   - ironic-db:
       no_puppet_run: true
   - plugins_rsync:
@@ -55,7 +57,8 @@ tasks:
       no_puppet_run: true
   - ntp-check: null
   - aodh-db: null
-  - disable_keystone_service_token: null
+  - disable_keystone_service_token:
+      no_puppet_run: true
   - umm: null
   - memcached: null
   - allocate_hugepages: null
@@ -66,7 +69,8 @@ tasks:
       no_puppet_run: true
   - sahara-keystone:
       no_puppet_run: true
-  - openstack-haproxy-sahara: null
+  - openstack-haproxy-sahara:
+      no_puppet_run: true
   - ssl-keys-saving: null
   - primary-cluster: null
   - upload_cirros:
@@ -85,7 +89,6 @@ tasks:
   - ironic-keystone:
       no_puppet_run: true
   - connectivity_tests: null
-  - swift-storage: null
   - primary-heat: null
   - conntrackd: null
   - sahara-db:
@@ -104,8 +107,8 @@ tasks:
   - murano-cfapi-keystone:
       no_puppet_run: true
   - aodh: null
-  - ceph_create_pools:
-      no_puppet_run: true
+  - copy_deleted_nodes:
+      type: copy_files
   - openstack-haproxy-ironic:
       no_puppet_run: true
   - setup_repositories: null
@@ -162,10 +165,13 @@ tasks:
   - ntp-server: null
   - murano-keystone:
       no_puppet_run: true
+  - swift-proxy_storage: null
   - primary-openstack-network-agents-dhcp: null
   - openstack-haproxy-heat: null
   - primary-openstack-controller: null
   - openstack-cinder: null
+  - ceph_create_pools:
+      no_puppet_run: true
   - keystone-db:
       skip:
       - File[/root/.my.cnf]
@@ -176,6 +182,5 @@ tasks:
   - openstack-network-server-nova: null
   - copy_haproxy_keys:
       type: copy_files
-  - primary-swift-proxy: null
   - openstack-network-networks: null
   - ssl-add-trust-chain: null

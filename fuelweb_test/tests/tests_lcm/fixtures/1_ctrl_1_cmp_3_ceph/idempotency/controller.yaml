@@ -9,7 +9,8 @@ tasks:
   - rsync_core_puppet:
       type: sync
   - ssl-dns-setup: null
-  - ceilometer-controller: null
+  - ceilometer-controller:
+      no_puppet_run: true
   - override_configuration: null
   - ceilometer-keystone:
       no_puppet_run: true
@@ -19,7 +20,8 @@ tasks:
   - radosgw-keystone: null
   - virtual_ips: null
   - primary-dns-server: null
-  - openstack-haproxy-murano: null
+  - openstack-haproxy-murano:
+      no_puppet_run: true
   - openstack-network-end:
       type: skipped
   - openstack-haproxy-radosgw: null
@@ -56,7 +58,8 @@ tasks:
   - ntp-check: null
   - aodh-db:
       no_puppet_run: true
-  - disable_keystone_service_token: null
+  - disable_keystone_service_token:
+      no_puppet_run: true
   - umm: null
   - memcached: null
   - allocate_hugepages: null
@@ -67,7 +70,8 @@ tasks:
       no_puppet_run: true
   - sahara-keystone:
       no_puppet_run: true
-  - openstack-haproxy-sahara: null
+  - openstack-haproxy-sahara:
+      no_puppet_run: true
   - ssl-keys-saving: null
   - primary-cluster: null
   - upload_cirros:
@@ -86,14 +90,13 @@ tasks:
   - ironic-keystone:
       no_puppet_run: true
   - connectivity_tests: null
-  - swift-storage:
-      no_puppet_run: true
   - primary-heat: null
   - conntrackd: null
   - sahara-db:
       no_puppet_run: true
   - horizon: null
-  - openstack-haproxy-ceilometer: null
+  - openstack-haproxy-ceilometer:
+      no_puppet_run: true
   - openstack-network-common-config: null
   - firewall: null
   - apache: null
@@ -108,7 +111,8 @@ tasks:
       no_puppet_run: true
   - aodh:
       no_puppet_run: true
-  - ceph_create_pools: null
+  - copy_deleted_nodes:
+      type: copy_files
   - openstack-haproxy-ironic:
       no_puppet_run: true
   - setup_repositories: null
@@ -167,10 +171,13 @@ tasks:
   - ntp-server: null
   - murano-keystone:
       no_puppet_run: true
+  - swift-proxy_storage:
+      no_puppet_run: true
   - primary-openstack-network-agents-dhcp: null
   - openstack-haproxy-heat: null
   - primary-openstack-controller: null
   - openstack-cinder: null
+  - ceph_create_pools: null
   - keystone-db:
       skip:
       - File[/root/.my.cnf]
@@ -181,7 +188,5 @@ tasks:
   - openstack-network-server-nova: null
   - copy_haproxy_keys:
       type: copy_files
-  - primary-swift-proxy:
-      no_puppet_run: true
   - openstack-network-networks: null
   - ssl-add-trust-chain: null
