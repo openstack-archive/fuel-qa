@@ -2826,19 +2826,3 @@ class FuelWebClient(object):
             logger.exception("Failed to run task {!r}".format(task_name))
             if force_exc:
                 raise
-
-    @logwrap
-    def get_vip_info(self, cluster_id, vip_name='public'):
-        vip_data = self.client.get_vip_info_by_name(cluster_id, vip_name)
-        assert_true(vip_data, "Vip with name {} wasn't found".format(vip_name))
-        logger.debug("vip data is {}".format(vip_data[0]))
-        return vip_data[0]
-
-    @logwrap
-    def update_vip_ip(self, cluster_id, ip, vip_name='public'):
-        vip_data = self.get_vip_info(cluster_id, vip_name=vip_name)
-        vip_data['ip_addr'] = ip
-        vip_data['is_user_defined'] = True
-        vip_id = vip_data['id']
-        logger.debug("data to send {}".format(vip_data))
-        self.client.update_vip_ip(cluster_id, vip_id, vip_data)
