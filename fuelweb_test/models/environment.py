@@ -519,6 +519,7 @@ class EnvironmentModel(object):
         docker load -i /var/www/nailgun/docker/images/fuel-images.tar
         dockerctl destroy all
         dockerctl start all
+        dockerctl check
         fuel release --sync-deployment-tasks --dir /etc/puppet/
         """
         logger.info('Searching for updates..')
@@ -551,6 +552,7 @@ class EnvironmentModel(object):
             ["docker load -i /var/www/nailgun/docker/images/fuel-images.tar",
              "dockerctl destroy all",
              "dockerctl start all",
+             "dockerctl check",
              "fuel release --sync-deployment-tasks --dir /etc/puppet/ "
              "--user={user} --password={pwd}"
              "".format(user=settings.KEYSTONE_CREDS['username'],
