@@ -641,33 +641,9 @@ class NailgunClient(object):
 
     @logwrap
     @json_parse
-    def get_vip_info(self, cluster_id):
-        """Get all available vips.
-
-        :param cluster_id: Id of cluster.
-        :return: a decoded JSON response.
-        """
-        return self.client.get("/api/clusters/{}/network_configuration/"
-                               "ips/vips".format(cluster_id))
-
-    @logwrap
-    def get_vip_info_by_name(self, cluster_id, name):
-        """Get vip data by its name.
-
-        :param cluster_id: Id of cluster.
-        :param name: Name of vip.
-        :return: vip info with specified name.
-        """
-        vips_data = self.get_vip_info(cluster_id)
-        logger.debug("available vips are {}".format(vips_data))
-        vip_data = [vip for vip in vips_data if vip['vip_name'] == name]
-        return vip_data
-
-    @logwrap
-    @json_parse
-    def update_vip_ip(self, cluster_id, vip_id, data):
-        return self.client.put("/api/clusters/{0}/network_configuration/ips/"
-                               "{1}/vips".format(cluster_id, vip_id), data)
+    def update_vip_ip(self, cluster_id, data):
+        return self.client.post("/api/clusters/{0}/network_configuration/ips/"
+                                "vips".format(cluster_id), data)
 
     @logwrap
     @json_parse
