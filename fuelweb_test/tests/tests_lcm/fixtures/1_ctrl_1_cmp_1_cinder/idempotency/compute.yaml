@@ -8,8 +8,7 @@ tasks:
   - clear_nodes_info:
       type: skipped
   - openstack-network-agents-sriov: null
-  - copy_keys_ceph:
-      type: copy_files
+  - override_configuration: null
   - globals: null
   - fuel_pkgs: null
   - openstack-network-agents-l3: null
@@ -23,12 +22,14 @@ tasks:
       type: skipped
   - copy_keys:
       type: copy_files
-  - override_configuration: null
+  - copy_deleted_nodes:
+      type: copy_files
   - setup_repositories: null
   - dns-client: null
   - openstack-network-plugins-l2: null
   - allocate_hugepages: null
-  - plugins_setup_repositories: null
+  - plugins_setup_repositories:
+      no_puppet_run: true
   - ceph-compute:
       no_puppet_run: true
   - ssl-keys-saving: null
@@ -37,8 +38,8 @@ tasks:
       - Exec[sriov_iommu_check]
   - openstack-network-end:
       type: skipped
-  - ceilometer-compute:
-      no_puppet_run: true
+  - copy_keys_ceph:
+      type: copy_files
   - upload_configuration:
       type: upload_file
   - firewall: null
@@ -56,6 +57,8 @@ tasks:
   - connectivity_tests: null
   - configuration_symlink:
       type: shell
+  - ceilometer-compute:
+      no_puppet_run: true
   - hosts: null
   - copy_haproxy_keys:
       type: copy_files
