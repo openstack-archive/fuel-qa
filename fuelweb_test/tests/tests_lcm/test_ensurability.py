@@ -61,24 +61,33 @@ class TaskEnsurability(LCMTestBasic):
 
         self.fuel_web.deploy_cluster_changes_wait(cluster_id)
 
-    def generate_tasks_fixture(self, deployment, cluster_id, slave_nodes):
+    def generate_tasks_fixture(self, deployment, cluster_id,
+                               slave_nodes, ha=False):
         """Collect per-node fixtures for tasks executed on deploying changes
 
         :param deployment: str, name of env configuration under test
         :param cluster_id: int, cluster ID
         :param slave_nodes: list, cluster nodes data
+        :param ha: bool, indicates whether HA env is used
         :return: None
         """
         # For each node get list of tasks executed during end-to-end redeploy
         tasks = {}
+        primary_ctrl_id = self.define_pr_ctrl()['id']
         for node in slave_nodes:
-            tasks[self.node_roles(node)] = self.get_nodes_tasks(node["id"])
+            node_ref = self.node_roles(node)
+            if ha and primary_ctrl_id == node['id']:
+                node_ref = 'primary-' + node_ref
+            tasks[node_ref] = self.get_nodes_tasks(node["id"])
 
         # Revert snapshot and collect fixtures for the executed tasks
         # by running each one separately
         self.env.revert_snapshot('lcm_deploy_{}'.format(deployment))
 
-        cluster_f, _ = self.load_settings_fixtures(deployment)
+        cluster_f, nodes_f = self.load_settings_fixtures(deployment)
+        for node in slave_nodes:
+            self.fuel_web.client.upload_node_attributes(
+                nodes_f[self.node_roles(node)], node["id"])
         self.fuel_web.client.update_cluster_attributes(
             cluster_id, {'editable': cluster_f})
 
@@ -87,6 +96,9 @@ class TaskEnsurability(LCMTestBasic):
         for node in slave_nodes:
             task_fixture = []
             node_ref = self.node_roles(node)
+
+            if ha and primary_ctrl_id == node['id']:
+                node_ref = 'primary-' + node_ref
 
             for task in tasks[node_ref]:
                 self.fuel_web.execute_task_on_node(
@@ -128,12 +140,14 @@ class TaskEnsurability(LCMTestBasic):
         logger.info("Generated tasks fixture:\n{}".format(
             yaml.safe_dump(result, default_flow_style=False)))
 
-    def check_ensurability(self, deployment, cluster_id, slave_nodes):
+    def check_ensurability(self, deployment, cluster_id,
+                           slave_nodes, ha=False):
         """Check ensurability of tasks for the given env configuration.
 
         :param deployment: str, name of env configuration under test
         :param cluster_id: int, cluster ID
         :param slave_nodes: list, cluster nodes data
+        :param ha: bool, indicates whether HA env is used
         :return: None
         """
         # Revert snapshot to run each task separately
@@ -149,9 +163,12 @@ class TaskEnsurability(LCMTestBasic):
 
         result = {}
         ensurable = True
+        primary_ctrl_id = self.define_pr_ctrl()['id']
         for node in slave_nodes:
-            fixture = self.load_fixture(
-                deployment, self.node_roles(node), idmp=False)
+            node_ref = self.node_roles(node)
+            if ha and primary_ctrl_id == node['id']:
+                node_ref = 'primary-' + node_ref
+            fixture = self.load_fixture(deployment, node_ref, idmp=False)
             nonensurable_tasks = {}
 
             for task in fixture["tasks"]:
@@ -194,7 +211,7 @@ class TaskEnsurability(LCMTestBasic):
                 else:
                     logger.info("Task {} on node {} was executed "
                                 "successfully".format(task_name, node['id']))
-            result[self.node_roles(node)] = nonensurable_tasks
+            result[node_ref] = nonensurable_tasks
 
         logger.info('Non-ensurable tasks:\n{}'.format(
             yaml.safe_dump(result, default_flow_style=False)))
@@ -318,6 +335,51 @@ class TaskEnsurability(LCMTestBasic):
         self.show_step(4)
         assert_true(
             self.check_ensurability(deployment, cluster_id, slave_nodes),
+            "There are not ensurable tasks. "
+            "Please take a look at the output above!")
+
+        self.env.make_snapshot('ensurability_{}'.format(deployment))
+
+    @test(depends_on=[SetupLCMEnvironment.lcm_deploy_3_ctrl_3_cmp_ceph_sahara],
+          groups=['ensurability_3_ctrl_3_cmp_ceph_sahara'])
+    @log_snapshot_after_test
+    def ensurability_3_ctrl_3_cmp_ceph_sahara(self):
+        """Test ensurability for cluster with Sahara, Ceilometer and Ceph
+        in HA mode.
+
+          Scenario:
+            1. Revert the snapshot 'lcm_deploy_1_ctrl_1_cmp_3_ceph'
+            2. Check that stored setting fixtures are up to date
+            3. Check that stored task fixtures are up to date
+            4. Check ensurability of the tasks
+
+        Snapshot: "ensurability_3_ctrl_3_cmp_ceph_sahara"
+        """
+        self.show_step(1)
+        deployment = "3_ctrl_3_cmp_ceph_sahara"
+        self.env.revert_snapshot('lcm_deploy_{}'.format(deployment))
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+
+        self.show_step(2)
+        self.check_settings_consistency(deployment, cluster_id)
+
+        self.show_step(3)
+        self.deploy_fixtures(deployment, cluster_id, slave_nodes)
+        node_refs = self.check_extra_tasks(
+            slave_nodes, deployment, idmp=False, ha=True)
+        if node_refs:
+            self.generate_tasks_fixture(
+                deployment, cluster_id, slave_nodes, ha=True)
+            msg = ('Please update ensurability fixtures in the repo '
+                   'according to generated fixtures')
+            raise DeprecatedFixture(msg)
+
+        self.show_step(4)
+        assert_true(
+            self.check_ensurability(
+                deployment, cluster_id, slave_nodes, ha=True),
             "There are not ensurable tasks. "
             "Please take a look at the output above!")
 
