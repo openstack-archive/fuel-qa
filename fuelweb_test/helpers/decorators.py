@@ -123,9 +123,9 @@ def log_snapshot_after_test(func):
             raise
         except Exception:
             name = 'error_{:s}'.format(func.__name__)
-            store_error_details(name, args[0].env)
             logger.error(traceback.format_exc())
             logger.info("<" * 5 + "*" * 100 + ">" * 5)
+            store_error_details(name, args[0].env)
             raise
         else:
             if settings.ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT:
