@@ -60,7 +60,8 @@ class TestAdminNode(TestBasic):
         wait(
             lambda: http(host=self.env.get_admin_node_ip(), url='/cobbler_api',
                          waited_code=501),
-            timeout=60
+            timeout=60,
+            timeout_msg='Cobler WEB API is not alive'
         )
         server = ServerProxy(
             'http://%s/cobbler_api' % self.env.get_admin_node_ip())

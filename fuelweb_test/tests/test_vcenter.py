@@ -58,7 +58,9 @@ class VcenterDeploy(TestBasic):
         # Wait for launch VMs
         for hypervisor in hypervisors_list:
             wait(lambda: os_conn.get_hypervisor_vms_count(hypervisor) != 0,
-                 timeout=300)
+                 timeout=300,
+                 timeout_msg='Timeout while waiting VM to be listed '
+                             'in hypervisor')
 
     def configure_nova_vlan(self, cluster_id):
         # Configure network interfaces.

@@ -65,10 +65,13 @@ class RepeatableImageBased(TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.client.delete_cluster(cluster_id)
         # wait nodes go to reboot
-        wait(lambda: not self.fuel_web.client.list_nodes(), timeout=10 * 60)
+        wait(lambda: not self.fuel_web.client.list_nodes(),
+             timeout=10 * 60,
+             timeout_msg='Nodes failed to become offline')
         # wait for nodes to appear after bootstrap
         wait(lambda: len(self.fuel_web.client.list_nodes()) == 5,
-             timeout=10 * 60)
+             timeout=10 * 60,
+             timeout_msg='Nodes failed to become online')
         for slave in self.env.d_env.nodes().slaves[:5]:
             slave.destroy()
 

@@ -16,7 +16,6 @@ import re
 import subprocess
 import time
 
-from devops.error import TimeoutError
 from devops.helpers.helpers import _tcp_ping
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
@@ -120,7 +119,9 @@ class EnvironmentModel(object):
             time.sleep(5)
 
         with TimeStat("wait_for_nodes_to_start_and_register_in_nailgun"):
-            wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
+            wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout,
+                 timeout_msg='Bootstrap timeout for nodes: {}'
+                             ''.format(devops_nodes))
 
         if not skip_timesync:
             self.sync_time()
@@ -285,13 +286,11 @@ class EnvironmentModel(object):
         time.sleep(30)
 
         for node in devops_nodes:
-            try:
-                wait(lambda:
-                     self.fuel_web.get_nailgun_node_by_devops_node(
-                         node)['online'], timeout=60 * 6)
-            except TimeoutError:
-                raise TimeoutError(
-                    "Node {0} does not become online".format(node.name))
+            wait(lambda:
+                 self.fuel_web.get_nailgun_node_by_devops_node(
+                     node)['online'], timeout=60 * 6,
+                 timeout_msg='Node {0} does not become online'
+                             ''.format(node.name))
         return True
 
     def revert_snapshot(self, name, skip_timesync=False,
@@ -310,6 +309,7 @@ class EnvironmentModel(object):
         if not skip_timesync:
             self.sync_time()
         try:
+            # TODO(astudenov): add timeout_msg
             _wait(self.fuel_web.client.get_releases,
                   expected=EnvironmentError, timeout=300)
         except exceptions.Unauthorized:
@@ -317,6 +317,7 @@ class EnvironmentModel(object):
             self.fuel_web.get_nailgun_version()
 
         if not skip_slaves_check:
+            # TODO(astudenov): add timeout_msg
             _wait(lambda: self.check_slaves_are_ready(), timeout=60 * 6)
         return True
 
@@ -397,7 +398,8 @@ class EnvironmentModel(object):
         self.d_env.start([admin])
 
         logger.info("Waiting for admin node to start up")
-        wait(lambda: admin.driver.node_active(admin), 60)
+        wait(lambda: admin.driver.node_active(admin), 60,
+             timeout_msg='Admin node startup timeout')
         logger.info("Proceed with installation")
         # update network parameters at boot screen
         admin.send_keys(self.get_keys(admin, custom=custom,
@@ -442,7 +444,8 @@ class EnvironmentModel(object):
         wait(lambda: (
              self.ssh_manager.execute_on_remote(
                  admin_node_ip, cmd)['stdout'][0] != 'dead'), interval=10,
-             timeout=30)
+             timeout=30,
+             timeout_msg='nginx service is dead')
 
     # pylint: disable=no-self-use
     @update_rpm_packages
@@ -455,6 +458,7 @@ class EnvironmentModel(object):
     @logwrap
     def wait_for_provisioning(self,
                               timeout=settings.WAIT_FOR_PROVISIONING_TIMEOUT):
+        # TODO(astudenov): add timeout_msg
         _wait(lambda: _tcp_ping(
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
@@ -486,14 +490,17 @@ class EnvironmentModel(object):
         wait(lambda: self.ssh_manager.exists_on_remote(
             self.ssh_manager.admin_ip,
             '/var/lock/wait_for_external_config'),
-            timeout=600)
+            timeout=600,
+            timeout_msg='wait_for_external_config lock file timeout')
 
         check_cmd = 'pkill -0 -f wait_for_external_config'
 
         wait(
             lambda: self.ssh_manager.execute(
                 ip=self.ssh_manager.admin_ip,
-                cmd=check_cmd)['exit_code'] == 0, timeout=timeout)
+                cmd=check_cmd)['exit_code'] == 0,
+            timeout=timeout,
+            timeout_msg='wait_for_external_config process timeout')
 
     @logwrap
     def kill_wait_for_external_config(self):
@@ -519,7 +526,8 @@ class EnvironmentModel(object):
                     ip=self.ssh_manager.admin_ip,
                     cmd="grep 'Fuel node deployment' '{:s}'".format(log_path)
                 )['exit_code'] == 0,
-                timeout=(float(settings.ADMIN_NODE_BOOTSTRAP_TIMEOUT))
+                timeout=settings.ADMIN_NODE_BOOTSTRAP_TIMEOUT,
+                timeout_msg='Admin node bootstrap timeout'
             )
         result = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,

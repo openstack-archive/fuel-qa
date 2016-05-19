@@ -198,7 +198,8 @@ class AdminActions(BaseActions):
 
     @logwrap
     def wait_for_fuel_ready(self, timeout=300):
-        wait(lambda: self.is_fuel_ready, timeout=timeout)
+        wait(lambda: self.is_fuel_ready, timeout=timeout,
+             timeout_msg='Fuel is not ready')
 
     @logwrap
     @retry()

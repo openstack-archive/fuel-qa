@@ -16,7 +16,6 @@ import os
 
 from proboscis import test
 from proboscis.asserts import assert_true
-from devops.helpers.helpers import wait
 
 from fuelweb_test.helpers.checkers import check_plugin_path_env
 from fuelweb_test.helpers import utils
@@ -179,8 +178,8 @@ class SeparateAllFailover(TestBasic):
         all_node = self.fuel_web.get_rabbit_master_node(
             self.env.d_env.nodes().slaves[3].name)
         all_node.destroy()
-        wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
-            all_node)['online'], timeout=60 * 5)
+        self.fuel_web.wait_node_is_offline(all_node)
+
         self.fuel_web.assert_ha_services_ready(cluster_id)
         self.fuel_web.assert_os_services_ready(cluster_id, timeout=15 * 60)
 
@@ -210,8 +209,7 @@ class SeparateAllFailover(TestBasic):
         logger.debug(
             "controller with primary role is {}".format(controller.name))
         controller.destroy()
-        wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
-            controller)['online'], timeout=60 * 5)
+        self.fuel_web.wait_node_is_offline(controller)
 
         self.fuel_web.assert_ha_services_ready(cluster_id, should_fail=1)
         self.fuel_web.assert_os_services_ready(cluster_id, timeout=15 * 60)

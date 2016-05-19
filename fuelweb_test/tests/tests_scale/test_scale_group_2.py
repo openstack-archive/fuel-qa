@@ -13,8 +13,7 @@
 #    under the License.
 
 from proboscis import test
-from proboscis.asserts import assert_false, assert_equal
-from devops.error import TimeoutError
+from proboscis.asserts import assert_equal
 from devops.helpers.helpers import wait
 
 from fuelweb_test import logger
@@ -75,15 +74,12 @@ class HaScaleGroup2(TestBasic):
             primary_controller)['id']
         primary_controller.destroy()
         self.show_step(5)
-        try:
-            wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
-                primary_controller)['online'], timeout=30 * 8)
-        except TimeoutError:
-            assert_false(
-                self.fuel_web.get_nailgun_node_by_devops_node(
-                    primary_controller)['online'],
-                'Node {0} has not become '
-                'offline after warm shutdown'.format(primary_controller.name))
+
+        wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
+            primary_controller)['online'], timeout=30 * 8,
+            timeout_msg='Node {0} has not become '
+                        'offline after warm shutdown'.format(
+                            primary_controller.name))
         self.show_step(6)
         self.fuel_web.delete_node(primary_controller_id)
         self.fuel_web.wait_task_success('deployment')
