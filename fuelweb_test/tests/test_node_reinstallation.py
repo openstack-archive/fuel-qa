@@ -19,9 +19,10 @@ from proboscis.asserts import assert_true
 from proboscis import test
 import yaml
 
+from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
-from fuelweb_test import logger
+from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -95,6 +96,7 @@ class NodeReinstallationEnv(TestBasic):
 
         Duration 25m
         """
+        self.check_run("failed_node_reinstallation_env")
         self.env.revert_snapshot("ready_with_5_slaves")
 
         cluster_id = self.fuel_web.create_cluster(
@@ -312,6 +314,44 @@ class FullClusterReinstallation(TestBasic):
 class ErrorNodeReinstallation(TestBasic):
     """ErrorNodeReinstallation."""  # TODO documentation
 
+    @staticmethod
+    def _turnoff_executable_ruby(node):
+        """Set mode -x for /usr/bin/ruby
+
+        :param node: dict, node attributes
+        """
+        ssh = SSHManager()
+        cmd = 'chmod -x /usr/bin/ruby'
+        ssh.execute_on_remote(node['ip'], cmd)
+
+    @staticmethod
+    def _turnon_executable_ruby(node):
+        """Set mode +x for /usr/bin/ruby
+
+        :param node: dict, node attributes
+        """
+        ssh = SSHManager()
+        cmd = 'chmod +x /usr/bin/ruby'
+        ssh.execute_on_remote(node['ip'], cmd)
+
+    def _put_cluster_in_error_state(self, cluster_id, node):
+        """Put cluster in error state
+
+        :param cluster_id: int, number of cluster id
+        :param node: dict, node attributes
+        :return:
+        """
+
+        # Start deployment for corresponding node
+        task = self.fuel_web.client.deploy_nodes(
+            cluster_id,
+            [str(node['id'])])
+        # disable ruby and wait for cluster will be in error state
+        self._turnoff_executable_ruby(node)
+        self.fuel_web.assert_task_failed(task)
+        # enable ruby
+        self._turnon_executable_ruby(node)
+
     @test(depends_on=[NodeReinstallationEnv.failed_node_reinstallation_env],
           groups=["reinstall_failed_primary_controller_deployment"])
     @log_snapshot_after_test
@@ -320,31 +360,29 @@ class ErrorNodeReinstallation(TestBasic):
 
         Scenario:
             1. Revert the snapshot
-            2. Start deployment; for primary controller put inappropriate task
-               to be executed to cause a failure on deployment
+            2. Start deployment; fail deployment on primary controller
             3. Reinstall the cluster
             4. Run network verification
             5. Run OSTF
 
         Duration: 145m
         """
+        self.show_step(1)
         self.env.revert_snapshot("failed_node_reinstallation_env")
 
+        self.show_step(2)
         cluster_id = self.fuel_web.get_last_created_cluster()
-
         # Get the primary controller
-        primary_ctrl = self.fuel_web.get_nailgun_node_by_name('slave-01')
+        pr_controller = self.fuel_web.get_nailgun_node_by_name('slave-01')
+        self._put_cluster_in_error_state(cluster_id, pr_controller)
 
-        # Start deployment; for primary controller put inappropriate task
-        # to be executed to cause a failure on deployment
-        task = self.fuel_web.client.put_deployment_tasks_for_cluster(
-            cluster_id, data=['hiera'],
-            node_id=primary_ctrl['id'])
-        self.fuel_web.assert_task_failed(task)
-
+        self.show_step(3)
         NodeReinstallationEnv._reinstall_nodes(self.fuel_web, cluster_id)
 
+        self.show_step(4)
         self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(5)
         self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
     @test(depends_on=[NodeReinstallationEnv.failed_node_reinstallation_env],
@@ -355,31 +393,29 @@ class ErrorNodeReinstallation(TestBasic):
 
         Scenario:
             1. Revert the snapshot
-            2. Start deployment; for a regular controller put inappropriate
-               task to be executed to cause a failure on deployment
+            2. Start deployment; fail deployment on regular controller
             3. Reinstall the cluster
             4. Run network verification
             5. Run OSTF
 
         Duration: 145m
         """
+        self.show_step(1)
         self.env.revert_snapshot("failed_node_reinstallation_env")
 
+        self.show_step(2)
         cluster_id = self.fuel_web.get_last_created_cluster()
-
         # Get a regular controller
         regular_ctrl = self.fuel_web.get_nailgun_node_by_name('slave-02')
+        self._put_cluster_in_error_state(cluster_id, regular_ctrl)
 
-        # Start deployment; for  a regular controller put inappropriate task
-        # to be executed to cause a failure on deployment
-        task = self.fuel_web.client.put_deployment_tasks_for_cluster(
-            cluster_id, data=['hiera'],
-            node_id=regular_ctrl['id'])
-        self.fuel_web.assert_task_failed(task)
-
+        self.show_step(3)
         NodeReinstallationEnv._reinstall_nodes(self.fuel_web, cluster_id)
 
+        self.show_step(4)
         self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(5)
         self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
     @test(depends_on=[NodeReinstallationEnv.failed_node_reinstallation_env],
@@ -390,34 +426,31 @@ class ErrorNodeReinstallation(TestBasic):
 
         Scenario:
             1. Revert the snapshot
-            2. Start deployment; for one of computes put inappropriate task
-               to be executed to cause a failure on deployment
+            2. Start deployment; fail deployment on one of computes
             3. Reinstall the cluster
             4. Run network verification
             5. Run OSTF
 
         Duration: 45m
         """
+        self.show_step(1)
         self.env.revert_snapshot("failed_node_reinstallation_env")
 
+        self.show_step(2)
         cluster_id = self.fuel_web.get_last_created_cluster()
-
         # Get nailgun nodes
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         cmps_nailgun = [n for n in nailgun_nodes
                         if 'compute' in n['pending_roles']]
-        cmp_node_id = str(cmps_nailgun[0]['id'])
+        self._put_cluster_in_error_state(cluster_id, cmps_nailgun[0])
 
-        # Start deployment; for one of computes put inappropriate task
-        # to be executed to cause a failure on deployment
-        task = self.fuel_web.client.put_deployment_tasks_for_cluster(
-            cluster_id, data=['hiera'],
-            node_id=cmp_node_id)
-        self.fuel_web.assert_task_failed(task)
-
+        self.show_step(3)
         NodeReinstallationEnv._reinstall_nodes(self.fuel_web, cluster_id)
 
+        self.show_step(4)
         self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(5)
         self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
 
