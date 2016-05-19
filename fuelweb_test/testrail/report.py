@@ -537,9 +537,17 @@ def main():
     milestone, iso_number, prefix = get_version(runner_build.build_data)
     milestone = project.get_milestone_by_name(name=milestone)
 
-    test_plan_name = ' '.join(
-        filter(lambda x: bool(x),
-               (milestone['name'], prefix, 'iso', '#' + str(iso_number))))
+    if TestRailSettings.plugin_build_number:
+        test_plan_name = '{test_suite} build#{plugin_build} iso#{iso}'
+        test_plan_name = test_plan_name.format(
+            tests_suite=TestRailSettings.tests_suite,
+            plugin_build=TestRailSettings.plugin_build_number,
+            iso=iso_number
+        )
+    else:
+        test_plan_name = ' '.join(
+            filter(lambda x: bool(x),
+                   (milestone['name'], prefix, 'iso', '#' + str(iso_number))))
 
     test_plan = project.get_plan_by_name(test_plan_name)
     iso_link = '/'.join([JENKINS['url'], 'job',
