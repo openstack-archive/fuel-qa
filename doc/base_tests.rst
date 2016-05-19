@@ -384,6 +384,11 @@ Test task coverage by LCM tests
 .. automodule:: fuelweb_test.tests.tests_lcm.test_task_coverage
   :members:
 
+Test for unlock settings tab from different cluster states
+----------------------------------------------------------
+.. automodule:: fuelweb_test.tests.test_states_unlock_settings_tab
+  :members:
+
 Gating tests
 ============
 
