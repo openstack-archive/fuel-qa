@@ -1,11 +1,21 @@
 bvt_2:
  - apache
+ - apache_api_proxy
+ - apache_mpm
  - api-proxy
+ - api_proxy.conf
  - apt
  - astute
+ - atop
+ - atop_retention
+ - auth_file
+ - credentials_file
  - ceph
+ - ceph_nova_compute
  - cluster
+ - cluster_haproxy
  - cluster-haproxy
+ - cluster_vrouter
  - cluster-vrouter
  - cobbler
  - compute
@@ -14,17 +24,23 @@ bvt_2:
  - corosync
  - database
  - datacat
+ - deployment_groups
+ - dnsmasq
+ - dnsmasq.conf
  - docker
  - fuel
  - fuel_pkgs
  - glance
  - globals
+ - globals_yaml
  - haproxy
  - hiera
  - horizon
+ - horizon/wsgi_vhost_custom
+ - hosts
  - inifile
+ - install_ssh_keys
  - keystone
- - keystone.pp
  - l23network
  - logging
  - mon
@@ -33,19 +49,27 @@ bvt_2:
  - monit
  - nailgun
  - neutron
+ - netconfig
  - nova
+ - openrc.erb
  - openssl
  - openstack
  - openstack-controller
  - openstack-haproxy
+ - openstack_haproxy
  - openstack-network
  - openstacklib
  - pacemaker
  - pacemaker_wrappers
+ - package_pins
  - postgresql
+ - puppet_pull
+ - puppet-pull.sh
  - rabbitmq
- - roles/controller.pp
- - roles/compute.pp
+ - roles/controller
+ - roles/compute
+ - roles/enable_compute
+ - roles/tasks
  - rsync
  - rsyslog
  - spec
@@ -55,6 +79,8 @@ bvt_2:
  - stdlib
  - sysctl
  - sysfs
+ - test_compute
+ - test_controller
  - tftp
  - tools
  - tweaks
@@ -62,25 +88,33 @@ bvt_2:
  - virtual_ips
  - xinetd
  - vmware
+ - wait_for_backend
+ - wait_for_keystone_backends
+ - wait_for_glance_backends
+
+
+deploy_ha_controller_neutron_example:
+ - plugins 
 
 deploy_heat_ha:
  - adhoc
  - ceilometer
  - ceilometer_ha
- - cfn_keystone.pp
  - heat
  - heat_ha
  - mongo
  - mongodb
- - roles/mongo.pp
+ - roles/mongo
 
 ha_neutron:
  - cinder
  - openstack-cinder
- - roles/cinder.pp
+ - roles/cinder
+ - roles/enable_cinder
 
 reduced_footprint:
  - generate_vms
+ - vm_libvirt
 
 ha_neutron_firewall:
  - firewall
@@ -88,12 +122,16 @@ ha_neutron_firewall:
 ha_neutron_mysql_termination:
  - galera
  - mysql
+ - mysql.access.cnf
+ - mysql_access
+ - mysql_grant
+ - mysql_user_access
 
 ironic_deploy_ceph:
  - ceph
  - ironic
  - ironic-conductor
- - roles/ironic-conductor.pp
+ - roles/ironic-conductor
 
 deploy_murano_ha_with_tun:
  - murano
@@ -101,6 +139,9 @@ deploy_murano_ha_with_tun:
 deploy_ha_dns_ntp:
  - dns
  - ntp
+ - resolvconf
+ - resolv.conf
+ - resolv.dnsmasq.conf
 
 deploy_sahara_ha_tun:
  - sahara
@@ -118,3 +159,7 @@ deploy_ha_cgroup:
 
 basic_env_for_hugepages:
  - allocated_hugepages
+
+test_logrotate:
+ - apache2.logrotate
+ - apache2.prerotate
