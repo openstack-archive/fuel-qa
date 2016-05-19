@@ -159,6 +159,49 @@ class NailgunClient(object):
 
     @logwrap
     @json_parse
+    def deploy_custom_graph(self, cluster_id, graph_type, node_ids=None):
+        """Method to deploy custom graph on cluster.
+
+        :param cluster_id: Cluster to be custom deployed
+        :param graph_type: Type of a graph to deploy
+        :param node_ids: nodes to deploy. None or empty list means all.
+        :return:
+        """
+        if not node_ids:
+            nailgun_nodes = self.list_cluster_nodes(cluster_id)
+            node_ids = [str(_node['id']) for _node in nailgun_nodes]
+        return self.client.put(
+            '/api/clusters/{0}/deploy/?graph_type={1}&nodes={2}'.format(
+                cluster_id,
+                graph_type,
+                ','.join(node_ids)))
+
+    @logwrap
+    @json_parse
+    def get_release_tasks(self, release_id):
+        """Method to get release deployment tasks.
+
+        :param release_id: Id of release to get tasks
+        :return: list of deployment graphs
+        """
+        return self.client.get('/api/releases/{rel_id}/deployment_graphs/'
+                               .format(rel_id=release_id))
+
+    @logwrap
+    @json_parse
+    def get_release_tasks_by_type(self, release_id, graph_type):
+        """Method to get release deployment tasks by type.
+
+        :param release_id: Id of release to get tasks
+        :param graph_type: Type of a graph to deploy
+        :return: list of deployment graphs for a given type
+        """
+        return self.client.get(
+            "/api/releases/{0}/deployment_graphs/{1}".format(release_id,
+                                                             graph_type))
+
+    @logwrap
+    @json_parse
     def get_task(self, task_id):
         return self.client.get("/api/tasks/{}".format(task_id))
 
@@ -453,6 +496,16 @@ class NailgunClient(object):
         """ Get list of all deployment tasks for release."""
         return self.client.get(
             '/api/releases/{}/deployment_tasks'.format(release_id))
+
+    @logwrap
+    @json_parse
+    def get_custom_cluster_deployment_tasks(self, cluster_id, custom_type):
+        """ Get list of all deployment tasks for cluster."""
+        return self.client.get(
+            '/api/clusters/{}/deployment_tasks/?graph_type={}'.format(
+                cluster_id,
+                custom_type
+            ))
 
     @logwrap
     @json_parse
