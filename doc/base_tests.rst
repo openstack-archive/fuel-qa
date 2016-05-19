@@ -379,6 +379,11 @@ Test task ensurability
 .. automodule:: fuelweb_test.tests.tests_lcm.test_ensurability
   :members:
 
+Test for unlock settings tab from different cluster states
+----------------------------------------------------------
+.. automodule:: fuelweb_test.tests.test_states_unlock_settings_tab
+  :members:
+
 Gating tests
 ============
 
