@@ -198,7 +198,9 @@ class AdminActions(BaseActions):
 
     @logwrap
     def wait_for_fuel_ready(self, timeout=300):
-        wait(lambda: self.is_fuel_ready, timeout=timeout)
+        wait(lambda: self.is_fuel_ready, timeout=timeout,
+             timeout_msg="Fuel services are not ready, please check the "
+                         "output of 'fuel-utils check_all")
 
     @logwrap
     @retry()

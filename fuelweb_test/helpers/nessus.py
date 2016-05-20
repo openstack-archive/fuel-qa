@@ -168,7 +168,9 @@ class NessusClient(object):
         file_id = self.post('/scans/{0}/export'.format(scan_id),
                             body=export_def)['file']
         wait(lambda: self.check_scan_export_status(scan_id, file_id),
-             interval=10, timeout=600)
+             interval=10, timeout=600,
+             timeout_msg='Nessus export scan status != "ready" for '
+                         ' scan_id={} file_id={}'.format(scan_id, file_id))
         return file_id
 
     def download_scan_result(
