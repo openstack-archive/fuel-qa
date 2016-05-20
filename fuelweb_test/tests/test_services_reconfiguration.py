@@ -411,7 +411,7 @@ class ServicesReconfiguration(TestBasic):
         task = self.fuel_web.client.apply_configuration(cluster_id)
 
         self.show_step(5)
-        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+        self.fuel_web.assert_task_success(task, timeout=900, interval=5)
 
         self.show_step(6)
         self.check_service_was_restarted(controllers, uptimes, service_name)
@@ -472,7 +472,7 @@ class ServicesReconfiguration(TestBasic):
                                                         role="controller")
 
         self.show_step(3)
-        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+        self.fuel_web.assert_task_success(task, timeout=900, interval=5)
 
         self.show_step(4)
         self.check_service_was_restarted(controllers, uptimes, service_name)
@@ -496,7 +496,7 @@ class ServicesReconfiguration(TestBasic):
         task = self.fuel_web.client.apply_configuration(cluster_id,
                                                         role="controller")
         self.show_step(8)
-        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+        self.fuel_web.assert_task_success(task, timeout=900, interval=5)
 
         self.show_step(9)
         self.check_service_was_restarted(controllers, uptimes, service_name)
@@ -607,7 +607,7 @@ class ServicesReconfiguration(TestBasic):
         task = self.fuel_web.client.apply_configuration(cluster_id)
 
         self.show_step(6)
-        self.fuel_web.assert_task_success(task, timeout=450, interval=5)
+        self.fuel_web.assert_task_success(task, timeout=900, interval=5)
 
         self.show_step(7)
         self.check_service_was_restarted(controllers, uptimes, 'nova-api')
@@ -681,7 +681,7 @@ class ServicesReconfiguration(TestBasic):
         task = self.fuel_web.client.apply_configuration(cluster_id,
                                                         role='compute')
         self.show_step(5)
-        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+        self.fuel_web.assert_task_success(task, timeout=900, interval=5)
 
         self.show_step(6)
         self.check_service_was_restarted(computes, uptimes, service_name)
@@ -820,7 +820,7 @@ class ServicesReconfiguration(TestBasic):
         self.show_step(3)
         task = self.fuel_web.client.apply_configuration(cluster_id,
                                                         role='controller')
-        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+        self.fuel_web.assert_task_success(task, timeout=900, interval=5)
 
         self.show_step(4)
         self.check_config_on_remote(controllers, structured_config_keystone)
@@ -937,7 +937,7 @@ class ServicesReconfiguration(TestBasic):
         task = self.fuel_web.client.apply_configuration(
             cluster_id,
             node_id=target_compute['id'])
-        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+        self.fuel_web.assert_task_success(task, timeout=900, interval=5)
 
         self.show_step(5)
         self.check_service_was_restarted([target_compute],
@@ -1108,7 +1108,7 @@ class ServicesReconfiguration(TestBasic):
         task = self.fuel_web.client.apply_configuration(cluster_id_1)
 
         self.show_step(10)
-        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+        self.fuel_web.assert_task_success(task, timeout=900, interval=5)
 
         self.show_step(11)
         self.check_service_was_restarted(controller_env_1,
@@ -1132,7 +1132,7 @@ class ServicesReconfiguration(TestBasic):
         uptimes = self.get_service_uptime(controller_env_2, service_name)
         task = self.fuel_web.client.apply_configuration(cluster_id_2)
         self.show_step(15)
-        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+        self.fuel_web.assert_task_success(task, timeout=900, interval=5)
 
         self.show_step(16)
         self.check_service_was_restarted(controller_env_2,
@@ -1310,7 +1310,7 @@ class ServicesReconfiguration(TestBasic):
         task = self.fuel_web.client.apply_configuration(
             cluster_id,
             node_id=target_node[0]['id'])
-        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+        self.fuel_web.assert_task_success(task, timeout=900, interval=5)
 
         self.show_step(5)
         self.check_service_was_restarted(target_node,
@@ -1400,7 +1400,7 @@ class ServicesReconfiguration(TestBasic):
         self.show_step(9)
         task = self.fuel_web.client.apply_configuration(cluster_id,
                                                         role='compute')
-        self.fuel_web.assert_task_success(task, timeout=300, interval=5)
+        self.fuel_web.assert_task_success(task, timeout=900, interval=5)
 
         self.show_step(10)
         self.check_service_was_restarted(computes,
@@ -1456,7 +1456,7 @@ class ServicesReconfiguration(TestBasic):
         task = self.fuel_web.client.apply_configuration(cluster_id)
 
         self.show_step(5)
-        self.fuel_web.assert_task_success(task, timeout=480, interval=5)
+        self.fuel_web.assert_task_success(task, timeout=900, interval=5)
 
         self.show_step(6)
         self.check_service_was_restarted(controllers, uptimes, service_name)
