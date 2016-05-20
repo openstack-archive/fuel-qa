@@ -157,7 +157,8 @@ class CommandLine(TestBasic):
         remote = self.env.d_env.get_admin_remote()
         cluster_id = self.fuel_web.get_last_created_cluster()
         assert_true(
-            remote.execute('fuel --env {0} env delete'.format(cluster_id))
+            remote.execute('fuel --env {0} env delete'
+                           ' --force'.format(cluster_id))
             ['exit_code'] == 0)
         try:
             wait(lambda:
