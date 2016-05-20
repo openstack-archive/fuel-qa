@@ -25,7 +25,7 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 @test(groups=["tests_security_compliance"])
-class TestsConfigDBAPI(TestBasic):
+class TestsSecurityCompliance(TestBasic):
     @test(depends_on=[SetupEnvironment.setup_master],
           groups=["master_node_compliance"])
     @log_snapshot_after_test
@@ -44,5 +44,9 @@ class TestsConfigDBAPI(TestBasic):
         self.show_step(1)
         self.env.revert_snapshot('empty')
         self.show_step(2)
-        install_lynis_master(master_node_ip=self.ssh_manager.admin_ip)
+        ip_master = self.ssh_manager.admin_ip
+        install_lynis_master(master_node_ip=ip_master)
+        cmd = 'lynis -c -Q --tests-category "custom"'
+        self.ssh_manager.execute_on_remote(ip_master, cmd)
+
 
