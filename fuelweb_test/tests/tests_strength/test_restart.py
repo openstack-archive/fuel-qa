@@ -13,7 +13,6 @@
 #    under the License.
 import time
 
-from devops.helpers.helpers import wait
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -131,9 +130,8 @@ class CephRestart(TestBasic):
         nailgun_node_id = self.fuel_web.get_nailgun_node_by_devops_node(
             slave_06)['id']
         slave_06.destroy()
+        self.fuel_web.wait_node_is_offline(slave_06)
 
-        wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
-            slave_06)['online'], timeout=30 * 8)
         self.fuel_web.delete_node(nailgun_node_id)
         self.fuel_web.check_ceph_status(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id,
@@ -147,8 +145,7 @@ class CephRestart(TestBasic):
             slave_05)['id']
         slave_05.destroy()
 
-        wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
-            slave_05)['online'], timeout=30 * 8)
+        self.fuel_web.wait_node_is_offline(slave_05)
 
         self.fuel_web.delete_node(nailgun_node_id)
         self.fuel_web.check_ceph_status(cluster_id)

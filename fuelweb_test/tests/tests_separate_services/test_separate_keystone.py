@@ -16,7 +16,6 @@ import os
 
 from proboscis import test
 from proboscis.asserts import assert_true
-from devops.helpers.helpers import wait
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers import utils
@@ -160,8 +159,7 @@ class SeparateKeystoneFailover(TestBasic):
         # destroy one keystone node
         keystone_node = self.env.d_env.nodes().slaves[3]
         keystone_node.destroy()
-        wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
-            keystone_node)['online'], timeout=60 * 5)
+        self.fuel_web.wait_node_is_offline(keystone_node)
 
         self.fuel_web.assert_ha_services_ready(cluster_id)
         self.fuel_web.assert_os_services_ready(cluster_id, timeout=15 * 60)
@@ -188,8 +186,7 @@ class SeparateKeystoneFailover(TestBasic):
         # restart one keystone node
         keystone_node = self.env.d_env.nodes().slaves[3]
         self.fuel_web.warm_restart_nodes([keystone_node])
-        wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
-            keystone_node)['online'], timeout=60 * 5)
+        self.fuel_web.wait_node_is_online(keystone_node)
         self.fuel_web.assert_ha_services_ready(cluster_id)
         self.fuel_web.assert_os_services_ready(cluster_id, timeout=15 * 60)
 
@@ -218,8 +215,7 @@ class SeparateKeystoneFailover(TestBasic):
         logger.debug(
             "controller with primary role is {}".format(controller.name))
         controller.destroy()
-        wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
-            controller)['online'], timeout=60 * 5)
+        self.fuel_web.wait_node_is_offline(controller)
 
         self.fuel_web.assert_ha_services_ready(cluster_id, should_fail=1)
         self.fuel_web.assert_os_services_ready(cluster_id, timeout=15 * 60)
@@ -285,8 +281,7 @@ class SeparateKeystoneFailover(TestBasic):
         nodes = [_node for _node in nailgun_node
                  if _node["pending_deletion"] is True]
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
-        wait(lambda: self.fuel_web.is_node_discovered(nodes[0]),
-             timeout=6 * 60)
+        self.fuel_web.wait_node_is_discovered(nodes[0])
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['sanity', 'smoke', 'ha'])

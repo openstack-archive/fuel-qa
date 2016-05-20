@@ -13,7 +13,6 @@
 #    under the License.
 import time
 
-from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
 from proboscis import asserts
@@ -116,17 +115,7 @@ class CICMaintenanceMode(TestBasic):
 
             logger.info('Wait a {0} node offline status after switching '
                         'maintenance mode '.format(devops_node.name))
-            try:
-                wait(
-                    lambda: not
-                    self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
-                    ['online'], timeout=60 * 10)
-            except TimeoutError:
-                asserts.assert_false(
-                    self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
-                    ['online'],
-                    'Node {0} has not become offline after'
-                    'switching maintenance mode'.format(devops_node.name))
+            self.fuel_web.wait_node_is_offline(devops_node)
 
             logger.info('Check that {0} node in maintenance mode after '
                         'switching'.format(devops_node.name))
@@ -149,17 +138,7 @@ class CICMaintenanceMode(TestBasic):
 
             logger.info('Wait a {0} node online status'
                         .format(devops_node.name))
-            try:
-                wait(
-                    lambda:
-                    self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
-                    ['online'], timeout=60 * 10)
-            except TimeoutError:
-                asserts.assert_true(
-                    self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
-                    ['online'],
-                    'Node {0} has not become online after '
-                    'exiting maintenance mode'.format(devops_node.name))
+            self.fuel_web.wait_node_is_online(devops_node)
 
             # Wait until MySQL Galera is UP on some controller
             self.fuel_web.wait_mysql_galera_is_up(
@@ -169,6 +148,7 @@ class CICMaintenanceMode(TestBasic):
             self.fuel_web.wait_cinder_is_up(
                 [n.name for n in d_ctrls])
 
+            # TODO(astudenov): add timeout_msg
             _wait(lambda:
                   self.fuel_web.run_single_ostf_test(
                       cluster_id, test_sets=['sanity'],
@@ -177,6 +157,7 @@ class CICMaintenanceMode(TestBasic):
                   timeout=1500)
             logger.debug("Required services are running")
 
+            # TODO(astudenov): add timeout_msg
             _wait(lambda:
                   self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
                   timeout=1500)
@@ -251,17 +232,7 @@ class CICMaintenanceMode(TestBasic):
 
             logger.info('Wait a {0} node offline status after unexpected '
                         'reboot'.format(devops_node.name))
-            try:
-                wait(
-                    lambda: not
-                    self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
-                    ['online'], timeout=60 * 10)
-            except TimeoutError:
-                asserts.assert_false(
-                    self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
-                    ['online'],
-                    'Node {0} has not become offline after unexpected'
-                    'reboot'.format(devops_node.name))
+            self.fuel_web.wait_node_is_offline(devops_node)
 
             logger.info('Check that {0} node in maintenance mode after'
                         ' unexpected reboot'.format(devops_node.name))
@@ -291,17 +262,7 @@ class CICMaintenanceMode(TestBasic):
 
             logger.info('Wait a {0} node online status'
                         .format(devops_node.name))
-            try:
-                wait(
-                    lambda:
-                    self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
-                    ['online'], timeout=90 * 10)
-            except TimeoutError:
-                asserts.assert_true(
-                    self.fuel_web.get_nailgun_node_by_devops_node(devops_node)
-                    ['online'],
-                    'Node {0} has not become online after umm off'.format(
-                        devops_node.name))
+            self.fuel_web.wait_node_is_online(devops_node)
 
             # Wait until MySQL Galera is UP on some controller
             self.fuel_web.wait_mysql_galera_is_up(
@@ -311,6 +272,7 @@ class CICMaintenanceMode(TestBasic):
             self.fuel_web.wait_cinder_is_up(
                 [n.name for n in d_ctrls])
 
+            # TODO(astudenov): add timeout_msg
             _wait(lambda:
                   self.fuel_web.run_single_ostf_test(
                       cluster_id, test_sets=['sanity'],
@@ -319,6 +281,7 @@ class CICMaintenanceMode(TestBasic):
                   timeout=1500)
             logger.debug("Required services are running")
 
+            # TODO(astudenov): add timeout_msg
             _wait(lambda:
                   self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
                   timeout=1500)
@@ -458,7 +421,8 @@ class CICMaintenanceMode(TestBasic):
             wait(lambda:
                  not checkers.check_ping(self.env.get_admin_node_ip(),
                                          _ip),
-                 timeout=60 * 10)
+                 timeout=60 * 10,
+                 timeout_msg='Failed to ping node {}'.format(devops_node.name))
 
             # Node don't have enough time for set offline status
             # after reboot --force
@@ -489,6 +453,7 @@ class CICMaintenanceMode(TestBasic):
             self.fuel_web.wait_cinder_is_up(
                 [n.name for n in d_ctrls])
 
+            # TODO(astudenov): add timeout_msg
             _wait(lambda:
                   self.fuel_web.run_single_ostf_test(
                       cluster_id, test_sets=['sanity'],
@@ -497,6 +462,7 @@ class CICMaintenanceMode(TestBasic):
                   timeout=1500)
             logger.debug("Required services are running")
 
+            # TODO(astudenov): add timeout_msg
             _wait(lambda:
                   self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
                   timeout=1500)

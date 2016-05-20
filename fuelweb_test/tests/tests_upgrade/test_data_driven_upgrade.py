@@ -617,7 +617,8 @@ class UpgradeRollback(DataDrivenUpgradeBase):
         self.fuel_web.client.delete_cluster(cluster_id)
         wait(lambda: not any([cluster['id'] == cluster_id for cluster in
                               self.fuel_web.client.list_clusters()]),
-             timeout=60 * 10)
+             timeout=60 * 10,
+             timeout_msg='Failed to delete cluster id={}'.format(cluster_id))
         self.env.bootstrap_nodes(devops_nodes)
 
         self.show_step(3)
@@ -789,8 +790,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.show_step(10)
         self.show_step(11)
         for node in pending_nodes:
-            wait(lambda: self.fuel_web.is_node_discovered(node),
-                 timeout=6 * 60)
+            self.fuel_web.wait_node_is_discovered(node)
             with self.fuel_web.get_ssh_for_node(
                 self.fuel_web.get_devops_node_by_nailgun_node(
                     node).name) as slave_remote:
@@ -836,11 +836,10 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
             self.fuel_web.delete_node(node['id'])
 
         self.show_step(4)
-        slaves = self.env.d_env.nodes().slaves[:2]
-        wait(lambda: all(self.env.nailgun_nodes(slaves)), timeout=10 * 60)
-        for node in self.fuel_web.client.list_cluster_nodes(
-                cluster_id=cluster_id):
-            wait(lambda: self.fuel_web.is_node_discovered(node), timeout=60)
+
+        nodes = self.fuel_web.client.list_cluster_nodes(cluster_id=cluster_id)
+        for node in nodes:
+            self.fuel_web.wait_node_is_discovered(node, timeout=10 * 60)
 
         self.show_step(5)
         self.fuel_web.update_nodes(
@@ -886,7 +885,8 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         )
         self.fuel_web.client.delete_cluster(cluster_id)
         wait(lambda: not any([cluster['id'] == cluster_id for cluster in
-                              self.fuel_web.client.list_clusters()]))
+                              self.fuel_web.client.list_clusters()]),
+             timeout_msg='Failed to delete cluster id={}'.format(cluster_id))
         self.env.bootstrap_nodes(devops_nodes)
 
         self.show_step(3)

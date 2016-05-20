@@ -142,7 +142,8 @@ class TestNessus(NeutronTunHaBase):
 
         check_scan_complete = self.get_check_scan_complete(
             nessus_client, scan_id, history_id)
-        wait(check_scan_complete, interval=10, timeout=60 * 30)
+        wait(check_scan_complete, interval=10, timeout=60 * 30,
+             timeout_msg='Timeout: nessus scan status != completed')
 
         file_id = nessus_client.export_scan(scan_id, history_id, 'html')
         nessus_client.download_scan_result(
@@ -199,7 +200,8 @@ class TestNessus(NeutronTunHaBase):
 
         check_scan_complete = self.get_check_scan_complete(
             nessus_client, scan_id, history_id)
-        wait(check_scan_complete, interval=10, timeout=60 * 50)
+        wait(check_scan_complete, interval=10, timeout=60 * 50,
+             timeout_msg='Timeout: nessus scan status != completed')
 
         file_id = nessus_client.export_scan(scan_id, history_id, 'html')
         nessus_client.download_scan_result(
@@ -260,7 +262,8 @@ class TestNessus(NeutronTunHaBase):
 
         check_scan_complete = self.get_check_scan_complete(
             nessus_client, scan_id, history_id)
-        wait(check_scan_complete, interval=10, timeout=60 * 30)
+        wait(check_scan_complete, interval=10, timeout=60 * 30,
+             timeout_msg='Timeout: nessus scan status != completed')
 
         file_id = nessus_client.export_scan(scan_id, history_id, 'html')
         nessus_client.download_scan_result(
