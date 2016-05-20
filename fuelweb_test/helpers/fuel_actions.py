@@ -287,7 +287,7 @@ class FuelPluginBuilder(object):
         """
         fpb_cmd = """bash -c 'yum -y install git tar createrepo \
                     rpm dpkg-devel rpm-build;
-                    git clone {0};
+                    git clone {0} -b stable/6.0;
                     cd fuel-plugins/fuel_plugin_builder;
                     python setup.py sdist;
                     cd dist;
