@@ -16,14 +16,10 @@
 
 from __future__ import unicode_literals
 
-import json
-
 from logging import DEBUG
 from optparse import OptionParser
-# pylint: disable=import-error
-# noinspection PyUnresolvedReferences
-from six.moves.urllib.request import urlopen
-# pylint: enable=import-error
+
+import requests
 
 from fuelweb_test.testrail.builds import Build
 from fuelweb_test.testrail.report import get_tests_results
@@ -46,7 +42,7 @@ def find_run_by_name(test_plan, run_name):
 def get_job_info(url):
     job_url = "/".join([url, 'api/json'])
     logger.debug("Request job info from %s", job_url)
-    return json.load(urlopen(job_url))
+    return requests.get(job_url).json()
 
 
 def main():
