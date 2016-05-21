@@ -26,19 +26,15 @@
 from __future__ import unicode_literals
 
 import base64
-import json
 import time
-
-# pylint: disable=import-error
-# noinspection PyUnresolvedReferences
-from six.moves.urllib.request import urlopen
-# noinspection PyUnresolvedReferences
-from six.moves.urllib.request import Request
-# noinspection PyUnresolvedReferences
-from six.moves.urllib.error import HTTPError
-# pylint: enable=import-error
+import requests
+from requests.exceptions import HTTPError
+from requests.packages.urllib3 import disable_warnings
 
 from fuelweb_test.testrail.settings import logger
+
+
+disable_warnings()
 
 
 def request_retry(codes):
@@ -50,19 +46,21 @@ def request_retry(codes):
             while True:
                 try:
                     response = func(*args, **kwargs)
+                    response.raise_for_status()
                 except HTTPError as e:
-                    if e.code in codes:
-                        if iter_number < codes[e.code]:
+                    error_code = e.response.status_code
+                    if error_code in codes:
+                        if iter_number < codes[error_code]:
                             wait = 5
-                            if 'Retry-After' in e.hdrs:
-                                wait = int(e.hdrs['Retry-after'])
-                            logger.debug(log_msg.format(e.code, wait))
+                            if 'Retry-After' in e.response.headers:
+                                wait = int(e.response.headers['Retry-after'])
+                            logger.debug(log_msg.format(error_code, wait))
                             time.sleep(wait)
                             iter_number += 1
                             continue
                     raise
                 else:
-                    return response
+                    return response.json()
         return wrapper
     return retry_request
 
@@ -77,33 +75,9 @@ class APIClient(object):
             base_url += '/'
         self.__url = base_url + 'index.php?/api/v2/'
 
-    #
-    # Send Get
-    #
-    # Issues a GET request (read) against the API and returns the result
-    # (as Python dict).
-    #
-    # Arguments:
-    #
-    # uri                 The API method to call including parameters
-    #                     (e.g. get_case/1)
-    #
     def send_get(self, uri):
         return self.__send_request('GET', uri, None)
 
-    #
-    # Send POST
-    #
-    # Issues a POST request (write) against the API and returns the result
-    # (as Python dict).
-    #
-    # Arguments:
-    #
-    # uri                 The API method to call including parameters
-    #                     (e.g. add_case/1)
-    # data                The data to submit as part of the request (as
-    #                     Python dict, strings must be UTF-8 encoded)
-    #
     def send_post(self, uri, data):
         return self.__send_request('POST', uri, data)
 
@@ -111,38 +85,28 @@ class APIClient(object):
         retry_codes = {429: 3}
 
         @request_retry(codes=retry_codes)
-        def __get_response(_request):
-            return urlopen(_request).read()
+        def __get_response(_url, _headers, _data):
+            if method == 'POST':
+                return requests.post(_url, json=_data, headers=_headers)
+            return requests.get(_url, headers=_headers)
 
         url = self.__url + uri
-        request = Request(url)
-        if method == 'POST':
-            request.add_data(json.dumps(data))
+
         auth = base64.encodestring(
             '{0}:{1}'.format(self.user, self.password)).strip()
-        request.add_header('Authorization', 'Basic {}'.format(auth))
-        request.add_header('Content-Type', 'application/json')
 
-        e = None
+        headers = {'Authorization': 'Basic {}'.format(auth),
+                   'Content-Type': 'application/json'}
+
         try:
-            response = __get_response(request)
+            return __get_response(url, headers, data)
         except HTTPError as e:
-            response = e.read()
-
-        if response:
-            result = json.loads(response)
-        else:
-            result = {}
-
-        if e is not None:
-            if result and 'error' in result:
-                error = '"' + result['error'] + '"'
+            if e.message:
+                error = e.message
             else:
                 error = 'No additional error message received'
-            raise APIError('TestRail API returned HTTP %s (%s)' %
-                           (e.code, error))
-
-        return result
+            raise APIError('TestRail API returned HTTP {0}: "{1}"'.format(
+                e.response.status_code, error))
 
 
 class APIError(Exception):
