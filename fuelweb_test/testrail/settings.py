@@ -28,6 +28,7 @@ LOGS_DIR = os.environ.get('LOGS_DIR', os.getcwd())
 
 os.environ["ENV_NAME"] = "some_environment"
 os.environ["ISO_PATH"] = "./fuel.iso"
+os.environ["CENTOS_CLOUD_IMAGE_PATH"] = "./centos-cloud-image.img"
 
 JENKINS = {
     'url': os.environ.get('JENKINS_URL', 'http://localhost/'),
