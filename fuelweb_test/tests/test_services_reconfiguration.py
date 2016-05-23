@@ -1147,37 +1147,6 @@ class ServicesReconfiguration(TestBasic):
 
     @test(depends_on_groups=['basic_env_for_reconfiguration'],
           groups=["services_reconfiguration_thread_2",
-                  "check_wrong_config"])
-    @log_snapshot_after_test
-    def check_wrong_config(self):
-        """Check wrong config
-
-        Scenario:
-            1. Revert snapshot "basic_env_for_reconfiguration"
-            2. Upload a wrong openstack configuration
-            3. Check Nailgun response
-
-        Snapshot: check_wrong_config
-
-        """
-
-        self.show_step(1, initialize=True)
-        self.env.revert_snapshot("basic_env_for_reconfiguration")
-
-        self.show_step(2)
-        self.show_step(3)
-        cluster_id = self.fuel_web.get_last_created_cluster()
-        config = {'cinder_config': {'foo': {'value': 'bar'}}}
-        err_msg = 'A wrong configuration was applied'
-        expected_code = 400
-        self.check_response_code(expected_code, err_msg,
-                                 self.fuel_web.client.upload_configuration,
-                                 config, cluster_id)
-
-        self.env.make_snapshot("check_wrong_config")
-
-    @test(depends_on_groups=['basic_env_for_reconfiguration'],
-          groups=["services_reconfiguration_thread_2",
                   "upload_config_for_node_and_env_in_transitional_state"])
     @log_snapshot_after_test
     def upload_config_for_node_and_env_in_transitional_state(self):
