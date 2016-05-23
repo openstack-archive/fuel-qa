@@ -46,9 +46,8 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
-        node_ids = [self.fuel_web.get_nailgun_node_by_devops_node(
-            self.env.d_env.nodes().slaves[slave_id])['id']
-            for slave_id in range(3)]
+        node_ids = sorted([node['id'] for node in
+                           self.fuel_web.client.list_nodes()])
         release_id = self.fuel_web.get_releases_list_for_os(
             release_name=OPENSTACK_RELEASE)[0]
 
@@ -119,9 +118,8 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
         Duration 50m
         """
         self.env.revert_snapshot("ready_with_3_slaves")
-        node_ids = [self.fuel_web.get_nailgun_node_by_devops_node(
-            self.env.d_env.nodes().slaves[slave_id])['id']
-            for slave_id in range(3)]
+        node_ids = sorted([node['id'] for node in
+                           self.fuel_web.client.list_nodes()])
 
         release_id = self.fuel_web.get_releases_list_for_os(
             release_name=OPENSTACK_RELEASE)[0]
