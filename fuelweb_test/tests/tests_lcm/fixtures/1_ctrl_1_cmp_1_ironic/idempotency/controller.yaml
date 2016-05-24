@@ -1,0 +1,5 @@
+roles:
+  controller
+tasks:
+  - ironic_post_swift_key:
+      type: shell
