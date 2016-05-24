@@ -18,11 +18,11 @@ template:
       nova-compute:
         - cluster: Cluster1
           srv_name: srv_cluster1
-          datastore: datastore1
+          datastore: datastore.*
           target_node: controllers
         - cluster: Cluster2
           srv_name: srv_cluster2
-          datastore: datastore1
+          datastore: datastore.*
           target_node: compute-vmware
       glance:
         enable: false

@@ -60,6 +60,7 @@ class HardResetPrimaryWithVMware(ActionTest, BaseActions, VMwareActions):
         'deploy_cluster',
         'create_instances',
         'hard_reset_primary',
+        'wait_ha_services',
         'network_check',
         'check_up_vips',
         'check_vm_connect',
@@ -110,12 +111,14 @@ class ShutdownPrimaryWithVMware(ActionTest, BaseActions, VMwareActions):
         'deploy_cluster',
         'create_instances',
         'shutdown_primary',
+        'wait_ha_services',
         'network_check',
         'check_up_vips',
         'check_vm_connect',
         'delete_instances',
         'ostf_with_services_fail',
         'turn_on_primary',
+        'wait_ha_services',
         'network_check',
         'health_check_sanity_smoke_ha'
     ]
@@ -160,6 +163,7 @@ class SafeRebootPrimaryWithVMware(ActionTest, BaseActions, VMwareActions):
         'deploy_cluster',
         'create_instances',
         'safe_reboot_primary',
+        'wait_ha_services',
         'network_check',
         'check_up_vips',
         'check_vm_connect',
@@ -184,13 +188,13 @@ class ShutdownCinderNodeWithVMware(ActionTest, BaseActions, VMwareActions):
         7. Deploy the cluster
         8. Create instances on KVM and vCenter
         9. Run all OSTF tests
-        10. Shutdown one of CinderVMDK node
+        10. Shutdown one of CinderVMDK node  (depends on yaml config)
         11. Run vCenter OSTF tests
-        12. Power on CinderVMDK node and wait for it to load
+        12. Power on CinderVMDK node and wait for it to load (depends on yaml)
         13. Run vCenter OSTF tests
-        14. Shutdown another CinderVMDK node
+        14. Shutdown another CinderVMDK node (depends on yaml config)
         15. Run vCenter OSTF tests
-        16. Power on CinderVMDK node and wait for it to load
+        16. Power on CinderVMDK node and wait for it to load (depends on yaml)
         17. Run all OSTF tests
 
     Duration 3h 00min
@@ -236,7 +240,7 @@ class RebootCinderNodeWithVMware(ActionTest, BaseActions, VMwareActions):
         5. Add nodes (depends on yaml config)
         6. Configure vmware settings (depends on yaml config)
         7. Deploy the cluster
-        8. Reboot CinderVMware node.
+        8. Reboot CinderVMware node  (depends on yaml config)
         9. Check CinderVMware services.
 
     Duration 3h 00min
@@ -345,7 +349,7 @@ class DeployIDSWithVMware(ActionTest, BaseActions, VMwareActions):
         8. Deploy the cluster
         9. Run OSTF tests (should fail)
 
-    Duration 3h 00min
+    Duration 2h 00min
     Snapshot vcenter_idatastore
     """
 
