@@ -838,3 +838,9 @@ class VMwareActions(object):
                                                 private_ips[vm[1]],
                                                 primary_ctrl_name),
                         'Ping between VMs failed')
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def wait_ha_services(self):
+        """Wait for HA services."""
+        self.fuel_web.assert_ha_services_ready(self.cluster_id)
