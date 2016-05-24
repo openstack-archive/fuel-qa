@@ -113,6 +113,7 @@ class TaskIdempotency(LCMTestBasic):
             1. Revert snapshot "lcm_deploy_1_ctrl_1_cmp_1_cinder"
             2. Check task idempotency
 
+        Duration 60m
         Snapshot: "idempotency_1_ctrl_1_cmp_1_cinder"
         """
         self.show_step(1)
@@ -134,6 +135,7 @@ class TaskIdempotency(LCMTestBasic):
             1. Revert snapshot "lcm_deploy_1_ctrl_1_cmp_1_mongo"
             2. Check task idempotency
 
+        Duration 60m
         Snapshot: "idempotency_1_ctrl_1_cmp_1_mongo"
         """
         self.show_step(1)
@@ -155,6 +157,7 @@ class TaskIdempotency(LCMTestBasic):
             1. Revert snapshot "lcm_deploy_1_ctrl_1_cmp_3_ceph"
             2. Check task idempotency
 
+        Duration 90m
         Snapshot: "idempotency_1_ctrl_1_cmp_3_ceph"
         """
         self.show_step(1)
@@ -178,10 +181,34 @@ class TaskIdempotency(LCMTestBasic):
             1. Revert snapshot "lcm_deploy_3_ctrl_3_cmp_ceph_sahara"
             2. Check task idempotency
 
+        Duration 180m
         Snapshot: "idempotency_3_ctrl_3_cmp_ceph_sahara"
         """
         self.show_step(1)
         deployment = "3_ctrl_3_cmp_ceph_sahara"
+        self.env.revert_snapshot('lcm_deploy_{}'.format(deployment))
+        self.show_step(2)
+        asserts.assert_true(self.check_idempotency(deployment),
+                            'There are non-idempotent tasks. '
+                            'Please take a look at the output above!')
+        self.env.make_snapshot('idempotency_{}'.format(deployment))
+
+    @test(depends_on=[SetupLCMEnvironment.lcm_deploy_1_ctrl_1_cmp_1_ironic],
+          groups=['idempotency_ironic',
+                  'idempotency_1_ctrl_1_cmp_1_ironic'])
+    @log_snapshot_after_test
+    def idempotency_1_ctrl_1_cmp_1_ironic(self):
+        """Test idempotency for cluster with Ironic
+
+          Scenario:
+            1. Revert snapshot "lcm_deploy_1_ctrl_1_cmp_1_ironic"
+            2. Check task idempotency
+
+        Duration 60m
+        Snapshot: "idempotency_1_ctrl_1_cmp_1_ironic"
+        """
+        self.show_step(1)
+        deployment = "1_ctrl_1_cmp_1_ironic"
         self.env.revert_snapshot('lcm_deploy_{}'.format(deployment))
         self.show_step(2)
         asserts.assert_true(self.check_idempotency(deployment),
