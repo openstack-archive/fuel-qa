@@ -1,0 +1,13 @@
+Code-Review+2: Andrey Sledzinskiy <asledzinskiy@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+1: Vladimir Khlyunev <vkhlyunev@mirantis.com>
+Code-Review+1: Sergey Novikov <snovikov@mirantis.com>
+Code-Review+1: Dmitry Tyzhnenko <dtyzhnenko@mirantis.com>
+Code-Review+1: Ksenia Demina <kdemina@mirantis.com>
+Workflow+1: Nastya Urlapova <aurlapova@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 24 May 2016 12:47:12 +0000
+Reviewed-on: https://review.openstack.org/319857
+Project: openstack/fuel-qa
+Branch: refs/heads/stable/mitaka
