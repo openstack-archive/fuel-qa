@@ -18,7 +18,7 @@ template:
       nova-compute:
         !include cluster_configs/settings/vmware/nova_compute/2clusters_ctrl.yaml
       glance:
-        !include cluster_configs/settings/vmware/vcenter_glance.yaml
+        enable: false
     vmware_dvs:
       !include cluster_configs/settings/vmware/dvs/dvs_main.yaml
   nodes:
