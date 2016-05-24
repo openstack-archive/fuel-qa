@@ -188,3 +188,25 @@ class TaskIdempotency(LCMTestBasic):
                             'There are non-idempotent tasks. '
                             'Please take a look at the output above!')
         self.env.make_snapshot('idempotency_{}'.format(deployment))
+
+    @test(depends_on=[SetupLCMEnvironment.lcm_deploy_1_ctrl_1_cmp_1_ironic],
+          groups=['idempotency_ironic',
+                  'idempotency_1_ctrl_1_cmp_1_ironic'])
+    @log_snapshot_after_test
+    def idempotency_1_ctrl_1_cmp_1_ironic(self):
+        """Test idempotency for cluster with Ironic
+
+          Scenario:
+            1. Revert snapshot "lcm_deploy_1_ctrl_1_cmp_1_ironic"
+            2. Check task idempotency
+
+        Snapshot: "idempotency_1_ctrl_1_cmp_1_ironic"
+        """
+        self.show_step(1)
+        deployment = "1_ctrl_1_cmp_1_ironic"
+        self.env.revert_snapshot('lcm_deploy_{}'.format(deployment))
+        self.show_step(2)
+        asserts.assert_true(self.check_idempotency(deployment),
+                            'There are non-idempotent tasks. '
+                            'Please take a look at the output above!')
+        self.env.make_snapshot('idempotency_{}'.format(deployment))
