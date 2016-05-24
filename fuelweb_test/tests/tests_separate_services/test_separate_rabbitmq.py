@@ -26,7 +26,8 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["thread_separate_services", "thread_2_separate_services"])
+@test(groups=["thread_separate_services", "thread_2_separate_services",
+              "detach-rabbitmq-ci-group"])
 class SeparateRabbit(TestBasic):
     """SeparateRabbit"""  # TODO documentation
 
@@ -115,7 +116,8 @@ class SeparateRabbit(TestBasic):
         self.env.make_snapshot("separate_rabbit_service", is_make=True)
 
 
-@test(groups=["thread_separate_services", "thread_2_separate_services"])
+@test(groups=["thread_separate_services", "thread_2_separate_services",
+              "detach-rabbitmq-ci-group"])
 class SeparateRabbitFailover(TestBasic):
     """SeparateRabbitFailover"""  # TODO documentation
 
