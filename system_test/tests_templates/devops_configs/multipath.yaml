@@ -52,6 +52,14 @@ aliases:
        capacity: !os_env NODE_VOLUME_SIZE, 55
        format: raw
        multipath_count: !os_env SLAVE_MULTIPATH_DISKS_COUNT, 2
+     - name: cinder
+       capacity: !os_env NODE_VOLUME_SIZE, 55
+       format: raw
+       multipath_count: !os_env SLAVE_MULTIPATH_DISKS_COUNT, 2
+     - name: swift
+       capacity: !os_env NODE_VOLUME_SIZE, 55
+       format: raw
+       multipath_count: !os_env SLAVE_MULTIPATH_DISKS_COUNT, 2
     interfaces: *rack-01-slave-interfaces
     network_config: *rack-01-slave-network_config
 
