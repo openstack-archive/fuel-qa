@@ -32,7 +32,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 class DataDrivenUpgradeBase(TestBasic):
     OCTANE_COMMANDS = {
         'backup': 'octane fuel-backup --to {path}',
-        'repo-backup': 'octane fuel-repo-backup --to {path}',
+        'repo-backup': 'octane fuel-repo-backup --to {path} --full',
         'restore': 'octane fuel-restore --from {path} --admin-password {pwd}',
         'repo-restore': 'octane fuel-repo-restore --from {path}',
         'update-bootstrap-centos': 'octane update-bootstrap-centos'
