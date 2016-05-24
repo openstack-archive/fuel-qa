@@ -60,6 +60,7 @@ class HardResetPrimaryWithVMware(ActionTest, BaseActions, VMwareActions):
         'deploy_cluster',
         'create_instances',
         'hard_reset_primary',
+        'wait_ha_services',
         'network_check',
         'check_up_vips',
         'check_vm_connect',
@@ -110,12 +111,14 @@ class ShutdownPrimaryWithVMware(ActionTest, BaseActions, VMwareActions):
         'deploy_cluster',
         'create_instances',
         'shutdown_primary',
+        'wait_ha_services',
         'network_check',
         'check_up_vips',
         'check_vm_connect',
         'delete_instances',
         'ostf_with_services_fail',
         'turn_on_primary',
+        'wait_ha_services',
         'network_check',
         'health_check_sanity_smoke_ha'
     ]
