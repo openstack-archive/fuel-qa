@@ -3,7 +3,9 @@ roles:
 tasks:
   - openstack-haproxy-mysqld: null
   - openstack-network-agents-l3: null
-  - dump_rabbitmq_definitions: null
+  - dump_rabbitmq_definitions:
+      skip:
+      - Dump_rabbitmq_definitions[/etc/rabbitmq/definitions.full]
   - rsync_core_puppet:
       type: sync
   - ssl-dns-setup: null
@@ -102,7 +104,9 @@ tasks:
       type: skipped
   - copy_keys_ceph:
       type: copy_files
-  - cluster: null
+  - cluster:
+      skip:
+      - Pcmk_property[no-quorum-policy]
   - sahara: null
   - fuel_pkgs: null
   - public_vip_ping: null
