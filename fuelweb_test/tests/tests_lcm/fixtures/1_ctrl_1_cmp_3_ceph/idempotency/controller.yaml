@@ -5,7 +5,9 @@ tasks:
       type: shell
   - openstack-haproxy-mysqld: null
   - cinder-db: null
-  - dump_rabbitmq_definitions: null
+  - dump_rabbitmq_definitions:
+      skip:
+      - Dump_rabbitmq_definitions[/etc/rabbitmq/definitions.full]
   - rsync_core_puppet:
       type: sync
   - ssl-dns-setup: null
@@ -73,7 +75,9 @@ tasks:
   - openstack-haproxy-sahara:
       no_puppet_run: true
   - ssl-keys-saving: null
-  - primary-cluster: null
+  - primary-cluster:
+      skip:
+      - Pcmk_property[no-quorum-policy]
   - upload_cirros:
       type: shell
   - primary-keystone:
@@ -117,6 +121,8 @@ tasks:
       no_puppet_run: true
   - setup_repositories: null
   - openstack-network-routers-ha:
+      no_puppet_run: true
+  - upload_murano_package:
       no_puppet_run: true
   - glance-db: null
   - neutron-db: null
