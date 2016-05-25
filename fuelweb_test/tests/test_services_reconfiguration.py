@@ -48,7 +48,7 @@ def get_structured_config_dict(config):
             if k == 'ensure' and v == 'absent':
                 d['value'] = None
             if k == 'value':
-                d['value'] = v
+                d['value'] = str(v)
             structured_conf[key2].append(d)
 
     for key in config.keys():
