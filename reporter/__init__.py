@@ -12,7 +12,3 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from reporter.testrail.upload_cases_description import main
-
-if __name__ == "__main__":
-    sys.exit(main())
