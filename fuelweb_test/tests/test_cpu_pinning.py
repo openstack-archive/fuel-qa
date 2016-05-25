@@ -181,7 +181,7 @@ class NumaCpuPinning(TestBasic):
             mode=settings.DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": settings.NEUTRON_SEGMENT_TYPE
+                "net_segment_type": 'vlan'
             }
         )
         self.show_step(2)
@@ -358,6 +358,71 @@ class NumaCpuPinning(TestBasic):
                                     vcpus=1,
                                     hostname=second_compute['fqdn'],
                                     meta=meta)
+
+        self.env.make_snapshot(snapshot_name, is_make=True)
+
+    @test(depends_on_groups=['basic_env_for_numa_cpu_pinning'],
+          groups=["cpu_pinning_on_two_compute_with_dpdk"])
+    @log_snapshot_after_test
+    def cpu_pinning_on_two_compute_with_dpdk(self):
+        """Deploy cluster with DPDK an pinned CPU
+
+        Scenario:
+            1. Revert snapshot "basic_env_for_numa_cpu_pinning"
+            2. Pin maximum CPU for the nova on computes
+               Configure HugePages for compute nodes
+            3. Enable private network in DPDK mode
+            4. Deploy cluster
+            5. Run OSTF
+
+        Snapshot: cpu_pinning_on_two_compute_with_dpdk
+        """
+        snapshot_name = 'cpu_pinning_on_two_compute_with_dpdk'
+        self.check_run(snapshot_name)
+
+        self.show_step(1)
+        self.env.revert_snapshot("basic_env_for_numa_cpu_pinning")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.show_step(2)
+        computes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute'], role_status='pending_roles')
+        for compute in computes:
+            compute_cpu = compute['meta']['cpu']['total']
+            config = self.fuel_web.client.get_node_attributes(compute['id'])
+            config['cpu_pinning']['nova']['value'] = compute_cpu - 2
+            config['cpu_pinning']['dpdk']['value'] = 1
+            config['hugepages']['nova']['value']['2048'] = 256
+            config['hugepages']['dpdk']['value'] = 128
+
+            self.fuel_web.client.upload_node_attributes(
+                config, compute['id'])
+
+        self.show_step(3)
+        for compute in computes:
+            compute_net = self.fuel_web.client.get_node_interfaces(
+                compute['id'])
+            for interface in compute_net:
+                for ids in interface['assigned_networks']:
+                    if ids['name'] == 'private':
+                        if interface['type'] == 'bond':
+                            interface['bond_properties']['type__'] = 'dpdkovs'
+                            interface['interface_properties']['dpdk'].update(
+                                {'enabled': True})
+                        else:
+                            interface['interface_properties']['dpdk'][
+                                'enabled'] = True
+                        break
+
+                self.fuel_web.client.put_node_interfaces(
+                    [{'id': compute['id'], 'interfaces': compute_net}])
+
+        self.show_step(4)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(5)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot(snapshot_name, is_make=True)
 
