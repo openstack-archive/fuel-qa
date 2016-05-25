@@ -557,7 +557,7 @@ class FuelWebClient29(object):
                 elif option in {'volumes_ceph', 'images_ceph',
                                 'ephemeral_ceph', 'objects_ceph',
                                 'osd_pool_size', 'volumes_lvm',
-                                'images_vcenter'}:
+                                'volumes_block_device', 'images_vcenter'}:
                     section = 'storage'
                 elif option in {'tenant', 'password', 'user'}:
                     section = 'access'
