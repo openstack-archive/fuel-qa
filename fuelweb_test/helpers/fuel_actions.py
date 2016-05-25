@@ -26,7 +26,6 @@ from fuelweb_test import logwrap
 from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
 from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
 from fuelweb_test.helpers.utils import cond_upload
-from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
 
 
@@ -287,11 +286,7 @@ class FuelPluginBuilder(object):
         """
         fpb_cmd = """bash -c 'yum -y install git tar createrepo \
                     rpm dpkg-devel rpm-build;
-                    git clone {0} -b stable/6.0;
-                    cd fuel-plugins/fuel_plugin_builder;
-                    python setup.py sdist;
-                    cd dist;
-                    pip install *.tar.gz'""".format(FUEL_PLUGIN_BUILDER_REPO)
+                    pip install fuel-plugin-builder'"""
 
         self.admin_node.execute_in_container(fpb_cmd, 'nailgun', 0)
 
