@@ -1,4 +1,4 @@
-#    Copyright 2015 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,13 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
 import os
 import posixpath
 import re
-import json
+import traceback
 
-from paramiko import RSAKey
+from devops.helpers.helpers import wait
 from devops.models.node import SSHClient
+from paramiko import RSAKey
+
 from fuelweb_test import logger
 
 
@@ -60,15 +63,19 @@ class SSHManager(object):
         self.login = login
         self.password = password
 
-    def _connect(self, remote):
+    @staticmethod
+    def _connect(remote):
         """ Check if connection is stable and return this one
 
         :param remote:
         :return:
         """
         try:
-            remote.execute("cd ~")
+            wait(lambda: remote.execute("cd ~")['exit_code'] == 0, timeout=20)
         except Exception:
+            logger.info('SSHManager: Check for current '
+                        'connection fails. Try to reconnect')
+            logger.debug(traceback.format_exc())
             remote.reconnect()
         return remote
 
@@ -156,28 +163,38 @@ class SSHManager(object):
         if assert_ec_equal is None:
             assert_ec_equal = [0]
         result = self.execute(ip=ip, port=port, cmd=cmd)
-        if result['exit_code'] not in assert_ec_equal:
-            error_details = {
-                'command': cmd,
-                'host': ip,
-                'stdout': result['stdout'],
-                'stderr': result['stderr'],
-                'exit_code': result['exit_code']}
 
-            error_msg = (err_msg or "Unexpected exit_code returned:"
-                                    " actual {0}, expected {1}."
-                         .format(error_details['exit_code'],
-                                 ' '.join(map(str, assert_ec_equal))))
-            log_msg = ("{0}  Command: '{1}'  "
-                       "Details: {2}".format(error_msg, cmd, error_details))
+        result['stdout_str'] = ''.join(result['stdout']).strip()
+        result['stdout_len'] = len(result['stdout'])
+        result['stderr_str'] = ''.join(result['stderr']).strip()
+        result['stderr_len'] = len(result['stderr'])
+
+        details_log = (
+            "Host:      {host}\n"
+            "Command:   '{cmd}'\n"
+            "Exit code: {code}\n"
+            "STDOUT:\n{stdout}\n"
+            "STDERR:\n{stderr}".format(
+                host=ip, cmd=cmd, code=result['exit_code'],
+                stdout=result['stdout_str'], stderr=result['stderr_str']
+            ))
+
+        if result['exit_code'] not in assert_ec_equal:
+            error_msg = (
+                err_msg or
+                "Unexpected exit_code returned: actual {0}, expected {1}."
+                "".format(
+                    result['exit_code'],
+                    ' '.join(map(str, assert_ec_equal))))
+            log_msg = (
+                "{0}  Command: '{1}'  "
+                "Details:\n{2}".format(
+                    error_msg, cmd, details_log))
             logger.error(log_msg)
             if raise_on_assert:
                 raise Exception(log_msg)
-
-        result['stdout_str'] = ''.join(result['stdout'])
-        result['stdout_len'] = len(result['stdout'])
-        result['stderr_str'] = ''.join(result['stderr'])
-        result['stderr_len'] = len(result['stderr'])
+        else:
+            logger.debug(details_log)
 
         if jsonify:
             try:
@@ -200,7 +217,7 @@ class SSHManager(object):
         :raise: Exception
         """
         if isinstance(json_string, list):
-            json_string = ''.join(json_string)
+            json_string = ''.join(json_string).strip()
 
         try:
             obj = json.loads(json_string)
@@ -274,7 +291,7 @@ class SSHManager(object):
                 return 0
 
         files_count = 0
-        for rootdir, subdirs, files in os.walk(source):
+        for rootdir, _, files in os.walk(source):
             targetdir = os.path.normpath(
                 os.path.join(
                     target,
