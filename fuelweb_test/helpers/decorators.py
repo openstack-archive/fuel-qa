@@ -84,6 +84,7 @@ def log_snapshot_after_test(func):
         except SkipTest:
             raise SkipTest()
         except Exception as test_exception:
+            raise
             exc_trace = sys.exc_traceback
             name = 'error_%s' % func.__name__
             description = "Failed in method '%s'." % func.__name__
