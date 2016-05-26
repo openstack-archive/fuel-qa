@@ -403,32 +403,39 @@ def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
     if assert_ec_equal is None:
         assert_ec_equal = [0]
     result = remote.execute(cmd)
-    if result['exit_code'] not in assert_ec_equal:
-        error_details = {
-            'command': cmd,
-            'host': remote.host,
-            'stdout': result['stdout'],
-            'stderr': result['stderr'],
-            'exit_code': result['exit_code']}
 
-        error_msg = (err_msg or "Unexpected exit_code returned:"
-                                " actual {0}, expected {1}."
-                     .format(error_details['exit_code'],
-                             ' '.join(map(str, assert_ec_equal))))
-        log_msg = ("{0}  Command: '{1}'  Details: {2}".format(error_msg,
-                                                              cmd,
-                                                              error_details))
+    result['stdout_str'] = ''.join(result['stdout']).strip()
+    result['stdout_len'] = len(result['stdout'])
+    result['stderr_str'] = ''.join(result['stderr']).strip()
+    result['stderr_len'] = len(result['stderr'])
+
+    details_log = (
+        "Host:      {host}\n"
+        "Command:   '{cmd}'\n"
+        "Exit code: {code}\n"
+        "STDOUT:\n{stdout}\n"
+        "STDERR:\n{stderr}".format(
+            host=remote.host, cmd=cmd, code=result['exit_code'],
+            stdout=result['stdout_str'], stderr=result['stderr_str']
+        ))
+
+    if result['exit_code'] not in assert_ec_equal:
+        error_msg = (
+            err_msg or
+            "Unexpected exit_code returned: actual {0}, expected {1}."
+            "".format(
+                result['exit_code'],
+                ' '.join(map(str, assert_ec_equal))))
+        log_msg = (
+            "{0}  Command: '{1}'  "
+            "Details:\n{2}".format(
+                error_msg, cmd, details_log))
         logger.error(log_msg)
         if raise_on_assert:
             raise Exception(log_msg)
 
     if clear:
         remote.clear()
-
-    result['stdout_str'] = ''.join(result['stdout'])
-    result['stdout_len'] = len(result['stdout'])
-    result['stderr_str'] = ''.join(result['stderr'])
-    result['stderr_len'] = len(result['stderr'])
 
     if jsonify:
         try:

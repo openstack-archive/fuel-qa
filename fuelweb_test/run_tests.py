@@ -118,7 +118,7 @@ def import_tests():
     from tests import test_clone_env  # noqa
     from tests import test_node_reassignment  # noqa
     from tests import test_os_upgrade  # noqa
-    from tests.tests_upgrade import test_data_driven_upgrade  # noqa
+    # from tests.tests_upgrade import test_data_driven_upgrade  # noqa
     from tests.tests_strength import test_failover  # noqa
     from tests.tests_strength import test_failover_with_ceph  # noqa
     from tests.tests_strength import test_master_node_failover  # noqa
