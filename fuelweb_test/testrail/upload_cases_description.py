@@ -370,11 +370,16 @@ def main():
                       dest='check_one_section', default=False,
                       help='Look for existing test case only in specified '
                            'section of test suite.')
+    parser.add_option("-l", "--live", dest="live_upload", action="store_true",
+                      help="Get tests results from running swarm")
 
     (options, _) = parser.parse_args()
 
     if options.verbose:
         logger.setLevel(DEBUG)
+
+    if options.live_upload and options.build_number == 'latest':
+        options.build_number = 'latest_started'
 
     project = TestRailProject(
         url=TestRailSettings.url,
