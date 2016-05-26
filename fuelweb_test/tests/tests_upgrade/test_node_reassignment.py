@@ -14,22 +14,22 @@
 
 import urllib2
 
+from proboscis import SkipTest
+from proboscis import test
 from proboscis.asserts import assert_equal
 from proboscis.asserts import fail
-from proboscis import test
-from proboscis import SkipTest
+
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-
 from fuelweb_test.tests import base_test_case as base_test_data
-from fuelweb_test.tests.test_os_upgrade import TestOSupgrade
+from fuelweb_test.tests.tests_upgrade.test_os_upgrade import TestOSupgrade
 
 
-@test(groups=["reassign_node_for_os_upgrade", "os_upgrade"])
+@test(groups=["reassign_node_for_os_upgrade", "os_upgrade"],
+      depends_on_groups=["upgrade_ceph_ha_restore"],
+      enabled=False)
 class TestReassignNode(base_test_data.TestBasic):
 
-    @test(
-        depends_on=[TestOSupgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan],
-        groups=["reassign_node_to_cloned_environment"])
+    @test(groups=["reassign_node_to_cloned_environment"])
     @log_snapshot_after_test
     def reassign_node_to_cloned_environment(self):
         """Test reassign node
