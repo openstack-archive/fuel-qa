@@ -5,60 +5,60 @@ Testrail
 
 Builds
 ------
-.. automodule:: fuelweb_test.testrail.builds
+.. automodule:: reporter.testrail.builds
    :members:
 
 Launchpad client
 ----------------
-.. automodule:: fuelweb_test.testrail.launchpad_client
+.. automodule:: reporter.testrail.launchpad_client
    :members:
 
 Report
 ------
-.. automodule:: fuelweb_test.testrail.report
+.. automodule:: reporter.testrail.report
    :members:
 
 Report partner ingreation
 -------------------------
-.. automodule:: fuelweb_test.testrail.report_pi
+.. automodule:: reporter.testrail.report_pi
    :members:
 
 Report tempest results
 ----------------------
-.. automodule:: fuelweb_test.testrail.report_tempest_results
+.. automodule:: reporter.testrail.report_tempest_results
    :members:
 
 Settings
 --------
-.. automodule:: fuelweb_test.testrail.settings
+.. automodule:: reporter.testrail.settings
    :members:
 
 Testrail
 --------
-.. automodule:: fuelweb_test.testrail.testrail
+.. automodule:: reporter.testrail.testrail
    :members:
 
 Testrail Client
 ---------------
-.. automodule:: fuelweb_test.testrail.testrail_client
+.. automodule:: reporter.testrail.testrail_client
    :members:
 
 Upload Cases Description
 ------------------------
-.. automodule:: fuelweb_test.testrail.upload_cases_description
+.. automodule:: reporter.testrail.upload_cases_description
    :members:
 
 Upload tempest test suite
 -------------------------
-.. automodule:: fuelweb_test.testrail.upload_tempest_test_suite
+.. automodule:: reporter.testrail.upload_tempest_test_suite
    :members:
 
 Generate bugs statistics for TestPlan
 -------------------------------------
-.. automodule:: fuelweb_test.testrail.generate_statistics
+.. automodule:: reporter.testrail.generate_statistics
    :members:
 
 Datetime utils for Testrail
 ---------------------------
-.. automodule:: fuelweb_test.testrail.datetime_util
+.. automodule:: reporter.testrail.datetime_util
    :members:
