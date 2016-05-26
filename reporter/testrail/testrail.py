@@ -1,4 +1,4 @@
-#    Copyright 2015 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -32,7 +32,7 @@ import requests
 from requests.exceptions import HTTPError
 from requests.packages.urllib3 import disable_warnings
 
-from fuelweb_test.testrail.settings import logger
+from reporter.testrail.settings import logger
 
 
 disable_warnings()

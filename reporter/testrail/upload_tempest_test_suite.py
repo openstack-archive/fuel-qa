@@ -1,4 +1,4 @@
-#    Copyright 2015 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -18,8 +18,8 @@ import subprocess
 
 from joblib import Parallel, delayed
 
-from fuelweb_test.testrail.settings import TestRailSettings
-from fuelweb_test.testrail.testrail_client import TestRailProject
+from reporter.testrail.settings import TestRailSettings
+from reporter.testrail.testrail_client import TestRailProject
 
 
 TEST_GROUPS = ["API", "CLI", "Scenario", "ThirdParty"]

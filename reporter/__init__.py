@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 #    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -14,8 +12,3 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import sys
-from reporter.testrail.generate_statistics import main
-
-if __name__ == "__main__":
-    sys.exit(main())
