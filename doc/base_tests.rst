@@ -73,7 +73,7 @@ Test Cli deploy ceph neutron tun
 
 Test Clone Environment
 ----------------------
-.. automodule:: fuelweb_test.tests.test_clone_env
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_clone_env
    :members:
 
 Test custom hostname
@@ -249,7 +249,7 @@ Test Node reinstallation
 
 Test Node reassignment
 ----------------------
-.. automodule:: fuelweb_test.tests.test_node_reassignment
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_node_reassignment
    :members:
 
 Test offloading types
@@ -591,7 +591,7 @@ OS upgrade tests
 
 Test OpenStack Upgrades
 -----------------------
-.. automodule:: fuelweb_test.tests.test_os_upgrade
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_os_upgrade
    :members:
 
 Tests for separated services
