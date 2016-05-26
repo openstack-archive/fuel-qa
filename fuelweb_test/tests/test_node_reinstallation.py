@@ -740,7 +740,7 @@ class StopReinstallation(TestBasic):
         self._stop_reinstallation(self.fuel_web, cluster_id,
                                   [str(cmp_nailgun['id'])], devops_nodes)
 
-        self.fuel_web.run_network_verify(cluster_id)
+        self.fuel_web.verify_network(cluster_id)
         logger.info('Start the reinstallation process again')
         NodeReinstallationEnv._reinstall_nodes(
             self.fuel_web, cluster_id, [str(cmp_nailgun['id'])])
