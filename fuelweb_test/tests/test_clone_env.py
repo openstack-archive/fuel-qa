@@ -22,18 +22,17 @@ from six.moves.urllib.error import HTTPError
 # pylint: enable=import-error
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.tests import base_test_case
-from fuelweb_test.tests.test_os_upgrade import TestOSupgrade
+from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["clone_env_for_os_upgrade", "os_upgrade"])
-class TestCloneEnv(base_test_case.TestBasic):
+@test(groups=["clone_env_for_os_upgrade"],
+      depends_on_groups=["upgrade_ceph_ha_restore"],
+      enabled=False)
+class TestCloneEnv(TestBasic):
 
     snapshot = 'upgrade_ha_ceph_for_all_ubuntu_neutron_vlan'
 
-    @test(
-        depends_on=[TestOSupgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan],
-        groups=["test_clone_environment"])
+    @test(groups=["test_clone_environment"])
     @log_snapshot_after_test
     def test_clone_environment(self):
         """Test clone environment
@@ -117,7 +116,8 @@ class TestCloneEnv(base_test_case.TestBasic):
                                  network["vlan_start"])
 
     @test(
-        depends_on=[TestOSupgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan],
+        depends_on_groups=['upgrade_old_nodes'],
+        # TODO(astepanov) maintain names changes later
         groups=["test_clone_nonexistent_cluster"])
     @log_snapshot_after_test
     def test_clone_nonexistent_cluster(self):
@@ -143,9 +143,7 @@ class TestCloneEnv(base_test_case.TestBasic):
         else:
             fail("Doesn't raise needed error")
 
-    @test(
-        depends_on=[TestOSupgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan],
-        groups=["test_clone_wo_name_in_body"])
+    @test(groups=["test_clone_wo_name_in_body"])
     @log_snapshot_after_test
     def test_clone_wo_name_in_body(self):
         """Test clone without name in POST body
@@ -175,9 +173,7 @@ class TestCloneEnv(base_test_case.TestBasic):
         else:
             fail("Doesn't raise needed error")
 
-    @test(
-        depends_on=[TestOSupgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan],
-        groups=["test_clone_wo_release_id_in_body"])
+    @test(groups=["test_clone_wo_release_id_in_body"])
     @log_snapshot_after_test
     def test_clone_wo_release_id_in_body(self):
         """Test clone without release id in POST body
@@ -204,9 +200,7 @@ class TestCloneEnv(base_test_case.TestBasic):
         else:
             fail("Doesn't raise needed error")
 
-    @test(
-        depends_on=[TestOSupgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan],
-        groups=["test_clone_with_empty_body"])
+    @test(groups=["test_clone_with_empty_body"])
     @log_snapshot_after_test
     def test_clone_with_empty_body(self):
         """Test clone with empty body
@@ -229,16 +223,14 @@ class TestCloneEnv(base_test_case.TestBasic):
         else:
             fail("Doesn't raise needed error")
 
-    @test(
-        depends_on=[TestOSupgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan],
-        groups=["test_clone_with_nonexistent_release_id"])
+    @test(groups=["test_clone_with_nonexistent_release_id"])
     @log_snapshot_after_test
     def test_clone_with_nonexistent_release_id(self):
         """Test clone with nonexistent release id in POST body
         Scenario:
             1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
             2. Try to clone environment with nonexistent
-            release id in POST body
+               release id in POST body
             3. Check status code
 
         """
@@ -260,9 +252,7 @@ class TestCloneEnv(base_test_case.TestBasic):
         else:
             fail("Doesn't raise needed error")
 
-    @test(
-        depends_on=[TestOSupgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan],
-        groups=["test_clone_with_incorrect_release_id"])
+    @test(groups=["test_clone_with_incorrect_release_id"])
     @log_snapshot_after_test
     def test_clone_with_incorrect_release_id(self):
         """Test clone with incorrect release id in POST body
@@ -291,9 +281,7 @@ class TestCloneEnv(base_test_case.TestBasic):
         else:
             fail("Doesn't raise needed error")
 
-    @test(
-        depends_on=[TestOSupgrade.upgrade_ha_ceph_for_all_ubuntu_neutron_vlan],
-        groups=["test_double_clone_environment"])
+    @test(groups=["test_double_clone_environment"])
     @log_snapshot_after_test
     def test_double_clone_environment(self):
         """Test double clone environment
