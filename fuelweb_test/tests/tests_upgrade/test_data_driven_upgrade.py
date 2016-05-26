@@ -110,6 +110,10 @@ class DataDrivenUpgradeBase(TestBasic):
 
             run_on_remote(self.admin_remote, cmd)
 
+        logger.info("Removing previously installed fuel-octane")
+        run_on_remote(self.admin_remote, "yum remove -y fuel-octane",
+                      raise_on_assert=False)
+        logger.info("Installing fuel-octane")
         run_on_remote(self.admin_remote, "yum install -y fuel-octane")
 
         if settings.OCTANE_PATCHES:
@@ -121,7 +125,14 @@ class DataDrivenUpgradeBase(TestBasic):
 
             run_on_remote(
                 self.admin_remote,
-                "bash /tmp/octane_patches {}".format(settings.OCTANE_PATCHES))
+                "bash /tmp//tmp/octane_patcher.sh {}".format(
+                    settings.OCTANE_PATCHES))
+
+        octane_log = ''.join(run_on_remote(
+            self.admin_remote,
+            "rpm -q --changelog fuel-octane"))
+        logger.info("Octane changes:")
+        logger.info(octane_log)
 
         if settings.FUEL_PROPOSED_REPO_URL:
             # pylint: disable=no-member
