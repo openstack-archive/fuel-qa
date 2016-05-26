@@ -170,7 +170,11 @@ class SSHManager(object):
                                  ' '.join(map(str, assert_ec_equal))))
             log_msg = ("{0}  Command: '{1}'  "
                        "Details: {2}".format(error_msg, cmd, error_details))
-            logger.error(log_msg)
+            # logger.error(log_msg)
+            logger.error('stdout:')
+            logger.error(''.join(result['stdout']))
+            logger.error('stderr:')
+            logger.error(''.join(result['stderr']))
             if raise_on_assert:
                 raise Exception(log_msg)
 
