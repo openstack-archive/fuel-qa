@@ -47,7 +47,7 @@ class UCATest(TestBasic):
     def check_package_origin(ip, package, origin):
         """Check that given package was installed from given repository"""
         version_cmd = ("apt-cache policy {package} | "
-                       "awk '$1 == \"Installed:\" {{print $2}}'").format(
+                       "awk '\$1 == \"Installed:\" {{print \$2}}'").format(
             package=package)
         version = SSHManager().execute_on_remote(ip, version_cmd)['stdout_str']
         origin_cmd = ("apt-cache madison {package} | "
@@ -69,7 +69,7 @@ class UCATest(TestBasic):
                                "ceilometer|ironic|glance"
 
         packages = SSHManager().execute_on_remote(
-            ip, "dpkg-query -W -f '${{package}}\n' | grep -E '{}'".format(
+            ip, "dpkg-query -W -f '\${{package}}\\\\n' | grep -E '{}'".format(
                 packages_pattern)
         )['stdout_str']
         return packages.split('\n')
