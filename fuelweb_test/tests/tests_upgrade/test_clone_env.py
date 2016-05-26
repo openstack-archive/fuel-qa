@@ -14,14 +14,14 @@
 
 import urllib2
 
+from proboscis import SkipTest
+from proboscis import test
 from proboscis.asserts import assert_equal
 from proboscis.asserts import fail
-from proboscis import test
-from proboscis import SkipTest
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests import base_test_case as base_test_data
-from fuelweb_test.tests.test_os_upgrade import TestOSupgrade
+from fuelweb_test.tests.tests_upgrade.test_os_upgrade import TestOSupgrade
 
 
 @test(groups=["clone_env_for_os_upgrade", "os_upgrade"])
