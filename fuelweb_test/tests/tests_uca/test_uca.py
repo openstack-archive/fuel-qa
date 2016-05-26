@@ -69,7 +69,7 @@ class UCATest(TestBasic):
                                "ceilometer|ironic|glance"
 
         packages = SSHManager().execute_on_remote(
-            ip, "dpkg-query -W -f '${{package}}\n' | grep -E '{}'".format(
+            ip, "dpkg-query -W -f '${{package}}\\n' | grep -E '{}'".format(
                 packages_pattern)
         )['stdout_str']
         return packages.split('\n')
