@@ -1,4 +1,4 @@
-#    Copyright 2015 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,225 +12,140 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import time
-
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_false
+from proboscis.asserts import assert_equal, assert_not_equal
 from proboscis.asserts import assert_true
 from proboscis import test
 from proboscis import SkipTest
 
-from fuelweb_test.helpers import checkers
+from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.helpers.utils import install_pkg
-from fuelweb_test.tests import base_test_case
-from fuelweb_test import settings
+from fuelweb_test.settings import KEYSTONE_CREDS
+from fuelweb_test.settings import OPENSTACK_RELEASE
+from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
+from fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade import \
+    DataDrivenUpgradeBase
 
 
-@test(groups=["prepare_os_upgrade"])
-class PrepareOSupgrade(base_test_case.TestBasic):
+@test(groups=["os_upgrade"])
+class TestOSupgrade(DataDrivenUpgradeBase):
+    @staticmethod
+    def check_release_requirements():
+        if OPENSTACK_RELEASE_UBUNTU not in OPENSTACK_RELEASE:
+            raise SkipTest('{0} not in {1}'.format(
+                OPENSTACK_RELEASE_UBUNTU, OPENSTACK_RELEASE))
 
-    @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_9],
-          groups=["ha_ceph_for_all_ubuntu_neutron_vlan"])
-    @log_snapshot_after_test
-    def ha_ceph_for_all_ubuntu_neutron_vlan(self):
-        """Deploy cluster with ha mode, ceph for all, neutron vlan
+    def minimal_check(self, seed_cluster_id, nwk_check=False):
+        def next_step():
+            return self.current_log_step + 1
 
-        Scenario:
-            1. Create cluster
-            2. Add 3 nodes with controller role
-            3. Add 3 nodes with compute and ceph OSD roles
-            4. Deploy the cluster
-            5. Run ostf
-            6. Make snapshot
+        if nwk_check:
+            self.show_step(next_step())
+            self.fuel_web.verify_network(seed_cluster_id)
 
-        Duration 50m
-        Snapshot ha_ceph_for_all_ubuntu_neutron_vlan
-        """
-        if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
-            raise SkipTest()
+        self.show_step(next_step())
+        self.fuel_web.run_single_ostf_test(
+            cluster_id=seed_cluster_id, test_sets=['sanity'],
+            test_name=('fuel_health.tests.sanity.test_sanity_identity'
+                       '.SanityIdentityTest.test_list_users'))
 
-        self.check_run('ha_ceph_for_all_ubuntu_neutron_vlan')
-        self.env.revert_snapshot("ready_with_9_slaves")
+    def check_ceph_health(self, ip):
+        ceph_health = self.ssh_manager.execute_on_remote(
+            ip=ip, cmd="ceph health")["stdout_str"]
 
-        data = {
-            'volumes_ceph': True,
-            'images_ceph': True,
-            'ephemeral_ceph': True,
-            'objects_ceph': True,
-            'volumes_lvm': False,
-            'net_provider': 'neutron',
-            'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
-        }
+        # There are an issue with PG calculation - LP#1464656
+        try:
+            assert_true("HEALTH_OK" in ceph_health,
+                        "Ceph health is not ok! Inspect output below:\n"
+                        "{!r}".format(ceph_health))
+        except AssertionError:
+            logger.warning("Ceph health is not ok! trying to check LP#1464656")
+            if "HEALTH_WARN" in ceph_health and \
+               "too many PGs per OSD" in ceph_health:
+                logger.info("Known issue in ceph - see LP#1464656 for details")
+            else:
+                raise
 
-        cluster_id = self.fuel_web.create_cluster(
-            name=self.__class__.__name__,
-            mode=settings.DEPLOYMENT_MODE_HA,
-            settings=data
-        )
+    @property
+    def orig_cluster_id(self):
+        return self.fuel_web.client.get_cluster_id('prepare_upgrade_ceph_ha')
 
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {
-                'slave-01': ['controller'],
-                'slave-02': ['controller'],
-                'slave-03': ['controller'],
-                'slave-04': ['compute', 'ceph-osd'],
-                'slave-05': ['compute', 'ceph-osd'],
-                'slave-06': ['compute', 'ceph-osd']
-            }
-        )
-
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
-        self.env.make_snapshot("ha_ceph_for_all_ubuntu_neutron_vlan",
-                               is_make=True)
-
-
-@test(groups=["os_upgrade"],
-      enabled=False)
-class TestOSupgrade(base_test_case.TestBasic):
-
-    @test(groups=["upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"])
-    @log_snapshot_after_test
-    def upgrade_ha_ceph_for_all_ubuntu_neutron_vlan(self):
-        """Upgrade master node ha mode, ceph for all, neutron vlan
-
-        Scenario:
-            1. Revert snapshot with ha mode, ceph for all, neutron vlan env
-            2. Run upgrade on master
-            3. Check that upgrade was successful
-
-        """
-        if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
-            raise SkipTest()
-
-        self.check_run('upgrade_ha_ceph_for_all_ubuntu_neutron_vlan')
-        self.env.revert_snapshot('ha_ceph_for_all_ubuntu_neutron_vlan')
-
-        cluster_id = self.fuel_web.get_last_created_cluster()
-
-        # TODO: Upgrade procedure were changed and upgrade to 9.0 not
-        # implemented yet. This should be replaced with actual code when it
-        # will be ready
-
-        # self.env.admin_actions.upgrade_master_node()
-
-        self.fuel_web.assert_nodes_in_ready_state(cluster_id)
-        self.fuel_web.wait_nodes_get_online_state(
-            self.env.d_env.nodes().slaves[:6])
-        self.fuel_web.assert_fuel_version(settings.UPGRADE_FUEL_TO)
-        self.fuel_web.assert_nailgun_upgrade_migration()
-
-        self.env.make_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan",
-                               is_make=True)
-
-    @test(depends_on=[upgrade_ha_ceph_for_all_ubuntu_neutron_vlan],
-          groups=["prepare_before_os_upgrade"])
-    @log_snapshot_after_test
-    def prepare_before_os_upgrade(self):
-        """Make prepare actions before os upgrade
-
-        Scenario:
-            1. Revert snapshot upgraded with ceph, neutron vlan
-            2. yum update
-            3. pip install pyzabbix
-            4. yum install fuel-octane
-            5. Create mirrors
-
-        """
-        if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
-            raise SkipTest()
-
-        self.check_run('prepare_before_os_upgrade')
-        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan")
-
-        with self.env.d_env.get_admin_remote() as remote:
-            remote.execute("yum -y update")
-            remote.execute("pip install pyzabbix")
-            install_pkg(remote, "fuel-octane")
-            cmd = (
-                "sed -i 's/DEBUG=\"no\"/DEBUG=\"yes\"/' {}".format(
-                    '/etc/fuel-createmirror/config/ubuntu.cfg'
-                )
-            )
-            remote.execute(cmd)
-            remote.execute("/usr/bin/fuel-createmirror")
-
-        self.env.make_snapshot("prepare_before_os_upgrade", is_make=True)
-
-    @test(depends_on=[prepare_before_os_upgrade],
+    @test(depends_on_groups=['upgrade_ceph_ha_restore'],
           groups=["os_upgrade_env"])
     @log_snapshot_after_test
     def os_upgrade_env(self):
         """Octane clone target environment
 
         Scenario:
-            1. Revert snapshot prepare_before_os_upgrade
-            2. run octane upgrade-env <target_env_id>
+            1. Revert snapshot upgrade_ceph_ha_restore
+            2. Run "octane upgrade-env <orig_env_id>"
+            3. Ensure that new cluster was created with correct release
 
         """
-        if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
-            raise SkipTest()
-
+        self.check_release_requirements()
         self.check_run('os_upgrade_env')
-        self.env.revert_snapshot("prepare_before_os_upgrade")
+        self.env.revert_snapshot("upgrade_ceph_ha_restore", skip_timesync=True)
+        self.install_octane()
 
-        cluster_id = self.fuel_web.get_last_created_cluster()
+        self.ssh_manager.execute_on_remote(
+            ip=self.env.get_admin_node_ip(),
+            cmd="octane upgrade-env {0}".format(self.orig_cluster_id),
+            err_msg="'upgrade-env' command failed, inspect logs for details")
 
-        with self.env.d_env.get_admin_remote() as remote:
-            octane_upgrade_env = remote.execute(
-                "octane upgrade-env {0}".format(cluster_id)
-            )
-
-        cluster_id = self.fuel_web.get_last_created_cluster()
-
-        assert_equal(0, octane_upgrade_env['exit_code'])
-        assert_equal(cluster_id,
-                     int(octane_upgrade_env['stdout'][0].split()[0]))
+        new_cluster_id = self.fuel_web.get_last_created_cluster()
+        assert_not_equal(self.orig_cluster_id, new_cluster_id,
+                         "Cluster IDs are the same: {!r} and {!r}".format(
+                             self.orig_cluster_id, new_cluster_id))
+        assert_equal(self.fuel_web.get_cluster_release_id(new_cluster_id),
+                     self.fuel_web.client.get_release_id(
+                         release_name='Liberty on Ubuntu 14.04'))
 
         self.env.make_snapshot("os_upgrade_env", is_make=True)
 
-    @test(depends_on=[os_upgrade_env],
-          groups=["upgrade_first_cic"])
+    @test(depends_on=[os_upgrade_env], groups=["upgrade_first_cic"])
     @log_snapshot_after_test
     def upgrade_first_cic(self):
         """Upgrade first controller
 
         Scenario:
             1. Revert snapshot os_upgrade_env
-            2. run octane upgrade-node --isolated <seed_env_id> <node_id>
+            2. Select cluster for upgrade and upgraded cluster
+            3. Select controller for upgrade
+            4. Run "octane upgrade-node --isolated <seed_env_id> <node_id>"
+            5. Check tasks status after upgrade run completion
+            6. Run minimal OSTF sanity check (user list) on target cluster
 
         """
-        if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
-            raise SkipTest()
-
+        self.check_release_requirements()
         self.check_run('upgrade_first_cic')
-        self.env.revert_snapshot("os_upgrade_env")
 
-        target_cluster_id = self.fuel_web.client.get_cluster_id(
-            'TestOSupgrade'
-        )
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot("os_upgrade_env")
+        self.install_octane()
+
+        self.show_step(2)
         seed_cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.show_step(3)
         controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            target_cluster_id, ["controller"]
-        )
-        with self.env.d_env.get_admin_remote() as remote:
-            octane_upgrade_node = remote.execute(
-                "octane upgrade-node --isolated {0} {1}".format(
-                    seed_cluster_id, controllers[-1]["id"])
-            )
-        assert_equal(0, octane_upgrade_node['exit_code'],
-                     "octane upgrade-node returns non zero"
-                     "status code,"
-                     "current result {}".format(octane_upgrade_node))
+            self.orig_cluster_id, ["controller"])
+        self.show_step(4)
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd="octane upgrade-node --isolated "
+                "{0} {1}".format(seed_cluster_id, controllers[-1]["id"]),
+            err_msg="octane upgrade-node failed")
+
+        self.show_step(5)
         tasks_started_by_octane = [
             task for task in self.fuel_web.client.get_tasks()
-            if task['cluster'] == seed_cluster_id
-        ]
+            if task['cluster'] == seed_cluster_id]
 
         for task in tasks_started_by_octane:
             self.fuel_web.assert_task_success(task)
+
+        self.show_step(6)
+        self.minimal_check(seed_cluster_id=seed_cluster_id)
+
         self.env.make_snapshot("upgrade_first_cic", is_make=True)
 
     @test(depends_on=[upgrade_first_cic],
@@ -241,77 +156,72 @@ class TestOSupgrade(base_test_case.TestBasic):
 
         Scenario:
             1. Revert snapshot upgrade_first_cic
-            2. run octane upgrade-db <target_env_id> <seed_env_id>
+            2. Select cluster for upgrade and upgraded cluster
+            3. Select controller for db upgrade
+            4. Collect from db IDs for upgrade (used in checks)
+            5. Run "octane upgrade-db <orig_env_id> <seed_env_id>"
+            6. Check upgrade status
 
         """
 
-        if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
-            raise SkipTest()
-
+        self.check_release_requirements()
         self.check_run('upgrade_db')
-        self.env.revert_snapshot("upgrade_first_cic")
 
-        target_cluster_id = self.fuel_web.client.get_cluster_id(
-            'TestOSupgrade'
-        )
-        target_controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            target_cluster_id, ["controller"]
-        )[0]
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot("upgrade_first_cic", skip_timesync=True)
+        self.install_octane()
+
+        self.show_step(2)
         seed_cluster_id = self.fuel_web.get_last_created_cluster()
-        controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            seed_cluster_id, ["controller"]
-        )[0]
 
-        with self.env.d_env.get_ssh_to_remote(
-                target_controller["ip"]) as remote:
-            target_ids = remote.execute(
-                'mysql cinder <<< "select id from volumes;"; '
-                'mysql glance <<< "select id from images"; '
-                'mysql neutron <<< "(select id from networks) '
-                'UNION (select id from routers) '
-                'UNION (select id from subnets)"; '
-                'mysql keystone <<< "(select id from project) '
-                'UNION (select id from user)"'
-            )["stdout"]
+        self.show_step(3)
+        orig_controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            self.orig_cluster_id, ["controller"])[0]
+        seed_controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            seed_cluster_id, ["controller"])[0]
 
-        with self.env.d_env.get_admin_remote() as remote:
-            octane_upgrade_db = remote.execute(
-                "octane upgrade-db {0} {1}".format(
-                    target_cluster_id, seed_cluster_id)
-            )
+        mysql_req = (
+            'mysql cinder <<< "select id from volumes;"; '
+            'mysql glance <<< "select id from images"; '
+            'mysql neutron <<< "(select id from networks) '
+            'UNION (select id from routers) '
+            'UNION (select id from subnets)"; '
+            'mysql keystone <<< "(select id from project) '
+            'UNION (select id from user)"')
 
-        assert_equal(0, octane_upgrade_db['exit_code'],
-                     "octane upgrade-db returns non zero"
-                     "status code,"
-                     "current result is {}".format(octane_upgrade_db))
+        self.show_step(4)
+        target_ids = self.ssh_manager.execute_on_remote(
+            ip=orig_controller["ip"], cmd=mysql_req)['stdout']
 
-        with self.env.d_env.get_ssh_to_remote(controller["ip"]) as remote:
-            stdout = remote.execute("crm resource status")["stdout"]
-            seed_ids = remote.execute(
-                'mysql cinder <<< "select id from volumes;"; '
-                'mysql glance <<< "select id from images"; '
-                'mysql neutron <<< "(select id from networks) '
-                'UNION (select id from routers) '
-                'UNION (select id from subnets)"; '
-                'mysql keystone <<< "(select id from project) '
-                'UNION (select id from user)"'
-            )["stdout"]
+        self.show_step(5)
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd="octane upgrade-db {0} {1}".format(
+                self.orig_cluster_id, seed_cluster_id),
+            err_msg="octane upgrade-db failed")
 
-        while stdout:
-            current = stdout.pop(0)
+        self.show_step(6)
+
+        crm_status = self.ssh_manager.execute_on_remote(
+            ip=seed_controller["ip"], cmd="crm resource status")['stdout']
+
+        while crm_status:
+            current = crm_status.pop(0)
             if "vip" in current:
                 assert_true("Started" in current)
             elif "master_p" in current:
-                next_element = stdout.pop(0)
+                next_element = crm_status.pop(0)
                 assert_true("Masters: [ node-" in next_element)
             elif any(x in current for x in ["ntp", "mysql", "dns"]):
-                next_element = stdout.pop(0)
+                next_element = crm_status.pop(0)
                 assert_true("Started" in next_element)
             elif any(x in current for x in ["nova", "cinder", "keystone",
                                             "heat", "neutron", "glance"]):
-                next_element = stdout.pop(0)
+                next_element = crm_status.pop(0)
                 assert_true("Stopped" in next_element)
 
+        seed_ids = self.ssh_manager.execute_on_remote(
+            ip=seed_controller["ip"], cmd=mysql_req)['stdout']
         assert_equal(sorted(target_ids), sorted(seed_ids),
                      "Objects in target and seed dbs are different")
 
@@ -325,149 +235,253 @@ class TestOSupgrade(base_test_case.TestBasic):
 
         Scenario:
             1. Revert snapshot upgrade_db
-            2. run octane upgrade-ceph <target_env_id> <seed_env_id>
-
+            2. Select cluster for upgrade and upgraded cluster
+            3. Run octane upgrade-ceph <orig_env_id> <seed_env_id>
+            4. Check CEPH health on seed env
         """
 
-        if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
-            raise SkipTest()
-
+        self.check_release_requirements()
         self.check_run('upgrade_ceph')
+
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("upgrade_db")
+        self.install_octane()
 
-        target_cluster_id = self.fuel_web.client.get_cluster_id(
-            'TestOSupgrade'
-        )
+        self.show_step(2)
         seed_cluster_id = self.fuel_web.get_last_created_cluster()
-        controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            seed_cluster_id, ["controller"]
-        )[0]
 
-        with self.env.d_env.get_admin_remote() as remote:
-            octane_upgrade_ceph = remote.execute(
-                "octane upgrade-ceph {0} {1}".format(
-                    target_cluster_id, seed_cluster_id)
-            )
+        seed_controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            seed_cluster_id, ["controller"])[0]
 
-        assert_equal(0, octane_upgrade_ceph['exit_code'],
-                     "octane upgrade-ceph returns non zero status code,"
-                     "current result is {}".format(octane_upgrade_ceph))
+        self.show_step(3)
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd="octane upgrade-ceph {0} {1}".format(
+                self.orig_cluster_id, seed_cluster_id),
+            err_msg="octane upgrade-ceph failed")
 
-        with self.env.d_env.get_ssh_to_remote(controller["ip"]) as remote:
-            ceph_health = remote.execute("ceph health")["stdout"][0][:-1]
-
-        assert_equal("HEALTH_OK", ceph_health)
+        self.show_step(4)
+        self.check_ceph_health(seed_controller['ip'])
 
         self.env.make_snapshot("upgrade_ceph", is_make=True)
 
     @test(depends_on=[upgrade_ceph],
-          groups=["upgrade_control_plane"])
+          groups=["upgrade_controllers"])
     @log_snapshot_after_test
-    def upgrade_control_plane(self):
-        """Upgrade control plane
+    def upgrade_controllers(self):
+        """Upgrade control plane and remaining controllers
 
         Scenario:
             1. Revert snapshot upgrade_ceph
-            2. run octane upgrade-control <target_env_id> <seed_env_id>
-            3. run octane upgrade-node <seed_cluster_id> <node_id> <node_id>
+            2. Select cluster for upgrade and upgraded cluster
+            3. Run octane upgrade-control <orig_env_id> <seed_env_id>
+            4. Check cluster consistency
+            5. Collect old controllers for upgrade
+            6. Run octane upgrade-node <seed_cluster_id> <node_id> <node_id>
+            7. Check tasks status after upgrade run completion
+            8. Run network verification on target cluster
+            9. Run minimal OSTF sanity check (user list) on target cluster
 
         """
 
-        if settings.OPENSTACK_RELEASE_UBUNTU not in settings.OPENSTACK_RELEASE:
-            raise SkipTest()
+        self.check_release_requirements()
+        self.check_run('upgrade_controllers')
 
-        self.check_run('upgrade_control_plane')
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("upgrade_ceph")
+        self.install_octane()
 
-        target_cluster_id = self.fuel_web.client.get_cluster_id(
-            'TestOSupgrade'
-        )
+        self.show_step(2)
         seed_cluster_id = self.fuel_web.get_last_created_cluster()
 
-        with self.env.d_env.get_admin_remote() as remote:
-            octane_upgrade_control = remote.execute(
-                "octane upgrade-control {0} {1}".format(
-                    target_cluster_id, seed_cluster_id)
-            )
+        self.show_step(3)
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd="octane upgrade-control {0} {1}".format(
+                self.orig_cluster_id, seed_cluster_id),
+            err_msg="octane upgrade-control failed")
 
-        assert_equal(0, octane_upgrade_control['exit_code'],
-                     "octane upgrade-control returns non zero status code,"
-                     "current result is {}".format(octane_upgrade_control))
-
+        self.show_step(4)
         controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            seed_cluster_id, ["controller"]
-        )
-        old_computes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            target_cluster_id, ["compute"]
-        )
-        old_controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            target_cluster_id, ["controller"]
-        )
+            seed_cluster_id, ["controller"])
 
-        ping_ips = []
-        for node in controllers + old_computes:
-            for data in node["network_data"]:
-                if data["name"] == "management":
-                    ping_ips.append(data["ip"].split("/")[0])
+        old_controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            self.orig_cluster_id, ["controller"])
+
+        old_computes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            self.orig_cluster_id, ["compute"])
+
+        def collect_management_ips(node_list):
+            result = []
+            for item in node_list:
+                for data in item["network_data"]:
+                    if data["name"] == "management":
+                        result.append(data["ip"].split("/")[0])
+            return result
+
+        ping_ips = collect_management_ips(controllers + old_computes)
         ping_ips.append(self.fuel_web.get_mgmt_vip(seed_cluster_id))
 
-        non_ping_ips = []
-        for node in old_controllers:
-            for data in node["network_data"]:
-                if data["name"] == "management":
-                    non_ping_ips.append(data["ip"].split("/")[0])
+        non_ping_ips = collect_management_ips(old_controllers)
+
+        ping_cmd = "ping -W 1 -i 1 -s 56 -c 1 -w 10 {host}"
 
         for node in controllers + old_computes:
-            self.ssh_manager.execute(node["ip"], "ip -s -s neigh flush all")
+            self.ssh_manager.execute_on_remote(
+                ip=node["ip"], cmd="ip -s -s neigh flush all")
 
             for ip in ping_ips:
-                assert_true(checkers.check_ping(node["ip"], ip),
-                            "Can not ping {0} from {1}"
+                self.ssh_manager.execute_on_remote(
+                    ip=node["ip"],
+                    cmd=ping_cmd.format(host=ip),
+                    err_msg="Can not ping {0} from {1}"
                             "need to check network"
                             " connectivity".format(ip, node["ip"]))
 
             for ip in non_ping_ips:
-                assert_false(checkers.check_ping(node["ip"], ip),
-                             "Patch ports from old controllers"
-                             "isn't removed")
+                self.ssh_manager.execute_on_remote(
+                    ip=node["ip"],
+                    cmd=ping_cmd.format(host=ip),
+                    err_msg="Patch ports from old controllers isn't removed",
+                    assert_ec_equal=[1, 2])  # No reply, Other errors
 
-        time.sleep(180)  # TODO need to remove
-        # after fix of https://bugs.launchpad.net/fuel/+bug/1499696
+        crm = self.ssh_manager.execute_on_remote(
+            ip=controllers[0]["ip"],
+            cmd="crm resource status")["stdout"]
 
-        with self.env.d_env.get_ssh_to_remote(controllers[0]["ip"]) as remote:
-            stdout = remote.execute("crm resource status")["stdout"]
-
-        while stdout:
-            current = stdout.pop(0)
+        while crm:
+            current = crm.pop(0)
             if "vip" in current:
                 assert_true("Started" in current)
             elif "master_p" in current:
-                next_element = stdout.pop(0)
+                next_element = crm.pop(0)
                 assert_true("Masters: [ node-" in next_element)
-            elif any(x in current for x in ["ntp", "mysql", "dns"]):
-                next_element = stdout.pop(0)
-                assert_true("Started" in next_element)
-            elif any(x in current for x in ["nova", "cinder", "keystone",
+            elif any(x in current for x in ["ntp", "mysql", "dns",
+                                            "nova", "cinder", "keystone",
                                             "heat", "neutron", "glance"]):
-                next_element = stdout.pop(0)
+                next_element = crm.pop(0)
                 assert_true("Started" in next_element)
 
-        with self.env.d_env.get_admin_remote() as remote:
-            octane_upgrade_node = remote.execute(
-                "octane upgrade-node {0} {1} {2}".format(
-                    seed_cluster_id, old_controllers[0]["id"],
-                    old_controllers[1]["id"])
-            )
-        assert_equal(0, octane_upgrade_node['exit_code'],
-                     "octane upgrade-node returns non zero"
-                     "status code,"
-                     "current result {}".format(octane_upgrade_node))
+        # upgrade controllers part
+        self.show_step(5)
+        seed_cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.show_step(6)
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd="octane upgrade-node {0} {1}".format(
+                seed_cluster_id,
+                " ".join([str(ctrl["id"]) for ctrl in old_controllers])),
+            err_msg="octane upgrade-node failed")
+
+        self.show_step(7)
         tasks_started_by_octane = [
             task for task in self.fuel_web.client.get_tasks()
-            if task['cluster'] == seed_cluster_id
-        ]
+            if task['cluster'] == seed_cluster_id]
 
         for task in tasks_started_by_octane:
             self.fuel_web.assert_task_success(task)
 
-        self.env.make_snapshot("upgrade_control_plane", is_make=True)
+        self.show_step(8)
+        self.show_step(9)
+        self.minimal_check(seed_cluster_id=seed_cluster_id, nwk_check=True)
+
+        self.env.make_snapshot("upgrade_controllers", is_make=True)
+
+    @test(depends_on=[upgrade_controllers], groups=["upgrade_ceph_osd"])
+    @log_snapshot_after_test
+    def upgrade_ceph_osd(self):
+        """Upgrade ceph osd
+
+        Scenario:
+            1. Revert snapshot upgrade_all_controllers
+            2. Select cluster for upgrade and upgraded cluster
+            3. Run octane upgrade-osd <target_env_id> <seed_env_id>
+            4. Check CEPH health on seed env
+            5. run network verification on target cluster
+            6. run minimal OSTF sanity check (user list) on target cluster
+        """
+
+        self.check_release_requirements()
+        self.check_run('upgrade_ceph_osd')
+
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot("upgrade_controllers")
+        self.install_octane()
+
+        self.show_step(2)
+        seed_cluster_id = self.fuel_web.get_last_created_cluster()
+
+        seed_controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            seed_cluster_id, ["controller"]
+        )[0]
+
+        self.show_step(3)
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd="octane upgrade-osd --admin-password {0} {1}".format(
+                KEYSTONE_CREDS['password'],
+                self.orig_cluster_id),
+            err_msg="octane upgrade-osd failed"
+        )
+
+        self.show_step(4)
+        self.check_ceph_health(seed_controller['ip'])
+
+        self.minimal_check(seed_cluster_id=seed_cluster_id, nwk_check=True)
+
+        self.env.make_snapshot("upgrade_ceph_osd", is_make=True)
+
+    @test(depends_on=[upgrade_ceph_osd], groups=["upgrade_old_nodes"])
+    @log_snapshot_after_test
+    def upgrade_old_nodes(self):
+        """Upgrade all non controller nodes
+
+        Scenario:
+            1. Revert snapshot upgrade_all_controllers
+            2. Select cluster for upgrade and upgraded cluster
+            3. Collect nodes for upgrade
+            4. Run octane upgrade-node $SEED_ID <ID>
+            5. run network verification on target cluster
+            6. run OSTF check
+            7. Drop old cluster
+        """
+
+        self.check_release_requirements()
+        self.check_run('upgrade_old_nodes')
+
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot("upgrade_ceph_osd")
+        self.install_octane()
+
+        self.show_step(2)
+        seed_cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.show_step(3)
+
+        # old_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+        #     orig_cluster_id, ["compute"]
+        # )
+
+        # TODO(astepanov): validate, that only correct nodes acquired
+        old_nodes = self.fuel_web.client.list_cluster_nodes(
+            self.orig_cluster_id)
+
+        self.show_step(4)
+
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd="octane upgrade-node {0} {1}".format(
+                seed_cluster_id,
+                " ".join([str(ctrl["id"]) for ctrl in old_nodes])),
+            err_msg="octane upgrade-node failed"
+        )
+
+        self.show_step(5)
+        self.fuel_web.verify_network(seed_cluster_id)
+
+        self.show_step(6)
+        self.fuel_web.run_ostf(seed_cluster_id)
+
+        self.show_step(7)
+        self.fuel_web.delete_env_wait(self.orig_cluster_id)
