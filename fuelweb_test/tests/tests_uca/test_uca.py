@@ -32,7 +32,8 @@ class UCATest(TestBasic):
     def get_uca_repo(self, cluster_id):
         """Pick link to UCA repository from cluster settings"""
         repos = self.fuel_web.get_cluster_repos(cluster_id)
-        template = '{uri}/ {suite}/{section}'
+        # only check that the UCA uri exists
+        template = '{uri}/'
         uca_repo = None
         for repo in repos['value']:
             if repo['name'] == 'uca':
@@ -47,13 +48,15 @@ class UCATest(TestBasic):
     def check_package_origin(ip, package, origin):
         """Check that given package was installed from given repository"""
         version_cmd = ("apt-cache policy {package} | "
-                       "awk '$1 == \"Installed:\" {{print $2}}'").format(
+                       "awk '\$1 == \"Installed:\" {{print \$2}}'").format(
             package=package)
         version = SSHManager().execute_on_remote(ip, version_cmd)['stdout_str']
         origin_cmd = ("apt-cache madison {package} | "
-                      "grep {version}").format(package=package,
-                                               version=version)
+                      "grep '{version}'").format(package=package,
+                                                 version=version)
         result = SSHManager().execute_on_remote(ip, origin_cmd)['stdout']
+        # we only want to check for the UCA uri because it might be in main
+        # or proposed
         repos = [str.strip(line.split("|")[2]) for line in result]
         assert_true(
             any([origin in repo for repo in repos]),
@@ -69,7 +72,7 @@ class UCATest(TestBasic):
                                "ceilometer|ironic|glance"
 
         packages = SSHManager().execute_on_remote(
-            ip, "dpkg-query -W -f '${{package}}\n' | grep -E '{}'".format(
+            ip, "dpkg-query -W -f '\${{package}}\\\\n' | grep -E '{}'".format(
                 packages_pattern)
         )['stdout_str']
         return packages.split('\n')
