@@ -1,4 +1,4 @@
-#    Copyright 2015 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -14,7 +14,7 @@
 
 import os
 
-from fuelweb_test.testrail.settings import LOGS_DIR
+from reporter.testrail.settings import LOGS_DIR
 
 if not os.path.exists(LOGS_DIR):
     os.makedirs(LOGS_DIR)
