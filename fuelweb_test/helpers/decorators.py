@@ -235,7 +235,8 @@ def update_rpm_packages(func):
                 ip=SSHManager().admin_ip,
                 cmd=cmd
             )
-            update_command = 'yum clean expire-cache; yum update -y -d3'
+            update_command = 'yum clean expire-cache; yum update -y -d3 ' \
+                             '2>>/var/log/yum-update-error.log'
             cmd_result = SSHManager().execute(ip=SSHManager().admin_ip,
                                               cmd=update_command)
             logger.debug('Result of "yum update" command on master node: '
@@ -283,7 +284,8 @@ def update_fuel(func):
                     # Update packages on master node
                     remote.execute(
                         'yum -y install yum-plugin-priorities;'
-                        'yum clean expire-cache; yum update -y')
+                        'yum clean expire-cache; yum update -y '
+                        '2>>/var/log/yum-update-error.log')
 
                 # Add auxiliary repository to the cluster attributes
                 if settings.OPENSTACK_RELEASE_UBUNTU not in \

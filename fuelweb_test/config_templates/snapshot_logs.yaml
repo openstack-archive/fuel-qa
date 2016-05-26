@@ -877,6 +877,7 @@ master:
   var/log/url_access_checker.log
   var/log/wtmp
   var/log/yum.log
+  var/log/yum-update-error.log
   xmlrpc/cobbler.txt
  remote:
   controller:
