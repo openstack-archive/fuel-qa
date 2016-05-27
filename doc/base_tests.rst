@@ -380,6 +380,11 @@ Test task ensurability
 .. automodule:: fuelweb_test.tests.tests_lcm.test_ensurability
   :members:
 
+Test unlock settings tab
+------------------------
+.. automodule:: fuelweb_test.tests.test_unlock_settings_tab
+  :members:
+
 Test for unlock settings tab from different cluster states
 ----------------------------------------------------------
 .. automodule:: fuelweb_test.tests.test_states_unlock_settings_tab
@@ -758,11 +763,6 @@ Test for tracking /etc dir by etckeeper plugin
 Test for separate master node deployment
 ----------------------------------------
 .. automodule:: system_test.tests.test_centos_master_deploy_ceph
-   :members:
-
-Tests for configDB api
-----------------------
-.. automodule:: fuelweb_test.tests.tests_configdb.test_configdb_api
    :members:
 
 Test for multipath devices
