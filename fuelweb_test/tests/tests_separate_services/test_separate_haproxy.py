@@ -31,7 +31,7 @@ from fuelweb_test.tests.test_net_templates_base import TestNetworkTemplatesBase
 from gates_tests.helpers import exceptions
 
 
-@test(groups=["multiracks_2"])
+@test(groups=["thread_separate_haproxy"])
 class TestSeparateHaproxy(TestNetworkTemplatesBase):
     """Test for verification of deployment with detached haproxy role."""
 
