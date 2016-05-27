@@ -46,7 +46,7 @@ class TestIronicBase(TestBasic):
                6. Verify network
                7. Run OSTF
 
-           Snapshot: test_ironic_base
+           Snapshot: ironic_base
         """
 
         self.env.revert_snapshot("ready_with_3_slaves")
