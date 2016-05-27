@@ -31,11 +31,11 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 class DataDrivenUpgradeBase(TestBasic):
     OCTANE_COMMANDS = {
-        'backup': 'octane fuel-backup --to {path}',
-        'repo-backup': 'octane fuel-repo-backup --to {path} --full',
-        'restore': 'octane fuel-restore --from {path} --admin-password {pwd}',
-        'repo-restore': 'octane fuel-repo-restore --from {path}',
-        'update-bootstrap-centos': 'octane update-bootstrap-centos'
+        'backup': 'octane -v --debug fuel-backup --to {path}',
+        'repo-backup': 'octane -v --debug fuel-repo-backup --to {path} --full',
+        'restore': 'octane -v --debug fuel-restore --from {path} --admin-password {pwd}',
+        'repo-restore': 'octane -v --debug fuel-repo-restore --from {path}',
+        'update-bootstrap-centos': 'octane -v --debug update-bootstrap-centos'
     }
 
     def __init__(self):
