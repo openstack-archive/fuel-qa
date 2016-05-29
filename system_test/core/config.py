@@ -100,3 +100,7 @@ def define_custom_groups():
     add_group(group="hard_compute_restart_after_fuel_master_migration",
               systest_group="system_test.hard_restart_after_migration",
               config_name="3ctrl_2comp_neutronVLAN")
+
+    add_group(group="warm_compute_restart_after_fuel_master_migration",
+              systest_group="system_test.warm_restart_after_migration",
+              config_name="3ctrl_2comp_neutronVLAN")

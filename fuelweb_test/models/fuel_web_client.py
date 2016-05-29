@@ -1979,6 +1979,12 @@ class FuelWebClient29(object):
         self.warm_shutdown_nodes(devops_nodes)
         self.warm_start_nodes(devops_nodes)
 
+    def warm_reboot_ips(self, ips):
+        for ip in ips:
+            logger.debug('Reboot (warm restart) ip %s', ip)
+            self.ssh_manager.execute_on_remote(ip=ip,
+                                               cmd='/sbin/shutdown -r now')
+
     def cold_restart_nodes(self, devops_nodes,
                            wait_offline=True, wait_online=True,
                            wait_after_destroy=None):

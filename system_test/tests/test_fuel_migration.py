@@ -169,3 +169,36 @@ class HardComputeRestartAfterFuelMasterMigrate(FuelMasterMigrate):
             [self.fuel_web.get_devops_node_by_nailgun_node(self.compute)],
             wait_offline=False, wait_online=False, wait_after_destroy=5
         )
+
+
+@testcase(groups=['system_test', 'system_test.warm_restart_after_migration'])
+class WarmComputeRestartAfterFuelMasterMigrate(FuelMasterMigrate):
+    """Check Fuel Master node functionality after warm restart of the compute
+       where Fuel Master node is located
+
+    Scenario:
+        1. Deploy cluster with two computes and three controllers
+        2. Migrate Fuel Master
+        3. Warm restart for compute node where fuel-master node was
+           migrated to
+        4. Reconnect to Fuel Master
+        5. Check status for master's services
+        6. Run OSTF
+    """
+
+    actions_order = FuelMasterMigrate.actions_order[:]
+    actions_order.extend([
+        'compute_warm_restart',
+        'wait_nailgun_available',
+        'wait_mcollective_nodes',
+        'wait_nailgun_nodes',
+        'network_check',
+        'health_check'
+    ])
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def compute_warm_restart(self):
+        """Warm restart of the compute with Fuel Master node"""
+        self.fuel_web.warm_reboot_ips([self.compute['ip']])
+        self.node_rebooted(self.compute['ip'])
