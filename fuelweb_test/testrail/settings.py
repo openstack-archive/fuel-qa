@@ -33,7 +33,12 @@ os.environ["CENTOS_CLOUD_IMAGE_PATH"] = "./centos-cloud-image.img"
 JENKINS = {
     'url': os.environ.get('JENKINS_URL', 'http://localhost/'),
     'magnet_link_artifact': os.environ.get('JENKINS_MAGNET_LINK_ARTIFACT',
-                                           'magnet_link.txt')
+                                           'magnet_link.txt'),
+    'username': os.environ.get('JENKINS_USER', None),
+    'password': os.environ.get('JENKINS_PASS', None),
+    'job_name': os.environ.get('TEST_RUNNER_JOB_NAME', '9.0.swarm.runner'),
+    'xml_testresult_file_name': os.environ.get('TEST_XML_RESULTS',
+                                               'nosetests.xml')
 }
 
 GROUPS_TO_EXPAND = [
