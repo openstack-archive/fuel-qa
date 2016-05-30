@@ -25,7 +25,7 @@ from fuelweb_test.tests.tests_lcm.base_lcm_test import LCMTestBasic
 from fuelweb_test.tests.tests_lcm.base_lcm_test import SetupLCMEnvironment
 
 
-@test(groups=['test_ensurability'])
+@test
 class TaskEnsurability(LCMTestBasic):
     """Test suite for verification of deployment tasks ensurability."""
 
@@ -218,7 +218,7 @@ class TaskEnsurability(LCMTestBasic):
         return ensurable
 
     @test(depends_on=[SetupLCMEnvironment.lcm_deploy_1_ctrl_1_cmp_1_cinder],
-          groups=['ensurability_1_ctrl_1_cmp_1_cinder'])
+          groups=['test_ensurability', 'ensurability_1_ctrl_1_cmp_1_cinder'])
     @log_snapshot_after_test
     def ensurability_1_ctrl_1_cmp_1_cinder(self):
         """Test ensurability for cluster with cinder
@@ -259,7 +259,7 @@ class TaskEnsurability(LCMTestBasic):
         self.env.make_snapshot('ensurability_{}'.format(deployment))
 
     @test(depends_on=[SetupLCMEnvironment.lcm_deploy_1_ctrl_1_cmp_1_mongo],
-          groups=['ensurability_1_ctrl_1_cmp_1_mongo'])
+          groups=['test_ensurability', 'ensurability_1_ctrl_1_cmp_1_mongo'])
     @log_snapshot_after_test
     def ensurability_1_ctrl_1_cmp_1_mongo(self):
         """Test ensurability for cluster with mongo
@@ -300,7 +300,7 @@ class TaskEnsurability(LCMTestBasic):
         self.env.make_snapshot('ensurability_{}'.format(deployment))
 
     @test(depends_on=[SetupLCMEnvironment.lcm_deploy_1_ctrl_1_cmp_3_ceph],
-          groups=['ensurability_1_ctrl_1_cmp_3_ceph'])
+          groups=['test_ensurability', 'ensurability_1_ctrl_1_cmp_3_ceph'])
     @log_snapshot_after_test
     def ensurability_1_ctrl_1_cmp_3_ceph(self):
         """Test ensurability for cluster with ceph
@@ -341,7 +341,8 @@ class TaskEnsurability(LCMTestBasic):
         self.env.make_snapshot('ensurability_{}'.format(deployment))
 
     @test(depends_on=[SetupLCMEnvironment.lcm_deploy_3_ctrl_3_cmp_ceph_sahara],
-          groups=['ensurability_3_ctrl_3_cmp_ceph_sahara'])
+          groups=['test_ensurability',
+                  'ensurability_3_ctrl_3_cmp_ceph_sahara'])
     @log_snapshot_after_test
     def ensurability_3_ctrl_3_cmp_ceph_sahara(self):
         """Test ensurability for cluster with Sahara, Ceilometer and Ceph
@@ -380,6 +381,47 @@ class TaskEnsurability(LCMTestBasic):
         assert_true(
             self.check_ensurability(
                 deployment, cluster_id, slave_nodes, ha=True),
+            "There are not ensurable tasks. "
+            "Please take a look at the output above!")
+
+        self.env.make_snapshot('ensurability_{}'.format(deployment))
+
+    @test(depends_on=[SetupLCMEnvironment.lcm_deploy_1_ctrl_1_cmp_1_ironic],
+          groups=['test_ensurability', 'ensurability_1_ctrl_1_cmp_1_ironic'])
+    @log_snapshot_after_test
+    def ensurability_1_ctrl_1_cmp_1_ironic(self):
+        """Test ensurability for cluster with Ironic
+
+          Scenario:
+            1. Revert the snapshot 'lcm_deploy_1_ctrl_1_cmp_1_ironic'
+            2. Check that stored setting fixtures are up to date
+            3. Check that stored task fixtures are up to date
+            4. Check ensurability of the tasks
+
+        Snapshot: "ensurability_1_ctrl_1_cmp_1_ironic"
+        """
+        self.show_step(1)
+        deployment = "1_ctrl_1_cmp_1_ironic"
+        self.env.revert_snapshot('lcm_deploy_{}'.format(deployment))
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+
+        self.show_step(2)
+        self.check_settings_consistency(deployment, cluster_id)
+
+        self.show_step(3)
+        self.deploy_fixtures(deployment, cluster_id, slave_nodes)
+        node_refs = self.check_extra_tasks(slave_nodes, deployment, idmp=False)
+        if node_refs:
+            self.generate_tasks_fixture(deployment, cluster_id, slave_nodes)
+            msg = ('Please update ensurability fixtures in the repo '
+                   'according to generated fixtures')
+            raise DeprecatedFixture(msg)
+
+        self.show_step(4)
+        assert_true(
+            self.check_ensurability(deployment, cluster_id, slave_nodes),
             "There are not ensurable tasks. "
             "Please take a look at the output above!")
 
