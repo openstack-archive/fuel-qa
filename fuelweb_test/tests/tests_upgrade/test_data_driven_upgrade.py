@@ -394,6 +394,18 @@ class DataDrivenUpgradeBase(TestBasic):
                        self.repos_backup_path, self.repos_local_path)
         self.env.make_snapshot("upgrade_detach_plugin_backup", is_make=True)
 
+    def prepare_upgrade_no_cluster(self):
+        self.backup_name = "backup_no_cluster.tar.gz"
+        self.repos_backup_name = "repos_backup_no_cluster.tar.gz"
+
+        self.check_run("upgrade_no_cluster_backup")
+        self.env.revert_snapshot("ready", skip_timesync=True)
+
+        self.do_backup(self.backup_path, self.local_path,
+                       self.repos_backup_path, self.repos_local_path)
+        self.env.make_snapshot("upgrade_no_cluster_backup",
+                               is_make=True)
+
 
 @test
 class UpgradePrepare(DataDrivenUpgradeBase):
@@ -404,6 +416,20 @@ class UpgradePrepare(DataDrivenUpgradeBase):
         'user': 'upgrade',
         'password': 'upgrade'
     }
+
+    @test(groups=['upgrade_no_cluster_backup'],
+          depends_on=[SetupEnvironment.prepare_release])
+    @log_snapshot_after_test
+    def upgrade_no_cluster_backup(self):
+        """Prepare Fuel master node without cluster
+
+        Scenario:
+        1. Create backup file using 'octane fuel-backup'
+        2. Download the backup to the host
+
+        Duration 5m
+        """
+        super(self.__class__, self).prepare_upgrade_no_cluster()
 
     @test(groups=['upgrade_smoke_backup'],
           depends_on=[SetupEnvironment.prepare_release])
