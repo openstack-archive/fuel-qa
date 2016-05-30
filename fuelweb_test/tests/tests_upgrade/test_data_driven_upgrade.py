@@ -214,6 +214,30 @@ class DataDrivenUpgradeBase(TestBasic):
             with self.fuel_web.get_ssh_for_node(node_name=node.name) as remote:
                 run_on_remote(remote, "service mcollective restart")
 
+    def install_plugin(self, plugin_source=None, build_from_source=True):
+        if build_from_source:
+            run_on_remote(
+                self.admin_remote,
+                "yum -y install git python-pip createrepo dpkg-devel dpkg-dev "
+                "rpm rpm-build && pip install fuel-plugin-builder")
+            dir_name = os.path.basename(plugin_source.split()[0])
+            cmds = [
+                "git clone {}".format(plugin_source),
+                "cd {}".format(dir_name),
+                "fpb --build . ",
+                "fuel plugins --install *.rpm "
+                "--user {user} --password {pwd}".format(
+                    user=settings.KEYSTONE_CREDS['username'],
+                    pwd=settings.KEYSTONE_CREDS['password'])
+            ]
+            run_on_remote(self.admin_remote, " && ".join(cmds))
+        else:
+            remote_tar_name = os.path.basename(plugin_source)
+            checkers.upload_tarball(
+                self.admin_remote, plugin_source,
+                           os.path.join('/var', remote_tar_name))
+            checkers.install_plugin_check_code(self.admin_remote, remote_tar_name)
+
     def deploy_cluster(self, cluster_settings):
         slaves_count = len(cluster_settings['nodes'])
         slaves = self.env.d_env.nodes().slaves[:slaves_count]
@@ -335,27 +359,9 @@ class DataDrivenUpgradeBase(TestBasic):
         self.check_run("upgrade_detach_plugin_backup")
         self.env.revert_snapshot("ready", skip_timesync=True)
 
-        run_on_remote(
-            self.admin_remote,
-            "yum -y install git python-pip createrepo dpkg-devel dpkg-dev rpm "
-            "rpm-build && pip install fuel-plugin-builder")
-
-        run_on_remote(
-            self.admin_remote,
-            "git clone https://github.com/"
-            "openstack/fuel-plugin-detach-database")
-
-        cmds = [
-            "cd fuel-plugin-detach-database", "git checkout stable/{}".format(
-                settings.UPGRADE_FUEL_FROM),
-            "fpb --build . ",
-            "fuel plugins --install *.rpm "
-            "--user {user} --password {pwd}".format(
-                user=settings.KEYSTONE_CREDS['username'],
-                pwd=settings.KEYSTONE_CREDS['password'])
-        ]
-
-        run_on_remote(self.admin_remote, " && ".join(cmds))
+        self.install_plugin(
+            "https://github.com/openstack/fuel-plugin-detach-database "
+            "--branch stable/{}".format(settings.UPGRADE_FUEL_FROM))
 
         cluster_settings = {
             'net_provider': settings.NEUTRON,
@@ -389,6 +395,22 @@ class DataDrivenUpgradeBase(TestBasic):
                        self.repos_backup_path, self.repos_local_path)
         self.env.make_snapshot("upgrade_detach_plugin_backup", is_make=True)
 
+    def prepare_upgrade_plugin_no_cluster(self):
+        self.backup_name = "backup_plugin_no_cluster.tar.gz"
+        self.repos_backup_name = "repos_backup_plugin_no_cluster.tar.gz"
+
+        self.check_run("upgrade_plugin_no_cluster_backup")
+        self.env.revert_snapshot("ready", skip_timesync=True)
+
+        self.install_plugin(
+            "https://github.com/openstack/fuel-plugin-detach-database "
+            "--branch stable/{}".format(settings.UPGRADE_FUEL_FROM))
+
+        self.do_backup(self.backup_path, self.local_path,
+                       self.repos_backup_path, self.repos_local_path)
+        self.env.make_snapshot("upgrade_plugin_no_cluster_backup",
+                               is_make=True)
+
 
 @test
 class UpgradePrepare(DataDrivenUpgradeBase):
@@ -399,6 +421,21 @@ class UpgradePrepare(DataDrivenUpgradeBase):
         'user': 'upgrade',
         'password': 'upgrade'
     }
+
+    @test(groups=['upgrade_plugin_no_cluster_backup'],
+          depends_on=[SetupEnvironment.prepare_release])
+    @log_snapshot_after_test
+    def upgrade_plugin_no_cluster_backup(self):
+        """Prepare Fuel master node with installed plugin but withour cluster
+
+        Scenario:
+        1. Install plugin on master node
+        2. Create backup file using 'octane fuel-backup'
+        3. Download the backup to the host
+
+        Duration 60m
+        """
+        super(self.__class__, self).prepare_upgrade_plugin_no_cluster()
 
     @test(groups=['upgrade_smoke_backup'],
           depends_on=[SetupEnvironment.prepare_release])
