@@ -761,6 +761,11 @@ Tests for configDB api
 .. automodule:: fuelweb_test.tests.tests_configdb.test_configdb_api
    :members:
 
+Tests for cinder block device driver
+----------------------
+.. automodule:: fuelweb_test.tests.TestBlockDevice.test_block_device
+   :members:
+
 Test for tracking /etc dir by etckeeper plugin
 ----------------------------------------------
 .. automodule:: fuelweb_test.tests.plugins.plugin_etckeeper.test_plugin_etckeeper
