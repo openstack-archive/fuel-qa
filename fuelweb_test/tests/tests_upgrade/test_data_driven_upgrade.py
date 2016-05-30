@@ -394,6 +394,18 @@ class DataDrivenUpgradeBase(TestBasic):
                        self.repos_backup_path, self.repos_local_path)
         self.env.make_snapshot("upgrade_detach_plugin_backup", is_make=True)
 
+    def prepare_upgrade_no_cluster(self):
+        self.backup_name = "backup_no_cluster.tar.gz"
+        self.repos_backup_name = "repos_backup_no_cluster.tar.gz"
+
+        self.check_run("upgrade_no_cluster_backup")
+        self.env.revert_snapshot("ready", skip_timesync=True)
+
+        self.do_backup(self.backup_path, self.local_path,
+                       self.repos_backup_path, self.repos_local_path)
+        self.env.make_snapshot("upgrade_no_cluster_backup",
+                               is_make=True)
+
 
 @test
 class UpgradePrepare(DataDrivenUpgradeBase):
@@ -404,6 +416,20 @@ class UpgradePrepare(DataDrivenUpgradeBase):
         'user': 'upgrade',
         'password': 'upgrade'
     }
+
+    @test(groups=['upgrade_no_cluster_backup'],
+          depends_on=[SetupEnvironment.prepare_release])
+    @log_snapshot_after_test
+    def upgrade_no_cluster_backup(self):
+        """Prepare Fuel master node without cluster
+
+        Scenario:
+        1. Create backup file using 'octane fuel-backup'
+        2. Download the backup to the host
+
+        Duration 5m
+        """
+        super(self.__class__, self).prepare_upgrade_no_cluster()
 
     @test(groups=['upgrade_smoke_backup'],
           depends_on=[SetupEnvironment.prepare_release])
@@ -1142,3 +1168,54 @@ class UpgradeDetach_Plugin(DataDrivenUpgradeBase):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(5)
         self.fuel_web.run_ostf(cluster_id)
+
+
+@test(groups=['upgrade_no_cluster_tests'])
+class UpgradePluginNoCluster(DataDrivenUpgradeBase):
+    def __init__(self):
+        super(self.__class__, self).__init__()
+        self.backup_name = "backup_no_cluster.tar.gz"
+        self.repos_backup_name = "repos_backup_no_cluster.tar.gz"
+        self.source_snapshot_name = "upgrade_no_cluster_backup"
+        self.snapshot_name = "upgrade_no_cluster_restore"
+
+    @test(groups=['upgrade_no_cluster_restore'])
+    @log_snapshot_after_test
+    def upgrade_no_cluster_restore(self):
+        """Reinstall Fuel and restore data with detach-db plugin and without
+        cluster
+
+        Scenario:
+        1. Revert "upgrade_no_cluster_backup" snapshot
+        2. Reinstall Fuel master using iso given in ISO_PATH
+        3. Install fuel-octane package
+        4. Upload the backup back to reinstalled Fuel maser node
+        5. Restore master node using 'octane fuel-restore'
+        6. Ensure that master node was restored
+
+        Duration: 60 m
+        Snapshot: upgrade_no_cluster_restore
+
+        """
+        self.check_run(self.snapshot_name)
+        assert_true(os.path.exists(self.local_path),
+                    "Can't find backup file at {!r}".format(self.local_path))
+        assert_true(
+            os.path.exists(self.repos_local_path),
+            "Can't find backup file at {!r}".format(self.repos_local_path))
+        self.show_step(1)
+        assert_true(
+            self.env.revert_snapshot(self.source_snapshot_name),
+            "The test can not use given environment - snapshot "
+            "{!r} does not exists".format(self.source_snapshot_name))
+        self.show_step(2)
+        self.env.reinstall_master_node()
+        self.show_step(3)
+        self.show_step(4)
+        self.show_step(5)
+        self.do_restore(self.backup_path, self.local_path,
+                        self.repos_backup_path, self.repos_local_path)
+        self.show_step(6)
+        self.fuel_web.client.get_releases()
+        self.env.make_snapshot(self.snapshot_name, is_make=True)
+        self.cleanup()
