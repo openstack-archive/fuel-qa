@@ -46,7 +46,9 @@ class TaskLCMCoverage(TestBasic):
             fixture = yaml.load(f)
         for task in fixture['tasks']:
             task_name, task_attr = task.items()[0]
-            if task_attr is None or 'type' not in task_attr:
+            if task_attr is None\
+                    or 'type' not in task_attr\
+                    or 'no_puppet_run' not in task_attr:
                 tasks.append(task_name)
         return tasks
 
