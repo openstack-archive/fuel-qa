@@ -28,7 +28,20 @@ from fuelweb_test.tests.tests_lcm.base_lcm_test import TASKS_BLACKLIST
 EXCLUDED_TASKS_FROM_COVERAGE = [
     "top-role-cinder-vmware",
     "top-role-compute-vmware",
-    "generate_vms"
+    "vmware-vcenter",
+    "generate_vms",
+    "plugins_rsync",
+    "plugins_setup_repositories",
+    "upload_murano_package",
+    "murano-cfapi-keystone",
+    "murano-keystone",
+    "murano-cfapi",
+    "murano-rabbitmq",
+    "openstack-haproxy-murano",
+    "murano",
+    "murano-db",
+    "disable_keystone_service_token",
+    "openstack-network-routers-ha"
 ]
 
 
@@ -46,9 +59,13 @@ class TaskLCMCoverage(TestBasic):
             fixture = yaml.load(f)
         for task in fixture['tasks']:
             task_name, task_attr = task.items()[0]
-            if task_attr is None or 'type' not in task_attr:
+            if task_attr is None:
                 tasks.append(task_name)
-        return tasks
+                continue
+            if 'type' in task_attr or 'no_puppet_run' in task_attr:
+                continue
+            tasks.append(task_name)
+        return list(set(tasks))
 
     def load_tasks_fixture_file(self, path, subdir, tasks=None):
         """Load task fixtures
@@ -64,7 +81,6 @@ class TaskLCMCoverage(TestBasic):
         if os.path.isdir(path) and os.path.basename(path) == subdir:
             for fl in os.listdir(path):
                 filepath = os.path.join(path, fl)
-                tasks = list(set(tasks))
                 tasks.extend(
                     self._load_from_file(filepath, tasks) or [])
         elif os.path.isdir(path):
@@ -76,7 +92,8 @@ class TaskLCMCoverage(TestBasic):
         return tasks
 
     @test(depends_on=[SetupEnvironment.prepare_release],
-          groups=['task_idempotency_coverage'])
+          groups=['task_lcm_coverage',
+                  'task_idempotency_coverage'])
     @log_snapshot_after_test
     def task_idempotency_coverage(self):
         """Setup master node with custom manifests
