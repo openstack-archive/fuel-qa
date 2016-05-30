@@ -214,6 +214,30 @@ class DataDrivenUpgradeBase(TestBasic):
             with self.fuel_web.get_ssh_for_node(node_name=node.name) as remote:
                 run_on_remote(remote, "service mcollective restart")
 
+    def install_plugin(self, plugin_source=None, build_from_source=True):
+        if build_from_source:
+            run_on_remote(
+                self.admin_remote,
+                "yum -y install git python-pip createrepo dpkg-devel dpkg-dev "
+                "rpm rpm-build && pip install fuel-plugin-builder")
+            dir_name = os.path.basename(plugin_source.split()[0])
+            cmds = [
+                "git clone {}".format(plugin_source),
+                "cd {}".format(dir_name),
+                "fpb --build . ",
+                "fuel plugins --install *.rpm "
+                "--user {user} --password {pwd}".format(
+                    user=settings.KEYSTONE_CREDS['username'],
+                    pwd=settings.KEYSTONE_CREDS['password'])
+            ]
+            run_on_remote(self.admin_remote, " && ".join(cmds))
+        else:
+            remote_tar_name = os.path.basename(plugin_source)
+            checkers.upload_tarball(
+                self.admin_remote, plugin_source,
+                           os.path.join('/var', remote_tar_name))
+            checkers.install_plugin_check_code(self.admin_remote, remote_tar_name)
+
     def deploy_cluster(self, cluster_settings):
         slaves_count = len(cluster_settings['nodes'])
         slaves = self.env.d_env.nodes().slaves[:slaves_count]
@@ -335,27 +359,9 @@ class DataDrivenUpgradeBase(TestBasic):
         self.check_run("upgrade_detach_plugin_backup")
         self.env.revert_snapshot("ready", skip_timesync=True)
 
-        run_on_remote(
-            self.admin_remote,
-            "yum -y install git python-pip createrepo dpkg-devel dpkg-dev rpm "
-            "rpm-build && pip install fuel-plugin-builder")
-
-        run_on_remote(
-            self.admin_remote,
-            "git clone https://github.com/"
-            "openstack/fuel-plugin-detach-database")
-
-        cmds = [
-            "cd fuel-plugin-detach-database", "git checkout stable/{}".format(
-                settings.UPGRADE_FUEL_FROM),
-            "fpb --build . ",
-            "fuel plugins --install *.rpm "
-            "--user {user} --password {pwd}".format(
-                user=settings.KEYSTONE_CREDS['username'],
-                pwd=settings.KEYSTONE_CREDS['password'])
-        ]
-
-        run_on_remote(self.admin_remote, " && ".join(cmds))
+        self.install_plugin(
+            "https://github.com/openstack/fuel-plugin-detach-database "
+            "--branch stable/{}".format(settings.UPGRADE_FUEL_FROM))
 
         cluster_settings = {
             'net_provider': settings.NEUTRON,
@@ -389,6 +395,22 @@ class DataDrivenUpgradeBase(TestBasic):
                        self.repos_backup_path, self.repos_local_path)
         self.env.make_snapshot("upgrade_detach_plugin_backup", is_make=True)
 
+    def prepare_upgrade_plugin_no_cluster(self):
+        self.backup_name = "backup_plugin_no_cluster.tar.gz"
+        self.repos_backup_name = "repos_backup_plugin_no_cluster.tar.gz"
+
+        self.check_run("upgrade_plugin_no_cluster_backup")
+        self.env.revert_snapshot("ready", skip_timesync=True)
+
+        self.install_plugin(
+            "https://github.com/openstack/fuel-plugin-detach-database "
+            "--branch stable/{}".format(settings.UPGRADE_FUEL_FROM))
+
+        self.do_backup(self.backup_path, self.local_path,
+                       self.repos_backup_path, self.repos_local_path)
+        self.env.make_snapshot("upgrade_plugin_no_cluster_backup",
+                               is_make=True)
+
 
 @test
 class UpgradePrepare(DataDrivenUpgradeBase):
@@ -399,6 +421,21 @@ class UpgradePrepare(DataDrivenUpgradeBase):
         'user': 'upgrade',
         'password': 'upgrade'
     }
+
+    @test(groups=['upgrade_plugin_no_cluster_backup'],
+          depends_on=[SetupEnvironment.prepare_release])
+    @log_snapshot_after_test
+    def upgrade_plugin_no_cluster_backup(self):
+        """Prepare Fuel master node with installed plugin but withour cluster
+
+        Scenario:
+        1. Install plugin on master node
+        2. Create backup file using 'octane fuel-backup'
+        3. Download the backup to the host
+
+        Duration 60m
+        """
+        super(self.__class__, self).prepare_upgrade_plugin_no_cluster()
 
     @test(groups=['upgrade_smoke_backup'],
           depends_on=[SetupEnvironment.prepare_release])
@@ -1138,3 +1175,59 @@ class UpgradeDetach_Plugin(DataDrivenUpgradeBase):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(5)
         self.fuel_web.run_ostf(cluster_id)
+
+
+@test(groups=['upgrade_plugin_no_cluster_tests'])
+class UpgradePluginNoCluster(DataDrivenUpgradeBase):
+    def __init__(self):
+        super(self.__class__, self).__init__()
+        self.backup_name = "backup_plugin_no_cluster.tar.gz"
+        self.repos_backup_name = "repos_backup_plugin_no_cluster.tar.gz"
+        self.source_snapshot_name = "upgrade_plugin_no_cluster_backup"
+        self.snapshot_name = "upgrade_plugin_no_cluster_restore"
+        assert_true(os.path.exists(self.repos_local_path))
+        assert_true(os.path.exists(self.local_path))
+
+    @test(groups=['upgrade_plugin_no_cluster_restore'])
+    @log_snapshot_after_test
+    def upgrade_plugin_no_cluster_restore(self):
+        """Reinstall Fuel and restore data with detach-db plugin and without
+        cluster
+
+        Scenario:
+        1. Revert "upgrade_plugin_no_cluster_backup" snapshot
+        2. Reinstall Fuel master using iso given in ISO_PATH
+        3. Install fuel-octane package
+        4. Upload the backup back to reinstalled Fuel maser node
+        5. Restore master node using 'octane fuel-restore'
+        6. Ensure that plugin were restored
+
+        Duration: 60 m
+        Snapshot: upgrade_plugin_no_cluster_restore
+
+        """
+        self.check_run(self.snapshot_name)
+        self.show_step(1)
+        assert_true(
+            self.env.revert_snapshot(self.source_snapshot_name),
+            "The test can not use given environment - snapshot "
+            "{!r} does not exists".format(self.source_snapshot_name))
+        self.show_step(2)
+        self.env.reinstall_master_node()
+        self.show_step(3)
+        self.show_step(4)
+        self.show_step(5)
+        self.do_restore(self.backup_path, self.local_path,
+                        self.repos_backup_path, self.repos_local_path)
+        self.show_step(6)
+        stdout = run_on_remote(
+            self.admin_remote,
+            "find /var/www/nailgun/plugins/ -name detach-database*")
+        assert_not_equal(len(stdout), 0, "Can not find plugin's directory")
+        plugin_dir = stdout[0].strip()
+
+        checkers.check_file_exists(self.admin_remote,
+                                   os.path.join(plugin_dir, "metadata.yaml"))
+
+        self.env.make_snapshot(self.upgrade_plugin_no_cluster_restore.__name__,
+                               is_make=True)
