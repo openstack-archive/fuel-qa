@@ -242,23 +242,31 @@ def check_untested(test):
     return False
 
 
-def get_test_build(build_name, build_number, check_rebuild=False):
+def get_test_build(build_name, build_number, check_rebuild=False,
+                   force_rebuild_search=False):
     """Get test data from Jenkins job build
     :param build_name: string
     :param build_number: string
     :param check_rebuild: bool, if True then look for newer job rebuild(s)
+    :param force_rebuild_search: bool, if True then force rebuild(s) search
     :return: dict
     """
     test_build = Build(build_name, build_number)
-    if test_build.test_data()['suites'][0]['cases'].pop()['name'] == 'jenkins':
-        if not check_rebuild:
-            return test_build
+    first_case = test_build.test_data()['suites'][0]['cases'].pop()['name']
+
+    if (force_rebuild_search or first_case == 'jenkins') and check_rebuild:
         iso_magnet = get_job_parameter(test_build.build_data, 'MAGNET_LINK')
         if not iso_magnet:
             return test_build
+
         latest_build_number = Build(build_name, 'latest').number
-        for n in range(build_number, latest_build_number):
-            test_rebuild = Build(build_name, n + 1)
+        builds_to_check = [i for i in
+                           range(build_number + 1, latest_build_number + 1)]
+        if force_rebuild_search:
+            builds_to_check.reverse()
+
+        for n in builds_to_check:
+            test_rebuild = Build(build_name, n)
             if get_job_parameter(test_rebuild.build_data, 'MAGNET_LINK') \
                     == iso_magnet:
                 logger.debug("Found test job rebuild: "
@@ -268,11 +276,12 @@ def get_test_build(build_name, build_number, check_rebuild=False):
 
 
 @retry(count=3)
-def get_tests_results(systest_build, os):
+def get_tests_results(systest_build, os, force_rebuild_search=False):
     tests_results = []
     test_build = get_test_build(systest_build['name'],
                                 systest_build['number'],
-                                check_rebuild=True)
+                                check_rebuild=True,
+                                force_rebuild_search=force_rebuild_search)
     run_test_data = test_build.test_data()
     test_classes = {}
     for one in run_test_data['suites'][0]['cases']:
@@ -521,6 +530,9 @@ def main():
     parser.add_option('-c', '--create-plan-only', action="store_true",
                       dest="create_plan_only", default=False,
                       help='Jenkins swarm runner job name')
+    parser.add_option('-f', '--force-rebuild', action="store_true",
+                      dest="force_rebuild_search", default=False,
+                      help='Force manual job rebuild search ')
     parser.add_option("-v", "--verbose",
                       action="store_true", dest="verbose", default=False,
                       help="Enable debug output")
@@ -588,7 +600,9 @@ def main():
                 continue
         for os in tests_results.keys():
             if os in systest_build['name'].lower():
-                tests_results[os].extend(get_tests_results(systest_build, os))
+                tests_results[os].extend(
+                    get_tests_results(systest_build, os,
+                                      options.force_rebuild_search))
 
     # STEP #3
     # Create new TestPlan in TestRail (or get existing) and add TestRuns
