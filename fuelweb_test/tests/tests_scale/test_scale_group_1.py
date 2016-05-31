@@ -12,15 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from proboscis import asserts
 from proboscis import test
-# pylint: disable=import-error
-from six.moves.urllib.error import HTTPError
-# pylint: enable=import-error
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import DEPLOYMENT_MODE
-from fuelweb_test.settings import DEPLOYMENT_TIMEOUT
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -29,19 +24,6 @@ from fuelweb_test.tests.base_test_case import TestBasic
 @test(groups=["ha_scale_group_1"])
 class HaScaleGroup1(TestBasic):
     """HaScaleGroup1."""  # TODO documentation
-
-    def expected_fail_stop_deployment(self, cluster_id):
-        try:
-            self.fuel_web.client.stop_deployment(cluster_id)
-        except HTTPError as e:
-            asserts.assert_equal(
-                400,
-                e.code,
-                'Stop action is forbidden for the cluster '
-                'on node additional step, so we expected to '
-                'receive code 400 and got {0}. '
-                'Details {1}'.format(
-                    e.code, 'https://bugs.launchpad.net/fuel/+bug/1529691'))
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["add_controllers_stop"])
@@ -56,10 +38,12 @@ class HaScaleGroup1(TestBasic):
             3. Deploy the cluster
             4. Add 2 controller nodes
             5. Start deployment
-            6. Check that stop deployment on new controllers is forbidden
-            7. Wait for ready deployment
-            8. Verify networks
-            9. Run OSTF
+            6. Stop deployment on new controllers re-deploy
+            7. Delete 2 added controllers
+            8. Add 2 new controllers
+            9. Deploy the cluster
+            10. Verify networks
+            11. Run OSTF
 
         Duration 120m
         Snapshot add_controllers_stop
@@ -88,17 +72,32 @@ class HaScaleGroup1(TestBasic):
             True, False
         )
         self.show_step(5)
-        task = self.fuel_web.deploy_cluster_wait_progress(
-            cluster_id=cluster_id, progress=60, return_task=True)
+        self.fuel_web.deploy_cluster_wait_progress(cluster_id=cluster_id,
+                                                   progress=60)
+
         self.show_step(6)
-        self.expected_fail_stop_deployment(cluster_id)
+        self.fuel_web.stop_deployment_wait(cluster_id)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:3], timeout=10 * 60)
 
         self.show_step(7)
-        self.fuel_web.assert_task_success(
-            task=task, timeout=DEPLOYMENT_TIMEOUT)
+        self.fuel_web.update_nodes(
+            cluster_id, nodes,
+            False, True
+        )
+
         self.show_step(8)
-        self.fuel_web.verify_network(cluster_id)
+        nodes = {'slave-04': ['controller'],
+                 'slave-05': ['controller']}
+        self.fuel_web.update_nodes(
+            cluster_id, nodes,
+            True, False
+        )
         self.show_step(9)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.show_step(10)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(11)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
         self.env.make_snapshot("add_controllers_stop")
 
@@ -114,10 +113,10 @@ class HaScaleGroup1(TestBasic):
             3. Deploy the cluster
             4. Add 2 ceph nodes
             5. Start deployment
-            6. Assert stop deployment on ceph nodes deploy fail
-            7. Wait for ready cluster
-            8. Run OSTF
-            9. Verify networks
+            6. Stop deployment on ceph nodes deploy
+            7. Deploy changes
+            8. Verify networks
+            9. Run OSTF
 
         Duration 120m
         Snapshot add_ceph_stop
@@ -161,16 +160,18 @@ class HaScaleGroup1(TestBasic):
             True, False
         )
         self.show_step(5)
-        task = self.fuel_web.deploy_cluster_wait_progress(
-            cluster_id=cluster_id, progress=5, return_task=True)
+        self.fuel_web.deploy_cluster_wait_progress(cluster_id=cluster_id,
+                                                   progress=5)
         self.show_step(6)
-        self.expected_fail_stop_deployment(cluster_id)
+        self.fuel_web.stop_deployment_wait(cluster_id)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:9], timeout=10 * 60)
+
         self.show_step(7)
-        self.fuel_web.assert_task_success(
-            task=task, timeout=DEPLOYMENT_TIMEOUT)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(8)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
-        self.show_step(9)
         self.fuel_web.verify_network(cluster_id)
+        self.show_step(9)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("add_ceph_stop")
