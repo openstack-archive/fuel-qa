@@ -259,6 +259,15 @@ class TestBasic(object):
                          ''.join(result['stdout'])))
             if force_ssl:
                 self.env.enable_force_https(self.ssh_manager.admin_ip)
+        # TODO(isuzdal): Remove if RedHat include relevant
+        # fixes in upstream before MOS 9.0 release
+        if settings.USE_E1000_MODULE:
+            logger.info('Install fixed e1000 driver')
+            cmd = "yum install -y e1000-kmod"
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd=cmd
+            )
 
     def reinstall_master_node(self):
         """Erase boot sector and run setup_environment"""
