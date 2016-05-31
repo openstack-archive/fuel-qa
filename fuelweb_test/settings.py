@@ -693,6 +693,10 @@ NOVA_QUOTAS_ENABLED = get_var_as_bool("NOVA_QUOTAS_ENABLED", False)
 
 DISABLE_OFFLOADING = get_var_as_bool("DISABLE_OFFLOADING", True)
 
+#TODO(isuzdal): Remove if RedHat include relevant
+# fixes in upstream before MOS 9.0 release
+USE_E1000_MODULE = get_var_as_bool("USE_E1000_MODULE", False)
+
 GERRIT_PROJECT = os.environ.get("GERRIT_PROJECT")
 GERRIT_BRANCH = os.environ.get("GERRIT_BRANCH")
 GERRIT_CHANGE_ID = os.environ.get("GERRIT_CHANGE_ID")
