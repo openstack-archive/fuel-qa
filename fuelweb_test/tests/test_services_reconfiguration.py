@@ -1268,9 +1268,10 @@ class ServicesReconfiguration(TestBasic):
                                                   cluster_id,
                                                   role='cinder')
 
+        # Configs are merging with ID-priority
         general_config = {}
-        general_config.update(config_for_cinder_role)
         general_config.update(config_for_compute_role)
+        general_config.update(config_for_cinder_role)
         structured_config = get_structured_config_dict(general_config)
         service_name = 'nova-compute'
         uptime = self.get_service_uptime(target_node, service_name)
