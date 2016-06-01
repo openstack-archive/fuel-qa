@@ -158,3 +158,13 @@ Utils
 -----
 .. automodule:: fuelweb_test.helpers.gerrit.utils
    :members:
+
+Rules
+-----
+.. automodule:: fuelweb_test.helpers.gerrit.rules
+   :members:
+
+Content parser
+--------------
+.. automodule:: fuelweb_test.helpers.gerrit.content_parser
+   :members:

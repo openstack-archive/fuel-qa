@@ -12,12 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import base64
 import os
 import requests
 from requests.utils import quote
 
+from fuelweb_test.helpers.gerrit import utils
 
-class GerritClient(object):
+
+class BaseGerritClient(object):
 
     def __init__(self,
                  endpoint='https://review.openstack.org',
@@ -71,3 +74,47 @@ class GerritClient(object):
 
     def _send_get_request(self):
         return requests.get(self.query, verify=False)
+
+
+class GerritClient(BaseGerritClient):
+
+    def __init__(self, *args, **kwargs):
+        super(GerritClient, self).__init__(*args, **kwargs)
+
+    def get_files(self):
+        r = self._request_file_list()
+        text = r.text
+        files = utils.filter_response_text(text)
+        return set(filter(lambda x: x != '/COMMIT_MSG',
+                          utils.json_to_dict(files).keys()))
+
+    def get_content_as_dict(self, filename):
+        content_decoded = self._request_content(filename).text
+        content = base64.b64decode(content_decoded)
+        return {num: line for num, line in enumerate(content.split('\n'), 1)}
+
+    def get_diff_as_dict(self, filename):
+        diff_raw = self._request_diff(filename).text
+        diff_filtered = utils.filter_response_text(diff_raw)
+        return utils.json_to_dict(diff_filtered)
+
+    def get_dependencies_as_dict(self):
+        dependencies_raw = self._request_related_changes().text
+        dependencies_filtered = utils.filter_response_text(dependencies_raw)
+        return utils.json_to_dict(dependencies_filtered)
+
+    @utils.check_status_code(200)
+    def _request_file_list(self):
+        return self.list_files()
+
+    @utils.check_status_code(200)
+    def _request_content(self, filename):
+        return self.get_content(filename)
+
+    @utils.check_status_code(200)
+    def _request_diff(self, filename):
+        return self.get_diff(filename)
+
+    @utils.check_status_code(200)
+    def _request_related_changes(self):
+        return self.get_related_changes()
