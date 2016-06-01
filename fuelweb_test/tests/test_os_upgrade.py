@@ -24,7 +24,7 @@ from fuelweb_test.settings import DEPLOYMENT_MODE_HA
 @test(groups=["prepare_os_upgrade"])
 class PrepareOSupgrade(base_test_data.TestBasic):
 
-    @test(depends_on=[base_test_data.SetupEnvironment.prepare_slaves_9],
+    @test(depends_on=[base_test_data.SetupEnvironment.prepare_slaves_5],
           groups=["ha_ceph_for_all_ubuntu_neutron_vlan"])
     @log_snapshot_after_test
     def ha_ceph_for_all_ubuntu_neutron_vlan(self):
@@ -42,10 +42,16 @@ class PrepareOSupgrade(base_test_data.TestBasic):
         Snapshot ha_ceph_for_all_ubuntu_neutron_vlan
         """
         if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
-            raise SkipTest()
+            raise SkipTest('{0} bot in {1}'.format(
+                hlp_data.OPENSTACK_RELEASE_UBUNTU, hlp_data.OPENSTACK_RELEASE
+            ))
 
         self.check_run('ha_ceph_for_all_ubuntu_neutron_vlan')
-        self.env.revert_snapshot("ready_with_9_slaves")
+        self.env.revert_snapshot("ready_with_5_slaves")
+
+        # Bootstrap 6th slave
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[5:6],
+                                 skip_timesync=True)
 
         data = {
             'volumes_ceph': True,
@@ -96,7 +102,9 @@ class TestOSupgrade(base_test_data.TestBasic):
 
         """
         if hlp_data.OPENSTACK_RELEASE_UBUNTU not in hlp_data.OPENSTACK_RELEASE:
-            raise SkipTest()
+            raise SkipTest('{0} bot in {1}'.format(
+                hlp_data.OPENSTACK_RELEASE_UBUNTU, hlp_data.OPENSTACK_RELEASE
+            ))
 
         self.check_run('upgrade_ha_ceph_for_all_ubuntu_neutron_vlan')
         self.env.revert_snapshot('ha_ceph_for_all_ubuntu_neutron_vlan')
