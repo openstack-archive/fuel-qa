@@ -295,7 +295,8 @@ class UnlockSettingsTabStates(TestBasic):
           groups=["unlock_settings_tab_positive"])
     @log_snapshot_after_test
     def unlock_settings_tab_positive(self):
-        """
+        """Check settings and network tabs is unlocked for a positively
+        deployed and redeployed cluster
 
         Scenario:
             1. Create cluster
