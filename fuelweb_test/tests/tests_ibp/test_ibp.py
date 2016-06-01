@@ -27,7 +27,7 @@ class IBPTest(TestBasic):
 
     def check_node_packages(self, node_name, pkg_list):
         node_ip = self.fuel_web.get_nailgun_node_by_base_name(node_name)['ip']
-        cmd = "dpkg-query -W -f='\${Package}'\r"
+        cmd = "dpkg-query -W -f='${Package}'\r"
         node_pkgs = self.ssh_manager.execute_on_remote(
             node_ip,
             cmd)['stdout_str'].splitlines()
