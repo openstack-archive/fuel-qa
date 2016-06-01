@@ -295,7 +295,7 @@ class UnlockSettingsTabStates(TestBasic):
           groups=["unlock_settings_tab_positive"])
     @log_snapshot_after_test
     def unlock_settings_tab_positive(self):
-        """
+        """unlock_settings_tab_positive TODO(msamoylov)
 
         Scenario:
             1. Create cluster
