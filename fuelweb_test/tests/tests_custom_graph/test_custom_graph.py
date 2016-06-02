@@ -910,3 +910,86 @@ class TestCustomGraph(TestBasic):
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd=check_yaql_cmd)
+
+    @test(depends_on=[pre_provision_ubuntu_slaves_3],
+          groups=['custom_graph', 'graph_tasks'])
+    @log_snapshot_after_test
+    def test_skip_task_behaviour(self):
+        """Deploy cluster without tools tasks
+
+        Scenario:
+            1. Revert snapshot 'pre_provision_ubuntu_slaves_3'
+            2. Create cluster
+            3. Add 1 node with controller role
+            4. Provision cluster
+            5. Deploy controller node with skipped task
+            6. Wait for deployment to finish
+            7. Verify that tools task has been skipped
+            8. Verify that strace is not installed
+
+        Duration 30m
+        """
+        self.show_step(1)  # Revert snapshot 'pre_provision_ubuntu_slaves_3'
+        self.env.revert_snapshot('pre_provision_ubuntu_slaves_3')
+
+        self.show_step(2)  # Create cluster
+        cluster_id = self.fuel_web.create_cluster(name=self.__class__.__name__)
+        rel_id = self.fuel_web.get_cluster_release_id(cluster_id)
+        self.move_ubuntu_target_image(rel_id, cluster_id)
+
+        self.show_step(3)  # Add 1 node with controller role
+        self.fuel_web.update_nodes(cluster_id, {'slave-01': ['controller']})
+
+        self.show_step(4)  # Provision cluster
+        self.fuel_web.provisioning_cluster_wait(cluster_id)
+
+        self.show_step(5)  # Deploy controller node with skipped task
+        controller_node_id = 1
+        deploy_with_skip = 'fuel node --node {0} --skip tools'.format(
+            controller_node_id
+        )
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=deploy_with_skip)
+
+        self.show_step(6)  # Wait for deployment to finish
+        tasks = self.fuel_web.client.get_tasks()
+        deploy_tasks = [t for t in tasks if t['status']
+                        in ('pending', 'running') and
+                        t['name'] == 'deployment' and
+                        t['cluster'] == cluster_id]
+        deploy_task = None
+        for task in deploy_tasks:
+            if min([t['progress'] for t in deploy_tasks]) == task['progress']:
+                deploy_task = task
+        from proboscis.asserts import assert_is_not_none
+        assert_is_not_none(deploy_task,
+                           'Got empty result after running deployment tasks!')
+        timeout = 3600
+        self.fuel_web.assert_task_success(deploy_task, timeout)
+
+        self.show_step(7)  # Verify that tools task has been skipped
+        task_id_cmd = "fuel2 task list -f value -c id -c name | " \
+                      "awk '/deployment/ {print $1}'"
+        task_id = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=task_id_cmd)['stdout'][0].strip()
+
+        check_skip_cmd = 'fuel2 task history show {0}|' \
+                         'grep skipped|grep tools'.format(task_id)
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=check_skip_cmd,
+            assert_ec_equal=[0]  # NOTE Explicit check or return code.
+        )
+
+        self.show_step(8)  # Verify that strace is not installed
+        check_screen_absent_cmd = 'which screen'
+        controller_node = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id,
+            ['controller'])[0]
+        self.ssh_manager.execute_on_remote(
+            ip=controller_node['ip'],
+            cmd=check_screen_absent_cmd,
+            assert_ec_equal=[1]  # NOTE Explicit check or return code.
+        )
