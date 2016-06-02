@@ -70,6 +70,8 @@ class CloseSSHConnectionsPlugin(Plugin):
 
 
 def import_tests():
+    from tests.tests_configdb import test_configdb_api  # noqa
+    return
     from tests import test_admin_node  # noqa
     from tests import test_backup_restore  # noqa
     from tests import test_ceph  # noqa

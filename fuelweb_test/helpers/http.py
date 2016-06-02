@@ -18,6 +18,12 @@ import urllib2
 
 from keystoneclient.v2_0 import Client as KeystoneClient
 from keystoneclient import exceptions
+# pylint: disable=import-error
+from six.moves.urllib import request
+from six.moves.urllib.error import HTTPError
+# pylint: enable=import-error
+import requests
+
 from fuelweb_test import logger
 
 
@@ -90,7 +96,15 @@ class HTTPClient(object):
     def _open(self, req):
         try:
             return self._get_response(req)
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
+            if e.code == 308:
+                logger.info(e.read())
+                url = req.get_full_url()
+                req = requests.get(url, headers={'X-Auth-Token': self.token})
+                if req.status_code in [200]:
+                    return req.json()
+                else:
+                    req.raise_for_status()
             if e.code == 401:
                 logger.warning('Authorization failure: {0}'.format(e.read()))
                 self.authenticate()

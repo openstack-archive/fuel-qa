@@ -629,3 +629,190 @@ class NailgunClient(object):
             data['node_id'] = node_id
         url = '/api/openstack-config/execute/'
         return self.client.put(url, data=data)
+
+
+class ConfigDBClient(object):
+    def __init__(self, admin_node_ip, **kwargs):
+        url = "http://{0}:8082".format(admin_node_ip)
+        logger.info('Initiate ConfigDB client with url %s', url)
+        self.keystone_url = "http://{0}:5000/v2.0".format(admin_node_ip)
+        self._client = HTTPClient(url=url, keystone_url=self.keystone_url,
+                                  credentials=KEYSTONE_CREDS,
+                                  **kwargs)
+    @property
+    def client(self):
+        return self._client
+
+    @logwrap
+    @json_parse
+    def get_components(self, comp_id=None):
+        """Get all existing components
+
+        :param comp_id: component id
+        :return: components data
+        """
+        endpoint = '/components'
+        endpoint = '{path}/{component_id}'.format(
+            path=endpoint, component_id=comp_id) if comp_id else endpoint
+        return self.client.get(endpoint)
+
+    @logwrap
+    @json_parse
+    def create_component(self, data):
+        """ Create component with specified data
+
+        :param data:
+        :return:
+        """
+        return self.client.post('/components', data)
+
+    @logwrap
+    @json_parse
+    def get_environments(self, env_id=None):
+        """Get all existing environments
+
+        :param env_id: environment id
+        :return: env data
+        """
+        endpoint = '/environments'
+        endpoint = '{path}/{env_id}'.format(
+            env_id=env_id, path=endpoint) if env_id else endpoint
+        return self.client.get(endpoint)
+
+    @logwrap
+    @json_parse
+    def create_environment(self, data):
+        """ Create env with specified data
+
+        :param data:
+        :return:
+        """
+        return self.client.post('/environments', data)
+
+    @logwrap
+    @json_parse
+    def get_global_resource_id_value(self, env_id, resource_id,
+                                     effective=False):
+        """ Get global resource value for specified env and resource
+
+        :param env_id:  str or int
+        :param resource_id: int
+        :param effective: true or false
+        :return: global resource value
+        """
+        endpoint = '/environments/' \
+                   '{env_id}/resources/{resource}' \
+                   '/values'.format(env_id=env_id, resource=resource_id)
+        endpoint = endpoint + '?effective' if effective else endpoint
+        return self.client.get(endpoint)
+
+    @logwrap
+    def get_global_resource_name_value(self, env_id, resource_name,
+                                       effective=False):
+        """ Get global resource value for specified env and resource
+
+        :param env_id:  str or int
+        :param resource_name: str or int
+        :param effective: true or false
+        :return: global resource value
+        """
+        endpoint = '/environments/' \
+                   '{env_id}/resources/{resource}' \
+                   '/values'.format(env_id=env_id, resource=resource_name)
+        endpoint = endpoint + '?effective' if effective else endpoint
+        return self.client.get(endpoint)
+
+    @logwrap
+    def put_global_resource_value(self, env_id, resource, data):
+        """Put global resource value
+
+        :param env_id: str or int
+        :param resource: name or id
+        :param data: data in dict format
+        """
+        endpoint = '/environments/' \
+                   '{env_id}/resources/{resource}' \
+                   '/values'.format(env_id=env_id, resource=resource)
+        return self.client.put(endpoint, data)
+
+    @logwrap
+    def put_global_resource_override(self, env_id, resource, data):
+        """Put global resource override value
+
+        :param env_id: str or int
+        :param resource: name or id
+        :param data: data in dict format
+        """
+        endpoint = '/environments/' \
+                   '{env_id}/resources/{resource}' \
+                   '/overrides'.format(env_id=env_id, resource=resource)
+        return self.client.put(endpoint, data)
+
+    @logwrap
+    @json_parse
+    def get_node_resource_id_value(self, env_id, resource_id, node_id,
+                                   effective=False):
+        """ Get node level resource value for specified env, resource and node
+
+        :param env_id: str or int
+        :param resource_id: id
+        :param node_id: str or int
+        :param effective: true or false
+        :return: node resource value
+        """
+        endpoint = '/environments/' \
+                   '{env_id}/nodes/{node_id}/resources/{resource}' \
+                   '/values'.format(env_id=env_id, resource=resource_id,
+                                    node_id=node_id)
+        endpoint = endpoint + '?effective' if effective else endpoint
+
+        return self.client.get(endpoint)
+
+    @logwrap
+    def get_node_resource_name_value(self, env_id, resource_name, node_id,
+                                     effective=False):
+        """ Get node level resource value for specified env, resource and node
+
+        :param env_id: str or int
+        :param resource_name: name in string format
+        :param node_id: str or int
+        :param effective: true or false
+        :return: node resource value
+        """
+        endpoint = '/environments/' \
+                   '{env_id}/nodes/{node_id}/resources/{resource}' \
+                   '/values'.format(env_id=env_id, resource=resource_name,
+                                    node_id=node_id)
+        endpoint = endpoint + '?effective' if effective else endpoint
+
+        return self.client.get(endpoint)
+
+    @logwrap
+    def put_node_resource_value(self, env_id, resource, node_id, data):
+        """ Put node resource value
+
+        :param env_id: str or int
+        :param resource: name or id
+        :param node_id: str or int
+        :param data: data in dict format
+        """
+        endpoint = '/environments/' \
+                   '{env_id}/nodes/{node_id}/resources/{resource}' \
+                   '/values'.format(env_id=env_id, resource=resource,
+                                    node_id=node_id)
+        return self.client.put(endpoint, data)
+
+    @logwrap
+    def put_node_resource_overrides(self, env_id, resource, node_id, data):
+        """Put node resource override value
+
+        :param env_id: str or int
+        :param resource: name or id
+        :param node_id: str or int
+        :param data: data in dict format
+        """
+        endpoint = '/environments/' \
+                   '{env_id}/nodes/{node_id}/resources/{resource}' \
+                   '/overrides'.format(env_id=env_id, resource=resource,
+                                       node_id=node_id)
+        return self.client.put(endpoint, data)
