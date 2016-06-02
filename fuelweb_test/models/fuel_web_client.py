@@ -892,7 +892,8 @@ class FuelWebClient29(object):
     @custom_repo
     def deploy_cluster_wait(self, cluster_id, is_feature=False,
                             timeout=help_data.DEPLOYMENT_TIMEOUT, interval=30,
-                            check_services=True, check_tasks=False):
+                            check_services=True, check_tasks=False,
+                            allow_partially_deploy=False):
         warn_txt = ('Temporary: flag check_tasks is set to False, '
                     'until bugs LP#1578218 and LP#1578257 fixed')
         logger.warning(warn_txt)
@@ -904,6 +905,7 @@ class FuelWebClient29(object):
             logger.info('Deploy cluster %s', cluster_id)
             task = self.deploy_cluster(cluster_id)
             self.assert_task_success(task, interval=interval, timeout=timeout)
+            self.check_cluster_status(cluster_id, allow_partially_deploy)
             self.check_deploy_state(cluster_id, check_services, check_tasks)
             return
 
@@ -916,10 +918,25 @@ class FuelWebClient29(object):
                         cluster_id, str(retry_number + 1))
             task = self.client.deploy_nodes(cluster_id)
             self.assert_task_success(task, timeout=timeout, interval=interval)
+            self.check_cluster_status(cluster_id, allow_partially_deploy)
             self.check_deploy_state(cluster_id, check_services, check_tasks)
         self.check_cluster_settings(cluster_id, cluster_attributes)
         self.check_network_settings(cluster_id, network_settings)
         self.check_deployment_info_save_for_task(cluster_id)
+
+    def check_cluster_status(self, cluster_id, allow_partially_deploy):
+        cluster_info = self.client.get_cluster(cluster_id)
+        cluster_status = cluster_info['status']
+        error_msg = \
+            "Cluster is not deployed: some nodes are in the Error state"
+        check = 'operational' in cluster_status
+        if not check and allow_partially_deploy:
+            logger.warning(error_msg)
+        elif not check:
+            assert_true(check, error_msg)
+        else:
+            logger.info("Cluster with id {} is in Operational state".format(
+                cluster_id))
 
     @logwrap
     def check_cluster_settings(self, cluster_id, cluster_attributes):
