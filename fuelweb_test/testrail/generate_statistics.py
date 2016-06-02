@@ -207,9 +207,9 @@ class TestRunStatistics(object):
                         and result['custom_launchpad_bug']:
                     linked_bugs.append(result['custom_launchpad_bug'])
 
-            bug_ids = set([re.search(r'.*bug/(\d+)/?', link).group(1)
+            bug_ids = set([re.search(r'.*bugs?/(\d+)/?', link).group(1)
                            for link in linked_bugs
-                           if re.search(r'.*bug/(\d+)/?', link)])
+                           if re.search(r'.*bugs?/(\d+)/?', link)])
 
             for bug_id in bug_ids:
                 if bug_id in self._bugs_statistics:
