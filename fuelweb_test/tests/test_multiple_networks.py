@@ -15,6 +15,7 @@
 from __future__ import division
 
 import json
+import time
 
 from devops.helpers.helpers import wait
 from devops.error import TimeoutError
@@ -707,6 +708,10 @@ class TestMultipleClusterNets(TestNetworkTemplatesBase):
         self.show_step(3)
         custom_nodes = self.env.d_env.nodes().slaves[3:6]
         self.fuel_web.stop_reset_env_wait(cluster_id)
+        # TODO(apanchenko): remove sleep(181) workaround when the issue with
+        # TODO(apanchenko): cluster reset is fixed (see LP#1588193)
+        # Nailgun waits 180 seconds before marking slave node as offline
+        time.sleep(181)
         logger.info('Waiting for all nodes online for 900 seconds...')
         wait(lambda: all(n['online'] for n in
                          self.fuel_web.client.list_cluster_nodes(cluster_id)),
