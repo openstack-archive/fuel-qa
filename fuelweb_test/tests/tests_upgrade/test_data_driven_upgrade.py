@@ -299,12 +299,13 @@ class DataDrivenUpgradeBase(TestBasic):
 
         cluster_settings = {
             'net_provider': settings.NEUTRON,
-            'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
+            'net_segment_type': settings.NEUTRON_SEGMENT['vlan'],
             'volumes_lvm': False,
             'volumes_ceph': True,
             'images_ceph': True,
             'objects_ceph': True,
             'ephemeral_ceph': True,
+            'osd_pool_size': 3
         }
         cluster_settings.update(self.cluster_creds)
 
@@ -316,8 +317,11 @@ class DataDrivenUpgradeBase(TestBasic):
                      {'slave-01': ['controller'],
                       'slave-02': ['controller'],
                       'slave-03': ['controller'],
-                      'slave-04': ['compute', 'ceph-osd'],
-                      'slave-05': ['compute', 'ceph-osd']}
+                      'slave-04': ['compute'],
+                      'slave-05': ['compute'],
+                      'slave-06': ['ceph-osd'],
+                      'slave-07': ['ceph-osd'],
+                      'slave-08': ['ceph-osd']}
                  }
             )
             self.env.make_snapshot(intermediate_snapshot)
@@ -432,15 +436,16 @@ class UpgradePrepare(DataDrivenUpgradeBase):
         Nailgun password should be changed via KEYSTONE_PASSWORD env variable
 
         Scenario:
-        1. Create cluster with NeutronTUN and ceph for all
+        1. Create cluster with NeutronVLAN and ceph for all (replica factor 3)
         2. Add 3 node with controller role
-        3. Add 2 node with compute+ceph roles
-        4. Verify networks
-        5. Deploy cluster
-        6. Run OSTF
-        7. Install fuel-octane package
-        8. Create backup file using 'octane fuel-backup'
-        9. Download the backup to the host
+        3. Add 2 node with compute role
+        4. Add 3 node with ceph osd role
+        5. Verify networks
+        6. Deploy cluster
+        7. Run OSTF
+        8. Install fuel-octane package
+        9. Create backup file using 'octane fuel-backup'
+        10. Download the backup to the host
 
         Duration: TODO
         Snapshot: upgrade_ceph_ha_backup
@@ -457,7 +462,7 @@ class UpgradePrepare(DataDrivenUpgradeBase):
 
         Scenario:
         1. Install detach-database plugin on master node
-        2. Create cluster with default configuration
+        2. Create cluster with NeutronTUN network provider
         3. Enable plugin for created cluster
         4. Add 3 node with controller role
         5. Add 3 node with separate-database role
@@ -549,7 +554,7 @@ class UpgradeRollback(DataDrivenUpgradeBase):
 
         self.show_step(2)
         cluster_id = self.fuel_web.get_last_created_cluster()
-        self.fuel_web.update_nodes(cluster_id, {'slave-06': ['controller']})
+        self.fuel_web.update_nodes(cluster_id, {'slave-09': ['controller']})
         self.show_step(3)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
@@ -1027,7 +1032,7 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         self.show_step(2)
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[5:6])
-        self.fuel_web.update_nodes(cluster_id, {'slave-06': ['ceph-osd']})
+        self.fuel_web.update_nodes(cluster_id, {'slave-09': ['ceph-osd']})
         self.show_step(3)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(4)
