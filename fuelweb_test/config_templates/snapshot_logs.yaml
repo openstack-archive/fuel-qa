@@ -353,95 +353,6 @@ controller:
  var/lib/cloud/data/previous-instance-id
  var/lib/cloud/data/result.json
  var/lib/cloud/data/status.json
- var/lib/cloud/instances/nocloud/boot-finished
- var/lib/cloud/instances/nocloud/boothooks/boothook.txt
- var/lib/cloud/instances/nocloud/cloud-config.txt
- var/lib/cloud/instances/nocloud/datasource
- var/lib/cloud/instances/nocloud/obj.pkl
- var/lib/cloud/instances/nocloud/scripts/runcmd
- var/lib/cloud/instances/nocloud/sem/bootper.chmod_puppet.instance
- var/lib/cloud/instances/nocloud/sem/bootper.conntrack_ipv4.instance
- var/lib/cloud/instances/nocloud/sem/bootper.conntrack_ipv4_load.instance
- var/lib/cloud/instances/nocloud/sem/bootper.conntrack_ipv6.instance
- var/lib/cloud/instances/nocloud/sem/bootper.conntrack_ipv6_load.instance
- var/lib/cloud/instances/nocloud/sem/bootper.conntrack_max.instance
- var/lib/cloud/instances/nocloud/sem/bootper.conntrack_max_set.instance
- var/lib/cloud/instances/nocloud/sem/bootper.conntrack_proto_gre.instance
- var/lib/cloud/instances/nocloud/sem/bootper.conntrack_proto_gre_load.instance
- var/lib/cloud/instances/nocloud/sem/bootper.dhclient.instance
- var/lib/cloud/instances/nocloud/sem/bootper.edit_ntp_conf1.instance
- var/lib/cloud/instances/nocloud/sem/bootper.edit_ntp_conf2.instance
- var/lib/cloud/instances/nocloud/sem/bootper.edit_ntp_conf3.instance
- var/lib/cloud/instances/nocloud/sem/bootper.edit_ntp_conf4.instance
- var/lib/cloud/instances/nocloud/sem/bootper.edit_ntp_conf5.instance
- var/lib/cloud/instances/nocloud/sem/bootper.edit_ntp_conf_chown_dir.instance
- var/lib/cloud/instances/nocloud/sem/bootper.edit_ntp_conf_chown_drift.instance
- var/lib/cloud/instances/nocloud/sem/bootper.edit_ntp_conf_mkdir.instance
- var/lib/cloud/instances/nocloud/sem/bootper.gssapi_disable.instance
- var/lib/cloud/instances/nocloud/sem/bootper.hiera_puppet.instance
- var/lib/cloud/instances/nocloud/sem/bootper.kernel_panic.instance
- var/lib/cloud/instances/nocloud/sem/bootper.kernel_panic_set.instance
- var/lib/cloud/instances/nocloud/sem/bootper.nailgun_agent_0.instance
- var/lib/cloud/instances/nocloud/sem/bootper.nailgun_agent_1.instance
- var/lib/cloud/instances/nocloud/sem/bootper.removeUseDNS.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_domain.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_head_domain.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_head_header.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_head_nameserver.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_head_remove.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_head_search.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_header.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_mkdir.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_nameserver.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_remove.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_search.instance
- var/lib/cloud/instances/nocloud/sem/bootper.skel_bash.instance
- var/lib/cloud/instances/nocloud/sem/bootper.start_ntp.instance
- var/lib/cloud/instances/nocloud/sem/bootper.stop_ntp.instance
- var/lib/cloud/instances/nocloud/sem/bootper.sync_date.instance
- var/lib/cloud/instances/nocloud/sem/bootper.sync_hwclock.instance
- var/lib/cloud/instances/nocloud/sem/bootper.touch_puppet.instance
- var/lib/cloud/instances/nocloud/sem/bootper.udev_persistent_net1.instance
- var/lib/cloud/instances/nocloud/sem/bootper.udev_persistent_net5.instance
- var/lib/cloud/instances/nocloud/sem/bootper.wipe_sources_list_templates.instance
- var/lib/cloud/instances/nocloud/sem/config_apt_configure
- var/lib/cloud/instances/nocloud/sem/config_apt_pipelining
- var/lib/cloud/instances/nocloud/sem/config_byobu
- var/lib/cloud/instances/nocloud/sem/config_ca_certs
- var/lib/cloud/instances/nocloud/sem/config_chef
- var/lib/cloud/instances/nocloud/sem/config_disk_setup
- var/lib/cloud/instances/nocloud/sem/config_grub_dpkg
- var/lib/cloud/instances/nocloud/sem/config_keys_to_console
- var/lib/cloud/instances/nocloud/sem/config_landscape
- var/lib/cloud/instances/nocloud/sem/config_locale
- var/lib/cloud/instances/nocloud/sem/config_mcollective
- var/lib/cloud/instances/nocloud/sem/config_mounts
- var/lib/cloud/instances/nocloud/sem/config_package_update_upgrade_install
- var/lib/cloud/instances/nocloud/sem/config_phone_home
- var/lib/cloud/instances/nocloud/sem/config_power_state_change
- var/lib/cloud/instances/nocloud/sem/config_puppet
- var/lib/cloud/instances/nocloud/sem/config_rightscale_userdata
- var/lib/cloud/instances/nocloud/sem/config_rsyslog
- var/lib/cloud/instances/nocloud/sem/config_runcmd
- var/lib/cloud/instances/nocloud/sem/config_salt_minion
- var/lib/cloud/instances/nocloud/sem/config_scripts_per_instance
- var/lib/cloud/instances/nocloud/sem/config_scripts_user
- var/lib/cloud/instances/nocloud/sem/config_scripts_vendor
- var/lib/cloud/instances/nocloud/sem/config_seed_random
- var/lib/cloud/instances/nocloud/sem/config_set_hostname
- var/lib/cloud/instances/nocloud/sem/config_set_passwords
- var/lib/cloud/instances/nocloud/sem/config_ssh
- var/lib/cloud/instances/nocloud/sem/config_ssh_authkey_fingerprints
- var/lib/cloud/instances/nocloud/sem/config_ssh_import_id
- var/lib/cloud/instances/nocloud/sem/config_timezone
- var/lib/cloud/instances/nocloud/sem/config_users_groups
- var/lib/cloud/instances/nocloud/sem/config_write_files
- var/lib/cloud/instances/nocloud/sem/consume_data
- var/lib/cloud/instances/nocloud/sem/update_sources
- var/lib/cloud/instances/nocloud/user-data.txt
- var/lib/cloud/instances/nocloud/user-data.txt.i
- var/lib/cloud/instances/nocloud/vendor-data.txt
- var/lib/cloud/instances/nocloud/vendor-data.txt.i
  var/lib/cloud/sem/config_scripts_per_once.once
  var/lib/puppet/state/last_run_summary.yaml
  var/log/atop/atop_current
@@ -543,95 +454,6 @@ compute:
  var/lib/cloud/data/previous-instance-id
  var/lib/cloud/data/result.json
  var/lib/cloud/data/status.json
- var/lib/cloud/instances/nocloud/boot-finished
- var/lib/cloud/instances/nocloud/boothooks/boothook.txt
- var/lib/cloud/instances/nocloud/cloud-config.txt
- var/lib/cloud/instances/nocloud/datasource
- var/lib/cloud/instances/nocloud/obj.pkl
- var/lib/cloud/instances/nocloud/scripts/runcmd
- var/lib/cloud/instances/nocloud/sem/bootper.chmod_puppet.instance
- var/lib/cloud/instances/nocloud/sem/bootper.conntrack_ipv4.instance
- var/lib/cloud/instances/nocloud/sem/bootper.conntrack_ipv4_load.instance
- var/lib/cloud/instances/nocloud/sem/bootper.conntrack_ipv6.instance
- var/lib/cloud/instances/nocloud/sem/bootper.conntrack_ipv6_load.instance
- var/lib/cloud/instances/nocloud/sem/bootper.conntrack_max.instance
- var/lib/cloud/instances/nocloud/sem/bootper.conntrack_max_set.instance
- var/lib/cloud/instances/nocloud/sem/bootper.conntrack_proto_gre.instance
- var/lib/cloud/instances/nocloud/sem/bootper.conntrack_proto_gre_load.instance
- var/lib/cloud/instances/nocloud/sem/bootper.dhclient.instance
- var/lib/cloud/instances/nocloud/sem/bootper.edit_ntp_conf1.instance
- var/lib/cloud/instances/nocloud/sem/bootper.edit_ntp_conf2.instance
- var/lib/cloud/instances/nocloud/sem/bootper.edit_ntp_conf3.instance
- var/lib/cloud/instances/nocloud/sem/bootper.edit_ntp_conf4.instance
- var/lib/cloud/instances/nocloud/sem/bootper.edit_ntp_conf5.instance
- var/lib/cloud/instances/nocloud/sem/bootper.edit_ntp_conf_chown_dir.instance
- var/lib/cloud/instances/nocloud/sem/bootper.edit_ntp_conf_chown_drift.instance
- var/lib/cloud/instances/nocloud/sem/bootper.edit_ntp_conf_mkdir.instance
- var/lib/cloud/instances/nocloud/sem/bootper.gssapi_disable.instance
- var/lib/cloud/instances/nocloud/sem/bootper.hiera_puppet.instance
- var/lib/cloud/instances/nocloud/sem/bootper.kernel_panic.instance
- var/lib/cloud/instances/nocloud/sem/bootper.kernel_panic_set.instance
- var/lib/cloud/instances/nocloud/sem/bootper.nailgun_agent_0.instance
- var/lib/cloud/instances/nocloud/sem/bootper.nailgun_agent_1.instance
- var/lib/cloud/instances/nocloud/sem/bootper.removeUseDNS.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_domain.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_head_domain.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_head_header.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_head_nameserver.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_head_remove.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_head_search.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_header.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_mkdir.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_nameserver.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_remove.instance
- var/lib/cloud/instances/nocloud/sem/bootper.resolv_conf_search.instance
- var/lib/cloud/instances/nocloud/sem/bootper.skel_bash.instance
- var/lib/cloud/instances/nocloud/sem/bootper.start_ntp.instance
- var/lib/cloud/instances/nocloud/sem/bootper.stop_ntp.instance
- var/lib/cloud/instances/nocloud/sem/bootper.sync_date.instance
- var/lib/cloud/instances/nocloud/sem/bootper.sync_hwclock.instance
- var/lib/cloud/instances/nocloud/sem/bootper.touch_puppet.instance
- var/lib/cloud/instances/nocloud/sem/bootper.udev_persistent_net1.instance
- var/lib/cloud/instances/nocloud/sem/bootper.udev_persistent_net5.instance
- var/lib/cloud/instances/nocloud/sem/bootper.wipe_sources_list_templates.instance
- var/lib/cloud/instances/nocloud/sem/config_apt_configure
- var/lib/cloud/instances/nocloud/sem/config_apt_pipelining
- var/lib/cloud/instances/nocloud/sem/config_byobu
- var/lib/cloud/instances/nocloud/sem/config_ca_certs
- var/lib/cloud/instances/nocloud/sem/config_chef
- var/lib/cloud/instances/nocloud/sem/config_disk_setup
- var/lib/cloud/instances/nocloud/sem/config_grub_dpkg
- var/lib/cloud/instances/nocloud/sem/config_keys_to_console
- var/lib/cloud/instances/nocloud/sem/config_landscape
- var/lib/cloud/instances/nocloud/sem/config_locale
- var/lib/cloud/instances/nocloud/sem/config_mcollective
- var/lib/cloud/instances/nocloud/sem/config_mounts
- var/lib/cloud/instances/nocloud/sem/config_package_update_upgrade_install
- var/lib/cloud/instances/nocloud/sem/config_phone_home
- var/lib/cloud/instances/nocloud/sem/config_power_state_change
- var/lib/cloud/instances/nocloud/sem/config_puppet
- var/lib/cloud/instances/nocloud/sem/config_rightscale_userdata
- var/lib/cloud/instances/nocloud/sem/config_rsyslog
- var/lib/cloud/instances/nocloud/sem/config_runcmd
- var/lib/cloud/instances/nocloud/sem/config_salt_minion
- var/lib/cloud/instances/nocloud/sem/config_scripts_per_instance
- var/lib/cloud/instances/nocloud/sem/config_scripts_user
- var/lib/cloud/instances/nocloud/sem/config_scripts_vendor
- var/lib/cloud/instances/nocloud/sem/config_seed_random
- var/lib/cloud/instances/nocloud/sem/config_set_hostname
- var/lib/cloud/instances/nocloud/sem/config_set_passwords
- var/lib/cloud/instances/nocloud/sem/config_ssh
- var/lib/cloud/instances/nocloud/sem/config_ssh_authkey_fingerprints
- var/lib/cloud/instances/nocloud/sem/config_ssh_import_id
- var/lib/cloud/instances/nocloud/sem/config_timezone
- var/lib/cloud/instances/nocloud/sem/config_users_groups
- var/lib/cloud/instances/nocloud/sem/config_write_files
- var/lib/cloud/instances/nocloud/sem/consume_data
- var/lib/cloud/instances/nocloud/sem/update_sources
- var/lib/cloud/instances/nocloud/user-data.txt
- var/lib/cloud/instances/nocloud/user-data.txt.i
- var/lib/cloud/instances/nocloud/vendor-data.txt
- var/lib/cloud/instances/nocloud/vendor-data.txt.i
  var/lib/cloud/sem/config_scripts_per_once.once
  var/lib/puppet/state/last_run_summary.yaml
  var/log/atop/atop_current
@@ -877,7 +699,6 @@ master:
   var/log/url_access_checker.log
   var/log/wtmp
   var/log/yum.log
-  var/log/yum-update-error.log
   xmlrpc/cobbler.txt
  remote:
   controller:
@@ -914,7 +735,6 @@ master:
    efi.log
    freedos.log
    glance-api.log
-   glance-cache-pruner.log
    glance-manage.log
    glance-registry.log
    groupadd.log
