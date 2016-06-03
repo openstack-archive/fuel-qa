@@ -219,7 +219,8 @@ class DataDrivenUpgradeBase(TestBasic):
         slaves_count = len(cluster_settings['nodes'])
         slaves = self.env.d_env.nodes().slaves[:slaves_count]
         for chunk in [slaves[x:x + 5] for x in range(0, slaves_count, 5)]:
-            self.env.bootstrap_nodes(chunk)
+            self.env.bootstrap_nodes(chunk, skip_timesync=True)
+        self.env.sync_time()
         cluster_id = self.fuel_web.create_cluster(
             name=cluster_settings['name'],
             mode=settings.DEPLOYMENT_MODE,
@@ -248,7 +249,6 @@ class DataDrivenUpgradeBase(TestBasic):
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id)
 
     def prepare_upgrade_smoke(self):
         self.backup_name = "backup_smoke.tar.gz"
@@ -299,12 +299,13 @@ class DataDrivenUpgradeBase(TestBasic):
 
         cluster_settings = {
             'net_provider': settings.NEUTRON,
-            'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
+            'net_segment_type': settings.NEUTRON_SEGMENT['vlan'],
             'volumes_lvm': False,
             'volumes_ceph': True,
             'images_ceph': True,
             'objects_ceph': True,
             'ephemeral_ceph': True,
+            'osd_pool_size': '3'
         }
         cluster_settings.update(self.cluster_creds)
 
@@ -316,8 +317,11 @@ class DataDrivenUpgradeBase(TestBasic):
                      {'slave-01': ['controller'],
                       'slave-02': ['controller'],
                       'slave-03': ['controller'],
-                      'slave-04': ['compute', 'ceph-osd'],
-                      'slave-05': ['compute', 'ceph-osd']}
+                      'slave-04': ['compute'],
+                      'slave-05': ['compute'],
+                      'slave-06': ['ceph-osd'],
+                      'slave-07': ['ceph-osd'],
+                      'slave-08': ['ceph-osd']}
                  }
             )
             self.env.make_snapshot(intermediate_snapshot)
@@ -414,10 +418,9 @@ class UpgradePrepare(DataDrivenUpgradeBase):
         3. Add 1 node with compute+cinder roles
         4. Verify networks
         5. Deploy cluster
-        6. Run OSTF
-        7. Install fuel-octane package
-        8. Create backup file using 'octane fuel-backup'
-        9. Download the backup to the host
+        6. Install fuel-octane package
+        7. Create backup file using 'octane fuel-backup'
+        8. Download the backup to the host
 
         Duration: TODO
         Snapshot: upgrade_smoke_backup
@@ -432,12 +435,12 @@ class UpgradePrepare(DataDrivenUpgradeBase):
         Nailgun password should be changed via KEYSTONE_PASSWORD env variable
 
         Scenario:
-        1. Create cluster with NeutronTUN and ceph for all
+        1. Create cluster with NeutronVLAN and ceph for all (replica factor 3)
         2. Add 3 node with controller role
-        3. Add 2 node with compute+ceph roles
-        4. Verify networks
-        5. Deploy cluster
-        6. Run OSTF
+        3. Add 2 node with compute role
+        4. Add 3 node with ceph osd role
+        5. Verify networks
+        6. Deploy cluster
         7. Install fuel-octane package
         8. Create backup file using 'octane fuel-backup'
         9. Download the backup to the host
@@ -457,17 +460,16 @@ class UpgradePrepare(DataDrivenUpgradeBase):
 
         Scenario:
         1. Install detach-database plugin on master node
-        2. Create cluster with default configuration
+        2. Create cluster with NeutronTUN network provider
         3. Enable plugin for created cluster
         4. Add 3 node with controller role
         5. Add 3 node with separate-database role
         6. Add 2 node with compute+ceph roles
         7. Verify networks
         8. Deploy cluster
-        9. Run OSTF
-        10. Install fuel-octane package
-        11. Create backup file using 'octane fuel-backup'
-        12. Download the backup to the host
+        9. Install fuel-octane package
+        10. Create backup file using 'octane fuel-backup'
+        11. Download the backup to the host
 
         Duration: TODO
         Snapshot: upgrade_detach_plugin_backup
@@ -549,7 +551,7 @@ class UpgradeRollback(DataDrivenUpgradeBase):
 
         self.show_step(2)
         cluster_id = self.fuel_web.get_last_created_cluster()
-        self.fuel_web.update_nodes(cluster_id, {'slave-06': ['controller']})
+        self.fuel_web.update_nodes(cluster_id, {'slave-09': ['controller']})
         self.show_step(3)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
@@ -948,10 +950,11 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         Snapshot: upgrade_ceph_ha_restore
         Duration: TODO
         """
+        self.check_run(self.snapshot_name)
+
         assert_true(os.path.exists(self.repos_local_path))
         assert_true(os.path.exists(self.local_path))
 
-        self.check_run(self.snapshot_name)
         self.show_step(1, initialize=True)
         assert_true(
             self.env.revert_snapshot(self.source_snapshot_name),
@@ -1027,7 +1030,7 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         self.show_step(2)
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[5:6])
-        self.fuel_web.update_nodes(cluster_id, {'slave-06': ['ceph-osd']})
+        self.fuel_web.update_nodes(cluster_id, {'slave-09': ['ceph-osd']})
         self.show_step(3)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(4)
