@@ -276,7 +276,12 @@ class MuranoHAOneController(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE,
-            settings=data)
+            settings=data,
+            configure_ssl=False
+        )
+        # TODO(freerunner): Need to configure SSL again when root cause for
+        # TODO(freerunner): https://bugs.launchpad.net/fuel/+bug/1590633
+        # TODO(freerunner): will be found and fixed
 
         self.fuel_web.update_nodes(
             cluster_id,
@@ -287,26 +292,17 @@ class MuranoHAOneController(TestBasic):
         )
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id),
-            data['user'], data['password'], data['tenant'])
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=5)
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         checkers.verify_service(_ip, service_name='murano-api')
 
         logger.debug('Run sanity and functional Murano OSTF tests')
-        self.fuel_web.run_single_ostf_test(
-            cluster_id=self.fuel_web.get_last_created_cluster(),
-            test_sets=['sanity'],
-            test_name=('fuel_health.tests.sanity.test_sanity_murano.'
-                       'MuranoSanityTests.test_create_and_delete_service')
-        )
+        self.fuel_web.run_ostf(cluster_id=cluster_id, test_sets=['sanity'])
 
         logger.debug('Run OSTF platform tests')
 
         test_class_main = ('fuel_health.tests.tests_platform'
                            '.test_murano_linux.MuranoDeployLinuxServicesTests')
-        tests_names = ['test_deploy_dummy_app', ]
+        tests_names = ['test_deploy_dummy_app_with_glare', ]
 
         test_classes = []
 
@@ -360,7 +356,12 @@ class MuranoHA(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE,
-            settings=data)
+            settings=data,
+            configure_ssl=False
+        )
+        # TODO(freerunner): Need to configure SSL again when root cause for
+        # TODO(freerunner): https://bugs.launchpad.net/fuel/+bug/1590633
+        # TODO(freerunner): will be found and fixed
 
         self.fuel_web.update_nodes(
             cluster_id,
@@ -372,27 +373,18 @@ class MuranoHA(TestBasic):
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        cluster_vip = self.fuel_web.get_public_vip(cluster_id)
-        os_conn = os_actions.OpenStackActions(
-            cluster_vip, data['user'], data['password'], data['tenant'])
-        self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)
         for slave in ["slave-01", "slave-02", "slave-03"]:
             _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
             checkers.verify_service(_ip, service_name='murano-api')
 
         logger.debug('Run sanity and functional Murano OSTF tests')
-        self.fuel_web.run_single_ostf_test(
-            cluster_id=self.fuel_web.get_last_created_cluster(),
-            test_sets=['sanity'],
-            test_name=('fuel_health.tests.sanity.test_sanity_murano.'
-                       'MuranoSanityTests.test_create_and_delete_service')
-        )
+        self.fuel_web.run_ostf(cluster_id=cluster_id, test_sets=['sanity'])
 
         logger.debug('Run OSTF platform tests')
 
         test_class_main = ('fuel_health.tests.tests_platform'
                            '.test_murano_linux.MuranoDeployLinuxServicesTests')
-        tests_names = ['test_deploy_dummy_app', ]
+        tests_names = ['test_deploy_dummy_app_with_glare']
 
         test_classes = []
 
