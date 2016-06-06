@@ -571,6 +571,11 @@ Zabbix tests
 .. automodule:: fuelweb_test.tests.plugins.plugin_zabbix.test_plugin_zabbix
    :members:
 
+Murano Tests
+------------
+.. automodule:: fuelweb_test.tests.plugins.plugin_murano.test_plugin_murano
+   :members:
+
 Patching tests
 ==============
 
