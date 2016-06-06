@@ -276,7 +276,12 @@ class MuranoHAOneController(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE,
-            settings=data)
+            settings=data,
+            configure_ssl=False
+        )
+        # TODO(freerunner): Need to configure SSL again when root cause for
+        # TODO(freerunner): https://bugs.launchpad.net/fuel/+bug/1590633
+        # TODO(freerunner): will be found and fixed
 
         self.fuel_web.update_nodes(
             cluster_id,
@@ -306,7 +311,7 @@ class MuranoHAOneController(TestBasic):
 
         test_class_main = ('fuel_health.tests.tests_platform'
                            '.test_murano_linux.MuranoDeployLinuxServicesTests')
-        tests_names = ['test_deploy_dummy_app', ]
+        tests_names = ['test_deploy_dummy_app_with_glare', ]
 
         test_classes = []
 
@@ -360,7 +365,12 @@ class MuranoHA(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE,
-            settings=data)
+            settings=data,
+            configure_ssl=False
+        )
+        # TODO(freerunner): Need to configure SSL again when root cause for
+        # TODO(freerunner): https://bugs.launchpad.net/fuel/+bug/1590633
+        # TODO(freerunner): will be found and fixed
 
         self.fuel_web.update_nodes(
             cluster_id,
@@ -392,7 +402,7 @@ class MuranoHA(TestBasic):
 
         test_class_main = ('fuel_health.tests.tests_platform'
                            '.test_murano_linux.MuranoDeployLinuxServicesTests')
-        tests_names = ['test_deploy_dummy_app', ]
+        tests_names = ['test_deploy_dummy_app_with_glare']
 
         test_classes = []
 
