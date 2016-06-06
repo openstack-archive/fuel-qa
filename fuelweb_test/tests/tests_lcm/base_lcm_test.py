@@ -602,12 +602,12 @@ class SetupLCMEnvironment(LCMTestBasic):
         self.show_step(7)
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         node_refs = self.check_extra_tasks(slave_nodes, deployment)
-        if node_refs:
-            logger.info('Generating a new fixture . . .')
-            self.generate_fixture(node_refs, cluster_id, slave_nodes)
-            msg = ('Please update idempotency fixtures in the repo '
-                   'according to generated fixtures')
-            raise DeprecatedFixture(msg)
+        # if node_refs:
+        #     logger.info('Generating a new fixture . . .')
+        #     self.generate_fixture(node_refs, cluster_id, slave_nodes)
+        #     msg = ('Please update idempotency fixtures in the repo '
+        #            'according to generated fixtures')
+        #     raise DeprecatedFixture(msg)
         self.env.make_snapshot(snapshotname, is_make=True)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
