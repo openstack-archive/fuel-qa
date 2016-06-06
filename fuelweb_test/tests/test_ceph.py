@@ -14,6 +14,7 @@
 from __future__ import unicode_literals
 import time
 
+import paramiko
 from pkg_resources import parse_version
 from proboscis.asserts import assert_true, assert_false, assert_equal
 from proboscis import SkipTest
@@ -655,7 +656,17 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
         wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120)
 
+        def ssh_ready(remote, ip, creds):
+            try:
+                os.execute_through_host(remote, ip, '/bin/true', creds)
+                return True
+            except paramiko.AuthenticationException:
+                logger.info("Authentication failed. Trying again in a minute.")
+                time.sleep(60)
+                return False
+
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
+            wait(lambda: ssh_ready(remote, floating_ip.ip, creds), timeout=300)
             md5before = os.get_md5sum(
                 "/home/test_file", remote, floating_ip.ip, creds)
 
@@ -743,6 +754,8 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         logger.info("Create filesystem and mount volume")
 
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
+            wait(lambda: ssh_ready(remote, floating_ip.ip, creds), timeout=300)
+
             os.execute_through_host(
                 remote,
                 floating_ip.ip, 'sudo sh /home/mount_volume.sh', creds)

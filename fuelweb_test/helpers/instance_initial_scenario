@@ -4,7 +4,7 @@ echo "Creating test file"
 touch /home/test_file
 
 echo "Creating volume mount script on instance"
-echo "#!/bin/sh\nsudo /usr/sbin/mkfs.ext4 /dev/vdb\nsudo mount /dev/vdb /mnt" | tee /home/mount_volume.sh
+echo -e '#!/bin/sh\nsudo /usr/sbin/mkfs.ext4 /dev/vdb | logger -t mount_volume.sh\nsudo mount -t ext4 /dev/vdb /mnt | logger -t mount_volume.sh\nmount | grep /mnt | logger -t mount_volume.sh' | tee /home/mount_volume.sh
 chmod 777 /home/mount_volume.sh
 
 echo -e "test\ntest" | passwd cirros
