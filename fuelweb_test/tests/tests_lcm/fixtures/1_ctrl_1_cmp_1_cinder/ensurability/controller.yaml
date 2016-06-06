@@ -31,7 +31,7 @@ tasks:
 - primary-dns-server:
     resources: []
 - openstack-haproxy-murano:
-    resources: []
+    no_puppet_run: true
 - openstack-network-end:
     type: skipped
 - openstack-haproxy-radosgw:
@@ -87,7 +87,7 @@ tasks:
 - aodh-db:
     no_puppet_run: true
 - disable_keystone_service_token:
-    resources: []
+    no_puppet_run: true
 - umm:
     resources: []
 - memcached:
@@ -102,7 +102,7 @@ tasks:
 - sahara-keystone:
     no_puppet_run: true
 - openstack-haproxy-sahara:
-    resources: []
+    no_puppet_run: true
 - ssl-keys-saving:
     no_puppet_run: true
 - primary-cluster:
@@ -126,18 +126,20 @@ tasks:
 - nova-keystone:
     resources:
     - Keystone_endpoint[RegionOne/nova::compute]
-    - Keystone_endpoint[RegionOne/novav3::computev3]
+    - Keystone_endpoint[RegionOne/compute_legacy::compute_legacy]
 - update_hosts:
     resources: []
 - ironic-keystone:
     no_puppet_run: true
 - connectivity_tests:
     resources: []
-- swift-storage:
-    resources: []
 - primary-heat:
     resources:
+    - Heat_config[DEFAULT/heat_waitcondition_server_url]
+    - Heat_config[DEFAULT/heat_metadata_server_url]
     - Heat_config[keystone_authtoken/auth_uri]
+    - Heat_config[clients_heat/url]
+    - Heat_config[DEFAULT/heat_watch_server_url]
 - conntrackd:
     resources: []
 - sahara-db:
@@ -148,7 +150,7 @@ tasks:
     - File[/etc/openstack-dashboard/local_settings.py]
     - Exec[concat_/etc/openstack-dashboard/local_settings.py]
 - openstack-haproxy-ceilometer:
-    resources: []
+    no_puppet_run: true
 - openstack-network-common-config:
     resources: []
 - firewall:
@@ -179,13 +181,15 @@ tasks:
     no_puppet_run: true
 - aodh:
     no_puppet_run: true
-- ceph_create_pools:
-    no_puppet_run: true
+- copy_deleted_nodes:
+    type: copy_files
 - openstack-haproxy-ironic:
     no_puppet_run: true
 - setup_repositories:
     resources: []
 - openstack-network-routers-ha:
+    no_puppet_run: true
+- upload_murano_package:
     no_puppet_run: true
 - glance-db:
     resources: []
@@ -228,8 +232,7 @@ tasks:
 - clear_nodes_info:
     type: skipped
 - murano-db:
-    resources:
-    - Exec[clear_nodes_info_shell]
+    no_puppet_run: true
 - copy_keys_ceph:
     type: copy_files
 - sahara:
@@ -270,6 +273,7 @@ tasks:
     resources: []
 - primary-database:
     resources:
+    - File[mysql-config-file]
     - File[/root/.my.cnf]
 - vcenter_compute_zones_create:
     type: shell
@@ -282,21 +286,29 @@ tasks:
     resources: []
 - murano-keystone:
     no_puppet_run: true
+- swift-proxy_storage:
+    resources:
+    - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/00_swift_proxy]
+    - File[/etc/swift/proxy-server.conf]
+    - Exec[concat_/etc/swift/proxy-server.conf]
 - primary-openstack-network-agents-dhcp:
     resources:
     - Neutron_dhcp_agent_config[DEFAULT/debug]
 - openstack-haproxy-heat:
-    resources: []
+    no_puppet_run: true
 - primary-openstack-controller:
     resources:
     - Nova_config[DEFAULT/quota_driver]
     - Nova_config[DEFAULT/debug]
+    - Nova_config[DEFAULT/scheduler_default_filters]
     - Nova_config[DEFAULT/default_log_levels]
 - openstack-cinder:
     resources:
     - Cinder_config[DEFAULT/scheduler_default_filters]
     - Cinder_config[DEFAULT/default_log_levels]
     - Cinder_config[DEFAULT/debug]
+- ceph_create_pools:
+    no_puppet_run: true
 - keystone-db:
     resources:
     - File[/root/.my.cnf]
@@ -308,18 +320,6 @@ tasks:
     resources: []
 - copy_haproxy_keys:
     type: copy_files
-- primary-swift-proxy:
-    resources:
-    - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/10_account_frag-account]
-    - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/00_swift_proxy]
-    - File[/etc/swift/proxy-server.conf]
-    - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/10_object_frag-object]
-    - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/10_swift_server_frag-swift_server]
-    - Exec[concat_/etc/swift/proxy-server.conf]
-    - Exec[concat_/etc/rsyncd.conf]
-    - File[/etc/rsyncd.conf]
-    - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/10_container_frag-container]
-    - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/10_swift_backups_frag-swift_backups]
 - openstack-network-networks:
     resources: []
 - ssl-add-trust-chain:

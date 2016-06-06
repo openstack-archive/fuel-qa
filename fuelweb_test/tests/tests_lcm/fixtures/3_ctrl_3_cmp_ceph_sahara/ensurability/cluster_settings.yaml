@@ -14,7 +14,7 @@ access:
 additional_components:
   ceilometer:
     type: checkbox
-    value: false
+    value: true
   heat:
     type: hidden
     value: false
@@ -23,14 +23,11 @@ additional_components:
     value: false
   mongo:
     type: checkbox
-    value: false
+    value: true
   murano:
     type: checkbox
     value: false
   murano-cfapi:
-    type: checkbox
-    value: false
-  murano_glance_artifacts_plugin:
     type: checkbox
     value: false
   sahara:
@@ -101,6 +98,9 @@ kernel_params:
     type: text
     value: console=tty0 net.ifnames=0 biosdevname=0 rootdelay=90 nomodeset
 murano_settings:
+  murano_glance_artifacts_plugin:
+    type: checkbox
+    value: false
   murano_repo_url:
     type: text
     value: http://storage.apps.openstack.org/
@@ -395,13 +395,13 @@ storage:
     value: AQDLzzFXAAAAABAA5IKvoBQEHTMdItiodpG3dw==
   volumes_block_device:
     type: checkbox
-    value: true
+    value: false
   volumes_ceph:
     type: checkbox
-    value: false
+    value: true
   volumes_lvm:
     type: checkbox
-    value: true
+    value: false
 syslog:
   syslog_port:
     type: text

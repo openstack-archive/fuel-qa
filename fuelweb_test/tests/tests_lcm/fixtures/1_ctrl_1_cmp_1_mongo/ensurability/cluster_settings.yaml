@@ -30,9 +30,6 @@ additional_components:
   murano-cfapi:
     type: checkbox
     value: false
-  murano_glance_artifacts_plugin:
-    type: checkbox
-    value: false
   sahara:
     type: checkbox
     value: false
@@ -101,6 +98,9 @@ kernel_params:
     type: text
     value: console=tty0 net.ifnames=0 biosdevname=0 rootdelay=90 nomodeset
 murano_settings:
+  murano_glance_artifacts_plugin:
+    type: checkbox
+    value: false
   murano_repo_url:
     type: text
     value: http://storage.apps.openstack.org/

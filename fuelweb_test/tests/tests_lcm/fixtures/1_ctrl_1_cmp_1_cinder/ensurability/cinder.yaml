@@ -3,8 +3,8 @@ tasks:
     resources: []
 - clear_nodes_info:
     type: skipped
-- copy_keys_ceph:
-    type: copy_files
+- override_configuration:
+    resources: []
 - globals:
     resources: []
 - fuel_pkgs:
@@ -21,8 +21,8 @@ tasks:
     type: skipped
 - copy_keys:
     type: copy_files
-- override_configuration:
-    resources: []
+- copy_deleted_nodes:
+    type: copy_files
 - setup_repositories:
     resources: []
 - dns-client:
@@ -33,6 +33,8 @@ tasks:
     no_puppet_run: true
 - ssl-keys-saving:
     no_puppet_run: true
+- copy_keys_ceph:
+    type: copy_files
 - upload_configuration:
     type: upload_file
 - firewall:
