@@ -306,7 +306,7 @@ class MuranoHAOneController(TestBasic):
 
         test_class_main = ('fuel_health.tests.tests_platform'
                            '.test_murano_linux.MuranoDeployLinuxServicesTests')
-        tests_names = ['test_deploy_dummy_app', ]
+        tests_names = ['test_deploy_dummy_app_with_glare', ]
 
         test_classes = []
 
@@ -392,7 +392,7 @@ class MuranoHA(TestBasic):
 
         test_class_main = ('fuel_health.tests.tests_platform'
                            '.test_murano_linux.MuranoDeployLinuxServicesTests')
-        tests_names = ['test_deploy_dummy_app', ]
+        tests_names = ['test_deploy_dummy_app_with_glare']
 
         test_classes = []
 
