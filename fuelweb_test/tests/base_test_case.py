@@ -348,6 +348,7 @@ class SetupEnvironment(TestBasic):
             from system_test.core.discover import load_yaml
             self._devops_config = load_yaml(MULTIPLE_NETWORKS_TEMPLATE)
         if SEPARATE_SERVICE_HAPROXY_PLUGIN_PATH:
+            from system_test.core.discover import load_yaml
             self._devops_config = load_yaml(EXTERNAL_HAPROXY_TEMPLATE)
 
         self.check_run("empty")
