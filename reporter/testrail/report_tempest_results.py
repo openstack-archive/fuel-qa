@@ -24,11 +24,11 @@ from xml.etree import ElementTree
 from six.moves import urllib
 # pylint: enable=import-error
 
-from fuelweb_test.testrail import report
-from fuelweb_test.testrail.settings import JENKINS
-from fuelweb_test.testrail.settings import logger
-from fuelweb_test.testrail.settings import TestRailSettings
-from fuelweb_test.testrail.testrail_client import TestRailProject
+from reporter.testrail import report
+from reporter.testrail.settings import JENKINS
+from reporter.testrail.settings import logger
+from reporter.testrail.settings import TestRailSettings
+from reporter.testrail.testrail_client import TestRailProject
 
 
 LOG = logger

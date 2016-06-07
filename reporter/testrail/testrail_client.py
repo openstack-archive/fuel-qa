@@ -14,9 +14,9 @@
 
 from __future__ import unicode_literals
 
-from fuelweb_test.testrail.settings import logger
-from fuelweb_test.testrail.testrail import APIClient
-from fuelweb_test.testrail.testrail import APIError
+from reporter.testrail.settings import logger
+from reporter.testrail.testrail import APIClient
+from reporter.testrail.testrail import APIError
 
 
 class TestRailProject(object):
