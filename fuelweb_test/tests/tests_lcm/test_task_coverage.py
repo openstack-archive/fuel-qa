@@ -28,7 +28,20 @@ from fuelweb_test.tests.tests_lcm.base_lcm_test import TASKS_BLACKLIST
 EXCLUDED_TASKS_FROM_COVERAGE = [
     "top-role-cinder-vmware",
     "top-role-compute-vmware",
-    "generate_vms"
+    "vmware-vcenter",
+    "generate_vms",
+    "plugins_rsync",
+    "plugins_setup_repositories",
+    "upload_murano_package",
+    "murano-cfapi-keystone",
+    "murano-keystone",
+    "murano-cfapi",
+    "murano-rabbitmq",
+    "openstack-haproxy-murano",
+    "murano",
+    "murano-db",
+    "disable_keystone_service_token",
+    "openstack-network-routers-ha"
 ]
 
 
@@ -40,14 +53,18 @@ class TaskLCMCoverage(TestBasic):
         """Load fixture from the corresponding yaml file
 
         :param path: a string, a full path to fixture file
-        :return: a list of tasks
+        :return: a set of tasks
         """
         with open(path) as f:
             fixture = yaml.load(f)
         for task in fixture['tasks']:
             task_name, task_attr = task.items()[0]
-            if task_attr is None or 'type' not in task_attr:
-                tasks.append(task_name)
+            if task_attr is None:
+                tasks.add(task_name)
+                continue
+            if 'type' in task_attr or 'no_puppet_run' in task_attr:
+                continue
+            tasks.add(task_name)
         return tasks
 
     def load_tasks_fixture_file(self, path, subdir, tasks=None):
@@ -56,27 +73,26 @@ class TaskLCMCoverage(TestBasic):
         :param path: a string, relative path to fixture directory
         :param subdir: a string, indicates whether idempotency or ensurability
                        fixture is uploaded
-        :param tasks: a list of taken into consideration tasks
-        :return: a list of tasks
+        :param tasks: a set of taken into consideration tasks
+        :return: a set of tasks
         """
         if not tasks:
-            tasks = []
+            tasks = set([])
         if os.path.isdir(path) and os.path.basename(path) == subdir:
             for fl in os.listdir(path):
                 filepath = os.path.join(path, fl)
-                tasks = list(set(tasks))
-                tasks.extend(
-                    self._load_from_file(filepath, tasks) or [])
+                tasks.update(self._load_from_file(filepath, tasks) or [])
         elif os.path.isdir(path):
             for fl in os.listdir(path):
                 filepath = os.path.join(path, fl)
-                tasks.extend(
+                tasks.update(
                     self.load_tasks_fixture_file(
                         filepath, subdir, tasks) or [])
         return tasks
 
     @test(depends_on=[SetupEnvironment.prepare_release],
-          groups=['task_idempotency_coverage'])
+          groups=['task_lcm_coverage',
+                  'task_idempotency_coverage'])
     @log_snapshot_after_test
     def task_idempotency_coverage(self):
         """Setup master node with custom manifests
@@ -104,7 +120,7 @@ class TaskLCMCoverage(TestBasic):
 
         self.show_step(3)
         path = os.path.join(os.path.dirname(__file__), "fixtures")
-        fixture_tasks = set(self.load_tasks_fixture_file(path, 'idempotency'))
+        fixture_tasks = self.load_tasks_fixture_file(path, 'idempotency')
 
         self.show_step(4)
         task_blacklist = (set(TASKS_BLACKLIST) |
