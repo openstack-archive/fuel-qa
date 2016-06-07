@@ -33,6 +33,7 @@ from fuelweb_test.settings import MULTIPLE_NETWORKS_TEMPLATE
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
 from fuelweb_test.settings import SEPARATE_SERVICE_HAPROXY_PLUGIN_PATH
+from fuelweb_test.settings import USE_HAPROXY_TEMPLATE
 
 from gates_tests.helpers import exceptions
 
@@ -347,7 +348,8 @@ class SetupEnvironment(TestBasic):
         if MULTIPLE_NETWORKS:
             from system_test.core.discover import load_yaml
             self._devops_config = load_yaml(MULTIPLE_NETWORKS_TEMPLATE)
-        if SEPARATE_SERVICE_HAPROXY_PLUGIN_PATH:
+        if USE_HAPROXY_TEMPLATE and SEPARATE_SERVICE_HAPROXY_PLUGIN_PATH:
+            from system_test.core.discover import load_yaml
             self._devops_config = load_yaml(EXTERNAL_HAPROXY_TEMPLATE)
 
         self.check_run("empty")
