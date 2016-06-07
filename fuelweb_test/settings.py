@@ -132,6 +132,8 @@ MULTIPLE_NETWORKS_TEMPLATE = os.environ.get(
     'MULTIPLE_NETWORKS_TEMPLATE',
     os.path.join(os.getcwd(),
                  'system_test/tests_templates/tests_configs/multirack.yaml'))
+
+USE_HAPROXY_TEMPLATE = get_var_as_bool("USE_HAPROXY_TEMPLATE", False)
 EXTERNAL_HAPROXY_TEMPLATE = os.environ.get(
     'EXTERNAL_HAPROXY_TEMPLATE',
     os.path.join(os.getcwd(),
