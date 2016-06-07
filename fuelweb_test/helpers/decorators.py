@@ -862,9 +862,18 @@ def check_fuel_snapshot(func):
             logger.debug("compute fqdns are {}".format(compute_fqdns))
             args[0].env.fuel_web.task_wait(
                 args[0].env.fuel_web.client.generate_logs(), 60 * 10)
+
+            logs_path = '/var/dump/'
+            archive_name = args[0].env.ssh_manager.execute_on_remote(
+                args[0].env.ssh_manager.admin_ip,
+                cmd="ls {}*.tar.gz".format(logs_path))['stdout_str']
+            args[0].env.ssh_manager.execute_on_remote(
+                ip=args[0].env.ssh_manager.admin_ip,
+                cmd='cd {0} && tar -xpvf {1}'.format(logs_path, archive_name))
+
             snapshot_name = args[0].env.ssh_manager.execute_on_remote(
                 args[0].env.ssh_manager.admin_ip,
-                cmd="ls -I *.tar.xz /var/dump/")['stdout_str']
+                cmd="ls -I *.tar.gz {}".format(logs_path))['stdout_str']
             logger.debug("snapshot name is {}".format(snapshot_name))
             check_snapshot_logs(args[0].env.ssh_manager.admin_ip,
                                 snapshot_name, controllers_fqdns,
