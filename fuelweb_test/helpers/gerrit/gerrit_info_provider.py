@@ -12,42 +12,55 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import base64
-from collections import namedtuple
 import os
-import re
-
-# pylint: disable=redefined-builtin
-# noinspection PyUnresolvedReferences
-from six.moves import xrange
-# pylint: enable=redefined-builtin
 
 from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers.gerrit.gerrit_client import GerritClient
-from fuelweb_test.helpers.gerrit import utils
+from fuelweb_test.helpers.gerrit import rules
+
+
+class TemplateMap(object):
+
+    M_PATH = 'deployment/puppet/'
+
+    MAP = [
+        {'deployment/Puppetfile':
+            rules.get_changed_modules_inside_file},
+        {os.path.join(M_PATH, 'osnailyfacter/modular/roles/'):
+            rules.osnailyfacter_roles_rule},
+        {os.path.join(M_PATH, 'osnailyfacter/modular/'):
+            rules.osnailyfacter_modular_rule},
+        {os.path.join(M_PATH, 'osnailyfacter/manifests/'):
+            rules.osnailyfacter_manifest_rule},
+        {os.path.join(M_PATH, 'osnailyfacter/templates/'):
+            rules.osnailyfacter_templates_rule},
+        {os.path.join(M_PATH, 'osnailyfacter/'):
+            rules.no_rule},
+        {os.path.join(M_PATH, 'openstack_tasks/Puppetfile'):
+            rules.get_changed_modules_inside_file},
+        {os.path.join(M_PATH, 'openstack_tasks/lib/facter/'):
+            rules.openstack_tasks_libfacter_rule},
+        {os.path.join(M_PATH, 'openstack_tasks/manifests/roles/'):
+            rules.openstack_tasks_roles_rule},
+        {os.path.join(M_PATH, 'openstack_tasks/examples/roles/'):
+            rules.openstack_tasks_roles_rule},
+        {os.path.join(M_PATH, 'openstack_tasks/manifests/'):
+            rules.openstack_manifest_rule},
+        {os.path.join(M_PATH, 'openstack_tasks/examples/'):
+            rules.openstack_examples_rule},
+        {os.path.join(M_PATH, 'openstack_tasks/'):
+            rules.no_rule},
+        {M_PATH:
+            rules.common_rule},
+    ]
 
 
 class FuelLibraryModulesProvider(object):
 
-    PROJECT_ROOT_PATH = 'fuel-library'
-    MODULE_ROOT_PATH = 'deployment/puppet/'
-    OSNAILYFACTER_NAME = 'osnailyfacter'
-    OSNAILYFACTER_PATH = \
-        os.path.join(MODULE_ROOT_PATH, OSNAILYFACTER_NAME, 'modular/')
-    OSNAILYFACTER_ROLES_PATH = os.path.join(OSNAILYFACTER_PATH, 'roles/')
-    TASKS_YAML_PATH = os.path.join(OSNAILYFACTER_ROLES_PATH, 'tasks.yaml')
-    OPENSTACK_TASKS_PATH = os.path.join(MODULE_ROOT_PATH,
-                                        'openstack_tasks/manifests/')
-    OS_TASKS_YAML_PATH = os.path.join(MODULE_ROOT_PATH,
-                                      'openstack_tasks/tasks.yaml')
-    PUPPETFILE_PATH = 'deployment/Puppetfile'
-
-    def __init__(self, gerrit_review):
-        self.gerrit_review = gerrit_review
+    def __init__(self, review):
         self.changed_modules = {}
-        self._files_list = set()
-        self.dependency_provider = DependencyProvider(self.gerrit_review)
+        self.review = review
 
     @classmethod
     def from_environment_vars(cls, endpoint='https://review.openstack.org'):
@@ -58,190 +71,36 @@ class FuelLibraryModulesProvider(object):
                               patchset_num=settings.GERRIT_PATCHSET_NUMBER)
         return cls(review)
 
-    def get_changed_modules(self, dependency_lookup=True):
-        self._store_file_list()
-        self._find_modules_in_files()
-        self._find_modules_in_puppetfile_()
-        if dependency_lookup:
-            dependencies = self.dependency_provider.get_dependencies(
-                self.gerrit_review)
-            for dependency in dependencies:
-                self.gerrit_review.change_id = dependency.change_id
-                self.gerrit_review.patchset_num = str(dependency.patchset_num)
-                self._store_file_list()
-                self._find_modules_in_files()
-                self._find_modules_in_puppetfile_()
+    def get_changed_modules(self):
+        logger.debug('Review details: branch={0}, id={1}, patchset={2}'
+                     .format(self.review.branch,
+                             self.review.change_id,
+                             self.review.patchset_num))
+        files = self.review.get_files()
+        for _file in files:
+            self._apply_rule(review=self.review, _file=_file)
         return self.changed_modules
 
-    def _store_file_list(self):
-        r = self._request_file_list()
-        text = r.text
-        files = utils.filter_response_text(text)
-        logger.debug('Changed files list {}'.format(files))
-        self._files_list.update(set(filter(lambda x: x != '/COMMIT_MSG',
-                                           utils.json_to_dict(files).keys())))
-
-    @utils.check_status_code(200)
-    def _request_file_list(self):
-        return self.gerrit_review.list_files()
-
-    def _find_modules_in_files(self):
-        for f in self._files_list:
-            if f.startswith(FuelLibraryModulesProvider.MODULE_ROOT_PATH):
-                split_path = f.split('/')
-                module = split_path[-1]
-                logger.debug('Process next module {}'.format(module))
-                self._add_module_from_files(module, split_path)
-                self._add_module_from_osnailyfacter(f, split_path)
-                self._add_module_from_openstack_tasks(f, split_path)
-
-    def _add_module_from_files(self, module, split_path):
-        if module != FuelLibraryModulesProvider.OSNAILYFACTER_NAME:
-            module_path = os.path.join(
-                FuelLibraryModulesProvider.PROJECT_ROOT_PATH, *split_path[:3]
-            )
-            logger.debug('Add module {0} from files by  path {1}'.format(
-                module, module_path))
-            self._add_module(module, module_path)
-
-    def _add_module_from_openstack_tasks(self, filename, split_path):
-        if filename.startswith(
-                FuelLibraryModulesProvider.OPENSTACK_TASKS_PATH) \
-                and filename != FuelLibraryModulesProvider.OS_TASKS_YAML_PATH:
-            module = split_path[4]
-            module_path = os.path.join(
-                FuelLibraryModulesProvider.PROJECT_ROOT_PATH,
-                *split_path[0:-1])
-            logger.debug('Add module {0} from openstack_tasks '
-                         'by path {1}'.format(module, module_path))
-            self._add_module(module, module_path)
-
     def _add_module(self, module, module_path):
-        logger.debug('Changed modules are {}'.format(self.changed_modules))
+        logger.debug("Add module '{}' to changed modules".format(module))
         if module in self.changed_modules:
-            logger.debug('Add module {} to changed modules'.format(module))
             self.changed_modules[module].add(module_path)
         else:
             self.changed_modules[module] = {module_path}
-            logger.debug('Add module {} to changed modules'.format(module))
 
-    def _add_module_from_osnailyfacter(self, filename, split_path):
-        if filename.startswith(FuelLibraryModulesProvider.OSNAILYFACTER_PATH) \
-                and filename != FuelLibraryModulesProvider.TASKS_YAML_PATH:
-            module = split_path[4]
-            if module == 'roles':
-                module = 'roles/{}'.format(os.path.basename(filename))
-            module_path = os.path.join(
-                FuelLibraryModulesProvider.PROJECT_ROOT_PATH, *split_path[:5]
-            )
-            logger.debug('Add module {0} from osnailyfacter '
-                         'by path {1}'.format(module, module_path))
+    def _add_modules(self, modules):
+        for module, module_path in modules:
             self._add_module(module, module_path)
 
-    def _get_puppetfile_content_as_dict(self):
-        content_decoded = self._request_content(
-            FuelLibraryModulesProvider.PUPPETFILE_PATH
-        ).text
-        content = base64.b64decode(content_decoded)
-        return {num: line for num, line in enumerate(content.split('\n'), 1)}
-
-    @utils.check_status_code(200)
-    def _request_content(self, filename):
-        return self.gerrit_review.get_content(filename)
-
-    def _get_puppetfile_diff_as_dict(self):
-        diff_raw = self._request_diff(
-            FuelLibraryModulesProvider.PUPPETFILE_PATH
-        ).text
-        diff_filtered = utils.filter_response_text(diff_raw)
-        return utils.json_to_dict(diff_filtered)
-
-    @utils.check_status_code(200)
-    def _request_diff(self, filename):
-        return self.gerrit_review.get_diff(filename)
-
-    @staticmethod
-    def _get_lines_num_changed_from_diff(diff):
-        lines_changed = []
-        cursor = 1
-        for content in diff['content']:
-            diff_content = content.values()[0]
-            if 'ab' in content.keys():
-                cursor += len(diff_content)
-            if 'b' in content.keys():
-                lines_changed.extend(
-                    xrange(cursor, len(diff_content) + cursor))
-                cursor += len(diff_content)
-        return lines_changed
-
-    @staticmethod
-    def _get_modules_line_num_changed_from_content(lines, content):
-        modules_lines_changed = []
-        for num in lines:
-            index = num
-            if content[index] == '' or content[index].startswith('#'):
-                continue
-            while not content[index].startswith('mod'):
-                index -= 1
-            modules_lines_changed.append(index)
-        return modules_lines_changed
-
-    def _add_modules_from_lines_changed(self, lines, content):
-        pattern = re.compile(r"mod '([a-z]+)',")
-        for num in lines:
-            match = pattern.match(content[num])
-            if match:
-                module = match.group(1)
-                self._add_module(
-                    module,
-                    os.path.join(
-                        FuelLibraryModulesProvider.PROJECT_ROOT_PATH,
-                        FuelLibraryModulesProvider.PUPPETFILE_PATH
-                    )
-                )
-
-    def _find_modules_in_puppetfile_(self):
-        if FuelLibraryModulesProvider.PUPPETFILE_PATH in self._files_list:
-            content = self._get_puppetfile_content_as_dict()
-            diff = self._get_puppetfile_diff_as_dict()
-            diff_lines_changed = self._get_lines_num_changed_from_diff(diff)
-            mod_lines_changed = \
-                self._get_modules_line_num_changed_from_content(
-                    diff_lines_changed, content)
-            self._add_modules_from_lines_changed(mod_lines_changed, content)
-
-
-class DependencyProvider(object):
-
-    Dependency = namedtuple('Dependency', ['change_id', 'patchset_num'])
-
-    def __init__(self, review=None):
-        self.review = review
-        self.dependent_reviews = set()
-
-    @utils.check_status_code(200)
-    def _request_related_changes(self):
-        return self.review.get_related_changes()
-
-    def _get_dependencies_as_dict(self):
-        dependencies_raw = self._request_related_changes().text
-        dependencies_filtered = utils.filter_response_text(dependencies_raw)
-        return utils.json_to_dict(dependencies_filtered)
-
-    def _store_dependent_reviews(self, dependencies):
-        for dependency in dependencies['changes']:
-            if 'change_id' in dependency and \
-               '_current_revision_number' in dependency:
-                d = DependencyProvider.Dependency(
-                    change_id=dependency['change_id'],
-                    patchset_num=dependency['_current_revision_number']
-                )
-                if d.change_id != self.review.change_id:
-                    self.dependent_reviews.add(d)
-
-    def get_dependencies(self, review=None):
-        if review:
-            self.review = review
-        dependencies = self._get_dependencies_as_dict()
-        self._store_dependent_reviews(dependencies)
-        return self.dependent_reviews
+    def _apply_rule(self, review, _file):
+        for path_rule in TemplateMap.MAP:
+            tmpl, rule = next(iter(path_rule.items()))
+            if _file.startswith(tmpl):
+                logger.debug("Using '{0}' rule with '{1}' template "
+                             "for '{2}' filename".format(rule.__name__,
+                                                         tmpl,
+                                                         _file))
+                modules = rules.invoke_rule(review, _file, rule)
+                if modules:
+                    self._add_modules(modules)
+                return
