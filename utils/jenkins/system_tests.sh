@@ -398,6 +398,7 @@ RunTest() {
     export ENV_NAME
     export LOGS_DIR
     export ISO_PATH
+    export MASTER_NODE_EXTRA_PACKAGES=kmod-e1000
 
     if [ "${KEEP_BEFORE}" != "yes" ]; then
       # remove previous environment
