@@ -165,7 +165,8 @@ class EnvironmentModel(object):
             'nameserver': settings.DNS,
             'showmenu': 'yes' if settings.SHOW_FUELMENU else 'no',
             'wait_for_external_config': 'yes',
-            'build_images': '1' if build_images else '0'
+            'build_images': '1' if build_images else '0',
+            'MASTER_NODE_EXTRA_PACKAGES': settings.MASTER_NODE_EXTRA_PACKAGES
         }
         # TODO(akostrikov) add tests for menu items/kernel parameters
         # TODO(akostrikov) refactor it.
@@ -193,6 +194,7 @@ class EnvironmentModel(object):
             " showmenu=%(showmenu)s\n"
             " wait_for_external_config=%(wait_for_external_config)s"
             " build_images=%(build_images)s\n"
+            " MASTER_NODE_EXTRA_PACKAGES='%(MASTER_NODE_EXTRA_PACKAGES)s'\n"
             " <Enter>\n"
         ) % params
         return keys
