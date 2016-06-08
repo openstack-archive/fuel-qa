@@ -498,3 +498,32 @@ class SetupEnvironment(TestBasic):
                                  skip_timesync=True)
         self.env.make_snapshot("ready_with_9_slaves", is_make=True)
         self.current_log_step = 0
+
+    @test(depends_on=[prepare_release],
+          groups=["prepare_slaves_all"])
+    @log_snapshot_after_test
+    def prepare_slaves_all(self):
+        """Bootstrap all slave nodes
+
+        Scenario:
+            1. Revert snapshot "ready"
+            2. Start 9 slave nodes
+
+        Snapshot: ready_with_all_slaves
+
+        """
+        self.check_run("ready_with_all_slaves")
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot("ready", skip_timesync=True)
+
+        # Bootstrap by 5 slaves at the same time
+        self.show_step(2)
+        slaves = self.env.d_env.nodes().slaves[:]
+
+        while slaves:
+            slaves_to_bootstrap = slaves[:5]
+            self.env.bootstrap_nodes(slaves_to_bootstrap, skip_timesync=True)
+            del slaves[:5]
+
+        self.env.make_snapshot("ready_with_all_slaves", is_make=True)
+        self.current_log_step = 0
