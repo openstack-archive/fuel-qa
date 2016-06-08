@@ -96,7 +96,7 @@ deploy_ha_controller_neutron_example:
  - plugins
 
 deploy_heat_ha:
- - adhoc
+ - aodh
  - ceilometer
  - ceilometer_ha
  - heat
