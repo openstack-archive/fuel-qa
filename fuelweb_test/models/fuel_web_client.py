@@ -3115,11 +3115,11 @@ class FuelWebClient30(FuelWebClient29):
 
     @logwrap
     def update_nodes_interfaces(self, cluster_id, nailgun_nodes=None):
-        assigned_networks = {}
         nailgun_nodes = nailgun_nodes or []
         if not nailgun_nodes:
             nailgun_nodes = self.client.list_cluster_nodes(cluster_id)
         for node in nailgun_nodes:
+            assigned_networks = {}
             interfaces = self.client.get_node_interfaces(node['id'])
             interfaces = {iface['mac']: iface for iface in interfaces}
             d_node = self.get_devops_node_by_nailgun_node(node)
