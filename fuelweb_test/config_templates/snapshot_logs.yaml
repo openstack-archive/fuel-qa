@@ -703,7 +703,6 @@ master:
  remote:
   controller:
    acpid.log
-   admin.log
    anacron.log
    apache2_error.log
    attrd.log
@@ -755,7 +754,6 @@ master:
    logd.log
    lrmd.log
    macosx-prober.log
-   main.log
    mcollective.log
    microsoft.log
    mounted-tests.log
