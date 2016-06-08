@@ -15,16 +15,17 @@
 from proboscis import test
 
 from fuelweb_test import settings
-from fuelweb_test.helpers.fuel_actions import BaseActions
 from fuelweb_test.helpers import ironic_actions
 from fuelweb_test.helpers.checkers import verify_bootstrap_on_node
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.test_ironic_base import TestIronicDeploy
 
 from gates_tests.helpers import exceptions
-from gates_tests.helpers.utils import replace_rpm_package
 from gates_tests.helpers.utils import \
     check_package_version_injected_in_bootstraps
+from gates_tests.helpers.utils import replace_rpm_package
+from gates_tests.helpers.utils import update_bootstrap_cli_yaml
+
 
 
 @test(groups=["review_fuel_agent"])
@@ -34,18 +35,7 @@ class Gate(TestIronicDeploy):
     build environment images and provision one node"""
 
     @staticmethod
-    def update_bootstrap_cli_yaml():
-        actions = BaseActions()
-        path = "/etc/fuel-bootstrap-cli/fuel_bootstrap_cli.yaml"
-        element = ['repos']
-        new_repo = {'name': 'auxiliary', 'priority': "1200",
-                    'section': 'main restricted',
-                    'suite': 'auxiliary', 'type': 'deb',
-                    'uri': 'http://127.0.0.1:8080/ubuntu/auxiliary/'}
-        repos = actions.get_value_from_remote_yaml(path, element)
-        repos.append(new_repo)
 
-        actions.change_remote_yaml(path, element, repos)
 
     @test(depends_on_groups=['prepare_release'],
           groups=["review_fuel_agent_ironic_deploy"])
@@ -84,7 +74,7 @@ class Gate(TestIronicDeploy):
         replace_rpm_package('fuel-bootstrap-cli')
 
         self.show_step(3)
-        self.update_bootstrap_cli_yaml()
+        update_bootstrap_cli_yaml()
 
         self.show_step(4)
         if settings.UPDATE_FUEL:
