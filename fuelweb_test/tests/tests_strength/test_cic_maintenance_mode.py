@@ -321,7 +321,7 @@ class CICMaintenanceMode(TestBasic):
 
             _wait(lambda:
                   self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
-                  timeout=1500)
+                  timeout=3000)
             logger.debug("HA tests are pass now")
 
             try:
@@ -499,7 +499,7 @@ class CICMaintenanceMode(TestBasic):
 
             _wait(lambda:
                   self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
-                  timeout=1500)
+                  timeout=3000)
             logger.debug("HA tests are pass now")
 
             try:
