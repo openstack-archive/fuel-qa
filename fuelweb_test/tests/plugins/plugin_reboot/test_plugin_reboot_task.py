@@ -87,6 +87,12 @@ class RebootPlugin(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
+            settings={
+                'volumes_lvm': False,
+                'volumes_ceph': True,
+                'images_ceph': True,
+                'objects_ceph': True
+            }
         )
         # get plugins from fuel and enable our one
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
@@ -236,7 +242,7 @@ class RebootPlugin(TestBasic):
 
         self.fuel_web.update_nodes(
             cluster_id,
-            {'slave-01': ['controller', 'ceph-osd']}
+            {'slave-01': ['controller', 'cinder']}
         )
         self.show_step(7)
         self.fuel_web.provisioning_cluster_wait(cluster_id)
