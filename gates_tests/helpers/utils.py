@@ -19,7 +19,8 @@ from proboscis import register
 from proboscis.asserts import assert_equal
 from devops.helpers import helpers
 
-from fuelweb_test.helpers import checkers
+
+from fuelweb_test.helpers.fuel_actions import BaseActions
 from fuelweb_test.helpers.gerrit.gerrit_info_provider import \
     FuelLibraryModulesProvider
 from fuelweb_test.helpers.ssh_manager import SSHManager
@@ -279,77 +280,6 @@ def get_full_filename(wildcard_name):
     return full_pkg_name
 
 
-def inject_nailgun_agent_ubuntu_bootstrap(environment):
-    """Inject nailgun agent packet from review into ubuntu bootsrap
-    environment - Environment Model object - self.env
-    """
-    logger.info("Update nailgun-agent code and assemble new ubuntu bootstrap")
-    ssh = SSHManager()
-    if not settings.UPDATE_FUEL:
-        raise Exception("{} variable don't exist"
-                        .format(settings.UPDATE_FUEL))
-    pack_path = '/var/www/nailgun/nailgun-agent-review/'
-    # Step 1 - install squashfs-tools
-    cmd = "yum install -y squashfs-tools"
-    ssh.execute_on_remote(ip=ssh.admin_ip, cmd=cmd)
-
-    # Step 2 - unpack bootstrap
-    bootstrap = "/var/www/nailgun/bootstraps/active_bootstrap"
-    bootstrap_var = "/var/root.squashfs"
-
-    cmd = "unsquashfs -d /var/root.squashfs {}/root.squashfs".format(
-        bootstrap)
-    ssh.execute_on_remote(ip=ssh.admin_ip, cmd=cmd)
-
-    # Step 3 - replace nailgun-agent code in unpacked bootstrap
-    agent_path = "/usr/bin/nailgun-agent"
-    bootstrap_file = bootstrap + "/root.squashfs"
-    logger.info('bootsrap file {0}{1}'.format(bootstrap_var, agent_path))
-    old_sum = get_sha_sum('{0}{1}'.format(bootstrap_var, agent_path))
-    logger.info('Old sum is {0}'.format(old_sum))
-    cmd_etc_sync = ('rsync -r {1}etc/* {0}/etc/'.format(
-        bootstrap_var, pack_path))
-    ssh.execute_on_remote(ssh.admin_ip, cmd=cmd_etc_sync)
-    cmd = ("rsync -r {1}usr/* {0}/usr/;" "mv {2} "
-           "/var/root.squashfs.old;"
-           "").format(bootstrap_var, pack_path, bootstrap_file)
-    ssh.execute_on_remote(ip=ssh.admin_ip, cmd=cmd)
-    new_sum = get_sha_sum('{0}{1}'.format(bootstrap_var, agent_path))
-    logger.info('new sum is {0}'.format(new_sum))
-    assert_equal(new_sum != old_sum, True)
-
-    # Step 4 - assemble new bootstrap
-    compression = "-comp xz"
-    no_progress_bar = "-no-progress"
-    no_append = "-noappend"
-    image_rebuild = "mksquashfs {0} {1} {2} {3} {4}".format(
-        bootstrap_var,
-        bootstrap_file,
-        compression,
-        no_progress_bar,
-        no_append)
-    ssh.execute_on_remote(ip=ssh.admin_ip, cmd=image_rebuild)
-    checkers.check_file_exists(ssh.admin_ip, bootstrap_file)
-
-
-def upload_nailgun_agent_rpm():
-    """Upload nailgun_agent.rpm on master node
-    """
-    ssh = SSHManager()
-    logger.info("Upload nailgun-agent")
-    if not settings.UPDATE_FUEL:
-        raise exceptions.FuelQAVariableNotSet('UPDATE_FUEL', 'True')
-    pack_path = '/var/www/nailgun/nailgun-agent-review/'
-    ssh.upload_to_remote(
-        ip=ssh.admin_ip,
-        source=settings.UPDATE_FUEL_PATH.rstrip('/'),
-        target=pack_path)
-    # Extract rpm context
-    cmd = 'cd {0}; rpm2cpio {1} | cpio -idmv'.format(
-        pack_path, 'nailgun-agent-*.noarch.rpm ')
-    ssh.execute_on_remote(ssh.admin_ip, cmd)
-
-
 def get_sha_sum(file_path):
     logger.debug('Get md5 fo file {0}'.format(file_path))
     md5_sum = SSHManager().execute_on_remote(
@@ -494,3 +424,17 @@ def check_package_version_injected_in_bootstraps(
     ssh.execute_on_remote(
         ip=ssh.admin_ip,
         cmd=cmd)
+
+
+def update_bootstrap_cli_yaml():
+    actions = BaseActions()
+    path = "/etc/fuel-bootstrap-cli/fuel_bootstrap_cli.yaml"
+    element = ['repos']
+    new_repo = {'name': 'auxiliary', 'priority': "1200",
+                'section': 'main restricted',
+                'suite': 'auxiliary', 'type': 'deb',
+                'uri': 'http://127.0.0.1:8080/ubuntu/auxiliary/'}
+    repos = actions.get_value_from_remote_yaml(path, element)
+    repos.append(new_repo)
+
+    actions.change_remote_yaml(path, element, repos)
