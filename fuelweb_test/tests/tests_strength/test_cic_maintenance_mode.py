@@ -433,15 +433,12 @@ class CICMaintenanceMode(TestBasic):
                                 "Maintenance mode is not available")
             logger.info('Change UMM.CONF on node {0}'.format(devops_node.name))
 
-            command1 = ("echo -e 'UMM=yes\nREBOOT_COUNT=0\n"
+            command1 = ("echo -e 'UMM=no\nREBOOT_COUNT=0\n"
                         "COUNTER_RESET_TIME=10' > /etc/umm.conf")
             self.ssh_manager.execute_on_remote(
                 ip=_ip,
                 cmd=command1)
 
-            self.ssh_manager.execute_on_remote(
-                ip=_ip,
-                cmd="umm disable")
 
             asserts.assert_false('True' in checkers.check_available_mode(_ip),
                                  "Maintenance mode should not be available")
