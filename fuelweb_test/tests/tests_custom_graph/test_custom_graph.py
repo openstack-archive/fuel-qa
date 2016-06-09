@@ -523,9 +523,9 @@ class TestCustomGraph(TestBasic):
             8. Upload 'yaql_graph' tasks to release
             9. Run 'custom_graph' deployment.
             10. Run 'yaql_graph' deployment.
-            11. Verify that 'yaql_graph' tasks are not called on controller
-            12. Verify that 'yaql_graph' tasks are not called on compute
-            13. Verify that 'yaql_graph' tasks are not called on cinder
+            11. Verify that 'yaql_graph' tasks are called on controller
+            12. Verify that 'yaql_graph' tasks are called on compute
+            13. Verify that 'yaql_graph' tasks are called on cinder
             14. Create snapshot `two_custom_graphs_interfere`
 
         Duration 30m
@@ -605,35 +605,34 @@ class TestCustomGraph(TestBasic):
         # NOTE(akostrikov)
         # Verify that yaql tasks which uploaded with custom graph tasks are
         # not called at first run, because they are isolated in another graph
-        # and not called at second run because nodes are not added in such case
-        # and yaql expressions are preventing from running on already deployed
-        # nodes.
-        self.show_step(11)  # 'yaql_graph' tasks are not called on controller
+        # but are called at second run because current approach to check
+        # states of nodes exposes new state to the tasks.
+        self.show_step(11)  # 'yaql_graph' tasks are called on controller
         controller_node = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])[0]
         check_yaql_cmd = 'ls /tmp/yaql_task_on_all_nodes'
         self.ssh_manager.execute_on_remote(
             ip=controller_node['ip'],
             cmd=check_yaql_cmd,
-            assert_ec_equal=[2])
+            assert_ec_equal=[0])  # Explicit exit code for success
 
-        self.show_step(12)  # 'yaql_graph' tasks are not called on compute
+        self.show_step(12)  # 'yaql_graph' tasks are called on compute
         compute_node = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['compute'])[0]
         check_yaql_cmd = 'ls /tmp/yaql_task_on_all_nodes'
         self.ssh_manager.execute_on_remote(
             ip=compute_node['ip'],
             cmd=check_yaql_cmd,
-            assert_ec_equal=[2])
+            assert_ec_equal=[0])  # Explicit exit code for success
 
-        self.show_step(13)  # 'yaql_graph' tasks are not called on cinder
+        self.show_step(13)  # 'yaql_graph' tasks are called on cinder
         cinder_node = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['cinder'])[0]
         check_yaql_cmd = 'ls /tmp/yaql_task_on_all_nodes'
         self.ssh_manager.execute_on_remote(
             ip=cinder_node['ip'],
             cmd=check_yaql_cmd,
-            assert_ec_equal=[2])
+            assert_ec_equal=[0])  # Explicit exit code for success
 
         self.show_step(14)  # Create snapshot `two_custom_graphs_interfere`
         self.env.make_snapshot('two_custom_graphs_interfere')
