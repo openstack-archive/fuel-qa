@@ -31,10 +31,10 @@ OSTF_TEST_MAPPING = {
                                       'TestMysqlReplication.'
                                       'test_state_of_galera_cluster',
     'Check RabbitMQ is available': 'fuel_health.tests.ha.'
-                                   'test_rabbit.RabbitSmokeTest.'
+                                   'test_rabbit.RabbitSanityTest.'
                                    'test_001_rabbitmqctl_status',
     'RabbitMQ availability': 'fuel_health.tests.ha.test_rabbit.'
-                             'RabbitSmokeTest.'
+                             'RabbitSanityTest.'
                              'test_002_rabbitmqctl_status_ubuntu',
     'List ceilometer availability': 'fuel_health.tests.sanity.'
                                     'test_sanity_ceilometer.'
