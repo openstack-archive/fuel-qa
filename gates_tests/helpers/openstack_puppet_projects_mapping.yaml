@@ -1,0 +1,28 @@
+bvt_2:
+ - openstack/puppet-ceph
+ - openstack/puppet-glance
+ - openstack/puppet-horizon
+ - openstack/puppet-keystone
+ - openstack/puppet-keystone
+ - openstack/puppet-neutron
+ - openstack/puppet-nova
+ - openstack/puppet-openstacklib
+ - openstack/puppet-oslo
+
+neutron_vlan_ha:
+ - openstack/puppet-cinder
+ - openstack/puppet-swift
+
+deploy_sahara_ha_tun:
+ - openstack/puppet-sahara
+
+deploy_murano_ha_with_tun:
+ - openstack/puppet-murano
+
+ironic_deploy_ceph:
+ - openstack/puppet-ironic
+
+deploy_heat_ha:
+ - openstack/puppet-aodh
+ - openstack/puppet-ceilometer
+ - openstack/puppet-heat
