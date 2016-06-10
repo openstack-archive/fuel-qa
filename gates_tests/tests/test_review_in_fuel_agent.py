@@ -124,13 +124,11 @@ class Gate(TestIronicDeploy):
         self.show_step(12)
         self.show_step(13)
         self._create_os_resources(ironic_conn)
-        # TODO (tleontovich) uncomment steps 14-15
-        # as soon as LP1576881 become fixed
-        # self.show_step(14)
-        # self._boot_nova_instances(ironic_conn)
-        #
-        # self.show_step(15)
-        # ironic_conn.wait_for_vms(ironic_conn)
-        # ironic_conn.verify_vms_connection(ironic_conn)
+        self.show_step(14)
+        self._boot_nova_instances(ironic_conn)
+
+        self.show_step(15)
+        ironic_conn.wait_for_vms(ironic_conn)
+        ironic_conn.verify_vms_connection(ironic_conn)
 
         self.env.make_snapshot("review_fuel_agent_ironic_deploy")
