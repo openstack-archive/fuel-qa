@@ -133,7 +133,7 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
         self.env.revert_snapshot("ready_with_9_slaves")
 
         node_ids = sorted([node['id'] for node in
-                           self.fuel_web.client.list_nodes()])
+                           self.fuel_web.client.list_nodes()[0:8]])
 
         release_id = self.fuel_web.get_releases_list_for_os(
             release_name=OPENSTACK_RELEASE)[0]
