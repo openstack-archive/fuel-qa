@@ -861,7 +861,16 @@ class UntaggedNetworksNegative(TestBasic):
 
         # deploy cluster:
         task = self.fuel_web.deploy_cluster(cluster_id)
-        self.fuel_web.assert_task_failed(task)
+        self.fuel_web.assert_task_success(task)
+        try:
+            self.fuel_web.check_cluster_status(cluster_id=cluster_id,
+                                               allow_partially_deploy=False)
+        except AssertionError:
+            pass
+        else:
+            logger.error(
+                "Cluster status is not Partially Deployed, but it should")
+            raise Exception()
 
 
 @test(groups=["thread_usb"])
