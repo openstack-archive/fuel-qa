@@ -244,7 +244,16 @@ class RebootPlugin(TestBasic):
         self.show_step(8)
         task = self.fuel_web.client.deploy_nodes(cluster_id)
         self.show_step(9)
-        self.fuel_web.assert_task_failed(task)
+        self.fuel_web.assert_task_success(task)
+        try:
+            self.fuel_web.check_cluster_status(cluster_id=cluster_id,
+                                               allow_partially_deploy=False)
+        except AssertionError:
+            pass
+        else:
+            logger.error(
+                "Cluster status is not Partially Deployed, but it should")
+            raise
 
         msg = 'Time detection (1 sec) for node reboot has expired'
         cmd = 'grep "{0}" /var/log/astute/astute.log'.format(msg)
