@@ -208,7 +208,7 @@ class ExamplePlugin(TestBasic):
         # between netconfig and connectivity_tests
         netconfig_str = 'MODULAR: netconfig/netconfig.pp'
         plugin_str = 'PLUGIN: fuel_plugin_example_v3 - deploy.pp'
-        connect_str = 'MODULAR: connectivity_tests.pp'
+        connect_str = 'MODULAR: netconfig/connectivity_tests.pp'
         checkers.check_log_lines_order(
             ip=slave1['ip'],
             log_file_path='/var/log/puppet.log',
