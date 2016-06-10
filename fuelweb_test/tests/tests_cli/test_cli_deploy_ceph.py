@@ -24,7 +24,7 @@ from fuelweb_test.tests import test_cli_base
 class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
     """CommandLineAcceptanceCephDeploymentTests."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_release],
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["cli_deploy_ceph_neutron_tun"])
     @log_snapshot_after_test
     def cli_deploy_ceph_neutron_tun(self):
@@ -48,11 +48,8 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
         """
         self.env.revert_snapshot("ready")
 
-        self.env.bootstrap_nodes(
-            self.env.d_env.nodes().slaves[:7])
-
         node_ids = sorted([node['id'] for node in
-                           self.fuel_web.client.list_nodes()])
+                           self.fuel_web.client.list_nodes()[0:7]])
         release_id = self.fuel_web.get_releases_list_for_os(
             release_name=OPENSTACK_RELEASE)[0]
 
@@ -133,7 +130,7 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
         self.env.revert_snapshot("ready_with_9_slaves")
 
         node_ids = sorted([node['id'] for node in
-                           self.fuel_web.client.list_nodes()])
+                           self.fuel_web.client.list_nodes()[0:8]])
 
         release_id = self.fuel_web.get_releases_list_for_os(
             release_name=OPENSTACK_RELEASE)[0]
