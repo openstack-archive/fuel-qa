@@ -21,6 +21,11 @@ Cloud-image
 .. automodule:: fuelweb_test.helpers.cloud_image
    :members:
 
+CIC Maintenance Mode
+--------------------
+.. automodule:: fuelweb_test.helpers.cic_maintenance_mode
+   :members:
+
 Common
 ------
 .. automodule:: fuelweb_test.helpers.common

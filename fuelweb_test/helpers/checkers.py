@@ -16,10 +16,10 @@ from __future__ import division
 
 import hashlib
 import json
-import os
-import re
 from time import sleep
 
+import os
+import re
 from devops.error import TimeoutError
 from devops.helpers.helpers import _wait
 from devops.helpers.helpers import wait
@@ -28,6 +28,7 @@ from netaddr import IPNetwork
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
+
 # pylint: disable=import-error
 from six.moves.urllib.error import HTTPError
 from six.moves.urllib.error import URLError
@@ -966,24 +967,6 @@ def check_neutron_dhcp_lease(ip, instance_ip, instance_mac,
 
     logger.debug("DHCP server answer: {}".format(lease))
     return ' ack ' in lease
-
-
-def check_available_mode(ip):
-    command = ('umm status | grep runlevel &>/dev/null && echo "True" '
-               '|| echo "False"')
-    if ssh_manager.execute(ip, command)['exit_code'] == 0:
-        return ''.join(ssh_manager.execute(ip, command)['stdout']).strip()
-    else:
-        return ''.join(ssh_manager.execute(ip, command)['stderr']).strip()
-
-
-def check_auto_mode(ip):
-    command = ('umm status | grep umm &>/dev/null && echo "True" '
-               '|| echo "False"')
-    if ssh_manager.execute(ip, command)['exit_code'] == 0:
-        return ''.join(ssh_manager.execute(ip, command)['stdout']).strip()
-    else:
-        return ''.join(ssh_manager.execute(ip, command)['stderr']).strip()
 
 
 def is_ntpd_active(ip, ntpd_ip):

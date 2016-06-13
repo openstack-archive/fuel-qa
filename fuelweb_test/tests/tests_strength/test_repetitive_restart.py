@@ -23,6 +23,7 @@ from six.moves import xrange
 from fuelweb_test import logger
 from fuelweb_test import ostf_test_mapping
 from fuelweb_test import settings
+from fuelweb_test.helpers.cic_maintenance_mode import change_config
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.decorators import setup_teardown
 from fuelweb_test.helpers.rally import RallyBenchmarkTest
@@ -55,12 +56,13 @@ class RepetitiveRestart(TestLoadBase):
             4. Run ostf
             5. Fill ceph partitions on all nodes up to 30%
             6. Check Ceph status
-            7. Run RALLY
-            8. 100 times repetitive reboot:
-            9. Cold restart of all nodes
-            10. Wait for HA services ready
-            11. Wait until MySQL Galera is UP on some controller
-            12. Run ostf
+            7. Disable UMM
+            8. Run RALLY
+            9. 100 times repetitive reboot:
+            10. Cold restart of all nodes
+            11. Wait for HA services ready
+            12. Wait until MySQL Galera is UP on some controller
+            13. Run ostf
 
         Duration 1700m
         Snapshot ceph_partitions_repetitive_cold_restart
@@ -94,6 +96,11 @@ class RepetitiveRestart(TestLoadBase):
         self.fuel_web.check_ceph_status(cluster_id)
 
         self.show_step(7)
+
+        for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
+            change_config(node['ip'], umm=False)
+
+        self.show_step(8)
         assert_true(settings.PATCHING_RUN_RALLY,
                     'PATCHING_RUN_RALLY was not set in true')
         rally_benchmarks = {}
@@ -108,9 +115,9 @@ class RepetitiveRestart(TestLoadBase):
             benchmark_results[tag] = rally_benchmarks[tag].run()
             logger.debug(benchmark_results[tag].show())
 
-        self.show_step(8)
+        self.show_step(9)
         for i in xrange(settings.RESTART_COUNT):
-            self.show_step(9, 'number {}'.format(i + 1), initialize=True)
+            self.show_step(10, 'number {}'.format(i + 1), initialize=True)
             self.fuel_web.cold_restart_nodes(
                 self.env.d_env.get_nodes(name__in=[
                     'slave-01',
@@ -119,12 +126,12 @@ class RepetitiveRestart(TestLoadBase):
                     'slave-04',
                     'slave-05']))
 
-            self.show_step(10)
+            self.show_step(11)
             self.fuel_web.assert_ha_services_ready(cluster_id)
 
             self.fuel_web.assert_os_services_ready(cluster_id)
 
-            self.show_step(11)
+            self.show_step(12)
             self.fuel_web.wait_mysql_galera_is_up([primary_controller.name])
 
             try:
@@ -141,7 +148,7 @@ class RepetitiveRestart(TestLoadBase):
                     cluster_id, test_sets=['smoke'],
                     test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
                         'Create volume and attach it to instance'))
-            self.show_step(12)
+            self.show_step(13)
             # LB 1519018
             self.fuel_web.run_ostf(cluster_id=cluster_id)
             self.env.make_snapshot("ceph_partitions_repetitive_cold_restart")
