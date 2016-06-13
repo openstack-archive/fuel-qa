@@ -20,6 +20,9 @@ from proboscis import test
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers.cic_maintenance_mode import change_config
+from fuelweb_test.helpers.cic_maintenance_mode import check_auto_mode
+from fuelweb_test.helpers.cic_maintenance_mode import check_available_mode
 from fuelweb_test import logger
 from fuelweb_test import ostf_test_mapping
 from fuelweb_test import settings
@@ -105,7 +108,7 @@ class CICMaintenanceMode(TestBasic):
         _ip = regular_ctrl['ip']
         _id = regular_ctrl['id']
         logger.info('Maintenance mode for node-{0}'.format(_id))
-        asserts.assert_true('True' in checkers.check_available_mode(_ip),
+        asserts.assert_true('True' in check_available_mode(_ip),
                             "Maintenance mode is not available")
         self.ssh_manager.execute_on_remote(
             ip=_ip,
@@ -130,7 +133,7 @@ class CICMaintenanceMode(TestBasic):
             "Host {0} is not reachable by ping during 600 sec"
             .format(_ip))
 
-        asserts.assert_true('True' in checkers.check_auto_mode(_ip),
+        asserts.assert_true('True' in check_auto_mode(_ip),
                             "Maintenance mode is not switched on")
 
         self.ssh_manager.execute_on_remote(
@@ -208,15 +211,10 @@ class CICMaintenanceMode(TestBasic):
         _ip = regular_ctrl['ip']
         _id = regular_ctrl['id']
 
-        asserts.assert_true('True' in checkers.check_available_mode(_ip),
+        asserts.assert_true('True' in check_available_mode(_ip),
                             "Maintenance mode is not available")
 
-        command1 = ("echo -e 'UMM=yes\nREBOOT_COUNT=0\n"
-                    "COUNTER_RESET_TIME=10' > /etc/umm.conf")
-
-        self.ssh_manager.execute_on_remote(
-            ip=_ip,
-            cmd=command1)
+        change_config(_ip, reboot_count=0)
 
         logger.info('Change UMM.CONF on node-{0}'
                     .format(_id))
@@ -224,11 +222,11 @@ class CICMaintenanceMode(TestBasic):
         logger.info('Unexpected reboot on node-{0}'
                     .format(_id))
 
-        command2 = 'reboot --force >/dev/null & '
+        command = 'reboot --force >/dev/null & '
 
         self.ssh_manager.execute_on_remote(
             ip=_ip,
-            cmd=command2)
+            cmd=command)
 
         wait(lambda:
              not checkers.check_ping(self.env.get_admin_node_ip(),
@@ -253,7 +251,7 @@ class CICMaintenanceMode(TestBasic):
             "Host {0} is not reachable by ping during 600 sec"
             .format(_ip))
 
-        asserts.assert_true('True' in checkers.check_auto_mode(_ip),
+        asserts.assert_true('True' in check_auto_mode(_ip),
                             "Maintenance mode is not switched on")
 
         logger.info('turn off Maintenance mode')
@@ -261,12 +259,8 @@ class CICMaintenanceMode(TestBasic):
             ip=_ip,
             cmd="umm off")
         time.sleep(30)
-        command3 = ("echo -e 'UMM=yes\nREBOOT_COUNT=2\n"
-                    "COUNTER_RESET_TIME=10' > /etc/umm.conf")
 
-        self.ssh_manager.execute_on_remote(
-            ip=_ip,
-            cmd=command3)
+        change_config(_ip)
 
         logger.info('Wait a node-{0} online status'
                     .format(_id))
@@ -341,13 +335,13 @@ class CICMaintenanceMode(TestBasic):
         _ip = regular_ctrl['ip']
         _id = regular_ctrl['id']
 
-        asserts.assert_true('True' in checkers.check_available_mode(_ip),
+        asserts.assert_true('True' in check_available_mode(_ip),
                             "Maintenance mode is not available")
         self.ssh_manager.execute_on_remote(
             ip=_ip,
             cmd="umm disable")
 
-        asserts.assert_false('True' in checkers.check_available_mode(_ip),
+        asserts.assert_false('True' in check_available_mode(_ip),
                              "Maintenance mode should not be available")
 
         logger.info('Try to execute maintenance mode '
@@ -406,27 +400,23 @@ class CICMaintenanceMode(TestBasic):
         _ip = regular_ctrl['ip']
         _id = regular_ctrl['id']
 
-        asserts.assert_true('True' in checkers.check_available_mode(_ip),
+        asserts.assert_true('True' in check_available_mode(_ip),
                             "Maintenance mode is not available")
         logger.info('Disable UMM  on node-{0}'.format(_id))
 
-        command1 = ("echo -e 'UMM=no\nREBOOT_COUNT=0\n"
-                    "COUNTER_RESET_TIME=10' > /etc/umm.conf")
-        self.ssh_manager.execute_on_remote(
-            ip=_ip,
-            cmd=command1)
+        change_config(_ip, umm=False, reboot_count=0)
 
-        asserts.assert_false('True' in checkers.check_available_mode(_ip),
+        asserts.assert_false('True' in check_available_mode(_ip),
                              "Maintenance mode should not be available")
 
-        command2 = 'reboot --force >/dev/null & '
+        command = 'reboot --force >/dev/null & '
 
         logger.info('Unexpected reboot on node-{0}'
                     .format(_id))
 
         self.ssh_manager.execute_on_remote(
             ip=_ip,
-            cmd=command2)
+            cmd=command)
 
         wait(lambda:
              not checkers.check_ping(self.env.get_admin_node_ip(),
@@ -451,7 +441,7 @@ class CICMaintenanceMode(TestBasic):
         logger.info('Check that node-{0} not in maintenance mode after'
                     ' unexpected reboot'.format(_id))
 
-        asserts.assert_false('True' in checkers.check_auto_mode(_ip),
+        asserts.assert_false('True' in check_auto_mode(_ip),
                              "Maintenance mode should not switched")
 
         # Wait until MySQL Galera is UP on some controller

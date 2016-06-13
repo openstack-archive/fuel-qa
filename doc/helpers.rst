@@ -16,6 +16,11 @@ Checkers
 .. automodule:: fuelweb_test.helpers.checkers
    :members:
 
+CIC Maintenance Mode
+--------------------
+.. automodule:: fuelweb_test.helpers.cic_maintenance_mode
+   :members:
+
 Cloud Image
 -----------
 .. automodule:: fuelweb_test.helpers.cloud_image
