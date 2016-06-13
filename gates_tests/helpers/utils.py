@@ -289,7 +289,7 @@ def get_sha_sum(file_path):
     return md5_sum
 
 
-def puppet_modules_mapping(modules):
+def fuel_library_modules_mapping(modules):
     """
     find fuel-qa system test which have maximum coverage for edited
     puppet modules and register that group with "review_in_fuel_library" name
@@ -298,7 +298,8 @@ def puppet_modules_mapping(modules):
     """
 
     # open yaml with covered modules
-    with open("gates_tests/helpers/puppet_module_mapping.yaml", "r") as f:
+    with open(
+            "gates_tests/helpers/fuel_library_modules_mapping.yaml", "r") as f:
         mapping = yaml.load(f)
 
     if modules and isinstance(modules, dict):
@@ -317,7 +318,6 @@ def puppet_modules_mapping(modules):
                     .format(module, modules[module]))
 
         # find test group which has better coverage of modules from review
-        formatted_modules = [module.split('.')[0] for module in modules]
         system_test = "bvt_2"
         max_intersection = 0
         if not ("ceph" in modules and
@@ -325,7 +325,7 @@ def puppet_modules_mapping(modules):
                 set(modules)):
             for test in mapping:
                 test_intersection = len(
-                    set(mapping[test]).intersection(set(formatted_modules)))
+                    set(mapping[test]).intersection(set(modules)))
                 if test_intersection > max_intersection:
                     max_intersection = test_intersection
                     system_test = test
@@ -349,6 +349,50 @@ def puppet_modules_mapping(modules):
              depends_on_groups=[system_test])
 
 
+def openstack_puppet_project_mapping(project):
+    """
+    find fuel-qa system test which have maximum coverage for edited
+    openstack/puppet-project and register that group with
+    "review_in_openstack_puppet_project" name
+    project -  puppet project edited in review
+    Example: project = "openstack/puppet-openstacklib"
+    """
+
+    # open yaml with covered projects
+    with open(
+            "gates_tests/helpers/openstack_puppet_projects_mapping.yaml",
+            "r") as f:
+        mapping = yaml.load(f)
+
+        all_projects = set([j for i in mapping.values() for j in i])
+        logger.debug(
+            "List of openstack/puppet-projects "
+            "covered by system_tests {}".format(
+                all_projects))
+        logger.info(
+            "Edited project in review - '{}'".format(project))
+
+        # checking that project from review covered by system_test
+        if project not in all_projects:
+            logger.warning(
+                "{} project not exist or not covered by system_test"
+                .format(project))
+
+        # find test group which cover project edited in review
+        system_test = "bvt_2"
+        for test in mapping:
+            if project in mapping[test]:
+                system_test = test
+                break
+        logger.info(
+            "Edited project in review - '{}'"
+            " will be checked by next system test: {}".format(
+                project, system_test))
+
+        register(groups=['review_in_openstack_puppet_project'],
+                 depends_on_groups=[system_test])
+
+
 def map_test_review_in_fuel_library(**kwargs):
     groups = kwargs.get('run_groups', [])
     old_groups = kwargs.get('groups', None)
@@ -359,7 +403,19 @@ def map_test_review_in_fuel_library(**kwargs):
             modules = mp.get_changed_modules()
         else:
             modules = dict()
-        puppet_modules_mapping(modules)
+        fuel_library_modules_mapping(modules)
+
+
+def map_test_review_in_openstack_puppet_projects(**kwargs):
+    groups = kwargs.get('run_groups', [])
+    old_groups = kwargs.get('groups', None)
+    groups.extend(old_groups or [])
+    if 'review_in_openstack_puppet_project' in groups:
+        if settings.GERRIT_PROJECT:
+            project = settings.GERRIT_PROJECT
+        else:
+            project = str()
+        openstack_puppet_project_mapping(project)
 
 
 def check_package_version_injected_in_bootstraps(
