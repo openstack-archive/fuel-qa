@@ -72,7 +72,7 @@ class RebootPlugin(TestBasic):
         # replace plugin tasks with our file
         fpb.fpb_replace_plugin_content(
             os.path.join(tasks_path, tasks_file),
-            os.path.join(source_plugin_path, 'tasks.yaml'))
+            os.path.join(source_plugin_path, 'deployment_tasks.yaml'))
         # build plugin
         self.show_step(4)
         packet_name = fpb.fpb_build_plugin(source_plugin_path)
@@ -128,8 +128,11 @@ class RebootPlugin(TestBasic):
             logger.debug(
                 "Get init object creation time from node {0}".format(node))
             cmd = 'stat --printf=\'%Y\' /proc/1'
-            with self.fuel_web.get_ssh_for_node(node) as node_ssh:
-                old_timestamps[node] = node_ssh.execute(cmd)['stdout'][0]
+            old_timestamps[node] = int(
+                self.ssh_manager.execute_on_remote(
+                    ip=self.fuel_web.get_node_ip_by_devops_name(node),
+                    cmd=cmd)['stdout_str']
+            )
 
         # start deploying nodes
         # here nodes with controller and ceph roles should be rebooted
@@ -142,8 +145,11 @@ class RebootPlugin(TestBasic):
             logger.debug(
                 "Get init object creation time from node {0}".format(node))
             cmd = 'stat --printf=\'%Y\' /proc/1'
-            with self.fuel_web.get_ssh_for_node(node) as node_ssh:
-                new_timestamp = node_ssh.execute(cmd)['stdout'][0]
+            new_timestamp = int(
+                self.ssh_manager.execute_on_remote(
+                    ip=self.fuel_web.get_node_ip_by_devops_name(node),
+                    cmd=cmd)['stdout_str']
+            )
             # compute node without ceph role shouldn't reboot
             if not nodes[node]:
                 asserts.assert_equal(
@@ -178,8 +184,7 @@ class RebootPlugin(TestBasic):
             6. Create cluster and enable plugin
             7. Provision nodes
             8. Deploy cluster
-            9. Check deployment was failed by reboot task
-            10. Check error msg at the logs
+            9. Check error msg at the logs
 
         Duration 15m
         """
@@ -210,7 +215,7 @@ class RebootPlugin(TestBasic):
         # replace plugin tasks with our file
         fpb.fpb_replace_plugin_content(
             os.path.join('/tmp/', tasks_file),
-            os.path.join(source_plugin_path, 'tasks.yaml'))
+            os.path.join(source_plugin_path, 'deployment_tasks.yaml'))
         # build plugin
         self.show_step(4)
         packet_name = fpb.fpb_build_plugin(source_plugin_path)
@@ -248,9 +253,7 @@ class RebootPlugin(TestBasic):
         self.fuel_web.provisioning_cluster_wait(cluster_id)
         logger.info('Start cluster #%s deployment', cluster_id)
         self.show_step(8)
-        task = self.fuel_web.client.deploy_nodes(cluster_id)
-        self.show_step(9)
-        self.fuel_web.assert_task_failed(task)
+        self.fuel_web.deploy_cluster_wait_progress(cluster_id, 30)
 
         msg = 'Time detection (1 sec) for node reboot has expired'
         cmd = 'grep "{0}" /var/log/astute/astute.log'.format(msg)
