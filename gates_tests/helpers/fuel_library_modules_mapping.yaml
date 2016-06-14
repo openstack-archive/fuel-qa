@@ -54,9 +54,11 @@ bvt_2:
  - openssl
  - openstack
  - openstack-controller
+ - openstack_controller
  - openstack-haproxy
  - openstack_haproxy
  - openstack-network
+ - openstack_network
  - openstacklib
  - pacemaker
  - pacemaker_wrappers
@@ -131,6 +133,7 @@ ironic_deploy_ceph:
  - ironic
  - ironic-conductor
  - roles/ironic-conductor
+ - roles/ironic_conductor
 
 deploy_murano_ha_with_tun:
  - murano
