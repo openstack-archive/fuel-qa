@@ -189,7 +189,7 @@ class Manager(Basic):
         if 'devops_settings' in config['template']:
             self._devops_config = config
 
-    def get_ready_setup(self):
+    def get_ready_setup(self, centos=settings.CENTOS_MASTER_NODE):
         """Create virtual environment and install Fuel master node."""
 
         logger.info("Getting ready setup")
@@ -197,15 +197,29 @@ class Manager(Basic):
             self.env.revert_snapshot("empty")
             return True
         else:
-            with TimeStat("setup_environment", is_uniq=True):
-                self.env.setup_environment()
-                self.fuel_post_install_actions()
+            if centos:
+                with TimeStat("centos_setup_environment", is_uniq=True):
+                    admin = self.env.d_env.nodes().admin
+                    self.env.d_env.start([admin])
+                    hostname = ''.join((settings.FUEL_MASTER_HOSTNAME,
+                                        settings.DNS_SUFFIX))
+                    self.centos_setup_fuel(hostname)
+                    self.fuel_post_install_actions(
+                        force_ssl=settings.FORCE_HTTPS_MASTER_NODE)
 
-            self.env.make_snapshot("empty", is_make=True)
-            self.env.resume_environment()
-            return True
+                self.env.make_snapshot("empty", is_make=True)
+                self.env.resume_environment()
+                return True
+            else:
+                with TimeStat("setup_environment", is_uniq=True):
+                    self.env.setup_environment()
+                    self.fuel_post_install_actions()
 
-    def get_ready_release(self):
+                self.env.make_snapshot("empty", is_make=True)
+                self.env.resume_environment()
+                return True
+
+    def get_ready_release(self, centos=settings.CENTOS_MASTER_NODE):
         """Make changes in release configuration."""
 
         logger.info("Getting ready relase")
@@ -213,7 +227,7 @@ class Manager(Basic):
             self.env.revert_snapshot("ready")
             logger.info("Getted ready release from snapshot")
             return True
-        elif self.get_ready_setup():
+        elif self.get_ready_setup(centos):
             self.fuel_web.get_nailgun_version()
             self.fuel_web.change_default_network_settings()
 

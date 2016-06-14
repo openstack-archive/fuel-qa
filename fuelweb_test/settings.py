@@ -710,3 +710,5 @@ FUEL_RELEASE_PATH = os.environ.get("FUEL_RELEASE_PATH")
 S3_API_CLIENT = os.environ.get("S3_API_CLIENT", "s3cmd")
 
 MASTER_NODE_EXTRA_PACKAGES = os.environ.get("MASTER_NODE_EXTRA_PACKAGES", "")
+
+CENTOS_MASTER_NODE = os.environ.get("CENTOS_MASTER")
