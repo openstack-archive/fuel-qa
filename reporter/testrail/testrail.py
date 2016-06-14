@@ -32,7 +32,7 @@ import requests
 from requests.exceptions import HTTPError
 from requests.packages.urllib3 import disable_warnings
 
-from fuelweb_test.testrail.settings import logger
+from reporter.testrail.settings import logger
 
 
 disable_warnings()
