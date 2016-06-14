@@ -24,6 +24,7 @@ from fuelweb_test.helpers.ssl import change_cluster_ssl_config
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logwrap
 from fuelweb_test import logger
+from fuelweb_test.settings import iface_alias
 from fuelweb_test.settings import SSL_CN
 
 
@@ -180,3 +181,53 @@ class CommandLine(TestBasic):
             settings['editable']['storage']['objects_ceph'][
                 'value'] = True
         self.upload_settings(cluster_id, remote, settings)
+
+    @logwrap
+    def download_node_interfaces(self, node_id):
+        cmd = ' fuel node --node-id {} --network --download --dir' \
+              ' /tmp --json'.format(node_id)
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd
+        )
+        out = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='cd /tmp && cat node_{}/interfaces.json'.format(node_id),
+            jsonify=True
+        )['stdout_json']
+        return out
+
+    def upload_node_interfaces(self, node_id, interfaces):
+        data = json.dumps(interfaces)
+        cmd = 'cd /tmp && echo {data} > node_{id}/interfaces.json'.format(
+            data=json.dumps(data),
+            id=node_id)
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd
+        )
+        cmd = ('fuel node --node-id {} --network --upload --dir /tmp'
+               ' --json'.format(node_id))
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd
+        )
+
+    @logwrap
+    def update_node_interfaces(self, node_id):
+        interfaces = self.download_node_interfaces(node_id)
+        logger.debug("interfaces we get {}".format(interfaces))
+        assigned_networks = {
+            iface_alias('eth0'): [{'id': 1, 'name': 'fuelweb_admin'}],
+            iface_alias('eth1'): [{'id': 2, 'name': 'public'}],
+            iface_alias('eth2'): [{'id': 3, 'name': 'management'}],
+            iface_alias('eth3'): [{'id': 5, 'name': 'private'}],
+            iface_alias('eth4'): [{'id': 4, 'name': 'storage'}],
+        }
+        for interface in interfaces:
+            name = interface['name']
+            net_to_assign = assigned_networks.get(name, None)
+            if net_to_assign:
+                interface['assigned_networks'] = net_to_assign
+        logger.debug("interfaces after update {}".format(interfaces))
+        self.upload_node_interfaces(node_id, interfaces)

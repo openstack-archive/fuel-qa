@@ -139,6 +139,7 @@ class CommandLineTest(test_cli_base.CommandLine):
             cmd = ('fuel --env-id={0} node set --node {1} --role=controller'
                    .format(cluster_id, node_ids[0]))
             remote.execute(cmd)
+            self.update_node_interfaces(node_ids[0])
             cmd = ('fuel --env-id={0} node --provision --node={1} --json'
                    .format(cluster_id, node_ids[0]))
             task = run_on_remote(remote, cmd, jsonify=True)
@@ -152,6 +153,8 @@ class CommandLineTest(test_cli_base.CommandLine):
                    '--role=compute,cinder'.format(cluster_id,
                                                   node_ids[1], node_ids[2]))
             remote.execute(cmd)
+            for node_id in (node_ids[1], node_ids[2]):
+                self.update_node_interfaces(node_id)
             cmd = ('fuel --env-id={0} node --provision --node={1},{2} --json'
                    .format(cluster_id, node_ids[1], node_ids[2]))
             task = run_on_remote(remote, cmd, jsonify=True)
@@ -169,9 +172,11 @@ class CommandLineTest(test_cli_base.CommandLine):
             task = run_on_remote(remote, cmd, jsonify=True)
             self.assert_cli_task_success(task, remote, timeout=30 * 60)
 
+            self.fuel_web.assert_os_services_ready(cluster_id)
+            self.fuel_web.assert_ha_services_ready(cluster_id)
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
-                test_sets=['ha', 'smoke', 'sanity'])
+                test_sets=['smoke'])
 
             self.env.make_snapshot("cli_selected_nodes_deploy", is_make=True)
 
