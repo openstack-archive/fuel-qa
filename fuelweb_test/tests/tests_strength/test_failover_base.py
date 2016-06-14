@@ -1272,7 +1272,7 @@ class TestHaFailoverBase(TestBasic):
 
         def count_run_rabbit(node, all_up=False):
             r_nodes = len(self.fuel_web.get_rabbit_running_nodes(node.name))
-            expected_up = len(n_ctrls) if all_up else 1
+            expected_up = len(n_ctrls) if all_up else 0
             return r_nodes == expected_up
 
         for n in xrange(1, 4):
