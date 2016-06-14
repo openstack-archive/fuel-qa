@@ -72,7 +72,7 @@ class RebootPlugin(TestBasic):
         # replace plugin tasks with our file
         fpb.fpb_replace_plugin_content(
             os.path.join(tasks_path, tasks_file),
-            os.path.join(source_plugin_path, 'tasks.yaml'))
+            os.path.join(source_plugin_path, 'deployment_tasks.yaml'))
         # build plugin
         self.show_step(4)
         packet_name = fpb.fpb_build_plugin(source_plugin_path)
