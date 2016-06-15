@@ -15,6 +15,8 @@
 import os
 import yaml
 
+import devops
+
 from proboscis import register
 from proboscis.asserts import assert_equal
 from devops.helpers import helpers
@@ -347,6 +349,9 @@ def fuel_library_modules_mapping(modules):
 
     register(groups=['review_in_fuel_library'],
              depends_on_groups=[system_test])
+    if system_test == "ironic_deploy_ceph":
+        devops.settings.IRONIC_ENABLED = True
+        devops.settings.IRONIC_NODES_COUNT = 1
 
 
 def openstack_puppet_project_mapping(project):
@@ -391,6 +396,9 @@ def openstack_puppet_project_mapping(project):
 
         register(groups=['review_in_openstack_puppet_project'],
                  depends_on_groups=[system_test])
+        if system_test == "ironic_deploy_ceph":
+            devops.settings.IRONIC_ENABLED = True
+            devops.settings.IRONIC_NODES_COUNT = 1
 
 
 def map_test_review_in_fuel_library(**kwargs):
