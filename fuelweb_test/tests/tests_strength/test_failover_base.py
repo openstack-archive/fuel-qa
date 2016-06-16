@@ -396,8 +396,7 @@ class TestHaFailoverBase(TestBasic):
                 devops_node.name, config))
             assert_not_equal(
                 re.search("vip__public\s+\(ocf::fuel:ns_IPaddr2\):\s+Started",
-                          config)
-                and
+                          config) and
                 re.search("Clone Set:\s+clone_ping_vip__public\s+"
                           "\[ping_vip__public\]\s+Started:\s+\[ {0} \]"
                           .format(pcm_nodes), config),
@@ -489,10 +488,12 @@ class TestHaFailoverBase(TestBasic):
             remote = self.fuel_web.get_ssh_for_node(devops_node.name)
             remote.execute("kill -9 `pgrep nova-compute`")
             wait(
-                lambda: len(remote.execute('pgrep nova-compute')['stdout'])
-                == 1, timeout=120)
-            assert_true(len(remote.execute('pgrep nova-compute')['stdout'])
-                        == 1, 'Nova service was not restarted')
+                lambda: len(
+                    remote.execute('pgrep nova-compute')['stdout']) == 1,
+                timeout=120)
+            assert_true(
+                len(remote.execute('pgrep nova-compute')['stdout']) == 1,
+                'Nova service was not restarted')
             assert_true(len(remote.execute(
                 "grep \"nova-compute.*trying to restart\" "
                 "/var/log/monit.log")['stdout']) > 0,
