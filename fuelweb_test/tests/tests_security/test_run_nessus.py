@@ -132,10 +132,11 @@ class TestNessus(NeutronTunHaBase):
         scan_uuid = nessus_client.launch_scan(scan_id)
         history_id = nessus_client.list_scan_history_ids(scan_id)[scan_uuid]
 
-        check_scan_complete = \
-            lambda: (nessus_client.get_scan_status(scan_id, history_id) ==
-                     'completed')
-        wait(check_scan_complete, interval=10, timeout=60 * 30)
+        wait(
+            lambda: nessus_client.get_scan_status(
+                scan_id, history_id) == 'completed',
+            interval=10,
+            timeout=60 * 30)
 
         file_id = nessus_client.export_scan(scan_id, history_id, 'html')
         nessus_client.download_scan_result(scan_id, file_id,
@@ -190,10 +191,11 @@ class TestNessus(NeutronTunHaBase):
         scan_uuid = nessus_client.launch_scan(scan_id)
         history_id = nessus_client.list_scan_history_ids(scan_id)[scan_uuid]
 
-        check_scan_complete = \
-            lambda: (nessus_client.get_scan_status(scan_id, history_id) ==
-                     'completed')
-        wait(check_scan_complete, interval=10, timeout=60 * 30)
+        wait(
+            lambda: nessus_client.get_scan_status(
+                scan_id, history_id) == 'completed',
+            interval=10,
+            timeout=60 * 30)
 
         file_id = nessus_client.export_scan(scan_id, history_id, 'html')
         nessus_client.download_scan_result(scan_id, file_id,
@@ -252,10 +254,11 @@ class TestNessus(NeutronTunHaBase):
         scan_uuid = nessus_client.launch_scan(scan_id)
         history_id = nessus_client.list_scan_history_ids(scan_id)[scan_uuid]
 
-        check_scan_complete = \
-            lambda: (nessus_client.get_scan_status(scan_id, history_id) ==
-                     'completed')
-        wait(check_scan_complete, interval=10, timeout=60 * 30)
+        wait(
+            lambda: nessus_client.get_scan_status(
+                scan_id, history_id) == 'completed',
+            interval=10,
+            timeout=60 * 30)
 
         file_id = nessus_client.export_scan(scan_id, history_id, 'html')
         nessus_client.download_scan_result(scan_id, file_id,
