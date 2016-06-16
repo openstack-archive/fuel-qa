@@ -32,8 +32,8 @@ from fuelweb_test.helpers import os_actions
 class VcenterDeploy(TestBasic):
     """VcenterDeploy."""  # TODO documentation
 
-    node_name = lambda self, name_node: self.fuel_web. \
-        get_nailgun_node_by_name(name_node)['hostname']
+    def node_name(self, name_node):
+        return self.fuel_web.get_nailgun_node_by_name(name_node)['hostname']
 
     def create_vm(self, os_conn=None, vm_count=None):
         # Get list of available images,flavors and hipervisors

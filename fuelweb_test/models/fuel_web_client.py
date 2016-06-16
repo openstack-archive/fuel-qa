@@ -369,10 +369,9 @@ class FuelWebClient(object):
     @logwrap
     def assert_pacemaker(self, ctrl_node, online_nodes, offline_nodes):
         logger.info('Assert pacemaker status at devops node %s', ctrl_node)
-        fqdn_names = lambda nodes: sorted([self.fqdn(n) for n in nodes])
 
-        online = fqdn_names(online_nodes)
-        offline = fqdn_names(offline_nodes)
+        online = sorted([self.fqdn(n) for n in online_nodes])
+        offline = sorted([self.fqdn(n) for n in offline_nodes])
         try:
             wait(lambda: self.get_pcm_nodes(ctrl_node)['Online'] == online and
                  self.get_pcm_nodes(ctrl_node)['Offline'] == offline,
@@ -1115,8 +1114,9 @@ class FuelWebClient(object):
     @logwrap
     def is_node_discovered(self, nailgun_node):
         return any(
-            map(lambda node: node['mac'] == nailgun_node['mac']
-                and node['status'] == 'discover', self.client.list_nodes()))
+          map(lambda node:
+              node['mac'] == nailgun_node['mac'] and
+              node['status'] == 'discover', self.client.list_nodes()))
 
     @logwrap
     def run_network_verify(self, cluster_id):
@@ -2308,9 +2308,10 @@ class FuelWebClient(object):
             cluster_id=cluster_id, data=tasks,
             node_id=','.join(map(str, nodes)))
         tasks = self.client.get_tasks()
-        deploy_tasks = [t for t in tasks if t['status'] == 'running'
-                        and t['name'] == 'deployment'
-                        and t['cluster'] == cluster_id]
+        deploy_tasks = [t for t in tasks if
+                        t['status'] == 'running' and
+                        t['name'] == 'deployment' and
+                        t['cluster'] == cluster_id]
         for task in deploy_tasks:
             if min([t['progress'] for t in deploy_tasks]) == task['progress']:
                 return task
