@@ -43,7 +43,7 @@ class MuranoPlugin(TestBasic):
                             cfapi=False,
                             glare=False,
                             apps_url='http://storage.apps.openstack.org/'):
-        plugin_name = 'detach_murano'
+        plugin_name = 'detach-murano'
 
         assert_true(
             self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
