@@ -52,7 +52,9 @@ class TestMultipleClusterNets(TestBasic):
         # Get network parts of IP addresses with /24 netmask
         admin_net = self.env.d_env.admin_net
         admin_net2 = self.env.d_env.admin_net2
-        get_network = lambda x: self.env.d_env.get_network(name=x).ip_network
+
+        def get_network(x):
+            return self.env.d_env.get_network(name=x).ip_network
 
         # This should be refactored
         networks = ['.'.join(get_network(n).split('.')[0:-1])

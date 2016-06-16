@@ -54,8 +54,8 @@ def check_cinder_status(remote):
     if result['exit_code'] == 0:
         return all(' up ' in x.split('enabled')[1]
                    for x in cinder_services.split('\n')
-                   if 'cinder' in x and 'enabled' in x
-                   and len(x.split('enabled')))
+                   if 'cinder' in x and 'enabled' in x and
+                   len(x.split('enabled')))
     return False
 
 

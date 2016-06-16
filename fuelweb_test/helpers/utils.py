@@ -125,8 +125,8 @@ def get_node_packages(remote, func_name, node_role,
     logger.debug("node packages are {0}".format(node_packages))
     packages_dict[func_name][node_role] = node_packages\
         if node_role not in packages_dict[func_name].keys()\
-        else list(set(packages_dict[func_name][node_role])
-                  | set(node_packages))
+        else list(
+        set(packages_dict[func_name][node_role]) | set(node_packages))
     return packages_dict
 
 
