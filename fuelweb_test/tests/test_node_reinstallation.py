@@ -642,18 +642,21 @@ class PartitionPreservation(TestBasic):
                 "{0} alarm is not available in mongo after reinstallation "
                 "of the controllers".format(alarm_name))
 
-            log_path = "/var/log/mysql/error.log"
-            output = remote.execute(
-                'grep "IST received" {0} | grep -v grep &>/dev/null '
-                '&& echo "OK" || echo "FAIL"'.format(log_path))
+            cmd = ("mysql --connect_timeout=5 -sse \"SHOW STATUS LIKE "
+                   "'wsrep_local_state_comment';\"")
+            result = remote.execute(cmd)
 
-        assert_true('OK' in output['stdout'][0],
-                    "IST was not received after the {0} node "
-                    "reinstallation.".format(mongo_nailgun['hostname']))
+        assert_equal(result['exit_code'], 0,
+                     "Failed to query the state of the reinstalled node {0} "
+                     "in Galera cluster".format(mongo_nailgun['hostname']))
+        assert_equal(
+            result['stdout'][0].split()[1],
+            'Synced',
+            "The node {0} was not synced with the Galera cluster after "
+            "reinstallation.".format(mongo_nailgun['hostname']))
 
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
-
 
 @test(groups=["known_issues"])
 class StopReinstallation(TestBasic):
