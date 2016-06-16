@@ -70,6 +70,10 @@ class DataDrivenUpgradeBase(TestBasic):
         return os.path.join(self.local_dir_for_backups, self.repos_backup_name)
 
     @property
+    def admin_ip(self):
+        return self.env.get_admin_node_ip()
+
+    @property
     def admin_remote(self):
         try:
             self.__admin_remote.execute("ls")
@@ -130,13 +134,13 @@ class DataDrivenUpgradeBase(TestBasic):
                          'File already exists, not able to reuse')
             # pylint: enable=no-member
         elif 'restore' in action:
-            checkers.check_file_exists(self.admin_remote, path)
+            checkers.check_file_exists(self.admin_ip, path)
 
         run_on_remote(self.admin_remote,
                       self.OCTANE_COMMANDS[action].format(**octane_cli_args))
 
         if 'backup' in action:
-            checkers.check_file_exists(self.admin_remote, path)
+            checkers.check_file_exists(self.admin_ip, path)
 
     def do_backup(self,
                   backup_path, local_path,
@@ -738,7 +742,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
 
         self.show_step(7)
         for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
-            checkers.check_cobbler_node_exists(self.admin_remote, node['id'])
+            checkers.check_cobbler_node_exists(self.admin_ip, node['id'])
 
         # Check non-default parameters of the cluster
         creds = self.fuel_web.get_cluster_credentials(cluster_id)
@@ -748,8 +752,8 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.show_step(8)
         slave_03 = self.env.d_env.get_node(name="slave-03")
         self.env.bootstrap_nodes([slave_03])
-        with self.fuel_web.get_ssh_for_node(slave_03.name) as slave_remote:
-            checkers.verify_bootstrap_on_node(slave_remote, "ubuntu")
+        ip = self.fuel_web.get_nailgun_node_by_devops_node(slave_03)['ip']
+        checkers.verify_bootstrap_on_node(ip, "ubuntu")
 
         self.show_step(9)
         self.fuel_web.verify_network(cluster_id)
@@ -820,10 +824,8 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         for node in pending_nodes:
             wait(lambda: self.fuel_web.is_node_discovered(node),
                  timeout=6 * 60)
-            with self.fuel_web.get_ssh_for_node(
-                self.fuel_web.get_devops_node_by_nailgun_node(
-                    node).name) as slave_remote:
-                checkers.verify_bootstrap_on_node(slave_remote, "ubuntu")
+            ip = self.fuel_web.get_nailgun_node_by_devops_node(node)['ip']
+            checkers.verify_bootstrap_on_node(ip, "ubuntu")
         self.show_step(12)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(13)
@@ -1125,7 +1127,7 @@ class UpgradeDetach_Plugin(DataDrivenUpgradeBase):
         assert_not_equal(len(stdout), 0, "Can not find plugin's directory")
         plugin_dir = stdout[0].strip()
 
-        checkers.check_file_exists(self.admin_remote,
+        checkers.check_file_exists(self.admin_ip,
                                    os.path.join(plugin_dir, "metadata.yaml"))
 
         self.show_step(7)
