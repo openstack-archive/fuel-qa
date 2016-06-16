@@ -35,6 +35,7 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logwrap
 from fuelweb_test import logger
+from fuelweb_test.settings import iface_alias
 
 
 @test(groups=["command_line_minimal"])
@@ -196,6 +197,47 @@ class CommandLine(TestBasic):
         change_cluster_ssl_config(settings, cn)
         self.upload_settings(cluster_id, remote, settings)
 
+    @logwrap
+    def download_node_interfaces(self, node_id):
+        with self.env.d_env.get_admin_remote() as remote:
+            cmd = ' fuel node --node-id {} --network --download --dir' \
+                  ' /tmp --json'.format(node_id)
+            remote.check_call(cmd)
+            cmd = 'cd /tmp && cat node_{}/interfaces.json'.format(node_id)
+            out = run_on_remote(remote, cmd, jsonify=True)
+        return out
+
+    def upload_node_interfaces(self, node_id, interfaces):
+        data = json.dumps(interfaces)
+
+        with self.env.d_env.get_admin_remote() as remote:
+            cmd = 'cd /tmp && echo {data} > node_{id}/interfaces.json'.format(
+                data=json.dumps(data),
+                id=node_id)
+            remote.check_call(cmd)
+            cmd = ('fuel node --node-id {} --network --upload --dir /tmp'
+                   ' --json'.format(node_id))
+            remote.check_call(cmd)
+
+    @logwrap
+    def update_node_interfaces(self, node_id):
+        interfaces = self.download_node_interfaces(node_id)
+        logger.debug("interfaces we get {}".format(interfaces))
+        assigned_networks = {
+            iface_alias('eth0'): [{'id': 1, 'name': 'fuelweb_admin'}],
+            iface_alias('eth1'): [{'id': 2, 'name': 'public'}],
+            iface_alias('eth2'): [{'id': 3, 'name': 'management'}],
+            iface_alias('eth3'): [{'id': 5, 'name': 'private'}],
+            iface_alias('eth4'): [{'id': 4, 'name': 'storage'}],
+        }
+        for interface in interfaces:
+            name = interface['name']
+            net_to_assign = assigned_networks.get(name, None)
+            if net_to_assign:
+                interface['assigned_networks'] = net_to_assign
+        logger.debug("interfaces after update {}".format(interfaces))
+        self.upload_node_interfaces(node_id, interfaces)
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["cli_selected_nodes_deploy"])
     @log_snapshot_after_test
@@ -248,6 +290,7 @@ class CommandLine(TestBasic):
             cmd = ('fuel --env-id={0} node set --node {1} --role=controller'
                    .format(cluster_id, node_ids[0]))
             remote.execute(cmd)
+            self.update_node_interfaces(node_ids[0])
             cmd = ('fuel --env-id={0} node --provision --node={1} --json'
                    .format(cluster_id, node_ids[0]))
             task = run_on_remote(remote, cmd, jsonify=True)
@@ -261,6 +304,8 @@ class CommandLine(TestBasic):
                    '--role=compute,cinder'.format(cluster_id,
                                                   node_ids[1], node_ids[2]))
             remote.execute(cmd)
+            for node_id in (node_ids[1], node_ids[2]):
+                self.update_node_interfaces(node_id)
             cmd = ('fuel --env-id={0} node --provision --node={1},{2} --json'
                    .format(cluster_id, node_ids[1], node_ids[2]))
             task = run_on_remote(remote, cmd, jsonify=True)
@@ -278,9 +323,11 @@ class CommandLine(TestBasic):
             task = run_on_remote(remote, cmd, jsonify=True)
             self.assert_cli_task_success(task, remote, timeout=30 * 60)
 
+            self.fuel_web.assert_os_services_ready(cluster_id)
+            self.fuel_web.assert_ha_services_ready(cluster_id)
             self.fuel_web.run_ostf(
                 cluster_id=cluster_id,
-                test_sets=['ha', 'smoke', 'sanity'])
+                test_sets=['smoke'])
 
             self.env.make_snapshot("cli_selected_nodes_deploy", is_make=True)
 
