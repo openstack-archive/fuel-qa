@@ -247,6 +247,26 @@ class SeparateKeystoneFailover(TestBasic):
 
         Duration 30m
         """
+        def check_keystone_nodes(nodes):
+            hiera_hosts = []
+            for node in nodes:
+                cmd = "cat /etc/hiera/plugins/detach-keystone.yaml"
+                result = self.ssh_manager.execute_on_remote(
+                    ip=node['ip'],
+                    cmd=cmd,
+                    yamlify=True
+                )['stdout_yaml']
+                hosts = result['corosync_roles']
+                logger.debug("hosts on {0} are {1}".format(node['hostname'],
+                                                           hosts))
+                if not hiera_hosts:
+                    hiera_hosts = hosts
+                    continue
+                else:
+                    assert_true(set(hosts) == set(hiera_hosts),
+                                'Hosts on node {0} differ from '
+                                'others'.format(node['hostname']))
+
         self.env.revert_snapshot("separate_keystone_service")
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -276,9 +296,7 @@ class SeparateKeystoneFailover(TestBasic):
             other_nodes,
             cmd='hiera memcache_roles')
 
-        checkers.check_hiera_hosts(
-            keystone_nodes,
-            cmd='hiera corosync_roles')
+        check_keystone_nodes(keystone_nodes)
 
         nailgun_node = self.fuel_web.update_nodes(cluster_id, node,
                                                   False, True)
@@ -308,6 +326,4 @@ class SeparateKeystoneFailover(TestBasic):
             other_nodes,
             cmd='hiera memcache_roles')
 
-        checkers.check_hiera_hosts(
-            keystone_nodes,
-            cmd='hiera corosync_roles')
+        check_keystone_nodes(keystone_nodes)
