@@ -33,7 +33,7 @@ class NodeReinstallationEnv(TestBasic):
     """NodeReinstallationEnv."""  # TODO documentation
 
     @staticmethod
-    def _reinstall_nodes(fuel_web_client, cluster_id, nodes=None):
+    def reinstall_nodes(fuel_web_client, cluster_id, nodes=None):
         """Provision and deploy the given cluster nodes."""
         task = fuel_web_client.client.provision_nodes(cluster_id, nodes)
         fuel_web_client.assert_task_success(task)
@@ -162,7 +162,7 @@ class ReadyNodeReinstallation(TestBasic):
         regular_ctrl = self.fuel_web.get_nailgun_node_by_name("slave-02")
 
         # Reinstall the controller
-        NodeReinstallationEnv._reinstall_nodes(
+        NodeReinstallationEnv.reinstall_nodes(
             self.fuel_web, cluster_id, [str(regular_ctrl['id'])])
 
         self.fuel_web.verify_network(cluster_id)
@@ -202,7 +202,7 @@ class ReadyNodeReinstallation(TestBasic):
             primary_ctrl_devops)
 
         # Reinstall the controller
-        NodeReinstallationEnv._reinstall_nodes(
+        NodeReinstallationEnv.reinstall_nodes(
             self.fuel_web, cluster_id, [str(primary_ctrl_nailgun['id'])])
 
         self.fuel_web.verify_network(cluster_id)
@@ -252,7 +252,7 @@ class ReadyNodeReinstallation(TestBasic):
 
         # Reinstall the compute
         logger.info('Reinstall')
-        NodeReinstallationEnv._reinstall_nodes(
+        NodeReinstallationEnv.reinstall_nodes(
             self.fuel_web, cluster_id, [str(cmp_nailgun['id'])])
 
         logger.info('Verify network')
@@ -295,7 +295,7 @@ class FullClusterReinstallation(TestBasic):
             with self.fuel_web.get_ssh_for_node(slave.name) as remote:
                 remote.execute("touch {0}".format(file_name))
             node = self.fuel_web.get_nailgun_node_by_name(slave.name)
-            NodeReinstallationEnv._reinstall_nodes(
+            NodeReinstallationEnv.reinstall_nodes(
                 self.fuel_web, cluster_id, [str(node['id'])])
 
         # Verify that all node are reinstalled (not just rebooted),
@@ -377,7 +377,7 @@ class ErrorNodeReinstallation(TestBasic):
         self._put_cluster_in_error_state(cluster_id, pr_controller)
 
         self.show_step(3)
-        NodeReinstallationEnv._reinstall_nodes(self.fuel_web, cluster_id)
+        NodeReinstallationEnv.reinstall_nodes(self.fuel_web, cluster_id)
 
         self.show_step(4)
         self.fuel_web.verify_network(cluster_id)
@@ -410,7 +410,7 @@ class ErrorNodeReinstallation(TestBasic):
         self._put_cluster_in_error_state(cluster_id, regular_ctrl)
 
         self.show_step(3)
-        NodeReinstallationEnv._reinstall_nodes(self.fuel_web, cluster_id)
+        NodeReinstallationEnv.reinstall_nodes(self.fuel_web, cluster_id)
 
         self.show_step(4)
         self.fuel_web.verify_network(cluster_id)
@@ -445,7 +445,7 @@ class ErrorNodeReinstallation(TestBasic):
         self._put_cluster_in_error_state(cluster_id, cmps_nailgun[0])
 
         self.show_step(3)
-        NodeReinstallationEnv._reinstall_nodes(self.fuel_web, cluster_id)
+        NodeReinstallationEnv.reinstall_nodes(self.fuel_web, cluster_id)
 
         self.show_step(4)
         self.fuel_web.verify_network(cluster_id)
@@ -459,7 +459,7 @@ class PartitionPreservation(TestBasic):
     """PartitionPreservation."""  # TODO documentation
 
     @staticmethod
-    def _preserve_partition(admin_remote, node_id, partition):
+    def preserve_partition(admin_remote, node_id, partition):
 
         # Retrieve disks config for the given node
         res = admin_remote.execute(
@@ -543,12 +543,12 @@ class PartitionPreservation(TestBasic):
 
         # Mark 'cinder' and 'vm' partitions to be preserved
         with self.env.d_env.get_admin_remote() as remote:
-            PartitionPreservation._preserve_partition(
+            PartitionPreservation.preserve_partition(
                 remote, cmp_nailgun['id'], "cinder")
-            PartitionPreservation._preserve_partition(
+            PartitionPreservation.preserve_partition(
                 remote, cmp_nailgun['id'], "vm")
 
-        NodeReinstallationEnv._reinstall_nodes(
+        NodeReinstallationEnv.reinstall_nodes(
             self.fuel_web, cluster_id, [str(cmp_nailgun['id'])])
 
         self.fuel_web.verify_network(cluster_id)
@@ -595,7 +595,8 @@ class PartitionPreservation(TestBasic):
                preserved on one of controllers
             4. Reinstall the controller
             5. Verify that the alarm is present after the node reinstallation
-            6. Verify IST has been received for the reinstalled controller
+            6. Verify that the reinstalled node joined the Galera cluster
+               and synced its state
             7. Run network verification
             8. Run OSTF
 
@@ -626,30 +627,39 @@ class PartitionPreservation(TestBasic):
 
         # Mark 'mongo' and 'mysql' partitions to be preserved
         with self.env.d_env.get_admin_remote() as remote:
-            PartitionPreservation._preserve_partition(
+            PartitionPreservation.preserve_partition(
                 remote, mongo_nailgun['id'], "mongo")
-            PartitionPreservation._preserve_partition(
+            PartitionPreservation.preserve_partition(
                 remote, mongo_nailgun['id'], "mysql")
 
-        NodeReinstallationEnv._reinstall_nodes(
+        NodeReinstallationEnv.reinstall_nodes(
             self.fuel_web, cluster_id, [str(mongo_nailgun['id'])])
 
-        with self.fuel_web.get_ssh_for_nailgun_node(mongo_nailgun) as remote:
-            alarms = remote.execute("source openrc; ceilometer alarm-list")
+        with self.fuel_web.get_ssh_for_nailgun_node(mongo_nailgun) as rmt:
+            alarms = rmt.execute("source openrc; ceilometer alarm-list")
             assert_equal(
                 initial_alarms['stdout'],
                 alarms['stdout'],
                 "{0} alarm is not available in mongo after reinstallation "
                 "of the controllers".format(alarm_name))
 
-            log_path = "/var/log/mysql/error.log"
-            output = remote.execute(
-                'grep "IST received" {0} | grep -v grep &>/dev/null '
-                '&& echo "OK" || echo "FAIL"'.format(log_path))
+            cmd = ("mysql --connect_timeout=5 -sse "
+                   "\"SHOW STATUS LIKE 'wsrep%';\"")
+            err_msg = ("Galera isn't ready on {0} "
+                       "node".format(mongo_nailgun['hostname']))
+            devops_helpers.wait(
+                lambda: rmt.execute(cmd)['exit_code'] == 0,
+                timeout=10 * 60,
+                timeout_msg=err_msg)
 
-        assert_true('OK' in output['stdout'][0],
-                    "IST was not received after the {0} node "
-                    "reinstallation.".format(mongo_nailgun['hostname']))
+            cmd = ("mysql --connect_timeout=5 -sse \"SHOW STATUS LIKE "
+                   "'wsrep_local_state_comment';\"")
+            err_msg = ("The reinstalled node {0} is not synced with the "
+                       "Galera cluster".format(mongo_nailgun['hostname']))
+            devops_helpers.wait(
+                lambda: rmt.execute(cmd)['stdout'][0].split()[1] == "Synced",
+                timeout=10 * 60,
+                timeout_msg=err_msg)
 
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
@@ -727,9 +737,9 @@ class StopReinstallation(TestBasic):
 
         # Mark 'cinder' and 'vm' partitions to be preserved
         with self.env.d_env.get_admin_remote() as remote:
-            PartitionPreservation._preserve_partition(
+            PartitionPreservation.preserve_partition(
                 remote, cmp_nailgun['id'], "cinder")
-            PartitionPreservation._preserve_partition(
+            PartitionPreservation.preserve_partition(
                 remote, cmp_nailgun['id'], "vm")
 
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
@@ -742,7 +752,7 @@ class StopReinstallation(TestBasic):
 
         self.fuel_web.run_network_verify(cluster_id)
         logger.info('Start the reinstallation process again')
-        NodeReinstallationEnv._reinstall_nodes(
+        NodeReinstallationEnv.reinstall_nodes(
             self.fuel_web, cluster_id, [str(cmp_nailgun['id'])])
 
         self.fuel_web.verify_network(cluster_id)
@@ -808,7 +818,7 @@ class StopReinstallation(TestBasic):
                                   [str(ctrl_nailgun['id'])], devops_nodes)
 
         logger.info('Start the reinstallation process again')
-        NodeReinstallationEnv._reinstall_nodes(
+        NodeReinstallationEnv.reinstall_nodes(
             self.fuel_web, cluster_id, [str(ctrl_nailgun['id'])])
 
         self.fuel_web.verify_network(cluster_id)
