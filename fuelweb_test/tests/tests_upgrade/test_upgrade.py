@@ -42,6 +42,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 
     @test(groups=["upgrade_ha_one_controller",
                   "upgrade_one_controller",
+                  "upgrade_ceph_ha_7_0",
                   "upgrade_one_controller_neutron",
                   "upgrade_one_controller_classic"])
     @log_snapshot_after_test
@@ -59,45 +60,63 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
             8. Run OSTF
 
         """
-        if not self.env.d_env.has_snapshot('ceph_ha_one_controller_compact'):
+        if self.env.d_env.has_snapshot('ceph_ha_7_0'):
             raise SkipTest()
-        self.env.revert_snapshot('ceph_ha_one_controller_compact')
+        self.env.revert_snapshot('ceph_ha_6_1')
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         _ip = self.fuel_web.get_nailgun_node_by_name('slave-01')['ip']
         remote = self.env.d_env.get_ssh_to_remote(_ip)
-        expected_kernel = self.get_slave_kernel(remote)
+        #expected_kernel = self.get_slave_kernel(remote)
+
+        self.env.d_env.get_admin_remote().execute("cd /var; rm -rf MirantisOpenStack-6.1-upgrade.tar.lrz upgrade.sh upgrade; echo -n > logs/fuel_upgrade.log")
 
         self.env.admin_actions.upgrade_master_node()
 
         self.fuel_web.assert_nodes_in_ready_state(cluster_id)
-        self.fuel_web.wait_nodes_get_online_state(
-            self.env.d_env.nodes().slaves[:3])
+        #self.fuel_web.wait_nodes_get_online_state(
+        #    self.env.d_env.nodes().slaves[:3])
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nailgun_upgrade_migration()
-        self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id=cluster_id,
-                               test_sets=['ha', 'smoke', 'sanity'])
-        self.env.bootstrap_nodes(
-            self.env.d_env.nodes().slaves[3:4])
-        self.fuel_web.update_nodes(
-            cluster_id, {'slave-04': ['compute']},
-            True, False
-        )
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        from fuelweb_test import settings
+        if settings.UPDATE_MASTER:
+            with self.d_env.get_admin_remote() as remote:
+                remote.execute("rm -rf /etc/yum.repos.d/temporary-*.repo")
+            if settings.UPDATE_FUEL_MIRROR:
+                for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
+                    conf_file = '/etc/yum.repos.d/temporary-{}.repo'.format(i)
+                    cmd = ("echo -e"
+                           " '[temporary-{0}]\nname="
+                           "temporary-{0}\nbaseurl={1}/"
+                           "\ngpgcheck=0\npriority="
+                           "1' > {2}").format(i, url, conf_file)
+                    with self.d_env.get_admin_remote() as remote:
+                        remote.execute(cmd)
+            self.admin_install_updates()
+        #self.fuel_web.verify_network(cluster_id)
+        #self.fuel_web.run_ostf(cluster_id=cluster_id,
+        #                       test_sets=['ha', 'smoke', 'sanity'])
+        #self.env.bootstrap_nodes(
+        #    self.env.d_env.nodes().slaves[3:4])
+        #self.fuel_web.update_nodes(
+        #    cluster_id, {'slave-04': ['compute']},
+        #    True, False
+        #)
+        #self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        self.fuel_web.run_ostf(cluster_id=cluster_id,
-                               test_sets=['ha', 'smoke', 'sanity'])
-        if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
-            _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
-            remote = self.env.d_env.get_ssh_to_remote(_ip)
-            kernel = self.get_slave_kernel(remote)
-            checkers.check_kernel(kernel, expected_kernel)
-        create_diagnostic_snapshot(
-            self.env, "pass", "upgrade_ha_one_controller")
+        #self.fuel_web.run_ostf(cluster_id=cluster_id,
+        #                       test_sets=['ha', 'smoke', 'sanity'])
+        #if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
+        #    _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
+        #    remote = self.env.d_env.get_ssh_to_remote(_ip)
+        #    kernel = self.get_slave_kernel(remote)
+        #    checkers.check_kernel(kernel, expected_kernel)
+        #create_diagnostic_snapshot(
+        #    self.env, "pass", "upgrade_ha_one_controller")
 
-        self.env.make_snapshot("upgrade_ha_one_controller")
+        self.env.d_env.get_admin_remote().execute("cd /var; rm -rf MirantisOpenStack-7.0-upgrade.tar.lrz upgrade.sh upgrade; echo -n > logs/fuel_upgrade.log")
+        self.env.make_snapshot("ceph_ha_7_0", is_make=True)
 
     @test(groups=["upgrade_ha_one_controller_delete_node",
                   "upgrade_one_controller",
