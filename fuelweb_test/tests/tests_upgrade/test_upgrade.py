@@ -62,9 +62,9 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
 
         # For upgrade jobs *from* 6.1, change snapshot name to
         # "ceph_ha_one_controller_compact"
-        if not self.env.d_env.has_snapshot('ceph_multinode_compact'):
+        if self.env.d_env.has_snapshot('ceph_ha_6_1'):
             raise SkipTest()
-        self.env.revert_snapshot("ceph_multinode_compact")
+        self.env.revert_snapshot("ceph_ha")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -96,32 +96,45 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         self.fuel_web.assert_fuel_version(hlp_data.UPGRADE_FUEL_TO)
         self.fuel_web.assert_nailgun_upgrade_migration()
         self.fuel_web.verify_network(cluster_id)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
-        self.env.bootstrap_nodes(
-            self.env.d_env.nodes().slaves[3:4])
-        self.fuel_web.update_nodes(
-            cluster_id, {'slave-04': ['compute']},
-            True, False
-        )
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-        os_conn = os_actions.OpenStackActions(
-            self.fuel_web.get_public_vip(cluster_id),
-            user='ceph1', tenant='ceph1', passwd='ceph1')
-        self.fuel_web.assert_cluster_ready(
-            os_conn,
-            smiles_count=7 if hlp_data.NEUTRON_ENABLE else 10,
-            networks_count=2 if hlp_data.NEUTRON_ENABLE else 1,
-            timeout=300)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
-        if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
-            _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
-            remote = self.env.d_env.get_ssh_to_remote(_ip)
-            kernel = self.get_slave_kernel(remote)
-            checkers.check_kernel(kernel, expected_kernel)
-        create_diagnostic_snapshot(
-            self.env, "pass", "upgrade_ha_one_controller_env")
+        from fuelweb_test import settings
+        if settings.UPDATE_MASTER:
+            with self.env.d_env.get_admin_remote() as remote:
+                remote.execute("rm -rf /etc/yum.repos.d/temporary-*.repo")
+            if settings.UPDATE_FUEL_MIRROR:
+                for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
+                    conf_file = '/etc/yum.repos.d/temporary-{}.repo'.format(i)
+                    cmd = ("echo -e"
+                           " '[temporary-{0}]\nname="
+                           "temporary-{0}\nbaseurl={1}/"
+                           "\ngpgcheck=0\npriority="
+                           "1' > {2}").format(i, url, conf_file)
+                    with self.d_env.get_admin_remote() as remote:
+                        remote.execute(cmd)
+            self.env.admin_install_updates()
+#        self.fuel_web.run_ostf(cluster_id=cluster_id)
+#        self.env.bootstrap_nodes(
+#            self.env.d_env.nodes().slaves[3:4])
+#        self.fuel_web.update_nodes(
+#            cluster_id, {'slave-04': ['compute']},
+#            True, False
+#        )
+#        self.fuel_web.deploy_cluster_wait(cluster_id)
+#        os_conn = os_actions.OpenStackActions(
+#            self.fuel_web.get_public_vip(cluster_id),
+#            user='ceph1', tenant='ceph1', passwd='ceph1')
+#        self.fuel_web.assert_cluster_ready(
+#            os_conn,
+#            smiles_count=7 if hlp_data.NEUTRON_ENABLE else 10,
+#            networks_count=2 if hlp_data.NEUTRON_ENABLE else 1,
+#            timeout=300)
+#        self.fuel_web.run_ostf(cluster_id=cluster_id)
+#        if hlp_data.OPENSTACK_RELEASE_UBUNTU in hlp_data.OPENSTACK_RELEASE:
+#            _ip = self.fuel_web.get_nailgun_node_by_name('slave-04')['ip']
+#            remote = self.env.d_env.get_ssh_to_remote(_ip)
+#            kernel = self.get_slave_kernel(remote)
+#            checkers.check_kernel(kernel, expected_kernel)
 
-        self.env.make_snapshot("upgrade_ha_one_controller")
+        self.env.make_snapshot("ceph_ha_6_1", is_make=True)
 
     @test(groups=["upgrade_ha_one_controller_delete_node"])
     @log_snapshot_after_test
