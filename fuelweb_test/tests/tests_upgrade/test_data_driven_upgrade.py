@@ -778,7 +778,6 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.fuel_web.run_ostf(cluster_id)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
-        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(7)
         self.show_step(8)
         nodes_to_remove = {'slave-06': ['controller']}
