@@ -14,3 +14,4 @@ AllPairs==2.0.1
 launchpadlib
 beautifulsoup4>=4.2.0
 requests>=2.1.0,!=2.4.0,<=2.2.1
+pyOpenSSL==0.14
