@@ -42,7 +42,7 @@ class DataDrivenUpgradeBase(TestBasic):
     def __init__(self):
         super(DataDrivenUpgradeBase, self).__init__()
         self.local_dir_for_backups = settings.LOGS_DIR
-        self.remote_dir_for_backups = "/root/upgrade/backup"
+        self.remote_dir_for_backups = "/var/log/backup"
         self.cluster_creds = {
             'tenant': 'upgrade',
             'user': 'upgrade',
@@ -111,6 +111,11 @@ class DataDrivenUpgradeBase(TestBasic):
             run_on_remote(self.admin_remote, cmd)
 
         run_on_remote(self.admin_remote, "yum install -y fuel-octane")
+
+        if os.environ.get('OCTANE_PATCHES'):
+          cmd = "curl -o /tmp/octane_patches http://paste.openstack.org/show/516178/ && sh /tmp/octane_patches {}".format(os.environ.get('OCTANE_PATCHES'))
+          run_on_remote(self.admin_remote, cmd)
+
 
         if settings.FUEL_PROPOSED_REPO_URL:
             # pylint: disable=no-member
@@ -234,6 +239,7 @@ class DataDrivenUpgradeBase(TestBasic):
                 cluster_id, plugin_name, cluster_settings['plugin']['data'])
 
         self.fuel_web.update_nodes(cluster_id, cluster_settings['nodes'])
+
         self.fuel_web.verify_network(cluster_id)
 
         # Code for debugging on hosts with low IO
@@ -995,16 +1001,40 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         self.show_step(5)
         self.do_restore(self.backup_path, self.local_path,
                         self.repos_backup_path, self.repos_local_path)
-        self.fuel_web.change_default_network_settings()
         self.env.sync_time()
 
+        self.env.make_snapshot("XXXDebug", is_make=True
         self.show_step(6)
-        self.fuel_web.verify_network(cluster_id)
+        #self.fuel_web.verify_network(cluster_id)
         self.show_step(7)
+        #self.fuel_web.run_ostf(cluster_id)
+        run_on_remote(self.admin_remote, "fuel --env 1 env --force delete")
+        run_on_remote(self.admin_remote, "sleep 300")
+
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:2], timeout=15 * 60)
+
+        cluster_settings = {
+            'net_provider': settings.NEUTRON,
+            'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
+        }
+        cluster_settings.update(self.cluster_creds)
+        self.fuel_web.change_default_network_settings()
+
+        self.deploy_cluster(
+            {'name': "env8",
+                 'settings': cluster_settings,
+                 'nodes': {'slave-01': ['controller'],
+                           'slave-02': ['compute', 'cinder']}
+            }
+        )
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
         self.fuel_web.run_ostf(cluster_id)
 
         self.env.make_snapshot(self.snapshot_name, is_make=True)
-        self.cleanup()
+        #self.cleanup()
 
     @test(groups=['upgrade_ceph_ha_reboot_ctrl'],
           depends_on=[upgrade_ceph_ha_restore])
