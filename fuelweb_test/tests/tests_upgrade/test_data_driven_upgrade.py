@@ -19,6 +19,7 @@ from proboscis import test
 from proboscis.asserts import assert_equal, assert_not_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
+from proboscis import SkipTest
 
 from fuelweb_test import logger
 from fuelweb_test import settings
@@ -42,7 +43,7 @@ class DataDrivenUpgradeBase(TestBasic):
     def __init__(self):
         super(DataDrivenUpgradeBase, self).__init__()
         self.local_dir_for_backups = settings.LOGS_DIR
-        self.remote_dir_for_backups = "/root/upgrade/backup"
+        self.remote_dir_for_backups = "/var/log/backup"
         self.cluster_creds = {
             'tenant': 'upgrade',
             'user': 'upgrade',
@@ -289,45 +290,11 @@ class DataDrivenUpgradeBase(TestBasic):
         self.backup_name = "backup_ceph_ha.tar.gz"
         self.repos_backup_name = "repos_backup_ceph_ha.tar.gz"
 
-        self.check_run("upgrade_ceph_ha_backup")
-        self.env.revert_snapshot("ready", skip_timesync=True)
-        intermediate_snapshot = "prepare_upgrade_ceph_ha_before_backup"
+        if self.env.d_env.has_snapshot('upgrade_ceph_ha_backup'):
+            raise SkipTest()
+        self.env.revert_snapshot("ceph_ha_7_0", skip_timesync=True)
 
-        assert_not_equal(
-            settings.KEYSTONE_CREDS['password'], 'admin',
-            "Admin password was not changed, aborting execution")
-
-        cluster_settings = {
-            'net_provider': settings.NEUTRON,
-            'net_segment_type': settings.NEUTRON_SEGMENT['vlan'],
-            'volumes_lvm': False,
-            'volumes_ceph': True,
-            'images_ceph': True,
-            'objects_ceph': True,
-            'ephemeral_ceph': True,
-            'osd_pool_size': '3'
-        }
-        cluster_settings.update(self.cluster_creds)
-
-        if not self.env.d_env.has_snapshot(intermediate_snapshot):
-            self.deploy_cluster(
-                {'name': self.prepare_upgrade_ceph_ha.__name__,
-                 'settings': cluster_settings,
-                 'nodes':
-                     {'slave-01': ['controller'],
-                      'slave-02': ['controller'],
-                      'slave-03': ['controller'],
-                      'slave-04': ['compute'],
-                      'slave-05': ['compute'],
-                      'slave-06': ['ceph-osd'],
-                      'slave-07': ['ceph-osd'],
-                      'slave-08': ['ceph-osd']}
-                 }
-            )
-            self.env.make_snapshot(intermediate_snapshot)
-
-        self.env.revert_snapshot(intermediate_snapshot)
-
+        self.env.d_env.get_admin_remote().execute("echo 172.18.162.63 perestroika-repo-tst.infra.mirantis.net >> /etc/hosts")
         self.do_backup(self.backup_path, self.local_path,
                        self.repos_backup_path, self.repos_local_path)
 
@@ -455,7 +422,7 @@ class UpgradePrepare(DataDrivenUpgradeBase):
         super(self.__class__, self).prepare_upgrade_smoke()
 
     @test(groups=['upgrade_ceph_ha_backup'],
-          depends_on=[SetupEnvironment.prepare_release])
+          depends_on=['upgrade_ceph_ha_7_0'])
     @log_snapshot_after_test
     def upgrade_ceph_ha_backup(self):
         """Prepare HA, ceph for all cluster using previous version of Fuel.
