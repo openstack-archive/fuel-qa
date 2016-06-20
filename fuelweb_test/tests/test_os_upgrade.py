@@ -86,9 +86,11 @@ class TestOSupgrade(DataDrivenUpgradeBase):
         self.env.revert_snapshot("upgrade_ceph_ha_restore", skip_timesync=True)
         self.install_octane()
 
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
         self.ssh_manager.execute_on_remote(
             ip=self.env.get_admin_node_ip(),
-            cmd="octane upgrade-env {0}".format(self.orig_cluster_id),
+            cmd="octane upgrade-env {0}".format(cluster_id),
             err_msg="'upgrade-env' command failed, inspect logs for details")
 
         new_cluster_id = self.fuel_web.get_last_created_cluster()
