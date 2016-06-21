@@ -194,10 +194,6 @@ class DataDrivenUpgradeBase(TestBasic):
             logger.info("Applying backup from {}".format(repos_backup_path))
             self.octane_action("repo-restore", repos_backup_path)
 
-        logger.info(
-            "Update existing CentOS bootstrap image using restored ssh keys")
-        self.octane_action('update-bootstrap-centos')
-
         n_nodes = self.fuel_web.client.list_nodes()
         d_nodes = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_nodes)
         discover_n_nodes = [node for node in self.fuel_web.client.list_nodes()
