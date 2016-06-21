@@ -15,8 +15,10 @@
 import os
 import yaml
 
+from devops.error import TimeoutError
 from proboscis import SkipTest
 from proboscis import test
+from proboscis.asserts import assert_false
 from keystoneauth1.exceptions import HttpError
 # pylint: disable=redefined-builtin
 from six.moves import xrange
@@ -135,7 +137,7 @@ class UnlockSettingsTab(TestBasic):
     def deploy_cluster(self):
         try:
             self.fuel_web.deploy_cluster_wait(self.cluster_id)
-        except AssertionError:
+        except (AssertionError, TimeoutError):
             self.env.make_snapshot(
                 "error_" + self.cluster_name, is_make=True)
             return False
@@ -182,45 +184,61 @@ class UnlockSettingsTab(TestBasic):
             3. Create a cluster from config
             4. Update nodes accordingly to the config
             5. Deploy the cluster
-            6. Get cluster attributes
-            7. Modify randomly cluster attributes
-            8. Add if it's needed ceph nodes
-            9. Update cluster attributes with changed one
-            10. Redeploy cluster
-            11. Run OSTF
-            12. Go to the next config
+            6. Run OSTF
+            7. Get cluster attributes
+            8. Modify randomly cluster attributes
+            9. Add if it's needed ceph nodes
+            10. Update cluster attributes with changed one
+            11. Redeploy cluster
+            12. Run OSTF
+            13. Go to the next config
 
         Duration xxx m
         Snapshot will be made for all failed configurations
         """
+        fail_trigger = False
+        failed_confs = []
         self.show_step(1)
         for conf in self.load_config('cluster_configs.yaml'):
             logger.info(
                 "Creating cluster from config with name: {}".format(
                     conf['name']))
-            self.show_step(2, initialize=True)
+            self.show_step(2, details=conf['name'], initialize=True)
             self.revert_snapshot(len(conf['nodes']))
-            self.show_step(3)
+            self.show_step(3, details=conf['name'])
             self.create_cluster(conf)
-            self.show_step(4)
+            self.show_step(4, details=conf['name'])
             self.update_nodes(conf)
-            self.show_step(5)
+            self.show_step(5, details=conf['name'])
             if not self.deploy_cluster():
-                logger.info(
-                    "Initial deployment of cluster {} was failed. "
-                    "Go to the next config".format(self.cluster_name))
+                logger.error(
+                    "Initial deployment of cluster {0} "
+                    "with config name {1} was failed. "
+                    "Go to the next config".format(
+                        self.cluster_name, conf['name']))
+                fail_trigger = True
+                failed_confs.append(conf['name'])
                 continue
 
-            self.show_step(6)
+            self.show_step(6, details=conf['name'])
+            if not self.run_ostf():
+                fail_trigger = True
+                failed_confs.append(conf['name'])
+                logger.error(
+                    "Failed to pass OSTF tests for first time deployed "
+                    "cluster with config {}".format(conf['name']))
+                continue
+
+            self.show_step(7, details=conf['name'])
             attrs = self.get_cluster_attributes()
-            self.show_step(7)
+            self.show_step(8, details=conf['name'])
             changer = SettingsChanger(attrs)
             logger.info(
                 "The options below will NOT be changed: {}".format(
                     changer.SKIPPED_FIELDS_LIST))
             changer.make_changes(options=None, randomize=30)
             new_attrs = changer.attrs
-            self.show_step(8)
+            self.show_step(9, details=conf['name'])
             ceph_nodes_count = self.check_config_for_ceph(new_attrs)
             existed_ceph_count = self.get_existed_ceph_nodes_count(conf)
             if ceph_nodes_count > existed_ceph_count:
@@ -231,23 +249,40 @@ class UnlockSettingsTab(TestBasic):
                     continue
                 self.add_ceph_nodes(count, ceph_nodes_count)
 
-            self.show_step(9)
+            self.show_step(10, details=conf['name'])
             if not self.update_cluster_attributes(new_attrs):
+                fail_trigger = True
+                failed_confs.append(conf['name'])
+                logger.error(
+                    "Failed to update cluster attributes with changed one")
                 continue
 
-            self.show_step(10)
+            self.show_step(11, details=conf['name'])
             if not self.deploy_cluster():
-                logger.info(
-                    "Redeployment of cluster {} was failed. "
-                    "Go to the next config".format(self.cluster_name))
+                logger.error(
+                    "Redeployment of cluster {0} "
+                    "with config name {1} was failed. "
+                    "Go to the next config".format(
+                        self.cluster_name, conf['name']))
+                fail_trigger = True
+                failed_confs.append(conf['name'])
                 continue
-            else:
-                # Run ostf
-                self.show_step(11)
-                if not self.run_ostf():
-                    continue
-                logger.info(
-                    "Redeployment and OSTF were successfully "
-                    "executed for cluster {}".format(self.cluster_name))
 
-            self.show_step(12)
+            # Run ostf
+            self.show_step(12, details=conf['name'])
+            if not self.run_ostf():
+                fail_trigger = True
+                failed_confs.append(conf['name'])
+                logger.error("Failed to pass OSTF tests for redeployed "
+                             "cluster with config {}".format(conf['name']))
+                continue
+            logger.info(
+                "Redeployment and OSTF were successfully "
+                "executed for cluster {}".format(self.cluster_name))
+
+            self.show_step(13, details=conf['name'])
+
+        if fail_trigger:
+            assert_false(fail_trigger,
+                         "A few configurations were failed: {} "
+                         "Please, check logs".format(failed_confs))
