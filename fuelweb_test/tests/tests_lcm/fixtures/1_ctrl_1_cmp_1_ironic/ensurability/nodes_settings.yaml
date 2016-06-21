@@ -2,7 +2,7 @@ controller:
   cpu_pinning:
     dpdk:
       type: number
-      value: 1
+      value: 0
     nova:
       type: number
       value: 1
@@ -19,7 +19,7 @@ ironic:
   cpu_pinning:
     dpdk:
       type: number
-      value: 1
+      value: 0
     nova:
       type: number
       value: 1
@@ -39,7 +39,7 @@ compute:
       value: 1
     nova:
       type: number
-      value: 1
+      value: 0
   hugepages:
     dpdk:
       type: number
