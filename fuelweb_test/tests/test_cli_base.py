@@ -44,16 +44,16 @@ class CommandLine(TestBasic):
     def get_task(self, task_id):
         tasks = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd='fuel task --task-id {0} --json'.format(task_id),
+            cmd='fuel2 task show -f json {}'.format(task_id),
             jsonify=True
         )['stdout_json']
-        return tasks[0]
+        return tasks
 
     @logwrap
     def get_tasks(self):
         tasks = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd='fuel task --json',
+            cmd='fuel2 task list -f json',
             jsonify=True)['stdout_json']
         return tasks
 
@@ -111,7 +111,7 @@ class CommandLine(TestBasic):
         start = time.time()
         try:
             wait(
-                lambda: (self.get_task(task['id'])['status'] not in
+                lambda: (self.get_task(task['id'])[2]['Value'] not in
                          ('pending', 'running')),
                 interval=interval,
                 timeout=timeout
@@ -125,7 +125,7 @@ class CommandLine(TestBasic):
         logger.info('Task finished in {took} seconds with the result: {task}'
                     .format(took=took, task=task))
         assert_equal(
-            task['status'], 'ready',
+            task[2]['Value'], 'ready',
             "Task '{name}' has incorrect status. {status} != {exp}".format(
                 status=task['status'], exp='ready', name=task["name"]
             )
