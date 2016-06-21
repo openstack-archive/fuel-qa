@@ -17,6 +17,7 @@ import yaml
 
 from proboscis import SkipTest
 from proboscis import test
+from proboscis.asserts import assert_false
 # pylint: disable=import-error
 from six.moves.urllib.error import HTTPError
 # pylint: enable=import-error
@@ -195,6 +196,7 @@ class UnlockSettingsTab(TestBasic):
         Duration xxx m
         Snapshot will be made for all failed configurations
         """
+        fail_trigger = False
         self.show_step(1)
         for conf in self.load_config('cluster_configs.yaml'):
             logger.info(
@@ -211,6 +213,7 @@ class UnlockSettingsTab(TestBasic):
                 logger.info(
                     "Initial deployment of cluster {} was failed. "
                     "Go to the next config".format(self.cluster_name))
+                fail_trigger = True
                 continue
 
             self.show_step(6)
@@ -235,6 +238,7 @@ class UnlockSettingsTab(TestBasic):
 
             self.show_step(9)
             if not self.update_cluster_attributes(new_attrs):
+                fail_trigger = True
                 continue
 
             self.show_step(10)
@@ -242,14 +246,20 @@ class UnlockSettingsTab(TestBasic):
                 logger.info(
                     "Redeployment of cluster {} was failed. "
                     "Go to the next config".format(self.cluster_name))
+                fail_trigger = True
                 continue
             else:
                 # Run ostf
                 self.show_step(11)
                 if not self.run_ostf():
+                    fail_trigger = True
                     continue
                 logger.info(
                     "Redeployment and OSTF were successfully "
                     "executed for cluster {}".format(self.cluster_name))
 
             self.show_step(12)
+
+        if fail_trigger:
+            assert_false(fail_trigger, "A few configurations were failed. "
+                                       "Please, check logs")
