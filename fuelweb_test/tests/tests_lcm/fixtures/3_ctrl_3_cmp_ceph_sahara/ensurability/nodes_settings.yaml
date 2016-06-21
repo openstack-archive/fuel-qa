@@ -2,7 +2,7 @@ ceph-osd_compute:
   cpu_pinning:
     dpdk:
       type: number
-      value: 1
+      value: 0
     nova:
       type: number
       value: 1
@@ -19,7 +19,7 @@ controller_mongo:
   cpu_pinning:
     dpdk:
       type: number
-      value: 1
+      value: 0
     nova:
       type: number
       value: 1
