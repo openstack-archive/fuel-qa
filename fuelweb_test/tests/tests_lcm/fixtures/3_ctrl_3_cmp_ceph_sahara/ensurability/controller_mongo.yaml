@@ -4,19 +4,20 @@ tasks:
   - openstack-network-agents-l3:
       resources: []
   - dump_rabbitmq_definitions:
-      resources:
+      skip:
       - Dump_rabbitmq_definitions[/etc/rabbitmq/definitions.full]
+      resources: []
   - rsync_core_puppet:
       type: sync
   - ssl-dns-setup:
       resources:
       - Exec[rsync_core_puppet_shell]
   - ceilometer-controller:
-      no_puppet_run: true
+      resources: []
   - override_configuration:
       resources: []
   - ceph_create_pools:
-      no_puppet_run: true
+      resources: []
   - virtual_ips:
       resources: []
   - openstack-haproxy-murano:
@@ -30,13 +31,13 @@ tasks:
   - openstack-haproxy-neutron:
       resources: []
   - updatedb:
-      no_puppet_run: true
+      resources: []
   - plugins_rsync:
       no_puppet_run: true
   - openstack-controller:
       resources: []
-  - ceilometer-radosgw-user:
-      no_puppet_run: true
+  - rabbitmq:
+      resources: []
   - openstack-haproxy-keystone:
       resources: []
   - hosts:
@@ -53,8 +54,8 @@ tasks:
       no_puppet_run: true
   - vmware-vcenter:
       no_puppet_run: true
-  - rabbitmq:
-      resources: []
+  - ceilometer-radosgw-user:
+      no_puppet_run: true
   - ironic-compute:
       no_puppet_run: true
   - dns-server:
@@ -78,7 +79,7 @@ tasks:
   - memcached:
       resources: []
   - allocate_hugepages:
-      resources: []
+      no_puppet_run: true
   - openrc-delete:
       resources:
       - File[/root/openrc]
@@ -110,7 +111,10 @@ tasks:
       - File[/etc/openstack-dashboard/local_settings.py]
       - Exec[concat_/etc/openstack-dashboard/local_settings.py]
   - openstack-haproxy-ceilometer:
-      no_puppet_run: true
+      resources:
+      - Exec[concat_/etc/haproxy/conf.d/140-ceilometer.cfg]
+      - File[/var/lib/puppet/concat/_etc_haproxy_conf.d_140-ceilometer.cfg/fragments/00_ceilometer_listen_block]
+      - File[/etc/haproxy/conf.d/140-ceilometer.cfg]
   - openstack-network-common-config:
       resources: []
   - firewall:
@@ -123,7 +127,7 @@ tasks:
   - glance:
       resources:
       - Glance_swift_config[ref1/user]
-      - Glance_glare_config[glance_store/swift_store_create_container_on_put]
+      - Glance_swift_config[ref1/project_domain_id]
       - Glance_glare_config[glance_store/swift_store_config_file]
       - Package[swift]
       - Glance_api_config[glance_store/default_store]
@@ -133,11 +137,12 @@ tasks:
       - Glance_glare_config[DEFAULT/default_log_levels]
       - Glance_api_config[glance_store/stores]
       - Glance_cache_config[DEFAULT/image_cache_max_size]
+      - Glance_swift_config[ref1/user_domain_id]
       - Glance_glare_config[glance_store/default_store]
       - Glance_registry_config[DEFAULT/default_log_levels]
-      - Glance_api_config[DEFAULT/notification_driver]
       - Glance_api_config[DEFAULT/default_log_levels]
       - Glance_glare_config[glance_store/swift_store_region]
+      - Glance_glare_config[glance_store/swift_store_create_container_on_put]
       - Glance_cache_config[DEFAULT/debug]
       - Glance_glare_config[glance_store/swift_store_endpoint_type]
       - Glance_api_config[DEFAULT/debug]
@@ -145,6 +150,7 @@ tasks:
       - Glance_api_config[glance_store/swift_store_config_file]
       - Glance_api_config[DEFAULT/show_image_direct_url]
       - Glance_glare_config[glance_store/stores]
+      - Glance_swift_config[ref1/auth_version]
       - Glance_api_config[glance_store/default_swift_reference]
       - Glance_glare_config[glance_store/swift_store_large_object_size]
       - Glance_registry_config[DEFAULT/debug]
@@ -161,7 +167,10 @@ tasks:
   - cgroups:
       resources: []
   - aodh:
-      no_puppet_run: true
+      resources:
+      - Aodh_config[api/pecan_debug]
+      - Aodh_config[DEFAULT/debug]
+      - Aodh_config[DEFAULT/default_log_levels]
   - copy_deleted_nodes:
       type: copy_files
   - openstack-haproxy-ironic:
@@ -175,15 +184,22 @@ tasks:
   - heat:
       resources:
       - Heat_config[DEFAULT/reauthentication_auth_method]
+      - Heat_config[DEFAULT/heat_waitcondition_server_url]
+      - Heat_config[DEFAULT/heat_metadata_server_url]
       - Heat_config[keystone_authtoken/auth_uri]
       - Heat_config[DEFAULT/default_log_levels]
+      - Heat_config[clients_heat/url]
+      - Heat_config[DEFAULT/heat_watch_server_url]
       - Heat_config[DEFAULT/debug]
   - openstack-haproxy-stats:
       resources: []
   - ironic-api:
       no_puppet_run: true
   - top-role-mongo:
-      no_puppet_run: true
+      resources:
+      - Mongodb_user[User ceilometer on db ceilometer]
+      - File[/etc/mongodb.conf]
+      - Mongodb_user[User admin on db admin]
   - dns-client:
       resources: []
   - cluster-vrouter:
@@ -207,6 +223,8 @@ tasks:
   - copy_keys_ceph:
       type: copy_files
   - cluster:
+      skip:
+      - Pcmk_property[no-quorum-policy]
       resources: []
   - sahara:
       no_puppet_run: true
@@ -252,7 +270,6 @@ tasks:
       no_puppet_run: true
   - openstack-cinder:
       resources:
-      - Cinder_config[DEFAULT/scheduler_default_filters]
       - Cinder_config[DEFAULT/default_log_levels]
       - Cinder_config[DEFAULT/debug]
   - sync_time:
