@@ -44,7 +44,7 @@ class CommandLine(TestBasic):
     def get_task(self, task_id):
         tasks = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd='fuel task --task-id {0} --json'.format(task_id),
+            cmd='fuel2 task show -f json {}'.format(task_id),
             jsonify=True
         )['stdout_json']
         return tasks[0]
@@ -53,7 +53,7 @@ class CommandLine(TestBasic):
     def get_tasks(self):
         tasks = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd='fuel task --json',
+            cmd='fuel2 task list -f json',
             jsonify=True)['stdout_json']
         return tasks
 
