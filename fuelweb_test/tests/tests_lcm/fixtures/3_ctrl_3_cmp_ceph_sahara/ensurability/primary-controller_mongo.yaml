@@ -4,26 +4,29 @@ tasks:
   - openstack-haproxy-mysqld:
       resources: []
   - top-role-primary-mongo:
-      no_puppet_run: true
+      resources: []
   - cinder-db:
       resources: []
   - dump_rabbitmq_definitions:
-      resources:
+      skip:
       - Dump_rabbitmq_definitions[/etc/rabbitmq/definitions.full]
+      resources: []
   - rsync_core_puppet:
       type: sync
-  - create-cinder-types:
-      resources: []
+  - ssl-dns-setup:
+      resources:
+      - Exec[rsync_core_puppet_shell]
   - ceilometer-controller:
-      no_puppet_run: true
+      resources: []
   - override_configuration:
       resources: []
   - ceilometer-keystone:
-      no_puppet_run: true
-  - ceph_create_pools:
-      no_puppet_run: true
-  - workloads_collector_add:
       resources: []
+  - nova-db:
+      resources: []
+  - workloads_collector_add:
+      resources:
+      - Keystone_tenant[services]
   - primary-openstack-network-plugins-l2:
       resources: []
   - radosgw-keystone:
@@ -45,7 +48,7 @@ tasks:
   - openstack-haproxy-neutron:
       resources: []
   - updatedb:
-      no_puppet_run: true
+      resources: []
   - ironic-db:
       no_puppet_run: true
   - plugins_rsync:
@@ -87,7 +90,7 @@ tasks:
   - ntp-check:
       resources: []
   - aodh-db:
-      no_puppet_run: true
+      resources: []
   - disable_keystone_service_token:
       no_puppet_run: true
   - umm:
@@ -95,7 +98,7 @@ tasks:
   - memcached:
       resources: []
   - allocate_hugepages:
-      resources: []
+      no_puppet_run: true
   - openrc-delete:
       resources:
       - File[/root/openrc]
@@ -108,6 +111,8 @@ tasks:
   - ssl-keys-saving:
       no_puppet_run: true
   - primary-cluster:
+      skip:
+      - Pcmk_property[no-quorum-policy]
       resources: []
   - upload_cirros:
       type: shell
@@ -118,8 +123,8 @@ tasks:
       resources: []
   - upload_configuration:
       type: upload_file
-  - ssl-dns-setup:
-      no_puppet_run: true
+  - create-cinder-types:
+      resources: []
   - neutron-keystone:
       resources:
       - Keystone_endpoint[RegionOne/neutron::network]
@@ -130,7 +135,7 @@ tasks:
   - nova-keystone:
       resources:
       - Keystone_endpoint[RegionOne/nova::compute]
-      - Keystone_endpoint[RegionOne/novav3::computev3]
+      - Keystone_endpoint[RegionOne/compute_legacy::compute_legacy]
   - update_hosts:
       resources: []
   - ironic-keystone:
@@ -139,7 +144,11 @@ tasks:
       resources: []
   - primary-heat:
       resources:
+      - Heat_config[DEFAULT/heat_waitcondition_server_url]
+      - Heat_config[DEFAULT/heat_metadata_server_url]
       - Heat_config[keystone_authtoken/auth_uri]
+      - Heat_config[clients_heat/url]
+      - Heat_config[DEFAULT/heat_watch_server_url]
   - conntrackd:
       resources: []
   - sahara-db:
@@ -150,7 +159,10 @@ tasks:
       - File[/etc/openstack-dashboard/local_settings.py]
       - Exec[concat_/etc/openstack-dashboard/local_settings.py]
   - openstack-haproxy-ceilometer:
-      no_puppet_run: true
+      resources:
+      - Exec[concat_/etc/haproxy/conf.d/140-ceilometer.cfg]
+      - File[/var/lib/puppet/concat/_etc_haproxy_conf.d_140-ceilometer.cfg/fragments/00_ceilometer_listen_block]
+      - File[/etc/haproxy/conf.d/140-ceilometer.cfg]
   - openstack-network-common-config:
       resources: []
   - firewall:
@@ -161,11 +173,12 @@ tasks:
       resources:
       - File[/etc/hiera/globals.yaml]
   - aodh-keystone:
-      no_puppet_run: true
+      resources:
+      - Keystone_endpoint[RegionOne/aodh::alarming]
   - glance:
       resources:
       - Glance_swift_config[ref1/user]
-      - Glance_glare_config[glance_store/swift_store_create_container_on_put]
+      - Glance_swift_config[ref1/project_domain_id]
       - Glance_glare_config[glance_store/swift_store_config_file]
       - Package[swift]
       - Glance_api_config[glance_store/default_store]
@@ -175,11 +188,12 @@ tasks:
       - Glance_glare_config[DEFAULT/default_log_levels]
       - Glance_api_config[glance_store/stores]
       - Glance_cache_config[DEFAULT/image_cache_max_size]
+      - Glance_swift_config[ref1/user_domain_id]
       - Glance_glare_config[glance_store/default_store]
       - Glance_registry_config[DEFAULT/default_log_levels]
-      - Glance_api_config[DEFAULT/notification_driver]
       - Glance_api_config[DEFAULT/default_log_levels]
       - Glance_glare_config[glance_store/swift_store_region]
+      - Glance_glare_config[glance_store/swift_store_create_container_on_put]
       - Glance_cache_config[DEFAULT/debug]
       - Glance_glare_config[glance_store/swift_store_endpoint_type]
       - Glance_api_config[DEFAULT/debug]
@@ -187,6 +201,7 @@ tasks:
       - Glance_api_config[glance_store/swift_store_config_file]
       - Glance_api_config[DEFAULT/show_image_direct_url]
       - Glance_glare_config[glance_store/stores]
+      - Glance_swift_config[ref1/auth_version]
       - Glance_api_config[glance_store/default_swift_reference]
       - Glance_glare_config[glance_store/swift_store_large_object_size]
       - Glance_registry_config[DEFAULT/debug]
@@ -205,7 +220,10 @@ tasks:
   - murano-cfapi-keystone:
       no_puppet_run: true
   - aodh:
-      no_puppet_run: true
+      resources:
+      - Aodh_config[api/pecan_debug]
+      - Aodh_config[DEFAULT/debug]
+      - Aodh_config[DEFAULT/default_log_levels]
   - copy_deleted_nodes:
       type: copy_files
   - openstack-haproxy-ironic:
@@ -214,14 +232,14 @@ tasks:
       resources: []
   - openstack-network-routers-ha:
       no_puppet_run: true
+  - upload_murano_package:
+      no_puppet_run: true
   - glance-db:
       resources: []
   - neutron-db:
       resources: []
   - ironic_upload_images:
       type: shell
-  - nova-db:
-      resources: []
   - swift-rebalance-cron:
       resources:
       - File[/usr/local/bin/swift-rings-rebalance.sh]
@@ -359,13 +377,16 @@ tasks:
       - Service[swift-object-updater]
       - Exec[create_container]
       - File[/etc/swift/object-server.conf]
+      - File[/var/log/ceilometer/swift-proxy-server.log]
       - Swift_dispersion_config[dispersion/auth_version]
       - Ring_container_device[10.109.2.5:6001/2]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/82_swift_container_sync]
       - Exec[concat_/etc/rsyncd.conf]
       - Service[swift-proxy-server]
       - Swift_dispersion_config[dispersion/swift_dir]
       - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/00_header_rsyncd_conf_header]
       - File[/etc/swift/container-server.conf]
+      - Swift_container_sync_realms_config[realm1/cluster_name1]
       - Service[swift-account-auditor]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments.concat]
       - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments]
@@ -375,8 +396,9 @@ tasks:
       - File[/etc/swift]
       - Ring_container_device[10.109.2.5:6001/1]
       - Ring_container_device[10.109.2.3:6001/1]
-      - Service[swift-container-server]
+      - Ring_object_device[10.109.2.2:6000/1]
       - File[/var/lib/puppet/concat/_etc_swift_object-server.conf/fragments.concat]
+      - User[swift]
       - File[/var/lib/puppet/concat/_etc_swift_container-server.conf/fragments]
       - File[/var/lib/puppet/concat/_etc_swift_object-server.conf/fragments/00_swift-object-6000]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/81_swift_container_quotas]
@@ -408,7 +430,7 @@ tasks:
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/29_swift-proxy-tempurl]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/27_swift_swift3]
       - Exec[create_object]
-      - Ring_object_device[10.109.2.2:6000/1]
+      - Service[swift-container-server]
       - Swift_dispersion_config[dispersion/auth_key]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments.concat.out]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/28_swift_s3token]
@@ -424,11 +446,13 @@ tasks:
       - Ring_container_device[10.109.2.3:6001/2]
       - File[/etc/rsyncd.conf]
       - Package[swift-proxy]
+      - Swift_container_sync_realms_config[realm1/key]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/79_swift_keystone]
       - Service[swift-object-auditor]
       - File[/etc/swift/account-server/]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf]
       - Ring_account_device[10.109.2.3:6002/2]
+      - Package[python-ceilometermiddleware]
       - File[/var/lib/puppet/concat/_etc_swift_account-server.conf/fragments/00_swift-account-6002]
       - Ring_account_device[10.109.2.2:6002/2]
       - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/10_container_frag-container]
@@ -437,6 +461,7 @@ tasks:
       - Service[swift-object-server]
       - Exec[concat_/etc/swift/object-server.conf]
       - File[/etc/swift/object-server/]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/33_swift_ceilometer]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/24_swift_catch_errors]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/21_swift_bulk]
   - primary-openstack-network-agents-dhcp:
@@ -452,9 +477,10 @@ tasks:
       - Nova_config[DEFAULT/default_log_levels]
   - openstack-cinder:
       resources:
-      - Cinder_config[DEFAULT/scheduler_default_filters]
       - Cinder_config[DEFAULT/default_log_levels]
       - Cinder_config[DEFAULT/debug]
+  - ceph_create_pools:
+      resources: []
   - keystone-db:
       resources:
       - File[/root/.my.cnf]
