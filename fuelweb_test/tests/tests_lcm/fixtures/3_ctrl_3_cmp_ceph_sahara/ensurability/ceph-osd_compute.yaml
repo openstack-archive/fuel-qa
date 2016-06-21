@@ -1,16 +1,6 @@
-tasks:
-  - plugins_rsync:
-      resources:
-      - Nova_config[libvirt/rbd_user]
-      - Nova_config[libvirt/rbd_secret_uuid]
-      - Nova_config[libvirt/images_rbd_pool]
-      - File[/etc/ceph/ceph.client.compute.keyring]
-      - Exec[Create compute pool]
-      - Exec[Populate compute keyring]
-      - Exec[Create compute Cephx user and ACL]
-      - Nova_config[libvirt/images_type]
-      - Exec[Set Ceph RBD secret for Nova]
-      - File[/root/.secret_attrs.xml]
+  tasks:
+  - update_hosts:
+      resources: []
   - openstack-network-start:
       type: skipped
   - openstack-network-common-config:
@@ -19,16 +9,16 @@ tasks:
       type: skipped
   - openstack-network-agents-sriov:
       resources: []
-  - ceilometer-compute:
-      no_puppet_run: true
+  - override_configuration:
+      resources: []
   - globals:
       resources: []
   - fuel_pkgs:
       resources: []
   - openstack-network-agents-l3:
       resources: []
-  - configuration_symlink:
-      type: shell
+  - openstack-network-agents-metadata:
+      resources: []
   - tools:
       resources: []
   - rsync_core_puppet:
@@ -41,22 +31,22 @@ tasks:
       type: skipped
   - copy_keys:
       type: copy_files
-  - sync_time:
-      type: shell
-  - override_configuration:
-      resources: []
+  - copy_deleted_nodes:
+      type: copy_files
   - setup_repositories:
+      resources: []
+  - dns-client:
       resources: []
   - openstack-network-plugins-l2:
       resources: []
   - allocate_hugepages:
-      resources: []
+      no_puppet_run: true
   - plugins_setup_repositories:
       no_puppet_run: true
-  - connectivity_tests:
+  - updatedb:
       resources: []
   - ceph-compute:
-      no_puppet_run: true
+      resources: []
   - ssl-keys-saving:
       no_puppet_run: true
   - sriov_iommu_check:
@@ -64,8 +54,6 @@ tasks:
       - Exec[sriov_iommu_check]
   - openstack-network-end:
       type: skipped
-  - copy_deleted_nodes:
-      type: copy_files
   - copy_keys_ceph:
       type: copy_files
   - upload_configuration:
@@ -76,8 +64,6 @@ tasks:
       resources: []
   - logging:
       resources: []
-  - updatedb:
-      no_puppet_run: true
   - top-role-compute:
       resources:
       - Notify[Module openstack_tasks cannot notify service nova-compute on packages
@@ -86,13 +72,17 @@ tasks:
       - Nova_config[vnc/novncproxy_base_url]
       - Nova_config[DEFAULT/vcpu_pin_set]
       - Service[nova-compute]
+  - sync_time:
+      type: shell
   - openstack-network-compute-nova:
       resources: []
-  - update_hosts:
+  - plugins_rsync:
+      no_puppet_run: true
+  - connectivity_tests:
       resources: []
-  - dns-client:
-      resources: []
-  - openstack-network-agents-metadata:
+  - configuration_symlink:
+      type: shell
+  - ceilometer-compute:
       resources: []
   - hosts:
       resources: []
