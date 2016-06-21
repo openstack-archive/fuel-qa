@@ -572,6 +572,12 @@ Restart tests
 .. automodule:: fuelweb_test.tests.tests_strength.test_restart
    :members:
 
+Update tests
+============
+
+.. automodule:: fuelweb_test.tests.tests_update.test_mixed_repos
+   :members:
+
 Upgrade tests
 =============
 

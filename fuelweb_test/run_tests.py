@@ -173,6 +173,7 @@ def import_tests():
     from tests.tests_strength import test_failover_group_1  # noqa
     from tests.tests_strength import test_failover_mongo  # noqa
     from tests.tests_strength import test_failover_group_2  # noqa
+    from tests.tests_update import test_mixed_repos  # noqa
 
 
 def run_tests():
