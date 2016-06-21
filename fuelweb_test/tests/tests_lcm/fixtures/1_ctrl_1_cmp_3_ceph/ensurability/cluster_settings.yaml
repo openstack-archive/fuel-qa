@@ -30,9 +30,6 @@ additional_components:
   murano-cfapi:
     type: checkbox
     value: false
-  murano_glance_artifacts_plugin:
-    type: checkbox
-    value: false
   sahara:
     type: checkbox
     value: false
@@ -104,6 +101,9 @@ murano_settings:
   murano_repo_url:
     type: text
     value: http://storage.apps.openstack.org/
+  murano_glance_artifacts_plugin:
+    type: checkbox
+    value: false
 neutron_advanced_configuration:
   neutron_dvr:
     type: checkbox
@@ -395,13 +395,13 @@ storage:
     value: AQDzghZXAAAAABAA8jY8KftsCK4l726rNdu/Zg==
   volumes_block_device:
     type: checkbox
-    value: true
+    value: false
   volumes_ceph:
     type: checkbox
-    value: false
+    value: true
   volumes_lvm:
     type: checkbox
-    value: true
+    value: false
 syslog:
   syslog_port:
     type: text
