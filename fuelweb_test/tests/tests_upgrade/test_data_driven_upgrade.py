@@ -35,8 +35,7 @@ class DataDrivenUpgradeBase(TestBasic):
         'repo-backup': 'octane -v --debug fuel-repo-backup --to {path} --full',
         'restore': 'octane -v --debug fuel-restore --from {path} '
                        '--admin-password {pwd}',
-        'repo-restore': 'octane -v --debug fuel-repo-restore --from {path}',
-        'update-bootstrap-centos': 'octane -v --debug update-bootstrap-centos'
+        'repo-restore': 'octane -v --debug fuel-repo-restore --from {path}'
     }
 
     def __init__(self):
@@ -193,10 +192,6 @@ class DataDrivenUpgradeBase(TestBasic):
             # pylint: enable=no-member
             logger.info("Applying backup from {}".format(repos_backup_path))
             self.octane_action("repo-restore", repos_backup_path)
-
-        logger.info(
-            "Update existing CentOS bootstrap image using restored ssh keys")
-        self.octane_action('update-bootstrap-centos')
 
         n_nodes = self.fuel_web.client.list_nodes()
         d_nodes = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_nodes)
