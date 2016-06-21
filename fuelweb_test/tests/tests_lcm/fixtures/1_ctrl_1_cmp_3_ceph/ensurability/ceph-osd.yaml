@@ -3,8 +3,8 @@ tasks:
       resources: []
   - clear_nodes_info:
       type: skipped
-  - copy_keys_ceph:
-      type: copy_files
+  - override_configuration:
+      resources: []
   - globals:
       resources: []
   - fuel_pkgs:
@@ -19,18 +19,20 @@ tasks:
       type: skipped
   - copy_keys:
       type: copy_files
-  - override_configuration:
-      resources: []
+  - copy_deleted_nodes:
+      type: copy_files
   - setup_repositories:
       resources: []
   - dns-client:
       resources: []
   - allocate_hugepages:
-      resources: []
+      no_puppet_run: true
   - plugins_setup_repositories:
       no_puppet_run: true
   - ssl-keys-saving:
       no_puppet_run: true
+  - copy_keys_ceph:
+      type: copy_files
   - upload_configuration:
       type: upload_file
   - firewall:
@@ -40,7 +42,7 @@ tasks:
   - logging:
       resources: []
   - updatedb:
-      no_puppet_run: true
+      resources: []
   - sync_time:
       type: shell
   - plugins_rsync:
