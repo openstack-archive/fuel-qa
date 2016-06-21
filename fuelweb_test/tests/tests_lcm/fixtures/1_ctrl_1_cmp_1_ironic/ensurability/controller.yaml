@@ -137,7 +137,11 @@ tasks:
       resources: []
   - primary-heat:
       resources:
+      - Heat_config[DEFAULT/heat_waitcondition_server_url]
+      - Heat_config[DEFAULT/heat_metadata_server_url]
       - Heat_config[keystone_authtoken/auth_uri]
+      - Heat_config[clients_heat/url]
+      - Heat_config[DEFAULT/heat_watch_server_url]
   - conntrackd:
       resources: []
   - sahara-db:
@@ -207,6 +211,7 @@ tasks:
   - ironic-api:
       resources:
       - Ironic_config[DEFAULT/default_log_levels]
+      - Ironic_config[api/public_endpoint]
       - Ironic_config[DEFAULT/debug]
   - primary-ceph-radosgw:
       resources: []
@@ -291,6 +296,7 @@ tasks:
       no_puppet_run: true
   - swift-proxy_storage:
       resources:
+      - Swift_container_sync_realms_config[realm1/cluster_name1]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/00_swift_proxy]
       - File[/etc/swift/proxy-server.conf]
       - Exec[concat_/etc/swift/proxy-server.conf]
@@ -302,19 +308,9 @@ tasks:
   - primary-openstack-controller:
       resources:
       - Nova_config[DEFAULT/quota_driver]
-      - Nova_config[database/max_retries]
       - Nova_config[DEFAULT/debug]
-      - Nova_config[database/max_pool_size]
-      - Nova_config[database/max_overflow]
-      - Nova_config[DEFAULT/notify_on_state_change]
-      - Nova_config[DEFAULT/notification_driver]
-      - Nova_config[cinder/catalog_info]
-      - Nova_config[database/idle_timeout]
       - Nova_config[DEFAULT/scheduler_default_filters]
-      - Nova_config[DEFAULT/allow_resize_to_same_host]
       - Nova_config[DEFAULT/default_log_levels]
-      - Nova_config[DEFAULT/use_stderr]
-      - Nova_config[glance/api_servers]
   - openstack-cinder:
       resources:
       - Cinder_config[DEFAULT/scheduler_default_filters]

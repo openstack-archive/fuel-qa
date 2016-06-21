@@ -14,7 +14,7 @@ access:
 additional_components:
   ceilometer:
     type: checkbox
-    value: false
+    value: true
   heat:
     type: hidden
     value: false
@@ -23,14 +23,11 @@ additional_components:
     value: false
   mongo:
     type: checkbox
-    value: false
+    value: true
   murano:
     type: checkbox
     value: false
   murano-cfapi:
-    type: checkbox
-    value: false
-  murano_glance_artifacts_plugin:
     type: checkbox
     value: false
   sahara:
@@ -104,6 +101,9 @@ murano_settings:
   murano_repo_url:
     type: text
     value: http://storage.apps.openstack.org/
+  murano_glance_artifacts_plugin:
+    type: checkbox
+    value: false
 neutron_advanced_configuration:
   neutron_dvr:
     type: checkbox

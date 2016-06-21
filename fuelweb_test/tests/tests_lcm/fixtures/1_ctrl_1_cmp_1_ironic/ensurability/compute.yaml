@@ -71,8 +71,7 @@ tasks:
   - sync_time:
       type: shell
   - openstack-network-compute-nova:
-      resources:
-      - Exec[undefine_libvirt_default_network]
+      resources: []
   - plugins_rsync:
       no_puppet_run: true
   - connectivity_tests:
