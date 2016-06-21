@@ -1721,6 +1721,14 @@ class FuelWebClient29(object):
 
         logger.info("Applying default network settings")
         for _release in self.client.get_releases():
+            if (_release['is_deployable'] is False and
+                    _release['state'] != 'available'):
+                logger.info("Release {!r} (version {!r}) is not available for "
+                            "deployment; skipping default network "
+                            "replacement".format(_release['name'],
+                                                 _release['version']))
+                continue
+
             logger.info(
                 'Applying changes for release: {}'.format(
                     _release['name']))
