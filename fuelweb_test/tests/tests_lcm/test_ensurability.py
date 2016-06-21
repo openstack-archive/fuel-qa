@@ -191,8 +191,9 @@ class TaskEnsurability(LCMTestBasic):
                     continue
 
                 task_resources = []
+                skip = task_data.get('skip')
                 for res_name, res_stats in report['resource_statuses'].items():
-                    if res_stats['changed']:
+                    if res_stats['changed'] and res_name not in skip:
                         logger.info("Task {} changed resource: "
                                     "{}".format(task_name, res_name))
                         task_resources.append(res_name)
