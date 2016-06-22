@@ -146,6 +146,7 @@ class ExamplePlugin(TestBasic):
         Duration 35m
         Snapshot deploy_ha_one_controller_neutron_example_v3
         """
+        self.check_run("deploy_ha_one_controller_neutron_example_v3")
         checkers.check_plugin_path_env(
             var_name='EXAMPLE_PLUGIN_V3_PATH',
             plugin_path=EXAMPLE_PLUGIN_V3_PATH
@@ -257,7 +258,34 @@ class ExamplePlugin(TestBasic):
         )
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_ha_one_controller_neutron_example_v3")
+        self.env.make_snapshot("deploy_ha_one_controller_neutron_example_v3",
+                               is_make=True)
+
+    @test(depends_on=[deploy_ha_one_controller_neutron_example_v3],
+          groups=["delete_plugin_enabled_in_cluster"])
+    @log_snapshot_after_test
+    def delete_plugin_enabled_in_cluster(self):
+        """Try remove plugin enabled in cluster
+
+        Scenario:
+            1. Try to remove plugin from cluster
+
+            Duration 3m
+        """
+
+        self.env.revert_snapshot("deploy_ha_one_controller_neutron_example_v3",
+                                 skip_timesync=True)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        enabled_plugins = self.fuel_web.\
+            list_cluster_enabled_plugins(cluster_id)
+        for plugin in enabled_plugins:
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd='fuel plugins --remove {0}=={1}'.format(plugin['name'],
+                                                            plugin['version']),
+                assert_ec_equal=[1]
+            )
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_example_ha"])
