@@ -826,7 +826,11 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.show_step(12)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(13)
-        self.fuel_web.run_ostf(cluster_id)
+        # nova services is not cleaning up after controller
+        # removal - fixed in 9.0
+        self.fuel_web.run_ostf(
+            cluster_id, should_fail=1,
+            failed_test_name=['Check that required services are running'])
         self.env.make_snapshot("upgrade_smoke_scale")
 
     @test(groups=['upgrade_smoke_reset_deploy'],
