@@ -12,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import random
 
 from proboscis import test
+from tempest.lib.common.utils import data_utils
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.common import Common
@@ -138,17 +138,12 @@ class TestIronicDeploy(TestBasic):
 
         ironic_conn.wait_for_ironic_hypervisors(ironic_conn, ironic_slaves)
 
-    @staticmethod
-    def _rand_name(name):
-        """Randomize the given name."""
-        return name + str(random.randint(1, 0x7fffffff))
-
     def _boot_nova_instances(self, ironic_conn):
         ironic_slaves = self.env.d_env.nodes().ironics
         user_image = ironic_conn.get_image_by_name('virtual_trusty_ext4')
         network = ironic_conn.nova.networks.find(label='baremetal')
         # Randomize name to avoid conflict on repetitive flavor creation.
-        flavor_name = self._rand_name('baremetal_flavor')
+        flavor_name = data_utils.rand_name('baremetal_flavor')
         flavor = ironic_conn.create_flavor(flavor_name, 1024, 1, 50)
         nics = [{'net-id': network.id}]
 
