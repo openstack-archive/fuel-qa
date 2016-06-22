@@ -129,18 +129,18 @@ class TestSeparateHaproxy(TestNetworkTemplatesBase):
         plugin_name = 'detach_haproxy'
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         asserts.assert_true(
-            self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
+            self.fuel_web.check_cluster_plugin_exists(cluster_id, plugin_name),
             msg)
         options = {'metadata/enabled': True}
-        self.fuel_web.update_plugin_data(cluster_id, plugin_name, options)
+        self.fuel_web.update_cluster_plugin_data(cluster_id, plugin_name, options)
 
         plugin_name = 'external_loadbalancer'
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         asserts.assert_true(
-            self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
+            self.fuel_web.check_cluster_plugin_exists(cluster_id, plugin_name),
             msg)
         options = {'metadata/enabled': True}
-        self.fuel_web.update_plugin_data(cluster_id, plugin_name, options)
+        self.fuel_web.update_cluster_plugin_data(cluster_id, plugin_name, options)
 
         self.show_step(8)
         self.show_step(9)

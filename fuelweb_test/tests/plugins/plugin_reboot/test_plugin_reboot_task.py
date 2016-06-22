@@ -97,10 +97,10 @@ class RebootPlugin(TestBasic):
         # get plugins from fuel and enable our one
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         asserts.assert_true(
-            self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
+            self.fuel_web.check_cluster_plugin_exists(cluster_id, plugin_name),
             msg)
         options = {'metadata/enabled': True}
-        self.fuel_web.update_plugin_data(cluster_id, plugin_name, options)
+        self.fuel_web.update_cluster_plugin_data(cluster_id, plugin_name, options)
 
         logger.info('Cluster is {!s}'.format(cluster_id))
 
@@ -239,10 +239,10 @@ class RebootPlugin(TestBasic):
         # get plugins from fuel and enable it
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         asserts.assert_true(
-            self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
+            self.fuel_web.check_cluster_plugin_exists(cluster_id, plugin_name),
             msg)
         options = {'metadata/enabled': True}
-        self.fuel_web.update_plugin_data(cluster_id, plugin_name, options)
+        self.fuel_web.update_cluster_plugin_data(cluster_id, plugin_name, options)
 
         logger.info('Cluster is {!s}'.format(cluster_id))
 

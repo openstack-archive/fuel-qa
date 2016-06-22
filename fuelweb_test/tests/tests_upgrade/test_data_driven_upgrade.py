@@ -233,8 +233,8 @@ class DataDrivenUpgradeBase(TestBasic):
         if cluster_settings.get('plugin'):
             plugin_name = cluster_settings['plugin']['name']
             assert_true(
-                self.fuel_web.check_plugin_exists(cluster_id, plugin_name))
-            self.fuel_web.update_plugin_data(
+                self.fuel_web.check_cluster_plugin_exists(cluster_id, plugin_name))
+            self.fuel_web.update_cluster_plugin_data(
                 cluster_id, plugin_name, cluster_settings['plugin']['data'])
 
         self.fuel_web.update_nodes(cluster_id, cluster_settings['nodes'])

@@ -74,12 +74,12 @@ class PluginsActions(object):
 
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         assert_true(
-            self.fuel_web.check_plugin_exists(
+            self.fuel_web.check_cluster_plugin_exists(
                 self.cluster_id,
                 self.plugin_name),
             msg)
         options = {'metadata/enabled': True}
-        self.fuel_web.update_plugin_data(
+        self.fuel_web.update_cluster_plugin_data(
             self.cluster_id,
             self.plugin_name, options)
 

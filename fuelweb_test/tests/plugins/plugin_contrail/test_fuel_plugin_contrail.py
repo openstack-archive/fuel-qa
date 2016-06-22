@@ -132,11 +132,11 @@ class ContrailPlugin(TestBasic):
         plugin_name = 'contrail'
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         assert_true(
-            self.fuel_web.check_plugin_exists(self.cluster_id, plugin_name),
+            self.fuel_web.check_cluster_plugin_exists(self.cluster_id, plugin_name),
             msg)
         logger.debug('we have contrail element')
         option = {'metadata/enabled': True, }
-        self.fuel_web.update_plugin_data(self.cluster_id, plugin_name, option)
+        self.fuel_web.update_cluster_plugin_data(self.cluster_id, plugin_name, option)
 
     def _create_net_subnet(self, cluster):
         """Create net and subnet"""

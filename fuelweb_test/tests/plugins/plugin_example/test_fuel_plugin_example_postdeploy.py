@@ -129,14 +129,14 @@ class ExamplePluginPostDeploy(TestBasic):
         plugin_name = 'fuel_plugin_example_v4_hotpluggable'
         msg = "Plugin couldn't be enabled. Check plugin version."
         assert_true(
-            self.fuel_web.check_plugin_exists(self.cluster_id, plugin_name),
+            self.fuel_web.check_cluster_plugin_exists(self.cluster_id, plugin_name),
             msg)
 
     def enable_plugin_v4(self):
         plugin_name = 'fuel_plugin_example_v4_hotpluggable'
         self.check_plugin_v4_is_installed()
         options = {'metadata/enabled': True}
-        self.fuel_web.update_plugin_data(self.cluster_id, plugin_name, options)
+        self.fuel_web.update_cluster_plugin_data(self.cluster_id, plugin_name, options)
 
     def __get_controller_nodelist(self):
         devops_nodes = [

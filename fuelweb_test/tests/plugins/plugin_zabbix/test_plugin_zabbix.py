@@ -92,12 +92,12 @@ class ZabbixPlugin(TestBasic):
         plugin_name = 'zabbix_monitoring'
 
         assert_true(
-            self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
+            self.fuel_web.check_cluster_plugin_exists(cluster_id, plugin_name),
             "Plugin couldn't be enabled. Check plugin version. Test aborted")
         plugin_options = {'metadata/enabled': True,
                           'username/value': zabbix_username,
                           'password/value': zabbix_password}
-        self.fuel_web.update_plugin_data(
+        self.fuel_web.update_cluster_plugin_data(
             cluster_id, plugin_name, plugin_options)
 
     def setup_snmp_plugin(self,
@@ -106,35 +106,35 @@ class ZabbixPlugin(TestBasic):
         plugin_name = 'zabbix_snmptrapd'
 
         assert_true(
-            self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
+            self.fuel_web.check_cluster_plugin_exists(cluster_id, plugin_name),
             "Plugin couldn't be enabled. Check plugin version. Test aborted")
         plugin_options = {'metadata/enabled': True,
                           'community/value': snmp_community}
-        self.fuel_web.update_plugin_data(
+        self.fuel_web.update_cluster_plugin_data(
             cluster_id, plugin_name, plugin_options)
 
     def setup_snmp_emc_plugin(self, cluster_id):
         plugin_name = 'zabbix_monitoring_emc'
 
         assert_true(
-            self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
+            self.fuel_web.check_cluster_plugin_exists(cluster_id, plugin_name),
             "Plugin couldn't be enabled. Check plugin version. Test aborted")
 
         plugin_options = {'metadata/enabled': True,
                           'hosts/value': 'emc:10.109.2.2'}
-        self.fuel_web.update_plugin_data(
+        self.fuel_web.update_cluster_plugin_data(
             cluster_id, plugin_name, plugin_options)
 
     def setup_snmp_extreme_plugin(self, cluster_id):
         plugin_name = 'zabbix_monitoring_extreme_networks'
 
         assert_true(
-            self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
+            self.fuel_web.check_cluster_plugin_exists(cluster_id, plugin_name),
             "Plugin couldn't be enabled. Check plugin version. Test aborted")
 
         plugin_options = {'metadata/enabled': True,
                           'hosts/value': 'extreme:10.109.2.2'}
-        self.fuel_web.update_plugin_data(
+        self.fuel_web.update_cluster_plugin_data(
             cluster_id, plugin_name, plugin_options)
 
     @staticmethod

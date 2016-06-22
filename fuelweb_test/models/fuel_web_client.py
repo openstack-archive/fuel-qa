@@ -2646,11 +2646,28 @@ class FuelWebClient29(object):
                 master_node, self.environment.d_env.nodes().slaves)
             return devops_node
 
-    def check_plugin_exists(self, cluster_id, plugin_name, section='editable'):
+    def check_cluster_plugin_exists(self, cluster_id, plugin_name, section='editable'):
         attr = self.client.get_cluster_attributes(cluster_id)[section]
         return plugin_name in attr
 
-    def update_plugin_data(self, cluster_id, plugin_name, data):
+    @logwrap
+    def list_cluster_enabled_plugins(self, cluster_id):
+        enabled_plugins = []
+        all_plugins = self.client.plugins_list()
+        cluster_attributes = self.client.get_cluster_attributes(cluster_id)
+        for plugin in all_plugins:
+            plugin_name = plugin['name']
+            if plugin_name in cluster_attributes['editable']:
+                if cluster_attributes['editable'][plugin_name]\
+                    ['metadata']['enabled']:
+                    enabled_plugins.append(plugin)
+                    logger.info('{} plugin is enabled '
+                                'in cluster id={}'.format(plugin_name,
+                                                          cluster_id))
+        return enabled_plugins
+
+
+    def update_cluster_plugin_data(self, cluster_id, plugin_name, data):
         attr = self.client.get_cluster_attributes(cluster_id)
         # Do not re-upload anything, except selected plugin data
         plugin_attributes = {
@@ -2677,7 +2694,7 @@ class FuelWebClient29(object):
                 plugin_data[path[-1]] = value
         self.client.update_cluster_attributes(cluster_id, plugin_attributes)
 
-    def get_plugin_data(self, cluster_id, plugin_name, version):
+    def get_cluster_plugin_data(self, cluster_id, plugin_name, version):
         """Return data (settings) for specified version of plugin
 
         :param cluster_id: int
@@ -2694,8 +2711,8 @@ class FuelWebClient29(object):
         raise AssertionError("Plugin {0} version {1} is not "
                              "found".format(plugin_name, version))
 
-    def update_plugin_settings(self, cluster_id, plugin_name, version, data,
-                               enabled=True):
+    def update_cluster_plugin_settings(self, cluster_id, plugin_name, version, data,
+                                       enabled=True):
         """Update settings for specified version of plugin
 
         :param plugin_name: string

@@ -87,10 +87,10 @@ class ExamplePlugin(TestBasic):
         plugin_name = 'fuel_plugin_example'
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         assert_true(
-            self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
+            self.fuel_web.check_cluster_plugin_exists(cluster_id, plugin_name),
             msg)
         options = {'metadata/enabled': True}
-        self.fuel_web.update_plugin_data(cluster_id, plugin_name, options)
+        self.fuel_web.update_cluster_plugin_data(cluster_id, plugin_name, options)
 
         self.fuel_web.update_nodes(
             cluster_id,
@@ -146,6 +146,7 @@ class ExamplePlugin(TestBasic):
         Duration 35m
         Snapshot deploy_ha_one_controller_neutron_example_v3
         """
+        self.check_run("deploy_ha_one_controller_neutron_example_v3")
         checkers.check_plugin_path_env(
             var_name='EXAMPLE_PLUGIN_V3_PATH',
             plugin_path=EXAMPLE_PLUGIN_V3_PATH
@@ -174,10 +175,10 @@ class ExamplePlugin(TestBasic):
         plugin_name = 'fuel_plugin_example_v3'
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         assert_true(
-            self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
+            self.fuel_web.check_cluster_plugin_exists(cluster_id, plugin_name),
             msg)
         options = {'metadata/enabled': True}
-        self.fuel_web.update_plugin_data(cluster_id, plugin_name, options)
+        self.fuel_web.update_cluster_plugin_data(cluster_id, plugin_name, options)
 
         self.fuel_web.update_nodes(
             cluster_id,
@@ -259,6 +260,33 @@ class ExamplePlugin(TestBasic):
 
         self.env.make_snapshot("deploy_ha_one_controller_neutron_example_v3")
 
+    @test(depends_on=[deploy_ha_one_controller_neutron_example_v3],
+          groups=["delete_plugin_enabled_in_cluster"])
+    @log_snapshot_after_test
+    def delete_plugin_enabled_in_cluster(self):
+        """Try remove plugin enabled in cluster
+
+        Scenario:
+            1. Try to remove plugin from cluster
+
+            Duration 3m
+        """
+
+        self.env.revert_snapshot("deploy_ha_one_controller_neutron_example_v3",
+                                 skip_timesync=True)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        enabled_plugins = self.fuel_web.list_cluster_enabled_plugins(cluster_id)
+        for plugin in enabled_plugins:
+            name = plugin['name']
+            version = plugin['version']
+            ip = self.ssh_manager.admin_ip
+            self.ssh_manager.execute_on_remote(
+                ip=ip,
+                cmd = 'fuel plugins --remove {0}=={1}'.format(name, version),
+                assert_ec_equal=[1]
+            )
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_example_ha"])
     @log_snapshot_after_test
@@ -312,10 +340,10 @@ class ExamplePlugin(TestBasic):
         plugin_name = 'fuel_plugin_example'
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         assert_true(
-            self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
+            self.fuel_web.check_cluster_plugin_exists(cluster_id, plugin_name),
             msg)
         options = {'metadata/enabled': True}
-        self.fuel_web.update_plugin_data(cluster_id, plugin_name, options)
+        self.fuel_web.update_cluster_plugin_data(cluster_id, plugin_name, options)
 
         self.fuel_web.update_nodes(
             cluster_id,
@@ -412,10 +440,10 @@ class ExamplePlugin(TestBasic):
         plugin_name = 'fuel_plugin_example'
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         assert_true(
-            self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
+            self.fuel_web.check_cluster_plugin_exists(cluster_id, plugin_name),
             msg)
         options = {'metadata/enabled': True}
-        self.fuel_web.update_plugin_data(cluster_id, plugin_name, options)
+        self.fuel_web.update_cluster_plugin_data(cluster_id, plugin_name, options)
 
         self.fuel_web.update_nodes(
             cluster_id,

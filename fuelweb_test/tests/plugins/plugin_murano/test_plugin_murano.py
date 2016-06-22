@@ -46,7 +46,7 @@ class MuranoPlugin(TestBasic):
         plugin_name = 'detach-murano'
 
         assert_true(
-            self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
+            self.fuel_web.check_cluster_plugin_exists(cluster_id, plugin_name),
             "Plugin couldn't be enabled. Check plugin version. Test aborted")
         plugin_options = {
             'metadata/enabled': True,
@@ -56,7 +56,7 @@ class MuranoPlugin(TestBasic):
             'metadata/versions/murano_cfapi/value': cfapi,
             'metadata/versions/murano_repo_url/value': apps_url
         }
-        self.fuel_web.update_plugin_data(
+        self.fuel_web.update_cluster_plugin_data(
             cluster_id, plugin_name, plugin_options)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],

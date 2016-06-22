@@ -60,7 +60,7 @@ class VMwareActions(object):
         """Configure DVS plugin."""
         msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
         assert_true(
-            self.fuel_web.check_plugin_exists(
+            self.fuel_web.check_cluster_plugin_exists(
                 self.cluster_id,
                 self.plugin_name),
             msg)
@@ -79,7 +79,7 @@ class VMwareActions(object):
             'vmware_dvs_net_maps/value': dvs_settings['dvswitch_name']
         }
 
-        self.fuel_web.update_plugin_settings(
+        self.fuel_web.update_cluster_plugin_settings(
             self.cluster_id, self.plugin_name, self.plugin_version, options,
             enabled=True)
 
