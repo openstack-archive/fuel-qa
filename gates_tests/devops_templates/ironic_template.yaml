@@ -1,0 +1,366 @@
+---
+template:
+  devops_settings:
+    address_pools:
+      admin:
+        net: !os_env POOL_DEFAULT, 10.109.0.0/16:24
+      ironic:
+        net: !os_env POOL_DEFAULT, 10.109.0.0/16:24
+      management:
+        net: !os_env POOL_DEFAULT, 10.109.0.0/16:24
+      private:
+        net: !os_env POOL_DEFAULT, 10.109.0.0/16:24
+      public:
+        net: !os_env POOL_DEFAULT, 10.109.0.0/16:24
+      storage:
+        net: !os_env POOL_DEFAULT, 10.109.0.0/16:24
+    env_name: !os_env ENV_NAME
+    groups:
+    - l2_network_devices:
+        admin:
+          address_pool: admin
+          dhcp: false
+          forward:
+            mode: nat
+        ironic:
+          address_pool: ironic
+          dhcp: false
+          forward:
+            mode: null
+        management:
+          address_pool: management
+          dhcp: false
+          forward:
+            mode: null
+        private:
+          address_pool: private
+          dhcp: false
+          forward:
+            mode: null
+        public:
+          address_pool: public
+          dhcp: false
+          forward:
+            mode: nat
+        storage:
+          address_pool: storage
+          dhcp: false
+          forward:
+            mode: null
+      name: rack-01
+      nodes:
+      - name: admin
+        params:
+          boot:
+          - hd
+          - cdrom
+          interfaces:
+          - l2_network_device: admin
+            label: eth0
+          memory: 3072
+          vcpu: 2
+          volumes:
+          - capacity: !os_env ADMIN_NODE_VOLUME_SIZE, 75
+            format: qcow2
+            name: system
+          - bus: ide
+            device: cdrom
+            format: raw
+            name: iso
+            source_image: !os_env ISO_PATH
+        role: fuel_master
+      - name: slave-01
+        params:
+          boot:
+          - network
+          - hd
+          interfaces:
+          - l2_network_device: admin
+            label: eth0
+          - l2_network_device: public
+            label: eth1
+          - l2_network_device: management
+            label: eth2
+          - l2_network_device: private
+            label: eth3
+          - l2_network_device: storage
+            label: eth4
+          - l2_network_device: ironic
+            label: eth5
+          memory: 4096
+          vcpu: 2
+          volumes:
+          - name: system
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+          - name: cinder
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+          - name: swift
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+        role: fuel_slave
+      - name: slave-02
+        params:
+          boot:
+          - network
+          - hd
+          interfaces:
+          - l2_network_device: admin
+            label: eth0
+          - l2_network_device: public
+            label: eth1
+          - l2_network_device: management
+            label: eth2
+          - l2_network_device: private
+            label: eth3
+          - l2_network_device: storage
+            label: eth4
+          - l2_network_device: ironic
+            label: eth5
+          memory: 4096
+          vcpu: 2
+          volumes:
+          - name: system
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+          - name: cinder
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+          - name: swift
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+        role: fuel_slave
+      - name: slave-03
+        params:
+          boot:
+          - network
+          - hd
+          interfaces:
+          - l2_network_device: admin
+            label: eth0
+          - l2_network_device: public
+            label: eth1
+          - l2_network_device: management
+            label: eth2
+          - l2_network_device: private
+            label: eth3
+          - l2_network_device: storage
+            label: eth4
+          - l2_network_device: ironic
+            label: eth5
+          memory: 4096
+          vcpu: 2
+          volumes:
+          - name: system
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+          - name: cinder
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+          - name: swift
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+        role: fuel_slave
+      - name: slave-04
+        params:
+          boot:
+          - network
+          - hd
+          interfaces:
+          - l2_network_device: admin
+            label: eth0
+          - l2_network_device: public
+            label: eth1
+          - l2_network_device: management
+            label: eth2
+          - l2_network_device: private
+            label: eth3
+          - l2_network_device: storage
+            label: eth4
+          - l2_network_device: ironic
+            label: eth5
+          memory: 4096
+          vcpu: 2
+          volumes:
+          - name: system
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+          - name: cinder
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+          - name: swift
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+        role: fuel_slave
+      - name: slave-05
+        params:
+          boot:
+          - network
+          - hd
+          interfaces:
+          - l2_network_device: admin
+            label: eth0
+          - l2_network_device: public
+            label: eth1
+          - l2_network_device: management
+            label: eth2
+          - l2_network_device: private
+            label: eth3
+          - l2_network_device: storage
+            label: eth4
+          - l2_network_device: ironic
+            label: eth5
+          memory: 4096
+          vcpu: 2
+          volumes:
+          - name: system
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+          - name: cinder
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+          - name: swift
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+        role: fuel_slave
+      - name: slave-06
+        params:
+          boot:
+          - network
+          - hd
+          interfaces:
+          - l2_network_device: admin
+            label: eth0
+          - l2_network_device: public
+            label: eth1
+          - l2_network_device: management
+            label: eth2
+          - l2_network_device: private
+            label: eth3
+          - l2_network_device: storage
+            label: eth4
+          - l2_network_device: ironic
+            label: eth5
+          memory: 4096
+          vcpu: 2
+          volumes:
+          - name: system
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+          - name: cinder
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+          - name: swift
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+        role: fuel_slave
+      - name: slave-07
+        params:
+          boot:
+          - network
+          - hd
+          interfaces:
+          - l2_network_device: admin
+            label: eth0
+          - l2_network_device: public
+            label: eth1
+          - l2_network_device: management
+            label: eth2
+          - l2_network_device: private
+            label: eth3
+          - l2_network_device: storage
+            label: eth4
+          - l2_network_device: ironic
+            label: eth5
+          memory: 4096
+          vcpu: 2
+          volumes:
+          - name: system
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+          - name: cinder
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+          - name: swift
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+        role: fuel_slave
+      - name: slave-08
+        params:
+          boot:
+          - network
+          - hd
+          interfaces:
+          - l2_network_device: admin
+            label: eth0
+          - l2_network_device: public
+            label: eth1
+          - l2_network_device: management
+            label: eth2
+          - l2_network_device: private
+            label: eth3
+          - l2_network_device: storage
+            label: eth4
+          - l2_network_device: ironic
+            label: eth5
+          memory: 4096
+          vcpu: 2
+          volumes:
+          - name: system
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+          - name: cinder
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+          - name: swift
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+        role: fuel_slave
+      - name: slave-09
+        params:
+          boot:
+          - network
+          - hd
+          interfaces:
+          - l2_network_device: admin
+            label: eth0
+          - l2_network_device: public
+            label: eth1
+          - l2_network_device: management
+            label: eth2
+          - l2_network_device: private
+            label: eth3
+          - l2_network_device: storage
+            label: eth4
+          - l2_network_device: ironic
+            label: eth5
+          memory: 4096
+          vcpu: 2
+          volumes:
+          - name: system
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+          - name: cinder
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+          - name: swift
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+            name: swift
+        role: fuel_slave
+      - name: ironic-slave-01
+        params:
+          boot:
+          - network
+          - hd
+          interfaces:
+          - l2_network_device: ironic
+            label: eth0
+          memory: 4096
+          vcpu: 2
+          volumes:
+          - name: system
+            capacity: !os_env NODE_VOLUME_SIZE, 50
+            format: qcow2
+        role: ironic_slave
