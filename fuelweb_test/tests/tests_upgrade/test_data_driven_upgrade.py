@@ -1200,7 +1200,7 @@ class UpgradeDetach_Plugin(DataDrivenUpgradeBase):
 
 
 @test(groups=['upgrade_no_cluster_tests'])
-class UpgradePluginNoCluster(DataDrivenUpgradeBase):
+class UpgradeNoCluster(DataDrivenUpgradeBase):
     def __init__(self):
         super(self.__class__, self).__init__()
         self.backup_name = "backup_no_cluster.tar.gz"
@@ -1249,3 +1249,48 @@ class UpgradePluginNoCluster(DataDrivenUpgradeBase):
         # TODO(vkhlyunev): add aditional checks for validation of restored node
         self.env.make_snapshot(self.snapshot_name, is_make=True)
         self.cleanup()
+
+    @test(groups=['upgrade_no_cluster_deploy'],
+          depends_on=[upgrade_no_cluster_restore])
+    @log_snapshot_after_test
+    def upgrade_no_cluster_deploy(self):
+        """Deploy fresh cluster using restored empty Fuel
+
+        Scenario:
+        1. Revert "upgrade_no_cluster_restore" snapshot
+        2. Bootstrap 2 additional nodes
+        3. Create cluster, add 1 controller and 1 compute nodes
+        4. Verify networks
+        5. Deploy cluster
+        6. Verify networks
+        7. Run OSTF
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot(self.snapshot_name)
+        self.show_step(2)
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:3])
+        self.show_step(3)
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.upgrade_no_cluster_deploy.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings={
+                'net_provider': settings.NEUTRON,
+                'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
+            }
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['compute', 'cinder']
+            }
+        )
+        self.show_step(4)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(5)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.show_step(6)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(7)
+        self.fuel_web.run_ostf(cluster_id)
