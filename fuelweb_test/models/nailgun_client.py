@@ -972,3 +972,10 @@ class NailgunClient(object):
                    '/overrides'.format(env_id=env_id, resource=resource,
                                        node_id=node_id)
         return self.client.put(endpoint, data)
+
+    @logwrap
+    @json_parse
+    def plugins_list(self):
+        """Get list of installed plugins"""
+        endpoint = '/api/plugins'
+        return self.client.get(endpoint)
