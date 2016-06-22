@@ -2650,6 +2650,21 @@ class FuelWebClient29(object):
         attr = self.client.get_cluster_attributes(cluster_id)[section]
         return plugin_name in attr
 
+    @logwrap
+    def list_cluster_enabled_plugins(self, cluster_id):
+        enabled_plugins = []
+        all_plugins = self.client.plugins_list()
+        cl_attrib = self.client.get_cluster_attributes(cluster_id)
+        for plugin in all_plugins:
+            plugin_name = plugin['name']
+            if plugin_name in cl_attrib['editable']:
+                if cl_attrib['editable'][plugin_name]['metadata']['enabled']:
+                    enabled_plugins.append(plugin)
+                    logger.info('{} plugin is enabled '
+                                'in cluster id={}'.format(plugin_name,
+                                                          cluster_id))
+        return enabled_plugins
+
     def update_plugin_data(self, cluster_id, plugin_name, data):
         attr = self.client.get_cluster_attributes(cluster_id)
         # Do not re-upload anything, except selected plugin data
