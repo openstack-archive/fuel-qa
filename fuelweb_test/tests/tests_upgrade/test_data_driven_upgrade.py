@@ -1194,7 +1194,7 @@ class UpgradeDetach_Plugin(DataDrivenUpgradeBase):
 
 
 @test(groups=['upgrade_no_cluster_tests'])
-class UpgradePluginNoCluster(DataDrivenUpgradeBase):
+class UpgradeNoCluster(DataDrivenUpgradeBase):
     def __init__(self):
         super(self.__class__, self).__init__()
         self.backup_name = "backup_no_cluster.tar.gz"
@@ -1239,7 +1239,117 @@ class UpgradePluginNoCluster(DataDrivenUpgradeBase):
         self.do_restore(self.backup_path, self.local_path,
                         self.repos_backup_path, self.repos_local_path)
         self.show_step(6)
+        self.fuel_web.change_default_network_settings()
         self.fuel_web.client.get_releases()
         # TODO(vkhlyunev): add aditional checks for validation of restored node
         self.env.make_snapshot(self.snapshot_name, is_make=True)
         self.cleanup()
+
+    @test(groups=['upgrade_no_cluster_deploy'],
+          depends_on=[upgrade_no_cluster_restore])
+    @log_snapshot_after_test
+    def upgrade_no_cluster_deploy(self):
+        """Deploy fresh cluster using restored empty Fuel
+
+        Scenario:
+        1. Revert "upgrade_no_cluster_restore" snapshot
+        2. Bootstrap 2 additional nodes
+        3. Create cluster, add 1 controller and 1 compute nodes
+        4. Verify networks
+        5. Deploy cluster
+        6. Verify networks
+        7. Run OSTF
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot(self.snapshot_name)
+        self.show_step(2)
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:3])
+        self.show_step(3)
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.upgrade_no_cluster_deploy.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings={
+                'net_provider': settings.NEUTRON,
+                'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
+            }
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['compute', 'cinder']
+            }
+        )
+        self.show_step(4)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(5)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.show_step(6)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(7)
+        self.fuel_web.run_ostf(cluster_id)
+        self.env.make_snapshot("upgrade_no_cluster_deploy", is_make=True)
+
+    @test(groups=['upgrade_no_cluster_new_deployment'],
+          depends_on=[upgrade_no_cluster_deploy])
+    @log_snapshot_after_test
+    def upgrade_smoke_new_deployment(self):
+        """Deploy Liberty cluster using upgraded to 8.0 Fuel.
+
+        Scenario:
+        1. Revert 'upgrade_no_cluster_deploy' snapshot
+        2. Delete existing cluster
+        3. Create new cluster with default parameters
+        4. Add 1 node with controller role
+        5. Add 1 node with compute+cinder roles
+        6. Verify network
+        7. Deploy changes
+        8. Run OSTF
+
+        Snapshot: upgrade_no_cluster_new_deployment
+        Duration: TODO
+        """
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot("upgrade_no_cluster_deploy", skip_timesync=True)
+
+        self.show_step(2)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        devops_nodes = self.fuel_web.get_devops_nodes_by_nailgun_nodes(
+            self.fuel_web.client.list_cluster_nodes(cluster_id=cluster_id)
+        )
+        self.fuel_web.client.delete_cluster(cluster_id)
+        wait(lambda: not any([cluster['id'] == cluster_id for cluster in
+                              self.fuel_web.client.list_clusters()]), 1800)
+        self.env.bootstrap_nodes(devops_nodes)
+
+        self.show_step(3)
+        releases = self.fuel_web.client.get_releases()
+        release_id = [
+            release['id'] for release in releases if
+            release['is_deployable'] and
+            settings.UPGRADE_FUEL_TO in release['version']][0]
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.upgrade_smoke_new_deployment.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            release_id=release_id,
+            settings={
+                'net_provider': settings.NEUTRON,
+                'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
+            }
+        )
+        self.show_step(4)
+        self.show_step(5)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['compute', 'cinder']
+            }
+        )
+        self.show_step(6)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(7)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.show_step(8)
+        self.fuel_web.run_ostf(cluster_id)
