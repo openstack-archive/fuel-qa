@@ -826,7 +826,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.show_step(12)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(13)
-        self.fuel_web.run_ostf(cluster_id)
+        self.fuel_web.run_ostf(cluster_id, should_fail=1)
         self.env.make_snapshot("upgrade_smoke_scale")
 
     @test(groups=['upgrade_smoke_reset_deploy'],
