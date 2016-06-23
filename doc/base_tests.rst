@@ -716,6 +716,11 @@ Deployment with platform components
 .. automodule:: fuelweb_test.tests.tests_separate_services.test_deploy_platform_components
    :members:
 
+Deployment with separate nodes for database, keystone, and rabbitmq (noha)
+--------------------------------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_separate_services.test_separate_noha
+   :members:
+
 Test for ssl components
 -----------------------
 .. automodule:: fuelweb_test.tests.test_ssl
