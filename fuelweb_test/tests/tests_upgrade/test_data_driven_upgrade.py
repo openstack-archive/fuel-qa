@@ -532,9 +532,9 @@ class UpgradeRollback(DataDrivenUpgradeBase):
         Snapshot: upgrade_rollback_ceph_ha
         Duration: XX m
         """
+        self.check_run(self.snapshot_name)
         assert_true(os.path.exists(self.repos_local_path))
         assert_true(os.path.exists(self.local_path))
-        self.check_run(self.snapshot_name)
         self.show_step(1)
         assert_true(
             self.env.revert_snapshot(self.source_snapshot_name),
@@ -718,10 +718,10 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         Duration: TODO
         """
 
+        self.check_run(self.snapshot_name)
         assert_true(os.path.exists(self.repos_local_path))
         assert_true(os.path.exists(self.local_path))
 
-        self.check_run(self.snapshot_name)
         self.show_step(1, initialize=True)
         assert_true(
             self.env.revert_snapshot(self.source_snapshot_name),
@@ -1094,10 +1094,10 @@ class UpgradeDetach_Plugin(DataDrivenUpgradeBase):
         Snapshot: upgrade_detach_plugin_restore
         Duration: TODO
         """
+        self.check_run(self.snapshot_name)
         assert_true(os.path.exists(self.repos_local_path))
         assert_true(os.path.exists(self.local_path))
 
-        self.check_run(self.snapshot_name)
         self.show_step(1, initialize=True)
         assert_true(
             self.env.revert_snapshot(self.source_snapshot_name),
