@@ -148,3 +148,107 @@ class SeparateServicesNoha(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("separate_all_services_noha", is_make=True)
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
+          groups=["separate_messaging_services_noha"])
+    @log_snapshot_after_test
+    def separate_messaging_service(self):
+        """Deploy cluster with 3 controllers, 1 nodes with db, 1 with rabbit,
+        2 with cinder+compute
+
+        Scenario:
+            1. Create cluster
+            2. Add 3 nodes with controller role
+            3. Add 1 nodes with database
+            4. Add 1 nodes with rabbit
+            5. Add 2 compute and cinder
+            6. Verify networks
+            7. Deploy the cluster
+            8. Verify networks
+            9. Run OSTF
+
+        Duration 120m
+        Snapshot separate_messaging_services_noha
+        """
+        self.check_run("separate_messaging_services_noha")
+
+        check_plugin_path_env(
+            var_name='SEPARATE_SERVICE_DB_PLUGIN_PATH',
+            plugin_path=settings.SEPARATE_SERVICE_DB_PLUGIN_PATH
+        )
+        check_plugin_path_env(
+            var_name='SEPARATE_SERVICE_RABBIT_PLUGIN_PATH',
+            plugin_path=settings.SEPARATE_SERVICE_KEYSTONE_PLUGIN_PATH
+        )
+        self.env.revert_snapshot("ready_with_9_slaves")
+
+        # copy plugins to the master node
+
+        utils.upload_tarball(
+            ip=self.ssh_manager.admin_ip,
+            tar_path=settings.SEPARATE_SERVICE_DB_PLUGIN_PATH,
+            tar_target="/var")
+
+        utils.upload_tarball(
+            ip=self.ssh_manager.admin_ip,
+            tar_path=settings.SEPARATE_SERVICE_RABBIT_PLUGIN_PATH,
+            tar_target="/var")
+
+        # install plugins
+
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.basename(
+                settings.SEPARATE_SERVICE_DB_PLUGIN_PATH))
+
+        utils.install_plugin_check_code(
+            ip=self.ssh_manager.admin_ip,
+            plugin=os.path.basename(
+                settings.SEPARATE_SERVICE_RABBIT_PLUGIN_PATH))
+
+        data = {
+            'tenant': 'separatemessaging',
+            'user': 'separatemessaging',
+            'password': 'separatemessaging',
+            "net_provider": 'neutron',
+            "net_segment_type": settings.NEUTRON_SEGMENT['vlan'],
+        }
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE,
+            settings=data)
+
+        plugin_names = ['detach-database', 'detach-rabbitmq']
+        msg = "Plugin couldn't be enabled. Check plugin version. Test aborted"
+        for plugin_name in plugin_names:
+            assert_true(
+                self.fuel_web.check_plugin_exists(cluster_id, plugin_name),
+                msg)
+            options = {'metadata/enabled': True}
+            self.fuel_web.update_plugin_data(cluster_id, plugin_name, options)
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['standalone-database'],
+                'slave-05': ['standalone-rabbitmq'],
+                'slave-06': ['compute', 'cinder'],
+                'slave-07': ['compute', 'cinder'],
+            }
+        )
+
+        self.fuel_web.verify_network(cluster_id)
+
+        # Cluster deploy
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.fuel_web.verify_network(cluster_id)
+
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.env.make_snapshot("separate_messaging_services_noha",
+                               is_make=True)
