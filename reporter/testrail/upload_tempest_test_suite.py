@@ -18,8 +18,8 @@ import subprocess
 
 from joblib import Parallel, delayed
 
-from fuelweb_test.testrail.settings import TestRailSettings
-from fuelweb_test.testrail.testrail_client import TestRailProject
+from reporter.testrail.settings import TestRailSettings
+from reporter.testrail.testrail_client import TestRailProject
 
 
 TEST_GROUPS = ["API", "CLI", "Scenario", "ThirdParty"]
