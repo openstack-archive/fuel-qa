@@ -1,5 +1,5 @@
+fuel-devops>=2.9.20
 nose==1.2.1
-git+git://github.com/openstack/fuel-devops.git@2.9.20
 anyjson==0.3.1
 paramiko
 proboscis==1.2.6.0
@@ -15,7 +15,7 @@ oslo.i18n>=3.1.0
 six
 Jinja2
 AllPairs==2.0.1
-launchpadlib
+launchpadlib==1.10.3
 beautifulsoup4>=4.2.0
 joblib>=0.8.4
 pytest>=2.9
