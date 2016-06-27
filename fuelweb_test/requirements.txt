@@ -1,7 +1,6 @@
 nose==1.2.1
-git+git://github.com/openstack/fuel-devops.git@2.9.19
-anyjson==0.3.1
-paramiko
+anyjson>=0.3.3  # BSD
+paramiko>=1.16.0  # LGPL
 proboscis==1.2.6.0
 ipaddr
 junitxml>=0.7.0
