@@ -818,7 +818,8 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         for node in pending_nodes:
             wait(lambda: self.fuel_web.is_node_discovered(node),
                  timeout=6 * 60)
-            ip = self.fuel_web.get_nailgun_node_by_devops_node(node)['ip']
+            ip = self.fuel_web.get_nailgun_node_by_devops_node(
+                self.env.d_env.get_node(name='slave-06'))['ip']
             checkers.verify_bootstrap_on_node(ip, "ubuntu")
         self.show_step(12)
         self.fuel_web.verify_network(cluster_id)
