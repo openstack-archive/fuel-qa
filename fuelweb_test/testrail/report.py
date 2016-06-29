@@ -571,8 +571,12 @@ def main():
                (milestone['name'], prefix, 'iso', '#' + str(iso_number))))
 
     test_plan = project.get_plan_by_name(test_plan_name)
-    iso_link = '/'.join([JENKINS['url'], 'job',
-                         '{0}.all'.format(milestone['name']), str(iso_number)])
+
+    iso_job_name = '{0}{1}.all'.format(milestone['name'],
+                                       '-{0}'.format(prefix) if prefix
+                                       else '')
+    iso_link = '/'.join([JENKINS['url'], 'job', iso_job_name, str(iso_number)])
+
     if not test_plan:
         test_plan = project.add_plan(test_plan_name,
                                      description=iso_link,
