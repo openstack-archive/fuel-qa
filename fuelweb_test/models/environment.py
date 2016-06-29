@@ -608,7 +608,8 @@ class EnvironmentModel(object):
     # then `bootstrap_admin_node.sh;`
     def admin_install_updates(self):
         logger.info('Searching for updates..')
-        update_command = 'yum clean expire-cache; yum update -y'
+        update_command = 'yum clean expire-cache; ' \
+                         'yum update -y 2>>/var/log/yum-update-error.log'
 
         update_result = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
