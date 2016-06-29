@@ -420,8 +420,9 @@ MAKE_SNAPSHOT = get_var_as_bool('MAKE_SNAPSHOT', False)
 FUEL_SETTINGS_YAML = os.environ.get('FUEL_SETTINGS_YAML',
                                     '/etc/fuel/astute.yaml')
 
-UPGRADE_FUEL_FROM = os.environ.get('UPGRADE_FUEL_FROM', '8.0')
-UPGRADE_FUEL_TO = os.environ.get('UPGRADE_FUEL_TO', '9.0')
+UPGRADE_FUEL_FROM = os.environ.get('UPGRADE_FUEL_FROM', '7.0')
+UPGRADE_FUEL_TO = os.environ.get('UPGRADE_FUEL_TO', '8.0')
+OCTANE_PATCHES = os.environ.get('OCTANE_PATCHES', None)
 
 SNAPSHOT = os.environ.get('SNAPSHOT', '')
 # For 5.1.1 we have 2 releases in tarball and should specify what we need
