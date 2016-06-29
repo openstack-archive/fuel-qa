@@ -195,3 +195,84 @@ class SeparateServicesNoha(TestBasic):
         self.fuel_web.run_ostf(cluster_id=self.cluster_id)
 
         self.env.make_snapshot("separate_all_services_noha", is_make=True)
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
+          groups=["separate_messaging_services_noha"])
+    @log_snapshot_after_test
+    def separate_messaging_services_noha(self):
+        """Test all detached messaging services on their own node
+
+        Deploy cluster with 3 controllers, 1 with detached database, 1 with
+        detached keystone, 1 with detached rabbit, 2 with cinder+compute and
+        DVR enabled
+
+        Scenario:
+            1. Install detached plugins
+            2. Create cluster
+            3. Enable plugins
+            4. Configure nodes with the following roles:
+               3 controllers
+               1 detached-database
+               1 detached-rabbit
+               2 commute+cinder
+            5. Verify networks
+            6. Deploy the cluster
+            7. Verify networks
+            8. Run OSTF
+
+        Duration 120m
+        Snapshot separate_messaging_services_noha
+        """
+        self.check_run("separate_messaging_services_noha")
+
+        self.env.revert_snapshot("ready_with_9_slaves")
+
+        plugins = ['detach-database', 'detach-rabbitmq']
+
+        self.show_step(1, initialize=True)
+        self.prep_plugins()
+        self.install_plugins(plugin_names=plugins)
+
+        data = {
+            'tenant': 'separatemessaging',
+            'user': 'separatemessaging',
+            'password': 'separatemessaging',
+            'net_provider': 'neutron',
+            'net_segment_type': settings.NEUTRON_SEGMENT['vlan'],
+            'neutron_dvr': True,
+        }
+
+        self.show_step(2)
+        self.create_cluster(cluster_settings=data)
+
+        self.show_step(3)
+        self.enable_plugins(plugin_names=plugins)
+
+        self.show_step(4)
+        self.fuel_web.update_nodes(
+            self.cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['standalone-database'],
+                'slave-05': ['standalone-rabbitmq'],
+                'slave-06': ['compute', 'cinder'],
+                'slave-07': ['compute', 'cinder'],
+            }
+        )
+
+        self.show_step(5)
+        self.fuel_web.verify_network(self.cluster_id)
+
+        self.show_step(6)
+        self.fuel_web.deploy_cluster_wait(self.cluster_id)
+
+        self.show_step(7)
+        self.fuel_web.verify_network(self.cluster_id)
+
+        self.show_step(8)
+        self.fuel_web.run_ostf(cluster_id=self.cluster_id)
+
+        self.env.make_snapshot("separate_messaging_services_noha",
+                               is_make=True)
