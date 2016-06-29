@@ -112,6 +112,17 @@ class DataDrivenUpgradeBase(TestBasic):
 
         run_on_remote(self.admin_remote, "yum install -y fuel-octane")
 
+        if settings.OCTANE_PATCHES:
+            self.admin_remote.upload(
+                os.path.join(
+                    os.path.abspath(os.path.dirname(__file__)),
+                    "octane_patcher.sh"),
+                "/tmp/octane_patcher.sh")
+
+            run_on_remote(
+                self.admin_remote,
+                "bash /tmp/octane_patches {}".format(settings.OCTANE_PATCHES))
+
         if settings.FUEL_PROPOSED_REPO_URL:
             # pylint: disable=no-member
             self.admin_remote.rm_rf(conf_file)
