@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-#
-#    Copyright 2015 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -14,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import sys
-from reporter.testrail.report import main
+import os
 
+from reporter.testrail.settings import LOGS_DIR
 
-if __name__ == "__main__":
-    main()
+if not os.path.exists(LOGS_DIR):
+    os.makedirs(LOGS_DIR)

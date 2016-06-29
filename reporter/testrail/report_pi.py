@@ -21,13 +21,13 @@ from optparse import OptionParser
 
 import requests
 
-from fuelweb_test.testrail.builds import Build
-from fuelweb_test.testrail.report import get_tests_results
-from fuelweb_test.testrail.report import publish_results
-from fuelweb_test.testrail.settings import JENKINS
-from fuelweb_test.testrail.settings import logger
-from fuelweb_test.testrail.settings import TestRailSettings
-from fuelweb_test.testrail.testrail_client import TestRailProject
+from reporter.testrail.builds import Build
+from reporter.testrail.report import get_tests_results
+from reporter.testrail.report import publish_results
+from reporter.testrail.settings import JENKINS
+from reporter.testrail.settings import logger
+from reporter.testrail.settings import TestRailSettings
+from reporter.testrail.testrail_client import TestRailProject
 
 
 def find_run_by_name(test_plan, run_name):
