@@ -102,6 +102,23 @@ def store_error_details(name, env):
                              " {0}".format(traceback.format_exc()))
 
 
+def log_snapshot_timeout(timeout):
+    def _wrapper(func):
+        def wrapper(*args, **kwargs):
+            o_timeout = settings.LOG_SNAPSHOT_TIMEOUT
+            settings.LOG_SNAPSHOT_TIMEOUT = timeout
+            logger.info('Log snapshot timeout changed '
+                        'from {} to {}'.format(o_timeout, timeout))
+
+            result = func(*args, **kwargs)
+
+            settings.LOG_SNAPSHOT_TIMEOUT = o_timeout
+            logger.info('Log snapshot timeout restored to original value')
+            return result
+        return functools.wraps(func)(wrapper)
+    return _wrapper
+
+
 def log_snapshot_after_test(func):
     """Generate diagnostic snapshot after the end of the test.
 
@@ -332,7 +349,10 @@ def revert_info(snapshot_name, master_ip, description=""):
 
 
 def create_diagnostic_snapshot(env, status, name=""):
-    task = env.fuel_web.task_wait(env.fuel_web.client.generate_logs(), 60 * 10)
+    timeout = settings.LOG_SNAPSHOT_TIMEOUT
+    logger.debug('Starting log snapshot with '
+                 'timeout {} seconds'.format(timeout))
+    task = env.fuel_web.task_wait(env.fuel_web.client.generate_logs(), timeout)
     assert_true(task['status'] == 'ready',
                 "Generation of diagnostic snapshot failed: {}".format(task))
     if settings.FORCE_HTTPS_MASTER_NODE:
