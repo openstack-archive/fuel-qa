@@ -1158,8 +1158,8 @@ def check_client_smoke(ip):
 
 
 def check_offload(ip, interface, offload_type):
-    command = "ethtool --show-offload {0} |" \
-              " awk '/{1}/ {{print $2}}'".format(interface, offload_type)
+    command = ("ethtool --show-offload {0} | awk '/{1}/' "
+               "| cut -d ':' -f 2").format(interface, offload_type)
 
     result = ssh_manager.execute_on_remote(
         ip=ip,
@@ -1167,7 +1167,10 @@ def check_offload(ip, interface, offload_type):
         err_msg="Failed to get Offload {0} "
                 "on node {1}".format(offload_type, ip)
     )
-    return ''.join(result['stdout']).rstrip()
+    logger.info("result['stdout']:\n{}".format(result['stdout']))
+    import ipdb
+    ipdb.set_trace()
+    return ''.join(result['stdout']).strip()
 
 
 def check_get_network_data_over_cli(ip, cluster_id, path):
