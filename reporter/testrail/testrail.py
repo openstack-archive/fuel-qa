@@ -32,7 +32,7 @@ import requests
 from requests.exceptions import HTTPError
 from requests.packages.urllib3 import disable_warnings
 
-from fuelweb_test.testrail.settings import logger
+from reporter.testrail.settings import logger
 
 
 disable_warnings()
@@ -52,7 +52,7 @@ def request_retry(codes):
                     error_code = e.response.status_code
                     if error_code in codes:
                         if iter_number < codes[error_code]:
-                            wait = 5
+                            wait = 60
                             if 'Retry-After' in e.response.headers:
                                 wait = int(e.response.headers['Retry-after'])
                             logger.debug(log_msg.format(error_code, wait))
@@ -83,7 +83,8 @@ class APIClient(object):
         return self.__send_request('POST', uri, data)
 
     def __send_request(self, method, uri, data):
-        retry_codes = {429: 3}
+        retry_codes = {429: 3,
+                       503: 10}
 
         @request_retry(codes=retry_codes)
         def __get_response(_url, _headers, _data):
