@@ -712,3 +712,5 @@ S3_API_CLIENT = os.environ.get("S3_API_CLIENT", "s3cmd")
 MASTER_NODE_EXTRA_PACKAGES = os.environ.get("MASTER_NODE_EXTRA_PACKAGES", "")
 
 CENTOS_MASTER_NODE = os.environ.get("CENTOS_MASTER")
+
+LOG_SNAPSHOT_TIMEOUT = int(os.environ.get("LOG_SNAPSHOT_TIMEOUT", 10 * 60))
