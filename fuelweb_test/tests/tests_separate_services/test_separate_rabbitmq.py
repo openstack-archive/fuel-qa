@@ -208,6 +208,7 @@ class SeparateRabbitFailover(TestBasic):
         wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
             controller)['online'], timeout=60 * 5)
 
+        # One test should fail: Check state of haproxy backends on controllers
         self.fuel_web.assert_ha_services_ready(cluster_id, should_fail=1)
         self.fuel_web.assert_os_services_ready(cluster_id, timeout=15 * 60)
 
