@@ -36,7 +36,7 @@ class CICMaintenanceMode(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["cic_maintenance_mode_env"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cic_maintenance_mode_env(self):
         """Deploy cluster in HA mode with 3 controller for maintenance mode
 
@@ -84,7 +84,7 @@ class CICMaintenanceMode(TestBasic):
     @test(depends_on=[cic_maintenance_mode_env],
           groups=["manual_cic_maintenance_mode",
                   "positive_cic_maintenance_mode"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def manual_cic_maintenance_mode(self):
         """Check manual maintenance mode for controller
 
@@ -187,7 +187,7 @@ class CICMaintenanceMode(TestBasic):
     @test(depends_on=[cic_maintenance_mode_env],
           groups=["auto_cic_maintenance_mode",
                   "positive_cic_maintenance_mode"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def auto_cic_maintenance_mode(self):
         """Check auto maintenance mode for controller
 
@@ -311,7 +311,7 @@ class CICMaintenanceMode(TestBasic):
     @test(depends_on=[cic_maintenance_mode_env],
           groups=["negative_manual_cic_maintenance_mode",
                   "negative_cic_maintenance_mode"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def negative_manual_cic_maintenance_mode(self):
         """Check negative scenario for manual maintenance mode
 
@@ -375,7 +375,7 @@ class CICMaintenanceMode(TestBasic):
     @test(depends_on=[cic_maintenance_mode_env],
           groups=["negative_auto_cic_maintenance_mode",
                   "negative_cic_maintenance_mode"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def negative_auto_cic_maintenance_mode(self):
         """Check negative scenario for auto maintenance mode
 

@@ -35,7 +35,7 @@ class Gate(TestIronicDeploy):
     """
     @test(depends_on_groups=['prepare_release'],
           groups=["review_fuel_agent_ironic_deploy"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def gate_patch_fuel_agent(self):
         """Revert snapshot, update fuel-agent, bootstrap from review
         and provision one node.

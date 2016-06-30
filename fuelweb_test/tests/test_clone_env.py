@@ -33,7 +33,7 @@ class TestCloneEnv(TestBasic):
     snapshot = 'upgrade_ha_ceph_for_all_ubuntu_neutron_vlan'
 
     @test(groups=["test_clone_environment"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def test_clone_environment(self):
         """Test clone environment
         Scenario:
@@ -119,7 +119,7 @@ class TestCloneEnv(TestBasic):
         depends_on_groups=['upgrade_old_nodes'],
         # TODO(astepanov) maintain names changes later
         groups=["test_clone_nonexistent_cluster"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def test_clone_nonexistent_cluster(self):
         """Test clone environment with nonexistent cluster id as argument
         Scenario:
@@ -144,7 +144,7 @@ class TestCloneEnv(TestBasic):
             fail("Doesn't raise needed error")
 
     @test(groups=["test_clone_wo_name_in_body"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def test_clone_wo_name_in_body(self):
         """Test clone without name in POST body
         Scenario:
@@ -174,7 +174,7 @@ class TestCloneEnv(TestBasic):
             fail("Doesn't raise needed error")
 
     @test(groups=["test_clone_wo_release_id_in_body"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def test_clone_wo_release_id_in_body(self):
         """Test clone without release id in POST body
         Scenario:
@@ -253,7 +253,7 @@ class TestCloneEnv(TestBasic):
             fail("Doesn't raise needed error")
 
     @test(groups=["test_clone_with_incorrect_release_id"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def test_clone_with_incorrect_release_id(self):
         """Test clone with incorrect release id in POST body
         Scenario:

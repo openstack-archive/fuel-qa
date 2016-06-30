@@ -174,7 +174,7 @@ class UnlockSettingsTab(TestBasic):
                       SetupEnvironment.prepare_slaves_5,
                       SetupEnvironment.prepare_slaves_9],
           groups=["deploy_with_redeploy_and_modify_settings"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_with_redeploy_and_modify_settings(self):
         """Deploy iteratively clusters from config, modify settings, redeploy
 

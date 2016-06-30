@@ -26,7 +26,7 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["cli_deploy_ceph_neutron_tun"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cli_deploy_ceph_neutron_tun(self):
         """Deployment with 3 controllers, NeutronTUN, both Ceph
 
@@ -107,7 +107,7 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["cli_deploy_ceph_neutron_vlan"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cli_deploy_ceph_neutron_vlan(self):
         """Deployment with 3 controlelrs, NeutronVLAN, both Ceph
 

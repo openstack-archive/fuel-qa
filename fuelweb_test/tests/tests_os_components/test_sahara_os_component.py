@@ -26,7 +26,7 @@ class SaharaOSComponent(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=['sahara_ceph_ephemeral'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def sahara_ceph_ephemeral(self):
         """Deployment with 3 controllers, NeutronVLAN, with Ceph for volumes,
            images, ephemeral, object with Sahara

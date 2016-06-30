@@ -97,7 +97,7 @@ class LbaasPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_neutron_lbaas_simple"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_neutron_lbaas_simple(self):
         """Deploy cluster in simple mode with LbaaS plugin
 
@@ -174,7 +174,7 @@ class LbaasPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_neutron_lbaas_simple_reset_ready"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_neutron_lbaas_simple_reset_ready(self):
         """Deploy and re-deploy cluster in simple mode with LbaaS plugin
 

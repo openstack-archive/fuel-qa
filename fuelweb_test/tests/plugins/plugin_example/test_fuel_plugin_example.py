@@ -34,7 +34,7 @@ class ExamplePlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ha_controller_neutron_example"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ha_one_controller_neutron_example(self):
         """Deploy cluster with one controller and example plugin
 
@@ -127,7 +127,7 @@ class ExamplePlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ha_controller_neutron_example_v3"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ha_one_controller_neutron_example_v3(self):
         """Deploy cluster with one controller and example plugin v3
 
@@ -263,7 +263,7 @@ class ExamplePlugin(TestBasic):
 
     @test(depends_on=[deploy_ha_one_controller_neutron_example_v3],
           groups=["delete_plugin_enabled_in_cluster"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def delete_plugin_enabled_in_cluster(self):
         """Try remove plugin enabled in cluster
 
@@ -289,7 +289,7 @@ class ExamplePlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_example_ha"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_neutron_example_ha(self):
         """Deploy cluster in ha mode with example plugin
 
@@ -383,7 +383,7 @@ class ExamplePlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_example_ha_add_node"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_neutron_example_ha_add_node(self):
         """Deploy and scale cluster in ha mode with example plugin
 

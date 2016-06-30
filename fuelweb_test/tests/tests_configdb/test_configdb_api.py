@@ -35,7 +35,7 @@ class TestsConfigDBAPI(TestBasic):
     @test(depends_on=[SetupEnvironment.setup_master],
           groups=["create_component_and_env_configdb",
                   "smoke_test_configdb"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def create_component_and_env_configdb(self):
         """ Install and check ConfigDB
 
@@ -117,7 +117,7 @@ class TestsConfigDBAPI(TestBasic):
 
     @test(depends_on_groups=['create_component_and_env_configdb'],
           groups=["get_upload_resource_value", "smoke_test_configdb"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def get_upload_resource_value(self):
         """ Getting and uploading resource values
 
@@ -211,7 +211,7 @@ class TestsConfigDBAPI(TestBasic):
 
     @test(depends_on_groups=['create_component_and_env_configdb'],
           groups=["override_resource_value", "smoke_test_configdb"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def override_resource_value(self):
         """ Check overridden data takes priority
 

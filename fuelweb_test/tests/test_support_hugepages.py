@@ -84,7 +84,7 @@ class SupportHugepages(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["basic_env_for_hugepages"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def basic_env_for_hugepages(self):
         """Basic environment for hugepages
 
@@ -214,7 +214,7 @@ class SupportHugepages(TestBasic):
 
     @test(depends_on=[basic_env_for_hugepages],
           groups=["check_hugepages_distribution_per_numa"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_hugepages_distribution_per_numa(self):
         """Deploy environment with different HugePages allocation
 
@@ -308,7 +308,7 @@ class SupportHugepages(TestBasic):
 
     @test(depends_on=[check_hugepages_distribution_per_numa],
           groups=["check_instance_one_gb_page_size_one_gb_host"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_instance_one_gb_page_size_one_gb_host(self):
         """Boot instance with 1 Gb page size on host with only 1 Gb HugePages
 
@@ -331,7 +331,7 @@ class SupportHugepages(TestBasic):
 
     @test(depends_on=[check_hugepages_distribution_per_numa],
           groups=["check_instance_two_mb_page_size_two_mb_host"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_instance_two_mb_page_size_two_mb_host(self):
         """Boot instance with 2 Mb page size on host with only 2 Mb HugePages
 
@@ -354,7 +354,7 @@ class SupportHugepages(TestBasic):
 
     @test(depends_on=[check_hugepages_distribution_per_numa],
           groups=["check_instance_one_gb_page_size_mixed_size_host"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_instance_one_gb_page_size_mixed_size_host(self):
         """Boot instance with 1 Gb page size on host with both HugePages types
 
@@ -377,7 +377,7 @@ class SupportHugepages(TestBasic):
 
     @test(depends_on=[check_hugepages_distribution_per_numa],
           groups=["check_instance_two_mb_page_size_mixed_size_host"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_instance_two_mb_page_size_mixed_size_host(self):
         """Boot instance with 2 Mb page size on host with both HugePages types
 
@@ -400,7 +400,7 @@ class SupportHugepages(TestBasic):
 
     @test(depends_on=[check_hugepages_distribution_per_numa],
           groups=["check_hugepages_nova_scheduler"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_instance_two_mb_page_size_mixed_role_host(self):
         """Boot instance with both HP sizes on host with Cinder+Compute role
 
@@ -430,7 +430,7 @@ class SupportHugepages(TestBasic):
 
     @test(depends_on=[check_hugepages_distribution_per_numa],
           groups=["check_hugepages_after_reboot"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_hugepages_after_reboot(self):
         """Boot instances with both HP sizes on compute after reboot
 

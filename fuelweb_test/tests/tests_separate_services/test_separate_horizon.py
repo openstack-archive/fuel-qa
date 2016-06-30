@@ -33,7 +33,7 @@ class SeparateHorizon(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["separate_horizon_service"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def separate_horizon_service(self):
         """Deploy cluster with 3 separate horizon roles
 
@@ -132,7 +132,7 @@ class SeparateHorizonFailover(TestBasic):
 
     @test(depends_on=[SeparateHorizon.separate_horizon_service],
           groups=["separate_horizon_service_shutdown"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def separate_horizon_service_shutdown(self):
         """Shutdown one horizon node
 
@@ -158,7 +158,7 @@ class SeparateHorizonFailover(TestBasic):
 
     @test(depends_on=[SeparateHorizon.separate_horizon_service],
           groups=["separate_horizon_service_restart"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def separate_horizon_service_restart(self):
         """Restart one horizon node
 
@@ -184,7 +184,7 @@ class SeparateHorizonFailover(TestBasic):
 
     @test(depends_on=[SeparateHorizon.separate_horizon_service],
           groups=["separate_horizon_service_controller_shutdown"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def separate_horizon_service_controller_shutdown(self):
         """Shutdown primary controller node
 
@@ -215,7 +215,7 @@ class SeparateHorizonFailover(TestBasic):
 
     @test(depends_on=[SeparateHorizon.separate_horizon_service],
           groups=["separate_horizon_service_add_delete_node"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def separate_horizon_service_add_delete_node(self):
         """Add and delete horizon node
 

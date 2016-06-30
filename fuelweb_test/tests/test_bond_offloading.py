@@ -44,7 +44,7 @@ class TestOffloading(BondingTest):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["offloading_bond_neutron_vlan", "bonding"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def offloading_bond_neutron_vlan(self):
         """Verify offloading types for the logical bonded interfaces and
         neutron VLAN
@@ -152,7 +152,7 @@ class TestOffloading(BondingTest):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["offloading_bond_neutron_vxlan", "bonding"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def offloading_bond_neutron_vxlan(self):
         """Verify setting offloading types for the logical bonded interfaces
         and neutron VXLAN

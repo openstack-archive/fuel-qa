@@ -31,7 +31,7 @@ class GateOstf(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["gate_ostf_ceph_ha"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def gate_ostf_ceph_ha(self):
         """Deploy ceph with cinder in HA mode
 
@@ -95,7 +95,7 @@ class GateOstf(TestBasic):
 
     @test(depends_on=[gate_ostf_ceph_ha],
           groups=["gate_ostf_update"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def gate_ostf_update(self):
         """ Update ostf start on deployed cluster
 

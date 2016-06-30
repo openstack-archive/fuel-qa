@@ -93,7 +93,7 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["review_fuel_client"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def review_fuel_cli_one_node_deploy(self):
         """ Revert snapshot, apply changes from review and deploy
         cluster with controller node only over cli.

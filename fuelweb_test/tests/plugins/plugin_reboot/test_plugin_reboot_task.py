@@ -32,7 +32,7 @@ class RebootPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_cluster_with_reboot_plugin"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_cluster_with_reboot_plugin(self):
         """Add pre-deployment reboot task to nailgun via plugin.
 
@@ -170,7 +170,7 @@ class RebootPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_cluster_with_reboot_plugin_timeout"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_cluster_with_reboot_plugin_timeout(self):
         """Check deployment is failed by reboot task plugin.
 

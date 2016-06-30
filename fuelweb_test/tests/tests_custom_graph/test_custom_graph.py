@@ -78,7 +78,7 @@ class TestCustomGraph(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=['pre_provision_ubuntu_slaves_3'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def pre_provision_ubuntu_slaves_3(self):
         """Bootstrap 3 slave nodes with prepared target image
 
@@ -133,7 +133,7 @@ class TestCustomGraph(TestBasic):
 
     @test(depends_on=[pre_provision_ubuntu_slaves_3],
           groups=['custom_graph', 'graph_isolation', 'custom_graph_leakage'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def custom_graph_leakage(self):
         """Check tasks for custom graph are not shown in default
 
@@ -237,7 +237,7 @@ class TestCustomGraph(TestBasic):
 
     @test(depends_on=[pre_provision_ubuntu_slaves_3],
           groups=['custom_graph', 'graph_isolation', 'default_graph_leakage'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def default_graph_leakage(self):
         """Check tasks for default graph are not shown in custom
 
@@ -368,7 +368,7 @@ class TestCustomGraph(TestBasic):
 
     @test(depends_on=[pre_provision_ubuntu_slaves_3],
           groups=['custom_graph', 'graph_merge', 'default_is_from_puppet'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def default_is_from_puppet(self):
         """Verify that default graph is generated from
         tasks in /etc/puppet
@@ -416,7 +416,7 @@ class TestCustomGraph(TestBasic):
     @test(depends_on=[pre_provision_ubuntu_slaves_3],
           groups=['custom_graph', 'graph_merge',
                   'tasks_merge_cluster_and_release'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def tasks_merge_cluster_and_release(self):
         """Verify custom graph merging from release and cluster tasks
 
@@ -508,7 +508,7 @@ class TestCustomGraph(TestBasic):
     @test(depends_on=[pre_provision_ubuntu_slaves_3],
           groups=['custom_graph', 'graph_isolation',
                   'two_custom_graphs_interfere'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def two_custom_graphs_interfere(self):
         """Verify that two custom graphs do not interfere with each other.
 
@@ -639,7 +639,7 @@ class TestCustomGraph(TestBasic):
 
     @test(depends_on=[pre_provision_ubuntu_slaves_3],
           groups=['custom_graph', 'custom_graph_master_node'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def master_node_tasks(self):
         """Verify tasks execution and ordering on master node
 
@@ -704,7 +704,7 @@ class TestCustomGraph(TestBasic):
 
     @test(depends_on=[pre_provision_ubuntu_slaves_3],
           groups=['custom_graph', 'custom_graph_edges'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def custom_yaql_expression_tasks(self):
         """Verify yaql expressions are working in custom graph
 
@@ -805,7 +805,7 @@ class TestCustomGraph(TestBasic):
 
     @test(depends_on=[pre_provision_ubuntu_slaves_3],
           groups=['custom_graph', 'graph_meta'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def information_at_graphs_handler(self):
         """Get info of api handlers
 

@@ -45,7 +45,7 @@ class RepetitiveRestart(TestLoadBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["ceph_partitions_repetitive_cold_restart"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     @setup_teardown(setup=TestLoadBase.prepare_load_ceph_ha)
     def ceph_partitions_repetitive_cold_restart(self):
         """Ceph-osd partitions on 30% ~start rally~ repetitive cold restart

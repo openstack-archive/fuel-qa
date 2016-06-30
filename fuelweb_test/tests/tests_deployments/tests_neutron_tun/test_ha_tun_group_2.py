@@ -32,7 +32,7 @@ class HaTunGroup2(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["tun_ha_ceph_base_os"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def tun_ha_ceph_base_os(self):
         """Deploy 3 controllers, 1 base_os, 2 computes
            and 3 ceph nodes with Neutron Tun
@@ -100,7 +100,7 @@ class HaTunGroup2(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["tun_ceph_all"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def tun_ceph_all(self):
         """Deployment with 3 controllers, NeutronVxLAN,
            with Ceph for volumes and images, ephemeral and Rados GW for objects

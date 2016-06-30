@@ -36,7 +36,7 @@ class SaharaHAOneController(TestBasic):
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_sahara_ha_one_controller_tun"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_sahara_ha_one_controller_tun(self):
         """Deploy cluster in ha mode with 1 controller Sahara and Neutron VXLAN
 
@@ -139,7 +139,7 @@ class SaharaHA(TestBasic):
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_sahara_ha_tun"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_sahara_ha_tun(self):
         """Deploy cluster in HA mode with Sahara and Neutron VXLAN
 
@@ -246,7 +246,7 @@ class MuranoHAOneController(TestBasic):
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_murano_ha_one_controller_tun"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_murano_ha_one_controller_tun(self):
         """Deploy cluster in HA mode with Murano and Neutron VXLAN
 
@@ -325,7 +325,7 @@ class MuranoHA(TestBasic):
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_murano_ha_with_tun"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_murano_ha_with_tun(self):
         """Deploy cluster in ha mode with Murano and Neutron VXLAN
 
@@ -467,7 +467,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ceilometer_ha_one_controller_with_mongo"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ceilometer_ha_one_controller_with_mongo(self):
         """Deploy cluster in HA mode with Ceilometer
 
@@ -551,7 +551,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ceilometer_ha_one_controller_multirole"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ceilometer_ha_one_controller_multirole(self):
         """Deploy cluster in ha multirole mode with Ceilometer
 
@@ -601,7 +601,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
 class CeilometerHAMongo(OSTFCeilometerHelper):
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ceilometer_ha_with_mongo"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ceilometer_ha_with_mongo(self):
         """Deploy cluster in ha mode with Ceilometer
 
@@ -656,7 +656,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ceilometer_ha_multirole"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ceilometer_ha_multirole(self):
         """Deploy cluster in ha multirole mode with Ceilometer
 
@@ -706,7 +706,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
 
     @test(depends_on=[deploy_ceilometer_ha_multirole],
           groups=["ceilometer_ha_multirole_add_mongo"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ceilometer_ha_multirole_add_mongo(self):
         """Add mongo node to cluster with HA mode and Ceilometer
 
@@ -736,7 +736,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ceilometer_ha_with_external_mongo"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ceilometer_ha_with_external_mongo(self):
         """Deploy cluster in ha mode with Ceilometer and external Mongo
 
@@ -806,7 +806,7 @@ class HeatHAOneController(TestBasic):
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_heat_ha_one_controller_neutron"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_heat_ha_one_controller_neutron(self):
         """Deploy Heat cluster in HA mode with Neutron VXLAN
 
@@ -894,7 +894,7 @@ class HeatHA(TestBasic):
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_heat_ha"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_heat_ha(self):
         """Deploy Heat cluster in HA mode
 

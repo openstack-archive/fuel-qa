@@ -103,7 +103,7 @@ class TestsDeployPlatformComponents(BaseDeployPlatformComponents):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["acceptance_deploy_platform_components_sahara"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def acceptance_deploy_platform_components_sahara(self):
         """Deploy cluster with detached keystone, rabbitmq, database and Sahara
 
@@ -175,7 +175,7 @@ class TestsDeployPlatformComponents(BaseDeployPlatformComponents):
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["acceptance_deploy_platform_components_murano"],
           enabled=False)
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def acceptance_deploy_platform_components_murano(self):
         """Deploy cluster with detached keystone, rabbitmq, database and Murano
 
@@ -244,7 +244,7 @@ class TestsDeployPlatformComponents(BaseDeployPlatformComponents):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["acceptance_deploy_platform_components_ceilometer"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def acceptance_deploy_platform_components_ceilometer(self):
         """Deploy cluster with detached keystone, rabbitmq,
            database and Ceilometer
@@ -323,7 +323,7 @@ class TestsDeployPlatformComponentsHuge(BaseDeployPlatformComponents):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["huge_separate_rabbitmq_db"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def huge_separate_rabbitmq_db(self):
         """Deploy cluster with 3 controllers, 3 nodes with detached rabbitmq\
            service and 3 nodes with detached db service.

@@ -40,7 +40,7 @@ class NeutronVlan(TestBasic):
           depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_neutron_vlan", "ha_one_controller_neutron_vlan",
                   "deployment", "nova", "nova-compute"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_neutron_vlan(self):
         """Deploy cluster in ha mode with 1 controller and Neutron VLAN
 
@@ -110,7 +110,7 @@ class NeutronGreHa(TestBasic):
     @test(enabled=False,
           depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_gre_ha", "ha_neutron_gre"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_neutron_gre_ha(self):
         """Deploy cluster in HA mode with Neutron GRE (DEPRECATED)
 
@@ -188,7 +188,7 @@ class NeutronVlanHa(TestBasic):
     @test(enabled=False,
           depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_vlan_ha", "neutron_vlan_ha"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_neutron_vlan_ha(self):
         """Deploy cluster in HA mode with Neutron VLAN
 

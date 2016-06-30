@@ -33,7 +33,7 @@ class TestReassignNode(TestBasic):
     snapshot = 'upgrade_ha_ceph_for_all_ubuntu_neutron_vlan'
 
     @test(groups=["reassign_node_to_cloned_environment"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def reassign_node_to_cloned_environment(self):
         """Test reassign node
         Scenario:
@@ -112,7 +112,7 @@ class TestReassignNode(TestBasic):
         self.fuel_web.assert_task_success(task)
 
     @test(groups=["reassign_node_to_nonexistent_cluster"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def reassign_node_to_nonexistent_cluster(self):
         """Test reassign node to nonexistent cluster
         Scenario:
@@ -224,7 +224,7 @@ class TestReassignNode(TestBasic):
                  "to reassigning node with incorrect node_id")
 
     @test(groups=["reassign_nonexistent_node_to_cloned_environment"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def reassign_nonexistent_node_to_cloned_environment(self):
         """Test reassign node with nonexistent node in POST body
         Scenario:

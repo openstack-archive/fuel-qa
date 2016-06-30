@@ -27,7 +27,7 @@ class HaVlanGroup7(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["ceph_for_images"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ceph_for_images(self):
         """Deployment with 3 controllers, NeutronVLAN,
            with no storage for volumes and ceph for images
@@ -109,7 +109,7 @@ class HaVlanGroup7(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["ha_vlan_operating_system"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_vlan_operating_system(self):
         """Deployment with 3 controllers, NeutronVlan, with Operating System
 

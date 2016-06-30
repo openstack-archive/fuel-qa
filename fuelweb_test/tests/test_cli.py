@@ -41,7 +41,7 @@ class CommandLineMinimal(TestBasic):
 
     @test(depends_on=[SetupEnvironment.setup_with_custom_manifests],
           groups=["hiera_deploy"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def hiera_deploy(self):
         """Deploy cluster with controller node only
 
@@ -97,7 +97,7 @@ class CommandLineTest(test_cli_base.CommandLine):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["cli_selected_nodes_deploy"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cli_selected_nodes_deploy(self):
         """Create and deploy environment using Fuel CLI and check CN name
            is equal to the public name passed via UI (user-owned cert)
@@ -304,7 +304,7 @@ class CommandLineTest(test_cli_base.CommandLine):
 
     @test(depends_on_groups=['cli_selected_nodes_deploy'],
           groups=["cli_node_deletion_check"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cli_node_deletion_check(self):
         """Destroy node and remove it from Nailgun using Fuel CLI
 
@@ -371,7 +371,7 @@ class CommandLineTest(test_cli_base.CommandLine):
 
     @test(depends_on_groups=['cli_selected_nodes_deploy'],
           groups=["cli_cluster_deletion"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cli_cluster_deletion(self):
         """Delete a cluster using Fuel CLI
 
@@ -416,7 +416,7 @@ class CommandLineTest(test_cli_base.CommandLine):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["cli_selected_nodes_deploy_huge"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cli_selected_nodes_deploy_huge(self):
         """Create and deploy huge environment using Fuel CLI
 

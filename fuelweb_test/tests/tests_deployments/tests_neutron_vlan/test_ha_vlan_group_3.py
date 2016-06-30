@@ -24,7 +24,7 @@ class HaVlanGroup3(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["no_storage_for_volumes_swift"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def no_storage_for_volumes_swift(self):
         """Deployment with 3 controllers,
            NeutronVLAN with no storage for volumes and swift
@@ -94,7 +94,7 @@ class HaVlanGroup3(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["ceph_volumes_ephemeral"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ceph_volumes_ephemeral(self):
         """Deployment with 3 controllers, NeutronVLAN,
            with Ceph for volumes and ephemeral

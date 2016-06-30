@@ -29,7 +29,7 @@ class FailoverGroup1(TestBasic):
 
     @test(depends_on_groups=['prepare_slaves_5'],
           groups=['deploy_ha_cinder'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ha_cinder(self):
         """Deploy environment with 3 controllers, Cinder and NeutronVLAN
 
@@ -91,7 +91,7 @@ class FailoverGroup1(TestBasic):
 
     @test(depends_on_groups=['deploy_ha_cinder'],
           groups=['lock_db_access_from_primary_controller'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def lock_db_access_from_primary_controller(self):
         """Lock DB access from primary controller
 
@@ -151,7 +151,7 @@ class FailoverGroup1(TestBasic):
 
     @test(depends_on_groups=['deploy_ha_cinder'],
           groups=['recovery_neutron_agents_after_restart'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def recovery_neutron_agents_after_restart(self):
         """Recovery of neutron agents after restart
 
@@ -248,7 +248,7 @@ class FailoverGroup1(TestBasic):
 
     @test(depends_on_groups=['deploy_ha_cinder'],
           groups=['safe_reboot_primary_controller'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def safe_reboot_primary_controller(self):
         """Safe reboot of primary controller
 
@@ -291,7 +291,7 @@ class FailoverGroup1(TestBasic):
 
     @test(depends_on_groups=['deploy_ha_cinder'],
           groups=['hard_reset_primary_controller'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def hard_reset_primary_controller(self):
         """Hard reset of primary controller
 
@@ -334,7 +334,7 @@ class FailoverGroup1(TestBasic):
 
     @test(depends_on_groups=['deploy_ha_cinder'],
           groups=['power_outage_cinder_cluster'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def power_outage_cinder_cluster(self):
         """Power outage of Neutron vlan, cinder/swift cluster
 

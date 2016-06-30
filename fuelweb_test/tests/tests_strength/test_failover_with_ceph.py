@@ -29,7 +29,7 @@ class TestHaCephNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ceph_ha", "prepare_ha_ceph_neutron"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def prepare_ha_ceph_neutron(self):
         """Prepare cluster in HA/Neutron mode with ceph for failover tests
 
@@ -47,7 +47,7 @@ class TestHaCephNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_ceph_neutron'],
           groups=["ha_ceph_neutron_sequential_destroy_controllers"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_ceph_neutron_rabbit_master_destroy(self):
         """Suspend rabbit master, check neutron cluster,
          resume nodes, check cluster

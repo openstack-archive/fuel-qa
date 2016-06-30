@@ -112,7 +112,7 @@ class TestMultipath(base_test_case.TestBasic):
         return int(result['stdout_str'])
 
     @test(groups=["bootstrap_multipath"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def bootstrap_multipath(self):
         """Bootstrap node with multipath devices
 
@@ -154,7 +154,7 @@ class TestMultipath(base_test_case.TestBasic):
 
     @test(depends_on_groups=["bootstrap_multipath"],
           groups=["deploy_multipath"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_multipath(self):
         """Deploy cluster with multipath devices
 

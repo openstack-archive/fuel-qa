@@ -33,7 +33,7 @@ class FailoverGroup3(TestBasic):
 
     @test(depends_on_groups=['prepare_slaves_9'],
           groups=['shutdown_ceph_for_all'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def shutdown_ceph_for_all(self):
         """Shutdown of Neutron Vxlan, ceph for all cluster
 
@@ -241,7 +241,7 @@ class FailoverGroup3(TestBasic):
 
     @test(depends_on_groups=['prepare_slaves_5'],
           groups=['shutdown_cinder_cluster'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def shutdown_cinder_cluster(self):
         """Shutdown of Neutron vlan, cinder/swift cluster
 

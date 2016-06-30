@@ -36,7 +36,7 @@ class HaTunGroup3(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["tun_no_volumes_ceph_for_images_and_ephemeral"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def tun_no_volumes_ceph_for_images_and_ephemeral(self):
         """Deployment with 3 controllers, NeutronVxLAN,
            with no storage for volumes and ceph for images and ephemeral
@@ -137,7 +137,7 @@ class HaTunGroup3(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["tun_5_ctrl_ceph_ephemeral"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def tun_5_ctrl_ceph_ephemeral(self):
         """Deployment with 5 controllers, NeutronTUN,
            with Ceph RBD for ephemeral volumes

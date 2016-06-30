@@ -37,7 +37,7 @@ class NeutronTun(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_neutron_tun", "ha_one_controller_neutron_tun",
                   "cinder", "swift", "glance", "neutron", "deployment"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_neutron_tun(self):
         """Deploy cluster in ha mode with 1 controller and Neutron VXLAN
 
@@ -106,7 +106,7 @@ class NeutronTunHa(NeutronTunHaBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_tun_ha", "ha_neutron_tun"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_neutron_tun_ha(self):
         """Deploy cluster in HA mode with Neutron VXLAN
 
@@ -131,7 +131,7 @@ class TestHaNeutronAddCompute(TestBasic):
 
     @test(depends_on_groups=['deploy_neutron_tun_ha'],
           groups=["neutron_tun_ha_add_compute"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def neutron_tun_ha_add_compute(self):
         """Add compute node to cluster in HA mode with Neutron VXLAN network
 
@@ -167,7 +167,7 @@ class TestHaNeutronAddCompute(TestBasic):
 
     @test(depends_on_groups=['deploy_neutron_tun_ha'],
           groups=["neutron_tun_ha_addremove"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def neutron_tun_ha_addremove(self):
         """Add and re-add cinder / compute + cinder to HA cluster
 
@@ -223,7 +223,7 @@ class TestHaNeutronScalability(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["neutron_tun_scalability"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def neutron_tun_scalability(self):
         """Check HA mode on scalability
 

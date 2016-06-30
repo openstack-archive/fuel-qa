@@ -27,7 +27,7 @@ class HaScaleGroup1(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["add_controllers_stop"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def add_controllers_stop(self):
         """Add 2 controllers, deploy, stop deploy, remove added controllers,
            add 2 controllers once again
@@ -103,7 +103,7 @@ class HaScaleGroup1(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["add_ceph_stop"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def add_ceph_stop(self):
         """Add 2 ceph-osd, deploy, stop deploy, re-deploy again
 

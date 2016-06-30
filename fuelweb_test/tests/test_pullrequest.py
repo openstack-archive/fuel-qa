@@ -26,7 +26,7 @@ class TestPullRequest(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_pr_ha"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_pr_ha(self):
         """Deploy one-controller cluster in HA mode with Neutron GRE
 

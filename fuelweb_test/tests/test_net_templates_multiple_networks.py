@@ -32,7 +32,7 @@ class TestNetworkTemplatesMultipleNetworks(TestNetworkTemplatesBase):
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=['two_nodegroups_network_templates'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def two_nodegroups_network_templates(self):
         """Deploy HA environment with Cinder, Neutron and network template on
         two nodegroups.

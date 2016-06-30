@@ -27,7 +27,7 @@ class HaVlanGroup6(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["ceph_for_images_ephemeral_rados"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ceph_for_images_ephemeral_rados(self):
         """Deployment with 3 controllers, NeutronVLAN, with no storage for
            volumes and ceph for images, ephemeral and Rados GW for objects
@@ -120,7 +120,7 @@ class HaVlanGroup6(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["ceph_for_volumes_images_ephemeral"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ceph_for_volumes_images_ephemeral(self):
         """Deployment with 5 controllers, NeutronVLAN,
            with Ceph for volumes and images, ephemeral

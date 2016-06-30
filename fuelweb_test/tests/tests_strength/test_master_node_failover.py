@@ -57,7 +57,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["non_functional",
                   "deploy_ha_one_controller_neutron_master_node_fail"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ha_one_controller_neutron_master_node_fail(self):
         """Deploy HA cluster with neutron and check it without master node
 
@@ -140,7 +140,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha_dns_ntp"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ha_dns_ntp(self):
         """Use external ntp and dns in ha mode
 
@@ -190,7 +190,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
 
     @test(depends_on=[deploy_ha_dns_ntp],
           groups=["external_dns_ha"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def external_dns_ha(self):
         """Check external dns in ha mode
 
@@ -210,7 +210,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
 
     @test(depends_on=[deploy_ha_dns_ntp],
           groups=["external_ntp_ha"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def external_ntp_ha(self):
         """Check external ntp in ha mode
 

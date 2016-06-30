@@ -61,7 +61,7 @@ class TestOffloading(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["offloading_neutron_vlan", "offloading"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def offloading_neutron_vlan(self):
         """Deploy cluster with specific offload modes and neutron VLAN
 
@@ -154,7 +154,7 @@ class TestOffloading(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["offloading_neutron_vxlan", "offloading"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def offloading_neutron_vxlan(self):
         """Deploy cluster with specific offload modes and neutron VXLAN
 

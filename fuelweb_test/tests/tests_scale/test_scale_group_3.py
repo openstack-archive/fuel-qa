@@ -25,7 +25,7 @@ class HaScaleGroup3(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["add_delete_compute"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def add_delete_compute(self):
         """Deployment with 3 controllers, NeutronVLAN, add, add/delete/,
            delete compute node
@@ -121,7 +121,7 @@ class HaScaleGroup3(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["add_delete_cinder"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def add_delete_cinder(self):
         """Deployment with 3 controllers, NeutronVlan, with add, delete,
            add/delete cinder node

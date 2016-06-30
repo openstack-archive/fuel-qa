@@ -27,7 +27,7 @@ class EnvironmentAction(base_test_case.TestBasic):
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_neutron_stop_reset_on_deploying",
                   "classic_provisioning"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     @check_fuel_statistics
     def deploy_neutron_stop_on_deploying(self):
         """Stop reset cluster in HA mode with neutron
@@ -97,7 +97,7 @@ class EnvironmentAction(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_neutron_stop_reset_on_provisioning"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_neutron_stop_reset_on_provisioning(self):
         """Stop provisioning cluster in HA mode with neutron
 
@@ -164,7 +164,7 @@ class EnvironmentAction(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_reset_on_ready"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     @check_fuel_statistics
     def deploy_reset_on_ready(self):
         """Stop reset cluster in HA mode with 1 controller
@@ -223,7 +223,7 @@ class EnvironmentActionOnHA(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
           groups=["smoke", "deploy_stop_reset_on_ha"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_stop_reset_on_ha(self):
         """Stop reset cluster in ha mode
 
@@ -294,7 +294,7 @@ class ControllerReplacement(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha_neutron_tun_ctrl_replacement"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ha_neutron_tun_ctrl_replacement(self):
         """Replace 1 controller and re-deploy on ha env with neutron vxlan
 
@@ -352,7 +352,7 @@ class ControllerReplacement(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha_neutron_vlan_ctrl_replacement"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ha_neutron_vlan_ctrl_replacement(self):
         """Replace 1 controller and re-deploy on ha env with neutron vlan
 
@@ -411,7 +411,7 @@ class ControllerReplacement(base_test_case.TestBasic):
     @test(enabled=False,
           depends_on=[base_test_case.SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha_nova_ctrl_replacement"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ha_nova_ctrl_replacement(self):
         # REMOVE THIS NOVA_NETWORK CASE WHEN NEUTRON BE DEFAULT
         """Replace 1 controller and re-deploy on ha env with nova

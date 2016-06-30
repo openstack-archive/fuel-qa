@@ -32,7 +32,7 @@ class GateAstute(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=['review_astute_patched'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def gate_patch_astute(self):
         """ Revert 'ready_with_3_slaves' snapshot,
         download package with astute changes, install package,
