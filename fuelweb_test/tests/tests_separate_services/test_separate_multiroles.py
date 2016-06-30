@@ -33,7 +33,7 @@ class SeparateAllServices(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["separate_all_service"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def separate_all_service(self):
         """Deploy cluster with 3 nodes with db, keystone, rabbit, horizon
 
@@ -160,7 +160,7 @@ class SeparateAllFailover(TestBasic):
 
     @test(depends_on=[SeparateAllServices.separate_all_service],
           groups=["separate_all_service_shutdown"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def separate_all_service_shutdown(self):
         """Shutdown one multirole node
 
@@ -189,7 +189,7 @@ class SeparateAllFailover(TestBasic):
 
     @test(depends_on=[SeparateAllServices.separate_all_service],
           groups=["separate_all_service_controller_shutdown"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def separate_all_service_controller_shutdown(self):
         """Shutdown primary controller node
 

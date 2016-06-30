@@ -33,7 +33,7 @@ class EtcKeeper(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["etckeeper_plugin"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def etckeeper_plugin(self):
         """Check tracking /etc dir by etckeeper plugin
 

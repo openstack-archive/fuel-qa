@@ -28,7 +28,7 @@ class RepeatableImageBased(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["repeatable_image_based", "image_based"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def repeatable_image_based(self):
         """Provision new cluster many times after deletion the old one
 

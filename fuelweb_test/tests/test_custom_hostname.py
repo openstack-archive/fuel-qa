@@ -37,7 +37,7 @@ class CustomHostname(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=['default_hostname'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def default_hostname(self):
         """Verify that the default hostnames (e.g. 'node-1') are applied
 
@@ -97,7 +97,7 @@ class CustomHostname(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=['set_custom_hostname'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def set_custom_hostname(self):
         """Verify that a custom hostname can be applied to a node
 
@@ -177,7 +177,7 @@ class CustomHostname(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=['custom_hostname_validation'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def custom_hostname_validation(self):
         """Verify the hostname format validation
 
@@ -218,7 +218,7 @@ class CustomHostname(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=['set_duplicate_hostname'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def set_duplicate_hostname(self):
         """Verify that a duplicate hostname is not allowed
 
@@ -247,7 +247,7 @@ class CustomHostname(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=['set_custom_hostname_for_provisioned_node'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def set_custom_hostname_for_provisioned_node(self):
         """Verify that it is not allowed to change a hostname of a
         provisioned node

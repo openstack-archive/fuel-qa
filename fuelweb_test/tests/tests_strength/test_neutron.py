@@ -31,7 +31,7 @@ class TestNeutronFailoverVlan(TestNeutronFailoverBase):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
           groups=["deploy_ha_neutron_vlan"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ha_neutron_vlan(self):
         """Deploy cluster in HA mode, Neutron with VLAN segmentation
 
@@ -51,7 +51,7 @@ class TestNeutronFailoverVlan(TestNeutronFailoverBase):
     @test(depends_on=[deploy_ha_neutron_vlan],
           groups=["neutron_l3_migration",
                   "neutron_l3_migration_vlan"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def neutron_l3_migration_vlan(self):
         """Check l3-agent rescheduling after l3-agent dies on vlan
 
@@ -74,7 +74,7 @@ class TestNeutronFailoverVlan(TestNeutronFailoverBase):
     @test(depends_on=[deploy_ha_neutron_vlan],
           groups=["neutron_l3_migration_after_reset",
                   "neutron_l3_migration_after_reset_vlan"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def neutron_l3_migration_after_reset_vlan(self):
         """Check l3-agent rescheduling after reset non-primary controller vlan
 
@@ -96,7 +96,7 @@ class TestNeutronFailoverVlan(TestNeutronFailoverBase):
     @test(depends_on=[deploy_ha_neutron_vlan],
           groups=["neutron_l3_migration_after_destroy",
                   "neutron_l3_migration_after_destroy_vlan"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def neutron_l3_migration_after_destroy_vlan(self):
         """Check l3-agent rescheduling after destroy nonprimary controller vlan
 
@@ -118,7 +118,7 @@ class TestNeutronFailoverVlan(TestNeutronFailoverBase):
     @test(depends_on=[deploy_ha_neutron_vlan],
           groups=["neutron_packets_drops_stat",
                   "neutron_packets_drops_stat_vlan"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def neutron_packets_drop_stat_vlan(self):
         """Check packets drops statistic when size is equal to MTU on vlan
 
@@ -145,7 +145,7 @@ class TestNeutronFailoverVxlan(TestNeutronFailoverBase):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
           groups=["deploy_ha_neutron_vxlan"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ha_neutron_vxlan(self):
         """Deploy cluster in HA mode, Neutron with VxLAN segmentation
 
@@ -165,7 +165,7 @@ class TestNeutronFailoverVxlan(TestNeutronFailoverBase):
     @test(depends_on=[deploy_ha_neutron_vxlan],
           groups=["neutron_l3_migration",
                   "neutron_l3_migration_vxlan"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def neutron_l3_migration_vxlan(self):
         """Check l3-agent rescheduling after l3-agent dies on vxlan
 
@@ -188,7 +188,7 @@ class TestNeutronFailoverVxlan(TestNeutronFailoverBase):
     @test(depends_on=[deploy_ha_neutron_vxlan],
           groups=["neutron_l3_migration_after_reset",
                   "neutron_l3_migration_after_reset_vxlan"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def neutron_l3_migration_after_reset_vxlan(self):
         """Check l3-agent rescheduling after reset non-primary controller
         for vxlan
@@ -211,7 +211,7 @@ class TestNeutronFailoverVxlan(TestNeutronFailoverBase):
     @test(depends_on=[deploy_ha_neutron_vxlan],
           groups=["neutron_l3_migration_after_destroy",
                   "neutron_l3_migration_after_destroy_vxlan"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def neutron_l3_migration_after_destroy_vxlan(self):
         """Check l3-agent rescheduling after destroy non-primary controller
         for vxlan
@@ -235,7 +235,7 @@ class TestNeutronFailoverVxlan(TestNeutronFailoverBase):
     @test(depends_on=[deploy_ha_neutron_vxlan],
           groups=["neutron_packets_drops_stat",
                   "neutron_packets_drops_stat_vxlan"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def neutron_packets_drop_stat_vxlan(self):
         """Check packets drops statistic when size is equal to MTU on vxlan
 

@@ -178,7 +178,7 @@ class ExamplePluginPostDeploy(TestBasic):
         groups=[
             "install_plugin_after_create",
             "three_ctrl_install_enable_after_create"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     @setup_teardown(setup=clean_up, teardown=clean_up)
     def three_ctrl_install_enable_after_create(self):
         """Install and enable plugin after cluster create
@@ -244,7 +244,7 @@ class ExamplePluginPostDeploy(TestBasic):
         groups=[
             "install_plugin_after_create",
             "three_ctrl_install_after_create"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     @setup_teardown(setup=clean_up, teardown=clean_up)
     def three_ctrl_install_after_create(self):
         """Install plugin after cluster create
@@ -309,7 +309,7 @@ class ExamplePluginPostDeploy(TestBasic):
         groups=[
             "install_plugin_after_create",
             "three_ctrl_enable_installed_after_create_redeploy"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     @setup_teardown(setup=clean_up, teardown=clean_up)
     def three_ctrl_enable_installed_after_create_redeploy(self):
         """Enable plugin, installed after create, and re-deploy node
@@ -354,7 +354,7 @@ class ExamplePluginPostDeploy(TestBasic):
         groups=[
             "install_plugin_after_create",
             "five_ctrl_enable_installed_after_create_add"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     @setup_teardown(setup=clean_up, teardown=clean_up)
     def five_ctrl_enable_installed_after_create_add(self):
         """Enable plugin, installed after create, and add nodes
@@ -402,7 +402,7 @@ class ExamplePluginPostDeploy(TestBasic):
         groups=[
             "install_plugin_after_deploy",
             "three_ctrl_install_after_deploy"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     @setup_teardown(setup=clean_up, teardown=clean_up)
     def three_ctrl_install_after_deploy(self):
         """Install plugin after cluster deployment
@@ -471,7 +471,7 @@ class ExamplePluginPostDeploy(TestBasic):
         groups=[
             "install_plugin_after_deploy",
             "three_ctrl_enable_installed_after_deploy_redeploy"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     @setup_teardown(setup=clean_up, teardown=clean_up)
     def three_ctrl_enable_installed_after_deploy_redeploy(self):
         """Enable plugin, installed after deploy, and re-deploy node
@@ -516,7 +516,7 @@ class ExamplePluginPostDeploy(TestBasic):
         groups=[
             "install_plugin_after_deploy",
             "five_ctrl_enable_installed_after_deploy_add"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     @setup_teardown(setup=clean_up, teardown=clean_up)
     def five_ctrl_enable_installed_after_deploy_add(self):
         """Enable plugin, installed after deploy, and add nodes

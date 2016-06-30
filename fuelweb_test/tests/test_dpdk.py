@@ -155,7 +155,7 @@ class SupportDPDK(TestDPDK):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_cluster_with_dpdk"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_cluster_with_dpdk(self):
         """Deploy cluster with DPDK
 
@@ -241,7 +241,7 @@ class SupportDPDK(TestDPDK):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["check_can_not_enable_dpdk_with_tun"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_can_not_enable_dpdk_with_tun(self):
         """Check can not enable DPDK on tun network
 
@@ -285,7 +285,7 @@ class SupportDPDK(TestDPDK):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["check_can_not_enable_dpdk_on_non_dedicated_iface"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_can_not_enable_dpdk_on_non_dedicated_iface(self):
         """Check can not enable DPDK on non-dedicated interface
 
@@ -348,7 +348,7 @@ class SupportDPDKBond(BondingTestDPDK, TestDPDK):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_cluster_with_dpdk_bond"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_cluster_with_dpdk_bond(self):
         """Deploy cluster with DPDK, active-backup bonding and Neutron VLAN
 

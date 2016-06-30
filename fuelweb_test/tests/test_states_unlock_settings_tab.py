@@ -194,7 +194,7 @@ class UnlockSettingsTabStates(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["partially_deployed_unlock"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def partially_deployed_unlock(self):
         """Check settings tab is unlocked for partially-deployed environment
 
@@ -242,7 +242,7 @@ class UnlockSettingsTabStates(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["failed_deploy_unlock"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def failed_deploy_unlock(self):
         """Check settings tab is unlocked for a deployed with error environment
 
@@ -293,7 +293,7 @@ class UnlockSettingsTabStates(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["unlock_settings_tab_positive"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def unlock_settings_tab_positive(self):
         """Check settings and network tabs is unlocked for a positively
         deployed and redeployed cluster

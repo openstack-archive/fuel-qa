@@ -26,7 +26,7 @@ class OstfRepeatableTests(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["create_delete_ip_n_times_neutron_vlan"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def create_delete_ip_n_times_neutron_vlan(self):
         """Deploy cluster in ha mode with VLAN Manager
 
@@ -70,7 +70,7 @@ class OstfRepeatableTests(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["create_delete_ip_n_times_neutron_tun"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_create_delete_ip_n_times_neutron_tun(self):
         """Deploy HA cluster, check connectivity from instance n times
 
@@ -112,7 +112,7 @@ class OstfRepeatableTests(base_test_case.TestBasic):
         self.env.make_snapshot("create_delete_ip_n_times_neutron_tun")
 
     @test(groups=["run_ostf_n_times_against_custom_environment"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def run_ostf_n_times_against_custom_deployment(self):
         cluster_id = self.fuel_web.client.get_cluster_id(
             settings.DEPLOYMENT_NAME)

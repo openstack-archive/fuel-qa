@@ -37,7 +37,7 @@ class TestSeparateHaproxy(TestNetworkTemplatesBase):
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["separate_haproxy"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def separate_haproxy(self):
         """Deploy HA environment with separate Haproxy.
 

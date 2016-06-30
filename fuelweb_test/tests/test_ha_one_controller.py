@@ -45,7 +45,7 @@ class OneNodeDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["deploy_one_node", 'master'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_one_node(self):
         """Deploy cluster with controller node only
 
@@ -89,7 +89,7 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_ha_one_controller_neutron"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ha_one_controller_neutron(self):
         """Deploy cluster in HA mode (one controller) with neutron
 
@@ -112,7 +112,7 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
 
     @test(depends_on=[deploy_ha_one_controller_neutron],
           groups=["ha_one_controller_neutron_node_deletion"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_one_controller_neutron_node_deletion(self):
         """Remove compute from cluster in ha mode with neutron
 
@@ -144,7 +144,7 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ha_one_controller_neutron_blocked_vlan"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_one_controller_neutron_blocked_vlan(self):
         """Verify network verification with blocked VLANs
 
@@ -195,7 +195,7 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ha_one_controller_neutron_add_compute"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_one_controller_neutron_add_compute(self):
         """Add compute node to cluster in ha mode
 
@@ -259,7 +259,7 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
 
     @test(depends_on=[deploy_ha_one_controller_neutron],
           groups=["deploy_base_os_node"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_base_os_node(self):
         """Add base-os node to cluster in HA mode with one controller
 
@@ -300,7 +300,7 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
 
     @test(depends_on=[deploy_ha_one_controller_neutron],
           groups=["delete_environment"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def delete_environment(self):
         """Delete existing environment
         and verify nodes returns to unallocated state
@@ -337,7 +337,7 @@ class MultiroleControllerCinder(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_multirole_controller_cinder"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     @check_fuel_snapshot
     def deploy_multirole_controller_cinder(self):
         """Deploy cluster in HA mode with multi-role controller and cinder
@@ -389,7 +389,7 @@ class MultiroleComputeCinder(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_multirole_compute_cinder", "bvt_3"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_multirole_compute_cinder(self):
         """Deploy cluster in HA mode with multi-role compute and cinder
 
@@ -434,7 +434,7 @@ class MultiroleMultipleServices(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_multiple_services_local_mirror"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_multiple_services_local_mirror(self):
         """Deploy cluster with multiple services using local mirror
 
@@ -527,7 +527,7 @@ class FloatingIPs(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_floating_ips"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_floating_ips(self):
         """Deploy cluster with non-default 1 floating IPs ranges
 
@@ -605,7 +605,7 @@ class NodeMultipleInterfaces(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_node_multiple_interfaces"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_node_multiple_interfaces(self):
         """Deploy cluster with networks allocated on different interfaces
 
@@ -673,7 +673,7 @@ class NodeDiskSizes(TestBasic):
 
     @test(enabled=False, depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["check_nodes_notifications"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_nodes_notifications(self):
         """Verify nailgun notifications for discovered nodes
 
@@ -733,7 +733,7 @@ class NodeDiskSizes(TestBasic):
     @test(enabled=False,
           depends_on=[NodeMultipleInterfaces.deploy_node_multiple_interfaces],
           groups=["check_nodes_disks"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_nodes_disks(self):
         """Verify hard drive sizes for deployed nodes
 
@@ -802,7 +802,7 @@ class MultinicBootstrap(TestBasic):
     @test(enabled=False,
           depends_on=[SetupEnvironment.prepare_release],
           groups=["multinic_bootstrap_booting"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def multinic_bootstrap_booting(self):
         """Verify slaves booting with blocked mac address
 
@@ -855,7 +855,7 @@ class UntaggedNetworksNegative(TestBasic):
         depends_on=[SetupEnvironment.prepare_slaves_3],
         groups=["untagged_networks_negative"],
         enabled=False)
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def untagged_networks_negative(self):
         """Verify network verification fails with untagged network on eth0
 
@@ -925,7 +925,7 @@ class HAOneControllerNeutronUSB(HAOneControllerNeutronBase):
     """HAOneControllerNeutronUSB."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ha_one_controller_neutron_usb(self):
         """Deploy cluster in HA mode (1 controller) with neutron USB
 

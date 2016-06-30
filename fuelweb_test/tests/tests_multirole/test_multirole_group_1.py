@@ -27,7 +27,7 @@ class MultiroleGroup1(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["controller_ceph_and_compute_cinder"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def controller_ceph_and_compute_cinder(self):
         """Deployment with 3 Controllers plus Ceph, Neutron Vxlan
            and non-default disks partition
@@ -105,7 +105,7 @@ class MultiroleGroup1(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["controller_ceph_cinder_compute_ceph_cinder"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def controller_ceph_cinder_compute_ceph_cinder(self):
         """Deployment with 3 Controllers plus Ceph plus Cinder, Neutron Vlan,
            cinder for volumes, ceph for images/ephemeral/objects

@@ -25,7 +25,7 @@ class HaVlanGroup4(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["four_controllers"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def four_controllers(self):
         """Deployment with 4 controllers, NeutronVLAN,
            and other disk configuration
@@ -107,7 +107,7 @@ class HaVlanGroup4(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["ceph_rados_gw_no_storage_volumes"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ceph_rados_gw_no_storage_volumes(self):
         """Deployment with 3 controllers, NeutronVLAN, with no storage for
            volumes and ceph for images and Rados GW

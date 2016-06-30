@@ -32,7 +32,7 @@ class CephRestart(TestBasic):
 
     @test(depends_on_groups=['ceph_ha_one_controller_with_cinder'],
           groups=["ceph_ha_one_controller_with_cinder_restart"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ceph_ha_one_controller_with_cinder_restart(self):
         """Restart cluster with ceph and cinder in ha mode
         Scenario:
@@ -86,7 +86,7 @@ class CephRestart(TestBasic):
 
     @test(depends_on_groups=['ceph_ha'],
           groups=["ceph_ha_restart"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ceph_ha_restart(self):
         """Destructive ceph test in HA mode
 
@@ -211,7 +211,7 @@ class HAOneControllerNeutronRestart(TestBasic):
     @test(enabled=False,
           depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ha_one_controller_neutron_warm_restart"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_one_controller_neutron_warm_restart(self):
         """Warm restart for ha one controller environment
 

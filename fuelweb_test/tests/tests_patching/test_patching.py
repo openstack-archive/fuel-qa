@@ -80,7 +80,7 @@ class PatchingTests(TestBasic):
 
     @test(groups=["patching_environment"],
           depends_on_groups=['prepare_patching_environment'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def patching_environment(self):
         """Apply patches on deployed environment
 
@@ -283,7 +283,7 @@ class PatchingMasterTests(TestBasic):
 
     @test(groups=["patching_test"],
           depends_on_groups=['prepare_patching_master_environment'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def patching_test(self):
         """Apply patches on deployed master
 
@@ -419,7 +419,7 @@ class PatchingMasterTests(TestBasic):
 
     @test(groups=["patching_master"],
           depends_on_groups=['patching_test'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def patching_master(self):
         """
         Deploy cluster after master node patching

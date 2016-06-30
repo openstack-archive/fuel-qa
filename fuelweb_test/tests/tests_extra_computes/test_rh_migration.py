@@ -30,7 +30,7 @@ class RhHAOneControllerMigration(ExtraComputesBase):
     """RH-based compute HA migration test"""
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["check_vm_migration_rh_ha_one_controller_tun"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_vm_migration_rh_ha_one_controller_tun(self):
         """Deploy environment with RH and Ubuntu computes in HA mode with
            neutron VXLAN

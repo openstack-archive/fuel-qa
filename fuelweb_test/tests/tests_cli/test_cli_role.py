@@ -29,7 +29,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["cli_update_role"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cli_update_role(self):
         """Update controller role using Fuel CLI
 
@@ -102,7 +102,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["cli_create_role"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cli_create_role(self):
         """Create new role using Fuel CLI
 
@@ -194,7 +194,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["cli_create_role_with_has_primary"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cli_create_role_with_has_primary(self):
         """Create role with flag 'has_primary' set in 'true'
 
@@ -275,7 +275,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["cli_delete_role"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cli_delete_role(self):
         """Delete role using Fuel CLI
 
@@ -393,7 +393,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["cli_incorrect_update_role"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cli_incorrect_update_role(self):
         """Update controller role using Fuel CLI
 

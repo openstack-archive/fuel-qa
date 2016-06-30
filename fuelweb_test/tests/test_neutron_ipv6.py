@@ -40,7 +40,7 @@ class TestNeutronIPv6(TestBasic):
           depends_on_groups=['deploy_neutron_vlan'],
           groups=['deploy_neutron_ip_v6',
                   "nova", "nova-compute", "neutron_ipv6"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_neutron_ip_v6(self):
         """Check IPv6 only functionality for Neutron VLAN
 

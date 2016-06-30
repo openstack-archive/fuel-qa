@@ -30,7 +30,7 @@ class ChangeVipManually(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["change_public_vip"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def change_public_vip(self):
         """Deploy cluster with public vip manually set
 
@@ -104,7 +104,7 @@ class ChangeVipManually(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["change_public_vip_outside_range"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def change_public_vip_outside_range(self):
         """Deploy cluster with public vip manually set
            and picked from floating ips range

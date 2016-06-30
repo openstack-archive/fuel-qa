@@ -96,7 +96,7 @@ class EMCPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_emc_ha"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_emc_ha(self):
         """Deploy cluster in ha mode with emc plugin
 

@@ -106,7 +106,7 @@ class TaskIdempotency(LCMTestBasic):
           groups=['lcm_non_ha',
                   'idempotency',
                   'idempotency_1_ctrl_1_cmp_1_cinder'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def idempotency_1_ctrl_1_cmp_1_cinder(self):
         """Test idempotency for cluster with cinder
 
@@ -130,7 +130,7 @@ class TaskIdempotency(LCMTestBasic):
           groups=['lcm_non_ha',
                   'idempotency',
                   'idempotency_1_ctrl_1_cmp_1_mongo'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def idempotency_1_ctrl_1_cmp_1_mongo(self):
         """Test idempotency for cluster with Ceilometer
 
@@ -154,7 +154,7 @@ class TaskIdempotency(LCMTestBasic):
           groups=['lcm_non_ha',
                   'idempotency',
                   'idempotency_1_ctrl_1_cmp_3_ceph'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def idempotency_1_ctrl_1_cmp_3_ceph(self):
         """Test idempotency for cluster with Ceph
 
@@ -178,7 +178,7 @@ class TaskIdempotency(LCMTestBasic):
           groups=['lcm_ha',
                   'idempotency',
                   'idempotency_3_ctrl_3_cmp_ceph_sahara'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def idempotency_3_ctrl_3_cmp_ceph_sahara(self):
         """Test idempotency for cluster with Sahara, Ceilometer,
         Ceph in HA mode
@@ -202,7 +202,7 @@ class TaskIdempotency(LCMTestBasic):
     @test(depends_on=[SetupLCMEnvironment.lcm_deploy_1_ctrl_1_cmp_1_ironic],
           groups=['lcm_ironic',
                   'idempotency_1_ctrl_1_cmp_1_ironic'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def idempotency_1_ctrl_1_cmp_1_ironic(self):
         """Test idempotency for cluster with Ironic
 

@@ -192,7 +192,7 @@ class TestCgroupHa(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=['deploy_ha_cgroup'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ha_cgroup(self):
         """Deploy cluster in HA mode with enabled cgroups
 
@@ -266,7 +266,7 @@ class TestCgroupHa(TestBasic):
 
     @test(depends_on=[deploy_ha_cgroup],
           groups=['apply_cgroups_after_deploy'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def apply_cgroups_after_deploy(self):
         """Apply, reconfigure and disable cgroups limits to services
 
@@ -356,7 +356,7 @@ class TestCgroupHa(TestBasic):
 
     @test(depends_on=[deploy_ha_cgroup],
           groups=['apply_relative_cgroups_after_deploy'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def apply_relative_cgroups_after_deploy(self):
         """Apply relative cgroups limits to services
 
@@ -426,7 +426,7 @@ class TestCgroupHa(TestBasic):
 
     @test(depends_on=[deploy_ha_cgroup],
           groups=['apply_cgroups_reboot_node'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def apply_cgroups_reboot_node(self):
         """Apply cgroups limits to services, reboot, verify
 

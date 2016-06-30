@@ -25,7 +25,7 @@ class HaScaleGroup4(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["add_delete_ceph"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def add_delete_ceph(self):
         """Deployment with 3 controllers, NeutronVlan, with add, delete,
            add/delete ceph node
@@ -132,7 +132,7 @@ class HaScaleGroup4(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["add_delete_cinder_ceph"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def add_delete_cinder_ceph(self):
         """Deployment with 3 controllers, NeutronVLan, with add, delete,
            add/delete cinder and ceph node

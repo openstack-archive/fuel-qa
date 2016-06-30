@@ -31,7 +31,7 @@ class GateFuelWeb(TestBasic):
 
     @test(depends_on=[SetupEnvironment.setup_master],
           groups=["review_fuel_web_deploy"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def gate_fuel_web(self):
         """
     Scenario:

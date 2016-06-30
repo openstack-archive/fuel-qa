@@ -32,7 +32,7 @@ from fuelweb_test.helpers.os_actions import OpenStackActions
 class SSL_Tests(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["master_node_with_https_only"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def master_node_with_https_only(self):
         """Check cluster creation with SSL is enabled only on Master node
 
@@ -63,7 +63,7 @@ class SSL_Tests(TestBasic):
 
     @test(depends_on=['master_node_with_https_only'],
           groups=["endpoints_with_disabled_ssl"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def endpoints_with_disabled_ssl(self):
         """Check MOS services are NOT running ssl on public endpoints
         when TLS is disabled

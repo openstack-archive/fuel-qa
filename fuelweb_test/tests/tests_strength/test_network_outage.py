@@ -33,7 +33,7 @@ class NetworkOutage(TestBasic):
 
     @test(depends_on_groups=['deploy_ha_cinder'],
           groups=['block_net_traffic_cinder'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def block_net_traffic_cinder(self):
         """Block network traffic of whole environment
 
@@ -207,7 +207,7 @@ class NetworkOutage(TestBasic):
 
     @test(depends_on_groups=['deploy_ha_ceph'],
           groups=['block_net_traffic_ceph'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def block_net_traffic_ceph(self):
         """Block network traffic of whole environment
 

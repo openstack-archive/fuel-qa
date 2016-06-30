@@ -83,7 +83,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_bvt"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_bvt(self):
         """Deploy environment in HA with cinder-vmware, compute-vmware, \
         vCenter as backend for glance and multiple clusters.
@@ -145,7 +145,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["smoke", "vcenter_smoke"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_smoke(self):
         """Deploy dual hypervisors cluster with controller node only
 
@@ -185,7 +185,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["vcenter_cindervmdk"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_cindervmdk(self):
         """Deploy environment with vCenter and CinderVMDK
 
@@ -232,7 +232,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["vcenter_cindervmdk_and_computevmware"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_cindervmdk_and_computevmware(self):
         """Deploy environment with vCenter, CinderVMDK and ComputeVMWare
 
@@ -285,7 +285,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["vcenter_computevmware"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_computevmware(self):
         """Deploy environment with vCenter and compute-vmware
 
@@ -337,7 +337,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["vcenter_glance_backend"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_glance_backend(self):
         """Deploy environment with VMWare vCenter/ESXi datastore as backend /
         for glance
@@ -385,7 +385,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["vcenter_glance_backend_and_computevmware"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_glance_backend_and_computevmware(self):
         """Deploy environment with VMWare vCenter/ESXi datastore as backend /
         for glance and compute-vmware
@@ -442,7 +442,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["vcenter_multiple_cluster_with_computevmware"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_multiple_cluster_with_computevmware(self):
         """Deploy environment in DualHypervisors mode with cinder-vmware, \
         compute-vmware and multiple clusters.
@@ -500,7 +500,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_ceph"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_ceph(self):
         """Deploy environment in HA with CephOSD as backend for Cinder and \
         Glance
@@ -559,7 +559,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["vcenter_computevmware_and_ceph"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_computevmware_and_ceph(self):
         """Deploy environment in DualHypervisors mode with Ceph as backend \
         for Cinder and Glance and compute-vmware nodes
@@ -628,7 +628,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["vcenter_multiroles_cindervmdk_and_ceph"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_multiroles_cindervmdk_and_ceph(self):
         """Deploy environment in DualHypervisors mode with Ceph and nodes \
         with multiroles (combinations with CinderVMDK and CephOSD)
@@ -680,7 +680,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["vcenter_multiroles_cindervmdk_and_cinder"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_multiroles_cindervmdk_and_cinder(self):
         """Deploy environment in DualHypervisors mode with nodes \
         with multiroles (combinations with CinderVMDK and Cinder)
@@ -731,7 +731,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_ceilometer"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_ceilometer(self):
         """Deploy environment with vCenter and Ceilometer enabled
 
@@ -785,7 +785,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["vcenter_ceilometer_and_computevmware"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_ceilometer_and_computevmware(self):
         """Deploy environment with vCenter, Ceilometer enabled and\
         ComputeVMWare
@@ -853,7 +853,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["vcenter_multiroles_ceilometer"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_multiroles_ceilometer(self):
         """Deploy environment with vCenter, Ceilometer and nodes with \
         multiroles (combinations with CinderVMDK, Cinder and MongoDB)
@@ -913,7 +913,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["vcenter_add_delete_nodes"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_add_delete_nodes(self):
         """Deploy environment of vcenter+qemu nova vlan and default backend for
            glance and with addition and deletion of nodes with different roles
@@ -1103,7 +1103,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["vcenter_delete_controler"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_delete_controller(self):
         """Deploy environment of vcenter+qemu nova vlan, default backend for
            glance and deletion one node with controller role
@@ -1179,7 +1179,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_ha_nova_flat_multiple_clusters"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_ha_nova_flat_multiple_clusters(self):
         """Deploy environment in HA with compute-vmware and multiple \
         clusters. Check network connection between VM's from different \
@@ -1297,7 +1297,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_ha_nova_vlan_multiple_clusters"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_ha_nova_vlan_multiple_clusters(self):
         """Deploy environment in HA with compute-vmware and multiple \
         clusters. Check network connection between VM's from different \
@@ -1416,7 +1416,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_ha_glance_backend_multiple_cluster"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_ha_glance_backend_multiple_cluster(self):
         """Deploy environment with nova-vlan in HA with multiple cluster \
          (Controller + ComputeVMWare), CinderVMDK, Cinder and VMWare \
@@ -1482,7 +1482,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["vcenter_ha_ceph"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_ha_ceph(self):
         """Deploy environment in HA with ComputeVMWare and Ceph \
         (Ceph RBD for volumes/images and RadosGW)
@@ -1552,7 +1552,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["vcenter_ha_cinder_and_ceph"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_ha_cinder_and_ceph(self):
         """Deploy environment in HA with Cinder and Ceph \
         (Ceph RBD for images/ephemeral volumes and RadosGW)
@@ -1613,7 +1613,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_ha_multiroles_cindervmdk_and_cinder"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_ha_multiroles_cindervmdk_and_cinder(self):
         """Deploy environment in HA with ComputeVMWare, Cinder and \
         check multiroles with CinderVMDK
@@ -1673,7 +1673,7 @@ class VcenterDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_ha_multiroles_cindervmdk_and_ceph"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vcenter_ha_multiroles_cindervmdk_and_ceph(self):
         """Deploy environment in HA with ComputeVMWare, Ceph and \
         check multiroles with CinderVMDK

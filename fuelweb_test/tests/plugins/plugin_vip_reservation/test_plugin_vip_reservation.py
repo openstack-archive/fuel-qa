@@ -35,7 +35,7 @@ class VipReservation(TestBasic):
           groups=["vip_reservation_for_plugin",
                   "vip_reservation_for_plugin_vlan",
                   "vip_reservation_for_plugin_vxlan"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vip_reservation_for_plugin(self):
         """Check vip reservation for fuel plugin
 
@@ -157,7 +157,7 @@ class VipReservation(TestBasic):
           groups=["vip_reservation_for_plugin_haproxy_ns",
                   "vip_reservation_for_plugin_haproxy_ns_vlan",
                   "vip_reservation_for_plugin_haproxy_ns_vxlan"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vip_reservation_for_plugin_haproxy_ns(self):
         """Check vip reservation for haproxy ns plugin
 
@@ -284,7 +284,7 @@ class VipReservation(TestBasic):
           groups=["vip_reservation_for_plugin_custom_ns",
                   "vip_reservation_for_plugin_custom_ns_vlan",
                   "vip_reservation_for_plugin_custom_ns_vxlan"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def vip_reservation_for_plugin_custom_ns(self):
         """Check vip reservation for custom ns plugin
 

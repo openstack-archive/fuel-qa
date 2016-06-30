@@ -34,7 +34,7 @@ class HaTunGroup1(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["tun_controller_base_os"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def tun_controller_base_os(self):
         """Deploy 3 controllers with base_os using Neutron Tun
 
@@ -88,7 +88,7 @@ class HaTunGroup1(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["tun_ceph_for_images_and_objects"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def tun_ceph_for_images_and_objects(self):
         """Deployment with 3 controllers, NeutronTUN,
            with Ceph for images and RadosGW

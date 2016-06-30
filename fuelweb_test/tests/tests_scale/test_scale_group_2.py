@@ -30,7 +30,7 @@ class HaScaleGroup2(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["replace_primary_controller"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def replace_primary_controller(self):
         """Replace the primary controller in the cluster
 
@@ -104,7 +104,7 @@ class HaScaleGroup2(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["remove_controllers"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def remove_controllers(self):
         """Deploy cluster with 3 controllers, remove 2 controllers
            and re-deploy, check hosts and corosync

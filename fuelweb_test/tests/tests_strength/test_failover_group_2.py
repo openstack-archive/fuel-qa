@@ -32,7 +32,7 @@ class FailoverGroup2(TestBasic):
 
     @test(depends_on_groups=['prepare_slaves_5'],
           groups=['deploy_ha_ceph'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ha_ceph(self):
         """Deploy environment with 3 controllers, Ceph and Neutron VXLAN
 
@@ -100,7 +100,7 @@ class FailoverGroup2(TestBasic):
 
     @test(depends_on_groups=['deploy_ha_ceph'],
           groups=['safe_reboot_primary_controller_ceph'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def safe_reboot_primary_controller_ceph(self):
         """Safe reboot of primary controller on ceph cluster
 
@@ -143,7 +143,7 @@ class FailoverGroup2(TestBasic):
 
     @test(depends_on_groups=['deploy_ha_ceph'],
           groups=['hard_reboot_primary_controller_ceph'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def hard_reboot_primary_controller_ceph(self):
         """Hard reboot of primary controller with Ceph for storage
 
@@ -186,7 +186,7 @@ class FailoverGroup2(TestBasic):
 
     @test(depends_on_groups=['deploy_ha_ceph'],
           groups=['shutdown_primary_controller_ceph'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def shutdown_primary_controller_ceph(self):
         """Shutdown primary controller for Neutron on ceph cluster
 

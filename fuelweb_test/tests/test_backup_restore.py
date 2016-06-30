@@ -42,7 +42,7 @@ class TestAdminNodeBackupRestore(TestBasic):
 
     @test(enabled=False, depends_on=[SetupEnvironment.setup_master],
           groups=["backup_restore_master_base"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def backup_restore_master_base(self):
         """Backup/restore master node
 
@@ -78,7 +78,7 @@ class BackupRestoreHAOneController(HAOneControllerNeutronBase):
 
     @test(enabled=False, depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ha_one_controller_backup_restore"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ha_one_controller_backup_restore(self):
         """Deploy cluster in HA mode (one controller) with neutron
 
@@ -101,7 +101,7 @@ class BackupRestoreHAOneController(HAOneControllerNeutronBase):
 
     @test(enabled=False, depends_on=[deploy_ha_one_controller_backup_restore],
           groups=["ha_one_controller_backup_restore"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_one_controller_backup_restore(self):
         """Backup/restore master node with one controller in cluster
 
@@ -168,7 +168,7 @@ class BackupRestoreHA(NeutronTunHaBase):
 
     @test(enabled=False, depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_tun_ha_backup_restore"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_neutron_tun_ha_backup_restore(self):
         """Deploy cluster in HA mode with Neutron VXLAN
 
@@ -189,7 +189,7 @@ class BackupRestoreHA(NeutronTunHaBase):
     @test(enabled=False,
           depends_on_groups=['deploy_neutron_tun_ha_backup_restore'],
           groups=["neutron_tun_ha_backup_restore"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def neutron_tun_ha_backup_restore(self):
         """Backup/restore master node with cluster in ha mode
 
@@ -258,7 +258,7 @@ class BackupRestoreHA(NeutronTunHaBase):
 
     @test(enabled=False, depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["create_backup_reset_restore_and_deploy_via_cli"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def create_backup_reset_restore_and_deploy_via_cli(self):
         """Backup/restore master node with cluster in ha mode
 
@@ -385,7 +385,7 @@ class BackupReinstallRestoreHA(NeutronTunHaBase):
     @test(enabled=False,
           depends_on_groups=['deploy_neutron_tun_ha_backup_restore'],
           groups=["backup_reinstall_restore"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def backup_reinstall_restore(self):
         """Backup, reinstall then restore master node with cluster in ha mode
 

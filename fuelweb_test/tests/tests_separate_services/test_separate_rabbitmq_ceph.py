@@ -31,7 +31,7 @@ class SeparateRabbitCeph(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["separate_rabbit_ceph_service"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def separate_rabbit_ceph_service(self):
         """Deployment with separate rabbitmq nodes and ceph for all
 

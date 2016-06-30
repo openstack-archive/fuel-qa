@@ -42,7 +42,7 @@ class IBPTest(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["check_mcollective_version"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_mcollective_version(self):
         """Check mcollective package version on bootstrap and provisioned node
 
@@ -85,7 +85,7 @@ class IBPTest(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["check_ibp_default_package_list"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_ibp_default_package_list(self):
         """Provision one node with default package list
 
@@ -126,7 +126,7 @@ class IBPTest(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["check_ibp_add_package"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_ibp_add_package(self):
         """Add package to package list and provision one node. Check that
         added package is installed.
@@ -186,7 +186,7 @@ class IBPTest(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["check_ibp_remove_package"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_ibp_remove_package(self):
         """Remove package from package list and provision one node. Check that
         removed package is not installed.
@@ -241,7 +241,7 @@ class IBPTest(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["check_ibp_add_wrong_package"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_ibp_add_wrong_package(self):
         """Add package with wrong name to package list and provision one node.
         Check that provision ends with error.

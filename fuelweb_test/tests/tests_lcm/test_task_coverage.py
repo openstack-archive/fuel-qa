@@ -93,7 +93,7 @@ class TaskLCMCoverage(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=['task_lcm_coverage',
                   'task_idempotency_coverage'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def task_idempotency_coverage(self):
         """Setup master node with custom manifests
 

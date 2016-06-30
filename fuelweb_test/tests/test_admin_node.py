@@ -49,7 +49,7 @@ class TestAdminNode(TestBasic):
 
     @test(enabled=False, depends_on=[SetupEnvironment.setup_master],
           groups=["test_cobbler_alive"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def test_cobbler_alive(self):
         """Test current installation has correctly setup cobbler
 
@@ -87,7 +87,7 @@ class TestAdminNode(TestBasic):
 
     @test(enabled=False, depends_on=[SetupEnvironment.setup_master],
           groups=["test_astuted_alive"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def test_astuted_alive(self):
         """Test astute master and worker processes are alive on master node
 
@@ -190,7 +190,7 @@ class TestLogrotateBase(TestBasic):
 
     @test(depends_on=[SetupEnvironment.setup_master],
           groups=["test_logrotate"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def test_log_rotation(self):
         """Logrotate with logrotate.conf on master node
 
@@ -265,7 +265,7 @@ class TestLogrotateBase(TestBasic):
 
     @test(depends_on=[SetupEnvironment.setup_master],
           groups=["test_fuel_nondaily_logrotate"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def test_fuel_nondaily_rotation(self):
         """Logrotate with fuel.nondaily  on master node
 
@@ -328,7 +328,7 @@ class TestLogrotateBase(TestBasic):
 
     @test(depends_on=[SetupEnvironment.setup_master],
           groups=["test_logrotate_101MB"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def test_log_rotation_101mb(self):
         """Logrotate with logrotate.conf for 101MB size file on master node
 
@@ -401,7 +401,7 @@ class TestLogrotateBase(TestBasic):
 
     @test(depends_on=[SetupEnvironment.setup_master],
           groups=["test_logrotate_one_week_11MB"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def test_log_rotation_one_week_11mb(self):
         """Logrotate with logrotate.conf for 1 week old file with size 11MB
 
@@ -497,7 +497,7 @@ class GPGSigningCheck(TestBasic):
 
     @test(depends_on=[SetupEnvironment.setup_master],
           groups=['test_check_rpm_packages_signed'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_rpm_packages_signed(self):
         """Check that local rpm packages are signed
 
@@ -534,7 +534,7 @@ class GPGSigningCheck(TestBasic):
 
     @test(depends_on=[SetupEnvironment.setup_master],
           groups=['test_remote_packages_and_mos_repositories_signed'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_remote_packages_and_mos_repositories_signed(self):
         """Check that remote packages and MOS repositories are signed
 

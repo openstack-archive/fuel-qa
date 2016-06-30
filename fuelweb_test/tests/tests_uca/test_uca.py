@@ -79,7 +79,7 @@ class UCATest(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["uca_neutron_ha"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def uca_neutron_ha(self):
         """Deploy cluster in ha mode with UCA repo
 
@@ -147,7 +147,7 @@ class UCATest(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["uca_neutron_tun_ceph"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def uca_neutron_tun_ceph(self):
         """Deploy cluster with NeutronTUN, Ceph and UCA repo
 
@@ -225,7 +225,7 @@ class UCATest(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["uca_vlan_mongo"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def uca_vlan_mongo(self):
         """Deploy cluster with NeutronVlan, Ceilometer and UCA repo
 
@@ -299,7 +299,7 @@ class UCATest(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
     @test(depends_on=[uca_neutron_ha], groups=['uca_shutdown_cluster'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def uca_shutdown_cluster(self):
         """Graceful shutdown of cluster deployed from UCA
 
