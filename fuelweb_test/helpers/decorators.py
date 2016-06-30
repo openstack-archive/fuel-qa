@@ -328,8 +328,11 @@ def revert_info(snapshot_name, master_ip, description=""):
     logger.info("<" * 5 + "*" * 100 + ">" * 5)
 
 
-def create_diagnostic_snapshot(env, status, name=""):
-    task = env.fuel_web.task_wait(env.fuel_web.client.generate_logs(), 60 * 10)
+def create_diagnostic_snapshot(env, status, name="",
+                               timeout=settings.LOG_SNAPSHOT_TIMEOUT):
+    logger.debug('Starting log snapshot with '
+                 'timeout {} seconds'.format(timeout))
+    task = env.fuel_web.task_wait(env.fuel_web.client.generate_logs(), timeout)
     assert_true(task['status'] == 'ready',
                 "Generation of diagnostic snapshot failed: {}".format(task))
     if settings.FORCE_HTTPS_MASTER_NODE:
