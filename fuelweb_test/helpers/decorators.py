@@ -63,11 +63,11 @@ def save_logs(session, url, path, chunk_size=1024):
                 fp.flush()
 
 
-def store_error_details(name, env):
+def store_error_details(name, env, timeout=settings.LOG_SNAPSHOT_TIMEOUT):
     description = "Failed in method {:s}.".format(name)
     if env is not None:
         try:
-            create_diagnostic_snapshot(env, "fail", name)
+            create_diagnostic_snapshot(env, "fail", name, timeout)
         except:
             logger.error("Fetching of diagnostic snapshot failed: {0}".format(
                 traceback.format_exception_only(sys.exc_info()[0],
@@ -98,7 +98,7 @@ def store_error_details(name, env):
                              " {0}".format(traceback.format_exc()))
 
 
-def log_snapshot_after_test(func):
+def log_snapshot_after_test(timeout=settings.LOG_SNAPSHOT_TIMEOUT):
     """Generate diagnostic snapshot after the end of the test.
 
       - Show test case method name and scenario from docstring.
@@ -108,36 +108,42 @@ def log_snapshot_after_test(func):
       - Fetch logs from master node if creating the diagnostic
         snapshot has failed.
     """
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        logger.info("\n" + "<" * 5 + "#" * 30 + "[ {} ]"
-                    .format(func.__name__) + "#" * 30 + ">" * 5 + "\n{}"
-                    .format(''.join(func.__doc__)))
-        try:
-            result = func(*args, **kwargs)
-        except SkipTest:
-            raise
-        except Exception:
-            name = 'error_{:s}'.format(func.__name__)
-            store_error_details(name, args[0].env)
-            logger.error(traceback.format_exc())
-            logger.info("<" * 5 + "*" * 100 + ">" * 5)
-            raise
-        else:
-            if settings.ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT:
-                if args[0].env is None:
-                    logger.warning("Can't get diagnostic snapshot: "
-                                   "unexpected class is decorated.")
-                    return result
-                try:
-                    args[0].env.resume_environment()
-                    create_diagnostic_snapshot(args[0].env, "pass",
-                                               func.__name__)
-                except:
-                    logger.error("Fetching of diagnostic snapshot failed: {0}".
-                                 format(traceback.format_exc()))
-            return result
-    return wrapper
+    def wrapped(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            logger.info("\n" + "<" * 5 + "#" * 30 + "[ {} ]"
+                        .format(func.__name__) + "#" * 30 + ">" * 5 + "\n{}"
+                        .format(''.join(func.__doc__)))
+            try:
+                result = func(*args, **kwargs)
+            except SkipTest:
+                raise
+            except Exception:
+                name = 'error_{:s}'.format(func.__name__)
+                store_error_details(name=name,
+                                    env=args[0].env,
+                                    timeout=timeout)
+                logger.error(traceback.format_exc())
+                logger.info("<" * 5 + "*" * 100 + ">" * 5)
+                raise
+            else:
+                if settings.ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT:
+                    if args[0].env is None:
+                        logger.warning("Can't get diagnostic snapshot: "
+                                       "unexpected class is decorated.")
+                        return result
+                    try:
+                        args[0].env.resume_environment()
+                        create_diagnostic_snapshot(env=args[0].env,
+                                                   status="pass",
+                                                   name=func.__name__,
+                                                   timeout=timeout)
+                    except:
+                        logger.error("Fetching of diagnostic snapshot failed:"
+                                     " {0}".format(traceback.format_exc()))
+                return result
+        return wrapper
+    return wrapped
 
 
 def json_parse(func):
@@ -327,8 +333,11 @@ def revert_info(snapshot_name, master_ip, description=""):
     logger.info("<" * 5 + "*" * 100 + ">" * 5)
 
 
-def create_diagnostic_snapshot(env, status, name=""):
-    task = env.fuel_web.task_wait(env.fuel_web.client.generate_logs(), 60 * 10)
+def create_diagnostic_snapshot(env, status, name="",
+                               timeout=settings.LOG_SNAPSHOT_TIMEOUT):
+    logger.debug('Starting log snapshot with '
+                 'timeout {} seconds'.format(timeout))
+    task = env.fuel_web.task_wait(env.fuel_web.client.generate_logs(), timeout)
     assert_true(task['status'] == 'ready',
                 "Generation of diagnostic snapshot failed: {}".format(task))
     if settings.FORCE_HTTPS_MASTER_NODE:
