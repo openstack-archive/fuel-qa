@@ -53,7 +53,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
           groups=["build_default_bootstrap"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def build_default_bootstrap(self):
         """Verify than slaves retrieved Default ubuntu bootstrap
 
@@ -87,7 +87,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
           groups=["build_simple_bootstrap"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def build_simple_bootstrap(self):
         """Verify than slaves retrieved Ubuntu bootstrap with extra package
 
@@ -148,7 +148,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
           groups=["build_full_bootstrap"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def build_full_bootstrap(self):
         """Verify than slaves retrieved Ubuntu bootstrap with extra settings
 
@@ -253,7 +253,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
 
     @test(depends_on_groups=["build_default_bootstrap"],
           groups=["create_list_import_delete_bootstrap_image"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def create_list_import_delete_bootstrap_image(self):
         """Validate CRD operations of fuel-bootstrap utility
 
@@ -315,7 +315,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
 class UbuntuBootstrap(base_test_case.TestBasic):
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
           groups=["deploy_with_two_ubuntu_bootstraps"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_with_two_ubuntu_bootstraps(self):
         """Deploy cluster with two different bootstrap images
 
@@ -387,7 +387,7 @@ class UbuntuBootstrap(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["deploy_stop_on_deploying_ubuntu_bootstrap"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_stop_on_deploying_ubuntu_bootstrap(self):
         """Stop reset cluster in HA mode with 1 controller on Ubuntu Bootstrap
 
@@ -499,7 +499,7 @@ class UbuntuBootstrap(base_test_case.TestBasic):
 
     @test(depends_on_groups=['deploy_stop_on_deploying_ubuntu_bootstrap'],
           groups=["deploy_reset_on_ready_ubuntu_bootstrap"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def reset_on_ready_ubuntu_bootstrap(self):
         """Stop reset cluster in HA mode with 1 controller on Ubuntu Bootstrap
 
@@ -547,7 +547,7 @@ class UbuntuBootstrap(base_test_case.TestBasic):
 
     @test(depends_on_groups=['deploy_stop_on_deploying_ubuntu_bootstrap'],
           groups=["delete_on_ready_ubuntu_bootstrap"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def delete_on_ready_ubuntu_bootstrap(self):
         """Delete cluster cluster in HA mode\
         with 1 controller on Ubuntu Bootstrap
@@ -587,7 +587,7 @@ class UbuntuBootstrap(base_test_case.TestBasic):
 
     @test(depends_on_groups=['deploy_stop_on_deploying_ubuntu_bootstrap'],
           groups=["delete_node_on_ready_ubuntu_bootstrap"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def delete_node_on_ready_ubuntu_bootstrap(self):
         """Delete node from cluster in HA mode\
         with 1 controller on Ubuntu Bootstrap

@@ -49,7 +49,7 @@ class TestMultipleClusterNets(TestNetworkTemplatesBase):
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["deploy_neutron_tun_ha_nodegroups"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     @check_fuel_statistics
     def deploy_neutron_tun_ha_nodegroups(self):
         """Deploy HA environment with NeutronVXLAN and 2 nodegroups
@@ -289,7 +289,7 @@ class TestMultipleClusterNets(TestNetworkTemplatesBase):
 
     @test(depends_on_groups=['deploy_neutron_tun_ha_nodegroups'],
           groups=["add_custom_nodegroup"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def add_custom_nodegroup(self):
         """Add new nodegroup to operational environment
 
@@ -390,7 +390,7 @@ class TestMultipleClusterNets(TestNetworkTemplatesBase):
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["deploy_ceph_ha_nodegroups"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ceph_ha_nodegroups(self):
         """Deploy HA environment with Neutron VXLAN, Ceph and 2 nodegroups
 
@@ -503,7 +503,7 @@ class TestMultipleClusterNets(TestNetworkTemplatesBase):
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["deploy_controllers_from_custom_nodegroup",
                   "multiple_cluster_networks"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_controllers_from_custom_nodegroup(self):
         """Assigning controllers to non-default nodegroup
 
@@ -618,7 +618,7 @@ class TestMultipleClusterNets(TestNetworkTemplatesBase):
           groups=["delete_cluster_with_custom_nodegroup"],
           # TODO: enable this test when bug #1521682 is fixed
           enabled=False)
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def delete_cluster_with_custom_nodegroup(self):
         """Delete env, check nodes from custom nodegroup can't bootstrap
 
@@ -680,7 +680,7 @@ class TestMultipleClusterNets(TestNetworkTemplatesBase):
 
     @test(depends_on=[deploy_controllers_from_custom_nodegroup],
           groups=["delete_custom_nodegroup"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def delete_custom_nodegroup(self):
         """Delete nodegroup, check its nodes are marked as 'error'
 

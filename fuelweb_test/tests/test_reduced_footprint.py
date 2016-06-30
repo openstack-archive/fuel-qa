@@ -35,7 +35,7 @@ class TestVirtRole(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["spawn_one_vm_on_one_virt_node"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def spawn_one_vm_on_one_virt_node(self):
         """Spawn one vm node on one slave node
 
@@ -93,7 +93,7 @@ class TestVirtRole(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["spawn_two_vms_on_one_virt_node"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def spawn_two_vms_on_one_virt_node(self):
         """Spawn two vm nodes on one slave node
 
@@ -158,7 +158,7 @@ class TestVirtRole(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["spawn_three_vms_across_three_virt_nodes"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def spawn_three_vms_across_three_virt_nodes(self):
         """Spawn three vm nodes across three slave nodes
 

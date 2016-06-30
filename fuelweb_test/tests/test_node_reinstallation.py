@@ -42,7 +42,7 @@ class NodeReinstallationEnv(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["node_reinstallation_env"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def node_reinstallation_env(self):
         """Deploy a cluster for nodes reinstallation.
 
@@ -83,7 +83,7 @@ class NodeReinstallationEnv(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["failed_node_reinstallation_env"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def failed_node_reinstallation_env(self):
         """Prepare a cluster for 'failed node reinstallation' tests.
 
@@ -139,7 +139,7 @@ class ReadyNodeReinstallation(TestBasic):
 
     @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
           groups=["reinstall_single_regular_controller_node"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def reinstall_single_regular_controller_node(self):
         """Verify reinstallation of a regular (non-primary) controller node.
 
@@ -174,7 +174,7 @@ class ReadyNodeReinstallation(TestBasic):
 
     @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
           groups=["reinstall_single_primary_controller_node"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def reinstall_single_primary_controller_node(self):
         """Verify reinstallation of the primary controller node.
 
@@ -228,7 +228,7 @@ class ReadyNodeReinstallation(TestBasic):
 
     @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
           groups=["reinstall_single_compute_node"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def reinstall_single_compute_node(self):
         """Verify reinstallation of a compute node.
 
@@ -268,7 +268,7 @@ class ReadyNodeReinstallation(TestBasic):
 class FullClusterReinstallation(TestBasic):
     @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
           groups=["full_cluster_reinstallation"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def full_cluster_reinstallation(self):
         """Verify full cluster reinstallation.
 
@@ -354,7 +354,7 @@ class ErrorNodeReinstallation(TestBasic):
 
     @test(depends_on=[NodeReinstallationEnv.failed_node_reinstallation_env],
           groups=["reinstall_failed_primary_controller_deployment"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def reinstall_failed_primary_controller_deployment(self):
         """Verify reinstallation of a failed controller.
 
@@ -387,7 +387,7 @@ class ErrorNodeReinstallation(TestBasic):
 
     @test(depends_on=[NodeReinstallationEnv.failed_node_reinstallation_env],
           groups=["reinstall_failed_regular_controller_deployment"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def reinstall_failed_regular_controller_deployment(self):
         """Verify reinstallation of a failed controller.
 
@@ -420,7 +420,7 @@ class ErrorNodeReinstallation(TestBasic):
 
     @test(depends_on=[NodeReinstallationEnv.failed_node_reinstallation_env],
           groups=["reinstall_failed_compute_deployment"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def reinstall_failed_compute_deployment(self):
         """Verify reinstallation of a failed compute.
 
@@ -493,7 +493,7 @@ class PartitionPreservation(TestBasic):
 
     @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
           groups=["cinder_nova_partition_preservation"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cinder_nova_partition_preservation(self):
         """Verify partition preservation of Cinder and Nova instances data.
 
@@ -584,7 +584,7 @@ class PartitionPreservation(TestBasic):
 
     @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
           groups=["mongo_mysql_partition_preservation"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def mongo_mysql_partition_preservation(self):
         """Verify partition preservation of Ceilometer and mysql data.
 
@@ -687,7 +687,7 @@ class StopReinstallation(TestBasic):
 
     @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
           groups=["compute_stop_reinstallation"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def compute_stop_reinstallation(self):
         """Verify stop reinstallation of compute.
 
@@ -788,7 +788,7 @@ class StopReinstallation(TestBasic):
 
     @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
           groups=["node_stop_reinstallation"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def node_stop_reinstallation(self):
         """Verify stop reinstallation of node.
 

@@ -34,7 +34,7 @@ class RhHaOneController(ExtraComputesBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_rh_compute_ha_one_controller_tun"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_rh_compute_ha_one_controller_tun(self):
         """Deploy RH-based compute in HA One Controller mode
         with Neutron VXLAN
@@ -177,7 +177,7 @@ class RhFailoverGroup(ExtraComputesBase):
 
     @test(depends_on_groups=['deploy_rh_compute_ha_one_controller_tun'],
           groups=['check_rh_warm_reboot'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_rh_warm_reboot(self):
         """Check that resumed VM is working properly after warm reboot of
         RH-based compute
@@ -254,7 +254,7 @@ class RhFailoverGroup(ExtraComputesBase):
 
     @test(depends_on_groups=['deploy_rh_compute_ha_one_controller_tun'],
           groups=['check_rh_hard_reboot'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_rh_hard_reboot(self):
         """Check that resumed VM is working properly after hard reboot of
         RH-based compute

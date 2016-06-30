@@ -30,7 +30,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ha", "prepare_ha_neutron", "neutron", "deployment"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def prepare_ha_neutron(self):
         """Prepare cluster in HA/Neutron mode for failover tests
 
@@ -48,7 +48,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_destroy_controllers", "ha_destroy_controllers"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_neutron_destroy_controllers(self):
         """Destroy two controllers and check pacemaker status is correct
 
@@ -70,7 +70,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
           depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_disconnect_controllers",
                   "ha_disconnect_controllers"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_neutron_disconnect_controllers(self):
         """Disconnect controllers and check pacemaker status is correct
 
@@ -86,7 +86,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_delete_vips", "ha_delete_vips"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_neutron_delete_vips(self):
         """Delete management and public VIPs 10 times.
         Verify that they are restored.
@@ -104,7 +104,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_mysql_termination", "ha_mysql_termination"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_neutron_mysql_termination(self):
         """Terminate mysql on all controllers one by one
 
@@ -121,7 +121,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_haproxy_termination", "ha_haproxy_termination"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_neutron_haproxy_termination(self):
         """Terminate haproxy on all controllers one by one
 
@@ -139,7 +139,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_pacemaker_configuration",
                   "ha_pacemaker_configuration"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_neutron_pacemaker_configuration(self):
         """Verify resources are configured
 
@@ -155,7 +155,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
     @test(enabled=False, depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_pacemaker_restart_heat_engine",
                   "ha_pacemaker_restart_heat_engine"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_neutron_pacemaker_restart_heat_engine(self):
         """Verify heat engine service is restarted
          by pacemaker on amqp connection loss
@@ -175,7 +175,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(enabled=False, depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_check_monit", "ha_check_monit"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_neutron_check_monit(self):
         """Verify monit restarted nova
          service if it was killed
@@ -191,7 +191,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_firewall"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_neutron_firewall(self):
         """Check firewall vulnerability on Neutron network
 
@@ -208,7 +208,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_virtual_router"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_neutron_virtual_router(self):
         """Verify connection is present and
         downloading maintained by conntrackd
@@ -227,7 +227,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(enabled=False, depends_on_groups=['prepare_ha_neutron'],
           groups=["check_neutron_package_loss"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_neutron_packages_loss(self):
         """Check cluster recovery if br-mgmt loss 5% packages
 
@@ -243,7 +243,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_check_alive_rabbit"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_neutron_check_alive_rabbit(self):
         """Check alive rabbit node is not kicked from cluster
            when corosync service on node dies
@@ -267,7 +267,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_check_dead_rabbit"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_neutron_check_dead_rabbit(self):
         """Check dead rabbit node is kicked from cluster
            when corosync service on node dies
@@ -289,7 +289,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_neutron_3_1_rabbit_failover"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_neutron_test_3_1_rabbit_failover(self):
         """Check 3 in 1 rabbit failover
 
@@ -315,7 +315,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=["ha_corosync_stability_check", "ha"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_corosync_stability_check(self):
         """Check after corosync failover that "pcs status nodes" reports
            the same DC with quorum, "offline"/"online" statuses
@@ -333,7 +333,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=['change_pacemaker_parameter_does_not_break_rabbitmq'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def change_pacemaker_parameter_not_break_rabbitmq(self):
         """Change pacemaker parameters doesn't break RabbitMQ.
 
@@ -355,7 +355,7 @@ class TestHaNeutronFailover(TestHaFailoverBase):
 
     @test(depends_on_groups=['prepare_ha_neutron'],
           groups=['ha_rabbitmq_stability_check'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ha_rabbitmq_stability_check(self):
         """Check after repeatable failover rabbit cluster is healthy.
 

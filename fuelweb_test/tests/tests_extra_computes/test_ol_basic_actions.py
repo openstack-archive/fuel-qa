@@ -31,7 +31,7 @@ class OlHaOneController(ExtraComputesBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_ol_compute_ha_one_controller_tun"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ol_compute_ha_one_controller_tun(self):
         """Deploy OL-based compute in HA One Controller mode
         with Neutron VXLAN

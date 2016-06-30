@@ -34,7 +34,7 @@ class SeparateRabbit(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["separate_rabbit_service"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def separate_rabbit_service(self):
         """Deploy cluster with 3 separate rabbit roles
 
@@ -128,7 +128,7 @@ class SeparateRabbitFailover(TestBasic):
 
     @test(depends_on=[SeparateRabbit.separate_rabbit_service],
           groups=["separate_rabbit_service_shutdown"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def separate_rabbit_service_shutdown(self):
         """Shutdown one rabbit node
 
@@ -156,7 +156,7 @@ class SeparateRabbitFailover(TestBasic):
 
     @test(depends_on=[SeparateRabbit.separate_rabbit_service],
           groups=["separate_rabbit_service_restart"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def separate_rabbit_service_restart(self):
         """Restart one rabbit node
 
@@ -185,7 +185,7 @@ class SeparateRabbitFailover(TestBasic):
 
     @test(depends_on=[SeparateRabbit.separate_rabbit_service],
           groups=["separate_rabbit_service_controller_shutdown"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def separate_rabbit_service_controller_shutdown(self):
         """Shutdown primary controller node
 
@@ -216,7 +216,7 @@ class SeparateRabbitFailover(TestBasic):
 
     @test(depends_on=[SeparateRabbit.separate_rabbit_service],
           groups=["separate_rabbit_service_add_delete_node"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def separate_rabbit_service_add_delete_node(self):
         """Add and delete rabbit node
 

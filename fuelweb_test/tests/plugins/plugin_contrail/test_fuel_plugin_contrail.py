@@ -196,7 +196,7 @@ class ContrailPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["install_contrail"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def install_contrail(self):
         """Install Contrail Plugin and create cluster
 
@@ -216,7 +216,7 @@ class ContrailPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_contrail"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_contrail(self):
         """Deploy a cluster with Contrail Plugin
 
@@ -260,7 +260,7 @@ class ContrailPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_controller_compute_contrail"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_controller_compute_contrail(self):
         """Deploy cluster with 1 controller, 1 compute,
         3 base-os and install contrail plugin
@@ -331,7 +331,7 @@ class ContrailPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["contrail_plugin_add_delete_compute_node"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def contrail_plugin_add_delete_compute_node(self):
         """Verify that Compute node can be
         deleted and added after deploying
@@ -421,7 +421,7 @@ class ContrailPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["deploy_ha_contrail_plugin"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ha_contrail_plugin(self):
         """Deploy HA Environment with Contrail Plugin
 
@@ -530,7 +530,7 @@ class ContrailPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["contrail_plugin_add_delete_controller_node"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def contrail_plugin_add_delete_controller_node(self):
         """Verify that Controller node can be
         deleted and added after deploying
@@ -623,7 +623,7 @@ class ContrailPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["deploy_ha_with_pub_net_all_nodes"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ha_with_pub_net_all_nodes(self):
         """Deploy HA Environment with Contrail Plugin
         and assign public network to all nodes
@@ -701,7 +701,7 @@ class ContrailPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["check_bonding_with_contrail"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_bonding_with_contrail(self):
         """Verify bonding with Contrail Plugin
 

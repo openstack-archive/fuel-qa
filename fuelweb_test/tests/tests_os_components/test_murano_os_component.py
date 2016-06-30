@@ -26,7 +26,7 @@ class MuranoOSComponent(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=['murano_neutron_vlan'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def murano_neutron_vlan(self):
         """Deployment with 3 controllers, NeutronVLAN, with Murano
 

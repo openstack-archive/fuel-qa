@@ -47,7 +47,7 @@ class CephCompact(TestBasic):
                   "ha_one_controller_nova_ceph",
                   "ceph_ha_one_controller_compact_neutron", "ceph",
                   "nova", "deployment"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ceph_ha_one_controller_compact(self):
         """Deploy ceph in HA mode with 1 controller
 
@@ -97,7 +97,7 @@ class CephCompact(TestBasic):
 
     @test(depends_on=[ceph_ha_one_controller_compact],
           groups=["check_ceph_cinder_cow"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_ceph_cinder_cow(self):
         """Check copy-on-write when Cinder creates a volume from Glance image
 
@@ -153,7 +153,7 @@ class CephCompactWithCinder(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["ceph_ha_one_controller_with_cinder"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ceph_ha_one_controller_with_cinder(self):
         """Deploy ceph with cinder in ha mode with 1 controller
 
@@ -230,7 +230,7 @@ class CephHA(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["ceph_ha", "classic_provisioning"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ceph_ha(self):
         """Deploy ceph with cinder in HA mode
 
@@ -288,7 +288,7 @@ class CephHA(TestBasic):
 
     @test(depends_on=[ceph_ha],
           groups=["ha_nova_ceph", "ha_neutron_ceph", "check_ceph_ha"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_ceph_ha(self):
         """Check ceph with cinder in HA mode
 
@@ -335,7 +335,7 @@ class CephHA(TestBasic):
 
     @test(depends_on=[ceph_ha],
           groups=["openstack_stat"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_openstack_stat(self):
         """Check openstack statistic on fuel and collector side
 
@@ -452,7 +452,7 @@ class CephRadosGW(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["ceph_rados_gw", "bvt_2", "ceph", "neutron", "deployment"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ceph_rados_gw(self):
         """Deploy ceph HA with RadosGW for objects
 
@@ -538,7 +538,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ceph_migration"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def migrate_vm_backed_with_ceph(self):
         """Check VM backed with ceph migration in ha mode with 1 controller
 
@@ -814,7 +814,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ceph_partitions"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def check_ceph_partitions_after_reboot(self):
         """Check that Ceph OSD partitions are remounted after reboot
 
@@ -935,7 +935,7 @@ class RadosGW(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["radosgw_without_os_services_usage"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def radosgw_without_os_services_usage(self):
         """Deploy ceph HA with RadosGW for objects
 

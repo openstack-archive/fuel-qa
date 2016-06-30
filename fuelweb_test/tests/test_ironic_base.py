@@ -32,7 +32,7 @@ class TestIronicBase(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ironic_base"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ironic_base(
             self):
         """Deploy cluster in HA mode with Ironic:
@@ -168,7 +168,7 @@ class TestIronicDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["ironic_deploy_swift"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ironic_deploy_swift(self):
         """Deploy ironic with 1 baremetal node
 
@@ -216,7 +216,7 @@ class TestIronicDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["ironic_deploy_ceph"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ironic_deploy_ceph(self):
         """Deploy ironic with 1 baremetal node
 
@@ -285,7 +285,7 @@ class TestIronicDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ironic_deploy_sahara"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ironic_deploy_sahara(self):
         """Deploy Ironic with Sahara
 
@@ -344,7 +344,7 @@ class TestIronicDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ironic_deploy_ceilometer"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ironic_deploy_ceilometer(self):
         """Deploy Ironic with Ceilometer
 
@@ -399,7 +399,7 @@ class TestIronicDeploy(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_scale_controller_ironic"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_scale_controller_ironic(self):
         """Test cluster scaling with Controller and Ironic
 

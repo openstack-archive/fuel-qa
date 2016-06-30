@@ -30,7 +30,7 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_cinder_net_tmpl"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_cinder_net_tmpl(self):
         """Deploy HA environment with Cinder, Neutron and network template
 
@@ -111,7 +111,7 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_ceph_net_tmpl"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_ceph_net_tmpl(self):
         """Deploy HA environment with Ceph, Neutron and network template
 
@@ -195,7 +195,7 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
 
     @test(depends_on_groups=["deploy_cinder_net_tmpl"],
           groups=["add_nodes_net_tmpl"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def add_nodes_net_tmpl(self):
         """Add nodes to operational environment with network template
 
@@ -273,7 +273,7 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["network_config_consistency_on_reboot"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def network_config_consistency_on_reboot(self):
         """Deploy HA environment with Cinder, Neutron and network template
 
@@ -379,7 +379,7 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_cluster_without_management_net"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_cluster_without_management_net(self):
         """Deploy HA environment network template: no dedicate management nwk
 

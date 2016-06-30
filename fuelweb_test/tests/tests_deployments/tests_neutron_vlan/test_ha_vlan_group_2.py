@@ -26,7 +26,7 @@ class HaVlanGroup2(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["cinder_ceph_for_ephemeral"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cinder_ceph_for_ephemeral(self):
         """Deployment with 3 controllers, NeutronVLAN, with Ceph for ephemeral
 
@@ -90,7 +90,7 @@ class HaVlanGroup2(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["cinder_ceph_for_images_ephemeral"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cinder_ceph_for_images_ephemeral(self):
         """Deployment with 3 controllers, NeutronVLAN, with Ceph for
            images and ephemeral

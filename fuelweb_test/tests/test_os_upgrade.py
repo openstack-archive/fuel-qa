@@ -19,6 +19,7 @@ from proboscis import SkipTest
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+<<<<<<< HEAD
 from fuelweb_test.settings import KEYSTONE_CREDS
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
@@ -71,7 +72,7 @@ class TestOSupgrade(DataDrivenUpgradeBase):
 
     @test(depends_on_groups=['upgrade_ceph_ha_restore'],
           groups=["os_upgrade_env"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def os_upgrade_env(self):
         """Octane clone target environment
 
@@ -102,7 +103,7 @@ class TestOSupgrade(DataDrivenUpgradeBase):
         self.env.make_snapshot("os_upgrade_env", is_make=True)
 
     @test(depends_on=[os_upgrade_env], groups=["upgrade_first_cic"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def upgrade_first_cic(self):
         """Upgrade first controller
 
@@ -150,7 +151,7 @@ class TestOSupgrade(DataDrivenUpgradeBase):
 
     @test(depends_on=[upgrade_first_cic],
           groups=["upgrade_db"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def upgrade_db(self):
         """Move and upgrade mysql db from target cluster to seed cluster
 
@@ -229,7 +230,7 @@ class TestOSupgrade(DataDrivenUpgradeBase):
 
     @test(depends_on=[upgrade_db],
           groups=["upgrade_ceph"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def upgrade_ceph(self):
         """Upgrade ceph
 
@@ -267,7 +268,7 @@ class TestOSupgrade(DataDrivenUpgradeBase):
 
     @test(depends_on=[upgrade_ceph],
           groups=["upgrade_controllers"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def upgrade_controllers(self):
         """Upgrade control plane and remaining controllers
 
@@ -389,7 +390,7 @@ class TestOSupgrade(DataDrivenUpgradeBase):
         self.env.make_snapshot("upgrade_controllers", is_make=True)
 
     @test(depends_on=[upgrade_controllers], groups=["upgrade_ceph_osd"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def upgrade_ceph_osd(self):
         """Upgrade ceph osd
 
@@ -433,7 +434,7 @@ class TestOSupgrade(DataDrivenUpgradeBase):
         self.env.make_snapshot("upgrade_ceph_osd", is_make=True)
 
     @test(depends_on=[upgrade_ceph_osd], groups=["upgrade_old_nodes"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def upgrade_old_nodes(self):
         """Upgrade all non controller nodes
 

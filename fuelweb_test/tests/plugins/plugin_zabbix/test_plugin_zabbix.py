@@ -155,7 +155,7 @@ class ZabbixPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_zabbix_ha"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_zabbix_ha(self):
         """Deploy cluster in ha mode with zabbix plugin
 
@@ -236,7 +236,7 @@ class ZabbixPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_zabbix_snmptrap_ha"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_zabbix_snmptrap_ha(self):
         """Deploy cluster in ha mode with zabbix snmptrap plugin
 
@@ -342,7 +342,7 @@ class ZabbixPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_zabbix_snmp_emc_ha"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_zabbix_snmp_emc_ha(self):
         """Deploy cluster in ha mode with zabbix emc plugin
 
@@ -434,7 +434,7 @@ class ZabbixPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_zabbix_snmp_extreme_ha"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_zabbix_snmp_extreme_ha(self):
         """Deploy cluster in ha mode with zabbix snmptrap plugin
 
@@ -525,7 +525,7 @@ class ZabbixPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_zabbix_ceph_ha"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_zabbix_ceph_ha(self):
         """Deploy cluster in ha mode with zabbix plugin
 
@@ -598,7 +598,7 @@ class ZabbixPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_zabbix_ceph_radosgw_ha"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_zabbix_ceph_radosgw_ha(self):
         """Deploy cluster in ha mode with zabbix plugin
 

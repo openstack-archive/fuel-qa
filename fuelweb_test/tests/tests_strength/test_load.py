@@ -39,7 +39,7 @@ class Load(TestLoadBase):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["load_ceph_partitions_cold_reboot"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     @setup_teardown(setup=TestLoadBase.prepare_load_ceph_ha)
     def load_ceph_partitions_cold_reboot(self):
         """Load ceph-osd partitions on 30% ~start rally~ reboot nodes

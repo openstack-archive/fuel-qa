@@ -61,7 +61,7 @@ class MuranoPlugin(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_murano_with_glare_ha_one_controller"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_murano_with_glare_ha_one_controller(self):
         """Deploy cluster in ha mode with murano plugin
 

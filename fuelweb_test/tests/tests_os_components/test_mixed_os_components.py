@@ -26,7 +26,7 @@ class MixedComponents(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["mixed_components_murano_sahara_ceilometer"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def mixed_components_murano_sahara_ceilometer(self):
         """Deployment with 3 controllers, NeutronTUN, with Murano,
            Sahara and Ceilometer

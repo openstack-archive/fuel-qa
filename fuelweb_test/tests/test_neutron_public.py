@@ -28,7 +28,7 @@ class NeutronTunHaPublicNetwork(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_tun_ha_public_network"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_neutron_tun_ha_with_public_network(self):
         """Deploy cluster in HA mode with Neutron VXLAN and public network
            assigned to all nodes
@@ -93,7 +93,7 @@ class NeutronVlanHaPublicNetwork(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_neutron_vlan_ha_public_network"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_neutron_vlan_ha_with_public_network(self):
         """Deploy cluster in HA mode with Neutron VLAN and public network
            assigned to all nodes

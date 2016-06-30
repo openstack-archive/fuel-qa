@@ -118,7 +118,7 @@ class NumaCpuPinning(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["numa_cpu_pinning",
                   "basic_env_for_numa_cpu_pinning"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def basic_env_for_numa_cpu_pinning(self):
         """Basic environment for NUMA CPU pinning
 
@@ -226,7 +226,7 @@ class NumaCpuPinning(TestBasic):
 
     @test(depends_on_groups=['basic_env_for_numa_cpu_pinning'],
           groups=["cpu_pinning_on_two_compute"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cpu_pinning_on_two_compute(self):
         """Check different amount of pinned CPU
 
@@ -363,7 +363,7 @@ class NumaCpuPinning(TestBasic):
 
     @test(depends_on_groups=['basic_env_for_numa_cpu_pinning'],
           groups=["cpu_pinning_with_other_role"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cpu_pinning_with_other_role(self):
         """Check pinned CPU on compute,cinder node
 
@@ -472,7 +472,7 @@ class NumaCpuPinning(TestBasic):
 
     @test(depends_on_groups=['cpu_pinning_on_two_compute'],
           groups=["reboot_cpu_pinning_compute"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def reboot_cpu_pinning_compute(self):
         """Check compute with pinned CPU after reboot
 
@@ -531,7 +531,7 @@ class NumaCpuPinning(TestBasic):
 
     @test(depends_on_groups=['basic_env_for_numa_cpu_pinning'],
           groups=["cpu_pinning_allocation"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cpu_pinning_allocation(self):
         """Check errors for allocation of CPU for nova
 
@@ -585,7 +585,7 @@ class NumaCpuPinning(TestBasic):
 
     @test(depends_on_groups=['cpu_pinning_on_two_compute'],
           groups=["change_pinned_cpu_and_redeploy"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def change_pinned_cpu_and_redeploy(self):
         """Unpinned CPU and redeploy cluster
 

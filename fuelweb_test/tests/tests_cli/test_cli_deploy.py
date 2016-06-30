@@ -26,7 +26,7 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["cli_deploy_neutron_tun"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cli_deploy_neutron_tun(self):
         """Deployment with 1 controller, NeutronTUN
 
@@ -97,7 +97,7 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["cli_deploy_tasks"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cli_deploy_tasks(self):
         """Deployment with 3 controllers, NeutronVLAN
 

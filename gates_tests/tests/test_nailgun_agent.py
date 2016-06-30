@@ -31,7 +31,7 @@ class NailgunAgentGate(TestBasic):
 
     @test(depends_on_groups=['prepare_release'],
           groups=["review_nailgun_agent_one_node"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def gate_patch_nailgun_agent(self):
         """ Revert snapshot, update nailgun-agent, deploy one node
 

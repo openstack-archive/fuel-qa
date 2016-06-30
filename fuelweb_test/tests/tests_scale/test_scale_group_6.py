@@ -24,7 +24,7 @@ class HaScaleGroup6(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["add_delete_compute_cinder_ceph_ephemeral"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def add_delete_compute_cinder_ceph_ephemeral(self):
         """Deployment with 3 controllers, NeutronVlan, with add, delete,
            add/delete cinder+ceph node

@@ -28,7 +28,7 @@ class FailoverGroupMongo(TestBasic):
 
     @test(depends_on_groups=["prepare_slaves_9"],
           groups=['deploy_mongo_cluster'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_mongo_cluster(self):
         """Deploy cluster with MongoDB nodes
 
@@ -93,7 +93,7 @@ class FailoverGroupMongo(TestBasic):
 
     @test(depends_on_groups=["deploy_mongo_cluster"],
           groups=['kill_mongo_processes'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def kill_mongo_processes(self):
         """Kill mongo processes
 
@@ -153,7 +153,7 @@ class FailoverGroupMongo(TestBasic):
 
     @test(depends_on_groups=['deploy_mongo_cluster'],
           groups=['close_connections_for_mongo'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def close_connections_for_mongo(self):
         """Close connection for Mongo node
 
@@ -192,7 +192,7 @@ class FailoverGroupMongo(TestBasic):
 
     @test(depends_on_groups=['deploy_mongo_cluster'],
           groups=['shut_down_mongo_node'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def shut_down_mongo_node(self):
         """Shut down Mongo node for Neutron
 

@@ -35,7 +35,7 @@ class BondingHAOneController(BondingTest):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_bonding_one_controller_tun"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_bonding_one_controller_tun(self):
         """Deploy cluster with active-backup bonding and Neutron VXLAN
 
@@ -101,7 +101,7 @@ class BondingHAOneController(BondingTest):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_bonding_one_controller_vlan"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_bonding_one_controller_vlan(self):
         """Deploy cluster with active-backup bonding and Neutron VLAN
 
@@ -169,7 +169,7 @@ class BondingHAOneController(BondingTest):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["negative_admin_bonding_in_lacp_mode"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def negative_admin_bonding_in_lacp_mode(self):
         """Verify that lacp mode cannot be enabled for admin bond
 
@@ -248,7 +248,7 @@ class BondingHA(BondingTest):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_bonding_neutron_vlan"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_bonding_neutron_vlan(self):
         """Deploy cluster with active-backup bonding and Neutron VLAN
 
@@ -341,7 +341,7 @@ class BondingHA(BondingTest):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_bonding_neutron_tun"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def deploy_bonding_neutron_tun(self):
         """Deploy cluster with active-backup bonding and Neutron VXLAN
 
@@ -434,7 +434,7 @@ class BondingHA(BondingTest):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["bonding_conf_consistency"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def bonding_conf_consistency(self):
         """Verify that network configuration with bonds is consistent\
          after deployment failure

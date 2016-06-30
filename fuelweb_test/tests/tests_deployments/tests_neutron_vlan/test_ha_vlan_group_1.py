@@ -27,7 +27,7 @@ class HaVlanGroup1(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["cinder_ceph_for_images"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def cinder_ceph_for_images(self):
         """Deployment with 3 controllers, NeutronVLAN,
            with Ceph for images and other disk configuration
@@ -103,7 +103,7 @@ class HaVlanGroup1(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["ceph_for_volumes_swift"])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def ceph_for_volumes_swift(self):
         """Deployment with 5 controllers, NeutronVLAN, with Ceph for volumes
 

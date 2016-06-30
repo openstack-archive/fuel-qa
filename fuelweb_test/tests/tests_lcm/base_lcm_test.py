@@ -554,7 +554,7 @@ class LCMTestBasic(TestBasic):
 class SetupLCMEnvironment(LCMTestBasic):
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=['lcm_deploy_1_ctrl_1_cmp_1_cinder'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def lcm_deploy_1_ctrl_1_cmp_1_cinder(self):
         """Create cluster with cinder
 
@@ -612,7 +612,7 @@ class SetupLCMEnvironment(LCMTestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=['lcm_deploy_1_ctrl_1_cmp_1_mongo'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def lcm_deploy_1_ctrl_1_cmp_1_mongo(self):
         """Create cluster with Ceilometer
 
@@ -671,7 +671,7 @@ class SetupLCMEnvironment(LCMTestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=['lcm_deploy_1_ctrl_1_cmp_3_ceph'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def lcm_deploy_1_ctrl_1_cmp_3_ceph(self):
         """Create cluster with ceph
 
@@ -735,7 +735,7 @@ class SetupLCMEnvironment(LCMTestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=['lcm_deploy_3_ctrl_3_cmp_ceph_sahara'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def lcm_deploy_3_ctrl_3_cmp_ceph_sahara(self):
         """Create cluster with Sahara, Ceilometer, Ceph in HA mode
 
@@ -800,7 +800,7 @@ class SetupLCMEnvironment(LCMTestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=['lcm_deploy_1_ctrl_1_cmp_1_ironic'])
-    @log_snapshot_after_test
+    @log_snapshot_after_test()
     def lcm_deploy_1_ctrl_1_cmp_1_ironic(self):
         """Deploy cluster with Ironic:
 
