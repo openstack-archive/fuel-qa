@@ -50,6 +50,15 @@ class TestOffloading(TestBasic):
                  'offloading_modes': [{'name': name, 'state': state,
                                        'sub': []} for name in types]}]
 
+    @staticmethod
+    def check_offloading_modes(nodes, offloadings, iface, state):
+        for node in nodes:
+            for name in offloadings:
+                result = check_offload(node['ip'], iface, name)
+                assert_equal(result, state,
+                             "Offload type {0} is {1} on {2}".format(
+                                 name, result, node['name']))
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["offloading_neutron_vlan", "offloading"])
     @log_snapshot_after_test
@@ -61,11 +70,12 @@ class TestOffloading(TestBasic):
             2. Add 1 node with controller role
             3. Add 1 node with compute role and 1 node with cinder role
             4. Setup offloading types
-            5. Run network verification
-            6. Deploy the cluster
-            7. Run network verification
-            8. Verify offloading modes on nodes
-            9. Run OSTF
+            5. Verify offloading modes on nodes
+            6. Run network verification
+            7. Deploy the cluster
+            8. Run network verification
+            9. Verify offloading modes on nodes
+            10. Run OSTF
 
         Duration 30m
         Snapshot offloading_neutron_vlan
@@ -126,26 +136,21 @@ class TestOffloading(TestBasic):
                     node['id'], deepcopy(offloading), offloading['name'])
 
         self.show_step(5)
-        self.fuel_web.verify_network(cluster_id)
-        self.show_step(6)
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.show_step(7)
-        self.fuel_web.verify_network(cluster_id)
+        self.check_offloading_modes(nodes, offloadings_1, iface1, 'off')
+        self.check_offloading_modes(nodes, offloadings_2, iface2, 'on')
 
+        self.show_step(6)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(7)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(8)
-        for node in nodes:
-            for name in offloadings_1:
-                result = check_offload(node['ip'], iface1, name)
-                assert_equal(result, "off",
-                             "Offload type {0} is {1} on {2}".format(
-                                     name, result, node['name']))
-            for name in offloadings_2:
-                result = check_offload(node['ip'], iface2, name)
-                assert_equal(result, "on",
-                             "Offload type {0} is {1} on {2}".format(
-                                     name, result, node['name']))
+        self.fuel_web.verify_network(cluster_id)
 
         self.show_step(9)
+        self.check_offloading_modes(nodes, offloadings_1, iface1, 'off')
+        self.check_offloading_modes(nodes, offloadings_2, iface2, 'on')
+
+        self.show_step(10)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("offloading_neutron_vlan")
@@ -226,26 +231,21 @@ class TestOffloading(TestBasic):
                     node['id'], deepcopy(offloading), offloading['name'])
 
         self.show_step(5)
-        self.fuel_web.verify_network(cluster_id)
-        self.show_step(6)
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.show_step(7)
-        self.fuel_web.verify_network(cluster_id)
+        self.check_offloading_modes(nodes, offloadings_1, iface1, 'off')
+        self.check_offloading_modes(nodes, offloadings_2, iface2, 'on')
 
+        self.show_step(6)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(7)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(8)
-        for node in nodes:
-            for name in offloadings_1:
-                result = check_offload(node['ip'], iface1, name)
-                assert_equal(result, "off",
-                             "Offload type {0} is {1} on {2}".format(
-                                     name, result, node['name']))
-            for name in offloadings_2:
-                result = check_offload(node['ip'], iface2, name)
-                assert_equal(result, "on",
-                             "Offload type {0} is {1} on {2}".format(
-                                     name, result, node['name']))
+        self.fuel_web.verify_network(cluster_id)
 
         self.show_step(9)
+        self.check_offloading_modes(nodes, offloadings_1, iface1, 'off')
+        self.check_offloading_modes(nodes, offloadings_2, iface2, 'on')
+
+        self.show_step(10)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("offloading_neutron_vxlan")
