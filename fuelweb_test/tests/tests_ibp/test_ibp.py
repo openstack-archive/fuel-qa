@@ -15,6 +15,7 @@
 from proboscis import test
 from proboscis.asserts import assert_true
 
+from fuelweb_test.helpers.checkers import check_package_version
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import logger
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -38,6 +39,51 @@ class IBPTest(TestBasic):
             'Not all packages are present on node.'
             ' Missing packages: {}'.format(pkg_list - node_pkgs)
         )
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_1],
+          groups=["check_mcollective_version"])
+    @log_snapshot_after_test
+    def check_mcollective_version(self):
+        """Check mcollective package version on bootstrap and provisioned node
+
+        Scenario:
+            1. Check mcollective version on bootstrap
+            2. Create cluster
+            3. Add one node to cluster
+            4. Provision nodes
+            5. Check mcollective version on node
+
+        Duration 60m
+        Snapshot check_mcollective_version
+
+        """
+        self.env.revert_snapshot("ready_with_1_slaves", skip_timesync=True)
+        self.show_step(1)
+
+        node = self.env.d_env.get_node(name__in=["slave-01"])
+        _ip = self.fuel_web.get_nailgun_node_by_devops_node(node)['ip']
+        check_package_version(_ip, 'mcollective', '2.3.3', 'ge')
+
+        self.show_step(2)
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__
+        )
+        pkg_list = self.fuel_web.get_cluster_ibp_packages(cluster_id)
+        logger.debug('Cluster IBP packages: {}'.format(pkg_list))
+
+        self.show_step(3)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+            }
+        )
+
+        self.show_step(4)
+        self.fuel_web.provisioning_cluster_wait(cluster_id)
+
+        self.show_step(5)
+        check_package_version(_ip, 'mcollective', '2.3.3', 'ge')
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["check_ibp_default_package_list"])
