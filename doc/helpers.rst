@@ -51,6 +51,11 @@ Fuel Actions
 .. automodule:: fuelweb_test.helpers.fuel_actions
    :members:
 
+Fuel Release Hacks
+------------------
+.. automodule:: fuelweb_test.helpers.fuel_release_hacks
+   :members:
+
 Granular Deployment Checkers
 ----------------------------
 .. automodule:: fuelweb_test.helpers.granular_deployment_checkers

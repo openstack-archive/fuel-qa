@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
 import time
 
 from proboscis import TestProgram
@@ -34,8 +33,6 @@ from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
 from fuelweb_test.settings import SEPARATE_SERVICE_HAPROXY_PLUGIN_PATH
 from fuelweb_test.settings import USE_HAPROXY_TEMPLATE
-
-from gates_tests.helpers import exceptions
 
 
 class TestBasic(object):
@@ -272,22 +269,7 @@ class TestBasic(object):
         self.fuel_post_install_actions()
 
     def centos_setup_fuel(self, hostname):
-        logger.info("upload fuel-release packet")
-        if not settings.FUEL_RELEASE_PATH:
-            raise exceptions.FuelQAVariableNotSet('FUEL_RELEASE_PATH', '/path')
-        try:
-            ssh = SSHManager()
-            pack_path = '/tmp/'
-            full_pack_path = os.path.join(pack_path,
-                                          'fuel-release*.noarch.rpm')
-            ssh.upload_to_remote(
-                ip=ssh.admin_ip,
-                source=settings.FUEL_RELEASE_PATH.rstrip('/'),
-                target=pack_path)
-
-        except Exception:
-            logger.exception("Could not upload package")
-
+        ssh = SSHManager()
         logger.debug("Update host information")
         cmd = "echo HOSTNAME={} >> /etc/sysconfig/network".format(hostname)
         ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
@@ -300,13 +282,6 @@ class TestBasic(object):
         ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
 
         cmd = "hostname {}".format(hostname)
-        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
-
-        logger.debug("setup MOS repositories")
-        cmd = "rpm -ivh {}".format(full_pack_path)
-        ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
-
-        cmd = "yum install -y fuel-setup"
         ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
 
         cmd = "yum install -y screen"

@@ -17,13 +17,18 @@
 from six.moves import xrange
 # pylint: enable=redefined-builtin
 
+from devops.helpers.helpers import wait
+
 from fuelweb_test import logger
 from fuelweb_test import settings
+from fuelweb_test.helpers.fuel_release_hacks import install_mos_repos
 from fuelweb_test.helpers.decorators import create_diagnostic_snapshot
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.tests.base_test_case import TestBasic as Basic
 
 from system_test.core.discover import load_yaml
+
+from gates_tests.helpers import exceptions
 
 
 class Manager(Basic):
@@ -189,21 +194,48 @@ class Manager(Basic):
         if 'devops_settings' in config['template']:
             self._devops_config = config
 
-    def get_ready_setup(self):
-        """Create virtual environment and install Fuel master node."""
+    def get_ready_setup(self, centos=settings.CENTOS_MASTER_NODE):
+        """Create virtual environment and install Fuel master node.
+        """
 
         logger.info("Getting ready setup")
         if self.check_run("empty"):
             self.env.revert_snapshot("empty")
             return True
         else:
-            with TimeStat("setup_environment", is_uniq=True):
-                self.env.setup_environment()
-                self.fuel_post_install_actions()
+            if centos:
+                """ Need to export CENTOS_CLOUD_IMAGE_PATH,
+                FUEL_RELEASE_PATH and EXTRA_DEB_REPOS environment variables"""
+                if not settings.EXTRA_DEB_REPOS:
+                    raise exceptions.FuelQAVariableNotSet(
+                        settings.EXTRA_DEB_REPOS,
+                        "deb mos repo for building cluster")
 
-            self.env.make_snapshot("empty", is_make=True)
-            self.env.resume_environment()
-            return True
+                with TimeStat("centos_setup_environment", is_uniq=True):
+                    admin = self.env.d_env.nodes().admin
+                    self.env.d_env.start([admin])
+                    logger.info("Waiting for Centos node to start up")
+                    wait(lambda: admin.driver.node_active(admin), 60)
+                    logger.info("Waiting for Centos node ssh ready")
+                    self.env.wait_for_provisioning()
+                    hostname = ''.join((settings.FUEL_MASTER_HOSTNAME,
+                                        settings.DNS_SUFFIX))
+                    install_mos_repos()
+                    self.centos_setup_fuel(hostname)
+                    self.fuel_post_install_actions(
+                        force_ssl=settings.FORCE_HTTPS_MASTER_NODE)
+
+                self.env.make_snapshot("empty", is_make=True)
+                self.env.resume_environment()
+                return True
+            else:
+                with TimeStat("setup_environment", is_uniq=True):
+                    self.env.setup_environment()
+                    self.fuel_post_install_actions()
+
+                self.env.make_snapshot("empty", is_make=True)
+                self.env.resume_environment()
+                return True
 
     def get_ready_release(self):
         """Make changes in release configuration."""
