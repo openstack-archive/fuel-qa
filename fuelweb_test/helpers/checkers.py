@@ -1470,3 +1470,34 @@ def check_free_space_slave(env, min_disk_slave=150):
                     "The minimal vm-nova storage size should be {0}, "
                     "current {1}".format(
                         vm_storage_free_space, 4 * small_flavor_disk))
+
+
+@logwrap
+def check_package_version(ip, package_name, expected_version, condition='ge'):
+    """Check that package version equal/not equal/greater/less than expected
+
+    :param ip: ip
+    :param package_name: package name to check
+    :param expected_version: expected version of package
+    :param condition: predicate can be on of eq, ne, lt, le, ge, gt
+    :return None: or raise UnexpectedExitCode
+    """
+    cmd = "dpkg -s {0} " \
+          "| awk -F': ' '/Version/ {{print \$2}}'".format(package_name)
+    logger.debug(cmd)
+    result = ssh_manager.execute_on_remote(
+        ip,
+        cmd=cmd,
+        assert_ec_equal=[0]
+    )
+    version = result['stdout_str']
+    logger.info('{} ver is {}'.format(package_name, version))
+    err_msg = 'Package {} version is {} and not {} {}'.format(package_name,
+                                                              version,
+                                                              condition,
+                                                              expected_version)
+    cmd = 'dpkg --compare-versions {0} {1} {2}'.format(version,
+                                                     condition,
+                                                     expected_version)
+    ssh_manager.execute_on_remote(ip, cmd, assert_ec_equal=[0],
+                                  err_msg=err_msg)
