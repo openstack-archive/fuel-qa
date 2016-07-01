@@ -18,6 +18,7 @@ from proboscis.asserts import assert_equal
 from proboscis import test
 
 from fuelweb_test.helpers.checkers import ssh_manager
+from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import MULTIPATH
@@ -111,6 +112,7 @@ class TestMultipath(base_test_case.TestBasic):
         return int(result['stdout_str'])
 
     @test(groups=["bootstrap_multipath"])
+    @log_snapshot_after_test
     def bootstrap_multipath(self):
         """Bootstrap node with multipath devices
 
@@ -152,6 +154,7 @@ class TestMultipath(base_test_case.TestBasic):
 
     @test(depends_on_groups=["bootstrap_multipath"],
           groups=["deploy_multipath"])
+    @log_snapshot_after_test
     def deploy_multipath(self):
         """Deploy cluster with multipath devices
 
