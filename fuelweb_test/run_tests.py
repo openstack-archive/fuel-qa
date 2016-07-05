@@ -118,8 +118,12 @@ def import_tests():
     from tests import test_clone_env  # noqa
     from tests import test_node_reassignment  # noqa
     from tests import test_os_upgrade  # noqa
-    # from tests.tests_upgrade import test_data_driven_upgrade  # noqa
-    # TODO(vkhlyunev): Uncomment upper line after test rework.
+    from tests.tests_upgrade import test_data_driven_upgrade_ha  # noqa
+    from tests.tests_upgrade import test_data_driven_upgrade_no_cluster  # noqa
+    from tests.tests_upgrade import test_data_driven_upgrade_plugin  # noqa
+    from tests.tests_upgrade import test_data_driven_upgrade_smoke  # noqa
+    from tests.tests_upgrade import test_data_driven_upgrade_network_templates  # noqa
+    from tests.tests_upgrade import test_data_driven_upgrade_customized  # noqa
     from tests.tests_strength import test_failover  # noqa
     from tests.tests_strength import test_failover_with_ceph  # noqa
     from tests.tests_strength import test_master_node_failover  # noqa
