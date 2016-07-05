@@ -112,6 +112,7 @@ ha_neutron:
  - openstack-cinder
  - roles/cinder
  - roles/enable_cinder
+ - openstack_cinder
 
 reduced_footprint:
  - generate_vms
