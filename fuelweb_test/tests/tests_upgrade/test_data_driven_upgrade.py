@@ -160,12 +160,18 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         assert_true(os.path.exists(self.local_path))
 
         self.show_step(1, initialize=True)
-        assert_true(
-            self.env.revert_snapshot(self.source_snapshot_name),
-            "The test can not use given environment - snapshot "
-            "{!r} does not exists".format(self.source_snapshot_name))
-        self.show_step(2)
-        self.env.reinstall_master_node()
+        intermediate_snapshot = 'upgrade_smoke_before_restore'
+        if not self.env.d_env.has_snapshot(intermediate_snapshot):
+            self.env.reinstall_master_node()
+            assert_true(
+                self.env.revert_snapshot(self.source_snapshot_name),
+                "The test can not use given environment - snapshot "
+                "{!r} does not exists".format(self.source_snapshot_name))
+            self.show_step(2)
+            self.env.make_snapshot(intermediate_snapshot)
+        else:
+            self.env.d_env.revert(intermediate_snapshot)
+        self.env.resume_environment()
         self.show_step(3)
         self.show_step(4)
         self.show_step(5)
@@ -427,16 +433,19 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         assert_true(os.path.exists(self.repos_local_path))
         assert_true(os.path.exists(self.local_path))
 
-        self.show_step(1, initialize=True)
-        assert_true(
-            self.env.revert_snapshot(self.source_snapshot_name),
-            "The test can not use given environment - snapshot "
-            "'upgrade_ceph_ha_backup' does not exists")
-
-        cluster_id = self.fuel_web.get_last_created_cluster()
-
-        self.show_step(2)
-        self.env.reinstall_master_node()
+        intermediate_snapshot = 'ceph_ha_before_restore'
+        if not self.env.d_env.has_snapshot(intermediate_snapshot):
+            self.show_step(1, initialize=True)
+            assert_true(
+                self.env.revert_snapshot(self.source_snapshot_name),
+                "The test can not use given environment - snapshot "
+                "'upgrade_ceph_ha_backup' does not exists")
+            self.show_step(2)
+            self.env.reinstall_master_node()
+            self.env.make_snapshot(intermediate_snapshot)
+        else:
+            self.env.d_env.revert(intermediate_snapshot)
+        self.env.resume_environment()
         self.show_step(3)
         self.show_step(4)
         self.show_step(5)
@@ -445,6 +454,7 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         self.fuel_web.change_default_network_settings()
 
         self.show_step(6)
+        cluster_id = self.fuel_web.get_last_created_cluster()
         self.fuel_web.verify_network(cluster_id)
         self.show_step(7)
         self.fuel_web.run_ostf(cluster_id)
@@ -551,7 +561,13 @@ class UpgradeDetach_Plugin(DataDrivenUpgradeBase):
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         self.show_step(2)
-        self.env.reinstall_master_node()
+        intermediate_snapshot = 'plugin_before_restore'
+        if not self.env.d_env.has_snapshot(intermediate_snapshot):
+            self.env.reinstall_master_node()
+            self.env.make_snapshot(intermediate_snapshot)
+        else:
+            self.env.d_env.revert(intermediate_snapshot)
+        self.env.resume_environment()
         self.show_step(3)
         self.show_step(4)
         self.show_step(5)
@@ -654,7 +670,13 @@ class UpgradeNoCluster(DataDrivenUpgradeBase):
             "The test can not use given environment - snapshot "
             "{!r} does not exists".format(self.source_snapshot_name))
         self.show_step(2)
-        self.env.reinstall_master_node()
+        intermediate_snapshot = 'no_cluster_before_restore'
+        if not self.env.d_env.has_snapshot(intermediate_snapshot):
+            self.env.reinstall_master_node()
+            self.env.make_snapshot(intermediate_snapshot)
+        else:
+            self.env.d_env.revert(intermediate_snapshot)
+        self.env.resume_environment()
         self.show_step(3)
         self.show_step(4)
         self.show_step(5)
