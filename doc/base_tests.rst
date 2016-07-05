@@ -581,9 +581,39 @@ Restart tests
 Upgrade tests
 =============
 
-Test Data-Driven Upgrade
+Data-Driven Upgrade Base Class
+------------------------------
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_base
+   :members
+
+Data-Driven Upgrade Smoke tests
+-------------------------------
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_smoke
+   :members:
+
+Data-Driven Upgrade HA tests
+----------------------------
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_ha
+   :members:
+
+Data-Driven Upgrade tests with plugin
+-------------------------------------
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_plugin
+   :members:
+
+Data-Driven Upgrade tests with network templates
+------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_network_templates
+   :members:
+
+Data-Driven Upgrade Fuel without cluster
+----------------------------------------
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_no_cluster
+   :members:
+
+Data-Driven Upgrade tool
 ------------------------
-.. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_customized
    :members:
 
 OS upgrade tests
