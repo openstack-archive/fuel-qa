@@ -340,9 +340,21 @@ FUEL_SETTINGS_YAML = os.environ.get('FUEL_SETTINGS_YAML',
 
 TARBALL_PATH = os.environ.get('TARBALL_PATH')
 
+# Upgrade-related variables
 UPGRADE_FUEL_FROM = os.environ.get('UPGRADE_FUEL_FROM', '6.1')
 UPGRADE_FUEL_TO = os.environ.get('UPGRADE_FUEL_TO', '7.0')
 OCTANE_PATCHES = os.environ.get('OCTANE_PATCHES', None)
+OCTANE_LOCAL_BACKUP_PATH = os.environ.get('OCTANE_LOCAL_BACKUP_PATH',
+                                          LOGS_DIR)
+OCTANE_REMOTE_BACKUP_PATH = os.environ.get('OCTANE_REMOTE_BACKUP_PATH',
+                                           '/var/octane_backup')
+# URL for Fuel proposed repository - required for correct ordering of upgrade:
+# update Fuel Master node using published packages (UPDATE_FUEL=True)
+# then attach the repository in the test case.
+OCTANE_REPO_URL = os.environ.get('OCTANE_REPO_URL')
+if not OCTANE_REPO_URL:
+    FUEL_PROPOSED_REPO_URL = os.environ.get('FUEL_PROPOSED_REPO_URL')
+    OCTANE_REPO_URL = FUEL_PROPOSED_REPO_URL
 
 SNAPSHOT = os.environ.get('SNAPSHOT', '')
 # For 5.1.1 we have 2 releases in tarball and should specify what we need
@@ -422,11 +434,6 @@ FUEL_PLUGIN_BUILDER_REPO = ('https://github.com/stackforge/fuel-plugins.git '
 # CentOS: http://osci-obs.vm.mirantis.net:82/centos-fuel-master-20921/centos/
 # Ubuntu: http://osci-obs.vm.mirantis.net:82/ubuntu-fuel-master-20921/ubuntu/
 CUSTOM_PKGS_MIRROR = os.environ.get('CUSTOM_PKGS_MIRROR', '')
-
-# URL for Fuel proposed repository - required for correct ordering of upgrade:
-# update Fuel Master node using published packages (UPDATE_FUEL=True)
-# then attach the repository in the test case.
-FUEL_PROPOSED_REPO_URL = os.environ.get('FUEL_PROPOSED_REPO_URL', '')
 
 # Location of local mirrors on master node.
 LOCAL_MIRROR_UBUNTU = os.environ.get('LOCAL_MIRROR_UBUNTU',
