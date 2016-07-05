@@ -165,7 +165,13 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
             "The test can not use given environment - snapshot "
             "{!r} does not exists".format(self.source_snapshot_name))
         self.show_step(2)
-        self.env.reinstall_master_node()
+        intermediate_snapshot = 'upgrade_smoke_before_restore'
+        if not self.env.d_env.has_snapshot(intermediate_snapshot):
+            self.env.reinstall_master_node()
+            self.env.make_snapshot(intermediate_snapshot)
+        else:
+            self.env.d_env.revert(intermediate_snapshot)
+        self.env.resume_environment()
         self.show_step(3)
         self.show_step(4)
         self.show_step(5)
@@ -436,7 +442,13 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         self.show_step(2)
-        self.env.reinstall_master_node()
+        intermediate_snapshot = 'ceph_ha_before_restore'
+        if not self.env.d_env.has_snapshot(intermediate_snapshot):
+            self.env.reinstall_master_node()
+            self.env.make_snapshot(intermediate_snapshot)
+        else:
+            self.env.d_env.revert(intermediate_snapshot)
+        self.env.resume_environment()
         self.show_step(3)
         self.show_step(4)
         self.show_step(5)
@@ -551,7 +563,13 @@ class UpgradeDetach_Plugin(DataDrivenUpgradeBase):
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         self.show_step(2)
-        self.env.reinstall_master_node()
+        intermediate_snapshot = 'plugin_before_restore'
+        if not self.env.d_env.has_snapshot(intermediate_snapshot):
+            self.env.reinstall_master_node()
+            self.env.make_snapshot(intermediate_snapshot)
+        else:
+            self.env.d_env.revert(intermediate_snapshot)
+        self.env.resume_environment()
         self.show_step(3)
         self.show_step(4)
         self.show_step(5)
@@ -654,7 +672,13 @@ class UpgradeNoCluster(DataDrivenUpgradeBase):
             "The test can not use given environment - snapshot "
             "{!r} does not exists".format(self.source_snapshot_name))
         self.show_step(2)
-        self.env.reinstall_master_node()
+        intermediate_snapshot = 'no_cluster_before_restore'
+        if not self.env.d_env.has_snapshot(intermediate_snapshot):
+            self.env.reinstall_master_node()
+            self.env.make_snapshot(intermediate_snapshot)
+        else:
+            self.env.d_env.revert(intermediate_snapshot)
+        self.env.resume_environment()
         self.show_step(3)
         self.show_step(4)
         self.show_step(5)
