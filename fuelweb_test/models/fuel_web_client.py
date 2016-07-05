@@ -3112,6 +3112,11 @@ class FuelWebClient30(FuelWebClient29):
                         '192.168.0.0/24'
                     net_settings[net_provider]['config']['internal_gateway'] =\
                         '192.168.0.1'
+                    if (private_net_pool.vlan_start and
+                            private_net_pool.vlan_end):
+                        net_settings[net_provider]['config']['vlan_range'] = \
+                            (private_net_pool.vlan_start,
+                             private_net_pool.vlan_end)
 
                 elif net_provider == 'nova_network':
                     private_net_pool = default_node_group.get_network_pool(
