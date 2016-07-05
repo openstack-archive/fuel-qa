@@ -3099,19 +3099,28 @@ class FuelWebClient30(FuelWebClient29):
                     networks[pool.name]['vlan_start'] = pool.vlan_start
 
                 if net_provider == 'neutron':
-                    private_net_pool = default_node_group.get_network_pool(
-                        name='private')
-                    networks['private_tun']['cidr'] = str(private_net_pool.net)
-                    networks['private_gre']['cidr'] = str(private_net_pool.net)
-                    networks['private_tun']['vlan_start'] = \
-                        private_net_pool.vlan_start or None
-                    networks['private_gre']['vlan_start'] = \
-                        private_net_pool.vlan_start or None
-
                     net_settings[net_provider]['config']['internal_cidr'] = \
                         '192.168.0.0/24'
-                    net_settings[net_provider]['config']['internal_gateway'] =\
+                    net_settings[net_provider]['config']['internal_gateway'] = \
                         '192.168.0.1'
+                    private_net_pool = default_node_group.get_network_pool(
+                        name='private')
+                    if NEUTRON_SEGMENT_TYPE == 'tun' or \
+                       NEUTRON_SEGMENT_TYPE == 'gre':
+                        networks['private_tun']['cidr'] = \
+                            str(private_net_pool.net)
+                        networks['private_gre']['cidr'] = \
+                            str(private_net_pool.net)
+                        networks['private_tun']['vlan_start'] = \
+                            private_net_pool.vlan_start or None
+                        networks['private_gre']['vlan_start'] = \
+                            private_net_pool.vlan_start or None
+
+                    if NEUTRON_SEGMENT_TYPE == 'vlan':
+                        networks['private']['vlan_start'] = None
+                        net_settings[net_provider]['config']['vlan_range'] = \
+                            (private_net_pool.vlan_start or None,
+                             private_net_pool.vlan_end or None)
 
                 elif net_provider == 'nova_network':
                     private_net_pool = default_node_group.get_network_pool(
