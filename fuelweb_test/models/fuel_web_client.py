@@ -3090,6 +3090,10 @@ class FuelWebClient30(FuelWebClient29):
                     net_settings[net_provider]['config']['baremetal_range'] = \
                         list(ironic_net_pool.ip_range('baremetal'))
 
+                if BONDING:
+                    # leave defaults for mgmt, storage and private if
+                    # BONDING is enabled
+                    continue
                 for pool in default_node_group.get_network_pools(
                         name__in=['storage', 'management']):
                     networks[pool.name]['cidr'] = str(pool.net)
