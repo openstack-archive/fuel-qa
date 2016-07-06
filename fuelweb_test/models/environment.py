@@ -13,7 +13,6 @@
 #    under the License.
 
 import re
-import subprocess
 import time
 import yaml
 from devops.error import TimeoutError
@@ -345,26 +344,18 @@ class EnvironmentModel(object):
                 .format(settings.KEYSTONE_CREDS['username'],
                         settings.KEYSTONE_CREDS['password']))
 
-    def insert_cdrom_tray(self):
-        # This is very rude implementation and it SHOULD be changes after
-        # implementation this feature in fuel-devops
-        name = "{}_{}".format(settings.ENV_NAME, self.d_env.nodes().admin.name)
-        NAME_SIZE = 80
-        if len(name) > NAME_SIZE:
-            hash_str = str(hash(name))
-            name = (hash_str + name)[:NAME_SIZE]
-
-        cmd = """EDITOR="sed -i s/tray=\\'open\\'//" virsh edit {}""".format(
-            name)
-        subprocess.check_call(cmd, shell=True)
-
     def reinstall_master_node(self):
         """Erase boot sector and run setup_environment"""
+        admin = self.d_env.get_node(name="admin")
         with self.d_env.get_admin_remote() as remote:
             erase_data_from_hdd(remote, mount_point='/boot')
-            remote.execute("/sbin/shutdown")
-        self.d_env.nodes().admin.destroy()
-        self.insert_cdrom_tray()
+        admin.destroy()
+        admin.close_tray()
+        if settings.ADMIN_BOOT_DEVICE == 'usb':
+            volume = admin.disk_devices.get(device='disk', bus='usb').volume
+        else:  # cdrom is default
+            volume = admin.disk_devices.get(device='cdrom').volume
+        volume.upload(settings.ISO_PATH)
         self.setup_environment()
 
     def setup_environment(self, custom=settings.CUSTOM_ENV,
