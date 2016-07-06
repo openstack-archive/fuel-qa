@@ -260,11 +260,16 @@ class TestBasic(object):
 
     def reinstall_master_node(self):
         """Erase boot sector and run setup_environment"""
+        admin = self.env.d_env.get_node(name="admin")
         with self.env.d_env.get_admin_remote() as remote:
             erase_data_from_hdd(remote, mount_point='/boot')
-            remote.execute("/sbin/shutdown")
-        self.env.d_env.nodes().admin.destroy()
-        self.env.insert_cdrom_tray()
+        admin.destroy()
+        admin.close_tray()
+        if settings.ADMIN_BOOT_DEVICE == 'usb':
+            volume = admin.disk_devices.get(device='disk', bus='usb').volume
+        else:  # cdrom is default
+            volume = admin.disk_devices.get(device='cdrom').volume
+        volume.upload(settings.ISO_PATH)
         self.env.setup_environment()
         self.fuel_post_install_actions()
 
