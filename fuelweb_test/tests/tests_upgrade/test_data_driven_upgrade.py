@@ -33,7 +33,7 @@ class DataDrivenUpgradeBase(TestBasic):
     OCTANE_COMMANDS = {
         'backup': 'octane -v --debug fuel-backup --to {path}',
         'repo-backup': 'octane -v --debug fuel-repo-backup --to {path} --full',
-        'restore': 'octane -v --debug fuel-restore --from {path} '
+        'restore': 'octane -q fuel-restore --from {path} '
                        '--admin-password {pwd}',
         'repo-restore': 'octane -v --debug fuel-repo-restore --from {path}'
     }
