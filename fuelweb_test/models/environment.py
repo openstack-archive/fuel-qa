@@ -13,7 +13,6 @@
 #    under the License.
 
 import re
-import subprocess
 import time
 
 from devops.error import TimeoutError
@@ -370,19 +369,6 @@ class EnvironmentModel(object):
                 'New Fuel UI (keystone) username: "{0}", password: "{1}"'
                 .format(settings.KEYSTONE_CREDS['username'],
                         settings.KEYSTONE_CREDS['password']))
-
-    def insert_cdrom_tray(self):
-        # This is very rude implementation and it SHOULD be changes after
-        # implementation this feature in fuel-devops
-        name = "{}_{}".format(settings.ENV_NAME, self.d_env.nodes().admin.name)
-        name_size = 80
-        if len(name) > name_size:
-            hash_str = str(hash(name))
-            name = (hash_str + name)[:name_size]
-
-        cmd = """EDITOR="sed -i s/tray=\\'open\\'//" virsh edit {}""".format(
-            name)
-        subprocess.check_call(cmd, shell=True)
 
     def setup_environment(self, custom=settings.CUSTOM_ENV,
                           build_images=settings.BUILD_IMAGES,
