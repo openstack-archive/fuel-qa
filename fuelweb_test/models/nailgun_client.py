@@ -147,6 +147,10 @@ class NailgunClient(object):
         return self._delete(url="/clusters/{}/".format(cluster_id)).json()
 
     @logwrap
+    def get_node_by_id(self, node_id):
+        return self._get(url="/api/nodes/{}".format(node_id)).json()
+
+    @logwrap
     def update_node(self, node_id, data):
         return self._put(
             "/nodes/{}/".format(node_id), json=data
