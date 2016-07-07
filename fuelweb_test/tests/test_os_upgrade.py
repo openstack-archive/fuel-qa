@@ -126,13 +126,14 @@ class TestOSupgrade(DataDrivenUpgradeBase):
         seed_cluster_id = self.fuel_web.get_last_created_cluster()
 
         self.show_step(3)
-        controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            self.orig_cluster_id, ["controller"])
+        controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            self.orig_cluster_id, ["primary-controller"])[0]
+
         self.show_step(4)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd="octane upgrade-node --isolated "
-                "{0} {1}".format(seed_cluster_id, controllers[-1]["id"]),
+                "{0} {1}".format(seed_cluster_id, controller["id"]),
             err_msg="octane upgrade-node failed")
 
         self.show_step(5)
