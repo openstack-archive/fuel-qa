@@ -77,23 +77,44 @@ class Build(object):
         """
 
         self.name = name
-
+        self._job_info = None
+        self._injected_vars = None
         if number == 'latest':
-            job_info = self.get_job_info(depth=0)
-            self.number = job_info["lastCompletedBuild"]["number"]
+            self._job_info = self.get_job_info(depth=0)
+            self.number = self._job_info["lastCompletedBuild"]["number"]
         elif number == 'latest_started':
-            job_info = self.get_job_info(depth=0)
-            self.number = job_info["lastBuild"]["number"]
+            self._job_info = self.get_job_info(depth=0)
+            self.number = self._job_info["lastBuild"]["number"]
         else:
             self.number = int(number)
 
+        self._injected_vars = self.get_injected_vars(
+            depth=0, build_number=self.number)
+
         self.build_data = self.get_build_data(depth=0)
         self.url = self.build_data["url"]
+
+    @property
+    def job_info(self):
+        return self._job_info
 
     def get_job_info(self, depth=1):
         job_url = "/".join([JENKINS["url"], 'job', self.name,
                             'api/json?depth={depth}'.format(depth=depth)])
         logger.debug("Request job info from {}".format(job_url))
+        return requests.get(job_url).json()
+
+    @property
+    def injected_vars(self):
+        return self._injected_vars
+
+    def get_injected_vars(self, depth=1, build_number=None):
+        if not build_number:
+            return []
+        job_url = "/".join([JENKINS["url"], 'job', self.name,
+                            str(build_number), 'injectedEnvVars',
+                            'api/json?depth={depth}'.format(depth=depth)])
+        logger.debug("Request injected variables from job {}".format(job_url))
         return requests.get(job_url).json()
 
     def get_job_console(self):
