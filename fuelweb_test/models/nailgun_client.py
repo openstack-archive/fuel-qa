@@ -147,6 +147,15 @@ class NailgunClient(object):
         return self._delete(url="/clusters/{}/".format(cluster_id)).json()
 
     @logwrap
+<<<<<<< HEAD
+=======
+    @json_parse
+    def get_node_by_id(self, node_id):
+        return self.client.get("/api/nodes/{}".format(node_id))
+
+    @logwrap
+    @json_parse
+>>>>>>> Test compute rebooting after migration of fuel master
     def update_node(self, node_id, data):
         return self._put(
             "/nodes/{}/".format(node_id), json=data
