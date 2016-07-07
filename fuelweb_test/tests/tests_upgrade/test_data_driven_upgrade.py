@@ -786,7 +786,8 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.show_step(9)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(10)
-        self.fuel_web.run_ostf(cluster_id)
+        self.fuel_web.run_ostf(cluster_id, test_sets=['sanity'])
+        self.fuel_web.assert_os_services_ready(cluster_id)
 
         self.env.make_snapshot("upgrade_smoke_restore", is_make=True)
         self.cleanup()
@@ -1043,7 +1044,8 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         self.show_step(6)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(7)
-        self.fuel_web.run_ostf(cluster_id)
+        self.fuel_web.run_ostf(cluster_id, test_sets=['sanity'])
+        self.fuel_web.assert_os_services_ready(cluster_id)
 
         self.env.make_snapshot(self.snapshot_name, is_make=True)
         self.cleanup()
@@ -1178,7 +1180,8 @@ class UpgradeDetach_Plugin(DataDrivenUpgradeBase):
         self.show_step(7)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(8)
-        self.fuel_web.run_ostf(cluster_id)
+        self.fuel_web.run_ostf(cluster_id, test_sets=['sanity'])
+        self.fuel_web.assert_os_services_ready(cluster_id)
 
         self.env.make_snapshot(self.snapshot_name, is_make=True)
         self.cleanup()
