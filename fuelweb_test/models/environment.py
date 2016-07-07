@@ -622,20 +622,32 @@ class EnvironmentModel(object):
                      'inspect logs for details')
 
         # Check if any packets were updated and update was successful
-        for str_line in update_result['stdout']:
-            match_updated_count = re.search("Upgrade(?:\s*)(\d+).*Package",
-                                            str_line)
-            if match_updated_count:
-                updates_count = match_updated_count.group(1)
-            match_complete_message = re.search("(Complete!)", str_line)
-            match_no_updates = re.search("No Packages marked for Update",
-                                         str_line)
+        yum_output = ''.join(update_result['stdout'])
+        match_updated_count = re.search(r'Upgrade\s+(\d+)\s+Package',
+                                        yum_output)
+        # In case of package replacement, the new one is marked as
+        # installed and the old one as removed
+        match_installed_count = re.search(r'Install\s+(\d+)\s+Package',
+                                          yum_output)
+        match_complete_message = re.search(r'Complete!', yum_output)
 
-        if (not match_updated_count or match_no_updates)\
-                and not match_complete_message:
+        match_no_updates = re.search("No Packages marked for Update",
+                                     yum_output)
+
+        if match_no_updates or not match_complete_message \
+                or not (match_updated_count or match_installed_count):
             logger.warning('No updates were found or update was incomplete.')
             return
-        logger.info('{0} packet(s) were updated'.format(updates_count))
+
+        updates_count = 0
+
+        if match_updated_count:
+            updates_count += int(match_updated_count.group(1))
+
+        if match_installed_count:
+            updates_count += int(match_installed_count.group(1))
+
+        logger.info('{0} package(s) were updated'.format(updates_count))
 
         cmd = 'bootstrap_admin_node.sh;'
 
