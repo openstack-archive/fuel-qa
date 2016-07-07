@@ -146,6 +146,20 @@ class DataDrivenUpgradeBase(TestBasic):
             self.admin_remote.rm_rf(conf_file)
             # pylint: enable=no-member
 
+    def patcher(self, base_dir, crs):
+        logger.info("Patching {} with CR: {!r}".format(
+          base_dir, crs))
+        self.admin_remote.upload(
+          os.path.join(
+              os.path.abspath(os.path.dirname(__file__)),
+              "octane_patcher.sh"),
+          "/tmp/octane_patcher.sh")
+
+        run_on_remote(
+          self.admin_remote,
+          "bash /tmp/octane_patcher.sh {} {}".format(
+                    base_dir, crs))
+
     def octane_action(self, action, path=None):
         assert_true(action in self.OCTANE_COMMANDS.keys(),
                     "Unknown octane action '{}', aborting".format(action))
@@ -758,6 +772,8 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         # Check nailgun api is available
         self.show_step(6)
         self.fuel_web.change_default_network_settings()
+
+        self.patcher("/usr/lib/python2.7/site-packages/fuel_plugin/", "338854")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
