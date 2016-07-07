@@ -201,7 +201,10 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.show_step(9)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(10)
-        self.fuel_web.run_ostf(cluster_id)
+        # Live migration test could fail
+        # https://bugs.launchpad.net/fuel/+bug/1471172
+        # https://bugs.launchpad.net/fuel/+bug/1604749
+        self.fuel_web.run_ostf(cluster_id, should_fail=1)
 
         self.env.make_snapshot("upgrade_smoke_restore", is_make=True)
         self.cleanup()
@@ -451,7 +454,10 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.fuel_web.verify_network(cluster_id)
         self.show_step(7)
-        self.fuel_web.run_ostf(cluster_id)
+        # Live migration test could fail
+        # https://bugs.launchpad.net/fuel/+bug/1471172
+        # https://bugs.launchpad.net/fuel/+bug/1604749
+        self.fuel_web.run_ostf(cluster_id, should_fail=1)
 
         self.env.make_snapshot(self.snapshot_name, is_make=True)
         self.cleanup()
@@ -584,7 +590,10 @@ class UpgradeDetach_Plugin(DataDrivenUpgradeBase):
         self.show_step(7)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(8)
-        self.fuel_web.run_ostf(cluster_id)
+        # Live migration test could fail
+        # https://bugs.launchpad.net/fuel/+bug/1471172
+        # https://bugs.launchpad.net/fuel/+bug/1604749
+        self.fuel_web.run_ostf(cluster_id, should_fail=1)
 
         self.env.make_snapshot(self.snapshot_name, is_make=True)
         self.cleanup()
