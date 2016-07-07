@@ -78,7 +78,7 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
     tests = []
 
     for jenkins_suffix in groups:
-        group = groups[jenkins_suffix]
+        group = groups[jenkins_suffix][0]
         if group_in_pytest(group):
             for case in get_cases_from_pytest(group):
                 docstring = case.obj.__doc__ or ''
@@ -118,8 +118,9 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
                 title, steps, duration = _parse_docstring(docstring, case)
 
                 if case.entry.home.func_name in GROUPS_TO_EXPAND:
-                    """Expand specified test names with the group names that are
-                       used in jenkins jobs where this test is started.
+                    """
+                    Expand specified test names with the group names that are
+                    used in jenkins jobs where this test is started.
                     """
                     title = ' - '.join([title, jenkins_suffix])
                     test_group = '_'.join([case.entry.home.func_name,
@@ -134,7 +135,8 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
                     "refs": "",
                     "custom_test_group": test_group,
                     "custom_test_case_description": docstring or " ",
-                    "custom_test_case_steps": steps
+                    "custom_test_case_steps": steps,
+                    "custom_job_settings": str(groups[jenkins_suffix][2])
                 }
 
                 if not any([x[GROUP_FIELD] == test_group for x in tests]):
@@ -201,16 +203,29 @@ def upload_tests_descriptions(testrail_project, section_id,
 def get_tests_groups_from_jenkins(runner_name, build_number, distros):
     runner_build = Build(runner_name, build_number)
     res = {}
-    for b in runner_build.build_data['subBuilds']:
-
+    sub_builds = \
+        runner_build.build_data.get('subBuilds', [runner_build.build_data])
+    for b in sub_builds:
+        job_info = None
+        env_vars = None
         if b['result'] is None:
             logger.debug("Skipping '{0}' job (build #{1}) because it's still "
                          "running...".format(b['jobName'], b['buildNumber'],))
             continue
 
         # Get the test group from the console of the job
-        z = Build(b['jobName'], b['buildNumber'])
-        console = z.get_job_console()
+        # Get the job suffix
+        if b.get('jobName'):
+            z = Build(b['jobName'], b['buildNumber'])
+            console = z.get_job_console()
+            job_name = b['jobName']
+            job_info = z.job_info
+            env_vars = z.injected_vars
+        else:
+            console = runner_build.get_job_console()
+            job_name = runner_build.name
+            job_info = runner_build.job_info
+            env_vars = runner_build.injected_vars
         groups = [keyword.split('=')[1]
                   for line in console
                   for keyword in line.split()
@@ -222,8 +237,6 @@ def get_tests_groups_from_jenkins(runner_name, build_number, distros):
         # Use the last group (there can be several groups in upgrade jobs)
         test_group = groups[-1]
 
-        # Get the job suffix
-        job_name = b['jobName']
         for distro in distros:
             if distro in job_name:
                 sep = '.' + distro + '.'
@@ -231,7 +244,7 @@ def get_tests_groups_from_jenkins(runner_name, build_number, distros):
                 break
         else:
             job_suffix = job_name.split('.')[-1]
-        res[job_suffix] = test_group
+        res[job_suffix] = [test_group, job_info, env_vars]
     return res
 
 
@@ -378,7 +391,7 @@ def _get_fields_to_update(test_case, testrail_case):
     """
     fields_to_update = {}
     for field in ('title', 'estimate', 'custom_test_case_description',
-                  'custom_test_case_steps'):
+                  'custom_test_case_steps', 'custom_job_settings'):
         if test_case[field] and \
                 test_case[field] != testrail_case[field]:
             if field == 'estimate':
