@@ -44,6 +44,7 @@ from fuelweb_test.helpers import multiple_networks_hacks
 from fuelweb_test.models.fuel_web_client import FuelWebClient
 from fuelweb_test.models.collector_client import CollectorClient
 from fuelweb_test import settings
+from fuelweb_test.settings import CUSTOM_FUEL_SETTING_YAML
 from fuelweb_test.settings import iface_alias
 from fuelweb_test import logwrap
 from fuelweb_test import QuietLogger
@@ -413,6 +414,9 @@ class EnvironmentModel(object):
         # wait while installation complete
 
         self.admin_actions.modify_configs(self.d_env.router())
+        if CUSTOM_FUEL_SETTING_YAML:
+            self.admin_actions.update_fuel_setting_yaml(
+                CUSTOM_FUEL_SETTING_YAML)
         self.kill_wait_for_external_config()
         self.wait_bootstrap()
         self.admin_actions.wait_for_fuel_ready()

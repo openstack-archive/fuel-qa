@@ -26,6 +26,7 @@ from fuelweb_test.helpers.utils import get_test_method_name
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.models.environment import EnvironmentModel
+from fuelweb_test.settings import CUSTOM_FUEL_SETTING_YAML
 from fuelweb_test.settings import EXTERNAL_HAPROXY_TEMPLATE
 from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import MULTIPLE_NETWORKS_TEMPLATE
@@ -300,6 +301,9 @@ class TestBasic(object):
 
         self.env.wait_for_external_config()
         self.env.admin_actions.modify_configs(self.env.d_env.router())
+        if CUSTOM_FUEL_SETTING_YAML:
+            self.env.admin_actions.update_fuel_setting_yaml(
+                CUSTOM_FUEL_SETTING_YAML)
         self.env.kill_wait_for_external_config()
 
         self.env.wait_bootstrap()
