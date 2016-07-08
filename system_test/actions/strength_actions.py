@@ -18,16 +18,18 @@ from proboscis.asserts import assert_true
 
 from devops.helpers.helpers import wait
 
-from fuelweb_test.helpers.checkers import check_file_exists
 from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test.helpers.pacemaker import get_pacemaker_nodes_attributes
 from fuelweb_test.helpers.pacemaker import get_pcs_nodes
 from fuelweb_test.helpers.pacemaker import parse_pcs_status_xml
+from fuelweb_test.helpers.ssh_manager import SSHManager
 
 from system_test import logger
 from system_test import deferred_decorator
 from system_test import action
 from system_test.helpers.decorators import make_snapshot_if_step_fail
+
+ssh_manager = SSHManager()
 
 
 # pylint: disable=no-member
@@ -135,13 +137,12 @@ class FillRootActions(object):
         self.primary_controller_fqdn = str(
             self.fuel_web.fqdn(self.primary_controller))
 
-        primary_ctrl = \
-            self.primary_controller.get_ip_address_by_network_name('admin')
-        pcs_status = parse_pcs_status_xml(primary_ctrl)
+        nail_node = self.fuel_web.get_nailgun_node_by_devops_node(
+            self.primary_controller)
+        pcs_status = parse_pcs_status_xml(nail_node['ip'])
 
         with self.fuel_web.get_ssh_for_node(
                 self.primary_controller.name) as remote:
-
             root_free = run_on_remote_get_results(
                 remote, 'cibadmin --query --scope status')['stdout_str']
 
@@ -196,10 +197,13 @@ class FillRootActions(object):
             self.primary_controller.name)
         self.ssh_manager.execute_on_remote(
             ip=node['ip'],
-            cmd='fallocate -l {}M /root/bigfile'.format(
+            cmd='fallocate -l {}M /root/bigfile && sync'.format(
                 self.primary_controller_space_to_filled)
         )
-        check_file_exists(node['ip'], '/root/bigfile')
+        self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd='ls /root/bigfile',
+            assert_ec_equal=[0])
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
@@ -227,10 +231,13 @@ class FillRootActions(object):
 
         self.ssh_manager.execute_on_remote(
             ip=node['ip'],
-            cmd='fallocate -l {}M /root/bigfile2'.format(
+            cmd='fallocate -l {}M /root/bigfile2 && sync'.format(
                 controller_space_to_filled)
         )
-        check_file_exists(node['ip'], '/root/bigfile2')
+        self.ssh_manager.execute_on_remote(
+            ip=node['ip'],
+            cmd='ls /root/bigfile2',
+            assert_ec_equal=[0])
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
@@ -272,10 +279,9 @@ class FillRootActions(object):
                     "Checking for 'running_resources "
                     "attribute have '0' value")
 
-                primary_ctrl = \
-                    self.primary_controller.get_ip_address_by_network_name(
-                        'admin')
-                pcs_status = parse_pcs_status_xml(primary_ctrl)
+                nail_node = self.fuel_web.get_nailgun_node_by_devops_node(
+                    self.primary_controller)
+                pcs_status = parse_pcs_status_xml(nail_node['ip'])
 
                 pcs_attribs = get_pcs_nodes(pcs_status)
                 return pcs_attribs[self.primary_controller_fqdn][
@@ -344,22 +350,6 @@ class FillRootActions(object):
                 return '#health_disk' not in pcs_attribs[
                     self.primary_controller_fqdn]
 
-            def check_started_resources():
-                logger.info(
-                    "Checking for 'running_resources' attribute "
-                    "have {} value on node {}".format(
-                        self.slave_node_running_resources,
-                        self.primary_controller_fqdn))
-
-                primary_ctrl = \
-                    self.primary_controller.get_ip_address_by_network_name(
-                        'admin')
-                pcs_status = parse_pcs_status_xml(primary_ctrl)
-
-                pcs_attribs = get_pcs_nodes(pcs_status)
-                return pcs_attribs[self.primary_controller_fqdn][
-                    'resources_running'] == self.slave_node_running_resources
-
             wait(checking_health_disk_attribute_is_not_present,
                  "Attribute #health_disk was appeared in attributes "
                  "on node {} in {} seconds".format(
@@ -367,10 +357,4 @@ class FillRootActions(object):
                      self.pcs_check_timeout),
                  timeout=self.pcs_check_timeout)
 
-            wait(check_started_resources,
-                 "Attribute 'running_resources' doesn't have {} value "
-                 "on node {} in {} seconds".format(
-                     self.slave_node_running_resources,
-                     self.primary_controller_fqdn,
-                     self.pcs_check_timeout),
-                 self.pcs_check_timeout)
+            self.fuel_web.assert_ha_services_ready(self.cluster_id)
