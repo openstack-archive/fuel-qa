@@ -435,20 +435,18 @@ class TestOSupgrade(DataDrivenUpgradeBase):
     @test(depends_on=[upgrade_ceph_osd], groups=["upgrade_old_nodes"])
     @log_snapshot_after_test
     def upgrade_old_nodes(self):
-        """Upgrade all non controller nodes
+        """Upgrade all non controller nodes - no live migration
 
         Scenario:
-            1. Revert snapshot upgrade_all_controllers
+            1. Revert snapshot upgrade_ceph_osd
             2. Select cluster for upgrade and upgraded cluster
             3. Collect nodes for upgrade
-            4. Run octane upgrade-node $SEED_ID <ID>
-            5. run network verification on target cluster
-            6. run OSTF check
-            7. Drop old cluster
+            4. Run octane upgrade-node --no-live-migration $SEED_ID <ID>
+            5. Run network verification on target cluster
+            6. Run OSTF check
+            7. Drop orig cluster
         """
-
         self.check_release_requirements()
-        self.check_run('upgrade_old_nodes')
 
         self.show_step(1, initialize=True)
         self.env.revert_snapshot("upgrade_ceph_osd")
@@ -459,11 +457,6 @@ class TestOSupgrade(DataDrivenUpgradeBase):
 
         self.show_step(3)
 
-        # old_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-        #     orig_cluster_id, ["compute"]
-        # )
-
-        # TODO(astepanov): validate, that only correct nodes acquired
         old_nodes = self.fuel_web.client.list_cluster_nodes(
             self.orig_cluster_id)
 
@@ -471,11 +464,57 @@ class TestOSupgrade(DataDrivenUpgradeBase):
 
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd="octane upgrade-node {0} {1}".format(
+            cmd="octane upgrade-node --no-live-migration {0} {1}".format(
                 seed_cluster_id,
-                " ".join([str(ctrl["id"]) for ctrl in old_nodes])),
-            err_msg="octane upgrade-node failed"
-        )
+                " ".join([str(node["id"]) for node in old_nodes])),
+            err_msg="octane upgrade-node failed")
+
+        self.show_step(5)
+        self.fuel_web.verify_network(seed_cluster_id)
+
+        self.show_step(6)
+        self.fuel_web.run_ostf(seed_cluster_id)
+
+        self.show_step(7)
+        self.fuel_web.delete_env_wait(self.orig_cluster_id)
+
+    @test(depends_on=[upgrade_ceph_osd],
+          groups=["upgrade_nodes_live_migration"])
+    @log_snapshot_after_test
+    def upgrade_nodes_live_migration(self):
+        """Upgrade all non controller nodes with live migration
+
+        Scenario:
+            1. Revert snapshot upgrade_ceph_osd
+            2. Select cluster for upgrade and upgraded cluster
+            3. Collect nodes for upgrade
+            4. Upgrade each node using octane upgrade-node $SEED_ID <ID>
+            5. Run network verification on target cluster
+            6. Run OSTF check
+            7. Drop orig cluster
+        """
+
+        self.check_release_requirements()
+
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot("upgrade_ceph_osd")
+        self.install_octane()
+
+        self.show_step(2)
+        seed_cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.show_step(3)
+        old_nodes = self.fuel_web.client.list_cluster_nodes(
+            self.orig_cluster_id)
+
+        self.show_step(4)
+        for node in old_nodes:
+            logger.info("Upgrading node {!s}, role {!s}".format(
+                node['id'], node['roles']))
+            self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd="octane upgrade-node {0} {1!s}".format(
+                    seed_cluster_id, node['id']))
 
         self.show_step(5)
         self.fuel_web.verify_network(seed_cluster_id)
