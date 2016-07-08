@@ -442,10 +442,11 @@ class CephRadosGW(TestBasic):
 
         # Check the radosqw daemon is started
         remote = self.fuel_web.get_ssh_for_node('slave-01')
-        radosgw_started = lambda: len(remote.check_call(
-            'ps aux | grep "/usr/bin/radosgw -n '
-            'client.radosgw.gateway"')['stdout']) == 3
-        assert_true(radosgw_started(), 'radosgw daemon started')
+        assert_true(
+            len(remote.check_call(
+                'ps aux | grep "/usr/bin/radosgw -n client.radosgw.gateway"')[
+                    'stdout']) == 3,
+            'radosgw daemon started')
         remote.clear()
 
         self.env.make_snapshot("ceph_rados_gw")

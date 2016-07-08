@@ -208,10 +208,10 @@ def get_package_test_info(package, pkg_type, tests_path, patch_target):
     target, project = _get_target_and_project(package, all_packages)
     if patch_target == 'master':
         if target not in ['master', 'bootstrap']:
-            return set([None])
+            return {None}
     if patch_target == 'environment':
         if target not in ['deployment', 'provisioning']:
-            return set([None])
+            return {None}
     target_tests_path = "/".join((tests_path, pkg_type, target, tests_file))
     project_tests_path = "/".join((tests_path, pkg_type, target, project,
                                    tests_file))

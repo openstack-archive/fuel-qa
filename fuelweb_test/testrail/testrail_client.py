@@ -15,7 +15,7 @@
 from testrail import APIClient
 
 
-class TestRailProject():
+class TestRailProject(object):
     """TestRailProject."""  # TODO documentation
 
     def __init__(self, url, user, password, project):
