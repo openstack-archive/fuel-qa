@@ -15,6 +15,8 @@ from xml.etree import ElementTree
 
 from fuelweb_test.helpers.ssh_manager import SSHManager
 
+ssh_manager = SSHManager()
+
 
 def get_pacemaker_nodes_attributes(cibadmin_status_xml):
     """Parse 'cibadmin --query --scope status'.
@@ -103,7 +105,7 @@ def parse_pcs_status_xml(remote_ip):
     :param remote_ip: remote IP address
     :return: nested dictionary with node-fqdn and attribute name as keys
     """
-    pcs_status_dict = SSHManager().execute_on_remote(
+    pcs_status_dict = ssh_manager.execute_on_remote(
         remote_ip, 'pcs status xml')['stdout_str']
     return pcs_status_dict
 
@@ -116,7 +118,7 @@ def get_pacemaker_resource_name(remote_ip, resource_name):
     :param resource_name: resource name string
     :return: string with proper resource name
     """
-    cib = SSHManager().execute_on_remote(
+    cib = ssh_manager.execute_on_remote(
         remote_ip, 'cibadmin -Q --scope resources')['stdout_str']
     root = ElementTree.fromstring(cib)
 
