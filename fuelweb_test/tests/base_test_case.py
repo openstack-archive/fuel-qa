@@ -300,6 +300,7 @@ class TestBasic(object):
 
         self.env.wait_for_external_config()
         self.env.admin_actions.modify_configs(self.env.d_env.router())
+        self.env.admin_actions.update_fuel_setting_yaml()
         self.env.kill_wait_for_external_config()
 
         self.env.wait_bootstrap()
