@@ -440,7 +440,8 @@ def get_global_failure_group_list(
                 failure_group_dict[key] = []
             failure_group_dict[key].append(failure)
     # let's find Levenshtein distance and update failure_group_dict
-    for num1, key1 in enumerate(failure_group_dict.keys()):
+    for num1, key1 in enumerate(failure_group_dict):
+        # pylint: disable=C0201
         for key2 in failure_group_dict.keys()[num1 + 1:]:
             # let's skip grouping if len are different more 10%
             if key1 == key2 or abs(float(len(key1) / len(key2))) >\

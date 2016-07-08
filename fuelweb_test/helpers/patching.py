@@ -396,7 +396,7 @@ def get_slaves_ids_by_role(slaves, role=None):
 
 def verify_fix_apply_step(apply_step):
     validation_schema = patching_validation_schema
-    for key in validation_schema.keys():
+    for key in validation_schema:
         if key in apply_step.keys():
             is_exists = apply_step[key] is not None
         else:
