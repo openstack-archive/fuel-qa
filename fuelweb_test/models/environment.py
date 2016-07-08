@@ -421,6 +421,7 @@ class EnvironmentModel(object):
         # wait while installation complete
 
         self.admin_actions.modify_configs(self.d_env.router())
+        self.admin_actions.update_fuel_setting_yaml()
         self.kill_wait_for_external_config()
         self.wait_bootstrap()
         self.admin_actions.wait_for_fuel_ready()
