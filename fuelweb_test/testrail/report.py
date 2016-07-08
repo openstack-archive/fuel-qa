@@ -73,7 +73,7 @@ class TestResult(object):
 
     @property
     def status(self):
-        for s in self.available_statuses.keys():
+        for s in self.available_statuses:
             if self._status in self.available_statuses[s]:
                 return s
         logger.error('Unsupported result status: "{0}"!'.format(self._status))

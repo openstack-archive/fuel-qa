@@ -502,7 +502,7 @@ def check_stats_on_collector(collector_remote, postgres_actions, master_uuid):
 
     # Check that important data (clusters number, nodes number, nodes roles,
     # user's email, used operation system, OpenStack stats) is saved correctly
-    for stat_type in general_stats.keys():
+    for stat_type in general_stats:
         assert_true(
             isinstance(summ_stats[stat_type], general_stats[stat_type]),
             "Installation structure in Collector's DB doesn't contain"
@@ -562,7 +562,7 @@ def check_stats_private_info(collector_remote, postgres_actions,
         _has_private_data = False
         # Check that stats doesn't contain private data (e.g.
         # specific passwords, settings, emails)
-        for _private in private_data.keys():
+        for _private in private_data:
             _regex = r'(?P<key>"\S+"): (?P<value>[^:]*"{0}"[^:]*)'.format(
                 private_data[_private])
             for _match in re.finditer(_regex, data):
@@ -578,7 +578,7 @@ def check_stats_private_info(collector_remote, postgres_actions,
                 _has_private_data = True
         # Check that stats doesn't contain private types of data (e.g. any kind
         # of passwords)
-        for _data_type in secret_data_types.keys():
+        for _data_type in secret_data_types:
             _regex = (r'(?P<secret>"[^"]*{0}[^"]*": (\{{[^\}}]+\}}|\[[^\]+]\]|'
                       r'"[^"]+"))').format(secret_data_types[_data_type])
 
