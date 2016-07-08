@@ -38,6 +38,7 @@ from fuelweb_test.settings import MIRROR_UBUNTU
 from fuelweb_test.settings import PLUGIN_PACKAGE_VERSION
 from fuelweb_test.settings import FUEL_SETTINGS_YAML
 from fuelweb_test.settings import NESSUS_IMAGE_PATH
+from fuelweb_test.settings import CUSTOM_FUEL_SETTING_YAML
 
 
 class BaseActions(object):
@@ -265,6 +266,38 @@ class AdminActions(BaseActions):
                     upstream_host='archive.ubuntu.com')
             logger.info("Replace default Ubuntu mirror URL for "
                         "bootstrap image in Fuel settings")
+        self.save_fuel_settings(fuel_settings)
+
+    @logwrap
+    def update_fuel_setting_yaml(self):
+        """This method override fuel settings yaml according to custom yaml
+        """
+        path = CUSTOM_FUEL_SETTING_YAML
+        if not path:
+            return
+
+        fuel_settings = self.get_fuel_settings()
+        with open(path) as fyaml:
+            custom_fuel_settings = yaml.load(fyaml)
+
+        def deep_update(original_dict, update_dict):
+            """Method updates dictionary recursively according to
+            a given dictionary. All values with non-dict type will
+            be overrided by corresponding key.
+
+            :param original_dict: dict, a dictionary for the update
+            :param update_dict: dict, a dictionary with data for the update
+            :return: dict, updated dictionary
+            """
+            for k, v in update_dict.iteritems():
+                if isinstance(v, dict):
+                    r = deep_update(original_dict.get(k, {}), v)
+                    original_dict[k] = r
+                else:
+                    original_dict[k] = update_dict[k]
+            return original_dict
+
+        fuel_settings = deep_update(fuel_settings, custom_fuel_settings)
         self.save_fuel_settings(fuel_settings)
 
     @logwrap
