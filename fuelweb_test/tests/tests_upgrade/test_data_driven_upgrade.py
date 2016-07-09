@@ -938,7 +938,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         )
         self.fuel_web.client.delete_cluster(cluster_id)
         wait(lambda: not any([cluster['id'] == cluster_id for cluster in
-                              self.fuel_web.client.list_clusters()]))
+                              self.fuel_web.client.list_clusters()]), timeout = 1800)
         self.env.bootstrap_nodes(devops_nodes)
 
         self.show_step(3)
