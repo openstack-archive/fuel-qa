@@ -30,6 +30,21 @@ TIME_ZONE = 'UTC'
 ENV_NAME = os.environ.get("ENV_NAME", "fuel_system_test")
 VIRTUAL_ENV = os.environ.get("VIRTUAL_ENV", "")
 
+INTERFACES_DICT = {
+    'eth0': os.environ.get('IFACE_0', 'enp0s3'),
+    'eth1': os.environ.get('IFACE_1', 'enp0s4'),
+    'eth2': os.environ.get('IFACE_2', 'enp0s5'),
+    'eth3': os.environ.get('IFACE_3', 'enp0s6'),
+    'eth4': os.environ.get('IFACE_4', 'enp0s7'),
+    'eth5': os.environ.get('IFACE_5', 'enp0s8'),
+}
+
+
+# NOTE(akostrikov) The method is here to avoid problems with imports
+# Refactor when additional logic is needed like info from master node/devops.
+def iface_alias(interface_name):
+    return INTERFACES_DICT[interface_name]
+
 ISO_PATH = os.environ.get('ISO_PATH')
 LOGS_DIR = os.environ.get('LOGS_DIR', os.getcwd())
 # cdrom or usb
