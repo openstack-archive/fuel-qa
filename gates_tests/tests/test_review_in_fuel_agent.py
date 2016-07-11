@@ -14,48 +14,48 @@
 
 from proboscis import test
 
-from fuelweb_test import settings
-from fuelweb_test.helpers import ironic_actions
 from fuelweb_test.helpers.checkers import verify_bootstrap_on_node
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers import ironic_actions
+from fuelweb_test import settings
 from fuelweb_test.tests.test_ironic_base import TestIronicDeploy
-
 from gates_tests.helpers import exceptions
-from gates_tests.helpers.utils import \
-    check_package_version_injected_in_bootstraps
+from gates_tests.helpers.utils import (
+    check_package_version_injected_in_bootstraps)
 from gates_tests.helpers.utils import replace_rpm_package
 from gates_tests.helpers.utils import update_bootstrap_cli_yaml
 
 
 @test(groups=["review_fuel_agent"])
 class Gate(TestIronicDeploy):
-    """Using in fuel-agent CI-gates
-    Update fuel-agent on master node, bootstrap from review,
-    build environment images and provision one node"""
+    """Using in fuel-agent CI-gates.
 
+    Update fuel-agent on master node, bootstrap from review,
+    build environment images and provision one node.
+    """
     @test(depends_on_groups=['prepare_release'],
           groups=["review_fuel_agent_ironic_deploy"])
     @log_snapshot_after_test
     def gate_patch_fuel_agent(self):
-        """ Revert snapshot, update fuel-agent, bootstrap from review
-        and provision one node
+        """Revert snapshot, update fuel-agent, bootstrap from review
+        and provision one node.
 
-    Scenario:
-        1. Revert snapshot "ready"
-        2. Update fuel-agent, fuel-bootstrap-cli on master node
-        3. Update fuel_bootstrap_cli.yaml
-        4. Rebuild bootstrap
-        5. Verify fuel-agent version in ubuntu bootstrap image
-        6. Bootstrap 5 slaves
-        7. Verify Ubuntu bootstrap on slaves
-        8. Add 1 node with controller
-        9. Add 1 node ironic role
-        10. Deploy the cluster
-        11. Verify fuel-agent version in ironic-bootstrap
-        12. Upload image to glance
-        13. Enroll Ironic nodes
-        14. Boot nova instance
-        15. Check Nova instance status
+        Scenario:
+            1. Revert snapshot "ready"
+            2. Update fuel-agent, fuel-bootstrap-cli on master node
+            3. Update fuel_bootstrap_cli.yaml
+            4. Rebuild bootstrap
+            5. Verify fuel-agent version in ubuntu bootstrap image
+            6. Bootstrap 5 slaves
+            7. Verify Ubuntu bootstrap on slaves
+            8. Add 1 node with controller
+            9. Add 1 node ironic role
+            10. Deploy the cluster
+            11. Verify fuel-agent version in ironic-bootstrap
+            12. Upload image to glance
+            13. Enroll Ironic nodes
+            14. Boot nova instance
+            15. Check Nova instance status
 
         Snapshot review_fuel_agent_ironic_deploy
         """
@@ -79,12 +79,12 @@ class Gate(TestIronicDeploy):
                 centos_repo_path=None,
                 ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU,
                 clean_target=True)
-        uuid, bootstrap_location = \
-            self.env.fuel_bootstrap_actions.build_bootstrap_image()
-        self.env.fuel_bootstrap_actions. \
-            import_bootstrap_image(bootstrap_location)
-        self.env.fuel_bootstrap_actions. \
-            activate_bootstrap_image(uuid)
+        uuid, bootstrap_location = (
+            self.env.fuel_bootstrap_actions.build_bootstrap_image())
+        (self.env.fuel_bootstrap_actions.
+            import_bootstrap_image(bootstrap_location))
+        (self.env.fuel_bootstrap_actions.
+            activate_bootstrap_image(uuid))
 
         self.show_step(5)
         check_package_version_injected_in_bootstraps("fuel-agent")
