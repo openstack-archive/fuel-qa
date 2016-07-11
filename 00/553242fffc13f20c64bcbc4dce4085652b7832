@@ -1,0 +1,12 @@
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+1: tatyana-leontovich <tleontovich@mirantis.com>
+Code-Review+1: Vadim Rovachev <vrovachev@mirantis.com>
+Code-Review+1: Mikhail Samoylov <msamoylov@mirantis.com>
+Code-Review+2: Dennis Dmitriev <ddmitriev@mirantis.com>
+Workflow+1: Dennis Dmitriev <ddmitriev@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 11 Jul 2016 08:03:07 +0000
+Reviewed-on: https://review.openstack.org/330668
+Project: openstack/fuel-qa
+Branch: refs/heads/stable/7.0
