@@ -40,22 +40,16 @@ if you do need to override them.
 -V (dir)    - Path to python virtual environment
 -i (file)   - Full path to ISO file to build or use for tests.
               Made from iso dir and name if not set.
--t (name)   - Name of task this script should perform. Should be one of defined ones.
-              Taken from Jenkins' job's suffix if not set.
 -o (str)    - Allows you any extra command line option to run test job if you
               want to use some parameters.
 -a (str)    - Allows you to path NOSE_ATTR to the test job if you want
               to use some parameters.
 -A (str)    - Allows you to path  NOSE_EVAL_ATTR if you want to enter attributes
               as python expressions.
--m (name)   - Use this mirror to build ISO from.
-              Uses 'srt' if not set.
 -U          - ISO URL for tests.
               Null by default.
--r (yes/no) - Should built ISO file be places with build number tag and
-              symlinked to the last build or just copied over the last file.
 -b (num)    - Allows you to override Jenkins' build number if you need to.
--l (dir)    - Path to logs directory. Can be set by LOGS_DIR evironment variable.
+-l (dir)    - Path to logs directory. Can be set by LOGS_DIR environment variable.
               Uses WORKSPACE/logs if not set.
 -L          - Disable fuel_logs tool to extract the useful lines from Astute and Puppet logs
               within the Fuel log snapshot or on the live Fuel Master node.
@@ -63,9 +57,12 @@ if you do need to override them.
               Useful for debugging.
 -k          - Keep previously created test environment before tests run
 -K          - Keep test environment after tests are finished
+-R (name)   - Name of the package where requirements.txt is located. For use with the option -N only.
+              Uses 'fuelweb_test' if option is not set.
+-N          - Install PyPi packages from 'requirements.txt'.
 -h          - Show this help page
 
-Most variables uses guesing from Jenkins' job name but can be overriden
+Most variables uses guessing from Jenkins' job name but can be overridden
 by exported variable before script is run or by one of command line options.
 
 You can override following variables using export VARNAME="value" before running this script
@@ -110,34 +107,28 @@ GlobalVariables() {
 
   # full path where iso file should be placed
   # make from iso name and path to iso shared directory
-  # if was not overriden by options or export
+  # if was not overridden by options or export
   if [ -z "${ISO_PATH}" ]; then
     ISO_PATH="${ISO_DIR}/${ISO_NAME}"
   fi
 
-  # what task should be ran
-  # it's taken from jenkins job name suffix if not set by options
-  if [ -z "${TASK_NAME}" ]; then
-    TASK_NAME="${JOB_NAME##*.}"
-  fi
-
-  # do we want to keep iso's for each build or just copy over single file
-  ROTATE_ISO="${ROTATE_ISO:=yes}"
-
-  # choose mirror to build iso from. Default is 'srt' for Saratov's mirror
-  # you can change mirror by exporting USE_MIRROR variable before running this script
-  USE_MIRROR="${USE_MIRROR:=srt}"
-
   # only show what commands would be executed but do nothing
-  # this feature is usefull if you want to debug this script's behaviour
+  # this feature is useful if you want to debug this script's behaviour
   DRY_RUN="${DRY_RUN:=no}"
 
   VENV="${VENV:=yes}"
+
+  # Path to the directory where requirements.txt is placed.
+  # Default place is ./fuelweb_test/requirements.txt
+  REQUIREMENTS_DIR="${REQUIREMENTS_DIR:=fuelweb_test}"
+
+  # Perform requirements update from the requirements.txt file. Default = no.
+  UPDATE_REQUIREMENTS="${UPDATE_REQUIREMENTS:=no}"
 }
 
 GetoptsVariables() {
-  while getopts ":w:j:i:t:o:a:A:m:U:r:b:V:l:LdkKe:v:h" opt; do
-    case $opt in
+  while getopts ":w:j:i:t:o:a:A:m:U:r:b:V:l:LdkKNe:v:R:h" opt; do
+    case ${opt} in
       w)
         WORKSPACE="${OPTARG}"
         ;;
@@ -148,7 +139,7 @@ GetoptsVariables() {
         ISO_PATH="${OPTARG}"
         ;;
       t)
-        TASK_NAME="${OPTARG}"
+        echo "Option 'TASK_NAME' deprecated."
         ;;
       o)
         TEST_OPTIONS="${TEST_OPTIONS} ${OPTARG}"
@@ -160,13 +151,13 @@ GetoptsVariables() {
         NOSE_EVAL_ATTR="${OPTARG}"
         ;;
       m)
-        USE_MIRROR="${OPTARG}"
+        echo "Option 'USE_MIRROR' deprecated."
         ;;
       U)
         ISO_URL="${OPTARG}"
         ;;
       r)
-        ROTATE_ISO="${OPTARG}"
+        echo "Option 'ROTATE_ISO' deprecated."
         ;;
       b)
         BUILD_NUMBER="${OPTARG}"
@@ -195,6 +186,12 @@ GetoptsVariables() {
       v)
         VENV="no"
         ;;
+      R)
+        REQUIREMENTS_DIR="${OPTARG}"
+        ;;
+      N)
+        UPDATE_REQUIREMENTS="yes"
+        ;;
       h)
         ShowHelp
         exit 0
@@ -202,12 +199,12 @@ GetoptsVariables() {
       \?)
         echo "Invalid option: -$OPTARG"
         ShowHelp
-        exit $INVALIDOPTS_ERR
+        exit ${INVALIDOPTS_ERR}
         ;;
       :)
         echo "Option -$OPTARG requires an argument."
         ShowHelp
-        exit $INVALIDOPTS_ERR
+        exit ${INVALIDOPTS_ERR}
         ;;
     esac
   done
@@ -217,119 +214,18 @@ CheckVariables() {
 
   if [ -z "${JOB_NAME}" ]; then
     echo "Error! JOB_NAME is not set!"
-    exit $NOJOBNAME_ERR
+    exit ${NOJOBNAME_ERR}
   fi
 
   if [ -z "${ISO_PATH}" ]; then
     echo "Error! ISO_PATH is not set!"
-    exit $NOISOPATH_ERR
-  fi
-
-  if [ -z "${TASK_NAME}" ]; then
-    echo "Error! TASK_NAME is not set!"
-    exit $NOTASKNAME_ERR
+    exit ${NOISOPATH_ERR}
   fi
 
   if [ -z "${WORKSPACE}" ]; then
     echo "Error! WORKSPACE is not set!"
-    exit $NOWORKSPACE_ERR
+    exit ${NOWORKSPACE_ERR}
   fi
-}
-
-MakeISO() {
-  # Create iso file to be used in tests
-
-  # clean previous garbage
-  if [ "${DRY_RUN}" = "yes" ]; then
-    echo make deep_clean
-  else
-    make deep_clean
-  fi
-  ec="${?}"
-
-  if [ "${ec}" -gt "0" ]; then
-    echo "Error! Deep clean failed!"
-    exit $DEEPCLEAN_ERR
-  fi
-
-  # create ISO file
-  export USE_MIRROR
-  if [ "${DRY_RUN}" = "yes" ]; then
-    echo make iso
-  else
-    make iso
-  fi
-  ec=$?
-
-  if [ "${ec}" -gt "0" ]; then
-    echo "Error making ISO!"
-    exit $MAKEISO_ERR
-  fi
-
-  if [ "${DRY_RUN}" = "yes" ]; then
-    ISO="${WORKSPACE}/build/iso/fuel.iso"
-  else
-    ISO="`ls ${WORKSPACE}/build/iso/*.iso | head -n 1`"
-    # check that ISO file exists
-    if [ ! -f "${ISO}" ]; then
-      echo "Error! ISO file not found!"
-      exit $NOISOFOUND_ERR
-    fi
-  fi
-
-  # copy ISO file to storage dir
-  # if rotation is enabled and build number is aviable
-  # save iso to tagged file and symlink to the last build
-  # if rotation is not enabled just copy iso to iso_dir
-
-  if [ "${ROTATE_ISO}" = "yes" -a "${BUILD_NUMBER}" != "" ]; then
-    # copy iso file to shared dir with revision tagged name
-    NEW_BUILD_ISO_PATH="${ISO_PATH#.iso}_${BUILD_NUMBER}.iso"
-    if [ "${DRY_RUN}" = "yes" ]; then
-      echo cp "${ISO}" "${NEW_BUILD_ISO_PATH}"
-    else
-      cp "${ISO}" "${NEW_BUILD_ISO_PATH}"
-    fi
-    ec=$?
-
-    if [ "${ec}" -gt "0" ]; then
-      echo "Error! Copy ${ISO} to ${NEW_BUILD_ISO_PATH} failed!"
-      exit $COPYISO_ERR
-    fi
-
-    # create symlink to the last built ISO file
-    if [ "${DRY_RUN}" = "yes" ]; then
-      echo ln -sf "${NEW_BUILD_ISO_PATH}" "${ISO_PATH}"
-    else
-      ln -sf "${NEW_BUILD_ISO_PATH}" "${ISO_PATH}"
-    fi
-    ec=$?
-
-    if [ "${ec}" -gt "0" ]; then
-      echo "Error! Create symlink from ${NEW_BUILD_ISO_PATH} to ${ISO_PATH} failed!"
-      exit $SYMLINKISO_ERR
-    fi
-  else
-    # just copy file to shared dir
-    if [ "${DRY_RUN}" = "yes" ]; then
-      echo cp "${ISO}" "${ISO_PATH}"
-    else
-      cp "${ISO}" "${ISO_PATH}"
-    fi
-    ec=$?
-
-    if [ "${ec}" -gt "0" ]; then
-      echo "Error! Copy ${ISO} to ${ISO_PATH} failed!"
-      exit $COPYISO_ERR
-    fi
-  fi
-
-  if [ "${ec}" -gt "0" ]; then
-    echo "Error! Copy ISO from ${ISO} to ${ISO_PATH} failed!"
-    exit $COPYISO_ERR
-  fi
-  echo "Finished building ISO: ${ISO_PATH}"
-  exit 0
 }
 
 CdWorkSpace() {
@@ -340,10 +236,44 @@ CdWorkSpace() {
 
         if [ "${ec}" -gt "0" ]; then
             echo "Error! Cannot cd to WORKSPACE!"
-            exit $CDWORKSPACE_ERR
+            exit ${CDWORKSPACE_ERR}
         fi
     else
         echo cd "${WORKSPACE}"
+    fi
+}
+
+CheckRequirements() {
+    REQUIREMENTS_PATH="${WORKSPACE}/${REQUIREMENTS_DIR}"
+
+    if [ "${UPDATE_REQUIREMENTS}" = "yes" ]; then
+        if [ -f "${REQUIREMENTS_PATH}/requirements.txt" ]; then
+            # Install packages from requirements.txt
+            pip install -r "${REQUIREMENTS_PATH}/requirements.txt"
+        fi
+
+        if [ -f "${REQUIREMENTS_PATH}/requirements-devops.txt" ]; then
+            # Try to install fuel-devops as a package, to controll that
+            # required version of fuel-devops is already installed.
+            # Installation will fail if fuel-devops is not installed or
+            # installed with correct version (until it is not a PyPi package)
+            pip install -r "${REQUIREMENTS_PATH}/requirements-devops.txt"
+        fi
+    fi
+}
+
+ActivateVirtualenv() {
+    if [ -z "${VENV_PATH}" ]; then
+        VENV_PATH="/home/jenkins/venv-nailgun-tests"
+    fi
+
+    # run python virtualenv
+    if [ "${VENV}" = "yes" ]; then
+        if [ "${DRY_RUN}" = "yes" ]; then
+            echo . ${VENV_PATH}/bin/activate
+        else
+            . ${VENV_PATH}/bin/activate
+        fi
     fi
 }
 
@@ -354,7 +284,7 @@ RunTest() {
     if [ ! -f "${ISO_PATH}" ]; then
         if [ -z "${ISO_URL}" -a "${DRY_RUN}" != "yes" ]; then
             echo "Error! File ${ISO_PATH} not found and no ISO_URL (-U key) for downloading!"
-            exit $NOISOFOUND_ERR
+            exit ${NOISOFOUND_ERR}
         else
             if [ "${DRY_RUN}" = "yes" ]; then
                 echo wget -c ${ISO_URL} -O ${ISO_PATH}
@@ -362,24 +292,11 @@ RunTest() {
                 echo "No ${ISO_PATH} found. Trying to download file."
                 wget -c ${ISO_URL} -O ${ISO_PATH}
                 rc=$?
-                if [ $rc -ne 0 ]; then
+                if [ ${rc} -ne 0 ]; then
                     echo "Failed to fetch ISO from ${ISO_URL}"
-                    exit $ISODOWNLOAD_ERR
+                    exit ${ISODOWNLOAD_ERR}
                 fi
             fi
-        fi
-    fi
-
-    if [ -z "${VENV_PATH}" ]; then
-        VENV_PATH="/home/jenkins/venv-nailgun-tests"
-    fi
-
-    # run python virtualenv
-    if [ "${VENV}" = "yes" ]; then
-        if [ "${DRY_RUN}" = "yes" ]; then
-            echo . $VENV_PATH/bin/activate
-        else
-            . $VENV_PATH/bin/activate
         fi
     fi
 
@@ -392,7 +309,7 @@ RunTest() {
     fi
 
     if [ ! -f "$LOGS_DIR" ]; then
-      mkdir -p $LOGS_DIR
+      mkdir -p ${LOGS_DIR}
     fi
 
     export ENV_NAME
@@ -425,18 +342,18 @@ RunTest() {
     # run python test set to create environments, deploy and test product
     if [ "${DRY_RUN}" = "yes" ]; then
         echo export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}${WORKSPACE}"
-        echo python fuelweb_test/run_tests.py -q --nologcapture --with-xunit ${OPTS}
+        echo python run_system_test.py run -q --nologcapture --with-xunit ${OPTS}
     else
         export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}${WORKSPACE}"
         echo ${PYTHONPATH}
-        python fuelweb_test/run_tests.py -q --nologcapture --with-xunit ${OPTS}
+        python run_system_test.py run -q --nologcapture --with-xunit ${OPTS}
 
     fi
     ec=$?
 
     # Extract logs using fuel_logs utility
     if [ "${FUELLOGS_TOOL}" != "no" ]; then
-      for logfile in $(find "${LOGS_DIR}" -name "fail*.tar.xz" -type f);
+      for logfile in $(find "${LOGS_DIR}" -name "fail*.tar.[gx]z" -type f);
       do
          ./utils/jenkins/fuel_logs.py "${logfile}" > "${logfile}.filtered.log"
       done
@@ -454,26 +371,6 @@ RunTest() {
     exit "${ec}"
 }
 
-RouteTasks() {
-  # this selector defines task names that are recognised by this script
-  # and runs corresponding jobs for them
-  # running any jobs should exit this script
-
-  case "${TASK_NAME}" in
-  test)
-    RunTest
-    ;;
-  iso)
-    MakeISO
-    ;;
-  *)
-    echo "Unknown task: ${TASK_NAME}!"
-    exit $INVALIDTASK_ERR
-    ;;
-  esac
-  exit 0
-}
-
 # MAIN
 
 # first we want to get variable from command line options
@@ -488,5 +385,11 @@ CheckVariables
 # first we chdir into our working directory unless we dry run
 CdWorkSpace
 
-# finally we can choose what to do according to TASK_NAME
-RouteTasks
+# Activate python virtual environment
+ActivateVirtualenv
+
+# Check/update PyPi requirements
+CheckRequirements
+
+# Run the test
+RunTest
