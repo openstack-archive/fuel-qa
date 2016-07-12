@@ -170,13 +170,14 @@ class HaScaleGroup2(TestBasic):
         self.show_step(8)
         self.show_step(9)
         for host in hosts:
+            cmd = "grep '{}' /etc/hosts".format(host)
             result = self.ssh_manager.execute_on_remote(
-                ip=node['ip'], cmd="grep '{}' /etc/hosts".format(host))
+                ip=node['ip'], cmd=cmd, assert_ec_equal=[1])
             assert_equal(result['exit_code'], 1,
                          "host {} is present in /etc/hosts".format(host))
+            cmd = "grep '{}' /etc/corosync/corosync.conf".format(host)
             result = self.ssh_manager.execute_on_remote(
-                ip=node['ip'], cmd="grep '{}' /etc/corosync/"
-                                   "corosync.conf".format(host))
+                ip=node['ip'], cmd=cmd, assert_ec_equal=[1])
             assert_equal(result['exit_code'], 1,
                          "host {} is present in"
                          " /etc/corosync/corosync.conf".format(host))
