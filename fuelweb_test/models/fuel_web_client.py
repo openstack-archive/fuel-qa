@@ -136,7 +136,9 @@ class FuelWebClient29(object):
             lambda: all([run['status'] == 'finished'
                          for run in
                          self.client.get_ostf_test_run(cluster_id)]),
-            timeout=timeout)
+            timeout=timeout,
+            timeout_msg='OSTF tests run timeout '
+                        '(cluster_id={})'.format(cluster_id))
         return self.client.get_ostf_test_run(cluster_id)
 
     @logwrap
@@ -161,6 +163,7 @@ class FuelWebClient29(object):
     def assert_cluster_ready(self, os_conn, smiles_count,
                              networks_count=2, timeout=300):
         logger.info('Assert cluster services are UP')
+        # TODO(astudenov): add timeout_msg
         _wait(
             lambda: self.get_cluster_status(
                 os_conn,
@@ -177,6 +180,7 @@ class FuelWebClient29(object):
             logger.info('Waiting {0} sec. for passed OSTF HA tests.'
                         .format(timeout))
             with QuietLogger(logging.ERROR):
+                # TODO(astudenov): add timeout_msg
                 _wait(lambda: self.run_ostf(cluster_id,
                                             test_sets=['ha'],
                                             should_fail=should_fail),
@@ -194,6 +198,7 @@ class FuelWebClient29(object):
         logger.info('Waiting {0} sec. for passed OSTF Sanity checks.'
                     .format(timeout))
         with QuietLogger():
+            # TODO(astudenov): add timeout_msg
             _wait(lambda: self.run_ostf(cluster_id,
                                         test_sets=['sanity'],
                                         should_fail=should_fail),
@@ -397,6 +402,24 @@ class FuelWebClient29(object):
                 assert_true(len(not_ready_tasks) == 0, task_text)
 
         checkers.fail_deploy(not_ready_transactions)
+
+    def wait_node_is_online(self, devops_node, timeout=60 * 5):
+        logger.info(
+            'Wait for node {!r} online status'.format(devops_node.name))
+        wait(lambda: self.get_nailgun_node_by_devops_node(
+             devops_node)['online'],
+             timeout=timeout,
+             timeout_msg='Node {!r} failed to become online'
+                         ''.format(devops_node.name))
+
+    def wait_node_is_offline(self, devops_node, timeout=60 * 5):
+        logger.info(
+            'Wait for node {!r} offline status'.format(devops_node.name))
+        wait(lambda: not self.get_nailgun_node_by_devops_node(
+             devops_node)['online'],
+             timeout=timeout,
+             timeout_msg='Node {!r} failed to become offline'
+                         ''.format(devops_node.name))
 
     @logwrap
     def fqdn(self, devops_node):
@@ -1270,6 +1293,14 @@ class FuelWebClient29(object):
                 node['mac'] == nailgun_node['mac'] and
                 node['status'] == 'discover', self.client.list_nodes()))
 
+    def wait_node_is_discovered(self, nailgun_node, timeout=6 * 60):
+        logger.info('Wait for node {!r} to become discovered'
+                    ''.format(nailgun_node['name']))
+        wait(lambda: self.is_node_discovered(nailgun_node),
+             timeout=timeout,
+             timeout_msg='Node {!r} failed to become discovered'
+                         ''.format(nailgun_node['name']))
+
     @logwrap
     def run_network_verify(self, cluster_id):
         logger.info('Run network verification on the cluster %s', cluster_id)
@@ -1334,17 +1365,15 @@ class FuelWebClient29(object):
         logger.info('Wait for task {0} seconds: {1}'.format(
                     timeout, pretty_log(task, indent=1)))
         start = time.time()
-        try:
-            wait(
-                lambda: (self.client.get_task(task['id'])['status']
-                         not in ('pending', 'running')),
-                interval=interval,
-                timeout=timeout
-            )
-        except TimeoutError:
-            raise TimeoutError(
-                "Waiting task \"{task}\" timeout {timeout} sec "
-                "was exceeded: ".format(task=task["name"], timeout=timeout))
+
+        wait(
+            lambda: (self.client.get_task(task['id'])['status']
+                     not in ('pending', 'running')),
+            interval=interval,
+            timeout=timeout,
+            timeout_msg='Waiting task {0!r} timeout {1} sec '
+                        'was exceeded'.format(task['name'], timeout))
+
         took = time.time() - start
         task = self.client.get_task(task['id'])
         logger.info('Task finished. Took {0} seconds. {1}'.format(
@@ -1354,21 +1383,15 @@ class FuelWebClient29(object):
 
     @logwrap
     def task_wait_progress(self, task, timeout, interval=5, progress=None):
-        try:
-            logger.info(
-                'start to wait with timeout {0} '
-                'interval {1}'.format(timeout, interval))
-            wait(
-                lambda: self.client.get_task(
-                    task['id'])['progress'] >= progress,
-                interval=interval,
-                timeout=timeout
-            )
-        except TimeoutError:
-            raise TimeoutError(
-                "Waiting task \"{task}\" timeout {timeout} sec "
-                "was exceeded: ".format(task=task["name"], timeout=timeout))
-
+        logger.info('start to wait with timeout {0} '
+                    'interval {1}'.format(timeout, interval))
+        wait(
+            lambda: self.client.get_task(
+                task['id'])['progress'] >= progress,
+            interval=interval,
+            timeout=timeout,
+            timeout_msg='Waiting task {0!r} timeout {1} sec '
+                        'was exceeded'.format(task["name"], timeout))
         return self.client.get_task(task['id'])
 
     # TODO(ddmitriev): this method will be replaced
@@ -1415,12 +1438,8 @@ class FuelWebClient29(object):
 
             node_group, node_roles = self.get_node_group_and_role(node_name,
                                                                   nodes_dict)
-            wait(lambda:
-                 self.get_nailgun_node_by_devops_node(devops_node)['online'],
-                 timeout=60 * 2)
+            self.wait_node_is_online(devops_node, timeout=60 * 2)
             node = self.get_nailgun_node_by_devops_node(devops_node)
-            assert_true(node['online'],
-                        'Node {0} is offline'.format(node['mac']))
 
             if custom_names:
                 name = custom_names.get(node_name,
@@ -1979,33 +1998,14 @@ class FuelWebClient29(object):
                 remote.check_call('/sbin/shutdown -Ph now')
 
         for node in devops_nodes:
-            logger.info('Wait a %s node offline status', node.name)
-            try:
-                wait(
-                    lambda: not self.get_nailgun_node_by_devops_node(node)[
-                        'online'], timeout=60 * 10)
-            except TimeoutError:
-                assert_false(
-                    self.get_nailgun_node_by_devops_node(node)['online'],
-                    'Node {0} has not become '
-                    'offline after warm shutdown'.format(node.name))
+            self.wait_node_is_offline(node)
             node.destroy()
 
     def warm_start_nodes(self, devops_nodes):
         logger.info('Starting nodes %s', [n.name for n in devops_nodes])
         for node in devops_nodes:
             node.create()
-        for node in devops_nodes:
-            try:
-                wait(
-                    lambda: self.get_nailgun_node_by_devops_node(
-                        node)['online'], timeout=60 * 10)
-            except TimeoutError:
-                assert_true(
-                    self.get_nailgun_node_by_devops_node(node)['online'],
-                    'Node {0} has not become online '
-                    'after warm start'.format(node.name))
-            logger.debug('Node {0} became online.'.format(node.name))
+        self.wait_nodes_get_online_state(devops_nodes)
 
     def warm_restart_nodes(self, devops_nodes):
         logger.info('Reboot (warm restart) nodes %s',
@@ -2023,15 +2023,8 @@ class FuelWebClient29(object):
             node.destroy()
         for node in devops_nodes:
             if wait_offline:
-                logger.info('Wait a %s node offline status', node.name)
-                try:
-                    wait(lambda: not self.get_nailgun_node_by_devops_node(
-                         node)['online'], timeout=60 * 10)
-                except TimeoutError:
-                    assert_false(
-                        self.get_nailgun_node_by_devops_node(node)['online'],
-                        'Node {0} has not become offline after '
-                        'cold restart'.format(node.name))
+                self.wait_node_is_offline(node)
+
         if wait_after_destroy:
             time.sleep(wait_after_destroy)
 
@@ -2040,15 +2033,7 @@ class FuelWebClient29(object):
             node.create()
         if wait_online:
             for node in devops_nodes:
-                try:
-                    wait(
-                        lambda: self.get_nailgun_node_by_devops_node(
-                            node)['online'], timeout=60 * 10)
-                except TimeoutError:
-                    assert_true(
-                        self.get_nailgun_node_by_devops_node(node)['online'],
-                        'Node {0} has not become online'
-                        ' after cold start'.format(node.name))
+                self.wait_node_is_online(node)
             self.environment.sync_time()
 
     @logwrap
@@ -2168,18 +2153,7 @@ class FuelWebClient29(object):
     @logwrap
     def wait_nodes_get_online_state(self, nodes, timeout=4 * 60):
         for node in nodes:
-            logger.info('Wait for %s node online status', node.name)
-            try:
-                wait(lambda:
-                     self.get_nailgun_node_by_devops_node(node)['online'],
-                     timeout=timeout)
-            except TimeoutError:
-                assert_true(
-                    self.get_nailgun_node_by_devops_node(node)['online'],
-                    'Node {0} has not become online'.format(node.name))
-            node = self.get_nailgun_node_by_devops_node(node)
-            assert_true(node['online'],
-                        'Node {0} is online'.format(node['mac']))
+            self.wait_node_is_online(node, timeout=timeout)
 
     @logwrap
     def wait_mysql_galera_is_up(self, node_names, timeout=60 * 4):
@@ -2214,14 +2188,10 @@ class FuelWebClient29(object):
         logger.info("Waiting for all Cinder services up.")
         for node_name in node_names:
             node = self.get_nailgun_node_by_name(node_name)
-            try:
-                wait(lambda: checkers.check_cinder_status(node['ip']),
-                     timeout=300)
-                logger.info("All Cinder services up.")
-            except TimeoutError:
-                logger.error("Cinder services not ready.")
-                raise TimeoutError(
-                    "Cinder services not ready. ")
+            wait(lambda: checkers.check_cinder_status(node['ip']),
+                 timeout=300,
+                 timeout_msg='Cinder services not ready')
+            logger.info("All Cinder services up.")
         return True
 
     def run_ostf_repeatably(self, cluster_id, test_name=None,
@@ -2315,7 +2285,8 @@ class FuelWebClient29(object):
                                      "on node %s", fqdn)
                         ceph.restart_monitor(remote_to_mon)
 
-                wait(lambda: not ceph.is_clock_skew(remote), timeout=120)
+                wait(lambda: not ceph.is_clock_skew(remote), timeout=120,
+                     timeout_msg='check ceph time skew timeout')
 
     @logwrap
     def check_ceph_status(self, cluster_id, offline_nodes=(),
@@ -2329,14 +2300,11 @@ class FuelWebClient29(object):
         for node in online_ceph_nodes:
             with self.environment.d_env\
                     .get_ssh_to_remote(node['ip']) as remote:
-                try:
-                    wait(lambda: ceph.check_service_ready(remote) is True,
-                         interval=20, timeout=600)
-                except TimeoutError:
-                    error_msg = 'Ceph service is not properly started' \
-                                ' on {0}'.format(node['name'])
-                    logger.error(error_msg)
-                    raise TimeoutError(error_msg)
+
+                wait(lambda: ceph.check_service_ready(remote) is True,
+                     interval=20, timeout=600,
+                     timeout_msg='Ceph service is not properly started'
+                                 ' on {0}'.format(node['name']))
 
         logger.info('Ceph service is ready. Checking Ceph Health...')
         self.check_ceph_time_skew(cluster_id, offline_nodes)
@@ -2753,7 +2721,8 @@ class FuelWebClient29(object):
         for osd_id in ids:
             remote_ceph.execute("ceph osd out {}".format(osd_id))
         wait(lambda: ceph.is_health_ok(remote_ceph),
-             interval=30, timeout=10 * 60)
+             interval=30, timeout=10 * 60,
+             timeout_msg='ceph helth ok timeout')
         for osd_id in ids:
             if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
                 remote_ceph.execute("stop ceph-osd id={}".format(osd_id))

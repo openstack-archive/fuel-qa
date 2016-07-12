@@ -256,7 +256,8 @@ def enable_feature_group(env, group):
         except (HTTPError, URLError):
             return False
 
-    wait(check_api_group_enabled, interval=10, timeout=60 * 20)
+    wait(check_api_group_enabled, interval=10, timeout=60 * 20,
+         timeout_msg='Failed to enable feature group - {!r}'.format(group))
 
 
 def find_backup(ip):
@@ -331,13 +332,13 @@ def check_mysql(ip, node_name):
                         " information_schema.GLOBAL_STATUS"
                         " WHERE VARIABLE_NAME"
                         " = 'wsrep_local_state_comment';\"")
-    try:
-        wait(lambda: ssh_manager.execute(ip, check_cmd)['exit_code'] == 0,
-             timeout=10 * 60)
-        logger.info('MySQL daemon is started on {0}'.format(node_name))
-    except TimeoutError:
-        logger.error('MySQL daemon is down on {0}'.format(node_name))
-        raise
+
+    wait(lambda: ssh_manager.execute(ip, check_cmd)['exit_code'] == 0,
+         timeout=10 * 60,
+         timeout_msg='MySQL daemon is down on {0}'.format(node_name))
+    logger.info('MySQL daemon is started on {0}'.format(node_name))
+
+    # TODO(astudenov): add timeout_msg
     _wait(
         lambda: assert_equal(
             ssh_manager.execute(
@@ -348,7 +349,9 @@ def check_mysql(ip, node_name):
         timeout=120)
     try:
         wait(lambda: ''.join(ssh_manager.execute(
-            ip, check_galera_cmd)['stdout']).rstrip() == 'Synced', timeout=600)
+            ip, check_galera_cmd)['stdout']).rstrip() == 'Synced', timeout=600,
+            timeout_msg='galera status != "Synced" on node {!r} with ip {}'
+                        ''.format(node_name, ip))
     except TimeoutError:
         logger.error('galera status is {0}'.format(''.join(ssh_manager.execute(
             ip, check_galera_cmd)['stdout']).rstrip()))
