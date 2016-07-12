@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
 import re
 import subprocess
 import time
@@ -313,7 +314,7 @@ class EnvironmentModel(object):
         if not skip_timesync:
             self.sync_time()
         try:
-            with QuietLogger():
+            with QuietLogger(upper_log_level=logging.CRITICAL):
                 _wait(
                     self.fuel_web.client.get_releases,
                     expected=(
