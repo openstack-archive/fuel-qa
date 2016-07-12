@@ -1870,9 +1870,7 @@ class FuelWebClient29(object):
                 for devops_network in self.environment.d_env.get_networks():
                     if str(devops_network.ip_network) == net['cidr']:
                         net['gateway'] = \
-                            self.environment.d_env.nodes().\
-                            admin.get_ip_address_by_network_name(
-                                devops_network.name)
+                            self.environment.get_admin_node_ip()
                         logger.info('Set master node ({0}) as '
                                     'router for admin network '
                                     'in nodegroup {1}.'.format(

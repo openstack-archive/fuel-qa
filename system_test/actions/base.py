@@ -152,8 +152,7 @@ class PrepareActions(object):
             name=self.env.d_env.admin_net)
         admin_network = admin_net_object.ip.network
         admin_netmask = admin_net_object.ip.netmask
-        admin_ip = str(self.env.d_env.nodes(
-        ).admin.get_ip_address_by_network_name(self.env.d_env.admin_net))
+        admin_ip = self.env.get_admin_node_ip()
         interface_name = settings.iface_alias("eth0")
         gateway = self.env.d_env.router()
         dns = settings.DNS

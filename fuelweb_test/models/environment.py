@@ -143,6 +143,11 @@ class EnvironmentModel(object):
 
     @logwrap
     def get_admin_node_ip(self):
+        default_node_group = self.d_env.get_group(name='default')
+        admin_pool = default_node_group.get_network_pool(name='fuelweb_admin')
+        fm_static_ip = admin_pool.address_pool.get_ip('fm_static_ip')
+        if fm_static_ip:
+            return str(fm_static_ip)
         return str(
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name(
@@ -158,8 +163,7 @@ class EnvironmentModel(object):
         params = {
             'device_label': settings.ISO_LABEL,
             'iface': iface_alias('eth0'),
-            'ip': node.get_ip_address_by_network_name(
-                self.d_env.admin_net),
+            'ip': self.get_admin_node_ip(),
             'mask': self.d_env.get_network(
                 name=self.d_env.admin_net).ip.netmask,
             'gw': self.d_env.router(),
@@ -465,10 +469,8 @@ class EnvironmentModel(object):
     def wait_for_provisioning(self,
                               timeout=settings.WAIT_FOR_PROVISIONING_TIMEOUT):
         # TODO(astudenov): add timeout_msg
-        _wait(lambda: _tcp_ping(
-            self.d_env.nodes(
-            ).admin.get_ip_address_by_network_name
-            (self.d_env.admin_net), 22), timeout=timeout)
+        _wait(lambda: _tcp_ping(self.get_admin_node_ip(), 22),
+              timeout=timeout)
 
     @logwrap
     def wait_for_fuelmenu(self,
@@ -477,10 +479,7 @@ class EnvironmentModel(object):
         def check_ssh_connection():
             """Try to close fuelmenu and check ssh connection"""
             try:
-                _tcp_ping(
-                    self.d_env.nodes(
-                    ).admin.get_ip_address_by_network_name
-                    (self.d_env.admin_net), 22)
+                _tcp_ping(self.get_admin_node_ip(), 22)
             except Exception:
                 #  send F8 trying to exit fuelmenu
                 self.d_env.nodes().admin.send_keys("<F8>\n")
@@ -739,8 +738,7 @@ class EnvironmentModel(object):
         admin_net_object = self.d_env.get_network(name=network_name)
         admin_network = admin_net_object.ip.network
         admin_netmask = admin_net_object.ip.netmask
-        admin_ip = str(self.d_env.nodes(
-        ).admin.get_ip_address_by_network_name(network_name))
+        admin_ip = self.get_admin_node_ip()
         logger.info(('Parameters for admin interface configuration: '
                      'Network - {0}, Netmask - {1}, Interface - {2}, '
                      'IP Address - {3}').format(admin_network,
