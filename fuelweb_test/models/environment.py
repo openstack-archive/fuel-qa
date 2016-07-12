@@ -142,6 +142,11 @@ class EnvironmentModel(object):
 
     @logwrap
     def get_admin_node_ip(self):
+        default_node_group = self.fuel_web.get_default_node_group()
+        admin_pool = default_node_group.get_network_pool(name='admin')
+        fm_static_ip = admin_pool.get_ip('fm_static_ip')
+        if fm_static_ip:
+            return str(fm_static_ip)
         return str(
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name(
@@ -465,10 +470,8 @@ class EnvironmentModel(object):
     @logwrap
     def wait_for_provisioning(self,
                               timeout=settings.WAIT_FOR_PROVISIONING_TIMEOUT):
-        _wait(lambda: _tcp_ping(
-            self.d_env.nodes(
-            ).admin.get_ip_address_by_network_name
-            (self.d_env.admin_net), 22), timeout=timeout)
+        _wait(lambda: _tcp_ping(self.get_admin_node_ip(), 22),
+              timeout=timeout)
 
     @logwrap
     def wait_for_fuelmenu(self,
@@ -477,10 +480,7 @@ class EnvironmentModel(object):
         def check_ssh_connection():
             """Try to close fuelmenu and check ssh connection"""
             try:
-                _tcp_ping(
-                    self.d_env.nodes(
-                    ).admin.get_ip_address_by_network_name
-                    (self.d_env.admin_net), 22)
+                _tcp_ping(self.get_admin_node_ip(), 22)
             except Exception:
                 #  send F8 trying to exit fuelmenu
                 self.d_env.nodes().admin.send_keys("<F8>\n")
