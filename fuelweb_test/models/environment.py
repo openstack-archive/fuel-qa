@@ -310,7 +310,9 @@ class EnvironmentModel(object):
             with QuietLogger():
                 # TODO(astudenov): add timeout_msg
                 _wait(
-                    self.fuel_web.client.get_releases,
+                    self.fuel_web.client.session.get(
+                        url="/releases/",
+                        endpoint_filter={'service_type': 'fuel'}),
                     expected=(
                         exceptions.RetriableConnectionFailure,
                         exceptions.UnknownConnectionError),
