@@ -1742,7 +1742,10 @@ class FuelWebClient(object):
                         devops_env.get_networks(name='ironic'):
                     ironic_net = self.environment.d_env.get_network(
                         name='ironic').ip
-                    subnet1, subnet2 = ironic_net.subnet()
+                    prefix = netaddr.IPNetwork(
+                        str(ironic_net['cidr'])
+                    ).prefixlen
+                    subnet1, subnet2 = ironic_net.subnet(prefix)
                     networks['baremetal']['cidr'] = str(ironic_net)
                     net_settings[net_provider]['config'][
                         'baremetal_gateway'] = str(ironic_net[-2])
