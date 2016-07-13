@@ -1,0 +1,8 @@
+---
+upgrade_data:
+  source_snapshot_name: !os_env UPGRADE_SOURCE_SNAPSHOT_NAME
+  backup_snapshot_name: !os_env UPGRADE_BACKUP_SNAPSHOT_NAME
+  restore_snapshot_name: !os_env UPGRADE_RESULT_SNAPSHOT_NAME
+  tarball_remote_dir: !os_env TARBALL_REMOTE_DIR, /var
+  backup_name: !os_env UPGRADE_BACKUP_FILE_NAME, None
+  repos_backup_name: !os_env UPGRADE_BACKUP_REPO_FILE_NAME, None
