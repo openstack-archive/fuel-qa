@@ -12,13 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import paramiko
-from proboscis import asserts
 import random
 import time
 
 from devops.error import TimeoutError
 from devops.helpers import helpers
+import paramiko
+from proboscis import asserts
+
 from fuelweb_test.helpers import common
 from fuelweb_test import logger
 
@@ -116,7 +117,7 @@ class OpenStackActions(common.Common):
                 " is {0}".format(self.get_instance_detail(srv).status))
 
     def create_server_for_migration(self, neutron=True, scenario='',
-                                    timeout=100, file=None, key_name=None,
+                                    timeout=100, filename=None, key_name=None,
                                     label=None, flavor=1, **kwargs):
         name = "test-serv" + str(random.randint(1, 0x7fffffff))
         security_group = {}
@@ -125,12 +126,12 @@ class OpenStackActions(common.Common):
                 with open(scenario, "r+") as f:
                     scenario = f.read()
         except Exception as exc:
-            logger.info("Error opening file: %s" % exc)
+            logger.info("Error opening file: {:s}".format(exc))
             raise Exception()
         image_id = self._get_cirros_image().id
-        security_group[self.keystone.tenant_id] =\
+        security_group[self.keystone_access.tenant_id] =\
             self.create_sec_group_for_ssh()
-        security_group = [security_group[self.keystone.tenant_id].name]
+        security_groups = [security_group[self.keystone_access.tenant_id].name]
 
         if neutron:
             net_label = label if label else 'net04'
@@ -138,15 +139,15 @@ class OpenStackActions(common.Common):
                        if net.label == net_label]
 
             kwargs.update({'nics': [{'net-id': network[0]}],
-                           'security_groups': security_group})
+                           'security_groups': security_groups})
         else:
-            kwargs.update({'security_groups': security_group})
+            kwargs.update({'security_groups': security_groups})
 
         srv = self.nova.servers.create(name=name,
                                        image=image_id,
                                        flavor=flavor,
                                        userdata=scenario,
-                                       files=file,
+                                       files=filename,
                                        key_name=key_name,
                                        **kwargs)
         try:
@@ -195,9 +196,8 @@ class OpenStackActions(common.Common):
             flip = self.neutron.create_floatingip(body)
             #   Wait active state for port
             port_id = flip['floatingip']['port_id']
-            helpers.wait(
-                lambda:
-                self.neutron.show_port(port_id)['port']['status'] == "ACTIVE")
+            helpers.wait(lambda: self.neutron.show_port(
+                port_id)['port']['status'] == "ACTIVE")
             return flip['floatingip']
 
         fl_ips_pool = self.nova.floating_ip_pools.list()
@@ -275,8 +275,9 @@ class OpenStackActions(common.Common):
         server = self.get_instance_detail(server.id)
         return server
 
-    def create_volume(self, size=1, image_id=None):
-        volume = self.cinder.volumes.create(size=size, imageRef=image_id)
+    def create_volume(self, size=1, image_id=None, **kwargs):
+        volume = self.cinder.volumes.create(size=size, imageRef=image_id,
+                                            **kwargs)
         helpers.wait(
             lambda: self.cinder.volumes.get(volume.id).status == "available",
             timeout=100)
@@ -308,18 +309,19 @@ class OpenStackActions(common.Common):
 
     def get_hosts_for_migr(self, srv_host_name):
         # Determine which host is available for live migration
-        host_list = filter(lambda host: host.host_name != srv_host_name,
-                           self.nova.hosts.list())
-        return filter(lambda host: host._info['service'] == 'compute',
-                      host_list)
+        return [
+            host for host in self.nova.hosts.list()
+            if host.host_name != srv_host_name and
+            host._info['service'] == 'compute']
 
     def get_md5sum(self, file_path, controller_ssh, vm_ip, creds=()):
         logger.info("Get file md5sum and compare it with previous one")
         out = self.execute_through_host(
-            controller_ssh, vm_ip, "md5sum %s" % file_path, creds)
+            controller_ssh, vm_ip, "md5sum {:s}".format(file_path), creds)
         return out['stdout']
 
-    def execute_through_host(self, ssh, vm_host, cmd, creds=()):
+    @staticmethod
+    def execute_through_host(ssh, vm_host, cmd, creds=()):
         logger.debug("Making intermediate transport")
         intermediate_transport = ssh._ssh.get_transport()
 
@@ -547,16 +549,17 @@ class OpenStackActions(common.Common):
     def get_vip(self, vip):
         return self.neutron.show_vip(vip)
 
-    def get_nova_instance_ip(self, srv, net_name='novanetwork', type='fixed'):
+    @staticmethod
+    def get_nova_instance_ip(srv, net_name='novanetwork', addrtype='fixed'):
         for network_label, address_list in srv.addresses.items():
             if network_label != net_name:
                 continue
             for addr in address_list:
-                if addr['OS-EXT-IPS:type'] == type:
+                if addr['OS-EXT-IPS:type'] == addrtype:
                     return addr['addr']
         raise Exception("Instance {0} doesn't have {1} address for network "
                         "{2}, available addresses: {3}".format(srv.id,
-                                                               type,
+                                                               addrtype,
                                                                net_name,
                                                                srv.addresses))
 
