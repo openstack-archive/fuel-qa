@@ -5,15 +5,16 @@ proboscis==1.2.6.0
 ipaddr
 junitxml>=0.7.0
 netaddr
-python-glanceclient==0.17.1
-python-keystoneclient>=1.2.0,<1.4.0
-python-novaclient>=2.22.0,<2.24.0
-python-cinderclient>=1.1.0,<1.2.0
-python-neutronclient>=2.4.0,<2.5.0
+python-glanceclient==0.19.0
+python-keystoneclient>=1.6.0
+python-novaclient>=2.26.0
+python-cinderclient>=1.2.2
+python-neutronclient>=2.6.0
+python-heatclient>=0.6.0
 six>=1.9.0
 Jinja2>=2.6  # BSD License (3 clause)
 AllPairs==2.0.1
 launchpadlib
 beautifulsoup4>=4.2.0
-requests>=2.2.0,!=2.4.0,<2.8.0
+requests>=2.7.0
 joblib>=0.8.4
