@@ -309,15 +309,24 @@ class EnvironmentModel(object):
             with QuietLogger():
                 # TODO(astudenov): add timeout_msg
                 _wait(
-                    self.fuel_web.client.get_releases,
+                    self.fuel_web.client.session.get(
+                        url="/releases/",
+                        endpoint_filter={'service_type': 'fuel'}),
                     expected=(
                         exceptions.RetriableConnectionFailure,
+                        exceptions.ConnectFailure,
                         exceptions.UnknownConnectionError),
                     timeout=300)
         except exceptions.Unauthorized:
             self.set_admin_keystone_password()
             self.fuel_web.get_nailgun_version()
-        except BaseException:
+        except BaseException as e:
+            raise ValueError(
+                e,
+                type(e),
+                e.__class__.__name__,
+                e.__class__.__module__,
+                isinstance(e, exceptions.RetriableConnectionFailure))
             logger.exception(
                 'Unexpected exception while tried to get releases')
         if not skip_slaves_check:
