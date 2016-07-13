@@ -338,6 +338,7 @@ FUEL_SETTINGS_YAML = os.environ.get('FUEL_SETTINGS_YAML',
                                     '/etc/fuel/astute.yaml')
 # TarBall data for updates and upgrades
 
+UPGRADE_TEST_TEMPLATE = os.environ.get("UPGRADE_TEST_TEMPLATE")
 TARBALL_PATH = os.environ.get('TARBALL_PATH')
 
 UPGRADE_FUEL_FROM = os.environ.get('UPGRADE_FUEL_FROM', '6.1')
