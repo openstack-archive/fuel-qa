@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import re
 import yaml
 
 from proboscis.asserts import assert_true
@@ -161,6 +162,8 @@ class TaskEnsurability(LCMTestBasic):
         self.fuel_web.client.update_cluster_attributes(
             cluster_id, {'editable': cluster_f})
 
+        ip_pattern = re.compile(r"(?:\d{1,3}\.){3}\d{1,3}:\d{1,4}/\d")
+
         result = {}
         ensurable = True
         primary_ctrl_id = self.define_pr_ctrl()['id']
@@ -191,21 +194,25 @@ class TaskEnsurability(LCMTestBasic):
                     continue
 
                 task_resources = []
+                skip = task_data.get('skip')
                 for res_name, res_stats in report['resource_statuses'].items():
-                    if res_stats['changed']:
+                    if res_stats['changed'] and res_name not in skip:
                         logger.info("Task {} changed resource: "
                                     "{}".format(task_name, res_name))
                         task_resources.append(res_name)
 
-                expected_resources = task_data["resources"]
-                if sorted(task_resources) != sorted(expected_resources):
+                expected_resources = [ip_pattern.sub("addr", r)
+                                      for r in task_data["resources"]]
+                actual_resources = [ip_pattern.sub("addr", r)
+                                    for r in task_resources]
+                if sorted(actual_resources) != sorted(expected_resources):
                     ensurable = False
                     logger.info("Task {} was executed on node {} and is not "
                                 "ensurable".format(task_name, node['id']))
                     nonensurable_tasks.update({
                         task_name: {
                             "actual": task_resources,
-                            "expected": expected_resources
+                            "expected": task_data["resources"]
                         }
                     })
                 else:
