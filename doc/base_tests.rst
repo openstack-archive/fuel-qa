@@ -315,9 +315,19 @@ Test Upgrade Chains
 .. automodule:: fuelweb_test.tests.tests_upgrade.test_upgrade_chains
    :members:
 
+Test Data-Driven Upgrade Base
+-----------------------------
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_base
+   :members:
+
 Test Data-Driven Upgrade
 ------------------------
 .. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade
+   :members:
+
+Upgrade Master tool
+-------------------
+.. automodule:: fuelweb_test.tests.tests_upgrade.upgrader_tool
    :members:
 
 OS upgrade tests
