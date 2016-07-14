@@ -609,9 +609,16 @@ def main():
     milestone, iso_number, prefix = get_version(runner_build.build_data)
     milestone = project.get_milestone_by_name(name=milestone)
 
-    test_plan_name = ' '.join(
-        filter(lambda x: bool(x),
-               (milestone['name'], prefix, 'iso', '#' + str(iso_number))))
+    # NOTE(akostrikov) LP #1603088 When there is a snapshot word in prefix,
+    # we can skip timestamp part of a test plan name.
+    if 'snapshot' not in prefix:
+        test_plan_name = ' '.join(
+            filter(lambda x: bool(x),
+                   (milestone['name'], prefix, 'iso', '#' + str(iso_number))))
+    else:
+        test_plan_name = ' '.join(
+            filter(lambda x: bool(x),
+                   (milestone['name'], prefix)))
 
     test_plan = project.get_plan_by_name(test_plan_name)
 
