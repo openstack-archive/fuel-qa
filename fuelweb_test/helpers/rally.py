@@ -297,7 +297,8 @@ class RallyTask(object):
         cmd = ("awk 'BEGIN{{retval=1}};/^Using task:/{{print $NF; retval=0}};"
                "END {{exit retval}}' {0}").format(temp_file)
         wait(lambda: self.engine.run_container_command(cmd)['exit_code'] == 0,
-             timeout=30)
+             timeout=30, timeout_msg='Rally task {!r} creation timeout'
+                                     ''.format(result))
         result = self.engine.run_container_command(cmd)
         task_uuid = ''.join(result['stdout']).strip()
         assert_true(task_uuid in self.engine.list_tasks(),
@@ -421,6 +422,6 @@ class RallyBenchmarkTest(object):
                      '{0}'.format(self.current_task.status))
         if result:
             wait(lambda: self.current_task.status == 'finished',
-                 timeout=timeout)
+                 timeout=timeout, timeout_msg='Rally benchmark test timeout')
             logger.info('Rally benchmark test is finished.')
             return RallyResult(json_results=self.current_task.get_results())
