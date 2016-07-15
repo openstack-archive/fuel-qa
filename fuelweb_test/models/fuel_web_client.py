@@ -1977,7 +1977,7 @@ class FuelWebClient(object):
 
         return ip_ranges, expected_ips
 
-    def warm_shutdown_nodes(self, devops_nodes):
+    def warm_shutdown_nodes(self, devops_nodes, timeout=4 * 60):
         logger.info('Shutting down (warm) nodes %s',
                     [n.name for n in devops_nodes])
         for node in devops_nodes:
@@ -1986,24 +1986,24 @@ class FuelWebClient(object):
                 remote.check_call('/sbin/shutdown -Ph now')
 
         for node in devops_nodes:
-            self.wait_node_is_offline(node)
+            self.wait_node_is_offline(node, timeout=timeout)
             node.destroy()
 
-    def warm_start_nodes(self, devops_nodes):
+    def warm_start_nodes(self, devops_nodes, timeout=4 * 60):
         logger.info('Starting nodes %s', [n.name for n in devops_nodes])
         for node in devops_nodes:
-            node.create()
-        self.wait_nodes_get_online_state(devops_nodes)
+            node.start()
+        self.wait_nodes_get_online_state(devops_nodes, timeout=timeout)
 
-    def warm_restart_nodes(self, devops_nodes):
+    def warm_restart_nodes(self, devops_nodes, timeout=4 * 60):
         logger.info('Reboot (warm restart) nodes %s',
                     [n.name for n in devops_nodes])
-        self.warm_shutdown_nodes(devops_nodes)
-        self.warm_start_nodes(devops_nodes)
+        self.warm_shutdown_nodes(devops_nodes, timeout=timeout)
+        self.warm_start_nodes(devops_nodes, timeout=timeout)
 
     def cold_restart_nodes(self, devops_nodes,
                            wait_offline=True, wait_online=True,
-                           wait_after_destroy=None):
+                           wait_after_destroy=None, timeout=4 * 60):
         logger.info('Cold restart nodes %s',
                     [n.name for n in devops_nodes])
         for node in devops_nodes:
@@ -2011,17 +2011,17 @@ class FuelWebClient(object):
             node.destroy()
         for node in devops_nodes:
             if wait_offline:
-                self.wait_node_is_offline(node)
+                self.wait_node_is_offline(node, timeout=timeout)
 
         if wait_after_destroy:
             time.sleep(wait_after_destroy)
 
         for node in devops_nodes:
             logger.info('Start %s node', node.name)
-            node.create()
+            node.start()
         if wait_online:
             for node in devops_nodes:
-                self.wait_node_is_online(node)
+                self.wait_node_is_online(node, timeout=timeout)
             self.environment.sync_time()
 
     @logwrap
