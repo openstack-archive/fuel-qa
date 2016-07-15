@@ -2004,7 +2004,7 @@ class FuelWebClient29(object):
     def warm_start_nodes(self, devops_nodes):
         logger.info('Starting nodes %s', [n.name for n in devops_nodes])
         for node in devops_nodes:
-            node.create()
+            node.start()
         self.wait_nodes_get_online_state(devops_nodes)
 
     def warm_restart_nodes(self, devops_nodes):
