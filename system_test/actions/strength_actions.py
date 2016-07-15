@@ -62,7 +62,8 @@ class StrengthActions(object):
             n_nodes = [node['online'] for node in n_nodes]
             return n_nodes.count(False) == 0
 
-        wait(wait_offline_nodes, timeout=60 * 5)
+        wait(wait_offline_nodes, timeout=60 * 5,
+             timeout_msg='Nodes failed to become offline')
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
@@ -282,25 +283,26 @@ class FillRootActions(object):
                     'resources_running'] == '0'
 
             wait(checking_health_disk_attribute,
-                 "Attribute #health_disk wasn't appeared "
-                 "in attributes on node {} in {} seconds".format(
-                     self.primary_controller_fqdn,
-                     self.pcs_check_timeout),
-                 timeout=self.pcs_check_timeout)
+                 timeout=self.pcs_check_timeout,
+                 timeout_msg="Attribute #health_disk wasn't appeared "
+                             "in attributes on node {} in {} seconds".format(
+                                 self.primary_controller_fqdn,
+                                 self.pcs_check_timeout))
 
             wait(checking_for_red_in_health_disk_attribute,
-                 "Attribute #health_disk doesn't have 'red' value "
-                 "on node {} in {} seconds".format(
-                     self.primary_controller_fqdn,
-                     self.pcs_check_timeout),
-                 timeout=self.pcs_check_timeout)
+                 timeout=self.pcs_check_timeout,
+                 timeout_msg="Attribute #health_disk doesn't have 'red' value "
+                             "on node {} in {} seconds".format(
+                                 self.primary_controller_fqdn,
+                                 self.pcs_check_timeout))
 
             wait(check_stopping_resources,
-                 "Attribute 'running_resources' doesn't have '0' value "
-                 "on node {} in {} seconds".format(
-                     self.primary_controller_fqdn,
-                     self.pcs_check_timeout),
-                 timeout=self.pcs_check_timeout)
+                 timeout=self.pcs_check_timeout,
+                 timeout_msg="Attribute 'running_resources' "
+                             "doesn't have '0' value "
+                             "on node {} in {} seconds".format(
+                                 self.primary_controller_fqdn,
+                                 self.pcs_check_timeout))
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
@@ -361,16 +363,17 @@ class FillRootActions(object):
                     'resources_running'] == self.slave_node_running_resources
 
             wait(checking_health_disk_attribute_is_not_present,
-                 "Attribute #health_disk was appeared in attributes "
-                 "on node {} in {} seconds".format(
-                     self.primary_controller_fqdn,
-                     self.pcs_check_timeout),
-                 timeout=self.pcs_check_timeout)
+                 timeout=self.pcs_check_timeout,
+                 timeout_msg="Attribute #health_disk was appeared "
+                             "in attributes on node {} in {} seconds".format(
+                                 self.primary_controller_fqdn,
+                                 self.pcs_check_timeout))
 
             wait(check_started_resources,
-                 "Attribute 'running_resources' doesn't have {} value "
-                 "on node {} in {} seconds".format(
-                     self.slave_node_running_resources,
-                     self.primary_controller_fqdn,
-                     self.pcs_check_timeout),
-                 self.pcs_check_timeout)
+                 timeout=self.pcs_check_timeout,
+                 timeout_msg="Attribute 'running_resources' "
+                             "doesn't have {} value "
+                             "on node {} in {} seconds".format(
+                                 self.slave_node_running_resources,
+                                 self.primary_controller_fqdn,
+                                 self.pcs_check_timeout))

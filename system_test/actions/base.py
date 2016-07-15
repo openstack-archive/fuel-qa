@@ -172,7 +172,8 @@ class PrepareActions(object):
                 device='cdrom').volume.upload(cloud_image_settings_path)
             self.env.d_env.start([admin])
             logger.info("Waiting for Centos node to start up")
-            wait(lambda: admin.driver.node_active(admin), 60)
+            wait(lambda: admin.driver.node_active(admin), 60,
+                 timeout_msg='Centos node failed to start')
             logger.info("Waiting for Centos node ssh ready")
             self.env.wait_for_provisioning()
 
