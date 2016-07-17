@@ -12,5 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+# pylint: disable=line-too-long
+
 from fuelweb_test.tests.tests_upgrade import test_data_driven_upgrade  # noqa
+from fuelweb_test.tests.tests_upgrade import test_data_driven_upgrade_net_tmpl  # noqa
 from fuelweb_test.tests.tests_upgrade import upgrader_tool  # noqa
