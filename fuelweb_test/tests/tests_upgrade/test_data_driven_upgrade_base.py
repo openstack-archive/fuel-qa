@@ -43,7 +43,8 @@ class DataDrivenUpgradeBase(TestBasic):
         self.tarball_remote_dir = None
         self.backup_name = None
         self.repos_backup_name = None
-
+        if hasattr(self.env, "reinstall_master_node"):
+            self.reinstall_master_node = self.env.reinstall_master_node
         self.__admin_remote = None
 
     @property
