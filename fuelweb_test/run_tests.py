@@ -60,6 +60,7 @@ def import_tests():
     from tests.tests_separate_services import test_separate_multiroles  # noqa
     from tests.tests_separate_services import test_separate_rabbitmq  # noqa
     from tests.tests_upgrade.upgrader_tool import UpgradeCustom  # noqa
+    from tests.tests_upgrade.test_data_driven_upgrade_net_tmpl import TestUpgradeNetworkTemplates  # noqa
     from tests import test_clone_env  # noqa
     from tests import test_node_reassignment  # noqa
     from tests import test_os_upgrade  # noqa
