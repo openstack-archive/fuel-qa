@@ -160,7 +160,7 @@ def reg_factory(cases, configs):
 
 
 def split_group_config(group):
-    m = re.search('([\w\.]*)\((\w*)\)', group)
+    m = re.search('([\w\.]*)\(([\w\-\_]*)\)', group)
     if m:
         return m.groups()
 
