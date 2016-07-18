@@ -343,7 +343,7 @@ Test Services reconfiguration
   :members:
 
 Test Support HugePages
------------------------------
+----------------------
 .. automodule:: fuelweb_test.tests.test_support_hugepages
   :members:
 
@@ -575,7 +575,7 @@ Nessus scan tests
    :members:
 
 Lynis audit tests
-------------------
+-----------------
 .. automodule:: fuelweb_test.tests.tests_security.test_lynis_audit
    :members:
 
@@ -670,7 +670,10 @@ OS upgrade tests
 
 Test OpenStack Upgrades
 -----------------------
-.. automodule:: fuelweb_test.tests.test_os_upgrade
+.. automodule:: fuelweb_test.tests.tests_upgrade.upgrade_base
+   :members:
+
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_os_upgrade
    :members:
 
 Tests for separated services

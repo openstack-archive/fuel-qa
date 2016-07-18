@@ -71,6 +71,10 @@ class TestBasic(object):
         self.__current_log_step = new_val
 
     @property
+    def next_step(self):
+        return self.current_log_step + 1
+
+    @property
     def test_program(self):
         if self.__test_program is None:
             self.__test_program = TestProgram()
