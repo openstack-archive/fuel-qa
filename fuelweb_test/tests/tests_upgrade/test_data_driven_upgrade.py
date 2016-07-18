@@ -1078,7 +1078,7 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
 
         self.show_step(2)
         cluster_id = self.fuel_web.get_last_created_cluster()
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[5:6])
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[8:9])
         self.fuel_web.update_nodes(cluster_id, {'slave-09': ['ceph-osd']})
         self.show_step(3)
         self.fuel_web.verify_network(cluster_id)
