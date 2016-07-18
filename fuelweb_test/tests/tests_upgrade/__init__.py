@@ -17,3 +17,4 @@
 from fuelweb_test.tests.tests_upgrade import test_data_driven_upgrade  # noqa
 from fuelweb_test.tests.tests_upgrade import test_data_driven_upgrade_net_tmpl  # noqa
 from fuelweb_test.tests.tests_upgrade import upgrader_tool  # noqa
+from fuelweb_test.tests.tests_upgrade import test_os_upgrade  # noqa
