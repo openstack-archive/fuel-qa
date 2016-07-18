@@ -120,8 +120,12 @@ class EnvironmentModel(object):
 
         with TimeStat("wait_for_nodes_to_start_and_register_in_nailgun"):
             wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout,
-                 timeout_msg='Bootstrap timeout for nodes: {}'
-                             ''.format([node.name for node in devops_nodes]))
+                 timeout_msg='Bootstrap timeout for nodes: {}'.format(
+                     set([node.name for node in devops_nodes]) -
+                     set([node.name for node in devops_nodes if
+                          self.nailgun_nodes([node])])
+                 )
+                 )
 
         if not skip_timesync:
             self.sync_time()
