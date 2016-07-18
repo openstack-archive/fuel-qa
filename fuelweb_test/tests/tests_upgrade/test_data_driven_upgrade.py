@@ -408,7 +408,7 @@ class UpgradeNoCluster(DataDrivenUpgradeBase):
         self.show_step(6)
         self.fuel_web.change_default_network_settings()
         self.fuel_web.client.get_releases()
-        # TODO(vkhlyunev): add aditional checks for validation of restored node
+        # TODO(vkhlyunev): add additional checks for validation of node
         self.env.make_snapshot(self.snapshot_name, is_make=True)
         self.cleanup()
 
