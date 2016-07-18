@@ -12,10 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-import re
 import sys
 
+import os
+import re
 from nose.plugins import Plugin
 from paramiko.transport import _join_lingering_threads
 from proboscis import register
@@ -70,112 +70,9 @@ class CloseSSHConnectionsPlugin(Plugin):
 
 
 def import_tests():
-    from tests import test_admin_node  # noqa
-    from tests import test_backup_restore  # noqa
-    from tests import test_ceph  # noqa
-    from tests import test_environment_action  # noqa
-    from tests import test_ironic_base  # noqa
-    from tests import test_neutron  # noqa
-    from tests import test_neutron_public  # noqa
-    from tests import test_neutron_tun  # noqa
-    from tests import test_neutron_ipv6  # noqa
-    from tests import test_pullrequest  # noqa
-    from tests import test_services  # noqa
-    from tests import test_ha_one_controller  # noqa
-    from tests import test_vcenter  # noqa
-    from tests import test_reduced_footprint  # noqa
-    from tests.tests_cli import test_cli_role  # noqa
-    from tests.tests_cli import test_cli_deploy  # noqa
-    from tests.tests_cli import test_cli_deploy_ceph  # noqa
-    from tests.tests_deployments.tests_neutron_vlan import test_ha_vlan_group_1  # noqa
-    from tests.tests_deployments.tests_neutron_vlan import test_ha_vlan_group_2  # noqa
-    from tests.tests_deployments.tests_neutron_vlan import test_ha_vlan_group_3  # noqa
-    from tests.tests_deployments.tests_neutron_vlan import test_ha_vlan_group_4  # noqa
-    from tests.tests_deployments.tests_neutron_vlan import test_ha_vlan_group_5  # noqa
-    from tests.tests_deployments.tests_neutron_vlan import test_ha_vlan_group_6  # noqa
-    from tests.tests_deployments.tests_neutron_vlan import test_ha_vlan_group_7  # noqa
-    from tests.tests_deployments.tests_neutron_tun import test_ha_tun_group_1  # noqa
-    from tests.tests_deployments.tests_neutron_tun import test_ha_tun_group_2  # noqa
-    from tests.tests_deployments.tests_neutron_tun import test_ha_tun_group_3  # noqa
-    from tests.tests_multirole import test_multirole_group_1  # noqa
-    from tests.tests_scale import test_scale_group_1  # noqa
-    from tests.tests_scale import test_scale_group_2  # noqa
-    from tests.tests_scale import test_scale_group_3  # noqa
-    from tests.tests_scale import test_scale_group_4  # noqa
-    from tests.tests_scale import test_scale_group_5  # noqa
-    from tests.tests_scale import test_scale_group_6  # noqa
-    from tests.tests_multirole import test_mongo_multirole  # noqa
-    from tests import test_rh_compute  # noqa
-    from tests.tests_security import test_run_nessus  # noqa
-    from tests.tests_separate_services import test_separate_db  # noqa
-    from tests.tests_separate_services import test_separate_horizon  # noqa
-    from tests.tests_separate_services import test_separate_keystone  # noqa
-    from tests.tests_separate_services import test_separate_multiroles  # noqa
-    from tests.tests_separate_services import test_separate_rabbitmq  # noqa
-    from tests.tests_separate_services import test_separate_db_ceph  # noqa
-    from tests.tests_separate_services import test_separate_keystone_ceph  # noqa
-    from tests.tests_separate_services import test_separate_rabbitmq_ceph  # noqa
-    from tests import test_clone_env  # noqa
-    from tests import test_node_reassignment  # noqa
-    from tests import test_os_upgrade  # noqa
+    pass
     # from tests.tests_upgrade import test_data_driven_upgrade  # noqa
     # TODO(vkhlyunev): Uncomment upper line after test rework.
-    from tests.tests_strength import test_failover  # noqa
-    from tests.tests_strength import test_failover_with_ceph  # noqa
-    from tests.tests_strength import test_master_node_failover  # noqa
-    from tests.tests_strength import test_ostf_repeatable_tests  # noqa
-    from tests.tests_strength import test_restart  # noqa
-    from tests.tests_strength import test_huge_environments  # noqa
-    from tests.tests_strength import test_image_based  # noqa
-    from tests.tests_strength import test_cic_maintenance_mode  # noqa
-    from tests import test_bonding  # noqa
-    from tests import test_offloading_types  # noqa
-    from tests import test_bond_offloading  # noqa
-    from tests.tests_strength import test_neutron  # noqa
-    from tests.plugins.plugin_emc import test_plugin_emc  # noqa
-    from tests.plugins.plugin_elasticsearch import test_plugin_elasticsearch  # noqa
-    from tests.plugins.plugin_example import test_fuel_plugin_example  # noqa
-    from tests.plugins.plugin_contrail import test_fuel_plugin_contrail  # noqa
-    from tests.plugins.plugin_glusterfs import test_plugin_glusterfs  # noqa
-    from tests.plugins.plugin_influxdb import test_plugin_influxdb  # noqa
-    from tests.plugins.plugin_lbaas import test_plugin_lbaas  # noqa
-    from tests.plugins.plugin_lma_collector import test_plugin_lma_collector  # noqa
-    from tests.plugins.plugin_lma_infra_alerting import test_plugin_lma_infra_alerting  # noqa
-    from tests.plugins.plugin_reboot import test_plugin_reboot_task  # noqa
-    from tests.plugins.plugin_vip_reservation import test_plugin_vip_reservation  # noqa
-    from tests.plugins.plugin_zabbix import test_plugin_zabbix  # noqa
-    from tests import test_multiple_networks  # noqa
-    from tests.gd_based_tests import test_neutron  # noqa
-    from tests.gd_based_tests import test_neutron_vlan_ceph_mongo  # noqa
-    from tests.tests_patching import test_patching  # noqa
-    from tests import test_cli  # noqa
-    from tests import test_custom_hostname  # noqa
-    from tests import test_jumbo_frames  # noqa
-    from tests import test_node_reinstallation  # noqa
-    from tests import test_ubuntu_bootstrap  # noqa
-    from tests import test_centos_bootstrap  # noqa
-    from tests import test_net_templates  # noqa
-    from tests.tests_mirrors import test_create_mirror  # noqa
-    from tests.tests_mirrors import test_use_mirror  # noqa
-    from system_test.tests import test_create_deploy_ostf  # noqa
-    from system_test.tests import test_deploy_check_rados  # noqa
-    from system_test.tests.strength import destroy_controllers  # noqa
-    from system_test.tests.strength import filling_root  # noqa
-    from system_test.tests import test_fuel_migration  # noqa
-    from system_test.tests.plugins.plugin_example import test_plugin_example  # noqa
-    from system_test.tests.plugins.plugin_example import test_plugin_example_v3  # noqa
-    from system_test.tests.vcenter import test_vcenter_dvs   # noqa
-    from gates_tests.tests import test_review_in_fuel_agent  # noqa
-    from tests.tests_strength import test_load  # noqa
-    from tests import test_services_reconfiguration  # noqa
-    from gates_tests.tests import test_review_in_ostf  # noqa
-    from gates_tests.tests import test_review_in_fuel_client  # noqa
-    from tests.tests_os_components import test_murano_os_component  # noqa
-    from tests.tests_os_components import test_sahara_os_component  # noqa
-    from tests.tests_os_components import test_mixed_os_components  # noqa
-    from tests.tests_strength import test_failover_group_1  # noqa
-    from tests.tests_strength import test_failover_mongo  # noqa
-    from tests.tests_strength import test_failover_group_2  # noqa
 
 
 def run_tests():
