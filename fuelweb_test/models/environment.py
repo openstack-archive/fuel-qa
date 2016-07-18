@@ -119,9 +119,14 @@ class EnvironmentModel(object):
             time.sleep(5)
 
         with TimeStat("wait_for_nodes_to_start_and_register_in_nailgun"):
-            wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout,
-                 timeout_msg='Bootstrap timeout for nodes: {}'
-                             ''.format([node.name for node in devops_nodes]))
+            wait(
+                lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout,
+                timeout_msg='Bootstrap timeout for nodes: {}'.format(
+                    {node.name for node in devops_nodes} -
+                    {node.name for node in devops_nodes if
+                     self.nailgun_nodes([node])}
+                )
+            )
 
         if not skip_timesync:
             self.sync_time()
@@ -279,7 +284,9 @@ class EnvironmentModel(object):
 
     def nailgun_nodes(self, devops_nodes):
         return [self.fuel_web.get_nailgun_node_by_devops_node(node)
-                for node in devops_nodes]
+                for node in devops_nodes if
+                self.fuel_web.get_nailgun_node_by_devops_node(node) is not
+                None]
 
     def check_slaves_are_ready(self):
         devops_nodes = [node for node in self.d_env.nodes().slaves
