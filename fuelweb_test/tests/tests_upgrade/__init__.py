@@ -18,10 +18,12 @@ from fuelweb_test.tests.tests_upgrade import test_data_driven_upgrade  # noqa
 from fuelweb_test.tests.tests_upgrade import test_data_driven_upgrade_net_tmpl  # noqa
 from fuelweb_test.tests.tests_upgrade import test_data_driven_upgrade_plugin  # noqa
 from fuelweb_test.tests.tests_upgrade import upgrader_tool  # noqa
+from fuelweb_test.tests.tests_upgrade import test_os_upgrade  # noqa
 
 __all__ = [
     'test_data_driven_upgrade',
     'test_data_driven_upgrade_net_tmpl',
     'test_data_driven_upgrade_plugin',
-    'upgrader_tool'
+    'upgrader_tool',
+    'test_os_upgrade'
 ]
