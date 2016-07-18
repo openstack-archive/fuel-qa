@@ -54,8 +54,13 @@ def generate_test_plan_name(job_name, build_number):
     # taken from Jenkins job build parameters
     runner_build = Build(job_name, build_number)
     milestone, iso_number, prefix = get_version(runner_build.build_data)
-    return ' '.join(filter(lambda x: bool(x),
-                           (milestone, prefix, 'iso', '#' + str(iso_number))))
+    if 'snapshot' not in prefix:
+        return ' '.join(filter(lambda x: bool(x), (milestone,
+                                                   prefix, 'iso',
+                                                   '#' + str(iso_number))))
+    else:
+        return ' '.join(filter(lambda x: bool(x), (milestone,
+                                                   prefix)))
 
 
 def get_testrail():
