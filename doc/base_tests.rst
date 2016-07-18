@@ -678,9 +678,14 @@ Test Data-Driven Upgrade
 OS upgrade tests
 ================
 
+Openstack Upgrades helpers
+--------------------------
+.. automodule:: fuelweb_test.tests.tests_upgrade.upgrade_base
+   :members:
+
 Test OpenStack Upgrades
 -----------------------
-.. automodule:: fuelweb_test.tests.test_os_upgrade
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_os_upgrade
    :members:
 
 Tests for separated services
