@@ -48,6 +48,10 @@ class DataDrivenUpgradeBase(TestBasic):
         # pylint: enable=no-member
 
     @property
+    def next_step(self):
+        return self.current_log_step + 1
+
+    @property
     def backup_path(self):
         return os.path.join(self.remote_dir_for_backups, self.backup_name)
 
