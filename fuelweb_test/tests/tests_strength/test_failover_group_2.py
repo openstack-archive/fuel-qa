@@ -16,7 +16,6 @@ from proboscis import SkipTest
 from proboscis import test
 from proboscis.asserts import assert_equal
 
-from devops.error import TimeoutError
 from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
 from fuelweb_test import logger
@@ -246,11 +245,9 @@ class FailoverGroup2(TestBasic):
         self.fuel_web.verify_network(cluster_id)
 
         self.show_step(7)
-        try:
-            wait(lambda: tcp_ping(floating_ip_1.ip, 22), timeout=120)
-        except TimeoutError:
-            raise TimeoutError('Can not ping instance'
-                               ' by floating ip {0}'.format(floating_ip_1.ip))
+        wait(lambda: tcp_ping(floating_ip_1.ip, 22), timeout=120,
+             timeout_msg='Can not ping instance'
+                         ' by floating ip {0}'.format(floating_ip_1.ip))
 
         self.show_step(8)
         self.fuel_web.run_ostf(cluster_id)

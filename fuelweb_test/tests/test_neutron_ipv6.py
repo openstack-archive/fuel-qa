@@ -19,7 +19,6 @@ from proboscis import SkipTest
 from paramiko import ChannelException
 
 from devops.helpers.helpers import wait
-from devops.error import TimeoutError
 
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -204,14 +203,11 @@ class TestNeutronIPv6(TestBasic):
                     (floating_ip.ip, instance1),
                     (floating_ip2.ip, instance2)
             ):
-                try:
-                    wait(lambda: ssh_ready(vm_host), timeout=120)
-                except TimeoutError:
-                    raise TimeoutError(
-                        'ssh is not ready on host '
-                        '{hostname:s} ({ip:s}) '
-                        'at timeout 120s'.format(
-                            hostname=hostname, ip=vm_host))
+                wait(lambda: ssh_ready(vm_host), timeout=120,
+                     timeout_msg='ssh is not ready on host '
+                                 '{hostname:s} ({ip:s}) '
+                                 'at timeout 120s'.format(hostname=hostname,
+                                                          ip=vm_host))
 
             res = os_conn.execute_through_host(
                 ssh=remote,

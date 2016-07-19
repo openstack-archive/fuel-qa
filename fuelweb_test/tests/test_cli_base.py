@@ -18,7 +18,6 @@ import time
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
-from devops.error import TimeoutError
 from devops.helpers.helpers import wait
 # pylint: disable=import-error
 # noinspection PyUnresolvedReferences
@@ -109,17 +108,15 @@ class CommandLine(TestBasic):
         logger.info('Wait {timeout} seconds for task: {task}'
                     .format(timeout=timeout, task=task))
         start = time.time()
-        try:
-            wait(
-                lambda: (self.get_task(task['id'])['status'] not in
-                         ('pending', 'running')),
-                interval=interval,
-                timeout=timeout
-            )
-        except TimeoutError:
-            raise TimeoutError(
-                "Waiting timeout {timeout} sec was reached for task: {task}"
-                .format(task=task["name"], timeout=timeout))
+        wait(
+            lambda: (self.get_task(task['id'])['status'] not in
+                     ('pending', 'running')),
+            interval=interval,
+            timeout=timeout,
+            timeout_msg='Waiting timeout {timeout} sec was reached '
+                        'for task: {task}'.format(task=task["name"],
+                                                  timeout=timeout)
+        )
         took = time.time() - start
         task = self.get_task(task['id'])
         logger.info('Task finished in {took} seconds with the result: {task}'

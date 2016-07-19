@@ -645,20 +645,20 @@ class TestMultipleClusterNets(TestNetworkTemplatesBase):
         self.show_step(3)
         logger.info('Wait five nodes online for 900 seconds..')
         wait(lambda: len(self.fuel_web.client.list_nodes()) == 5,
-             timeout=15 * 60)
+             timeout=15 * 60,
+             timeout_msg='Timeout while waiting five nodes '
+                         'to become online')
 
         logger.info('Wait all nodes from custom nodegroup become '
                     'in error state..')
         # check all custom in error state
         for slave in custom_nodes:
-            try:
-                wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
-                    slave)['status'] == 'error', timeout=15 * 60)
-                logger.info(
-                    'Node {} changed state to error'.format(slave.name))
-            except TimeoutError:
-                raise TimeoutError('Node {} not changed state to '
-                                   'error'.format(slave.name))
+            wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+                slave)['status'] == 'error', timeout=15 * 60,
+                timeout_msg='Node {} not changed state to '
+                            'error'.format(slave.name))
+            logger.info(
+                'Node {} changed state to error'.format(slave.name))
 
         self.show_step(4)
         logger.info('Rebooting nodes from custom nodegroup..')
@@ -672,7 +672,7 @@ class TestMultipleClusterNets(TestNetworkTemplatesBase):
                             get_nailgun_node_by_devops_node(slave)['online']
                             for slave in custom_nodes),
                 timeout=10 * 60)
-            assert 'Some nodes online'
+            raise AssertionError('Some nodes online')
         except TimeoutError:
             logger.info('Nodes are offline')
 
@@ -715,7 +715,9 @@ class TestMultipleClusterNets(TestNetworkTemplatesBase):
         logger.info('Waiting for all nodes online for 900 seconds...')
         wait(lambda: all(n['online'] for n in
                          self.fuel_web.client.list_cluster_nodes(cluster_id)),
-             timeout=15 * 60)
+             timeout=15 * 60,
+             timeout_msg='Timeout while waiting nodes to become online '
+                         'after reset')
 
         self.show_step(4)
         custom_nodegroup = [ng for ng in self.fuel_web.client.get_nodegroups()
@@ -726,15 +728,13 @@ class TestMultipleClusterNets(TestNetworkTemplatesBase):
         logger.info('Wait all nodes from custom nodegroup become '
                     'in error state..')
         for slave in custom_nodes:
-            try:
-                # pylint: disable=undefined-loop-variable
-                wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
-                    slave)['status'] == 'error', timeout=60 * 5)
-                # pylint: enable=undefined-loop-variable
-                logger.info('Node {} is in "error" state'.format(slave.name))
-            except TimeoutError:
-                raise TimeoutError('Node {} status wasn\'t changed '
-                                   'to "error"!'.format(slave.name))
+            # pylint: disable=undefined-loop-variable
+            wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+                slave)['status'] == 'error', timeout=60 * 5,
+                timeout_msg='Node {} status wasn\'t changed '
+                            'to "error"!'.format(slave.name))
+            # pylint: enable=undefined-loop-variable
+            logger.info('Node {} is in "error" state'.format(slave.name))
 
         self.show_step(6)
         new_nodegroup = self.fuel_web.client.create_nodegroup(
@@ -764,13 +764,10 @@ class TestMultipleClusterNets(TestNetworkTemplatesBase):
         logger.info('Wait all nodes from custom nodegroup become '
                     'in discover state..')
         for slave in custom_nodes:
-            try:
-                wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
-                    slave)['status'] == 'discover', timeout=60 * 5)
-                logger.info('Node {} is in "discover" state'.format(
-                    slave.name))
-            except TimeoutError:
-                raise TimeoutError('Node {} status wasn\'t changed '
-                                   'to "discover"!'.format(slave.name))
+            wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+                slave)['status'] == 'discover', timeout=60 * 5,
+                timeout_msg='Node {} status wasn\'t changed '
+                            'to "discover"!'.format(slave.name))
+            logger.info('Node {} is in "discover" state'.format(slave.name))
 
         self.env.make_snapshot("delete_custom_nodegroup")
