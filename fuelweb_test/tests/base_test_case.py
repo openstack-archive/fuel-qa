@@ -14,6 +14,8 @@
 
 import time
 
+from devops.helpers.helpers import wait
+
 from proboscis import TestProgram
 from proboscis import SkipTest
 from proboscis import test
@@ -21,6 +23,7 @@ from proboscis import test
 from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers.fuel_release_hacks import install_mos_repos
 from fuelweb_test.helpers.utils import erase_data_from_hdd
 from fuelweb_test.helpers.utils import get_test_method_name
 from fuelweb_test.helpers.utils import TimeStat
@@ -274,6 +277,15 @@ class TestBasic(object):
         self.fuel_post_install_actions()
 
     def centos_setup_fuel(self, hostname):
+        with TimeStat("bootstrap_centos_node", is_uniq=True):
+            admin = list(self.env.d_env.get_nodes(role__contains='master'))[0]
+            self.env.d_env.start([admin])
+            logger.info("Waiting for Centos node to start up")
+            wait(lambda: admin.driver.node_active(admin), 60,
+                 timeout_msg='Centos node failed to start')
+            logger.info("Waiting for Centos node ssh ready")
+            self.env.wait_for_provisioning()
+
         ssh = SSHManager()
         logger.debug("Update host information")
         cmd = "echo HOSTNAME={} >> /etc/sysconfig/network".format(hostname)
@@ -291,6 +303,8 @@ class TestBasic(object):
 
         cmd = "yum install -y screen"
         ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+
+        install_mos_repos()
 
         logger.info("Install Fuel services")
 
@@ -335,8 +349,21 @@ class SetupEnvironment(TestBasic):
         self.check_run("empty")
 
         with TimeStat("setup_environment", is_uniq=True):
-            self.env.setup_environment()
-            self.fuel_post_install_actions()
+
+            if list(self.env.d_env.get_nodes(role='fuel_master')):
+                self.env.setup_environment()
+                self.fuel_post_install_actions()
+
+            elif list(self.env.d_env.get_nodes(role='centos_master')):
+                # need to use centos_master.yaml devops template
+                hostname = ''.join((settings.FUEL_MASTER_HOSTNAME,
+                                    settings.DNS_SUFFIX))
+                self.centos_setup_fuel(hostname)
+
+            else:
+                raise SkipTest(
+                    "No Fuel master nodes found!")
+
         self.env.make_snapshot("empty", is_make=True)
         self.current_log_step = 0
 
