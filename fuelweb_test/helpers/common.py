@@ -19,7 +19,7 @@ import traceback
 from cinderclient.client import Client as CinderClient
 from heatclient.v1.client import Client as HeatClient
 from glanceclient.v1 import Client as GlanceClient
-from ironicclient.client import Client as IronicClient
+from ironicclient.client import get_client as get_ironic_client
 from keystoneauth1.exceptions import ClientException
 from keystoneauth1.identity import V2Password
 from keystoneauth1.session import Session as KeystoneSession
@@ -131,12 +131,8 @@ class Common(object):
         try:
             endpoint = self.__make_endpoint(
                 self._get_url_for_svc(service_type='baremetal'))
-            return IronicClient(
-                version='1',
-                session=self.keystone_session,
-                insecure=True,
-                endpoint_override=endpoint
-            )
+            return get_ironic_client('1', session=self.keystone_session,
+                                     insecure=True, ironic_url=endpoint)
         except ClientException as e:
             logger.warning('Could not initialize ironic client {0}'.format(e))
             raise
