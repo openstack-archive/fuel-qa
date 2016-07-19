@@ -569,11 +569,13 @@ class UbuntuBootstrap(base_test_case.TestBasic):
         self.fuel_web.client.delete_cluster(cluster_id)
 
         # wait nodes go to reboot
-        wait(lambda: not self.fuel_web.client.list_nodes(), timeout=10 * 60)
+        wait(lambda: not self.fuel_web.client.list_nodes(), timeout=10 * 60,
+             timeout_msg='Timeout while waiting nodes to become offline')
 
         # wait for nodes to appear after bootstrap
         wait(lambda: len(self.fuel_web.client.list_nodes()) == 3,
-             timeout=10 * 60)
+             timeout=10 * 60,
+             timeout_msg='Timeout while waiting nodes to become online')
 
         nodes = self.env.d_env.get_nodes(
             name__in=["slave-01", "slave-02", "slave-03"])
@@ -619,7 +621,8 @@ class UbuntuBootstrap(base_test_case.TestBasic):
 
         # wait for nodes to appear after bootstrap
         wait(lambda: len(self.fuel_web.client.list_nodes()) == 3,
-             timeout=10 * 60)
+             timeout=10 * 60,
+             timeout_msg='Timeout while waiting nodes to become online')
         self.fuel_web.verify_network(cluster_id)
 
         node = self.fuel_web.get_nailgun_node_by_name("slave-03")

@@ -656,7 +656,8 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         srv_host = os.get_srv_host_name(srv)
         logger.info("Server is on host {:s}".format(srv_host))
 
-        wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120)
+        wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120,
+             timeout_msg='new WM ssh port ping timeout')
 
         def ssh_ready(remote, ip, creds):
             try:
@@ -681,7 +682,8 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         new_srv = os.migrate_server(srv, avail_hosts[0], timeout=200)
         logger.info("Check cluster and server state after migration")
 
-        wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120)
+        wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120,
+             timeout_msg='WM ssh port ping timeout after migration')
 
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
             md5after = os.get_md5sum(
@@ -752,7 +754,8 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         os.attach_volume(vol, srv)
 
         self.show_step(14)
-        wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120)
+        wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120,
+             timeout_msg='new WM ssh port ping timeout')
         logger.info("Create filesystem and mount volume")
 
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
@@ -774,7 +777,8 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         new_srv = os.migrate_server(srv, avail_hosts[0], timeout=120)
 
         logger.info("Check cluster and server state after migration")
-        wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120)
+        wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120,
+             timeout_msg='WM ssh port ping timeout after migration')
 
         self.show_step(16)
         logger.info("Mount volume after migration")

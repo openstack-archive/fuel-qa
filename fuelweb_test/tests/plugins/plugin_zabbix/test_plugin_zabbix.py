@@ -336,7 +336,9 @@ class ZabbixPlugin(TestBasic):
                    '/var/log/zabbix/zabbix_server.log | '
                    'grep "Status Events"')
 
-            wait(lambda: remote.execute(cmd)['exit_code'] == 0)
+            wait(lambda: remote.execute(cmd)['exit_code'] == 0,
+                 timeout_msg='SNMP heartbeat status not found '
+                             ' in /var/log/zabbix/zabbix_server.log')
 
         self.env.make_snapshot("deploy_zabbix_snmptrap_ha")
 
@@ -428,7 +430,8 @@ class ZabbixPlugin(TestBasic):
         zabbix_web.login()
 
         wait(lambda: self.check_event_message(
-            zabbix_web, 'emc', 'SNMPtrigger Critical'))
+            zabbix_web, 'emc', 'SNMPtrigger Critical'),
+            timeout_msg='SNMPtrigger Critical event not found in Zabbix')
 
         self.env.make_snapshot("deploy_zabbix_snmp_emc_ha")
 
@@ -519,7 +522,8 @@ class ZabbixPlugin(TestBasic):
         zabbix_web.login()
 
         wait(lambda: self.check_event_message(
-            zabbix_web, 'extreme', 'Power Supply Failed'))
+            zabbix_web, 'extreme', 'Power Supply Failed'),
+            timeout_msg='Power Supply Failed event not found in Zabbix')
 
         self.env.make_snapshot("deploy_zabbix_snmp_extreme_ha")
 

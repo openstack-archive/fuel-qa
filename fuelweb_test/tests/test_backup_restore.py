@@ -14,7 +14,6 @@
 
 import os
 
-from devops.error import TimeoutError
 from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
@@ -313,14 +312,10 @@ class BackupRestoreHA(NeutronTunHaBase):
 
         self.fuel_web.client.delete_cluster(cluster_id)
 
-        try:
-            wait((lambda: len(
-                self.fuel_web.client.list_nodes()) == number_of_nodes),
-                timeout=5 * 60)
-        except TimeoutError:
-            assert_true(len(
-                self.fuel_web.client.list_nodes()) == number_of_nodes,
-                'Nodes are not discovered in timeout 5 *60')
+        wait((lambda: len(
+            self.fuel_web.client.list_nodes()) == number_of_nodes),
+            timeout=5 * 60,
+            timeout_msg='Nodes are not discovered in timeout')
 
         cl = CommandLine()
         release_id = self.fuel_web.get_releases_list_for_os(

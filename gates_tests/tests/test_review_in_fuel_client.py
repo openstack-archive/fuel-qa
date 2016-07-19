@@ -14,7 +14,6 @@
 import os
 import traceback
 
-from devops.error import TimeoutError
 from devops.helpers.helpers import wait
 from proboscis import test
 from proboscis import asserts
@@ -196,13 +195,10 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
             res['exit_code'] == 0)
 
         with self.env.d_env.get_admin_remote() as remote:
-            try:
-                wait(lambda:
-                     remote.execute("fuel env |  awk '{print $1}'"
-                                    " |  tail -n 1 | grep '^.$'")
-                     ['exit_code'] == 1, timeout=60 * 10)
-            except TimeoutError:
-                raise TimeoutError(
-                    "cluster {0} was not deleted".format(cluster_id))
+            wait(lambda:
+                 remote.execute("fuel env |  awk '{print $1}'"
+                                " |  tail -n 1 | grep '^.$'")
+                 ['exit_code'] == 1, timeout=60 * 10,
+                 timeout_msg='cluster {0} was not deleted'.format(cluster_id))
 
         self.env.make_snapshot("review_fuel_cli_one_node_deploy")

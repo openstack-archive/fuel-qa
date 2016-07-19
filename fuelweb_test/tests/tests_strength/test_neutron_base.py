@@ -209,7 +209,9 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
             # Wait 60 second until ssh is available on instance
             wait(
                 lambda: remote.execute(ssh_awail_cmd)['exit_code'] == 0,
-                timeout=60)
+                timeout=60,
+                timeout_msg='SSH port is not available in dhcp_namespace={}'
+                            ''.format(dhcp_namespace))
 
         logger.debug('instance internal ip is {0}'.format(instance_ip))
 
@@ -386,8 +388,7 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
 
         #   Destroy controller with l3 agent for start migration process
         devops_node_with_l3.destroy()
-        wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
-             devops_node_with_l3)['online'], timeout=60 * 10)
+        self.fuel_web.wait_node_is_offline(devops_node_with_l3)
 
         #   Wait for HA services get ready
         self.fuel_web.assert_ha_services_ready(cluster_id, should_fail=1)

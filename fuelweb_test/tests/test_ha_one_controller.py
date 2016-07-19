@@ -16,7 +16,6 @@ from __future__ import division
 from warnings import warn
 import re
 
-from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import test
@@ -137,10 +136,7 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
         assert_true(
             len(nodes) == 1, "Verify 1 node has pending deletion status"
         )
-        wait(
-            lambda: self.fuel_web.is_node_discovered(nodes[0]),
-            timeout=10 * 60
-        )
+        self.fuel_web.wait_node_is_discovered(nodes[0])
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["ha_one_controller_neutron_blocked_vlan"])
@@ -322,13 +318,8 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
         assert_true(
             len(nodes) == 2, "Verify 2 node has pending deletion status"
         )
-        wait(
-            lambda:
-            self.fuel_web.is_node_discovered(nodes[0]) and
-            self.fuel_web.is_node_discovered(nodes[1]),
-            timeout=10 * 60,
-            interval=15
-        )
+        self.fuel_web.wait_node_is_discovered(nodes[0])
+        self.fuel_web.wait_node_is_discovered(nodes[1])
 
 
 @test(groups=["multirole"])
