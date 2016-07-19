@@ -114,17 +114,7 @@ class CICMaintenanceMode(TestBasic):
             ip=_ip,
             cmd="umm on")
 
-        logger.info('Wait a node-{0} offline status after turning on of'
-                    ' maintenance mode'.format(_id))
-        err_msg = ('Node-{0} has not become offline after'
-                   'turning on of maintenance mode'.format(_id))
-        wait(
-            lambda: not
-            self.fuel_web.get_nailgun_node_by_devops_node(dregular_ctrl)
-            ['online'], timeout=70 * 10, timeout_msg=err_msg)
-
-        logger.info('Check that node-{0} in maintenance mode after '
-                    'switching'.format(_id))
+        self.fuel_web.wait_node_is_offline(dregular_ctrl)
 
         asserts.assert_true(
             checkers.check_ping(self.env.get_admin_node_ip(),
@@ -140,17 +130,7 @@ class CICMaintenanceMode(TestBasic):
             ip=_ip,
             cmd="umm off")
 
-        logger.info('Wait a node-{0} online status'.format(_id))
-        err_msg = ('Node-{0} has not become online after'
-                   'turning off maintenance mode'.format(_id))
-        wait(
-            lambda:
-            self.fuel_web.get_nailgun_node_by_devops_node(dregular_ctrl)
-            ['online'], timeout=70 * 10, timeout_msg=err_msg)
-
-        # Wait until MySQL Galera is UP on some controller
-        self.fuel_web.wait_mysql_galera_is_up(
-            [dregular_ctrl.name])
+        self.fuel_web.wait_node_is_online(dregular_ctrl)
 
         # Wait until Cinder services UP on a controller
         self.fuel_web.wait_cinder_is_up(
@@ -165,6 +145,7 @@ class CICMaintenanceMode(TestBasic):
               timeout=1500)
         logger.info('RabbitMQ cluster is available')
 
+        # TODO(astudenov): add timeout_msg
         _wait(lambda:
               self.fuel_web.run_single_ostf_test(
                   cluster_id, test_sets=['sanity'],
@@ -173,6 +154,7 @@ class CICMaintenanceMode(TestBasic):
               timeout=1500)
         logger.info("Required services are running")
 
+        # TODO(astudenov): add timeout_msg
         try:
             self.fuel_web.run_ostf(cluster_id,
                                    test_sets=['smoke', 'sanity', 'ha'])
@@ -231,16 +213,11 @@ class CICMaintenanceMode(TestBasic):
         wait(lambda:
              not checkers.check_ping(self.env.get_admin_node_ip(),
                                      _ip),
-             timeout=60 * 10)
+             timeout=60 * 10,
+             timeout_msg='Node {} still responds to ping'.format(
+                 dregular_ctrl.name))
 
-        logger.info('Wait a node-{0} offline status after unexpected '
-                    'reboot'.format(_id))
-        err_msg = ('Node-{0} has not become offline'
-                   ' after unexpected'.format(_id))
-        wait(
-            lambda: not
-            self.fuel_web.get_nailgun_node_by_devops_node(dregular_ctrl)
-            ['online'], timeout=70 * 10, timeout_msg=err_msg)
+        self.fuel_web.wait_node_is_offline(dregular_ctrl)
 
         logger.info('Check that node-{0} in maintenance mode after'
                     ' unexpected reboot'.format(_id))
@@ -262,14 +239,7 @@ class CICMaintenanceMode(TestBasic):
 
         change_config(_ip)
 
-        logger.info('Wait a node-{0} online status'
-                    .format(_id))
-        err_msg = ('Node-{0} has not become online after'
-                   'turning off maintenance mode'.format(_id))
-        wait(
-            lambda:
-            self.fuel_web.get_nailgun_node_by_devops_node(dregular_ctrl)
-            ['online'], timeout=70 * 10, timeout_msg=err_msg)
+        self.fuel_web.wait_node_is_online(dregular_ctrl)
 
         # Wait until MySQL Galera is UP on some controller
         self.fuel_web.wait_mysql_galera_is_up(
@@ -421,7 +391,9 @@ class CICMaintenanceMode(TestBasic):
         wait(lambda:
              not checkers.check_ping(self.env.get_admin_node_ip(),
                                      _ip),
-             timeout=60 * 10)
+             timeout=60 * 10,
+             timeout_msg='Node {} still responds to ping'.format(
+                 dregular_ctrl.name))
 
         # Node don't have enough time for set offline status
         # after reboot --force
@@ -433,10 +405,8 @@ class CICMaintenanceMode(TestBasic):
                                 deadline=600),
             "Host {0} is not reachable by ping during 600 sec"
             .format(_ip))
-        logger.info('Wait a node-{0} online status after unexpected '
-                    'reboot'.format(_id))
 
-        self.fuel_web.wait_nodes_get_online_state([dregular_ctrl])
+        self.fuel_web.wait_node_is_online(dregular_ctrl)
 
         logger.info('Check that node-{0} not in maintenance mode after'
                     ' unexpected reboot'.format(_id))
@@ -461,6 +431,7 @@ class CICMaintenanceMode(TestBasic):
               timeout=1500)
         logger.info('RabbitMQ cluster is available')
 
+        # TODO(astudenov): add timeout_msg
         _wait(lambda:
               self.fuel_web.run_single_ostf_test(
                   cluster_id, test_sets=['sanity'],

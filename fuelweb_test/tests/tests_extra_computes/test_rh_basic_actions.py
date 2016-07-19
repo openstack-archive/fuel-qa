@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from devops.error import TimeoutError
 from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
 from proboscis import asserts
@@ -223,11 +222,9 @@ class RhFailoverGroup(ExtraComputesBase):
             neutron=True, label=net_label)
         vm_floating_ip = os_conn.assign_floating_ip(vm)
         logger.info('Trying to get vm via tcp.')
-        try:
-            wait(lambda: tcp_ping(vm_floating_ip.ip, 22), timeout=120)
-        except TimeoutError:
-            raise TimeoutError('Can not ping instance'
-                               ' by floating ip {0}'.format(vm_floating_ip.ip))
+        wait(lambda: tcp_ping(vm_floating_ip.ip, 22), timeout=120,
+             timeout_msg='Can not ping instance'
+                         ' by floating ip {0}'.format(vm_floating_ip.ip))
         logger.info('VM is accessible via ip: {0}'.format(vm_floating_ip.ip))
         self.show_step(4)
         self.warm_restart_nodes([target_node])
@@ -243,11 +240,9 @@ class RhFailoverGroup(ExtraComputesBase):
                 os_conn.get_instance_detail(vm).status))
         logger.info('Spawned VM is ACTIVE. Trying to '
                     'access it via ip: {0}'.format(vm_floating_ip.ip))
-        try:
-            wait(lambda: tcp_ping(vm_floating_ip.ip, 22), timeout=120)
-        except TimeoutError:
-            raise TimeoutError('Can not ping instance'
-                               ' by floating ip {0}'.format(vm_floating_ip.ip))
+        wait(lambda: tcp_ping(vm_floating_ip.ip, 22), timeout=120,
+             timeout_msg='Can not ping instance'
+                         ' by floating ip {0}'.format(vm_floating_ip.ip))
         logger.info('VM is accessible. Deleting it.')
         os_conn.delete_instance(vm)
         os_conn.verify_srv_deleted(vm)
@@ -305,11 +300,9 @@ class RhFailoverGroup(ExtraComputesBase):
             neutron=True, label=net_label)
         vm_floating_ip = os_conn.assign_floating_ip(vm)
         logger.info('Trying to get vm via tcp.')
-        try:
-            wait(lambda: tcp_ping(vm_floating_ip.ip, 22), timeout=120)
-        except TimeoutError:
-            raise TimeoutError('Can not ping instance'
-                               ' by floating ip {0}'.format(vm_floating_ip.ip))
+        wait(lambda: tcp_ping(vm_floating_ip.ip, 22), timeout=120,
+             timeout_msg='Can not ping instance'
+                         ' by floating ip {0}'.format(vm_floating_ip.ip))
         logger.info('VM is accessible via ip: {0}'.format(vm_floating_ip.ip))
         self.show_step(4)
         target_node.destroy()
@@ -331,11 +324,9 @@ class RhFailoverGroup(ExtraComputesBase):
                 os_conn.get_instance_detail(vm).status))
         logger.info('Spawned VM is ACTIVE. Trying to '
                     'access it via ip: {0}'.format(vm_floating_ip.ip))
-        try:
-            wait(lambda: tcp_ping(vm_floating_ip.ip, 22), timeout=120)
-        except TimeoutError:
-            raise TimeoutError('Can not ping instance'
-                               ' by floating ip {0}'.format(vm_floating_ip.ip))
+        wait(lambda: tcp_ping(vm_floating_ip.ip, 22), timeout=120,
+             timeout_msg='Can not ping instance'
+                         ' by floating ip {0}'.format(vm_floating_ip.ip))
         logger.info('VM is accessible. Deleting it.')
         os_conn.delete_instance(vm)
         os_conn.verify_srv_deleted(vm)

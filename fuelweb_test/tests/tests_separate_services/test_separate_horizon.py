@@ -16,7 +16,6 @@ import os
 
 from proboscis import test
 from proboscis.asserts import assert_true
-from devops.helpers.helpers import wait
 
 from fuelweb_test.helpers.checkers import check_plugin_path_env
 from fuelweb_test.helpers import utils
@@ -149,8 +148,8 @@ class SeparateHorizonFailover(TestBasic):
         # destroy one horizon node
         horizon_node = self.env.d_env.nodes().slaves[3]
         horizon_node.destroy()
-        wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
-            horizon_node)['online'], timeout=60 * 5)
+        self.fuel_web.wait_node_is_offline(horizon_node)
+
         self.fuel_web.assert_os_services_ready(cluster_id)
 
         self.fuel_web.run_ostf(
@@ -175,8 +174,7 @@ class SeparateHorizonFailover(TestBasic):
         # restart one horizon node
         horizon_node = self.env.d_env.nodes().slaves[3]
         self.fuel_web.warm_restart_nodes([horizon_node])
-        wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
-            horizon_node)['online'], timeout=60 * 5)
+        self.fuel_web.wait_node_is_online(horizon_node)
         self.fuel_web.assert_os_services_ready(cluster_id)
 
         self.fuel_web.run_ostf(
@@ -204,8 +202,7 @@ class SeparateHorizonFailover(TestBasic):
         logger.debug(
             "controller with primary role is {}".format(controller.name))
         controller.destroy()
-        wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
-            controller)['online'], timeout=60 * 5)
+        self.fuel_web.wait_node_is_offline(controller)
 
         self.fuel_web.assert_ha_services_ready(cluster_id, should_fail=1)
         self.fuel_web.assert_os_services_ready(cluster_id, should_fail=1)
@@ -247,8 +244,7 @@ class SeparateHorizonFailover(TestBasic):
         nodes = [_node for _node in nailgun_node
                  if _node["pending_deletion"] is True]
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
-        wait(lambda: self.fuel_web.is_node_discovered(nodes[0]),
-             timeout=6 * 60)
+        self.fuel_web.wait_node_is_discovered(nodes[0])
         self.fuel_web.verify_network(cluster_id)
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['sanity', 'smoke', 'ha'])

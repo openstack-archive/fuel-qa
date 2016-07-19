@@ -23,7 +23,6 @@ from proboscis.asserts import assert_true
 from six.moves.urllib.request import urlopen
 # pylint: enable=import-error
 
-from devops.error import TimeoutError
 from devops.helpers.helpers import wait
 from fuelweb_test import logger
 from fuelweb_test import settings
@@ -231,9 +230,8 @@ class PatchingTests(TestBasic):
             nodes = [_node for _node in nailgun_node
                      if _node["pending_deletion"] is True]
             self.fuel_web.deploy_cluster(cluster_id)
-            wait(
-                lambda: self.fuel_web.is_node_discovered(nodes[0]),
-                timeout=6 * 60)
+            self.fuel_web.wait_node_is_discovered(nodes[0])
+
             # sanity set isn't running due to LP1457515
             self.fuel_web.run_ostf(cluster_id=cluster_id,
                                    test_sets=['smoke', 'ha'])
@@ -390,9 +388,8 @@ class PatchingMasterTests(TestBasic):
                 nodes = [_node for _node in nailgun_node
                          if _node["pending_deletion"] is True]
                 self.fuel_web.deploy_cluster(cluster_id)
-                wait(
-                    lambda: self.fuel_web.is_node_discovered(nodes[0]),
-                    timeout=6 * 60)
+                self.fuel_web.wait_node_is_discovered(nodes[0])
+
                 # sanity set isn't running due to LP1457515
                 self.fuel_web.run_ostf(cluster_id=cluster_id,
                                        test_sets=['smoke', 'ha'])
@@ -407,14 +404,11 @@ class PatchingMasterTests(TestBasic):
             self.fuel_web.wait_nodes_get_online_state(
                 active_nodes, timeout=10 * 60)
             self.fuel_web.client.delete_cluster(cluster_id)
-            try:
-                wait((lambda: len(
-                    self.fuel_web.client.list_nodes()) == number_of_nodes),
-                    timeout=5 * 60)
-            except TimeoutError:
-                assert_true(len(
-                    self.fuel_web.client.list_nodes()) == number_of_nodes,
-                    'Nodes are not discovered in timeout 5 *60')
+            wait((lambda: len(
+                self.fuel_web.client.list_nodes()) == number_of_nodes),
+                timeout=5 * 60,
+                timeout_msg='Timeout: Nodes are not discovered')
+
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:3])
 
     @test(groups=["patching_master"],
