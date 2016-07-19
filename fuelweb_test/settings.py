@@ -135,6 +135,12 @@ if MULTIPATH and not SLAVE_MULTIPATH_DISKS_COUNT:
     SLAVE_MULTIPATH_DISKS_COUNT = int(
         os.environ.get('SLAVE_MULTIPATH_DISKS_COUNT'))
 
+ENABLE_DMZ = get_var_as_bool('ENABLE_DMZ', False)
+ENABLE_DMZ_TEMPLATE = os.environ.get(
+    'ENABLE_DMZ_TEMPLATE',
+    os.path.join(os.getcwd(),
+                 'system_test/tests_templates/tests_configs/public_api.yaml'))
+
 MULTIPLE_NETWORKS = get_var_as_bool('MULTIPLE_NETWORKS', False)
 MULTIPLE_NETWORKS_TEMPLATE = os.environ.get(
     'MULTIPLE_NETWORKS_TEMPLATE',
