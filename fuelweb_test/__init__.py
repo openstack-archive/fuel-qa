@@ -44,6 +44,7 @@ class NoDebugMessageFilter(logging.Filter):
 logging.getLogger('paramiko.transport').addFilter(NoDebugMessageFilter())
 logging.getLogger('paramiko.hostkeys').addFilter(NoDebugMessageFilter())
 logging.getLogger('iso8601.iso8601').addFilter(NoDebugMessageFilter())
+logging.getLogger('keystoneauth1.session').addFilter(NoDebugMessageFilter())
 
 
 def debug(logger):
