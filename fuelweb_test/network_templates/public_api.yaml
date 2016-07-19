@@ -1,0 +1,168 @@
+adv_net_template:
+  default:
+    network_assignments:
+      fuelweb_admin:
+        ep: br-fw-admin
+      management:
+        ep: br-mgmt
+      os-api:
+        ep: br-osapi
+      private:
+        ep: br-prv
+      public:
+        ep: br-ex
+      storage:
+        ep: br-storage
+    network_scheme:
+      admin:
+        endpoints:
+        - br-fw-admin
+        roles:
+          admin/pxe: br-fw-admin
+          fw-admin: br-fw-admin
+        transformations:
+        - action: add-br
+          name: br-fw-admin
+        - action: add-port
+          bridge: br-fw-admin
+          name: <% if1 %>
+      management:
+        endpoints:
+        - br-mgmt
+        roles:
+          ceilometer/api: br-mgmt
+          ceph/radosgw: br-mgmt
+          ceph/replication: br-mgmt
+          cinder/api: br-mgmt
+          cinder/iscsi: br-mgmt
+          glance/api: br-mgmt
+          heat/api: br-mgmt
+          horizon: br-mgmt
+          ironic/api: br-mgmt
+          ironic/baremetal: br-mgmt
+          keystone/api: br-mgmt
+          management: br-mgmt
+          mgmt/api: br-mgmt
+          mgmt/corosync: br-mgmt
+          mgmt/database: br-mgmt
+          mgmt/memcache: br-mgmt
+          mgmt/messaging: br-mgmt
+          mgmt/vip: br-mgmt
+          mongo/db: br-mgmt
+          murano/api: br-mgmt
+          murano/cfapi: br-mgmt
+          neutron/api: br-mgmt
+          neutron/mesh: br-mgmt
+          nova/api: br-mgmt
+          nova/migration: br-mgmt
+          sahara/api: br-mgmt
+          swift/api: br-mgmt
+          swift/replication: br-mgmt
+        transformations:
+        - action: add-br
+          name: br-mgmt
+        - action: add-port
+          bridge: br-mgmt
+          name: <% if4 %>
+      os-api:
+        endpoints:
+        - br-osapi
+        roles:
+          public/vip: br-osapi
+        transformations:
+        - action: add-br
+          name: br-osapi
+        - action: add-port
+          bridge: br-osapi
+          name: <% if3 %>
+      private:
+        endpoints:
+        - br-prv
+        roles:
+          neutron/private: br-prv
+          private: br-prv
+        transformations:
+        - action: add-br
+          name: br-prv
+          provider: ovs
+        - action: add-br
+          name: br-aux
+        - action: add-patch
+          bridges:
+          - br-prv
+          - br-aux
+          mtu: 65000
+          provider: ovs
+        - action: add-port
+          bridge: br-aux
+          name: <% if5 %>
+      public:
+        endpoints:
+        - br-ex
+        roles:
+          ex: br-ex
+          neutron/floating: br-ex
+          public: br-ex
+        transformations:
+        - action: add-br
+          name: br-ex
+        - action: add-br
+          name: br-floating
+          provider: ovs
+        - action: add-patch
+          bridges:
+          - br-floating
+          - br-ex
+          mtu: 65000
+          provider: ovs
+        - action: add-port
+          bridge: br-ex
+          name: <% if2 %>
+      storage:
+        endpoints:
+        - br-storage
+        roles:
+          ceph/public: br-storage
+          ceph/radosgw: br-storage
+          ceph/replication: br-storage
+          storage: br-storage
+        transformations:
+        - action: add-br
+          name: br-storage
+        - action: add-port
+          bridge: br-storage
+          name: <% if6 %>.101
+    nic_mapping:
+      default:
+        if1: enp0s3 # admin
+        if2: enp0s4 # public
+        if3: enp0s5 # os-api
+        if4: enp0s6 # management
+        if5: enp0s7 # private
+        if6: enp0s8 # storage
+    templates_for_node_role:
+      ceph-osd:
+      - admin
+      - public
+      - management
+      - private
+      - storage
+      cinder:
+      - admin
+      - public
+      - management
+      - private
+      - storage
+      compute:
+      - admin
+      - public
+      - management
+      - private
+      - storage
+      controller:
+      - admin
+      - public
+      - os-api
+      - management
+      - private
+      - storage
