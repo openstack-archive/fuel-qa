@@ -2963,6 +2963,15 @@ class FuelWebClient29(object):
             if force_exception:
                 raise
 
+    def get_network_pool(self, pool_name, group_name=None):
+        net = self.environment.d_env.get_network(name=pool_name)
+
+        _net_pool = {
+            "gateway": net.default_gw,
+            "network": net.ip_network
+        }
+        return _net_pool
+
 
 class FuelWebClient30(FuelWebClient29):
     """FuelWebClient that works with fuel-devops 3.0
@@ -3246,6 +3255,17 @@ class FuelWebClient30(FuelWebClient29):
                 net['ip_ranges'] = [list(net_pool.ip_range())]
 
         return network_configuration
+
+    @logwrap
+    def get_network_pool(self, pool_name, group_name='default'):
+        group = self.environment.d_env.get_group(name=group_name)
+        net_pool = group.get_network_pool(name=pool_name)
+        _net_pool = {
+            "gateway": net_pool.gateway,
+            "network": net_pool.ip_range
+        }
+        return _net_pool
+
 
 # TODO(ddmitriev): this code will be removed after moving to fuel-devops3.0
 # pylint: disable=no-member
