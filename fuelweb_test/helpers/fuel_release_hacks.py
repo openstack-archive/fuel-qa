@@ -17,6 +17,7 @@ import os
 from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers.ssh_manager import SSHManager
+from fuelweb_test.helpers.utils import generate_yum_repos_config
 
 from gates_tests.helpers import exceptions
 
@@ -40,6 +41,17 @@ def install_mos_repos():
             source=settings.FUEL_RELEASE_PATH.rstrip('/'),
             target=pack_path)
 
+        if settings.RPM_REPO_YAML:
+            outfile = "custom.repo"
+            with open(outfile, 'wt') as f:
+                f.write(generate_yum_repos_config(
+                    settings.RPM_REPO_YAML))
+
+            ssh.upload_to_remote(
+                ip=ssh.admin_ip,
+                source=outfile,
+                target='/etc/yum.repos.d/custom.repo')
+
     except Exception:
         logger.exception("Could not upload package")
         raise
@@ -50,3 +62,22 @@ def install_mos_repos():
 
     cmd = "yum install -y fuel-setup"
     ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+
+    if settings.DEB_REPO_YAML:
+        try:
+            ssh = SSHManager()
+            pack_path = "/tmp/"
+            full_deb_yaml_path = os.path.join(pack_path, 'deb/*.yaml')
+            ssh.upload_to_remote(
+                ip=ssh.admin_ip,
+                source=settings.DEB_REPO_YAML,
+                target=pack_path)
+
+            "Update debian repos for fuelmenu"
+            cmd = "fix_default_repos.py fuelmenu " \
+                  "--repositories-file {}".format(full_deb_yaml_path)
+
+            ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+        except Exception:
+            logger.exception("Could not upload and update")
+            raise

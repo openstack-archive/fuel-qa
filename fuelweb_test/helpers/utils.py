@@ -1514,3 +1514,26 @@ def install_lynis_master(master_node_ip):
             ]
     for cmd in cmds:
         ssh_manager.execute_on_remote(ip=master_node_ip, cmd=cmd)
+
+
+def generate_yum_repos_config(repositories):
+    """
+    Function parses yaml file with repository describing
+    and create repository config for storing in /etc/yum.repos.d/*
+    :param repositories: yaml file with repo
+    :return: a dict with options
+    """
+    with open(repositories) as f:
+        repos = yaml.safe_load(f)
+    config = ""
+    for repo in repos:
+        config += """
+[{name}]
+name={name}
+baseurl={uri}
+enabled=1
+gpgcheck=0
+priority={priority}
+skip_if_unavailable=1
+""".format(**repo)
+    return config
