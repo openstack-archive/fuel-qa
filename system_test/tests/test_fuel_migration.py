@@ -16,8 +16,6 @@ from devops.helpers.helpers import icmp_ping
 from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
 
-from fuelweb_test.helpers import checkers
-
 from system_test import logger
 from system_test import testcase
 from system_test import action
@@ -87,46 +85,47 @@ class FuelMasterMigrate(ActionTest, BaseActions, FuelMasterActions):
     def check_migration_status(self):
         """Check periodically the status of Fuel Master migration process"""
 
-        checkers.wait_phrase_in_log(
-            self.env.get_admin_node_ip(), 60 * 60, interval=0.2,
-            phrase='Rebooting to begin the data sync process',
-            log_path='/var/log/fuel-migrate.log')
-        logger.info(
-            'Rebooting to begin the data sync process for fuel migrate')
+        logger.info('First reboot of Master node...')
 
+        logger.info('Wait for Master node become offline')
         wait(lambda: not icmp_ping(self.env.get_admin_node_ip()),
-             timeout=60 * 15, timeout_msg='Master node has not become offline '
-                                          'after starting reboot')
+             timeout=60 * 10,
+             timeout_msg='Master node did not become offline')
+
+        logger.info('Wait for echo from Master node')
         wait(lambda: icmp_ping(self.env.get_admin_node_ip()),
-             timeout=60 * 15, timeout_msg='Master node has not become online '
-                                          'after rebooting')
-        self.env.d_env.nodes().admin.await(
-            network_name=self.env.d_env.admin_net,
-            timeout=60 * 15)
+             timeout=60 * 10,
+             timeout_msg='Master node did not respond after reboot')
 
-        checkers.wait_phrase_in_log(
-            self.env.get_admin_node_ip(), 60 * 90, interval=0.1,
-            phrase='Stop network and up with new settings',
-            log_path='/var/log/fuel-migrate.log')
-        logger.info('Shutting down network')
-
-        wait(lambda: not icmp_ping(self.env.get_admin_node_ip()),
-             timeout=60 * 15, interval=0.1,
-             timeout_msg='Master node has not become offline on '
-                         'shutting network down')
-        wait(lambda: icmp_ping(self.env.get_admin_node_ip()),
-             timeout=60 * 15,
-             timeout_msg='Master node has not become online after '
-                         'shutting network down')
-
+        logger.info('Wait for Master node become online')
         self.env.d_env.nodes().admin.await(
             network_name=self.env.d_env.admin_net,
             timeout=60 * 10)
 
-        with self.env.d_env.get_admin_remote() as remote:
-            wait(lambda: not remote.exists("/notready"),
-                 timeout=900,
-                 timeout_msg="File wasn't removed in 900 sec")
+        logger.info('Second reboot of Master node...')
 
+        logger.info('Wait for Master node become offline')
+        wait(lambda: not icmp_ping(self.env.get_admin_node_ip()),
+             timeout=60 * 40,
+             timeout_msg='Master node did not become offline')
+
+        logger.info('Wait for echo from Master node')
+        wait(lambda: icmp_ping(self.env.get_admin_node_ip()),
+             timeout=60 * 10,
+             timeout_msg='Master node did not respond after reboot')
+
+        logger.info('Wait for Master node become online')
+        self.env.d_env.nodes().admin.await(
+            network_name=self.env.d_env.admin_net,
+            timeout=60 * 10)
+
+        logger.info("Wait for file 'migration-done' appears")
+        with self.env.d_env.get_admin_remote() as remote:
+            wait(lambda: remote.exists("/tmp/migration-done"),
+                 timeout=60 * 10,
+                 timeout_msg="File /tmp/migration-done wasn't appeared")
+            logger.info("Migration complete!")
+
+        logger.info("Wait for Slave nodes become online")
         self.fuel_web.wait_nodes_get_online_state(
-            self.env.d_env.nodes().slaves[:2])
+            self.env.d_env.nodes().slaves[:2], timeout=60 * 20)
