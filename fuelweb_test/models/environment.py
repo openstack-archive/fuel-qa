@@ -549,9 +549,9 @@ class EnvironmentModel(object):
         out = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
             cmd=command
-        )['stdout']
+        )['stdout_str']
 
-        assert_true(self.get_admin_node_ip() in "".join(out),
+        assert_true(self.get_admin_node_ip() in out,
                     "dhcpcheck doesn't discover master ip")
 
     def bootstrap_image_check(self):
@@ -655,15 +655,12 @@ class EnvironmentModel(object):
 
         cmd = 'bootstrap_admin_node.sh;'
 
-        result = self.ssh_manager.execute(
+        self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd=cmd
+            cmd=cmd,
+            err_msg='bootstrap failed, inspect logs for details',
         )
-        logger.info('Result of "{1}" command on master node: '
-                    '{0}'.format(result, cmd))
-        assert_equal(int(result['exit_code']), 0,
-                     'bootstrap failed, '
-                     'inspect logs for details')
+        logger.info('bootstrap successfull')
 
     # Modifies a resolv.conf on the Fuel master node and returns
     # its original content.
