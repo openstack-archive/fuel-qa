@@ -573,6 +573,10 @@ Nessus scan tests
 .. automodule:: fuelweb_test.tests.tests_security.test_run_nessus
    :members:
 
+Lynis audit tests
+------------------
+.. automodule:: fuelweb_test.tests.tests_security.test_lynis_audit
+   :members:
 
 Strength tests
 ==============
