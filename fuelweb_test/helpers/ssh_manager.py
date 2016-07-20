@@ -21,7 +21,7 @@ import traceback
 from devops.helpers.helpers import wait
 from devops.models.node import SSHClient
 from paramiko import RSAKey
-from paramiko.ssh_exception import BadAuthenticationType
+from paramiko.ssh_exception import AuthenticationException
 import six
 import yaml
 
@@ -124,7 +124,7 @@ class SSHManager(object):
                         password=self.__slave_password,
                         private_keys=keys
                     )
-                except BadAuthenticationType:
+                except AuthenticationException:
                     ssh_client = SSHClient(
                         host=ip,
                         port=port,
