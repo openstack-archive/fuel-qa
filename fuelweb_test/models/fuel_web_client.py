@@ -29,7 +29,7 @@ except ImportError:
     # pylint: disable=no-member
     DevopsObjNotFound = Node.DoesNotExist
     # pylint: enable=no-member
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 import netaddr
 from proboscis.asserts import assert_equal
@@ -39,6 +39,7 @@ from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves.urllib.error import HTTPError
 # pylint: enable=import-error
 import yaml
@@ -161,7 +162,7 @@ class FuelWebClient(object):
                              networks_count=2, timeout=300):
         logger.info('Assert cluster services are UP')
         # TODO(astudenov): add timeout_msg
-        _wait(
+        wait_pass(
             lambda: self.get_cluster_status(
                 os_conn,
                 smiles_count=smiles_count,
@@ -178,10 +179,10 @@ class FuelWebClient(object):
                         .format(timeout))
             with QuietLogger(logging.ERROR):
                 # TODO(astudenov): add timeout_msg
-                _wait(lambda: self.run_ostf(cluster_id,
-                                            test_sets=['ha'],
-                                            should_fail=should_fail),
-                      interval=20, timeout=timeout)
+                wait_pass(lambda: self.run_ostf(cluster_id,
+                                                test_sets=['ha'],
+                                                should_fail=should_fail),
+                          interval=20, timeout=timeout)
             logger.info('OSTF HA tests passed successfully.')
         else:
             logger.debug('Cluster {0} is not in HA mode, OSTF HA tests '
@@ -196,10 +197,10 @@ class FuelWebClient(object):
                     .format(timeout))
         with QuietLogger():
             # TODO(astudenov): add timeout_msg
-            _wait(lambda: self.run_ostf(cluster_id,
-                                        test_sets=['sanity'],
-                                        should_fail=should_fail),
-                  interval=10, timeout=timeout)
+            wait_pass(lambda: self.run_ostf(cluster_id,
+                                            test_sets=['sanity'],
+                                            should_fail=should_fail),
+                      interval=10, timeout=timeout)
         logger.info('OSTF Sanity checks passed successfully.')
 
     @logwrap
@@ -350,8 +351,8 @@ class FuelWebClient(object):
         task = self.task_wait(task, timeout, interval)
         assert_equal(
             'error', task['status'],
-            "Task '{name}' has incorrect status. {} != {}".format(
-                task['status'], 'error', name=task["name"]
+            "Task '{name}' has incorrect status. {status} != {exp}".format(
+                status=task['status'], exp='error', name=task["name"]
             )
         )
 
@@ -516,7 +517,7 @@ class FuelWebClient(object):
         :param settings:
         :param port:
         :param configure_ssl:
-        :param cgroup_data:
+        :param release_id:
         :return: cluster_id
         """
         logger.info('Create cluster with name %s', name)
@@ -629,9 +630,8 @@ class FuelWebClient(object):
                                     "it is required for VxLAN DVR "
                                     "network configuration.")
 
-            public_gw = self.environment.d_env.router(router_name="public")
+            public_gw = self.get_public_gw()
 
-            remote = self.environment.d_env.get_admin_remote()
             if help_data.FUEL_USE_LOCAL_NTPD\
                     and ('ntp_list' not in settings)\
                     and checkers.is_ntpd_active(
@@ -641,7 +641,6 @@ class FuelWebClient(object):
                 logger.info("Configuring cluster #{0}"
                             "to use NTP server {1}"
                             .format(cluster_id, public_gw))
-            remote.clear()
 
             if help_data.FUEL_USE_LOCAL_DNS and ('dns_list' not in settings):
                 attributes['editable']['external_dns']['dns_list']['value'] =\
@@ -678,12 +677,7 @@ class FuelWebClient(object):
             # may be created by new components like ironic
             self.client.update_cluster_attributes(cluster_id, attributes)
 
-            if MULTIPLE_NETWORKS:
-                ng = {rack['name']: [] for rack in NODEGROUPS}
-                self.update_nodegroups(cluster_id=cluster_id,
-                                       node_groups=ng)
-                self.update_nodegroups_network_configuration(cluster_id,
-                                                             NODEGROUPS)
+            self.nodegroups_configure(cluster_id)
 
             logger.debug("Try to update cluster "
                          "with next attributes {0}".format(attributes))
@@ -702,6 +696,21 @@ class FuelWebClient(object):
         #    cluster_id, self.environment.get_host_node_ip(), port)
 
         return cluster_id
+
+    @logwrap
+    def get_public_gw(self):
+        return self.environment.d_env.router(router_name="public")
+
+    @logwrap
+    def nodegroups_configure(self, cluster_id):
+        """Update nodegroups configuration
+        """
+        if not MULTIPLE_NETWORKS:
+            return
+
+        ng = {rack['name']: [] for rack in NODEGROUPS}
+        self.update_nodegroups(cluster_id=cluster_id, node_groups=ng)
+        self.update_nodegroups_network_configuration(cluster_id, NODEGROUPS)
 
     @logwrap
     def ssl_configure(self, cluster_id):
@@ -1419,12 +1428,8 @@ class FuelWebClient(object):
 
             devops_node = self.environment.d_env.get_node(name=node_name)
 
-            wait(lambda:
-                 self.get_nailgun_node_by_devops_node(devops_node)['online'],
-                 timeout=60 * 2)
+            self.wait_node_is_online(devops_node, timeout=60 * 2)
             node = self.get_nailgun_node_by_devops_node(devops_node)
-            assert_true(node['online'],
-                        'Node {0} is offline'.format(node['mac']))
 
             if custom_names:
                 name = custom_names.get(node_name,
@@ -2038,7 +2043,7 @@ class FuelWebClient(object):
                 cmd = 'ip netns exec {0} ip -4 ' \
                       '-o address show {1}'.format(namespace, interface)
             else:
-                cmd = 'ip -4 -o address show {1}'.format(interface)
+                cmd = 'ip -4 -o address show {0}'.format(interface)
 
             with self.get_ssh_for_node(node_name) as remote:
                 ret = remote.check_call(cmd)

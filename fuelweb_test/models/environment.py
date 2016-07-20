@@ -15,12 +15,12 @@
 import re
 import time
 
-from devops.helpers.helpers import _tcp_ping
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import tcp_ping_
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 from devops.helpers.ntp import sync_time
 from devops.models import Environment
-from keystoneauth1 import exceptions
+from keystoneclient import exceptions
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 import six
@@ -46,7 +46,6 @@ from fuelweb_test import settings
 from fuelweb_test.settings import iface_alias
 from fuelweb_test import logwrap
 from fuelweb_test import logger
-from fuelweb_test import QuietLogger
 
 
 @six.add_metaclass(SingletonMeta)
@@ -304,21 +303,15 @@ class EnvironmentModel(object):
         if not skip_timesync:
             self.sync_time()
         try:
-            with QuietLogger():
-                # TODO(astudenov): add timeout_msg
-                _wait(
-                    self.fuel_web.client.get_releases,
-                    expected=(
-                        exceptions.RetriableConnectionFailure,
-                        exceptions.UnknownConnectionError),
-                    timeout=300)
+            wait_pass(self.fuel_web.client.get_releases,
+                      expected=EnvironmentError, timeout=300)
         except exceptions.Unauthorized:
             self.set_admin_keystone_password()
             self.fuel_web.get_nailgun_version()
 
         if not skip_slaves_check:
             # TODO(astudenov): add timeout_msg
-            _wait(lambda: self.check_slaves_are_ready(), timeout=60 * 6)
+            wait_pass(lambda: self.check_slaves_are_ready(), timeout=60 * 6)
         return True
 
     def set_admin_ssh_password(self):
@@ -443,7 +436,7 @@ class EnvironmentModel(object):
     def wait_for_provisioning(self,
                               timeout=settings.WAIT_FOR_PROVISIONING_TIMEOUT):
         # TODO(astudenov): add timeout_msg
-        _wait(lambda: _tcp_ping(
+        wait_pass(lambda: tcp_ping_(
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
             (self.d_env.admin_net), 22), timeout=timeout)
@@ -455,7 +448,7 @@ class EnvironmentModel(object):
         def check_ssh_connection():
             """Try to close fuelmenu and check ssh connection"""
             try:
-                _tcp_ping(
+                tcp_ping_(
                     self.d_env.nodes(
                     ).admin.get_ip_address_by_network_name
                     (self.d_env.admin_net), 22)
@@ -536,9 +529,9 @@ class EnvironmentModel(object):
         out = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
             cmd=command
-        )['stdout']
+        )['stdout_str']
 
-        assert_true(self.get_admin_node_ip() in "".join(out),
+        assert_true(self.get_admin_node_ip() in out,
                     "dhcpcheck doesn't discover master ip")
 
     def bootstrap_image_check(self):
@@ -642,15 +635,12 @@ class EnvironmentModel(object):
 
         cmd = 'bootstrap_admin_node.sh;'
 
-        result = self.ssh_manager.execute(
+        self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd=cmd
+            cmd=cmd,
+            err_msg='bootstrap failed, inspect logs for details',
         )
-        logger.info('Result of "{1}" command on master node: '
-                    '{0}'.format(result, cmd))
-        assert_equal(int(result['exit_code']), 0,
-                     'bootstrap failed, '
-                     'inspect logs for details')
+        logger.info('bootstrap successfull')
 
     # Modifies a resolv.conf on the Fuel master node and returns
     # its original content.
