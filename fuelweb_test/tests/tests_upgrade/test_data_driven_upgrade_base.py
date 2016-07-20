@@ -417,25 +417,27 @@ class DataDrivenUpgradeBase(TestBasic):
         self.check_run("upgrade_detach_plugin_backup")
         self.env.revert_snapshot("ready", skip_timesync=True)
 
-        run_on_remote(
-            self.admin_remote,
-            "yum -y install git python-pip createrepo dpkg-devel dpkg-dev rpm "
-            "rpm-build && pip install fuel-plugin-builder")
-
-        run_on_remote(
-            self.admin_remote,
-            "git clone https://github.com/"
-            "openstack/fuel-plugin-detach-database")
-
         cmds = [
-            "cd fuel-plugin-detach-database", "git checkout stable/{}".format(
-                settings.UPGRADE_FUEL_FROM),
+            "yum -y install git python-pip createrepo "
+            "dpkg-devel dpkg-dev rpm rpm-build",
+            "pip install virtualenv ",
+            "virtualenv --system-site-packages fpb",
+            "source fpb/bin/activate",
+            "pip install -U setuptools",
+            "pip install fuel-plugin-builder",
+
+            "git clone https://github.com/"
+            "openstack/fuel-plugin-detach-database",
+
+            "cd fuel-plugin-detach-database",
+            "git checkout stable/{}".format(settings.UPGRADE_FUEL_FROM),
+
             "fpb --build . ",
             "fuel plugins --install *.rpm "
             "--user {user} --password {pwd}".format(
                 user=settings.KEYSTONE_CREDS['username'],
-                pwd=settings.KEYSTONE_CREDS['password'])
-        ]
+                pwd=settings.KEYSTONE_CREDS['password']),
+            "deactivate"]
 
         run_on_remote(self.admin_remote, " && ".join(cmds))
 
