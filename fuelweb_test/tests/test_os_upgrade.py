@@ -22,7 +22,7 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.settings import KEYSTONE_CREDS
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
-from fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade import \
+from fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_base import \
     DataDrivenUpgradeBase
 
 
