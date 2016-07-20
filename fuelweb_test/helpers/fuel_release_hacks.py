@@ -17,6 +17,7 @@ import os
 from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers.ssh_manager import SSHManager
+from fuelweb_test.helpers.utils import generate_yum_repos_config
 
 from gates_tests.helpers import exceptions
 
@@ -39,6 +40,20 @@ def install_mos_repos():
             ip=ssh.admin_ip,
             source=settings.FUEL_RELEASE_PATH.rstrip('/'),
             target=pack_path)
+
+        if settings.RPM_REPOS_YAML:
+            with ssh.open_on_remote(
+                    ip=ssh.admin_ip,
+                    path='/etc/yum.repos.d/custom.repo') as f:
+                f.write(generate_yum_repos_config(settings.RPM_REPOS_YAML))
+
+        if settings.DEB_REPOS_YAML:
+            ssh = SSHManager()
+            pack_path = "/root/default_deb_repos.yaml"
+            ssh.upload_to_remote(
+                ip=ssh.admin_ip,
+                source=settings.DEB_REPOS_YAML,
+                target=pack_path)
 
     except Exception:
         logger.exception("Could not upload package")
