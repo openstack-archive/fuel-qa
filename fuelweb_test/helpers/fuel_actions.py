@@ -32,6 +32,7 @@ from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
 from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
 from fuelweb_test.helpers import replace_repos
 from fuelweb_test.helpers.ssh_manager import SSHManager
+from fuelweb_test.helpers.utils import dict_merge
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
 from fuelweb_test.settings import MIRROR_UBUNTU
@@ -268,6 +269,22 @@ class AdminActions(BaseActions):
             logger.info("Replace default Ubuntu mirror URL for "
                         "bootstrap image in Fuel settings")
         self.save_fuel_settings(fuel_settings)
+
+    @logwrap
+    def update_fuel_setting_yaml(self, path):
+        """This method override fuel settings yaml according to custom yaml
+
+        :param path: a string of full path to custom setting yaml
+        """
+
+        fuel_settings = self.get_fuel_settings()
+        with open(path) as fyaml:
+            custom_fuel_settings = yaml.load(fyaml)
+
+        fuel_settings = dict_merge(fuel_settings, custom_fuel_settings)
+        self.save_fuel_settings(fuel_settings)
+        logger.debug('File /etc/fuel/astute.yaml was updated.'
+                     'And now is {}'.format(fuel_settings))
 
     @logwrap
     def upload_packages(self, local_packages_dir, centos_repo_path,

@@ -423,6 +423,9 @@ FUEL_SETTINGS_YAML = os.environ.get('FUEL_SETTINGS_YAML',
 UPGRADE_TEST_TEMPLATE = os.environ.get("UPGRADE_TEST_TEMPLATE")
 TARBALL_PATH = os.environ.get('TARBALL_PATH')
 
+# Full path to the custom fuel setting yaml
+CUSTOM_FUEL_SETTING_YAML = os.environ.get('CUSTOM_FUEL_SETTING_YAML', None)
+
 UPGRADE_FUEL_FROM = os.environ.get('UPGRADE_FUEL_FROM', '8.0')
 UPGRADE_FUEL_TO = os.environ.get('UPGRADE_FUEL_TO', '9.0')
 OCTANE_PATCHES = os.environ.get('OCTANE_PATCHES', None)
