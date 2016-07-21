@@ -152,8 +152,13 @@ def get_version_from_upstream_job(jenkins_build_data):
 
 
 def get_job_parameter(jenkins_build_data, parameter):
-    parameters = [a['parameters'] for a in jenkins_build_data['actions']
-                  if 'parameters' in a.keys()][0]
+    parameters_arr = [a['parameters'] for a in jenkins_build_data['actions']
+                      if 'parameters' in a.keys()]
+    # NOTE(akostrikov) LP #1603088 The root job is a snapshot job without
+    # parameters. It has fullDisplayName, which is parse-able.
+    if len(parameters_arr) == 0:
+        return jenkins_build_data['fullDisplayName']
+    parameters = parameters_arr[0]
     target_params = [p['value'] for p in parameters
                      if p['name'].lower() == str(parameter).lower()]
     if len(target_params) > 0:
@@ -611,14 +616,14 @@ def main():
 
     # NOTE(akostrikov) LP #1603088 When there is a snapshot word in prefix,
     # we can skip timestamp part of a test plan name.
-    if 'snapshot' not in prefix:
+    if 'snapshot' in prefix:
         test_plan_name = ' '.join(
             filter(lambda x: bool(x),
-                   (milestone['name'], prefix, 'iso', '#' + str(iso_number))))
+                   (milestone['name'], prefix.replace('9.x.', ''))))
     else:
         test_plan_name = ' '.join(
             filter(lambda x: bool(x),
-                   (milestone['name'], prefix)))
+                   (milestone['name'], prefix, 'iso', '#' + str(iso_number))))
 
     test_plan = project.get_plan_by_name(test_plan_name)
 
