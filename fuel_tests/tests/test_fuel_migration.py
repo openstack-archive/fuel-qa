@@ -45,6 +45,29 @@ class TestFuelMasterMigrate(object):
 
     @pytest.mark.need_ready_cluster
     @pytest.mark.fuel_master_migration
+    @pytest.mark.test_fuel_master_migration
+    def test_fuel_master_migration(self):
+        """Fuel master migration to VM
+
+            Scenario:
+                1. Create environment
+                2. Run network checker
+                3. Deploy environment
+                4. Run network checker
+                5. Migrate Fuel Master to the compute node
+                6. Run network checker
+                7. Run OSTF
+            """
+        self.manager.show_step(1)
+        self.manager.show_step(2)
+        self.manager.show_step(3)
+        self.manager.show_step(4)
+        self.manager.show_step(5)
+        self.manager.show_step(6)
+        self.manager.show_step(7)
+
+    @pytest.mark.need_ready_cluster
+    @pytest.mark.fuel_master_migration
     @pytest.mark.test_compute_hard_restart
     def test_compute_hard_restart(self):
         """Check Fuel Master node functionality after hard restart of the
