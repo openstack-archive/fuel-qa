@@ -614,31 +614,29 @@ class EnvironmentModel(object):
     # then `bootstrap_admin_node.sh;`
     def admin_install_updates(self):
         logger.info('Searching for updates..')
-        update_command = 'yum clean expire-cache; yum update -y'
+        update_command = 'yum clean expire-cache && ' \
+                         'yum update -y 2>>/var/log/yum-update-error.log'
 
-        update_result = self.ssh_manager.execute(
+        logger.info('Performing yum clean and update commands')
+        update_result = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd=update_command
-        )
+            cmd=update_command,
+            err_msg='Packages update failed, inspect logs for details')
 
-        logger.info('Result of "{1}" command on master node: '
-                    '{0}'.format(update_result, update_command))
-        assert_equal(int(update_result['exit_code']), 0,
-                     'Packages update failed, '
-                     'inspect logs for details')
+        logger.info('Packages were updated successfully')
 
         # Check if any packets were updated and update was successful
-        yum_output = ''.join(update_result['stdout'])
         match_updated_count = re.search(r'Upgrade\s+(\d+)\s+Package',
-                                        yum_output)
+                                        update_result['stdout_str'])
         # In case of package replacement, the new one is marked as
         # installed and the old one as removed
         match_installed_count = re.search(r'Install\s+(\d+)\s+Package',
-                                          yum_output)
-        match_complete_message = re.search(r'Complete!', yum_output)
+                                          update_result['stdout_str'])
+        match_complete_message = re.search(r'Complete!',
+                                           update_result['stdout_str'])
 
         match_no_updates = re.search("No Packages marked for Update",
-                                     yum_output)
+                                     update_result['stdout_str'])
 
         if match_no_updates or not match_complete_message \
                 or not (match_updated_count or match_installed_count):
