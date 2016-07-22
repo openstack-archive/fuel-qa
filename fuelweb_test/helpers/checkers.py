@@ -282,13 +282,11 @@ def backup_check(ip):
 @logwrap
 def restore_check_sum(ip):
     logger.debug('Check if removed file /etc/fuel/data was restored')
-    res = ssh_manager.execute(
-        ip=ip,
-        cmd="if [ -e /etc/fuel/data ]; then echo Restored!!; fi"
-    )
-    assert_true("Restored!!" in ''.join(res['stdout']).strip(),
-                'Test file /etc/fuel/data '
-                'was not restored!!! {0}'.format(res['stderr']))
+
+    assert_true(
+        ssh_manager.exists_on_remote(ip=ip, path='/etc/fuel/data'),
+        'Test file /etc/fuel/data was not restored!!!')
+
     logger.info("Restore check md5sum")
     md5sum_backup = ssh_manager.execute_on_remote(ip, "cat /etc/fuel/sum")
     assert_true(md5sum_backup['stdout_str'],
@@ -1373,7 +1371,7 @@ def check_free_space_admin(env, min_disk_admin=50, disk_id=0):
     """
     disk_size_admin = env.d_env.nodes().admin.disk_devices[
         disk_id].volume.get_capacity()
-    min_disk_admin = min_disk_admin * 1024 ** 3
+    min_disk_admin *= 1024 ** 3
     if disk_size_admin < min_disk_admin:
         raise ValueError(
             "The minimal disk size should be {0}, current {1}".format(
@@ -1420,7 +1418,7 @@ def check_free_space_slave(env, min_disk_slave=150):
     :param env: environment model object
     :param min_disk_slave: minimal disk size of slave node
     """
-    min_disk_slave = min_disk_slave * 1024 ** 3
+    min_disk_slave *= 1024 ** 3
     disk_size_slave = 0
     active_nodes = []
     for node in env.d_env.nodes().slaves:
