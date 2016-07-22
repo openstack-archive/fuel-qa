@@ -12,15 +12,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import unicode_literals
+
 import pytest
 from paramiko import ChannelException
-
+from devops.helpers.ssh_client import SSHAuth
 from devops.helpers.helpers import wait
-from devops.error import TimeoutError
 
 from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers import os_actions
+
+cirros_auth = SSHAuth(**settings.SSH_IMAGE_CREDENTIALS)
 
 # pylint: disable=no-member
 
@@ -196,11 +199,10 @@ class TestNeutronIPv6(object):
         with fuel_web.get_ssh_for_node("slave-01") as remote:
             def ssh_ready(vm_host):
                 try:
-                    os_conn.execute_through_host(
-                        ssh=remote,
-                        vm_host=vm_host,
+                    remote.execute_through_host(
+                        hostname=vm_host,
                         cmd="ls -la",
-                        creds=("cirros", "cubswin:)")
+                        auth=cirros_auth
                     )
                     return True
                 except ChannelException:
@@ -210,18 +212,13 @@ class TestNeutronIPv6(object):
                     (floating_ip.ip, instance1),
                     (floating_ip2.ip, instance2)
             ):
-                try:
-                    wait(lambda: ssh_ready(vm_host), timeout=120)
-                except TimeoutError:
-                    raise TimeoutError(
-                        'ssh is not ready on host '
-                        '{hostname:s} ({ip:s}) '
-                        'at timeout 120s'.format(
-                            hostname=hostname, ip=vm_host))
+                wait(lambda: ssh_ready(vm_host), timeout=120,
+                     timeout_msg='ssh is not ready on host '
+                                 '{hostname:s} ({ip:s}) at timeout 120s'
+                                 ''.format(hostname=hostname, ip=vm_host))
 
-            res = os_conn.execute_through_host(
-                ssh=remote,
-                vm_host=floating_ip.ip,
+            res = remote.execute_through_host(
+                hostname=floating_ip.ip,
                 cmd="{ping:s} -q "
                     "-c{count:d} "
                     "-w{deadline:d} "
@@ -232,16 +229,18 @@ class TestNeutronIPv6(object):
                         deadline=20,
                         packetsize=1452,
                         dst_address=instance2_ipv6),
-                creds=("cirros", "cubswin:)")
+                auth=cirros_auth
             )
-            logger.info('Ping results: \n\t{res:s}'.format(res=res['stdout']))
+
+            logger.info(
+                'Ping results: \n\t{res:s}'.format(res=res['stdout_str']))
 
             assert res['exit_code'] == 0, (
                 'Ping failed with error code: {code:d}\n'
                 '\tSTDOUT: {stdout:s}\n'
                 '\tSTDERR: {stderr:s}'.format(
                     code=res['exit_code'],
-                    stdout=res['stdout'],
-                    stderr=res['stderr']))
+                    stdout=res['stdout_str'],
+                    stderr=res['stderr_str']))
 
         self.env.make_snapshot('deploy_neutron_ip_v6')
