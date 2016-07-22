@@ -16,6 +16,7 @@ from copy import deepcopy
 import subprocess
 
 from devops.helpers import helpers as devops_helpers
+from devops.helpers.ssh_client import SSHAuth
 from proboscis import asserts
 from proboscis import test
 
@@ -25,6 +26,9 @@ from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.settings import iface_alias
 from fuelweb_test.tests import base_test_case
+
+
+cirros_auth = SSHAuth(**settings.SSH_IMAGE_CREDENTIALS)
 
 
 @test(groups=["jumbo_frames"])
@@ -119,7 +123,6 @@ class TestJumboFrames(base_test_case.TestBasic):
     def ping_instance_from_instance(self, source_instance,
                                     destination_instance,
                                     net_from, net_to, size, count=1):
-        creds = ("cirros", "cubswin:)")
         destination_ip = self.os_conn.get_nova_instance_ip(
             destination_instance, net_name=net_to, addrtype='fixed')
         source_ip = self.os_conn.get_nova_instance_ip(
@@ -133,13 +136,19 @@ class TestJumboFrames(base_test_case.TestBasic):
                 "Try to ping private address {0} from {1} with {2} {3} bytes "
                 "packet(s): {4}".format(destination_ip, source_ip, count, size,
                                         command))
-            ping = self.os_conn.execute_through_host(ssh, source_ip, command,
-                                                     creds)
-            logger.info("Ping result: \n"
-                        "{0}\n"
-                        "{1}\n"
-                        "exit_code={2}".format(ping['stdout'], ping['stderr'],
-                                               ping['exit_code']))
+
+            ping = ssh.execute_through_host(
+                hostname=source_ip,
+                cmd=command,
+                auth=cirros_auth
+            )
+
+            logger.info(
+                "Ping result: \n"
+                "{0}\n"
+                "{1}\n"
+                "exit_code={2}".format(
+                    ping['stdout_str'], ping['stderr_str'], ping['exit_code']))
 
             return 0 == ping['exit_code']
 

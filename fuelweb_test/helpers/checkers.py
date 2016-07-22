@@ -278,13 +278,11 @@ def backup_check(ip):
 @logwrap
 def restore_check_sum(ip):
     logger.debug('Check if removed file /etc/fuel/data was restored')
-    res = ssh_manager.execute(
-        ip=ip,
-        cmd="if [ -e /etc/fuel/data ]; then echo Restored!!; fi"
-    )
-    assert_true("Restored!!" in ''.join(res['stdout']).strip(),
-                'Test file /etc/fuel/data '
-                'was not restored!!! {0}'.format(res['stderr']))
+
+    assert_true(
+        ssh_manager.exists_on_remote(ip=ip, path='/etc/fuel/data'),
+        'Test file /etc/fuel/data was not restored!!!')
+
     logger.info("Restore check md5sum")
     md5sum_backup = ssh_manager.execute_on_remote(ip, "cat /etc/fuel/sum")
     assert_true(md5sum_backup['stdout_str'],
