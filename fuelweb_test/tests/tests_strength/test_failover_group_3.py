@@ -16,6 +16,7 @@ from __future__ import division
 import time
 
 from devops.error import TimeoutError
+from devops.helpers.ssh_client import SSHAuth
 from proboscis import test
 from proboscis.asserts import assert_equal
 
@@ -25,6 +26,9 @@ from fuelweb_test.helpers import utils
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import TestBasic
+
+
+cirros_auth = SSHAuth(**settings.SSH_IMAGE_CREDENTIALS)
 
 
 @test(groups=['failover_group_3'])
@@ -181,7 +185,10 @@ class FailoverGroup3(TestBasic):
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
             for ip in [floating_ip_1.ip, floating_ip_2.ip]:
                 for cmd in cmds:
-                    res = os.execute_through_host(remote, ip, cmd)
+                    res = remote.execute_through_host(
+                        hostname=ip,
+                        cmd=cmd,
+                        auth=cirros_auth)
                     logger.info('RESULT for {}: {}'.format(
                         cmd,
                         utils.pretty_log(res))
@@ -189,7 +196,10 @@ class FailoverGroup3(TestBasic):
                 logger.info('Wait 7200 untill "dd" ends')
                 for _ in range(720):
                     cmd = 'ps -ef |grep -v grep| grep "dd if" '
-                    res = os.execute_through_host(remote, ip, cmd)
+                    res = remote.execute_through_host(
+                        hostname=ip,
+                        cmd=cmd,
+                        auth=cirros_auth)
                     if res['exit_code'] != 0:
                         break
                     time.sleep(10)
@@ -199,8 +209,10 @@ class FailoverGroup3(TestBasic):
                     raise TimeoutError('BigFile has not been'
                                        ' created yet, after 7200 sec')
                 cmd = 'md5sum /mnt/bigfile'
-                md5s[ip] = os.execute_through_host(remote,
-                                                   ip, cmd)['stdout']
+                md5s[ip] = remote.execute_through_host(
+                    hostname=ip,
+                    cmd=cmd,
+                    auth=cirros_auth)['stdout']
 
         self.show_step(9)
         nodes = {'compute': [], 'controller': [], 'ceph-osd': []}
@@ -233,7 +245,10 @@ class FailoverGroup3(TestBasic):
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
             for ip in [floating_ip_1.ip, floating_ip_2.ip]:
                 cmd = 'md5sum /mnt/bigfile'
-                md5 = os.execute_through_host(remote, ip, cmd)['stdout']
+                md5 = remote.execute_through_host(
+                    hostname=ip,
+                    cmd=cmd,
+                    auth=cirros_auth)['stdout']
                 assert_equal(md5, md5s[ip],
                              "Actual md5sum {0} doesnt match"
                              " with old one {1} on {2}".format(
@@ -381,7 +396,10 @@ class FailoverGroup3(TestBasic):
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
             for ip in [floating_ip_1.ip, floating_ip_2.ip]:
                 for cmd in cmds:
-                    res = os.execute_through_host(remote, ip, cmd)
+                    res = remote.execute_through_host(
+                        hostname=ip,
+                        cmd=cmd,
+                        auth=cirros_auth)
                     logger.info('RESULT for {}: {}'.format(
                         cmd,
                         utils.pretty_log(res))
@@ -389,7 +407,10 @@ class FailoverGroup3(TestBasic):
                 logger.info('Wait 7200 untill "dd" ends')
                 for _ in range(720):
                     cmd = 'ps -ef |grep -v grep| grep "dd if" '
-                    res = os.execute_through_host(remote, ip, cmd)
+                    res = remote.execute_through_host(
+                        hostname=ip,
+                        cmd=cmd,
+                        auth=cirros_auth)
                     if res['exit_code'] != 0:
                         break
                     time.sleep(15)
@@ -399,8 +420,10 @@ class FailoverGroup3(TestBasic):
                     raise TimeoutError('BigFile has not been'
                                        ' created yet, after 7200 sec')
                 cmd = 'md5sum /mnt/bigfile'
-                md5s[ip] = os.execute_through_host(remote,
-                                                   ip, cmd)['stdout']
+                md5s[ip] = remote.execute_through_host(
+                    hostname=ip,
+                    cmd=cmd,
+                    auth=cirros_auth)['stdout']
         self.show_step(9)
         nodes = {'compute': [], 'controller': [], 'cinder': []}
 
@@ -433,7 +456,10 @@ class FailoverGroup3(TestBasic):
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
             for ip in [floating_ip_1.ip, floating_ip_2.ip]:
                 cmd = 'md5sum /mnt/bigfile'
-                md5 = os.execute_through_host(remote, ip, cmd)['stdout']
+                md5 = remote.execute_through_host(
+                    hostname=ip,
+                    cmd=cmd,
+                    auth=cirros_auth)['stdout']
                 assert_equal(md5, md5s[ip],
                              "Actual md5sum {0} doesnt match"
                              " with old one {1} on {2}".format(
