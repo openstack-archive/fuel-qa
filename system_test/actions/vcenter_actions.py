@@ -17,7 +17,7 @@ from random import randrange
 from time import sleep
 
 from devops.helpers import helpers
-
+from devops.helpers.ssh_client import SSHAuth
 from proboscis import SkipTest
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
@@ -29,10 +29,14 @@ from fuelweb_test.settings import NEUTRON
 from fuelweb_test.settings import SERVTEST_PASSWORD
 from fuelweb_test.settings import SERVTEST_TENANT
 from fuelweb_test.settings import SERVTEST_USERNAME
+from fuelweb_test.settings import SSH_IMAGE_CREDENTIALS
 from system_test import action
 from system_test import deferred_decorator
 from system_test import logger
 from system_test.helpers.decorators import make_snapshot_if_step_fail
+
+
+cirros_auth = SSHAuth(**SSH_IMAGE_CREDENTIALS)
 
 
 # pylint: disable=no-member
@@ -318,8 +322,12 @@ class VMwareActions(object):
             self.cluster_id, ["controller"])[0]
         with self.fuel_web.get_ssh_for_nailgun_node(controller) as remote:
             cmd = 'sudo /sbin/fdisk -l | grep {}'.format(mount_point)
-            res = os_conn.execute_through_host(remote, floating_ip.ip, cmd)
-            logger.debug('OUTPUT: {}'.format(res))
+            res = remote.execute_through_host(
+                hostname=floating_ip.ip,
+                cmd=cmd,
+                auth=cirros_auth
+            )
+            logger.debug('OUTPUT: {}'.format(res['stdout_str']))
             assert_equal(res['exit_code'], 0, "Attached volume is not found")
 
         os_conn.delete_instance(vm)
@@ -456,9 +464,12 @@ class VMwareActions(object):
             self.cluster_id, ["controller"])[0]
         with self.fuel_web.get_ssh_for_nailgun_node(controller) as remote:
             cmd = '/usr/bin/lshw -class network | grep vmxnet3'
-            res = os_conn.execute_through_host(remote, floating_ip.ip, cmd,
-                                               creds=self.image_creds)
-            logger.debug('OUTPUT: {}'.format(res))
+            res = remote.execute_through_host(
+                hostname=floating_ip.ip,
+                cmd=cmd,
+                auth=self.image_creds
+            )
+            logger.debug('OUTPUT: {}'.format(res['stdout_str']))
             assert_equal(res['exit_code'], 0, "VMxnet3 driver is not found")
 
         os_conn.delete_instance(vm)
@@ -795,14 +806,17 @@ class VMwareActions(object):
         :param size: number of data bytes to be sent
         :param count: number of packets to be sent
         """
-        creds = ("cirros", "cubswin:)")
 
         with self.fuel_web.get_ssh_for_node(primary) as ssh:
             command = "ping -s {0} -c {1} {2}".format(size, count,
                                                       dst_ip)
-            ping = self.os_conn.execute_through_host(ssh, src_floating_ip,
-                                                     command, creds)
-            logger.info("Ping result is {}".format(ping['exit_code']))
+            ping = ssh.execute_through_host(
+                hostname=src_floating_ip,
+                cmd=command,
+                auth=cirros_auth
+            )
+
+            logger.info("Ping result is {}".format(ping['stdout_str']))
             return 0 == ping['exit_code']
 
     @deferred_decorator([make_snapshot_if_step_fail])
