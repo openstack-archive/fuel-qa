@@ -14,6 +14,7 @@
 
 from proboscis import test
 from proboscis.asserts import assert_true
+from devops.helpers.ssh_client import SSHAuth
 from devops.helpers.helpers import wait
 from devops.error import TimeoutError
 
@@ -23,10 +24,13 @@ from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import SERVTEST_USERNAME
 from fuelweb_test.settings import SERVTEST_PASSWORD
 from fuelweb_test.settings import SERVTEST_TENANT
+from fuelweb_test.settings import SSH_IMAGE_CREDENTIALS
 from fuelweb_test.settings import iface_alias
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.helpers import os_actions
+
+cirros_auth = SSHAuth(**SSH_IMAGE_CREDENTIALS)
 
 
 @test(groups=["vcenter"])
@@ -1287,15 +1291,15 @@ class VcenterDeploy(TestBasic):
             for ip_2 in srv_ip:
                 if ip_1 != ip_2:
                     # Check server's connectivity
-                    res = int(
-                        os_conn.execute_through_host(
-                            ssh, ip_1, "ping -q -c3 " + ip_2 +
-                            "| grep -o '[0-9] packets received'"
-                            "| cut -f1 -d ' '")['stdout'])
+                    res = ssh.execute_through_host(
+                        hostname=ip_1,
+                        cmd="ping -q -c3 {}".format(ip_2),
+                        auth=cirros_auth
+                    )
                     assert_true(
-                        res == 3,
+                        res['exit_code'] == 0,
                         "VM{0} not ping from Vm {1}, received {2} icmp".format(
-                            ip_1, ip_2, res))
+                            ip_1, ip_2, res['stdout_str']))
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_ha_nova_vlan_multiple_clusters"])
@@ -1406,15 +1410,15 @@ class VcenterDeploy(TestBasic):
             for ip_2 in srv_ip:
                 if ip_1 != ip_2:
                     # Check server's connectivity
-                    res = int(
-                        os_conn.execute_through_host(
-                            ssh, ip_1, "ping -q -c3 " + ip_2 +
-                            "| grep -o '[0-9] packets received'"
-                            "| cut -f1 -d ' '")['stdout'])
+                    res = ssh.execute_through_host(
+                        hostname=ip_1,
+                        cmd="ping -q -c3 {}".format(ip_2),
+                        auth=cirros_auth
+                    )
                     assert_true(
-                        res == 3,
+                        res['exit_code'] == 0,
                         "VM{0} not ping from Vm {1}, received {2} icmp".format(
-                            ip_1, ip_2, res))
+                            ip_1, ip_2, res['stdout_str']))
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["vcenter_ha_glance_backend_multiple_cluster"])
