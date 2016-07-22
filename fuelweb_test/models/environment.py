@@ -40,6 +40,7 @@ from fuelweb_test.helpers.fuel_actions import NessusActions
 from fuelweb_test.helpers.fuel_actions import FuelBootstrapCliActions
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import TimeStat
+from fuelweb_test.helpers.utils import YamlEditor
 from fuelweb_test.helpers import multiple_networks_hacks
 from fuelweb_test.models.fuel_web_client import FuelWebClient
 from fuelweb_test.models.collector_client import CollectorClient
@@ -377,6 +378,18 @@ class EnvironmentModel(object):
                 cmd='fuel user --newpass {0} --change-password'.format(
                     settings.KEYSTONE_CREDS['password'])
             )
+            config_file = self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd='ls -1 $HOME/.config/fuel/fuel_client.yaml')['stdout_str']
+
+            with YamlEditor(config_file, ip=self.admin_node_ip) as editor:
+                editor.content["OS_PASSWORD"] = \
+                    settings.KEYSTONE_CREDS['password']
+            with YamlEditor(settings.FUEL_SETTINGS_YAML,
+                            ip=self.admin_node_ip) as editor:
+                editor.content["FUEL_ACCESS"]['password'] = \
+                    settings.KEYSTONE_CREDS['password']
+
             logger.info(
                 'New Fuel UI (keystone) username: "{0}", password: "{1}"'
                 .format(settings.KEYSTONE_CREDS['username'],
