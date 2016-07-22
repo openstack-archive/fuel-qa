@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from devops.helpers.ssh_client import SSHAuth
+
 from fuelweb_test.settings import DVS_PLUGIN_PATH
 from fuelweb_test.settings import DVS_PLUGIN_VERSION
 from fuelweb_test.settings import VMWARE_IMG_LOGIN
@@ -418,7 +420,7 @@ class UploadImage(ActionTest, BaseActions, VMwareActions):
     plugin_version = DVS_PLUGIN_VERSION
     image_name = VMWARE_IMG_NAME
     image_url = VMWARE_IMG_URL
-    image_creds = (VMWARE_IMG_LOGIN, VMWARE_IMG_PASSWORD)
+    image_creds = SSHAuth(VMWARE_IMG_LOGIN, VMWARE_IMG_PASSWORD)
 
     actions_order = [
         'prepare_env_with_plugin',
@@ -458,7 +460,7 @@ class Vmxnet3(ActionTest, BaseActions, VMwareActions):
     plugin_version = DVS_PLUGIN_VERSION
     image_name = VMWARE_IMG_NAME
     image_url = VMWARE_IMG_URL
-    image_creds = (VMWARE_IMG_LOGIN, VMWARE_IMG_PASSWORD)
+    image_creds = SSHAuth(VMWARE_IMG_LOGIN, VMWARE_IMG_PASSWORD)
 
     actions_order = [
         'prepare_env_with_plugin',

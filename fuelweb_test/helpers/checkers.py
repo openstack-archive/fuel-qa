@@ -279,16 +279,84 @@ def backup_check(ip):
                 "Archive '{0}' does not exist".format(path.rstrip()))
 
 
+_md5_record = re.compile(r'(?P<md5>\w+)[ \t]+(?P<filename>\w+)')
+
+
+def parse_md5sum_output(string):
+    """Process md5sum command output and return dict filename: md5
+
+    :param string: output of md5sum
+    :type string: str
+    :rtype: dict
+    :return: dict
+    """
+    return {filename: md5 for md5, filename in _md5_record.findall(string)}
+
+
+def diff_md5(before, after, no_dir_change=True):
+    """Doff md5sum output
+
+    :type before: str
+    :type after: str
+    :param no_dir_change: Check, that some files was added or removed
+    :type no_dir_change: bool
+    """
+    before_dict = parse_md5sum_output(before)
+    after_dict = parse_md5sum_output(after)
+
+    before_files = set(before_dict.keys())
+    after_files = set(after_dict.keys())
+
+    diff_filenames = before_files ^ after_files
+
+    dir_change = (
+        "Directory contents changed:\n"
+        "\tRemoved files: {removed}\n"
+        "\tNew files: {created}".format(
+            removed=[
+                filename for filename in diff_filenames
+                if filename in before_files],
+            created=[
+                filename for filename in diff_filenames
+                if filename in after_files],
+        )
+    )
+    if no_dir_change:
+        assert_true(len(diff_filenames) == 0, dir_change)
+    else:
+        logger.debug(dir_change)
+
+    changelist = [
+        {
+            'filename': filename,
+            'before': before_dict[filename],
+            'after': after_dict[filename]}
+        for filename in before_files & after_files
+        if before_dict[filename] != after_dict[filename]
+    ]
+    assert_true(
+        len(changelist) == 0,
+        "Files has been changed:\n"
+        "{}".format(
+            "".join(
+                map(
+                    lambda record: "{filename}: {before} -> {after}\n".format(
+                        **record),
+                    changelist
+                )
+            )
+        )
+    )
+
+
 @logwrap
 def restore_check_sum(ip):
     logger.debug('Check if removed file /etc/fuel/data was restored')
-    res = ssh_manager.execute(
-        ip=ip,
-        cmd="if [ -e /etc/fuel/data ]; then echo Restored!!; fi"
-    )
-    assert_true("Restored!!" in ''.join(res['stdout']).strip(),
-                'Test file /etc/fuel/data '
-                'was not restored!!! {0}'.format(res['stderr']))
+
+    assert_true(
+        ssh_manager.exists_on_remote(ip=ip, path='/etc/fuel/data'),
+        'Test file /etc/fuel/data was not restored!!!')
+
     logger.info("Restore check md5sum")
     md5sum_backup = ssh_manager.execute_on_remote(ip, "cat /etc/fuel/sum")
     assert_true(md5sum_backup['stdout_str'],
@@ -1373,7 +1441,7 @@ def check_free_space_admin(env, min_disk_admin=50, disk_id=0):
     """
     disk_size_admin = env.d_env.nodes().admin.disk_devices[
         disk_id].volume.get_capacity()
-    min_disk_admin = min_disk_admin * 1024 ** 3
+    min_disk_admin *= 1024 ** 3
     if disk_size_admin < min_disk_admin:
         raise ValueError(
             "The minimal disk size should be {0}, current {1}".format(
@@ -1420,7 +1488,7 @@ def check_free_space_slave(env, min_disk_slave=150):
     :param env: environment model object
     :param min_disk_slave: minimal disk size of slave node
     """
-    min_disk_slave = min_disk_slave * 1024 ** 3
+    min_disk_slave *= 1024 ** 3
     disk_size_slave = 0
     active_nodes = []
     for node in env.d_env.nodes().slaves:
