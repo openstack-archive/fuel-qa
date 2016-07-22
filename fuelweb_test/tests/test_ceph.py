@@ -12,9 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from __future__ import unicode_literals
+
 import time
-from ConfigParser import ConfigParser
-from cStringIO import StringIO
 
 import paramiko
 from pkg_resources import parse_version
@@ -23,7 +22,14 @@ from proboscis import SkipTest
 from proboscis import test
 from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
+from devops.helpers.ssh_client import SSHAuth
 from six import BytesIO
+# pylint: disable=import-error
+# noinspection PyUnresolvedReferences
+from six.moves import configparser
+# noinspection PyUnresolvedReferences
+from six.moves import cStringIO
+# pylint: enable=import-error
 
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers import ceph
@@ -591,7 +597,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
                 'slave-03': ['compute', 'ceph-osd']
             }
         )
-        creds = ("cirros", "test")
+        creds = SSHAuth(username="cirros", password="test")
 
         self.show_step(4)
 
@@ -657,11 +663,16 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         logger.info("Server is on host {:s}".format(srv_host))
 
         wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120,
-             timeout_msg='new WM ssh port ping timeout')
+             timeout_msg='new VM ssh port ping timeout')
 
         def ssh_ready(remote, ip, creds):
+            """SSH Ready status
+
+            :type ip: str
+            :type creds: SSHAuth
+            """
             try:
-                os.execute_through_host(remote, ip, '/bin/true', creds)
+                remote.execute_through_host(ip, '/bin/true', creds)
                 return True
             except paramiko.AuthenticationException:
                 logger.info("Authentication failed. Trying again in a minute.")
@@ -670,8 +681,10 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
             wait(lambda: ssh_ready(remote, floating_ip.ip, creds), timeout=300)
-            md5before = os.get_md5sum(
-                "/home/test_file", remote, floating_ip.ip, creds)
+            md5before = remote.execute_through_host(
+                floating_ip.ip,
+                "md5sum {:s}".format("/home/test_file"),
+                auth=creds).stdout_str
 
         self.show_step(8)
 
@@ -683,26 +696,25 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         logger.info("Check cluster and server state after migration")
 
         wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120,
-             timeout_msg='WM ssh port ping timeout after migration')
+             timeout_msg='VM ssh port ping timeout after migration')
 
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
-            md5after = os.get_md5sum(
-                "/home/test_file", remote, floating_ip.ip, creds)
+            md5after = remote.execute_through_host(
+                floating_ip.ip,
+                "md5sum {:s}".format("/home/test_file"),
+                auth=creds).stdout_str
 
-        assert_true(
-            md5after in md5before,
-            "Md5 checksums don`t match."
-            "Before migration md5 was equal to: {bef}"
-            "Now it equals: {aft}".format(bef=md5before, aft=md5after))
+        checkers.diff_md5(md5before, md5after)
 
         self.show_step(9)
 
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
-            res = os.execute_through_host(
-                remote, floating_ip.ip,
+            res = remote.execute_through_host(
+                floating_ip.ip,
                 "ping -q -c3 -w10 {0} | grep 'received' |"
                 " grep -v '0 packets received'"
-                .format(settings.PUBLIC_TEST_IP), creds)
+                .format(settings.PUBLIC_TEST_IP),
+                auth=creds)
         logger.info("Ping {0} result on vm is: {1}"
                     .format(settings.PUBLIC_TEST_IP, res['stdout']))
 
@@ -755,19 +767,21 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
         self.show_step(14)
         wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120,
-             timeout_msg='new WM ssh port ping timeout')
+             timeout_msg='new VM ssh port ping timeout')
         logger.info("Create filesystem and mount volume")
 
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
             wait(lambda: ssh_ready(remote, floating_ip.ip, creds), timeout=300)
 
-            os.execute_through_host(
-                remote,
-                floating_ip.ip, 'sudo sh /home/mount_volume.sh', creds)
+            remote.execute_through_host(
+                floating_ip.ip,
+                'sudo sh /home/mount_volume.sh',
+                auth=creds)
 
-            os.execute_through_host(
-                remote,
-                floating_ip.ip, 'sudo touch /mnt/file-on-volume', creds)
+            remote.execute_through_host(
+                floating_ip.ip,
+                'sudo touch /mnt/file-on-volume',
+                auth=creds)
 
         self.show_step(15)
         logger.info("Get available computes")
@@ -778,21 +792,23 @@ class VmBackedWithCephMigrationBasic(TestBasic):
 
         logger.info("Check cluster and server state after migration")
         wait(lambda: tcp_ping(floating_ip.ip, 22), timeout=120,
-             timeout_msg='WM ssh port ping timeout after migration')
+             timeout_msg='VM ssh port ping timeout after migration')
 
         self.show_step(16)
         logger.info("Mount volume after migration")
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
-            out = os.execute_through_host(
-                remote,
-                floating_ip.ip, 'sudo mount /dev/vdb /mnt', creds)
+            out = remote.execute_through_host(
+                floating_ip.ip,
+                'sudo mount /dev/vdb /mnt',
+                auth=creds)
 
         logger.info("out of mounting volume is: {:s}".format(out['stdout']))
 
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
-            out = os.execute_through_host(
-                remote,
-                floating_ip.ip, "sudo ls /mnt", creds)
+            out = remote.execute_through_host(
+                floating_ip.ip,
+                "sudo ls /mnt",
+                auth=creds)
         assert_true("file-on-volume" in out['stdout'],
                     "File is absent in /mnt")
 
@@ -1038,8 +1054,8 @@ class RadosGW(TestBasic):
             ip=node['ip'],
             cmd="cat {0} | egrep -v '^#'".format(
                 settings_source))['stdout_str']
-        glance_config_file = StringIO(glance_config)
-        parser = ConfigParser()
+        glance_config_file = cStringIO(glance_config)
+        parser = configparser.ConfigParser()
         parser.readfp(glance_config_file)
         settings_value = [
             parser.get('keystone_authtoken', value) for value in settings_list]

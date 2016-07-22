@@ -16,6 +16,7 @@ import random
 import time
 import traceback
 
+from devops.helpers.ssh_client import SSHAuth
 from devops.helpers import helpers
 from keystoneauth1.exceptions import HttpError
 from keystoneauth1.exceptions import NotFound
@@ -30,6 +31,8 @@ from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
+
+cirros_auth = SSHAuth(**settings.SSH_IMAGE_CREDENTIALS)
 
 
 def get_structured_config_dict(config):
@@ -231,12 +234,14 @@ class ServicesReconfiguration(TestBasic):
                      timeout_msg="Can not ping instance by floating "
                                  "ip {0}".format(floating_ip.ip))
 
-        creds = ("cirros", "cubswin:)")
         controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])[0]['ip']
         with self.env.d_env.get_ssh_to_remote(controller) as remote:
-            res = os_conn.execute_through_host(
-                remote, floating_ip.ip, "mount", creds)
+            res = remote.execute_through_host(
+                hostname=floating_ip.ip,
+                cmd="mount",
+                auth=cirros_auth
+            )
             asserts.assert_true('/mnt type {0}'.format(fs_type)
                                 in res['stdout'],
                                 "Ephemeral disk format was not "

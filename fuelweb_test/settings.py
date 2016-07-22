@@ -625,6 +625,11 @@ SSH_SLAVE_CREDENTIALS = {
     'login': os.environ.get('ENV_SLAVE_LOGIN', 'fuel'),
     'password': os.environ.get('ENV_SLAVE_PASSWORD', 'fuel')}
 
+SSH_IMAGE_CREDENTIALS = {
+    'username': os.environ.get('SSH_IMAGE_CREDENTIALS_LOGIN', "cirros"),
+    'password': os.environ.get('SSH_IMAGE_CREDENTIALS_PASSWORD', "cubswin:)")
+}
+
 ###############################################################################
 
 PATCHING_WEB_DIR = os.environ.get("PATCHING_WEB_DIR", "/var/www/nailgun/")
