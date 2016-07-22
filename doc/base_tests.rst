@@ -745,3 +745,7 @@ Test for tracking /etc dir by etckeeper plugin
 .. automodule:: fuelweb_test.tests.plugins.plugin_etckeeper.test_plugin_etckeeper
    :members:
 
+Test SR-IOV
+-----------
+.. automodule:: fuelweb_test.tests.test_sriov
+   :members:
