@@ -422,6 +422,10 @@ class EnvironmentModel(object):
                 cmd='fuel user --newpass {0} --change-password'.format(
                     settings.KEYSTONE_CREDS['password'])
             )
+            config_file = self.ssh_manager.execute_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                cmd='ls -1 $HOME/.config/fuel/fuel_client.yaml')['stdout_str']
+
             logger.info(
                 'New Fuel UI (keystone) username: "{0}", password: "{1}"'
                 .format(settings.KEYSTONE_CREDS['username'],
