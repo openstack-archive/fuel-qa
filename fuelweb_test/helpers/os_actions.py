@@ -13,15 +13,17 @@
 #    under the License.
 
 import random
+import traceback
 from warnings import warn
 
 from devops.error import TimeoutError
 from devops.helpers import helpers
-import paramiko
+from devops.helpers.ssh_client import SSHAuth
 from proboscis import asserts
 
 from fuelweb_test import logger
 from fuelweb_test.helpers import common
+from fuelweb_test.settings import SSH_IMAGE_CREDENTIALS
 
 
 class OpenStackActions(common.Common):
@@ -359,6 +361,9 @@ class OpenStackActions(common.Common):
             host._info['service'] == 'compute']
 
     def get_md5sum(self, file_path, controller_ssh, vm_ip, creds=()):
+        warn(
+            'get_md5sum is deprecated due to legacy API usage',
+            DeprecationWarning)
         logger.info("Get file md5sum and compare it with previous one")
         out = self.execute_through_host(
             controller_ssh, vm_ip, "md5sum {:s}".format(file_path), creds)
@@ -366,49 +371,23 @@ class OpenStackActions(common.Common):
 
     @staticmethod
     def execute_through_host(ssh, vm_host, cmd, creds=()):
-        warn(
+        msg = (
             'execute_throw_host(ssh=SSHClient(), ...) is deprecated '
             'in favor of '
-            'SSHClient().execute_through_host(hostname, cmd, auth, ...)',
-            DeprecationWarning
-        )
-        logger.debug("Making intermediate transport")
-        intermediate_transport = ssh._ssh.get_transport()
-
-        logger.debug("Opening channel to VM")
-        intermediate_channel = intermediate_transport.open_channel(
-            'direct-tcpip', (vm_host, 22), (ssh.host, 0))
-        logger.debug("Opening paramiko transport")
-        transport = paramiko.Transport(intermediate_channel)
-        logger.debug("Starting client")
-        transport.start_client()
-        logger.info("Passing authentication to VM: {}".format(creds))
+            'SSHClient().execute_through_host(hostname, cmd, auth, ...).\n'
+            '{}'.format("".join(traceback.format_stack())))
+        warn(msg, DeprecationWarning)
+        logger.warning(msg)
         if not creds:
-            creds = ('cirros', 'cubswin:)')
-        transport.auth_password(creds[0], creds[1])
-
-        logger.debug("Opening session")
-        channel = transport.open_session()
-        logger.info("Executing command: {}".format(cmd))
-        channel.exec_command(cmd)
-
-        result = {
-            'stdout': [],
-            'stderr': [],
-            'exit_code': 0
-        }
-
-        logger.debug("Receiving exit_code")
-        result['exit_code'] = channel.recv_exit_status()
-        logger.debug("Receiving stdout")
-        result['stdout'] = channel.recv(1024)
-        logger.debug("Receiving stderr")
-        result['stderr'] = channel.recv_stderr(1024)
-
-        logger.debug("Closing channel")
-        channel.close()
-
-        return result
+            creds = (
+                SSH_IMAGE_CREDENTIALS['username'],
+                SSH_IMAGE_CREDENTIALS['password']
+            )
+        return ssh.execute_through_host(
+            hostname=vm_host,
+            cmd=cmd,
+            auth=SSHAuth(*creds)
+        )
 
     def get_tenant(self, tenant_name):
         tenant_list = self.keystone.tenants.list()
