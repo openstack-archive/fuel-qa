@@ -36,6 +36,7 @@ from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import dict_merge
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
+from fuelweb_test.settings import KEYSTONE_CREDS
 from fuelweb_test.settings import MIRROR_UBUNTU
 from fuelweb_test.settings import PLUGIN_PACKAGE_VERSION
 from fuelweb_test.settings import FUEL_SETTINGS_YAML
@@ -184,6 +185,8 @@ class AdminActions(BaseActions):
         fuel_settings['DEBUG'] = True
         fuel_settings['DNS_UPSTREAM'] = router
         fuel_settings['ADMIN_NETWORK']['dhcp_gateway'] = router
+        fuel_settings["FUEL_ACCESS"]['user'] = KEYSTONE_CREDS['username']
+        fuel_settings["FUEL_ACCESS"]['password'] = KEYSTONE_CREDS['password']
 
         if FUEL_USE_LOCAL_NTPD:
             # Try to use only ntpd on the host as the time source
