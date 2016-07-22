@@ -422,6 +422,7 @@ class EnvironmentModel(object):
                 cmd='fuel user --newpass {0} --change-password'.format(
                     settings.KEYSTONE_CREDS['password'])
             )
+
             logger.info(
                 'New Fuel UI (keystone) username: "{0}", password: "{1}"'
                 .format(settings.KEYSTONE_CREDS['username'],
