@@ -15,6 +15,7 @@
 import time
 
 from devops.error import TimeoutError
+from devops.helpers.ssh_client import SSHAuth
 from proboscis import test
 from proboscis.asserts import assert_true
 
@@ -25,6 +26,9 @@ from fuelweb_test.helpers import utils
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.rally import RallyBenchmarkTest
 from fuelweb_test.tests.base_test_case import TestBasic
+
+
+cirros_auth = SSHAuth(**settings.SSH_IMAGE_CREDENTIALS)
 
 
 @test(groups=['network_outage'])
@@ -133,7 +137,10 @@ class NetworkOutage(TestBasic):
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
             for ip in [floating_ip_1.ip, floating_ip_2.ip]:
                 for cmd in cmds:
-                    res = os.execute_through_host(remote, ip, cmd)
+                    res = remote.execute_through_host(
+                        hostname=ip,
+                        cmd=cmd,
+                        auth=cirros_auth)
                     logger.info('RESULT for {}: {}'.format(
                         cmd,
                         utils.pretty_log(res))
@@ -141,7 +148,10 @@ class NetworkOutage(TestBasic):
                 logger.info('Wait 7200 untill "dd" ends')
                 for _ in range(720):
                     cmd = 'ps -ef |grep -v grep| grep "dd if" '
-                    res = os.execute_through_host(remote, ip, cmd)
+                    res = remote.execute_through_host(
+                        hostname=ip,
+                        cmd=cmd,
+                        auth=cirros_auth)
                     if res['exit_code'] != 0:
                         break
                     time.sleep(15)
@@ -151,8 +161,10 @@ class NetworkOutage(TestBasic):
                     raise TimeoutError('BigFile has not been'
                                        ' created yet, after 7200 sec')
                 cmd = 'md5sum /mnt/bigfile'
-                md5s[ip] = os.execute_through_host(remote,
-                                                   ip, cmd)['stdout']
+                md5s[ip] = remote.execute_through_host(
+                    hostname=ip,
+                    cmd=cmd,
+                    auth=cirros_auth)['stdout']
         self.show_step(4)
         assert_true(settings.PATCHING_RUN_RALLY,
                     'PATCHING_RUN_RALLY was not set in true')
@@ -307,7 +319,10 @@ class NetworkOutage(TestBasic):
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
             for ip in [floating_ip_1.ip, floating_ip_2.ip]:
                 for cmd in cmds:
-                    res = os.execute_through_host(remote, ip, cmd)
+                    res = remote.execute_through_host(
+                        hostname=ip,
+                        cmd=cmd,
+                        auth=cirros_auth)
                     logger.info('RESULT for {}: {}'.format(
                         cmd,
                         utils.pretty_log(res))
@@ -315,7 +330,10 @@ class NetworkOutage(TestBasic):
                 logger.info('Wait 7200 untill "dd" ends')
                 for _ in range(720):
                     cmd = 'ps -ef |grep -v grep| grep "dd if" '
-                    res = os.execute_through_host(remote, ip, cmd)
+                    res = remote.execute_through_host(
+                        hostname=ip,
+                        cmd=cmd,
+                        auth=cirros_auth)
                     if res['exit_code'] != 0:
                         break
                     time.sleep(10)
@@ -325,8 +343,10 @@ class NetworkOutage(TestBasic):
                     raise TimeoutError('BigFile has not been'
                                        ' created yet, after 7200 sec')
                 cmd = 'md5sum /mnt/bigfile'
-                md5s[ip] = os.execute_through_host(remote,
-                                                   ip, cmd)['stdout']
+                md5s[ip] = remote.execute_through_host(
+                    hostname=ip,
+                    cmd=cmd,
+                    auth=cirros_auth)['stdout']
         self.show_step(4)
         assert_true(settings.PATCHING_RUN_RALLY,
                     'PATCHING_RUN_RALLY was not set in true')

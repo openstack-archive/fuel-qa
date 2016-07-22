@@ -290,7 +290,7 @@ def parse_md5sum_output(string):
 
 
 def diff_md5(before, after, no_dir_change=True):
-    """Doff md5sum output
+    """Diff md5sum output
 
     :type before: str
     :type after: str
