@@ -405,6 +405,17 @@ class DataDrivenUpgradeBase(TestBasic):
 
         self.env.revert_snapshot(intermediate_snapshot)
 
+        with self.env.d_env.get_ssh_to_remote(
+                self.fuel_web.get_nailgun_node_by_base_name("slave-01")[
+                    'ip']) as remote:
+            remote.upload(
+                os.path.join(
+                    os.path.abspath(os.path.dirname(__file__)),
+                    "populator.sh"),
+                "/tmp/populator.sh")
+
+            run_on_remote(remote, "bash /tmp/populator.sh 2 2")
+
         self.do_backup(self.backup_path, self.local_path,
                        self.repos_backup_path, self.repos_local_path)
 
