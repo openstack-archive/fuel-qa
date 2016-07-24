@@ -20,6 +20,7 @@ from heatclient.v1.client import Client as HeatClient
 from glanceclient.v1 import Client as GlanceClient
 from keystoneclient.v2_0 import Client as KeystoneClient
 from keystoneclient.exceptions import ClientException
+from keystoneclient.exceptions import EndpointNotFound
 from novaclient.v2 import Client as NovaClient
 import neutronclient.v2_0.client as neutronclient
 from proboscis.asserts import assert_equal
@@ -59,13 +60,18 @@ class Common(object):
         token = self.keystone.auth_token
         LOGGER.debug('Token is {0}'.format(token))
 
-        neutron_endpoint = self.keystone.service_catalog.url_for(
-            service_type='network', endpoint_type='publicURL')
-        neutron_args = {'username': user, 'password': password,
-                        'tenant_name': tenant, 'auth_url': auth_url,
-                        'ca_cert': path_to_cert,
-                        'endpoint_url': make_endpoint(neutron_endpoint)}
-        self.neutron = neutronclient.Client(**neutron_args)
+        try:
+            neutron_endpoint = self.keystone.service_catalog.url_for(
+                service_type='network', endpoint_type='publicURL')
+
+            neutron_args = {'username': user, 'password': password,
+                            'tenant_name': tenant, 'auth_url': auth_url,
+                            'endpoint_url': make_endpoint(neutron_endpoint)}
+            self.neutron = neutronclient.Client(**neutron_args)
+        except EndpointNotFound:
+            LOGGER.warning("Can't find Neutron endpoint. It is OK if you are "
+                           "running nova-network cluster")
+            self.neutron = None
 
         nova_endpoint = self.keystone.service_catalog.url_for(
             service_type='compute', endpoint_type='publicURL')
