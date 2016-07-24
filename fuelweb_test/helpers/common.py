@@ -51,11 +51,8 @@ class Common(object):
         token = self.keystone.auth_token
         LOGGER.debug('Token is {0}'.format(token))
 
-        neutron_endpoint = self.keystone.service_catalog.url_for(
-            service_type='network', endpoint_type='publicURL')
         neutron_args = {'username': user, 'password': password,
-                        'tenant_name': tenant, 'auth_url': auth_url,
-                        'endpoint_url': make_endpoint(neutron_endpoint)}
+                        'tenant_name': tenant, 'auth_url': auth_url}
         self.neutron = neutronclient.Client(**neutron_args)
 
         nova_endpoint = self.keystone.service_catalog.url_for(
