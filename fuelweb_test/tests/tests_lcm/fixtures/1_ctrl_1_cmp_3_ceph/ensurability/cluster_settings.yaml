@@ -163,19 +163,13 @@ provision:
 
       grub-pc
 
-      hpsa-dkms
-
       hwloc
-
-      i40e-dkms
 
       linux-firmware
 
-      linux-firmware-nonfree
+      linux-headers-generic-lts-xenial
 
-      linux-headers-generic-lts-trusty
-
-      linux-image-generic-lts-trusty
+      linux-image-generic-lts-xenial
 
       lvm2
 
