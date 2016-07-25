@@ -382,7 +382,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.cleanup()
 
     @test(groups=['upgrade_smoke_scale'],
-          depends_on=[upgrade_smoke_restore])
+          depends_on_groups=['upgrade_smoke_restore'])
     @log_snapshot_after_test
     def upgrade_smoke_scale(self):
         """Scale already existing Kilo cluster using upgraded to 8.0 Fuel.
@@ -451,7 +451,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.env.make_snapshot("upgrade_smoke_scale")
 
     @test(groups=['upgrade_smoke_reset_deploy'],
-          depends_on=[upgrade_smoke_restore])
+          depends_on_groups=['upgrade_smoke_restore'])
     @log_snapshot_after_test
     def upgrade_smore_reset_deploy(self):
         """Reset existing cluster 7.0 cluster and redeploy
@@ -506,7 +506,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.fuel_web.run_ostf(cluster_id)
 
     @test(groups=['upgrade_smoke_new_deployment'],
-          depends_on=[upgrade_smoke_restore])
+          depends_on_groups=['upgrade_smoke_restore'])
     @log_snapshot_after_test
     def upgrade_smoke_new_deployment(self):
         """Deploy Liberty cluster using upgraded to 8.0 Fuel.
@@ -628,7 +628,7 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         self.cleanup()
 
     @test(groups=['upgrade_ceph_ha_reboot_ctrl'],
-          depends_on=[upgrade_ceph_ha_restore])
+          depends_on_groups=['upgrade_ceph_ha_restore'])
     @log_snapshot_after_test
     def upgrade_ceph_ha_reboot_ctrl(self):
         """Ensure that controller receives correct boot order from cobbler
@@ -657,7 +657,7 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         self.fuel_web.run_ostf(cluster_id)
 
     @test(groups=['upgrade_ceph_ha_scale_ceph'],
-          depends_on=[upgrade_ceph_ha_restore])
+          depends_on_groups=['upgrade_ceph_ha_restore'])
     @log_snapshot_after_test
     def upgrade_ceph_ha_scale_ceph(self):
         """ Add 1 ceph node to existing cluster after upgrade
@@ -759,7 +759,7 @@ class UpgradeDetach_Plugin(DataDrivenUpgradeBase):
 
     @log_snapshot_after_test
     @test(groups=['upgrade_detach_plugin_scale'],
-          depends_on=[upgrade_detach_plugin_restore])
+          depends_on_groups=['upgrade_detach_plugin_restore'])
     def upgrade_detach_plugin_scale(self):
         """Add 1 node with plugin custom role to existing cluster
 
@@ -844,7 +844,7 @@ class UpgradeNoCluster(DataDrivenUpgradeBase):
         self.cleanup()
 
     @test(groups=['upgrade_no_cluster_deploy'],
-          depends_on=[upgrade_no_cluster_restore])
+          depends_on_groups=['upgrade_no_cluster_restore'])
     @log_snapshot_after_test
     def upgrade_no_cluster_deploy(self):
         """Deploy fresh cluster using restored empty Fuel
@@ -890,7 +890,7 @@ class UpgradeNoCluster(DataDrivenUpgradeBase):
         self.env.make_snapshot("upgrade_no_cluster_deploy", is_make=True)
 
     @test(groups=['upgrade_no_cluster_deploy_old_cluster'],
-          depends_on=[upgrade_no_cluster_restore])
+          depends_on_groups=['upgrade_no_cluster_restore'])
     @log_snapshot_after_test
     def upgrade_no_cluster_deploy_old_cluster(self):
         """Deploy old cluster using upgraded Fuel.
