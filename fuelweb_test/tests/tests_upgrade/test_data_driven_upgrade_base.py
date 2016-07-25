@@ -12,7 +12,6 @@ from proboscis.asserts import assert_not_equal
 
 from fuelweb_test import logger
 from fuelweb_test import settings
-from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -190,13 +189,13 @@ class DataDrivenUpgradeBase(TestBasic):
                          'File already exists, not able to reuse')
             # pylint: enable=no-member
         elif 'restore' in action:
-            checkers.check_file_exists(self.admin_remote, path)
+            assert_true(self.remote_file_exists(path))
 
         run_on_remote(self.admin_remote,
                       self.OCTANE_COMMANDS[action].format(**octane_cli_args))
 
         if 'backup' in action:
-            checkers.check_file_exists(self.admin_remote, path)
+            assert_true(self.remote_file_exists(path))
 
     def do_backup(self,
                   backup_path, local_path,
