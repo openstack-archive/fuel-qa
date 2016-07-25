@@ -621,7 +621,6 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         self.do_restore(self.backup_path, self.local_path,
                         self.repos_backup_path, self.repos_local_path)
         self.fuel_web.change_default_network_settings()
-        self.env.sync_time()
 
         self.show_step(6)
         self.fuel_web.verify_network(cluster_id)
@@ -737,7 +736,6 @@ class UpgradeDetach_Plugin(DataDrivenUpgradeBase):
         self.do_restore(self.backup_path, self.local_path,
                         self.repos_backup_path, self.repos_local_path)
         self.fuel_web.change_default_network_settings()
-        self.env.sync_time()
 
         self.show_step(6)
         attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
