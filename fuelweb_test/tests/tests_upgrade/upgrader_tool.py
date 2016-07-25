@@ -85,7 +85,6 @@ class UpgradeCustom(DataDrivenUpgradeBase):
         self.show_step(5)
         self.do_restore(self.backup_path, self.local_path,
                         self.repos_backup_path, self.repos_local_path)
-        self.env.sync_time()
         self.env.make_snapshot(self.restore_snapshot_name, is_make=True)
         self.cleanup()
 
