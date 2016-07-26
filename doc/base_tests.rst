@@ -664,6 +664,11 @@ Test Data-Driven Upgrade
 .. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade
    :members:
 
+Test Data-Driven Upgrade - HA+Ceph configuration
+------------------------------------------------
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_ceph_ha
+   :members:
+
 Upgrade Master tool
 -------------------
 .. automodule:: fuelweb_test.tests.tests_upgrade.upgrader_tool
