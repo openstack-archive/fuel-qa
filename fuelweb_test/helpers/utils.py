@@ -1589,3 +1589,24 @@ class YamlEditor(object):
         if self.content == self.original_content:
             return
         self.write_content()
+
+
+def generate_yum_repos_config(repositories):
+    """
+    Function will parce yaml file with describing of repos
+    and will create yum config
+    :param repositories: yaml file with repo
+    :return: a dict with options
+    """
+    repos = YamlEditor(repositories).get_content()
+    logger.debug('custom RPM repos from yaml: {0}'. format(repos))
+    config = ""
+    for repo in repos:
+        config += "[{name}]\n" \
+                  "name={name}\n" \
+                  "baseurl={uri}\n" \
+                  "enabled=1\n" \
+                  "gpgcheck=0\n" \
+                  "priority={priority}\n" \
+                  "skip_if_unavailable=1\n".format(**repo)
+    return config
