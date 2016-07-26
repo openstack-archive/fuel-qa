@@ -484,9 +484,7 @@ def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
     result = remote.execute(cmd)
 
     result['stdout_str'] = ''.join(result['stdout']).strip()
-    result['stdout_len'] = len(result['stdout'])
     result['stderr_str'] = ''.join(result['stderr']).strip()
-    result['stderr_len'] = len(result['stderr'])
 
     details_log = (
         "Host:      {host}\n"
