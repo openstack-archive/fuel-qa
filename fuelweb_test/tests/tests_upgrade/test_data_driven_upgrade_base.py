@@ -427,12 +427,12 @@ class DataDrivenUpgradeBase(TestBasic):
             "git clone https://github.com/"
             "openstack/fuel-plugin-detach-database",
 
-            "cd fuel-plugin-detach-database",
-            "git checkout stable/{}".format(settings.UPGRADE_FUEL_FROM),
-
-            "fpb --build . ",
+            "cd fuel-plugin-detach-database && "
+            "git checkout stable/{branch} && "
+            "fpb --build . && "
             "fuel plugins --install *.rpm "
             "--user {user} --password {pwd}".format(
+                branch=settings.UPGRADE_FUEL_FROM,
                 user=settings.KEYSTONE_CREDS['username'],
                 pwd=settings.KEYSTONE_CREDS['password'])]
 
