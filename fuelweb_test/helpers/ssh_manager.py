@@ -93,6 +93,10 @@ class SSHManager(object):
                          '{ip}:{port}'.format(ip=ip, port=port))
 
             keys = self._get_keys() if ip != self.admin_ip else []
+            logger.info("_get_remote({})".format(ip))
+            logger.info("self.login: {}".format(self.login))
+            logger.info("self.__password: {}".format(self.__password))
+            logger.info("len(keys): {}".format(len(keys)))
 
             self.connections[(ip, port)] = SSHClient(
                 host=ip,
@@ -117,6 +121,12 @@ class SSHManager(object):
         :param port: ssh port int
         :return: None
         """
+        logger.info("update_connection({ip}, {login}, {password}, {keys}, "
+                    "{port})".format(ip=ip, login=login, password=password,
+                                     keys=keys, port=port))
+        logger.info("connections: {}".format(len(self.connections)))
+        logger.info("(ip, port) in self.connections: {}".format(
+            (ip, port) in self.connections))
         if (ip, port) in self.connections:
             logger.info('SSH_MANAGER:Close connection for {ip}:{port}'.format(
                 ip=ip, port=port))
@@ -124,6 +134,8 @@ class SSHManager(object):
             logger.info('SSH_MANAGER:Create new connection for '
                         '{ip}:{port}'.format(ip=ip, port=port))
 
+        logger.info("After clear (ip, port) in self.connections: {}".format(
+            (ip, port) in self.connections))
         self.connections[(ip, port)] = SSHClient(
             host=ip,
             port=port,

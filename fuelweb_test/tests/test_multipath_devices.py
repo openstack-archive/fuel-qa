@@ -17,6 +17,7 @@ import re
 from proboscis.asserts import assert_equal
 from proboscis import test
 
+from fuelweb_test import logger
 from fuelweb_test.helpers.checkers import ssh_manager
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.settings import DEPLOYMENT_MODE
@@ -48,9 +49,21 @@ class TestMultipath(base_test_case.TestBasic):
         :rtype: bool
         """
         cmd = "multipath -l -v2"
+        logger.info("ssh_manager.login: {}".format(ssh_manager.login))
+        logger.info("ssh_manager.__password: {}".format(ssh_manager.__password))
 
-        ssh_manager.update_connection(ip, login='root',
-                                      keys=ssh_manager._get_keys())
+        ssh_manager.login = 'root'
+        ssh_manager.__password = 'r00tme'
+        keys = ssh_manager._get_keys()
+        logger.info("Keys count: {}".format(len(keys)))
+        if keys > 0:
+            for key in keys:
+                logger.info("key.get_name(): {}".format(key.get_name()))
+        logger.info("ssh_manager.login: {}".format(ssh_manager.login))
+        logger.info("ssh_manager.__password: {}".format(ssh_manager.__password))
+        
+        ssh_manager.update_connection(ip, login='root', keys=keys)
+        logger.info("updated connection")
         ssh_manager._get_remote(ip)
         result = ssh_manager.execute_on_remote(
             ip=ip,
