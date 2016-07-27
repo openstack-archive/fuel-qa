@@ -642,15 +642,12 @@ class EnvironmentModel(object):
 
         cmd = 'bootstrap_admin_node.sh;'
 
-        result = self.ssh_manager.execute(
+        self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd=cmd
+            cmd=cmd,
+            err_msg='bootstrap failed, inspect logs for details',
         )
-        logger.info('Result of "{1}" command on master node: '
-                    '{0}'.format(result, cmd))
-        assert_equal(int(result['exit_code']), 0,
-                     'bootstrap failed, '
-                     'inspect logs for details')
+        logger.info('bootstrap successfull')
 
     # Modifies a resolv.conf on the Fuel master node and returns
     # its original content.
