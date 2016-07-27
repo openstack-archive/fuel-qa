@@ -48,7 +48,8 @@ class TestMultipath(base_test_case.TestBasic):
         :rtype: bool
         """
         cmd = "multipath -l -v2"
-
+        import pdb
+        pdb.set_trace()
         ssh_manager.update_connection(ip, login='root',
                                       keys=ssh_manager._get_keys())
         ssh_manager._get_remote(ip)
