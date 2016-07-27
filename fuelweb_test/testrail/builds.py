@@ -100,7 +100,7 @@ class Build(object):
         job_url = "/".join([JENKINS["url"], 'job', self.name,
                             str(self.number), 'consoleText'])
         logger.debug("Request job console from {}".format(job_url))
-        return requests.get(job_url).text.split('\n')
+        return requests.get(job_url).text
 
     def get_build_data(self, depth=1):
         build_url = "/".join([JENKINS["url"], 'job',
