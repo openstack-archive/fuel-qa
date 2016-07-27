@@ -40,6 +40,7 @@ GROUP_FIELD = 'custom_test_group'
 
 STEP_NUM_PATTERN = re.compile(r'^(\d{1,3})[.].+')
 DURATION_PATTERN = re.compile(r'Duration:?\s+(\d+(?:[sm]|\s?m))(?:in)?\b')
+TEST_GROUP_PATTERN = re.compile(r'run_system_test.py\s+.*--group=(\S+)\b')
 
 
 def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
@@ -162,10 +163,8 @@ def get_tests_groups_from_jenkins(runner_name, build_number, distros):
         # Get the test group from the console of the job
         z = Build(b['jobName'], b['buildNumber'])
         console = z.get_job_console()
-        groups = [keyword.split('=')[1]
-                  for line in console
-                  for keyword in line.split()
-                  if 'run_system_test.py' in line and '--group=' in keyword]
+        groups = re.findall(TEST_GROUP_PATTERN, console)
+
         if not groups:
             logger.error("No test group found in console of the job {0}/{1}"
                          .format(b['jobName'], b['buildNumber']))
