@@ -791,9 +791,8 @@ master:
    pacemaker.log
    pacemakerd.log
    pengine.log
-   postfix/cleanup.log
-   postfix/local.log
-   postfix/qmgr.log
+   postfix/master.log
+   postfix.log
    puppet-apply.log
    qnx.log
    rabbit-fence.log
