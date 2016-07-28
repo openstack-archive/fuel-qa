@@ -269,6 +269,9 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
         """
         self.env.revert_snapshot("build_default_bootstrap")
 
+        expected_bootstrap_uuids = \
+            self.env.fuel_bootstrap_actions.list_bootstrap_images_uuids()
+
         uuid, bootstrap_location = \
             self.env.fuel_bootstrap_actions.build_bootstrap_image()
         self.env.fuel_bootstrap_actions.\
@@ -280,7 +283,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
                     "Newly built bootstrap image {0} is not in list of "
                     "available images: {1}".format(uuid, bootstrap_uuids))
 
-        assert_equal(3, len(bootstrap_uuids),
+        assert_equal(len(expected_bootstrap_uuids) + 1, len(bootstrap_uuids),
                      "Only three bootstrap images should be available, current"
                      " list: \n{0}".format(bootstrap_uuids))
 
@@ -296,7 +299,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
                       self.env.fuel_bootstrap_actions.activate_bootstrap_image,
                       uuid)
 
-        assert_equal(2, len(bootstrap_uuids),
+        assert_equal(len(expected_bootstrap_uuids), len(bootstrap_uuids),
                      "Only two bootstrap images should be available, current"
                      " list: \n{0}".format(bootstrap_uuids))
 
@@ -376,10 +379,12 @@ class UbuntuBootstrap(base_test_case.TestBasic):
             }
         )
 
+        expected_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         assert_equal(
-            3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
+            len(expected_nodes),
+            len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
 
         # Run ostf
         self.fuel_web.run_ostf(cluster_id=cluster_id,
@@ -484,7 +489,8 @@ class UbuntuBootstrap(base_test_case.TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         assert_equal(
-            3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
+            len(nodes_ips),
+            len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
 
         self.show_step(12)
         self.fuel_web.verify_network(cluster_id)
