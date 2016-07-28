@@ -269,6 +269,9 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
         """
         self.env.revert_snapshot("build_default_bootstrap")
 
+        expected_bootstrap_uuids = \
+            self.env.fuel_bootstrap_actions.list_bootstrap_images_uuids()
+
         uuid, bootstrap_location = \
             self.env.fuel_bootstrap_actions.build_bootstrap_image()
         self.env.fuel_bootstrap_actions.\
@@ -280,7 +283,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
                     "Newly built bootstrap image {0} is not in list of "
                     "available images: {1}".format(uuid, bootstrap_uuids))
 
-        assert_equal(3, len(bootstrap_uuids),
+        assert_equal(len(expected_bootstrap_uuids) + 1, len(bootstrap_uuids),
                      "Only three bootstrap images should be available, current"
                      " list: \n{0}".format(bootstrap_uuids))
 
@@ -296,7 +299,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
                       self.env.fuel_bootstrap_actions.activate_bootstrap_image,
                       uuid)
 
-        assert_equal(2, len(bootstrap_uuids),
+        assert_equal(len(expected_bootstrap_uuids), len(bootstrap_uuids),
                      "Only two bootstrap images should be available, current"
                      " list: \n{0}".format(bootstrap_uuids))
 
@@ -334,7 +337,7 @@ class UbuntuBootstrap(base_test_case.TestBasic):
         Duration 45m
         """
         if not self.env.revert_snapshot('ready'):
-            raise SkipTest('Required snapshot not found')
+            raise SkipTest()
 
         uuid = self.env.fuel_bootstrap_actions.get_active_bootstrap_uuid()
 
@@ -376,10 +379,12 @@ class UbuntuBootstrap(base_test_case.TestBasic):
             }
         )
 
+        expected_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         assert_equal(
-            3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
+            len(expected_nodes),
+            len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
 
         # Run ostf
         self.fuel_web.run_ostf(cluster_id=cluster_id,
@@ -411,7 +416,7 @@ class UbuntuBootstrap(base_test_case.TestBasic):
         """
 
         if not self.env.revert_snapshot('ready_with_3_slaves'):
-            raise SkipTest('Required snapshot not found')
+            raise SkipTest()
 
         def check_node(ssh_manager_executor, ip):
             cmd = 'grep bootstrap /etc/hostname'
@@ -484,7 +489,8 @@ class UbuntuBootstrap(base_test_case.TestBasic):
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         assert_equal(
-            3, len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
+            len(nodes_ips),
+            len(self.fuel_web.client.list_cluster_nodes(cluster_id)))
 
         self.show_step(12)
         self.fuel_web.verify_network(cluster_id)
@@ -515,7 +521,7 @@ class UbuntuBootstrap(base_test_case.TestBasic):
 
         if not self.env.revert_snapshot(
                 'deploy_stop_on_deploying_ubuntu_bootstrap'):
-            raise SkipTest('Required snapshot not found')
+            raise SkipTest()
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -561,7 +567,7 @@ class UbuntuBootstrap(base_test_case.TestBasic):
         """
         if not self.env.revert_snapshot(
                 'deploy_stop_on_deploying_ubuntu_bootstrap'):
-            raise SkipTest('Required snapshot not found')
+            raise SkipTest()
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -569,13 +575,11 @@ class UbuntuBootstrap(base_test_case.TestBasic):
         self.fuel_web.client.delete_cluster(cluster_id)
 
         # wait nodes go to reboot
-        wait(lambda: not self.fuel_web.client.list_nodes(), timeout=10 * 60,
-             timeout_msg='Timeout while waiting nodes to become offline')
+        wait(lambda: not self.fuel_web.client.list_nodes(), timeout=10 * 60)
 
         # wait for nodes to appear after bootstrap
         wait(lambda: len(self.fuel_web.client.list_nodes()) == 3,
-             timeout=10 * 60,
-             timeout_msg='Timeout while waiting nodes to become online')
+             timeout=10 * 60)
 
         nodes = self.env.d_env.get_nodes(
             name__in=["slave-01", "slave-02", "slave-03"])
@@ -603,7 +607,7 @@ class UbuntuBootstrap(base_test_case.TestBasic):
         """
         if not self.env.revert_snapshot(
                 'deploy_stop_on_deploying_ubuntu_bootstrap'):
-            raise SkipTest('Required snapshot not found')
+            raise SkipTest()
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -621,8 +625,7 @@ class UbuntuBootstrap(base_test_case.TestBasic):
 
         # wait for nodes to appear after bootstrap
         wait(lambda: len(self.fuel_web.client.list_nodes()) == 3,
-             timeout=10 * 60,
-             timeout_msg='Timeout while waiting nodes to become online')
+             timeout=10 * 60)
         self.fuel_web.verify_network(cluster_id)
 
         node = self.fuel_web.get_nailgun_node_by_name("slave-03")
