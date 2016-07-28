@@ -64,6 +64,7 @@ bvt_2:
  - pacemaker_wrappers
  - package_pins
  - postgresql
+ - provision
  - puppet_pull
  - puppet-pull.sh
  - rabbitmq
