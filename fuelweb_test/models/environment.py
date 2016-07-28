@@ -567,9 +567,9 @@ class EnvironmentModel(object):
         out = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
             cmd=command
-        )['stdout_str']
+        )['stdout']
 
-        assert_true(self.get_admin_node_ip() in out,
+        assert_true(self.get_admin_node_ip() in "".join(out),
                     "dhcpcheck doesn't discover master ip")
 
     def bootstrap_image_check(self):

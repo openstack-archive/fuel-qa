@@ -1115,8 +1115,8 @@ class TestHaFailoverBase(TestBasic):
         @logwrap
         def _get_pcm_nodes(remote, pure=False):
             nodes = {}
-            pcs_status = remote.execute('pcs status nodes')['stdout_str']
-            pcm_nodes = yaml.load(pcs_status)
+            pcs_status = remote.execute('pcs status nodes')['stdout']
+            pcm_nodes = yaml.load(''.join(pcs_status).strip())
             for status in ('Online', 'Offline', 'Standby'):
                 list_nodes = (pcm_nodes['Pacemaker Nodes']
                               [status] or '').split()
@@ -1132,7 +1132,8 @@ class TestHaFailoverBase(TestBasic):
             for remote in ctrl_remotes:
                 pcs_nodes = _get_pcm_nodes(remote)
                 # TODO: FIXME: Rewrite using normal SSHManager and node name
-                node_name = remote.execute('hostname -f')['stdout_str']
+                node_name = ''.join(
+                    remote.execute('hostname -f')['stdout']).strip()
                 logger.debug(
                     "Status of pacemaker nodes on node {0}: {1}".
                     format(node_name, pcs_nodes))
