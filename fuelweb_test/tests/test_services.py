@@ -843,7 +843,7 @@ class HeatHAOneController(TestBasic):
             cluster_id,
             {
                 'slave-01': ['controller', 'mongo'],
-                'slave-02': ['compute']
+                'slave-02': ['compute', 'cinder']
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
@@ -860,6 +860,33 @@ class HeatHAOneController(TestBasic):
         checkers.verify_service(_ip,
                                 service_name='ceilometer-api',
                                 ignore_count_of_proccesses=True)
+
+        # verify that Ceilometer works fine before we will run
+        # Heat autoscaling tests
+        logger.debug('Run Ceilometer OSTF platform tests')
+
+        test_class_main = ('fuel_health.tests.tests_platform.'
+                           'test_ceilometer.'
+                           'CeilometerApiPlatformTests')
+        tests_names = ['test_check_alarm_state',
+                       'test_create_sample',
+                       'test_check_volume_events',
+                       'test_check_glance_notifications',
+                       'test_check_keystone_notifications',
+                       'test_check_neutron_notifications',
+                       'test_check_sahara_notifications',
+                       'test_check_events_and_traits']
+
+        test_classes = []
+
+        for test_name in tests_names:
+            test_classes.append('{0}.{1}'.format(test_class_main,
+                                                 test_name))
+
+        for test_name in test_classes:
+            self.fuel_web.run_single_ostf_test(
+                cluster_id=cluster_id, test_sets=['tests_platform'],
+                test_name=test_name, timeout=60 * 60)
 
         logger.debug('Run Heat OSTF platform tests')
 
