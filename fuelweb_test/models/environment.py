@@ -118,7 +118,7 @@ class EnvironmentModel(object):
             self.sync_time()
         return self.nailgun_nodes(devops_nodes)
 
-    def sync_time(self, nodes_names=None, skip_sync=False):
+    def sync_time(self, nodes_names=None, skip_sync=True):
         if nodes_names is None:
             roles = ['fuel_master', 'fuel_slave']
             nodes_names = [node.name for node in self.d_env.get_nodes()
