@@ -142,6 +142,10 @@ class DataDrivenUpgradeBase(TestBasic):
         logger.info("Removing previously installed fuel-octane")
         run_on_remote(self.admin_remote, "yum remove -y fuel-octane",
                       raise_on_assert=False)
+        run_on_remote(
+            self.admin_remote,
+            "rm -rf /usr/lib/python2.*/site-packages/octane",
+            raise_on_assert=False)
         logger.info("Installing fuel-octane")
         run_on_remote(self.admin_remote, "yum install -y fuel-octane")
 
