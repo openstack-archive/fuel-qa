@@ -136,13 +136,20 @@ def check_disks(remote, nodes_ids):
 
 
 def check_service_ready(remote, exit_code=0):
+    cmds = []
     if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
-        cmd = 'service ceph-all status'
+        # systemctl is-failed returns 0 if any matches pattern has failed,
+        # otherwise error code is non-zero. That means we have to invert
+        # exit code to follow the logic 'return 0 if every service is running'
+        cmds.append('! systemctl is-failed ceph-mon*service')
+        cmds.append('! systemctl is-failed ceph-osd*service')
+        cmds.append('! systemctl is-failed ceph-radosgw*service')
     else:
-        cmd = 'service ceph status'
-    if remote.execute(cmd)['exit_code'] == exit_code:
-        return True
-    return False
+        cmds.append('service ceph status')
+    for cmd in cmds:
+        if remote.execute(cmd)['exit_code'] != exit_code:
+            return False
+    return True
 
 
 def health_overall_status(remote):
