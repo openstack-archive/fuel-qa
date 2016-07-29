@@ -21,6 +21,7 @@ from fuelweb_test.settings import DNS_SUFFIX
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_CENTOS
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
+from fuelweb_test.settings import UBUNTU_SERVICE_PROVIDER
 
 
 def start_monitor(remote):
@@ -136,13 +137,38 @@ def check_disks(remote, nodes_ids):
 
 
 def check_service_ready(remote, exit_code=0):
+    cmds = []
     if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
-        cmd = 'service ceph-all status'
+        if UBUNTU_SERVICE_PROVIDER == 'systemd':
+            # Gather services on remote node
+            cmd = 'systemctl show --property=Id ceph-mon*service '\
+                  'ceph-osd*service ceph-radosgw*service'
+            result = remote.execute(cmd)
+            if result['exit_code'] != 0:
+                return False
+
+            ceph_services = []
+            for line in result['stdout']:
+                try:
+                    _, value = line.strip().split('=', 1)
+                    ceph_services.append(value)
+                except ValueError:
+                    pass
+            for service in ceph_services:
+                cmds.append('systemctl is-active -q {}'.format(service))
+        else:
+            cmds.append('service ceph-all status')
     else:
-        cmd = 'service ceph status'
-    if remote.execute(cmd)['exit_code'] == exit_code:
-        return True
-    return False
+        cmds.append('service ceph status')
+
+    if not cmds:
+        raise Exception('Cannot check ceph status: no check commands were added '\
+                        '(maybe ceph not installed at all?)')
+
+    for cmd in cmds:
+        if remote.execute(cmd)['exit_code'] != exit_code:
+            return False
+    return True
 
 
 def health_overall_status(remote):
