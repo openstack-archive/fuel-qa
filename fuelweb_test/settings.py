@@ -727,3 +727,6 @@ LOG_SNAPSHOT_TIMEOUT = int(os.environ.get("LOG_SNAPSHOT_TIMEOUT", 10 * 60))
 RPM_REPOS_YAML = os.environ.get("RPM_REPOS_YAML")
 
 DEB_REPOS_YAML = os.environ.get("DEB_REPOS_YAML")
+
+UBUNTU_SERVICE_PROVIDER = os.environ.get('UBUNTU_SERVICE_PROVIDER',
+                                         'systemd')
