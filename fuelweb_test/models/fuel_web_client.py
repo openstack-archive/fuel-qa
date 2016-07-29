@@ -2728,7 +2728,7 @@ class FuelWebClient29(object):
              timeout_msg='ceph helth ok timeout')
         for osd_id in ids:
             if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
-                remote_ceph.execute("stop ceph-osd id={}".format(osd_id))
+                remote_ceph.execute("systemctl stop ceph-osd@{}".format(osd_id))
             else:
                 remote_ceph.execute("service ceph stop osd.{}".format(osd_id))
             remote_ceph.execute("ceph osd crush remove osd.{}".format(osd_id))
