@@ -15,11 +15,12 @@ import hashlib
 import json
 import os
 import re
+from time import sleep
 import traceback
 import urllib2
 
 from devops.error import TimeoutError
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 import yaml
 
@@ -39,8 +40,6 @@ from netaddr import IPAddress
 from netaddr import IPNetwork
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
-
-from time import sleep
 
 
 @logwrap
@@ -176,7 +175,7 @@ def check_ceph_image_size(remote, expected_size, device='vdc'):
     if not ret:
         logger.error("Partition not present! {}: ".format(
                      remote.check_call("df -m")))
-        raise Exception
+        raise Exception()
     logger.debug("Partitions: {part}".format(part=ret))
     assert_true(abs(float(ret[0].rstrip()) / float(expected_size) - 1) < 0.1,
                 "size {0} is not equal"
@@ -282,7 +281,8 @@ def enable_feature_group(env, group):
         except (urllib2.HTTPError, urllib2.URLError):
             return False
 
-    wait(check_api_group_enabled, interval=10, timeout=60 * 20)
+    wait(check_api_group_enabled, interval=10, timeout=60 * 20,
+         timeout_msg='Failed to enable feature group - {!r}'.format(group))
 
 
 @logwrap
@@ -438,9 +438,10 @@ def check_mysql(remote, node_name):
     except TimeoutError:
         logger.error('MySQL daemon is down on {0}'.format(node_name))
         raise
-    _wait(lambda: assert_equal(remote.execute(check_crm_cmd)['exit_code'], 0,
-                               'MySQL resource is NOT running on {0}'.format(
-                                   node_name)), timeout=60)
+    wait_pass(lambda: assert_equal(
+        remote.execute(check_crm_cmd)['exit_code'], 0,
+        'MySQL resource is NOT running on {0}'.format(
+            node_name)), timeout=60)
     try:
         wait(lambda: ''.join(remote.execute(
             check_galera_cmd)['stdout']).rstrip() == 'Synced', timeout=600)
@@ -614,10 +615,11 @@ def check_stats_on_collector(collector_remote, postgres_actions, master_uuid):
 
     # Check that important data (clusters number, nodes number, nodes roles,
     # user's email, used operation system, OpenStack stats) is saved correctly
-    for stat_type in general_stats.keys():
-        assert_true(type(summ_stats[stat_type]) == general_stats[stat_type],
-                    "Installation structure in Collector's DB doesn't contain"
-                    "the following stats: {0}".format(stat_type))
+    for stat_type in general_stats:
+        assert_true(
+            isinstance(summ_stats[stat_type], general_stats[stat_type]),
+            "Installation structure in Collector's DB doesn't contain"
+            "the following stats: {0}".format(stat_type))
 
     real_clusters_number = int(postgres_actions.run_query(
         db='nailgun', query='select count(*) from clusters;'))
@@ -673,7 +675,7 @@ def check_stats_private_info(collector_remote, postgres_actions,
         _has_private_data = False
         # Check that stats doesn't contain private data (e.g.
         # specific passwords, settings, emails)
-        for _private in private_data.keys():
+        for _private in private_data:
             _regex = r'(?P<key>"\S+"): (?P<value>[^:]*"{0}"[^:]*)'.format(
                 private_data[_private])
             for _match in re.finditer(_regex, data):
@@ -689,7 +691,7 @@ def check_stats_private_info(collector_remote, postgres_actions,
                 _has_private_data = True
         # Check that stats doesn't contain private types of data (e.g. any kind
         # of passwords)
-        for _data_type in secret_data_types.keys():
+        for _data_type in secret_data_types:
             _regex = (r'(?P<secret>"[^"]*{0}[^"]*": (\{{[^\}}]+\}}|\[[^\]+]\]|'
                       r'"[^"]+"))').format(secret_data_types[_data_type])
 

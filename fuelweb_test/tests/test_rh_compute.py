@@ -148,19 +148,16 @@ class RhBase(TestBasic):
         )
 
         if settings.RH_SERVER_URL:
-            reg_command = reg_command + " --serverurl={0}".format(
-                settings.RH_SERVER_URL)
+            reg_command += " --serverurl={0}".format(settings.RH_SERVER_URL)
 
         if settings.RH_REGISTERED_ORG_NAME:
-            reg_command = reg_command + " --org={0}".format(
-                settings.RH_REGISTERED_ORG_NAME)
+            reg_command += " --org={0}".format(settings.RH_REGISTERED_ORG_NAME)
 
         if settings.RH_RELEASE:
-            reg_command = reg_command + " --release={0}".format(
-                settings.RH_RELEASE)
+            reg_command += " --release={0}".format(settings.RH_RELEASE)
 
         if settings.RH_ACTIVATION_KEY:
-            reg_command = reg_command + " --activationkey={0}".format(
+            reg_command += " --activationkey={0}".format(
                 settings.RH_ACTIVATION_KEY)
 
         if settings.RH_POOL_HASH:

@@ -258,7 +258,8 @@ class EnvironmentModel(object):
                 ) % params
         return keys
 
-    def get_target_devs(self, devops_nodes):
+    @staticmethod
+    def get_target_devs(devops_nodes):
         return [
             interface.target_dev for interface in [
                 val for var in map(lambda node: node.interfaces, devops_nodes)
@@ -331,10 +332,8 @@ class EnvironmentModel(object):
             self.resume_environment()
 
     def nailgun_nodes(self, devops_nodes):
-        return map(
-            lambda node: self.fuel_web.get_nailgun_node_by_devops_node(node),
-            devops_nodes
-        )
+        return [self.fuel_web.get_nailgun_node_by_devops_node(node)
+                for node in devops_nodes]
 
     def check_slaves_are_ready(self):
         devops_nodes = [node for node in self.d_env.nodes().slaves
@@ -356,7 +355,7 @@ class EnvironmentModel(object):
         if not self.d_env.has_snapshot(name):
             return False
 
-        logger.info('We have snapshot with such name: %s' % name)
+        logger.info('We have snapshot with such name: {:s}'.format(name))
 
         logger.info("Reverting the snapshot '{0}' ....".format(name))
         self.d_env.revert(name)
