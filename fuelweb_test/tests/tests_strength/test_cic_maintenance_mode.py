@@ -14,7 +14,7 @@
 import time
 
 from devops.error import TimeoutError
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
 from proboscis.asserts import assert_equal
@@ -167,17 +167,17 @@ class CICMaintenanceMode(TestBasic):
             self.fuel_web.wait_cinder_is_up(
                 [n.name for n in d_ctrls])
 
-            _wait(lambda:
-                  self.fuel_web.run_single_ostf_test(
-                      cluster_id, test_sets=['sanity'],
-                      test_name=map_ostf.OSTF_TEST_MAPPING.get(
-                          'Check that required services are running')),
-                  timeout=1500)
+            wait_pass(lambda:
+                      self.fuel_web.run_single_ostf_test(
+                          cluster_id, test_sets=['sanity'],
+                          test_name=map_ostf.OSTF_TEST_MAPPING.get(
+                              'Check that required services are running')),
+                      timeout=1500)
             logger.debug("Required services are running")
 
-            _wait(lambda:
-                  self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
-                  timeout=1500)
+            wait_pass(lambda:
+                      self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
+                      timeout=1500)
             logger.debug("HA tests are pass now")
 
             try:
@@ -296,17 +296,17 @@ class CICMaintenanceMode(TestBasic):
             self.fuel_web.wait_cinder_is_up(
                 [n.name for n in d_ctrls])
 
-            _wait(lambda:
-                  self.fuel_web.run_single_ostf_test(
-                      cluster_id, test_sets=['sanity'],
-                      test_name=map_ostf.OSTF_TEST_MAPPING.get(
-                          'Check that required services are running')),
-                  timeout=1500)
+            wait_pass(lambda:
+                      self.fuel_web.run_single_ostf_test(
+                          cluster_id, test_sets=['sanity'],
+                          test_name=map_ostf.OSTF_TEST_MAPPING.get(
+                              'Check that required services are running')),
+                      timeout=1500)
             logger.debug("Required services are running")
 
-            _wait(lambda:
-                  self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
-                  timeout=1500)
+            wait_pass(lambda:
+                      self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
+                      timeout=1500)
             logger.debug("HA tests are pass now")
 
             try:
@@ -470,17 +470,17 @@ class CICMaintenanceMode(TestBasic):
             self.fuel_web.wait_cinder_is_up(
                 [n.name for n in d_ctrls])
 
-            _wait(lambda:
-                  self.fuel_web.run_single_ostf_test(
-                      cluster_id, test_sets=['sanity'],
-                      test_name=map_ostf.OSTF_TEST_MAPPING.get(
-                          'Check that required services are running')),
-                  timeout=1500)
+            wait_pass(lambda:
+                      self.fuel_web.run_single_ostf_test(
+                          cluster_id, test_sets=['sanity'],
+                          test_name=map_ostf.OSTF_TEST_MAPPING.get(
+                              'Check that required services are running')),
+                      timeout=1500)
             logger.debug("Required services are running")
 
-            _wait(lambda:
-                  self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
-                  timeout=1500)
+            wait_pass(lambda:
+                      self.fuel_web.run_ostf(cluster_id, test_sets=['ha']),
+                      timeout=1500)
             logger.debug("HA tests are pass now")
 
             try:
