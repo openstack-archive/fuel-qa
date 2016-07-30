@@ -86,7 +86,6 @@ Repository = TestCaseRepository()
 def get_groups(only_groups=None, exclude=None):
     """Get groups from Proboscis register and count them children"""
     groups_childs = {}
-    groups = {}
 
     if only_groups and isinstance(only_groups, list):
         groups = {g: DEFAULT_REGISTRY.groups[g]

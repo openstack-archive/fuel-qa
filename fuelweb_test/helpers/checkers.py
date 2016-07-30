@@ -21,7 +21,7 @@ from time import sleep
 import os
 import re
 from devops.error import TimeoutError
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 from netaddr import IPAddress
 from netaddr import IPNetwork
@@ -334,7 +334,7 @@ def check_mysql(ip, node_name):
     logger.info('MySQL daemon is started on {0}'.format(node_name))
 
     # TODO(astudenov): add timeout_msg
-    _wait(
+    wait_pass(
         lambda: assert_equal(
             ssh_manager.execute(
                 ip,

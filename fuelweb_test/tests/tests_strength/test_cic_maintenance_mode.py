@@ -13,7 +13,7 @@
 #    under the License.
 import time
 
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 from proboscis import asserts
 from proboscis import test
@@ -130,8 +130,7 @@ class CICMaintenanceMode(TestBasic):
             checkers.check_ping(self.env.get_admin_node_ip(),
                                 _ip,
                                 deadline=600),
-            "Host {0} is not reachable by ping during 600 sec"
-            .format(_ip))
+            "Host {0} is not reachable by ping during 600 sec".format(_ip))
 
         asserts.assert_true('True' in check_auto_mode(_ip),
                             "Maintenance mode is not switched on")
@@ -157,20 +156,20 @@ class CICMaintenanceMode(TestBasic):
             [dregular_ctrl.name])
 
         # Wait until RabbitMQ cluster is UP
-        _wait(lambda:
-              self.fuel_web.run_single_ostf_test(
-                  cluster_id, test_sets=['ha'],
-                  test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
-                      'RabbitMQ availability')),
-              timeout=1500)
+        wait_pass(lambda:
+                  self.fuel_web.run_single_ostf_test(
+                      cluster_id, test_sets=['ha'],
+                      test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
+                          'RabbitMQ availability')),
+                  timeout=1500)
         logger.info('RabbitMQ cluster is available')
 
-        _wait(lambda:
-              self.fuel_web.run_single_ostf_test(
-                  cluster_id, test_sets=['sanity'],
-                  test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
-                      'Check that required services are running')),
-              timeout=1500)
+        wait_pass(lambda:
+                  self.fuel_web.run_single_ostf_test(
+                      cluster_id, test_sets=['sanity'],
+                      test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
+                          'Check that required services are running')),
+                  timeout=1500)
         logger.info("Required services are running")
 
         try:
@@ -248,8 +247,7 @@ class CICMaintenanceMode(TestBasic):
             checkers.check_ping(self.env.get_admin_node_ip(),
                                 _ip,
                                 deadline=600),
-            "Host {0} is not reachable by ping during 600 sec"
-            .format(_ip))
+            "Host {0} is not reachable by ping during 600 sec".format(_ip))
 
         asserts.assert_true('True' in check_auto_mode(_ip),
                             "Maintenance mode is not switched on")
@@ -280,21 +278,21 @@ class CICMaintenanceMode(TestBasic):
             [dregular_ctrl.name])
 
         # Wait until RabbitMQ cluster is UP
-        _wait(lambda:
-              self.fuel_web.run_single_ostf_test(
-                  cluster_id, test_sets=['ha'],
-                  test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
-                      'RabbitMQ availability')),
-              timeout=1500)
+        wait_pass(lambda:
+                  self.fuel_web.run_single_ostf_test(
+                      cluster_id, test_sets=['ha'],
+                      test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
+                          'RabbitMQ availability')),
+                  timeout=1500)
         logger.info('RabbitMQ cluster is available')
 
         # Wait until all Openstack services are UP
-        _wait(lambda:
-              self.fuel_web.run_single_ostf_test(
-                  cluster_id, test_sets=['sanity'],
-                  test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
-                      'Check that required services are running')),
-              timeout=1500)
+        wait_pass(lambda:
+                  self.fuel_web.run_single_ostf_test(
+                      cluster_id, test_sets=['sanity'],
+                      test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
+                          'Check that required services are running')),
+                  timeout=1500)
         logger.info("Required services are running")
 
         try:
@@ -358,8 +356,7 @@ class CICMaintenanceMode(TestBasic):
         asserts.assert_true(
             self.fuel_web.get_nailgun_node_by_devops_node(dregular_ctrl)
             ['online'],
-            'Node-{0} should be online after command "umm on"'.
-            format(_id))
+            'Node-{0} should be online after command "umm on"'.format(_id))
 
         try:
             self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke',
@@ -432,7 +429,7 @@ class CICMaintenanceMode(TestBasic):
                                 _ip,
                                 deadline=600),
             "Host {0} is not reachable by ping during 600 sec"
-            .format(_ip))
+            "".format(_ip))
         logger.info('Wait a node-{0} online status after unexpected '
                     'reboot'.format(_id))
 
@@ -453,20 +450,20 @@ class CICMaintenanceMode(TestBasic):
             [dregular_ctrl.name])
 
         # Wait until RabbitMQ cluster is UP
-        _wait(lambda:
-              self.fuel_web.run_single_ostf_test(
-                  cluster_id, test_sets=['ha'],
-                  test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
-                      'RabbitMQ availability')),
-              timeout=1500)
+        wait_pass(lambda:
+                  self.fuel_web.run_single_ostf_test(
+                      cluster_id, test_sets=['ha'],
+                      test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
+                          'RabbitMQ availability')),
+                  timeout=1500)
         logger.info('RabbitMQ cluster is available')
 
-        _wait(lambda:
-              self.fuel_web.run_single_ostf_test(
-                  cluster_id, test_sets=['sanity'],
-                  test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
-                      'Check that required services are running')),
-              timeout=1500)
+        wait_pass(lambda:
+                  self.fuel_web.run_single_ostf_test(
+                      cluster_id, test_sets=['sanity'],
+                      test_name=ostf_test_mapping.OSTF_TEST_MAPPING.get(
+                          'Check that required services are running')),
+                  timeout=1500)
         logger.info("Required services are running")
 
         try:
