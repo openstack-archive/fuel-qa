@@ -19,7 +19,7 @@ import traceback
 import urllib2
 
 from devops.error import TimeoutError
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 import yaml
 
@@ -364,9 +364,10 @@ def check_mysql(remote, node_name):
     except TimeoutError:
         logger.error('MySQL daemon is down on {0}'.format(node_name))
         raise
-    _wait(lambda: assert_equal(remote.execute(check_crm_cmd)['exit_code'], 0,
-                               'MySQL resource is NOT running on {0}'.format(
-                                   node_name)), timeout=60)
+    wait_pass(lambda: assert_equal(
+        remote.execute(check_crm_cmd)['exit_code'], 0,
+        'MySQL resource is NOT running on {0}'.format(
+            node_name)), timeout=60)
     try:
         wait(lambda: ''.join(remote.execute(
             check_galera_cmd)['stdout']).rstrip() == 'Synced', timeout=600)

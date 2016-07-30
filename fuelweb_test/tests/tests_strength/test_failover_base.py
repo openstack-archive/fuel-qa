@@ -16,7 +16,7 @@ import re
 import time
 
 from devops.error import TimeoutError
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
 from fuelweb_test.helpers.utils import RunLimit
@@ -502,7 +502,7 @@ class TestHaFailoverBase(TestBasic):
         with self.fuel_web.get_ssh_for_node(p_d_ctrl.name) as remote:
             remote.execute("iptables -D OUTPUT 1 -m owner --uid-owner heat -m"
                            " state --state NEW,ESTABLISHED,RELATED")
-            _wait(lambda: assert_true(ocf_success in ''.join(
+            wait_pass(lambda: assert_true(ocf_success in ''.join(
                 remote.execute(ocf_status)['stdout']).rstrip()), timeout=240)
             newpid = ''.join(remote.execute('pgrep {0}'
                                             .format(heat_name))['stdout'])
@@ -1210,27 +1210,27 @@ class TestHaFailoverBase(TestBasic):
             for count in xrange(500):
                 logger.debug('Checking splitbrain in the loop, '
                              'count number: {0}'.format(count))
-                _wait(
+                wait_pass(
                     lambda: assert_equal(
                         remote_controller.execute(
                             'killall -TERM corosync')['exit_code'], 0,
                         'Corosync was not killed on controller, '
                         'see debug log, count-{0}'.format(count)), timeout=20)
-                _wait(
+                wait_pass(
                     lambda: assert_true(
                         _check_all_pcs_nodes_status(
                             live_remotes, [controller_node['fqdn']],
                             'Offline'),
                         'Caught splitbrain, see debug log, '
                         'count-{0}'.format(count)), timeout=20)
-                _wait(
+                wait_pass(
                     lambda: assert_equal(
                         remote_controller.execute(
                             'service corosync start && service pacemaker '
                             'restart')['exit_code'], 0,
                         'Corosync was not started, see debug log,'
                         ' count-{0}'.format(count)), timeout=20)
-                _wait(
+                wait_pass(
                     lambda: assert_true(
                         _check_all_pcs_nodes_status(
                             ctrl_remotes, pcs_nodes_online, 'Online'),
