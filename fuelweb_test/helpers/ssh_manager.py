@@ -17,6 +17,7 @@ import os
 import posixpath
 import re
 import traceback
+from warnings import warn
 
 from devops.helpers.helpers import wait
 from devops.models.node import SSHClient
@@ -162,11 +163,17 @@ class SSHManager(object):
         """
         if assert_ec_equal is None:
             assert_ec_equal = [0]
-        orig_result = self.execute(ip=ip, port=port, cmd=cmd)
+
+        remote = self._get_remote(ip=ip, port=port)
+        orig_result = remote.check_call(
+            command=cmd,
+            error_info=err_msg,
+            expected=assert_ec_equal,
+            raise_on_err=raise_on_assert
+        )
 
         # Now create fallback result
         # TODO(astepanov): switch to SSHClient output after tests adoptation
-        # TODO(astepanov): process whole parameters on SSHClient().check_call()
 
         result = {
             'stdout': orig_result['stdout'],
@@ -176,43 +183,8 @@ class SSHManager(object):
             'stderr_str': ''.join(orig_result['stderr']).strip(),
         }
 
-        details_log = (
-            "Host:      {host}\n"
-            "Command:   '{cmd}'\n"
-            "Exit code: {code}\n"
-            "STDOUT:\n{stdout}\n"
-            "STDERR:\n{stderr}".format(
-                host=ip, cmd=cmd, code=result['exit_code'],
-                stdout=result['stdout_str'], stderr=result['stderr_str']
-            ))
-
-        if result['exit_code'] not in assert_ec_equal:
-            error_msg = (
-                err_msg or
-                "Unexpected exit_code returned: actual {0}, expected {1}."
-                "".format(
-                    result['exit_code'],
-                    ' '.join(map(str, assert_ec_equal))))
-            log_msg = (
-                "{0}  Command: '{1}'  "
-                "Details:\n{2}".format(
-                    error_msg, cmd, details_log))
-            logger.error(log_msg)
-            if raise_on_assert:
-                raise Exception(log_msg)
-        else:
-            logger.debug(details_log)
-
         if jsonify:
-            try:
-                result['stdout_json'] = \
-                    self._json_deserialize(result['stdout_str'])
-            except Exception:
-                error_msg = (
-                    "Unable to deserialize output of command"
-                    " '{0}' on host {1}".format(cmd, ip))
-                logger.error(error_msg)
-                raise Exception(error_msg)
+            result['stdout_json'] = orig_result.stdout_json
 
         return result
 
@@ -223,6 +195,10 @@ class SSHManager(object):
         :return: obj
         :raise: Exception
         """
+        warn(
+            '_json_deserialize is not used anymore and will be removed later',
+            DeprecationWarning)
+
         if isinstance(json_string, list):
             json_string = ''.join(json_string).strip()
 
@@ -247,9 +223,9 @@ class SSHManager(object):
         remote = self._get_remote(ip=ip, port=port)
         return remote.download(destination, target)
 
-    def exist_on_remote(self, ip, path, port=22):
+    def exists_on_remote(self, ip, path, port=22):
         remote = self._get_remote(ip=ip, port=port)
-        return remote.exist(path)
+        return remote.exists(path)
 
     def isdir_on_remote(self, ip, path, port=22):
         remote = self._get_remote(ip=ip, port=port)
