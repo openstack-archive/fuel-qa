@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from proboscis import test
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
@@ -58,8 +58,8 @@ class TestsConfigDBAPI(TestBasic):
         install_configdb(master_node_ip=self.ssh_manager.admin_ip)
 
         logger.debug('Waiting for ConfigDB')
-        _wait(lambda: self.fuel_web.client.get_components(),
-              timeout=45)
+        wait_pass(lambda: self.fuel_web.client.get_components(),
+                  timeout=45)
 
         logger.debug('Get env and component data')
         components = self.fuel_web.client.get_components()
