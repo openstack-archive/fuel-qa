@@ -130,13 +130,13 @@ class SSHManager(object):
             logger.info('SSH_MANAGER:Create new connection for '
                         '{ip}:{port}'.format(ip=ip, port=port))
 
-            self.connections[(ip, port)] = SSHClient(
-                host=ip,
-                port=port,
-                username=login,
-                password=password,
-                private_keys=keys if keys is not None else []
-            )
+        self.connections[(ip, port)] = SSHClient(
+            host=ip,
+            port=port,
+            username=login,
+            password=password,
+            private_keys=keys if keys is not None else []
+        )
 
     def execute(self, ip, cmd, port=22):
         remote = self._get_remote(ip=ip, port=port)
@@ -162,12 +162,19 @@ class SSHManager(object):
         """
         if assert_ec_equal is None:
             assert_ec_equal = [0]
-        result = self.execute(ip=ip, port=port, cmd=cmd)
+        orig_result = self.execute(ip=ip, port=port, cmd=cmd)
 
-        result['stdout_str'] = ''.join(result['stdout']).strip()
-        result['stdout_len'] = len(result['stdout'])
-        result['stderr_str'] = ''.join(result['stderr']).strip()
-        result['stderr_len'] = len(result['stderr'])
+        # Now create fallback result
+        # TODO(astepanov): switch to SSHClient output after tests adoptation
+        # TODO(astepanov): process whole parameters on SSHClient().check_call()
+
+        result = {
+            'stdout': orig_result['stdout'],
+            'stderr': orig_result['stderr'],
+            'exit_code': orig_result['exit_code'],
+            'stdout_str': ''.join(orig_result['stdout']).strip(),
+            'stderr_str': ''.join(orig_result['stderr']).strip(),
+        }
 
         details_log = (
             "Host:      {host}\n"
