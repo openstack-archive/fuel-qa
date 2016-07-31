@@ -14,9 +14,10 @@
 
 import re
 import time
-from devops.error import TimeoutError
+from warnings import warn
 
-from devops.helpers.helpers import tcp_ping
+from devops.error import TimeoutError
+from devops.helpers.helpers import tcp_ping_
 from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 from devops.helpers.ntp import sync_time
@@ -146,8 +147,7 @@ class EnvironmentModel(object):
                     .format(', '.join(sorted(nodes_names))))
         new_time = sync_time(self.d_env, nodes_names, skip_sync)
         for name in sorted(new_time):
-                logger.info("New time on '{0}' = {1}".format(name,
-                                                             new_time[name]))
+            logger.info("New time on '{0}' = {1}".format(name, new_time[name]))
 
     @logwrap
     def get_admin_node_ip(self):
@@ -531,7 +531,7 @@ class EnvironmentModel(object):
     @logwrap
     def wait_for_provisioning(self,
                               timeout=settings.WAIT_FOR_PROVISIONING_TIMEOUT):
-        wait_pass(lambda: tcp_ping(
+        wait_pass(lambda: tcp_ping_(
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
             (self.d_env.admin_net), 22), timeout=timeout)
@@ -767,15 +767,12 @@ class EnvironmentModel(object):
              "".format(user=settings.KEYSTONE_CREDS['username'],
                        pwd=settings.KEYSTONE_CREDS['password'])])
 
-        result = self.ssh_manager.execute(
+        self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd=cmd
+            cmd=cmd,
+            err_msg='bootstrap failed, inspect logs for details',
         )
-        logger.info('Result of "{1}" command on master node: '
-                    '{0}'.format(result, cmd))
-        assert_equal(int(result['exit_code']), 0,
-                     'bootstrap failed, '
-                     'inspect logs for details')
+        logger.info('bootstrap successfull')
 
     # Modifies a resolv.conf on the Fuel master node and returns
     # its original content.
@@ -808,8 +805,14 @@ class EnvironmentModel(object):
                      .format(echo_cmd, echo_result['stderr']))
         return resolv_conf['stdout']
 
+    @staticmethod
     @logwrap
-    def execute_remote_cmd(self, remote, cmd, exit_code=0):
+    def execute_remote_cmd(remote, cmd, exit_code=0):
+        warn(
+            'execute_remote_cmd(remote, cmd) is deprecated in favor of '
+            'SSHClient().check_call()',
+            DeprecationWarning
+        )
         result = remote.execute(cmd)
         assert_equal(result['exit_code'], exit_code,
                      'Failed to execute "{0}" on remote host: {1}'.

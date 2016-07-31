@@ -133,13 +133,13 @@ class SSHManager(object):
             logger.info('SSH_MANAGER:Create new connection for '
                         '{ip}:{port}'.format(ip=ip, port=port))
 
-            self.connections[(ip, port)] = SSHClient(
-                host=ip,
-                port=port,
-                username=login,
-                password=password,
-                private_keys=keys if keys is not None else []
-            )
+        self.connections[(ip, port)] = SSHClient(
+            host=ip,
+            port=port,
+            username=login,
+            password=password,
+            private_keys=keys if keys is not None else []
+        )
 
     def execute(self, ip, cmd, port=22):
         remote = self._get_remote(ip=ip, port=port)
@@ -190,14 +190,19 @@ class SSHManager(object):
         """
         if assert_ec_equal is None:
             assert_ec_equal = [0]
+        orig_result = self.execute(ip=ip, port=port, cmd=cmd)
 
-        remote = self._get_remote(ip=ip, port=port)
-        orig_result = remote.check_call(
-            command=cmd,
-            error_info=err_msg,
-            expected=assert_ec_equal,
-            raise_on_err=raise_on_assert
-        )
+        # Now create fallback result
+        # TODO(astepanov): switch to SSHClient output after tests adoptation
+        # TODO(astepanov): process whole parameters on SSHClient().check_call()
+
+        result = {
+            'stdout': orig_result['stdout'],
+            'stderr': orig_result['stderr'],
+            'exit_code': orig_result['exit_code'],
+            'stdout_str': ''.join(orig_result['stdout']).strip(),
+            'stderr_str': ''.join(orig_result['stderr']).strip(),
+        }
 
         # Now create fallback result
         # TODO(astepanov): switch to SSHClient output after tests adoptation
