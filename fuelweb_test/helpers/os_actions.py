@@ -13,6 +13,7 @@
 #    under the License.
 
 import random
+from warnings import warn
 
 from devops.error import TimeoutError
 from devops.helpers import helpers
@@ -354,6 +355,12 @@ class OpenStackActions(common.Common):
 
     @staticmethod
     def execute_through_host(ssh, vm_host, cmd, creds=()):
+        warn(
+            'execute_throw_host(ssh=SSHClient(), ...) is deprecated '
+            'in favor of '
+            'SSHClient().execute_through_host(hostname, cmd, auth, ...)',
+            DeprecationWarning
+        )
         logger.debug("Making intermediate transport")
         intermediate_transport = ssh._ssh.get_transport()
 

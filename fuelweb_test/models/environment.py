@@ -15,6 +15,7 @@
 import logging
 import re
 import time
+from warnings import warn
 
 from devops.helpers.helpers import tcp_ping_
 from devops.helpers.helpers import wait_pass
@@ -702,6 +703,11 @@ class EnvironmentModel(object):
     @staticmethod
     @logwrap
     def execute_remote_cmd(remote, cmd, exit_code=0):
+        warn(
+            'execute_remote_cmd(remote, cmd) is deprecated in favor of '
+            'SSHClient().check_call()',
+            DeprecationWarning
+        )
         result = remote.execute(cmd)
         assert_equal(result['exit_code'], exit_code,
                      'Failed to execute "{0}" on remote host: {1}'.
