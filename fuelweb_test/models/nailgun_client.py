@@ -469,8 +469,12 @@ class NailgunClient(object):
         return self._put(url="/settings", json=data).json()
 
     @logwrap
+    def get_settings(self, data=None):
+        return self._get(url="/settings").json()
+
+    @logwrap
     def send_fuel_stats(self, enabled=False):
-        settings = self.update_settings()
+        settings = self.get_settings()
         params = ('send_anonymous_statistic', 'user_choice_saved')
         for p in params:
             settings['settings']['statistics'][p]['value'] = enabled
