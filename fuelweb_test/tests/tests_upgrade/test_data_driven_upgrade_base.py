@@ -12,7 +12,7 @@ from proboscis.asserts import assert_not_equal
 
 from fuelweb_test import logger
 from fuelweb_test import settings
-from fuelweb_test.helpers.utils import run_on_remote
+from fuelweb_test.helpers.utils import run_on_remote, RunLimit
 from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -195,8 +195,11 @@ class DataDrivenUpgradeBase(TestBasic):
         elif 'restore' in action:
             assert_true(self.remote_file_exists(path))
 
-        run_on_remote(self.admin_remote,
-                      self.OCTANE_COMMANDS[action].format(**octane_cli_args))
+        with RunLimit(seconds=60 * 60,
+                      error_message="Octane is running too long!"):
+            run_on_remote(
+                self.admin_remote,
+                self.OCTANE_COMMANDS[action].format(**octane_cli_args))
 
         if 'backup' in action:
             assert_true(self.remote_file_exists(path))
