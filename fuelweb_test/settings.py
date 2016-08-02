@@ -81,10 +81,16 @@ OPENSTACK_RELEASE_UBUNTU = os.environ.get('OPENSTACK_RELEASE_UBUNTU',
 OPENSTACK_RELEASE_UBUNTU_UCA = os.environ.get('OPENSTACK_RELEASE_UBUNTU_UCA',
                                               'Ubuntu+UCA 14.04').lower()
 OPENSTACK_RELEASE = os.environ.get(
-    'OPENSTACK_RELEASE', OPENSTACK_RELEASE_UBUNTU).lower()
+    'OPENSTACK_RELEASE', 'ubuntu_uca').lower()
 
 # FIXME(mattmymo): Update CI jobs to use 'Ubuntu 14.04' for OPENSTACK_RELEASE
+# FIXME(dteselkin): Because of strange logic to detect Ubuntu release we need
+#                       OPENSTACK_RELEASE == OPENSTACK_RELEASE_UBUNTU
+#                   For UCA that means that all three variables should be the same.
 if OPENSTACK_RELEASE == 'ubuntu':
+    OPENSTACK_RELEASE = OPENSTACK_RELEASE_UBUNTU
+elif OPENSTACK_RELEASE == 'ubuntu_uca':
+    OPENSTACK_RELEASE_UBUNTU = OPENSTACK_RELEASE_UBUNTU_UCA
     OPENSTACK_RELEASE = OPENSTACK_RELEASE_UBUNTU
 
 DEPLOYMENT_MODE_SIMPLE = "multinode"
