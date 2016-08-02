@@ -5,6 +5,7 @@ from distutils.version import StrictVersion
 # pylint: enable=no-name-in-module
 # pylint: enable=import-error
 
+from devops.error import TimeoutError, DevopsCalledProcessError
 from proboscis.asserts import assert_true
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_equal
@@ -21,8 +22,10 @@ class DataDrivenUpgradeBase(TestBasic):
     OCTANE_COMMANDS = {
         'backup': 'octane -v --debug fuel-backup --to {path}',
         'repo-backup': 'octane -v --debug fuel-repo-backup --to {path} --full',
-        'restore': 'octane -v --debug fuel-restore --from {path} '
-                       '--admin-password {pwd}',
+        'restore':
+            'octane -v --debug fuel-restore --from {path} '
+            '--admin-password {pwd} > ~/restore_stdout.log '
+            '2> ~/restore_stderr.log',
         'repo-restore': 'octane -v --debug fuel-repo-restore --from {path}',
         'update-bootstrap-centos': 'octane -v --debug update-bootstrap-centos'
     }
@@ -192,19 +195,31 @@ class DataDrivenUpgradeBase(TestBasic):
             'path': path,
             'pwd': settings.KEYSTONE_CREDS['password']
         }
+        admin_remote = self.env.d_env.get_admin_remote()
         if 'backup' in action:
-            # pylint: disable=no-member
-            assert_false(self.admin_remote.exists(path),
-                         'File already exists, not able to reuse')
-            # pylint: enable=no-member
+            assert_false(
+                admin_remote.exists(path),
+                'File {!r} already exists, not able to reuse'.format(path))
         elif 'restore' in action:
-            assert_true(self.remote_file_exists(path))
+            assert_true(
+                admin_remote.exists(path),
+                'File {!r} does not exists - can not run restore'.format(path))
 
-        run_on_remote(self.admin_remote,
-                      self.OCTANE_COMMANDS[action].format(**octane_cli_args))
+        cmd = self.OCTANE_COMMANDS[action].format(**octane_cli_args)
+
+        try:
+            admin_remote.check_call(cmd, timeout=60 * 60)
+        except (DevopsCalledProcessError, TimeoutError):
+            # snapshot generating procedure can be broken
+            admin_remote.download(
+                "/var/log/octane.log",
+                "octane_{}_.log".format(os.path.basename(path)))
+            raise
 
         if 'backup' in action:
-            assert_true(self.remote_file_exists(path))
+            assert_true(
+                admin_remote.exists(path),
+                "File {!r} was not created after backup command!".format(path))
 
     def do_backup(self,
                   backup_path, local_path,
