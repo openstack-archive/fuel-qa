@@ -86,7 +86,9 @@ class Common(object):
     @property
     def glance(self):
         endpoint = self.__make_endpoint(
-            self._get_url_for_svc(service_type='image'))
+                self._get_url_for_svc(service_type='image'))
+        logger.debug("Keystone session is: {}".format(self.keystone_session))
+        logger.debug("Endpoint is: {}".format(endpoint))
         return GlanceClient(
             session=self.keystone_session,
             endpoint=endpoint,
