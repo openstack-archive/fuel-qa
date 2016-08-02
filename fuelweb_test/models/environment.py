@@ -320,9 +320,7 @@ class EnvironmentModel(object):
         except exceptions.Unauthorized:
             self.set_admin_keystone_password()
             self.fuel_web.get_nailgun_version()
-        except BaseException:
-            logger.exception(
-                'Unexpected exception while tried to get releases')
+
         if not skip_slaves_check:
             # TODO(astudenov): add timeout_msg
             wait_pass(lambda: self.check_slaves_are_ready(), timeout=60 * 6)
@@ -567,9 +565,9 @@ class EnvironmentModel(object):
         out = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
             cmd=command
-        )['stdout_str']
+        )['stdout']
 
-        assert_true(self.get_admin_node_ip() in out,
+        assert_true(self.get_admin_node_ip() in "".join(out),
                     "dhcpcheck doesn't discover master ip")
 
     def bootstrap_image_check(self):
