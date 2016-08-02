@@ -77,9 +77,9 @@ PATH_TO_PEM = os.environ.get('PATH_TO_PEM', os.path.join(
 
 OPENSTACK_RELEASE_CENTOS = 'centos'
 OPENSTACK_RELEASE_UBUNTU = os.environ.get('OPENSTACK_RELEASE_UBUNTU',
-                                          'Ubuntu 14.04').lower()
+                                          'Ubuntu 16.04').lower()
 OPENSTACK_RELEASE_UBUNTU_UCA = os.environ.get('OPENSTACK_RELEASE_UBUNTU_UCA',
-                                              'Ubuntu+UCA 14.04').lower()
+                                              'Ubuntu+UCA 16.04').lower()
 OPENSTACK_RELEASE = os.environ.get(
     'OPENSTACK_RELEASE', OPENSTACK_RELEASE_UBUNTU).lower()
 
@@ -728,4 +728,5 @@ RPM_REPOS_YAML = os.environ.get("RPM_REPOS_YAML")
 
 DEB_REPOS_YAML = os.environ.get("DEB_REPOS_YAML")
 
-UBUNTU_SERVICE_PROVIDER = os.environ.get('UBUNTU_SERVICE_PROVIDER', '')
+UBUNTU_SERVICE_PROVIDER = os.environ.get('UBUNTU_SERVICE_PROVIDER',
+                                         'systemd')
