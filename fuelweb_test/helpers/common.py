@@ -87,10 +87,14 @@ class Common(object):
     def glance(self):
         endpoint = self.__make_endpoint(
             self._get_url_for_svc(service_type='image'))
+
+        insecure = not VERIFY_SSL
+
         return GlanceClient(
             session=self.keystone_session,
             endpoint=endpoint,
-            endpoint_override=endpoint)
+            endpoint_override=endpoint,
+            insecure=insecure)
 
     @property
     def neutron(self):
