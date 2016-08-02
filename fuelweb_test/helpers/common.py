@@ -85,12 +85,17 @@ class Common(object):
 
     @property
     def glance(self):
-        endpoint = self.__make_endpoint(
-            self._get_url_for_svc(service_type='image'))
-        return GlanceClient(
-            session=self.keystone_session,
-            endpoint=endpoint,
-            endpoint_override=endpoint)
+        try:
+            endpoint = self.__make_endpoint(
+                self._get_url_for_svc(service_type='image'))
+            return GlanceClient(
+                session=self.keystone_session,
+                endpoint=endpoint,
+                endpoint_override=endpoint,
+                insecure=True)
+        except ClientException as e:
+            logger.warning('Could not initialize glance client {0}'.format(e))
+            raise
 
     @property
     def neutron(self):
