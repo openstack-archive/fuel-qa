@@ -86,11 +86,14 @@ class Common(object):
     @property
     def glance(self):
         endpoint = self.__make_endpoint(
-            self._get_url_for_svc(service_type='image'))
-        return GlanceClient(
-            session=self.keystone_session,
-            endpoint=endpoint,
-            endpoint_override=endpoint)
+                self._get_url_for_svc(service_type='image'))
+        # return GlanceClient(
+        #     session=self.keystone_session,
+        #     endpoint=endpoint,
+        #     endpoint_override=endpoint,
+        #     insecure=True)
+        return GlanceClient(endpoint=endpoint, endpoint_override=endpoint,
+                            insecure=True)
 
     @property
     def neutron(self):
