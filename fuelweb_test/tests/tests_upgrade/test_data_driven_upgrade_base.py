@@ -17,8 +17,10 @@ class DataDrivenUpgradeBase(TestBasic):
     OCTANE_COMMANDS = {
         'backup': 'octane -v --debug fuel-backup --to {path}',
         'repo-backup': 'octane -v --debug fuel-repo-backup --to {path} --full',
-        'restore': 'octane -v --debug fuel-restore --from {path} '
-                       '--admin-password {pwd}',
+        'restore':
+            'octane -v --debug fuel-restore --from {path} '
+            '--admin-password {pwd} > ~/restore_stdout.log '
+            '2> ~/restore_stderr.log',
         'repo-restore': 'octane -v --debug fuel-repo-restore --from {path}',
         'update-bootstrap-centos': 'octane -v --debug update-bootstrap-centos'
     }
@@ -191,19 +193,28 @@ class DataDrivenUpgradeBase(TestBasic):
             'path': path,
             'pwd': settings.KEYSTONE_CREDS['password']
         }
+        admin_remote = self.env.d_env.get_admin_remote()
         if 'backup' in action:
-            # pylint: disable=no-member
-            assert_false(self.admin_remote.exists(path),
+            assert_false(admin_remote.exists(path),
                          'File already exists, not able to reuse')
-            # pylint: enable=no-member
         elif 'restore' in action:
-            assert_true(self.remote_file_exists(path))
+            assert_true(admin_remote.exists(path))
 
-        run_on_remote(self.admin_remote,
-                      self.OCTANE_COMMANDS[action].format(**octane_cli_args))
+        cmd = self.OCTANE_COMMANDS[action].format(**octane_cli_args)
+        result = self.env.d_env.get_admin_remote().execute(
+            cmd, timeout=60 * 60)
+        if result['exit_code'] != 0:
+            # snapshot generating procedure can be broken
+            self.download_file(
+                "/var/log/octane.log",
+                os.path.join(settings.LOGS_DIR,
+                             "octane_{}_.log".format(os.path.basename(path))))
+            assert_equal(
+                result['exit_code'], 0,
+                "Octane command {!r} fails! Inspect octane's log".format(cmd))
 
         if 'backup' in action:
-            assert_true(self.remote_file_exists(path))
+            assert_true(admin_remote.exists(path))
 
     def do_backup(self,
                   backup_path, local_path,
