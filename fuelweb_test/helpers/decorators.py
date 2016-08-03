@@ -39,6 +39,7 @@ from fuelweb_test.helpers.checkers import check_stats_private_info
 from fuelweb_test.helpers.checkers import count_stats_on_collector
 from fuelweb_test.helpers.regenerate_repo import CustomRepo
 from fuelweb_test.helpers.ssh_manager import SSHManager
+from fuelweb_test.helpers.timmy import collect_logs
 from fuelweb_test.helpers.utils import get_current_env
 from fuelweb_test.helpers.utils import pull_out_logs_via_ssh
 from fuelweb_test.helpers.utils import store_astute_yaml
@@ -47,20 +48,55 @@ from fuelweb_test.helpers.utils import TimeStat
 from gates_tests.helpers.exceptions import ConfigurationException
 
 
-def save_logs(session, url, path, chunk_size=1024):
-    logger.info('Saving logs to "%s" file', path)
+# TODO(mstrukov): to remove this
+#def save_logs(session, url, path, chunk_size=1024):
+#    logger.info('Saving logs to "%s" file', path)
+#
+#    stream = session.get(url, stream=True, verify=False)
+#    if stream.status_code != 200:
+#        logger.error("%s %s: %s", stream.status_code, stream.reason,
+#                     stream.content)
+#        return
+#
+#    with open(path, 'wb') as fp:
+#        for chunk in stream.iter_content(chunk_size=chunk_size):
+#            if chunk:
+#                fp.write(chunk)
+#                fp.flush()
 
-    stream = session.get(url, stream=True, verify=False)
-    if stream.status_code != 200:
-        logger.error("%s %s: %s", stream.status_code, stream.reason,
-                     stream.content)
-        return
 
-    with open(path, 'wb') as fp:
-        for chunk in stream.iter_content(chunk_size=chunk_size):
-            if chunk:
-                fp.write(chunk)
-                fp.flush()
+def create_diagnostic_snapshot(env, status, name="",
+                               timeout=settings.LOG_SNAPSHOT_TIMEOUT):
+    logger.debug('Starting log snapshot with '
+                 'timeout {} seconds'.format(timeout))
+
+    #task = env.fuel_web.task_wait(env.fuel_web.client.generate_logs(), timeout)
+    #assert_true(task['status'] == 'ready',
+    #            "Generation of diagnostic snapshot failed: {}".format(task))
+    date = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+    path_to_log=collect_logs(path=settings.LOGS_DIR,
+                 name='{status}_{envname}-{basename}'.format(status=status,
+                                                          envname=name,
+                                                          basename=date),
+                 ) # TODO(mstrukov): add params here
+    logger.info('Saving logs to {} file'.format(path_to_log))
+
+    #if settings.FORCE_HTTPS_MASTER_NODE:
+    #    url = "https://{}:8443{}".format(env.get_admin_node_ip(),
+    #                                     task['message'])
+    #else:
+    #    url = "http://{}:8000{}".format(env.get_admin_node_ip(),
+    #                                    task['message'])
+
+    #log_file_name = '{status}_{name}-{basename}'.format(
+    #    status=status,
+    #    name=name,
+    #    basename=os.path.basename(task['message']))
+
+    #save_logs(
+    #    session=env.fuel_web.client.session,
+    #    url=url,
+    #    path=os.path.join(settings.LOGS_DIR, log_file_name))
 
 
 def store_error_details(name, env):
@@ -74,6 +110,7 @@ def store_error_details(name, env):
                                                 sys.exc_info()[1])))
             logger.debug("Fetching of diagnostic snapshot failed: {0}".
                          format(traceback.format_exc()))
+
             try:
                 with env.d_env.get_admin_remote()\
                         as admin_remote:
@@ -325,30 +362,6 @@ def revert_info(snapshot_name, master_ip, description=""):
                 .format(command=command))
 
     logger.info("<" * 5 + "*" * 100 + ">" * 5)
-
-
-def create_diagnostic_snapshot(env, status, name="",
-                               timeout=settings.LOG_SNAPSHOT_TIMEOUT):
-    logger.debug('Starting log snapshot with '
-                 'timeout {} seconds'.format(timeout))
-    task = env.fuel_web.task_wait(env.fuel_web.client.generate_logs(), timeout)
-    assert_true(task['status'] == 'ready',
-                "Generation of diagnostic snapshot failed: {}".format(task))
-    if settings.FORCE_HTTPS_MASTER_NODE:
-        url = "https://{}:8443{}".format(env.get_admin_node_ip(),
-                                         task['message'])
-    else:
-        url = "http://{}:8000{}".format(env.get_admin_node_ip(),
-                                        task['message'])
-
-    log_file_name = '{status}_{name}-{basename}'.format(
-        status=status,
-        name=name,
-        basename=os.path.basename(task['message']))
-    save_logs(
-        session=env.fuel_web.client.session,
-        url=url,
-        path=os.path.join(settings.LOGS_DIR, log_file_name))
 
 
 def retry(count=3, delay=30):
@@ -840,7 +853,7 @@ def token(func):
             return func(*args, **kwargs)
     return wrapper
 
-
+# TODO(mstrukov): what's this?
 def check_fuel_snapshot(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
