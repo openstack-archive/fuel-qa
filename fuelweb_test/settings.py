@@ -51,7 +51,6 @@ def iface_alias(interface_name):
     return INTERFACES_DICT[interface_name]
 
 ISO_PATH = os.environ.get('ISO_PATH')
-LOGS_DIR = os.environ.get('LOGS_DIR', os.getcwd())
 # cdrom or usb
 ADMIN_BOOT_DEVICE = os.environ.get('ADMIN_BOOT_DEVICE', 'cdrom')
 ISO_MIRANTIS_FEATURE_GROUP = get_var_as_bool(
@@ -61,6 +60,17 @@ ISO_LABEL = 'Mirantis_Fuel' if ISO_MIRANTIS_FEATURE_GROUP else 'OpenStack_Fuel'
 SHOW_FUELMENU = get_var_as_bool('SHOW_FUELMENU', False)
 DNS = os.environ.get('DNS', '8.8.8.8')
 PUBLIC_TEST_IP = os.environ.get('PUBLIC_TEST_IP', '8.8.8.8')
+
+# <<< Diagnostic snapshot parameters >>>
+LOG_SNAPSHOT_TIMEOUT = int(os.environ.get("LOG_SNAPSHOT_TIMEOUT", 10 * 60))
+LOGS_DIR = os.environ.get('LOGS_DIR', os.getcwd())
+ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT = get_var_as_bool(
+    'ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT', False)
+# Can be preinstalled locally '/bin/timmy_bin.py'
+# or via pip from git 'https://github.com/adobdin/timmy.git'
+TIMMY_PATH = os.environ.get('TIMMY_PATH',
+                            '/usr/bin/timmy_bin.py')
+# >>> Diagnostic snapshot parameters <<<
 
 FORCE_HTTPS_MASTER_NODE = get_var_as_bool('FORCE_HTTPS_MASTER_NODE', False)
 DISABLE_SSL = get_var_as_bool('DISABLE_SSL', False)
@@ -649,9 +659,6 @@ UCA_PIN_HAPROXY = get_var_as_bool('UCA_PIN_HAPROXY', True)
 UCA_PIN_RABBITMQ = get_var_as_bool('UCA_PIN_RABBITMQ', True)
 UCA_PIN_CEPH = get_var_as_bool('UCA_PIN_CEPH', True)
 
-ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT = get_var_as_bool(
-    'ALWAYS_CREATE_DIAGNOSTIC_SNAPSHOT', False)
-
 RALLY_DOCKER_REPO = os.environ.get('RALLY_DOCKER_REPO',
                                    'docker.io/rallyforge/rally')
 RALLY_CONTAINER_NAME = os.environ.get('RALLY_CONTAINER_NAME', 'rally')
@@ -721,8 +728,6 @@ S3_API_CLIENT = os.environ.get("S3_API_CLIENT", "s3cmd")
 MASTER_NODE_EXTRA_PACKAGES = os.environ.get("MASTER_NODE_EXTRA_PACKAGES", "")
 
 CENTOS_MASTER_NODE = os.environ.get("CENTOS_MASTER")
-
-LOG_SNAPSHOT_TIMEOUT = int(os.environ.get("LOG_SNAPSHOT_TIMEOUT", 10 * 60))
 
 RPM_REPOS_YAML = os.environ.get("RPM_REPOS_YAML")
 
