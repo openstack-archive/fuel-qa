@@ -397,9 +397,10 @@ class NailgunClient(object):
     def get_notifications(self):
         return self._get(url="/notifications").json()
 
-    @logwrap
-    def generate_logs(self):
-        return self._put(url="/logs/package").json()
+    # TODO(mstrukov): will this be removed from nailgun?
+    #@logwrap
+    #def generate_logs(self):
+    #    return self._put(url="/logs/package").json()
 
     @logwrap
     def provision_nodes(self, cluster_id, node_ids=None):
