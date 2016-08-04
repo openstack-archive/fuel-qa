@@ -65,21 +65,64 @@ class OpenStackActions(common.Common):
         if servers:
             return servers
 
+    def get_server_by_name(self, name):
+        servers = self.get_servers()
+        for srv in servers:
+            if srv.name == name:
+                return srv
+        logger.warning("Instance with name {} was not found".format(name))
+        return None
+
+    def get_flavor_by_name(self, name):
+        flavor_list = self.nova.flavors.list()
+        for flavor in flavor_list:
+            if flavor.name == name:
+                return flavor
+        logger.warning("Flavor with name {} was not found".format(name))
+        return None
+
+    def wait_for_server_is_active(self, server, timeout):
+        """Wait for server is in active state
+
+        :param server: nova server object
+        :param timeout: int, timeout in sec
+        """
+        try:
+            helpers.wait(
+                lambda: self.get_instance_detail(server).status == "ACTIVE",
+                timeout=timeout)
+            srv = self.get_instance_detail(server.id)
+            logger.debug('The Instance {!r} booted successfully on {!r}'
+                         .format(srv.id,
+                                 srv.to_dict()['OS-EXT-SRV-ATTR:host']))
+            return srv
+        except TimeoutError:
+            logger.debug("Create server {!r} failed by timeout. Please, take "
+                         "a look at OpenStack logs".format(server.id))
+            asserts.assert_equal(
+                self.get_instance_detail(server).status,
+                "ACTIVE",
+                "Instance do not reach active state, current state"
+                " is {0}".format(self.get_instance_detail(server).status))
+
     def create_server(
             self,
             name=None,
             security_groups=None,
             flavor_id=None,
             net_id=None,
-            timeout=100
+            timeout=100,
+            image=None,
+            **kwargs
     ):
-        """ Creates simple server, like in OSTF.
+        """Creates simple server, like in OSTF.
 
         :param name: server name, if None -> test-serv + random suffix
         :param security_groups: list, if None -> ssh + icmp v4 & icmp v6
         :param flavor_id: micro_flavor if None
         :param net_id: network id, could be omitted.
         :param timeout: int=100
+        :param image: TestVM if None.
         :return: Server, in started state
         """
         def find_micro_flavor():
@@ -94,27 +137,22 @@ class OpenStackActions(common.Common):
         if not flavor_id:
             flavor_id = find_micro_flavor().id
 
+        if image is None:
+            image = self._get_cirros_image().id
+
         nics = [{'net-id': net_id}] if net_id else None
 
         srv = self.nova.servers.create(
             name=name,
-            image=self._get_cirros_image().id,
+            image=image,
             flavor=flavor_id,
             security_groups=[sec_group.name for sec_group in security_groups],
-            nics=nics)
+            nics=nics,
+            **kwargs)
 
-        try:
-            helpers.wait(
-                lambda: self.get_instance_detail(srv).status == "ACTIVE",
-                timeout=timeout)
-            return self.get_instance_detail(srv.id)
-        except TimeoutError:
-            logger.debug("Create server failed by timeout")
-            asserts.assert_equal(
-                self.get_instance_detail(srv).status,
-                "ACTIVE",
-                "Instance do not reach active state, current state"
-                " is {0}".format(self.get_instance_detail(srv).status))
+        logger.debug('Start instance {!r} ...'.format(srv.id))
+        self.wait_for_server_is_active(srv, timeout)
+        return self.get_instance_detail(srv)
 
     def create_server_for_migration(self, neutron=True, scenario='',
                                     timeout=100, filename=None, key_name=None,
@@ -150,18 +188,19 @@ class OpenStackActions(common.Common):
                                        files=filename,
                                        key_name=key_name,
                                        **kwargs)
-        try:
-            helpers.wait(
-                lambda: self.get_instance_detail(srv).status == "ACTIVE",
-                timeout=timeout)
-            return self.get_instance_detail(srv.id)
-        except TimeoutError:
-            logger.debug("Create server for migration failed by timeout")
-            asserts.assert_equal(
-                self.get_instance_detail(srv).status,
-                "ACTIVE",
-                "Instance do not reach active state, current state"
-                " is {0}".format(self.get_instance_detail(srv).status))
+        self.wait_for_server_is_active(srv, timeout)
+        return self.get_instance_detail(srv)
+
+    def create_server_from_volume(self, name=None, security_groups=None,
+                                  flavor_id=None, net_id=None, timeout=100,
+                                  image=None, **kwargs):
+        bootable_volume = self.create_volume(
+            image_id=image or self._get_cirros_image().id)
+        kwargs['block_device_mapping'] = {'vda': bootable_volume.id + ':::0'}
+        srv = self.create_server(name=name, security_groups=security_groups,
+                                 flavor_id=flavor_id, net_id=net_id,
+                                 timeput=timeout, image=image, **kwargs)
+        return srv
 
     def verify_srv_deleted(self, srv):
         try:
@@ -301,6 +340,8 @@ class OpenStackActions(common.Common):
 
     def attach_volume(self, volume, server, mount='/dev/vdb'):
         self.cinder.volumes.attach(volume, server.id, mount)
+        logger.debug('The volume {!r} was attached to instance {!r}'
+                     .format(volume.id, server.id))
         return self.cinder.volumes.get(volume.id)
 
     def extend_volume(self, volume, newsize):
@@ -414,6 +455,25 @@ class OpenStackActions(common.Common):
         net_list = self.neutron.list_networks()
         for net in net_list['networks']:
             if net['name'] == network_name:
+                return net
+        return None
+
+    def get_network_by_type(self, net_type):
+        """Get the first network by type: external or internal
+
+        :param net_type: str, value is external or internal
+        :return: dict, network data
+        """
+        if net_type == 'external':
+            flag = True
+        elif net_type == 'internal':
+            flag = False
+        else:
+            raise Exception('Type should be "external" or "internal".'
+                            ' Your type is {!r}!'.format(net_type))
+        net_list = self.neutron.list_networks()
+        for net in net_list['networks']:
+            if net['router:external'] == flag:
                 return net
         return None
 
@@ -625,3 +685,61 @@ class OpenStackActions(common.Common):
             }
         }
         return self.neutron.create_router(router_info)['router']
+
+    def get_keystone_endpoints(self):
+        endpoints = self.keystone.endpoints.list()
+        return endpoints
+
+    def boot_parameterized_vms(self, attach_volume=False,
+                               boot_vm_from_volume=False,
+                               enable_floating_ips=False,
+                               on_each_compute=False,
+                               **kwargs):
+        """Boot parameterized VMs
+
+        :param attach_volume: bool, flag for attaching of volume to booted VM
+        :param boot_vm_from_volume: bool, flag for the boot of VM from volume
+        :param enable_floating_ips: bool, flag for assigning of floating ip to
+               booted VM
+        :param on_each_compute: bool, boot VMs on each compute or only one
+        :param kwargs: dict, it includes the same keys like for
+               nova.servers.create
+        :return: list, list of vms data dicts
+        """
+        vms_data = []
+        if on_each_compute:
+            for hypervisor in self.get_hypervisors():
+                kwargs['availability_zone'] = '{}:{}'.format(
+                    'nova',
+                    hypervisor.hypervisor_hostname)
+                vms_data.extend(
+                    self.boot_parameterized_vms(
+                        attach_volume=attach_volume,
+                        boot_vm_from_volume=boot_vm_from_volume,
+                        enable_floating_ips=enable_floating_ips,
+                        on_each_compute=False,
+                        **kwargs))
+            return vms_data
+
+        fixed_network_id = self.get_network_by_type('internal')['id']
+        if boot_vm_from_volume:
+            server = self.create_server_from_volume(net_id=fixed_network_id,
+                                                    **kwargs)
+        else:
+            server = self.create_server(net_id=fixed_network_id,
+                                        **kwargs)
+        vm_data = {'server': server.to_dict()}
+
+        if attach_volume:
+            volume = self.create_volume()
+            self.attach_volume(volume, server)
+            volume = self.cinder.volumes.get(volume.id)
+            vm_data['attached_volume'] = volume.to_dict()
+
+        if enable_floating_ips:
+            self.assign_floating_ip(server)
+
+        server = self.get_instance_detail(server)
+        vm_data['server'] = server.to_dict()
+        vms_data.append(vm_data)
+        return vms_data
