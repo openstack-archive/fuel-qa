@@ -25,23 +25,32 @@ from fuelweb_test import logger
 
 
 @test(groups=["clone_env_for_os_upgrade"],
-      depends_on_groups=["upgrade_ceph_ha_restore"],
-      enabled=False)
+      depends_on_groups=["upgrade_ceph_ha_restore"])
 class TestCloneEnv(TestBasic):
 
-    snapshot = 'upgrade_ha_ceph_for_all_ubuntu_neutron_vlan'
+    snapshot = 'upgrade_ceph_ha_restore'
 
     @test(groups=["test_clone_environment"])
     @log_snapshot_after_test
     def test_clone_environment(self):
         """Test clone environment
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Clone cluster
             3. Check status code
             4. Check that clusters are equal
 
         """
+
+        def text_to_textlist(old_val, new_val):
+            return set([val.strip() for val in
+                        old_val.split(',')]) == set(new_val)
+
+        def get_field_comparer(old_type, new_type):
+            method_fields = {('text', 'text_list'): text_to_textlist}
+            return method_fields.get(
+                (old_type, new_type),
+                lambda old_val, new_val: old_val == new_val)
 
         if not self.env.d_env.has_snapshot(self.snapshot):
             raise SkipTest('Snapshot {} not found'.format(self.snapshot))
@@ -77,10 +86,12 @@ class TestCloneEnv(TestBasic):
                 if "value" in value1:
                     if "value" in cluster_attrs["editable"].get(key, {}).get(
                             key1, {}):
+                        value_old = cluster_attrs["editable"][key][key1]
+                        comparator = get_field_comparer(value_old["type"],
+                                                        value1["type"])
                         assert_equal(
-                            cluster_attrs["editable"][key][key1]["value"],
-                            value1["value"])
-
+                            comparator(value_old["value"], value1["value"]),
+                            True)
                 elif "values" in value1:
                     if "values" in cluster_attrs["editable"].get(key, {}).get(
                             key1, {}):
@@ -90,11 +101,6 @@ class TestCloneEnv(TestBasic):
 
         old_cluster_net_cfg = self.fuel_web.client.get_networks(cluster_id)
         cloned_cluster_net_cfg = self.fuel_web.client.get_networks(body["id"])
-
-        assert_equal(old_cluster_net_cfg["management_vip"],
-                     cloned_cluster_net_cfg["management_vip"])
-        assert_equal(old_cluster_net_cfg["public_vip"],
-                     cloned_cluster_net_cfg["public_vip"])
 
         for parameter in cloned_cluster_net_cfg["networking_parameters"]:
             if parameter in old_cluster_net_cfg["networking_parameters"]:
@@ -114,15 +120,13 @@ class TestCloneEnv(TestBasic):
                     assert_equal(old_network["vlan_start"],
                                  network["vlan_start"])
 
-    @test(
-        depends_on_groups=['upgrade_old_nodes'],
-        # TODO(astepanov) maintain names changes later
-        groups=["test_clone_nonexistent_cluster"])
+    @test(groups=["test_clone_nonexistent_cluster"])
+    # TODO(astepanov) maintain names changes later
     @log_snapshot_after_test
     def test_clone_nonexistent_cluster(self):
         """Test clone environment with nonexistent cluster id as argument
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Try to clone nonexistent environment
             3. Check status code
 
@@ -147,7 +151,7 @@ class TestCloneEnv(TestBasic):
     def test_clone_wo_name_in_body(self):
         """Test clone without name in POST body
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Try to clone environment without name in POST body
             3. Check status code
 
@@ -177,7 +181,7 @@ class TestCloneEnv(TestBasic):
     def test_clone_wo_release_id_in_body(self):
         """Test clone without release id in POST body
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Try to clone environment without release id in POST body
             3. Check status code
 
@@ -204,7 +208,7 @@ class TestCloneEnv(TestBasic):
     def test_clone_with_empty_body(self):
         """Test clone with empty body
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Try to clone environment with empty body
             3. Check status code
 
@@ -227,7 +231,7 @@ class TestCloneEnv(TestBasic):
     def test_clone_with_nonexistent_release_id(self):
         """Test clone with nonexistent release id in POST body
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Try to clone environment with nonexistent
                release id in POST body
             3. Check status code
@@ -256,7 +260,7 @@ class TestCloneEnv(TestBasic):
     def test_clone_with_incorrect_release_id(self):
         """Test clone with incorrect release id in POST body
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Try to clone environment with incorrect
             release id in POST body
             3. Check status code
@@ -285,7 +289,7 @@ class TestCloneEnv(TestBasic):
     def test_double_clone_environment(self):
         """Test double clone environment
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Clone cluster
             3. Clone cluster again
             4. Check status code
