@@ -49,7 +49,7 @@ class TestMultipath(base_test_case.TestBasic):
         """
         cmd = "multipath -l -v2"
 
-        ssh_manager.update_connection(ip, login='root',
+        ssh_manager.update_connection(ip, login='root', password='r00tme',
                                       keys=ssh_manager._get_keys())
         ssh_manager._get_remote(ip)
         result = ssh_manager.execute_on_remote(
