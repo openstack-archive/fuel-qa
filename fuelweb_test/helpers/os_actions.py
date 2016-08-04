@@ -20,8 +20,8 @@ from devops.helpers import helpers
 import paramiko
 from proboscis import asserts
 
-from fuelweb_test.helpers import common
 from fuelweb_test import logger
+from fuelweb_test.helpers import common
 
 
 class OpenStackActions(common.Common):
@@ -81,6 +81,25 @@ class OpenStackActions(common.Common):
         logger.warning("Flavor with name {} was not found".format(name))
         return None
 
+    def wait_for_server_is_active(self, server, timeout):
+        """Wait for server is in active state
+
+        :param server: nova server object
+        :param timeout: int, timeout in sec
+        """
+        try:
+            helpers.wait(
+                lambda: self.get_instance_detail(server).status == "ACTIVE",
+                timeout=timeout)
+            return self.get_instance_detail(server.id)
+        except TimeoutError:
+            logger.debug("Create server failed by timeout")
+            asserts.assert_equal(
+                self.get_instance_detail(server).status,
+                "ACTIVE",
+                "Instance do not reach active state, current state"
+                " is {0}".format(self.get_instance_detail(server).status))
+
     def create_server(
             self,
             name=None,
@@ -124,19 +143,8 @@ class OpenStackActions(common.Common):
             security_groups=[sec_group.name for sec_group in security_groups],
             nics=nics,
             **kwargs)
-
-        try:
-            helpers.wait(
-                lambda: self.get_instance_detail(srv).status == "ACTIVE",
-                timeout=timeout)
-            return self.get_instance_detail(srv.id)
-        except TimeoutError:
-            logger.debug("Create server failed by timeout")
-            asserts.assert_equal(
-                self.get_instance_detail(srv).status,
-                "ACTIVE",
-                "Instance do not reach active state, current state"
-                " is {0}".format(self.get_instance_detail(srv).status))
+        self.wait_for_server_is_active(srv, timeout)
+        return self.get_instance_detail(srv)
 
     def create_server_for_migration(self, neutron=True, scenario='',
                                     timeout=100, filename=None, key_name=None,
@@ -172,18 +180,19 @@ class OpenStackActions(common.Common):
                                        files=filename,
                                        key_name=key_name,
                                        **kwargs)
-        try:
-            helpers.wait(
-                lambda: self.get_instance_detail(srv).status == "ACTIVE",
-                timeout=timeout)
-            return self.get_instance_detail(srv.id)
-        except TimeoutError:
-            logger.debug("Create server for migration failed by timeout")
-            asserts.assert_equal(
-                self.get_instance_detail(srv).status,
-                "ACTIVE",
-                "Instance do not reach active state, current state"
-                " is {0}".format(self.get_instance_detail(srv).status))
+        self.wait_for_server_is_active(srv, timeout)
+        return self.get_instance_detail(srv)
+
+    def create_server_from_volume(self, name=None, security_groups=None,
+                                  flavor_id=None, net_id=None, timeout=100,
+                                  image=None, **kwargs):
+        bootable_volume = self.create_volume(
+            image_id=image or self._get_cirros_image().id)
+        kwargs['block_device_mapping'] = {'vda': bootable_volume.id + ':::0'}
+        srv = self.create_server(name=name, security_groups=security_groups,
+                                 flavor_id=flavor_id, net_id=net_id,
+                                 timeput=timeout, image=image, **kwargs)
+        return srv
 
     def is_srv_deleted(self, srv):
         if srv in self.nova.servers.list():
@@ -456,6 +465,25 @@ class OpenStackActions(common.Common):
                 return net
         return None
 
+    def get_network_by_type(self, net_type):
+        """Get the first network by type: external or internal
+
+        :param net_type: str, value is external or internal
+        :return: dict, network data
+        """
+        if net_type == 'external':
+            flag = True
+        elif net_type == 'internal':
+            flag = False
+        else:
+            raise Exception('Type should be "external" or "internal".'
+                            ' Your type is {!r}!'.format(net_type))
+        net_list = self.neutron.list_networks()
+        for net in net_list['networks']:
+            if net['router:external'] == flag:
+                return net
+        return None
+
     def get_subnet(self, subnet_name):
         subnet_list = self.neutron.list_subnets()
         for subnet in subnet_list['subnets']:
@@ -707,3 +735,50 @@ class OpenStackActions(common.Common):
     def get_keystone_endpoints(self):
         endpoints = self.keystone.endpoints.list()
         return endpoints
+
+    def boot_parameterized_vms(self, attach_volume=False,
+                               boot_vm_from_volume=False,
+                               enable_floating_ips=False,
+                               on_each_compute=False,
+                               **kwargs):
+        """Boot param
+
+        :param attach_volume: bool, flag for attaching of volume to booted VM
+        :param boot_vm_from_volume: bool, flag for the boot of VM from volume
+        :param enable_floating_ips: bool, flag for assigning of floating ip to
+               booted VM
+        :param on_each_compute: bool, boot VMs on each compute or only one
+        :param kwargs: dict, it includes the same keys like for
+               nova.servers.create
+        :return: list, list of vms data dicts
+        """
+        vms_data = []
+        if on_each_compute:
+            for hypervisor in self.get_hypervisors():
+                kwargs['availability_zone'] = hypervisor.hypervisor_hostname
+                vms_data.append(
+                    self.boot_parameterized_vms(
+                        attach_volume=attach_volume,
+                        boot_vm_from_volume=boot_vm_from_volume,
+                        enable_floating_ips=enable_floating_ips,
+                        on_each_compute=False,
+                        **kwargs)[0])
+
+        fixed_network_id = self.get_network_by_type('internal')['id']
+        if boot_vm_from_volume:
+            server = self.create_server_from_volume(net_id=fixed_network_id,
+                                                    **kwargs)
+        else:
+            server = self.create_server(net_id=fixed_network_id,
+                                        **kwargs)
+
+        if attach_volume:
+            volume = self.create_volume()
+            self.attach_volume(volume, server)
+
+        if enable_floating_ips:
+            self.assign_floating_ip(server)
+
+        server = self.get_instance_detail(server)
+        vms_data.append(server)
+        return vms_data
