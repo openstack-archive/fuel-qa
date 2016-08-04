@@ -110,7 +110,8 @@ class TestSRIOV(TestBasic):
                     'available!'.format(sriov_nailgun_nodes)
                     )
         sriov_nailgun_nodes = sriov_nailgun_nodes[:2]
-        other_n_nodes = {nodes} - {sriov_nailgun_nodes}
+        sriov_n_nodes_ids = [n['id'] for n in sriov_nailgun_nodes]
+        other_n_nodes = [n for n in nodes if n['id'] not in sriov_n_nodes_ids]
         sriov_devops_nodes = self.fuel_web.get_devops_nodes_by_nailgun_nodes(
             sriov_nailgun_nodes)
         other_devops_nodes = self.fuel_web.get_devops_nodes_by_nailgun_nodes(
