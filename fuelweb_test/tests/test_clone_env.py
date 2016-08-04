@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from keystoneauth1 import exceptions
+
 from proboscis.asserts import assert_equal
 from proboscis.asserts import fail
 from proboscis import test
@@ -26,23 +28,33 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 
 @test(groups=["clone_env_for_os_upgrade"],
-      depends_on_groups=["upgrade_ceph_ha_restore"],
-      enabled=False)
+      depends_on_groups=["upgrade_ceph_ha_restore"])
 class TestCloneEnv(TestBasic):
 
-    snapshot = 'upgrade_ha_ceph_for_all_ubuntu_neutron_vlan'
+    snapshot = 'upgrade_ceph_ha_restore'
 
     @test(groups=["test_clone_environment"])
     @log_snapshot_after_test
     def test_clone_environment(self):
         """Test clone environment
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Clone cluster
             3. Check status code
             4. Check that clusters are equal
 
         """
+
+        def text_to_textlist(value_old, value_new):
+            return set(value_old.split(',')) == set(value_new)
+
+        def get_field_comparer(old_type, new_type):
+            method_fields_hash = {text_to_textlist: {'text': 'text_list'}}
+            for method, fields_hash in method_fields_hash.items():
+                if fields_hash.get(old_type) == new_type:
+                    return method
+            # default comparer
+            return lambda old_value, new_value: old_value == new_value
 
         if not self.env.d_env.has_snapshot(self.snapshot):
             raise SkipTest('Snapshot {} not found'.format(self.snapshot))
@@ -78,9 +90,16 @@ class TestCloneEnv(TestBasic):
                 if "value" in value1:
                     if "value" in cluster_attrs["editable"].get(key, {}).get(
                             key1, {}):
-                        assert_equal(
-                            cluster_attrs["editable"][key][key1]["value"],
-                            value1["value"])
+                        value_old = cluster_attrs["editable"][key][key1]
+                        if value_old["type"] != value1["type"]:
+                            # change to asert_true
+                            comparer = get_field_comparer(value_old["type"],
+                                                          value1["type"])
+                            assert_equal(
+                                comparer(value_old["value"], value1["value"]),
+                                True)
+                            continue
+                        assert_equal(value_old["value"], value1["value"])
 
                 elif "values" in value1:
                     if "values" in cluster_attrs["editable"].get(key, {}).get(
@@ -91,11 +110,6 @@ class TestCloneEnv(TestBasic):
 
         old_cluster_net_cfg = self.fuel_web.client.get_networks(cluster_id)
         cloned_cluster_net_cfg = self.fuel_web.client.get_networks(body["id"])
-
-        assert_equal(old_cluster_net_cfg["management_vip"],
-                     cloned_cluster_net_cfg["management_vip"])
-        assert_equal(old_cluster_net_cfg["public_vip"],
-                     cloned_cluster_net_cfg["public_vip"])
 
         for parameter in cloned_cluster_net_cfg["networking_parameters"]:
             if parameter in old_cluster_net_cfg["networking_parameters"]:
@@ -115,15 +129,13 @@ class TestCloneEnv(TestBasic):
                     assert_equal(old_network["vlan_start"],
                                  network["vlan_start"])
 
-    @test(
-        depends_on_groups=['upgrade_old_nodes'],
-        # TODO(astepanov) maintain names changes later
-        groups=["test_clone_nonexistent_cluster"])
+    @test(groups=["test_clone_nonexistent_cluster"])
+    # TODO(astepanov) maintain names changes later
     @log_snapshot_after_test
     def test_clone_nonexistent_cluster(self):
         """Test clone environment with nonexistent cluster id as argument
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Try to clone nonexistent environment
             3. Check status code
 
@@ -140,6 +152,8 @@ class TestCloneEnv(TestBasic):
             self.fuel_web.client.clone_environment(1234567, data)
         except HTTPError as e:
             assert_equal(404, e.code)
+        except exceptions.NotFound:
+            pass
         else:
             fail("Doesn't raise needed error")
 
@@ -148,7 +162,7 @@ class TestCloneEnv(TestBasic):
     def test_clone_wo_name_in_body(self):
         """Test clone without name in POST body
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Try to clone environment without name in POST body
             3. Check status code
 
@@ -170,6 +184,8 @@ class TestCloneEnv(TestBasic):
             self.fuel_web.client.clone_environment(cluster_id, data)
         except HTTPError as e:
             assert_equal(400, e.code)
+        except exceptions.BadRequest:
+            pass
         else:
             fail("Doesn't raise needed error")
 
@@ -178,7 +194,7 @@ class TestCloneEnv(TestBasic):
     def test_clone_wo_release_id_in_body(self):
         """Test clone without release id in POST body
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Try to clone environment without release id in POST body
             3. Check status code
 
@@ -197,6 +213,8 @@ class TestCloneEnv(TestBasic):
             self.fuel_web.client.clone_environment(cluster_id, data)
         except HTTPError as e:
             assert_equal(400, e.code)
+        except exceptions.BadRequest:
+            pass
         else:
             fail("Doesn't raise needed error")
 
@@ -205,7 +223,7 @@ class TestCloneEnv(TestBasic):
     def test_clone_with_empty_body(self):
         """Test clone with empty body
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Try to clone environment with empty body
             3. Check status code
 
@@ -220,6 +238,8 @@ class TestCloneEnv(TestBasic):
             self.fuel_web.client.clone_environment(cluster_id, None)
         except HTTPError as e:
             assert_equal(400, e.code)
+        except exceptions.BadRequest:
+            pass
         else:
             fail("Doesn't raise needed error")
 
@@ -228,7 +248,7 @@ class TestCloneEnv(TestBasic):
     def test_clone_with_nonexistent_release_id(self):
         """Test clone with nonexistent release id in POST body
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Try to clone environment with nonexistent
                release id in POST body
             3. Check status code
@@ -249,6 +269,8 @@ class TestCloneEnv(TestBasic):
             self.fuel_web.client.clone_environment(cluster_id, data)
         except HTTPError as e:
             assert_equal(404, e.code)
+        except exceptions.NotFound:
+            pass
         else:
             fail("Doesn't raise needed error")
 
@@ -257,7 +279,7 @@ class TestCloneEnv(TestBasic):
     def test_clone_with_incorrect_release_id(self):
         """Test clone with incorrect release id in POST body
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Try to clone environment with incorrect
             release id in POST body
             3. Check status code
@@ -278,6 +300,8 @@ class TestCloneEnv(TestBasic):
             self.fuel_web.client.clone_environment(cluster_id, data)
         except HTTPError as e:
             assert_equal(400, e.code)
+        except exceptions.BadRequest:
+            pass
         else:
             fail("Doesn't raise needed error")
 
@@ -286,7 +310,7 @@ class TestCloneEnv(TestBasic):
     def test_double_clone_environment(self):
         """Test double clone environment
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Clone cluster
             3. Clone cluster again
             4. Check status code
@@ -312,5 +336,7 @@ class TestCloneEnv(TestBasic):
             self.fuel_web.client.clone_environment(cluster_id, data)
         except HTTPError as e:
             assert_equal(400, e.code)
+        except exceptions.BadRequest:
+            pass
         else:
             fail("Doesn't raise needed error")
