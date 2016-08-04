@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from keystoneauth1 import exceptions
 from proboscis.asserts import assert_equal
 from proboscis.asserts import fail
 from proboscis import test
@@ -26,18 +27,17 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 
 @test(groups=["reassign_node_for_os_upgrade", "os_upgrade"],
-      depends_on_groups=["upgrade_ceph_ha_restore"],
-      enabled=False)
+      depends_on_groups=["upgrade_ceph_ha_restore"])
 class TestReassignNode(TestBasic):
 
-    snapshot = 'upgrade_ha_ceph_for_all_ubuntu_neutron_vlan'
+    snapshot = 'upgrade_ceph_ha_restore'
 
     @test(groups=["reassign_node_to_cloned_environment"])
     @log_snapshot_after_test
     def reassign_node_to_cloned_environment(self):
         """Test reassign node
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Clone cluster
             3. Reassign node
             4. Verify node settings
@@ -116,7 +116,7 @@ class TestReassignNode(TestBasic):
     def reassign_node_to_nonexistent_cluster(self):
         """Test reassign node to nonexistent cluster
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Reassign node to nonexistent cluster
             3. Check status code: 404
 
@@ -138,6 +138,8 @@ class TestReassignNode(TestBasic):
             self.fuel_web.client.reassign_node(123456, data)
         except HTTPError as e:
             assert_equal(404, e.code)
+        except exceptions.NotFound:
+            pass
         else:
             fail("Doesn't rise HTTP 404 error"
                  "while reassigning"
@@ -150,7 +152,7 @@ class TestReassignNode(TestBasic):
     def reassign_node_with_empty_body(self):
         """Test reassign node with empty body
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Clone cluster
             3. Reassign node with empty POST body
             4. Check status code: 400
@@ -178,6 +180,8 @@ class TestReassignNode(TestBasic):
             self.fuel_web.client.reassign_node(cloned_cluster["id"], None)
         except HTTPError as e:
             assert_equal(400, e.code)
+        except exceptions.BadRequest:
+            pass
         else:
             fail("Doesn't raise HTTP 400 error on request"
                  "to reassigning node with empty body")
@@ -187,7 +191,7 @@ class TestReassignNode(TestBasic):
     def reassign_node_with_incorrect_node(self):
         """Test reassign node with incorrect node in POST body
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Clone cluster
             3. Reassign node with incorrect node in POST body
             4. Check status code: 400
@@ -219,6 +223,8 @@ class TestReassignNode(TestBasic):
             self.fuel_web.client.reassign_node(cloned_cluster["id"], data)
         except HTTPError as e:
             assert_equal(400, e.code)
+        except exceptions.BadRequest:
+            pass
         else:
             fail("Doesn't raise HTTP 400 error on request"
                  "to reassigning node with incorrect node_id")
@@ -228,7 +234,7 @@ class TestReassignNode(TestBasic):
     def reassign_nonexistent_node_to_cloned_environment(self):
         """Test reassign node with nonexistent node in POST body
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Clone cluster
             3. Reassign node with nonexistent node in POST body
             4. Check status code: 404
@@ -260,6 +266,8 @@ class TestReassignNode(TestBasic):
             self.fuel_web.client.reassign_node(cloned_cluster["id"], data)
         except HTTPError as e:
             assert_equal(404, e.code)
+        except exceptions.NotFound:
+            pass
         else:
             fail("Doesn't raise HTTP 404 error on request"
                  "to reassigning nonexistent node to cloned cluster")
