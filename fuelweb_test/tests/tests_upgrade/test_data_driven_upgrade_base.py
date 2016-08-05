@@ -63,6 +63,11 @@ class DataDrivenUpgradeBase(TestBasic):
                             self.repos_backup_name)
 
     @property
+    def fuel_version(self):
+        version = self.fuel_web.client.get_api_version()['release']
+        return StrictVersion(version)
+
+    @property
     def repos_local_path(self):
         return os.path.join(self.local_dir_for_backups, self.repos_backup_name)
 
@@ -517,9 +522,10 @@ class DataDrivenUpgradeBase(TestBasic):
         """
         logger.debug("Check that cluster contains node with ID:{0} ".
                      format(node_id))
-        run_on_remote(
-            self.admin_remote,
-            'dockerctl shell cobbler bash -c "cobbler system list" | grep '
-            '-w "node-{0}"'.format(node_id),
-            err_msg="Can not find node {!r} in cobbler node list".format(
-                node_id))
+        admin_remote = self.env.d_env.get_admin_remote()
+
+        cmd = 'bash -c "cobbler system list" | grep ' \
+              '-w "node-{0}"'.format(node_id)
+        if self.fuel_version <= StrictVersion('8.0'):
+            cmd = "dockerctl shell cobbler {}".format(cmd)
+        admin_remote.check_call(cmd)
