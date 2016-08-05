@@ -855,7 +855,7 @@ class NailgunClient(object):
                    '{env_id}/resources/{resource}' \
                    '/values'.format(env_id=env_id, resource=resource_name)
         endpoint = endpoint + '?effective' if effective else endpoint
-        return self._get(endpoint)
+        return self._get(endpoint).json()
 
     @logwrap
     def put_global_resource_value(self, env_id, resource, data):
@@ -900,7 +900,7 @@ class NailgunClient(object):
                                     node_id=node_id)
         endpoint = endpoint + '?effective' if effective else endpoint
 
-        return self._get(endpoint)
+        return self._get(endpoint).json()
 
     @logwrap
     def get_node_resource_name_value(self, env_id, resource_name, node_id,
