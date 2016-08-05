@@ -309,6 +309,8 @@ class EnvironmentModel(object):
 
         if not skip_timesync:
             self.sync_time()
+        else:
+            self.sync_time(['admin'])
         try:
             with QuietLogger(upper_log_level=logging.CRITICAL):
                 # TODO(astudenov): add timeout_msg
