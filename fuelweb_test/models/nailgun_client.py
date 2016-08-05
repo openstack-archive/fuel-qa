@@ -900,7 +900,7 @@ class NailgunClient(object):
                                     node_id=node_id)
         endpoint = endpoint + '?effective' if effective else endpoint
 
-        return self._get(endpoint)
+        return self._get(endpoint).json()
 
     @logwrap
     def get_node_resource_name_value(self, env_id, resource_name, node_id,
