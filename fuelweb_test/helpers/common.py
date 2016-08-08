@@ -16,7 +16,6 @@ import time
 from urlparse import urlparse
 
 from cinderclient import client as cinderclient
-from heatclient.v1.client import Client as HeatClient
 from glanceclient.v1 import Client as GlanceClient
 from keystoneclient.v2_0 import Client as KeystoneClient
 from keystoneclient.exceptions import ClientException
@@ -92,14 +91,6 @@ class Common(object):
                        'token': token,
                        'cacert': path_to_cert}
         self.glance = GlanceClient(**glance_args)
-
-        heat_endpoint = self.keystone.service_catalog.url_for(
-            service_type='orchestration', endpoint_type='publicURL')
-
-        heat_args = {'endpoint': make_endpoint(heat_endpoint),
-                     'token': token,
-                     'cacert': path_to_cert}
-        self.heat = HeatClient(**heat_args)
 
     def goodbye_security(self):
         secgroup_list = self.nova.security_groups.list()
