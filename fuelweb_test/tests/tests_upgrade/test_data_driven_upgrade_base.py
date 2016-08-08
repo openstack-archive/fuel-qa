@@ -425,68 +425,6 @@ class DataDrivenUpgradeBase(TestBasic):
 
         self.env.make_snapshot("upgrade_ceph_ha_backup", is_make=True)
 
-    def prepare_upgrade_detach_plugin(self):
-        self.backup_name = "backup_detach_plugin.tar.gz"
-        self.repos_backup_name = "repos_backup_detach_plugin.tar.gz"
-
-        self.check_run("upgrade_detach_plugin_backup")
-        self.env.revert_snapshot("ready", skip_timesync=True)
-
-        cmds = [
-            "yum -y install git python-pip createrepo "
-            "dpkg-devel dpkg-dev rpm rpm-build",
-            "pip install virtualenv ",
-            "virtualenv --system-site-packages fpb",
-            "source fpb/bin/activate",
-            "pip install -U setuptools",
-            "pip install fuel-plugin-builder",
-            "git clone https://github.com/"
-            "openstack/fuel-plugin-detach-database",
-
-            "cd fuel-plugin-detach-database && "
-            "git checkout stable/{branch} && "
-            "fpb --build . && "
-            "fuel plugins --install *.rpm "
-            "--user {user} --password {pwd}".format(
-                branch=settings.UPGRADE_FUEL_FROM,
-                user=settings.KEYSTONE_CREDS['username'],
-                pwd=settings.KEYSTONE_CREDS['password'])]
-
-        for cmd in cmds:
-            run_on_remote(self.admin_remote, cmd)
-
-        cluster_settings = {
-            'net_provider': settings.NEUTRON,
-            'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
-            'volumes_lvm': False,
-            'volumes_ceph': True,
-            'images_ceph': True,
-            'objects_ceph': True,
-            'ephemeral_ceph': True,
-        }
-        cluster_settings.update(self.cluster_creds)
-
-        self.deploy_cluster({
-            'name': self.prepare_upgrade_detach_plugin.__name__,
-            'settings': cluster_settings,
-            'plugin':
-                {'name': 'detach-database',
-                 'data': {'metadata/enabled': True}},
-            'nodes':
-                {'slave-01': ['controller'],
-                 'slave-02': ['controller'],
-                 'slave-03': ['controller'],
-                 'slave-04': ['standalone-database'],
-                 'slave-05': ['standalone-database'],
-                 'slave-06': ['standalone-database'],
-                 'slave-07': ['compute', 'ceph-osd'],
-                 'slave-08': ['compute', 'ceph-osd']}
-        })
-
-        self.do_backup(self.backup_path, self.local_path,
-                       self.repos_backup_path, self.repos_local_path)
-        self.env.make_snapshot("upgrade_detach_plugin_backup", is_make=True)
-
     def prepare_upgrade_no_cluster(self):
         self.backup_name = "backup_no_cluster.tar.gz"
         self.repos_backup_name = "repos_backup_no_cluster.tar.gz"
