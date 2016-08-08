@@ -16,8 +16,7 @@ import sys
 import time
 import traceback
 
-from cinderclient.client import Client as CinderClient
-from heatclient.v1.client import Client as HeatClient
+from cinderclient import client as CinderClient
 from glanceclient.v1 import Client as GlanceClient
 from ironicclient.client import get_client as get_ironic_client
 from keystoneauth1.exceptions import ClientException
@@ -113,14 +112,6 @@ class Common(object):
             self._get_url_for_svc(service_type='volume'))
         return CinderClient(
             version='1',
-            session=self.keystone_session,
-            endpoint_override=endpoint)
-
-    @property
-    def heat(self):
-        endpoint = self.__make_endpoint(
-            self._get_url_for_svc(service_type='orchestration'))
-        return HeatClient(
             session=self.keystone_session,
             endpoint_override=endpoint)
 
