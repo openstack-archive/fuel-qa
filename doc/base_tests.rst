@@ -679,6 +679,11 @@ Test Data-Driven Upgrade - Network templates
 .. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_net_tmpl
    :members:
 
+Test Data-Driven Upgrade - Plugins engine
+-----------------------------------------
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_plugins
+   :members:
+
 Upgrade Master tool
 -------------------
 .. automodule:: fuelweb_test.tests.tests_upgrade.upgrader_tool
