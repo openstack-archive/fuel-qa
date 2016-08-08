@@ -344,6 +344,8 @@ TARBALL_PATH = os.environ.get('TARBALL_PATH')
 UPGRADE_FUEL_FROM = os.environ.get('UPGRADE_FUEL_FROM', '6.1')
 UPGRADE_FUEL_TO = os.environ.get('UPGRADE_FUEL_TO', '7.0')
 OCTANE_PATCHES = os.environ.get('OCTANE_PATCHES', None)
+EXAMPLE_V3_PLUGIN_REMOTE_URL = os.environ.get('EXAMPLE_V3_PLUGIN_REMOTE_URL',
+                                              None)
 
 SNAPSHOT = os.environ.get('SNAPSHOT', '')
 # For 5.1.1 we have 2 releases in tarball and should specify what we need
