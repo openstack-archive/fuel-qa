@@ -12,17 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from keystoneauth1.exceptions import NotFound
+from keystoneauth1.exceptions import BadRequest
 from proboscis.asserts import assert_equal
 from proboscis.asserts import fail
 from proboscis import test
 from proboscis import SkipTest
-# pylint: disable=import-error
-# noinspection PyUnresolvedReferences
-from six.moves.urllib.error import HTTPError
-# pylint: enable=import-error
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import TestBasic
+from fuelweb_test import logger
 
 
 @test(groups=["clone_env_for_os_upgrade"],
@@ -138,8 +137,8 @@ class TestCloneEnv(TestBasic):
         }
         try:
             self.fuel_web.client.clone_environment(1234567, data)
-        except HTTPError as e:
-            assert_equal(404, e.code)
+        except NotFound:
+            logger.debug('exceptions.NotFound received as expected')
         else:
             fail("Doesn't raise needed error")
 
@@ -168,8 +167,8 @@ class TestCloneEnv(TestBasic):
 
         try:
             self.fuel_web.client.clone_environment(cluster_id, data)
-        except HTTPError as e:
-            assert_equal(400, e.code)
+        except BadRequest:
+            logger.debug('exceptions.BadRequest received as expected')
         else:
             fail("Doesn't raise needed error")
 
@@ -195,8 +194,8 @@ class TestCloneEnv(TestBasic):
 
         try:
             self.fuel_web.client.clone_environment(cluster_id, data)
-        except HTTPError as e:
-            assert_equal(400, e.code)
+        except BadRequest:
+            logger.debug('exceptions.BadRequest received as expected')
         else:
             fail("Doesn't raise needed error")
 
@@ -218,8 +217,8 @@ class TestCloneEnv(TestBasic):
 
         try:
             self.fuel_web.client.clone_environment(cluster_id, None)
-        except HTTPError as e:
-            assert_equal(400, e.code)
+        except BadRequest:
+            logger.debug('exceptions.BadRequest received as expected')
         else:
             fail("Doesn't raise needed error")
 
@@ -247,8 +246,8 @@ class TestCloneEnv(TestBasic):
 
         try:
             self.fuel_web.client.clone_environment(cluster_id, data)
-        except HTTPError as e:
-            assert_equal(404, e.code)
+        except NotFound:
+            logger.debug('exceptions.NotFound received as expected')
         else:
             fail("Doesn't raise needed error")
 
@@ -276,8 +275,8 @@ class TestCloneEnv(TestBasic):
 
         try:
             self.fuel_web.client.clone_environment(cluster_id, data)
-        except HTTPError as e:
-            assert_equal(400, e.code)
+        except BadRequest:
+            logger.debug('exceptions.BadRequest received as expected')
         else:
             fail("Doesn't raise needed error")
 
@@ -310,7 +309,7 @@ class TestCloneEnv(TestBasic):
         self.fuel_web.client.clone_environment(cluster_id, data)
         try:
             self.fuel_web.client.clone_environment(cluster_id, data)
-        except HTTPError as e:
-            assert_equal(400, e.code)
+        except BadRequest:
+            logger.debug('exceptions.BadRequest received as expected')
         else:
             fail("Doesn't raise needed error")

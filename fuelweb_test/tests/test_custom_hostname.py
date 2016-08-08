@@ -14,14 +14,11 @@
 from random import randrange
 from re import match
 
+from keystoneauth1.exceptions import BadRequest
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
 from proboscis import test
-# pylint: disable=import-error
-# noinspection PyUnresolvedReferences
-from six.moves.urllib.error import HTTPError
-# pylint: enable=import-error
 
 from fuelweb_test.helpers.checkers import check_ping
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -209,7 +206,7 @@ class CustomHostname(TestBasic):
             "node-",
         ):
             assert_raises(
-                HTTPError,
+                BadRequest,
                 self.fuel_web.client.set_hostname,
                 node['id'],
                 invalid_hostname)
@@ -238,7 +235,7 @@ class CustomHostname(TestBasic):
 
         # Try to change the hostname of the provisioned node
         assert_raises(
-            HTTPError,
+            BadRequest,
             self.fuel_web.client.set_hostname,
             node,
             custom_hostname)
@@ -281,7 +278,7 @@ class CustomHostname(TestBasic):
         # Try to change the hostname of the provisioned node
         # TODO(dkruglov): LP#1476722
         assert_raises(
-            HTTPError,
+            BadRequest,
             self.fuel_web.client.set_hostname,
             node['id'],
             'new-custom-hostname')

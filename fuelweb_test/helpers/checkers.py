@@ -29,12 +29,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
 
-# pylint: disable=import-error
-# noinspection PyUnresolvedReferences
-from six.moves.urllib.error import HTTPError
-# noinspection PyUnresolvedReferences
-from six.moves.urllib.error import URLError
-# pylint: enable=import-error
+from keystoneauth1 import exceptions
 # pylint: disable=redefined-builtin
 # noinspection PyUnresolvedReferences
 from six.moves import xrange
@@ -254,7 +249,7 @@ def enable_feature_group(env, group):
         try:
             return (group in
                     env.fuel_web.client.get_api_version()["feature_groups"])
-        except (HTTPError, URLError):
+        except exceptions.HttpError:
             return False
 
     wait(check_api_group_enabled, interval=10, timeout=60 * 20,

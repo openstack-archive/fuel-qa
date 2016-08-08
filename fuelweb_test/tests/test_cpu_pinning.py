@@ -14,12 +14,9 @@
 
 import random
 
+from keystoneauth1.exceptions import BadRequest
 from proboscis import asserts
 from proboscis import test
-# pylint: disable=import-error
-# noinspection PyUnresolvedReferences
-from six.moves.urllib.error import HTTPError
-# pylint: enable=import-error
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
@@ -562,8 +559,8 @@ class NumaCpuPinning(TestBasic):
             try:
                 self.fuel_web.client.upload_node_attributes(
                     compute_config, compute['id'])
-            except HTTPError as e:
-                asserts.assert_equal(400, e.code)
+            except BadRequest:
+                logger.debug('BadRequest received as expected')
             else:
                 asserts.fail("Pinned all CPU on {0}, while expecting HTTP "
                              "error on CPU value {1}"
@@ -574,8 +571,8 @@ class NumaCpuPinning(TestBasic):
             try:
                 self.fuel_web.client.upload_node_attributes(
                     compute_config, compute['id'])
-            except HTTPError as e:
-                asserts.assert_equal(400, e.code)
+            except BadRequest:
+                logger.debug('BadRequest received as expected')
             else:
                 asserts.fail("Pinned all CPU on {0}, while expecting HTTP "
                              "400 error on CPU value {1}"

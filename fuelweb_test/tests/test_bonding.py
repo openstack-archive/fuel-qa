@@ -14,12 +14,9 @@
 
 from copy import deepcopy
 
+from keystoneauth1.exceptions import HttpError
 from proboscis.asserts import assert_equal
 from proboscis import test
-# pylint: disable=import-error
-# noinspection PyUnresolvedReferences
-from six.moves.urllib.error import HTTPError
-# pylint: enable=import-error
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -219,12 +216,14 @@ class BondingHAOneController(BondingTest):
                 nailgun_nodes[0]['id'],
                 interfaces_dict=interfaces_dict,
                 raw_data=invalid_bond_conf)
-        except HTTPError as exc:
-            if exc.code != exp_code:
+        except HttpError as exc:
+            if exc.http_status != exp_code:
                 logger.error(
                     'Raised:   {exc!s},\n'
                     'Expected: {exp} with code={code}'.format(
-                        exc=exc, exp=HTTPError.__class__, code=exp_code))
+                        exc=exc,
+                        exp=HttpError,
+                        code=exp_code))
                 raise
 
             logger.info('Test PASS: expected exception raised: '
@@ -234,12 +233,15 @@ class BondingHAOneController(BondingTest):
             logger.error(
                 'Raised:   {exc!s},\n'
                 'Expected: {exp} with code={code}'.format(
-                    exc=exc, exp=HTTPError.__class__, code=exp_code))
+                    exc=exc,
+                    exp=HttpError,
+                    code=exp_code))
             raise
         raise AssertionError(
             'Not raised any exception, while expected '
             '{exp} with code={code}'.format(
-                exp=HTTPError.__class__, code=exp_code))
+                exp=HttpError,
+                code=exp_code))
 
 
 @test(groups=["bonding_neutron", "bonding_ha", "bonding"])
