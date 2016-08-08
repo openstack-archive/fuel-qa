@@ -19,9 +19,7 @@ from devops.helpers import helpers as devops_helpers
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
 from proboscis import test
-# pylint: disable=import-error
-from six.moves.urllib.error import HTTPError
-# pylint: enable=import-error
+from keystoneauth1 import exceptions
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
@@ -281,7 +279,10 @@ class SupportDPDK(TestDPDK):
         self.setup_hugepages(compute, hp_2mb=256, hp_dpdk_mb=128)
 
         self.show_step(5)
-        assert_raises(HTTPError, self.enable_dpdk, compute, forceEnable=True)
+        assert_raises(
+            exceptions.BadRequest,
+            self.enable_dpdk, compute,
+            forceEnable=True)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["check_can_not_enable_dpdk_on_non_dedicated_iface"])
@@ -335,7 +336,10 @@ class SupportDPDK(TestDPDK):
         }
         self.fuel_web.update_node_networks(compute['id'],
                                            interfaces_dict=assigned_networks)
-        assert_raises(HTTPError, self.enable_dpdk, compute, forceEnable=True)
+        assert_raises(
+            exceptions.BadRequest,
+            self.enable_dpdk, compute,
+            forceEnable=True)
 
 
 @test(groups=["support_dpdk_bond"])
