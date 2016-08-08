@@ -17,12 +17,10 @@ import os
 from devops.helpers.helpers import wait
 from proboscis import test
 from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 
 from fuelweb_test import settings
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_base import \
     DataDrivenUpgradeBase
@@ -97,31 +95,6 @@ class UpgradePrepare(DataDrivenUpgradeBase):
         """
 
         super(self.__class__, self).prepare_upgrade_ceph_ha()
-
-    @test(groups=['upgrade_detach_plugin_backup'],
-          depends_on=[SetupEnvironment.prepare_slaves_9])
-    @log_snapshot_after_test
-    def upgrade_detach_plugin_backup(self):
-        """Initial preparation of the cluster using previous version of Fuel;
-        Using: HA, ceph for all
-
-        Scenario:
-        1. Install detach-database plugin on master node
-        2. Create cluster with NeutronTUN network provider
-        3. Enable plugin for created cluster
-        4. Add 3 node with controller role
-        5. Add 3 node with separate-database role
-        6. Add 2 node with compute+ceph roles
-        7. Verify networks
-        8. Deploy cluster
-        9. Install fuel-octane package
-        10. Create backup file using 'octane fuel-backup'
-        11. Download the backup to the host
-
-        Duration: TODO
-        Snapshot: upgrade_detach_plugin_backup
-        """
-        super(self.__class__, self).prepare_upgrade_detach_plugin()
 
 
 @test(groups=['upgrade_smoke_tests'])
@@ -512,114 +485,6 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[8:9])
         self.fuel_web.update_nodes(cluster_id, {'slave-09': ['ceph-osd']})
-        self.show_step(3)
-        self.fuel_web.verify_network(cluster_id)
-        self.show_step(4)
-        # LP 1562736 get_devops_node_by_nailgun_node is not working
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.show_step(5)
-        self.fuel_web.run_ostf(cluster_id)
-
-
-@test(groups=['upgrade_detach_plugin_tests'])
-class UpgradeDetach_Plugin(DataDrivenUpgradeBase):
-    def __init__(self):
-        super(self.__class__, self).__init__()
-        self.source_snapshot_name = "upgrade_detach_plugin_backup"
-        self.snapshot_name = "upgrade_detach_plugin_restore"
-        self.backup_name = "backup_detach_plugin.tar.gz"
-        self.repos_backup_name = "repos_backup_detach_plugin.tar.gz"
-
-    @log_snapshot_after_test
-    @test(groups=['upgrade_detach_plugin_restore'])
-    def upgrade_detach_plugin_restore(self):
-        """Reinstall Fuel and restore data with cluster with detach-db plugin
-
-        Scenario:
-        1. Revert "upgrade_detach_plugin_backup" snapshot
-        2. Reinstall Fuel master using iso given in ISO_PATH
-        3. Install fuel-octane package
-        4. Upload the backup back to reinstalled Fuel maser node
-        5. Restore master node using 'octane fuel-restore'
-        6. Ensure that plugin were restored
-        7. Verify networks for restored cluster
-        8. Run OSTF for restored cluster
-
-        Snapshot: upgrade_detach_plugin_restore
-        Duration: TODO
-        """
-        self.check_run(self.snapshot_name)
-        assert_true(os.path.exists(self.repos_local_path))
-        assert_true(os.path.exists(self.local_path))
-
-        intermediate_snapshot = 'plugin_before_restore'
-        if not self.env.d_env.has_snapshot(intermediate_snapshot):
-            self.show_step(1, initialize=True)
-            assert_true(
-                self.env.revert_snapshot(self.source_snapshot_name),
-                "The test can not use given environment - snapshot "
-                "{!r} does not exists".format(self.source_snapshot_name))
-            self.show_step(2)
-            self.env.reinstall_master_node()
-            self.env.make_snapshot(intermediate_snapshot)
-        else:
-            self.env.d_env.revert(intermediate_snapshot)
-        self.env.resume_environment()
-        self.show_step(3)
-        self.show_step(4)
-        self.show_step(5)
-        self.do_restore(self.backup_path, self.local_path,
-                        self.repos_backup_path, self.repos_local_path)
-        self.fuel_web.change_default_network_settings()
-
-        cluster_id = self.fuel_web.get_last_created_cluster()
-        self.show_step(6)
-        attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
-        assert_true('detach-database' in attr['editable'],
-                    "Can't find plugin data in cluster attributes!")
-        stdout = run_on_remote(
-            self.admin_remote,
-            "find /var/www/nailgun/plugins/ -name detach-database*")
-        assert_not_equal(len(stdout), 0, "Can not find plugin's directory")
-        plugin_dir = stdout[0].strip()
-
-        assert_true(
-            self.remote_file_exists(os.path.join(plugin_dir, "metadata.yaml")),
-            "Plugin's files does not found!")
-
-        self.show_step(7)
-        self.fuel_web.verify_network(cluster_id)
-        self.show_step(8)
-        self.fuel_web.run_ostf(cluster_id)
-
-        self.env.make_snapshot(self.snapshot_name, is_make=True)
-        self.cleanup()
-
-    @log_snapshot_after_test
-    @test(groups=['upgrade_detach_plugin_scale'],
-          depends_on_groups=['upgrade_detach_plugin_restore'])
-    def upgrade_detach_plugin_scale(self):
-        """Add 1 node with plugin custom role to existing cluster
-
-        Scenario:
-        1. Revert "upgrade_detach_plugin_backup" snapshot.
-        2. Add 1 separate-database node
-        3. Verify networks
-        4. Deploy cluster
-        5. Run OSTF
-
-        Duration: 60m
-        """
-
-        self.show_step(1, initialize=True)
-        self.env.revert_snapshot(self.snapshot_name)
-
-        self.show_step(2)
-        cluster_id = self.fuel_web.get_last_created_cluster()
-        self.env.bootstrap_nodes(
-            [self.env.d_env.get_node(name='slave-09')])
-        self.fuel_web.update_nodes(cluster_id,
-                                   {'slave-09': ['standalone-database']})
         self.show_step(3)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(4)
