@@ -16,10 +16,10 @@ from __future__ import division
 
 import hashlib
 import json
-from time import sleep
-
 import os
 import re
+from time import sleep
+
 from devops.error import TimeoutError
 from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
@@ -29,10 +29,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
 
-# pylint: disable=import-error
-from six.moves.urllib.error import HTTPError
-from six.moves.urllib.error import URLError
-# pylint: enable=import-error
+from keystoneauth1 import exceptions
 import yaml
 
 from fuelweb_test import logger
@@ -60,11 +57,11 @@ def check_cinder_status(ip):
     | cinder-scheduler | node-2.test.domain.local | nova | enabled |  down |
     """
     cmd = '. openrc; cinder service-list'
-    result = ssh_manager.execute(
+    result = ssh_manager.execute_on_remote(
         ip=ip,
         cmd=cmd
     )
-    cinder_services = ''.join(result['stdout'])
+    cinder_services = result['stdout_str']
     logger.debug('>$ cinder service-list\n{}'.format(cinder_services))
     if result['exit_code'] == 0:
         return all(' up ' in x.split('enabled')[1]
@@ -248,7 +245,7 @@ def enable_feature_group(env, group):
         try:
             return (group in
                     env.fuel_web.client.get_api_version()["feature_groups"])
-        except (HTTPError, URLError):
+        except exceptions.HttpError:
             return False
 
     wait(check_api_group_enabled, interval=10, timeout=60 * 20,
@@ -288,8 +285,8 @@ def restore_check_sum(ip):
                 'Test file /etc/fuel/data '
                 'was not restored!!! {0}'.format(res['stderr']))
     logger.info("Restore check md5sum")
-    md5sum_backup = ssh_manager.execute(ip, "cat /etc/fuel/sum")
-    assert_true(''.join(md5sum_backup['stdout']).strip(),
+    md5sum_backup = ssh_manager.execute_on_remote(ip, "cat /etc/fuel/sum")
+    assert_true(md5sum_backup['stdout_str'],
                 'Command cat /etc/fuel/sum '
                 'failed with {0}'.format(md5sum_backup['stderr']))
     md5sum_restore = ssh_manager.execute(
@@ -927,7 +924,7 @@ def check_neutron_dhcp_lease(ip, instance_ip, instance_mac,
                              dhcp_server_ip, dhcp_port_tag):
     """Check if the DHCP server offers a lease for a client with the specified
        MAC address
-       :param SSHClient remote: fuel-devops.helpers.helpers object
+       :param ip: remote IP
        :param str instance_ip: IP address of instance
        :param str instance_mac: MAC address that will be checked
        :param str dhcp_server_ip: IP address of DHCP server for request a lease
@@ -1111,8 +1108,8 @@ def check_hiera_hosts(nodes, cmd):
         result = ssh_manager.execute_on_remote(
             ip=node['ip'],
             cmd=cmd
-        )['stdout']
-        hosts = ''.join(result).strip().split(',')
+        )['stdout_str']
+        hosts = result.split(',')
         logger.debug("hosts on {0} are {1}".format(node['hostname'], hosts))
 
         if not hiera_hosts:
@@ -1147,7 +1144,7 @@ def check_offload(ip, interface, offload_type):
         err_msg="Failed to get Offload {0} "
                 "on node {1}".format(offload_type, ip)
     )
-    return ''.join(result['stdout']).rstrip()
+    return result['stdout_str']
 
 
 def check_get_network_data_over_cli(ip, cluster_id, path):

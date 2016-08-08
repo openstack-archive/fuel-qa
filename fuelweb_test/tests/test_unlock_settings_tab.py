@@ -17,9 +17,7 @@ import yaml
 
 from proboscis import SkipTest
 from proboscis import test
-# pylint: disable=import-error
-from six.moves.urllib.error import HTTPError
-# pylint: enable=import-error
+from keystoneauth1.exceptions import HttpError
 # pylint: disable=redefined-builtin
 from six.moves import xrange
 # pylint: enable=redefined-builtin
@@ -151,7 +149,7 @@ class UnlockSettingsTab(TestBasic):
         try:
             self.fuel_web.client.update_cluster_attributes(
                 self.cluster_id, new_attrs)
-        except HTTPError:
+        except HttpError:
             logger.info(
                 "Failed to update cluster attributes, please check logs")
             return False
