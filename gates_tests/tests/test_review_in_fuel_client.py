@@ -144,6 +144,8 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
                 active_release_id, 'Can not find deployable release. '
                 'Current release data {0}'.format(list_release_res))
 
+            logger.info('Available for deploy: {!s}'.format(active_release_id))
+
             # Create an environment
             self.show_step(5)
             cmd = ('fuel env create --name={0} --release={1} '
