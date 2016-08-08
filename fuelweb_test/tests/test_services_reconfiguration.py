@@ -17,13 +17,10 @@ import time
 import traceback
 
 from devops.helpers import helpers
+from keystoneauth1.exceptions import HttpError
 import netaddr
 from proboscis import asserts
 from proboscis import test
-# pylint: disable=import-error
-# noinspection PyUnresolvedReferences
-from six.moves.urllib.error import HTTPError
-# pylint: enable=import-error
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
@@ -87,8 +84,8 @@ class ServicesReconfiguration(TestBasic):
                             func, *args, **kwargs):
         try:
             func(*args, **kwargs)
-        except HTTPError as e:
-            if e.code != expected_code:
+        except HttpError as e:
+            if e.http_status != expected_code:
                 raise
             logger.warning('Ignoring exception: {!r}'.format(e))
             logger.debug(traceback.format_exc())

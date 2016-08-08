@@ -33,6 +33,7 @@ except ImportError:
     # pylint: enable=no-member
 from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
+from keystoneauth1 import exceptions
 import netaddr
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
@@ -40,10 +41,6 @@ from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
-# pylint: disable=import-error
-# noinspection PyUnresolvedReferences
-from six.moves.urllib.error import HTTPError
-# pylint: enable=import-error
 import yaml
 
 from fuelweb_test import logger
@@ -2160,8 +2157,9 @@ class FuelWebClient29(object):
             logger.info('Selected task: {}'.format(task))
 
             # Task will be removed with the cluster, so we will get 404 error
-            assert_raises(HTTPError,
-                          self.assert_task_success, task, timeout)
+            assert_raises(
+                exceptions.NotFound,
+                self.assert_task_success, task, timeout)
         else:
             assert 'No cluster_deletion task found!'
 
