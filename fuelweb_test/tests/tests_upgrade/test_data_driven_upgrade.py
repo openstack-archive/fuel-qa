@@ -162,12 +162,12 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.show_step(1, initialize=True)
         intermediate_snapshot = 'upgrade_smoke_before_restore'
         if not self.env.d_env.has_snapshot(intermediate_snapshot):
-            self.env.reinstall_master_node()
             assert_true(
                 self.env.revert_snapshot(self.source_snapshot_name),
                 "The test can not use given environment - snapshot "
                 "{!r} does not exists".format(self.source_snapshot_name))
             self.show_step(2)
+            self.reinstall_master_node()
             self.env.make_snapshot(intermediate_snapshot)
         else:
             self.env.d_env.revert(intermediate_snapshot)
