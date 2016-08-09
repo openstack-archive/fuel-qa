@@ -91,29 +91,3 @@ class UpgradePrepare(DataDrivenUpgradeBase):
         """
 
         super(self.__class__, self).prepare_upgrade_ceph_ha()
-
-    @test(groups=['upgrade_detach_plugin_backup'],
-          depends_on=[SetupEnvironment.prepare_slaves_9])
-    @log_snapshot_after_test
-    def upgrade_detach_plugin_backup(self):
-        """Initial preparation of the cluster using previous version of Fuel;
-        Using: HA, ceph for all
-
-        Scenario:
-        1. Install detach-database plugin on master node
-        2. Create cluster with NeutronTUN network provider
-        3. Enable plugin for created cluster
-        4. Add 3 node with controller role
-        5. Add 3 node with separate-database role
-        6. Add 2 node with compute+ceph roles
-        7. Verify networks
-        8. Deploy cluster
-        9. Run OSTF
-        10. Install fuel-octane package
-        11. Create backup file using 'octane fuel-backup'
-        12. Download the backup to the host
-
-        Duration: TODO
-        Snapshot: upgrade_detach_plugin_backup
-        """
-        super(self.__class__, self).prepare_upgrade_detach_plugin()
