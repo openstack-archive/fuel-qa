@@ -11,12 +11,20 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
+import os
+import yaml
+
 from devops.helpers.helpers import wait
+from paramiko.ssh_exception import ChannelException
 from proboscis import asserts
+from proboscis import before_class
 from proboscis import test
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers.utils import get_network_template
+from fuelweb_test.helpers.utils import preserve_partition
 from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -217,3 +225,460 @@ class TestVirtRole(TestBasic):
                               ['Name: {0}, status: {1}, online: {2}'.
                                format(i['name'], i['status'], i['online'])
                                for i in self.fuel_web.client.list_nodes()])))
+
+
+@test(groups=["virt_role_baremetal", "reduced_footprint_baremetal"])
+class TestVirtRoleBaremetal(TestBasic):
+    """Tests for virt role on baremetal servers"""
+
+    # pylint: disable=no-self-use
+    @before_class
+    def check_net_template_presence(self):
+        if not settings.RF_NET_TEMPLATE:
+            raise AssertionError("Template for reduced footprint environment "
+                                 "is not provided")
+    # pylint: enable=no-self-use
+
+    def get_slave_total_cpu(self, slave_ip):
+        """Get total number of CPUs on the given baremetal slave node.
+
+        :param slave_ip: str, IP address of a slave node
+        :return: int, total number of CPUs on the given node
+        """
+        result = self.ssh_manager.execute_through_master(
+            slave_ip, "cat /proc/cpuinfo | grep processor | wc -l")
+        if result['exit_code'] != 0:
+            raise AssertionError("Failed to get number of CPUs on {0} slave "
+                                 "node".format(slave_ip))
+        # pylint: disable=no-member
+        cpu = int(result['stdout'].strip())
+        # pylint: enable=no-member
+        return cpu
+
+    def get_slave_total_mem(self, slave_ip):
+        """Get total amount of RAM (in GB) on the given baremetal slave node.
+
+        :param slave_ip: str, IP address of a slave node
+        :return: int, total amount of RAM in GB on the given node
+        """
+        result = self.ssh_manager.execute_through_master(
+            slave_ip, "grep -i memtotal /proc/meminfo | awk '{print $2}'")
+        if result['exit_code'] != 0:
+            raise AssertionError("Failed to get number of CPUs on {0} slave "
+                                 "node".format(slave_ip))
+        # pylint: disable=no-member
+        mem_in_gb = int(result['stdout'].strip()) // pow(1024, 2)
+        # pylint: enable=no-member
+        return mem_in_gb
+
+    def update_virt_vm_template(self,
+            path='/etc/puppet/modules/osnailyfacter/templates/vm_libvirt.erb'):
+        """Update virtual VM template for VLAN environment
+
+        :param path: str, path to the virtual vm template on Fuel master node
+        :return: None
+        """
+
+        cmd = ('sed -i "s/mesh/prv/; s/.*prv.*/&\\n      <virtualport '
+               'type=\'openvswitch\'\/>/" {0}'.format(path))
+        self.ssh_manager.execute_on_remote(self.ssh_manager.admin_ip, cmd)
+
+    def update_virtual_nodes(self, cluster_id, nodes_dict):
+        """Update nodes attributes with nailgun client.
+
+        FuelWebClient.update_nodes uses devops nodes as data source.
+        Virtual nodes are not in devops database, so we have to
+        update nodes attributes directly via nailgun client.
+
+        :param cluster_id: int, ID of a cluster in question
+        :param nodes_dict: dict, 'name: role(s)' key-paired collection of
+                           virtual nodes to add to the cluster
+        :return: None
+        """
+
+        nodes = self.fuel_web.client.list_nodes()
+        virt_nodes = [node for node in nodes if node['cluster'] != cluster_id]
+        asserts.assert_equal(len(nodes_dict),
+                             len(virt_nodes),
+                             "Number of given virtual nodes differs from the"
+                             "number of virtual nodes available in nailgun:\n"
+                             "Nodes dict: {0}\nAvailable nodes: {1}"
+                             .format(nodes_dict,
+                                     [node['name'] for node in virt_nodes]))
+
+        for virt_node, virt_node_name in zip(virt_nodes, nodes_dict):
+            new_roles = nodes_dict[virt_node_name]
+            new_name = '{}_{}'.format(virt_node_name, "_".join(new_roles))
+            data = {"cluster_id": cluster_id,
+                    "pending_addition": True,
+                    "pending_deletion": False,
+                    "pending_roles": new_roles,
+                    "name": new_name}
+            self.fuel_web.client.update_node(virt_node['id'], data)
+
+    def wait_for_slave(self, slave):
+        """Wait for slave ignoring connection errors that may appear
+        due to node reboot"""
+        while True:
+            try:
+                wait(
+                    lambda: self.ssh_manager.execute_through_master(
+                        slave['ip'], "cd ~")['exit_code'] == 0,
+                    timeout=10 * 60,
+                    timeout_msg="{0} didn't appear online after graceful "
+                                "reboot". format(slave['name']))
+                break
+            except ChannelException:
+                pass
+
+    @staticmethod
+    def get_network_template(template, template_dir=settings.RF_NET_TEMPLATE):
+        template_path = os.path.join(template_dir, '{0}.yaml'.format(template))
+        with open(template_path) as template_file:
+            return yaml.load(template_file)
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_1],
+          groups=["baremetal_deploy_cluster_with_virt_node"])
+    @log_snapshot_after_test
+    def baremetal_deploy_cluster_with_virt_node(self):
+        """Baremetal deployment of cluster with one virtual node
+
+        Scenario:
+            1. Create a cluster
+            2. Assign compute and virt roles to the slave node
+            3. Upload configuration for one VM
+            4. Apply network template for the env and spawn the VM
+            5. Assign controller role to the VM
+            6. Deploy the environment
+            7. Run OSTF
+            8. Reset the environment
+            9. Redeploy cluster
+            10. Run OSTF
+
+        Duration: 240m
+        """
+
+        self.env.revert_snapshot("ready_with_1_slaves")
+
+        self.show_step(1)
+        checkers.enable_feature_group(self.env, "advanced")
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE_HA,
+            settings={
+                'net_provider': 'neutron',
+                'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
+            })
+
+        self.show_step(2)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['compute', 'virt']
+            })
+        self.show_step(3)
+        node = self.fuel_web.get_nailgun_node_by_name("slave-01")
+        self.fuel_web.client.create_vm_nodes(
+            node['id'],
+            [
+                {
+                    "id": 1,
+                    "mem": self.get_slave_total_mem(node['ip']) - 2,
+                    "cpu": self.get_slave_total_cpu(node['ip']) - 2,
+                    "vda_size": "100G"
+                }
+            ])
+
+        self.show_step(4)
+        self.update_virt_vm_template()
+        net_template = get_network_template("baremetal_rf")
+        self.fuel_web.client.upload_network_template(cluster_id, net_template)
+        self.fuel_web.spawn_vms_wait(cluster_id)
+        wait(lambda: len(self.fuel_web.client.list_nodes()) == 2,
+             timeout=60 * 60,
+             timeout_msg=("Timeout waiting for available nodes, "
+                          "current nodes: \n{0}" + '\n'.join(
+                              ['Name: {0}, status: {1}, online: {2}'.
+                               format(i['name'], i['status'], i['online'])
+                               for i in self.fuel_web.client.list_nodes()])))
+
+        self.show_step(5)
+        virt_nodes = {'vslave-01': ['controller']}
+        self.update_virtual_nodes(cluster_id, virt_nodes)
+
+        self.show_step(6)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(7)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(8)
+        self.fuel_web.stop_reset_env_wait(cluster_id)
+        for node in self.fuel_web.client.list_nodes():
+            self.wait_for_slave(node)
+
+        self.show_step(9)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(10)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["baremetal_deploy_virt_nodes_on_different_computes"])
+    @log_snapshot_after_test
+    def baremetal_deploy_virt_nodes_on_different_computes(self):
+        """Baremetal deployment of a cluster with virtual nodes in HA mode;
+        each virtual node on a separate compute
+
+        Scenario:
+            1. Create cluster
+            2. Assign compute and virt roles to three slave nodes
+            3. Upload VM configuration for one VM to each slave node
+            4. Apply network template for the env and spawn the VMs
+            5. Assign controller role to VMs
+            6. Deploy cluster
+            7. Run OSTF
+            8. Mark 'mysql' partition to be preserved on one of controllers
+            9. Reinstall the controller
+            10. Verify that the reinstalled controller joined the Galera
+                cluster and synced its state
+            11. Run OSTF
+            12. Gracefully reboot one controller using "reboot" command
+                and wait till it comes up
+            13. Run OSTF
+            14. Forcefully reboot one controller using "reboot -f" command
+                and wait till it comes up
+            15. Run OSTF
+            16. Gracefully reboot one compute using "reboot" command
+                and wait till compute and controller come up
+            17. Run OSTF
+            18. Forcefully reboot one compute using "reboot -f" command
+                and wait till compute and controller come up
+            19. Run OSTF
+
+        Duration: 360m
+        """
+        self.env.revert_snapshot("ready_with_3_slaves")
+
+        self.show_step(1)
+        checkers.enable_feature_group(self.env, "advanced")
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE_HA,
+            settings={
+                'net_provider': 'neutron',
+                'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
+            })
+
+        self.show_step(2)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['compute', 'virt'],
+                'slave-02': ['compute', 'virt'],
+                'slave-03': ['compute', 'virt']
+            })
+
+        self.show_step(3)
+
+        for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
+            self.fuel_web.client.create_vm_nodes(
+                node['id'],
+                [{
+                    "id": 1,
+                    "mem": 2,
+                    "cpu": 2,
+                    "vda_size": "100G"
+                }])
+
+        self.show_step(4)
+        self.update_virt_vm_template()
+        net_template = get_network_template("baremetal_rf_ha")
+        self.fuel_web.client.upload_network_template(cluster_id, net_template)
+        self.fuel_web.spawn_vms_wait(cluster_id)
+        wait(lambda: len(self.fuel_web.client.list_nodes()) == 6,
+             timeout=60 * 60,
+             timeout_msg=("Timeout waiting 2 available nodes, "
+                          "current nodes: \n{0}" + '\n'.join(
+                              ['Name: {0}, status: {1}, online: {2}'.
+                               format(i['name'], i['status'], i['online'])
+                               for i in self.fuel_web.client.list_nodes()])))
+
+        self.show_step(5)
+        virt_nodes = {
+            'vslave-01': ['controller'],
+            'vslave-02': ['controller'],
+            'vslave-03': ['controller']
+        }
+        self.update_virtual_nodes(cluster_id, virt_nodes)
+
+        self.show_step(6)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(7)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(8)
+        virt_nodes = [n for n in self.fuel_web.client.list_nodes()
+                      if n['name'].startswith('vslave')]
+        ctrl_nailgun = virt_nodes[0]
+        with self.env.d_env.get_admin_remote() as remote:
+            preserve_partition(remote, ctrl_nailgun['id'], "mysql")
+
+        self.show_step(9)
+        task = self.fuel_web.client.provision_nodes(
+            cluster_id, [str(ctrl_nailgun['id'])])
+        self.fuel_web.assert_task_success(task)
+        task = self.fuel_web.client.deploy_nodes(
+            cluster_id, [str(ctrl_nailgun['id'])])
+        self.fuel_web.assert_task_success(task)
+
+        self.show_step(10)
+        cmd = "mysql --connect_timeout=5 -sse \"SHOW STATUS LIKE 'wsrep%';\""
+        err_msg = ("Galera isn't ready on {0} node".format(
+            ctrl_nailgun['hostname']))
+        wait(
+            lambda: self.ssh_manager.execute_through_master(
+                ctrl_nailgun['ip'], cmd)['exit_code'] == 0,
+            timeout=10 * 60, timeout_msg=err_msg)
+
+        cmd = ("mysql --connect_timeout=5 -sse \"SHOW STATUS LIKE "
+               "'wsrep_local_state_comment';\"")
+        err_msg = ("The reinstalled node {0} is not synced with the "
+                   "Galera cluster".format(ctrl_nailgun['hostname']))
+        wait(
+            # pylint: disable=no-member
+            lambda: self.ssh_manager.execute_through_master(
+                ctrl_nailgun['ip'], cmd)['stdout'].split()[1] == "Synced",
+            # pylint: enable=no-member
+            timeout=10 * 60,
+            timeout_msg=err_msg)
+
+        self.show_step(11)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(12)
+        asserts.assert_true(
+            self.ssh_manager.execute_through_master(
+                virt_nodes[1]['ip'], "reboot")['exit_code'] == 0,
+            "Failed to gracefully reboot {0} controller"
+            "node".format(virt_nodes[1]['name']))
+        self.wait_for_slave(virt_nodes[1])
+
+        self.show_step(13)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(14)
+        asserts.assert_true(
+            self.ssh_manager.execute_through_master(
+                    virt_nodes[1]['ip'],
+                    "reboot -f >/dev/null &")['exit_code'] == 0,
+            "Failed to forcefully reboot {0} controller"
+            "node".format(virt_nodes[1]['name']))
+        self.wait_for_slave(virt_nodes[1])
+
+        self.show_step(15)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(16)
+        cmp_nailgun = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute'])[0]
+        asserts.assert_true(
+            self.ssh_manager.execute_through_master(
+                cmp_nailgun['ip'], "reboot")['exit_code'] == 0,
+            "Failed to gracefully reboot {0} compute"
+            "node".format(cmp_nailgun['name']))
+        self.wait_for_slave(cmp_nailgun)
+        for vm in virt_nodes:
+            self.wait_for_slave(vm)
+
+        self.show_step(17)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(18)
+        asserts.assert_true(
+            self.ssh_manager.execute_through_master(
+                cmp_nailgun['ip'],
+                "reboot -f >/dev/null &")['exit_code'] == 0,
+            "Failed to forcefully reboot {0} controller"
+            "node".format(cmp_nailgun['name']))
+        self.wait_for_slave(cmp_nailgun)
+        for vm in virt_nodes:
+            self.wait_for_slave(vm)
+
+        self.show_step(19)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_1],
+          groups=["baremetal_deploy_virt_nodes_on_one_compute"])
+    @log_snapshot_after_test
+    def baremetal_deploy_virt_nodes_on_one_compute(self):
+        """Baremetal deployment of a cluster with virtual nodes in HA mode;
+        all virtual nodes on the same compute
+
+        Scenario:
+            1. Create a cluster
+            2. Assign compute and virt roles to the slave node
+            3. Upload configuration for three VMs
+            4. Spawn the VMs and wait until they are available for allocation
+            5. Assign controller role to the VMs
+            6. Deploy the cluster
+            7. Run OSTF
+
+        Duration: 180m
+        """
+        self.env.revert_snapshot("ready_with_1_slaves")
+
+        self.show_step(1)
+        checkers.enable_feature_group(self.env, "advanced")
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=settings.DEPLOYMENT_MODE_HA,
+            settings={
+                'net_provider': 'neutron',
+                'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
+            })
+
+        self.show_step(2)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['compute', 'virt'],
+            })
+
+        self.show_step(3)
+        node = self.fuel_web.get_nailgun_node_by_name("slave-01")
+        self.fuel_web.client.create_vm_nodes(
+            node['id'],
+            [
+                {"id": 1, "mem": 4, "cpu": 2, "vda_size": "100G"},
+                {"id": 2, "mem": 4, "cpu": 2, "vda_size": "100G"},
+                {"id": 3, "mem": 4, "cpu": 2, "vda_size": "100G"},
+            ])
+
+        self.show_step(4)
+        self.update_virt_vm_template()
+        net_template = get_network_template("baremetal_rf")
+        self.fuel_web.client.upload_network_template(cluster_id, net_template)
+        self.fuel_web.spawn_vms_wait(cluster_id)
+        wait(lambda: len(self.fuel_web.client.list_nodes()) == 4,
+             timeout=60 * 60,
+             timeout_msg=("Timeout waiting for available nodes, "
+                          "current nodes: \n{0}" + '\n'.join(
+                              ['Name: {0}, status: {1}, online: {2}'.
+                               format(i['name'], i['status'], i['online'])
+                               for i in self.fuel_web.client.list_nodes()])))
+
+        self.show_step(5)
+        virt_nodes = {
+            'vslave-01': ['controller'],
+            'vslave-02': ['controller'],
+            'vslave-03': ['controller']}
+        self.update_virtual_nodes(cluster_id, virt_nodes)
+
+        self.show_step(6)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(7)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
