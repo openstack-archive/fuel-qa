@@ -1,0 +1,10 @@
+Code-Review+2: Alexey Stepanov <astepanov@mirantis.com>
+Code-Review+2: Vladimir Khlyunev <vkhlyunev@mirantis.com>
+Workflow+1: Vladimir Khlyunev <vkhlyunev@mirantis.com>
+Code-Review+1: Ivan Remizov <iremizov@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 09 Aug 2016 10:46:01 +0000
+Reviewed-on: https://review.openstack.org/352810
+Project: openstack/fuel-qa
+Branch: refs/heads/stable/mitaka
