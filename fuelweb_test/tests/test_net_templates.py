@@ -432,7 +432,7 @@ class TestNetworkTemplates(TestNetworkTemplatesBase):
             if grp['name'] == 'management'].pop()
 
         assert_true(
-            self.fuel_web.client.del_network_group(mgmt_net['id']).code
+            self.fuel_web.client.del_network_group(mgmt_net['id']).status_code
             in {200, 204},
             'Network group delete failed'
         )
