@@ -23,6 +23,7 @@ import os
 import posixpath
 import re
 import signal
+from warnings import warn
 
 from proboscis import asserts
 
@@ -377,6 +378,13 @@ def cond_upload(remote, source, target, condition=''):
 
 
 def run_on_remote(*args, **kwargs):
+    warn(
+        'This is old deprecated method, which should not be used anymore. '
+        'please use remote.execute() and remote.check_call() instead.\n'
+        'Starting from fuel-devops 2.9.22 this methods will return all '
+        'required data.',
+        DeprecationWarning
+    )
     if 'jsonify' in kwargs:
         if kwargs['jsonify']:
             return run_on_remote_get_results(*args, **kwargs)['stdout_json']
@@ -388,7 +396,6 @@ def run_on_remote(*args, **kwargs):
 def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
                               jsonify=False, assert_ec_equal=None,
                               raise_on_assert=True):
-    # TODO(ivankliuk): move it to devops.helpers.SSHClient
     """Execute ``cmd`` on ``remote`` and return result.
 
     :param remote: devops.helpers.helpers.SSHClient
@@ -400,14 +407,26 @@ def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
     :return: dict
     :raise: Exception
     """
+    warn(
+        'run_on_remote_get_results() is deprecated in favor of '
+        'remote.check_call() \n'
+        'Starting from fuel-devops 2.9.22 this methods will return whole '
+        'required data.',
+        DeprecationWarning
+    )
     if assert_ec_equal is None:
         assert_ec_equal = [0]
-    result = remote.execute(cmd)
+    orig_result = remote.execute(cmd)
 
-    result['stdout_str'] = ''.join(result['stdout']).strip()
-    result['stdout_len'] = len(result['stdout'])
-    result['stderr_str'] = ''.join(result['stderr']).strip()
-    result['stderr_len'] = len(result['stderr'])
+    # now create fallback result for compatibility reasons (UTF-8)
+
+    result = {
+        'stdout': orig_result['stdout'],
+        'stderr': orig_result['stderr'],
+        'exit_code': orig_result['exit_code'],
+        'stdout_str': ''.join(orig_result['stdout']).strip(),
+        'stderr_str': ''.join(orig_result['stderr']).strip()
+    }
 
     details_log = (
         "Host:      {host}\n"
