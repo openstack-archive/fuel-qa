@@ -23,27 +23,27 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["clone_env_for_os_upgrade"],
-      depends_on_groups=["upgrade_ceph_ha_restore"],
-      enabled=False)
+@test(groups=["clone_env_for_os_upgrade", "upgrade_ceph_ha_tests"],
+      depends_on_groups=["upgrade_ceph_ha_restore"])
 class TestCloneEnv(TestBasic):
+
+    snapshot = 'upgrade_ceph_ha_restore'
+
     @test(groups=["test_clone_environment"])
     @log_snapshot_after_test
     def test_clone_environment(self):
         """Test clone environment
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Clone cluster
             3. Check status code
             4. Check that clusters are equal
 
         """
 
-        if not self.env.d_env.has_snapshot(
-                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
-            raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan",
-                                 skip_timesync=True)
+        if not self.env.d_env.has_snapshot(self.snapshot):
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot))
+        self.env.revert_snapshot(self.snapshot)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         cluster = self.fuel_web.client.get_cluster(cluster_id)
@@ -120,16 +120,15 @@ class TestCloneEnv(TestBasic):
     def test_clone_nonexistent_cluster(self):
         """Test clone environment with nonexistent cluster id as argument
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Try to clone nonexistent environment
             3. Check status code
 
         """
-        if not self.env.d_env.has_snapshot(
-                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
-            raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan",
-                                 skip_timesync=True)
+
+        if not self.env.d_env.has_snapshot(self.snapshot):
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot))
+        self.env.revert_snapshot(self.snapshot)
 
         data = {
             "name": "new_test_cluster",
@@ -147,16 +146,15 @@ class TestCloneEnv(TestBasic):
     def test_clone_wo_name_in_body(self):
         """Test clone without name in POST body
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Try to clone environment without name in POST body
             3. Check status code
 
         """
-        if not self.env.d_env.has_snapshot(
-                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
-            raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan",
-                                 skip_timesync=True)
+
+        if not self.env.d_env.has_snapshot(self.snapshot):
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot))
+        self.env.revert_snapshot(self.snapshot)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         cluster = self.fuel_web.client.get_cluster(cluster_id)
@@ -179,16 +177,15 @@ class TestCloneEnv(TestBasic):
     def test_clone_wo_release_id_in_body(self):
         """Test clone without release id in POST body
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Try to clone environment without release id in POST body
             3. Check status code
 
         """
-        if not self.env.d_env.has_snapshot(
-                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
-            raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan",
-                                 skip_timesync=True)
+
+        if not self.env.d_env.has_snapshot(self.snapshot):
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot))
+        self.env.revert_snapshot(self.snapshot)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -208,16 +205,15 @@ class TestCloneEnv(TestBasic):
     def test_clone_with_empty_body(self):
         """Test clone with empty body
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Try to clone environment with empty body
             3. Check status code
 
         """
-        if not self.env.d_env.has_snapshot(
-                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
-            raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan",
-                                 skip_timesync=True)
+
+        if not self.env.d_env.has_snapshot(self.snapshot):
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot))
+        self.env.revert_snapshot(self.snapshot)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -233,17 +229,16 @@ class TestCloneEnv(TestBasic):
     def test_clone_with_nonexistent_release_id(self):
         """Test clone with nonexistent release id in POST body
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Try to clone environment with nonexistent
                release id in POST body
             3. Check status code
 
         """
-        if not self.env.d_env.has_snapshot(
-                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
-            raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan",
-                                 skip_timesync=True)
+
+        if not self.env.d_env.has_snapshot(self.snapshot):
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot))
+        self.env.revert_snapshot(self.snapshot)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -264,17 +259,16 @@ class TestCloneEnv(TestBasic):
     def test_clone_with_incorrect_release_id(self):
         """Test clone with incorrect release id in POST body
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Try to clone environment with incorrect
             release id in POST body
             3. Check status code
 
         """
-        if not self.env.d_env.has_snapshot(
-                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
-            raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan",
-                                 skip_timesync=True)
+
+        if not self.env.d_env.has_snapshot(self.snapshot):
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot))
+        self.env.revert_snapshot(self.snapshot)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -295,18 +289,16 @@ class TestCloneEnv(TestBasic):
     def test_double_clone_environment(self):
         """Test double clone environment
         Scenario:
-            1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
+            1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Clone cluster
             3. Clone cluster again
             4. Check status code
 
         """
 
-        if not self.env.d_env.has_snapshot(
-                "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
-            raise SkipTest()
-        self.env.revert_snapshot("upgrade_ha_ceph_for_all_ubuntu_neutron_vlan",
-                                 skip_timesync=True)
+        if not self.env.d_env.has_snapshot(self.snapshot):
+            raise SkipTest('Snapshot {} not found'.format(self.snapshot))
+        self.env.revert_snapshot(self.snapshot)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         cluster = self.fuel_web.client.get_cluster(cluster_id)
