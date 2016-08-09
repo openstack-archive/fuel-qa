@@ -1,3 +1,5 @@
+setuptools>=22.0,!=24.0.0  # PSF/ZPL  # MANDATORY TO BUILD CORRECT VIRTUALENV
+pip>=6.0  # MIT  # MANDATORY TO BUILD CORRECT VIRTUALENV
 nose==1.2.1
 anyjson>=0.3.3  # BSD
 paramiko>=1.16.0,<=2.0.0  # LGPL
