@@ -1,6 +1,6 @@
 nose==1.2.1
 anyjson>=0.3.3  # BSD
-paramiko>=1.16.0  # LGPL
+paramiko>=1.16.0,<=2.0.0  # LGPL
 proboscis==1.2.6.0
 junitxml>=0.7.0
 netaddr>=0.7.12,!=0.7.16  # BSD
