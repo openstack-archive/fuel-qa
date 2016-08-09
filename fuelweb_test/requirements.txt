@@ -1,3 +1,4 @@
+cryptography==1.2.1
 nose==1.2.1
 anyjson>=0.3.3  # BSD
 paramiko>=1.16.0  # LGPL
