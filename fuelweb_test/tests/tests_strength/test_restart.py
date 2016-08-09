@@ -282,3 +282,102 @@ class HAOneControllerNeutronRestart(TestBasic):
 
         self.show_step(13)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+@test(enabled=False,
+      groups=["deploy_reset_primary_neutron"])
+class HAThreeControllerNeutronRestart(TestBasic):
+    """NeutronGreHa.
+
+    Test disabled and move to fuel_tests suite:
+        fuel_tests.test.test_neutron
+
+    """  # TODO documentation
+
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_slaves_all],
+          groups=["deploy_reset_primary_neutron"])
+    @log_snapshot_after_test
+    def deploy_reset_primary_neutron(self):
+        """Hard reset of primary controller for Neutron
+
+        Scenario:
+        1. Deploy environment with 3 controllers and NeutronTUN or NeutronVLAN, all default storages, 2 compute, 1 cinder node
+        2. Verify networks
+        3. Run OSTF tests
+        4. Hard reset of primary controller
+        5. Wait for HA services to be ready
+        6. Wait for for OS services to be ready
+        7. Verify networks
+        8. Run OSTF tests
+
+        Duration 100m
+        Snapshot deploy_reset_primary_neutron
+
+        """
+
+        self.env.revert_snapshot("ready_with_all_slaves")
+
+        self.show_step(1)
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT['vlan'],
+                'tenant': 'simpleVlan',
+                'user': 'simpleVlan',
+                'password': 'simpleVlan'
+            }
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute'],
+                'slave-05': ['compute'],
+                'slave-06': ['cinder']
+            }
+        )
+
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        cluster = self.fuel_web.client.get_cluster(cluster_id)
+        assert_equal(str(cluster['net_provider']), 'neutron')
+
+        self.show_step(2)
+        self.fuel_web.verify_network(cluster_id)
+        devops_node = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+        logger.debug("devops node name is {0}".format(devops_node.name))
+
+        # ostf_tests before reset
+        self.show_step(3)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['ha', 'smoke', 'sanity'])
+
+        # restart primary controller
+        controller = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+        logger.debug(
+            "controller with primary role is {}".format(controller.name))
+        self.show_step(4)
+        self.fuel_web.cold_restart_nodes([controller])
+        self.show_step(5)
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+        self.show_step(6)
+        self.fuel_web.assert_os_services_ready(cluster_id, timeout=10 * 60)
+        self.show_step(7)
+        self.fuel_web.verify_network(cluster_id)
+
+        # ostf_tests after reset
+        self.show_step(8)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['ha', 'smoke', 'sanity'])
+
+        self.env.make_snapshot("deploy_reset_primary_neutron")
+
