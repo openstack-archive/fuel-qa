@@ -672,6 +672,15 @@ class EnvironmentModel(object):
 
         logger.info('{0} package(s) were updated'.format(updates_count))
 
+        # this is temporary solution for disabling 50min timeout;
+        # should be removed when the main script for 9.0->9.x will be merged
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='sed -i '
+                '"s/wait_for_external_config=yes/wait_for_external_config=no/"'
+                ' /etc/fuel/bootstrap_admin_node.conf')
+        # end of temporary solution
+
         cmd = 'bootstrap_admin_node.sh;'
 
         self.ssh_manager.execute_on_remote(
