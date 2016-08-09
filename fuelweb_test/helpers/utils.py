@@ -1629,3 +1629,43 @@ def generate_yum_repos_config(repositories):
                   "priority={priority}\n" \
                   "skip_if_unavailable=1\n".format(**repo)
     return config
+
+
+def preserve_partition(admin_remote, node_id, partition):
+    """
+    Marks the given partition to be preserved during slave node reinstallation
+
+    :param admin_remote: SSHClient to master node
+    :param node_id: ID of a slave node to update settings for
+    :param partition: name of the partition to be preserved
+    :return: None
+    """
+    # Retrieve disks config for the given node
+    res = admin_remote.execute(
+        "fuel node --node-id {0} "
+        "--disk --download".format(str(node_id)))
+    rem_yaml = res['stdout'][-1].rstrip()
+
+    # Get local copy of the disks config file in question
+    tmp_yaml = "/tmp/tmp_disk.yaml"
+    admin_remote.execute("cp {0} {1}".format(rem_yaml, tmp_yaml))
+    admin_remote.download(tmp_yaml, tmp_yaml)
+
+    # Update the local copy of the disk config file, mark the partition
+    # in question to be preserved during provisioning of the node
+    with open(tmp_yaml) as f:
+        disks_data = yaml.load(f)
+
+    for disk in disks_data:
+        for volume in disk['volumes']:
+            if volume['name'] == partition:
+                volume['keep_data'] = True
+
+    with open(tmp_yaml, 'w') as f:
+        yaml.dump(disks_data, f)
+
+    # Upload the updated disks config to the corresponding node
+    admin_remote.upload(tmp_yaml, tmp_yaml)
+    admin_remote.execute("cp {0} {1}".format(tmp_yaml, rem_yaml))
+    admin_remote.execute("fuel node --node-id {0} "
+                         "--disk --upload".format(str(node_id)))

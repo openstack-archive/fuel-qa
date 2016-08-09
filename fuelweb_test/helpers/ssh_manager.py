@@ -21,6 +21,7 @@ import traceback
 from devops.helpers.helpers import wait
 from devops.models.node import SSHClient
 from paramiko import RSAKey
+from paramiko import Transport
 from paramiko.ssh_exception import AuthenticationException
 import six
 import yaml
@@ -174,6 +175,59 @@ class SSHManager(object):
     def execute(self, ip, cmd, port=22):
         remote = self.get_remote(ip=ip, port=port)
         return remote.execute(cmd)
+
+    def execute_through_master(self, ip, cmd, port=22):
+        """Execute the given command on a slave through master
+
+        :param ip: str, a slave IP address
+        :param cmd: str, shell command
+        :param port: int, socket port number
+        :return: dict
+        """
+        master = self.get_remote(self.admin_ip)
+
+        logger.debug("Getting master node key")
+        keys = self._get_keys()
+
+        logger.debug("Opening channel to slave node")
+        # pylint: disable=protected-access
+        intermediate_channel = master._ssh.get_transport().open_channel(
+            kind='direct-tcpip',
+            dest_addr=(ip, port),
+            src_addr=(master.hostname, 0))
+        # pylint: enable=protected-access
+        logger.debug("Opening paramiko transport")
+        transport = Transport(sock=intermediate_channel)
+
+        logger.debug("Starting client")
+        transport.start_client()
+
+        logger.debug("Authorizing using the key")
+        transport.auth_publickey('root', keys[0])
+
+        logger.debug("Opening session")
+        channel = transport.open_session()
+
+        logger.info("Executing command: {}".format(cmd))
+        channel.exec_command(cmd)
+
+        result = {
+            'stdout': [],
+            'stderr': [],
+            'exit_code': 0
+        }
+
+        logger.debug("Receiving exit_code")
+        result['exit_code'] = channel.recv_exit_status()
+        logger.debug("Receiving stdout")
+        result['stdout'] = channel.recv(1024)
+        logger.debug("Receiving stderr")
+        result['stderr'] = channel.recv_stderr(1024)
+
+        logger.debug("Closing channel")
+        channel.close()
+
+        return result
 
     def check_call(self, ip, cmd, port=22, verbose=False):
         remote = self.get_remote(ip=ip, port=port)

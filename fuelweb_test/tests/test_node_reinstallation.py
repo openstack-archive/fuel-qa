@@ -17,12 +17,12 @@ from devops.helpers import helpers as devops_helpers
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import test
-import yaml
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.ssh_manager import SSHManager
+from fuelweb_test.helpers.utils import preserve_partition
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -458,39 +458,6 @@ class ErrorNodeReinstallation(TestBasic):
 class PartitionPreservation(TestBasic):
     """PartitionPreservation."""  # TODO documentation
 
-    @staticmethod
-    def preserve_partition(admin_remote, node_id, partition):
-
-        # Retrieve disks config for the given node
-        res = admin_remote.execute(
-            "fuel node --node-id {0} "
-            "--disk --download".format(str(node_id)))
-        rem_yaml = res['stdout'][-1].rstrip()
-
-        # Get local copy of the disks config file in question
-        tmp_yaml = "/tmp/tmp_disk.yaml"
-        admin_remote.execute("cp {0} {1}".format(rem_yaml, tmp_yaml))
-        admin_remote.download(tmp_yaml, tmp_yaml)
-
-        # Update the local copy of the disk config file, mark the partition
-        # in question to be preserved during provisioning of the node
-        with open(tmp_yaml) as f:
-            disks_data = yaml.load(f)
-
-        for disk in disks_data:
-            for volume in disk['volumes']:
-                if volume['name'] == partition:
-                    volume['keep_data'] = True
-
-        with open(tmp_yaml, 'w') as f:
-            yaml.dump(disks_data, f)
-
-        # Upload the updated disks config to the corresponding node
-        admin_remote.upload(tmp_yaml, tmp_yaml)
-        admin_remote.execute("cp {0} {1}".format(tmp_yaml, rem_yaml))
-        admin_remote.execute("fuel node --node-id {0} "
-                             "--disk --upload".format(str(node_id)))
-
     @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
           groups=["cinder_nova_partition_preservation"])
     @log_snapshot_after_test
@@ -543,10 +510,8 @@ class PartitionPreservation(TestBasic):
 
         # Mark 'cinder' and 'vm' partitions to be preserved
         with self.env.d_env.get_admin_remote() as remote:
-            PartitionPreservation.preserve_partition(
-                remote, cmp_nailgun['id'], "cinder")
-            PartitionPreservation.preserve_partition(
-                remote, cmp_nailgun['id'], "vm")
+            preserve_partition(remote, cmp_nailgun['id'], "cinder")
+            preserve_partition(remote, cmp_nailgun['id'], "vm")
 
         NodeReinstallationEnv.reinstall_nodes(
             self.fuel_web, cluster_id, [str(cmp_nailgun['id'])])
@@ -627,10 +592,8 @@ class PartitionPreservation(TestBasic):
 
         # Mark 'mongo' and 'mysql' partitions to be preserved
         with self.env.d_env.get_admin_remote() as remote:
-            PartitionPreservation.preserve_partition(
-                remote, mongo_nailgun['id'], "mongo")
-            PartitionPreservation.preserve_partition(
-                remote, mongo_nailgun['id'], "mysql")
+            preserve_partition(remote, mongo_nailgun['id'], "mongo")
+            preserve_partition(remote, mongo_nailgun['id'], "mysql")
 
         NodeReinstallationEnv.reinstall_nodes(
             self.fuel_web, cluster_id, [str(mongo_nailgun['id'])])
@@ -737,10 +700,8 @@ class StopReinstallation(TestBasic):
 
         # Mark 'cinder' and 'vm' partitions to be preserved
         with self.env.d_env.get_admin_remote() as remote:
-            PartitionPreservation.preserve_partition(
-                remote, cmp_nailgun['id'], "cinder")
-            PartitionPreservation.preserve_partition(
-                remote, cmp_nailgun['id'], "vm")
+            preserve_partition(remote, cmp_nailgun['id'], "cinder")
+            preserve_partition(remote, cmp_nailgun['id'], "vm")
 
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         devops_nodes = self.fuel_web.get_devops_nodes_by_nailgun_nodes(
