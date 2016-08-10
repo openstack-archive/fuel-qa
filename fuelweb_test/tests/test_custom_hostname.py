@@ -14,7 +14,7 @@
 from random import randrange
 from re import match
 
-from keystoneauth1.exceptions import BadRequest
+from keystoneauth1.exceptions import BadRequest, Forbidden
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
@@ -237,7 +237,7 @@ class CustomHostname(TestBasic):
         assert_raises(
             BadRequest,
             self.fuel_web.client.set_hostname,
-            node,
+            node["id"],
             custom_hostname)
 
         self.env.make_snapshot("set_duplicate_hostname")
@@ -278,7 +278,7 @@ class CustomHostname(TestBasic):
         # Try to change the hostname of the provisioned node
         # TODO(dkruglov): LP#1476722
         assert_raises(
-            BadRequest,
+            Forbidden,
             self.fuel_web.client.set_hostname,
             node['id'],
             'new-custom-hostname')
