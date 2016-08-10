@@ -12,13 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import paramiko
-from proboscis import asserts
 import random
 import time
+from warnings import warn
 
 from devops.error import TimeoutError
 from devops.helpers import helpers
+import paramiko
+from proboscis import asserts
+
 from fuelweb_test.helpers import common
 from fuelweb_test import logger
 
@@ -321,7 +323,14 @@ class OpenStackActions(common.Common):
             controller_ssh, vm_ip, "md5sum %s" % file_path, creds)
         return out['stdout']
 
-    def execute_through_host(self, ssh, vm_host, cmd, creds=()):
+    @staticmethod
+    def execute_through_host(ssh, vm_host, cmd, creds=()):
+        warn(
+            'execute_throw_host(ssh=SSHClient(), ...) is deprecated '
+            'in favor of '
+            'SSHClient().execute_through_host(hostname, cmd, auth, ...)',
+            DeprecationWarning
+        )
         logger.debug("Making intermediate transport")
         interm_transp = ssh._ssh.get_transport()
 
