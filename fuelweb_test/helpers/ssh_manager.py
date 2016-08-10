@@ -91,8 +91,10 @@ class SSHManager(object):
         """ Function returns remote SSH connection to node by ip address
 
         :param ip: IP of host
+        :type ip: str
         :param port: port for SSH
-        :return: SSHClient
+        :type port: int
+        :rtype: SSHClient
         """
         if (ip, port) not in self.connections:
             logger.debug('SSH_MANAGER:Create new connection for '
@@ -142,9 +144,34 @@ class SSHManager(object):
         remote = self._get_remote(ip=ip, port=port)
         return remote.execute(cmd)
 
-    def check_call(self, ip, cmd, port=22, verbose=False):
+    def check_call(
+            self,
+            ip,
+            command, port=22, verbose=False, timeout=None,
+            error_info=None,
+            expected=None, raise_on_err=True):
+        """Execute command and check for return code
+
+        :type ip: str
+        :type command: str
+        :type port: int
+        :type verbose: bool
+        :type timeout: int
+        :type error_info: str
+        :type expected: list
+        :type raise_on_err: bool
+        :rtype: ExecResult
+        :raises: DevopsCalledProcessError
+        """
         remote = self._get_remote(ip=ip, port=port)
-        return remote.check_call(cmd, verbose)
+        return remote.check_call(
+            command=command,
+            verbose=verbose,
+            timeout=timeout,
+            error_info=error_info,
+            expected=expected,
+            raise_on_err=raise_on_err
+        )
 
     def execute_on_remote(self, ip, cmd, port=22, err_msg=None,
                           jsonify=False, assert_ec_equal=None,
