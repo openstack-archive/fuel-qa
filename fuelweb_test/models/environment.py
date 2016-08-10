@@ -27,6 +27,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 import six
 
+from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.decorators import revert_info
 from fuelweb_test.helpers.decorators import update_rpm_packages
 from fuelweb_test.helpers.decorators import upload_manifests
@@ -401,12 +402,18 @@ class EnvironmentModel(object):
                 .format(settings.KEYSTONE_CREDS['username'],
                         settings.KEYSTONE_CREDS['password']))
 
+    # NOTE(akostrikov) Due to fact that virtual machine in libvirt 1.x hangs
+    # with probability less than 0,3%, we need to restart virtual machine to
+    # reinitialize its resources.
+    # TODO(akostrikov) Replace when possible, with exact Exception type.
+    @retry(count=2, delay=0)
     def setup_environment(self, custom=settings.CUSTOM_ENV,
                           build_images=settings.BUILD_IMAGES,
                           iso_connect_as=settings.ADMIN_BOOT_DEVICE,
                           security=settings.SECURITY_TEST):
         # Create environment and start the Fuel master node
         admin = self.d_env.nodes().admin
+        self.d_env.destroy()
         self.d_env.start([admin])
 
         logger.info("Waiting for admin node to start up")
