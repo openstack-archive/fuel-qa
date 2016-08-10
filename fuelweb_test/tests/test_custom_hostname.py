@@ -237,7 +237,7 @@ class CustomHostname(TestBasic):
         assert_raises(
             BadRequest,
             self.fuel_web.client.set_hostname,
-            node,
+            node["id"],
             custom_hostname)
 
         self.env.make_snapshot("set_duplicate_hostname")
