@@ -24,15 +24,15 @@ import distutils
 import devops
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
+from devops.helpers.helpers import wait_pass
+from devops.helpers.helpers import wait
+from devops.models.node import Node
 try:
     from devops.error import DevopsObjNotFound
 except ImportError:
-    from devops.models.node import Node
     # pylint: disable=no-member
     DevopsObjNotFound = Node.DoesNotExist
     # pylint: enable=no-member
-from devops.helpers.helpers import wait_pass
-from devops.helpers.helpers import wait
 from keystoneauth1 import exceptions
 import netaddr
 from proboscis.asserts import assert_equal
