@@ -387,8 +387,8 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         self.backup_name = "backup_ceph_ha.tar.gz"
         self.repos_backup_name = "repos_backup_ceph_ha.tar.gz"
 
-    @log_snapshot_after_test
     @test(groups=['upgrade_ceph_ha_restore'])
+    @log_snapshot_after_test
     def upgrade_ceph_ha_restore(self):
         """Reinstall Fuel and restore data with Tun+Ceph+HA cluster
 

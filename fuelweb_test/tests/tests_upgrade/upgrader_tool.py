@@ -89,6 +89,7 @@ class UpgradeCustom(DataDrivenUpgradeBase):
         self.cleanup()
 
     @test(groups=['upgrade_custom_tarball'])
+    @log_snapshot_after_test
     def upgrade_custom_tarball(self):
         """Upgrade master node via tarball"""
         self.check_run(self.backup_snapshot_name)
