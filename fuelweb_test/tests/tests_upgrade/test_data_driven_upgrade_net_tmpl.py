@@ -156,6 +156,7 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
         self.env.make_snapshot(self.source_snapshot_name, is_make=True)
 
     @test(groups=["upgrade_net_tmpl_restore"])
+    @log_snapshot_after_test
     def upgrade_net_tmpl_restore(self):
         """Restore Fuel master - network templates
 
