@@ -212,7 +212,8 @@ class DataDrivenUpgradeBase(TestBasic):
             # snapshot generating procedure can be broken
             admin_remote.download(
                 "/var/log/octane.log",
-                "octane_{}_.log".format(os.path.basename(path)))
+                os.path.join(settings.LOGS_DIR,
+                             "octane_{}_.log".format(os.path.basename(path))))
             raise
 
         if 'backup' in action:
