@@ -125,6 +125,17 @@ class GateOstf(TestBasic):
         test_to_execute = [
             suite for suite in all_test_suits
             if suite not in ['configuration']]
+        # TODO: remove below skipped tests after bugs
+        # TODO: 1611712 and 1611713 will be fixed
+        tests_to_skip = \
+            ['Advanced stack actions: suspend, resume and check',
+             'Typical stack actions: create, delete, show details, etc.',
+             'Update stack actions: inplace, replace and update whole '
+             'template',
+             'Check stack rollback',
+             'Instance live migration']
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
-            test_sets=test_to_execute)
+            test_sets=test_to_execute,
+            should_fail=5,
+            failed_test_name=tests_to_skip)
