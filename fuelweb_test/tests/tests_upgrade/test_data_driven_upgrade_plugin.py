@@ -117,8 +117,8 @@ class UpgradePlugin(DataDrivenUpgradeBase):
                        self.repos_backup_path, self.repos_local_path)
         self.env.make_snapshot(self.source_snapshot_name, is_make=True)
 
-    @log_snapshot_after_test
     @test(groups=['upgrade_plugin_tests', 'upgrade_plugin_restore'])
+    @log_snapshot_after_test
     def upgrade_plugin_restore(self):
         """Reinstall Fuel and restore data with cluster with example plugin
 
@@ -184,9 +184,9 @@ class UpgradePlugin(DataDrivenUpgradeBase):
         self.env.make_snapshot(self.snapshot_name, is_make=True)
         self.cleanup()
 
-    @log_snapshot_after_test
     @test(groups=['upgrade_plugin_tests', 'upgrade_plugin_scale'],
           depends_on_groups=['upgrade_plugin_restore'])
+    @log_snapshot_after_test
     def upgrade_plugin_scale(self):
         """Add 1 node with plugin custom role to existing cluster
 
