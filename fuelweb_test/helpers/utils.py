@@ -1044,14 +1044,14 @@ def get_ceph_partitions(ip, device, fs_type="xfs"):
     # Moved from checkers.py for improvement of code
     ret = SSHManager().check_call(
         ip=ip,
-        cmd="parted {device} print | grep {type}".format(device=device,
-                                                         type=fs_type)
-    )['stdout']
+        command="parted {device} print | grep {type}".format(device=device,
+                                                             type=fs_type)
+    ).stdout
     if not ret:
         logger.error(
             "Partition not present! {partitions}: ".format(
                 partitions=SSHManager().check_call(
-                    ip=ip, cmd="parted {device} print")))
+                    ip=ip, command="parted {device} print").stdout_str))
         raise Exception()
     logger.debug("Partitions: {part}".format(part=ret))
     return ret
@@ -1062,7 +1062,7 @@ def get_mongo_partitions(ip, device):
     # Moved from checkers.py for improvement of code
     ret = SSHManager().check_call(
         ip=ip,
-        cmd="lsblk | grep {device} | awk {size}".format(
+        command="lsblk | grep {device} | awk {size}".format(
             device=device,
             size=re.escape('{print $4}'))
     )['stdout']
@@ -1070,7 +1070,7 @@ def get_mongo_partitions(ip, device):
         logger.error(
             "Partition not present! {partitions}: ".format(
                 partitions=SSHManager().check_call(
-                    ip=ip, cmd="parted {device} print")))
+                    ip=ip, command="parted {device} print").stdout_str))
         raise Exception()
     logger.debug("Partitions: {part}".format(part=ret))
     return ret
@@ -1147,8 +1147,8 @@ def get_quantity_of_numa(ip):
 
     numa = int(SSHManager().check_call(
         ip=ip,
-        cmd="lstopo | grep NUMANode| wc -l"
-    )['stdout'][0])
+        command="lstopo | grep NUMANode| wc -l"
+    ).stdout[0])
 
     if not numa:
         logger.debug("There are no NUMA nodes on {0}".format(ip))

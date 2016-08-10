@@ -156,14 +156,15 @@ def verify_network_list_api(os_conn, net_count=None):
 def check_ceph_image_size(ip, expected_size, device='vdc'):
     ret = ssh_manager.check_call(
         ip=ip,
-        cmd="df -m /dev/{device}* | grep ceph | awk"
-            " {size}".format(device=device,
-                             size=re.escape('{print $2}'))
-    )['stdout']
+        command="df -m /dev/{device}* | grep ceph | awk"
+                " {size}".format(device=device,
+                                 size=re.escape('{print $2}'))
+    ).stdout
 
     if not ret:
-        logger.error("Partition not present! {}: ".format(
-                     ssh_manager.check_call(ip=ip, cmd="df -m")))
+        logger.error(
+            "Partition not present! {}: ".format(
+                ssh_manager.check_call(ip=ip, command="df -m").stdout_str))
         raise Exception()
     logger.debug("Partitions: {part}".format(part=ret))
     assert_true(abs(float(ret[0].rstrip()) / expected_size - 1) < 0.1,
@@ -238,7 +239,7 @@ def enable_feature_group(env, group):
     # update nailgun configs via puppet from that value
     ssh_manager.check_call(
         ip=ssh_manager.admin_ip,
-        cmd='puppet apply /etc/puppet/modules/fuel/examples/nailgun.pp'
+        command='puppet apply /etc/puppet/modules/fuel/examples/nailgun.pp'
     )
 
     def check_api_group_enabled():
