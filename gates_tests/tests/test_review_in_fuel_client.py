@@ -11,23 +11,24 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from __future__ import unicode_literals
+
 import os
 import traceback
 
 from devops.helpers.helpers import wait
-from proboscis import test
 from proboscis import asserts
+from proboscis import test
 
-
-from gates_tests.helpers import exceptions
+from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.helpers.utils import get_package_version
+from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import UPDATE_FUEL
 from fuelweb_test.settings import UPDATE_FUEL_PATH
-from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests import test_cli_base
-from fuelweb_test import logger
+from fuelweb_test.tests.base_test_case import SetupEnvironment
+from gates_tests.helpers import exceptions
 
 
 @test(groups=["review_fuel"])
@@ -47,22 +48,16 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
                 'Can not find {0}, '
                 'please check exported variables'.format(UPDATE_FUEL_PATH))
         cmd = "ls -all {0} | grep {1}".format(target_path, package_name)
-        result = remote.execute(cmd)
-        asserts.assert_equal(
-            0, result['exit_code'],
-            'Can not upload changes to master node. '
-            'Command {0} failed with {1}'.format(cmd, result))
+        remote.check_call(
+            cmd,
+            error_info='Can not upload changes to master node.')
 
     @staticmethod
     def replace_package(remote, package_name, package_path):
         cmd = "ls -all {0} | grep noarch.rpm| awk '{{print $9}}' ".format(
             package_path)
-        result = remote.execute(cmd)
-        asserts.assert_equal(
-            0, result['exit_code'],
-            'Failed to run command {0} with {1} '
-            'on replace package stage'.format(cmd, result))
-        package_from_review = ''.join(result['stdout']).strip()
+        result = remote.check_call(cmd, error_info='Failed package replace.')
+        package_from_review = result.stdout_str
         income_version = get_package_version(
             remote, os.path.join(package_path, package_from_review),
             income=True)
@@ -135,14 +130,26 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
             # get releases list
             self.show_step(4)
             list_release_cmd = 'fuel release --json'
-            list_release_res = run_on_remote(
-                remote, list_release_cmd, jsonify=True)
-            active_release_id = [
-                release['id'] for release
-                in list_release_res if release['is_deployable']]
+            list_release_res = remote.check_call(list_release_cmd).stdout_json
+            active_releases = [
+                release for release
+                in list_release_res if release['is_deployable'] and
+                OPENSTACK_RELEASE.lower() in release['name'].lower()]
+
+            active_release_id = [release['id'] for release in active_releases]
             asserts.assert_true(
                 active_release_id, 'Can not find deployable release. '
                 'Current release data {0}'.format(list_release_res))
+
+            logger.info('Available for deploy: \n{!s}'.format(
+                '\n'.join(
+                    ['\tID:      {id}\n'
+                     '\tSTATE:   {state}\n'
+                     '\tNAME:    {name}\n'
+                     '\tVERSION: {version}\n'
+                     '\tOS:      {operating_system}\n'.format(**release) for
+                     release in active_releases]))
+            )
 
             # Create an environment
             self.show_step(5)
@@ -150,7 +157,7 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
                    '--nst=tun --json'.format(self.__class__.__name__,
                                              active_release_id[0]))
 
-            env_result = run_on_remote(remote, cmd, jsonify=True)
+            env_result = remote.check_call(cmd).stdout_json
             cluster_id = env_result['id']
             cluster_name = env_result['name']
 
@@ -164,8 +171,7 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
 
             self.show_step(8)
             cmd = 'fuel env --json'
-            env_list_res = run_on_remote(
-                remote, cmd, jsonify=True)
+            env_list_res = remote.check_call(cmd).stdout_json
             asserts.assert_true(
                 cluster_id in [cluster['id'] for cluster in env_list_res],
                 'Can not find created before environment'
@@ -184,17 +190,13 @@ class CreateDeployEnvironmentCli(test_cli_base.CommandLine):
             self.update_node_interfaces(node_id[0])
             cmd = ('fuel --env-id={0} node --provision --node={1} --json'
                    .format(cluster_id, node_id[0]))
-            task = run_on_remote(remote, cmd, jsonify=True)
+            task = remote.check_call(cmd).stdout_json
             self.assert_cli_task_success(task, timeout=30 * 60)
 
-        self.show_step(10)
-        with self.env.d_env.get_admin_remote() as remote:
-            res = remote.execute('fuel --env {0} env delete --force'
-                                 .format(cluster_id))
-        asserts.assert_true(
-            res['exit_code'] == 0)
+            self.show_step(10)
+            remote.check_call(
+                'fuel --env {0} env delete --force'.format(cluster_id))
 
-        with self.env.d_env.get_admin_remote() as remote:
             wait(lambda:
                  remote.execute("fuel env |  awk '{print $1}'"
                                 " |  tail -n 1 | grep '^.$'")
