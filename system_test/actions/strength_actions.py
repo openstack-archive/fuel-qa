@@ -12,13 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import unicode_literals
+
 import time
 
+from devops.helpers.helpers import wait
 from proboscis.asserts import assert_true
 
-from devops.helpers.helpers import wait
-
-from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test.helpers.pacemaker import get_pacemaker_nodes_attributes
 from fuelweb_test.helpers.pacemaker import get_pcs_nodes
 from fuelweb_test.helpers.pacemaker import parse_pcs_status_xml
@@ -144,8 +144,8 @@ class FillRootActions(object):
 
         with self.fuel_web.get_ssh_for_node(
                 self.primary_controller.name) as remote:
-            root_free = run_on_remote_get_results(
-                remote, 'cibadmin --query --scope status')['stdout_str']
+            root_free = remote.check_call(
+                'cibadmin --query --scope status').stdout_str
 
         self.primary_controller_space_on_root = get_pacemaker_nodes_attributes(
             root_free)[self.primary_controller_fqdn]['root_free']
@@ -256,9 +256,8 @@ class FillRootActions(object):
 
             def checking_health_disk_attribute():
                 logger.info("Checking for '#health_disk' attribute")
-                cibadmin_status_xml = run_on_remote_get_results(
-                    remote, 'cibadmin --query --scope status')[
-                    'stdout_str']
+                cibadmin_status_xml = remote.check_call(
+                    'cibadmin --query --scope status').stdout_str
                 pcs_attribs = get_pacemaker_nodes_attributes(
                     cibadmin_status_xml)
                 return '#health_disk' in pcs_attribs[
@@ -267,9 +266,8 @@ class FillRootActions(object):
             def checking_for_red_in_health_disk_attribute():
                 logger.info(
                     "Checking for '#health_disk' attribute have 'red' value")
-                cibadmin_status_xml = run_on_remote_get_results(
-                    remote, 'cibadmin --query --scope status')[
-                    'stdout_str']
+                cibadmin_status_xml = remote.check_call(
+                    'cibadmin --query --scope status').stdout_str
                 pcs_attribs = get_pacemaker_nodes_attributes(
                     cibadmin_status_xml)
                 return pcs_attribs[self.primary_controller_fqdn][
@@ -317,11 +315,9 @@ class FillRootActions(object):
 
         with self.fuel_web.get_ssh_for_node(
                 self.primary_controller.name) as remote:
-            run_on_remote_get_results(
-                remote, 'rm /root/bigfile /root/bigfile2')
+            remote.check_call('rm /root/bigfile /root/bigfile2')
 
-            run_on_remote_get_results(
-                remote,
+            remote.check_call(
                 'crm node status-attr {} delete "#health_disk"'.format(
                     self.primary_controller_fqdn))
 
@@ -344,9 +340,8 @@ class FillRootActions(object):
                     "Checking for '#health_disk' attribute "
                     "is not present on node {}".format(
                         self.primary_controller_fqdn))
-                cibadmin_status_xml = run_on_remote_get_results(
-                    remote, 'cibadmin --query --scope status')[
-                    'stdout_str']
+                cibadmin_status_xml = remote.check_call(
+                    remote, 'cibadmin --query --scope status').stdout_str
                 pcs_attribs = get_pacemaker_nodes_attributes(
                     cibadmin_status_xml)
                 return '#health_disk' not in pcs_attribs[

@@ -1,3 +1,19 @@
+#    Copyright 2016 Mirantis, Inc.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+from __future__ import unicode_literals
+
 import os
 # pylint: disable=import-error
 # pylint: disable=no-name-in-module
@@ -13,8 +29,6 @@ from proboscis.asserts import assert_not_equal
 
 from fuelweb_test import logger
 from fuelweb_test import settings
-from fuelweb_test.helpers.utils import run_on_remote
-from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
@@ -152,21 +166,19 @@ class DataDrivenUpgradeBase(TestBasic):
                        settings.FUEL_PROPOSED_REPO_URL,
                        conf_file)
 
-            run_on_remote(self.admin_remote, cmd)
+            self.admin_remote.check_call(cmd)
 
         logger.info("Removing previously installed fuel-octane")
-        run_on_remote(self.admin_remote, "yum remove -y fuel-octane",
-                      raise_on_assert=False)
-        run_on_remote(
-            self.admin_remote,
+        self.admin_remote.check_call(
+            "yum remove -y fuel-octane", raise_on_assert=False)
+        self.admin_remote.check_call(
             "rm -rf /usr/lib/python2.*/site-packages/octane",
             raise_on_assert=False)
         logger.info("Installing fuel-octane")
-        run_on_remote(self.admin_remote, "yum install -y fuel-octane")
+        self.admin_remote.check_call("yum install -y fuel-octane")
 
-        octane_log = ''.join(run_on_remote(
-            self.admin_remote,
-            "rpm -q --changelog fuel-octane"))
+        octane_log = self.admin_remote.check_call(
+            "rpm -q --changelog fuel-octane").stdout_str
         logger.info("Octane changes:")
         logger.info(octane_log)
 
@@ -181,8 +193,7 @@ class DataDrivenUpgradeBase(TestBasic):
                 "/tmp/octane_patcher.sh")
             # pylint: enable=no-member
 
-            run_on_remote(
-                self.admin_remote,
+            self.admin_remote.check_call(
                 "bash /tmp/octane_patcher.sh {}".format(
                     settings.OCTANE_PATCHES))
 
@@ -236,7 +247,7 @@ class DataDrivenUpgradeBase(TestBasic):
         self.install_octane()
 
         cmd = "mkdir -p {}".format(self.remote_dir_for_backups)
-        run_on_remote(self.admin_remote, cmd)
+        self.admin_remote.check_call(cmd)
 
         self.octane_action("backup", backup_path)
         logger.info("Downloading {}".format(backup_path))
@@ -264,7 +275,7 @@ class DataDrivenUpgradeBase(TestBasic):
         self.install_octane()
 
         cmd = "mkdir -p {}".format(self.remote_dir_for_backups)
-        run_on_remote(self.admin_remote, cmd)
+        self.admin_remote.check_call(cmd)
 
         logger.info("Uploading {}".format(local_path))
         # pylint: disable=no-member
@@ -304,7 +315,7 @@ class DataDrivenUpgradeBase(TestBasic):
         logger.info("Applying fix for LP:1561092")
         for node in d_nodes:
             with self.fuel_web.get_ssh_for_node(node_name=node.name) as remote:
-                run_on_remote(remote, "service mcollective restart")
+                remote.check_call("service mcollective restart")
 
     def revert_backup(self):
         assert_not_equal(self.backup_snapshot_name, None,
@@ -462,7 +473,7 @@ class DataDrivenUpgradeBase(TestBasic):
         logger.info("Verify bootstrap on slave {0}".format(remote.host))
 
         cmd = 'cat /etc/*release'
-        output = run_on_remote_get_results(remote, cmd)['stdout_str'].lower()
+        output = remote.check_call(cmd).stdout_str.lower()
         assert_true(os_type in output,
                     "Slave {0} doesn't use {1} image for bootstrap "
                     "after {1} images were enabled, /etc/release "
