@@ -60,7 +60,7 @@ class UCATest(TestBasic):
         repos = [str.strip(line.split("|")[2]) for line in result]
         # Remove trailing spaces and backslash characters to avoid
         # false negatives.
-        origin.rstrip('/ ')
+        origin = origin.rstrip('/ ')
         assert_true(
             any([origin in repo for repo in repos]),
             "Package {!r}: repository {!r} not found in {!r}".format(
