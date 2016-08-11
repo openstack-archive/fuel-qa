@@ -17,6 +17,7 @@ from proboscis import test
 from paramiko import ChannelException
 
 from devops.helpers.helpers import wait
+from devops.helpers.ssh_client import SSHAuth
 from devops.error import TimeoutError
 
 from fuelweb_test.helpers import os_actions
@@ -175,11 +176,10 @@ class TestNeutronIPv6(TestBasic):
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
             def ssh_ready(vm_host):
                 try:
-                    os_conn.execute_through_host(
-                        ssh=remote,
-                        vm_host=vm_host,
+                    remote.execute_through_host(
+                        hostname=vm_host,
                         cmd="ls -la",
-                        creds=("cirros", "cubswin:)")
+                        auth=SSHAuth("cirros", "cubswin:)")
                     )
                     return True
                 except ChannelException:
@@ -198,9 +198,8 @@ class TestNeutronIPv6(TestBasic):
                         'at timeout 120s'.format(
                             hostname=hostname, ip=vm_host))
 
-            res = os_conn.execute_through_host(
-                ssh=remote,
-                vm_host=floating_ip.ip,
+            res = remote.execute_through_host(
+                hostname=floating_ip.ip,
                 cmd="{ping:s} -q "
                     "-c{count:d} "
                     "-w{deadline:d} "
@@ -211,9 +210,9 @@ class TestNeutronIPv6(TestBasic):
                         deadline=20,
                         packetsize=1452,
                         dst_address=instance2_ipv6),
-                creds=("cirros", "cubswin:)")
+                auth=SSHAuth("cirros", "cubswin:)")
             )
-            logger.info('Ping results: \n\t{res:s}'.format(res=res['stdout']))
+            logger.info('Ping results: \n\t{res:s}'.format(res=res.stdout_str))
 
             assert_equal(
                 res['exit_code'],
@@ -222,8 +221,8 @@ class TestNeutronIPv6(TestBasic):
                 '\tSTDOUT: {stdout:s}\n'
                 '\tSTDERR: {stderr:s}'.format(
                     code=res['exit_code'],
-                    stdout=res['stdout'],
-                    stderr=res['stderr'],
+                    stdout=res.stdout_str,
+                    stderr=res.stderr_str,
                 ))
 
         self.env.make_snapshot('deploy_neutron_ip_v6')
