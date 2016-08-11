@@ -66,7 +66,6 @@ from fuelweb_test.helpers.uca import change_cluster_uca_config
 from fuelweb_test.helpers.utils import get_node_hiera_roles
 from fuelweb_test.helpers.utils import node_freemem
 from fuelweb_test.helpers.utils import pretty_log
-from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.models.nailgun_client import NailgunClient
 import fuelweb_test.settings as help_data
 from fuelweb_test.settings import ATTEMPTS
@@ -2405,16 +2404,19 @@ class FuelWebClient29(object):
         # FIXME(kozhukalov): This approach is outdated
         # due to getting rid of docker containers.
         logger.info("Backup of the master node is started.")
-        run_on_remote(remote, "echo CALC_MY_MD5SUM > /etc/fuel/data",
-                      err_msg='command calc_my_mdsum failed')
-        run_on_remote(remote, "iptables-save > /etc/fuel/iptables-backup",
-                      err_msg='can not save iptables in iptables-backup')
-        run_on_remote(remote,
-                      "md5sum /etc/fuel/data | cut -d' ' -f1 > /etc/fuel/sum",
-                      err_msg='failed to create sum file')
-        run_on_remote(remote, 'dockerctl backup')
-        run_on_remote(remote, 'rm -f /etc/fuel/data',
-                      err_msg='Can not remove /etc/fuel/data')
+        remote.check_call(
+            "echo CALC_MY_MD5SUM > /etc/fuel/data",
+            error_info='command calc_my_mdsum failed')
+        remote.check_call(
+            "iptables-save > /etc/fuel/iptables-backup",
+            error_info='can not save iptables in iptables-backup')
+        remote.check_call(
+            "md5sum /etc/fuel/data | cut -d' ' -f1 > /etc/fuel/sum",
+            error_info='failed to create sum file')
+        remote.check_call('dockerctl backup')
+        remote.check_call(
+            'rm -f /etc/fuel/data',
+            error_info='Can not remove /etc/fuel/data')
         logger.info("Backup of the master node is complete.")
 
     @logwrap

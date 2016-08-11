@@ -18,9 +18,9 @@ import time
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
-from devops.error import TimeoutError
 from devops.helpers.helpers import wait
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves import urllib
 # pylint: enable=import-error
 
@@ -108,25 +108,23 @@ class CommandLine(TestBasic):
         logger.info('Wait {timeout} seconds for task: {task}'
                     .format(timeout=timeout, task=task))
         start = time.time()
-        try:
-            wait(
-                lambda: (self.get_task(task['id'])['status'] not in
-                         ('pending', 'running')),
-                interval=interval,
-                timeout=timeout
-            )
-        except TimeoutError:
-            raise TimeoutError(
-                "Waiting timeout {timeout} sec was reached for task: {task}"
-                .format(task=task["name"], timeout=timeout))
+        wait(
+            lambda: (self.get_task(task['id'])['status'] not in
+                     ('pending', 'running')),
+            interval=interval,
+            timeout=timeout,
+            timeout_msg='Waiting timeout {timeout} sec was reached '
+                        'for task: {task}'.format(task=task["name"],
+                                                  timeout=timeout)
+        )
         took = time.time() - start
         task = self.get_task(task['id'])
         logger.info('Task finished in {took} seconds with the result: {task}'
                     .format(took=took, task=task))
         assert_equal(
             task['status'], 'ready',
-            "Task '{name}' has incorrect status. {} != {}".format(
-                task['status'], 'ready', name=task["name"]
+            "Task '{name}' has incorrect status. {status} != {exp}".format(
+                status=task['status'], exp='ready', name=task["name"]
             )
         )
 
@@ -355,10 +353,12 @@ class CommandLine(TestBasic):
 
     @logwrap
     def get_current_ssl_keypair(self, controller_ip):
-        cmd = "cat /var/lib/astute/haproxy/public_haproxy.pem"
-        current_ssl_keypair = self.ssh_manager.execute_on_remote(
-            ip=controller_ip,
-            cmd=cmd)['stdout_str']
+        path = "/var/lib/astute/haproxy/public_haproxy.pem"
+        with self.ssh_manager.open_on_remote(
+                ip=controller_ip,
+                path=path
+        ) as f:
+            current_ssl_keypair = f.read().strip()
         return current_ssl_keypair
 
     @logwrap
