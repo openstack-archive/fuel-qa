@@ -66,28 +66,3 @@ class UpgradePrepare(DataDrivenUpgradeBase):
         Snapshot: upgrade_smoke_backup
         """
         super(self.__class__, self).prepare_upgrade_smoke()
-
-    @test(groups=['upgrade_ceph_ha_backup'],
-          depends_on=[SetupEnvironment.prepare_release])
-    @log_snapshot_after_test
-    def upgrade_ceph_ha_backup(self):
-        """Prepare HA, ceph for all cluster using previous version of Fuel.
-        Nailgun password should be changed via KEYSTONE_PASSWORD env variable
-
-        Scenario:
-        1. Create cluster with NeutronVLAN and ceph for all (replica factor 3)
-        2. Add 3 node with controller role
-        3. Add 2 node with compute role
-        4. Add 3 node with ceph osd role
-        5. Verify networks
-        6. Deploy cluster
-        7. Run OSTF
-        8. Install fuel-octane package
-        9. Create backup file using 'octane fuel-backup'
-        10. Download the backup to the host
-
-        Duration: TODO
-        Snapshot: upgrade_ceph_ha_backup
-        """
-
-        super(self.__class__, self).prepare_upgrade_ceph_ha()
