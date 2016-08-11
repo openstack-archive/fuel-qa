@@ -476,6 +476,10 @@ class TestOSupgrade(DataDrivenUpgradeBase):
                 " ".join([str(node["id"]) for node in old_nodes])),
             err_msg="octane upgrade-node failed")
 
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd="octane cleanup {0}".format(seed_cluster_id))
+
         self.show_step(5)
         self.fuel_web.verify_network(seed_cluster_id)
 
@@ -523,6 +527,10 @@ class TestOSupgrade(DataDrivenUpgradeBase):
                 ip=self.ssh_manager.admin_ip,
                 cmd="octane upgrade-node {0} {1!s}".format(
                     seed_cluster_id, node['id']))
+
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd="octane cleanup {0}".format(seed_cluster_id))
 
         self.show_step(5)
         self.fuel_web.verify_network(seed_cluster_id)
