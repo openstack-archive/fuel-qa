@@ -353,10 +353,12 @@ class CommandLine(TestBasic):
 
     @logwrap
     def get_current_ssl_keypair(self, controller_ip):
-        cmd = "cat /var/lib/astute/haproxy/public_haproxy.pem"
-        current_ssl_keypair = self.ssh_manager.execute_on_remote(
-            ip=controller_ip,
-            cmd=cmd)['stdout_str']
+        path = "/var/lib/astute/haproxy/public_haproxy.pem"
+        with self.ssh_manager.open_on_remote(
+                ip=controller_ip,
+                path=path
+        ) as f:
+            current_ssl_keypair = f.read().strip()
         return current_ssl_keypair
 
     @logwrap

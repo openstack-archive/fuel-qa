@@ -267,10 +267,12 @@ class CommandLineTest(test_cli_base.CommandLine):
         with open(PATH_TO_PEM) as pem_file:
             old_ssl_keypair = pem_file.read().strip()
             current_ssl_keypair = self.get_current_ssl_keypair(controller_node)
-            logger.info(("SSL keypair before cluster deploy {0} \
-                              and after deploy {1}".format(old_ssl_keypair,
-                                                           current_ssl_keypair)
-                         ))
+            logger.info(
+                "SSL keypair before cluster deploy:\n"
+                "{0}\n"
+                "and after deploy:\n"
+                "{1}".format(old_ssl_keypair, current_ssl_keypair)
+            )
             assert_equal(old_ssl_keypair, current_ssl_keypair,
                          message="SSL keypairs are not equal")
         self.show_step(16)

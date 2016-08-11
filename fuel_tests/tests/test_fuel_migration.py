@@ -16,7 +16,7 @@ import pytest
 
 from devops.helpers.helpers import get_admin_remote
 from devops.helpers.helpers import icmp_ping
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 
 from fuelweb_test import logger
@@ -193,8 +193,8 @@ class TestFuelMasterMigrate(object):
 
         fuel_web = self.manager.fuel_web
 
-        _wait(fuel_web.get_nailgun_version,
-              timeout=60 * 20)
+        wait_pass(fuel_web.get_nailgun_version,
+                  timeout=60 * 20)
 
     def compute_hard_restart(self):
         """Hard restart compute with Fuel Master node"""

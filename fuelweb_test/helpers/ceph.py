@@ -16,7 +16,6 @@ from proboscis.asserts import assert_equal
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.utils import check_distribution
-from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test.settings import DNS_SUFFIX
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_CENTOS
@@ -34,9 +33,9 @@ def start_monitor(remote):
     logger.debug("Starting Ceph monitor on {0}".format(remote.host))
     check_distribution()
     if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
-        run_on_remote(remote, 'start ceph-mon-all')
+        remote.check_call('start ceph-mon-all')
     if OPENSTACK_RELEASE_CENTOS in OPENSTACK_RELEASE:
-        run_on_remote(remote, '/etc/init.d/ceph start')
+        remote.check_call('/etc/init.d/ceph start')
 
 
 def stop_monitor(remote):
@@ -49,9 +48,9 @@ def stop_monitor(remote):
     logger.debug("Stopping Ceph monitor on {0}".format(remote.host))
     check_distribution()
     if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
-        run_on_remote(remote, 'stop ceph-mon-all')
+        remote.check_call('stop ceph-mon-all')
     if OPENSTACK_RELEASE_CENTOS in OPENSTACK_RELEASE:
-        run_on_remote(remote, '/etc/init.d/ceph stop')
+        remote.check_call('/etc/init.d/ceph stop')
 
 
 def restart_monitor(remote):
@@ -68,7 +67,7 @@ def restart_monitor(remote):
 def get_health(remote):
     logger.debug("Checking Ceph cluster health on {0}".format(remote.host))
     cmd = 'ceph health -f json'
-    return run_on_remote(remote, cmd, jsonify=True)
+    return remote.check_call(cmd).stdout_json
 
 
 def get_monitor_node_fqdns(remote):
@@ -78,7 +77,7 @@ def get_monitor_node_fqdns(remote):
     :return: list of FQDNs
     """
     cmd = 'ceph mon_status -f json'
-    result = run_on_remote(remote, cmd, jsonify=True)
+    result = remote.check_call(cmd).stdout_json
     fqdns = [i['name'] + DNS_SUFFIX for i in result['monmap']['mons']]
     msg = "Ceph monitor service is running on {0}".format(', '.join(fqdns))
     logger.debug(msg)
@@ -242,7 +241,7 @@ def get_osd_tree(remote):
     """
     logger.debug("Fetching Ceph OSD tree")
     cmd = 'ceph osd tree -f json'
-    return run_on_remote(remote, cmd, jsonify=True)
+    return remote.check_call(cmd).stdout_json
 
 
 def get_osd_ids(remote):
@@ -253,7 +252,7 @@ def get_osd_ids(remote):
     """
     logger.debug("Fetching Ceph OSD ids")
     cmd = 'ceph osd ls -f json'
-    return run_on_remote(remote, cmd, jsonify=True)
+    return remote.check_call(cmd).stdout_json
 
 
 def get_rbd_images_list(remote, pool):
@@ -264,7 +263,7 @@ def get_rbd_images_list(remote, pool):
     :return: JSON-like object
     """
     cmd = 'rbd --pool {pool} --format json ls -l'.format(pool=pool)
-    return run_on_remote(remote, cmd, jsonify=True)
+    return remote.check_call(cmd).stdout_json
 
 
 def get_version(remote):
@@ -274,4 +273,4 @@ def get_version(remote):
     :return: str
     """
     cmd = 'ceph --version'
-    return run_on_remote(remote, cmd)[0].split(' ')[2]
+    return remote.check_call(cmd).stdout[0].split(' ')[2]
