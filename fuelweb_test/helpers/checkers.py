@@ -160,14 +160,15 @@ def verify_network_list_api(os_conn, net_count=None):
 def check_ceph_image_size(ip, expected_size, device='vdc'):
     ret = ssh_manager.check_call(
         ip=ip,
-        cmd="df -m /dev/{device}* | grep ceph | awk"
-            " {size}".format(device=device,
-                             size=re.escape('{print $2}'))
-    )['stdout']
+        command="df -m /dev/{device}* | grep ceph | awk"
+                " {size}".format(device=device,
+                                 size=re.escape('{print $2}'))
+    ).stdout
 
     if not ret:
-        logger.error("Partition not present! {}: ".format(
-                     ssh_manager.check_call(ip=ip, cmd="df -m")))
+        logger.error(
+            "Partition not present! {}: ".format(
+                ssh_manager.check_call(ip=ip, command="df -m").stdout_str))
         raise Exception()
     logger.debug("Partitions: {part}".format(part=ret))
     assert_true(abs(float(ret[0].rstrip()) / expected_size - 1) < 0.1,
@@ -242,7 +243,7 @@ def enable_feature_group(env, group):
     # update nailgun configs via puppet from that value
     ssh_manager.check_call(
         ip=ssh_manager.admin_ip,
-        cmd='puppet apply /etc/puppet/modules/fuel/examples/nailgun.pp'
+        command='puppet apply /etc/puppet/modules/fuel/examples/nailgun.pp'
     )
 
     def check_api_group_enabled():
@@ -1380,20 +1381,20 @@ def check_free_space_admin(env, min_disk_admin=50, disk_id=0):
     admin_ip = env.ssh_manager.admin_ip
     var_free_space = ssh_manager.check_call(
         ip=admin_ip,
-        cmd="df -h /var")['stdout'][1].split()[3][:-1]
+        command="df -h /var")['stdout'][1].split()[3][:-1]
     system_dirs = ['/boot/efi', '/boot$', 'docker-docker--pool', 'SWAP',
                    'os-root']
     system_dirs_size = 0
     for sys_dir in system_dirs:
         system_dir = ssh_manager.check_call(
             ip=admin_ip,
-            cmd="lsblk -b | grep -we  {0}  | tail -1".format(
+            command="lsblk -b | grep -we  {0}  | tail -1".format(
                 sys_dir))['stdout'][0]
         system_dir = int(re.findall(r"\D(\d{9,12})\D", system_dir)[0])
         system_dirs_size += system_dir
     system_files_var = int(ssh_manager.check_call(
         ip=admin_ip,
-        cmd="df -B1 /var")['stdout'][1].split()[2])
+        command="df -B1 /var")['stdout'][1].split()[2])
     init_size = (min_disk_admin - system_dirs_size)
     min_var_free_space = (init_size * 0.4 - system_files_var) / 1024 ** 3
     if var_free_space < min_var_free_space:
@@ -1402,11 +1403,11 @@ def check_free_space_admin(env, min_disk_admin=50, disk_id=0):
                 min_var_free_space, var_free_space))
     system_files_log = int(ssh_manager.check_call(
         ip=admin_ip,
-        cmd="df -B1 /var/log")['stdout'][1].split()[2])
+        command="df -B1 /var/log")['stdout'][1].split()[2])
     min_log_free_space = (init_size * 0.6 - system_files_log) / 1024 ** 3
     log_free_space = ssh_manager.check_call(
         ip=admin_ip,
-        cmd="df -h /var/log")['stdout'][1].split()[3][:-1]
+        command="df -h /var/log")['stdout'][1].split()[3][:-1]
     if log_free_space < min_log_free_space:
         raise ValueError(
             "The minimal /var/log size should be {0}, current {1}".format(
@@ -1445,7 +1446,7 @@ def check_free_space_slave(env, min_disk_slave=150):
         for ip in compute_ip:
             vm_storage_free_space = ssh_manager.check_call(
                 ip=ip,
-                cmd="df -h /var/lib/nova")['stdout'][1].split()[3][:-1]
+                command="df -h /var/lib/nova")['stdout'][1].split()[3][:-1]
             if vm_storage_free_space < 4 * small_flavor_disk:
                 raise ValueError(
                     "The minimal vm-nova storage size should be {0}, "
