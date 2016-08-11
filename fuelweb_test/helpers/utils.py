@@ -607,12 +607,13 @@ def get_net_settings(remote, skip_interfaces=None):
                        '/sys/class/net/{0}/bonding/slaves')
     bridge_slaves_cmd = 'ls -1 /sys/class/net/{0}/brif/'
 
-    node_interfaces = [l.strip() for l in run_on_remote(remote, interface_cmd)
-                       if not any(re.search(regex, l.strip()) for regex
-                                  in skip_interfaces)]
-    node_vlans = [l.strip() for l in run_on_remote(remote, vlan_cmd)]
-    node_bonds = [l.strip() for l in run_on_remote(remote, bond_cmd)]
-    node_bridges = [l.strip() for l in run_on_remote(remote, bridge_cmd)]
+    node_interfaces = [
+        l.strip() for l in remote.check_call(interface_cmd).stdout
+        if not any(re.search(regex, l.strip())
+                   for regex in skip_interfaces)]
+    node_vlans = [l.strip() for l in remote.check_call(vlan_cmd).stdout]
+    node_bonds = [l.strip() for l in remote.check_call(bond_cmd).stdout]
+    node_bridges = [l.strip() for l in remote.check_call(bridge_cmd).stdout]
 
     for interface in node_interfaces:
         bond_mode = None
@@ -624,16 +625,16 @@ def get_net_settings(remote, skip_interfaces=None):
             if_type = 'bond'
             bond_mode = ''.join(
                 [l.strip() for l in
-                 run_on_remote(remote, bond_mode_cmd.format(interface))])
+                 remote.check_call(bond_mode_cmd.format(interface)).stdout])
             bond_slaves = set(
                 [l.strip() for l in
-                 run_on_remote(remote, bond_slaves_cmd.format(interface))]
+                 remote.check_call(bond_slaves_cmd.format(interface)).stdout]
             )
         elif interface in node_bridges:
             if_type = 'bridge'
             bridge_slaves = set(
                 [l.strip() for l in
-                 run_on_remote(remote, bridge_slaves_cmd.format(interface))
+                 remote.check_call(bridge_slaves_cmd.format(interface)).stdout
                  if not any(re.search(regex, l.strip())
                             for regex in skip_interfaces)]
             )
@@ -641,7 +642,7 @@ def get_net_settings(remote, skip_interfaces=None):
             if_type = 'common'
         if_ips = set(
             [l.strip()
-             for l in run_on_remote(remote, ip_cmd.format(interface))]
+             for l in remote.check_call(ip_cmd.format(interface)).stdout]
         )
 
         net_settings[interface] = {
@@ -658,8 +659,8 @@ def get_net_settings(remote, skip_interfaces=None):
 def get_ip_listen_stats(remote, proto='tcp'):
     # If bindv6only is disabled, then IPv6 sockets listen on IPv4 too
     check_v6_bind_cmd = 'cat /proc/sys/net/ipv6/bindv6only'
-    bindv6only = ''.join([l.strip()
-                          for l in run_on_remote(remote, check_v6_bind_cmd)])
+    bindv6only = ''.join(
+        [l.strip() for l in remote.check_call(check_v6_bind_cmd).stdout])
     check_v6 = bindv6only == '0'
     if check_v6:
         cmd = ("awk '$4 == \"0A\" {{gsub(\"00000000000000000000000000000000\","
@@ -667,7 +668,7 @@ def get_ip_listen_stats(remote, proto='tcp'):
                "/proc/net/{0} /proc/net/{0}6").format(proto)
     else:
         cmd = "awk '$4 == \"0A\" {{print $2}}' /proc/net/{0}".format(proto)
-    return [l.strip() for l in run_on_remote(remote, cmd)]
+    return [l.strip() for l in remote.check_call(cmd).stdout]
 
 
 @logwrap
@@ -684,8 +685,8 @@ def node_freemem(remote, unit='MB'):
     denominator = denominators.get(unit, denominators['MB'])
     cmd_mem_free = 'free -k | grep Mem:'
     cmd_swap_free = 'free -k | grep Swap:'
-    mem_free = run_on_remote(remote, cmd_mem_free)[0]
-    swap_free = run_on_remote(remote, cmd_swap_free)[0]
+    mem_free = remote.check_call(cmd_mem_free).stdout[0]
+    swap_free = remote.check_call(cmd_swap_free).stdout[0]
     ret = {
         "mem": {
             "total": int(mem_free.split()[1]) // denominator,
@@ -742,7 +743,7 @@ def get_node_hiera_roles(remote):
         :rtype: dict host plus role
     """
     cmd = 'hiera roles'
-    roles = ''.join(run_on_remote(remote, cmd)).strip()
+    roles = remote.check_call(cmd).stdout_str
     # Content string with roles like a ["ceph-osd", "controller"] to list
     return [role.strip('" ') for role in roles.strip("[]").split(',')]
 
@@ -1019,7 +1020,7 @@ def erase_data_from_hdd(remote,
     commands.append("sync")
 
     for cmd in commands:
-        run_on_remote(remote, cmd)
+        remote.check_call(cmd)
 
 
 @logwrap
@@ -1168,7 +1169,7 @@ def dict_merge(a, b):
     if not isinstance(b, dict):
         return copy.deepcopy(b)
     result = copy.deepcopy(a)
-    for k, v in b.iteritems():
+    for k, v in b.items():
         if k in result and isinstance(result[k], dict):
             result[k] = dict_merge(result[k], v)
         else:
