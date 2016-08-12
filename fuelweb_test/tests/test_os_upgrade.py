@@ -450,8 +450,8 @@ class TestOSupgrade(DataDrivenUpgradeBase):
             3. Collect nodes for upgrade
             4. Run octane upgrade-node --no-live-migration $SEED_ID <ID>
             5. Run network verification on target cluster
-            6. Run OSTF check
-            7. Drop orig cluster
+            6. Run minimal OSTF sanity check
+            7. Create snapshot
         """
         self.check_release_requirements()
 
@@ -476,14 +476,8 @@ class TestOSupgrade(DataDrivenUpgradeBase):
                 " ".join([str(node["id"]) for node in old_nodes])),
             err_msg="octane upgrade-node failed")
 
-        self.show_step(5)
-        self.fuel_web.verify_network(seed_cluster_id)
-
-        self.show_step(6)
-        self.fuel_web.run_ostf(seed_cluster_id)
-
-        self.show_step(7)
-        self.fuel_web.delete_env_wait(self.orig_cluster_id)
+        self.minimal_check(seed_cluster_id=seed_cluster_id, nwk_check=True)
+        self.env.make_snapshot("upgrade_old_nodes", is_make=True)
 
     @test(depends_on=[upgrade_ceph_osd],
           groups=["upgrade_nodes_live_migration",
@@ -498,8 +492,8 @@ class TestOSupgrade(DataDrivenUpgradeBase):
             3. Collect nodes for upgrade
             4. Upgrade each node using octane upgrade-node $SEED_ID <ID>
             5. Run network verification on target cluster
-            6. Run OSTF check
-            7. Drop orig cluster
+            6. Run minimal OSTF sanity check
+            7. Create snapshot
         """
 
         self.check_release_requirements()
@@ -524,6 +518,19 @@ class TestOSupgrade(DataDrivenUpgradeBase):
                 cmd="octane upgrade-node {0} {1!s}".format(
                     seed_cluster_id, node['id']))
 
+        self.minimal_check(seed_cluster_id=seed_cluster_id, nwk_check=True)
+        self.env.make_snapshot("upgrade_nodes_live_migration", is_make=True)
+
+    def _cleanup_action(self):
+        seed_cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.install_octane()
+
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd="octane cleanup {0}".format(seed_cluster_id),
+            err_msg="octane cleanup cmd failed")
+
         self.show_step(5)
         self.fuel_web.verify_network(seed_cluster_id)
 
@@ -532,3 +539,43 @@ class TestOSupgrade(DataDrivenUpgradeBase):
 
         self.show_step(7)
         self.fuel_web.delete_env_wait(self.orig_cluster_id)
+
+    @test(depends_on=[upgrade_nodes_live_migration], groups=["cleanup_live"])
+    @log_snapshot_after_test
+    def octane_cleanup_after_upgrade_live_migration(self):
+        """Cleanup
+
+        Scenario:
+            1. Revert snapshot upgrade_ceph_osd
+            2. Select upgraded cluster
+            3. Cleanup uprgaded env
+            4. Run network verification on target cluster
+            5. Run OSTF check
+            6. Drop orig cluster
+        """
+
+        self.check_release_requirements()
+
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot("upgrade_nodes_live_migration")
+        self._cleanup_action()
+
+    @test(depends_on=[upgrade_old_nodes], groups=["cleanup_no_live"])
+    @log_snapshot_after_test
+    def octane_cleanup_after_upgrade(self):
+        """Cleanup
+
+        Scenario:
+            1. Revert snapshot upgrade_ceph_osd
+            2. Select upgraded cluster
+            3. Cleanup uprgaded env
+            4. Run network verification on target cluster
+            5. Run OSTF check
+            6. Drop orig cluster
+        """
+
+        self.check_release_requirements()
+
+        self.show_step(1, initialize=True)
+        self.env.revert_snapshot("upgrade_old_nodes")
+        self._cleanup_action()
