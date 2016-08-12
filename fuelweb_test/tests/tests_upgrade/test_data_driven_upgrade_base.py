@@ -13,8 +13,6 @@ from proboscis.asserts import assert_not_equal
 
 from fuelweb_test import logger
 from fuelweb_test import settings
-from fuelweb_test.helpers.utils import run_on_remote
-from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
@@ -50,7 +48,6 @@ class DataDrivenUpgradeBase(TestBasic):
         if hasattr(self.env, "reinstall_master_node"):
             self.reinstall_master_node = self.env.reinstall_master_node
         # pylint: enable=no-member
-        self.__admin_remote = None
 
     @property
     def backup_path(self):
@@ -76,20 +73,11 @@ class DataDrivenUpgradeBase(TestBasic):
 
     @property
     def admin_remote(self):
-        try:
-            self.__admin_remote.execute("ls")
-        # I'm not sure which exception will be raised by paramiko
-        except Exception as e:
-            logger.debug(
-                "Got exception in admin_remote: {!r}\n Reconnecting".format(e)
-            )
-            self.__admin_remote = self.env.d_env.get_admin_remote()
-        return self.__admin_remote
+        return self.env.d_env.get_admin_remote()
 
     @admin_remote.deleter
     def admin_remote(self):
-        if self.__admin_remote:
-            self.__admin_remote.clear()
+        self.env.d_env.get_admin_remote().close()
 
     # pylint: disable=no-member
 
@@ -152,21 +140,24 @@ class DataDrivenUpgradeBase(TestBasic):
                        settings.FUEL_PROPOSED_REPO_URL,
                        conf_file)
 
-            run_on_remote(self.admin_remote, cmd)
+            # pylint: disable=no-member
+            self.admin_remote.check_call(cmd)
+            # pylint: enable=no-member
 
         logger.info("Removing previously installed fuel-octane")
-        run_on_remote(self.admin_remote, "yum remove -y fuel-octane",
-                      raise_on_assert=False)
-        run_on_remote(
-            self.admin_remote,
+        # pylint: disable=no-member
+        self.admin_remote.check_call(
+            "yum remove -y fuel-octane",
+            raise_on_er=False)
+        self.admin_remote.check_call(
             "rm -rf /usr/lib/python2.*/site-packages/octane",
-            raise_on_assert=False)
+            raise_on_er=False)
         logger.info("Installing fuel-octane")
-        run_on_remote(self.admin_remote, "yum install -y fuel-octane")
+        self.admin_remote.check_call("yum install -y fuel-octane")
 
-        octane_log = ''.join(run_on_remote(
-            self.admin_remote,
-            "rpm -q --changelog fuel-octane"))
+        octane_log = self.admin_remote.check_call(
+            "rpm -q --changelog fuel-octane").stdout_str
+        # pylint: enable=no-member
         logger.info("Octane changes:")
         logger.info(octane_log)
 
@@ -179,12 +170,11 @@ class DataDrivenUpgradeBase(TestBasic):
                     os.path.abspath(os.path.dirname(__file__)),
                     "octane_patcher.sh"),
                 "/tmp/octane_patcher.sh")
-            # pylint: enable=no-member
 
-            run_on_remote(
-                self.admin_remote,
+            self.admin_remote.check_call(
                 "bash /tmp/octane_patcher.sh {}".format(
                     settings.OCTANE_PATCHES))
+            # pylint: enable=no-member
 
         if settings.FUEL_PROPOSED_REPO_URL:
             # pylint: disable=no-member
@@ -236,11 +226,12 @@ class DataDrivenUpgradeBase(TestBasic):
         self.install_octane()
 
         cmd = "mkdir -p {}".format(self.remote_dir_for_backups)
-        run_on_remote(self.admin_remote, cmd)
+        # pylint: disable=no-member
+        self.admin_remote.check_call(cmd)
 
         self.octane_action("backup", backup_path)
         logger.info("Downloading {}".format(backup_path))
-        # pylint: disable=no-member
+
         self.admin_remote.download(backup_path, local_path)
         # pylint: enable=no-member
         assert_true(os.path.exists(local_path))
@@ -264,10 +255,11 @@ class DataDrivenUpgradeBase(TestBasic):
         self.install_octane()
 
         cmd = "mkdir -p {}".format(self.remote_dir_for_backups)
-        run_on_remote(self.admin_remote, cmd)
+        # pylint: disable=no-member
+        self.admin_remote.check_call(cmd)
 
         logger.info("Uploading {}".format(local_path))
-        # pylint: disable=no-member
+
         self.admin_remote.upload(local_path, backup_path)
         # pylint: enable=no-member
         logger.info("Applying backup from {}".format(backup_path))
@@ -304,7 +296,7 @@ class DataDrivenUpgradeBase(TestBasic):
         logger.info("Applying fix for LP:1561092")
         for node in d_nodes:
             with self.fuel_web.get_ssh_for_node(node_name=node.name) as remote:
-                run_on_remote(remote, "service mcollective restart")
+                remote.check_call("service mcollective restart")
 
     def revert_backup(self):
         assert_not_equal(self.backup_snapshot_name, None,
@@ -462,7 +454,7 @@ class DataDrivenUpgradeBase(TestBasic):
         logger.info("Verify bootstrap on slave {0}".format(remote.host))
 
         cmd = 'cat /etc/*release'
-        output = run_on_remote_get_results(remote, cmd)['stdout_str'].lower()
+        output = remote.check_call(cmd).stdout_str.lower()
         assert_true(os_type in output,
                     "Slave {0} doesn't use {1} image for bootstrap "
                     "after {1} images were enabled, /etc/release "
