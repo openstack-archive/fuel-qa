@@ -662,6 +662,10 @@ class EnvironmentModel(object):
 
         logger.info('{0} package(s) were updated'.format(updates_count))
 
+        logger.warning(
+            "'bootstrap_admin_node.sh' is used for applying 9.x release."
+            "It should be replaced with proper procedure when it will be "
+            "merged - https://review.openstack.org/#/c/346119/ ")
         # this is temporary solution for disabling 50min timeout;
         # should be removed when the main script for 9.0->9.x will be merged
         self.ssh_manager.execute_on_remote(
@@ -669,7 +673,17 @@ class EnvironmentModel(object):
             cmd='sed -i '
                 '"s/wait_for_external_config=yes/wait_for_external_config=no/"'
                 ' /etc/fuel/bootstrap_admin_node.conf')
-        # end of temporary solution
+        # devops is creating ssh connection without associated tty
+        # which leads to broken fuelmenu. we do not need to call fuelmenu
+        # while applying 9.x so turn it off
+        # this is only addition to fix for fuel-devops for unlocking usb thread
+        # without devops bump
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='sed -i '
+                '"s/showmenu=yes/showmenu=no/"'
+                ' /etc/fuel/bootstrap_admin_node.conf')
+        # end of temporary solutions
 
         cmd = 'bootstrap_admin_node.sh;'
 
