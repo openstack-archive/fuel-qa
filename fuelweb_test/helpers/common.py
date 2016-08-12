@@ -46,12 +46,6 @@ from fuelweb_test.settings import PATH_TO_CERT
 from fuelweb_test.settings import VERIFY_SSL
 
 
-KeystoneSession._REDIRECT_STATUSES =\
-    KeystoneSession._REDIRECT_STATUSES + (308, )
-logger.info("Temprary solution for keystone session class, bug: #1610914."
-            "Status code 308 was added to the tuple redirects")
-
-
 class Common(object):
     """Common."""  # TODO documentation
 
