@@ -7,7 +7,6 @@ from proboscis.asserts import assert_true
 
 from fuelweb_test import settings, logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_base import \
     DataDrivenUpgradeBase
 
@@ -102,7 +101,9 @@ class UpgradeCustom(DataDrivenUpgradeBase):
         cmd = "cd {} && ".format(self.tarball_remote_dir)
         cmd += "tar -xpvf" if ext.endswith("tar") else "lrzuntar"
 
-        run_on_remote_get_results(self.admin_remote, cmd)
+        # pylint: disable=no-member
+        self.admin_remote.check_call(cmd)
+        # pylint: enable=no-member
         cmd = "sh {} --no-rollback --password {}".format(
             os.path.join(self.tarball_remote_dir, "upgrade.sh"),
             settings.KEYSTONE_CREDS['password'])
@@ -115,7 +116,9 @@ class UpgradeCustom(DataDrivenUpgradeBase):
 
         signal.signal(signal.SIGALRM, handler)
         signal.alarm(60 * 60)
-        run_on_remote_get_results(self.admin_remote, cmd)
+        # pylint: disable=no-member
+        self.admin_remote.check_call(cmd)
+        # pylint: enable=no-member
         signal.alarm(0)
 
         self.env.make_snapshot(self.restore_snapshot_name, is_make=True)
