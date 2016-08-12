@@ -784,4 +784,8 @@ Test for separate master node deployment
 Test for multipath devices
 --------------------------
 .. automodule:: fuelweb_test.tests.test_multipath_devices
+
+Test SR-IOV
+-----------
+.. automodule:: fuelweb_test.tests.test_sriov
    :members:
