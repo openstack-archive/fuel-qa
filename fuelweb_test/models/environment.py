@@ -678,7 +678,8 @@ class EnvironmentModel(object):
             ip=self.ssh_manager.admin_ip,
             cmd='sed -i '
                 '"s/wait_for_external_config=yes/wait_for_external_config=no/"'
-                ' /etc/fuel/bootstrap_admin_node.conf')
+                ' /etc/fuel/bootstrap_admin_node.conf',
+            raise_on_assert=False)
         # end of temporary solution
 
         cmd = 'bootstrap_admin_node.sh;'
