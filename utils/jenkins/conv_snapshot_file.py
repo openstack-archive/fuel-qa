@@ -122,9 +122,9 @@ def combine_deb_url(
         snapshot_id,
         mirror_host=MIRROR_HOST):
     return ("http://{mirror_host}/mos-repos/ubuntu/snapshots/"
-            "{snapshot_id}/x86_64".format(mirror_host=mirror_host,
-                                          version=VERSION,
-                                          snapshot_id=snapshot_id))
+            "{snapshot_id}".format(mirror_host=mirror_host,
+                                   version=VERSION,
+                                   snapshot_id=snapshot_id))
 
 
 def combine_rpm_url(
