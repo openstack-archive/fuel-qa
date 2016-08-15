@@ -227,7 +227,10 @@ class UnlockSettingsTabStates(TestBasic):
         self.show_step(4)
         self.provision_nodes()
         self.show_step(5)
-        self.deploy_selected_nodes(['1', '2'])
+        controller_id = \
+            self.fuel_web.get_nailgun_node_by_name("slave-01")['id']
+        compute_id = self.fuel_web.get_nailgun_node_by_name("slave-02")['id']
+        self.deploy_selected_nodes([str(controller_id), str(compute_id)])
         self.show_step(6)
         attrs = self.get_cluster_attributes()
         new_attrs = self.change_settings(attrs)
