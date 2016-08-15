@@ -1,13 +1,28 @@
+#    Copyright 2016 Mirantis, Inc.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
 from __future__ import unicode_literals
 
 import os
 from distutils.version import StrictVersion
 
 from devops.error import TimeoutError, DevopsCalledProcessError
-from proboscis.asserts import assert_true
-from proboscis.asserts import assert_false
+from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_false
 from proboscis.asserts import assert_not_equal
+from proboscis.asserts import assert_true
 
 from fuelweb_test import logger
 from fuelweb_test import settings
@@ -290,17 +305,25 @@ class DataDrivenUpgradeBase(TestBasic):
             with self.fuel_web.get_ssh_for_node(node_name=node.name) as remote:
                 remote.check_call("service mcollective restart")
 
+    def revert_source(self):
+        assert_is_not_none(self.source_snapshot_name,
+                           "'source_snapshot_name' variable is not defined!")
+        assert_true(
+            self.env.revert_snapshot(self.source_snapshot_name),
+            "The test can not use given environment - snapshot "
+            "{!r} does not exists".format(self.source_snapshot_name))
+
     def revert_backup(self):
-        assert_not_equal(self.backup_snapshot_name, None,
-                         "'backup_snapshot_name' variable is not defined!")
+        assert_is_not_none(self.source_snapshot_name,
+                           "'backup_snapshot_name' variable is not defined!")
         assert_true(
             self.env.revert_snapshot(self.backup_snapshot_name),
             "The test can not use given environment - snapshot "
             "{!r} does not exists".format(self.backup_snapshot_name))
 
     def revert_restore(self):
-        assert_not_equal(self.snapshot_name, None,
-                         "'snapshot_name' variable is not defined!")
+        assert_is_not_none(self.source_snapshot_name,
+                           "'snapshot_name' variable is not defined!")
         assert_true(
             self.env.revert_snapshot(self.snapshot_name),
             "The test can not use given environment - snapshot "
