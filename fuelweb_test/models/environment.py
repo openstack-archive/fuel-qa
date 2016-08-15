@@ -15,7 +15,6 @@
 import logging
 import re
 import time
-from warnings import warn
 
 from devops.helpers.helpers import tcp_ping_
 from devops.helpers.helpers import wait_pass
@@ -727,20 +726,6 @@ class EnvironmentModel(object):
                      'Executing "{0}" on the admin node has failed with: {1}'
                      .format(echo_cmd, echo_result['stderr']))
         return resolv_conf['stdout']
-
-    @staticmethod
-    @logwrap
-    def execute_remote_cmd(remote, cmd, exit_code=0):
-        warn(
-            'execute_remote_cmd(remote, cmd) is deprecated in favor of '
-            'SSHClient().check_call()',
-            DeprecationWarning
-        )
-        result = remote.execute(cmd)
-        assert_equal(result['exit_code'], exit_code,
-                     'Failed to execute "{0}" on remote host: {1}'.
-                     format(cmd, result))
-        return result['stdout']
 
     @logwrap
     def describe_other_admin_interfaces(self, admin):
