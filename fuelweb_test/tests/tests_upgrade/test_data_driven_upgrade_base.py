@@ -29,7 +29,7 @@ class DataDrivenUpgradeBase(TestBasic):
     def __init__(self):
         super(DataDrivenUpgradeBase, self).__init__()
         self.local_dir_for_backups = settings.LOGS_DIR
-        self.remote_dir_for_backups = "/root/upgrade/backup"
+        self.remote_dir_for_backups = "/var/upgrade/backup"
         self.cluster_creds = {
             'tenant': 'upgrade',
             'user': 'upgrade',
@@ -289,6 +289,14 @@ class DataDrivenUpgradeBase(TestBasic):
         for node in d_nodes:
             with self.fuel_web.get_ssh_for_node(node_name=node.name) as remote:
                 remote.check_call("service mcollective restart")
+
+    def revert_source(self):
+        assert_not_equal(self.source_snapshot_name, None,
+                         "'source_snapshot_name' variable is not defined!")
+        assert_true(
+            self.env.revert_snapshot(self.source_snapshot_name),
+            "The test can not use given environment - snapshot "
+            "{!r} does not exists".format(self.source_snapshot_name))
 
     def revert_backup(self):
         assert_not_equal(self.backup_snapshot_name, None,
