@@ -290,6 +290,14 @@ class DataDrivenUpgradeBase(TestBasic):
             with self.fuel_web.get_ssh_for_node(node_name=node.name) as remote:
                 remote.check_call("service mcollective restart")
 
+    def revert_source(self):
+        assert_not_equal(self.source_snapshot_name, None,
+                         "'source_snapshot_name' variable is not defined!")
+        assert_true(
+            self.env.revert_snapshot(self.source_snapshot_name),
+            "The test can not use given environment - snapshot "
+            "{!r} does not exists".format(self.source_snapshot_name))
+
     def revert_backup(self):
         assert_not_equal(self.backup_snapshot_name, None,
                          "'backup_snapshot_name' variable is not defined!")
