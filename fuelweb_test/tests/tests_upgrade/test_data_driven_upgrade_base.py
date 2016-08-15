@@ -144,10 +144,10 @@ class DataDrivenUpgradeBase(TestBasic):
         # pylint: disable=no-member
         self.admin_remote.check_call(
             "yum remove -y fuel-octane",
-            raise_on_er=False)
+            raise_on_err=False)
         self.admin_remote.check_call(
             "rm -rf /usr/lib/python2.*/site-packages/octane",
-            raise_on_er=False)
+            raise_on_err=False)
         logger.info("Installing fuel-octane")
         self.admin_remote.check_call("yum install -y fuel-octane")
 
