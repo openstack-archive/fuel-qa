@@ -712,20 +712,6 @@ class EnvironmentModel(object):
                      .format(echo_cmd, echo_result['stderr']))
         return resolv_conf['stdout']
 
-    @staticmethod
-    @logwrap
-    def execute_remote_cmd(remote, cmd, exit_code=0):
-        warn(
-            'execute_remote_cmd(remote, cmd) is deprecated in favor of '
-            'SSHClient().check_call()',
-            DeprecationWarning
-        )
-        result = remote.execute(cmd)
-        assert_equal(result['exit_code'], exit_code,
-                     'Failed to execute "{0}" on remote host: {1}'.
-                     format(cmd, result))
-        return result['stdout']
-
     @logwrap
     def describe_other_admin_interfaces(self, admin):
         admin_networks = [iface.network.name for iface in admin.interfaces]

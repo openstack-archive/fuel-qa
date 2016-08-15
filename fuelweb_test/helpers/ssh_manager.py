@@ -189,6 +189,12 @@ class SSHManager(object):
         :return: dict
         :raise: Exception
         """
+        warn(
+            'SSHManager().execute_on_remote is deprecated in favor of '
+            'SSHManager().check_call.\n'
+            'Please, do not use this method in any new tests. '
+            'Old code will be updated later.'
+        )
         if assert_ec_equal is None:
             assert_ec_equal = [0]
 
