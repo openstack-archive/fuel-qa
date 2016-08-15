@@ -82,7 +82,7 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
                 'objects_ceph': True,
                 'net_provider': 'neutron',
                 'net_segment_type':
-                    settings.NEUTRON_SEGMENT[settings.NEUTRON_SEGMENT_TYPE]}
+                    settings.NEUTRON_SEGMENT['vlan']}
             cluster_settings.update(self.cluster_creds)
 
             cluster_id = self.fuel_web.create_cluster(
