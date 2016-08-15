@@ -21,7 +21,6 @@ from proboscis import SkipTest
 
 from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers import os_actions
-from fuelweb_test.helpers.utils import run_on_remote
 from fuelweb_test import logger
 from fuelweb_test import logwrap
 from fuelweb_test import settings
@@ -85,13 +84,14 @@ class TestNeutronFailoverBase(base_test_case.TestBasic):
     def check_instance_connectivity(remote, dhcp_namespace, instance_ip,
                                     instance_keypair):
         cmd_check_ns = 'ip netns list'
-        namespaces = [l.strip() for l in run_on_remote(remote, cmd_check_ns)]
+        namespaces = [
+            l.strip() for l in remote.check_call(cmd_check_ns).stdout]
         logger.debug('Net namespaces on remote: {0}.'.format(namespaces))
         assert_true(dhcp_namespace in namespaces,
                     "Network namespace '{0}' doesn't exist on "
                     "remote slave!".format(dhcp_namespace))
         instance_key_path = '/root/.ssh/instancekey_rsa'
-        run_on_remote(remote, 'echo "{0}" > {1} && chmod 400 {1}'.format(
+        remote.check_call('echo "{0}" > {1} && chmod 400 {1}'.format(
             instance_keypair.private_key, instance_key_path))
 
         cmd = (". openrc; ip netns exec {0} ssh -i {1}"
