@@ -18,7 +18,6 @@ from proboscis import SkipTest
 from fuelweb_test import logger
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
-from fuelweb_test.helpers.utils import run_on_remote
 
 
 @test(groups=['fuel-mirror'])
@@ -55,8 +54,8 @@ class TestCreateMirror(TestBasic):
         self.env.revert_snapshot('empty')
         logger.info('Prepare environment for mirror checks.')
         with self.env.d_env.get_admin_remote() as remote:
-            run_on_remote(remote, 'docker pull ubuntu')
-            run_on_remote(remote, 'docker pull nginx')
+            remote.check_call('docker pull ubuntu')
+            remote.check_call('docker pull nginx')
         # TODO(akostrikov) add check that images are present.
         self.env.make_snapshot(snapshot_name, is_make=True)
 

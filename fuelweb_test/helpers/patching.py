@@ -358,7 +358,7 @@ def update_packages(environment, remote, packages, exclude_packages=None):
                 ' '.join(packages), ','.join(exclude_packages or []))
         ]
     for cmd in cmds:
-        environment.execute_remote_cmd(remote, cmd, exit_code=0)
+        remote.check_call(cmd)
 
 
 def update_packages_on_slaves(environment, slaves, packages=None,
@@ -589,7 +589,7 @@ def run_actions(environment, target, slaves, action_type='patch-scenario'):
                                                        tasks, timeout)
             continue
         for remote in remotes:
-            environment.execute_remote_cmd(remote, command)
+            remote.check_call(command)
         if devops_action == 'down':
             environment.fuel_web.warm_shutdown_nodes(devops_nodes)
         elif devops_action == 'up':

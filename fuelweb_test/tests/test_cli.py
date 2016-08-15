@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from devops.error import TimeoutError
 from devops.helpers.helpers import wait
 from proboscis import test
 from proboscis.asserts import assert_equal
@@ -78,12 +77,10 @@ class CommandLineMinimal(TestBasic):
                                                                   cluster_id)
         self.ssh_manager.execute_on_remote(admin_ip, cmd)
         cmd = 'fuel task | grep deployment | awk \'{print $9}\''
-        try:
-            wait(lambda: int(
-                self.ssh_manager.execute_on_remote(
-                    admin_ip, cmd)['stdout'][0].rstrip()) == 100, timeout=120)
-        except TimeoutError:
-            raise TimeoutError("hiera manifest was not applied")
+        wait(lambda: int(
+            self.ssh_manager.execute_on_remote(
+                admin_ip, cmd)['stdout'][0].rstrip()) == 100, timeout=120,
+             timeout_msg='hiera manifest was not applied')
         cmd = 'ssh -q node-{0} "hiera role"'.format(node_id)
         role = self.ssh_manager.execute_on_remote(
             admin_ip, cmd)['stdout'][0].rstrip()
@@ -270,10 +267,12 @@ class CommandLineTest(test_cli_base.CommandLine):
         with open(PATH_TO_PEM) as pem_file:
             old_ssl_keypair = pem_file.read().strip()
             current_ssl_keypair = self.get_current_ssl_keypair(controller_node)
-            logger.info(("SSL keypair before cluster deploy {0} \
-                              and after deploy {1}".format(old_ssl_keypair,
-                                                           current_ssl_keypair)
-                         ))
+            logger.info(
+                "SSL keypair before cluster deploy:\n"
+                "{0}\n"
+                "and after deploy:\n"
+                "{1}".format(old_ssl_keypair, current_ssl_keypair)
+            )
             assert_equal(old_ssl_keypair, current_ssl_keypair,
                          message="SSL keypairs are not equal")
         self.show_step(16)
@@ -321,20 +320,15 @@ class CommandLineTest(test_cli_base.CommandLine):
         """
         self.env.revert_snapshot("cli_selected_nodes_deploy")
 
-        node_id = self.fuel_web.get_nailgun_node_by_devops_node(
-            self.env.d_env.nodes().slaves[2])['id']
+        node = self.env.d_env.nodes().slaves[2]
+        node_id = self.fuel_web.get_nailgun_node_by_devops_node(node)['id']
 
         assert_true(check_cobbler_node_exists(self.ssh_manager.admin_ip,
                                               node_id),
                     "node-{0} is not found".format(node_id))
-        self.env.d_env.nodes().slaves[2].destroy()
-        try:
-            wait(
-                lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
-                    self.env.d_env.nodes().
-                    slaves[2])['online'], timeout=60 * 6)
-        except TimeoutError:
-            raise
+        node.destroy()
+        self.fuel_web.wait_node_is_offline(node, timeout=60 * 6)
+
         admin_ip = self.ssh_manager.admin_ip
         cmd = 'fuel node --node-id {0} --delete-from-db'.format(node_id)
         res = self.ssh_manager.execute_on_remote(admin_ip, cmd)
@@ -344,16 +338,15 @@ class CommandLineTest(test_cli_base.CommandLine):
             "deleted from database".format(node_id))
 
         cmd = "fuel node | awk '{{print $1}}' | grep -w '{0}'".format(node_id)
-        try:
-            wait(
-                lambda: not self.ssh_manager.execute_on_remote(
-                    admin_ip,
-                    cmd,
-                    raise_on_assert=False)['exit_code'] == 0, timeout=60 * 4)
-        except TimeoutError:
-            raise TimeoutError(
-                "After deletion node-{0} is found in fuel list".format(
-                    node_id))
+
+        wait(
+            lambda: not self.ssh_manager.execute_on_remote(
+                admin_ip,
+                cmd,
+                raise_on_assert=False)['exit_code'] == 0, timeout=60 * 4,
+            timeout_msg='After deletion node-{0} is found in fuel list'
+                        ''.format(node_id))
+
         is_cobbler_node_exists = check_cobbler_node_exists(
             self.ssh_manager.admin_ip, node_id)
 
@@ -399,16 +392,13 @@ class CommandLineTest(test_cli_base.CommandLine):
             cmd='fuel --env {0} env delete --force'.format(cluster_id)
         )
 
-        try:
-            wait(lambda:
-                 self.ssh_manager.execute_on_remote(
-                     ip=self.ssh_manager.admin_ip,
-                     cmd="fuel env |  awk '{print $1}' |  tail -n 1 | "
-                         "grep '^.$'",
-                     raise_on_assert=False)['exit_code'] == 1, timeout=60 * 10)
-        except TimeoutError:
-            raise TimeoutError(
-                "cluster {0} was not deleted".format(cluster_id))
+        wait(lambda:
+             self.ssh_manager.execute_on_remote(
+                 ip=self.ssh_manager.admin_ip,
+                 cmd="fuel env |  awk '{print $1}' |  tail -n 1 | "
+                     "grep '^.$'",
+                 raise_on_assert=False)['exit_code'] == 1, timeout=60 * 10,
+             timeout_msg='cluster {0} was not deleted'.format(cluster_id))
 
         assert_false(
             check_cluster_presence(cluster_id, self.env.postgres_actions),
