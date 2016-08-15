@@ -194,6 +194,6 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
         self.show_step(7)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(8)
-        self.fuel_web.run_ostf(cluster_id=cluster_id,
+        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1,
                                test_sets=['smoke', 'sanity', 'ha'])
         self.env.make_snapshot("upgrade_net_tmpl_restore", is_make=True)
