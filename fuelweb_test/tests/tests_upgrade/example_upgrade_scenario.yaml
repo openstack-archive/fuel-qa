@@ -1,8 +1,22 @@
----
-upgrade_data:
-  source_snapshot_name: !os_env UPGRADE_SOURCE_SNAPSHOT_NAME
-  backup_snapshot_name: !os_env UPGRADE_BACKUP_SNAPSHOT_NAME
-  restore_snapshot_name: !os_env UPGRADE_RESULT_SNAPSHOT_NAME
-  tarball_remote_dir: !os_env TARBALL_REMOTE_DIR, /var
-  backup_name: !os_env UPGRADE_BACKUP_FILE_NAME
-  repos_backup_name: !os_env UPGRADE_BACKUP_REPO_FILE_NAME
+step_1:
+  action: backup
+  fuel_version: 7.0
+  source_snapshot_name: prepare_upgrade_ceph_ha_before_backup
+  backup_name: data_ceph_ha_octane_backup_7.tgz
+  repos_backup_name: repo_ceph_ha_octane_backup_7.tgz
+  backup_snapshot_name: ceph_ha_octane_backup_7
+step_2:
+  action: restore
+  source_fuel_version: 7.0
+  target_fuel_version: 8.0
+  backup_snapshot_name: ceph_ha_octane_backup_7
+  backup_name: data_ceph_ha_octane_backup_7.tgz
+  repos_backup_name: repo_ceph_ha_octane_backup_7.tgz
+  restore_snapshot_name: ceph_ha_octane_restore_8
+step_3:
+  action: backup
+  fuel_version: 8.0
+  source_snapshot_name: ceph_ha_octane_restore_8
+  backup_name: backup_ceph_ha.tar.gz
+  repos_backup_name: repos_backup_ceph_ha.tar.gz
+  backup_snapshot_name: upgrade_ceph_ha_backup
