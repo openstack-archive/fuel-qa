@@ -455,13 +455,15 @@ def cond_upload(remote, source, target, condition=''):
 
 
 def run_on_remote(*args, **kwargs):
-    warn(
-        'This is old deprecated method, which should not be used anymore. '
-        'please use remote.execute() and remote.check_call() instead.\n'
+    msg = (
+        'run_on_remote() is old deprecated method, '
+        'which should not be used anymore. '
+        'please use remote.check_call() instead.\n'
         'Starting from fuel-devops 2.9.22 this methods will return all '
-        'required data.',
-        DeprecationWarning
-    )
+        'required data.\n'
+        '{}'.format("".join(traceback.format_stack())))
+    warn(msg, DeprecationWarning)
+    logger.warning(msg)
     if 'jsonify' in kwargs:
         if kwargs['jsonify']:
             return run_on_remote_get_results(*args, **kwargs)['stdout_json']
@@ -484,16 +486,23 @@ def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
     :return: dict
     :raise: Exception
     """
-    warn(
-        'run_on_remote_get_results() is deprecated in favor of '
-        'remote.check_call() \n'
-        'Starting from fuel-devops 2.9.22 this methods will return whole '
-        'required data.',
-        DeprecationWarning
-    )
+    msg = (
+        'run_on_remote_get_results() is old deprecated method, '
+        'which should not be used anymore. '
+        'please use remote.check_call() instead.\n'
+        'Starting from fuel-devops 2.9.22 this methods will return all '
+        'required data.\n'
+        '{}'.format("".join(traceback.format_stack())))
+    warn(msg, DeprecationWarning)
+    logger.warning(msg)
     if assert_ec_equal is None:
         assert_ec_equal = [0]
-    orig_result = remote.execute(cmd)
+    orig_result = remote.check_call(
+            command=cmd,
+            error_info=err_msg,
+            expected=assert_ec_equal,
+            raise_on_err=raise_on_assert
+        )
 
     # now create fallback result for compatibility reasons (UTF-8)
 
@@ -505,43 +514,11 @@ def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
         'stderr_str': ''.join(orig_result['stderr']).strip()
     }
 
-    details_log = (
-        "Host:      {host}\n"
-        "Command:   '{cmd}'\n"
-        "Exit code: {code}\n"
-        "STDOUT:\n{stdout}\n"
-        "STDERR:\n{stderr}".format(
-            host=remote.host, cmd=cmd, code=result['exit_code'],
-            stdout=result['stdout_str'], stderr=result['stderr_str']
-        ))
-
-    if result['exit_code'] not in assert_ec_equal:
-        error_msg = (
-            err_msg or
-            "Unexpected exit_code returned: actual {0}, expected {1}."
-            "".format(
-                result['exit_code'],
-                ' '.join(map(str, assert_ec_equal))))
-        log_msg = (
-            "{0}  Command: '{1}'  "
-            "Details:\n{2}".format(
-                error_msg, cmd, details_log))
-        logger.error(log_msg)
-        if raise_on_assert:
-            raise Exception(log_msg)
-
     if clear:
         remote.clear()
 
     if jsonify:
-        try:
-            result['stdout_json'] = json_deserialize(result['stdout_str'])
-        except Exception:
-            error_msg = (
-                "Unable to deserialize output of command"
-                " '{0}' on host {1}".format(cmd, remote.host))
-            logger.error(error_msg)
-            raise Exception(error_msg)
+        result['stdout_json'] = orig_result.stdout_json
 
     return result
 
