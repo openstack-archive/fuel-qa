@@ -15,6 +15,7 @@
 import logging
 import re
 import time
+import traceback
 from warnings import warn
 
 from devops.helpers.helpers import tcp_ping_
@@ -725,15 +726,19 @@ class EnvironmentModel(object):
     @staticmethod
     @logwrap
     def execute_remote_cmd(remote, cmd, exit_code=0):
-        warn(
-            'execute_remote_cmd(remote, cmd) is deprecated in favor of '
-            'SSHClient().check_call()',
-            DeprecationWarning
+        msg = (
+            'execute_remote_cmd() is old deprecated method, '
+            'which should not be used anymore. '
+            'please use remote.check_call() instead.\n'
+            'Starting from fuel-devops 2.9.22 this methods will return all '
+            'required data.\n'
+            '{}'.format("".join(traceback.format_stack())))
+        warn(msg, DeprecationWarning)
+        logger.warning(msg)
+        result = remote.check_call(
+            command=cmd,
+            expected=[exit_code],
         )
-        result = remote.execute(cmd)
-        assert_equal(result['exit_code'], exit_code,
-                     'Failed to execute "{0}" on remote host: {1}'.
-                     format(cmd, result))
         return result['stdout']
 
     @logwrap
