@@ -18,7 +18,7 @@ import traceback
 
 from cinderclient.client import Client as CinderClient
 from heatclient.v1.client import Client as HeatClient
-from glanceclient.v1 import Client as GlanceClient
+from glanceclient import Client as GlanceClient
 from ironicclient.client import get_client as get_ironic_client
 from keystoneauth1.exceptions import ClientException
 from keystoneauth1.identity import V2Password
@@ -86,6 +86,7 @@ class Common(object):
         endpoint = self.__make_endpoint(
             self._get_url_for_svc(service_type='image'))
         return GlanceClient(
+            version='1',
             session=self.keystone_session,
             endpoint=endpoint,
             endpoint_override=endpoint)
@@ -112,7 +113,7 @@ class Common(object):
         endpoint = self.__make_endpoint(
             self._get_url_for_svc(service_type='volume'))
         return CinderClient(
-            version='1',
+            version='2',
             session=self.keystone_session,
             endpoint_override=endpoint)
 
