@@ -75,13 +75,13 @@ class SSHManager(object):
 
     def _get_keys(self):
         keys = []
-        admin_remote = self._get_remote(self.admin_ip)
+        admin_remote = self.get_remote(self.admin_ip)
         key_string = '/root/.ssh/id_rsa'
         with admin_remote.open(key_string) as f:
             keys.append(RSAKey.from_private_key(f))
         return keys
 
-    def _get_remote(self, ip, port=22):
+    def get_remote(self, ip, port=22):
         """ Function returns remote SSH connection to node by ip address
 
         :param ip: IP of host
@@ -141,7 +141,7 @@ class SSHManager(object):
                 ip=ip, port=port))
 
     def execute(self, ip, cmd, port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.execute(cmd)
 
     def check_call(
@@ -163,7 +163,7 @@ class SSHManager(object):
         :rtype: ExecResult
         :raises: DevopsCalledProcessError
         """
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.check_call(
             command=command,
             verbose=verbose,
@@ -201,7 +201,7 @@ class SSHManager(object):
         if yamlify and jsonify:
             raise ValueError('Conflicting arguments: yamlify and jsonify!')
 
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         orig_result = remote.check_call(
             command=cmd,
             error_info=err_msg,
@@ -228,7 +228,7 @@ class SSHManager(object):
         return result
 
     def execute_async_on_remote(self, ip, cmd, port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.execute_async(cmd)
 
     @staticmethod
@@ -280,35 +280,35 @@ class SSHManager(object):
         return obj
 
     def open_on_remote(self, ip, path, mode='r', port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.open(path, mode)
 
     def upload_to_remote(self, ip, source, target, port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.upload(source, target)
 
     def download_from_remote(self, ip, destination, target, port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.download(destination, target)
 
     def exists_on_remote(self, ip, path, port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.exists(path)
 
     def isdir_on_remote(self, ip, path, port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.isdir(path)
 
     def isfile_on_remote(self, ip, path, port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.isfile(path)
 
     def mkdir_on_remote(self, ip, path, port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.mkdir(path)
 
     def rm_rf_on_remote(self, ip, path, port=22):
-        remote = self._get_remote(ip=ip, port=port)
+        remote = self.get_remote(ip=ip, port=port)
         return remote.rm_rf(path)
 
     def cond_upload(self, ip, source, target, port=22, condition='',
@@ -323,7 +323,7 @@ class SSHManager(object):
         :return: count of files
         """
 
-        # remote = self._get_remote(ip=ip, port=port)
+        # remote = self.get_remote(ip=ip, port=port)
         # maybe we should use SSHClient function. e.g. remote.isdir(target)
         # we can move this function to some *_actions class
         if self.isdir_on_remote(ip=ip, port=port, path=target):
