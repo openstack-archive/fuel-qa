@@ -89,8 +89,7 @@ OPENSTACK_RELEASE = os.environ.get(
 #                   For UCA that means that all three variables should be
 #                   the same.
 if OPENSTACK_RELEASE == 'ubuntu':
-    OPENSTACK_RELEASE_UBUNTU = OPENSTACK_RELEASE_UBUNTU_UCA
-    OPENSTACK_RELEASE = OPENSTACK_RELEASE_UBUNTU_UCA
+    OPENSTACK_RELEASE = OPENSTACK_RELEASE_UBUNTU
 
 DEPLOYMENT_MODE_SIMPLE = "multinode"
 DEPLOYMENT_MODE_HA = "ha_compact"
