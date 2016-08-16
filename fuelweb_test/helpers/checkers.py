@@ -314,25 +314,97 @@ def backup_check(remote):
                 "Archive '{0}' does not exist".format(path.rstrip()))
 
 
+_md5_record = re.compile(r'(?P<md5>\w+)[ \t]+(?P<filename>\w+)')
+
+
+def parse_md5sum_output(string):
+    """Process md5sum command output and return dict filename: md5
+
+    :param string: output of md5sum
+    :type string: str
+    :rtype: dict
+    :return: dict
+    """
+    return {filename: md5 for md5, filename in _md5_record.findall(string)}
+
+
+def diff_md5(before, after, no_dir_change=True):
+    """Doff md5sum output
+
+    :type before: str
+    :type after: str
+    :param no_dir_change: Check, that some files was added or removed
+    :type no_dir_change: bool
+    """
+    before_dict = parse_md5sum_output(before)
+    after_dict = parse_md5sum_output(after)
+
+    before_files = set(before_dict.keys())
+    after_files = set(after_dict.keys())
+
+    diff_filenames = before_files ^ after_files
+
+    dir_change = (
+        "Directory contents changed:\n"
+        "\tRemoved files: {removed}\n"
+        "\tNew files: {created}".format(
+            removed=[
+                filename for filename in diff_filenames
+                if filename in before_files],
+            created=[
+                filename for filename in diff_filenames
+                if filename in after_files],
+        )
+    )
+    if no_dir_change:
+        assert_true(len(diff_filenames) == 0, dir_change)
+    else:
+        logger.debug(dir_change)
+
+    changelist = [
+        {
+            'filename': filename,
+            'before': before_dict[filename],
+            'after': after_dict[filename]}
+        for filename in before_files & after_files
+        if before_dict[filename] != after_dict[filename]
+    ]
+    assert_true(
+        len(changelist) == 0,
+        "Files has been changed:\n"
+        "{}".format(
+            "".join(
+                map(
+                    lambda record: "{filename}: {before} -> {after}\n".format(
+                        **record),
+                    changelist
+                )
+            )
+        )
+    )
+
+
 @logwrap
 def restore_check_sum(remote):
     logger.debug('Check if removed file /etc/fuel/data was restored')
-    res = remote.execute("if [ -e /etc/fuel/data ]; "
-                         "then echo Restored!!;"
-                         " fi")
-    assert_true("Restored!!" in ''.join(res['stdout']).strip(),
-                'Test file /etc/fuel/data '
-                'was not restored!!! {0}'.format(res['stderr']))
+    assert_true(
+        remote.exists(path='/etc/fuel/data'),
+        'Test file /etc/fuel/data was not restored!!!')
+
     logger.info("Restore check md5sum")
-    md5sum_backup = remote.execute("cat /etc/fuel/sum")
-    assert_true(''.join(md5sum_backup['stdout']).strip(),
+    md5sum_backup = remote.check_call("cat /etc/fuel/sum")
+    assert_true(md5sum_backup['stdout_str'],
                 'Command cat /etc/fuel/sum '
                 'failed with {0}'.format(md5sum_backup['stderr']))
-    md5sum_restore = remote.execute("md5sum /etc/fuel/data | sed -n 1p "
-                                    " | awk '{print $1}'")
-    assert_equal(md5sum_backup, md5sum_restore,
-                 "md5sums not equal: backup{0}, restore{1}".
-                 format(md5sum_backup, md5sum_restore))
+    md5sum_restore = remote.check_call(
+        "md5sum /etc/fuel/data | sed -n 1p | awk '{print $1}'"
+    )
+    assert_equal(
+        md5sum_backup.stdout_str, md5sum_restore.stdout_str,
+        "Checksum is not equal:\n"
+        "\tOLD: {0}\n"
+        "\tNEW: {1}".format(md5sum_backup.stdout_str, md5sum_restore.stdout_str)
+    )
 
 
 @logwrap
