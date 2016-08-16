@@ -1607,3 +1607,30 @@ def generate_yum_repos_config(repositories):
                   "priority={priority}\n" \
                   "skip_if_unavailable=1\n".format(**repo)
     return config
+
+
+def preserve_partition(admin_remote, node_id, partition):
+    """
+    Marks the given partition to be preserved during slave node reinstallation
+
+    :param admin_remote: SSHClient to master node
+    :param node_id: ID of a slave node to update settings for
+    :param partition: name of the partition to be preserved
+    :return: None
+    """
+    # Retrieve disks config for the given node
+    res = admin_remote.execute(
+        "fuel node --node-id {0} "
+        "--disk --download".format(str(node_id)))
+    disk_config_path = res['stdout'][-1].rstrip()
+
+    # Enable partition preservation in the disks config
+    with YamlEditor(disk_config_path, admin_remote.host) as editor:
+        for disk in editor.content:
+            for volume in disk['volumes']:
+                if volume['name'] == partition:
+                    volume['keep_data'] = True
+
+    # Upload the updated disks config to the corresponding node
+    admin_remote.execute("fuel node --node-id {0} "
+                         "--disk --upload".format(str(node_id)))
