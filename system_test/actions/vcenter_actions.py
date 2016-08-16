@@ -664,7 +664,7 @@ class VMwareActions(object):
         """Return name of controller with VIPs."""
         for node in self.env.d_env.nodes().slaves:
             ng_node = self.env.fuel_web.get_nailgun_node_by_devops_node(node)
-            if ng_node['online']:
+            if ng_node['online'] and 'controller' in ng_node['roles']:
                 hosts_vip = self.fuel_web.get_pacemaker_resource_location(
                     ng_node['devops_name'], 'vip__management')
                 logger.info('Now primary controller is '
@@ -753,11 +753,13 @@ class VMwareActions(object):
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
-    def ostf_with_services_fail(self):
+    def ostf_with_haproxy_fail(self):
         """Run OSTF tests (one should fail)."""
         self.env.fuel_web.run_ostf(
-            self.cluster_id, should_fail=1,
-            failed_test_name='Check that required services are running')
+            self.cluster_id,
+            test_sets=['sanity', 'smoke', 'ha'],
+            should_fail=1,
+            failed_test_name=['Check state of haproxy backends on controllers'])
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
