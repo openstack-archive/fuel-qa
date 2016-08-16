@@ -84,15 +84,17 @@ class ShutdownPrimaryWithVMware(ActionTest, BaseActions, VMwareActions):
         6. Configure vmware settings (depends on yaml config)
         7. Deploy the cluster
         8. Create instances on Nova and vCenter
-        9. Shutdown primary controller
-        10. Verify networks
-        11. Ensure that VIPs are moved to other controller
-        12. Ensure connectivity between VMs
-        13. Run OSTF tests (one should fail)
-        14. Turn on primary controller
-        15. Wait 5-10 minutes
-        16. Verify networks
-        17. Run OSTF tests
+        9. Add nodes (depends on yaml config)
+        10 Deploy changes
+        11. Shutdown primary controller
+        12. Verify networks
+        13. Ensure that VIPs are moved to other controller
+        14. Ensure connectivity between VMs
+        15. Run OSTF tests (one should fail)
+        16. Turn on primary controller
+        17. Wait 5-10 minutes
+        18. Verify networks
+        19. Run OSTF tests
 
     Duration 3h 00min
     Snapshot vcenter_shutdown_ctrl
@@ -110,8 +112,9 @@ class ShutdownPrimaryWithVMware(ActionTest, BaseActions, VMwareActions):
         'configure_vcenter',
         'deploy_cluster',
         'create_instances',
+        'scale_node',
+        'deploy_changes',
         'shutdown_primary',
-        'wait_ha_services',
         'network_check',
         'check_up_vips',
         'check_vm_connect',
@@ -120,7 +123,7 @@ class ShutdownPrimaryWithVMware(ActionTest, BaseActions, VMwareActions):
         'turn_on_primary',
         'wait_ha_services',
         'network_check',
-        'health_check'
+        'health_check_sanity_smoke_ha'
     ]
 
 
