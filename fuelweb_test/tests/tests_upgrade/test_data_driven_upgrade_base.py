@@ -316,7 +316,7 @@ class DataDrivenUpgradeBase(TestBasic):
             "{!r} does not exists".format(self.source_snapshot_name))
 
     def revert_backup(self):
-        assert_is_not_none(self.source_snapshot_name,
+        assert_is_not_none(self.backup_snapshot_name,
                            "'backup_snapshot_name' variable is not defined!")
         assert_true(
             self.env.revert_snapshot(self.backup_snapshot_name),
@@ -324,7 +324,7 @@ class DataDrivenUpgradeBase(TestBasic):
             "{!r} does not exists".format(self.backup_snapshot_name))
 
     def revert_restore(self):
-        assert_is_not_none(self.source_snapshot_name,
+        assert_is_not_none(self.snapshot_name,
                            "'snapshot_name' variable is not defined!")
         assert_true(
             self.env.revert_snapshot(self.snapshot_name),
