@@ -792,7 +792,6 @@ master:
    pacemakerd.log
    pengine.log
    postfix/master.log
-   postfix.log
    puppet-apply.log
    qnx.log
    rabbit-fence.log
