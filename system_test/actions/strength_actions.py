@@ -341,7 +341,7 @@ class FillRootActions(object):
                     "is not present on node {}".format(
                         self.primary_controller_fqdn))
                 cibadmin_status_xml = remote.check_call(
-                    remote, 'cibadmin --query --scope status').stdout_str
+                    'cibadmin --query --scope status').stdout_str
                 pcs_attribs = get_pacemaker_nodes_attributes(
                     cibadmin_status_xml)
                 return '#health_disk' not in pcs_attribs[
