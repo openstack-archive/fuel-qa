@@ -66,11 +66,6 @@ Test Cli deploy ceph neutron tun
 .. automodule:: fuelweb_test.tests.tests_cli.test_cli_deploy_ceph
    :members:
 
-Test Clone Environment
-----------------------
-.. automodule:: fuelweb_test.tests.test_clone_env
-   :members:
-
 Test custom hostname
 --------------------
 .. automodule:: fuelweb_test.tests.test_custom_hostname
@@ -270,11 +265,6 @@ Test Neutron IPv6 base functionality
 Test Node reinstallation
 ------------------------
 .. automodule:: fuelweb_test.tests.test_node_reinstallation
-   :members:
-
-Test Node reassignment
-----------------------
-.. automodule:: fuelweb_test.tests.test_node_reassignment
    :members:
 
 Test offloading types
@@ -657,11 +647,13 @@ Upgrade tests
 
 Test Data-Driven Upgrade
 ------------------------
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_clone_env
 .. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_base
 .. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade
 .. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_ceph_ha
 .. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_net_tmpl
 .. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_plugin
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_node_reassignment
 .. automodule:: fuelweb_test.tests.tests_upgrade.upgrader_tool
    :members:
 
