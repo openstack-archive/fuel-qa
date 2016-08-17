@@ -53,7 +53,7 @@ class TestMultipath(base_test_case.TestBasic):
         ssh_manager.update_connection(ip, SSH_CREDENTIALS['login'],
                                       SSH_CREDENTIALS['password'],
                                       keys=ssh_manager._get_keys())
-        ssh_manager._get_remote(ip)
+        ssh_manager.get_remote(ip)
         result = ssh_manager.execute_on_remote(
             ip=ip,
             cmd=cmd,
@@ -106,7 +106,7 @@ class TestMultipath(base_test_case.TestBasic):
         ssh_manager.update_connection(ip, SSH_CREDENTIALS['login'],
                                       SSH_CREDENTIALS['password'],
                                       keys=ssh_manager._get_keys())
-        ssh_manager._get_remote(ip)
+        ssh_manager.get_remote(ip)
         result = ssh_manager.execute_on_remote(
             ip=ip,
             cmd=cmd,
