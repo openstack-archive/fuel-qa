@@ -96,7 +96,6 @@ class Common(object):
         return GlanceClient(
             version='1',
             session=self.keystone_session,
-            endpoint=endpoint,
             endpoint_override=endpoint)
 
     @property
