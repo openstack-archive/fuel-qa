@@ -21,9 +21,11 @@ from fuelweb_test.tests.tests_upgrade import test_data_driven_upgrade_plugin  # 
 from fuelweb_test.tests.tests_upgrade import upgrader_tool  # noqa
 
 __all__ = [
+    'test_clone_env',
     'test_data_driven_upgrade',
     'test_data_driven_upgrade_ceph_ha',
     'test_data_driven_upgrade_net_tmpl',
     'test_data_driven_upgrade_plugin',
+    'test_node_reassignment',
     'upgrader_tool'
 ]
