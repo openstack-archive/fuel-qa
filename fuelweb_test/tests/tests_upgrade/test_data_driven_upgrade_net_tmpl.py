@@ -198,3 +198,122 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['smoke', 'sanity', 'ha'])
         self.env.make_snapshot("upgrade_net_tmpl_restore", is_make=True)
+
+    @test(depends_on_groups=["upgrade_net_tmpl_restore"],
+          groups=["reset_deploy_net_tmpl", "upgrade_net_tmpl_tests"])
+    @log_snapshot_after_test
+    def reset_deploy_net_tmpl(self):
+        """Reset the existing cluster and redeploy - network templates
+
+        Scenario:
+        1. Revert "upgrade_net_tmpl_restore" snapshot
+        2. Reset the existing cluster
+        3. Deploy cluster
+        4. Verify networks
+        5. Run OSTF
+
+        Snapshot: reset_cluster_net_tmpl
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot("upgrade_net_tmpl_restore")
+
+        self.show_step(2)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        self.fuel_web.stop_reset_env_wait(cluster_id)
+
+        self.show_step(3)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(4)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(5)
+        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1,
+                               test_sets=['smoke', 'sanity', 'ha'])
+        self.env.make_snapshot("reset_deploy_net_tmpl", is_make=True)
+
+    @test(depends_on_groups=["upgrade_net_tmpl_restore"],
+          groups=["replace_controller_net_tmpl", "upgrade_net_tmpl_tests"])
+    @log_snapshot_after_test
+    def replace_controller_net_tmpl(self):
+        """Replace controller and redeploy - network templates
+
+        Scenario:
+        1. Revert "upgrade_net_tmpl_restore" snapshot
+        2. Remove the existing controller
+        3. Add new controller
+        4. Verify networks
+        5. Deploy cluster
+        6. Verify networks
+        7. Run OSTF
+
+        Snapshot: replace_controller_net_tmpl
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot("upgrade_net_tmpl_restore")
+
+        self.show_step(2)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller']
+            },
+            pending_addition=False,
+            pending_deletion=True
+        )
+
+        self.show_step(4)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-09': ['controller']
+            }
+        )
+
+        self.show_step(4)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(5)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(6)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(7)
+        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1,
+                               test_sets=['smoke', 'sanity', 'ha'])
+        self.env.make_snapshot("replace_controller_net_tmpl", is_make=True)
+
+    @test(depends_on_groups=["replace_controller_net_tmpl"],
+          groups=["restart_node_net_tmpl", "upgrade_net_tmpl_tests"])
+    @log_snapshot_after_test
+    def restart_node_net_tmpl(self):
+        """Reboot node after controller replacement - network templates
+
+        Scenario:
+        1. Revert "replace_controller_net_tmpl" snapshot
+        2. Reboot node
+        3. Verify networks
+        4. Run OSTF
+
+        Snapshot: restart_node_net_tmpl
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot("replace_controller_net_tmpl")
+
+        self.show_step(2)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        self.fuel_web.cold_restart_nodes(
+            self.env.d_env.get_nodes(name__in=['slave-03']))
+
+        self.show_step(3)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(4)
+        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1,
+                               test_sets=['smoke', 'sanity', 'ha'])
+        self.env.make_snapshot("restart_node_net_tmpl", is_make=True)
