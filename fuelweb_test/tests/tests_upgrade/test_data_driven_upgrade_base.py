@@ -32,7 +32,10 @@ class DataDrivenUpgradeBase(TestBasic):
 
     def __init__(self):
         super(DataDrivenUpgradeBase, self).__init__()
-        self.local_dir_for_backups = settings.LOGS_DIR
+        self.local_dir_for_backups = os.path.join(
+            os.path.curdir, "..", "backup_storage")
+        if not os.path.exists(self.local_dir_for_backups):
+            os.makedirs(self.local_dir_for_backups)
         self.remote_dir_for_backups = "/root/upgrade/backup"
         self.cluster_creds = {
             'tenant': 'upgrade',
