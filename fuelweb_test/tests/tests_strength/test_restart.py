@@ -18,11 +18,13 @@ from proboscis import test
 from proboscis import SkipTest
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers import checkers
 from fuelweb_test import logger
 from fuelweb_test import ostf_test_mapping
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
+from fuelweb_test.settings import NEUTRON_SEGMENT
 
 
 @test(groups=["thread_3", "ceph"])
@@ -282,3 +284,109 @@ class HAOneControllerNeutronRestart(TestBasic):
 
         self.show_step(13)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+
+@test(groups=["five_controllers_restart"])
+class FiveControllerRestart(TestBasic):
+    """HAFiveControllerNeutronRestart."""  # TODO documentation
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_all],
+          groups=["deploy_reset_five_controllers"])
+    @log_snapshot_after_test
+    def deploy_reset_five_controllers(self):
+        """
+
+        Deployment with 5 controllers, NeutronVLAN with reset and re-deploy
+
+        Scenario:
+        1. Deploy environment with 5 controller NeutronVLAN, 2 compute,
+           1 cinder with disks partitioning 'vdc'
+        2. Verify networks
+        3. Run OSTF tests
+        4. Reset cluster
+        5. Change openstack username, password, tenant
+        6. Re-deploy environment
+        7. Wait for HA services to be ready
+        8. Wait for for OS services to be ready
+        9. Verify networks
+        10. Run OSTF
+
+        Duration 120m
+        Snapshot deploy_reset_five_controllers
+
+        """
+
+        self.env.revert_snapshot("ready_with_all_slaves")
+
+        self.show_step(1)
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT['vlan'],
+                'tenant': 'simpleVlan',
+                'user': 'simpleVlan',
+                'password': 'simpleVlan'
+            }
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['controller'],
+                'slave-05': ['controller'],
+                'slave-06': ['compute'],
+                'slave-07': ['compute'],
+                'slave-08': ['cinder']
+            }
+        )
+
+        cinder_nodes = self.fuel_web.\
+            get_nailgun_cluster_nodes_by_roles(cluster_id, ['cinder'],
+                                               role_status='pending_roles')
+        for cinder_node in cinder_nodes:
+            cinder_image_size = self.fuel_web.\
+                update_node_partitioning(cinder_node, node_role='cinder')
+
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(2)
+        self.fuel_web.verify_network(cluster_id)
+
+        for cinder in cinder_nodes:
+            checkers.check_cinder_image_size(cinder['ip'], cinder_image_size)
+
+        # ostf_tests before reset
+        self.show_step(3)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['ha', 'smoke', 'sanity'])
+
+        self.show_step(4)
+        self.fuel_web.stop_reset_env_wait(cluster_id)
+        self.show_step(5)
+        attributes = self.fuel_web.client.get_cluster_attributes(cluster_id)
+        access_attr = attributes['editable']['access']
+        access_attr['user']['value'] = 'myNewUser'
+        access_attr['password']['value'] = 'myNewPassword'
+        access_attr['tenant']['value'] = 'myNewTenant'
+        self.fuel_web.client.update_cluster_attributes(cluster_id, attributes)
+        self.show_step(6)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.show_step(7)
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+        self.show_step(8)
+        self.fuel_web.assert_os_services_ready(cluster_id, timeout=10 * 60)
+        self.show_step(9)
+        self.fuel_web.verify_network(cluster_id)
+
+        # ostf_tests after reset
+        self.show_step(10)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['ha', 'smoke', 'sanity'])
+
+        self.env.make_snapshot("deploy_reset_five_controllers")
