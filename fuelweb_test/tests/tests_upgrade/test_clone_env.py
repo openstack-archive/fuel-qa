@@ -24,7 +24,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
 
 
-@test(groups=["clone_env_for_os_upgrade", "upgrade_ceph_ha_tests"],
+@test(groups=["clone_env_for_os_upgrade"],
       depends_on_groups=["upgrade_ceph_ha_restore"])
 class TestCloneEnv(TestBasic):
 
