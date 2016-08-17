@@ -20,6 +20,7 @@ import yaml
 import os.path
 import posixpath
 import re
+from warnings import warn
 
 from proboscis import asserts
 
@@ -315,6 +316,13 @@ def cond_upload(remote, source, target, condition=''):
 
 
 def run_on_remote(*args, **kwargs):
+    warn(
+        'This is old deprecated method, which should not be used anymore. '
+        'please use remote.execute() and remote.check_call() instead.\n'
+        'Starting from fuel-devops 2.9.22 this methods will return all '
+        'required data.',
+        DeprecationWarning
+    )
     if 'jsonify' in kwargs:
         if kwargs['jsonify']:
             return run_on_remote_get_results(*args, **kwargs)['stdout_json']
@@ -324,9 +332,8 @@ def run_on_remote(*args, **kwargs):
 
 @logwrap
 def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
-                              jsonify=False, assert_ec_equal=[0],
+                              jsonify=False, assert_ec_equal=None,
                               raise_on_assert=True):
-    # TODO(ivankliuk): move it to devops.helpers.SSHClient
     """Execute ``cmd`` on ``remote`` and return result.
 
     :param remote: devops.helpers.helpers.SSHClient
@@ -338,33 +345,54 @@ def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
     :return: dict
     :raise: Exception
     """
-    result = remote.execute(cmd)
-    if result['exit_code'] not in assert_ec_equal:
-        error_details = {
-            'command': cmd,
-            'host': remote.host,
-            'stdout': result['stdout'],
-            'stderr': result['stderr'],
-            'exit_code': result['exit_code']}
+    warn(
+        'run_on_remote_get_results() is deprecated in favor of '
+        'remote.check_call() \n'
+        'Starting from fuel-devops 2.9.22 this methods will return whole '
+        'required data.',
+        DeprecationWarning
+    )
+    if assert_ec_equal is None:
+        assert_ec_equal = [0]
+    orig_result = remote.execute(cmd)
 
-        error_msg = (err_msg or "Unexpected exit_code returned:"
-                                " actual {0}, expected {1}."
-                     .format(error_details['exit_code'],
-                             ' '.join(map(str, assert_ec_equal))))
-        log_msg = ("{0}  Command: '{1}'  Details: {2}".format(error_msg,
-                                                              cmd,
-                                                              error_details))
+    # now create fallback result for compatibility reasons (UTF-8)
+
+    result = {
+        'stdout': orig_result['stdout'],
+        'stderr': orig_result['stderr'],
+        'exit_code': orig_result['exit_code'],
+        'stdout_str': ''.join(orig_result['stdout']).strip(),
+        'stderr_str': ''.join(orig_result['stderr']).strip()
+    }
+
+    details_log = (
+        "Host:      {host}\n"
+        "Command:   '{cmd}'\n"
+        "Exit code: {code}\n"
+        "STDOUT:\n{stdout}\n"
+        "STDERR:\n{stderr}".format(
+            host=remote.host, cmd=cmd, code=result['exit_code'],
+            stdout=result['stdout_str'], stderr=result['stderr_str']
+        ))
+
+    if result['exit_code'] not in assert_ec_equal:
+        error_msg = (
+            err_msg or
+            "Unexpected exit_code returned: actual {0}, expected {1}."
+            "".format(
+                result['exit_code'],
+                ' '.join(map(str, assert_ec_equal))))
+        log_msg = (
+            "{0}  Command: '{1}'  "
+            "Details:\n{2}".format(
+                error_msg, cmd, details_log))
         logger.error(log_msg)
         if raise_on_assert:
             raise Exception(log_msg)
 
     if clear:
         remote.clear()
-
-    result['stdout_str'] = ''.join(result['stdout'])
-    result['stdout_len'] = len(result['stdout'])
-    result['stderr_str'] = ''.join(result['stderr'])
-    result['stderr_len'] = len(result['stderr'])
 
     if jsonify:
         try:
