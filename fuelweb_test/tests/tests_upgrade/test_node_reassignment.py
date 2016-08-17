@@ -25,7 +25,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 
 @test(groups=["reassign_node_for_os_upgrade", "os_upgrade",
-              "upgrade_ceph_ha_tests"],
+              "cluster_upgrade_extension"],
       depends_on_groups=["upgrade_ceph_ha_restore"])
 class TestReassignNode(TestBasic):
 
