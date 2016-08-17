@@ -14,7 +14,11 @@
 
 from __future__ import unicode_literals
 
+# pylint: disable=import-error
+# pylint: disable=no-name-in-module
 from distutils.version import StrictVersion
+# pylint: enable=no-name-in-module
+# pylint: enable=import-error
 import os
 
 from devops.helpers.templates import yaml_template_load
@@ -118,6 +122,7 @@ class UpgradeCustom(DataDrivenUpgradeBase):
         self.repos_backup_name = current_step["repos_backup_name"]
 
         self.show_step(1)
+        self.revert_backup()
 
         assert_equal(
             StrictVersion(current_step['source_fuel_version']),
@@ -133,7 +138,6 @@ class UpgradeCustom(DataDrivenUpgradeBase):
         self.show_step(2)
         post_reinstall_snapshot = "post_reinstall_" + self.backup_snapshot_name
         if not self.env.d_env.has_snapshot(post_reinstall_snapshot):
-            self.revert_backup()
             self.reinstall_master_node()
             self.env.make_snapshot(post_reinstall_snapshot)
         else:
