@@ -1505,7 +1505,7 @@ class FuelWebClient(object):
         if not BONDING:
             float_range = public
         else:
-            float_range = list(public.subnet(new_prefix=27))[0]
+            float_range = list(public.subnet(27))[0]
         # Setting of multiple floating IP ranges disabled for 7.0, LP#1490657
         # This feature moved to 8.0: LP#1371363, LP#1490578
         nc["floating_ranges"] = self.get_range(float_range, 1)
@@ -1524,7 +1524,7 @@ class FuelWebClient(object):
                     self.net_settings(net_config, net_name)
             else:
                 ip_obj = self.environment.d_env.get_network(name="public").ip
-                pub_subnets = list(ip_obj.subnet(new_prefix=27))
+                pub_subnets = list(ip_obj.subnet(27))
                 if "floating" == net_name:
                     self.net_settings(net_config, pub_subnets[0],
                                       floating=True, jbond=True)
@@ -1547,7 +1547,7 @@ class FuelWebClient(object):
                     self.net_settings(net_config, admin_net)
             else:
                 ip_obj = self.environment.d_env.get_network(name=public_net).ip
-                pub_subnets = list(ip_obj.subnet(new_prefix=27))
+                pub_subnets = list(ip_obj.subnet(27))
 
                 if "floating" == net_name:
                     self.net_settings(net_config, pub_subnets[0],
