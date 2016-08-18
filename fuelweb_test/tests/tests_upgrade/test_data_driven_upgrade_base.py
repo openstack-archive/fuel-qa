@@ -64,6 +64,11 @@ class DataDrivenUpgradeBase(TestBasic):
             self.reinstall_master_node = self.env.reinstall_master_node
         # pylint: enable=no-member
 
+        # cluster's names database for avoiding true hardcode but allowing to
+        # store names in one place. All cluster names should migrate here later
+        # in separate commits
+        self.cluster_names = {"ceph_ha": "ceph_ha_cluster_for_upgrade"}
+
     @property
     def backup_path(self):
         return os.path.join(self.remote_dir_for_backups, self.backup_name)
