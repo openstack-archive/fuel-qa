@@ -18,6 +18,7 @@ import traceback
 
 from devops.helpers import helpers
 from keystoneauth1.exceptions import HttpError
+from keystoneauth1.exceptions import NotFound
 import netaddr
 from proboscis import asserts
 from proboscis import test
@@ -298,18 +299,12 @@ class ServicesReconfiguration(TestBasic):
         token = os_conn.keystone.tokens.authenticate(username='admin',
                                                      password='admin')
         time.sleep(time_expiration)
-        try:
-            os_conn.keystone.tokens.validate(token.id)
-        except Exception as e:
-            # TODO: Refactor HttpError in library (too much of copy-paste)
-            # pylint: disable=no-member
-            if hasattr(e, 'http_status') and e.http_status != 404:
-                raise
-            # pylint: enable=no-member
-            logger.warning('Ignoring exception: {!r}'.format(e))
-            logger.debug(traceback.format_exc())
-        else:
-            raise Exception("New configuration was not applied")
+
+        asserts.assert_raises(
+            NotFound,
+            os_conn.keystone.tokens.validate,
+            (token.id, )
+        )
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["services_reconfiguration_thread_1",
