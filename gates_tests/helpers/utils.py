@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import itertools
 import os
 import yaml
 
@@ -303,7 +304,9 @@ def fuel_library_modules_mapping(modules):
         mapping = yaml.load(f)
 
     if modules and isinstance(modules, dict):
-        all_modules = set([j for i in mapping.values() for j in i])
+        all_modules = set(list(itertools.chain.from_iterable(
+            [mapping[test_group]['modules'] for test_group in mapping])))
+
         logger.debug(
             "List of puppet modules covered by system_tests {}".format(
                 all_modules))
@@ -312,7 +315,7 @@ def fuel_library_modules_mapping(modules):
 
         # checking that module from review covered by system_test
         for module in modules.keys():
-            if module.split('.')[0] not in all_modules:
+            if module not in all_modules:
                 logger.warning(
                     "{}:{} module not exist or not covered by system_test"
                     .format(module, modules[module]))
@@ -325,10 +328,22 @@ def fuel_library_modules_mapping(modules):
                 set(modules)):
             for test in mapping:
                 test_intersection = len(
-                    set(mapping[test]).intersection(set(modules)))
+                    set(mapping[test]['modules']).intersection(set(modules)))
                 if test_intersection > max_intersection:
                     max_intersection = test_intersection
                     system_test = test
+            devops_template = mapping[system_test['devops_settings_template']]
+
+            if devops_template != "ironic_template.yaml":
+                path_to_template = devops_template
+            else:
+                import gates_tests
+                path_to_template = os.path.join(
+                    os.path.dirname(os.path.dirname(gates_tests.__file__)),
+                    "devops_templates/ironic_template.yaml")
+
+            os.environ['DEVOPS_SETTINGS_TEMPLATE'] = path_to_template
+
         # To completely check ceph module we can't mix ceph and cinder togeher
         else:
             logger.warning(
@@ -364,7 +379,8 @@ def openstack_puppet_project_mapping(project):
             "r") as f:
         mapping = yaml.load(f)
 
-        all_projects = set([j for i in mapping.values() for j in i])
+        all_projects = set(list(itertools.chain.from_iterable(
+            [mapping[test_group]['modules'] for test_group in mapping])))
         logger.debug(
             "List of openstack/puppet-projects "
             "covered by system_tests {}".format(
@@ -381,9 +397,21 @@ def openstack_puppet_project_mapping(project):
         # find test group which cover project edited in review
         system_test = "bvt_2"
         for test in mapping:
-            if project in mapping[test]:
+            if project in mapping[test]['projects']:
                 system_test = test
                 break
+
+        devops_template = mapping[system_test['devops_settings_template']]
+
+        if devops_template != "ironic_template.yaml":
+            path_to_template = devops_template
+        else:
+            import gates_tests
+            path_to_template = os.path.join(
+                os.path.dirname(os.path.dirname(gates_tests.__file__)),
+                "devops_templates/ironic_template.yaml")
+
+        os.environ['DEVOPS_SETTINGS_TEMPLATE'] = path_to_template
         logger.info(
             "Edited project in review - '{}'"
             " will be checked by next system test: {}".format(
