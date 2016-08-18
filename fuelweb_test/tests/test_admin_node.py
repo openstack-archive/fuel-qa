@@ -15,7 +15,7 @@
 import datetime
 import xmlrpclib
 
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import http
 from devops.helpers.helpers import icmp_ping
 from devops.helpers.helpers import wait
@@ -552,8 +552,8 @@ class FuelMasterMigrate(TestBasic):
         self.fuel_web.verify_network(cluster_id)
 
         # Run ostf
-        _wait(lambda:
-              self.fuel_web.run_ostf(cluster_id,
-                                     test_sets=['smoke', 'sanity']),
-              timeout=1500)
+        wait_pass(
+            lambda: self.fuel_web.run_ostf(cluster_id,
+                                           test_sets=['smoke', 'sanity']),
+            timeout=1500)
         logger.debug("OSTF tests are pass now")

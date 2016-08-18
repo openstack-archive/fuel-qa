@@ -126,8 +126,8 @@ def get_node_packages(remote, func_name, node_role,
     logger.debug("node packages are {0}".format(node_packages))
     packages_dict[func_name][node_role] = node_packages\
         if node_role not in packages_dict[func_name].keys()\
-        else list(
-        set(packages_dict[func_name][node_role]) | set(node_packages))
+        else list(set(packages_dict[func_name][node_role]) |
+                  set(node_packages))
     return packages_dict
 
 
@@ -354,7 +354,12 @@ def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
     )
     if assert_ec_equal is None:
         assert_ec_equal = [0]
-    orig_result = remote.execute(cmd)
+    orig_result = remote.check_call(
+        command=cmd,
+        error_info=err_msg,
+        expected=assert_ec_equal,
+        raise_on_err=raise_on_assert
+    )
 
     # now create fallback result for compatibility reasons (UTF-8)
 
@@ -366,43 +371,11 @@ def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
         'stderr_str': ''.join(orig_result['stderr']).strip()
     }
 
-    details_log = (
-        "Host:      {host}\n"
-        "Command:   '{cmd}'\n"
-        "Exit code: {code}\n"
-        "STDOUT:\n{stdout}\n"
-        "STDERR:\n{stderr}".format(
-            host=remote.host, cmd=cmd, code=result['exit_code'],
-            stdout=result['stdout_str'], stderr=result['stderr_str']
-        ))
-
-    if result['exit_code'] not in assert_ec_equal:
-        error_msg = (
-            err_msg or
-            "Unexpected exit_code returned: actual {0}, expected {1}."
-            "".format(
-                result['exit_code'],
-                ' '.join(map(str, assert_ec_equal))))
-        log_msg = (
-            "{0}  Command: '{1}'  "
-            "Details:\n{2}".format(
-                error_msg, cmd, details_log))
-        logger.error(log_msg)
-        if raise_on_assert:
-            raise Exception(log_msg)
-
     if clear:
         remote.clear()
 
     if jsonify:
-        try:
-            result['stdout_json'] = json_deserialize(result['stdout_str'])
-        except Exception:
-            error_msg = (
-                "Unable to deserialize output of command"
-                " '{0}' on host {1}".format(cmd, remote.host))
-            logger.error(error_msg)
-            raise Exception(error_msg)
+        result['stdout_json'] = orig_result.stdout_json
 
     return result
 
@@ -415,7 +388,7 @@ def json_deserialize(json_string):
     :return: obj
     :raise: Exception
     """
-    if isinstance(json_string, (list)):
+    if isinstance(json_string, list):
         json_string = ''.join(json_string)
 
     try:
@@ -464,14 +437,15 @@ def get_net_settings(remote, skip_interfaces=set()):
     bond_mode_cmd = 'awk \'{{print $1}}\' /sys/class/net/{0}/bonding/mode'
     bond_slaves_cmd = ('awk \'{{gsub(" ","\\n"); print}}\' '
                        '/sys/class/net/{0}/bonding/slaves')
-    bridge_slaves_cmd = ('ls -1 /sys/class/net/{0}/brif/')
+    bridge_slaves_cmd = 'ls -1 /sys/class/net/{0}/brif/'
 
-    node_interfaces = [l.strip() for l in run_on_remote(remote, interface_cmd)
-                       if not any(re.search(regex, l.strip()) for regex
-                                  in skip_interfaces)]
-    node_vlans = [l.strip() for l in run_on_remote(remote, vlan_cmd)]
-    node_bonds = [l.strip() for l in run_on_remote(remote, bond_cmd)]
-    node_bridges = [l.strip() for l in run_on_remote(remote, bridge_cmd)]
+    node_interfaces = [
+        l.strip() for l in remote.check_call(interface_cmd).stdout
+        if not any(re.search(regex, l.strip())
+                   for regex in skip_interfaces)]
+    node_vlans = [l.strip() for l in remote.check_call(vlan_cmd).stdout]
+    node_bonds = [l.strip() for l in remote.check_call(bond_cmd).stdout]
+    node_bridges = [l.strip() for l in remote.check_call(bridge_cmd).stdout]
 
     for interface in node_interfaces:
         bond_mode = None
@@ -483,16 +457,16 @@ def get_net_settings(remote, skip_interfaces=set()):
             if_type = 'bond'
             bond_mode = ''.join(
                 [l.strip() for l in
-                 run_on_remote(remote, bond_mode_cmd.format(interface))])
+                 remote.check_call(bond_mode_cmd.format(interface)).stdout])
             bond_slaves = set(
                 [l.strip() for l in
-                 run_on_remote(remote, bond_slaves_cmd.format(interface))]
+                 remote.check_call(bond_slaves_cmd.format(interface)).stdout]
             )
         elif interface in node_bridges:
             if_type = 'bridge'
             bridge_slaves = set(
                 [l.strip() for l in
-                 run_on_remote(remote, bridge_slaves_cmd.format(interface))
+                 remote.check_call(bridge_slaves_cmd.format(interface)).stdout
                  if not any(re.search(regex, l.strip())
                             for regex in skip_interfaces)]
             )
@@ -500,7 +474,7 @@ def get_net_settings(remote, skip_interfaces=set()):
             if_type = 'common'
         if_ips = set(
             [l.strip()
-             for l in run_on_remote(remote, ip_cmd.format(interface))]
+             for l in remote.check_call(ip_cmd.format(interface)).stdout]
         )
 
         net_settings[interface] = {
@@ -517,8 +491,8 @@ def get_net_settings(remote, skip_interfaces=set()):
 def get_ip_listen_stats(remote, proto='tcp'):
     # If bindv6only is disabled, then IPv6 sockets listen on IPv4 too
     check_v6_bind_cmd = 'cat /proc/sys/net/ipv6/bindv6only'
-    bindv6only = ''.join([l.strip()
-                          for l in run_on_remote(remote, check_v6_bind_cmd)])
+    bindv6only = ''.join(
+        [l.strip() for l in remote.check_call(check_v6_bind_cmd).stdout])
     check_v6 = bindv6only == '0'
     if check_v6:
         cmd = ("awk '$4 == \"0A\" {{gsub(\"00000000000000000000000000000000\","
@@ -526,7 +500,7 @@ def get_ip_listen_stats(remote, proto='tcp'):
                "/proc/net/{0} /proc/net/{0}6").format(proto)
     else:
         cmd = "awk '$4 == \"0A\" {{print $2}}' /proc/net/{0}".format(proto)
-    return [l.strip() for l in run_on_remote(remote, cmd)]
+    return [l.strip() for l in remote.check_call(cmd).stdout]
 
 
 def erase_data_from_hdd(remote,
@@ -590,4 +564,4 @@ def erase_data_from_hdd(remote,
     commands.append("sync")
 
     for cmd in commands:
-        run_on_remote(remote, cmd)
+        remote.check_call(cmd)
