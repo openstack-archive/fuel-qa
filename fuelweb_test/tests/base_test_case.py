@@ -12,9 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import time
 
 from devops.helpers.helpers import wait
+from devops.helpers.templates import yaml_template_load
 
 from proboscis import TestProgram
 from proboscis import SkipTest
@@ -83,7 +85,13 @@ class TestBasic(object):
     @property
     def env(self):
         if self.__env is None:
-            self.__env = EnvironmentModel(self._devops_config)
+            # hack before we find proper solution for loading devops templates
+            external_config = os.environ.get("DEVOPS_SETTINGS_TEMPLATE", None)
+            if external_config:
+                config = yaml_template_load(external_config)
+            else:
+                config = self._devops_config
+            self.__env = EnvironmentModel(config)
         return self.__env
 
     @property
