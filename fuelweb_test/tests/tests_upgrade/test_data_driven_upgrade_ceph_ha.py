@@ -78,7 +78,7 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         self.show_step(5)
         self.show_step(6)
         self.deploy_cluster(
-            {'name': self.prepare_upgrade_ceph_ha_before_backup.__name__,
+            {'name': self.cluster_names["ceph_ha"],
              'settings': cluster_settings,
              'nodes':
                  {'slave-01': ['controller'],

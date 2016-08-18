@@ -25,7 +25,7 @@ from fuelweb_test.tests.tests_upgrade.upgrade_base import OSUpgradeBase
 class TestOSupgrade(OSUpgradeBase):
     def __init__(self):
         super(TestOSupgrade, self).__init__()
-        self.old_cluster_name = 'prepare_upgrade_ceph_ha'
+        self.old_cluster_name = self.cluster_names["ceph_ha"]
 
     @test(depends_on_groups=['upgrade_ceph_ha_restore'],
           groups=["os_upgrade_env"])
