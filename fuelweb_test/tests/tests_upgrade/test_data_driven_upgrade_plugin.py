@@ -74,11 +74,8 @@ class UpgradePlugin(DataDrivenUpgradeBase):
                 url=settings.EXAMPLE_V3_PLUGIN_REMOTE_URL,
                 location=example_plugin_remote_name))
         admin_remote.check_call(
-            "fuel --username={user} --password {password} "
-            "plugins --install {location} ".format(
-                location=example_plugin_remote_name,
-                user=settings.KEYSTONE_CREDS['username'],
-                password=settings.KEYSTONE_CREDS['password']))
+            "fuel plugins --install {location} ".format(
+                location=example_plugin_remote_name))
 
         self.show_step(2)
         self.show_step(3)
