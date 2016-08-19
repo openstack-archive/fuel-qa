@@ -549,6 +549,18 @@ class LCMTestBasic(TestBasic):
         logger.info("Generated nodes settings fixture:\n{}".format(
             yaml.safe_dump(nodes_s, default_flow_style=False)))
 
+    def enable_hugepages(self, node_ids):
+        """Updates settings of the given nodes to enable hugepages
+
+        :param node_ids: list, node IDs
+        :return: None
+        """
+        for node_id in node_ids:
+            settings = self.fuel_web.client.get_node_attributes(
+                node_id)
+            settings['hugepages']['nova']['value']['2048'] = 10
+            self.fuel_web.client.upload_node_attributes(settings, node_id)
+
 
 @test(groups=['deploy_lcm_environment'])
 class SetupLCMEnvironment(LCMTestBasic):
@@ -598,6 +610,8 @@ class SetupLCMEnvironment(LCMTestBasic):
         )
 
         self.show_step(6)
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        self.enable_hugepages([node['id'] for node in slave_nodes])
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(7)
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
@@ -657,6 +671,8 @@ class SetupLCMEnvironment(LCMTestBasic):
         )
 
         self.show_step(6)
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        self.enable_hugepages([node['id'] for node in slave_nodes])
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(7)
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
@@ -721,6 +737,8 @@ class SetupLCMEnvironment(LCMTestBasic):
         )
 
         self.show_step(6)
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        self.enable_hugepages([node['id'] for node in slave_nodes])
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(7)
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
@@ -786,6 +804,8 @@ class SetupLCMEnvironment(LCMTestBasic):
         )
 
         self.show_step(5)
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        self.enable_hugepages([node['id'] for node in slave_nodes])
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(6)
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
@@ -844,6 +864,8 @@ class SetupLCMEnvironment(LCMTestBasic):
         )
 
         self.show_step(5)
+        slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        self.enable_hugepages([node['id'] for node in slave_nodes])
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(6)
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
