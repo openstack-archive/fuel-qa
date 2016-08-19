@@ -34,6 +34,7 @@ from fuelweb_test.helpers.utils import cond_upload
 from fuelweb_test.helpers.utils import run_on_remote_get_results
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
+from fuelweb_test.settings import KEYSTONE_CREDS
 from fuelweb_test import settings as hlp_data
 from fuelweb_test.settings import NESSUS_IMAGE_PATH
 
@@ -187,6 +188,10 @@ class AdminActions(BaseActions):
         assert_equal(0, result['exit_code'],
                      "Command [{cmd}] failed with the following result: {res}"
                      .format(cmd=cmd, res=result))
+        with self.admin_remote.open(config) as f:
+            content = yaml.load(f)
+        content["FUEL_ACCESS"]['user'] = KEYSTONE_CREDS['username']
+        content["FUEL_ACCESS"]['password'] = KEYSTONE_CREDS['password']
 
         if FUEL_USE_LOCAL_NTPD:
             # Try to use only ntpd on the host as the time source
