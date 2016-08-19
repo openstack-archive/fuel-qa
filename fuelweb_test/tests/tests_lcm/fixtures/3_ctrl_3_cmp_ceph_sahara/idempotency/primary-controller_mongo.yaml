@@ -55,6 +55,7 @@ tasks:
   - copy_keys:
       type: copy_files
   - enable_rados: null
+  - delete_old_admin_user: null
   - ntp-check: null
   - aodh-db: null
   - disable_keystone_service_token:
@@ -157,6 +158,8 @@ tasks:
       type: shell
   - enable_quorum:
       type: shell
+  - copy_changed_admin_user:
+      type: copy_files
   - openstack-haproxy-nova: null
   - openstack-network-server-config: null
   - primary-database:
@@ -185,5 +188,7 @@ tasks:
   - openstack-network-server-nova: null
   - copy_haproxy_keys:
       type: copy_files
+  - pkg_upgrade:
+      no_puppet_run: true
   - openstack-network-networks: null
   - ssl-add-trust-chain: null

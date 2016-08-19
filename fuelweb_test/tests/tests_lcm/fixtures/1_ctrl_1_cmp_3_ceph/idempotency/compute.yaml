@@ -28,6 +28,8 @@ tasks:
   - dns-client: null
   - openstack-network-plugins-l2: null
   - allocate_hugepages: null
+  - copy_changed_admin_user:
+      type: copy_files
   - plugins_setup_repositories:
       no_puppet_run: true
   - ceph-compute: null
@@ -62,5 +64,7 @@ tasks:
   - copy_haproxy_keys:
       type: copy_files
   - ntp-client: null
+  - pkg_upgrade:
+      no_puppet_run: true
   - ssl-add-trust-chain: null
   - reserved_ports: null
