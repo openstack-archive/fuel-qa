@@ -23,7 +23,7 @@ import os
 
 from devops.helpers.templates import yaml_template_load
 from proboscis import test, SkipTest
-from proboscis.asserts import assert_true, assert_equal
+from proboscis.asserts import assert_true, assert_equal, fail
 
 from fuelweb_test import settings, logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -45,19 +45,20 @@ class UpgradeCustom(DataDrivenUpgradeBase):
                 ["{}:{}".format(key, value) for key, value in step.items()]))
 
     def _get_current_step(self):
+        step_name = settings.UPGRADE_CUSTOM_STEP_NAME
+        target_field = {'backup': 'backup_snapshot_name',
+                        'restore': 'restore_snapshot_name'}
         for item in self.upgrade_data:
-            if item['action'] == 'backup':
-                if self.env.d_env.has_snapshot(item['backup_snapshot_name']):
-                    continue
-                else:
-                    return item
-            elif item['action'] == 'restore':
-                if self.env.d_env.has_snapshot(item['restore_snapshot_name']):
-                    continue
-                else:
-                    return item
-        raise SkipTest("All steps are executed, all snapshots are exists; "
-                       "Nothing to do")
+            if not step_name == item['step_name']:
+                continue
+            if self.env.d_env.has_snapshot(
+                    item[target_field[item['action']]]):
+                raise SkipTest(
+                    "Step {!r} already executed".format(step_name))
+            else:
+                return item
+        fail("Can not find step {!r} in config file {!r}".format(
+            step_name, settings.UPGRADE_TEST_TEMPLATE))
 
     @test(groups=['upgrade_custom_backup'])
     @log_snapshot_after_test
