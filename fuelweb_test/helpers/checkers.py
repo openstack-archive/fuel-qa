@@ -417,7 +417,7 @@ def iptables_check(remote):
                                      " /etc/fuel/iptables-backup")
     iptables_restore = remote.execute("sed -e '/^:/d; /^#/d' "
                                       " /etc/fuel/iptables-restore")
-    assert_equal(iptables_backup, iptables_restore,
+    assert_equal(iptables_backup.stdout_str, iptables_restore.stdout_str,
                  "list of iptables rules are not equal")
 
 
