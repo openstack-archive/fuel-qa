@@ -19,7 +19,7 @@ tasks:
       type: copy_files
   - setup_repositories: null
   - dns-client: null
-  - allocate_hugepages: null
+  - allocate_hugepages: all
   - plugins_setup_repositories:
       no_puppet_run: true
   - ssl-keys-saving: null
