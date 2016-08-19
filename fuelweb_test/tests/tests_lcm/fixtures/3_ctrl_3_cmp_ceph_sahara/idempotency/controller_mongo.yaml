@@ -117,6 +117,8 @@ tasks:
       no_puppet_run: true
   - openstack-network-plugins-l2: null
   - openstack-network-agents-dhcp: null
+  - copy_changed_admin_user:
+      type: copy_files
   - openstack-haproxy-nova: null
   - openstack-network-server-config: null
   - openstack-haproxy-cinder: null
@@ -131,4 +133,6 @@ tasks:
   - openstack-network-server-nova: null
   - copy_haproxy_keys:
       type: copy_files
+  - pkg_upgrade:
+      no_puppet_run: true
   - ssl-add-trust-chain: null

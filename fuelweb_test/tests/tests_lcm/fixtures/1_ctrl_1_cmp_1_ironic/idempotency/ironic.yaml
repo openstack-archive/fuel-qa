@@ -21,6 +21,8 @@ tasks:
       type: copy_files
   - setup_repositories: null
   - allocate_hugepages: null
+  - copy_changed_admin_user:
+      type: copy_files
   - plugins_setup_repositories:
       no_puppet_run: true
   - ironic-conductor: null
@@ -40,4 +42,6 @@ tasks:
   - hosts: null
   - copy_haproxy_keys:
       type: copy_files
+  - pkg_upgrade:
+      no_puppet_run: true
   - reserved_ports: null
