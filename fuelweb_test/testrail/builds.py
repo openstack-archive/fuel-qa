@@ -18,6 +18,7 @@ import re
 
 import requests
 from requests.packages.urllib3 import disable_warnings
+from simplejson.scanner import JSONDecodeError
 
 from fuelweb_test.testrail.settings import JENKINS
 from fuelweb_test.testrail.settings import logger
@@ -115,7 +116,14 @@ class Build(object):
                             str(build_number), 'injectedEnvVars',
                             'api/json?depth={depth}'.format(depth=depth)])
         logger.debug("Request injected variables from job {}".format(job_url))
-        return requests.get(job_url).json()
+        try:
+            result = requests.get(job_url).json()
+        except JSONDecodeError:
+            logger.debug(
+                "Failed to decode injected variables from job {}".format(
+                    job_url))
+            result = []
+        return result
 
     def get_job_console(self):
         job_url = "/".join([JENKINS["url"], 'job', self.name,
