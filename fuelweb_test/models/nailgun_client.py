@@ -67,22 +67,22 @@ class NailgunClient(object):
     def _get(self, url, **kwargs):
         if 'endpoint_filter' not in kwargs:
             kwargs.update(endpoint_filter={'service_type': 'fuel'})
-        return self.session.get(url=url, **kwargs)
+        return self.session.get(url=url, connect_retries=1, **kwargs)
 
     def _delete(self, url, **kwargs):
         if 'endpoint_filter' not in kwargs:
             kwargs.update(endpoint_filter={'service_type': 'fuel'})
-        return self.session.delete(url=url, **kwargs)
+        return self.session.delete(url=url, connect_retries=1, **kwargs)
 
     def _post(self, url, **kwargs):
         if 'endpoint_filter' not in kwargs:
             kwargs.update(endpoint_filter={'service_type': 'fuel'})
-        return self.session.post(url=url, **kwargs)
+        return self.session.post(url=url, connect_retries=1, **kwargs)
 
     def _put(self, url, **kwargs):
         if 'endpoint_filter' not in kwargs:
             kwargs.update(endpoint_filter={'service_type': 'fuel'})
-        return self.session.put(url=url, **kwargs)
+        return self.session.put(url=url, connect_retries=1, **kwargs)
 
     def list_nodes(self):
         return self._get(url="/nodes/").json()
