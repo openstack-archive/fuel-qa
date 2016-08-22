@@ -296,8 +296,9 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
         Scenario:
         1. Revert "replace_controller_net_tmpl" snapshot
         2. Reboot node
-        3. Verify networks
-        4. Run OSTF
+        3. Wait until OS and HA services are ready
+        4. Verify networks
+        5. Run OSTF
 
         Snapshot: restart_node_net_tmpl
         """
@@ -311,9 +312,12 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
             self.env.d_env.get_nodes(name__in=['slave-03']))
 
         self.show_step(3)
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+        self.fuel_web.assert_os_services_ready(cluster_id)
+        self.show_step(4)
         self.fuel_web.verify_network(cluster_id)
 
-        self.show_step(4)
+        self.show_step(5)
         self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1,
                                test_sets=['smoke', 'sanity', 'ha'])
         self.env.make_snapshot("restart_node_net_tmpl", is_make=True)
