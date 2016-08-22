@@ -17,6 +17,7 @@ from __future__ import unicode_literals
 import os
 # pylint: disable=import-error
 # pylint: disable=no-name-in-module
+from distutils.version import LooseVersion
 from distutils.version import StrictVersion
 # pylint: enable=no-name-in-module
 # pylint: enable=import-error
@@ -34,6 +35,12 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 
 class DataDrivenUpgradeBase(TestBasic):
+
+    IGNORED_OSTF_TESTS = {
+        '7.0': 'Instance live migration',
+        '8.0': 'Launch instance with file injection'
+    }
+
     OCTANE_COMMANDS = {
         'backup': 'octane -v --debug fuel-backup --to {path}',
         'repo-backup': 'octane -v --debug fuel-repo-backup --to {path} --full',
@@ -452,3 +459,18 @@ class DataDrivenUpgradeBase(TestBasic):
         if self.fuel_version <= StrictVersion('8.0'):
             cmd = "dockerctl shell cobbler {}".format(cmd)
         admin_remote.check_call(cmd)
+
+    def check_ostf_with_ignoring_some_res(self, cluster_id, test_sets=None,
+                                          timeout=30 * 60):
+        """Run OSTF tests with the ignoring some test result
+        """
+        if (
+            LooseVersion(settings.UPGRADE_FUEL_TO) >= LooseVersion('9.0') and
+            LooseVersion(settings.UPGRADE_FUEL_FROM) == LooseVersion('7.0')
+        ):
+            ignr_tests = list(self.IGNORED_OSTF_TESTS.values())
+        else:
+            ignr_tests = [self.IGNORED_OSTF_TESTS[settings.UPGRADE_FUEL_FROM]]
+
+        self.fuel_web.run_ostf(cluster_id, test_sets=test_sets,
+                               failed_test_name=ignr_tests, timeout=timeout)

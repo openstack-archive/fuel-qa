@@ -170,7 +170,7 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         # Live migration test could fail
         # https://bugs.launchpad.net/fuel/+bug/1471172
         # https://bugs.launchpad.net/fuel/+bug/1604749
-        self.fuel_web.run_ostf(cluster_id, should_fail=1)
+        self.check_ostf_with_ignoring_some_res(cluster_id)
 
         self.env.make_snapshot(self.snapshot_name, is_make=True)
         self.cleanup()
@@ -203,7 +203,7 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         self.fuel_web.assert_ha_services_ready(cluster_id)
         self.fuel_web.assert_os_services_ready(cluster_id)
         self.show_step(4)
-        self.fuel_web.run_ostf(cluster_id)
+        self.check_ostf_with_ignoring_some_res(cluster_id)
 
     @test(groups=['upgrade_ceph_ha_tests', 'upgrade_ceph_ha_scale_ceph'],
           depends_on_groups=['upgrade_ceph_ha_restore'])
@@ -232,4 +232,4 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         # LP 1562736 get_devops_node_by_nailgun_node is not working
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(5)
-        self.fuel_web.run_ostf(cluster_id)
+        self.check_ostf_with_ignoring_some_res(cluster_id)
