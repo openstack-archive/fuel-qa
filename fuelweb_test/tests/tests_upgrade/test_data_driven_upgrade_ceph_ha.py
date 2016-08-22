@@ -184,7 +184,7 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         Scenario:
         1. Revert "upgrade_ceph_ha_restore" snapshot.
         2. Warm restart of a controller.
-        3. Wait until HA services become ready.
+        3. Wait until services become ready.
         4. Run OSTF.
 
         Duration: 20m
@@ -201,6 +201,7 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         self.fuel_web.warm_restart_nodes([d_ctrls[0]])
         self.show_step(3)
         self.fuel_web.assert_ha_services_ready(cluster_id)
+        self.fuel_web.assert_os_services_ready(cluster_id)
         self.show_step(4)
         self.fuel_web.run_ostf(cluster_id)
 
