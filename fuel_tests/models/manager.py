@@ -219,7 +219,7 @@ class Manager(Basic):
     def get_ready_release(self):
         """Make changes in release configuration."""
 
-        logger.info("Getting ready relase")
+        logger.info("Getting ready release")
         if self.check_run("ready"):
             self.env.revert_snapshot("ready")
             logger.info("Getted ready release from snapshot")
