@@ -17,7 +17,7 @@ from proboscis.asserts import assert_true
 from proboscis import test
 from proboscis import SkipTest
 from devops.error import TimeoutError
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 
 from fuelweb_test.helpers import checkers
@@ -434,7 +434,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         self.env.admin_actions.upgrade_master_node(rollback=True)
-        _wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+        wait_pass(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.nodes().slaves[0]), timeout=8 * 60)
         logger.debug("all services are up now")
         self.fuel_web.wait_nodes_get_online_state(
@@ -516,7 +516,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
 
         self.env.admin_actions.upgrade_master_node(rollback=True)
 
-        _wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+        wait_pass(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.nodes().slaves[0]), timeout=8 * 60)
         logger.debug("all services are up now")
         self.fuel_web.wait_nodes_get_online_state(
@@ -569,7 +569,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
 
         self.env.admin_actions.upgrade_master_node(rollback=True)
 
-        _wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+        wait_pass(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.nodes().slaves[0]), timeout=8 * 60)
         logger.debug("all services are up now")
         self.fuel_web.wait_nodes_get_online_state(
@@ -624,7 +624,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
 
         self.env.admin_actions.upgrade_master_node(rollback=True)
 
-        _wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+        wait_pass(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.nodes().slaves[0]), timeout=8 * 60)
         logger.debug("all services are up now")
         self.fuel_web.wait_nodes_get_online_state(

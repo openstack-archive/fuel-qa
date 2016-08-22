@@ -20,7 +20,7 @@ from netaddr import EUI
 
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 from fuelweb_test.helpers.ssl import copy_cert_from_master
 from fuelweb_test.helpers.ssl import change_cluster_ssl_config
@@ -109,7 +109,9 @@ class FuelWebClient(object):
             lambda: all([run['status'] == 'finished'
                          for run in
                          self.client.get_ostf_test_run(cluster_id)]),
-            timeout=timeout)
+            timeout=timeout,
+            timeout_msg='OSTF tests run timeout '
+                        '(cluster_id={})'.format(cluster_id))
         return self.client.get_ostf_test_run(cluster_id)
 
     @logwrap
@@ -134,7 +136,7 @@ class FuelWebClient(object):
     def assert_cluster_ready(self, os_conn, smiles_count,
                              networks_count=2, timeout=300):
         logger.info('Assert cluster services are UP')
-        _wait(
+        wait_pass(
             lambda: self.get_cluster_status(
                 os_conn,
                 smiles_count=smiles_count,
@@ -150,10 +152,10 @@ class FuelWebClient(object):
             logger.info('Waiting {0} sec. for passed OSTF HA tests.'
                         .format(timeout))
             with quiet_logger():
-                _wait(lambda: self.run_ostf(cluster_id,
-                                            test_sets=['ha'],
-                                            should_fail=should_fail),
-                      interval=20, timeout=timeout)
+                wait_pass(lambda: self.run_ostf(cluster_id,
+                                                test_sets=['ha'],
+                                                should_fail=should_fail),
+                          interval=20, timeout=timeout)
             logger.info('OSTF HA tests passed successfully.')
         else:
             logger.debug('Cluster {0} is not in HA mode, OSTF HA tests '
@@ -167,10 +169,10 @@ class FuelWebClient(object):
         logger.info('Waiting {0} sec. for passed OSTF Sanity checks.'
                     .format(timeout))
         with quiet_logger():
-            _wait(lambda: self.run_ostf(cluster_id,
-                                        test_sets=['sanity'],
-                                        should_fail=should_fail),
-                  interval=10, timeout=timeout)
+            wait_pass(lambda: self.run_ostf(cluster_id,
+                                            test_sets=['sanity'],
+                                            should_fail=should_fail),
+                      interval=10, timeout=timeout)
         logger.info('OSTF Sanity checks passed successfully.')
 
     @logwrap
@@ -326,8 +328,8 @@ class FuelWebClient(object):
         task = self.task_wait(task, timeout, interval)
         assert_equal(
             'error', task['status'],
-            "Task '{name}' has incorrect status. {} != {}".format(
-                task['status'], 'error', name=task["name"]
+            "Task '{name}' has incorrect status. {status} != {exp}".format(
+                status=task['status'], exp='error', name=task["name"]
             )
         )
 
@@ -455,9 +457,9 @@ class FuelWebClient(object):
                     section = 'access'
                 if option == 'assign_to_all_nodes':
                     section = 'public_network_assignment'
-                if option in ('dns_list'):
+                if option in 'dns_list':
                     section = 'external_dns'
-                if option in ('ntp_list'):
+                if option in 'ntp_list':
                     section = 'external_ntp'
                 if section:
                     attributes['editable'][section][option]['value'] =\
@@ -514,7 +516,7 @@ class FuelWebClient(object):
             self.client.update_cluster_attributes(cluster_id, attributes)
 
         if not cluster_id:
-            raise Exception("Could not get cluster '%s'" % name)
+            raise Exception("Could not get cluster '{:s}'".format(name))
         # TODO: rw105719
         # self.client.add_syslog_server(
         #    cluster_id, self.environment.get_host_node_ip(), port)
