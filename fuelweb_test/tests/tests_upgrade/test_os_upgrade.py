@@ -144,11 +144,13 @@ class TestOSupgrade(OSUpgradeBase):
             2. Select cluster for upgrade and upgraded cluster
             3. Run octane upgrade-control <orig_env_id> <seed_env_id>
             4. Check cluster consistency
-            5. Collect old controllers for upgrade
-            6. Run octane upgrade-node <seed_cluster_id> <node_id> <node_id>
-            7. Check tasks status after upgrade run completion
-            8. Run network verification on target cluster
-            9. Run minimal OSTF sanity check (user list) on target cluster
+            5. Check, if required pre-upgrade computes packages and run:
+                run octane upgrade-compute ${SEED_ID} <NODE_ID> [... <NODE_ID>]
+            6. Collect old controllers for upgrade
+            7. Run octane upgrade-node <seed_cluster_id> <node_id> <node_id>
+            8. Check tasks status after upgrade run completion
+            9. Run network verification on target cluster
+            10. Run minimal OSTF sanity check (user list) on target cluster
 
         """
 
@@ -163,6 +165,8 @@ class TestOSupgrade(OSUpgradeBase):
         seed_cluster_id = self.fuel_web.get_last_created_cluster()
 
         self.upgrade_control_plane_code(seed_cluster_id)
+
+        self.pre_upgrade_computes(cluster_id=self.orig_cluster_id)
 
         # upgrade controllers part
 
