@@ -702,7 +702,9 @@ class OpenStackActions(common.Common):
             volume = self.create_volume()
             self.attach_volume(volume, server)
             volume = self.cinder.volumes.get(volume.id)
-            vm_data['attached_volume'] = volume.to_dict()
+            # cinderclient in kilo does not contains "to_dict" method for
+            # volume object
+            vm_data['attached_volume'] = volume._info
 
         if enable_floating_ips:
             self.assign_floating_ip(server)
