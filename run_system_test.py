@@ -61,7 +61,7 @@ def clean_argv_proboscis():
 def group_in_pytest(group):
     from _pytest.config import _prepareconfig
     from _pytest.main import Session
-    from _pytest.python import FixtureManager
+    from _pytest.fixtures import FixtureManager
     from _pytest.mark import MarkMapping
     config = _prepareconfig(args="")
     session = Session(config)

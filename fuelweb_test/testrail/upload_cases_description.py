@@ -40,7 +40,7 @@ from system_test.tests.base import ActionTest
 from pytest import Session
 # pylint: enable=no-name-in-module
 from _pytest.config import _prepareconfig
-from _pytest.python import FixtureManager
+from _pytest.fixtures import FixtureManager
 from _pytest.mark import MarkMapping
 
 GROUP_FIELD = 'custom_test_group'
