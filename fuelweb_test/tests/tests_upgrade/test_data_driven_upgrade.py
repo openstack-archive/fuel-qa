@@ -153,7 +153,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         # Live migration test could fail
         # https://bugs.launchpad.net/fuel/+bug/1471172
         # https://bugs.launchpad.net/fuel/+bug/1604749
-        self.fuel_web.run_ostf(cluster_id, should_fail=1)
+        self.check_ostf(cluster_id, ignore_known_issues=True)
 
         self.env.make_snapshot("upgrade_smoke_restore", is_make=True)
         self.cleanup()
@@ -200,7 +200,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         # LP 1562736 get_devops_node_by_nailgun_node is not working
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(6)
-        self.fuel_web.run_ostf(cluster_id)
+        self.check_ostf(cluster_id, ignore_known_issues=True)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.show_step(7)
@@ -225,7 +225,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.show_step(12)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(13)
-        self.fuel_web.run_ostf(cluster_id)
+        self.check_ostf(cluster_id, ignore_known_issues=True)
         self.env.make_snapshot("upgrade_smoke_scale")
 
     @test(groups=['upgrade_smoke_reset_deploy'],
@@ -282,7 +282,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.show_step(7)
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(8)
-        self.fuel_web.run_ostf(cluster_id)
+        self.check_ostf(cluster_id, ignore_known_issues=True)
 
     @test(groups=['upgrade_smoke_new_deployment'],
           depends_on_groups=['upgrade_smoke_restore'])
@@ -347,7 +347,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.show_step(7)
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(8)
-        self.fuel_web.run_ostf(cluster_id)
+        self.check_ostf(cluster_id)
 
 
 @test(groups=['upgrade_no_cluster_tests'])
@@ -451,7 +451,7 @@ class UpgradeNoCluster(DataDrivenUpgradeBase):
         self.show_step(6)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(7)
-        self.fuel_web.run_ostf(cluster_id)
+        self.check_ostf(cluster_id)
         self.env.make_snapshot("upgrade_no_cluster_deploy", is_make=True)
 
     @test(groups=['upgrade_no_cluster_deploy_old_cluster'],
@@ -506,4 +506,4 @@ class UpgradeNoCluster(DataDrivenUpgradeBase):
         self.show_step(7)
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(8)
-        self.fuel_web.run_ostf(cluster_id)
+        self.check_ostf(cluster_id, ignore_known_issues=True)
