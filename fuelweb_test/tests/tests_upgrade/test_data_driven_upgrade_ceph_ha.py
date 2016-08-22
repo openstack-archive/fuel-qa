@@ -16,8 +16,10 @@ import os
 
 from proboscis import test
 from proboscis.asserts import assert_true, assert_not_equal
+import yaml
 
 from fuelweb_test import settings
+from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_base import \
@@ -28,14 +30,16 @@ from fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_base import \
 class UpgradeCephHA(DataDrivenUpgradeBase):
     def __init__(self):
         super(UpgradeCephHA, self).__init__()
-        self.source_snapshot_name = "upgrade_ceph_ha_backup"
-        self.backup_snapshot_name = self.source_snapshot_name
+        self.source_snapshot_name = "prepare_upgrade_ceph_ha_before_backup"
+        self.backup_snapshot_name = "upgrade_ceph_ha_backup"
         self.snapshot_name = "upgrade_ceph_ha_restore"
         self.backup_name = "backup_ceph_ha.tar.gz"
         self.repos_backup_name = "repos_backup_ceph_ha.tar.gz"
         assert_not_equal(
             settings.KEYSTONE_CREDS['password'], 'admin',
             "Admin password was not changed, aborting execution")
+        self.workload_description_file = os.path.join(
+            self.local_dir_for_backups, "ceph_ha_instances_data.yaml")
 
     @test(groups=['prepare_upgrade_ceph_ha_before_backup'],
           depends_on=[SetupEnvironment.prepare_release])
@@ -51,12 +55,14 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         4. Add 3 node with ceph osd role
         5. Verify networks
         6. Deploy cluster
+        7. Spawn instance on each compute
+        8. Write workload definition to storage file
 
         Duration: TODO
         Snapshot: prepare_upgrade_ceph_ha_before_backup
         """
 
-        self.check_run("prepare_upgrade_ceph_ha_before_backup")
+        self.check_run(self.source_snapshot_name)
         self.env.revert_snapshot("ready", skip_timesync=True)
 
         cluster_settings = {
@@ -90,8 +96,25 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
                   'slave-07': ['ceph-osd'],
                   'slave-08': ['ceph-osd']}
              })
-        self.env.make_snapshot(
-            "prepare_upgrade_ceph_ha_before_backup", is_make=True)
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id),
+            user=self.cluster_creds['user'],
+            passwd=self.cluster_creds['password'],
+            tenant=self.cluster_creds['tenant'])
+
+        self.show_step(7)
+        vmdata = os_conn.boot_parameterized_vms(attach_volume=True,
+                                                boot_vm_from_volume=True,
+                                                enable_floating_ips=True,
+                                                on_each_compute=True)
+        self.show_step(8)
+        with open(self.workload_description_file, "w") as file_obj:
+            yaml.dump(vmdata, file_obj,
+                      default_flow_style=False, default_style='"')
+
+        self.env.make_snapshot(self.source_snapshot_name, is_make=True)
 
     @test(groups=['upgrade_ceph_ha_backup'],
           depends_on_groups=['prepare_upgrade_ceph_ha_before_backup'])
