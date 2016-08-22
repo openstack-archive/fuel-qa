@@ -15,6 +15,8 @@
 from __future__ import unicode_literals
 
 import os
+
+from distutils.version import LooseVersion
 from distutils.version import StrictVersion
 
 from devops.error import TimeoutError, DevopsCalledProcessError
@@ -25,11 +27,27 @@ from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 
 from fuelweb_test import logger
-from fuelweb_test import settings
+from fuelweb_test.settings import DEPLOYMENT_MODE
+from fuelweb_test.settings import FUEL_PROPOSED_REPO_URL
+from fuelweb_test.settings import LOGS_DIR
+from fuelweb_test.settings import KEYSTONE_CREDS
+from fuelweb_test.settings import NEUTRON
+from fuelweb_test.settings import NEUTRON_SEGMENT
+from fuelweb_test.settings import UPGRADE_FUEL_FROM
+from fuelweb_test.settings import UPGRADE_BACKUP_FILES_LOCAL_DIR
+from fuelweb_test.settings import UPGRADE_BACKUP_FILES_REMOTE_DIR
+from fuelweb_test.settings import UPGRADE_FUEL_TO
+from fuelweb_test.settings import OCTANE_PATCHES
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
 class DataDrivenUpgradeBase(TestBasic):
+
+    IGNORED_OSTF_TESTS = {
+        '7.0': 'Instance live migration',
+        '8.0': 'Launch instance with file injection'
+    }
+
     OCTANE_COMMANDS = {
         'backup': 'octane -v --debug fuel-backup --to {path}',
         'repo-backup': 'octane -v --debug fuel-repo-backup --to {path} --full',
@@ -43,10 +61,10 @@ class DataDrivenUpgradeBase(TestBasic):
 
     def __init__(self):
         super(DataDrivenUpgradeBase, self).__init__()
-        self.local_dir_for_backups = settings.UPGRADE_BACKUP_FILES_LOCAL_DIR
+        self.local_dir_for_backups = UPGRADE_BACKUP_FILES_LOCAL_DIR
         if not os.path.exists(self.local_dir_for_backups):
             os.makedirs(self.local_dir_for_backups)
-        self.remote_dir_for_backups = settings.UPGRADE_BACKUP_FILES_REMOTE_DIR
+        self.remote_dir_for_backups = UPGRADE_BACKUP_FILES_REMOTE_DIR
         self.cluster_creds = {
             'tenant': 'upgrade',
             'user': 'upgrade',
@@ -141,17 +159,15 @@ class DataDrivenUpgradeBase(TestBasic):
     def install_octane(self):
         """ Install fuel-octane package to master node"""
         conf_file = None
-        if settings.FUEL_PROPOSED_REPO_URL:
+        if FUEL_PROPOSED_REPO_URL:
             conf_file = '/etc/yum.repos.d/fuel-proposed.repo'
-            settings.FUEL_PROPOSED_REPO_URL = os.environ.get(
-                'FUEL_PROPOSED_REPO_URL')
             cmd = ("echo -e "
                    "'[fuel-proposed]\n"
                    "name=fuel-proposed\n"
                    "baseurl={}/\n"
                    "gpgcheck=0\n"
                    "priority=1' > {}").format(
-                       settings.FUEL_PROPOSED_REPO_URL,
+                       FUEL_PROPOSED_REPO_URL,
                        conf_file)
 
             # pylint: disable=no-member
@@ -175,9 +191,9 @@ class DataDrivenUpgradeBase(TestBasic):
         logger.info("Octane changes:")
         logger.info(octane_log)
 
-        if settings.OCTANE_PATCHES:
+        if OCTANE_PATCHES:
             logger.info("Patching octane with CR: {!r}".format(
-                settings.OCTANE_PATCHES))
+                OCTANE_PATCHES))
             # pylint: disable=no-member
             self.admin_remote.upload(
                 os.path.join(
@@ -187,10 +203,10 @@ class DataDrivenUpgradeBase(TestBasic):
 
             self.admin_remote.check_call(
                 "bash /tmp/octane_patcher.sh {}".format(
-                    settings.OCTANE_PATCHES))
+                    OCTANE_PATCHES))
             # pylint: enable=no-member
 
-        if settings.FUEL_PROPOSED_REPO_URL:
+        if FUEL_PROPOSED_REPO_URL:
             # pylint: disable=no-member
             self.admin_remote.rm_rf(conf_file)
             # pylint: enable=no-member
@@ -200,7 +216,7 @@ class DataDrivenUpgradeBase(TestBasic):
                     "Unknown octane action '{}', aborting".format(action))
         octane_cli_args = {
             'path': path,
-            'pwd': settings.KEYSTONE_CREDS['password']
+            'pwd': KEYSTONE_CREDS['password']
         }
         admin_remote = self.env.d_env.get_admin_remote()
         if 'backup' in action:
@@ -220,7 +236,7 @@ class DataDrivenUpgradeBase(TestBasic):
             # snapshot generating procedure can be broken
             admin_remote.download(
                 "/var/log/octane.log",
-                os.path.join(settings.LOGS_DIR,
+                os.path.join(LOGS_DIR,
                              "octane_{}_.log".format(os.path.basename(path))))
             raise
 
@@ -344,7 +360,7 @@ class DataDrivenUpgradeBase(TestBasic):
         self.env.sync_time()
         cluster_id = self.fuel_web.create_cluster(
             name=cluster_settings['name'],
-            mode=settings.DEPLOYMENT_MODE,
+            mode=DEPLOYMENT_MODE,
             settings=cluster_settings['settings']
         )
         if cluster_settings.get('plugin'):
@@ -380,12 +396,12 @@ class DataDrivenUpgradeBase(TestBasic):
         intermediate_snapshot = "prepare_upgrade_smoke_before_backup"
 
         assert_not_equal(
-            settings.KEYSTONE_CREDS['password'], 'admin',
+            KEYSTONE_CREDS['password'], 'admin',
             "Admin password was not changed, aborting execution")
 
         cluster_settings = {
-            'net_provider': settings.NEUTRON,
-            'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
+            'net_provider': NEUTRON,
+            'net_segment_type': NEUTRON_SEGMENT['vlan']
         }
         cluster_settings.update(self.cluster_creds)
 
@@ -448,3 +464,24 @@ class DataDrivenUpgradeBase(TestBasic):
         if self.fuel_version <= StrictVersion('8.0'):
             cmd = "dockerctl shell cobbler {}".format(cmd)
         admin_remote.check_call(cmd)
+
+    def check_ostf(self, cluster_id, test_sets=None, timeout=30 * 60,
+                   ignore_known_issues=False, additional_ignored_issues=None):
+        """Run OSTF tests with the ignoring some test result
+        """
+        if additional_ignored_issues:
+            ignr_tests = additional_ignored_issues
+        else:
+            ignr_tests = []
+
+        if ignore_known_issues:
+            if (
+                LooseVersion(UPGRADE_FUEL_TO) >= LooseVersion('9.0') and
+                LooseVersion(UPGRADE_FUEL_FROM) == LooseVersion('7.0')
+            ):
+                ignr_tests.expand(list(self.IGNORED_OSTF_TESTS.values()))
+            else:
+                ignr_tests.append(self.IGNORED_OSTF_TESTS[UPGRADE_FUEL_FROM])
+
+        self.fuel_web.run_ostf(cluster_id, test_sets=test_sets,
+                               failed_test_name=ignr_tests, timeout=timeout)
