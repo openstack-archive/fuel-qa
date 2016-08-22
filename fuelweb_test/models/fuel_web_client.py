@@ -262,11 +262,12 @@ class FuelWebClient(object):
             pretty_log(test_result, indent=1)))
 
         if failed_test_name:
-            for test_name in failed_test_name:
-                assert_true(test_name in actual_failed_names,
+            for test_name in actual_failed_names:
+                assert_true(test_name in failed_test_name,
                             'WARNING! Unexpected fail: '
                             'expected {0}, actual {1}'.format(
-                                failed_test_name, actual_failed_names))
+                                failed_test_name, actual_failed_names)
+                            )
 
         assert_true(
             failed <= should_fail, 'Failed {0} OSTF tests; should fail'
