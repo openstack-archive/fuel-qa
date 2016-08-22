@@ -15,14 +15,14 @@
 import time
 from urlparse import urlparse
 
-from cinderclient import client as cinderclient
+from cinderclient.client import Client as CinderClient
 from heatclient.v1.client import Client as HeatClient
-from glanceclient.v1 import Client as GlanceClient
+from glanceclient import Client as GlanceClient
 from keystoneclient.v2_0 import Client as KeystoneClient
 from keystoneclient.exceptions import ClientException
 from keystoneclient.exceptions import EndpointNotFound
-from novaclient.v2 import Client as NovaClient
-import neutronclient.v2_0.client as neutronclient
+from novaclient.client import Client as NovaClient
+from neutronclient.v2_0.client import Client as NeutronClient
 from proboscis.asserts import assert_equal
 
 from fuelweb_test import logger as LOGGER
@@ -59,7 +59,7 @@ class Common(object):
             neutron_args = {'username': user, 'password': password,
                             'tenant_name': tenant, 'auth_url': auth_url,
                             'endpoint_url': make_endpoint(neutron_endpoint)}
-            self.neutron = neutronclient.Client(**neutron_args)
+            self.neutron = NeutronClient(**neutron_args)
         except EndpointNotFound:
             LOGGER.warning("Can't find Neutron endpoint. It is OK if you are "
                            "running nova-network cluster")
@@ -67,7 +67,8 @@ class Common(object):
 
         nova_endpoint = self.keystone.service_catalog.url_for(
             service_type='compute', endpoint_type='publicURL')
-        nova_args = {'username': user, 'api_key': password,
+        nova_args = {'version': '2',
+                     'username': user, 'api_key': password,
                      'project_id': tenant, 'auth_url': auth_url,
                      'bypass_url': make_endpoint(nova_endpoint),
                      'auth_token': token}
@@ -79,13 +80,14 @@ class Common(object):
                        'api_key': password, 'project_id': tenant,
                        'auth_url': auth_url,
                        'bypass_url': make_endpoint(cinder_endpoint)}
-        self.cinder = cinderclient.Client(**cinder_args)
+        self.cinder = CinderClient(**cinder_args)
 
         glance_endpoint = self.keystone.service_catalog.url_for(
             service_type='image', endpoint_type='publicURL')
         LOGGER.debug('Glance endpoint is {0}'.format(
             make_endpoint(glance_endpoint)))
-        glance_args = {'endpoint': make_endpoint(glance_endpoint),
+        glance_args = {'version': '1',
+                       'endpoint': make_endpoint(glance_endpoint),
                        'token': token}
         self.glance = GlanceClient(**glance_args)
 
