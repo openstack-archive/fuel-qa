@@ -14,6 +14,12 @@
 
 from __future__ import unicode_literals
 
+# pylint: disable=import-error
+# pylint: disable=no-name-in-module
+from distutils.version import LooseVersion
+# pylint: enable=no-name-in-module
+# pylint: enable=import-error
+
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
@@ -24,6 +30,8 @@ from fuelweb_test import logger
 from fuelweb_test.settings import KEYSTONE_CREDS
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
+from fuelweb_test.settings import UPGRADE_FUEL_FROM
+from fuelweb_test.settings import UPGRADE_FUEL_TO
 from fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_base import \
     DataDrivenUpgradeBase
 
@@ -106,7 +114,7 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         assert_equal(
             self.fuel_web.get_cluster_release_id(new_cluster_id),
             self.fuel_web.client.get_release_id(
-                release_name='Liberty on Ubuntu 14.04'))
+                release_name='Newton on Ubuntu 14.04'))
 
     def upgrade_first_controller_code(self, seed_cluster_id):
         self.show_step(self.next_step)
@@ -311,6 +319,25 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         self.check_ceph_health(seed_controller['ip'])
 
         self.minimal_check(seed_cluster_id=seed_cluster_id, nwk_check=True)
+
+    def pre_upgrade_computes(self, cluster_id):
+        self.show_step(self.next_step)
+
+        # Fuel-octane can run pre-upgrade only starting from version 9.0 and
+        # we are upgrading packages only if version difference is >1 step
+        if LooseVersion(UPGRADE_FUEL_TO) >= LooseVersion('9.0') and \
+                LooseVersion(UPGRADE_FUEL_FROM) < LooseVersion('8.0'):
+
+            computes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+                cluster_id, ["compute"]
+            )
+
+            self.ssh_manager.check_call(
+                ip=self.ssh_manager.admin_ip,
+                command="octane upgrade-compute {0} {1}".format(
+                    cluster_id,
+                    " ".join([str(comp["id"]) for comp in computes])),
+                error_info="octane upgrade-node failed")
 
     def upgrade_nodes(self, seed_cluster_id, nodes_str, live_migration=False):
         self.ssh_manager.check_call(
