@@ -490,15 +490,17 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
         for node in step_config:
             if node['action'] == 'add':
                 self._add_node([node])
-                if node.get('vmware_vcenter'):
-                    nova_computes = node['vmware_vcenter']['nova-compute']
-                    dvs_settings = node['vmware_dvs']
-                    self.add_vmware_nova_compute(nova_computes)
-                    self.update_dvs_plugin_settings(dvs_settings)
             elif node['action'] == 'delete':
                 self._del_node([node])
                 if 'compute-vmware' in node['roles']:
                     self.del_vmware_nova_compute()
+            elif node['action'] == 'reconfigure':
+                if node.get('vmware_vcenter'):
+                    nova_computes = node['vmware_vcenter']['nova-compute']
+                    self.add_vmware_nova_compute(nova_computes)
+                if node.get('vmware_dvs'):
+                    dvs_settings = node['vmware_dvs']
+                    self.update_dvs_plugin_settings(dvs_settings)
             else:
                 logger.error("Unknown scale action: {}".format(node['action']))
         self.scale_step += 1
@@ -581,6 +583,10 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
         comp_vmware_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             self.cluster_id, ['compute-vmware'], role_status='pending_roles')
 
+        for n in comp_vmware_nodes:
+            if n['pending_addition'] is not True:
+                comp_vmware_nodes.remove(n)
+
         for instance in nova_computes:
             cluster_name = instance['cluster']
             srv_name = instance['srv_name']
@@ -590,6 +596,10 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
                 target_node = node['hostname']
             else:
                 target_node = instance['target_node']
+
+            for nova_inst in vcenter_data:
+                if cluster_name == nova_inst['vsphere_cluster']:
+                    vcenter_data.remove(nova_inst)
 
             vcenter_data.append(
                 {"vsphere_cluster": cluster_name,
