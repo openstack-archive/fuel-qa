@@ -19,6 +19,7 @@ from devops.helpers.helpers import wait
 from proboscis import TestProgram
 from proboscis import SkipTest
 from proboscis import test
+import unittest
 
 from fuelweb_test import logger
 from fuelweb_test import settings
