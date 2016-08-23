@@ -1180,7 +1180,11 @@ def install_configdb(master_node_ip):
 
             'rpm --import {}'.format(settings.MASTER_CENTOS_GPG),
 
-            'yum install -y tuning-box',
+            # TODO(akostrikov) Temporary hack to be on the edge.
+            'yum install -y tuning-box git',
+            'yum remove -y tuning-box',
+            'git clone http://github.com/openstack/tuning-box',
+            'cd tuning-box/ && python setup.py install',
             'nailgun_syncdb',
             "sudo -u postgres psql -c '\dt' nailgun | grep tuning_box",
             'service nailgun restart'
