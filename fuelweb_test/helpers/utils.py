@@ -50,6 +50,19 @@ from fuelweb_test import settings
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from gates_tests.helpers import exceptions
 
+REGISTER_CMD = """
+sed  's/\: /=/g' .config/fuel/fuel_client.yaml > \
+.config/fuel/fuel_client.yaml.env;
+echo 'OS_AUTH_URL="http://$SERVER_ADDRESS:$KEYSTONE_PORT"' >> \
+.config/fuel/fuel_client.yaml.env;
+sed -i'' 's/^/export /g' .config/fuel/fuel_client.yaml.env;
+source .config/fuel/fuel_client.yaml.env;
+openstack service create --name tuning-box config;
+openstack endpoint create \
+--publicurl http://$SERVER_ADDRESS:$SERVER_PORT/api/config \
+--region RegionOne tuning-box;
+"""
+
 
 @logwrap
 def get_yaml_to_json(node_ssh, filename):
@@ -1180,10 +1193,15 @@ def install_configdb(master_node_ip):
 
             'rpm --import {}'.format(settings.MASTER_CENTOS_GPG),
 
-            'yum install -y tuning-box',
+            # TODO(akostrikov) Temporary hack to be on the edge.
+            'yum install -y tuning-box git',
+            'yum remove -y tuning-box',
+            'git clone http://github.com/openstack/tuning-box',
+            'cd tuning-box/ && python setup.py install',
             'nailgun_syncdb',
             "sudo -u postgres psql -c '\dt' nailgun | grep tuning_box",
-            'service nailgun restart'
+            'service nailgun restart',
+            REGISTER_CMD
             ]
     for cmd in cmds:
         ssh_manager.execute_on_remote(ip=ip, cmd=cmd)

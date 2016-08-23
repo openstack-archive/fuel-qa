@@ -280,3 +280,80 @@ class TestsConfigDBAPI(TestBasic):
         node_effective = self.fuel_web.client.get_node_resource_id_value(
             env_id=1, resource_id=1, node_id=2, effective=True)
         assert_equal(node_effective, global_override)
+
+    # TODO(akostrikov) Only 'get', 'override' and 'set' are implemented for now
+    @test(depends_on_groups=['create_component_and_env_configdb'],
+          groups=['configdb_cli_interface'])
+    @log_snapshot_after_test
+    def validate_creation_of_env(self):
+        create_env_cmd = 'fuel2 config environment create'
+        list_env_cmd = 'fuel2 config environment list'
+
+    @test(depends_on_groups=['create_component_and_env_configdb'],
+          groups=['configdb_cli_interface'])
+    def validate_creation_of_component(self):
+        # TODO x. Resource of another component by wrong env
+        create_component_cmd = 'fuel2 config component create'
+        list_component_cmd = 'fuel2 config component list'
+
+    @test(depends_on_groups=['create_component_and_env_configdb'],
+          groups=['configdb_cli_interface'])
+    def resource_value_without_level(self):
+        """Getting and setting resources without level with cli
+
+        Scenario:
+            1. Revert snapshot with installed ConfigDB and
+               created component + env
+            2. Check getting resource value by resource id
+            3. Update resource value by resource id
+            4. Check getting resource value by resource name
+            5. Update resource value by resource name
+            6. Add data to slashed resource and compare received data by id and
+               by name of resource
+
+        Duration: 5 min
+        """
+
+        self.env.revert_snapshot('create_component_and_env_configdb')
+        get_resource_cmd = 'fuel2 config get --env 1 --resource 2' \
+                           ' --format yaml'
+        admin_ip = self.ssh_manager.admin_ip
+        res = self.ssh_manager.execute_on_remote(ip=admin_ip,
+                                                 cmd=get_resource_cmd )
+
+        set_resource_cmd = 'echo \'{"a": 1, "b": null}\' | fuel2 config ' \
+                           'set --env 1 --resource resource1 --format json '
+
+    @test(depends_on_groups=['create_component_and_env_configdb'],
+          groups=['configdb_cli_interface'])
+    def resource_value_with_level(self):
+        # TODO: All the same data has been inherited.? - is it correct?
+        get_lvl_res_cmd = 'fuel2 config get --env 1 --resource resource1 ' \
+                          '--format yaml --level nodes=1'
+        set_lvl_res_cmd = 'echo \'{"a": 2}\' | fuel2 config set --env 1 ' \
+                          '--resource resource1 --format json --level nodes=1'
+        get_res_cmd = 'fuel2 config get --env 1 --resource resource1 ' \
+                      '--format yaml --level nodes=1'
+
+    @test(depends_on_groups=['create_component_and_env_configdb'],
+          groups=['configdb_cli_interface'])
+    def merge_overrides_without_level(self):
+        override_cmd = 'fuel2 config override --env 1 --resource resource1 ' \
+                       '--key b --value s --type str'
+
+    @test(depends_on_groups=['create_component_and_env_configdb'],
+          groups=['configdb_cli_interface'])
+    def merge_overrides_with_level(self):
+        lvl_override_cmd = 'fuel2 config override --env 1 --level nodes=1 ' \
+                           '--resource resource1 --key b --value s --type str'
+
+    @test(depends_on_groups=['create_component_and_env_configdb'],
+          groups=['configdb_cli_interface'])
+    def update_via_key_path(self):
+        update_key_by_path = '???'
+
+    @test(depends_on_groups=['create_component_and_env_configdb'],
+          groups=['configdb_cli_interface'])
+    def key_deletion_via_path(self):
+        wipe_key_by_path = '???'
+        delete_key_by_path = '???'
