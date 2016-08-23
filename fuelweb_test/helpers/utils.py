@@ -46,7 +46,7 @@ from six.moves import xrange
 import yaml
 
 from core.helpers.log_helpers import logwrap
-
+from core.models.value_objects import FuelAccessParams
 from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers.ssh_manager import SSHManager
@@ -1111,33 +1111,61 @@ def dict_merge(a, b):
 
 
 @logwrap
-def install_configdb(master_node_ip):
+def get_access_config_file(ssh_manager):
+    """Get path to file on master node, which contains access parameters.
+    That can be changed in fuel library/fuel main.
+
+    :param ssh_manager: ssh manager instance
+    :return: string with path to file
+    """
+    return ssh_manager.execute_on_remote(
+        ip=ssh_manager.admin_ip,
+        cmd='ls -1 $HOME/.config/fuel/fuel_client.yaml')['stdout_str']
+
+
+@logwrap
+def install_configdb(ssh_manager):
     """ Install ConfigDB extension on master node
 
-    :param master_node_ip: string with fuel master ip address
     :return: None
     """
-    ip = master_node_ip
-    ssh_manager = SSHManager()
-    asserts.assert_is_not_none(
-        settings.PERESTROIKA_REPO,
-        message='PERESTROIKA_REPO is empty, please set it to correct path'
-    )
-    cmds = ['yum-config-manager --add-repo '
-            '{}'.format(settings.PERESTROIKA_REPO),
+    # TODO(akostrikov) There is a space for improvement.
+    if not settings.PERESTROIKA_REPO:
+        raise exceptions.FuelQAVariableNotSet(
+            'PERESTROIKA_REPO',
+            'http://perestroika-repo-tst.infra.site.net/mos-repos/centos/')
+    admin_ip = ssh_manager.admin_ip
+    fuel_config_file = get_access_config_file(ssh_manager)
+    openrc_content = FuelAccessParams.from_yaml_params(
+        YamlEditor(fuel_config_file,
+                   ip=admin_ip).get_content()
+    ).to_openrc_content()
 
-            'yum-config-manager --add-repo {}'.format(
-                settings.PACKAGES_CENTOS),
+    openrc_path = '/root/.openrc'
+    with ssh_manager.open_on_remote(admin_ip, openrc_path, 'w') as openrc_file:
+        openrc_file.write(openrc_content)
 
-            'rpm --import {}'.format(settings.MASTER_CENTOS_GPG),
-
-            'yum install -y tuning-box',
-            'nailgun_syncdb',
-            "sudo -u postgres psql -c '\dt' nailgun | grep tuning_box",
-            'service nailgun restart'
-            ]
-    for cmd in cmds:
-        ssh_manager.execute_on_remote(ip=ip, cmd=cmd)
+    commands = [
+        'yum-config-manager --add-repo '
+        '{}'.format(settings.PERESTROIKA_REPO),
+        'yum-config-manager --add-repo {}'.format(settings.PACKAGES_CENTOS),
+        'rpm --import {}'.format(settings.MASTER_CENTOS_GPG),
+        # TODO(akostrikov) Temporary hack to be on the edge.
+        'yum install -y tuning-box git',
+        'yum remove -y tuning-box',
+        'git clone http://github.com/openstack/tuning-box',
+        'cd tuning-box/ && python setup.py install',
+        # TODO(akostrikov) Hack end
+        'nailgun_syncdb',
+        "sudo -u postgres psql -c '\dt' nailgun | grep tuning_box",
+        'service nailgun restart',
+        '. .openrc; openstack service create --name tuning-box config',
+        ('. .openrc; openstack endpoint create'
+         ' --publicurl $SERVICE_URL/api/config'
+         ' --region RegionOne tuning-box;')
+    ]
+    for install_command in commands:
+        ssh_manager.check_call(admin_ip, install_command)
 
 
 # pylint: disable=eval-used
