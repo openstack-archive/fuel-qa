@@ -22,6 +22,8 @@ from fuelweb_test.tests.tests_upgrade import test_data_driven_upgrade_plugin  # 
 from fuelweb_test.tests.tests_upgrade import test_node_reassignment # noqa
 from fuelweb_test.tests.tests_upgrade import upgrader_tool  # noqa
 from fuelweb_test.tests.tests_upgrade import test_os_upgrade  # noqa
+from fuelweb_test.tests.tests_upgrade import test_multirack_deployment  # noqa
+
 
 __all__ = [
     'test_clone_env',
@@ -31,5 +33,6 @@ __all__ = [
     'test_data_driven_upgrade_plugin',
     'test_node_reassignment',
     'test_os_upgrade',
-    'upgrader_tool'
+    'upgrader_tool',
+    'test_multirack_deployment'
 ]
