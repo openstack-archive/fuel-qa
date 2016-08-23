@@ -55,7 +55,7 @@ class TestsConfigDBAPI(TestBasic):
         self.show_step(1)
         self.env.revert_snapshot('empty')
         self.show_step(2)
-        install_configdb(master_node_ip=self.ssh_manager.admin_ip)
+        install_configdb()
 
         logger.debug('Waiting for ConfigDB')
         wait_pass(lambda: self.fuel_web.client.get_components(),
@@ -280,3 +280,4 @@ class TestsConfigDBAPI(TestBasic):
         node_effective = self.fuel_web.client.get_node_resource_id_value(
             env_id=1, resource_id=1, node_id=2, effective=True)
         assert_equal(node_effective, global_override)
+
