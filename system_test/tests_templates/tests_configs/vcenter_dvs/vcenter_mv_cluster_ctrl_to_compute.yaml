@@ -1,9 +1,9 @@
 ---
 template:
- name: 1 controller, 1 compute + cinder, 1 compute-vmware on Neutron/VLAN with DVS plugin
+ name: 1 controller, 1 cinder-vmware, 1 compute-vmware on Neutron/VLAN with DVS plugin
  slaves: 3
  cluster_template:
-  name: vcenter_add_computevmware
+  name: vcenter_mv_cluster_ctrl_to_compute
   release: ubuntu
   network:
     !include cluster_configs/networks/neutron_vlan.yaml
@@ -28,8 +28,7 @@ template:
       count: 1
 
     - roles:
-      - compute
-      - cinder
+      - cinder-vmware
       iface: !include cluster_configs/settings/vmware/vcenter_ifaces.yaml
       count: 1
 
@@ -42,10 +41,7 @@ template:
     - action: reconfigure
       vmware_vcenter:
         nova-compute:
-          - cluster: Cluster2
-            srv_name: srv_cluster2
+          - cluster: Cluster1
+            srv_name: srv_cluster1
             datastore: .*
             target_node: compute-vmware
-      vmware_dvs:
-        dvswitch_name: !os_env DVS_NAME, Cluster1:Cluster1;Cluster2:Cluster2
-        dvs_fw_driver: false
