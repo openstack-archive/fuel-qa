@@ -1,0 +1,182 @@
+class FuelAccessParams(object):
+    """Value object to represent and map yaml file values of fuel master node
+    access to openrc file.
+    Should not use any api."""
+
+    def __init__(self,
+                 tls_service_enabled=False,
+                 tls_keystone_enabled=False):
+        self._username = None  # type: str
+        self._password = None  # type: str
+        self._project = None  # type: str
+        self._service_address = None  # type: str
+        self._service_port = None  # type: str
+        self._keystone_address = None  # type: str
+        self._keystone_port = None  # type: str
+        self._tls_service_enabled = tls_service_enabled  # type: bool
+        self._tls_keystone_enabled = tls_keystone_enabled  # type: bool
+
+    @property
+    def username(self):
+        return self._username
+
+    @username.setter
+    def username(self, value):
+        """Set up username
+
+        :type value: str
+        """
+        self._username = value
+
+    @property
+    def password(self):
+        return self._password
+
+    @password.setter
+    def password(self, value):
+        """Set up password
+
+        :type value: str
+        """
+        self._password = value
+
+    @property
+    def project(self):
+        return self._project
+
+    @project.setter
+    def project(self, value):
+        """Set up project
+
+        :type value: str
+        """
+        self._project = value
+
+    @property
+    def service_address(self):
+        return self._service_address
+
+    @service_address.setter
+    def service_address(self, value):
+        """Set up service address
+
+        :type value: str
+        """
+        self._service_address = value
+
+    @property
+    def service_port(self):
+        return self._service_port
+
+    @service_port.setter
+    def service_port(self, value):
+        """Set up service port
+
+        :type value: str
+        """
+        self._service_port = value
+
+    @property
+    def keystone_address(self):
+        address = self.service_address
+        if self._keystone_address:
+            address = self._keystone_address
+        return address
+
+    @keystone_address.setter
+    def keystone_address(self, value):
+        """Set up keystone address
+
+        :type value: str
+        """
+        self._keystone_address = value
+
+    @property
+    def keystone_port(self):
+        return self._keystone_port
+
+    @keystone_port.setter
+    def keystone_port(self, value):
+        """Set up keystone port
+
+        :type value: str
+        """
+        self._keystone_port = value
+
+    @property
+    def os_auth_url(self):
+        """Get url of authentication endpoint
+
+        :rtype: str
+        :return: The url of os auth endpoint
+        """
+        protocol = 'http'
+        if self._tls_keystone_enabled:
+            protocol = 'https'
+        return "{protocol}://{keystone_address}:{keystone_port}".format(
+            protocol=protocol,
+            keystone_address=self.keystone_address,
+            keystone_port=self.keystone_port
+        )
+
+    @property
+    def service_url(self):
+        """Get url of nailgun service endpoint
+
+        :rtype: str
+        :return: The url of nailgun endpoint
+        """
+        protocol = 'http'
+        if self._tls_service_enabled:
+            protocol = 'https'
+        return "{protocol}://{service_address}:{service_port}".format(
+            protocol=protocol,
+            service_address=self.service_address,
+            service_port=self.service_port
+        )
+
+    @property
+    def to_openrc_content(self):
+        """Method to represent access credentials in openrc format.
+
+        :rtype: str
+        :return: string content for openrc file
+        """
+        env_template = ('export OS_USERNAME="{username}"\n'
+                        'export OS_PASSWORD="{password}"\n'
+                        'export OS_TENANT_NAME="{project}"\n'
+                        'export SERVICE_URL="{service_url}"\n'
+                        'export OS_AUTH_URL="{os_auth_url}"\n')
+
+        return env_template.format(
+            username=self.username,
+            password=self.username,
+            project=self.project,
+            service_url=self.service_url,
+            os_auth_url=self.os_auth_url,
+        )
+
+    @staticmethod
+    def from_yaml_params(yaml_content,
+                         tls_service_enabled=False,
+                         tls_keystone_enabled=False):
+        """The method to initialize value object from parsed yaml from
+        master node.
+
+        :type yaml_content: dict[str]
+        :type tls_service_enabled: boolean
+        :type tls_keystone_enabled: boolean
+        :rtype: FuelAccessParams
+        :return: instance, which can be used
+        """
+        access_params = FuelAccessParams(
+            tls_service_enabled=tls_service_enabled,
+            tls_keystone_enabled=tls_keystone_enabled)
+        access_params.username = yaml_content['OS_USERNAME']
+        access_params.password = yaml_content['OS_PASSWORD']
+        access_params.project = yaml_content['OS_TENANT_NAME']
+        access_params.service_address = yaml_content['SERVER_ADDRESS']
+        access_params.service_port = yaml_content['SERVER_PORT']
+        access_params.keystone_port = yaml_content['KEYSTONE_PORT']
+
+        return access_params
