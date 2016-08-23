@@ -55,7 +55,7 @@ class TestsConfigDBAPI(TestBasic):
         self.show_step(1)
         self.env.revert_snapshot('empty')
         self.show_step(2)
-        install_configdb(master_node_ip=self.ssh_manager.admin_ip)
+        install_configdb()
 
         logger.debug('Waiting for ConfigDB')
         wait_pass(lambda: self.fuel_web.client.get_components(),
