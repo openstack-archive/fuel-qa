@@ -20,6 +20,9 @@ from fuelweb_test.tests.tests_upgrade import test_data_driven_upgrade_no_cluster
 from fuelweb_test.tests.tests_upgrade import test_data_driven_upgrade_plugin  # noqa
 from fuelweb_test.tests.tests_upgrade import test_data_driven_upgrade_smoke  # noqa
 from fuelweb_test.tests.tests_upgrade import upgrader_tool  # noqa
+from fuelweb_test.tests.tests_upgrade import \
+    test_data_driven_upgrade_multirack_deployment  # noqa
+
 
 __all__ = [
     'test_data_driven_upgrade_ceph_ha',
@@ -27,6 +30,6 @@ __all__ = [
     'test_data_driven_upgrade_no_cluster',
     'test_data_driven_upgrade_plugin',
     'test_data_driven_upgrade_smoke',
-    'test_os_upgrade',
-    'upgrader_tool'
+    'upgrader_tool',
+    'test_data_driven_upgrade_multirack_deployment'
 ]
