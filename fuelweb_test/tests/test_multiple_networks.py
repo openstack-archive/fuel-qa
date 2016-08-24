@@ -12,11 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import netaddr
 import json
 
 from devops.helpers.helpers import wait
 from devops.error import TimeoutError
+import netaddr
 from proboscis import asserts
 from proboscis import SkipTest
 from proboscis import test
@@ -130,7 +130,7 @@ class TestMultipleClusterNets(TestBasic):
         """
 
         if not MULTIPLE_NETWORKS:
-            raise SkipTest()
+            raise SkipTest('MULTIPLE_NETWORKS not enabled')
 
         self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready")
@@ -428,13 +428,13 @@ class TestMultipleClusterNets(TestBasic):
                             "controller via {0} interface.".format(interface))
                 for ip in new_node_networks[interface]['ip_addresses']:
                     address = ip.split('/')[0]
-                    result = self.ssh_manager.execute(ip=primary_ctrl['ip'],
-                                                      cmd='ping -q -c 1 -w 3 {'
-                                                          '0}'.format(address))
-                    asserts.assert_equal(result['exit_code'], 0,
-                                         "New node isn't accessible from "
-                                         "primary controller via {0} interface"
-                                         ": {1}.".format(interface, result))
+                    self.ssh_manager.check_call(
+                        ip=primary_ctrl['ip'],
+                        cmd='ping -q -c 1 -w 3 {0}'.format(address),
+                        error_info="New node isn't accessible from "
+                                   "primary controller via {0} interface."
+                                   "".format(interface)
+                    )
 
         self.env.make_snapshot("add_custom_nodegroup")
 
@@ -464,7 +464,7 @@ class TestMultipleClusterNets(TestBasic):
         """
 
         if not MULTIPLE_NETWORKS:
-            raise SkipTest()
+            raise SkipTest('MULTIPLE_NETWORKS not enabled')
 
         self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready")
@@ -579,7 +579,7 @@ class TestMultipleClusterNets(TestBasic):
         """
 
         if not MULTIPLE_NETWORKS:
-            raise SkipTest()
+            raise SkipTest('MULTIPLE_NETWORKS not enabled')
 
         self.show_step(1, initialize=True)
         self.check_run("deploy_controllers_from_custom_nodegroup")
@@ -600,7 +600,7 @@ class TestMultipleClusterNets(TestBasic):
         # floating range
         public2_cidr = self.env.d_env.get_network(name='public2').ip
         new_settings_float = {
-            'floating_ranges': [[str(public2_cidr[public2_cidr.numhosts / 2]),
+            'floating_ranges': [[str(public2_cidr[len(public2_cidr) / 2]),
                                  str(public2_cidr[-2])]]
         }
         self.fuel_web.client.update_network(cluster_id, new_settings_float)
@@ -695,20 +695,20 @@ class TestMultipleClusterNets(TestBasic):
         self.show_step(3)
         logger.info('Wait five nodes online for 900 seconds..')
         wait(lambda: len(self.fuel_web.client.list_nodes()) == 5,
-             timeout=15 * 60)
+             timeout=15 * 60,
+             timeout_msg='Timeout while waiting five nodes '
+                         'to become online')
 
         logger.info('Wait all nodes from custom nodegroup become '
                     'in error state..')
         # check all custom in error state
         for slave in custom_nodes:
-            try:
-                wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
-                    slave)['status'] == 'error', timeout=15 * 60)
-                logger.info('Node {} become error state'.format(slave.name,
-                                                                'error'))
-            except TimeoutError:
-                raise TimeoutError('Node {} not become '
-                                   'error state'.format(slave.name))
+            wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+                slave)['status'] == 'error', timeout=15 * 60,
+                timeout_msg='Node {} not changed state to '
+                            'error'.format(slave.name))
+            logger.info(
+                'Node {} changed state to error'.format(slave.name))
 
         self.show_step(4)
         logger.info('Rebooting nodes from custom nodegroup..')
@@ -722,7 +722,7 @@ class TestMultipleClusterNets(TestBasic):
                             get_nailgun_node_by_devops_node(slave)['online']
                             for slave in custom_nodes),
                 timeout=10 * 60)
-            assert 'Some nodes online'
+            raise AssertionError('Some nodes online')
         except TimeoutError:
             logger.info('Nodes are offline')
 
@@ -761,7 +761,9 @@ class TestMultipleClusterNets(TestBasic):
         logger.info('Waiting for all nodes online for 900 seconds...')
         wait(lambda: all(n['online'] for n in
                          self.fuel_web.client.list_cluster_nodes(cluster_id)),
-             timeout=15 * 60)
+             timeout=15 * 60,
+             timeout_msg='Timeout while waiting nodes to become online '
+                         'after reset')
 
         self.show_step(4)
         custom_nodegroup = [ng for ng in self.fuel_web.client.get_nodegroups()
@@ -772,13 +774,13 @@ class TestMultipleClusterNets(TestBasic):
         logger.info('Wait all nodes from custom nodegroup become '
                     'in error state..')
         for slave in custom_nodes:
-            try:
-                wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
-                    slave)['status'] == 'error', timeout=60 * 5)
-                logger.info('Node {} is in "error" state'.format(slave.name))
-            except TimeoutError:
-                raise TimeoutError('Node {} status wasn\'t changed '
-                                   'to "error"!'.format(slave.name))
+            # pylint: disable=undefined-loop-variable
+            wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+                slave)['status'] == 'error', timeout=60 * 5,
+                timeout_msg='Node {} status wasn\'t changed '
+                            'to "error"!'.format(slave.name))
+            # pylint: enable=undefined-loop-variable
+            logger.info('Node {} is in "error" state'.format(slave.name))
 
         self.show_step(6)
         new_nodegroup = self.fuel_web.client.create_nodegroup(
@@ -808,13 +810,10 @@ class TestMultipleClusterNets(TestBasic):
         logger.info('Wait all nodes from custom nodegroup become '
                     'in discover state..')
         for slave in custom_nodes:
-            try:
-                wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
-                    slave)['status'] == 'discover', timeout=60 * 5)
-                logger.info('Node {} is in "discover" state'.format(
-                    slave.name))
-            except TimeoutError:
-                raise TimeoutError('Node {} status wasn\'t changed '
-                                   'to "discover"!'.format(slave.name))
+            wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+                slave)['status'] == 'discover', timeout=60 * 5,
+                timeout_msg='Node {} status wasn\'t changed '
+                            'to "discover"!'.format(slave.name))
+            logger.info('Node {} is in "discover" state'.format(slave.name))
 
         self.env.make_snapshot("delete_custom_nodegroup")
