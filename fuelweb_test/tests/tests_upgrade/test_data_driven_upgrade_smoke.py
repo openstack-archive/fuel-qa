@@ -17,6 +17,7 @@ import os
 from devops.helpers.helpers import wait
 from proboscis import test
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 
 from fuelweb_test import settings
@@ -27,33 +28,22 @@ from fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_base import \
 
 
 @test
-class UpgradePrepare(DataDrivenUpgradeBase):
-    """Base class for initial preparation of 7.0 env and clusters."""
+class UpgradeSmoke(DataDrivenUpgradeBase):
 
-    cluster_creds = {
-        'tenant': 'upgrade',
-        'user': 'upgrade',
-        'password': 'upgrade'
-    }
+    def __init__(self):
+        super(UpgradeSmoke, self).__init__()
+        self.backup_name = "backup_smoke.tar.gz"
+        self.repos_backup_name = "repos_backup_smoke.tar.gz"
+        self.source_snapshot_name = "upgrade_smoke_backup"
+        self.snapshot_name = "upgrade_smoke_restore"
+        assert_not_equal(
+            settings.KEYSTONE_CREDS['password'], 'admin',
+            "Admin password was not changed, aborting execution")
 
-    @test(groups=['upgrade_no_cluster_backup'],
+    @test(groups=['prepare_upgrade_smoke_before_backup'],
           depends_on=[SetupEnvironment.prepare_release])
     @log_snapshot_after_test
-    def upgrade_no_cluster_backup(self):
-        """Prepare Fuel master node without cluster
-
-        Scenario:
-        1. Create backup file using 'octane fuel-backup'
-        2. Download the backup to the host
-
-        Duration 5m
-        """
-        super(self.__class__, self).prepare_upgrade_no_cluster()
-
-    @test(groups=['upgrade_smoke_backup'],
-          depends_on=[SetupEnvironment.prepare_release])
-    @log_snapshot_after_test
-    def upgrade_smoke_backup(self):
+    def prepare_upgrade_smoke_before_backup(self):
         """Prepare non-HA+cinder cluster using previous version of Fuel
         Nailgun password should be changed via KEYSTONE_PASSWORD env variable
 
@@ -70,20 +60,58 @@ class UpgradePrepare(DataDrivenUpgradeBase):
         Duration: TODO
         Snapshot: upgrade_smoke_backup
         """
-        super(self.__class__, self).prepare_upgrade_smoke()
+        self.check_run("upgrade_smoke_backup")
+        self.env.revert_snapshot("ready", skip_timesync=True)
 
+        cluster_settings = {
+            'net_provider': settings.NEUTRON,
+            'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
+        }
+        cluster_settings.update(self.cluster_creds)
 
-@test(groups=['upgrade_smoke_tests'])
-class UpgradeSmoke(DataDrivenUpgradeBase):
+        self.show_step(1)
+        self.show_step(2)
+        self.show_step(3)
+        self.show_step(4)
+        self.show_step(5)
+        self.deploy_cluster(
+            {'name': self.cluster_names["smoke"],
+             'settings': cluster_settings,
+             'nodes': {'slave-01': ['controller'],
+                       'slave-02': ['compute', 'cinder']}
+             }
+        )
 
-    def __init__(self):
-        super(UpgradeSmoke, self).__init__()
-        self.backup_name = "backup_smoke.tar.gz"
-        self.repos_backup_name = "repos_backup_smoke.tar.gz"
-        self.source_snapshot_name = "upgrade_smoke_backup"
-        self.snapshot_name = "upgrade_smoke_restore"
+        self.env.make_snapshot('prepare_upgrade_smoke_before_backup',
+                               is_make=True)
 
-    @test(groups=['upgrade_smoke_restore'])
+    @test(groups=['upgrade_smoke_backup'],
+          depends_on_groups=['prepare_upgrade_smoke_before_backup'])
+    @log_snapshot_after_test
+    def upgrade_smoke_backup(self):
+        """Create upgrade backup file for ceph HA cluster
+
+        Scenario:
+        1. Revert "prepare_upgrade_smoke_before_backup" snapshot
+        2. Install fuel-octane package
+        3. Create backup file using 'octane fuel-backup'
+        4. Download the backup to the host
+
+        Snapshot: upgrade_smoke_backup
+        """
+        self.check_run(self.backup_snapshot_name)
+        self.show_step(1)
+        self.env.revert_snapshot("prepare_upgrade_smoke_before_backup",
+                                 skip_timesync=True)
+
+        self.show_step(2)
+        self.show_step(3)
+        self.show_step(4)
+        self.do_backup(self.backup_path, self.local_path,
+                       self.repos_backup_path, self.repos_local_path)
+        self.env.make_snapshot("upgrade_smoke_backup", is_make=True)
+
+    @test(groups=['upgrade_smoke_tests', 'upgrade_smoke_restore'])
     @log_snapshot_after_test
     def upgrade_smoke_restore(self):
         """Reinstall Fuel and restore non-HA cluster using fuel-octane.
@@ -158,7 +186,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.env.make_snapshot("upgrade_smoke_restore", is_make=True)
         self.cleanup()
 
-    @test(groups=['upgrade_smoke_scale'],
+    @test(groups=['upgrade_smoke_tests', 'upgrade_smoke_scale'],
           depends_on_groups=['upgrade_smoke_restore'])
     @log_snapshot_after_test
     def upgrade_smoke_scale(self):
@@ -234,10 +262,10 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
             ])
         self.env.make_snapshot("upgrade_smoke_scale")
 
-    @test(groups=['upgrade_smoke_reset_deploy'],
+    @test(groups=['upgrade_smoke_tests', 'upgrade_smoke_reset_deploy'],
           depends_on_groups=['upgrade_smoke_restore'])
     @log_snapshot_after_test
-    def upgrade_smore_reset_deploy(self):
+    def upgrade_smoke_reset_deploy(self):
         """Reset existing cluster 7.0 cluster and redeploy
 
         Scenario:
@@ -290,7 +318,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.show_step(8)
         self.check_ostf(cluster_id, ignore_known_issues=True)
 
-    @test(groups=['upgrade_smoke_new_deployment'],
+    @test(groups=['upgrade_smoke_tests', 'upgrade_smoke_new_deployment'],
           depends_on_groups=['upgrade_smoke_restore'])
     @log_snapshot_after_test
     def upgrade_smoke_new_deployment(self):
@@ -354,162 +382,3 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(8)
         self.check_ostf(cluster_id)
-
-
-@test(groups=['upgrade_no_cluster_tests'])
-class UpgradeNoCluster(DataDrivenUpgradeBase):
-    def __init__(self):
-        super(self.__class__, self).__init__()
-        self.backup_name = "backup_no_cluster.tar.gz"
-        self.repos_backup_name = "repos_backup_no_cluster.tar.gz"
-        self.source_snapshot_name = "upgrade_no_cluster_backup"
-        self.snapshot_name = "upgrade_no_cluster_restore"
-
-    @test(groups=['upgrade_no_cluster_restore'])
-    @log_snapshot_after_test
-    def upgrade_no_cluster_restore(self):
-        """Reinstall Fuel and restore data with detach-db plugin and without
-        cluster
-
-        Scenario:
-        1. Revert "upgrade_no_cluster_backup" snapshot
-        2. Reinstall Fuel master using iso given in ISO_PATH
-        3. Install fuel-octane package
-        4. Upload the backup back to reinstalled Fuel maser node
-        5. Restore master node using 'octane fuel-restore'
-        6. Ensure that master node was restored
-
-        Duration: 60 m
-        Snapshot: upgrade_no_cluster_restore
-
-        """
-        self.check_run(self.snapshot_name)
-        assert_true(os.path.exists(self.local_path),
-                    "Can't find backup file at {!r}".format(self.local_path))
-        assert_true(
-            os.path.exists(self.repos_local_path),
-            "Can't find backup file at {!r}".format(self.repos_local_path))
-        intermediate_snapshot = 'no_cluster_before_restore'
-        if not self.env.d_env.has_snapshot(intermediate_snapshot):
-            self.show_step(1)
-            assert_true(
-                self.env.revert_snapshot(self.source_snapshot_name),
-                "The test can not use given environment - snapshot "
-                "{!r} does not exists".format(self.source_snapshot_name))
-            self.show_step(2)
-            self.env.reinstall_master_node()
-            self.env.make_snapshot(intermediate_snapshot)
-        else:
-            self.env.d_env.revert(intermediate_snapshot)
-        self.env.resume_environment()
-        self.show_step(3)
-        self.show_step(4)
-        self.show_step(5)
-        self.do_restore(self.backup_path, self.local_path,
-                        self.repos_backup_path, self.repos_local_path)
-        self.show_step(6)
-        self.fuel_web.change_default_network_settings()
-        self.fuel_web.client.get_releases()
-        # TODO(vkhlyunev): add additional checks for validation of node
-        self.env.make_snapshot(self.snapshot_name, is_make=True)
-        self.cleanup()
-
-    @test(groups=['upgrade_no_cluster_deploy'],
-          depends_on_groups=['upgrade_no_cluster_restore'])
-    @log_snapshot_after_test
-    def upgrade_no_cluster_deploy(self):
-        """Deploy fresh cluster using restored empty Fuel
-
-        Scenario:
-        1. Revert "upgrade_no_cluster_restore" snapshot
-        2. Bootstrap 2 additional nodes
-        3. Create cluster, add 1 controller and 1 compute nodes
-        4. Verify networks
-        5. Deploy cluster
-        6. Verify networks
-        7. Run OSTF
-        """
-
-        self.show_step(1)
-        self.env.revert_snapshot(self.snapshot_name)
-        self.show_step(2)
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:3])
-        self.show_step(3)
-        cluster_id = self.fuel_web.create_cluster(
-            name=self.upgrade_no_cluster_deploy.__name__,
-            mode=settings.DEPLOYMENT_MODE,
-            settings={
-                'net_provider': settings.NEUTRON,
-                'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
-            }
-        )
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {
-                'slave-01': ['controller'],
-                'slave-02': ['compute', 'cinder']
-            }
-        )
-        self.show_step(4)
-        self.fuel_web.verify_network(cluster_id)
-        self.show_step(5)
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.show_step(6)
-        self.fuel_web.verify_network(cluster_id)
-        self.show_step(7)
-        self.check_ostf(cluster_id)
-        self.env.make_snapshot("upgrade_no_cluster_deploy", is_make=True)
-
-    @test(groups=['upgrade_no_cluster_deploy_old_cluster'],
-          depends_on_groups=['upgrade_no_cluster_restore'])
-    @log_snapshot_after_test
-    def upgrade_no_cluster_deploy_old_cluster(self):
-        """Deploy old cluster using upgraded Fuel.
-
-        Scenario:
-        1. Revert 'upgrade_no_cluster_restore' snapshot
-        2. Create new cluster with old release and default parameters
-        3. Add 1 node with controller role
-        4. Add 1 node with compute+cinder roles
-        5. Verify network
-        6. Deploy changes
-        7. Run OSTF
-
-        Snapshot: upgrade_no_cluster_new_deployment
-        Duration: TODO
-        """
-        self.show_step(1, initialize=True)
-        self.env.revert_snapshot(self.snapshot_name, skip_timesync=True)
-
-        self.show_step(2)
-        self.show_step(3)
-        releases = self.fuel_web.client.get_releases()
-        release_id = [
-            release['id'] for release in releases if
-            release['is_deployable'] and
-            settings.UPGRADE_FUEL_FROM in release['version']][0]
-        cluster_id = self.fuel_web.create_cluster(
-            name=self.upgrade_no_cluster_deploy_old_cluster.__name__,
-            mode=settings.DEPLOYMENT_MODE,
-            release_id=release_id,
-            settings={
-                'net_provider': settings.NEUTRON,
-                'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
-            }
-        )
-        self.show_step(4)
-        self.show_step(5)
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:2])
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {
-                'slave-01': ['controller'],
-                'slave-02': ['compute', 'cinder']
-            }
-        )
-        self.show_step(6)
-        self.fuel_web.verify_network(cluster_id)
-        self.show_step(7)
-        self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.show_step(8)
-        self.check_ostf(cluster_id, ignore_known_issues=True)
