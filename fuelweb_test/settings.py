@@ -610,7 +610,9 @@ KEYSTONE_CREDS = {'username': os.environ.get('KEYSTONE_USERNAME', 'admin'),
 # Default SSH password 'ENV_FUEL_PASSWORD' can be changed on Fuel master node
 SSH_CREDENTIALS = {
     'login': os.environ.get('ENV_FUEL_LOGIN', 'root'),
-    'password': os.environ.get('ENV_FUEL_PASSWORD', 'r00tme')}
+    'password': os.environ.get('ENV_FUEL_PASSWORD', 'r00tme'),
+    'sudo': get_var_as_bool('ENV_FUEL_SUDO', False)
+}
 
 SSH_IMAGE_CREDENTIALS = {
     'username': os.environ.get('SSH_IMAGE_CREDENTIALS_LOGIN', "cirros"),
