@@ -14,16 +14,19 @@
 
 # pylint: disable=line-too-long
 
-from fuelweb_test.tests.tests_upgrade import test_data_driven_upgrade  # noqa
 from fuelweb_test.tests.tests_upgrade import test_data_driven_upgrade_ceph_ha  # noqa
 from fuelweb_test.tests.tests_upgrade import test_data_driven_upgrade_net_tmpl  # noqa
+from fuelweb_test.tests.tests_upgrade import test_data_driven_upgrade_no_cluster  # noqa
 from fuelweb_test.tests.tests_upgrade import test_data_driven_upgrade_plugin  # noqa
+from fuelweb_test.tests.tests_upgrade import test_data_driven_upgrade_smoke  # noqa
 from fuelweb_test.tests.tests_upgrade import upgrader_tool  # noqa
 
 __all__ = [
-    'test_data_driven_upgrade',
     'test_data_driven_upgrade_ceph_ha',
     'test_data_driven_upgrade_net_tmpl',
+    'test_data_driven_upgrade_no_cluster',
     'test_data_driven_upgrade_plugin',
+    'test_data_driven_upgrade_smoke',
+    'test_os_upgrade',
     'upgrader_tool'
 ]
