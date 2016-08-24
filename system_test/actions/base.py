@@ -359,7 +359,8 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
             )
 
         cluster_id = self.cluster_id
-        self.fuel_web.deploy_cluster_wait_progress(cluster_id, progress=60)
+        self.fuel_web.deploy_cluster_wait_progress(
+            cluster_id, progress=settings.PROGRESS_TO_STOP)
         self.fuel_web.stop_deployment_wait(cluster_id)
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.get_nodes(name__in=list(self.assigned_slaves)),
