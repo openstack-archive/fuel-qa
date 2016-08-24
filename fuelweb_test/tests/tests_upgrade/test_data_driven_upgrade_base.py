@@ -27,7 +27,6 @@ from devops.error import TimeoutError, DevopsCalledProcessError
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
-from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 
 from fuelweb_test import logger
@@ -35,8 +34,6 @@ from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import FUEL_PROPOSED_REPO_URL
 from fuelweb_test.settings import LOGS_DIR
 from fuelweb_test.settings import KEYSTONE_CREDS
-from fuelweb_test.settings import NEUTRON
-from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import UPGRADE_FUEL_FROM
 from fuelweb_test.settings import UPGRADE_BACKUP_FILES_LOCAL_DIR
 from fuelweb_test.settings import UPGRADE_BACKUP_FILES_REMOTE_DIR
@@ -89,7 +86,10 @@ class DataDrivenUpgradeBase(TestBasic):
         # cluster's names database for avoiding true hardcode but allowing to
         # store names in one place. All cluster names should migrate here later
         # in separate commits
-        self.cluster_names = {"ceph_ha": "ceph_ha_cluster_for_upgrade"}
+        self.cluster_names = {
+            "ceph_ha": "ceph_ha_cluster_for_upgrade",
+            "smoke": "smoke_cluster_for_upgrade"
+        }
 
     @property
     def backup_path(self):
@@ -395,53 +395,6 @@ class DataDrivenUpgradeBase(TestBasic):
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.fuel_web.verify_network(cluster_id)
-
-    def prepare_upgrade_smoke(self):
-        self.backup_name = "backup_smoke.tar.gz"
-        self.repos_backup_name = "repos_backup_smoke.tar.gz"
-
-        self.check_run("upgrade_smoke_backup")
-        self.env.revert_snapshot("ready", skip_timesync=True)
-        intermediate_snapshot = "prepare_upgrade_smoke_before_backup"
-
-        assert_not_equal(
-            KEYSTONE_CREDS['password'], 'admin',
-            "Admin password was not changed, aborting execution")
-
-        cluster_settings = {
-            'net_provider': NEUTRON,
-            'net_segment_type': NEUTRON_SEGMENT['vlan']
-        }
-        cluster_settings.update(self.cluster_creds)
-
-        if not self.env.d_env.has_snapshot(intermediate_snapshot):
-            self.deploy_cluster(
-                {'name': self.prepare_upgrade_smoke.__name__,
-                 'settings': cluster_settings,
-                 'nodes': {'slave-01': ['controller'],
-                           'slave-02': ['compute', 'cinder']}
-                 }
-            )
-            self.env.make_snapshot(intermediate_snapshot)
-
-        # revert_snapshot will do nothing if there is no snapshot
-        self.env.revert_snapshot(intermediate_snapshot)
-
-        self.do_backup(self.backup_path, self.local_path,
-                       self.repos_backup_path, self.repos_local_path)
-        self.env.make_snapshot("upgrade_smoke_backup", is_make=True)
-
-    def prepare_upgrade_no_cluster(self):
-        self.backup_name = "backup_no_cluster.tar.gz"
-        self.repos_backup_name = "repos_backup_no_cluster.tar.gz"
-
-        self.check_run("upgrade_no_cluster_backup")
-        self.env.revert_snapshot("ready", skip_timesync=True)
-
-        self.do_backup(self.backup_path, self.local_path,
-                       self.repos_backup_path, self.repos_local_path)
-        self.env.make_snapshot("upgrade_no_cluster_backup",
-                               is_make=True)
 
     @staticmethod
     def verify_bootstrap_on_node(remote, os_type):
