@@ -2213,7 +2213,7 @@ class FuelWebClient29(object):
             cmd='mco find', assert_ec_equal=[0, 1])['stdout_str']
         ready_nodes_uids = set(out.split('\n'))
         unavailable_nodes = nodes_uids - ready_nodes_uids
-        logger.debug('Nodes {0} are not reacheable via'
+        logger.debug('Nodes {0} are not reachable via'
                      ' mcollective'.format(unavailable_nodes))
         return not unavailable_nodes
 

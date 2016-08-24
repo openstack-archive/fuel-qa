@@ -746,7 +746,7 @@ def main():
 
     parser = argparse.ArgumentParser(description='Get downstream build info'
                                      ' for Jenkins swarm.runner build.'
-                                     ' Generate matrix statisctics:'
+                                     ' Generate matrix statistics:'
                                      ' (failure group -> builds & tests).'
                                      ' Publish matrix to Testrail'
                                      ' if necessary.')
