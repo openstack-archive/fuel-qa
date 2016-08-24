@@ -19,6 +19,7 @@ import re
 import traceback
 from warnings import warn
 
+import devops
 from devops.helpers.helpers import wait
 from devops.models.node import SSHClient
 from paramiko import RSAKey
@@ -27,6 +28,54 @@ import yaml
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.metaclasses import SingletonMeta
+
+
+ver = devops.__version__.split('.')
+if int(ver[0]) < 3 or float('.'.join(ver[1:])) < 0.2:
+    # Old devops, patch to use new API
+
+    # New API backend
+    class _get_sudo(object):
+        def __init__(self, ssh, enforce=None):
+            self.__ssh = ssh
+            self.__sudo_status = ssh.sudo_mode
+            self.__enforce = enforce
+
+        def __enter__(self):
+            self.__sudo_status = self.__ssh.sudo_mode
+            if self.__enforce is not None:
+                self.__ssh.sudo_mode = self.__enforce
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            self.__ssh.sudo_mode = self.__sudo_status
+
+    # Old API
+    # noinspection PyPep8Naming
+    class get_sudo(_get_sudo):
+        def __init__(self, ssh, enforce=True):
+            super(self.__class__, self).__init__(ssh=ssh, enforce=enforce)
+
+    # New API frontend
+    def sudo(self, enforce=None):
+        return self._get_sudo(ssh=self, enforce=enforce)
+
+    # Apply patch
+    # noinspection PyUnresolvedReferences
+    SSHClient._get_sudo = _get_sudo
+    # noinspection PyUnresolvedReferences
+    SSHClient.get_sudo = get_sudo
+    # noinspection PyUnresolvedReferences
+    SSHClient.sudo = sudo
+
+    # Enforce closing all connections for objects recreate and API arrival
+    SSHClient.close_connections()
+
+else:
+    logger.info(
+        'Please check actual version of fuel-devops in requirements, and '
+        'revert changes, which producing this string, if fuel-devops >= 3.0.2 '
+        'is actually in requirements.'
+    )
 
 
 @six.add_metaclass(SingletonMeta)
