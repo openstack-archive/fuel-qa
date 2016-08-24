@@ -134,9 +134,9 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
             # Live migration test could fail
             # https://bugs.launchpad.net/fuel/+bug/1471172
             # https://bugs.launchpad.net/fuel/+bug/1604749
-            self.fuel_web.run_ostf(cluster_id=cluster_id,
-                                   test_sets=['smoke', 'sanity', 'ha'],
-                                   should_fail=1)
+            self.check_ostf(cluster_id=cluster_id,
+                            test_sets=['smoke', 'sanity', 'ha'],
+                            ignore_known_issues=True)
             self.show_step(11)
             self.check_ipconfig_for_template(cluster_id, network_template,
                                              networks)
@@ -195,8 +195,9 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
         self.show_step(7)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(8)
-        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1,
-                               test_sets=['smoke', 'sanity', 'ha'])
+        self.check_ostf(cluster_id=cluster_id,
+                        test_sets=['smoke', 'sanity', 'ha'],
+                        ignore_known_issues=True)
         self.env.make_snapshot("upgrade_net_tmpl_restore", is_make=True)
 
     @test(depends_on_groups=["upgrade_net_tmpl_restore"],
@@ -229,8 +230,9 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
         self.fuel_web.verify_network(cluster_id)
 
         self.show_step(5)
-        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1,
-                               test_sets=['smoke', 'sanity', 'ha'])
+        self.check_ostf(cluster_id=cluster_id,
+                        test_sets=['smoke', 'sanity', 'ha'],
+                        ignore_known_issues=True)
         self.env.make_snapshot("reset_deploy_net_tmpl", is_make=True)
 
     @test(depends_on_groups=["upgrade_net_tmpl_restore"],
@@ -283,8 +285,9 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
         self.fuel_web.verify_network(cluster_id)
 
         self.show_step(7)
-        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1,
-                               test_sets=['smoke', 'sanity', 'ha'])
+        self.check_ostf(cluster_id=cluster_id,
+                        test_sets=['smoke', 'sanity', 'ha'],
+                        ignore_known_issues=True)
         self.env.make_snapshot("replace_controller_net_tmpl", is_make=True)
 
     @test(depends_on_groups=["replace_controller_net_tmpl"],
@@ -318,6 +321,7 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
         self.fuel_web.verify_network(cluster_id)
 
         self.show_step(5)
-        self.fuel_web.run_ostf(cluster_id=cluster_id, should_fail=1,
-                               test_sets=['smoke', 'sanity', 'ha'])
+        self.check_ostf(cluster_id=cluster_id,
+                        test_sets=['smoke', 'sanity', 'ha'],
+                        ignore_known_issues=True)
         self.env.make_snapshot("restart_node_net_tmpl", is_make=True)
