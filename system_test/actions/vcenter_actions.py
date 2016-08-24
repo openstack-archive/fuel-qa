@@ -18,6 +18,8 @@ from time import sleep
 
 from devops.helpers import helpers
 from devops.helpers.ssh_client import SSHAuth
+from devops.error import TimeoutError
+
 from proboscis import SkipTest
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
@@ -145,16 +147,79 @@ class VMwareActions(object):
             self.fuel_web.client.update_cluster_attributes(self.cluster_id,
                                                            attributes)
 
-            vcenter_value["glance"]["vcenter_host"] = vmware_vcenter[
-                'glance']['host']
-            vcenter_value["glance"]["vcenter_username"] = vmware_vcenter[
-                'glance']['user']
-            vcenter_value["glance"]["vcenter_password"] = vmware_vcenter[
-                'glance']['pwd']
-            vcenter_value["glance"]["datacenter"] = vmware_vcenter[
-                'glance']['datacenter']
-            vcenter_value["glance"]["datastore"] = vmware_vcenter[
-                'glance']['datastore']
+            glance = vcenter_value['glance']
+            glance["vcenter_host"] = vmware_vcenter['glance']['host']
+            glance["vcenter_username"] = vmware_vcenter['glance']['user']
+            glance["vcenter_password"] = vmware_vcenter['glance']['pwd']
+            glance["datacenter"] = vmware_vcenter['glance']['datacenter']
+            glance["datastore"] = vmware_vcenter['glance']['datastore']
+        logger.info('Configuring vCenter...')
+
+        vmware_attr = \
+            self.fuel_web.client.get_cluster_vmware_attributes(self.cluster_id)
+        vcenter_data = vmware_attr['editable']
+        vcenter_data['value'] = vcenter_value
+        logger.debug("Try to update cluster with next "
+                     "vmware_attributes {0}".format(vmware_attr))
+        self.fuel_web.client.update_cluster_vmware_attributes(self.cluster_id,
+                                                              vmware_attr)
+
+        logger.debug("Attributes of cluster have been updated")
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def configure_vcenter_incorrect(self):
+        """Configure vCenter settings."""
+        vmware_vcenter = self.env_settings['vmware_vcenter']
+
+        vcenter_value = {
+            "availability_zones": [{
+                "vcenter_username": 'user',
+                "nova_computes": [],
+                "vcenter_host": '8.8.8.8',
+                "az_name": 'az',
+                "vcenter_password": 'pwd'
+            }],
+            'glance': {}
+        }
+
+        clusters = vmware_vcenter['nova-compute']
+        nodes = self.fuel_web.client.list_cluster_nodes(self.cluster_id)
+        comp_vmware_nodes = [node for node in nodes if {'compute-vmware'} <=
+                             set(node['pending_roles'])]
+
+        for cluster in clusters:
+            if cluster['target_node'] == 'compute-vmware':
+                node = comp_vmware_nodes.pop()
+                target_node = node['hostname']
+            else:
+                target_node = cluster['target_node']
+
+            vcenter_value["availability_zones"][0]["nova_computes"].append(
+                {"vsphere_cluster": cluster['cluster'] + '!',
+                 "service_name": cluster['srv_name'],
+                 "datastore_regex": '!@#$%^&*()',
+                 "target_node": {
+                     "current": {"id": target_node,
+                                 "label": target_node},
+                     "options": [{"id": target_node,
+                                  "label": target_node}, ]},
+                 }
+            )
+
+        glance = vcenter_value['glance']
+        if vmware_vcenter['glance']['enable']:
+            attributes = self.fuel_web.client.get_cluster_attributes(
+                self.cluster_id)
+            attributes['editable']['storage']['images_vcenter']['value'] = \
+                vmware_vcenter['glance']['enable']
+            self.fuel_web.client.update_cluster_attributes(self.cluster_id,
+                                                           attributes)
+            glance["vcenter_host"] = '8.8.8.8'
+            glance["vcenter_username"] = 'user'
+            glance["vcenter_password"] = 'pwd'
+            glance["datacenter"] = 'dc'
+            glance["datastore"] = '!@#$%^&*()'
 
         logger.info('Configuring vCenter...')
 
@@ -573,11 +638,15 @@ class VMwareActions(object):
     @action
     def config_idatastore(self):
         """Reconfigure vCenter settings with incorrect regex of Datastore."""
+        vmware_vcenter = self.env_settings['vmware_vcenter']
+        instances = vmware_vcenter['nova-compute']
+
         vmware_attr = \
             self.fuel_web.client.get_cluster_vmware_attributes(self.cluster_id)
         vcenter_data = vmware_attr['editable']
-        vcenter_data['value']['availability_zones'][0]['nova_computes'][0][
-            'datastore_regex'] = '!@#$%^&*()'
+        for i in range(len(instances)):
+            vcenter_data['value']['availability_zones'][0]['nova_computes'][i][
+                'datastore_regex'] = '!@#$%^&*()'
 
         self.fuel_web.client.update_cluster_vmware_attributes(self.cluster_id,
                                                               vmware_attr)
@@ -675,7 +744,7 @@ class VMwareActions(object):
     def _get_controller_with_vip(self):
         """Return name of controller with VIPs."""
         for node in self.env.d_env.nodes().slaves:
-            ng_node = self.env.fuel_web.get_nailgun_node_by_devops_node(node)
+            ng_node = self.fuel_web.get_nailgun_node_by_devops_node(node)
             if ng_node['online'] and 'controller' in ng_node['roles']:
                 hosts_vip = self.fuel_web.get_pacemaker_resource_location(
                     ng_node['devops_name'], 'vip__management')
@@ -709,7 +778,7 @@ class VMwareActions(object):
         logger.info('Wait offline status for '
                     '{ctrlr}'.format(ctrlr=self.primary_ctlr_ng.name))
 
-        helpers.wait(lambda: self.env.fuel_web.get_nailgun_node_by_devops_node(
+        helpers.wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
                      self.primary_ctlr_ng)['online'] is not True,
                      timeout=timeout,
                      timeout_msg="Primary controller is still online")
@@ -748,7 +817,7 @@ class VMwareActions(object):
         logger.info('Wait online status for '
                     '{name}'.format(name=self.primary_ctlr_ng.name))
 
-        helpers.wait(lambda: self.env.fuel_web.get_nailgun_node_by_devops_node(
+        helpers.wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
                      self.primary_ctlr_ng)['online'], timeout=timeout,
                      timeout_msg="Primary controller is still offline")
         logger.info('Primary controller is online')
@@ -767,7 +836,7 @@ class VMwareActions(object):
     @action
     def ostf_with_haproxy_fail(self):
         """Run OSTF tests (one should fail)."""
-        self.env.fuel_web.run_ostf(
+        self.fuel_web.run_ostf(
             self.cluster_id,
             test_sets=['sanity', 'smoke', 'ha'],
             should_fail=1,
@@ -779,7 +848,7 @@ class VMwareActions(object):
     def fail_ostf(self):
         """Run OSTF tests (must fail)."""
         try:
-            self.env.fuel_web.run_ostf(
+            self.fuel_web.run_ostf(
                 self.cluster_id,
                 test_sets=['sanity', 'smoke', 'ha'])
             failed = False
@@ -862,3 +931,37 @@ class VMwareActions(object):
     def wait_ha_services(self):
         """Wait for HA services."""
         self.fuel_web.assert_ha_services_ready(self.cluster_id)
+
+    def mcollective_nodes_online(self):
+        nodes_uids = set(
+            [str(node['id']) for node in
+             self.fuel_web.client.list_cluster_nodes(self.cluster_id)]
+        )
+        ssh_manager = SSHManager()
+        out = ssh_manager.execute_on_remote(
+            ip=ssh_manager.admin_ip,
+            cmd='mco find',
+            assert_ec_equal=[0, 1]
+        )['stdout_str']
+        ready_nodes_uids = set(out.split('\n'))
+        unavailable_nodes = nodes_uids - ready_nodes_uids
+        logger.debug('Nodes {0} are not reacheable via'
+                     ' mcollective'.format(unavailable_nodes))
+        return not unavailable_nodes
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def wait_mcollective(self):
+        """Wait for mcollective online status of nodes."""
+        helpers.wait(lambda: self.mcollective_nodes_online(), timeout=60 * 5,
+                     timeout_msg="Cluster nodes don't become available "
+                                 "via mcollective in allotted time.")
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def stop_deploy(self):
+        """Start deploy and stop it after several minutes."""
+        try:
+            self.fuel_web.deploy_cluster_wait(self.cluster_id, timeout=10 * 60)
+        except TimeoutError:
+            self.fuel_web.stop_deployment_wait(self.cluster_id)
