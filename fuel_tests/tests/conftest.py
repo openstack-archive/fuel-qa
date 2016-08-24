@@ -144,6 +144,26 @@ def pytest_runtest_makereport(item, call):
     setattr(item, "rep_" + rep.when, rep)
 
 
+test_names = set()
+test_groups = []
+
+
+@pytest.hookimpl()
+def pytest_collection_finish(session):
+    def _get_groups(kws):
+        return (
+            kw for kw, val in kws.keywords.items() if hasattr(val, 'name'))
+
+    # pylint: disable=global-statement
+    global test_names
+    global test_groups
+    # pylint: enable=global-statement
+
+    test_groups = [{tuple(_get_groups(kws)): kws} for kws in session.items]
+
+    test_names = {kw for kws in session.items for kw in _get_groups(kws)}
+
+
 def pytest_runtest_setup(item):
     """Hook which run before test start."""
     item.cls._current_test = item.function

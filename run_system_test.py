@@ -58,21 +58,6 @@ def clean_argv_proboscis():
     return argv
 
 
-def group_in_pytest(group):
-    from _pytest.config import _prepareconfig
-    from _pytest.main import Session
-    from _pytest.fixtures import FixtureManager
-    from _pytest.mark import MarkMapping
-    config = _prepareconfig(args="")
-    session = Session(config)
-    session._fixturemanager = FixtureManager(session)
-    l = [list(MarkMapping(i.keywords)._mymarks) for i
-         in session.perform_collect()]
-    groups = set([item for sublist in l for item in sublist])
-
-    return group in groups
-
-
 def cli():
     cli = argparse.ArgumentParser(prog="System test runner",
                                   description="Command line tool for run Fuel "
@@ -140,8 +125,13 @@ def run(**kwargs):
 
     groups_to_run = []
     groups.extend(old_groups or [])
+
+    # Collect from pytest only once!
+    pytest.main(['--collect-only', 'fuel_tests', ])
+    from fuel_tests.tests.conftest import test_names
+
     for g in set(groups):
-        if group_in_pytest(g):
+        if g in test_names:
             sys.exit(pytest.main('-m {}'.format(g)))
         if config_name:
             register_system_test_cases(

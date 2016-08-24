@@ -19,8 +19,10 @@ import string
 
 from logging import DEBUG
 from optparse import OptionParser
+
 from proboscis import TestPlan
 from proboscis.decorators import DEFAULT_REGISTRY
+import pytest
 
 from fuelweb_test.testrail.builds import Build
 from fuelweb_test.testrail.settings import GROUPS_TO_EXPAND
@@ -36,12 +38,6 @@ from system_test import get_basepath
 from system_test.tests.base import ActionTest
 
 # pylint: disable=no-name-in-module
-# noinspection PyUnresolvedReferences
-from pytest import Session
-# pylint: enable=no-name-in-module
-from _pytest.config import _prepareconfig
-from _pytest.fixtures import FixtureManager
-from _pytest.mark import MarkMapping
 
 GROUP_FIELD = 'custom_test_group'
 
@@ -49,26 +45,26 @@ STEP_NUM_PATTERN = re.compile(r'^(\d{1,3})[.].+')
 DURATION_PATTERN = re.compile(r'Duration:?\s+(\d+(?:[sm]|\s?m))(?:in)?\b')
 TEST_GROUP_PATTERN = re.compile(r'run_system_test.py\s+.*--group=(\S+)\b')
 
+# Grab groups from pytest on import
+pytest.main(['--collect-only', 'fuel_tests', ])
+
+# pylint: disable=wrong-import-position
+# noinspection PyPep8
+from fuel_tests.tests.conftest import test_groups  # noqa
+# noinspection PyPep8
+from fuel_tests.tests.conftest import test_names  # noqa
+# pylint: enable=wrong-import-position
+
 
 def get_cases_from_pytest(group):
-    config = _prepareconfig(args=str(""))
-    session = Session(config)
-    session._fixturemanager = FixtureManager(session)
-    ret = [i for i
-           in session.perform_collect() if
-           group in list(MarkMapping(i.keywords)._mymarks)]
-    return ret
+    return [
+        obj for grp in test_groups
+        for groups, obj in grp.items()
+        if group in groups]
 
 
 def group_in_pytest(group):
-    config = _prepareconfig(args=str(""))
-    session = Session(config)
-    session._fixturemanager = FixtureManager(session)
-    l = [list(MarkMapping(i.keywords)._mymarks) for i
-         in session.perform_collect()]
-    groups = set([item for sublist in l for item in sublist])
-
-    return group in groups
+    return group in test_names
 
 
 def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
@@ -208,8 +204,6 @@ def get_tests_groups_from_jenkins(runner_name, build_number, distros):
     sub_builds = \
         runner_build.build_data.get('subBuilds', [runner_build.build_data])
     for b in sub_builds:
-        job_info = None
-        env_vars = None
         if b['result'] is None:
             logger.debug("Skipping '{0}' job (build #{1}) because it's still "
                          "running...".format(b['jobName'], b['buildNumber'],))
