@@ -2,6 +2,7 @@
 template:
  name: 1 controller, 1 compute, 1 compute-vmware, 2 ceph-osd on Neutron/VLAN with DVS plugin
  slaves: 5
+ devops_settings: !include devops_configs/vcenter_ha_default.yaml
  cluster_template:
   name: vcenter_ceph_and_computevmware
   release: ubuntu

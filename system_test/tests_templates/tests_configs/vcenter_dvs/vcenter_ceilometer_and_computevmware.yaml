@@ -2,6 +2,7 @@
 template:
  name: 1 controller + mongo, 1 compute + cinder, 1 cinder-vmware, 1 compute-vmware on Neutron/VLAN with DVS plugin
  slaves: 4
+ devops_settings: !include devops_configs/vcenter_ha_default.yaml
  cluster_template:
   name: vcenter_ceilometer_and_computevmware
   release: ubuntu
