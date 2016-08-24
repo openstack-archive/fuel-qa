@@ -26,13 +26,14 @@ from warnings import warn
 
 import devops
 from devops.helpers.helpers import wait
-from devops.models.node import SSHClient
+from devops.helpers.ssh_client import SSHClient
 from paramiko import RSAKey
 import six
 import yaml
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.metaclasses import SingletonMeta
+from fuelweb_test.settings import SSH_CREDENTIALS
 
 
 if StrictVersion(devops.__version__) < StrictVersion('3.0.2'):
@@ -110,7 +111,10 @@ class SSHManager(object):
     def connections(self):
         return self.__connections
 
-    def initialize(self, admin_ip, login, password):
+    def initialize(self, admin_ip,
+                   login=SSH_CREDENTIALS['login'],
+                   password=SSH_CREDENTIALS['password']
+                   ):
         """ It will be moved to __init__
 
         :param admin_ip: ip address of admin node
@@ -206,16 +210,19 @@ class SSHManager(object):
             logger.info('SSH_MANAGER:Close connection for {ip}:{port}'.format(
                 ip=ip, port=port))
 
-    def execute(self, ip, cmd, port=22):
+    def execute(self, ip, cmd, port=22, sudo=None):
         remote = self.get_remote(ip=ip, port=port)
-        return remote.execute(cmd)
+        with remote.sudo(enforce=sudo):
+            return remote.execute(cmd)
 
     def check_call(
             self,
             ip,
             command, port=22, verbose=False, timeout=None,
             error_info=None,
-            expected=None, raise_on_err=True):
+            expected=None, raise_on_err=True,
+            sudo=None
+    ):
         """Execute command and check for return code
 
         :type ip: str
@@ -226,22 +233,24 @@ class SSHManager(object):
         :type error_info: str
         :type expected: list
         :type raise_on_err: bool
+        :type sudo: bool
         :rtype: ExecResult
         :raises: DevopsCalledProcessError
         """
         remote = self.get_remote(ip=ip, port=port)
-        return remote.check_call(
-            command=command,
-            verbose=verbose,
-            timeout=timeout,
-            error_info=error_info,
-            expected=expected,
-            raise_on_err=raise_on_err
-        )
+        with remote.sudo(enforce=sudo):
+            return remote.check_call(
+                command=command,
+                verbose=verbose,
+                timeout=timeout,
+                error_info=error_info,
+                expected=expected,
+                raise_on_err=raise_on_err
+            )
 
     def execute_on_remote(self, ip, cmd, port=22, err_msg=None,
                           jsonify=False, assert_ec_equal=None,
-                          raise_on_assert=True, yamlify=False):
+                          raise_on_assert=True, yamlify=False, sudo=None):
         """Execute ``cmd`` on ``remote`` and return result.
 
         :param ip: ip of host
@@ -252,6 +261,7 @@ class SSHManager(object):
         :param assert_ec_equal: list of expected exit_code
         :param raise_on_assert: Boolean
         :param yamlify: bool, conflicts with jsonify
+        :param sudo: use sudo: bool or None for default value set in settings
         :return: dict
         :raise: Exception
         """
@@ -267,12 +277,14 @@ class SSHManager(object):
         if yamlify and jsonify:
             raise ValueError('Conflicting arguments: yamlify and jsonify!')
 
-        remote = self.get_remote(ip=ip, port=port)
-        orig_result = remote.check_call(
+        orig_result = self.check_call(
+            ip=ip,
             command=cmd,
+            port=port,
             error_info=err_msg,
             expected=assert_ec_equal,
-            raise_on_err=raise_on_assert
+            raise_on_err=raise_on_assert,
+            sudo=sudo()
         )
 
         # Now create fallback result
@@ -293,9 +305,10 @@ class SSHManager(object):
 
         return result
 
-    def execute_async_on_remote(self, ip, cmd, port=22):
+    def execute_async_on_remote(self, ip, cmd, port=22, sudo=None):
         remote = self.get_remote(ip=ip, port=port)
-        return remote.execute_async(cmd)
+        with remote.sudo(enforce=sudo):
+            return remote.execute_async(cmd)
 
     @staticmethod
     def _json_deserialize(json_string):
@@ -349,9 +362,10 @@ class SSHManager(object):
         remote = self.get_remote(ip=ip, port=port)
         return remote.open(path, mode)
 
-    def upload_to_remote(self, ip, source, target, port=22):
+    def upload_to_remote(self, ip, source, target, port=22, sudo=None):
         remote = self.get_remote(ip=ip, port=port)
-        return remote.upload(source, target)
+        with remote.sudo(enforce=sudo):
+            return remote.upload(source, target)
 
     def download_from_remote(self, ip, destination, target, port=22):
         remote = self.get_remote(ip=ip, port=port)
@@ -369,16 +383,18 @@ class SSHManager(object):
         remote = self.get_remote(ip=ip, port=port)
         return remote.isfile(path)
 
-    def mkdir_on_remote(self, ip, path, port=22):
+    def mkdir_on_remote(self, ip, path, port=22, sudo=None):
         remote = self.get_remote(ip=ip, port=port)
-        return remote.mkdir(path)
+        with remote.sudo(enforce=sudo):
+            return remote.mkdir(path)
 
-    def rm_rf_on_remote(self, ip, path, port=22):
+    def rm_rf_on_remote(self, ip, path, port=22, sudo=None):
         remote = self.get_remote(ip=ip, port=port)
-        return remote.rm_rf(path)
+        with remote.sudo(enforce=sudo):
+            return remote.rm_rf(path)
 
     def cond_upload(self, ip, source, target, port=22, condition='',
-                    clean_target=False):
+                    clean_target=False, sudo=None):
         """ Upload files only if condition in regexp matches filenames
 
         :param ip: host ip
@@ -386,6 +402,8 @@ class SSHManager(object):
         :param target: destination path
         :param port: ssh port
         :param condition: regexp condition
+        :param clean_target: drop whole target contents by target recreate
+        :param sudo: use sudo: bool or None for default value set in settings
         :return: count of files
         """
 
@@ -396,14 +414,14 @@ class SSHManager(object):
             target = posixpath.join(target, os.path.basename(source))
 
         if clean_target:
-            self.rm_rf_on_remote(ip=ip, port=port, path=target)
-            self.mkdir_on_remote(ip=ip, port=port, path=target)
+            self.rm_rf_on_remote(ip=ip, port=port, path=target, sudo=sudo)
+            self.mkdir_on_remote(ip=ip, port=port, path=target, sudo=sudo)
 
         source = os.path.expanduser(source)
         if not os.path.isdir(source):
             if re.match(condition, source):
                 self.upload_to_remote(ip=ip, port=port,
-                                      source=source, target=target)
+                                      source=source, target=target, sudo=sudo)
                 logger.debug("File '{0}' uploaded to the remote folder"
                              " '{1}'".format(source, target))
                 return 1
@@ -419,7 +437,7 @@ class SSHManager(object):
                     target,
                     os.path.relpath(rootdir, source))).replace("\\", "/")
 
-            self.mkdir_on_remote(ip=ip, port=port, path=targetdir)
+            self.mkdir_on_remote(ip=ip, port=port, path=targetdir, sudo=sudo)
 
             for entry in files:
                 local_path = os.path.join(rootdir, entry)
@@ -428,7 +446,8 @@ class SSHManager(object):
                     self.upload_to_remote(ip=ip,
                                           port=port,
                                           source=local_path,
-                                          target=remote_path)
+                                          target=remote_path,
+                                          sudo=sudo)
                     files_count += 1
                     logger.debug("File '{0}' uploaded to the "
                                  "remote folder '{1}'".format(source, target))
