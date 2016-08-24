@@ -2393,7 +2393,8 @@ class FuelWebClient29(object):
             if (release["id"] > release_id and
                     release["operating_system"] ==
                     release_details["operating_system"] and
-                    release["is_deployable"]):
+                    release["is_deployable"] and
+                    OPENSTACK_RELEASE in release["name"].lower()):
                 return release["id"]
 
         return None
