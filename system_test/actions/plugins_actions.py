@@ -14,7 +14,8 @@
 
 import os
 
-from proboscis.asserts import assert_true, assert_equal
+from proboscis.asserts import assert_true
+from proboscis.asserts import assert_equal
 
 from fuelweb_test.helpers import utils
 from system_test import logger

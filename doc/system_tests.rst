@@ -146,6 +146,11 @@ vCenter/DVS failover
 .. automodule:: system_test.tests.vcenter.test_vcenter_failover
     :members:
 
+vCenter/DVS cluster actions
+---------------------------
+.. automodule:: system_test.tests.vcenter.test_vcenter_cluster_actions
+    :members:
+
 Helpers
 =======
 
