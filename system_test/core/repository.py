@@ -14,12 +14,12 @@
 
 import re
 
+from devops.helpers.metaclasses import SingletonMeta
 import proboscis.core
 from proboscis import factory
 from proboscis.decorators import DEFAULT_REGISTRY
 from six import add_metaclass
 
-from fuelweb_test.helpers.metaclasses import SingletonMeta
 from system_test.tests import ActionTest
 from system_test.core.discover import config_filter
 

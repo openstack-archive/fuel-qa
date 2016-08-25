@@ -20,6 +20,7 @@ import traceback
 from warnings import warn
 
 from devops.helpers.helpers import wait
+from devops.helpers.metaclasses import SingletonMeta
 from devops.models.node import SSHClient
 from paramiko import RSAKey
 from paramiko.ssh_exception import AuthenticationException
@@ -27,13 +28,11 @@ import six
 import yaml
 
 from fuelweb_test import logger
-from fuelweb_test.helpers.metaclasses import SingletonMeta
 from fuelweb_test.settings import SSH_FUEL_CREDENTIALS
 from fuelweb_test.settings import SSH_SLAVE_CREDENTIALS
 
 
-@six.add_metaclass(SingletonMeta)
-class SSHManager(object):
+class SSHManager(six.with_metaclass(SingletonMeta, object)):
 
     def __init__(self):
         logger.debug('SSH_MANAGER: Run constructor SSHManager')
