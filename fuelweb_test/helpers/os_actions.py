@@ -378,6 +378,9 @@ class OpenStackActions(common.Common):
             '{}'.format("".join(traceback.format_stack())))
         warn(msg, DeprecationWarning)
         logger.warning(msg)
+        logger.critical(
+            'This method could be deleted on 01.09.2016 '
+            'without any announcement!')
         if not creds:
             creds = (
                 SSH_IMAGE_CREDENTIALS['username'],
