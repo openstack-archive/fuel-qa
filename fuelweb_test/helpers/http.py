@@ -12,32 +12,21 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-# pylint: disable=import-error
-# noinspection PyUnresolvedReferences
-from six.moves.urllib import request
-# pylint: enable=import-error
+from __future__ import absolute_import
 
+from traceback import print_stack
+from warnings import warn
 
-class HTTPClientZabbix(object):
-    """HTTPClientZabbix."""  # TODO documentation
+from fuelweb_test import logger
 
-    def __init__(self, url):
-        self.url = url
-        self.opener = request.build_opener(request.HTTPHandler)
+from core.helpers.http import HTTPClientZabbix
 
-    def get(self, endpoint=None, cookie=None):
-        req = request.Request(self.url + endpoint)
-        if cookie:
-            req.add_header('cookie', cookie)
-        return self.opener.open(req)
+msg = (
+    'fuelweb_test.helpers.http is deprecated and will be dropped '
+    'on 14.09.2016. Please use core.models.collector_client instead'
+)
+warn(msg)
+print_stack()
+logger.critical(msg)
 
-    def post(self, endpoint=None, data=None, content_type="text/css",
-             cookie=None):
-        if not data:
-            data = {}
-        req = request.Request(self.url + endpoint, data=json.dumps(data))
-        req.add_header('Content-Type', content_type)
-        if cookie:
-            req.add_header('cookie', cookie)
-        return self.opener.open(req)
+__all__ = ['HTTPClientZabbix']
