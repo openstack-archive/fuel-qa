@@ -1,4 +1,4 @@
-#    Copyright 2013 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,10 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from core.helpers.http import HTTPClientZabbix
-# TODO(astepanov): switch to requests library
+from __future__ import unicode_literals
+
+import requests
+
 from fuelweb_test import logwrap
-from fuelweb_test.helpers.decorators import json_parse
 
 
 class CollectorClient(object):
@@ -23,35 +24,34 @@ class CollectorClient(object):
 
     def __init__(self, collector_ip, endpoint):
         url = "http://{0}/{1}".format(collector_ip, endpoint)
-        self._client = HTTPClientZabbix(url=url)
+        self.__url = url
         super(CollectorClient, self).__init__()
 
     @property
-    def client(self):
-        return self._client
+    def url(self):
+        return self.__url
+
+    def _get(self, endpoint):
+        return requests.get(url=self.url + endpoint)
 
     @logwrap
-    @json_parse
     def get_oswls(self, master_node_uid):
-        return self.client.get("/oswls/{0}".format(master_node_uid))
+        return self._get("/oswls/{0}".format(master_node_uid)).json()
 
     @logwrap
-    @json_parse
     def get_installation_info(self, master_node_uid):
-        return self.client.get("/installation_info/{0}".format(
-            master_node_uid))
+        return self._get("/installation_info/{0}".format(
+            master_node_uid)).json()
 
     @logwrap
-    @json_parse
     def get_action_logs(self, master_node_uid):
-        return self.client.get("/action_logs/{0}".format(
-            master_node_uid))
+        return self._get("/action_logs/{0}".format(
+            master_node_uid)).json()
 
     @logwrap
-    @json_parse
     def get_oswls_by_resource(self, master_node_uid, resource):
-        return self.client.get("/oswls/{0}/{1}".format(master_node_uid,
-                                                       resource))
+        return self._get("/oswls/{0}/{1}".format(master_node_uid,
+                                                 resource)).json()
 
     @logwrap
     def get_oswls_by_resource_data(self, master_node_uid, resource):
@@ -65,8 +65,7 @@ class CollectorClient(object):
 
     @logwrap
     def get_action_logs_count(self, master_node_uid):
-        return len([actions['id']
-                    for actions in self.get_action_logs(master_node_uid)])
+        return len(self.get_action_logs_ids(master_node_uid))
 
     @logwrap
     def get_action_logs_additional_info_by_id(
