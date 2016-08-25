@@ -20,17 +20,16 @@ import traceback
 from warnings import warn
 
 from devops.helpers.helpers import wait
+from devops.helpers.metaclasses import SingletonMeta
 from devops.models.node import SSHClient
 from paramiko import RSAKey
 import six
 import yaml
 
 from fuelweb_test import logger
-from fuelweb_test.helpers.metaclasses import SingletonMeta
 
 
-@six.add_metaclass(SingletonMeta)
-class SSHManager(object):
+class SSHManager(six.with_metaclass(SingletonMeta, object)):
 
     def __init__(self):
         logger.debug('SSH_MANAGER: Run constructor SSHManager')

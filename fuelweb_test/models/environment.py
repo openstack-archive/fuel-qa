@@ -21,6 +21,7 @@ from warnings import warn
 from devops.helpers.helpers import tcp_ping_
 from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
+from devops.helpers.metaclasses import SingletonMeta
 from devops.helpers.ntp import sync_time
 from devops.models import Environment
 from keystoneauth1 import exceptions
@@ -31,7 +32,6 @@ import six
 from fuelweb_test.helpers.decorators import revert_info
 from fuelweb_test.helpers.decorators import update_rpm_packages
 from fuelweb_test.helpers.decorators import upload_manifests
-from fuelweb_test.helpers.metaclasses import SingletonMeta
 from fuelweb_test.helpers.eb_tables import Ebtables
 from fuelweb_test.helpers.fuel_actions import AdminActions
 from fuelweb_test.helpers.fuel_actions import BaseActions
@@ -53,8 +53,7 @@ from fuelweb_test import QuietLogger
 from fuelweb_test import logger
 
 
-@six.add_metaclass(SingletonMeta)
-class EnvironmentModel(object):
+class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
     """EnvironmentModel."""  # TODO documentation
 
     def __init__(self, config=None):
@@ -740,6 +739,9 @@ class EnvironmentModel(object):
             '{}'.format("".join(traceback.format_stack())))
         warn(msg, DeprecationWarning)
         logger.warning(msg)
+        logger.critical(
+            'This method could be deleted on 01.09.2016 '
+            'without any announcement!')
         result = remote.check_call(
             command=cmd,
             expected=[exit_code],
