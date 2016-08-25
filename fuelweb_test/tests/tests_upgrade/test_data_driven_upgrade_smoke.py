@@ -20,7 +20,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 
-from fuelweb_test import settings
+from fuelweb_test import settings, logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_base import \
@@ -31,11 +31,14 @@ from fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_base import \
 class UpgradeSmoke(DataDrivenUpgradeBase):
 
     def __init__(self):
-        super(UpgradeSmoke, self).__init__()
+        super(self.__class__, self).__init__()
         self.backup_name = "backup_smoke.tar.gz"
         self.repos_backup_name = "repos_backup_smoke.tar.gz"
-        self.source_snapshot_name = "upgrade_smoke_backup"
+
+        self.source_snapshot_name = "prepare_upgrade_smoke_before_backup"
+        self.backup_snapshot_name = "upgrade_smoke_backup"
         self.snapshot_name = "upgrade_smoke_restore"
+
         assert_not_equal(
             settings.KEYSTONE_CREDS['password'], 'admin',
             "Admin password was not changed, aborting execution")
@@ -53,15 +56,10 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         3. Add 1 node with compute+cinder roles
         4. Verify networks
         5. Deploy cluster
-        6. Run OSTF
-        7. Install fuel-octane package
-        8. Create backup file using 'octane fuel-backup'
-        9. Download the backup to the host
 
-        Duration: TODO
-        Snapshot: upgrade_smoke_backup
+        Snapshot: prepare_upgrade_smoke_before_backup
         """
-        self.check_run("upgrade_smoke_backup")
+        self.check_run(self.source_snapshot_name)
         self.env.revert_snapshot("ready", skip_timesync=True)
 
         cluster_settings = {
@@ -83,8 +81,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
              }
         )
 
-        self.env.make_snapshot('prepare_upgrade_smoke_before_backup',
-                               is_make=True)
+        self.env.make_snapshot(self.source_snapshot_name, is_make=True)
 
     @test(groups=['upgrade_smoke_backup'],
           depends_on_groups=['prepare_upgrade_smoke_before_backup'])
@@ -102,15 +99,14 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         """
         self.check_run(self.backup_snapshot_name)
         self.show_step(1)
-        self.env.revert_snapshot("prepare_upgrade_smoke_before_backup",
-                                 skip_timesync=True)
+        self.revert_source()
 
         self.show_step(2)
         self.show_step(3)
         self.show_step(4)
         self.do_backup(self.backup_path, self.local_path,
                        self.repos_backup_path, self.repos_local_path)
-        self.env.make_snapshot("upgrade_smoke_backup", is_make=True)
+        self.env.make_snapshot(self.backup_snapshot_name, is_make=True)
 
     @test(groups=['upgrade_smoke_tests', 'upgrade_smoke_restore'])
     @log_snapshot_after_test
@@ -118,7 +114,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         """Reinstall Fuel and restore non-HA cluster using fuel-octane.
 
         Scenario:
-        1. Revert "upgrade_smoke" snapshot
+        1. Revert "upgrade_smoke_backup" snapshot
         2. Reinstall Fuel master using iso given in ISO_PATH
         3. Install fuel-octane package
         4. Upload the backup back to reinstalled Fuel maser node
@@ -137,17 +133,16 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         assert_true(os.path.exists(self.repos_local_path))
         assert_true(os.path.exists(self.local_path))
 
-        self.show_step(1, initialize=True)
         intermediate_snapshot = 'upgrade_smoke_before_restore'
         if not self.env.d_env.has_snapshot(intermediate_snapshot):
-            assert_true(
-                self.env.revert_snapshot(self.source_snapshot_name),
-                "The test can not use given environment - snapshot "
-                "{!r} does not exists".format(self.source_snapshot_name))
+            self.show_step(1)
+            self.revert_backup()
             self.show_step(2)
             self.reinstall_master_node()
             self.env.make_snapshot(intermediate_snapshot)
         else:
+            self.show_step(1)
+            self.show_step(2)
             self.env.d_env.revert(intermediate_snapshot)
         self.env.resume_environment()
         self.show_step(3)
@@ -191,7 +186,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
           depends_on_groups=['upgrade_smoke_restore'])
     @log_snapshot_after_test
     def upgrade_smoke_scale(self):
-        """Scale already existing Kilo cluster using upgraded to 8.0 Fuel.
+        """Scale already existing cluster using upgraded Fuel.
 
         Scenario:
         1. Revert 'upgrade_smoke_restore' snapshot
@@ -211,9 +206,8 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         Snapshot: upgrade_smoke_scale
         Duration: TODO
         """
-        self.show_step(1, initialize=True)
-        self.env.revert_snapshot(self.snapshot_name)
-
+        self.show_step(1)
+        self.revert_restore()
         self.show_step(2)
         self.show_step(3)
         cluster_id = self.fuel_web.get_last_created_cluster()
@@ -226,7 +220,6 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.show_step(4)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(5)
-        # LP 1562736 get_devops_node_by_nailgun_node is not working
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(6)
         self.check_ostf(cluster_id, ignore_known_issues=True)
@@ -281,8 +274,8 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
 
         Duration: TODO
         """
-        self.show_step(1, initialize=True)
-        self.env.revert_snapshot("upgrade_smoke_restore")
+        self.show_step(1)
+        self.revert_restore()
 
         self.show_step(2)
         cluster_id = self.fuel_web.get_last_created_cluster()
@@ -323,7 +316,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
           depends_on_groups=['upgrade_smoke_restore'])
     @log_snapshot_after_test
     def upgrade_smoke_new_deployment(self):
-        """Deploy Liberty cluster using upgraded to 8.0 Fuel.
+        """Deploy new release cluster using upgraded Fuel.
 
         Scenario:
         1. Revert 'upgrade_smoke_restore' snapshot
@@ -338,9 +331,8 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         Snapshot: upgrade_smoke_new_deployment
         Duration: TODO
         """
-        self.show_step(1, initialize=True)
-        self.env.revert_snapshot("upgrade_smoke_restore", skip_timesync=True)
-
+        self.show_step(1)
+        self.revert_restore()
         self.show_step(2)
         cluster_id = self.fuel_web.get_last_created_cluster()
         devops_nodes = self.fuel_web.get_devops_nodes_by_nailgun_nodes(
@@ -355,14 +347,16 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
 
         self.show_step(3)
         releases = self.fuel_web.client.get_releases()
-        release_id = [
-            release['id'] for release in releases if
+        release = [
+            release for release in releases if
             release['is_deployable'] and
-            settings.UPGRADE_FUEL_TO in release['version']][0]
+            settings.OPENSTACK_RELEASE in release['name'].lower()].pop()
+        logger.info("Release {!r} (id {!r}) is fetched for deployment".format(
+            release['name'], release['id']))
         cluster_id = self.fuel_web.create_cluster(
             name=self.upgrade_smoke_new_deployment.__name__,
             mode=settings.DEPLOYMENT_MODE,
-            release_id=release_id,
+            release_id=release['id'],
             settings={
                 'net_provider': settings.NEUTRON,
                 'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
