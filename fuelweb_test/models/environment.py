@@ -705,7 +705,7 @@ class EnvironmentModel(object):
             cmd=cmd,
             err_msg='bootstrap failed, inspect logs for details',
         )
-        logger.info('bootstrap successfull')
+        logger.info('bootstrap successfully')
 
     # Modifies a resolv.conf on the Fuel master node and returns
     # its original content.
