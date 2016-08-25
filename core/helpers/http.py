@@ -13,6 +13,8 @@
 #    under the License.
 
 import json
+from warnings import warn
+
 # pylint: disable=import-error
 # noinspection PyUnresolvedReferences
 from six.moves.urllib import request
@@ -23,6 +25,11 @@ class HTTPClientZabbix(object):
     """HTTPClientZabbix."""  # TODO documentation
 
     def __init__(self, url):
+        warn(
+            'HTTPClientZabbix is deprecated and not used now. '
+            'It will be dropped in short term period.',
+            DeprecationWarning
+        )
         self.url = url
         self.opener = request.build_opener(request.HTTPHandler)
 
