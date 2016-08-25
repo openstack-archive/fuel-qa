@@ -12,68 +12,21 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from fuelweb_test import logwrap
-from fuelweb_test.helpers.decorators import json_parse
-from fuelweb_test.helpers.http import HTTPClientZabbix
+from __future__ import absolute_import
 
+from traceback import print_stack
+from warnings import warn
 
-class CollectorClient(object):
-    """CollectorClient."""  # TODO documentation
+from fuelweb_test import logger
 
-    def __init__(self, collector_ip, endpoint):
-        url = "http://{0}/{1}".format(collector_ip, endpoint)
-        self._client = HTTPClientZabbix(url=url)
-        super(CollectorClient, self).__init__()
+from core.models.collector_client import CollectorClient
 
-    @property
-    def client(self):
-        return self._client
+msg = (
+    'fuelweb_test.models.collector_client is deprecated and will be dropped '
+    'on 14.09.2016. Please use core.models.collector_client instead'
+)
+warn(msg)
+print_stack()
+logger.critical(msg)
 
-    @logwrap
-    @json_parse
-    def get_oswls(self, master_node_uid):
-        return self.client.get("/oswls/{0}".format(master_node_uid))
-
-    @logwrap
-    @json_parse
-    def get_installation_info(self, master_node_uid):
-        return self.client.get("/installation_info/{0}".format(
-            master_node_uid))
-
-    @logwrap
-    @json_parse
-    def get_action_logs(self, master_node_uid):
-        return self.client.get("/action_logs/{0}".format(
-            master_node_uid))
-
-    @logwrap
-    @json_parse
-    def get_oswls_by_resource(self, master_node_uid, resource):
-        return self.client.get("/oswls/{0}/{1}".format(master_node_uid,
-                                                       resource))
-
-    @logwrap
-    def get_oswls_by_resource_data(self, master_node_uid, resource):
-        return self.get_oswls_by_resource(master_node_uid,
-                                          resource)['objs'][0]['resource_data']
-
-    @logwrap
-    def get_action_logs_ids(self, master_node_uid):
-        return [actions['id']
-                for actions in self.get_action_logs(master_node_uid)]
-
-    @logwrap
-    def get_action_logs_count(self, master_node_uid):
-        return len([actions['id']
-                    for actions in self.get_action_logs(master_node_uid)])
-
-    @logwrap
-    def get_action_logs_additional_info_by_id(
-            self, master_node_uid, action_id):
-        return [actions['body']['additional_info']
-                for actions in self.get_action_logs(master_node_uid)
-                if actions['id'] == action_id]
-
-    @logwrap
-    def get_installation_info_data(self, master_node_uid):
-        return self.get_installation_info(master_node_uid)['structure']
+__all__ = ['CollectorClient']
