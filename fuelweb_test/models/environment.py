@@ -13,45 +13,46 @@
 #    under the License.
 
 import logging
-import re
 import time
 import traceback
 from warnings import warn
 
+import re
+import six
 from devops.helpers.helpers import tcp_ping_
-from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.ntp import sync_time
 from devops.models import Environment
 from keystoneauth1 import exceptions
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
-import six
 
+from core.models.collector_client import CollectorClient
+
+from fuelweb_test import QuietLogger
+from fuelweb_test import logger
+from fuelweb_test import logwrap
+from fuelweb_test import settings
+from fuelweb_test.helpers import multiple_networks_hacks
 from fuelweb_test.helpers.decorators import revert_info
 from fuelweb_test.helpers.decorators import update_rpm_packages
 from fuelweb_test.helpers.decorators import upload_manifests
-from fuelweb_test.helpers.metaclasses import SingletonMeta
 from fuelweb_test.helpers.eb_tables import Ebtables
 from fuelweb_test.helpers.fuel_actions import AdminActions
 from fuelweb_test.helpers.fuel_actions import BaseActions
 from fuelweb_test.helpers.fuel_actions import CobblerActions
-from fuelweb_test.helpers.fuel_actions import NailgunActions
-from fuelweb_test.helpers.fuel_actions import PostgresActions
-from fuelweb_test.helpers.fuel_actions import NessusActions
 from fuelweb_test.helpers.fuel_actions import FuelBootstrapCliActions
+from fuelweb_test.helpers.fuel_actions import NailgunActions
+from fuelweb_test.helpers.fuel_actions import NessusActions
+from fuelweb_test.helpers.fuel_actions import PostgresActions
+from fuelweb_test.helpers.metaclasses import SingletonMeta
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.helpers.utils import YamlEditor
-from fuelweb_test.helpers import multiple_networks_hacks
 from fuelweb_test.models.fuel_web_client import FuelWebClient
-from fuelweb_test.models.collector_client import CollectorClient
-from fuelweb_test import settings
 from fuelweb_test.settings import CUSTOM_FUEL_SETTING_YAML
 from fuelweb_test.settings import iface_alias
-from fuelweb_test import logwrap
-from fuelweb_test import QuietLogger
-from fuelweb_test import logger
 
 
 @six.add_metaclass(SingletonMeta)
