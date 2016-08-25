@@ -19,7 +19,6 @@ import os
 # pylint: disable=import-error
 # pylint: disable=no-name-in-module
 from distutils.version import LooseVersion
-from distutils.version import StrictVersion
 # pylint: enable=no-name-in-module
 # pylint: enable=import-error
 
@@ -107,7 +106,7 @@ class DataDrivenUpgradeBase(TestBasic):
     @property
     def fuel_version(self):
         version = self.fuel_web.client.get_api_version()['release']
-        return StrictVersion(version)
+        return LooseVersion(version)
 
     @property
     def repos_local_path(self):
@@ -312,12 +311,12 @@ class DataDrivenUpgradeBase(TestBasic):
             logger.info("Applying backup from {}".format(repos_backup_path))
             self.octane_action("repo-restore", repos_backup_path)
 
-        if self.fuel_version in (StrictVersion('7.0'), StrictVersion('8.0')):
+        if self.fuel_version in (LooseVersion('7.0'), LooseVersion('8.0')):
             logger.info(
                 "Update CentOS bootstrap image with restored ssh keys")
             self.octane_action('update-bootstrap-centos')
 
-        if self.fuel_version >= StrictVersion('8.0'):
+        if self.fuel_version >= LooseVersion('8.0'):
             self.fuel_web.change_default_network_settings()
 
         n_nodes = self.fuel_web.client.list_nodes()
@@ -470,7 +469,7 @@ class DataDrivenUpgradeBase(TestBasic):
 
         cmd = 'bash -c "cobbler system list" | grep ' \
               '-w "node-{0}"'.format(node_id)
-        if self.fuel_version <= StrictVersion('8.0'):
+        if self.fuel_version <= LooseVersion('8.0'):
             cmd = "dockerctl shell cobbler {}".format(cmd)
         admin_remote.check_call(cmd)
 
