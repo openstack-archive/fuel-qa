@@ -16,7 +16,7 @@ from __future__ import unicode_literals
 
 # pylint: disable=import-error
 # pylint: disable=no-name-in-module
-from distutils.version import StrictVersion
+from distutils.version import LooseVersion
 # pylint: enable=no-name-in-module
 # pylint: enable=import-error
 import os
@@ -85,11 +85,11 @@ class UpgradeCustom(DataDrivenUpgradeBase):
 
         self.revert_source()
         assert_equal(
-            StrictVersion(current_step['fuel_version']),
+            LooseVersion(current_step['fuel_version']),
             self.fuel_version,
             "Wrong fuel version in current step; "
             "should be {!r}, actual {!r}".format(
-                StrictVersion(current_step['fuel_version']),
+                LooseVersion(current_step['fuel_version']),
                 self.fuel_version))
         # clean up existing files for avoiding "No space left"
         self.env.d_env.get_admin_remote().check_call(
@@ -126,11 +126,11 @@ class UpgradeCustom(DataDrivenUpgradeBase):
         self.revert_backup()
 
         assert_equal(
-            StrictVersion(current_step['source_fuel_version']),
+            LooseVersion(current_step['source_fuel_version']),
             self.fuel_version,
             "Wrong fuel version in current step; "
             "should be {!r}, actual {!r}".format(
-                StrictVersion(current_step['source_fuel_version']),
+                LooseVersion(current_step['source_fuel_version']),
                 self.fuel_version))
 
         assert_true(os.path.exists(self.repos_local_path))
@@ -150,11 +150,11 @@ class UpgradeCustom(DataDrivenUpgradeBase):
         self.do_restore(self.backup_path, self.local_path,
                         self.repos_backup_path, self.repos_local_path)
         assert_equal(
-            StrictVersion(current_step['target_fuel_version']),
+            LooseVersion(current_step['target_fuel_version']),
             self.fuel_version,
             "Wrong fuel version in current step; "
             "should be {!r}, actual {!r}".format(
-                StrictVersion(current_step['target_fuel_version']),
+                LooseVersion(current_step['target_fuel_version']),
                 self.fuel_version))
 
         self.env.make_snapshot(self.restore_snapshot_name, is_make=True)
