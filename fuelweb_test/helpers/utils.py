@@ -16,6 +16,7 @@ from __future__ import division
 
 import copy
 # pylint: disable=no-name-in-module
+# noinspection PyUnresolvedReferences
 from distutils import version
 # pylint: enable=no-name-in-module
 import inspect
@@ -35,9 +36,11 @@ from proboscis import asserts
 from proboscis.asserts import assert_true
 from proboscis.asserts import assert_equal
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves import configparser
 # pylint: enable=import-error
 # pylint: disable=redefined-builtin
+# noinspection PyUnresolvedReferences
 from six.moves import xrange
 # pylint: enable=redefined-builtin
 import yaml
@@ -464,6 +467,8 @@ def run_on_remote(*args, **kwargs):
         '{}'.format("".join(traceback.format_stack())))
     warn(msg, DeprecationWarning)
     logger.warning(msg)
+    logger.critical(
+        'This method cold be deleted on 01.09.2016 without any announcement!')
     if 'jsonify' in kwargs:
         if kwargs['jsonify']:
             return run_on_remote_get_results(*args, **kwargs)['stdout_json']
@@ -495,6 +500,8 @@ def run_on_remote_get_results(remote, cmd, clear=False, err_msg=None,
         '{}'.format("".join(traceback.format_stack())))
     warn(msg, DeprecationWarning)
     logger.warning(msg)
+    logger.critical(
+        'This method cold be deleted on 01.09.2016 without any announcement!')
     if assert_ec_equal is None:
         assert_ec_equal = [0]
     orig_result = remote.check_call(
@@ -716,8 +723,8 @@ def generate_floating_ranges(start_ip, end_ip, step):
 def get_node_hiera_roles(remote):
     """Get hiera roles assigned to host
 
-    :param :remote: SSHClient to node
-        :rtype: dict host plus role
+    :param remote: SSHClient to node
+    :rtype: dict host plus role
     """
     cmd = 'hiera roles'
     roles = remote.check_call(cmd).stdout_str
@@ -1119,7 +1126,7 @@ def get_file_size(ip, file_name, file_path):
 def get_quantity_of_numa(ip):
     """Get number of NUMA nodes that are contained on remote node
 
-    :param remote: node IP
+    :param ip: node IP
     :return: int, count of available NUMA nodes on the node
     """
 
