@@ -183,6 +183,11 @@ class DataDrivenUpgradeBase(TestBasic):
         self.admin_remote.check_call(
             "rm -rf /usr/lib/python2.*/site-packages/octane",
             raise_on_err=False)
+        if LooseVersion(self.fuel_version) >= LooseVersion("9.0"):
+            self.admin_remote.check_call(
+                "yum remove -y fuel-nailgun-extension-cluster-upgrade",
+                raise_on_err=False)
+
         logger.info("Installing fuel-octane")
         self.admin_remote.check_call("yum install -y fuel-octane")
 
