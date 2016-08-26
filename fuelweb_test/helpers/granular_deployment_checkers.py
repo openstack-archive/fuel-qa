@@ -12,12 +12,27 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import time
-
+from traceback import print_stack
+from warnings import warn
 
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
 from fuelweb_test import logger
+
+
+msg = (
+    'fuelweb_test.helpers.granular_deployment_checkers in not used for now '
+    'and marked as deprecated.\n'
+    'Please update your code, because this module is marked for deletion'
+)
+warn(msg, DeprecationWarning)
+logger.warning(msg)
+print_stack()
+logger.critical(
+    'fuelweb_test.helpers.granular_deployment_checkers is planned '
+    'for deletion on 14.09.2016'
+)
 
 
 def check_hiera_resources(remote, file_name=None):
