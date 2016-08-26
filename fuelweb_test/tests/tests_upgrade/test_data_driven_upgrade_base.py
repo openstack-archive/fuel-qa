@@ -45,7 +45,9 @@ class DataDrivenUpgradeBase(TestBasic):
 
     IGNORED_OSTF_TESTS = {
         '7.0': ['Instance live migration'],
-        '8.0': ['Launch instance with file injection']
+        '8.0': ['Launch instance with file injection'],
+        '9.0': [],
+        '9.1': []
     }
 
     OCTANE_COMMANDS = {
