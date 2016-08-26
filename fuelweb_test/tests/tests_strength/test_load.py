@@ -17,11 +17,12 @@ import time
 from proboscis import test
 from proboscis.asserts import assert_true
 
+from core.helpers.setup_teardown import setup_teardown
+
 from fuelweb_test import logger
 from fuelweb_test import ostf_test_mapping
 from fuelweb_test import settings
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.helpers.decorators import setup_teardown
 from fuelweb_test.helpers.rally import RallyBenchmarkTest
 from fuelweb_test.helpers.utils import fill_space
 from fuelweb_test.tests.base_test_case import SetupEnvironment
