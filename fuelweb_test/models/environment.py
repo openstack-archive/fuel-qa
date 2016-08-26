@@ -29,6 +29,8 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 import six
 
+from core.models.collector_client import CollectorClient
+
 from fuelweb_test.helpers.decorators import revert_info
 from fuelweb_test.helpers.decorators import update_rpm_packages
 from fuelweb_test.helpers.decorators import upload_manifests
@@ -45,7 +47,6 @@ from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.helpers.utils import YamlEditor
 from fuelweb_test.helpers import multiple_networks_hacks
 from fuelweb_test.models.fuel_web_client import FuelWebClient
-from fuelweb_test.models.collector_client import CollectorClient
 from fuelweb_test import settings
 from fuelweb_test.settings import CUSTOM_FUEL_SETTING_YAML
 from fuelweb_test.settings import iface_alias
