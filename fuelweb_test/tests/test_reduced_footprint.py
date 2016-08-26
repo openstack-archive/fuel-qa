@@ -21,9 +21,10 @@ from paramiko.ssh_exception import ChannelException
 from proboscis import asserts
 from proboscis import test
 
+from core.helpers.setup_teardown import setup_teardown
+
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.helpers.decorators import setup_teardown
 from fuelweb_test.helpers.utils import get_network_template
 from fuelweb_test.helpers.utils import preserve_partition
 from fuelweb_test import settings
