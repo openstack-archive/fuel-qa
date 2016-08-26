@@ -16,10 +16,11 @@ from os.path import basename
 from proboscis.asserts import assert_true
 from proboscis import test
 
+from core.helpers.setup_teardown import setup_teardown
+
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.decorators import upload_manifests
-from fuelweb_test.helpers.decorators import setup_teardown
 from fuelweb_test.helpers.utils import get_node_hiera_roles
 from fuelweb_test.helpers import checkers
 from fuelweb_test.settings import DEPLOYMENT_MODE
