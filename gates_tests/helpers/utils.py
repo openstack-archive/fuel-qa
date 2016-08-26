@@ -26,6 +26,7 @@ from fuelweb_test.helpers.gerrit.gerrit_info_provider import \
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test import logger
 from fuelweb_test import settings
+from fuelweb_test.helpers.utils import YamlEditor
 from gates_tests.helpers import exceptions
 
 
@@ -429,12 +430,9 @@ def check_package_version_injected_in_bootstraps(
 def update_bootstrap_cli_yaml():
     actions = BaseActions()
     path = "/etc/fuel-bootstrap-cli/fuel_bootstrap_cli.yaml"
-    element = ['repos']
     new_repo = {'name': 'auxiliary', 'priority': "1200",
                 'section': 'main restricted',
                 'suite': 'auxiliary', 'type': 'deb',
                 'uri': 'http://127.0.0.1:8080/ubuntu/auxiliary/'}
-    repos = actions.get_value_from_remote_yaml(path, element)
-    repos.append(new_repo)
-
-    actions.change_remote_yaml(path, element, repos)
+    with YamlEditor(path, ip=actions.admin_ip) as editor:
+        editor['repos'].append(new_repo)

@@ -14,7 +14,6 @@
 
 import os
 import re
-from warnings import warn
 
 from devops.helpers.helpers import wait
 from devops.models import DiskDevice
@@ -60,67 +59,6 @@ class BaseActions(object):
             ip=self.admin_ip,
             cmd="systemctl restart {0}".format(service))
         return result['exit_code'] == 0
-
-    @staticmethod
-    def put_value_to_local_yaml(old_file, new_file, element, value):
-        """Changes content in old_file at element is given to the new value
-        and creates new file with changed content
-        :param old_file: a path to the file content from to be changed
-        :param new_file: a path to the new file to ve created with new content
-        :param element: tuple with path to element to be changed
-        for example: ['root_elem', 'first_elem', 'target_elem']
-        if there are a few elements with equal names use integer
-        to identify which element should be used
-        :return: nothing
-        """
-        warn("Function is deprecated, use utils.YamlEditor instead",
-             DeprecationWarning)
-        old_content = YamlEditor(old_file).get_content()
-        open(new_file, "a").close()
-        with YamlEditor(new_file) as editor:
-            editor.content = old_content
-            editor.change_value(element, value)
-
-    @staticmethod
-    def get_value_from_local_yaml(yaml_file, element):
-        """Get a value of the element from the local yaml file
-
-           :param str yaml_file: a path to the yaml file
-           :param list element:
-               list with path to element to be read
-               for example: ['root_elem', 'first_elem', 'target_elem']
-               if there are a few elements with equal names use integer
-               to identify which element should be used
-           :return obj: value
-        """
-        warn("Function is deprecated, use utils.YamlEditor instead",
-             DeprecationWarning)
-        return YamlEditor(yaml_file).get_value(element)
-
-    def change_remote_yaml(self, path_to_file, element, value, ip=None):
-        """Changes values in the yaml file stored
-        There is no need to copy file manually
-        :param path_to_file: absolute path to the file
-        :param element: list with path to the element be changed
-        :param value: new value for element
-        :return: Nothing
-        """
-        warn("Function is deprecated, use utils.YamlEditor instead",
-             DeprecationWarning)
-        with YamlEditor(path_to_file, self.admin_ip) as editor:
-            editor.change_value(element, value)
-
-    def get_value_from_remote_yaml(self, path_to_file, element):
-        """Get a value from the yaml file stored
-           on the master node
-
-        :param str path_to_file: absolute path to the file
-        :param list element: list with path to the element
-        :return obj: value
-        """
-        warn("Function is deprecated, use utils.YamlEditor instead",
-             DeprecationWarning)
-        return YamlEditor(path_to_file, self.admin_ip).get_value(element)
 
 
 class AdminActions(BaseActions):
@@ -464,10 +402,9 @@ class FuelPluginBuilder(BaseActions):
             jsonify=True)['stdout_json']
         fuel_version = [str(output['release'])]
         openstack_version = str(output['openstack_version'])
-        self.change_remote_yaml(metadata_path, ['fuel_version'], fuel_version)
-        releases = self.get_value_from_remote_yaml(metadata_path, ['releases'])
-        releases[0]['version'] = openstack_version
-        self.change_remote_yaml(metadata_path, ['releases'], releases)
+        with YamlEditor(metadata_path, ip=self.admin_ip) as editor:
+            editor.content['fuel_version'] = fuel_version
+            editor.content['releases'][0]['version'] = openstack_version
 
     def fpb_validate_plugin(self, path):
         """
@@ -500,10 +437,9 @@ class FuelPluginBuilder(BaseActions):
         :param new_version: new version to be used for plugin
         :return: nothing
         """
-        self.change_remote_yaml(
-            '/root/{}/metadata.yaml'.format(plugin_name),
-            ['version'],
-            new_version)
+        with YamlEditor('/root/{}/metadata.yaml'.format(plugin_name),
+                        ip=self.admin_ip) as editor:
+            editor.content['version'] = new_version
 
     def fpb_change_package_version(self, plugin_name, new_version):
         """
@@ -512,10 +448,9 @@ class FuelPluginBuilder(BaseActions):
         :param new_version: version to be changed at
         :return: nothing
         """
-        self.change_remote_yaml(
-            '/root/{}/metadata.yaml'.format(plugin_name),
-            ['package_version'],
-            new_version)
+        with YamlEditor('/root/{}/metadata.yaml'.format(plugin_name),
+                        ip=self.admin_ip) as editor:
+            editor.content['package_version'] = new_version
 
     def fpb_copy_plugin(self, source, target):
         """

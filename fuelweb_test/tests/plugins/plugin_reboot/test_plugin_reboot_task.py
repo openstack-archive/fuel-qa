@@ -19,6 +19,7 @@ from proboscis import test
 
 from fuelweb_test.helpers import utils
 from fuelweb_test import logger
+from fuelweb_test.helpers.utils import YamlEditor
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -204,19 +205,19 @@ class RebootPlugin(TestBasic):
         fpb = FuelPluginBuilder()
         # install fuel_plugin_builder on master node
         fpb.fpb_install()
-        # change timeout to a new value '1'
-        fpb.put_value_to_local_yaml(os.path.join(tasks_path, tasks_file),
-                                    os.path.join('/tmp/', tasks_file),
-                                    [2, 'parameters', 'timeout'],
-                                    1)
         self.show_step(3)
         # create plugin template on the master node
         fpb.fpb_create_plugin(source_plugin_path)
         fpb.fpb_update_release_in_metadata(source_plugin_path)
         # replace plugin tasks with our file
         fpb.fpb_replace_plugin_content(
-            os.path.join('/tmp/', tasks_file),
+            os.path.join(tasks_path, tasks_file),
             os.path.join(source_plugin_path, 'deployment_tasks.yaml'))
+        # change timeout to a new value '1'
+        with YamlEditor(
+                os.path.join(source_plugin_path, 'deployment_tasks.yaml'),
+                fpb.admin_ip) as editor:
+            editor.content[2]['parameters']['timeout'] = 1
         # build plugin
         self.show_step(4)
         packet_name = fpb.fpb_build_plugin(source_plugin_path)
