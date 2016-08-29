@@ -54,6 +54,12 @@ from gates_tests.helpers import exceptions
 
 @logwrap
 def get_yaml_to_json(node_ssh, filename):
+    msg = (
+        'get_yaml_to_json helper is unused in fuel-qa and planned '
+        'for deletion on 14.09.2016')
+    warn(msg, DeprecationWarning)
+    logger.critical(msg)
+
     cmd = ("python -c 'import sys, yaml, json; json.dump("
            "yaml.load(sys.stdin),"
            " sys.stdout)' < {0}").format(filename)
@@ -69,6 +75,12 @@ def get_yaml_to_json(node_ssh, filename):
 
 @logwrap
 def put_json_on_remote_from_dict(remote, src_dict, cluster_id):
+    msg = (
+        'put_json_on_remote_from_dict helper is unused in fuel-qa and planned '
+        'for deletion on 14.09.2016')
+    warn(msg, DeprecationWarning)
+    logger.critical(msg)
+
     cmd = ('python -c "import json; '
            'data=json.dumps({0}); print data"').format(src_dict)
     result = remote.execute(
@@ -538,6 +550,11 @@ def json_deserialize(json_string):
     :return: obj
     :raise: Exception
     """
+    msg = (
+        'put_json_on_remote_from_dict helper is unused in fuel-qa and planned '
+        'for deletion on 14.09.2016')
+    warn(msg, DeprecationWarning)
+    logger.critical(msg)
     if isinstance(json_string, list):
         json_string = ''.join(json_string)
 
@@ -1113,12 +1130,11 @@ def get_package_versions_from_node(ip, name, os_type):
 @logwrap
 def get_file_size(ip, file_name, file_path):
     # Moved from checkers.py for improvement of code
-    file_size = SSHManager().execute(
-        ip, 'stat -c "%s" {0}/{1}'.format(file_path, file_name))
-    assert_equal(
-        int(file_size['exit_code']), 0, "Failed to get '{0}/{1}' file stats on"
-                                        " remote node".format(file_path,
-                                                              file_name))
+    file_size = SSHManager().check_call(
+        ip, 'stat -c "%s" {0}/{1}'.format(file_path, file_name),
+        error_info="Failed to get '{0}/{1}' file stats on"
+                   " remote node".format(file_path, file_name)
+    )
     return int(file_size['stdout'][0].rstrip())
 
 
