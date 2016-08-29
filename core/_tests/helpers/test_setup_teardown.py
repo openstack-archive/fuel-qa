@@ -3,8 +3,10 @@ from __future__ import print_function
 
 import unittest
 
+# pylint: disable=import-error
 from mock import call
 from mock import patch
+# pylint: enable=import-error
 
 from core.helpers import setup_teardown
 
@@ -159,18 +161,17 @@ class TestWrappers(unittest.TestCase):
             'cls was not filtered from @classmethod!'
         )
 
+        # Allow to replace function by None in special cases
+        self.assertIsNone(
+            call_in_context(None, {'test_arg': 'test_val'})
+        )
+
 
 @patch('core.helpers.setup_teardown.__getcallargs', return_value={'arg': True})
 @patch('core.helpers.setup_teardown.__call_in_context')
 class TestSetupTeardown(unittest.TestCase):
     def test_basic(self, call_in, getargs):
         arg = True
-
-        def setup_func():
-            pass
-
-        def teardown_func():
-            pass
 
         @setup_teardown.setup_teardown()
         def positive_example(arg):
