@@ -159,8 +159,10 @@ class TestMultipleClusterNets(TestNetworkTemplatesBase):
 
             # need to push to remote
             self.show_step(8)
-            utils.put_json_on_remote_from_dict(
-                remote, updated_network, cluster_id)
+            with remote.open(
+                    '/var/log/network_{0}.json'.format(cluster_id),
+                    mode='w') as file_obj:
+                json.dump(updated_network, file_obj)
 
             check_update_network_data_over_cli(self.ssh_manager.admin_ip,
                                                cluster_id,
