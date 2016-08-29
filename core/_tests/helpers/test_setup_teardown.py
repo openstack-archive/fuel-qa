@@ -159,6 +159,11 @@ class TestWrappers(unittest.TestCase):
             'cls was not filtered from @classmethod!'
         )
 
+        # Allow to replace function by None in special cases
+        self.assertIsNone(
+            call_in_context(None, {'test_arg': 'test_val'})
+        )
+
 
 @patch('core.helpers.setup_teardown.__getcallargs', return_value={'arg': True})
 @patch('core.helpers.setup_teardown.__call_in_context')
