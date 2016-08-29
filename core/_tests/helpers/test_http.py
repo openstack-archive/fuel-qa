@@ -2,8 +2,10 @@ from __future__ import absolute_import
 
 import unittest
 
-from mock import patch
+# pylint: disable=import-error
 from mock import call
+from mock import patch
+# pylint: enable=import-error
 
 from core.helpers.http import HTTPClientZabbix
 
