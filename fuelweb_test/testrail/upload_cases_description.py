@@ -93,7 +93,9 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
                     "refs": "",
                     "custom_test_group": test_group,
                     "custom_test_case_description": docstring or " ",
-                    "custom_test_case_steps": steps
+                    "custom_test_case_steps": steps,
+                    "custom_job_settings": str(
+                        groups[jenkins_suffix]['env_vars'])
                 }
                 tests.append(test_case)
         else:
