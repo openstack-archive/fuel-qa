@@ -100,6 +100,8 @@ class TestVirtRole(TestBasic):
                                format(i['name'], i['status'], i['online'])
                                for i in self.fuel_web.client.list_nodes()])))
 
+        self.env.make_snapshot("spawn_one_vm_on_one_virt_node")
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["spawn_two_vms_on_one_virt_node"])
     @log_snapshot_after_test
@@ -165,6 +167,8 @@ class TestVirtRole(TestBasic):
                                format(i['name'], i['status'], i['online'])
                                for i in self.fuel_web.client.list_nodes()])))
 
+        self.env.make_snapshot("spawn_two_vms_on_one_virt_node")
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["spawn_three_vms_across_three_virt_nodes"])
     @log_snapshot_after_test
@@ -226,6 +230,8 @@ class TestVirtRole(TestBasic):
                               ['Name: {0}, status: {1}, online: {2}'.
                                format(i['name'], i['status'], i['online'])
                                for i in self.fuel_web.client.list_nodes()])))
+
+        self.env.make_snapshot("spawn_three_vms_across_three_virt_nodes")
 
 
 @test(groups=["virt_role_baremetal", "reduced_footprint_baremetal"])
