@@ -341,6 +341,11 @@ UPGRADE_TEST_TEMPLATE = os.environ.get("UPGRADE_TEST_TEMPLATE")
 UPGRADE_CUSTOM_STEP_NAME = os.environ.get("UPGRADE_CUSTOM_STEP_NAME", "")
 TARBALL_PATH = os.environ.get('TARBALL_PATH')
 
+OCTANE_REPO_LOCATION = os.environ.get('OCTANE_REPO_LOCATION', '')
+if not OCTANE_REPO_LOCATION:
+    FUEL_PROPOSED_REPO_URL = os.environ.get('FUEL_PROPOSED_REPO_URL', '')
+    OCTANE_REPO_LOCATION = FUEL_PROPOSED_REPO_URL
+
 UPGRADE_FUEL_FROM = os.environ.get('UPGRADE_FUEL_FROM', '6.1')
 UPGRADE_FUEL_TO = os.environ.get('UPGRADE_FUEL_TO', '7.0')
 OCTANE_PATCHES = os.environ.get('OCTANE_PATCHES', None)
@@ -431,11 +436,6 @@ FUEL_PLUGIN_BUILDER_REPO = ('https://github.com/stackforge/fuel-plugins.git '
 # CentOS: http://osci-obs.vm.mirantis.net:82/centos-fuel-master-20921/centos/
 # Ubuntu: http://osci-obs.vm.mirantis.net:82/ubuntu-fuel-master-20921/ubuntu/
 CUSTOM_PKGS_MIRROR = os.environ.get('CUSTOM_PKGS_MIRROR', '')
-
-# URL for Fuel proposed repository - required for correct ordering of upgrade:
-# update Fuel Master node using published packages (UPDATE_FUEL=True)
-# then attach the repository in the test case.
-FUEL_PROPOSED_REPO_URL = os.environ.get('FUEL_PROPOSED_REPO_URL', '')
 
 # Location of local mirrors on master node.
 LOCAL_MIRROR_UBUNTU = os.environ.get('LOCAL_MIRROR_UBUNTU',
