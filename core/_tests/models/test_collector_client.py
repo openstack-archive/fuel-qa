@@ -3,8 +3,10 @@ from __future__ import unicode_literals
 
 import unittest
 
-from mock import patch
+# pylint: disable=import-error
 from mock import call
+from mock import patch
+# pylint: enable=import-error
 
 from core.models.collector_client import CollectorClient
 
