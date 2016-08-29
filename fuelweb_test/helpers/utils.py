@@ -1560,33 +1560,6 @@ class YamlEditor(object):
         self.original_content = copy.deepcopy(self.content)
         return self
 
-    def change_value(self, element, value):
-        """Change 'value' of 'element' (backward compatibility)
-        THIS METHOD WILL BE REMOVED AFTER PLUGIN TESTS REFACTORING!
-        Try to use 'content' field first before executing this method!"""
-        self.content = self.get_content()
-        result_dict = temp_dict = copy.deepcopy(self.content)
-        for k in element[:-1]:
-            temp_dict = temp_dict[k]
-        temp_dict[element[-1]] = value
-        self.content = result_dict
-        return self.content
-
-    def get_value(self, element):
-        """Return 'value' of 'element' (backward compatibility)
-        THIS METHOD WILL BE REMOVED AFTER PLUGIN TESTS REFACTORING!
-        Try to use 'content' field first before executing this method!"""
-        self.content = self.get_content()
-        temp = self.content
-        for k in element[:-1]:
-            try:
-                temp = temp[k]
-            except (KeyError, IndexError):
-                logger.error("Element {0!r} was not found in the config:\n"
-                             "{1!r}".format(k, self.content))
-                raise
-        return temp[element[-1]]
-
     def __exit__(self, x, y, z):
         if self.content == self.original_content:
             return

@@ -20,6 +20,7 @@ from proboscis import test
 
 from fuelweb_test.helpers import utils
 from fuelweb_test import logger
+from fuelweb_test.helpers.utils import YamlEditor
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -203,14 +204,10 @@ class VipReservation(TestBasic):
             os.path.join(task_path, metadata_file),
             os.path.join(source_plugin_path, metadata_file))
 
-        fpb.change_remote_yaml(
-            path_to_file=os.path.join(source_plugin_path, net_role_file),
-            element=[0, 'properties', 'vip', 0, 'namespace'],
-            value=namespace)
-        fpb.change_remote_yaml(
-            os.path.join(source_plugin_path, net_role_file),
-            [1, 'properties', 'vip', 0, 'namespace'],
-            namespace)
+        with YamlEditor(os.path.join(source_plugin_path, net_role_file),
+                        ip=fpb.admin_ip) as editor:
+            editor.content[0]['properties']['vip'][0]['namespace'] = namespace
+            editor.content[1]['properties']['vip'][0]['namespace'] = namespace
         # build plugin
         self.show_step(4)
         packet_name = fpb.fpb_build_plugin(source_plugin_path)
@@ -330,14 +327,10 @@ class VipReservation(TestBasic):
             os.path.join(task_path, metadata_file),
             os.path.join(source_plugin_path, metadata_file))
 
-        fpb.change_remote_yaml(
-            os.path.join(source_plugin_path, net_role_file),
-            [0, 'properties', 'vip', 0, 'namespace'],
-            namespace)
-        fpb.change_remote_yaml(
-            os.path.join(source_plugin_path, net_role_file),
-            [1, 'properties', 'vip', 0, 'namespace'],
-            namespace)
+        with YamlEditor(os.path.join(source_plugin_path, net_role_file),
+                        ip=fpb.admin_ip) as editor:
+            editor.content[0]['properties']['vip'][0]['namespace'] = namespace
+            editor.content[1]['properties']['vip'][0]['namespace'] = namespace
         # build plugin
         self.show_step(4)
         packet_name = fpb.fpb_build_plugin(source_plugin_path)
