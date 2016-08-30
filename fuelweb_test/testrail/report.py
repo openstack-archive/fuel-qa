@@ -631,10 +631,11 @@ def main():
                                        '-{0}'.format(prefix) if prefix
                                        else '')
     iso_link = '/'.join([JENKINS['url'], 'job', iso_job_name, str(iso_number)])
-
+    test_run = TestRailSettings.tests_description
+    description = test_run if test_run else iso_link
     if not test_plan:
         test_plan = project.add_plan(test_plan_name,
-                                     description=iso_link,
+                                     description=description,
                                      milestone_id=milestone['id'],
                                      entries=[]
                                      )
