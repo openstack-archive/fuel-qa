@@ -741,3 +741,8 @@ Test SR-IOV
 -----------
 .. automodule:: fuelweb_test.tests.test_sriov
    :members:
+
+Test graph extension
+------------------------------------------------------
+.. automodule:: fuelweb_test.tests.test_graph_extension
+   :members:
