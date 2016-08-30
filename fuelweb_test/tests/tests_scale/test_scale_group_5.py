@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from proboscis import test
+from devops.helpers.helpers import wait
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
@@ -290,3 +291,136 @@ class HaScaleGroup5(TestBasic):
         self.fuel_web.run_ostf(cluster_id)
 
         self.env.make_snapshot('add_delete_controller_cinder_ceph')
+
+
+@test(groups=['delete_add_controller'])
+class HaScaleRemoveAddController(TestBasic):
+    """HaScaleRemoveAddController."""  # TODO documentation
+
+    def get_cluster_tasks(self, cluster_id, task_status):
+        tasks = self.fuel_web.client.get_all_tasks_list()
+        return [t for t in tasks if t['cluster'] == cluster_id and
+                t['status'] == task_status]
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_all],
+          groups=["delete_add_controller"])
+    @log_snapshot_after_test
+    def delete_add_controller(self):
+        """Deployment with 1 controller, Neutron Vlan and add,
+           add/delete controllers
+
+        Scenario:
+        1. Deploy cluster: 1 controller, Neutron Vlan, default storages
+        2. Verify networks
+        3. Run OSTF
+        4. Add 2 controllers
+        5. Re-deploy cluster
+        6. Verify networks
+        7. Run OSTF
+        8. Add 2 controllers, 1 compute, 1 cinder node
+        9. Re-deploy cluster
+        10. Verify networks
+        11. Run OSTF
+        12. Delete primary controller
+        13. Add another one controller
+        14. Re-deploy cluster
+        15. Verify networks
+        16. Run OSTF
+
+        Duration: 300 min
+        Snapshot: delete_add_controller
+        """
+
+        self.env.revert_snapshot('ready_with_all_slaves')
+
+        data = {
+            'net_provider': 'neutron',
+            'tenant': 'simpleVlan',
+            'user': 'simpleVlan',
+            'password': 'simpleVlan'
+        }
+
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            settings=data
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-06': ['controller'],
+                'slave-07': ['controller'],
+                'slave-09': ['cinder']
+            }
+        )
+
+        self.show_step(1)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(2)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(3)
+        self.fuel_web.run_ostf(cluster_id)
+
+        # self.show_step(4)
+        # self.fuel_web.update_nodes(
+        #     cluster_id,
+        #     {
+        #         'slave-06': ['controller'],
+        #         'slave-07': ['controller']
+        #     }
+        # )
+        # self.show_step(5)
+        # self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        # self.show_step(6)
+        # self.fuel_web.verify_network(cluster_id)
+
+        # self.show_step(7)
+        # self.fuel_web.run_ostf(cluster_id)
+
+        # self.show_step(8)
+        # self.fuel_web.update_nodes(
+        #     cluster_id,
+        #     {
+        #         'slave-08': ['compute'],
+        #         'slave-09': ['cinder']
+        #     }
+        # )
+
+        # self.show_step(9)
+        # self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        # self.show_step(10)
+        # self.fuel_web.verify_network(cluster_id)
+
+        # self.show_step(11)
+        # self.fuel_web.run_ostf(cluster_id)
+
+        self.show_step(12)
+        primary_controller = self.fuel_web.get_nailgun_primary_node(
+            self.env.d_env.nodes().slaves[0])
+        primary_controller_id = self.fuel_web.get_nailgun_node_by_devops_node(
+            primary_controller)['id']
+        self.fuel_web.delete_node(primary_controller_id)
+
+        wait(lambda: len(self.get_cluster_tasks(
+            cluster_id=cluster_id, task_status='running')) == 0,
+             timeout=60 * 120)
+        self.show_step(13)
+        nodes = {'slave-05': ['controller']}
+        self.fuel_web.update_nodes(
+            cluster_id, nodes)
+
+        self.show_step(14)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(15)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(16)
+        self.fuel_web.run_ostf(cluster_id)
+
+        self.env.make_snapshot('delete_add_controller')
