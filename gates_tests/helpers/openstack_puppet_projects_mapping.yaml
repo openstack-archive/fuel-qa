@@ -1,4 +1,6 @@
 bvt_2:
+ devops_settings_template: devops_templates/default.yaml
+ projects:
  - openstack/puppet-ceph
  - openstack/puppet-glance
  - openstack/puppet-horizon
@@ -10,19 +12,29 @@ bvt_2:
  - openstack/puppet-oslo
 
 neutron_vlan_ha:
+ devops_settings_template: devops_templates/default.yaml
+ projects:
  - openstack/puppet-cinder
  - openstack/puppet-swift
 
 deploy_sahara_ha_tun:
+ devops_settings_template: devops_templates/default.yaml
+ projects:
  - openstack/puppet-sahara
 
 deploy_murano_ha_with_tun:
+ devops_settings_template: devops_templates/default.yaml
+ projects:
  - openstack/puppet-murano
 
 ironic_deploy_ceph:
+ devops_settings_template: devops_templates/ironic_template.yaml
+ projects:
  - openstack/puppet-ironic
 
 deploy_heat_ha:
+ devops_settings_template: devops_templates/default.yaml
+ projects:
  - openstack/puppet-aodh
  - openstack/puppet-ceilometer
  - openstack/puppet-heat
