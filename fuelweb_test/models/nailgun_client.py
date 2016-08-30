@@ -958,3 +958,14 @@ class NailgunClient(object):
         """Get list of installed plugins"""
         endpoint = '/plugins'
         return self._get(endpoint).json()
+
+    @logwrap
+    def graphs_execute(self, data):
+        """Execute passed graphs.
+
+        :param data: data in dict format
+        :return: ``task_uuid`` -- unique ID of accepted transaction
+        """
+        endpoint = '/api/v1/graphs/execute/'
+        return self._post(endpoint, json=data).json()
+
