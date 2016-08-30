@@ -46,6 +46,13 @@ class TestOSupgrade(OSUpgradeBase):
 
         self.upgrade_env_code()
 
+        new_cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.upgrade_release(
+            new_cluster_id=new_cluster_id,
+            use_net_template=False
+        )
+
         self.env.make_snapshot("os_upgrade_env", is_make=True)
 
     @test(depends_on=[os_upgrade_env], groups=["upgrade_first_cic"])

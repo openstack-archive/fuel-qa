@@ -98,23 +98,51 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
 
     def upgrade_env_code(self):
         self.show_step(self.next_step)
-        self.ssh_manager.check_call(
+        seed_id = self.ssh_manager.check_call(
             ip=self.env.get_admin_node_ip(),
             command="octane upgrade-env {0}".format(self.orig_cluster_id),
             error_info="'upgrade-env' command failed, inspect logs for details"
         )
 
         new_cluster_id = self.fuel_web.get_last_created_cluster()
+
+        assert_not_equal(
+            self.orig_cluster_id, seed_id,
+            "Cluster IDs are the same: old={!r} and new={!r}".format(
+                self.orig_cluster_id, seed_id))
+
+        assert_equal(
+            seed_id,
+            new_cluster_id,
+            "Cluster ID was changed, but it's not the last:"
+            " abnormal activity or configuration error presents!"
+        )
         assert_not_equal(
             self.orig_cluster_id, new_cluster_id,
-            "Cluster IDs are the same: {!r} and {!r}".format(
+            "Cluster IDs are the same: old={!r} and new={!r}".format(
                 self.orig_cluster_id, new_cluster_id))
 
+    def upgrade_release(self, new_cluster_id, use_net_template=False):
         self.show_step(self.next_step)
-        assert_equal(
-            self.fuel_web.get_cluster_release_id(new_cluster_id),
-            self.fuel_web.client.get_release_id(
-                release_name='Mitaka on Ubuntu 14.04'))
+
+        if not use_net_template:
+            release_id = self.ssh_manager.check_call(
+                ip=self.env.get_admin_node_ip,
+                command='fuel2 release clone $ORIG_ID $RELEASE_ID'
+                        ' -f value -c id',
+                error_info='RELEASE_ID clone failed'
+            )
+            assert_equal(
+                self.fuel_web.get_cluster_release_id(new_cluster_id),
+                release_id)
+
+            assert_equal(
+                self.fuel_web.get_cluster_release_id(new_cluster_id),
+                self.fuel_web.client.get_release_id(
+                    release_name='Mitaka on Ubuntu 14.04'))
+        else:
+            raise NotImplementedError(
+                'Upgrade with network templates is not supported now')
 
     def upgrade_first_controller_code(self, seed_cluster_id):
         self.show_step(self.next_step)
