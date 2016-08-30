@@ -30,14 +30,14 @@ from proboscis.asserts import assert_true
 
 from fuelweb_test import logger
 from fuelweb_test.settings import DEPLOYMENT_MODE
-from fuelweb_test.settings import FUEL_PROPOSED_REPO_URL
-from fuelweb_test.settings import LOGS_DIR
 from fuelweb_test.settings import KEYSTONE_CREDS
+from fuelweb_test.settings import LOGS_DIR
+from fuelweb_test.settings import OCTANE_PATCHES
+from fuelweb_test.settings import OCTANE_REPO_LOCATION
 from fuelweb_test.settings import UPGRADE_FUEL_FROM
 from fuelweb_test.settings import UPGRADE_BACKUP_FILES_LOCAL_DIR
 from fuelweb_test.settings import UPGRADE_BACKUP_FILES_REMOTE_DIR
 from fuelweb_test.settings import UPGRADE_FUEL_TO
-from fuelweb_test.settings import OCTANE_PATCHES
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
@@ -164,7 +164,7 @@ class DataDrivenUpgradeBase(TestBasic):
     def install_octane(self):
         """ Install fuel-octane package to master node"""
         conf_file = None
-        if FUEL_PROPOSED_REPO_URL:
+        if OCTANE_REPO_LOCATION:
             conf_file = '/etc/yum.repos.d/fuel-proposed.repo'
             cmd = ("echo -e "
                    "'[fuel-proposed]\n"
@@ -172,7 +172,7 @@ class DataDrivenUpgradeBase(TestBasic):
                    "baseurl={}/\n"
                    "gpgcheck=0\n"
                    "priority=1' > {}").format(
-                       FUEL_PROPOSED_REPO_URL,
+                       OCTANE_REPO_LOCATION,
                        conf_file)
 
             # pylint: disable=no-member
@@ -216,7 +216,7 @@ class DataDrivenUpgradeBase(TestBasic):
                     OCTANE_PATCHES))
             # pylint: enable=no-member
 
-        if FUEL_PROPOSED_REPO_URL:
+        if OCTANE_REPO_LOCATION:
             # pylint: disable=no-member
             self.admin_remote.rm_rf(conf_file)
             # pylint: enable=no-member
