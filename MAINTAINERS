@@ -31,13 +31,13 @@ maintainers:
         email:  vkhlyunev@mirantis.com
         IRC:    vkhlyunev
 
-      - name:   Dmytro Tyzhnenko
-        email:  dtyzhnenko@mirantis.com
-        IRC:    t_dmitry
+      - name:   Alexandr Kostrikov
+        email:  akostrikov@mirantis.com
+        IRC:    akostrikov_mirantis
 
-      - name:   Alexey Stepanov
-        email:  astepanov@mirantis.com
-        IRC:    penguinolog
+      - name:   Artem Grechanichenko
+        email:  agrechanichenko@mirantis.com
+        IRC:    agrechanicheko
 
       - name:   Maksym Strukov
         email:  mstrukov@mirantis.com
