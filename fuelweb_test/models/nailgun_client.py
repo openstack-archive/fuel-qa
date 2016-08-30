@@ -241,6 +241,12 @@ class NailgunClient(object):
             url="/nodes/{}/disks".format(node_id), json=data).json()
 
     @logwrap
+    def get_deployable_releases(self):
+        return [
+            release for release
+            in self.get_releases() if release['is_deployable']]
+
+    @logwrap
     def get_release_id(self, release_name=OPENSTACK_RELEASE):
         for release in self.get_releases():
             if release["name"].lower().find(release_name.lower()) != -1:
