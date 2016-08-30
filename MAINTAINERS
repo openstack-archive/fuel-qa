@@ -18,7 +18,7 @@ description:
   are not available for some reason (e.g. on vacation).
 
   [1] https://specs.openstack.org/openstack/fuel-specs/policy/team-structure
-  [2] https://review.openstack.org/#/admin/groups/664,members
+  [2] https://review.openstack.org/#/admin/groups/662,members
   [3] http://lists.openstack.org/pipermail/openstack-dev/2015-August/072406.html
 
   Please keep this file in YAML format in order to allow helper scripts
@@ -31,9 +31,21 @@ maintainers:
         email:  vkhlyunev@mirantis.com
         IRC:    vkhlyunev
 
-      - name:   Dmytro Tyzhnenko
-        email:  dtyzhnenko@mirantis.com
-        IRC:    t_dmitry
+      - name:   Alexandr Kostrikov
+        email:  akostrikov@mirantis.com
+        IRC:    akostrikov_mirantis
+
+      - name:   Artem Grechanichenko
+        email:  agrechanichenko@mirantis.com
+        IRC:    agrechanicheko
+
+      - name:   Maksym Strukov
+        email:  mstrukov@mirantis.com
+        IRC:    mstrukov
+
+      - name:   Aleksandr Kurenyshev
+        email:  akurenyshev@mirantis.com
+        IRC:    akurenyshev
 
   - fuelweb_test/tests/plugins/plugin_zabbix/:
 
