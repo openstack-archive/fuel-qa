@@ -619,10 +619,9 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
                                 remote_status['exit_code'],
                                 remote_status['stdout']))
 
-    # Execute yum updates
-    # If updates installed,
-    # then `bootstrap_admin_node.sh;`
     def admin_install_updates(self):
+        """Update packages using yum and install updates via
+        update-master-node.sh tool"""
         logger.info('Searching for updates..')
         update_command = 'yum clean expire-cache && ' \
                          'yum update -y 2>>/var/log/yum-update-error.log'
@@ -663,39 +662,15 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
 
         logger.info('{0} package(s) were updated'.format(updates_count))
 
-        logger.warning(
-            "'bootstrap_admin_node.sh' is used for applying 9.x release."
-            "It should be replaced with proper procedure when it will be "
-            "merged - https://review.openstack.org/#/c/346119/ ")
-        # this is temporary solution for disabling 50min timeout;
-        # should be removed when the main script for 9.0->9.x will be merged
-        self.ssh_manager.execute_on_remote(
-            ip=self.ssh_manager.admin_ip,
-            cmd='sed -i '
-                '"s/wait_for_external_config=yes/wait_for_external_config=no/"'
-                ' /etc/fuel/bootstrap_admin_node.conf',
-            raise_on_assert=False)
-        # devops is creating ssh connection without associated tty
-        # which leads to broken fuelmenu. we do not need to call fuelmenu
-        # while applying 9.x so turn it off
-        # this is only addition to fix for fuel-devops for unlocking usb thread
-        # without devops bump
-        self.ssh_manager.execute_on_remote(
-            ip=self.ssh_manager.admin_ip,
-            cmd='sed -i '
-                '"s/showmenu=yes/showmenu=no/"'
-                ' /etc/fuel/bootstrap_admin_node.conf',
-            raise_on_assert=False)
-        # end of temporary solutions
-
-        cmd = 'bootstrap_admin_node.sh;'
+        logger.info('Applying updates via update-master-node.sh')
+        cmd = '/usr/share/fuel-utils/update-master-node.sh'
 
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd,
-            err_msg='bootstrap failed, inspect logs for details',
+            err_msg='Update failed, inspect logs for details',
         )
-        logger.info('bootstrap successfull')
+        logger.info('Update successful')
 
     # Modifies a resolv.conf on the Fuel master node and returns
     # its original content.
