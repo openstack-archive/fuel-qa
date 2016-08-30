@@ -96,25 +96,54 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
             raise RuntimeError('old_cluster_name is not set')
         return self.fuel_web.client.get_cluster_id(self.old_cluster_name)
 
-    def upgrade_env_code(self):
+    def upgrade_release(self, use_net_template=False):
         self.show_step(self.next_step)
-        self.ssh_manager.check_call(
+
+        if not use_net_template:
+            return self.ssh_manager.check_call(
+                ip=self.env.get_admin_node_ip(),
+                command='fuel2 release clone {0} {1} -f value -c id'.format(
+                    self.orig_cluster_id,
+                    self.fuel_web.client.get_release_id()
+                ),
+                error_info='RELEASE_ID clone failed'
+            ).stdout_str
+        else:
+            raise NotImplementedError(
+                'Upgrade with network templates is not supported now')
+
+    def upgrade_env_code(self, release_id):
+        self.show_step(self.next_step)
+        seed_id = self.ssh_manager.check_call(
             ip=self.env.get_admin_node_ip(),
-            command="octane upgrade-env {0}".format(self.orig_cluster_id),
+            command="octane upgrade-env {0} {1}".format(
+                self.orig_cluster_id,
+                release_id
+            ),
             error_info="'upgrade-env' command failed, inspect logs for details"
-        )
+        ).stdout_str
 
         new_cluster_id = self.fuel_web.get_last_created_cluster()
+
+        assert_not_equal(
+            self.orig_cluster_id, seed_id,
+            "Cluster IDs are the same: old={!r} and new={!r}".format(
+                self.orig_cluster_id, seed_id))
+
+        assert_not_equal(
+            seed_id,
+            new_cluster_id,
+            "Cluster ID was changed, but it's not the last:"
+            " abnormal activity or configuration error presents!"
+        )
         assert_not_equal(
             self.orig_cluster_id, new_cluster_id,
-            "Cluster IDs are the same: {!r} and {!r}".format(
+            "Cluster IDs are the same: old={!r} and new={!r}".format(
                 self.orig_cluster_id, new_cluster_id))
 
-        self.show_step(self.next_step)
         assert_equal(
             self.fuel_web.get_cluster_release_id(new_cluster_id),
-            self.fuel_web.client.get_release_id(
-                release_name='Mitaka on Ubuntu 14.04'))
+            release_id)
 
     def upgrade_first_controller_code(self, seed_cluster_id):
         self.show_step(self.next_step)
