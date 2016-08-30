@@ -35,7 +35,8 @@ class TestOSupgrade(OSUpgradeBase):
 
         Scenario:
             1. Revert snapshot upgrade_ceph_ha_restore
-            2. Run "octane upgrade-env <orig_env_id>"
+            2. Run fuel2 release clone <orig_env_id>
+            3. Run "octane upgrade-env <orig_env_id> <RELEASE_ID>"
             3. Ensure that new cluster was created with correct release
 
         """
@@ -44,7 +45,9 @@ class TestOSupgrade(OSUpgradeBase):
         self.env.revert_snapshot("upgrade_ceph_ha_restore")
         self.install_octane()
 
-        self.upgrade_env_code()
+        release_id = self.upgrade_release(use_net_template=False)
+
+        self.upgrade_env_code(release_id=release_id)
 
         self.env.make_snapshot("os_upgrade_env", is_make=True)
 
