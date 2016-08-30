@@ -141,22 +141,26 @@ class NailgunClient(object):
         return self._put(url="/clusters/{}/changes/".format(cluster_id)).json()
 
     @logwrap
-    def deploy_custom_graph(self, cluster_id, graph_type, node_ids=None):
+    def deploy_custom_graph(self, cluster_id, graph_type, node_ids=None,
+                            tasks=None):
         """Method to deploy custom graph on cluster.
 
         :param cluster_id: Cluster to be custom deployed
         :param graph_type: Type of a graph to deploy
         :param node_ids: nodes to deploy. None or empty list means all.
-        :return:
+        :param tasks: list of string with task names in graph
+        :return: ``task_uuid`` -- unique ID of accepted transaction
         """
-        if not node_ids:
-            nailgun_nodes = self.list_cluster_nodes(cluster_id)
-            node_ids = [str(_node['id']) for _node in nailgun_nodes]
-        return self._put(
-            '/clusters/{0}/deploy/?graph_type={1}&nodes={2}'.format(
-                cluster_id,
-                graph_type,
-                ','.join(node_ids))).json()
+        scenario = {"cluster": int(cluster_id),
+                    "graphs": [
+                        {"type": graph_type,
+                         "tasks": tasks if tasks else [],
+                         "nodes": node_ids if node_ids else []
+                         }],
+                    "dry_run": False,
+                    "force": False}
+        endpoint = '/graphs/execute/'
+        return self._post(endpoint, json=scenario).json()
 
     @logwrap
     def get_release_tasks(self, release_id):
