@@ -202,7 +202,7 @@ class SSHManager(six.with_metaclass(SingletonMeta, object)):
                     )
                 ssh_client.sudo_mode = SSH_SLAVE_CREDENTIALS['sudo']
             self.connections[(ip, port)] = ssh_client
-        logger.debug('SSH_MANAGER:Return existed connection for '
+        logger.debug('SSH_MANAGER: Return existed connection for '
                      '{ip}:{port}'.format(ip=ip, port=port))
         logger.debug('SSH_MANAGER: Connections {0}'.format(self.connections))
         return self._connect(self.connections[(ip, port)])
