@@ -472,6 +472,8 @@ class CephRadosGW(TestBasic):
         def radosgw_started(remote):
             return remote.check_call('pkill -0 radosgw')['exit_code'] == 0
 
+        self.check_run("ceph_rados_gw")
+
         self.env.revert_snapshot("ready")
         self.env.bootstrap_nodes(
             self.env.d_env.nodes().slaves[:6])
@@ -529,7 +531,7 @@ class CephRadosGW(TestBasic):
         with self.fuel_web.get_ssh_for_node('slave-01') as remote:
             assert_true(radosgw_started(remote), 'radosgw daemon started')
 
-        self.env.make_snapshot("ceph_rados_gw")
+        self.env.make_snapshot("ceph_rados_gw", is_make=True)
 
 
 @test(groups=["ceph_ha_one_controller", "ceph_migration"])
