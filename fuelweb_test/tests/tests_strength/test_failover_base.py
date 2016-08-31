@@ -18,7 +18,7 @@ import time
 from devops.error import TimeoutError
 from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
@@ -464,7 +464,7 @@ class TestHaFailoverBase(TestBasic):
 
         remote.execute("iptables -D OUTPUT 1 -m owner --uid-owner heat -m"
                        " state --state NEW,ESTABLISHED,RELATED")
-        _wait(lambda: assert_true(ocf_success in ''.join(
+        wait_pass(lambda: assert_true(ocf_success in ''.join(
             remote.execute(ocf_status)['stdout']).rstrip()), timeout=240)
         newpid = ''.join(remote.execute('pgrep heat-engine')['stdout'])
         assert_true(pid != newpid, "heat pid is still the same")

@@ -19,7 +19,7 @@ import yaml
 
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 from ipaddr import IPNetwork
 from proboscis.asserts import assert_equal
@@ -120,7 +120,7 @@ class FuelWebClient(object):
     def assert_cluster_ready(self, os_conn, smiles_count,
                              networks_count=1, timeout=300):
         logger.info('Assert cluster services are UP')
-        _wait(
+        wait_pass(
             lambda: self.get_cluster_status(
                 os_conn,
                 smiles_count=smiles_count,
@@ -136,10 +136,10 @@ class FuelWebClient(object):
             logger.info('Waiting {0} sec. for passed OSTF HA tests.'
                         .format(timeout))
             with quiet_logger():
-                _wait(lambda: self.run_ostf(cluster_id,
-                                            test_sets=['ha'],
-                                            should_fail=should_fail),
-                      interval=20, timeout=timeout)
+                wait_pass(lambda: self.run_ostf(cluster_id,
+                                                test_sets=['ha'],
+                                                should_fail=should_fail),
+                          interval=20, timeout=timeout)
             logger.info('OSTF HA tests passed successfully.')
         else:
             logger.debug('Cluster {0} is not in HA mode, OSTF HA tests '
@@ -153,10 +153,10 @@ class FuelWebClient(object):
         logger.info('Waiting {0} sec. for passed OSTF Sanity checks.'
                     .format(timeout))
         with quiet_logger():
-            _wait(lambda: self.run_ostf(cluster_id,
-                                        test_sets=['sanity'],
-                                        should_fail=should_fail),
-                  interval=10, timeout=timeout)
+            wait_pass(lambda: self.run_ostf(cluster_id,
+                                            test_sets=['sanity'],
+                                            should_fail=should_fail),
+                      interval=10, timeout=timeout)
         logger.info('OSTF Sanity checks passed successfully.')
 
     @logwrap

@@ -19,7 +19,7 @@ from proboscis.asserts import assert_true
 from proboscis import test
 from proboscis import SkipTest
 from devops.error import TimeoutError
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 
 from fuelweb_test.helpers import checkers
@@ -419,7 +419,7 @@ class UpgradeFuelMaster(base_test_data.TestBasic):
         checkers.check_upgraded_containers(remote(), hlp_data.UPGRADE_FUEL_TO,
                                            hlp_data.UPGRADE_FUEL_FROM)
         logger.debug("all containers are ok")
-        _wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+        wait_pass(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.nodes().slaves[0]), timeout=8 * 60)
         logger.debug("all services are up now")
         self.fuel_web.wait_nodes_get_online_state(
@@ -522,7 +522,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
                                            hlp_data.UPGRADE_FUEL_TO,
                                            hlp_data.UPGRADE_FUEL_FROM)
         logger.debug("all containers are ok")
-        _wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+        wait_pass(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.nodes().slaves[0]), timeout=8 * 60)
         logger.debug("all services are up now")
         self.fuel_web.wait_nodes_get_online_state(
@@ -591,7 +591,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
                                            hlp_data.UPGRADE_FUEL_TO,
                                            hlp_data.UPGRADE_FUEL_FROM)
         logger.debug("all containers are ok")
-        _wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+        wait_pass(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.nodes().slaves[0]), timeout=8 * 60)
         logger.debug("all services are up now")
         self.fuel_web.wait_nodes_get_online_state(
@@ -661,7 +661,7 @@ class RollbackFuelMaster(base_test_data.TestBasic):
                                            hlp_data.UPGRADE_FUEL_TO,
                                            hlp_data.UPGRADE_FUEL_FROM)
         logger.debug("all containers are ok")
-        _wait(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
+        wait_pass(lambda: self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.nodes().slaves[0]), timeout=8 * 60)
         logger.debug("all services are up now")
         self.fuel_web.wait_nodes_get_online_state(
