@@ -1264,7 +1264,7 @@ def check_plugin_path_env(var_name, plugin_path):
 
 def check_snapshot_logs(ip, snapshot_name, controller_fqdns, compute_fqdns):
     snapshot_path_master = "/var/dump/{}".format(snapshot_name)
-    master_hostname = ''.join((FUEL_MASTER_HOSTNAME, DNS_SUFFIX))
+    master_hostname = 'logs-node-0'
     snapshot_logs_path = os.path.join(
         '{0}/fuelweb_test/config_templates/'.format(os.environ.get(
             "WORKSPACE", "./")), 'snapshot_logs.yaml')
@@ -1347,7 +1347,7 @@ def check_snapshot_logs(ip, snapshot_name, controller_fqdns, compute_fqdns):
             logger.debug("checking {} log file".format(log))
             log_path = "{dump_path}/{fqdn}/{log}".format(
                 dump_path=snapshot_path_master,
-                fqdn=compute_fqdn.replace(DNS_SUFFIX, ""), log=log)
+                fqdn=compute_fqdn.replace(DNS_SUFFIX, ""), log=log) # fqdn -> node-1 ???
             cmd = "ls {}".format(log_path)
             result = ssh_manager.execute_on_remote(
                 ip=ip,
