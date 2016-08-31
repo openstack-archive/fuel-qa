@@ -158,6 +158,8 @@ class SaharaHA(TestBasic):
 
         """
 
+        self.check_run("deploy_sahara_ha_tun")
+
         self.env.revert_snapshot("ready_with_5_slaves")
 
         logger.debug('Create Fuel cluster for Sahara tests')
@@ -236,7 +238,7 @@ class SaharaHA(TestBasic):
                 cluster_id=cluster_id, test_sets=['tests_platform'],
                 test_name=path_to_tests + test_name, timeout=60 * 200)
 
-        self.env.make_snapshot("deploy_sahara_ha_tun")
+        self.env.make_snapshot("deploy_sahara_ha_tun", is_make=True)
 
 
 @test(groups=["services", "services.murano", "services_ha_one_controller"])
@@ -342,6 +344,8 @@ class MuranoHA(TestBasic):
         Snapshot: deploy_murano_ha_with_tun
 
         """
+        self.check_run("deploy_murano_ha_with_tun")
+
         self.env.revert_snapshot("ready_with_5_slaves")
 
         data = {
@@ -397,7 +401,7 @@ class MuranoHA(TestBasic):
                 cluster_id=cluster_id, test_sets=['tests_platform'],
                 test_name=test_name, timeout=60 * 20)
 
-        self.env.make_snapshot("deploy_murano_ha_with_tun")
+        self.env.make_snapshot("deploy_murano_ha_with_tun", is_make=True)
 
 
 class OSTFCeilometerHelper(TestBasic):
