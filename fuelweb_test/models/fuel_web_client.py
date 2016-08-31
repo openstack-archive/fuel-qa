@@ -2001,8 +2001,8 @@ class FuelWebClient29(object):
         for node in devops_nodes:
             logger.debug('Shutdown node %s', node.name)
             nailgun_node = self.get_nailgun_node_by_devops_node(node)
-            self.ssh_manager.execute_on_remote(ip=nailgun_node['ip'],
-                                               cmd='/sbin/shutdown -Ph now')
+            self.ssh_manager.check_call(ip=nailgun_node['ip'], sudo=True,
+                                        command='/sbin/shutdown -Ph now')
 
         for node in devops_nodes:
             self.wait_node_is_offline(node, timeout=timeout)
