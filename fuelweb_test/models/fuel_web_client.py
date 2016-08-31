@@ -1995,15 +1995,14 @@ class FuelWebClient29(object):
         return self.get_nailgun_node_online_status(
             self.get_nailgun_node_by_devops_node(devops_node))
 
-    def warm_shutdown_nodes(self, devops_nodes, timeout=4 * 60):
+    def warm_shutdown_nodes(self, devops_nodes, timeout=15 * 60):
         logger.info('Shutting down (warm) nodes %s',
                     [n.name for n in devops_nodes])
         for node in devops_nodes:
             logger.debug('Shutdown node %s', node.name)
             nailgun_node = self.get_nailgun_node_by_devops_node(node)
-            self.ssh_manager.execute_on_remote(ip=nailgun_node['ip'],
-                                               cmd='/sbin/shutdown -Ph now')
-
+            self.ssh_manager.check_call(ip=nailgun_node['ip'], sudo=True,
+                                        command='shutdown +1')
         for node in devops_nodes:
             self.wait_node_is_offline(node, timeout=timeout)
             node.destroy()
