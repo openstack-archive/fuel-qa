@@ -1,4 +1,4 @@
-#    Copyright 2014 Mirantis, Inc.
+#    Copyright 2016 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -13,6 +13,7 @@
 #    under the License.
 import functools
 import logging
+import logging.config
 import traceback
 import os
 from fuelweb_test.settings import LOGS_DIR
@@ -20,57 +21,71 @@ from fuelweb_test.settings import LOGS_DIR
 if not os.path.exists(LOGS_DIR):
     os.makedirs(LOGS_DIR)
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s - %(levelname)s %(filename)s:'
-                    '%(lineno)d -- %(message)s',
-                    filename=os.path.join(LOGS_DIR, 'sys_test.log'),
-                    filemode='w')
+_log_config = {
+    'version': 1,
+    'formatters': {
+        'default': {
+            'format': '%(asctime)s - %(levelname)s %(filename)s:'
+                      '%(lineno)d -- %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'default'
+        },
+        'tests_log': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'formatter': 'default',
+            'filename': os.path.join(LOGS_DIR, 'sys_test.log'),
+            'mode': 'w',
+            'encoding': 'utf8',
+        },
+        'null': {
+            'level': 'CRITICAL',
+            'class': 'logging.NullHandler',
+        },
+    },
+    'loggers': {
+        'fuel-qa': {
+            'handlers': ['console', 'tests_log'],
+            'level': 'DEBUG',
+            'propagate': False
+        },
+        'paramiko': {'level': 'WARNING'},
+        'iso8601': {'level': 'WARNING'},
+        'keystoneauth': {'level': 'WARNING'},
+    }
+}
 
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(levelname)s %(filename)s:'
-                              '%(lineno)d -- %(message)s')
-console.setFormatter(formatter)
+logging.config.dictConfig(_log_config)
 
-logger = logging.getLogger(__name__)
-logger.addHandler(console)
+logger = logging.getLogger('fuel-qa')
 
 
-# suppress iso8601 and paramiko debug logging
-class NoDebugMessageFilter(logging.Filter):
-    def filter(self, record):
-        return not record.levelno <= logging.DEBUG
-
-logging.getLogger('paramiko.transport').setLevel(logging.WARNING)
-logging.getLogger('paramiko.hostkeys').setLevel(logging.WARNING)
-logging.getLogger('iso8601.iso8601').addFilter(NoDebugMessageFilter())
-logging.getLogger('keystoneauth.session').setLevel(logging.WARNING)
-
-
-def debug(logger):
-    def wrapper(func):
-        @functools.wraps(func)
-        def wrapped(*args, **kwargs):
-            logger.debug(
-                "Calling: {} with args: {} {}".format(
-                    func.__name__, args, kwargs
-                )
+def logwrap(func):
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        logger.debug(
+            "Calling: {} with args: {} {}".format(
+                func.__name__, args, kwargs
             )
-            try:
-                result = func(*args, **kwargs)
-                logger.debug(
-                    "Done: {} with result: {}".format(func.__name__, result))
-            except BaseException as e:
-                logger.error(
-                    '{func} raised: {exc!r}\n'
-                    'Traceback: {tb!s}'.format(
-                        func=func.__name__, exc=e, tb=traceback.format_exc()))
-                raise
-            return result
-        return wrapped
-    return wrapper
-
-logwrap = debug(logger)
+        )
+        try:
+            result = func(*args, **kwargs)
+            logger.debug(
+                "Done: {} with result: {}".format(func.__name__, result))
+        except BaseException as e:
+            logger.error(
+                '{func} raised: {exc!r}\n'
+                'Traceback: {tb!s}'.format(
+                    func=func.__name__, exc=e, tb=traceback.format_exc()))
+            raise
+        return result
+    return wrapped
 
 
 class QuietLogger(object):
@@ -81,8 +96,9 @@ class QuietLogger(object):
         self.storage = None
 
     def __enter__(self):
+        console = logging.StreamHandler()
         self.storage = console.level
         console.setLevel(self.log_level + 1)
 
-    def __exit__(self, exp_type, exp_value, traceback):
-        console.setLevel(self.storage)
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        logging.StreamHandler().setLevel(self.storage)
