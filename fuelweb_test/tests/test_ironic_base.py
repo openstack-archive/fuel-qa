@@ -363,6 +363,7 @@ class TestIronicDeploy(TestBasic):
         Snapshot ironic_deploy_ceilometer
         """
 
+        self.check_run("ironic_deploy_ceilometer")
         self.env.revert_snapshot("ready_with_3_slaves")
 
         data = {
@@ -395,7 +396,7 @@ class TestIronicDeploy(TestBasic):
         self.show_step(9)
         ironic_conn.verify_vms_connection(ironic_conn)
 
-        self.env.make_snapshot("ironic_deploy_ceilometer")
+        self.env.make_snapshot("ironic_deploy_ceilometer", is_make=True)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_scale_controller_ironic"])
