@@ -404,6 +404,8 @@ class MultiroleComputeCinder(TestBasic):
         Snapshot: deploy_multirole_compute_cinder
 
         """
+        self.check_run("deploy_multirole_compute_cinder")
+        self.show_step(1, initialize=True)
         self.env.revert_snapshot("ready_with_3_slaves")
 
         cluster_id = self.fuel_web.create_cluster(
@@ -424,7 +426,8 @@ class MultiroleComputeCinder(TestBasic):
 
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
-        self.env.make_snapshot("deploy_multirole_compute_cinder")
+        self.env.make_snapshot("deploy_multirole_compute_cinder",
+                               is_make=True)
 
 
 @test(groups=["multirole"])
