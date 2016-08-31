@@ -20,6 +20,7 @@ import yaml
 import os.path
 import posixpath
 import re
+from warnings import warn
 
 from proboscis import asserts
 
@@ -124,8 +125,8 @@ def get_node_packages(remote, func_name, node_role, packages_dict):
     logger.debug("node packages are {0}".format(node_packages))
     packages_dict[func_name][node_role] = node_packages\
         if node_role not in packages_dict[func_name].keys()\
-        else list(
-        set(packages_dict[func_name][node_role]) | set(node_packages))
+        else list(set(packages_dict[func_name][node_role]) |
+                  set(node_packages))
     return packages_dict
 
 
@@ -324,36 +325,20 @@ def run_on_remote(remote, cmd, jsonify=False, clear=False):
     :return: None
     :raise: Exception
     """
-    result = remote.execute(cmd)
-    if result['exit_code'] != 0:
-        error_details = {
-            'command': cmd,
-            'host': remote.host,
-            'stdout': result['stdout'],
-            'stderr': result['stderr'],
-            'exit_code': result['exit_code']}
-        error_msg = ("Unexpected error occurred during execution. "
-                     "Details: {0}".format(**error_details))
-        logger.error(error_msg)
-        raise Exception(error_msg)
+    warn(
+        'run_on_remote() is deprecated in favor of '
+        'remote.check_call() \n'
+        'Starting from fuel-devops 2.9.22 this methods will return whole '
+        'required data.',
+        DeprecationWarning
+    )
 
-    stdout = result['stdout']
+    orig_result = remote.check_call(cmd)
 
     if jsonify:
-        try:
-            obj = json.loads(''.join(stdout))
-        except Exception:
-            error_msg = (
-                "Unable to deserialize output of command"
-                " '{0}' on host {1}".format(cmd, remote.host))
-            logger.error(error_msg)
-            raise Exception(error_msg)
-        return obj
+        return orig_result.stdout_json
 
-    if clear:
-        remote.clear()
-
-    return stdout
+    return orig_result.stdout
 
 
 def check_distribution():

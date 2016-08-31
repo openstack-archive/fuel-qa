@@ -15,10 +15,11 @@
 import re
 import time
 import yaml
-from devops.error import TimeoutError
+from warnings import warn
 
-from devops.helpers.helpers import _tcp_ping
-from devops.helpers.helpers import _wait
+from devops.error import TimeoutError
+from devops.helpers.helpers import tcp_ping_
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 from devops.helpers.ntp import sync_time
 from devops.models import Environment
@@ -117,8 +118,7 @@ class EnvironmentModel(object):
                     .format(', '.join(sorted(nodes_names))))
         new_time = sync_time(self.d_env, nodes_names, skip_sync)
         for name in sorted(new_time):
-                logger.info("New time on '{0}' = {1}".format(name,
-                                                             new_time[name]))
+            logger.info("New time on '{0}' = {1}".format(name, new_time[name]))
 
     @logwrap
     def get_admin_node_ip(self):
@@ -287,13 +287,13 @@ class EnvironmentModel(object):
         if not skip_timesync:
             self.sync_time()
         try:
-            _wait(self.fuel_web.client.get_releases,
-                  expected=EnvironmentError, timeout=300)
+            wait_pass(self.fuel_web.client.get_releases,
+                      expected=EnvironmentError, timeout=300)
         except exceptions.Unauthorized:
             self.set_admin_keystone_password()
             self.fuel_web.get_nailgun_version()
 
-        _wait(lambda: self.check_slaves_are_ready(), timeout=60 * 6)
+        wait_pass(lambda: self.check_slaves_are_ready(), timeout=60 * 6)
         return True
 
     def set_admin_ssh_password(self):
@@ -396,7 +396,7 @@ class EnvironmentModel(object):
     @update_packages
     @upload_manifests
     def wait_for_provisioning(self):
-        _wait(lambda: _tcp_ping(
+        wait_pass(lambda: tcp_ping_(
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
             (self.d_env.admin_net), 22), timeout=7 * 60)
@@ -571,13 +571,16 @@ class EnvironmentModel(object):
                      .format(echo_cmd, echo_result['stderr']))
         return resolv_conf['stdout']
 
+    @staticmethod
     @logwrap
-    def execute_remote_cmd(self, remote, cmd, exit_code=0):
-        result = remote.execute(cmd)
-        assert_equal(result['exit_code'], exit_code,
-                     'Failed to execute "{0}" on remote host: {1}'.
-                     format(cmd, result))
-        return result['stdout']
+    def execute_remote_cmd(remote, cmd, exit_code=0):
+        warn(
+            'execute_remote_cmd(remote, cmd) is deprecated in favor of '
+            'SSHClient().check_call()',
+            DeprecationWarning
+        )
+        result = remote.check_call(cmd, expected=[exit_code])
+        return result.stdout
 
     @logwrap
     def describe_second_admin_interface(self):
