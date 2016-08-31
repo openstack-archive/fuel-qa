@@ -158,7 +158,7 @@ class SSHManager(six.with_metaclass(SingletonMeta, object)):
         :rtype: SSHClient
         """
         if (ip, port) not in self.connections:
-            logger.debug('SSH_MANAGER:Create new connection for '
+            logger.debug('SSH_MANAGER: Create new connection for '
                          '{ip}:{port}'.format(ip=ip, port=port))
 
             keys = self._get_keys() if ip != self.admin_ip else []
@@ -170,7 +170,7 @@ class SSHManager(six.with_metaclass(SingletonMeta, object)):
                 password=self.__password,
                 private_keys=keys
             )
-        logger.debug('SSH_MANAGER:Return existed connection for '
+        logger.debug('SSH_MANAGER: Return existed connection for '
                      '{ip}:{port}'.format(ip=ip, port=port))
         logger.debug('SSH_MANAGER: Connections {0}'.format(self.connections))
         return self._connect(self.connections[(ip, port)])
@@ -187,10 +187,10 @@ class SSHManager(six.with_metaclass(SingletonMeta, object)):
         :return: None
         """
         if (ip, port) in self.connections:
-            logger.info('SSH_MANAGER:Close connection for {ip}:{port}'.format(
+            logger.info('SSH_MANAGER: Close connection for {ip}:{port}'.format(
                 ip=ip, port=port))
             self.connections[(ip, port)].clear()
-            logger.info('SSH_MANAGER:Create new connection for '
+            logger.info('SSH_MANAGER: Create new connection for '
                         '{ip}:{port}'.format(ip=ip, port=port))
 
         self.connections[(ip, port)] = SSHClient(
@@ -204,7 +204,7 @@ class SSHManager(six.with_metaclass(SingletonMeta, object)):
     def clean_all_connections(self):
         for (ip, port), connection in self.connections.items():
             connection.clear()
-            logger.info('SSH_MANAGER:Close connection for {ip}:{port}'.format(
+            logger.info('SSH_MANAGER: Close connection for {ip}:{port}'.format(
                 ip=ip, port=port))
 
     def execute(self, ip, cmd, port=22, sudo=None):
