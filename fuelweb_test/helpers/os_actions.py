@@ -13,17 +13,13 @@
 #    under the License.
 
 import random
-import traceback
-from warnings import warn
 
 from devops.error import TimeoutError
 from devops.helpers import helpers
-from devops.helpers.ssh_client import SSHAuth
 from proboscis import asserts
 
 from fuelweb_test import logger
 from fuelweb_test.helpers import common
-from fuelweb_test.settings import SSH_IMAGE_CREDENTIALS
 
 
 class OpenStackActions(common.Common):
@@ -359,38 +355,6 @@ class OpenStackActions(common.Common):
             host for host in self.nova.hosts.list()
             if host.host_name != srv_host_name and
             host._info['service'] == 'compute']
-
-    def get_md5sum(self, file_path, controller_ssh, vm_ip, creds=()):
-        warn(
-            'get_md5sum is deprecated due to legacy API usage',
-            DeprecationWarning)
-        logger.info("Get file md5sum and compare it with previous one")
-        out = self.execute_through_host(
-            controller_ssh, vm_ip, "md5sum {:s}".format(file_path), creds)
-        return out['stdout']
-
-    @staticmethod
-    def execute_through_host(ssh, vm_host, cmd, creds=()):
-        msg = (
-            'execute_throw_host(ssh=SSHClient(), ...) is deprecated '
-            'in favor of '
-            'SSHClient().execute_through_host(hostname, cmd, auth, ...).\n'
-            '{}'.format("".join(traceback.format_stack())))
-        warn(msg, DeprecationWarning)
-        logger.warning(msg)
-        logger.critical(
-            'This method could be deleted on 01.09.2016 '
-            'without any announcement!')
-        if not creds:
-            creds = (
-                SSH_IMAGE_CREDENTIALS['username'],
-                SSH_IMAGE_CREDENTIALS['password']
-            )
-        return ssh.execute_through_host(
-            hostname=vm_host,
-            cmd=cmd,
-            auth=SSHAuth(*creds)
-        )
 
     def get_tenant(self, tenant_name):
         tenant_list = self.keystone.tenants.list()

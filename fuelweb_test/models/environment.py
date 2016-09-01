@@ -15,8 +15,6 @@
 import logging
 import re
 import time
-import traceback
-from warnings import warn
 
 from devops.helpers.helpers import tcp_ping_
 from devops.helpers.helpers import wait_pass
@@ -712,27 +710,6 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
                      'Executing "{0}" on the admin node has failed with: {1}'
                      .format(echo_cmd, echo_result['stderr']))
         return resolv_conf['stdout']
-
-    @staticmethod
-    @logwrap
-    def execute_remote_cmd(remote, cmd, exit_code=0):
-        msg = (
-            'execute_remote_cmd() is old deprecated method, '
-            'which should not be used anymore. '
-            'please use remote.check_call() instead.\n'
-            'Starting from fuel-devops 2.9.22 this methods will return all '
-            'required data.\n'
-            '{}'.format("".join(traceback.format_stack())))
-        warn(msg, DeprecationWarning)
-        logger.warning(msg)
-        logger.critical(
-            'This method could be deleted on 01.09.2016 '
-            'without any announcement!')
-        result = remote.check_call(
-            command=cmd,
-            expected=[exit_code],
-        )
-        return result['stdout']
 
     @logwrap
     def describe_other_admin_interfaces(self, admin):

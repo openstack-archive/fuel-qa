@@ -15,7 +15,7 @@
 from warnings import warn
 
 warn(
-    'fuelweb_test.helpers.metaclasses.SingletonMeta is deprected:'
+    'fuelweb_test.helpers.metaclasses.SingletonMeta is deprecated:'
     'class is moved to devops.helpers.metaclasses.\n'
     'Due to it was single metaclass in file, this file will be deleted in a'
     'short time!',
