@@ -549,29 +549,47 @@ def check_fuel_snapshot(func):
                     cluster_id, ['compute'])
             logger.debug("controller nodes are {}".format(controllers))
             logger.debug("compute nodes are {}".format(computes))
-            controllers_fqdns = [controller['fqdn']
-                                 for controller in controllers]
-            compute_fqdns = [compute['fqdn'] for compute in computes]
-            logger.debug("controller fqdns are {}".format(controllers_fqdns))
-            logger.debug("compute fqdns are {}".format(compute_fqdns))
+
+
+            #controllers_fqdns = {controller['fqdn']: controller['ip']
+            #                     for controller in controllers}
+            #compute_fqdns = {'fqdn': compute['fqdn'],'ip': compute['ip'], 'hostname': compute['fqdn'].replace(DNS_SUFFIX, "") for compute in computes}
+            #logger.debug("controller fqdns are {}".format(controllers_fqdns.keys()))
+            #logger.debug("compute fqdns are {}".format(compute_fqdns.keys()))
             args[0].env.fuel_web.task_wait(
                 args[0].env.fuel_web.client.generate_logs(), 60 * 10)
 
             logs_path = '/var/dump/'
+            archive_ext = 'tar*'
             archive_name = args[0].env.ssh_manager.execute_on_remote(
                 args[0].env.ssh_manager.admin_ip,
-                cmd="ls {}*.tar*".format(logs_path))['stdout_str']
+                cmd="ls {}*.{}".format(logs_path,
+                                       archive_ext))['stdout_str']
             args[0].env.ssh_manager.execute_on_remote(
                 ip=args[0].env.ssh_manager.admin_ip,
                 cmd='cd {0} && tar -xpvf {1}'.format(logs_path, archive_name))
-
             snapshot_name = args[0].env.ssh_manager.execute_on_remote(
                 args[0].env.ssh_manager.admin_ip,
-                cmd="ls -I *.tar* {}".format(logs_path))['stdout_str']
+                cmd="ls -I *.{} {}".format(archive_ext,
+                                           logs_path))['stdout_str']
             logger.debug("snapshot name is {}".format(snapshot_name))
-            check_snapshot_logs(args[0].env.ssh_manager.admin_ip,
-                                snapshot_name, controllers_fqdns,
-                                compute_fqdns)
+            # timmy
+            cmd = 'cd /var/dump/{sn_name}; ' \
+                  'for file in `find *.tar.gz`; ' \
+                  'do name=`basename ${{file}} .tar.gz` && ' \
+                  'mkdir -p $name && ' \
+                  'tar xfv $file -C $name && ' \
+                  'rm $file ' \
+                  '; done'.format(sn_name=snapshot_name)
+            res = args[0].env.ssh_manager.execute_on_remote(args[0].env.ssh_manager.admin_ip, cmd=cmd)
+            logger.info('out: '.format(res['stdout_str']))
+            logger.info('err: '.format(res['stderr_str']))
+            #
+            check_snapshot_logs(ip=args[0].env.ssh_manager.admin_ip,
+                                snapshot_name=snapshot_name,
+                                cluster_id=cluster_id,
+                                controllers=controllers,
+                                computes=computes)
             return result
         except Exception:
             logger.error(traceback.format_exc())
