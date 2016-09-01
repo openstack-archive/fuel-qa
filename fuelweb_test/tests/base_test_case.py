@@ -25,7 +25,7 @@ from proboscis import test
 from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.helpers.fuel_release_hacks import install_mos_repos
+from fuelweb_test.helpers import fuel_release_hacks
 from fuelweb_test.helpers.utils import erase_data_from_hdd
 from fuelweb_test.helpers.utils import get_test_method_name
 from fuelweb_test.helpers.utils import TimeStat
@@ -317,7 +317,10 @@ class TestBasic(object):
         cmd = "yum install -y screen"
         ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
 
-        install_mos_repos()
+        fuel_release_hacks.install_fuel_release_package()
+        fuel_release_hacks.add_master_node_centos_repos_from_yaml_if_defined()
+        fuel_release_hacks.put_deb_repos_yaml_if_defined()
+        fuel_release_hacks.install_fuel_setup_package()
 
         logger.info("Install Fuel services")
 

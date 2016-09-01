@@ -12,17 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-
 from proboscis import test
 
 from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers import fuel_release_hacks
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
-from gates_tests.helpers import utils
 
 
 @test(groups=['review_astute'])
@@ -40,8 +38,8 @@ class GateAstute(TestBasic):
 
     Scenario:
         1. Revert environment ready_with_3_slaves
-        2. Upload package
-        3. Update Astute rpm package from review
+        2. Configure repositories
+        3. Update master node (admin_install_updates)
         4. Update network configuration
         5. Create env
         6. Update nodes with roles: controller, compute, cinder
@@ -53,41 +51,23 @@ class GateAstute(TestBasic):
                             'UPDATE_FUEL value is {}'
                             .format(settings.UPDATE_FUEL))
 
-        astute_service = 'astute'
-        package_name = 'rubygem-astute'
-        package_ext = '*.noarch.rpm'
-        target_path = '/var/www/nailgun/astute/'
-
         self.show_step(1)
         self.env.revert_snapshot('ready_with_3_slaves')
 
         self.show_step(2)
-        self.ssh_manager.upload_to_remote(
-            self.ssh_manager.admin_ip,
-            source=settings.UPDATE_FUEL_PATH.rstrip('/'),
-            target=target_path)
+        release_id = self.fuel_web.get_releases_list_for_os(
+            release_name=OPENSTACK_RELEASE)[0]
+        fuel_release_hacks.add_master_node_centos_repos_from_yaml_if_defined()
+        fuel_release_hacks.update_release_repos_from_deb_repos_yaml_if_defined(
+            release_id)
 
         self.show_step(3)
-        pkg_path = os.path.join(target_path,
-                                '{}{}'.format(package_name, package_ext))
-        logger.debug('Package path is {0}'.format(pkg_path))
-        full_package_name = utils.get_full_filename(wildcard_name=pkg_path)
-        logger.debug('Package name is {0}'.format(full_package_name))
-        full_package_path = os.path.join(os.path.dirname(pkg_path),
-                                         full_package_name)
-        if not utils.does_new_pkg_equal_to_installed_pkg(
-                installed_package=package_name,
-                new_package=full_package_path):
-            utils.update_rpm(path=full_package_path)
-            utils.restart_service(service_name=astute_service,
-                                  timeout=10)
+        self.env.admin_install_updates()
 
         self.show_step(4)
         self.fuel_web.change_default_network_settings()
 
         self.show_step(5)
-        release_id = self.fuel_web.get_releases_list_for_os(
-            release_name=OPENSTACK_RELEASE)[0]
         cmd = ('fuel env create --name={0} --release={1} '
                '--nst=tun --json'.format(self.__class__.__name__,
                                          release_id))
