@@ -16,7 +16,7 @@ import os
 import time
 
 from devops.helpers.helpers import wait
-from devops.helpers.templates import yaml_template_load
+from devops.helpers.templates import get_devops_config
 
 from proboscis import TestProgram
 from proboscis import SkipTest
@@ -88,7 +88,7 @@ class TestBasic(object):
             # hack before we find proper solution for loading devops templates
             external_config = os.environ.get("DEVOPS_SETTINGS_TEMPLATE", None)
             if external_config:
-                config = yaml_template_load(external_config)
+                config = get_devops_config(external_config)
             else:
                 config = self._devops_config
             self.__env = EnvironmentModel(config)
