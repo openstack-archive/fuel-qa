@@ -1262,9 +1262,9 @@ def check_plugin_path_env(var_name, plugin_path):
     )
 
 
-def check_snapshot_logs(ip, snapshot_name, controller_fqdns, compute_fqdns):
+def check_snapshot_logs(ip, snapshot_name, cluster_id, controllers, computes):
     snapshot_path_master = "/var/dump/{}".format(snapshot_name)
-    master_hostname = ''.join((FUEL_MASTER_HOSTNAME, DNS_SUFFIX))
+    master_hostname = 'logs-node-0'
     snapshot_logs_path = os.path.join(
         '{0}/fuelweb_test/config_templates/'.format(os.environ.get(
             "WORKSPACE", "./")), 'snapshot_logs.yaml')
@@ -1276,8 +1276,11 @@ def check_snapshot_logs(ip, snapshot_name, controller_fqdns, compute_fqdns):
                                " logs from {}".format(snapshot_logs_path))
 
     absent_logs = []
+
+    # MASTER NODE
+    # LOGS
     logger.debug("checking master logs...")
-    for log in snapshot_logs['master']['master_node_logs'].split():
+    for log in snapshot_logs['master']['logs'].split():
         logger.debug("checking {} log file".format(log))
         log_path = "{dump_path}/{hostname}/{log}".format(
             dump_path=snapshot_path_master, hostname=master_hostname, log=log)
@@ -1289,77 +1292,191 @@ def check_snapshot_logs(ip, snapshot_name, controller_fqdns, compute_fqdns):
             raise_on_assert=False)
         if not result['exit_code'] == 0:
             absent_logs.append(log_path)
+    # CONFIGS
+    logger.debug("checking master configs...")
+    for log in snapshot_logs['master']['configs'].split():
+        logger.debug("checking {} log file".format(log))
+        log_path = "{dump_path}/config/files/cluster-{cluster_id}/{hostname}/{log}".format(
+            dump_path=snapshot_path_master, cluster_id=cluster_id, hostname=master_hostname, log=log)
+        cmd = "ls {}".format(log_path)
+        result = ssh_manager.execute_on_remote(
+            ip=ip,
+            cmd=cmd,
+            err_msg="Couldn't find {} config on master node".format(log),
+            raise_on_assert=False)
+        if not result['exit_code'] == 0:
+            absent_logs.append(log_path)
+    # COMMANDS
+    logger.debug("checking master commands...")
+    for log in snapshot_logs['master']['commands'].split():
+        logger.debug("checking {} log file".format(log))
+        log_path = "{dump_path}/config/cmds/cluster-{cluster_id}/{hostname}/{hostname}-{ip}-{log}".format(
+            dump_path=snapshot_path_master, cluster_id='0',
+            hostname=master_hostname, ip='127.0.0.1', log=log)
+        cmd = "ls {}".format(log_path)
+        result = ssh_manager.execute_on_remote(
+            ip=ip,
+            cmd=cmd,
+            err_msg="Couldn't find {} command on master node".format(log),
+            raise_on_assert=False)
+        if not result['exit_code'] == 0:
+            absent_logs.append(log_path)
 
-    for controller_fqdn in controller_fqdns:
-        logger.debug("checking controller logs from remote directory...")
+    # CONTROLLERS FROM MASTER NODE REMOTE FOLDER
+    for controller in controllers:
+        logger.debug("Checking controller {} logs from remote directory...".format(controller['hostname']))
         for log in snapshot_logs['master']['remote']['controller'].split():
             logger.debug("checking {} log file".format(log))
             log_path = "{dump_path}/{hostname}/var/log/remote" \
                        "/{fqdn}/{log}".format(dump_path=snapshot_path_master,
                                               hostname=master_hostname,
-                                              fqdn=controller_fqdn, log=log)
+                                              fqdn=controller['fqdn'], log=log)
             cmd = "ls {}".format(log_path)
             result = ssh_manager.execute_on_remote(
                 ip=ip,
                 cmd=cmd,
                 err_msg="Couldn't find {0} log in controller remote directory"
-                        " for node {1}".format(log, controller_fqdn),
+                        " for node {1}".format(log, controller['fqdn']),
                 raise_on_assert=False)
             if not result['exit_code'] == 0:
                 absent_logs.append(log_path)
 
-        logger.debug("checking controller logs...")
-        for log in snapshot_logs['controller'].split():
+        # CONTROLLERS ITSELF
+        # LOGS
+        logger.debug("Checking controller {} logs...".format(controller['hostname']))
+        for log in snapshot_logs['controller']['logs'].split():
             logger.debug("checking {} log file".format(log))
-            log_path = "{dump_path}/{fqdn}/{log}".format(
+            log_path = "{dump_path}/logs-{hostname}/{log}".format(
                 dump_path=snapshot_path_master,
-                fqdn=controller_fqdn.replace(DNS_SUFFIX, ""), log=log)
+                hostname=controller['hostname'], log=log)
             cmd = "ls {}".format(log_path)
             result = ssh_manager.execute_on_remote(
                 ip=ip,
                 cmd=cmd,
                 err_msg="Couldn't find {0} log for"
-                        " node {1}".format(log, controller_fqdn),
+                        " node {1}".format(log, controller['hostname']),
+                raise_on_assert=False)
+            if not result['exit_code'] == 0:
+                absent_logs.append(log_path)
+        # CONFIGS
+        logger.debug("Checking controller {} configs...".format(controller['hostname']))
+        for log in snapshot_logs['controller']['configs'].split():
+            logger.debug("checking {} config file".format(log))
+            log_path = "{dump_path}/config/files/cluster-{cluster_id}/{log}".format(
+                dump_path=snapshot_path_master,
+                cluster_id=cluster_id,
+                log=log)
+            cmd = "ls {}".format(log_path)
+            result = ssh_manager.execute_on_remote(
+                ip=ip,
+                cmd=cmd,
+                err_msg="Couldn't find {0} config for"
+                        " node {1}".format(log, controller['hostname']),
+                raise_on_assert=False)
+            if not result['exit_code'] == 0:
+                absent_logs.append(log_path)
+        # COMMANDS
+        logger.debug("Checking controller {} commands...".format(controller['hostname']))
+        for log in snapshot_logs['controller']['commands'].split():
+            logger.debug("checking {} command file".format(log))
+            log_path = "{dump_path}/config/cmds/cluster-{cluster_id}/{hostname}-{ip}-{log}".format(
+                dump_path=snapshot_path_master,
+                hostname=controller['hostname'],
+                ip = controller['ip'],
+                log=log)
+            cmd = "ls {}".format(log_path)
+            result = ssh_manager.execute_on_remote(
+                ip=ip,
+                cmd=cmd,
+                err_msg="Couldn't find {0} log for"
+                        " node {1}".format(log, controller['hostname']),
                 raise_on_assert=False)
             if not result['exit_code'] == 0:
                 absent_logs.append(log_path)
 
-    for compute_fqdn in compute_fqdns:
-        logger.debug("checking compute logs from remote directory...")
+
+    # COMPUTES FROM MASTER NODE REMOTE FOLDER
+    for compute in computes:
+        logger.debug(
+            "Checking compute {} logs from remote directory...".format(
+                compute['hostname']))
         for log in snapshot_logs['master']['remote']['compute'].split():
             logger.debug("checking {} log file".format(log))
-            log_path = "{dump_path}/{hostname}/var/log/remote" \
-                       "/{fqdn}/{log}".format(dump_path=snapshot_path_master,
-                                              hostname=master_hostname,
-                                              fqdn=compute_fqdn, log=log)
+            log_path = "{dump_path}/{hostname}/var/log/remote"\
+                       "/{fqdn}/{log}".format(
+                dump_path=snapshot_path_master,
+                hostname=master_hostname,
+                fqdn=compute['fqdn'], log=log)
             cmd = "ls {}".format(log_path)
             result = ssh_manager.execute_on_remote(
                 ip=ip,
                 cmd=cmd,
                 err_msg="Couldn't find {0} log in compute remote directory"
-                        " for node {1}".format(log, compute_fqdn),
+                        " for node {1}".format(log, compute['fqdn']),
                 raise_on_assert=False)
             if not result['exit_code'] == 0:
                 absent_logs.append(log_path)
 
-        logger.debug("checking compute logs...")
-        for log in snapshot_logs['compute'].split():
+        # COMPUTES ITSELF
+        # LOGS
+        logger.debug("Checking compute {} logs...".format(
+            compute['hostname']))
+        for log in snapshot_logs['compute']['logs'].split():
             logger.debug("checking {} log file".format(log))
-            log_path = "{dump_path}/{fqdn}/{log}".format(
+            log_path = "{dump_path}/logs-{hostname}/{log}".format(
                 dump_path=snapshot_path_master,
-                fqdn=compute_fqdn.replace(DNS_SUFFIX, ""), log=log)
+                hostname=compute['hostname'], log=log)
             cmd = "ls {}".format(log_path)
             result = ssh_manager.execute_on_remote(
                 ip=ip,
                 cmd=cmd,
-                err_msg="Couldn't find {0} log"
-                        " for node {1}".format(log, compute_fqdn),
+                err_msg="Couldn't find {0} log for"
+                        " node {1}".format(log, compute['hostname']),
                 raise_on_assert=False)
             if not result['exit_code'] == 0:
                 absent_logs.append(log_path)
-        logger.debug("missed logs are {}".format(absent_logs))
-        assert_false(absent_logs, "Next logs aren't present"
-                                  " in snapshot logs {}".format(absent_logs))
+        # CONFIGS
+        logger.debug("Checking compute {} configs...".format(
+            compute['hostname']))
+        for log in snapshot_logs['compute']['configs'].split():
+            logger.debug("checking {} config file".format(log))
+            log_path = "{dump_path}/config/files/cluster-{cluster_id}/{log}".format(
+                dump_path=snapshot_path_master,
+                cluster_id=cluster_id,
+                log=log)
+            cmd = "ls {}".format(log_path)
+            result = ssh_manager.execute_on_remote(
+                ip=ip,
+                cmd=cmd,
+                err_msg="Couldn't find {0} config for"
+                        " node {1}".format(log, compute['hostname']),
+                raise_on_assert=False)
+            if not result['exit_code'] == 0:
+                absent_logs.append(log_path)
+        # COMMANDS
+        logger.debug("Checking compute {} commands...".format(
+            compute['hostname']))
+        for log in snapshot_logs['compute']['commands'].split():
+            logger.debug("checking {} command file".format(log))
+            log_path = "{dump_path}/config/cmds/cluster-{cluster_id}/{hostname}-{ip}-{log}".format(
+                dump_path=snapshot_path_master,
+                hostname=compute['hostname'],
+                ip=compute['ip'],
+                log=log)
+            cmd = "ls {}".format(log_path)
+            result = ssh_manager.execute_on_remote(
+                ip=ip,
+                cmd=cmd,
+                err_msg="Couldn't find {0} log for"
+                        " node {1}".format(log, compute['hostname']),
+                raise_on_assert=False)
+            if not result['exit_code'] == 0:
+                absent_logs.append(log_path)
+                
+    # REPORT
+    logger.debug("missed logs are {}".format(absent_logs))
+    assert_false(absent_logs, "Next logs aren't present"
+                              " in snapshot logs {}".format(absent_logs))
 
 
 def incomplete_tasks(tasks, cluster_id=None):
