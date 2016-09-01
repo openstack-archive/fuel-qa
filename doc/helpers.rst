@@ -46,11 +46,6 @@ Eb tables
 .. automodule:: fuelweb_test.helpers.eb_tables
    :members:
 
-Exceptions
-----------
-.. automodule:: fuelweb_test.helpers.exceptions
-   :members:
-
 Fuel Actions
 ------------
 .. automodule:: fuelweb_test.helpers.fuel_actions
@@ -59,11 +54,6 @@ Fuel Actions
 Granular Deployment Checkers
 ----------------------------
 .. automodule:: fuelweb_test.helpers.granular_deployment_checkers
-   :members:
-
-Http
-----
-.. automodule:: fuelweb_test.helpers.http
    :members:
 
 Ironic Actions
