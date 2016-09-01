@@ -22,47 +22,75 @@ from fuelweb_test.helpers.utils import generate_yum_repos_config
 from gates_tests.helpers import exceptions
 
 
-def install_mos_repos():
+def add_master_node_centos_repos_from_yaml_if_defined():
+    if settings.RPM_REPOS_YAML:
+        logger.info("Configure yum repos in /etc/yum.repos.d/custom.repo "
+                    "from %s", settings.RPM_REPOS_YAML)
+        ssh = SSHManager()
+        with ssh.open_on_remote(ip=ssh.admin_ip,
+                                path='/etc/yum.repos.d/custom.repo',
+                                mode="w") as f:
+            content = generate_yum_repos_config(settings.RPM_REPOS_YAML)
+            logger.info("Content of custom.repo file: \n%s", content)
+            f.write(content)
+
+
+def put_deb_repos_yaml_if_defined():
+    if settings.DEB_REPOS_YAML:
+        logger.info("Copy %s to /root/default_deb_repos.yaml",
+                    settings.DEB_REPOS_YAML)
+        ssh = SSHManager()
+        ssh.upload_to_remote(
+            ip=ssh.admin_ip,
+            source=settings.DEB_REPOS_YAML,
+            target="/root/default_deb_repos.yaml")
+
+
+def update_release_repos_from_deb_repos_yaml_if_defined(release_id):
+    if settings.DEB_REPOS_YAML:
+        logger.info("Update release repos for release_id %s from yaml file %s",
+                    release_id, settings.DEB_REPOS_YAML)
+        ssh = SSHManager()
+        target_yaml_path = os.path.join(
+            "/tmp", os.path.basename(settings.DEB_REPOS_YAML))
+        ssh.upload_to_remote(
+            ip=ssh.admin_ip,
+            source=settings.DEB_REPOS_YAML,
+            target=target_yaml_path)
+        ssh.execute_on_remote(
+            ip=ssh.admin_ip,
+            cmd="fuel2 release repos update {} -f {}".format(
+                release_id, target_yaml_path))
+
+
+def install_fuel_release_package():
     """
-    Upload and install fuel-release packet with mos-repo description
-    and install necessary packets for packetary Fuel installation
-    :return: nothing
+    Upload and install fuel-release package
+    :return: None
     """
-    logger.info("upload fuel-release packet")
     if not settings.FUEL_RELEASE_PATH:
         raise exceptions.FuelQAVariableNotSet('FUEL_RELEASE_PATH', '/path')
+    ssh = SSHManager()
     try:
-        ssh = SSHManager()
-        pack_path = '/tmp/'
-        full_pack_path = os.path.join(pack_path,
-                                      'fuel-release*.noarch.rpm')
+        logger.info("Upload fuel-release package")
+        target_package_path = '/tmp/'
+        full_package_path = os.path.join(target_package_path,
+                                         'fuel-release*.noarch.rpm')
         ssh.upload_to_remote(
             ip=ssh.admin_ip,
             source=settings.FUEL_RELEASE_PATH.rstrip('/'),
-            target=pack_path)
-
-        if settings.RPM_REPOS_YAML:
-            with ssh.open_on_remote(
-                    ip=ssh.admin_ip,
-                    path='/etc/yum.repos.d/custom.repo',
-                    mode="w") as f:
-                f.write(generate_yum_repos_config(settings.RPM_REPOS_YAML))
-
-        if settings.DEB_REPOS_YAML:
-            ssh = SSHManager()
-            pack_path = "/root/default_deb_repos.yaml"
-            ssh.upload_to_remote(
-                ip=ssh.admin_ip,
-                source=settings.DEB_REPOS_YAML,
-                target=pack_path)
-
+            target=target_package_path)
     except Exception:
-        logger.exception("Could not upload package")
+        logger.exception("Could not upload necessary files")
         raise
 
-    logger.debug("setup MOS repositories")
-    cmd = "rpm -ivh {}".format(full_pack_path)
-    ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+    logger.info("Install fuel-release package")
+    ssh.execute_on_remote(ssh.admin_ip,
+                          cmd="rpm -ivh {}".format(full_package_path))
 
-    cmd = "yum install -y fuel-setup"
-    ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
+
+def install_fuel_setup_package():
+    """Assume necessary repositories are configured properly"""
+    logger.info("Install fuel-setup package")
+    ssh = SSHManager()
+    ssh.execute_on_remote(ssh.admin_ip, cmd="yum install -y fuel-setup")
