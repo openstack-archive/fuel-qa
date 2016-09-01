@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import unicode_literals
+
 import random
 import time
 import traceback
@@ -241,8 +243,8 @@ class ServicesReconfiguration(TestBasic):
                 cmd="mount",
                 auth=cirros_auth
             )
-            asserts.assert_true('/mnt type {0}'.format(fs_type)
-                                in res['stdout'],
+            test_substr = '/mnt type {0}'.format(fs_type)
+            asserts.assert_true(test_substr in res['stdout_str'],
                                 "Ephemeral disk format was not "
                                 "changed on instance. "
                                 "Please, see details: {0}".format(res))
