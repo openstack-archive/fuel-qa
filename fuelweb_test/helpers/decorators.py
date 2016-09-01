@@ -562,7 +562,16 @@ def check_fuel_snapshot(func):
             args[0].env.ssh_manager.execute_on_remote(
                 ip=args[0].env.ssh_manager.admin_ip,
                 cmd='cd {0} && tar -xpvf {1}'.format(logs_path, archive_name))
-
+            # timmy
+            cmd = 'for file in `find *.tar.gz`; ' \
+                  'do name=`basename ${file} .tar.gz` && ' \
+                  'mkdir -p $name && ' \
+                  'tar xfv $file -C $name && ' \
+                  'rm $file ' \
+                  '; done'
+            args[0].env.ssh_manager.execute_on_remote(args[0].env.ssh_manager.admin_ip,
+                                                      cmd=cmd)
+            #
             snapshot_name = args[0].env.ssh_manager.execute_on_remote(
                 args[0].env.ssh_manager.admin_ip,
                 cmd="ls -I *.tar* {}".format(logs_path))['stdout_str']
