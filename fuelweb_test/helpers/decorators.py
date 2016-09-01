@@ -37,7 +37,6 @@ from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers.checkers import check_action_logs
 from fuelweb_test.helpers.checkers import check_repo_managment
-from fuelweb_test.helpers.checkers import check_snapshot_logs
 from fuelweb_test.helpers.checkers import check_stats_on_collector
 from fuelweb_test.helpers.checkers import check_stats_private_info
 from fuelweb_test.helpers.checkers import count_stats_on_collector
@@ -529,49 +528,4 @@ def token(func):
                         " trying to update the token")
             args[0].login()
             return func(*args, **kwargs)
-    return wrapper
-
-
-def check_fuel_snapshot(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        result = func(*args, **kwargs)
-        try:
-            cluster_id = args[0].env.fuel_web.get_last_created_cluster()
-            logger.info("start checking snapshot logs")
-            controllers = \
-                args[0].env.fuel_web.get_nailgun_cluster_nodes_by_roles(
-                    cluster_id, ['controller'])
-            computes = \
-                args[0].env.fuel_web.get_nailgun_cluster_nodes_by_roles(
-                    cluster_id, ['compute'])
-            logger.debug("controller nodes are {}".format(controllers))
-            logger.debug("compute nodes are {}".format(computes))
-            controllers_fqdns = [controller['fqdn']
-                                 for controller in controllers]
-            compute_fqdns = [compute['fqdn'] for compute in computes]
-            logger.debug("controller fqdns are {}".format(controllers_fqdns))
-            logger.debug("compute fqdns are {}".format(compute_fqdns))
-            args[0].env.fuel_web.task_wait(
-                args[0].env.fuel_web.client.generate_logs(), 60 * 10)
-
-            logs_path = '/var/dump/'
-            archive_name = args[0].env.ssh_manager.execute_on_remote(
-                args[0].env.ssh_manager.admin_ip,
-                cmd="ls {}*.tar*".format(logs_path))['stdout_str']
-            args[0].env.ssh_manager.execute_on_remote(
-                ip=args[0].env.ssh_manager.admin_ip,
-                cmd='cd {0} && tar -xpvf {1}'.format(logs_path, archive_name))
-
-            snapshot_name = args[0].env.ssh_manager.execute_on_remote(
-                args[0].env.ssh_manager.admin_ip,
-                cmd="ls -I *.tar* {}".format(logs_path))['stdout_str']
-            logger.debug("snapshot name is {}".format(snapshot_name))
-            check_snapshot_logs(args[0].env.ssh_manager.admin_ip,
-                                snapshot_name, controllers_fqdns,
-                                compute_fqdns)
-            return result
-        except Exception:
-            logger.error(traceback.format_exc())
-            raise
     return wrapper
