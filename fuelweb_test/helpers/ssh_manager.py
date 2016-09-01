@@ -268,7 +268,7 @@ class SSHManager(six.with_metaclass(SingletonMeta, object)):
             'SSHManager().execute_on_remote is deprecated in favor of '
             'SSHManager().check_call.\n'
             'Please, do not use this method in any new tests. '
-            'Old code will be updated later.'
+            'Old code will be updated later.', DeprecationWarning
         )
         if assert_ec_equal is None:
             assert_ec_equal = [0]
@@ -308,54 +308,6 @@ class SSHManager(six.with_metaclass(SingletonMeta, object)):
         remote = self.get_remote(ip=ip, port=port)
         with remote.sudo(enforce=sudo):
             return remote.execute_async(cmd)
-
-    @staticmethod
-    def _json_deserialize(json_string):
-        """ Deserialize json_string and return object
-
-        :param json_string: string or list with json
-        :return: obj
-        :raise: Exception
-        """
-        warn(
-            '_json_deserialize is not used anymore and will be removed later',
-            DeprecationWarning)
-
-        if isinstance(json_string, list):
-            json_string = ''.join(json_string).strip()
-
-        try:
-            obj = json.loads(json_string)
-        except Exception:
-            logger.error(
-                "Unable to deserialize. Actual string:\n"
-                "{}".format(json_string))
-            raise
-        return obj
-
-    @staticmethod
-    def _yaml_deserialize(yaml_string):
-        """ Deserialize yaml_string and return object
-
-        :param yaml_string: string or list with yaml
-        :return: obj
-        :raise: Exception
-        """
-        warn(
-            '_yaml_deserialize is not used anymore and will be removed later',
-            DeprecationWarning)
-
-        if isinstance(yaml_string, list):
-            yaml_string = ''.join(yaml_string).strip()
-
-        try:
-            obj = yaml.safe_load(yaml_string)
-        except Exception:
-            logger.error(
-                "Unable to deserialize. Actual string:\n"
-                "{}".format(yaml_string))
-            raise
-        return obj
 
     def open_on_remote(self, ip, path, mode='r', port=22):
         remote = self.get_remote(ip=ip, port=port)
