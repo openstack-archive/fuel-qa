@@ -34,6 +34,8 @@ from fuelweb_test.settings import KEYSTONE_CREDS
 from fuelweb_test.settings import LOGS_DIR
 from fuelweb_test.settings import OCTANE_PATCHES
 from fuelweb_test.settings import OCTANE_REPO_LOCATION
+from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
+from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
 from fuelweb_test.settings import UPGRADE_FUEL_FROM
 from fuelweb_test.settings import UPGRADE_BACKUP_FILES_LOCAL_DIR
 from fuelweb_test.settings import UPGRADE_BACKUP_FILES_REMOTE_DIR
@@ -255,6 +257,15 @@ class DataDrivenUpgradeBase(TestBasic):
                 admin_remote.exists(path),
                 "File {!r} was not created after backup command!".format(path))
 
+    def do_reinstall_master_node(self):
+
+        self.reinstall_master_node()
+
+        if self.fuel_version >= LooseVersion('8.0'):
+            self.fuel_web.change_default_network_settings()
+        if REPLACE_DEFAULT_REPOS and REPLACE_DEFAULT_REPOS_ONLY_ONCE:
+            self.fuel_web.replace_default_repos()
+
     def do_backup(self,
                   backup_path, local_path,
                   repos_backup_path=None, repos_local_path=None):
@@ -317,9 +328,6 @@ class DataDrivenUpgradeBase(TestBasic):
             logger.info(
                 "Update CentOS bootstrap image with restored ssh keys")
             self.octane_action('update-bootstrap-centos')
-
-        if self.fuel_version >= LooseVersion('8.0'):
-            self.fuel_web.change_default_network_settings()
 
         n_nodes = self.fuel_web.client.list_nodes()
         d_nodes = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_nodes)

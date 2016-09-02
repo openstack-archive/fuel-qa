@@ -85,7 +85,7 @@ class UpgradeNoCluster(DataDrivenUpgradeBase):
                 "The test can not use given environment - snapshot "
                 "{!r} does not exists".format(self.source_snapshot_name))
             self.show_step(2)
-            self.reinstall_master_node()
+            self.do_reinstall_master_node()
             self.env.make_snapshot(intermediate_snapshot)
         else:
             self.env.d_env.revert(intermediate_snapshot)
