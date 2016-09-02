@@ -138,7 +138,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
             self.show_step(1)
             self.revert_backup()
             self.show_step(2)
-            self.reinstall_master_node()
+            self.do_reinstall_master_node()
             self.env.make_snapshot(intermediate_snapshot)
         else:
             self.show_step(1)

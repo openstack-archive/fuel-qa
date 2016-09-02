@@ -63,7 +63,7 @@ PATH_TO_PEM = os.environ.get('PATH_TO_PEM', os.path.join(
     SSL_CERTS_DIR, 'ca.pem'))
 
 OPENSTACK_RELEASE_CENTOS = 'centos'
-OPENSTACK_RELEASE_UBUNTU = 'ubuntu'
+OPENSTACK_RELEASE_UBUNTU = 'Kilo on Ubuntu 14.04'
 OPENSTACK_RELEASE = os.environ.get(
     'OPENSTACK_RELEASE', OPENSTACK_RELEASE_UBUNTU).lower()
 
