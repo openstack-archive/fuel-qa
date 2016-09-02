@@ -42,10 +42,11 @@ from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
 import yaml
 
+from core.helpers.log_helpers import logwrap
+from core.helpers.log_helpers import QuietLogger
+
 from fuelweb_test import logger
-from fuelweb_test import logwrap
 from fuelweb_test import ostf_test_mapping
-from fuelweb_test import QuietLogger
 from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers import replace_repos

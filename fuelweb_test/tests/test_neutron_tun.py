@@ -17,6 +17,8 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import test
 
+from core.helpers.log_helpers import QuietLogger
+
 from fuelweb_test.helpers.common import Common
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers import os_actions
@@ -27,7 +29,6 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.tests.test_neutron_tun_base import NeutronTunHaBase
 from fuelweb_test import logger
-from fuelweb_test import QuietLogger
 
 
 @test(groups=["ha_neutron_tun", "neutron", "smoke_neutron", "deployment"])

@@ -19,10 +19,11 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis import SkipTest
 
+from core.helpers.log_helpers import logwrap
+
 from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers import os_actions
 from fuelweb_test import logger
-from fuelweb_test import logwrap
 from fuelweb_test import settings
 from fuelweb_test.tests import base_test_case
 

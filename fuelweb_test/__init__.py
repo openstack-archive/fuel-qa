@@ -14,11 +14,12 @@
 
 from __future__ import unicode_literals
 
-import functools
 import logging.config
 import os
-import traceback
 import warnings
+
+from core.helpers.log_helpers import logwrap
+from core.helpers.log_helpers import QuietLogger
 
 from fuelweb_test.settings import LOGS_DIR
 
@@ -100,40 +101,4 @@ warnings.filterwarnings(
 
 logger = logging.getLogger('fuel-qa.{}'.format(__name__))
 
-
-def logwrap(func):
-    @functools.wraps(func)
-    def wrapped(*args, **kwargs):
-        logger.debug(
-            "Calling: {} with args: {} {}".format(
-                func.__name__, args, kwargs
-            )
-        )
-        try:
-            result = func(*args, **kwargs)
-            logger.debug(
-                "Done: {} with result: {}".format(func.__name__, result))
-        except BaseException as e:
-            logger.error(
-                '{func} raised: {exc!r}\n'
-                'Traceback: {tb!s}'.format(
-                    func=func.__name__, exc=e, tb=traceback.format_exc()))
-            raise
-        return result
-    return wrapped
-
-
-class QuietLogger(object):
-    """Reduce logging level while context is executed."""
-
-    def __init__(self, upper_log_level=logging.WARNING):
-        self.log_level = upper_log_level
-        self.storage = None
-
-    def __enter__(self):
-        console = logging.StreamHandler()
-        self.storage = console.level
-        console.setLevel(self.log_level + 1)
-
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        logging.StreamHandler().setLevel(self.storage)
+__all__ = ['QuietLogger', 'logwrap', 'logger']
