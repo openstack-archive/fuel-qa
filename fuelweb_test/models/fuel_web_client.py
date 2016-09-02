@@ -34,6 +34,8 @@ except ImportError:
     DevopsObjNotFound = Node.DoesNotExist
     # pylint: enable=no-member
 from keystoneauth1 import exceptions
+from keystoneauth1.identity import V2Password
+from keystoneauth1.session import Session as KeystoneSession
 import netaddr
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
@@ -75,6 +77,7 @@ from fuelweb_test.settings import DEPLOYMENT_MODE_HA
 from fuelweb_test.settings import DISABLE_SSL
 from fuelweb_test.settings import DNS_SUFFIX
 from fuelweb_test.settings import iface_alias
+from fuelweb_test.settings import KEYSTONE_CREDS
 from fuelweb_test.settings import KVM_USE
 from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import NOVA_QUOTAS_ENABLED
@@ -106,9 +109,22 @@ class FuelWebClient29(object):
     def __init__(self, environment):
         self.ssh_manager = SSHManager()
         self.admin_node_ip = self.ssh_manager.admin_ip
-        self.client = NailgunClient(self.ssh_manager.admin_ip)
         self._environment = environment
+
+        keystone_url = "http://{0}:5000/v2.0".format(self.admin_node_ip)
+
+        auth = V2Password(
+            auth_url=keystone_url,
+            username=KEYSTONE_CREDS['username'],
+            password=KEYSTONE_CREDS['password'],
+            tenant_name=KEYSTONE_CREDS['tenant_name'])
+        # TODO: in v3 project_name
+
+        self._session = KeystoneSession(auth=auth, verify=False)
+
+        self.client = NailgunClient(session=self._session)
         self.security = SecurityChecks(self.client, self._environment)
+
         super(FuelWebClient29, self).__init__()
 
     @property
@@ -295,7 +311,7 @@ class FuelWebClient29(object):
         logger.info('Assert role %s is available in release %s',
                     role_name, release_name)
         release_id = self.assert_release_state(release_name)
-        release_data = self.client.get_releases_details(release_id=release_id)
+        release_data = self.client.get_release(release_id=release_id)
         assert_equal(
             True, role_name in release_data['roles'],
             message='There is no {0} role in release id {1}'.format(
@@ -2361,7 +2377,7 @@ class FuelWebClient29(object):
     @logwrap
     def get_next_deployable_release_id(self, release_id):
         releases = self.client.get_releases()
-        release_details = self.client.get_releases_details(release_id)
+        release_details = self.client.get_release(release_id)
 
         for release in releases:
             if (release["id"] > release_id and
