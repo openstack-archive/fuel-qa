@@ -21,7 +21,8 @@
 
 from proboscis.asserts import assert_equal
 
-from fuelweb_test import logwrap
+from core.helpers.log_helpers import logwrap
+
 from fuelweb_test.helpers.ssh_manager import SSHManager
 
 

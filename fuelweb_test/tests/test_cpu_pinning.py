@@ -18,11 +18,12 @@ from keystoneauth1.exceptions import BadRequest
 from proboscis import asserts
 from proboscis import test
 
+from core.helpers.log_helpers import logwrap
+
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers import utils
 from fuelweb_test import logger
-from fuelweb_test import logwrap
 from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic

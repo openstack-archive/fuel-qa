@@ -16,7 +16,7 @@ from __future__ import unicode_literals
 
 import requests
 
-from fuelweb_test import logwrap
+from core.helpers.log_helpers import logwrap
 
 
 class CollectorClient(object):

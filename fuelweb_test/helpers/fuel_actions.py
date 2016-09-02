@@ -25,8 +25,9 @@ from proboscis.asserts import assert_true
 from six.moves import cStringIO
 import yaml
 
+from core.helpers.log_helpers import logwrap
+
 from fuelweb_test import logger
-from fuelweb_test import logwrap
 from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
 from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo

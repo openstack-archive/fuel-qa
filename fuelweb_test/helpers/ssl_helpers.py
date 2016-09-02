@@ -16,9 +16,9 @@ import os
 
 from OpenSSL import crypto
 
-from fuelweb_test import logger
-from fuelweb_test import logwrap
+from core.helpers.log_helpers import logwrap
 
+from fuelweb_test import logger
 from fuelweb_test.settings import DISABLE_SSL
 from fuelweb_test.settings import PATH_TO_CERT
 from fuelweb_test.settings import PATH_TO_PEM

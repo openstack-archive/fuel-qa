@@ -18,8 +18,9 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis.asserts import fail
 
+from core.helpers.log_helpers import logwrap
+
 from fuelweb_test import logger
-from fuelweb_test import logwrap
 from fuelweb_test.helpers.utils import get_ip_listen_stats
 from fuelweb_test.tests.base_test_case import TestBasic
 

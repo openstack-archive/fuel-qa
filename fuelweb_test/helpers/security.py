@@ -16,7 +16,8 @@ from random import randrange
 
 from proboscis.asserts import assert_equal
 
-from fuelweb_test import logwrap
+from core.helpers.log_helpers import logwrap
+
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.settings import OPENSTACK_RELEASE
