@@ -14,49 +14,21 @@
 
 from warnings import warn
 
-from keystoneauth1.identity import V2Password
-from keystoneauth1.session import Session as KeystoneSession
-
 from core.helpers.log_helpers import logwrap
 
 from fuelweb_test import logger
-from fuelweb_test.settings import FORCE_HTTPS_MASTER_NODE
-from fuelweb_test.settings import KEYSTONE_CREDS
+
 from fuelweb_test.settings import OPENSTACK_RELEASE
 
 
 class NailgunClient(object):
     """NailgunClient"""  # TODO documentation
 
-    def __init__(self, admin_node_ip=None, session=None, **kwargs):
-        if session:
-            logger.info(
-                'Initialization of NailgunClient using shared session \n'
-                '(auth_url={})'.format(session.auth.auth_url))
-            self.session = session
-        else:
-            warn(
-                'Initialization of NailgunClient by IP is deprecated, '
-                'please use keystonesession1.session.Session',
-                DeprecationWarning)
-
-            if FORCE_HTTPS_MASTER_NODE:
-                url = "https://{0}:8443".format(admin_node_ip)
-            else:
-                url = "http://{0}:8000".format(admin_node_ip)
-            logger.info('Initiate Nailgun client with url %s', url)
-            keystone_url = "http://{0}:5000/v2.0".format(admin_node_ip)
-
-            creds = dict(KEYSTONE_CREDS, **kwargs)
-
-            auth = V2Password(
-                auth_url=keystone_url,
-                username=creds['username'],
-                password=creds['password'],
-                tenant_name=creds['tenant_name'])
-            # TODO: in v3 project_name
-
-            self.session = KeystoneSession(auth=auth, verify=False)
+    def __init__(self, session=None):
+        logger.info(
+            'Initialization of NailgunClient using shared session \n'
+            '(auth_url={})'.format(session.auth.auth_url))
+        self.session = session
 
     def __repr__(self):
         klass, obj_id = type(self), hex(id(self))
@@ -229,7 +201,9 @@ class NailgunClient(object):
 
     @logwrap
     def get_releases_details(self, release_id):
-        warn('get_releases_details is deprecated in favor of get_release')
+        msg = 'get_releases_details is deprecated in favor of get_release'
+        warn(msg, DeprecationWarning)
+        logger.warning(msg)
         return self._get(url="/releases/{}".format(release_id)).json()
 
     @logwrap
