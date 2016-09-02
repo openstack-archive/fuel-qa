@@ -28,6 +28,8 @@ from proboscis.asserts import assert_true
 import six
 
 from core.models.collector_client import CollectorClient
+from core.helpers.log_helpers import logwrap
+from core.helpers.log_helpers import QuietLogger
 
 from fuelweb_test.helpers.decorators import revert_info
 from fuelweb_test.helpers.decorators import update_rpm_packages
@@ -47,8 +49,6 @@ from fuelweb_test.helpers import multiple_networks_hacks
 from fuelweb_test.models.fuel_web_client import FuelWebClient
 from fuelweb_test import settings
 from fuelweb_test.settings import iface_alias
-from fuelweb_test import logwrap
-from fuelweb_test import QuietLogger
 from fuelweb_test import logger
 
 

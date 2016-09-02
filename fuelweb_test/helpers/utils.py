@@ -45,8 +45,9 @@ from six.moves import xrange
 # pylint: enable=redefined-builtin
 import yaml
 
+from core.helpers.log_helpers import logwrap
+
 from fuelweb_test import logger
-from fuelweb_test import logwrap
 from fuelweb_test import settings
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from gates_tests.helpers import exceptions

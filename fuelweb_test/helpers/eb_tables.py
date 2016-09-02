@@ -14,7 +14,7 @@
 
 import subprocess
 
-from fuelweb_test import logwrap
+from core.helpers.log_helpers import logwrap
 
 
 class Ebtables(object):

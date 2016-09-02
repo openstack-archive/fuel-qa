@@ -24,12 +24,13 @@ from devops.helpers.helpers import wait
 from six.moves import urllib
 # pylint: enable=import-error
 
+from core.helpers.log_helpers import logwrap
+
 from fuelweb_test.helpers.checkers import fail_deploy
 from fuelweb_test.helpers.checkers import incomplete_deploy
 from fuelweb_test.helpers.checkers import incomplete_tasks
 from fuelweb_test.helpers.ssl_helpers import change_cluster_ssl_config
 from fuelweb_test.tests.base_test_case import TestBasic
-from fuelweb_test import logwrap
 from fuelweb_test import logger
 from fuelweb_test.helpers.utils import hiera_json_out
 from fuelweb_test.settings import iface_alias

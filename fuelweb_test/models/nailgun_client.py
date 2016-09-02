@@ -17,7 +17,8 @@ from warnings import warn
 from keystoneauth1.identity import V2Password
 from keystoneauth1.session import Session as KeystoneSession
 
-from fuelweb_test import logwrap
+from core.helpers.log_helpers import logwrap
+
 from fuelweb_test import logger
 from fuelweb_test.settings import FORCE_HTTPS_MASTER_NODE
 from fuelweb_test.settings import KEYSTONE_CREDS

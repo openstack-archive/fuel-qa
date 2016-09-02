@@ -29,16 +29,19 @@ from neutronclient.v2_0.client import Client as NeutronClient
 from proboscis.asserts import assert_equal
 import six
 # pylint: disable=redefined-builtin
+# noinspection PyUnresolvedReferences
 from six.moves import xrange
 # pylint: enable=redefined-builtin
 # pylint: disable=import-error
+# noinspection PyUnresolvedReferences
 from six.moves import urllib
 # pylint: enable=import-error
+
+from core.helpers.log_helpers import logwrap
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test import logger
-from fuelweb_test import logwrap
 from fuelweb_test.settings import DISABLE_SSL
 from fuelweb_test.settings import PATH_TO_CERT
 from fuelweb_test.settings import VERIFY_SSL

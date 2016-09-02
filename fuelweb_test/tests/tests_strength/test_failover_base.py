@@ -25,12 +25,14 @@ from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 from proboscis import SkipTest
 # pylint: disable=redefined-builtin
+# noinspection PyUnresolvedReferences
 from six.moves import xrange
 # pylint: enable=redefined-builtin
 import yaml
 
+from core.helpers.log_helpers import logwrap
+
 from fuelweb_test import logger
-from fuelweb_test import logwrap
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.checkers import check_mysql
 from fuelweb_test.helpers.checkers import check_ping
