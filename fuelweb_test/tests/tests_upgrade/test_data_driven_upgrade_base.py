@@ -34,6 +34,8 @@ from fuelweb_test.settings import KEYSTONE_CREDS
 from fuelweb_test.settings import LOGS_DIR
 from fuelweb_test.settings import OCTANE_PATCHES
 from fuelweb_test.settings import OCTANE_REPO_LOCATION
+from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
+from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
 from fuelweb_test.settings import UPGRADE_FUEL_FROM
 from fuelweb_test.settings import UPGRADE_BACKUP_FILES_LOCAL_DIR
 from fuelweb_test.settings import UPGRADE_BACKUP_FILES_REMOTE_DIR
@@ -318,6 +320,8 @@ class DataDrivenUpgradeBase(TestBasic):
                 "Update CentOS bootstrap image with restored ssh keys")
             self.octane_action('update-bootstrap-centos')
 
+        if REPLACE_DEFAULT_REPOS and REPLACE_DEFAULT_REPOS_ONLY_ONCE:
+            self.fuel_web.replace_default_repos()
         if self.fuel_version >= LooseVersion('8.0'):
             self.fuel_web.change_default_network_settings()
 
