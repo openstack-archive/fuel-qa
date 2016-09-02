@@ -180,7 +180,7 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
         self.show_step(1)
         self.revert_backup()
         self.show_step(2)
-        self.reinstall_master_node()
+        self.do_reinstall_master_node()
         self.show_step(3)
         self.show_step(4)
         self.show_step(5)
