@@ -1345,7 +1345,7 @@ class FuelWebClient(object):
         if not BONDING:
             float_range = public
         else:
-            float_range = list(public.subnet(new_prefix=27))[0]
+            float_range = list(public.subnet(27))[0]
         nc["floating_ranges"] = self.get_range(float_range, 1)
 
     def set_network(self, net_config, net_name, net_pools=None, seg_type=None):
