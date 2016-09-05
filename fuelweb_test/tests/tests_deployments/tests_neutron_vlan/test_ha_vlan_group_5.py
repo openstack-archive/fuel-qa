@@ -208,3 +208,93 @@ class HaVlanGroup5(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("cinder_ceph_for_images_ephemeral_rados")
+
+
+@test(groups=["ha_5_contr_rados"])
+class Ha5ContrRados(TestBasic):
+    """Ha5ContrRados."""  # TODO documentation
+
+    @test(depends_on=[SetupEnvironment.prepare_all_slaves],
+          groups=["deploy_5_contr_rados_delete"])
+    @log_snapshot_after_test
+    def deploy_5_contr_rados_delete(self):
+        """Deployment with 5 controllers, NeutronVLAN,
+           with Ceph for volumes and images, Rados GW for objects
+
+        Scenario:
+        1. Create environment 5 controller, 2 ceph Rados GW for objects,
+           2 compute, Neutron VLAN.
+        2. Change default disks partitioning for ceph nodes for 'vdc'
+        3. Change default dns server to any 2 public dns servers to the
+           'Host OS DNS Servers' on Settings tab
+        4. Change default ntp servers to any 2 public ntp servers to the
+           'Host OS NTP Servers' on Settings tab
+        5. Verify networks
+        6. Deploy cluster
+        7. Verify networks
+        8. Run OSTF
+        9. Delete env
+
+        Duration 180m
+        Snapshot deploy_5_contr_rados_delete
+        """
+
+        self.env.revert_snapshot("ready_with_all_slaves")
+
+        data = {
+            'volumes_lvm': True,
+            'images_ceph': True,
+            'ephemeral_ceph': True,
+            'objects_ceph': True,
+            'tenant': 'deploy_5_contr_rados_delete',
+            'user': 'deploy_5_contr_rados_delete',
+            'password': 'deploy_5_contr_rados_delete',
+            'ntp_list': settings.EXTERNAL_NTP,
+            'dns_list': settings.EXTERNAL_DNS
+        }
+        self.show_step(1)
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            settings=data
+        )
+        self.show_step(2)
+        self.show_step(3)
+        self.show_step(4)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['controller'],
+                'slave-05': ['controller'],
+                'slave-06': ['ceph-osd'],
+                'slave-07': ['ceph-osd'],
+                'slave-08': ['compute'],
+                'slave-09': ['compute']
+            }
+        )
+
+        ceph_nodes = self.fuel_web.\
+            get_nailgun_cluster_nodes_by_roles(cluster_id, ['ceph-osd'],
+                                               role_status='pending_roles')
+        for ceph_node in ceph_nodes:
+            ceph_image_size = self.fuel_web.\
+                update_node_partitioning(ceph_node, node_role='ceph')
+
+        self.show_step(5)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(6)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.check_ceph_status(cluster_id)
+        self.show_step(7)
+        self.fuel_web.verify_network(cluster_id)
+
+        for ceph in ceph_nodes:
+            checkers.check_ceph_image_size(ceph['ip'], ceph_image_size)
+
+        self.show_step(8)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.show_step(9)
+        self.fuel_web.delete_env_wait(cluster_id=cluster_id)
+        self.env.make_snapshot("deploy_5_contr_rados_delete")
