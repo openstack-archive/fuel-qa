@@ -15,6 +15,7 @@
 from warnings import warn
 
 from core.helpers.log_helpers import logwrap
+from core.models.fuel_client import Client as FuelClient
 
 from fuelweb_test import logger
 
@@ -28,6 +29,7 @@ class NailgunClient(object):
         logger.info(
             'Initialization of NailgunClient using shared session \n'
             '(auth_url={})'.format(session.auth.auth_url))
+        self.client = FuelClient(session=session)
         self.session = session
 
     def __repr__(self):
@@ -274,62 +276,41 @@ class NailgunClient(object):
     # ## OSTF ###
     @logwrap
     def get_ostf_test_sets(self, cluster_id):
-        return self._get(
-            url="/testsets/{}".format(cluster_id),
-            endpoint_filter={'service_type': 'ostf'}
-        ).json()
+        warn('get_ostf_test_sets has been moved to '
+             'core.models.fuel_client.Client.ostf.get_test_sets',
+             DeprecationWarning)
+        return self.client.ostf.get_test_sets(cluster_id=cluster_id)
 
     @logwrap
     def get_ostf_tests(self, cluster_id):
-        return self._get(
-            url="/tests/{}".format(cluster_id),
-            endpoint_filter={'service_type': 'ostf'}
-        ).json()
+        warn('get_ostf_tests has been moved to '
+             'core.models.fuel_client.Client.ostf.get_tests',
+             DeprecationWarning)
+        return self.client.ostf.get_tests(cluster_id=cluster_id)
 
     @logwrap
     def get_ostf_test_run(self, cluster_id):
-        return self._get(
-            url="/testruns/last/{}".format(cluster_id),
-            endpoint_filter={'service_type': 'ostf'}
-        ).json()
+        warn('get_ostf_test_run has been moved to '
+             'core.models.fuel_client.Client.ostf.get_test_runs',
+             DeprecationWarning)
+        return self.client.ostf.get_test_runs(cluster_id=cluster_id)
 
     @logwrap
     def ostf_run_tests(self, cluster_id, test_sets_list):
-        logger.info('Run OSTF tests at cluster #%s: %s',
-                    cluster_id, test_sets_list)
-        data = []
-        for test_set in test_sets_list:
-            data.append(
-                {
-                    'metadata': {'cluster_id': str(cluster_id), 'config': {}},
-                    'testset': test_set
-                }
-            )
-        # get tests otherwise 500 error will be thrown
-        self.get_ostf_tests(cluster_id)
-        return self._post(
-            "/testruns",
-            json=data,
-            endpoint_filter={'service_type': 'ostf'})
+        warn('ostf_run_tests has been moved to '
+             'core.models.fuel_client.Client.ostf.run_tests',
+             DeprecationWarning)
+        return self.client.ostf.run_tests(
+            cluster_id=cluster_id, test_sets=test_sets_list)
 
     @logwrap
     def ostf_run_singe_test(self, cluster_id, test_sets_list, test_name):
-        # get tests otherwise 500 error will be thrown
-        self.get_ostf_tests(cluster_id)
-        logger.info('Get tests finish with success')
-        data = []
-        for test_set in test_sets_list:
-            data.append(
-                {
-                    'metadata': {'cluster_id': str(cluster_id), 'config': {}},
-                    'tests': [test_name],
-                    'testset': test_set
-                }
-            )
-        return self._post(
-            "/testruns",
-            json=data,
-            endpoint_filter={'service_type': 'ostf'}).json()
+        warn('ostf_run_singe_test has been moved to '
+             'core.models.fuel_client.Client.ostf.run_tests',
+             DeprecationWarning)
+        return self.client.ostf.run_tests(
+            cluster_id=cluster_id, test_sets=test_sets_list,
+            test_name=test_name)
     # ## /OSTF ###
 
     @logwrap
