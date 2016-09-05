@@ -103,7 +103,6 @@ class TestOSupgrade(OSUpgradeBase):
             1. Revert snapshot upgrade_first_cic
             2. Select cluster for upgrade and upgraded cluster
             3. Select controller for db upgrade
-            4. Collect from db IDs for upgrade (used in checks)
             5. Run "octane upgrade-db <orig_env_id> <seed_env_id>"
             6. Check upgrade status
 
@@ -162,7 +161,8 @@ class TestOSupgrade(OSUpgradeBase):
             3. Run octane upgrade-control <orig_env_id> <seed_env_id>
             4. Check cluster consistency
             5. Check, if required pre-upgrade computes packages and run:
-                run octane upgrade-compute ${SEED_ID} <NODE_ID> [... <NODE_ID>]
+                octane preupgrade-compute ${RELEASE_ID} <NODE_ID> [... <NODE_ID>]
+                where RELEASE_ID is deployable liberty
             6. Collect old controllers for upgrade
             7. Run octane upgrade-node <seed_cluster_id> <node_id> <node_id>
             8. Check tasks status after upgrade run completion
@@ -183,9 +183,7 @@ class TestOSupgrade(OSUpgradeBase):
 
         self.upgrade_control_plane_code(seed_cluster_id)
 
-        self.pre_upgrade_computes(
-            orig_cluster_id=self.orig_cluster_id,
-            seed_cluster_id=seed_cluster_id)
+        self.pre_upgrade_computes(orig_cluster_id=self.orig_cluster_id)
 
         # upgrade controllers part
 
