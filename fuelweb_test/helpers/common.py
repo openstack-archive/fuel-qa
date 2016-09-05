@@ -37,10 +37,11 @@ from six.moves import xrange
 from six.moves import urllib
 # pylint: enable=import-error
 
+from core.helpers.log_helpers import logwrap
+
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test import logger
-from fuelweb_test import logwrap
 from fuelweb_test.settings import DISABLE_SSL
 from fuelweb_test.settings import PATH_TO_CERT
 from fuelweb_test.settings import VERIFY_SSL

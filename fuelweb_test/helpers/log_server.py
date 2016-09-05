@@ -16,7 +16,7 @@ import select
 import socket
 import threading
 
-from fuelweb_test import logwrap
+from core.helpers.log_helpers import logwrap
 
 
 class LogServer(threading.Thread):
