@@ -186,23 +186,9 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
 
     def upgrade_db_code(self, seed_cluster_id):
         self.show_step(self.next_step)
-        orig_controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            self.orig_cluster_id, ["controller"])[0]
+
         seed_controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             seed_cluster_id, ["controller"])[0]
-
-        mysql_req = (
-            'mysql cinder <<< "select id from volumes;"; '
-            'mysql glance <<< "select id from images"; '
-            'mysql neutron <<< "(select id from networks) '
-            'UNION (select id from routers) '
-            'UNION (select id from subnets)"; '
-            'mysql keystone <<< "(select id from project) '
-            'UNION (select id from user)"')
-
-        self.show_step(self.next_step)
-        target_ids = self.ssh_manager.check_call(
-            ip=orig_controller["ip"], command=mysql_req).stdout
 
         self.show_step(self.next_step)
         self.ssh_manager.check_call(
@@ -230,11 +216,6 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
                                             "heat", "neutron", "glance"]):
                 next_element = crm_status.pop(0)
                 assert_true("Stopped" in next_element)
-
-        seed_ids = self.ssh_manager.check_call(
-            ip=seed_controller["ip"], command=mysql_req).stdout
-        assert_equal(sorted(target_ids), sorted(seed_ids),
-                     "Objects in target and seed dbs are different")
 
     def upgrade_ceph_code(self, seed_cluster_id):
         seed_controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
@@ -361,7 +342,7 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
 
         self.minimal_check(seed_cluster_id=seed_cluster_id, nwk_check=True)
 
-    def pre_upgrade_computes(self, orig_cluster_id, seed_cluster_id):
+    def pre_upgrade_computes(self, orig_cluster_id):
         self.show_step(self.next_step)
 
         # Fuel-octane can run pre-upgrade only starting from version 9.0 and
@@ -373,10 +354,22 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
                 orig_cluster_id, ["compute"]
             )
 
+            logger.critical(str(type(self.fuel_web.client.get_deployable_releases())))
+
+            liberty_releases = [
+                release['id'] for release
+                in self.fuel_web.client.get_deployable_releases()
+                if 'liberty' in release['name'].lower
+                ]
+
+            prev_rel_id = liberty_releases.pop()
+
+            logger.info('Liberty release id is: {}'.format(prev_rel_id))
+
             self.ssh_manager.check_call(
                 ip=self.ssh_manager.admin_ip,
-                command="octane upgrade-compute {0} {1}".format(
-                    seed_cluster_id,
+                command="octane preupgrade-compute {0} {1}".format(
+                    prev_rel_id,
                     " ".join([str(comp["id"]) for comp in computes])),
                 error_info="octane upgrade-node failed")
 
