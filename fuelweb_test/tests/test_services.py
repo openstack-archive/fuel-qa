@@ -432,8 +432,9 @@ class OSTFCeilometerHelper(TestBasic):
             test_classes.append('{0}.{1}'.format(test_class_main,
                                                  test_name))
 
-        all_tests = [test['id'] for test
-                     in self.fuel_web.client.get_ostf_tests(cluster_id)]
+        all_tests = [
+            test['id'] for test
+            in self.fuel_web.fuel_client.ostf.get_tests(cluster_id)]
 
         for test_id in test_classes:
             if test_id in all_tests:
@@ -445,7 +446,7 @@ class OSTFCeilometerHelper(TestBasic):
 
                     test_name = next(
                         test['name'] for test
-                        in self.fuel_web.client.get_ostf_tests(cluster_id)
+                        in self.fuel_web.fuel_client.ostf.get_tests(cluster_id)
                         if test['id'] == test_id)
 
                     status = next(test.values()[0]
