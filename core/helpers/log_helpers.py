@@ -24,17 +24,17 @@ def logwrap(func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         logger.debug(
-            "Calling: {} with args: {} {}".format(
+            "Calling: {!r} with args: {!r} {!r}".format(
                 func.__name__, args, kwargs
             )
         )
         try:
             result = func(*args, **kwargs)
             logger.debug(
-                "Done: {} with result: {}".format(func.__name__, result))
+                "Done: {!r} with result: {!r}".format(func.__name__, result))
         except BaseException as e:
             logger.exception(
-                '{func} raised: {exc!r}\n'.format(func=func.__name__, exc=e))
+                '{func!r} raised: {exc!r}\n'.format(func=func.__name__, exc=e))
             raise
         return result
     return wrapped
