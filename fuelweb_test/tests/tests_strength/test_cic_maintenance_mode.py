@@ -13,6 +13,7 @@
 #    under the License.
 import time
 
+from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 from proboscis import asserts
@@ -437,6 +438,11 @@ class CICMaintenanceMode(TestBasic):
 
         logger.info('Check that node-{0} not in maintenance mode after'
                     ' unexpected reboot'.format(_id))
+
+        wait(lambda: tcp_ping(_ip, 22),
+             timeout=60 * 10,
+             timeout_msg='Node {} still is not available by SSH'.format(
+                 dregular_ctrl.name))
 
         asserts.assert_false('True' in check_auto_mode(_ip),
                              "Maintenance mode should not switched")
