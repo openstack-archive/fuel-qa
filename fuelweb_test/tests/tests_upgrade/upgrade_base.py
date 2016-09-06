@@ -207,7 +207,7 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         self.show_step(self.next_step)
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command="octane upgrade-db {0} {1}".format(
+            command="octane upgrade-db --with-graph {0} {1}".format(
                 self.orig_cluster_id, seed_cluster_id),
             error_info="octane upgrade-db failed")
 
@@ -243,7 +243,7 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         self.show_step(self.next_step)
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command="octane upgrade-ceph {0} {1}".format(
+            command="octane upgrade-ceph --with-graph {0} {1}".format(
                 self.orig_cluster_id, seed_cluster_id),
             error_info="octane upgrade-ceph failed")
 
