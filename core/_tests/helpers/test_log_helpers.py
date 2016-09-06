@@ -47,10 +47,10 @@ class TestLogWrap(unittest.TestCase):
 
         logger.assert_has_calls((
             call.debug(
-                "Calling: func with args: {} {}".format(
+                "Calling: func with args: {!r} {!r}".format(
                     call_args, call_kwargs)),
             call.debug(
-                "Done: func with result: {}".format(result))
+                "Done: func with result: {!r}".format(result))
         ))
 
     def test_negative(self, logger):
@@ -66,7 +66,7 @@ class TestLogWrap(unittest.TestCase):
 
         logger.assert_has_calls((
             call.debug(
-                "Calling: func with args: {} {}".format(
+                "Calling: func with args: {!r} {!r}".format(
                     call_args, call_kwargs)),
             call.exception(
                 'func raised: ValueError({}, {})\n'.format(
