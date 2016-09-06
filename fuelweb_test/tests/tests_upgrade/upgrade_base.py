@@ -186,6 +186,17 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
 
     def upgrade_db_code(self, seed_cluster_id):
         self.show_step(self.next_step)
+
+        self.patcher("/usr/lib/python2.7/site-packages/nailgun", "367327")
+        GIT_URL="https://github.com/aglarendil/fuel-nailgun-extension-converted-serializers.git"
+        cmd = "cd /root && git clone {0} && cd fuel-nailgun-extension-converted-serializers && python setup.py build && python setup.py install && service nailgun restart && sleep 60".format(GIT_URL)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=cmd,
+            error_info="octane upgrade-db failed")
+
+
         orig_controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             self.orig_cluster_id, ["controller"])[0]
         seed_controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
@@ -207,7 +218,7 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         self.show_step(self.next_step)
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command="octane upgrade-db {0} {1}".format(
+            command="octane upgrade-db --with-graph {0} {1}".format(
                 self.orig_cluster_id, seed_cluster_id),
             error_info="octane upgrade-db failed")
 
@@ -243,7 +254,7 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         self.show_step(self.next_step)
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command="octane upgrade-ceph {0} {1}".format(
+            command="octane upgrade-ceph --with-graph {0} {1}".format(
                 self.orig_cluster_id, seed_cluster_id),
             error_info="octane upgrade-ceph failed")
 
