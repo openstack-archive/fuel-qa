@@ -13,8 +13,10 @@
 #    under the License.
 
 from __future__ import division
-from warnings import warn
+from __future__ import unicode_literals
+
 import re
+from warnings import warn
 
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
@@ -287,10 +289,12 @@ class HAOneControllerNeutron(HAOneControllerNeutronBase):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-03")['ip']
-        result = self.ssh_manager.execute_on_remote(cmd='hiera roles',
-                                                    ip=_ip)['stdout_str']
-        assert_equal('[\"base-os\"]', result,
-                     message="Role mismatch. Node slave-03 is not base-os")
+        result = self.ssh_manager.check_call(
+            command='hiera roles', ip=_ip).stdout_str
+        assert_equal(
+            '["base-os"]',
+            result,
+            message="Role mismatch. Node slave-03 is not base-os")
 
         self.env.make_snapshot("deploy_base_os_node")
 
@@ -453,8 +457,7 @@ class MultiroleMultipleServices(TestBasic):
                 "sed -i 's,http://archive.ubuntu.com/ubuntu,{0},g'" \
                 " /usr/share/fuel-mirror/ubuntu.yaml".format(
                     ubuntu_url)
-            self.ssh_manager.execute_on_remote(ip=admin_ip,
-                                               cmd=replace_cmd)
+            self.ssh_manager.check_call(ip=admin_ip, command=replace_cmd)
 
         create_mirror_cmd = 'fuel-mirror create -P ubuntu -G mos ubuntu'
         self.env.admin_actions.ensure_cmd(create_mirror_cmd)
@@ -478,7 +481,7 @@ class MultiroleMultipleServices(TestBasic):
         self.show_step(4)
         apply_mirror_cmd = 'fuel-mirror apply -P ubuntu -G mos ubuntu ' \
                            '--env {0} --replace'.format(cluster_id)
-        self.ssh_manager.execute_on_remote(ip=admin_ip, cmd=apply_mirror_cmd)
+        self.ssh_manager.check_call(ip=admin_ip, command=apply_mirror_cmd)
 
         self.fuel_web.update_nodes(
             cluster_id,
