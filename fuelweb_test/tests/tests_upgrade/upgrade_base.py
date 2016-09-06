@@ -303,6 +303,14 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
 
     def upgrade_controllers_code(self, seed_cluster_id):
         self.show_step(self.next_step)
+
+        self.patcher("/usr/lib/python2.7/site-packages/cluster_upgrade", "365168")
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command="service nailgun restart && sleep 60",
+            error_info="octane upgrade-node failed")
+
+
         old_controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             self.orig_cluster_id, ["controller"])
 
@@ -364,12 +372,24 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
 
             logger.info('Liberty release id is: {}'.format(prev_rel_id))
 
+            for compute in computes:
+              self.ssh_manager.check_call(
+                ip=compute["ip"],
+                command="ip ro change to default via {0} dev br-fw-admin".format(self.ssh_manager.admin_ip),
+                error_info="route workaround failed step #1")
+
             self.ssh_manager.check_call(
                 ip=self.ssh_manager.admin_ip,
                 command="octane preupgrade-compute {0} {1}".format(
                     prev_rel_id,
                     " ".join([str(comp["id"]) for comp in computes])),
-                error_info="octane upgrade-node failed")
+                error_info="octane preupgrade-compute failed")
+
+            for compute in computes:
+              self.ssh_manager.check_call(
+                ip=compute["ip"],
+                command="ip ro change to default 10.109.36.2  dev br-mgmt",
+                error_info="route workaround failed step #2")
 
     def upgrade_nodes(self, seed_cluster_id, nodes_str, live_migration=False):
         self.ssh_manager.check_call(
