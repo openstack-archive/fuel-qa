@@ -125,6 +125,22 @@ class DataDrivenUpgradeBase(TestBasic):
 
     # pylint: disable=no-member
 
+    def patcher(self, base_dir, crs):
+        logger.info("Patching {} with CR: {!r}".format(
+          base_dir, crs))
+
+        cmd = "rpm -V patch || yum install -y patch"
+        self.admin_remote.check_call(cmd)
+
+        self.upload_file(
+          os.path.join(
+              os.path.abspath(os.path.dirname(__file__)),
+              "octane_patcher.sh"),
+          "/tmp/octane_patcher.sh")
+
+        cmd = "bash /tmp/octane_patcher.sh {} {}".format(base_dir, crs)
+        self.admin_remote.check_call(cmd, verbose=True)
+
     def upload_file(self, source, destination, remote=None):
         if not remote:
             remote = self.admin_remote
@@ -210,15 +226,7 @@ class DataDrivenUpgradeBase(TestBasic):
             logger.info("Patching octane with CR: {!r}".format(
                 OCTANE_PATCHES))
             # pylint: disable=no-member
-            self.admin_remote.upload(
-                os.path.join(
-                    os.path.abspath(os.path.dirname(__file__)),
-                    "octane_patcher.sh"),
-                "/tmp/octane_patcher.sh")
-
-            self.admin_remote.check_call(
-                "bash /tmp/octane_patcher.sh {}".format(
-                    OCTANE_PATCHES))
+            self.patcher("/usr/lib/python2.7/site-packages/octane", OCTANE_PATCHES)
             # pylint: enable=no-member
 
         if OCTANE_REPO_LOCATION:
