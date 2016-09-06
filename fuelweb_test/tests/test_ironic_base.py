@@ -223,9 +223,9 @@ class TestIronicDeploy(TestBasic):
 
         Scenario:
             1. Create cluster
-            2. Add 1 node with controller+ceph-osd role
-            3. Add 2 nodes with controller+ironic+ceph-osd role
-            4. Add 1 node with compute role
+            2. Add 1 node with controller role
+            3. Add 2 nodes with ironic+ceph-osd role
+            4. Add 1 node with compute+ceph-osd role
             5. Add 1 nodes with ironic role
             6. Deploy the cluster
             7. Upload image to glance
@@ -251,11 +251,11 @@ class TestIronicDeploy(TestBasic):
             'net_segment_type': NEUTRON_SEGMENT['vlan'],
             'ironic': True}
         nodes = {
-            'slave-01': ['controller', 'ceph-osd'],
-            'slave-02': ['controller', 'ironic', 'ceph-osd'],
-            'slave-03': ['controller', 'ironic', 'ceph-osd'],
-            'slave-04': ['ironic'],
-            'slave-05': ['compute']}
+            'slave-01': ['controller'],
+            'slave-02': ['ironic', 'ceph-osd'],
+            'slave-03': ['ironic', 'ceph-osd'],
+            'slave-04': ['compute', 'ceph-osd'],
+            'slave-05': ['ironic']}
 
         self.show_step(1, initialize=True)
         self.show_step(2)
