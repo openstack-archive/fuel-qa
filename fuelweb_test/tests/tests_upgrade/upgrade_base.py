@@ -117,6 +117,13 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
 
     def upgrade_env_code(self, release_id):
         self.show_step(self.next_step)
+        self.patcher("/usr/lib/python2.7/site-packages/cluster_upgrade", "362721")
+        self.patcher("/usr/lib/python2.7/site-packages/", "362087")
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command="service nailgun restart && sleep 60",
+            error_info="octane upgrade-node failed")
+
         seed_id = int(
             self.ssh_manager.check_call(
                 ip=self.env.get_admin_node_ip(),
@@ -158,6 +165,12 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         )
 
     def upgrade_first_controller_code(self, seed_cluster_id):
+        self.patcher("/usr/lib/python2.7/site-packages/cluster_upgrade", "362721")
+        self.patcher("/usr/lib/python2.7/site-packages/", "362087")
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command="service nailgun restart && sleep 60",
+            error_info="octane upgrade-node failed")
         self.show_step(self.next_step)
         controller = self.fuel_web.get_devops_node_by_nailgun_node(
             self.fuel_web.get_nailgun_cluster_nodes_by_roles(
@@ -185,6 +198,12 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         self.minimal_check(seed_cluster_id=seed_cluster_id)
 
     def upgrade_db_code(self, seed_cluster_id):
+        self.patcher("/usr/lib/python2.7/site-packages/cluster_upgrade", "362721")
+        self.patcher("/usr/lib/python2.7/site-packages/", "362087")
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command="service nailgun restart && sleep 60",
+            error_info="octane upgrade-node failed")
         self.show_step(self.next_step)
 
         seed_controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
@@ -218,6 +237,12 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
                 assert_true("Stopped" in next_element)
 
     def upgrade_ceph_code(self, seed_cluster_id):
+        self.patcher("/usr/lib/python2.7/site-packages/cluster_upgrade", "362721")
+        self.patcher("/usr/lib/python2.7/site-packages/", "362087")
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command="service nailgun restart && sleep 60",
+            error_info="octane upgrade-node failed")
         seed_controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             seed_cluster_id, ["controller"])[0]
 
@@ -232,6 +257,12 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         self.check_ceph_health(seed_controller['ip'])
 
     def upgrade_control_plane_code(self, seed_cluster_id):
+        self.patcher("/usr/lib/python2.7/site-packages/cluster_upgrade", "362721")
+        self.patcher("/usr/lib/python2.7/site-packages/", "362087")
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command="service nailgun restart && sleep 60",
+            error_info="octane upgrade-node failed")
         self.show_step(self.next_step)
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
@@ -302,7 +333,14 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
                 assert_true("Started" in next_element)
 
     def upgrade_controllers_code(self, seed_cluster_id):
+        self.patcher("/usr/lib/python2.7/site-packages/cluster_upgrade", "362721")
+        self.patcher("/usr/lib/python2.7/site-packages/", "362087")
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command="service nailgun restart && sleep 60",
+            error_info="octane upgrade-node failed")
         self.show_step(self.next_step)
+
         old_controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             self.orig_cluster_id, ["controller"])
 
@@ -324,6 +362,12 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         self.minimal_check(seed_cluster_id=seed_cluster_id, nwk_check=True)
 
     def upgrade_ceph_osd_code(self, seed_cluster_id):
+        self.patcher("/usr/lib/python2.7/site-packages/cluster_upgrade", "362721")
+        self.patcher("/usr/lib/python2.7/site-packages/", "362087")
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command="service nailgun restart && sleep 60",
+            error_info="octane upgrade-node failed")
         seed_controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             seed_cluster_id, ["controller"]
         )[0]
@@ -344,6 +388,12 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         self.minimal_check(seed_cluster_id=seed_cluster_id, nwk_check=True)
 
     def pre_upgrade_computes(self, orig_cluster_id):
+        self.patcher("/usr/lib/python2.7/site-packages/cluster_upgrade", "362721")
+        self.patcher("/usr/lib/python2.7/site-packages/", "362087")
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command="service nailgun restart && sleep 60",
+            error_info="octane upgrade-node failed")
         self.show_step(self.next_step)
 
         # Fuel-octane can run pre-upgrade only starting from version 9.0 and
@@ -365,14 +415,32 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
 
             logger.info('Liberty release id is: {}'.format(prev_rel_id))
 
+            for compute in computes:
+              self.ssh_manager.check_call(
+                ip=compute["ip"],
+                command="ip ro change to default via {0} dev br-fw-admin".format(self.ssh_manager.admin_ip),
+                error_info="route workaround failed step #1")
+
             self.ssh_manager.check_call(
                 ip=self.ssh_manager.admin_ip,
                 command="octane preupgrade-compute {0} {1}".format(
                     prev_rel_id,
                     " ".join([str(comp["id"]) for comp in computes])),
-                error_info="octane upgrade-node failed")
+                error_info="octane preupgrade-compute failed")
+
+            for compute in computes:
+              self.ssh_manager.check_call(
+                ip=compute["ip"],
+                command="ip ro change to default via 10.109.36.2  dev br-mgmt",
+                error_info="route workaround failed step #2")
 
     def upgrade_nodes(self, seed_cluster_id, nodes_str, live_migration=False):
+        self.patcher("/usr/lib/python2.7/site-packages/cluster_upgrade", "362721")
+        self.patcher("/usr/lib/python2.7/site-packages/", "362087")
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command="service nailgun restart && sleep 60",
+            error_info="octane upgrade-node failed")
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
             command=(
