@@ -120,6 +120,86 @@ class DataDrivenUpgradeBase(TestBasic):
 
     # pylint: disable=no-member
 
+    def patcher(self, base_dir, crs):
+        logger.info("Patching {} with CR: {!r}".format(
+          base_dir, crs))
+
+        cmd = "rpm -V patch || yum install -y patch"
+        self.admin_remote.check_call(cmd)
+
+        self.upload_file(
+          os.path.join(
+              os.path.abspath(os.path.dirname(__file__)),
+              "octane_patcher.sh"),
+          "/tmp/octane_patcher.sh")
+
+        cmd = "bash /tmp/octane_patcher.sh {} {}".format(base_dir, crs)
+        self.admin_remote.check_call(cmd)
+
+    def upload_file(self, source, destination, remote=None):
+        if not remote:
+            remote = self.admin_remote
+        assert_true(os.path.exists(source),
+                    "Source file {!r} does not exists".format(source))
+        logger.info("Uploading {!r} to {!r}".format(source, destination))
+        remote.upload(source, destination)
+        assert_true(remote.exists(destination),
+                    "Destination file {!r} does not exists after "
+                    "uploading".format(destination))
+        logger.info("File {!r} uploaded".format(destination))
+
+    def download_file(self, source, destination, remote=None):
+        if not remote:
+            remote = self.admin_remote
+        assert_true(
+            remote.exists(source),
+            "Source file {!r} on remote does not exists".format(source))
+        logger.info("Downloading {!r} to {!r}".format(source, destination))
+        remote.download(source, destination)
+        assert_true(os.path.exists(destination),
+                    "Destination file {!r} does not exists after "
+                    "downloading".format(destination))
+        logger.info("File {!r} downloaded".format(destination))
+
+    def remove_remote_file(self, path, remote=None):
+        if not remote:
+            remote = self.admin_remote
+        remote.rm_rf(path)
+
+    def remote_file_exists(self, path, remote=None):
+        if not remote:
+            remote = self.admin_remote
+        return remote.exists(path)
+
+    # pylint: enable=no-member
+
+    def cleanup(self):
+        os.remove(self.local_path)
+        os.remove(self.repos_local_path)
+
+    def install_octane(self):
+        """ Install fuel-octane package to master node"""
+        conf_file = None
+        if OCTANE_REPO_LOCATION:
+            conf_file = '/etc/yum.repos.d/fuel-proposed.repo'
+            cmd = ("echo -e "
+                   "'[fuel-proposed]\n"
+                   "name=fuel-proposed\n"
+                   "baseurl={}/\n"
+                   "gpgcheck=0\n"
+                   "priority=1' > {}").format(
+                       OCTANE_REPO_LOCATION,
+                       conf_file)
+
+            # pylint: disable=no-member
+
+        if OCTANE_PATCHES:
+            logger.info("Patching octane with CR: {!r}".format(
+                OCTANE_PATCHES))
+            # pylint: disable=no-member
+            self.patcher("/usr/lib/python2.7/site-packages/octane", OCTANE_PATCHES)
+
+
     def upload_file(self, source, destination, remote=None):
         if not remote:
             remote = self.admin_remote
@@ -205,15 +285,7 @@ class DataDrivenUpgradeBase(TestBasic):
             logger.info("Patching octane with CR: {!r}".format(
                 OCTANE_PATCHES))
             # pylint: disable=no-member
-            self.admin_remote.upload(
-                os.path.join(
-                    os.path.abspath(os.path.dirname(__file__)),
-                    "octane_patcher.sh"),
-                "/tmp/octane_patcher.sh")
-
-            self.admin_remote.check_call(
-                "bash /tmp/octane_patcher.sh {}".format(
-                    OCTANE_PATCHES))
+            self.patcher("/usr/lib/python2.7/site-packages/octane", OCTANE_PATCHES)
             # pylint: enable=no-member
 
         if OCTANE_REPO_LOCATION:
