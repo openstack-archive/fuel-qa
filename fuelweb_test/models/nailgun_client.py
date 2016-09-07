@@ -20,6 +20,7 @@ from core.models.fuel_client import Client as FuelClient
 from fuelweb_test import logger
 
 from fuelweb_test.settings import OPENSTACK_RELEASE
+from fuelweb_test.settings import RELEASE_VERSION
 
 
 class NailgunClient(object):
@@ -231,9 +232,11 @@ class NailgunClient(object):
         )
 
     @logwrap
-    def get_release_id(self, release_name=OPENSTACK_RELEASE):
+    def get_release_id(self, release_name=OPENSTACK_RELEASE,
+                       release_version=RELEASE_VERSION):
         for release in self.get_releases():
-            if release["name"].lower().find(release_name.lower()) != -1:
+            if (release_name.lower() in release["name"].lower() and
+                    release_version.lower() in release["version"].lower()):
                 return release["id"]
 
     @logwrap

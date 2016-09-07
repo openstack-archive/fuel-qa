@@ -83,6 +83,8 @@ OPENSTACK_RELEASE_UBUNTU_UCA = os.environ.get('OPENSTACK_RELEASE_UBUNTU_UCA',
 OPENSTACK_RELEASE = os.environ.get(
     'OPENSTACK_RELEASE', 'Ubuntu').lower()
 
+RELEASE_VERSION = os.environ.get('RELEASE_VERSION', "newton")
+
 # FIXME(mattmymo): Update CI jobs to use 'Ubuntu 14.04' for OPENSTACK_RELEASE
 # FIXME(dteselkin): Because of strange logic to detect Ubuntu release we need
 #                       OPENSTACK_RELEASE == OPENSTACK_RELEASE_UBUNTU
@@ -455,8 +457,6 @@ UPGRADE_BACKUP_FILES_REMOTE_DIR = os.environ.get(
 # End of upgrade-related variables
 
 SNAPSHOT = os.environ.get('SNAPSHOT', '')
-# For 5.1.1 we have 2 releases in tarball and should specify what we need
-RELEASE_VERSION = os.environ.get('RELEASE_VERSION', "2016.1.0-9.0")
 
 # Repos paths and files
 MOS_REPOS = os.environ.get('MOS_REPOS',
