@@ -71,6 +71,8 @@ OPENSTACK_RELEASE_UBUNTU = 'ubuntu'
 OPENSTACK_RELEASE = os.environ.get(
     'OPENSTACK_RELEASE', OPENSTACK_RELEASE_UBUNTU).lower()
 
+RELEASE_VERSION = os.environ.get('RELEASE_VERSION', "liberty")
+
 DEPLOYMENT_MODE_SIMPLE = "multinode"
 DEPLOYMENT_MODE_HA = "ha_compact"
 DEPLOYMENT_MODE = os.environ.get("DEPLOYMENT_MODE", DEPLOYMENT_MODE_HA)
@@ -396,8 +398,6 @@ UPGRADE_BACKUP_FILES_REMOTE_DIR = os.environ.get(
 # End of upgrade-related variables
 
 SNAPSHOT = os.environ.get('SNAPSHOT', '')
-# For 5.1.1 we have 2 releases in tarball and should specify what we need
-RELEASE_VERSION = os.environ.get('RELEASE_VERSION', "2015.1.0-8.0")
 
 # Repos paths and files
 MOS_REPOS = os.environ.get('MOS_REPOS',
