@@ -926,3 +926,76 @@ class NailgunClient(object):
         """Get list of installed plugins"""
         endpoint = '/plugins'
         return self._get(endpoint).json()
+
+    @logwrap
+    def create_tag(self, tag, owner_id, owner_type, has_primary=None):
+        """
+
+        :param tag:
+        :param owner_id:
+        :param owner_type: ENUM('release', 'cluster', 'plugin)
+        :param has_primary:
+        :return:
+        """
+        endpoint = '/tags'
+
+        data = {"tag": tag,
+                "owner_id": owner_id,
+                "owner_type": owner_type}
+
+        if has_primary is not None:
+            data.update({"has_primary": has_primary})
+
+        return self._post(endpoint, json=data)
+
+    @logwrap
+    def get_tag(self, tag_id):
+        """
+
+        :param tag_id:
+        :return:
+        """
+        endpoint = '/tags/{id}'.format(id=tag_id)
+        return self._get(endpoint)
+
+    @logwrap
+    def list_tags(self):
+        """
+
+        :return:
+        """
+        endpoint = '/tags'
+        return self._get(endpoint)
+
+    @logwrap
+    def update_tag(self, tag_id, tag=None,
+                   owner_id=None, owner_type=None, has_primary=None):
+        """
+
+        :param tag_id:
+        :param tag:
+        :param owner_id:
+        :param owner_type:
+        :param has_primary:
+        :return:
+        """
+        endpoint = '/tags/{id}'.format(id=tag_id)
+
+        data = {"tag": tag,
+                "owner_id": owner_id,
+                "owner_type": owner_type,
+                "has_primary": has_primary}
+        data = {k: v for k, v in data.items if v is not None}
+
+        return self._put(endpoint, json=data)
+
+    @logwrap
+    def delete_tag(self, tag_id):
+        """
+
+        :param tag_id:
+        :return:
+        """
+        endpoint = '/tags/{id}'.format(id=tag_id)
+        return self._delete(endpoint)
+
