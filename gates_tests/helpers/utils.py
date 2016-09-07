@@ -519,4 +519,4 @@ def update_bootstrap_cli_yaml():
                 'suite': 'auxiliary', 'type': 'deb',
                 'uri': 'http://127.0.0.1:8080/ubuntu/auxiliary/'}
     with YamlEditor(path, ip=actions.admin_ip) as editor:
-        editor['repos'].append(new_repo)
+        editor.content['repos'].append(new_repo)
