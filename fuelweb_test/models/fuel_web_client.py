@@ -46,6 +46,7 @@ import yaml
 
 from core.helpers.log_helpers import logwrap
 from core.helpers.log_helpers import QuietLogger
+from core.models.fuel_client import Client as FuelClient
 
 from fuelweb_test import logger
 from fuelweb_test import ostf_test_mapping
@@ -123,6 +124,8 @@ class FuelWebClient29(object):
         self._session = KeystoneSession(auth=auth, verify=False)
 
         self.client = NailgunClient(session=self._session)
+        self.fuel_client = FuelClient(session=self._session)
+
         self.security = SecurityChecks(self.client, self._environment)
 
         super(FuelWebClient29, self).__init__()
@@ -146,13 +149,15 @@ class FuelWebClient29(object):
         logger.info('Wait OSTF tests at cluster #%s for %s seconds',
                     cluster_id, timeout)
         wait(
-            lambda: all([run['status'] == 'finished'
-                         for run in
-                         self.client.get_ostf_test_run(cluster_id)]),
+            lambda: all(
+                [
+                    run['status'] == 'finished' for run
+                    in self.fuel_client.ostf.get_test_runs(
+                        cluster_id=cluster_id)]),
             timeout=timeout,
             timeout_msg='OSTF tests run timeout '
                         '(cluster_id={})'.format(cluster_id))
-        return self.client.get_ostf_test_run(cluster_id)
+        return self.fuel_client.ostf.get_test_runs(cluster_id=cluster_id)
 
     @logwrap
     def _tasks_wait(self, tasks, timeout):
@@ -1326,7 +1331,7 @@ class FuelWebClient29(object):
 
         test_sets = test_sets or ['smoke', 'sanity']
         timeout = timeout or 30 * 60
-        self.client.ostf_run_tests(cluster_id, test_sets)
+        self.fuel_client.ostf.run_tests(cluster_id, test_sets)
         if tests_must_be_passed:
             self.assert_ostf_run_certain(
                 cluster_id,
@@ -1362,7 +1367,7 @@ class FuelWebClient29(object):
                              retries=None, timeout=15 * 60):
         """Run a single OSTF test"""
 
-        self.client.ostf_run_singe_test(cluster_id, test_sets, test_name)
+        self.fuel_client.ostf.run_tests(cluster_id, test_sets, test_name)
         if retries:
             return self.return_ostf_results(cluster_id, timeout=timeout,
                                             test_sets=test_sets)
@@ -2900,7 +2905,7 @@ class FuelWebClient29(object):
 
     @logwrap
     def get_all_ostf_set_names(self, cluster_id):
-        sets = self.client.get_ostf_test_sets(cluster_id)
+        sets = self.fuel_client.ostf.get_test_sets(cluster_id=cluster_id)
         return [s['id'] for s in sets]
 
     @logwrap
