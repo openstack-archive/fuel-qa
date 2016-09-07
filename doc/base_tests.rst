@@ -654,6 +654,7 @@ Test Data-Driven Upgrade
 .. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_no_cluster
 .. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_plugin
 .. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_smoke
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_multirack_deployment
 .. automodule:: fuelweb_test.tests.tests_upgrade.test_node_reassignment
 .. automodule:: fuelweb_test.tests.tests_upgrade.upgrader_tool
    :members:
