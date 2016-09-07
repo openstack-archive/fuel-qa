@@ -78,3 +78,58 @@ class TestBlockDevice(TestBasic):
         self.show_step(6)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
         self.env.make_snapshot("bdd_ha_one_controller_compact")
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+          groups=["deploy_bdd_and_lvm"])
+    @log_snapshot_after_test
+    def bdd_lvm_ha_one_controller_compact(self):
+        """Deploy cluster with Cinder multi backend(bdd+lvm)
+
+        Scenario:
+            1. Create cluster with Neutron vlan
+            2. Add 1 nodes with controller and cinder vlm node
+            3. Add 1 nodes with compute and cinder-block-device role
+            4. Deploy the cluster
+            5. Network check
+            6. Run OSTF tests
+
+        Duration 60m
+        Snapshot bdd_lvm_ha_one_controller_compact
+        """
+        self.env.revert_snapshot("ready_with_3_slaves")
+        self.show_step(1)
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            settings={
+                'tenant': 'bdd',
+                'user': 'bdd',
+                'password': 'bdd',
+                'volumes_lvm': True,
+                'volumes_ceph': False,
+                'images_ceph': False,
+                'objects_ceph': False,
+                'ephemeral_ceph': False,
+                'nova_quotas': True,
+                'volumes_block_device': True,
+                'net_provider': 'neutron',
+                'net_segment_type': settings.NEUTRON_SEGMENT['vlan'],
+                'configure_ssl': False
+            }
+        )
+        self.show_step(2)
+        self.show_step(3)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller', 'cinder'],
+                'slave-02': ['compute', 'cinder-block-device'],
+            }
+        )
+
+        self.show_step(4)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.show_step(5)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(6)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.env.make_snapshot("bdd_lvm_ha_one_controller_compact")
