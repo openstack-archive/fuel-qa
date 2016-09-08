@@ -123,9 +123,10 @@ class Common(object):
     def heat(self):
         endpoint = self.__make_endpoint(
             self._get_url_for_svc(service_type='orchestration'))
+        # TODO: parameter endpoint_override when heatclient will be fixed
         return HeatClient(
             session=self.keystone_session,
-            endpoint_override=endpoint)
+            endpoint=endpoint)
 
     @property
     def ironic(self):
