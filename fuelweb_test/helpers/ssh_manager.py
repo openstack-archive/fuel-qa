@@ -20,7 +20,7 @@ import traceback
 from warnings import warn
 
 from devops.helpers.helpers import wait
-from devops.models.node import SSHClient
+from devops.helpers.ssh_client import SSHClient
 from paramiko import RSAKey
 
 from fuelweb_test import logger
