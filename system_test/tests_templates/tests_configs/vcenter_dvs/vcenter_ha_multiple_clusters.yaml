@@ -2,6 +2,7 @@
 template:
  name: 3 controllers, 1 compute + cinder, 1 cinder-vmware on Neutron/VLAN with DVS plugin
  slaves: 5
+ devops_settings: !include devops_configs/vcenter_ha_default.yaml
  cluster_template:
   name: vcenter_ha_multiple_clusters
   release: ubuntu

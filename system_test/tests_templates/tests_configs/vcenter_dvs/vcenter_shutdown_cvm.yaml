@@ -2,6 +2,7 @@
 template:
  name: 1 controller, 1 compute + cinder, 2 cinder-vmware on Neutron/VLAN with DVS plugin
  slaves: 4
+ devops_settings: !include devops_configs/vcenter_ha_default.yaml
  cluster_template:
   name: vcenter_shutdown_cindervmware
   release: ubuntu
