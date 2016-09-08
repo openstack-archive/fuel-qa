@@ -272,7 +272,8 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
             cluster_id,
             {
                 'slave-09': ['controller']
-            }
+            },
+            update_interfaces=False
         )
 
         self.show_step(4)
