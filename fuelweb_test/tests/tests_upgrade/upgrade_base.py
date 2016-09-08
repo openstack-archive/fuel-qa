@@ -187,13 +187,30 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
     def upgrade_db_code(self, seed_cluster_id):
         self.show_step(self.next_step)
 
+        # WRONG PLACE
+        self.patcher("/usr/lib/python2.7/site-packages/", "367327")
+        GIT_URL="https://github.com/aglarendil/fuel-nailgun-extension-converted-serializers.git"
+        cmd = "cd /root && git clone {0} && cd fuel-nailgun-extension-converted-serializers && python setup.py build && python setup.py install && service nailgun restart && sleep 60".format(GIT_URL)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=cmd,
+            error_info="extension installation failed")
+
+        cmd = "curl -H \"X-Auth-Token: `fuel token`\" -XPUT -d '[\"volume_manager\", \"converted_serializers\"]' http://localhost:8000/api/clusters/1/extensions && service nailgun restart && sleep 60"
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=cmd,
+            error_info="curl failed")
+
         seed_controller = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             seed_cluster_id, ["controller"])[0]
 
         self.show_step(self.next_step)
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command="octane upgrade-db {0} {1}".format(
+            command="fuel2 graph execute -t upgrade-db -e 1 -d && sleep 30; octane upgrade-db --with-graph {0} {1}".format(
                 self.orig_cluster_id, seed_cluster_id),
             error_info="octane upgrade-db failed")
 
@@ -224,7 +241,7 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         self.show_step(self.next_step)
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command="octane upgrade-ceph {0} {1}".format(
+            command="octane upgrade-ceph --with-graph {0} {1}".format(
                 self.orig_cluster_id, seed_cluster_id),
             error_info="octane upgrade-ceph failed")
 
