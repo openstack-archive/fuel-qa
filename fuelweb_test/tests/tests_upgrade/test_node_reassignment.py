@@ -69,7 +69,7 @@ class TestReassignNode(TestBasic):
             controller_node["id"])
 
         data = {
-            "node_id": controller_node["id"]
+            "nodes_ids": [controller_node["id"]]
         }
 
         task = self.fuel_web.client.reassign_node(cloned_cluster["id"], data)
@@ -131,7 +131,7 @@ class TestReassignNode(TestBasic):
             cluster_id, ['controller'])[0]
 
         data = {
-            "node_id": controller_node["id"]
+            "nodes_ids": [controller_node["id"]]
         }
 
         try:
@@ -214,7 +214,7 @@ class TestReassignNode(TestBasic):
             cluster_id, data)
 
         data = {
-            "node_id": "white_rabbit"
+            "nodes_ids": ["white_rabbit"]
         }
 
         try:
@@ -256,7 +256,7 @@ class TestReassignNode(TestBasic):
             cluster_id, data)
 
         data = {
-            "node_id": 123456
+            "nodes_ids": [123456]
         }
 
         try:
