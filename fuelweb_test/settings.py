@@ -390,6 +390,8 @@ UPGRADE_FUEL_TO = os.environ.get('UPGRADE_FUEL_TO', '8.0')
 OCTANE_PATCHES = os.environ.get('OCTANE_PATCHES', None)
 EXAMPLE_V3_PLUGIN_REMOTE_URL = os.environ.get('EXAMPLE_V3_PLUGIN_REMOTE_URL',
                                               None)
+EXAMPLE_V4_PLUGIN_REMOTE_URL = os.environ.get('EXAMPLE_V4_PLUGIN_REMOTE_URL',
+                                              None)
 UPGRADE_BACKUP_FILES_LOCAL_DIR = os.environ.get(
     'UPGRADE_BACKUP_FILES_LOCAL_DIR', os.path.join(
         os.path.curdir, "..", "backup_storage"))
