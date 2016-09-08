@@ -2,6 +2,7 @@
 template:
  name: 1 controller + cinder-vmware + ceph, 1 compute + cinder-vmware + ceph on Neutron/VLAN with DVS plugin
  slaves: 2
+ devops_settings: !include devops_configs/vcenter_ha_default.yaml
  cluster_template:
   name: vcenter_multiroles_cindervmdk_and_ceph
   release: ubuntu
