@@ -99,6 +99,7 @@ class ScaleWithVMware(ActionTest, BaseActions, VMwareActions):
         'deploy_cluster',
         'scale_node',
         'deploy_changes',
+        'check_nova_conf',
         'health_check_sanity_smoke_ha'
     ]
 

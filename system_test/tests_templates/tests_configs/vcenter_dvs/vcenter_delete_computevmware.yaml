@@ -44,3 +44,7 @@ template:
       iface: !include cluster_configs/settings/vmware/vcenter_ifaces.yaml
       count: 1
       action: delete
+    - action: reconfigure
+      vmware_dvs:
+        dvswitch_name: !os_env DVS_NAME, Cluster1:Cluster1
+        dvs_fw_driver: false
