@@ -13,6 +13,7 @@
 #    under the License.
 
 import os
+from distutils.version import LooseVersion
 
 from proboscis import test
 from proboscis.asserts import assert_true, assert_not_equal, assert_is_not_none
@@ -32,6 +33,15 @@ class UpgradePlugin(DataDrivenUpgradeBase):
         self.snapshot_name = "upgrade_plugin_restore"
         self.backup_name = "backup_plugin.tar.gz"
         self.repos_backup_name = "repos_backup_plugin.tar.gz"
+
+        if LooseVersion(settings.UPGRADE_FUEL_FROM) < LooseVersion("9.0"):
+            self.plugin_url = settings.EXAMPLE_V3_PLUGIN_REMOTE_URL
+            self.plugin_name = "fuel_plugin_example_v3"
+            self.plugin_custom_role = "fuel_plugin_example_v3"
+        else:
+            self.plugin_url = settings.EXAMPLE_V4_PLUGIN_REMOTE_URL
+            self.plugin_name = "fuel_plugin_example_v4"
+            self.plugin_custom_role = "fuel_plugin_example_v4"
 
     @test(groups=['upgrade_plugin_backup'],
           depends_on=[SetupEnvironment.prepare_release])
@@ -56,11 +66,12 @@ class UpgradePlugin(DataDrivenUpgradeBase):
         Duration: TODO
         Snapshot: upgrade_plugin_backup
         """
-        assert_is_not_none(settings.EXAMPLE_V3_PLUGIN_REMOTE_URL,
-                           "EXAMPLE_V3_PLUGIN_REMOTE_URL is not defined!")
+
+        assert_is_not_none(self.plugin_url,
+                           "EXAMPLE_V[34]_PLUGIN_REMOTE_URL is not defined!")
         example_plugin_remote_name = os.path.join(
             "/var",
-            os.path.basename(settings.EXAMPLE_V3_PLUGIN_REMOTE_URL))
+            os.path.basename(self.plugin_url))
 
         self.check_run(self.source_snapshot_name)
 
@@ -71,7 +82,7 @@ class UpgradePlugin(DataDrivenUpgradeBase):
         admin_remote = self.env.d_env.get_admin_remote()
         admin_remote.check_call(
             "curl -s {url} > {location}".format(
-                url=settings.EXAMPLE_V3_PLUGIN_REMOTE_URL,
+                url=self.plugin_url,
                 location=example_plugin_remote_name))
         admin_remote.check_call(
             "fuel plugins --install {location} ".format(
@@ -98,11 +109,11 @@ class UpgradePlugin(DataDrivenUpgradeBase):
             'name': self.upgrade_plugin_backup.__name__,
             'settings': cluster_settings,
             'plugin':
-                {'name': 'fuel_plugin_example_v3',
+                {'name': self.plugin_name,
                  'data': {'metadata/enabled': True}},
             'nodes':
                 {'slave-01': ['controller'],
-                 'slave-02': ['fuel_plugin_example_v3'],
+                 'slave-02': [self.plugin_custom_role],
                  'slave-03': ['compute', 'ceph-osd'],
                  'slave-04': ['compute', 'ceph-osd'],
                  'slave-05': ['compute', 'ceph-osd']}
@@ -157,12 +168,12 @@ class UpgradePlugin(DataDrivenUpgradeBase):
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.show_step(6)
         attr = self.fuel_web.client.get_cluster_attributes(cluster_id)
-        assert_true('fuel_plugin_example_v3' in attr['editable'],
+        assert_true(self.plugin_name in attr['editable'],
                     "Can't find plugin data in cluster attributes!")
         admin_remote = self.env.d_env.get_admin_remote()
         stdout = admin_remote.check_call(
             "find /var/www/nailgun/plugins/ "
-            "-name fuel_plugin_example_v3*")['stdout']
+            "-name fuel_plugin_example_v*")['stdout']
         assert_not_equal(len(stdout), 0, "Can not find plugin's directory")
         plugin_dir = stdout[0].strip()
 
@@ -206,7 +217,7 @@ class UpgradePlugin(DataDrivenUpgradeBase):
             len(self.fuel_web.client.list_nodes()) + 1)
         self.env.bootstrap_nodes([self.env.d_env.get_node(name=slave_name)])
         self.fuel_web.update_nodes(cluster_id,
-                                   {slave_name: ['fuel_plugin_example_v3']})
+                                   {slave_name: [self.plugin_custom_role]})
         self.show_step(3)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(4)
