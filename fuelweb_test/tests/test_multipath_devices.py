@@ -25,6 +25,8 @@ from fuelweb_test.settings import MULTIPATH_TEMPLATE
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import SLAVE_MULTIPATH_DISKS_COUNT
 from fuelweb_test.settings import SSH_CREDENTIALS
+from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
+from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
 from fuelweb_test.tests import base_test_case
 from gates_tests.helpers import exceptions
 from system_test.core.discover import load_yaml
@@ -142,6 +144,8 @@ class TestMultipath(base_test_case.TestBasic):
         with TimeStat("setup_environment", is_uniq=True):
             self.env.setup_environment()
             self.fuel_post_install_actions()
+            if REPLACE_DEFAULT_REPOS and REPLACE_DEFAULT_REPOS_ONLY_ONCE:
+                self.fuel_web.replace_default_repos()
         self.fuel_web.get_nailgun_version()
         self.fuel_web.change_default_network_settings()
 
