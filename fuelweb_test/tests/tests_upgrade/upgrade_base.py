@@ -331,9 +331,10 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         self.show_step(self.next_step)
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command="octane upgrade-osd --admin-password {0} {1}".format(
+            command="octane upgrade-osd --admin-password {0} {1} {2}".format(
                 KEYSTONE_CREDS['password'],
-                self.orig_cluster_id),
+                self.orig_cluster_id,
+                seed_cluster_id),
             error_info="octane upgrade-osd failed"
         )
 
