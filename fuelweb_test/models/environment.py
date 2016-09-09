@@ -13,7 +13,6 @@
 #    under the License.
 
 import logging
-import re
 import time
 
 from devops.helpers.helpers import tcp_ping_
@@ -620,54 +619,39 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
     def admin_install_updates(self):
         """Update packages using yum and install updates via
         update-master-node.sh tool"""
-        logger.info('Searching for updates..')
-        update_command = 'yum clean expire-cache && ' \
-                         'yum update -y 2>>/var/log/yum-update-error.log'
+        logger.info('Searching for python-cudet package')
 
-        logger.info('Performing yum clean and update commands')
-        update_result = self.ssh_manager.execute_on_remote(
+        search_command = 'yum search python-cudet'
+
+        search_result = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd=update_command,
-            err_msg='Packages update failed, inspect logs for details')
+            cmd=search_command)
 
-        logger.info('Packages were updated successfully')
+        assert_true("Warning: No matches found for: " not in search_result[
+            'stderr_str'], "python-cudet wasn't found")
 
-        # Check if any packets were updated and update was successful
-        match_updated_count = re.search(r'Upgrade\s+(\d+)\s+Package',
-                                        update_result['stdout_str'])
-        # In case of package replacement, the new one is marked as
-        # installed and the old one as removed
-        match_installed_count = re.search(r'Install\s+(\d+)\s+Package',
-                                          update_result['stdout_str'])
-        match_complete_message = re.search(r'Complete!',
-                                           update_result['stdout_str'])
-
-        match_no_updates = re.search("No Packages marked for Update",
-                                     update_result['stdout_str'])
-
-        if match_no_updates or not match_complete_message \
-                or not (match_updated_count or match_installed_count):
-            logger.warning('No updates were found or update was incomplete.')
-            return
-
-        updates_count = 0
-
-        if match_updated_count:
-            updates_count += int(match_updated_count.group(1))
-
-        if match_installed_count:
-            updates_count += int(match_installed_count.group(1))
-
-        logger.info('{0} package(s) were updated'.format(updates_count))
-
-        logger.info('Applying updates via update-master-node.sh')
-        cmd = '/usr/share/fuel-utils/update-master-node.sh'
+        install_command = 'yum install -y python-cudet'
 
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd=cmd,
-            err_msg='Update failed, inspect logs for details',
-        )
+            cmd=install_command)
+
+        logger.info('prepare Fuel node for updating')
+        prepare_command = 'update-prepare prepare master'
+
+        std_out = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=prepare_command)
+        logger.debug(std_out)
+
+        logger.info('update Fuel node')
+        update_command = 'update-prepare update master'
+
+        std_out = self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd=update_command)
+        logger.debug(std_out)
+
         logger.info('Update successful')
 
     # Modifies a resolv.conf on the Fuel master node and returns
