@@ -12,8 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from copy import deepcopy
 import os
 
+from devops.helpers.helpers import wait
 from proboscis import test
 from proboscis.asserts import assert_not_equal, assert_true
 
@@ -25,6 +27,8 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.test_net_templates_base import TestNetworkTemplatesBase
 from fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_base import \
     DataDrivenUpgradeBase
+from fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_base import \
+    LooseVersion
 
 
 @test
@@ -189,8 +193,20 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
         self.show_step(6)
         cluster_id = self.fuel_web.get_last_created_cluster()
         # get_network_template will raise en exception if there is no template
-        self.fuel_web.client.get_network_template(cluster_id)
-        # TODO(vkhlyunev): ensure that the template wasn't changed
+        template = self.fuel_web.client.get_network_template(cluster_id)
+        if LooseVersion(settings.UPGRADE_FUEL_FROM) == LooseVersion("7.0"):
+            # replace network mapping from eth* schema to enp0s* schema for all
+            # deployed nodes
+            nic_map = template['adv_net_template']['default']['nic_mapping']
+            default_mapping = nic_map['default']
+            for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
+                template['adv_net_template']['default']['nic_mapping'][
+                    node['hostname']] = deepcopy(default_mapping)
+            new_template = get_network_template("upgrades")
+            template['adv_net_template']['default']['nic_mapping'][
+                'default'] = new_template['adv_net_template']['default'][
+                'nic_mapping']['default']
+            self.fuel_web.client.upload_network_template(cluster_id, template)
 
         self.show_step(7)
         self.fuel_web.verify_network(cluster_id)
@@ -222,6 +238,23 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
         self.show_step(2)
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.fuel_web.stop_reset_env_wait(cluster_id)
+
+        # After reset nodes will use new interface naming scheme which
+        # conflicts with nailgun data (it still contains eth-named
+        # interfaces and there is no way to fix it)
+        # LP : 1553210
+        if LooseVersion(settings.UPGRADE_FUEL_FROM) == LooseVersion(7.0):
+            template = self.fuel_web.client.get_network_template(cluster_id)
+            for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
+                del template['adv_net_template']['default']['nic_mapping'][
+                    node['hostname']]
+                self.fuel_web.delete_node(node['id'])
+            self.fuel_web.client.upload_network_template(cluster_id, template)
+            slaves = self.env.d_env.nodes().slaves[:7]
+            wait(lambda: all(self.env.nailgun_nodes(slaves)), timeout=10 * 60)
+            for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
+                wait(lambda: self.fuel_web.is_node_discovered(node),
+                     timeout=60)
 
         self.show_step(3)
         self.fuel_web.deploy_cluster_wait(cluster_id)
