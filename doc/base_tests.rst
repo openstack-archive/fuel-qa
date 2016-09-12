@@ -685,6 +685,9 @@ Test OpenStack Upgrades
 .. automodule:: fuelweb_test.tests.tests_upgrade.test_os_upgrade
    :members:
 
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_customizations_check
+   :members:
+
 Tests for separated services
 ============================
 
