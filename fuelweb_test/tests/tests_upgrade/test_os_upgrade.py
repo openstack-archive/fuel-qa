@@ -18,7 +18,11 @@ from proboscis import test
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.settings import UPGRADE_FUEL_FROM
+from fuelweb_test.settings import UPGRADE_FUEL_TO
 from fuelweb_test.tests.tests_upgrade.upgrade_base import OSUpgradeBase
+from fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_base import \
+    LooseVersion
 
 
 @test(groups=["os_upgrade"])
@@ -45,6 +49,9 @@ class TestOSupgrade(OSUpgradeBase):
         self.env.revert_snapshot("upgrade_ceph_ha_restore")
         self.install_octane()
 
+        if (LooseVersion(UPGRADE_FUEL_FROM) == LooseVersion("7.0") and
+                LooseVersion(UPGRADE_FUEL_TO) >= LooseVersion("9.0")):
+            self.prepare_liberty_mirror()
         release_id = self.upgrade_release(use_net_template=False)
 
         logger.info(
