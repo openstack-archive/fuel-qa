@@ -1210,10 +1210,9 @@ class TestHaFailoverBase(TestBasic):
         rabbit_master = self.fuel_web.get_rabbit_master_node(d_ctrls[0].name)
         rabbit_slaves = self.fuel_web.get_rabbit_slaves_node(d_ctrls[0].name)
 
-        def count_run_rabbit(node, all_up=False):
+        def count_run_rabbit(node):
             r_nodes = len(self.fuel_web.get_rabbit_running_nodes(node.name))
-            expected_up = len(n_ctrls) if all_up else 0
-            return r_nodes == expected_up
+            return r_nodes == len(n_ctrls)
 
         for n in xrange(1, 4):
             logger.info('Checking {} time'.format(n))
@@ -1227,9 +1226,9 @@ class TestHaFailoverBase(TestBasic):
             )
             logger.info('Command {} was executed on controller'.format(cmd))
 
-            logger.info('Check nodes left RabbitMQ cluster')
-            wait(lambda: count_run_rabbit(rabbit_master), timeout=180,
-                 timeout_msg='All nodes are staying in the cluster')
+            logger.info('Waiting 60 seconds to give Pacemaker time to kill '
+                        'some RabbitMQ nodes if it decides to do so')
+            time.sleep(60)
 
             logger.info('Check parameter was changed')
             for node in rabbit_slaves:
@@ -1244,13 +1243,12 @@ class TestHaFailoverBase(TestBasic):
                 assert_equal(out, 3 + n, 'Parameter was not changed')
 
             logger.info('Wait and check nodes back to the RabbitMQ cluster')
-            wait(lambda: count_run_rabbit(rabbit_master, all_up=True),
+            wait(lambda: count_run_rabbit(rabbit_master),
                  timeout=600, interval=120,
                  timeout_msg='RabbitMQ cluster was not assembled')
             for node in rabbit_slaves:
                 # pylint: disable=undefined-loop-variable
-                wait(lambda: count_run_rabbit(node, all_up=True), timeout=180,
-                     interval=10,
+                wait(lambda: count_run_rabbit(node), timeout=180, interval=10,
                      timeout_msg='Some nodes did not back to the cluster after'
                                  '10 minutes wait.')
                 # pylint: enable=undefined-loop-variable
