@@ -20,7 +20,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 
-from fuelweb_test import settings, logger
+from fuelweb_test import settings
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_base import \
@@ -340,17 +340,9 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.env.bootstrap_nodes(devops_nodes)
 
         self.show_step(3)
-        releases = self.fuel_web.client.get_releases()
-        release = [
-            release for release in releases if
-            release['is_deployable'] and
-            settings.OPENSTACK_RELEASE in release['name'].lower()].pop()
-        logger.info("Release {!r} (id {!r}) is fetched for deployment".format(
-            release['name'], release['id']))
         cluster_id = self.fuel_web.create_cluster(
             name=self.upgrade_smoke_new_deployment.__name__,
             mode=settings.DEPLOYMENT_MODE,
-            release_id=release['id'],
             settings={
                 'net_provider': settings.NEUTRON,
                 'net_segment_type': settings.NEUTRON_SEGMENT['vlan']
