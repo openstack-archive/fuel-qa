@@ -29,6 +29,7 @@ from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
 
 from fuelweb_test import logger
+from fuelweb_test.helpers.utils import YamlEditor
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import KEYSTONE_CREDS
 from fuelweb_test.settings import LOGS_DIR
@@ -62,6 +63,8 @@ class DataDrivenUpgradeBase(TestBasic):
         'repo-restore': 'octane -v --debug fuel-repo-restore --from {path}',
         'update-bootstrap-centos': 'octane -v --debug update-bootstrap-centos'
     }
+
+    FUEL_MIRROR_CFG_FILE = "/usr/share/fuel-mirror/ubuntu.yaml"
 
     def __init__(self):
         super(DataDrivenUpgradeBase, self).__init__()
@@ -455,3 +458,17 @@ class DataDrivenUpgradeBase(TestBasic):
         self.fuel_web.run_ostf(cluster_id, test_sets=test_sets,
                                should_fail=len(ignr_tests),
                                failed_test_name=ignr_tests, timeout=timeout)
+
+    def add_proposed_to_fuel_mirror_config(self):
+        with YamlEditor(self.FUEL_MIRROR_CFG_FILE,
+                        ip=self.env.get_admin_node_ip()) as editor:
+            proposed_desc = {
+                str("name"): "mos-proposed",
+                "uri": editor.content['mos_baseurl'],
+                "suite": "mos$mos_version-proposed",
+                "section": "main restricted",
+                "type": "deb",
+                "priority": 1050
+            }
+            editor.content["groups"]["mos"].append(proposed_desc)
+            editor.content["repos"].append(proposed_desc)
