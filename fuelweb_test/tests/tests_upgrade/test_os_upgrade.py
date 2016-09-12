@@ -18,7 +18,11 @@ from proboscis import test
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.settings import UPGRADE_FUEL_FROM
+from fuelweb_test.settings import UPGRADE_FUEL_TO
 from fuelweb_test.tests.tests_upgrade.upgrade_base import OSUpgradeBase
+from fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_base import \
+    LooseVersion
 
 
 @test(groups=["os_upgrade"])
