@@ -91,7 +91,7 @@ class MixedComponents(TestBasic):
         self.fuel_web.verify_network(cluster_id)
 
         self.show_step(8)
-        self.fuel_web.run_ostf(cluster_id, test_sets=['smoke', 'sanity', 'ha',
-                                                      'tests_platform'])
-
+        self.fuel_web.run_ostf(cluster_id, test_sets=['smoke', 'sanity', 'ha'])
+        self.fuel_web.run_ostf(cluster_id, test_sets=['tests_platform'],
+                               timeout=60 * 60)
         self.env.make_snapshot('mixed_components_murano_sahara_ceilometer')
