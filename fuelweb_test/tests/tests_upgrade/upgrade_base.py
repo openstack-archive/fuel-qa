@@ -96,6 +96,25 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
             raise RuntimeError('old_cluster_name is not set')
         return self.fuel_web.client.get_cluster_id(self.old_cluster_name)
 
+    def prepare_liberty_mirror(self):
+        """Create local mirror with Liberty packages"""
+
+        self.add_proposed_to_fuel_mirror_config()
+        cmds = [
+            "cp {cfg}{{,.backup}}".format(cfg=self.FUEL_MIRROR_CFG_FILE),
+            "sed -i 's/\$mos_version/8.0/g' {cfg}".format(
+                cfg=self.FUEL_MIRROR_CFG_FILE),
+            "sed -i 's/\$openstack_version/liberty-8.0/g' {cfg}".format(
+                cfg=self.FUEL_MIRROR_CFG_FILE),
+
+            "fuel-mirror create -P ubuntu -G mos",
+            "fuel-mirror apply --default -P ubuntu -G mos",
+            "mv {cfg}{{,.liberty.yaml}}".format(cfg=self.FUEL_MIRROR_CFG_FILE),
+            "mv {cfg}.backup {cfg}".format(cfg=self.FUEL_MIRROR_CFG_FILE)]
+        admin_remote = self.env.d_env.get_admin_remote()
+        for cmd in cmds:
+            admin_remote.check_call(cmd, verbose=True)
+
     def upgrade_release(self, use_net_template=False):
         self.show_step(self.next_step)
 
