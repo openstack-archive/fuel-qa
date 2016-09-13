@@ -3,3 +3,5 @@ az: vcenter
 host: !os_env VCENTER_IP, 172.16.0.254
 user: !os_env VCENTER_USERNAME, administrator@vsphere.local
 pwd: !os_env VCENTER_PASSWORD, Qwer!1234
+ca_bypass: !os_env VCENTER_CERT_BYPASS, True
+ca_file: !os_env VCENTER_CERT_URL, None
