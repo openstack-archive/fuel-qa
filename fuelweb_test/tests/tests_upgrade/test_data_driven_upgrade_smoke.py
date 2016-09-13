@@ -369,3 +369,39 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(8)
         self.check_ostf(cluster_id)
+
+    @test(depends_on_groups=["upgrade_smoke_scale"],
+          groups=["upgrade_smoke_tests", "upgrade_smoke_restart_node"])
+    @log_snapshot_after_test
+    def upgrade_smoke_restart_node(self):
+        """Reboot node
+
+        Scenario:
+        1. Revert "upgrade_smoke_scale" snapshot
+        2. Reboot node
+        3. Wait until OS and HA services are ready
+        4. Verify networks
+        5. Run OSTF
+
+        Snapshot: upgrade_smoke_restart_node
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot("upgrade_smoke_scale")
+
+        self.show_step(2)
+        cluster_id = self.fuel_web.get_last_created_cluster()
+        self.fuel_web.cold_restart_nodes(
+            self.env.d_env.get_nodes(name__in=['slave-01']))
+
+        self.show_step(3)
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+        self.fuel_web.assert_os_services_ready(cluster_id)
+        self.show_step(4)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(5)
+        self.check_ostf(cluster_id=cluster_id,
+                        test_sets=['smoke', 'sanity', 'ha'],
+                        ignore_known_issues=True)
+        self.env.make_snapshot("upgrade_smoke_restart_node", is_make=True)
