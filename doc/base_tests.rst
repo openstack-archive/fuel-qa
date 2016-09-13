@@ -681,6 +681,8 @@ Test OpenStack Upgrades
    :members:
 
 .. automodule:: fuelweb_test.tests.tests_upgrade.tests_install_mu.test_install_mu_base
+.. automodule:: fuelweb_test.tests.tests_upgrade.tests_install_mu.test_install_mu_no_ha
+.. automodule:: fuelweb_test.tests.tests_upgrade.tests_install_mu.test_install_mu_ironic
    :members:
 
 
