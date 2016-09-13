@@ -45,7 +45,7 @@ class MUInstallBase(test_cli_base.CommandLine):
         )
 
     def _prepare_for_update(self, cluster_id):
-        cmd = ["update-prepare prepare env {}".format(cluster_id)]
+        cmd = "update-prepare prepare env {}".format(cluster_id)
 
         self.ssh_manager.execute_on_remote(self.ssh_manager.admin_ip,
                                            cmd=cmd)
@@ -95,7 +95,7 @@ class MUInstallBase(test_cli_base.CommandLine):
         # "fuel2 update" command don't have json output
         assert_true(
             "fuel2 task show" in std_out,
-            "fuel2 update command don't return task id ".format(std_out))
+            "fuel2 update command don't return task id: \n {}".format(std_out))
 
         task_id = int(std_out.split("fuel2 task show")[1].split("`")[0])
         task = self.get_task(task_id)
