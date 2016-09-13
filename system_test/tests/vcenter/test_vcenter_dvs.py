@@ -181,7 +181,7 @@ class DeployWithCustomHostname(ActionTest, BaseActions, VMwareActions):
 
 @testcase(groups=['system_test',
                   'system_test.vcenter',
-                  'system_test.vcenter.check_nova_config'])
+                  'system_test.vcenter.check_vcenter_configs'])
 class CheckNovaConfig(ActionTest, BaseActions, VMwareActions):
     """Deploy cluster with vCenter and custom hostname.
 
@@ -212,6 +212,8 @@ class CheckNovaConfig(ActionTest, BaseActions, VMwareActions):
         'configure_vcenter',
         'deploy_cluster',
         'check_nova_conf',
+        'check_cinder_conf',
+        'check_glance_conf',
         'health_check_sanity_smoke_ha'
     ]
 
