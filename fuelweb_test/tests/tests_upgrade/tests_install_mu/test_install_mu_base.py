@@ -45,7 +45,7 @@ class MUInstallBase(test_cli_base.CommandLine):
         )
 
     def _prepare_for_update(self, cluster_id):
-        cmd = ["update-prepare prepare env {}".format(cluster_id)]
+        cmd = "update-prepare prepare env {}".format(cluster_id)
 
         self.ssh_manager.execute_on_remote(self.ssh_manager.admin_ip,
                                            cmd=cmd)
@@ -95,7 +95,7 @@ class MUInstallBase(test_cli_base.CommandLine):
         # "fuel2 update" command don't have json output
         assert_true(
             "fuel2 task show" in std_out,
-            "fuel2 update command don't return task id ".format(std_out))
+            "fuel2 update command don't return task id: \n {}".format(std_out))
 
         task_id = int(std_out.split("fuel2 task show")[1].split("`")[0])
         task = self.get_task(task_id)
@@ -154,7 +154,7 @@ class MUInstallBase(test_cli_base.CommandLine):
             u'name': u'test_proposed',
             u'section': u'main restricted',
             u'uri': u'http://mirror.fuel-infra.org/mos-repos/ubuntu/snapshots'
-                    u'/9.0-2016-09-08-104322/',
+                    u'/9.0-2016-09-13-084322/',
             u'priority': 1200,
             u'suite':
                 u'mos9.0-proposed',
@@ -169,10 +169,10 @@ class MUInstallBase(test_cli_base.CommandLine):
         # TODO agrechanichenko - remove_after_testing
         repo_url = "http://mirror.fuel-infra.org/mos-repos/" \
                    "centos/mos9.0-centos7/snapshots/" \
-                   "proposed-2016-09-07-082322/x86_64/"
+                   "proposed-2016-09-13-084322/x86_64/"
         key = "http://mirror.fuel-infra.org/mos-repos/" \
               "centos/mos9.0-centos7/snapshots/" \
-              "proposed-2016-09-07-082322/RPM-GPG-KEY-mos9.0"
+              "proposed-2016-09-13-084322/RPM-GPG-KEY-mos9.0"
 
         self._add_centos_test_proposed_repo(repo_url, key)
 
@@ -245,7 +245,7 @@ class MUInstallBase(test_cli_base.CommandLine):
             u'name': u'test_proposed',
             u'section': u'main restricted',
             u'uri': u'http://mirror.fuel-infra.org/mos-repos/ubuntu/snapshots'
-                    u'/9.0-2016-09-08-104322/',
+                    u'/9.0-2016-09-13-084322/',
             u'priority': 1200,
             u'suite':
                 u'mos9.0-proposed',
@@ -260,10 +260,10 @@ class MUInstallBase(test_cli_base.CommandLine):
         # TODO agrechanichenko - remove_after_testing
         repo_url = "http://mirror.fuel-infra.org/mos-repos/" \
                    "centos/mos9.0-centos7/snapshots/" \
-                   "proposed-2016-09-07-082322/x86_64/"
+                   "proposed-2016-09-13-084322/x86_64/"
         key = "http://mirror.fuel-infra.org/mos-repos/" \
               "centos/mos9.0-centos7/snapshots/" \
-              "proposed-2016-09-07-082322/RPM-GPG-KEY-mos9.0"
+              "proposed-2016-09-13-084322/RPM-GPG-KEY-mos9.0"
 
         self._add_centos_test_proposed_repo(repo_url, key)
 
@@ -337,7 +337,7 @@ class MUInstallBase(test_cli_base.CommandLine):
             u'name': u'test_proposed',
             u'section': u'main restricted',
             u'uri': u'http://mirror.fuel-infra.org/mos-repos/ubuntu/snapshots'
-                    u'/9.0-2016-09-08-104322/',
+                    u'/9.0-2016-09-13-084322/',
             u'priority': 1200,
             u'suite':
                 u'mos9.0-proposed',
@@ -352,10 +352,10 @@ class MUInstallBase(test_cli_base.CommandLine):
         # TODO agrechanichenko - remove_after_testing
         repo_url = "http://mirror.fuel-infra.org/mos-repos/" \
                    "centos/mos9.0-centos7/snapshots/" \
-                   "proposed-2016-09-07-082322/x86_64/"
+                   "proposed-2016-09-13-084322/x86_64/"
         key = "http://mirror.fuel-infra.org/mos-repos/" \
               "centos/mos9.0-centos7/snapshots/" \
-              "proposed-2016-09-07-082322/RPM-GPG-KEY-mos9.0"
+              "proposed-2016-09-13-084322/RPM-GPG-KEY-mos9.0"
 
         self._add_centos_test_proposed_repo(repo_url, key)
 
@@ -429,7 +429,7 @@ class MUInstallBase(test_cli_base.CommandLine):
             u'name': u'test_proposed',
             u'section': u'main restricted',
             u'uri': u'http://mirror.fuel-infra.org/mos-repos/ubuntu/snapshots'
-                    u'/9.0-2016-09-08-104322/',
+                    u'/9.0-2016-09-13-084322/',
             u'priority': 1200,
             u'suite':
                 u'mos9.0-proposed',
@@ -444,10 +444,10 @@ class MUInstallBase(test_cli_base.CommandLine):
         # TODO agrechanichenko - remove_after_testing
         repo_url = "http://mirror.fuel-infra.org/mos-repos/" \
                    "centos/mos9.0-centos7/snapshots/" \
-                   "proposed-2016-09-07-082322/x86_64/"
+                   "proposed-2016-09-13-084322/x86_64/"
         key = "http://mirror.fuel-infra.org/mos-repos/" \
               "centos/mos9.0-centos7/snapshots/" \
-              "proposed-2016-09-07-082322/RPM-GPG-KEY-mos9.0"
+              "proposed-2016-09-13-084322/RPM-GPG-KEY-mos9.0"
 
         self._add_centos_test_proposed_repo(repo_url, key)
 
@@ -521,7 +521,7 @@ class MUInstallBase(test_cli_base.CommandLine):
             u'name': u'test_proposed',
             u'section': u'main restricted',
             u'uri': u'http://mirror.fuel-infra.org/mos-repos/ubuntu/snapshots'
-                    u'/9.0-2016-09-08-104322/',
+                    u'/9.0-2016-09-13-084322/',
             u'priority': 1200,
             u'suite':
                 u'mos9.0-proposed',
@@ -536,10 +536,10 @@ class MUInstallBase(test_cli_base.CommandLine):
         # TODO agrechanichenko - remove_after_testing
         repo_url = "http://mirror.fuel-infra.org/mos-repos/" \
                    "centos/mos9.0-centos7/snapshots/" \
-                   "proposed-2016-09-07-082322/x86_64/"
+                   "proposed-2016-09-13-084322/x86_64/"
         key = "http://mirror.fuel-infra.org/mos-repos/" \
               "centos/mos9.0-centos7/snapshots/" \
-              "proposed-2016-09-07-082322/RPM-GPG-KEY-mos9.0"
+              "proposed-2016-09-13-084322/RPM-GPG-KEY-mos9.0"
 
         self._add_centos_test_proposed_repo(repo_url, key)
 

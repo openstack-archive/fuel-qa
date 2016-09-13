@@ -680,6 +680,12 @@ Test OpenStack Upgrades
 .. automodule:: fuelweb_test.tests.tests_upgrade.test_os_upgrade
    :members:
 
+.. automodule:: fuelweb_test.tests.tests_upgrade.tests_install_mu.test_install_mu_base
+.. automodule:: fuelweb_test/tests/tests_upgrade/tests_install_mu/test_install_mu_ironic.py
+.. automodule:: fuelweb_test/tests/tests_upgrade/tests_install_mu/test_install_mu_no_ha.py
+   :members:
+
+
 Tests for separated services
 ============================
 
