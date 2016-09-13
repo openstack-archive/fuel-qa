@@ -41,6 +41,7 @@ def fuel_master_migration(request):
 @pytest.mark.get_logs
 @pytest.mark.fail_snapshot
 @pytest.mark.thread_1
+@pytest.mark.fuel_master_migrate
 class TestFuelMasterMigrate(object):
 
     compute = None
@@ -55,6 +56,22 @@ class TestFuelMasterMigrate(object):
             'slave-05': ['compute'],
         }
     }
+
+    @pytest.mark.need_ready_cluster
+    @pytest.mark.usefixtures("fuel_master_migration")
+    @pytest.mark.test_fuel_master_migrate
+    def test_fuel_master_migrate(self):
+        """Fuel master migration to VM
+
+        Scenario:
+            1. Create environment with two computes and three controllers
+            2. Run network checker
+            3. Deploy environment
+            4. Run network checker
+            5. Migrate Fuel Master to the compute node
+            6. Run network checker
+            7. Run OSTF
+        """
 
     @pytest.mark.need_ready_cluster
     @pytest.mark.usefixtures("fuel_master_migration")
