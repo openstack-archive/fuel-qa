@@ -158,8 +158,8 @@ class MUInstallBase(test_cli_base.CommandLine):
                 "There potential updates "
                 "after installing MU:/n{}".format(pretty_log(std_out)))
 
-    def _install_mu(self, cluster_id, repos=None):
-        if repos:
+    def _install_mu(self, cluster_id, repos='proposed'):
+        if settings.UPGRADE_CLUSTER_FROM_PROPOSED:
             cmd = "fuel2 update install --env {} --repos {} " \
                   "--restart-rabbit --restart-mysql".format(cluster_id,
                                                             repos)
