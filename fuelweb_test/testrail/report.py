@@ -216,6 +216,11 @@ def expand_test_group(group, systest_build_name, os):
 
         if systest_group_name:
             group = '_'.join([group, systest_group_name])
+    elif TestRailSettings.extra_factor_of_tc_definition:
+        group = '{}_{}'.format(
+            group,
+            TestRailSettings.extra_factor_of_tc_definition
+        )
     return group
 
 
