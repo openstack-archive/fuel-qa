@@ -243,7 +243,7 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
         # conflicts with nailgun data (it still contains eth-named
         # interfaces and there is no way to fix it)
         # LP : 1553210
-        if LooseVersion(settings.UPGRADE_FUEL_FROM) == LooseVersion(7.0):
+        if LooseVersion(settings.UPGRADE_FUEL_FROM) == LooseVersion("7.0"):
             template = self.fuel_web.client.get_network_template(cluster_id)
             for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
                 del template['adv_net_template']['default']['nic_mapping'][
