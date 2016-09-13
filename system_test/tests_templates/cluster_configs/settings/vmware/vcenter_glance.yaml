@@ -5,3 +5,5 @@ user: !os_env VCENTER_GLANCE_USERNAME, administrator@vsphere.local
 pwd: !os_env VCENTER_GLANCE_PASSWORD, Qwer!1234
 datacenter: !os_env VCENTER_DATACENTER, Datacenter
 datastore: !os_env VCENTER_DATASTORE, nfs
+ca_bypass: !os_env VCENTER_GLANCE_CERT_BYPASS, True
+ca_file: !os_env VCENTER_GLANCE_CERT_URL, None
