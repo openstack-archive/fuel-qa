@@ -73,7 +73,9 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
             'images_ceph': True,
             'objects_ceph': True,
             'ephemeral_ceph': True,
-            'osd_pool_size': '3'
+            'osd_pool_size': '3',
+            'ntp_list': self.env.get_admin_node_ip(),
+            'dns_list': self.env.get_admin_node_ip()
         }
         cluster_settings.update(self.cluster_creds)
 
