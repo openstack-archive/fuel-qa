@@ -669,6 +669,17 @@ Test Data-Driven Upgrade
 .. automodule:: fuelweb_test.tests.tests_upgrade.upgrader_tool
    :members:
 
+MU installing tests
+===================
+
+Test install MU on cluster
+--------------------------
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_install_mu.test_install_mu_base
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_install_mu.test_install_mu_ironic
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_install_mu.test_install_mu_murano
+.. automodule:: fuelweb_test.tests.tests_upgrade.test_install_mu.test_install_mu_no_ha
+   :members:
+
 OS upgrade tests
 ================
 

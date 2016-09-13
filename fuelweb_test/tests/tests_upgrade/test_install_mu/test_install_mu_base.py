@@ -45,7 +45,7 @@ class MUInstallBase(test_cli_base.CommandLine):
         )
 
     def _prepare_for_update(self, cluster_id):
-        cmd = ["update-prepare prepare env {}".format(cluster_id)]
+        cmd = "update-prepare prepare env {}".format(cluster_id)
 
         self.ssh_manager.execute_on_remote(self.ssh_manager.admin_ip,
                                            cmd=cmd)
