@@ -22,6 +22,7 @@ from proboscis import SkipTest
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
+import requests
 
 from fuelweb_test.helpers.os_actions import OpenStackActions
 from fuelweb_test.helpers.ssh_manager import SSHManager
@@ -87,25 +88,29 @@ class VMwareActions(object):
             enabled=True)
 
     @staticmethod
-    def config_attr_vcenter(vmware_attr, vc_user, vc_host, vc_az, vc_pwd):
+    def config_attr_vcenter(vmware_attr, vc_user, vc_host, vc_az, vc_pwd,
+                            ca_bypass, ca_file):
         """Update and return the dictionary with vCenter attributes."""
         logger.info('Configuring vCenter...')
 
-        vc_values = vmware_attr['editable']['value']
-        computes = vc_values['availability_zones'][0]['nova_computes'][:]
-        vcenter_value = {
-            "availability_zones": [{
-                "vcenter_username": vc_user,
-                "nova_computes": computes,
-                "vcenter_host": vc_host,
-                "az_name": vc_az,
-                "vcenter_password": vc_pwd
-            }]
+        vc_values = vmware_attr['editable']['value']['availability_zones'][0]
+        computes = vc_values['nova_computes'][:]
+
+        az_params = {
+            "vcenter_username": vc_user,
+            "nova_computes": computes,
+            "vcenter_host": vc_host,
+            "az_name": vc_az,
+            "vcenter_password": vc_pwd,
+            "vcenter_insecure": ca_bypass,
+            "vcenter_ca_file": ca_file
         }
-        vmware_attr['editable']['value'].update(vcenter_value)
+
+        vc_values.update(az_params)
         return vmware_attr
 
-    def config_attr_glance(self, vmware_attr, host, user, pwd, dc, ds):
+    def config_attr_glance(self, vmware_attr, host, user, pwd, dc, ds,
+                           ca_bypass, ca_file):
         """Update and return the dictionary with Glance attributes."""
         cluster_attr = self.fuel_web.client.get_cluster_attributes(
             self.cluster_id)
@@ -119,7 +124,9 @@ class VMwareActions(object):
                 "vcenter_username": user,
                 "vcenter_password": pwd,
                 "datacenter": dc,
-                "datastore": ds
+                "datastore": ds,
+                "vcenter_insecure": ca_bypass,
+                "ca_file": ca_file
             }
         }
 
@@ -178,20 +185,37 @@ class VMwareActions(object):
             self.cluster_id)
 
         settings = vmware_vcenter['settings']
+        cert_data = {}
+        if not settings['ca_bypass']:
+            file_url = settings['ca_file']
+            r = requests.get(file_url)
+            cert_data["content"] = r.text
+            cert_data["name"] = file_url.split('/')[-1]
         vmware_attr = self.config_attr_vcenter(vmware_attr=vmware_attr,
                                                vc_user=settings['user'],
                                                vc_host=settings['host'],
                                                vc_az=settings['az'],
-                                               vc_pwd=settings['pwd'])
+                                               vc_pwd=settings['pwd'],
+                                               ca_bypass=settings['ca_bypass'],
+                                               ca_file=cert_data)
 
         glance = vmware_vcenter['glance']
         if glance['enable']:
-            vmware_attr = self.config_attr_glance(vmware_attr=vmware_attr,
-                                                  host=glance['host'],
-                                                  user=glance['user'],
-                                                  pwd=glance['pwd'],
-                                                  dc=glance['datacenter'],
-                                                  ds=glance['datastore'])
+            cert_data = {}
+            if not glance['ca_bypass']:
+                file_url = glance['ca_file']
+                r = requests.get(file_url)
+                cert_data["content"] = r.text
+                cert_data["name"] = file_url.split('/')[-1]
+            vmware_attr = \
+                self.config_attr_glance(vmware_attr=vmware_attr,
+                                        host=glance['host'],
+                                        user=glance['user'],
+                                        pwd=glance['pwd'],
+                                        dc=glance['datacenter'],
+                                        ds=glance['datastore'],
+                                        ca_bypass=glance['ca_bypass'],
+                                        ca_file=cert_data)
 
         vmware_attr = self.config_attr_computes(
             vmware_attr=vmware_attr, clusters=vmware_vcenter['nova-compute'])
@@ -211,7 +235,9 @@ class VMwareActions(object):
                                                vc_user='user',
                                                vc_host='8.8.8.8',
                                                vc_az='az',
-                                               vc_pwd='pwd')
+                                               vc_pwd='pwd',
+                                               ca_bypass=False,
+                                               ca_file='')
 
         glance = vmware_vcenter['glance']
         if glance['enable']:
@@ -220,7 +246,9 @@ class VMwareActions(object):
                                                   user='user',
                                                   pwd='pwd',
                                                   dc='dc',
-                                                  ds='!@#$%^&*()')
+                                                  ds='!@#$%^&*()',
+                                                  ca_bypass=False,
+                                                  ca_file='')
 
         clusters = [{
             'cluster': 'Cluster1!',
@@ -265,7 +293,8 @@ class VMwareActions(object):
             'datastore_regex': nova['datastore_regex'],
             'host_username': az['vcenter_username'],
             'host_password': az['vcenter_password'],
-            'host_ip': az['vcenter_host']
+            'host_ip': az['vcenter_host'],
+            'insecure': az['vcenter_insecure']
         }
         return conf_dict
 
@@ -284,32 +313,119 @@ class VMwareActions(object):
             self.cluster_id, ["controller"])
         for nova in nova_computes:
             target_node = nova['target_node']['current']['id']
+            conf_dict = self.get_nova_conf_dict(az, nova)
             if target_node == 'controllers':
                 conf_path = '/etc/nova/nova-compute.d/vmware-vcenter_{0}.' \
                             'conf'.format(nova['service_name'])
                 for node in ctrl_nodes:
-                    hostname = node['hostname']
-                    ip = node['ip']
-                    conf_dict = self.get_nova_conf_dict(az, nova)
-                    params = (hostname, ip, conf_path, conf_dict)
+                    params = (node['hostname'], node['ip'], conf_path,
+                              conf_dict)
                     data.append(params)
             else:
                 conf_path = '/etc/nova/nova-compute.conf'
                 for node in nodes:
                     if node['hostname'] == target_node:
-                        hostname = node['hostname']
-                        ip = node['ip']
-                        conf_dict = self.get_nova_conf_dict(az, nova)
-                        params = (hostname, ip, conf_path, conf_dict)
+                        params = (node['hostname'], node['ip'], conf_path,
+                                  conf_dict)
                         data.append(params)
 
         for hostname, ip, conf_path, conf_dict in data:
             logger.info("Check nova conf of {0}".format(hostname))
-            for key in conf_dict.keys():
-                cmd = 'cat {0} | grep {1}={2}'.format(conf_path, key,
-                                                      conf_dict[key])
-                logger.debug('CMD: {}'.format(cmd))
-                SSHManager().execute_on_remote(ip, cmd)
+            self.check_config(ip, conf_path, conf_dict)
+
+    @staticmethod
+    def get_cinder_conf_dict(settings):
+        """Return cinder-vmware conf_dict.
+
+        :param settings:  vcenter settings (api), dict
+        :return: dict
+        """
+        conf_dict = {
+            'vmware_host_ip': settings['vcenter_host'],
+            'vmware_host_username': settings['vcenter_username'],
+            'vmware_host_password': settings['vcenter_password'],
+            'vmware_insecure': settings['vcenter_insecure']
+        }
+        return conf_dict
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def check_cinder_conf(self):
+        """Verify cinder-vmware configuration."""
+
+        vmware_attr = self.fuel_web.client.get_cluster_vmware_attributes(
+            self.cluster_id)
+        az = vmware_attr['editable']['value']['availability_zones'][0]
+
+        nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            self.cluster_id, ["cinder-vmware"])
+        if not nodes:
+            raise SkipTest()
+
+        conf_path = '/etc/cinder/cinder.d/vmware-vcenter.conf'
+        conf_dict = self.get_cinder_conf_dict(az)
+        data = [(n['hostname'], n['ip']) for n in nodes]
+
+        for hostname, ip in data:
+            logger.info("Check cinder conf of {0}".format(hostname))
+            self.check_config(ip, conf_path, conf_dict)
+
+    @staticmethod
+    def get_glance_conf_dict(settings):
+        """Return vmware glance backend conf_dict.
+
+        :param settings:  glance settings (api), dict
+        :return: dict
+        """
+        datastore = "{0}:{1}".format(settings['datacenter'],
+                                     settings['datastore'])
+        conf_dict = {
+            'vmware_server_host': settings['vcenter_host'],
+            'vmware_server_username': settings['vcenter_username'],
+            'vmware_server_password': settings['vcenter_password'],
+            'vmware_datastores': datastore,
+            'vmware_insecure': settings['vcenter_insecure']
+        }
+        return conf_dict
+
+    @deferred_decorator([make_snapshot_if_step_fail])
+    @action
+    def check_glance_conf(self):
+        """Verify vmware glance backend configuration."""
+
+        cluster_attr = self.fuel_web.client.get_cluster_attributes(
+            self.cluster_id)
+        if not cluster_attr['editable']['storage']['images_vcenter']['value']:
+            raise SkipTest()
+
+        vmware_attr = self.fuel_web.client.get_cluster_vmware_attributes(
+            self.cluster_id)
+        glance_settings = vmware_attr['editable']['value']['glance']
+
+        ctrl_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            self.cluster_id, ["controller"])
+
+        conf_path = '/etc/glance/glance-api.conf'
+        conf_dict = self.get_glance_conf_dict(glance_settings)
+        data = [(n['hostname'], n['ip']) for n in ctrl_nodes]
+
+        for hostname, ip in data:
+            logger.info("Check glance conf of {0}".format(hostname))
+            self.check_config(ip, conf_path, conf_dict)
+
+    @staticmethod
+    def check_config(host, path, settings):
+        """Return vmware glance backend conf_dict.
+
+        :param host:     host url or ip, string
+        :param path:     config path, string
+        :param settings: settings, dict
+        """
+        for key in settings.keys():
+            cmd = 'grep {1} {0} | grep -i "{2}"'.format(path, key,
+                                                        settings[key])
+            logger.debug('CMD: {}'.format(cmd))
+            SSHManager().check_call(host, cmd)
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
