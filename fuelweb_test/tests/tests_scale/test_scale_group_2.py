@@ -116,8 +116,7 @@ class HaScaleGroup2(TestBasic):
             5. Deploy changes
             6. Run OSTF
             7. Verify networks
-            8. Check /etc/hosts that removed nodes aren't present
-            9. Check corosync.conf that removed nodes aren't present
+            8. Check corosync.conf that removed nodes aren't present
 
         Duration 120m
         Snapshot remove_controllers
@@ -168,10 +167,6 @@ class HaScaleGroup2(TestBasic):
             self.env.d_env.get_node(name='slave-01'))
         self.show_step(8)
         for host in hosts:
-            result = self.ssh_manager.execute_on_remote(
-                ip=node['ip'], cmd="grep '{}' /etc/hosts".format(host))
-            assert_equal(result['exit_code'], 1,
-                         "host {} is present in /etc/hosts".format(host))
             result = self.ssh_manager.execute_on_remote(
                 ip=node['ip'], cmd="grep '{}' /etc/corosync/"
                                    "corosync.conf".format(host))
