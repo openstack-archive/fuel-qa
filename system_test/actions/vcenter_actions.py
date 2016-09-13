@@ -13,6 +13,7 @@
 #    under the License.
 
 import itertools
+import requests
 from random import randrange
 from time import sleep
 
@@ -22,6 +23,7 @@ from proboscis import SkipTest
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
+from StringIO import StringIO
 
 from fuelweb_test.helpers.os_actions import OpenStackActions
 from fuelweb_test.helpers.ssh_manager import SSHManager
@@ -87,7 +89,8 @@ class VMwareActions(object):
             enabled=True)
 
     @staticmethod
-    def config_attr_vcenter(vmware_attr, vc_user, vc_host, vc_az, vc_pwd):
+    def config_attr_vcenter(vmware_attr, vc_user, vc_host, vc_az, vc_pwd,
+                            ca_bypass, ca_file):
         """Update and return the dictionary with vCenter attributes."""
         logger.info('Configuring vCenter...')
 
@@ -99,13 +102,16 @@ class VMwareActions(object):
                 "nova_computes": computes,
                 "vcenter_host": vc_host,
                 "az_name": vc_az,
-                "vcenter_password": vc_pwd
+                "vcenter_password": vc_pwd,
+                "vcenter_insecure": ca_bypass,
+                "vc_ca_file": ca_file
             }]
         }
         vmware_attr['editable']['value'].update(vcenter_value)
         return vmware_attr
 
-    def config_attr_glance(self, vmware_attr, host, user, pwd, dc, ds):
+    def config_attr_glance(self, vmware_attr, host, user, pwd, dc, ds,
+                           ca_bypass, ca_file):
         """Update and return the dictionary with Glance attributes."""
         cluster_attr = self.fuel_web.client.get_cluster_attributes(
             self.cluster_id)
@@ -119,7 +125,9 @@ class VMwareActions(object):
                 "vcenter_username": user,
                 "vcenter_password": pwd,
                 "datacenter": dc,
-                "datastore": ds
+                "datastore": ds,
+                "vcenter_insecure": ca_bypass,
+                "ca_file": ca_file
             }
         }
 
@@ -178,20 +186,39 @@ class VMwareActions(object):
             self.cluster_id)
 
         settings = vmware_vcenter['settings']
+        cert_data = {}
+        if not settings['ca_bypass']:
+            file_url = settings['ca_file']
+            r = requests.get(file_url)
+            f = StringIO(r.content)
+            cert_data["content"] = f.read()
+            cert_data["name"] = file_url.split('/')[-1]
         vmware_attr = self.config_attr_vcenter(vmware_attr=vmware_attr,
                                                vc_user=settings['user'],
                                                vc_host=settings['host'],
                                                vc_az=settings['az'],
-                                               vc_pwd=settings['pwd'])
+                                               vc_pwd=settings['pwd'],
+                                               ca_bypass=settings['ca_bypass'],
+                                               ca_file=cert_data)
 
         glance = vmware_vcenter['glance']
         if glance['enable']:
-            vmware_attr = self.config_attr_glance(vmware_attr=vmware_attr,
-                                                  host=glance['host'],
-                                                  user=glance['user'],
-                                                  pwd=glance['pwd'],
-                                                  dc=glance['datacenter'],
-                                                  ds=glance['datastore'])
+            cert_data = {}
+            if not glance['ca_bypass']:
+                file_url = glance['ca_file']
+                r = requests.get(file_url)
+                f = StringIO(r.content)
+                cert_data["content"] = f.read()
+                cert_data["name"] = file_url.split('/')[-1]
+            vmware_attr = \
+                self.config_attr_glance(vmware_attr=vmware_attr,
+                                        host=glance['host'],
+                                        user=glance['user'],
+                                        pwd=glance['pwd'],
+                                        dc=glance['datacenter'],
+                                        ds=glance['datastore'],
+                                        ca_bypass=glance['ca_bypass'],
+                                        ca_file=cert_data)
 
         vmware_attr = self.config_attr_computes(
             vmware_attr=vmware_attr, clusters=vmware_vcenter['nova-compute'])
