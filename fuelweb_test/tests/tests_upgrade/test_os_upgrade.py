@@ -183,6 +183,9 @@ class TestOSupgrade(OSUpgradeBase):
 
         self.upgrade_control_plane_code(seed_cluster_id)
 
+        # sync time can prevents ceph issues
+        self.env.sync_time()
+
         self.pre_upgrade_computes(orig_cluster_id=self.orig_cluster_id)
 
         # upgrade controllers part
