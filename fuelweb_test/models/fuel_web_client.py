@@ -859,7 +859,9 @@ class FuelWebClient(object):
         logger.info('Get ID of a last created cluster')
         clusters = self.client.list_clusters()
         if len(clusters) > 0:
-            return clusters.pop()['id']
+            return sorted(
+                clusters, key=lambda cluster: cluster[id]
+            ).pop()['id']
         return None
 
     @logwrap
