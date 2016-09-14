@@ -1388,6 +1388,7 @@ def incomplete_tasks(tasks, cluster_id=None):
     return not_ready_tasks, deploy_tasks
 
 
+@logwrap
 def incomplete_deploy(deployment_tasks):
     allowed_statuses = {'ready', 'skipped'}
     not_ready_deploy = {}
@@ -1406,6 +1407,7 @@ def incomplete_deploy(deployment_tasks):
     return not_ready_deploy
 
 
+@logwrap
 def fail_deploy(not_ready_transactions):
     if len(not_ready_transactions) > 0:
         cluster_info_template = "\n\tCluster ID: {cluster}{info}\n"
