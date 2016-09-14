@@ -43,6 +43,11 @@ class TestOSupgrade(OSUpgradeBase):
         self.check_release_requirements()
         self.check_run('os_upgrade_env')
         self.env.revert_snapshot("upgrade_ceph_ha_restore")
+
+        # some paranoid time sync sequence
+        self.env.sync_time(["admin"])
+        self.env.sync_time()
+
         self.install_octane()
 
         release_id = self.upgrade_release(use_net_template=False)
@@ -63,7 +68,7 @@ class TestOSupgrade(OSUpgradeBase):
 
         self.upgrade_env_code(release_id=release_id)
 
-        self.env.make_snapshot("os_upgrade_env", is_make=True)
+        self.env.make_snapshot("os_upgrade_env")
 
     @test(depends_on=[os_upgrade_env], groups=["upgrade_first_cic"])
     @log_snapshot_after_test
@@ -91,7 +96,7 @@ class TestOSupgrade(OSUpgradeBase):
 
         self.upgrade_first_controller_code(seed_cluster_id)
 
-        self.env.make_snapshot("upgrade_first_cic", is_make=True)
+        self.env.make_snapshot("upgrade_first_cic")
 
     @test(depends_on=[upgrade_first_cic],
           groups=["upgrade_db"])
@@ -120,7 +125,7 @@ class TestOSupgrade(OSUpgradeBase):
 
         self.upgrade_db_code(seed_cluster_id)
 
-        self.env.make_snapshot("upgrade_db", is_make=True)
+        self.env.make_snapshot("upgrade_db")
 
     @test(depends_on=[upgrade_db],
           groups=["upgrade_ceph"])
@@ -147,7 +152,7 @@ class TestOSupgrade(OSUpgradeBase):
 
         self.upgrade_ceph_code(seed_cluster_id)
 
-        self.env.make_snapshot("upgrade_ceph", is_make=True)
+        self.env.make_snapshot("upgrade_ceph")
 
     @test(depends_on=[upgrade_ceph],
           groups=["upgrade_controllers"])
@@ -189,7 +194,7 @@ class TestOSupgrade(OSUpgradeBase):
 
         self.upgrade_controllers_code(seed_cluster_id)
 
-        self.env.make_snapshot("upgrade_controllers", is_make=True)
+        self.env.make_snapshot("upgrade_controllers")
 
     @test(depends_on=[upgrade_controllers], groups=["upgrade_ceph_osd"])
     @log_snapshot_after_test
@@ -217,7 +222,7 @@ class TestOSupgrade(OSUpgradeBase):
 
         self.upgrade_ceph_osd_code(seed_cluster_id)
 
-        self.env.make_snapshot("upgrade_ceph_osd", is_make=True)
+        self.env.make_snapshot("upgrade_ceph_osd")
 
     @test(depends_on=[upgrade_ceph_osd],
           groups=["upgrade_old_nodes"])
@@ -257,7 +262,7 @@ class TestOSupgrade(OSUpgradeBase):
 
         self.minimal_check(seed_cluster_id=seed_cluster_id, nwk_check=True)
 
-        self.env.make_snapshot("upgrade_old_nodes", is_make=True)
+        self.env.make_snapshot("upgrade_old_nodes")
 
     @test(depends_on=[upgrade_old_nodes],
           groups=['cleanup_no_live', 'upgrade_cloud_no_live_migration'])
@@ -333,7 +338,7 @@ class TestOSupgrade(OSUpgradeBase):
 
         self.minimal_check(seed_cluster_id=seed_cluster_id, nwk_check=True)
 
-        self.env.make_snapshot("upgrade_nodes_live_migration", is_make=True)
+        self.env.make_snapshot("upgrade_nodes_live_migration")
 
     @test(depends_on=[upgrade_nodes_live_migration],
           groups=['cleanup_live', 'upgrade_cloud_live_migration'])
