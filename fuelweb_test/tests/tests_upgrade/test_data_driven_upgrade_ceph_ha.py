@@ -24,6 +24,8 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_base import \
     DataDrivenUpgradeBase
+from fuelweb_test.tests.tests_upgrade.test_data_driven_upgrade_base import \
+    LooseVersion
 
 
 @test
@@ -65,6 +67,9 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         self.check_run(self.source_snapshot_name)
         self.env.revert_snapshot("ready", skip_timesync=True)
 
+        admin_ip = self.env.get_admin_node_ip()
+        ntp_arg = admin_ip if self.fuel_version <= LooseVersion("7.0") else \
+            [admin_ip]
         cluster_settings = {
             'net_provider': settings.NEUTRON,
             'net_segment_type': settings.NEUTRON_SEGMENT['vlan'],
@@ -74,8 +79,8 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
             'objects_ceph': True,
             'ephemeral_ceph': True,
             'osd_pool_size': '3',
-            'ntp_list': self.env.get_admin_node_ip(),
-            'dns_list': self.env.get_admin_node_ip()
+            'ntp_list': ntp_arg,
+            'dns_list': ntp_arg
         }
         cluster_settings.update(self.cluster_creds)
 
