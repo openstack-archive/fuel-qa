@@ -455,8 +455,8 @@ class FuelWebClient29(object):
     def get_pcm_nodes(self, ctrl_node, pure=False):
         nodes = {}
         with self.get_ssh_for_node(ctrl_node) as remote:
-            pcs_status = remote.execute('pcs status nodes')['stdout']
-        pcm_nodes = yaml.load(''.join(pcs_status).strip())
+            pcm_nodes = remote.execute('pcs status nodes').stdout_yaml
+
         for status in ('Online', 'Offline', 'Standby'):
             list_nodes = (pcm_nodes['Pacemaker Nodes'][status] or '').split()
             if not pure:
@@ -2677,8 +2677,8 @@ class FuelWebClient29(object):
     def get_nailgun_primary_node(self, slave, role='primary-controller'):
         # returns controller or mongo that is primary in nailgun
         with self.get_ssh_for_node(slave.name) as remote:
-            data = yaml.load(''.join(
-                remote.execute('cat /etc/astute.yaml')['stdout']))
+            with remote.open('/etc/astute.yaml') as f:
+                data = yaml.safe_load(f)
         nodes = data['network_metadata']['nodes']
         node_name = [node['fqdn'] for node in nodes.values()
                      if role in node['node_roles']][0]
