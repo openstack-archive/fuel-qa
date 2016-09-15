@@ -30,6 +30,7 @@ from fuelweb_test.helpers.checkers import fail_deploy
 from fuelweb_test.helpers.checkers import incomplete_deploy
 from fuelweb_test.helpers.checkers import incomplete_tasks
 from fuelweb_test.helpers.ssl_helpers import change_cluster_ssl_config
+from fuelweb_test.helpers import utils
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
 from fuelweb_test.helpers.utils import hiera_json_out
@@ -81,25 +82,24 @@ class CommandLine(TestBasic):
     @logwrap
     def get_networks(self, cluster_id):
         net_file = self.get_network_filename(cluster_id)
-        out = self.ssh_manager.execute_on_remote(
-            ip=self.ssh_manager.admin_ip,
-            cmd='cat {0}'.format(net_file),
-            jsonify=True
-        )['stdout_json']
-        return out
+        with self.ssh_manager.open_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                path=net_file
+        ) as f:
+            return json.load(f)
 
     @logwrap
     def update_network(self, cluster_id, net_config):
         net_file = self.get_network_filename(cluster_id)
-        data = json.dumps(net_config)
-        cmd = 'echo {data} > {net_file}'.format(data=json.dumps(data),
-                                                net_file=net_file)
-        self.ssh_manager.execute_on_remote(
-            ip=self.ssh_manager.admin_ip,
-            cmd=cmd
-        )
-        cmd = ('cd /tmp; fuel --env {0} network --upload --json'
-               .format(cluster_id))
+        with self.ssh_manager.open_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                path=net_file,
+                mode='w'
+        ) as f:
+            json.dump(net_config, f)
+
+        cmd = 'cd /tmp; fuel --env {0} network --upload --json'.format(
+            cluster_id)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd
@@ -270,24 +270,22 @@ class CommandLine(TestBasic):
             ip=self.ssh_manager.admin_ip,
             cmd=cmd
         )
-        out = self.ssh_manager.execute_on_remote(
-            ip=self.ssh_manager.admin_ip,
-            cmd='cd /tmp && cat settings_{0}.json'.format(cluster_id),
-            jsonify=True
-        )['stdout_json']
-        return out
+        with self.ssh_manager.open_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                path='/tmp/settings_{0}.json'.format(cluster_id)
+        ) as f:
+            return json.load(f)
 
     def upload_settings(self, cluster_id, settings):
-        data = json.dumps(settings)
-        cmd = 'cd /tmp && echo {data} > settings_{id}.json'.format(
-            data=json.dumps(data),
-            id=cluster_id)
-        self.ssh_manager.execute_on_remote(
-            ip=self.ssh_manager.admin_ip,
-            cmd=cmd
-        )
-        cmd = ('fuel --env {0} settings --upload --dir /tmp --json'.format(
-            cluster_id))
+        with self.ssh_manager.open_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                path='/tmp/settings_{id}.json'.format(id=cluster_id),
+                mode='w'
+        ) as f:
+            json.dump(settings, f)
+
+        cmd = 'fuel --env {0} settings --upload --dir /tmp --json'.format(
+            cluster_id)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd
@@ -402,22 +400,24 @@ class CommandLine(TestBasic):
             ip=self.ssh_manager.admin_ip,
             cmd=cmd
         )
-        out = self.ssh_manager.execute_on_remote(
-            ip=self.ssh_manager.admin_ip,
-            cmd='cd /tmp && cat node_{}/interfaces.json'.format(node_id),
-            jsonify=True
-        )['stdout_json']
-        return out
+        with self.ssh_manager.open_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                path='/tmp/node_{}/interfaces.json'.format(node_id)
+        ) as f:
+            return json.load(f)
 
     def upload_node_interfaces(self, node_id, interfaces):
-        data = json.dumps(interfaces)
-        cmd = 'cd /tmp && echo {data} > node_{id}/interfaces.json'.format(
-            data=json.dumps(data),
-            id=node_id)
-        self.ssh_manager.execute_on_remote(
+        self.ssh_manager.mkdir_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd=cmd
+            path='/tmp/node_{id}'.format(id=node_id)
         )
+        with self.ssh_manager.open_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                path='/tmp/node_{id}/interfaces.json'.format(id=node_id),
+                mode='w'
+        ) as f:
+            json.dump(interfaces, f)
+
         cmd = ('fuel node --node-id {} --network --upload --dir /tmp'
                ' --json'.format(node_id))
         self.ssh_manager.execute_on_remote(
@@ -457,44 +457,38 @@ class CommandLine(TestBasic):
             task_id = all_deployment_tasks[0]['id']
 
         cmd = 'fuel2 task network-configuration download {0}'.format(task_id)
-        out = self.ssh_manager.execute_on_remote(
+        settings_download = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd
-        )['stdout']
-        settings_download = ''.join(out)
+        )['stdout_str']
         settings_file = settings_download.split()[-1]
-        out = self.ssh_manager.execute_on_remote(
-            ip=self.ssh_manager.admin_ip,
-            cmd='cat {0}'.format(settings_file),
-            yamlify=True)['stdout_yaml']
-        return out
+        return utils.YamlEditor(
+            file_path=settings_file,
+            ip=self.ssh_manager.admin_ip
+        ).get_content()
 
     @logwrap
     def get_cluster_config_cli(self, task_id):
         cmd = 'fuel2 task settings download {0}'.format(task_id)
-        out = self.ssh_manager.execute_on_remote(
+        settings_download = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd
-        )['stdout']
-        settings_download = ''.join(out)
+        )['stdout_str']
         settings_file = settings_download.split()[-1]
-        out = self.ssh_manager.execute_on_remote(
+        return utils.YamlEditor(
+            file_path=settings_file,
             ip=self.ssh_manager.admin_ip,
-            cmd='cat {0}'.format(settings_file),
-            yamlify=True)['stdout_yaml']
-        return out
+        ).get_content()
 
     @logwrap
     def get_deployment_info_cli(self, task_id):
         cmd = 'fuel2 task deployment-info download {0}'.format(task_id)
-        out = self.ssh_manager.execute_on_remote(
+        settings_download = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd
-        )['stdout']
-        settings_download = ''.join(out)
+        )['stdout_str']
         settings_file = settings_download.split()[-1]
-        out = self.ssh_manager.execute_on_remote(
+        return utils.YamlEditor(
+            file_path=settings_file,
             ip=self.ssh_manager.admin_ip,
-            cmd='cat {0}'.format(settings_file),
-            yamlify=True)['stdout_yaml']
-        return out
+        ).get_content()
