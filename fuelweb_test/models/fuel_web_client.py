@@ -858,23 +858,27 @@ class FuelWebClient29(object):
 
     def replace_default_repos(self):
         # Replace Ubuntu default repositories for the release
-        logger.info("Replace default repository list.")
-        ubuntu_id = self.client.get_release_id(
-            release_name=help_data.OPENSTACK_RELEASE_UBUNTU)
+        for release_name in [help_data.OPENSTACK_RELEASE_UBUNTU,
+                             help_data.OPENSTACK_RELEASE_UBUNTU_UCA]:
+            ubuntu_id = self.client.get_release_id(release_name=release_name)
+            logger.info("Replace default repository list for %s: '%s' release",
+                        str(ubuntu_id), release_name)
 
-        ubuntu_release = self.client.get_release(ubuntu_id)
-        ubuntu_meta = ubuntu_release["attributes_metadata"]
-        repos_ubuntu = ubuntu_meta["editable"]["repo_setup"]["repos"]
+            ubuntu_release = self.client.get_release(ubuntu_id)
+            ubuntu_meta = ubuntu_release["attributes_metadata"]
+            repos_ubuntu = ubuntu_meta["editable"]["repo_setup"]["repos"]
 
-        repos_ubuntu["value"] = replace_repos.replace_ubuntu_repos(
-            repos_ubuntu, upstream_host='archive.ubuntu.com')
+            repos_ubuntu["value"] = replace_repos.replace_ubuntu_repos(
+                repos_ubuntu, upstream_host='archive.ubuntu.com')
 
-        self.client.put_release(ubuntu_id, ubuntu_release)
-        replace_repos.report_ubuntu_repos(repos_ubuntu["value"])
+            self.client.put_release(ubuntu_id, ubuntu_release)
+            replace_repos.report_ubuntu_repos(repos_ubuntu["value"])
 
         # Replace CentOS default repositories for the release
-        centos_id = self.client.get_release_id(
-            release_name=help_data.OPENSTACK_RELEASE_CENTOS)
+        release_name = help_data.OPENSTACK_RELEASE_CENTOS
+        centos_id = self.client.get_release_id(release_name=release_name)
+        logger.info("Replace default repository list for %s: '%s' release",
+                    str(centos_id), release_name)
 
         centos_release = self.client.get_release(centos_id)
         centos_meta = centos_release["attributes_metadata"]
