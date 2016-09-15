@@ -152,6 +152,17 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
 
     def upgrade_env_code(self, release_id):
         self.show_step(self.next_step)
+        self.patcher("/usr/lib/python2.7/site-packages/cluster_upgrade/", "376541")
+        self.patcher("/usr/lib/python2.7/site-packages/", "376527")
+
+        cmd = "service nailgun restart && sleep 60"
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=cmd,
+            error_info="extension installation failed")
+
+
         seed_id = int(
             self.ssh_manager.check_call(
                 ip=self.env.get_admin_node_ip(),
