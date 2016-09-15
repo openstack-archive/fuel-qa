@@ -28,7 +28,6 @@ from proboscis import SkipTest
 # noinspection PyUnresolvedReferences
 from six.moves import xrange
 # pylint: enable=redefined-builtin
-import yaml
 
 from core.helpers.log_helpers import logwrap
 
@@ -1116,8 +1115,7 @@ class TestHaFailoverBase(TestBasic):
         @logwrap
         def _get_pcm_nodes(remote, pure=False):
             nodes = {}
-            pcs_status = remote.execute('pcs status nodes')['stdout']
-            pcm_nodes = yaml.load(''.join(pcs_status).strip())
+            pcm_nodes = remote.execute('pcs status nodes').stdout_yaml
             for status in ('Online', 'Offline', 'Standby'):
                 list_nodes = (pcm_nodes['Pacemaker Nodes']
                               [status] or '').split()

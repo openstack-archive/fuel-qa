@@ -307,10 +307,8 @@ class VMwareActions(object):
         for hostname, ip, conf_path, conf_dict in data:
             logger.info("Check nova conf of {0}".format(hostname))
             for key in conf_dict.keys():
-                cmd = 'cat {0} | grep {1}={2}'.format(conf_path, key,
-                                                      conf_dict[key])
-                logger.debug('CMD: {}'.format(cmd))
-                SSHManager().execute_on_remote(ip, cmd)
+                cmd = 'grep {1}={2} {0}'.format(conf_path, key, conf_dict[key])
+                SSHManager().check_call(ip, cmd)
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
