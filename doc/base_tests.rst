@@ -272,6 +272,11 @@ Test offloading types
 .. automodule:: fuelweb_test.tests.test_offloading_types
    :members:
 
+Test public api
+---------------
+.. automodule:: fuelweb_test.tests.test_public_api
+   :members:
+
 Test Pull Requests
 ------------------
 .. automodule:: fuelweb_test.tests.test_pullrequest
