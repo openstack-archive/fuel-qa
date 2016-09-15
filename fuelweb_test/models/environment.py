@@ -664,28 +664,26 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
         if nameservers is None:
             nameservers = []
 
-        resolv_conf = self.ssh_manager.execute(
-            ip=self.ssh_manager.admin_ip,
-            cmd='cat /etc/resolv.conf'
-        )
-        assert_equal(0, resolv_conf['exit_code'],
-                     'Executing "{0}" on the admin node has failed with: {1}'
-                     .format('cat /etc/resolv.conf', resolv_conf['stderr']))
+        with self.ssh_manager.open_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                path='/etc/resolv.conf',
+        ) as f:
+            resolv_conf = f.readlines()
+
         if merge:
-            nameservers.extend(resolv_conf['stdout'])
+            nameservers.extend(resolv_conf)
         resolv_keys = ['search', 'domain', 'nameserver']
-        resolv_new = "".join('{0}\n'.format(ns) for ns in nameservers
-                             if any(x in ns for x in resolv_keys))
-        logger.debug('echo "{0}" > /etc/resolv.conf'.format(resolv_new))
-        echo_cmd = 'echo "{0}" > /etc/resolv.conf'.format(resolv_new)
-        echo_result = self.ssh_manager.execute(
-            ip=self.ssh_manager.admin_ip,
-            cmd=echo_cmd
-        )
-        assert_equal(0, echo_result['exit_code'],
-                     'Executing "{0}" on the admin node has failed with: {1}'
-                     .format(echo_cmd, echo_result['stderr']))
-        return resolv_conf['stdout']
+        resolv_new = "".join(
+            '{0}\n'.format(ns) for ns in nameservers
+            if any(x in ns for x in resolv_keys))
+        with self.ssh_manager.open_on_remote(
+                ip=self.ssh_manager.admin_ip,
+                path='/etc/resolv.conf',
+                mode='w'
+        ) as f:
+            f.write(resolv_new)
+
+        return resolv_conf
 
     @logwrap
     def describe_other_admin_interfaces(self, admin):

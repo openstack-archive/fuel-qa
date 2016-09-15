@@ -103,7 +103,7 @@ class TestMultipath(base_test_case.TestBasic):
 
         :rtype: int
         """
-        cmd = "lsblk -lo NAME,TYPE,MOUNTPOINT | grep '/$' | grep lvm | wc -l"
+        cmd = "lsblk -lo NAME,TYPE,MOUNTPOINT | grep '/$' | grep -c lvm"
 
         ssh_manager.update_connection(ip, SSH_CREDENTIALS['login'],
                                       SSH_CREDENTIALS['password'],
