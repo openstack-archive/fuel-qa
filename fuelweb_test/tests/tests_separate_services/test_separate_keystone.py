@@ -250,12 +250,11 @@ class SeparateKeystoneFailover(TestBasic):
         def check_keystone_nodes(nodes):
             hiera_hosts = []
             for node in nodes:
-                cmd = "cat /etc/hiera/plugins/detach-keystone.yaml"
-                result = self.ssh_manager.execute_on_remote(
-                    ip=node['ip'],
-                    cmd=cmd,
-                    yamlify=True
-                )['stdout_yaml']
+                result = utils.YamlEditor(
+                    file_path='/etc/hiera/plugins/detach-keystone.yaml',
+                    ip=node['ip']
+                ).content
+
                 hosts = result['corosync_roles']
                 logger.debug("hosts on {0} are {1}".format(node['hostname'],
                                                            hosts))

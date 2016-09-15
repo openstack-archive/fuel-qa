@@ -20,8 +20,6 @@ from devops.models import DiskDevice
 from devops.models import Node
 from devops.models import Volume
 from proboscis.asserts import assert_equal
-# noinspection PyUnresolvedReferences
-from six.moves import cStringIO
 import yaml
 
 from core.helpers.log_helpers import logwrap
@@ -202,11 +200,8 @@ class AdminActions(BaseActions):
         )
 
     def get_fuel_settings(self):
-        result = self.ssh_manager.execute_on_remote(
-            ip=self.admin_ip,
-            cmd='cat {cfg_file}'.format(cfg_file=FUEL_SETTINGS_YAML)
-        )
-        return yaml.load(result['stdout_str'])
+        return YamlEditor(
+            file_path=FUEL_SETTINGS_YAML, ip=self.admin_ip).content
 
     def save_fuel_settings(self, settings):
         cmd = 'echo \'{0}\' > {1}'.format(yaml.dump(settings,
@@ -230,8 +225,7 @@ class AdminActions(BaseActions):
         if not release:
             release = ''
         cmd = "cat `find /etc/puppet/{} -name tasks.yaml`".format(release)
-        data = self.ssh_manager.execute_on_remote(self.admin_ip, cmd)
-        return yaml.load(cStringIO(''.join(data['stdout'])))
+        return self.ssh_manager.check_call(self.admin_ip, cmd).stdout_yaml
 
 
 class NailgunActions(BaseActions):
@@ -240,19 +234,11 @@ class NailgunActions(BaseActions):
     def update_nailgun_settings_once(self, settings):
         # temporary change Nailgun settings (until next container restart)
         cfg_file = '/etc/nailgun/settings.yaml'
-        ng_settings = yaml.load(
-            self.ssh_manager.execute_on_remote(
-                ip=self.admin_ip,
-                cmd='cat {0}'.format(cfg_file))['stdout_str']
-        )
+        with YamlEditor(file_path=cfg_file, ip=self.admin_ip) as ng_settings:
+            ng_settings.content.update(settings)
 
-        ng_settings.update(settings)
-        logger.debug('Uploading new nailgun settings: {}'.format(
-            ng_settings))
-        self.ssh_manager.execute_on_remote(
-            ip=self.admin_ip,
-            cmd='echo "{0}" | tee {1}'.format(yaml.dump(ng_settings), cfg_file)
-        )
+            logger.debug('Uploading new nailgun settings: {}'.format(
+                ng_settings))
 
     def set_collector_address(self, host, port, ssl=False):
         cmd = ("awk '/COLLECTOR.*URL/' /usr/lib/python2.7"
