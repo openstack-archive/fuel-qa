@@ -1451,18 +1451,39 @@ class YamlEditor(object):
     """
 
     def __init__(self, file_path, ip=None, port=None):
-        self.file_path = file_path
+        """YAML files editor
+
+        :type file_path: str
+        :type ip: str
+        :type port: int
+        """
+        self.__file_path = file_path
         self.ip = ip
         self.port = port or 22
-        self.content = None
-        self.original_content = None
+        self.__content = None
+        self.__original_content = None
+
+    @property
+    def file_path(self):
+        """Open file path
+
+        :rtype: str
+        """
+        return self.__file_path
+
+    @property
+    def content(self):
+        if self.__content is None:
+            self.__content = self.get_content()
+        return self.__content
 
     def __get_file(self, mode="r"):
         if self.ip:
-            return SSHManager().open_on_remote(self.ip, self.file_path,
-                                               mode=mode, port=self.port)
+            return SSHManager().open_on_remote(
+                self.ip, self.__file_path,
+                mode=mode, port=self.port)
         else:
-            return open(self.file_path, mode)
+            return open(self.__file_path, mode)
 
     def get_content(self):
         with self.__get_file() as file_obj:
@@ -1470,19 +1491,19 @@ class YamlEditor(object):
 
     def write_content(self, content=None):
         if content:
-            self.content = content
+            self.__content = content
         with self.__get_file("w") as file_obj:
             yaml.safe_dump(self.content, file_obj,
                            default_flow_style=False,
                            default_style='"')
 
     def __enter__(self):
-        self.content = self.get_content()
-        self.original_content = copy.deepcopy(self.content)
+        self.__content = self.get_content()
+        self.__original_content = copy.deepcopy(self.content)
         return self
 
     def __exit__(self, x, y, z):
-        if self.content == self.original_content:
+        if self.content == self.__original_content:
             return
         self.write_content()
 
