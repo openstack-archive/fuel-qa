@@ -230,11 +230,12 @@ class CustomHostname(TestBasic):
 
         # Set a custom hostname for a node for the 1st time
         custom_hostname = 'custom-hostname'
-        node = self.fuel_web.client.list_nodes()[0]
+        node_list = self.fuel_web.client.list_nodes()
+        node = node_list[0]
         self.fuel_web.client.set_hostname(node['id'], custom_hostname)
 
         # Try to set duplicate hostname for another node
-        node = self.fuel_web.client.list_nodes()[1]
+        node = node_list[1]
         assert_raises(
             http_exceptions.Conflict,
             self.fuel_web.client.set_hostname,
