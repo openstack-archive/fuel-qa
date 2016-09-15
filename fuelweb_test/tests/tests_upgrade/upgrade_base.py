@@ -357,8 +357,8 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
 
             liberty_releases = [
                 release['id'] for release
-                in self.fuel_web.client.get_deployable_releases()
-                if 'liberty' in release['name'].lower()
+                in self.fuel_web.client.get_releases()
+                if 'Liberty on Ubuntu'.lower() in release['name'].lower()
             ]
 
             prev_rel_id = liberty_releases.pop()
