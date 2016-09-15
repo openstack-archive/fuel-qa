@@ -551,7 +551,7 @@ class FuelWebClient29(object):
             settings = {}
 
         if REPLACE_DEFAULT_REPOS and not REPLACE_DEFAULT_REPOS_ONLY_ONCE:
-            self.replace_default_repos()
+            self.replace_default_repos(release_name=release_name)
 
         cluster_id = self.client.get_cluster_id(name)
         if not cluster_id:
@@ -856,35 +856,39 @@ class FuelWebClient29(object):
         replace_repos.report_centos_repos(repos_attr['value'])
         self.client.update_cluster_attributes(cluster_id, attributes)
 
-    def replace_default_repos(self):
-        # Replace Ubuntu default repositories for the release
-        logger.info("Replace default repository list.")
-        ubuntu_id = self.client.get_release_id(
-            release_name=help_data.OPENSTACK_RELEASE_UBUNTU)
+    def replace_default_repos(self, release_name=None):
+        if release_name is None:
+            for release_name in [help_data.OPENSTACK_RELEASE_UBUNTU,
+                                 help_data.OPENSTACK_RELEASE_UBUNTU_UCA]:
+                self.replace_release_repos(release_name=release_name)
+        else:
+            self.replace_release_repos(release_name=release_name)
 
-        ubuntu_release = self.client.get_release(ubuntu_id)
-        ubuntu_meta = ubuntu_release["attributes_metadata"]
-        repos_ubuntu = ubuntu_meta["editable"]["repo_setup"]["repos"]
-
-        repos_ubuntu["value"] = replace_repos.replace_ubuntu_repos(
-            repos_ubuntu, upstream_host='archive.ubuntu.com')
-
-        self.client.put_release(ubuntu_id, ubuntu_release)
-        replace_repos.report_ubuntu_repos(repos_ubuntu["value"])
-
-        # Replace CentOS default repositories for the release
-        centos_id = self.client.get_release_id(
-            release_name=help_data.OPENSTACK_RELEASE_CENTOS)
-
-        centos_release = self.client.get_release(centos_id)
-        centos_meta = centos_release["attributes_metadata"]
-        repos_centos = centos_meta["editable"]["repo_setup"]["repos"]
-
-        repos_centos["value"] = replace_repos.replace_centos_repos(
-            repos_centos, upstream_host=self.admin_node_ip)
-
-        self.client.put_release(centos_id, centos_release)
-        replace_repos.report_centos_repos(repos_centos["value"])
+    def replace_release_repos(self, release_name):
+        release_id = self.client.get_release_id(release_name=release_name)
+        release_data = self.client.get_release(release_id)
+        if release_data["state"] == "available":
+            logger.info("Replace default repository list for {0}: '{1}'"
+                        " release".format(release_id, release_name))
+            release_meta = release_data["attributes_metadata"]
+            release_repos = release_meta["editable"]["repo_setup"]["repos"]
+            if release_data["operating_system"] == "Ubuntu":
+                release_repos["value"] = replace_repos.replace_ubuntu_repos(
+                    release_repos, upstream_host='archive.ubuntu.com')
+                self.client.put_release(release_id, release_data)
+                replace_repos.report_ubuntu_repos(release_repos["value"])
+            elif release_data["operating_system"] == "CentOS":
+                release_repos["value"] = replace_repos.replace_centos_repos(
+                    release_repos, upstream_host=self.admin_node_ip)
+                self.client.put_release(release_id, release_data)
+                replace_repos.report_centos_repos(release_repos["value"])
+            else:
+                logger.info("Unknown Operating System for release {0}: '{1}'."
+                            " Repository list not updated".format(
+                                release_id, release_name))
+        else:
+            logger.info("Release {0}: '{1}' is unavailable. Repository list"
+                        " not updated".format(release_id, release_name))
 
     def get_cluster_repos(self, cluster_id):
         attributes = self.client.get_cluster_attributes(cluster_id)
