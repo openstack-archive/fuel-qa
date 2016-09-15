@@ -285,7 +285,7 @@ class TestVirtRoleBaremetal(TestBasic):
         with self.ssh_manager.get_remote(self.ssh_manager.admin_ip) as admin:
             result = admin.execute_through_host(
                 slave_ip,
-                "cat /proc/cpuinfo | grep processor | wc -l",
+                "grep -c processor /proc/cpuinfo",
                 auth=self.ssh_auth,
                 timeout=60)
         asserts.assert_equal(

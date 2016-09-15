@@ -18,8 +18,6 @@ from proboscis import test
 # pylint: disable=import-error
 # noinspection PyUnresolvedReferences
 from six.moves import configparser
-# noinspection PyUnresolvedReferences
-from six.moves import cStringIO
 # pylint: enable=import-error
 
 from fuelweb_test.helpers import utils
@@ -43,11 +41,12 @@ class EMCPlugin(TestBasic):
 
     @classmethod
     def check_emc_cinder_config(cls, ip, path):
-        command = 'cat {0}'.format(path)
-        conf_data = SSHManager().execute_on_remote(ip, command)['stdout_str']
-        conf_data = cStringIO(conf_data)
-        cinder_conf = configparser.ConfigParser()
-        cinder_conf.readfp(conf_data)
+        with SSHManager().open_on_remote(
+            ip=ip,
+            path=path
+        ) as f:
+            cinder_conf = configparser.ConfigParser()
+            cinder_conf.readfp(f)
 
         asserts.assert_equal(
             cinder_conf.get('DEFAULT', 'volume_driver'),
