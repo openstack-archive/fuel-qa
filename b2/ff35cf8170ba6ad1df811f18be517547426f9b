@@ -1,0 +1,10 @@
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+1: sryabin <sryabin@mirantis.com>
+Code-Review+2: Vladimir Khlyunev <vkhlyunev@mirantis.com>
+Workflow+1: Vadim Rovachev <vrovachev@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 15 Sep 2016 09:42:34 +0000
+Reviewed-on: https://review.openstack.org/370172
+Project: openstack/fuel-qa
+Branch: refs/heads/stable-mu/8.0
