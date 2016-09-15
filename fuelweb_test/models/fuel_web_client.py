@@ -551,7 +551,7 @@ class FuelWebClient29(object):
             settings = {}
 
         if REPLACE_DEFAULT_REPOS and not REPLACE_DEFAULT_REPOS_ONLY_ONCE:
-            self.replace_default_repos()
+            self.replace_default_repos(release_name=release_name)
 
         cluster_id = self.client.get_cluster_id(name)
         if not cluster_id:
@@ -856,11 +856,11 @@ class FuelWebClient29(object):
         replace_repos.report_centos_repos(repos_attr['value'])
         self.client.update_cluster_attributes(cluster_id, attributes)
 
-    def replace_default_repos(self):
+    def replace_default_repos(self,
+                              release_name=help_data.OPENSTACK_RELEASE_UBUNTU):
         # Replace Ubuntu default repositories for the release
         logger.info("Replace default repository list.")
-        ubuntu_id = self.client.get_release_id(
-            release_name=help_data.OPENSTACK_RELEASE_UBUNTU)
+        ubuntu_id = self.client.get_release_id(release_name)
 
         ubuntu_release = self.client.get_release(ubuntu_id)
         ubuntu_meta = ubuntu_release["attributes_metadata"]
