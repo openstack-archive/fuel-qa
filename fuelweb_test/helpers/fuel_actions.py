@@ -19,11 +19,7 @@ from devops.helpers.helpers import wait
 from devops.models import DiskDevice
 from devops.models import Node
 from devops.models import Volume
-from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
-# noinspection PyUnresolvedReferences
-from six.moves import cStringIO
-import yaml
 
 from core.helpers.log_helpers import logwrap
 
@@ -202,23 +198,17 @@ class AdminActions(BaseActions):
         )
 
     def get_fuel_settings(self):
-        result = self.ssh_manager.execute_on_remote(
-            ip=self.admin_ip,
-            cmd='cat {cfg_file}'.format(cfg_file=FUEL_SETTINGS_YAML)
-        )
-        return yaml.load(result['stdout_str'])
+        return YamlEditor(
+            file_path=FUEL_SETTINGS_YAML,
+            ip=self.admin_ip
+        ).get_content()
 
     def save_fuel_settings(self, settings):
-        cmd = 'echo \'{0}\' > {1}'.format(yaml.dump(settings,
-                                                    default_style='"',
-                                                    default_flow_style=False),
-                                          FUEL_SETTINGS_YAML)
-        result = self.ssh_manager.execute(
-            ip=self.admin_ip,
-            cmd=cmd
-        )
-        assert_equal(result['exit_code'], 0,
-                     "Saving Fuel settings failed: {0}!".format(result))
+        with YamlEditor(
+                file_path=FUEL_SETTINGS_YAML,
+                ip=self.admin_ip
+        ) as data:
+            data.content = settings
 
     @logwrap
     def get_tasks_description(self, release=None):
@@ -230,8 +220,7 @@ class AdminActions(BaseActions):
         if not release:
             release = ''
         cmd = "cat `find /etc/puppet/{} -name tasks.yaml`".format(release)
-        data = self.ssh_manager.execute_on_remote(self.admin_ip, cmd)
-        return yaml.load(cStringIO(''.join(data['stdout'])))
+        return self.ssh_manager.check_call(self.admin_ip, cmd).stdout_yaml
 
     @logwrap
     def create_mirror(self, pattern_name, repo_groups, input_file=None):
@@ -299,15 +288,11 @@ class NailgunActions(BaseActions):
 
     def update_nailgun_settings(self, settings):
         cfg_file = '/etc/nailgun/settings.yaml'
-        with self.ssh_manager.open_on_remote(self.admin_ip, cfg_file) as f:
-            ng_settings = yaml.load(f)
+        with YamlEditor(file_path=cfg_file, ip=self.admin_ip) as ng_settings:
+            ng_settings.content.update(settings)
 
-        ng_settings.update(settings)
-        logger.debug('Uploading new nailgun settings: {!r}'.format(
-            ng_settings))
-        with self.ssh_manager.open_on_remote(
-                self.admin_ip, cfg_file, "w") as f:
-            yaml.dump(ng_settings, f)
+            logger.debug('Uploading new nailgun settings: {}'.format(
+                ng_settings))
         self.restart_service("nailgun")
 
     def set_collector_address(self, host, port, ssl=False):
@@ -323,9 +308,8 @@ class NailgunActions(BaseActions):
                       'OSWL_COLLECT_PERIOD': 0}
         if not ssl:
             # replace https endpoints to http endpoints
-            with self.ssh_manager.open_on_remote(self.admin_ip,
-                                                 base_cfg_file) as f:
-                data = yaml.load(f)
+            data = YamlEditor(base_cfg_file, self.admin_ip).get_content()
+
             for key, value in data.items():
                 if (isinstance(key, str) and key.startswith("COLLECTOR") and
                         key.endswith("URL") and value.startswith("https")):
