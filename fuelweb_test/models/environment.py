@@ -635,24 +635,21 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
 
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command=install_command,
-            verbose=True)
+            command=install_command)
 
         logger.info('prepare Fuel node for updating')
         prepare_command = 'update-prepare prepare master'
 
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command=prepare_command,
-            verbose=True)
+            command=prepare_command)
 
         logger.info('update Fuel node')
         update_command = 'update-prepare update master'
 
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command=update_command,
-            verbose=True)
+            command=update_command)
 
         logger.info('Update successful')
 
