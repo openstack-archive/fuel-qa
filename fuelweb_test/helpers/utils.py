@@ -1526,9 +1526,9 @@ class YamlEditor(object):
         if content:
             self.content = content
         with self.__get_file("w") as file_obj:
-            yaml.dump(self.content, file_obj,
-                      default_flow_style=False,
-                      default_style='"')
+            yaml.safe_dump(self.content, file_obj,
+                           default_flow_style=False,
+                           default_style='"')
 
     def __enter__(self):
         self.content = self.get_content()
