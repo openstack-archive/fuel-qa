@@ -182,7 +182,7 @@ class TestOSupgrade(OSUpgradeBase):
         seed_cluster_id = self.fuel_web.get_last_created_cluster()
 
         self.upgrade_control_plane_code(seed_cluster_id)
-
+        return
         self.pre_upgrade_computes(orig_cluster_id=self.orig_cluster_id)
 
         # upgrade controllers part
