@@ -837,9 +837,12 @@ def verify_bootstrap_on_node(ip, os_type, uuid=None):
     if not uuid:
         return
 
-    cmd = "cat /etc/nailgun-agent/config.yaml"
-    output = yaml.load(ssh_manager.execute_on_remote(ip, cmd)['stdout_str'])
-    actual_uuid = output.get("runtime_uuid")
+    with ssh_manager.open_on_remote(
+            ip=ip,
+            path='/etc/nailgun-agent/config.yaml') as f:
+        data = yaml.safe_load(f)
+
+    actual_uuid = data.get("runtime_uuid")
     assert_equal(actual_uuid, uuid,
                  "Actual uuid {0} is not the same as expected {1}"
                  .format(actual_uuid, uuid))
