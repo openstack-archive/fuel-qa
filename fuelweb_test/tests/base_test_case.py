@@ -175,6 +175,8 @@ class TestBasic(object):
         time.sleep(10)
         self.env.set_admin_keystone_password()
         self.env.sync_time(['admin'])
+        if REPLACE_DEFAULT_REPOS:
+            self.fuel_web.replace_default_repos()
         if settings.UPDATE_MASTER:
             if settings.UPDATE_FUEL_MIRROR:
                 for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
