@@ -664,27 +664,22 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
         if nameservers is None:
             nameservers = []
 
-        resolv_conf = self.ssh_manager.execute(
+        resolv_conf = self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            cmd='cat /etc/resolv.conf'
+            command='cat /etc/resolv.conf',
+            error_info='Executing "{0}" on the admin node has failed'
         )
-        assert_equal(0, resolv_conf['exit_code'],
-                     'Executing "{0}" on the admin node has failed with: {1}'
-                     .format('cat /etc/resolv.conf', resolv_conf['stderr']))
+
         if merge:
             nameservers.extend(resolv_conf['stdout'])
         resolv_keys = ['search', 'domain', 'nameserver']
         resolv_new = "".join('{0}\n'.format(ns) for ns in nameservers
                              if any(x in ns for x in resolv_keys))
-        logger.debug('echo "{0}" > /etc/resolv.conf'.format(resolv_new))
         echo_cmd = 'echo "{0}" > /etc/resolv.conf'.format(resolv_new)
-        echo_result = self.ssh_manager.execute(
+        self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            cmd=echo_cmd
+            command=echo_cmd
         )
-        assert_equal(0, echo_result['exit_code'],
-                     'Executing "{0}" on the admin node has failed with: {1}'
-                     .format(echo_cmd, echo_result['stderr']))
         return resolv_conf['stdout']
 
     @logwrap
