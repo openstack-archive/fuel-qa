@@ -26,7 +26,6 @@ from devops.helpers.helpers import wait
 from netaddr import IPAddress
 from netaddr import IPNetwork
 from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
 
 from keystoneauth1 import exceptions
@@ -37,10 +36,8 @@ from core.helpers.log_helpers import logwrap
 from fuelweb_test import logger
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import get_mongo_partitions
-from fuelweb_test.settings import DNS_SUFFIX
 from fuelweb_test.settings import EXTERNAL_DNS
 from fuelweb_test.settings import EXTERNAL_NTP
-from fuelweb_test.settings import FUEL_MASTER_HOSTNAME
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import POOLS
@@ -1257,106 +1254,6 @@ def check_plugin_path_env(var_name, plugin_path):
         'File {plugin_path:s} (variable: {var_name:s}) does not exists!'
         ''.format(plugin_path=plugin_path, var_name=var_name)
     )
-
-
-def check_snapshot_logs(ip, snapshot_name, controller_fqdns, compute_fqdns):
-    snapshot_path_master = "/var/dump/{}".format(snapshot_name)
-    master_hostname = ''.join((FUEL_MASTER_HOSTNAME, DNS_SUFFIX))
-    snapshot_logs_path = os.path.join(
-        '{0}/fuelweb_test/config_templates/'.format(os.environ.get(
-            "WORKSPACE", "./")), 'snapshot_logs.yaml')
-    if os.path.exists(snapshot_logs_path):
-        with open(snapshot_logs_path, 'r') as f:
-            snapshot_logs = yaml.load(f)
-        logger.debug("snapshot logs are {}".format(snapshot_logs))
-    assert_true(snapshot_logs, "Failed to get expected snapshot"
-                               " logs from {}".format(snapshot_logs_path))
-
-    absent_logs = []
-    logger.debug("checking master logs...")
-    for log in snapshot_logs['master']['master_node_logs'].split():
-        logger.debug("checking {} log file".format(log))
-        log_path = "{dump_path}/{hostname}/{log}".format(
-            dump_path=snapshot_path_master, hostname=master_hostname, log=log)
-        cmd = "ls {}".format(log_path)
-        result = ssh_manager.execute_on_remote(
-            ip=ip,
-            cmd=cmd,
-            err_msg="Couldn't find {} log on master node".format(log),
-            raise_on_assert=False)
-        if not result['exit_code'] == 0:
-            absent_logs.append(log_path)
-
-    for controller_fqdn in controller_fqdns:
-        logger.debug("checking controller logs from remote directory...")
-        for log in snapshot_logs['master']['remote']['controller'].split():
-            logger.debug("checking {} log file".format(log))
-            log_path = "{dump_path}/{hostname}/var/log/remote" \
-                       "/{fqdn}/{log}".format(dump_path=snapshot_path_master,
-                                              hostname=master_hostname,
-                                              fqdn=controller_fqdn, log=log)
-            cmd = "ls {}".format(log_path)
-            result = ssh_manager.execute_on_remote(
-                ip=ip,
-                cmd=cmd,
-                err_msg="Couldn't find {0} log in controller remote directory"
-                        " for node {1}".format(log, controller_fqdn),
-                raise_on_assert=False)
-            if not result['exit_code'] == 0:
-                absent_logs.append(log_path)
-
-        logger.debug("checking controller logs...")
-        for log in snapshot_logs['controller'].split():
-            logger.debug("checking {} log file".format(log))
-            log_path = "{dump_path}/{fqdn}/{log}".format(
-                dump_path=snapshot_path_master,
-                fqdn=controller_fqdn.replace(DNS_SUFFIX, ""), log=log)
-            cmd = "ls {}".format(log_path)
-            result = ssh_manager.execute_on_remote(
-                ip=ip,
-                cmd=cmd,
-                err_msg="Couldn't find {0} log for"
-                        " node {1}".format(log, controller_fqdn),
-                raise_on_assert=False)
-            if not result['exit_code'] == 0:
-                absent_logs.append(log_path)
-
-    for compute_fqdn in compute_fqdns:
-        logger.debug("checking compute logs from remote directory...")
-        for log in snapshot_logs['master']['remote']['compute'].split():
-            logger.debug("checking {} log file".format(log))
-            log_path = "{dump_path}/{hostname}/var/log/remote" \
-                       "/{fqdn}/{log}".format(dump_path=snapshot_path_master,
-                                              hostname=master_hostname,
-                                              fqdn=compute_fqdn, log=log)
-            cmd = "ls {}".format(log_path)
-            result = ssh_manager.execute_on_remote(
-                ip=ip,
-                cmd=cmd,
-                err_msg="Couldn't find {0} log in compute remote directory"
-                        " for node {1}".format(log, compute_fqdn),
-                raise_on_assert=False)
-            if not result['exit_code'] == 0:
-                absent_logs.append(log_path)
-
-        logger.debug("checking compute logs...")
-        for log in snapshot_logs['compute'].split():
-            logger.debug("checking {} log file".format(log))
-            log_path = "{dump_path}/{fqdn}/{log}".format(
-                dump_path=snapshot_path_master,
-                fqdn=compute_fqdn.replace(DNS_SUFFIX, ""), log=log)
-            cmd = "ls {}".format(log_path)
-            result = ssh_manager.execute_on_remote(
-                ip=ip,
-                cmd=cmd,
-                err_msg="Couldn't find {0} log"
-                        " for node {1}".format(log, compute_fqdn),
-                raise_on_assert=False)
-            if not result['exit_code'] == 0:
-                absent_logs.append(log_path)
-        logger.debug("missed logs are {}".format(absent_logs))
-        assert_false(absent_logs, "Next logs aren't present"
-                                  " in snapshot logs {}".format(absent_logs))
 
 
 def incomplete_tasks(tasks, cluster_id=None):
