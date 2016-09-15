@@ -57,7 +57,8 @@ def check_cinder_status(ip):
     cmd = '. openrc; cinder service-list'
     result = ssh_manager.execute_on_remote(
         ip=ip,
-        cmd=cmd
+        cmd=cmd,
+        raise_on_assert=False
     )
     cinder_services = result['stdout_str']
     logger.debug('>$ cinder service-list\n{}'.format(cinder_services))
