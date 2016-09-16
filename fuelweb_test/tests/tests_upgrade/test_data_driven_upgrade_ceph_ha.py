@@ -18,6 +18,7 @@ from proboscis import test
 from proboscis.asserts import assert_true, assert_not_equal
 import yaml
 
+from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -42,6 +43,11 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
             "Admin password was not changed, aborting execution")
         self.workload_description_file = os.path.join(
             self.local_dir_for_backups, "ceph_ha_instances_data.yaml")
+        if settings.HARDWARE["slave_node_memory"] < 4096:
+            logger.warning("Less than 4gb RAM can be harmful in "
+                           "live-migration scenario! Please increase it if you"
+                           "want to upgrade this cloud later using "
+                           "'export SLAVE_NODE_MEMORY='")
 
     @test(groups=['prepare_upgrade_ceph_ha_before_backup'],
           depends_on=[SetupEnvironment.prepare_release])
@@ -103,9 +109,10 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
                   'slave-03': ['controller'],
                   'slave-04': ['compute'],
                   'slave-05': ['compute'],
-                  'slave-06': ['ceph-osd'],
+                  'slave-06': ['compute'],
                   'slave-07': ['ceph-osd'],
-                  'slave-08': ['ceph-osd']}
+                  'slave-08': ['ceph-osd'],
+                  'slave-09': ['ceph-osd']}
              })
 
         cluster_id = self.fuel_web.get_last_created_cluster()
