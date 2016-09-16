@@ -418,18 +418,14 @@ class CommandLineTest(test_cli_base.CommandLine):
             12. Leave 2 nodes in discover state
             13. Deploy the ceph-osd and controller nodes using Fuel CLI
             14. Deploy the compute node using Fuel CLI
-            15. Compare network settings after compute deployment task
-            16. Deploy the cinder node using Fuel CLI
-            17. Compare network settings after cinder deployment task
-            18. Deploy the mongo node using Fuel CLI
-            19. Compare network settings after mongo deployment task
-            20. Deploy the base-os node using Fuel CLI
-            21. Compare network settings after base-os deployment task
-            22. Check that nodes in discover state stay in it
-            23. Get deployment-info
-            24. Get cluster settings after deployment task
-            25. Compare cluster settings after deploy and before deploy
-            26. Run OSTF
+            15. Deploy the cinder node using Fuel CLI
+            16. Deploy the mongo node using Fuel CLI
+            17. Deploy the base-os node using Fuel CLI
+            18. Check that nodes in discover state stay in it
+            19. Get deployment-info
+            20. Get cluster settings after deployment task
+            21. Compare cluster settings after deploy and before deploy
+            22. Run OSTF
 
         Duration 60m
         """
@@ -464,15 +460,17 @@ class CommandLineTest(test_cli_base.CommandLine):
         # Add and provision a controller node node_ids[0]
         self.show_step(6, 'on node {0}'.format(node_ids[0]))
 
-        cmd = ('fuel --env-id={0} node set --node {1}\
-         --role=controller'.format(cluster_id, node_ids[0]))
-        self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        cmd = (
+            'fuel --env-id={0} node set --node {1} --role=controller'
+            ''.format(cluster_id, node_ids[0]))
+        self.ssh_manager.check_call(admin_ip, cmd)
         self.update_node_interfaces(node_ids[0])
-        cmd = ('fuel --env-id={0} node --provision --node={1} --json'.format(
-            cluster_id, node_ids[0]))
-        task = self.ssh_manager.execute_on_remote(admin_ip,
-                                                  cmd,
-                                                  jsonify=True)['stdout_json']
+        cmd = (
+            'fuel --env-id={0} node --provision --node={1} --json'
+            ''.format(cluster_id, node_ids[0]))
+        task = self.ssh_manager.check_call(
+            admin_ip,
+            cmd).stdout_json
         self.assert_cli_task_success(task, timeout=80 * 60)
 
         self.assert_all_tasks_completed(cluster_id=cluster_id)
@@ -487,16 +485,16 @@ class CommandLineTest(test_cli_base.CommandLine):
 
         # Add and provision 1 compute node_ids[1]
         self.show_step(7, details='using node id {}'.format(node_ids[1]))
-        cmd = ('fuel --env-id={0} node set --node {1}\
-        --role=compute'.format(cluster_id, node_ids[1]))
-        self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        cmd = (
+            'fuel --env-id={0} node set --node {1} --role=compute'
+            ''.format(cluster_id, node_ids[1]))
+        self.ssh_manager.check_call(admin_ip, cmd)
         self.update_node_interfaces(node_ids[1])
 
-        cmd = ('fuel --env-id={0} node --provision \
-        --node={1} --json'.format(cluster_id, node_ids[1]))
-        task = self.ssh_manager.execute_on_remote(admin_ip,
-                                                  cmd,
-                                                  jsonify=True)['stdout_json']
+        cmd = (
+            'fuel --env-id={0} node --provision --node={1} --json'
+            ''.format(cluster_id, node_ids[1]))
+        task = self.ssh_manager.check_call(admin_ip, cmd,).stdout_json
         self.assert_cli_task_success(task, timeout=10 * 60)
 
         self.assert_all_tasks_completed(cluster_id=cluster_id)
@@ -511,16 +509,16 @@ class CommandLineTest(test_cli_base.CommandLine):
 
         # Add and provision 1 cinder node_ids[2]
         self.show_step(8, details='using node id {}'.format(node_ids[2]))
-        cmd = ('fuel --env-id={0} node set --node {1}\
-        --role=cinder'.format(cluster_id, node_ids[2]))
-        self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        cmd = (
+            'fuel --env-id={0} node set --node {1} --role=cinder'
+            ''.format(cluster_id, node_ids[2]))
+        self.ssh_manager.check_call(admin_ip, cmd)
         self.update_node_interfaces(node_ids[2])
 
-        cmd = ('fuel --env-id={0} node --provision \
-        --node={1} --json'.format(cluster_id, node_ids[2]))
-        task = self.ssh_manager.execute_on_remote(admin_ip,
-                                                  cmd,
-                                                  jsonify=True)['stdout_json']
+        cmd = (
+            'fuel --env-id={0} node --provision  --node={1} --json'
+            ''.format(cluster_id, node_ids[2]))
+        task = self.ssh_manager.check_call(admin_ip, cmd).stdout_json
         self.assert_cli_task_success(task, timeout=10 * 60)
 
         self.assert_all_tasks_completed(cluster_id=cluster_id)
@@ -535,16 +533,16 @@ class CommandLineTest(test_cli_base.CommandLine):
 
         # Add and provision 1 mongo node_ids[3]
         self.show_step(9, details='using node id {0}'.format(node_ids[3]))
-        cmd = ('fuel --env-id={0} node set --node {1}\
-        --role=mongo'.format(cluster_id, node_ids[3]))
-        self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        cmd = (
+            'fuel --env-id={0} node set --node {1} --role=mongo'
+            ''.format(cluster_id, node_ids[3]))
+        self.ssh_manager.check_call(admin_ip, cmd)
         self.update_node_interfaces(node_ids[3])
 
-        cmd = ('fuel --env-id={0} node --provision \
-        --node={1} --json'.format(cluster_id, node_ids[3]))
-        task = self.ssh_manager.execute_on_remote(admin_ip,
-                                                  cmd,
-                                                  jsonify=True)['stdout_json']
+        cmd = (
+            'fuel --env-id={0} node --provision  --node={1} --json'
+            ''.format(cluster_id, node_ids[3]))
+        task = self.ssh_manager.check_call(admin_ip, cmd).stdout_json
         self.assert_cli_task_success(task, timeout=10 * 60)
 
         self.assert_all_tasks_completed(cluster_id=cluster_id)
@@ -560,9 +558,10 @@ class CommandLineTest(test_cli_base.CommandLine):
         # Add and provision 2 ceph-osd node_ids[4], node_ids[5]
         self.show_step(10, details='using node ids {0}, {1}'.format(
             node_ids[4], node_ids[5]))
-        cmd = ('fuel --env-id={0} node set --node {1},{2} '
-               '--role=ceph-osd'.format(cluster_id, node_ids[4], node_ids[5]))
-        self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        cmd = (
+            'fuel --env-id={0} node set --node {1},{2} '
+            '--role=ceph-osd'.format(cluster_id, node_ids[4], node_ids[5]))
+        self.ssh_manager.check_call(admin_ip, cmd)
         for node_id in (node_ids[4], node_ids[5]):
             self.update_node_interfaces(node_id)
 
@@ -570,9 +569,7 @@ class CommandLineTest(test_cli_base.CommandLine):
                '--env-id={0} node --provision '
                '--node {1},{2} '
                '--json'.format(cluster_id, node_ids[4], node_ids[5]))
-        task = self.ssh_manager.execute_on_remote(admin_ip,
-                                                  cmd,
-                                                  jsonify=True)['stdout_json']
+        task = self.ssh_manager.check_call(admin_ip, cmd).stdout_json
         self.assert_cli_task_success(task, timeout=10 * 60)
 
         self.assert_all_tasks_completed(cluster_id=cluster_id)
@@ -588,14 +585,12 @@ class CommandLineTest(test_cli_base.CommandLine):
         self.show_step(11, details='using node ids {0}'.format(node_ids[6]))
         cmd = ('fuel --env-id={0} node set --node {1} '
                '--role=base-os'.format(cluster_id, node_ids[6]))
-        self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        self.ssh_manager.check_call(admin_ip, cmd)
         self.update_node_interfaces(node_ids[6])
 
         cmd = ('fuel --env-id={0} node --provision '
                '--node={1} --json'.format(cluster_id, node_ids[6]))
-        task = self.ssh_manager.execute_on_remote(admin_ip,
-                                                  cmd,
-                                                  jsonify=True)['stdout_json']
+        task = self.ssh_manager.check_call(admin_ip, cmd).stdout_json
         self.assert_cli_task_success(task, timeout=10 * 60)
 
         self.assert_all_tasks_completed(cluster_id=cluster_id)
@@ -612,7 +607,7 @@ class CommandLineTest(test_cli_base.CommandLine):
         # Add 2 compute but do not deploy node_ids[7] node_ids[8]
         cmd = ('fuel --env-id={0} node set --node {1},{2} '
                '--role=compute'.format(cluster_id, node_ids[7], node_ids[8]))
-        self.ssh_manager.execute_on_remote(admin_ip, cmd)
+        self.ssh_manager.check_call(admin_ip, cmd)
 
         node_discover = self.fuel_web.get_nailgun_node_by_status('discover')
         assert_equal(
@@ -633,9 +628,7 @@ class CommandLineTest(test_cli_base.CommandLine):
         cmd = (
             'fuel --env-id={0} node --deploy --node {1},{2},{3} --json'.format(
                 cluster_id, node_ids[0], node_ids[4], node_ids[5]))
-        task = self.ssh_manager.execute_on_remote(admin_ip,
-                                                  cmd,
-                                                  jsonify=True)['stdout_json']
+        task = self.ssh_manager.check_call(admin_ip, cmd).stdout_json
         self.assert_cli_task_success(task, timeout=80 * 60)
 
         self.assert_all_tasks_completed(cluster_id=cluster_id)
@@ -643,76 +636,36 @@ class CommandLineTest(test_cli_base.CommandLine):
         # Deploy the compute node node_ids[1]
         cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
             cluster_id, node_ids[1]))
-        task = self.ssh_manager.execute_on_remote(admin_ip,
-                                                  cmd,
-                                                  jsonify=True)['stdout_json']
-        network_settings = self.get_networks(cluster_id)
+        task = self.ssh_manager.check_call(admin_ip, cmd).stdout_json
         self.assert_cli_task_success(task, timeout=30 * 60)
-        self.show_step(15)
-        network_configuration = self.get_net_config_cli(task['id'])
-        assert_equal(network_settings,
-                     network_configuration,
-                     message='Network settings are not equal before'
-                             ' and after deploy')
-
         self.assert_all_tasks_completed(cluster_id=cluster_id)
 
         # Deploy the cinder node node_ids[2]
-        self.show_step(16, details='for node id {}'.format(node_ids[2]))
+        self.show_step(15, details='for node id {}'.format(node_ids[2]))
         cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
             cluster_id, node_ids[2]))
-        task = self.ssh_manager.execute_on_remote(admin_ip,
-                                                  cmd,
-                                                  jsonify=True)['stdout_json']
-        network_settings = self.get_networks(cluster_id)
+        task = self.ssh_manager.check_call(admin_ip, cmd).stdout_json
         self.assert_cli_task_success(task, timeout=60 * 60)
-        self.show_step(17)
-        network_configuration = self.get_net_config_cli(task['id'])
-        assert_equal(network_settings,
-                     network_configuration,
-                     message='Network settings are not equal before'
-                             ' and after deploy')
-
         self.assert_all_tasks_completed(cluster_id=cluster_id)
 
         # Deploy the mongo node node_ids[3]
-        self.show_step(18, details='for node id {}'.format(node_ids[3]))
+        self.show_step(16, details='for node id {}'.format(node_ids[3]))
         cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
             cluster_id, node_ids[3]))
-        task = self.ssh_manager.execute_on_remote(admin_ip,
-                                                  cmd,
-                                                  jsonify=True)['stdout_json']
-        network_settings = self.get_networks(cluster_id)
+        task = self.ssh_manager.check_call(admin_ip, cmd).stdout_json
         self.assert_cli_task_success(task, timeout=60 * 60)
-        self.show_step(19)
-        network_configuration = self.get_net_config_cli(task['id'])
-        assert_equal(network_settings,
-                     network_configuration,
-                     message='Network settings are not equal before'
-                             ' and after deploy')
-
         self.assert_all_tasks_completed(cluster_id=cluster_id)
 
         # Deploy the base-os node node_ids[6]
-        self.show_step(20, details='for node id {}'.format(node_ids[6]))
+        self.show_step(17, details='for node id {}'.format(node_ids[6]))
         cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
             cluster_id, node_ids[6]))
-        task = self.ssh_manager.execute_on_remote(admin_ip,
-                                                  cmd,
-                                                  jsonify=True)['stdout_json']
-        network_settings = self.get_networks(cluster_id)
+        task = self.ssh_manager.check_call(admin_ip, cmd).stdout_json
         self.assert_cli_task_success(task, timeout=60 * 60)
-        self.show_step(21)
-        network_configuration = self.get_net_config_cli(task['id'])
-        assert_equal(network_settings,
-                     network_configuration,
-                     message='Network settings are not equal before'
-                             ' and after deploy')
-
         self.assert_all_tasks_completed(cluster_id=cluster_id)
 
+        self.show_step(18)
         self.fuel_web.verify_network(cluster_id)
-        self.show_step(22)
         node_discover_after_deploy = self.fuel_web.get_nailgun_node_by_status(
             'discover')
         assert_equal(
@@ -724,18 +677,18 @@ class CommandLineTest(test_cli_base.CommandLine):
 
         for node in node_discover_after_deploy:
             assert_true(node['pending_addition'])
-        self.show_step(23)
+        self.show_step(19)
         task_id = self.get_first_task_id_by_name(cluster_id, 'deployment')
         self.get_deployment_info_cli(task_id)
-        self.show_step(24)
+        self.show_step(20)
         cluster_config = self.get_cluster_config_cli(task_id)
-        self.show_step(25)
+        self.show_step(21)
         assert_equal(cluster_settings,
                      cluster_config,
                      message='Cluster settings are not equal before'
                              ' and after deploy')
         # Run OSTF
-        self.show_step(26)
+        self.show_step(22)
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['ha', 'smoke', 'sanity'])
         self.env.make_snapshot("cli_selected_nodes_deploy_huge")
