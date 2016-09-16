@@ -302,9 +302,10 @@ class TestOSupgrade(OSUpgradeBase):
             1. Revert snapshot upgrade_ceph_osd
             2. Select cluster for upgrade and upgraded cluster
             3. Collect nodes for upgrade
-            4. Upgrade each node using octane upgrade-node $SEED_ID <ID>
-            5. Run network verification on target cluster
-            6. Run minimal OSTF sanity check
+            4. Upgrade each osd node using octane upgrade-node $SEED_ID <ID>
+            5. Upgrade each rest node using octane upgrade-node $SEED_ID <ID>
+            6. Run network verification on target cluster
+            7. Run minimal OSTF sanity check
         """
 
         self.check_release_requirements()
@@ -317,10 +318,23 @@ class TestOSupgrade(OSUpgradeBase):
         seed_cluster_id = self.fuel_web.get_last_created_cluster()
 
         self.show_step(3)
-        old_nodes = self.fuel_web.client.list_cluster_nodes(
-            self.orig_cluster_id)
+        osd_old_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            self.orig_cluster_id, roles=['ceph-osd'])
 
         self.show_step(4)
+        for node in osd_old_nodes:
+            logger.info("Upgrading node {!s}, role {!s}".format(
+                node['id'], node['roles']))
+
+            self.upgrade_nodes(
+                seed_cluster_id=seed_cluster_id,
+                nodes_str=node['id'],
+                live_migration=True
+            )
+
+        self.show_step(5)
+        old_nodes = self.fuel_web.client.list_cluster_nodes(
+            self.orig_cluster_id)
         for node in old_nodes:
             logger.info("Upgrading node {!s}, role {!s}".format(
                 node['id'], node['roles']))
