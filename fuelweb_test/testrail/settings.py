@@ -89,3 +89,6 @@ class TestRailSettings(object):
         'blocked': ['blocked']
     }
     max_results_per_request = 250
+
+    extra_factor_of_tc_definition = os.environ.get(
+        'EXTRA_FACTOR_OF_TC_DEFINITION', None)
