@@ -253,6 +253,7 @@ class UCATest(TestBasic):
             'uca_enabled': True,
             'images_ceph': True,
             'objects_ceph': True,
+            'ceilometer': True,
         }
 
         self.show_step(1)
