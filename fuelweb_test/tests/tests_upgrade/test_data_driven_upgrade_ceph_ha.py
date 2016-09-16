@@ -75,7 +75,7 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
 
         admin_ip = self.env.get_admin_node_ip()
         # pylint: disable=redefined-variable-type
-        if self.fuel_version <= LooseVersion("7.0"):
+        if self.fuel_version <= LooseVersion("8.0"):
             dns_ntp_arg = admin_ip
         else:
             dns_ntp_arg = [admin_ip]
