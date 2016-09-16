@@ -114,6 +114,11 @@ class TestRunStatistics(object):
             if m:
                 tests_thread = m.group(1)
                 group = '{0}_{1}'.format(group, tests_thread)
+        elif TestRailSettings.extra_factor_of_tc_definition:
+            group = '{}_{}'.format(
+                group,
+                TestRailSettings.extra_factor_of_tc_definition
+            )
         for test in self.tests:
             if test['custom_test_group'] == group:
                 return test

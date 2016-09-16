@@ -76,6 +76,15 @@ def get_tests_descriptions(milestone_id, tests_include, tests_exclude, groups,
                 title = ' - '.join([title, jenkins_suffix])
                 test_group = '_'.join([case.entry.home.func_name,
                                        jenkins_suffix])
+            elif TestRailSettings.extra_factor_of_tc_definition:
+                title = '{} - {}'.format(
+                    title,
+                    TestRailSettings.extra_factor_of_tc_definition
+                )
+                test_group = '{}_{}'.format(
+                    test_group,
+                    TestRailSettings.extra_factor_of_tc_definition
+                )
 
             test_case = {
                 "title": title,
