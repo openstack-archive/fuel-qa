@@ -196,7 +196,7 @@ class TestPublicApi(TestNetworkTemplatesBase):
         self.show_step(3)
         attributes = self.fuel_web.client.get_cluster_attributes(cluster_id)
         protocol = 'https' if attributes['editable']['public_ssl']['horizon'][
-            'value'] is False else 'http'
+            'value'] is True else 'http'
 
         cmd = 'curl -I ' \
               '{proto}://{ip}/horizon --insecure'.format(proto=protocol,
