@@ -59,7 +59,7 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         Scenario:
         1. Create cluster with NeutronVLAN and ceph for all (replica factor 3)
         2. Add 3 node with controller role
-        3. Add 2 node with compute role
+        3. Add 3 node with compute role
         4. Add 3 node with ceph osd role
         5. Verify networks
         6. Deploy cluster
@@ -268,8 +268,8 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
 
         self.show_step(2)
         cluster_id = self.fuel_web.get_last_created_cluster()
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[8:9])
-        self.fuel_web.update_nodes(cluster_id, {'slave-09': ['ceph-osd']})
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[9:10])
+        self.fuel_web.update_nodes(cluster_id, {'slave-10': ['ceph-osd']})
         self.show_step(3)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(4)
