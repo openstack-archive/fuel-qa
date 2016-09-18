@@ -678,7 +678,7 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
             cmd=cmd,
             err_msg='Update failed, inspect logs for details',
         )
-        logger.info('Update successful')
+        logger.info('Update successfully')
 
     # Modifies a resolv.conf on the Fuel master node and returns
     # its original content.
