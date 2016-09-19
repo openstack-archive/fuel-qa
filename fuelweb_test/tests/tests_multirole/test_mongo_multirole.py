@@ -130,8 +130,8 @@ class MongoMultirole(TestBasic):
             3. Choose Ceph for volumes and Ceph for images, ceph ephemeral,
                ceph for objects
             4. Choose Ceilometer
-            5. Add 3 controller
-            6. Add 3 ceph+mongo
+            5. Add 3 controller+mongo
+            6. Add 3 ceph
             7. Add 1 compute node
             8. Verify networks
             9. Deploy the environment
@@ -169,12 +169,12 @@ class MongoMultirole(TestBasic):
         self.fuel_web.update_nodes(
             cluster_id,
             {
-                'slave-01': ['controller'],
-                'slave-02': ['controller'],
-                'slave-03': ['controller'],
-                'slave-04': ['ceph-osd', 'mongo'],
-                'slave-05': ['ceph-osd', 'mongo'],
-                'slave-06': ['ceph-osd', 'mongo'],
+                'slave-01': ['controller', 'mongo'],
+                'slave-02': ['controller', 'mongo'],
+                'slave-03': ['controller', 'mongo'],
+                'slave-04': ['ceph-osd'],
+                'slave-05': ['ceph-osd'],
+                'slave-06': ['ceph-osd'],
                 'slave-07': ['compute']
             }
         )
