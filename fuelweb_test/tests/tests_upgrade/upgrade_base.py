@@ -155,7 +155,7 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         seed_id = int(
             self.ssh_manager.check_call(
                 ip=self.env.get_admin_node_ip(),
-                command="octane upgrade-env {0} {1}".format(
+                command="octane upgrade-env --debug -v {0} {1}".format(
                     self.orig_cluster_id,
                     release_id
                 ),
@@ -204,7 +204,7 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         self.show_step(self.next_step)
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command="octane upgrade-node --isolated "
+            command="octane upgrade-node --debug -v --isolated "
                     "{0} {1}".format(seed_cluster_id, primary["id"]),
             error_info="octane upgrade-node failed")
 
@@ -228,7 +228,7 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         self.show_step(self.next_step)
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command="octane upgrade-db {0} {1}".format(
+            command="octane upgrade-db --debug -v {0} {1}".format(
                 self.orig_cluster_id, seed_cluster_id),
             error_info="octane upgrade-db failed")
 
@@ -259,7 +259,7 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         self.show_step(self.next_step)
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command="octane upgrade-ceph {0} {1}".format(
+            command="octane upgrade-ceph --debug -v {0} {1}".format(
                 self.orig_cluster_id, seed_cluster_id),
             error_info="octane upgrade-ceph failed")
 
@@ -270,7 +270,7 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         self.show_step(self.next_step)
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command="octane upgrade-control {0} {1}".format(
+            command="octane upgrade-control --debug -v {0} {1}".format(
                 self.orig_cluster_id, seed_cluster_id),
             error_info="octane upgrade-control failed")
 
@@ -343,7 +343,7 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
 
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command="octane upgrade-node {0} {1}".format(
+            command="octane upgrade-node --debug -v {0} {1}".format(
                 seed_cluster_id,
                 " ".join([str(ctrl["id"]) for ctrl in old_controllers])),
             error_info="octane upgrade-node failed")
@@ -366,10 +366,11 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         self.show_step(self.next_step)
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command="octane upgrade-osd --admin-password {0} {1} {2}".format(
-                KEYSTONE_CREDS['password'],
-                self.orig_cluster_id,
-                seed_cluster_id),
+            command="octane upgrade-osd --debug -v --admin-password "
+                    "{0} {1} {2}".format(
+                        KEYSTONE_CREDS['password'],
+                        self.orig_cluster_id,
+                        seed_cluster_id),
             error_info="octane upgrade-osd failed"
         )
 
@@ -403,16 +404,17 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
 
             self.ssh_manager.check_call(
                 ip=self.ssh_manager.admin_ip,
-                command="octane preupgrade-compute {0} {1}".format(
-                    prev_rel_id,
-                    " ".join([str(comp["id"]) for comp in computes])),
+                command="octane preupgrade-compute --debug -v "
+                        "{0} {1}".format(
+                            prev_rel_id,
+                            " ".join([str(comp["id"]) for comp in computes])),
                 error_info="octane upgrade-node failed")
 
     def upgrade_nodes(self, seed_cluster_id, nodes_str, live_migration=False):
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
             command=(
-                "octane upgrade-node {migration} {seed_cluster_id} "
+                "octane upgrade-node --debug -v {migration} {seed_cluster_id} "
                 "{nodes!s}".format(
                     migration='' if live_migration else '--no-live-migration',
                     seed_cluster_id=seed_cluster_id,
@@ -423,5 +425,5 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         self.show_step(self.next_step)
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command="octane cleanup {0}".format(seed_cluster_id),
+            command="octane cleanup --debug -v {0}".format(seed_cluster_id),
             error_info="octane cleanup cmd failed")
