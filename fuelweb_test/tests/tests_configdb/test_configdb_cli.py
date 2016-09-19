@@ -40,6 +40,7 @@ class TestsConfigDBAPI(TestBasic):
 
     @test(depends_on_groups=['create_component_and_env_configdb'],
           groups=['configdb_cli_interface'])
+    @log_snapshot_after_test
     def validate_creation_of_component(self):
         """Validate CRUD operations on components and resource definitions
 
@@ -159,7 +160,7 @@ class TestsConfigDBAPI(TestBasic):
         self.show_step(2)  # Create environment with level
         create_env_cmd = 'fuel2 config env create -l servers'
         self.ssh_manager.check_call(self.ssh_manager.admin_ip, create_env_cmd)
-        list_env_cmd = 'fuel2 config env list'
+        list_env_cmd = 'fuel2 config env list -f json'
         list_cmd_out = self.ssh_manager.check_call(self.ssh_manager.admin_ip,
                                                    list_env_cmd)['stdout_str']
 
@@ -185,11 +186,11 @@ class TestsConfigDBAPI(TestBasic):
         res_id = res_comp['id']
 
         self.show_step(5)  # Create environment with component
-        create_with_comp = 'fuel2 config env create -c {id}'.format(id=res_id)
+        create_with_comp = 'fuel2 config env create -i {id} -f json'.format(id=res_id)
         self.ssh_manager.check_call(admin_ip, create_with_comp)
 
         self.show_step(6)  # Verify environment with component
-        find_comp_env = 'fuel2 config env list'
+        find_comp_env = 'fuel2 config env list -f json'
         env_list = self.ssh_manager.check_call(admin_ip,
                                                find_comp_env)['stdout_str']
         env_comp = [e for e in json.loads(env_list)
@@ -197,7 +198,7 @@ class TestsConfigDBAPI(TestBasic):
         assert_equal(env_comp['hierarchy_levels'], [])
 
         self.show_step(7)  # Create environment with component and level
-        create_lvl_comp = 'fuel2 config env create -c {id} -l nodes'.format(
+        create_lvl_comp = 'fuel2 config env create -i {id} -l nodes  -f json'.format(
             id=res_id)
         out_lvl_comp = self.ssh_manager.check_call(
             admin_ip, create_lvl_comp)['stdout_str']
@@ -213,8 +214,8 @@ class TestsConfigDBAPI(TestBasic):
             admin_ip, create_new_comp)['stdout_str']
         comp_id = json.loads(comp_res)['id']
         create_mult_env_cmd = 'fuel2 config env create ' \
-                              '-l nodes,servers ' \
-                              '-c{id1},{id2}'.format(id1=comp_id, id2=res_id)
+                              '-l nodes,servers  -f json ' \
+                              '-i{id1},{id2}'.format(id1=comp_id, id2=res_id)
         env_res = self.ssh_manager.check_call(
             admin_ip, create_mult_env_cmd)['stdout_str']
 
@@ -238,6 +239,7 @@ class TestsConfigDBAPI(TestBasic):
 
     @test(depends_on_groups=['create_component_and_env_configdb'],
           groups=['configdb_cli_interface'])
+    @log_snapshot_after_test
     def resource_value_without_level(self):
         """Getting and setting resources without level with cli
 
@@ -271,8 +273,8 @@ class TestsConfigDBAPI(TestBasic):
         res_id = create_res_obj['id']
 
         self.show_step(3)  # Create environment with component
-        create_mult_env_cmd = 'fuel2 config env create ' \
-                              '-c{cid}'.format(cid=comp_id)
+        create_mult_env_cmd = 'fuel2 config env create  -f json ' \
+                              '-i{cid}'.format(cid=comp_id)
         env_res = self.ssh_manager.check_call(
             admin_ip, create_mult_env_cmd)['stdout_str']
         env_obj = json.loads(env_res)
@@ -312,6 +314,7 @@ class TestsConfigDBAPI(TestBasic):
 
     @test(depends_on_groups=['create_component_and_env_configdb'],
           groups=['configdb_cli_interface'])
+    @log_snapshot_after_test
     def resource_value_with_level(self):
         """Getting and setting resources without level with cli
 
@@ -347,7 +350,7 @@ class TestsConfigDBAPI(TestBasic):
 
         self.show_step(3)  # Create environment with component and levels
         create_mult_env_cmd = 'fuel2 config env create -l nodes ' \
-                              '-c{cid}'.format(cid=comp_id)
+                              '-i{cid} -f json'.format(cid=comp_id)
         env_res = self.ssh_manager.check_call(
             admin_ip, create_mult_env_cmd)['stdout_str']
         env_obj = json.loads(env_res)
@@ -407,6 +410,7 @@ class TestsConfigDBAPI(TestBasic):
 
     @test(depends_on_groups=['create_component_and_env_configdb'],
           groups=['configdb_cli_interface'])
+    @log_snapshot_after_test
     def merge_overrides_without_level(self):
         """Test overrides behaviour without levels
 
@@ -441,7 +445,7 @@ class TestsConfigDBAPI(TestBasic):
 
         self.show_step(3)  # Create environment for overrides
         create_mult_env_cmd = 'fuel2 config env create ' \
-                              '-c{cid}'.format(cid=comp_id)
+                              '-i{cid} -f json'.format(cid=comp_id)
         env_res = self.ssh_manager.check_call(
             admin_ip, create_mult_env_cmd)['stdout_str']
         env_obj = json.loads(env_res)
@@ -482,6 +486,7 @@ class TestsConfigDBAPI(TestBasic):
 
     @test(depends_on_groups=['create_component_and_env_configdb'],
           groups=['configdb_cli_interface'])
+    @log_snapshot_after_test
     def merge_overrides_with_level(self):
         """Test overrides behaviour with levels
 
@@ -492,7 +497,7 @@ class TestsConfigDBAPI(TestBasic):
             4. Update resource value with level
             5. Update resource override with level
             6. Check effective value with level
-            7. Check effective value with level
+            7. Check effective value without level
             8. Make snapshot
 
         Duration: 5 min
@@ -516,8 +521,8 @@ class TestsConfigDBAPI(TestBasic):
         res_id = create_res_obj['id']
 
         self.show_step(3)  # Create environment for overrides
-        create_mult_env_cmd = 'fuel2 config env create ' \
-                              '-c{cid}'.format(cid=comp_id)
+        create_mult_env_cmd = 'fuel2 config env create -l nodes ' \
+                              '-i{cid} -f json'.format(cid=comp_id)
         env_res = self.ssh_manager.check_call(
             admin_ip, create_mult_env_cmd)['stdout_str']
         env_obj = json.loads(env_res)
@@ -568,12 +573,14 @@ class TestsConfigDBAPI(TestBasic):
 
     @test(depends_on_groups=['create_component_and_env_configdb'],
           groups=['configdb_cli_interface'])
+    @log_snapshot_after_test
     def update_via_key_path(self):
         # TODO(akostrikov) Update_key_by_path
         pass
 
     @test(depends_on_groups=['create_component_and_env_configdb'],
           groups=['configdb_cli_interface'])
+    @log_snapshot_after_test
     def key_deletion_via_path(self):
         # TODO(akostrikov) Wipe key by path
         # TODO(akostrikov) Delete key by path
