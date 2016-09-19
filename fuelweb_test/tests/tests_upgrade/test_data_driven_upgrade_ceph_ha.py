@@ -59,7 +59,7 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         Scenario:
         1. Create cluster with NeutronVLAN and ceph for all (replica factor 3)
         2. Add 3 node with controller role
-        3. Add 2 node with compute role
+        3. Add 3 node with compute role
         4. Add 3 node with ceph osd role
         5. Verify networks
         6. Deploy cluster
@@ -246,18 +246,21 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         self.show_step(4)
         self.check_ostf(cluster_id, ignore_known_issues=True)
 
-    @test(groups=['upgrade_ceph_ha_tests', 'upgrade_ceph_ha_scale_ceph'],
+    @test(groups=['upgrade_ceph_ha_tests', 'upgrade_ceph_ha_replace_node'],
           depends_on_groups=['upgrade_ceph_ha_restore'])
     @log_snapshot_after_test
-    def upgrade_ceph_ha_scale_ceph(self):
-        """ Add 1 ceph node to existing cluster after upgrade
+    def upgrade_ceph_ha_replace_node(self):
+        """Replace 1 compute on ceph node in existing cluster after upgrade
 
         Scenario:
         1. Revert "upgrade_ceph_ha_restore" snapshot.
-        2. Add 1 ceph node
-        3. Verify networks
-        4. Deploy cluster
-        5. Run OSTF
+        2. Mark 1 compute node for removing
+        3. Deploy changes
+        4. Run OSTF
+        5. Add 1 ceph node
+        6. Verify networks
+        7. Deploy cluster
+        8. Run OSTF
 
         """
         self.show_step(1)
@@ -265,12 +268,24 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
 
         self.show_step(2)
         cluster_id = self.fuel_web.get_last_created_cluster()
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[8:9])
-        self.fuel_web.update_nodes(cluster_id, {'slave-09': ['ceph-osd']})
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-06': ['compute']
+            },
+            pending_addition=False,
+            pending_deletion=True
+        )
         self.show_step(3)
-        self.fuel_web.verify_network(cluster_id)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(4)
+        self.check_ostf(cluster_id, ignore_known_issues=True)
+        self.show_step(5)
+        self.fuel_web.update_nodes(cluster_id, {'slave-06': ['ceph-osd']})
+        self.show_step(6)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(7)
         # LP 1562736 get_devops_node_by_nailgun_node is not working
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.show_step(5)
+        self.show_step(8)
         self.check_ostf(cluster_id, ignore_known_issues=True)
