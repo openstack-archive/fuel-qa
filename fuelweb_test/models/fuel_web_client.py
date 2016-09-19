@@ -2127,24 +2127,27 @@ class FuelWebClient29(object):
                                  cluster_id,
                                  graph_type,
                                  node_ids=None,
+                                 tasks=None,
                                  progress=None):
         """Deploy custom graph of a given type.
 
         :param cluster_id: Id of a cluster to deploy
         :param graph_type: Custom graph type to deploy
         :param node_ids: Ids of nodes to deploy. None means all
+        :param tasks: list of tasks. None means all
         :param progress: Progress at which count deployment as a success.
         """
         logger.info('Start cluster #{cid} custom type "{type}" '
-                    'graph deployment on nodes: {nodes}. '
+                    'graph deployment on nodes: {nodes}. With tasks "{tasks}" '
                     'None means on all nodes.'.format(
                         cid=cluster_id,
                         type=graph_type,
+                        tasks=tasks,
                         nodes=node_ids
                     ))
         task = self.client.deploy_custom_graph(cluster_id,
                                                graph_type,
-                                               node_ids)
+                                               node_ids, tasks)
         self.assert_task_success(task, progress=progress)
 
     @logwrap
