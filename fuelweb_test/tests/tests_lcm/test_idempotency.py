@@ -151,7 +151,7 @@ class TaskIdempotency(LCMTestBasic):
         self.env.make_snapshot('idempotency_{}'.format(deployment))
 
     @test(depends_on=[SetupLCMEnvironment.lcm_deploy_1_ctrl_1_cmp_3_ceph],
-          groups=['lcm_non_ha',
+          groups=['lcm_non_ha_2',
                   'idempotency',
                   'idempotency_1_ctrl_1_cmp_3_ceph'])
     @log_snapshot_after_test
