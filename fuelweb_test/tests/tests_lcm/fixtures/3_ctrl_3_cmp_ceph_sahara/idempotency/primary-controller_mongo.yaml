@@ -16,7 +16,9 @@ tasks:
   - override_configuration: null
   - ceilometer-keystone: null
   - nova-db: null
-  - workloads_collector_add: null
+  - workloads_collector_add:
+      skip:
+      - Keystone_tenant[services]
   - primary-openstack-network-plugins-l2: null
   - radosgw-keystone: null
   - virtual_ips: null
@@ -54,6 +56,7 @@ tasks:
   - cinder-keystone: null
   - copy_keys:
       type: copy_files
+  - tools: null
   - enable_rados: null
   - delete_old_admin_user: null
   - ntp-check: null
@@ -71,20 +74,20 @@ tasks:
   - sahara-keystone: null
   - openstack-haproxy-sahara: null
   - ssl-keys-saving: null
-  - primary-cluster:
-      skip:
-      - Pcmk_property[no-quorum-policy]
+  - primary-cluster: null
   - upload_cirros:
       type: shell
   - primary-keystone:
       skip:
       - File[/root/openrc]
-  - apache: null
+  - primary-openstack-network-agents-l3: null
   - upload_configuration:
       type: upload_file
   - create-cinder-types: null
   - neutron-keystone: null
-  - logging: null
+  - logging:
+      skip:
+      - File[/etc/rsyslog.d/49-haproxy.conf]
   - ntp-client: null
   - nova-keystone: null
   - update_hosts: null
@@ -98,11 +101,12 @@ tasks:
   - openstack-haproxy-ceilometer: null
   - openstack-network-common-config: null
   - firewall: null
-  - primary-openstack-network-agents-l3: null
+  - apache: null
   - globals: null
   - aodh-keystone: null
   - glance: null
-  - tools: null
+  - prepare_symlinks:
+      no_puppet_run: true
   - openstack-haproxy: null
   - cgroups: null
   - murano-cfapi-keystone:
@@ -155,7 +159,8 @@ tasks:
   - murano:
       no_puppet_run: true
   - ceph_ready_check:
-      type: shell
+      skip:
+      - Exec[ceph_ready_check]
   - enable_quorum:
       type: shell
   - copy_changed_admin_user:
