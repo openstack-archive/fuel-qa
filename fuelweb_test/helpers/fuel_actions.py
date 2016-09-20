@@ -233,6 +233,45 @@ class AdminActions(BaseActions):
         data = self.ssh_manager.execute_on_remote(self.admin_ip, cmd)
         return yaml.load(cStringIO(''.join(data['stdout'])))
 
+    @logwrap
+    def create_mirror(self, pattern_name, repo_groups, input_file=None):
+        """Creates a new local mirrors
+        :param pattern_name: the builtin input file name
+        :param repo_groups: the name of repository groups
+        :param input_file: the path to file with input data
+        """
+        cmd = 'fuel-mirror create -P {0} -G {1}'.format(pattern_name,
+                                                        repo_groups)
+        if input_file:
+            cmd = '{0} -I {1}'.format(cmd, input_file)
+        self.ssh_manager.check_call(self.admin_ip, cmd)
+
+    @logwrap
+    def apply_mirror(self, pattern_name, repo_groups, input_file=None,
+                     set_default=False, replace_default=False,
+                     environment_id=None):
+        """Applies local mirrors for FUEL-environments
+        :param pattern_name: the builtin input file name
+        :param repo_groups: the name of repository groups
+        :param input_file: the path to file with input data
+        :param set_default: set as default repository
+        :param replace_default: replace default repository with generated
+        mirrors
+        :param environment_id: FUEL environment ID to update, by default
+        applies for all environments
+        """
+        cmd = 'fuel-mirror apply -P {0} -G {1}'.format(pattern_name,
+                                                       repo_groups)
+        if input_file:
+            cmd = '{0} -I {1}'.format(cmd, input_file)
+        if set_default:
+            cmd = '{0} --default'.format(cmd)
+        if replace_default:
+            cmd = '{0} --replace'.format(cmd)
+        if environment_id:
+            cmd = '{0} --env {1}'.format(cmd, environment_id)
+        self.ssh_manager.check_call(self.admin_ip, cmd)
+
 
 class NailgunActions(BaseActions):
     """NailgunActions."""  # TODO documentation
