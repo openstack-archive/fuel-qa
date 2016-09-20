@@ -63,8 +63,9 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
         4. Add 3 node with ceph osd role
         5. Verify networks
         6. Deploy cluster
-        7. Spawn instance on each compute
-        8. Write workload definition to storage file
+        7. Updates tenant quotas
+        8. Spawn instances on each compute
+        9. Write workload definition to storage file
 
         Duration: TODO
         Snapshot: prepare_upgrade_ceph_ha_before_backup
@@ -123,6 +124,23 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
             tenant=self.cluster_creds['tenant'])
 
         self.show_step(7)
+        tenant_id = os_conn.keystone.get_project_id(
+            self.cluster_creds['tenant'])
+
+        os_conn.cinder.quotas.update(tenant_id,
+                                     volumes=999,
+                                     snapshots=999,
+                                     backups=999)
+        os_conn.neutron.update_quota(
+            tenant_id,
+            {
+                'quota': {
+                    'security_group': 999,
+                    'subnet': 999,
+                    'network': 999,
+                    'router': 999}})
+
+        self.show_step(8)
         vmdata = []
         for _ in range(3):
             vmdata.extend(
@@ -130,7 +148,7 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
                                                boot_vm_from_volume=True,
                                                enable_floating_ips=True,
                                                on_each_compute=True))
-        self.show_step(8)
+        self.show_step(9)
         with open(self.workload_description_file, "w") as file_obj:
             yaml.dump(vmdata, file_obj,
                       default_flow_style=False, default_style='"')
