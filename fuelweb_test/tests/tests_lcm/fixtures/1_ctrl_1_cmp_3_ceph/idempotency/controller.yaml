@@ -5,9 +5,7 @@ tasks:
       type: shell
   - openstack-haproxy-mysqld: null
   - cinder-db: null
-  - dump_rabbitmq_definitions:
-      skip:
-      - Dump_rabbitmq_definitions[/etc/rabbitmq/definitions.full]
+  - dump_rabbitmq_definitions: null
   - rsync_core_puppet:
       type: sync
   - ssl-dns-setup: null
@@ -17,7 +15,9 @@ tasks:
   - ceilometer-keystone:
       no_puppet_run: true
   - nova-db: null
-  - workloads_collector_add: null
+  - workloads_collector_add:
+      skip:
+      - Keystone_tenant[services]
   - primary-openstack-network-plugins-l2: null
   - radosgw-keystone: null
   - virtual_ips: null
@@ -56,6 +56,7 @@ tasks:
   - cinder-keystone: null
   - copy_keys:
       type: copy_files
+  - tools: null
   - enable_rados: null
   - delete_old_admin_user: null
   - ntp-check: null
@@ -76,9 +77,7 @@ tasks:
   - openstack-haproxy-sahara:
       no_puppet_run: true
   - ssl-keys-saving: null
-  - primary-cluster:
-      skip:
-      - Pcmk_property[no-quorum-policy]
+  - primary-cluster: null
   - upload_cirros:
       type: shell
   - primary-keystone:
@@ -89,7 +88,9 @@ tasks:
       type: upload_file
   - create-cinder-types: null
   - neutron-keystone: null
-  - logging: null
+  - logging:
+      skip:
+      - File[/etc/rsyslog.d/49-haproxy.conf]
   - nova-keystone: null
   - update_hosts: null
   - ironic-keystone:
@@ -109,7 +110,8 @@ tasks:
   - aodh-keystone:
       no_puppet_run: true
   - glance: null
-  - tools: null
+  - prepare_symlinks:
+      no_puppet_run: true
   - openstack-haproxy: null
   - cgroups: null
   - murano-cfapi-keystone:
@@ -164,7 +166,8 @@ tasks:
   - murano:
       no_puppet_run: true
   - ceph_ready_check:
-      type: shell
+      skip:
+      - Exec[ceph_ready_check]
   - enable_quorum:
       type: shell
   - copy_changed_admin_user:
