@@ -105,6 +105,19 @@ class CommandLine(TestBasic):
             cmd=cmd
         )
 
+    def wait_cli_task_status(self, task, status, timeout=5 * 60, interval=5):
+        wait(
+            lambda: (self.get_task(task['id'])['status'] == status),
+            interval=interval,
+            timeout=timeout,
+            timeout_msg='Waiting timeout {timeout} sec was reached '
+                        'for status: {status}'
+                        ' on task: {task}'.format(task=task["name"],
+                                                  timeout=timeout,
+                                                  status=status
+                                                  )
+        )
+
     def assert_cli_task_success(self, task, timeout=70 * 60, interval=20):
         logger.info('Wait {timeout} seconds for task: {task}'
                     .format(timeout=timeout, task=task))

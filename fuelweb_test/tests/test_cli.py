@@ -217,7 +217,11 @@ class CommandLineTest(test_cli_base.CommandLine):
         task = self.ssh_manager.execute_on_remote(admin_ip,
                                                   cmd,
                                                   jsonify=True)['stdout_json']
+
+        self.wait_cli_task_status(task=task, status='running')
+        # Fuel 9.1 is async, so we should wait for real task start
         network_settings = self.get_networks(cluster_id)
+
         self.assert_cli_task_success(task, timeout=30 * 60)
 
         self.assert_all_tasks_completed(cluster_id=cluster_id)
