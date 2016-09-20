@@ -1,7 +1,7 @@
 access:
   email:
     type: text
-    value: admin_upd@localhost
+    value: admin@localhost
   password:
     type: password
     value: admin
@@ -17,13 +17,13 @@ additional_components:
     value: true
   heat:
     type: hidden
-    value: false
+    value: true
   ironic:
     type: checkbox
     value: false
   mongo:
     type: checkbox
-    value: true
+    value: false
   murano:
     type: checkbox
     value: false
@@ -39,25 +39,28 @@ common:
     value: ''
   auto_assign_floating_ip:
     type: checkbox
-    value: true
+    value: false
   debug:
     type: checkbox
-    value: false
+    value: true
   libvirt_type:
     type: radio
     value: qemu
   nova_quota:
     type: checkbox
-    value: true
+    value: false
   propagate_task_deploy:
-    type: hidden
+    type: checkbox
     value: false
   puppet_debug:
     type: checkbox
-    value: false
+    value: true
   resume_guests_state_on_host_boot:
     type: checkbox
-    value: false
+    value: true
+  run_ping_checker:
+    type: checkbox
+    value: true
   task_deploy:
     type: hidden
     value: true
@@ -96,14 +99,14 @@ external_mongo:
 kernel_params:
   kernel:
     type: text
-    value: console=tty0 net.ifnames=0 biosdevname=0 rootdelay=90 nomodeset
+    value: console=tty0 net.ifnames=1 biosdevname=0 rootdelay=90 nomodeset
 murano_settings:
+  murano_glance_artifacts_plugin:
+    type: checkbox
+    value: true
   murano_repo_url:
     type: text
     value: http://storage.apps.openstack.org/
-  murano_glance_artifacts_plugin:
-    type: checkbox
-    value: false
 neutron_advanced_configuration:
   neutron_dvr:
     type: checkbox
@@ -129,7 +132,7 @@ operator_user:
     value: fueladmin
   password:
     type: password
-    value: xalFdhQSGrB7xgdPrPiM3vZm
+    value: xzyO7tAMgyBYgJIkOGcr4pCj
   sudo:
     type: textarea
     value: 'ALL=(ALL) NOPASSWD: ALL'
@@ -242,93 +245,93 @@ public_ssl:
     value:
       content: '-----BEGIN CERTIFICATE-----
 
-        MIIC7TCCAdUCAgPoMA0GCSqGSIb3DQEBBQUAMDwxHjAcBgNVBAsMFU1pcmFudGlz
+        MIIC2zCCAcMCAgPoMA0GCSqGSIb3DQEBBQUAMDMxFTATBgNVBAsMDEZ1ZWwtUUEg
 
-        IEZ1ZWwtUUEgVGVhbTEaMBgGA1UEAwwRcHVibGljLmZ1ZWwubG9jYWwwHhcNMTYw
+        VGVhbTEaMBgGA1UEAwwRcHVibGljLmZ1ZWwubG9jYWwwHhcNMTYwOTIxMDU1ODMx
 
-        NDE5MTkxMTU1WhcNMjYwNDE3MTkxMTU1WjA8MR4wHAYDVQQLDBVNaXJhbnRpcyBG
+        WhcNMjYwOTE5MDU1ODMxWjAzMRUwEwYDVQQLDAxGdWVsLVFBIFRlYW0xGjAYBgNV
 
-        dWVsLVFBIFRlYW0xGjAYBgNVBAMMEXB1YmxpYy5mdWVsLmxvY2FsMIIBIjANBgkq
+        BAMMEXB1YmxpYy5mdWVsLmxvY2FsMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB
 
-        hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoZBouZH+0S1jPYy+FxvNAkdGxsNVzsOI
+        CgKCAQEAoNUeb2cUHim6zfN1TneyJTN0+W+JJhnQPEfgAQXOvc4Pl9Oq2K3OkoWZ
 
-        g7OybWx+DIskdRvONwrCFFtvP2InKJowPCebGcCqDqGF2zgFLmA9yQN/05A9f8bX
+        JzhHpUMIGiQZklfDrOMSUlAmYzrFYkcIyup545gAwAbMEcZ0UsuwyhuXz5l7H42o
 
-        hFrtjfNb/YYJxDE4itSYNgSzSfnitii7AJme9UBw94s0p3749irGTB++ZhcPzwdg
+        zwi1pvCC/b5XSNKhSeQK1O242UJuVRd28c+U30fYneaIXut+MSrGkOXsITgCDlbC
 
-        Nx0Ymk2uFFNU18YxSx8PAk2w73a36t61E0P++MT6sYIM1GAx+9pm9Ddrj5r0b/M7
+        hKNivFNJArJ31T9yWafE8PNvmUH99zl2lHgydS9PoHmHU16bc4l+amPUj86n1qW6
 
-        ikHGIUuB7M6t3mNHUveld+ZyXjaONMHZI5WQ16AMZwtHunUu/42k+o6RSS4h+zT8
+        Yb2Q1q7iuiBn/b2Ej1lhxEd0uyDM9uZ2/XQUB+fsV5dgaZXz2Eg9gTucWvBwIkAW
 
-        ZiWW5cxZVLn6xqJkDkXMDdsS7PrveSuODq3LuaG4fwRpf1u2hqvyuwIDAQABMA0G
+        okA9qPsj2EVTsEh+Y/iz9oYJx9A8EQIDAQABMA0GCSqGSIb3DQEBBQUAA4IBAQAo
 
-        CSqGSIb3DQEBBQUAA4IBAQBfAjtVxKItKMFAQl/EufHjk4rBpRiaHGLH2CIJHWJ1
+        itjmUzDzfsegdbu5yUHobgB4SovTfw0OC0poZKUuwAnVbGhI5sThpu3wo233WDrb
 
-        i+z7gI5XazzwMCprOxsCUrJUpr8ChobenyebNPJSnDI0R0z8ZTX6kTNk7A2ZFVrp
+        LKFmhzVYCGjiprd1sJnCyTMW7fzlk9STw7CAVKGELQmJM8zmSShMklCylgcFNSJG
 
-        lL5TlpwhdtUjWxF3Coi+w694MbyLmJ4pA6QZTYVqSilZZ1cncLNA+Fc97STfLukK
+        SsnEiz0JiCxfkbdzNkNUfoNcrXME1fiPo6ULcOyy1dhtjLFxZZff8ykfgNOMmNGj
 
-        wqjwCYovRVjUn4jLRjy2kcw89060xxZopVpkY9cPfg0P+PICo/eS4EunQ5rd/EDV
+        wMJMHJ65Z7460vqOEi+Lj1NDTvS0+M1rHn3gGVU/Diq2vDNzd5cZ74v4wUeyzaJQ
 
-        7DBfCbzthArBjF8/72J8PYhqwEc+i5PDkn2CNIXoT0coxC9YAHJ+zFHgxHnKa0/q
+        LbXP0XBRGaNR6yumYUmM/5RsvWv6bY4yDrlHC+pszLI07pO7dmO7okDzvA/VEds6
 
-        TPlvi+wJKrrSnXb5Oc34tVOxDF/WQjNuve8vHg7hvaIM
+        wzzs63UZ9cQNqcOo7Nfw
 
         -----END CERTIFICATE-----
 
         -----BEGIN PRIVATE KEY-----
 
-        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
+        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
 
-        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
+        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
 
-        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
+        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
 
-        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
+        7bjZQm5VF3bxz5TfR9id5ohe634xKsaQ5ewhOAIOVsKEo2K8U0kCsnfVP3JZp8Tw
 
-        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
+        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
 
-        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
+        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
 
-        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
+        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
 
-        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
+        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
 
-        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
+        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
 
-        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
+        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
 
-        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
+        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
 
-        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
+        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
 
-        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
+        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
 
-        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
+        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
 
-        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
+        eUgX8mBtO0qbKrHYunirBjfJ4T0CgYEAyCVrOuGU8FPBRDr1nGtgCVGrmI6wY1hg
 
-        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
+        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
 
-        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
+        gzkwXCUAayuT42rq/AurKFWdRwAC8uchgyx2AYKXn3HHSmoDcUs7++y9hn/BdR2B
 
-        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
+        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
 
-        67GSpSFtEa9zhvXNMSnxvuNyAwgMTFnuEaNPN1do4wjRdSNL+VIN1Vu5fz6mp2Kk
+        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
 
-        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
+        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
 
-        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
+        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
 
-        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
+        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
 
-        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
+        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
 
-        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
+        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
 
-        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
+        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
 
-        sQ/BZiYxMSE8+synlzp3gss=
+        3BuROZEFRxaBrktDUGSbyyQ=
 
         -----END PRIVATE KEY-----
 
@@ -339,13 +342,13 @@ public_ssl:
     value: user_uploaded
   horizon:
     type: checkbox
-    value: false
+    value: true
   hostname:
     type: text
     value: public.fuel.local
   services:
     type: checkbox
-    value: false
+    value: true
 service_user:
   homedir:
     type: hidden
@@ -355,7 +358,7 @@ service_user:
     value: fuel
   password:
     type: hidden
-    value: WEwz5aKA0hYDrcERjX7irQzS
+    value: yxFf89bi7nSbcxxdMBuu3ooC
   root_password:
     type: hidden
     value: r00tme
@@ -365,16 +368,19 @@ service_user:
 storage:
   admin_key:
     type: hidden
-    value: AQDzghZXAAAAABAA7obspvgNjPa/HBWSOUzI1w==
+    value: AQCAIeJXAAAAABAAfhJsyRlk/lUS7C8E7y3/2A==
+  auth_s3_keystone_ceph:
+    type: checkbox
+    value: false
   bootstrap_osd_key:
     type: hidden
-    value: AQDzghZXAAAAABAAWaiWslWwse+hsaKLzbtQFw==
+    value: AQCAIeJXAAAAABAAYNtvQUwTIuC8FgjVG737Ng==
   ephemeral_ceph:
     type: checkbox
     value: false
   fsid:
     type: hidden
-    value: 4b0ab6f5-b82b-44e4-ac3a-15c76f960b82
+    value: aa004ff1-8171-44ed-90f4-b7d8cae7e667
   images_ceph:
     type: checkbox
     value: false
@@ -383,7 +389,7 @@ storage:
     value: false
   mon_key:
     type: hidden
-    value: AQDzghZXAAAAABAAVi1udBHvkQbZbDgNnT7gXA==
+    value: AQCAIeJXAAAAABAAI90l9KxBPY6YtJ8pH976Sg==
   objects_ceph:
     type: checkbox
     value: false
@@ -392,16 +398,16 @@ storage:
     value: '3'
   radosgw_key:
     type: hidden
-    value: AQDzghZXAAAAABAA8jY8KftsCK4l726rNdu/Zg==
+    value: AQCAIeJXAAAAABAAyXGX6sytry+woGHIfhDR+A==
   volumes_block_device:
     type: checkbox
-    value: true
+    value: false
   volumes_ceph:
     type: checkbox
     value: false
   volumes_lvm:
     type: checkbox
-    value: false
+    value: true
 syslog:
   syslog_port:
     type: text
@@ -415,10 +421,10 @@ syslog:
 workloads_collector:
   enabled:
     type: hidden
-    value: false
+    value: true
   password:
     type: password
-    value: 8qtWdXhhY84wFoxwBbZcpq3P
+    value: 50KScdLUvGqTarZzCqBiVaNG
   tenant:
     type: text
     value: services
