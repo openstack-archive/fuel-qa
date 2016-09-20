@@ -227,7 +227,8 @@ class TaskEnsurability(LCMTestBasic):
     @test(depends_on=[SetupLCMEnvironment.lcm_deploy_1_ctrl_1_cmp_1_cinder],
           groups=['lcm_non_ha',
                   'test_ensurability',
-                  'ensurability_1_ctrl_1_cmp_1_cinder'])
+                  'ensurability_1_ctrl_1_cmp_1_cinder',
+                  'lcm_cinder'])
     @log_snapshot_after_test
     def ensurability_1_ctrl_1_cmp_1_cinder(self):
         """Test ensurability for cluster with cinder
@@ -270,7 +271,8 @@ class TaskEnsurability(LCMTestBasic):
     @test(depends_on=[SetupLCMEnvironment.lcm_deploy_1_ctrl_1_cmp_1_mongo],
           groups=['lcm_non_ha',
                   'test_ensurability',
-                  'ensurability_1_ctrl_1_cmp_1_mongo'])
+                  'ensurability_1_ctrl_1_cmp_1_mongo',
+                  'lcm_mongo'])
     @log_snapshot_after_test
     def ensurability_1_ctrl_1_cmp_1_mongo(self):
         """Test ensurability for cluster with mongo
@@ -311,9 +313,10 @@ class TaskEnsurability(LCMTestBasic):
         self.env.make_snapshot('ensurability_{}'.format(deployment))
 
     @test(depends_on=[SetupLCMEnvironment.lcm_deploy_1_ctrl_1_cmp_3_ceph],
-          groups=['lcm_non_ha',
+          groups=['lcm_non_ha_2',
                   'test_ensurability',
-                  'ensurability_1_ctrl_1_cmp_3_ceph'])
+                  'ensurability_1_ctrl_1_cmp_3_ceph',
+                  'lcm_ceph'])
     @log_snapshot_after_test
     def ensurability_1_ctrl_1_cmp_3_ceph(self):
         """Test ensurability for cluster with ceph
@@ -356,7 +359,8 @@ class TaskEnsurability(LCMTestBasic):
     @test(depends_on=[SetupLCMEnvironment.lcm_deploy_3_ctrl_3_cmp_ceph_sahara],
           groups=['lcm_ha',
                   'test_ensurability',
-                  'ensurability_3_ctrl_3_cmp_ceph_sahara'])
+                  'ensurability_3_ctrl_3_cmp_ceph_sahara',
+                  'lcm_sahara'])
     @log_snapshot_after_test
     def ensurability_3_ctrl_3_cmp_ceph_sahara(self):
         """Test ensurability for cluster with Sahara, Ceilometer and Ceph
@@ -402,7 +406,8 @@ class TaskEnsurability(LCMTestBasic):
 
     @test(depends_on=[SetupLCMEnvironment.lcm_deploy_1_ctrl_1_cmp_1_ironic],
           groups=['lcm_ironic',
-                  'ensurability_1_ctrl_1_cmp_1_ironic'])
+                  'ensurability_1_ctrl_1_cmp_1_ironic',
+                  'lcm_ironic'])
     @log_snapshot_after_test
     def ensurability_1_ctrl_1_cmp_1_ironic(self):
         """Test ensurability for cluster with Ironic
