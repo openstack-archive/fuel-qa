@@ -79,6 +79,7 @@ class GraphExtension(TestBasic):
     @log_snapshot_after_test
     def graph_extension_cli(self):
         """Upload and execute graph for env with 4 slaves (CLI)
+
         Scenario:
             1. Revert snapshot "ready_with_3_slaves"
             2. Create env with 1 controller nodes and 1 compute+cinder node
@@ -130,6 +131,7 @@ class GraphExtension(TestBasic):
     @log_snapshot_after_test
     def graph_extension_api(self):
         """Upload and execute graph for env with 4 slaves (CLI)
+
         Scenario:
             1. Revert snapshot "extension_graph_prepare_env"
             2. Execute graphs via API
