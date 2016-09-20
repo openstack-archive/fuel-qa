@@ -442,6 +442,8 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
         if CUSTOM_FUEL_SETTING_YAML:
             self.admin_actions.update_fuel_setting_yaml(
                 CUSTOM_FUEL_SETTING_YAML)
+        if settings.DISABLE_MASTER_MOS_UPDATE:
+            self.admin_actions.disable_master_update(repo_list=['mos*'])
         self.kill_wait_for_external_config()
         self.wait_bootstrap()
         self.admin_actions.wait_for_fuel_ready()

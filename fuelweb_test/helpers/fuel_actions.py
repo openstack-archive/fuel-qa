@@ -252,6 +252,19 @@ class AdminActions(BaseActions):
         data = self.ssh_manager.execute_on_remote(self.admin_ip, cmd)
         return yaml.load(cStringIO(''.join(data['stdout'])))
 
+    @logwrap
+    def disable_master_update(self, repo_list=None):
+        """Disable repos on fuel-master
+
+        :param repos:
+        :return:
+        """
+        if repo_list is not None:
+            for repo in repo_list:
+                cmd = 'yum-config-manager --disable {} --save'.format(repo)
+                data = self.ssh_manager.execute_on_remote(self.admin_ip, cmd)
+            return data
+
 
 class NailgunActions(BaseActions):
     """NailgunActions."""  # TODO documentation
