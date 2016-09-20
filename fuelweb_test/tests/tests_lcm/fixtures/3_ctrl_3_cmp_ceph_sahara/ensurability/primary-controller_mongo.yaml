@@ -8,9 +8,8 @@ tasks:
   - cinder-db:
       resources: []
   - dump_rabbitmq_definitions:
-      skip:
+      resources:
       - Dump_rabbitmq_definitions[/etc/rabbitmq/definitions.full]
-      resources: []
   - rsync_core_puppet:
       type: sync
   - ssl-dns-setup:
@@ -25,11 +24,12 @@ tasks:
   - nova-db:
       resources: []
   - workloads_collector_add:
-      resources: []
+      resources:
+      - Keystone_tenant[services]
   - primary-openstack-network-plugins-l2:
       resources: []
   - radosgw-keystone:
-      resources: []
+      no_puppet_run: true
   - virtual_ips:
       resources: []
   - primary-dns-server:
@@ -84,8 +84,12 @@ tasks:
       resources: []
   - copy_keys:
       type: copy_files
+  - tools:
+      resources: []
   - enable_rados:
       no_puppet_run: true
+  - delete_old_admin_user:
+      resources: []
   - ntp-check:
       resources: []
   - aodh-db:
@@ -97,7 +101,7 @@ tasks:
   - memcached:
       resources: []
   - allocate_hugepages:
-      no_puppet_run: true
+      resources: []
   - openrc-delete:
       resources:
       - File[/root/openrc]
@@ -110,8 +114,6 @@ tasks:
   - ssl-keys-saving:
       no_puppet_run: true
   - primary-cluster:
-      skip:
-      - Pcmk_property[no-quorum-policy]
       resources: []
   - upload_cirros:
       type: shell
@@ -128,7 +130,8 @@ tasks:
       resources:
       - Keystone_endpoint[RegionOne/neutron::network]
   - logging:
-      resources: []
+      resources:
+      - File[/etc/rsyslog.d/49-haproxy.conf]
   - ntp-client:
       resources: []
   - nova-keystone:
@@ -169,7 +172,8 @@ tasks:
   - apache:
       resources: []
   - globals:
-      resources: []
+      resources:
+      - File[/etc/hiera/globals.yaml]
   - aodh-keystone:
       resources:
       - Keystone_endpoint[RegionOne/aodh::alarming]
@@ -185,7 +189,6 @@ tasks:
       - Glance_api_config[glance_store/swift_store_endpoint_type]
       - Glance_glare_config[DEFAULT/default_log_levels]
       - Glance_api_config[glance_store/stores]
-      - Glance_cache_config[DEFAULT/image_cache_max_size]
       - Glance_swift_config[ref1/user_domain_id]
       - Glance_glare_config[glance_store/default_store]
       - Glance_registry_config[DEFAULT/default_log_levels]
@@ -209,8 +212,8 @@ tasks:
       - Glance_glare_config[glance_store/swift_store_container]
       - Glance_api_config[glance_store/swift_store_container]
       - Glance_api_config[glance_store/swift_store_region]
-  - tools:
-      resources: []
+  - prepare_symlinks:
+      no_puppet_run: true
   - openstack-haproxy:
       resources: []
   - cgroups:
@@ -243,14 +246,13 @@ tasks:
       - File[/usr/local/bin/swift-rings-rebalance.sh]
       - Cron[swift-rings-rebalance]
   - primary-ceph-mon:
-      resources:
-      - Exec[ceph-deploy gatherkeys]
+      resources: []
   - openstack-haproxy-stats:
       resources: []
   - ironic-api:
       no_puppet_run: true
   - primary-ceph-radosgw:
-      resources: []
+      no_puppet_run: true
   - dns-client:
       resources: []
   - cluster-vrouter:
@@ -306,9 +308,12 @@ tasks:
   - murano:
       no_puppet_run: true
   - ceph_ready_check:
-      type: shell
+      resources:
+      - Exec[ceph_ready_check]
   - enable_quorum:
       type: shell
+  - copy_changed_admin_user:
+      type: copy_files
   - openstack-haproxy-nova:
       resources:
       - File[/etc/haproxy/conf.d/040-nova-api.cfg]
@@ -344,10 +349,8 @@ tasks:
       - Exec[create_account]
       - Swift_dispersion_config[dispersion/auth_url]
       - Swift_dispersion_config[dispersion/dump_json]
-      - Ring_account_device[10.109.2.5:6002/2]
       - Package[swift-object]
       - File[/var/lib/puppet/concat/_etc_swift_account-server.conf]
-      - Ring_object_device[10.109.2.5:6000/1]
       - File[/etc/swift/swift.conf]
       - File[/var/lib/glance]
       - Service[swift-account-server]
@@ -355,6 +358,7 @@ tasks:
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/35_swift_slo]
       - Ring_object_device[10.109.2.2:6000/2]
       - Package[swift-plugin-s3]
+      - Ring_account_device[10.109.2.4:6002/2]
       - File[/etc/swift/account-server.conf]
       - Service[swift-account-replicator]
       - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments.concat.out]
@@ -365,7 +369,6 @@ tasks:
       - File[/var/run/swift]
       - File[/var/lib/puppet/concat/_etc_swift_container-server.conf]
       - File[/var/lib/puppet/concat/_etc_swift_object-server.conf/fragments.concat.out]
-      - Ring_object_device[10.109.2.5:6000/2]
       - Service[swift-container-replicator]
       - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments.concat]
       - Swift_dispersion_config[dispersion/auth_user]
@@ -377,12 +380,13 @@ tasks:
       - Exec[create_container]
       - File[/etc/swift/object-server.conf]
       - File[/var/log/ceilometer/swift-proxy-server.log]
+      - Ring_container_device[10.109.2.2:6001/2]
       - Swift_dispersion_config[dispersion/auth_version]
-      - Ring_container_device[10.109.2.5:6001/2]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/82_swift_container_sync]
       - Exec[concat_/etc/rsyncd.conf]
       - Service[swift-proxy-server]
       - Swift_dispersion_config[dispersion/swift_dir]
+      - Ring_object_device[10.109.2.4:6000/1]
       - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/00_header_rsyncd_conf_header]
       - File[/etc/swift/container-server.conf]
       - Swift_container_sync_realms_config[realm1/cluster_name1]
@@ -393,9 +397,9 @@ tasks:
       - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/10_swift_backups_frag-swift_backups]
       - Swift_config[swift-constraints/max_header_size]
       - File[/etc/swift]
-      - Ring_container_device[10.109.2.5:6001/1]
       - Ring_container_device[10.109.2.3:6001/1]
       - Ring_object_device[10.109.2.2:6000/1]
+      - Service[swift-object-reconstructor]
       - File[/var/lib/puppet/concat/_etc_swift_object-server.conf/fragments.concat]
       - User[swift]
       - File[/var/lib/puppet/concat/_etc_swift_container-server.conf/fragments]
@@ -406,7 +410,7 @@ tasks:
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/00_swift_proxy]
       - File[/var/cache/swift]
       - File[/var/lib/puppet/concat/_etc_swift_account-server.conf/fragments.concat]
-      - Ring_container_device[10.109.2.2:6001/2]
+      - Service[swift-container-reconciler]
       - File[/var/lib/swift]
       - File[/etc/xinetd.d/rsync]
       - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/10_account_frag-account]
@@ -423,7 +427,8 @@ tasks:
       - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/10_object_frag-object]
       - File[/var/lib/puppet/concat/_etc_swift_container-server.conf/fragments/00_swift-container-6001]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/25_swift_healthcheck]
-      - Ring_account_device[10.109.2.5:6002/1]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/24_swift_catch_errors]
+      - Ring_object_device[10.109.2.4:6000/2]
       - Ring_object_device[10.109.2.3:6000/1]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/23_swift_cache]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/29_swift-proxy-tempurl]
@@ -432,6 +437,7 @@ tasks:
       - Service[swift-container-server]
       - Swift_dispersion_config[dispersion/auth_key]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments.concat.out]
+      - Ring_account_device[10.109.2.4:6002/1]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/28_swift_s3token]
       - File[/var/lib/puppet/concat/_etc_swift_object-server.conf/fragments]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/32_swift-proxy-staticweb]
@@ -443,6 +449,7 @@ tasks:
       - Exec[concat_/etc/swift/proxy-server.conf]
       - Service[swift-object-replicator]
       - Ring_container_device[10.109.2.3:6001/2]
+      - Ring_container_device[10.109.2.4:6001/1]
       - File[/etc/rsyncd.conf]
       - Package[swift-proxy]
       - Swift_container_sync_realms_config[realm1/key]
@@ -461,7 +468,7 @@ tasks:
       - Exec[concat_/etc/swift/object-server.conf]
       - File[/etc/swift/object-server/]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/33_swift_ceilometer]
-      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/24_swift_catch_errors]
+      - Ring_container_device[10.109.2.4:6001/2]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/21_swift_bulk]
   - primary-openstack-network-agents-dhcp:
       resources:
@@ -491,6 +498,8 @@ tasks:
       resources: []
   - copy_haproxy_keys:
       type: copy_files
+  - pkg_upgrade:
+      no_puppet_run: true
   - openstack-network-networks:
       resources: []
   - ssl-add-trust-chain:

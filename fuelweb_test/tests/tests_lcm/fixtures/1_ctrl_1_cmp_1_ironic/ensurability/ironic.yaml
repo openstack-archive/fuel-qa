@@ -7,6 +7,8 @@ tasks:
       resources: []
   - globals:
       resources: []
+  - tools:
+      resources: []
   - fuel_pkgs:
       resources: []
   - ironic_copy_bootstrap_key:
@@ -19,16 +21,16 @@ tasks:
       type: skipped
   - copy_keys:
       type: copy_files
-  - tools:
-      resources: []
+  - prepare_symlinks:
+      no_puppet_run: true
   - copy_deleted_nodes:
       type: copy_files
   - setup_repositories:
       resources: []
   - allocate_hugepages:
       resources: []
-  - plugins_setup_repositories:
-      no_puppet_run: true
+  - copy_changed_admin_user:
+      type: copy_files
   - ironic-conductor:
       resources: []
   - copy_keys_ceph:
@@ -52,5 +54,9 @@ tasks:
       resources: []
   - copy_haproxy_keys:
       type: copy_files
+  - plugins_setup_repositories:
+      no_puppet_run: true
+  - pkg_upgrade:
+      no_puppet_run: true
   - reserved_ports:
       resources: []

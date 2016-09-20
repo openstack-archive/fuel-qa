@@ -105,7 +105,8 @@ class TaskIdempotency(LCMTestBasic):
     @test(depends_on=[SetupLCMEnvironment.lcm_deploy_1_ctrl_1_cmp_1_cinder],
           groups=['lcm_non_ha',
                   'idempotency',
-                  'idempotency_1_ctrl_1_cmp_1_cinder'])
+                  'idempotency_1_ctrl_1_cmp_1_cinder',
+                  'lcm_cinder'])
     @log_snapshot_after_test
     def idempotency_1_ctrl_1_cmp_1_cinder(self):
         """Test idempotency for cluster with cinder
@@ -129,7 +130,8 @@ class TaskIdempotency(LCMTestBasic):
     @test(depends_on=[SetupLCMEnvironment.lcm_deploy_1_ctrl_1_cmp_1_mongo],
           groups=['lcm_non_ha',
                   'idempotency',
-                  'idempotency_1_ctrl_1_cmp_1_mongo'])
+                  'idempotency_1_ctrl_1_cmp_1_mongo',
+                  'lcm_mongo'])
     @log_snapshot_after_test
     def idempotency_1_ctrl_1_cmp_1_mongo(self):
         """Test idempotency for cluster with Ceilometer
@@ -151,9 +153,10 @@ class TaskIdempotency(LCMTestBasic):
         self.env.make_snapshot('idempotency_{}'.format(deployment))
 
     @test(depends_on=[SetupLCMEnvironment.lcm_deploy_1_ctrl_1_cmp_3_ceph],
-          groups=['lcm_non_ha',
+          groups=['lcm_non_ha_2',
                   'idempotency',
-                  'idempotency_1_ctrl_1_cmp_3_ceph'])
+                  'idempotency_1_ctrl_1_cmp_3_ceph',
+                  'lcm_ceph'])
     @log_snapshot_after_test
     def idempotency_1_ctrl_1_cmp_3_ceph(self):
         """Test idempotency for cluster with Ceph
@@ -177,7 +180,8 @@ class TaskIdempotency(LCMTestBasic):
     @test(depends_on=[SetupLCMEnvironment.lcm_deploy_3_ctrl_3_cmp_ceph_sahara],
           groups=['lcm_ha',
                   'idempotency',
-                  'idempotency_3_ctrl_3_cmp_ceph_sahara'])
+                  'idempotency_3_ctrl_3_cmp_ceph_sahara',
+                  'lcm_sahara'])
     @log_snapshot_after_test
     def idempotency_3_ctrl_3_cmp_ceph_sahara(self):
         """Test idempotency for cluster with Sahara, Ceilometer,
@@ -201,7 +205,8 @@ class TaskIdempotency(LCMTestBasic):
 
     @test(depends_on=[SetupLCMEnvironment.lcm_deploy_1_ctrl_1_cmp_1_ironic],
           groups=['lcm_ironic',
-                  'idempotency_1_ctrl_1_cmp_1_ironic'])
+                  'idempotency_1_ctrl_1_cmp_1_ironic',
+                  'lcm_ironic'])
     @log_snapshot_after_test
     def idempotency_1_ctrl_1_cmp_1_ironic(self):
         """Test idempotency for cluster with Ironic
