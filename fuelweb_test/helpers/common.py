@@ -309,7 +309,7 @@ class Common(object):
                 checkers.check_swift_ring(controller_ip)
                 break
             except AssertionError:
-                result = ssh.execute_on_remote(ip=controller_ip, cmd=cmd)
+                result = ssh.execute(controller_ip, cmd)
                 logger.debug("command execution result is {0}".format(result))
         else:
             checkers.check_swift_ring(controller_ip)
