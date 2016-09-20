@@ -14,6 +14,7 @@
 
 from __future__ import unicode_literals
 
+from keystoneauth1.exceptions import http
 import functools
 import logging
 
@@ -32,6 +33,12 @@ def logwrap(func):
             result = func(*args, **kwargs)
             logger.debug(
                 "Done: {!r} with result: {!r}".format(func.__name__, result))
+        except http.BadRequest as e:
+            message = getattr(e, "details", e.message)
+            logger.exception(
+                '{func!r} raised: {exc}\n'.format(func=func.__name__,
+                                                  exc=message))
+            raise
         except BaseException as e:
             logger.exception(
                 '{func!r} raised: {exc!r}\n'.format(func=func.__name__, exc=e))

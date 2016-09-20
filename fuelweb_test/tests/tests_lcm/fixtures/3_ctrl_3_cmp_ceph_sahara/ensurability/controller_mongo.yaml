@@ -4,9 +4,8 @@ tasks:
   - openstack-network-agents-l3:
       resources: []
   - dump_rabbitmq_definitions:
-      skip:
+      resources:
       - Dump_rabbitmq_definitions[/etc/rabbitmq/definitions.full]
-      resources: []
   - rsync_core_puppet:
       type: sync
   - ssl-dns-setup:
@@ -61,9 +60,122 @@ tasks:
   - dns-server:
       resources: []
   - swift-proxy_storage:
-      resources: []
+      resources:
+      - Swift_dispersion_config[dispersion/dispersion_coverage]
+      - Exec[rsync /etc/swift/object.ring.gz]
+      - File[/var/lib/puppet/concat/_etc_rsyncd.conf]
+      - File[/etc/swift/dispersion.conf]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/31_swift-proxy-formpost]
+      - Package[swift-proxy]
+      - Swift_dispersion_config[dispersion/auth_url]
+      - Swift_dispersion_config[dispersion/dump_json]
+      - Exec[rsync /etc/swift/account.ring.gz]
+      - Package[swift-object]
+      - File[/var/lib/puppet/concat/_etc_swift_account-server.conf]
+      - File[/etc/swift/swift.conf]
+      - File[/var/lib/glance]
+      - Service[swift-account-server]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/35_swift_slo]
+      - Package[swift-plugin-s3]
+      - File[/etc/swift/account-server.conf]
+      - Service[swift-account-replicator]
+      - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments.concat.out]
+      - File[/var/lib/puppet/concat/_etc_swift_account-server.conf/fragments.concat.out]
+      - File[/var/lib/puppet/concat/_etc_swift_account-server.conf/fragments]
+      - Package[swift-container]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/35_swift_crossdomain]
+      - File[/var/run/swift]
+      - File[/var/lib/puppet/concat/_etc_swift_container-server.conf]
+      - File[/var/lib/puppet/concat/_etc_swift_object-server.conf/fragments.concat.out]
+      - Service[swift-container-replicator]
+      - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments.concat]
+      - Swift_dispersion_config[dispersion/auth_user]
+      - Swift_dispersion_config[dispersion/endpoint_type]
+      - Service[swift-container-updater]
+      - File[/var/lib/puppet/concat/_etc_swift_object-server.conf]
+      - Service[swift-object-updater]
+      - File[/etc/swift/object-server.conf]
+      - File[/var/log/ceilometer/swift-proxy-server.log]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/23_swift_cache]
+      - Swift_dispersion_config[dispersion/auth_version]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/82_swift_container_sync]
+      - Exec[concat_/etc/rsyncd.conf]
+      - Service[swift-proxy-server]
+      - Swift_dispersion_config[dispersion/swift_dir]
+      - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/00_header_rsyncd_conf_header]
+      - File[/etc/swift/container-server.conf]
+      - Package[swift]
+      - Swift_container_sync_realms_config[realm1/cluster_name1]
+      - Service[swift-account-auditor]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments.concat]
+      - Exec[rsync /etc/swift/backups/]
+      - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments]
+      - Swift_config[swift-constraints/max_header_size]
+      - File[/etc/swift]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/24_swift_catch_errors]
+      - Service[swift-container-sync]
+      - Service[swift-object-reconstructor]
+      - File[/var/lib/puppet/concat/_etc_swift_object-server.conf/fragments.concat]
+      - User[swift]
+      - File[/etc/swift/object-server/]
+      - File[/var/lib/puppet/concat/_etc_swift_object-server.conf/fragments/00_swift-object-6000]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/81_swift_container_quotas]
+      - File[/etc/swift/container-server/]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/26_swift_ratelimit]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/00_swift_proxy]
+      - File[/var/cache/swift]
+      - File[/var/lib/puppet/concat/_etc_swift_account-server.conf/fragments.concat]
+      - Service[swift-container-reconciler]
+      - File[/var/lib/swift]
+      - File[/etc/xinetd.d/rsync]
+      - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/10_account_frag-account]
+      - Swift_dispersion_config[dispersion/concurrency]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/22_swift_authtoken]
+      - Swift_config[swift-hash/swift_hash_path_suffix]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/80_swift_account_quotas]
+      - Swift_dispersion_config[dispersion/retries]
+      - Package[swift-account]
+      - File[/etc/swift/proxy-server.conf]
+      - Service[swift-account-reaper]
+      - Exec[concat_/etc/swift/container-server.conf]
+      - File[/var/lib/puppet/concat/_etc_swift_container-server.conf/fragments.concat]
+      - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/10_object_frag-object]
+      - File[/var/lib/puppet/concat/_etc_swift_container-server.conf/fragments/00_swift-container-6001]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/25_swift_healthcheck]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/29_swift-proxy-tempurl]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/27_swift_swift3]
+      - Service[swift-container-server]
+      - Swift_dispersion_config[dispersion/auth_key]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments.concat.out]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/28_swift_s3token]
+      - File[/var/lib/puppet/concat/_etc_swift_object-server.conf/fragments]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/32_swift-proxy-staticweb]
+      - Exec[concat_/etc/swift/account-server.conf]
+      - Service[swift-container-auditor]
+      - File[/var/lib/glance/node]
+      - Exec[concat_/etc/swift/proxy-server.conf]
+      - Service[swift-object-replicator]
+      - File[/etc/rsyncd.conf]
+      - Swift_container_sync_realms_config[realm1/key]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/79_swift_keystone]
+      - Service[swift-object-auditor]
+      - File[/etc/swift/account-server/]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf]
+      - Package[python-ceilometermiddleware]
+      - File[/var/lib/puppet/concat/_etc_swift_account-server.conf/fragments/00_swift-account-6002]
+      - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/10_container_frag-container]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments]
+      - File[/var/lib/puppet/concat/_etc_swift_container-server.conf/fragments.concat.out]
+      - Service[swift-object-server]
+      - Exec[concat_/etc/swift/object-server.conf]
+      - File[/var/lib/puppet/concat/_etc_swift_container-server.conf/fragments]
+      - Exec[rsync /etc/swift/container.ring.gz]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/33_swift_ceilometer]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/21_swift_bulk]
   - copy_keys:
       type: copy_files
+  - tools:
+      resources: []
   - enable_rados:
       no_puppet_run: true
   - ntp-check:
@@ -79,14 +191,14 @@ tasks:
   - memcached:
       resources: []
   - allocate_hugepages:
-      no_puppet_run: true
+      resources: []
   - openrc-delete:
       resources:
       - File[/root/openrc]
   - plugins_setup_repositories:
       no_puppet_run: true
   - ceph-radosgw:
-      resources: []
+      no_puppet_run: true
   - openstack-haproxy-sahara:
       no_puppet_run: true
   - ssl-keys-saving:
@@ -96,7 +208,8 @@ tasks:
   - upload_configuration:
       type: upload_file
   - logging:
-      resources: []
+      resources:
+      - File[/etc/rsyslog.d/49-haproxy.conf]
   - update_hosts:
       resources: []
   - connectivity_tests:
@@ -122,20 +235,19 @@ tasks:
   - cluster-haproxy:
       resources: []
   - globals:
-      resources: []
+      resources:
+      - File[/etc/hiera/globals.yaml]
   - glance:
       resources:
       - Glance_swift_config[ref1/user]
       - Glance_swift_config[ref1/project_domain_id]
       - Glance_glare_config[glance_store/swift_store_config_file]
-      - Package[swift]
       - Glance_api_config[glance_store/default_store]
       - Glance_api_config[glance_store/swift_store_create_container_on_put]
       - Glance_swift_config[ref1/auth_address]
       - Glance_api_config[glance_store/swift_store_endpoint_type]
       - Glance_glare_config[DEFAULT/default_log_levels]
       - Glance_api_config[glance_store/stores]
-      - Glance_cache_config[DEFAULT/image_cache_max_size]
       - Glance_swift_config[ref1/user_domain_id]
       - Glance_glare_config[glance_store/default_store]
       - Glance_registry_config[DEFAULT/default_log_levels]
@@ -159,8 +271,8 @@ tasks:
       - Glance_glare_config[glance_store/swift_store_container]
       - Glance_api_config[glance_store/swift_store_container]
       - Glance_api_config[glance_store/swift_store_region]
-  - tools:
-      resources: []
+  - prepare_symlinks:
+      no_puppet_run: true
   - openstack-haproxy:
       resources: []
   - cgroups:
@@ -182,7 +294,6 @@ tasks:
       - File[/usr/local/bin/swift-rings-sync.sh]
   - heat:
       resources:
-      - Heat_config[DEFAULT/reauthentication_auth_method]
       - Heat_config[DEFAULT/heat_waitcondition_server_url]
       - Heat_config[DEFAULT/heat_metadata_server_url]
       - Heat_config[keystone_authtoken/auth_uri]
@@ -222,9 +333,8 @@ tasks:
   - copy_keys_ceph:
       type: copy_files
   - cluster:
-      skip:
+      resources:
       - Pcmk_property[no-quorum-policy]
-      resources: []
   - sahara:
       no_puppet_run: true
   - fuel_pkgs:
@@ -248,6 +358,8 @@ tasks:
   - openstack-network-agents-dhcp:
       resources:
       - Neutron_dhcp_agent_config[DEFAULT/debug]
+  - copy_changed_admin_user:
+      type: copy_files
   - openstack-haproxy-nova:
       resources:
       - File[/etc/haproxy/conf.d/040-nova-api.cfg]
@@ -282,5 +394,7 @@ tasks:
       resources: []
   - copy_haproxy_keys:
       type: copy_files
+  - pkg_upgrade:
+      no_puppet_run: true
   - ssl-add-trust-chain:
       no_puppet_run: true

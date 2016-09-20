@@ -43,6 +43,7 @@ tasks:
       no_puppet_run: true
   - copy_keys:
       type: copy_files
+  - tools: null
   - enable_rados: null
   - ntp-check: null
   - keystone: null
@@ -63,7 +64,9 @@ tasks:
   - apache: null
   - upload_configuration:
       type: upload_file
-  - logging: null
+  - logging:
+      skip:
+      - File[/etc/rsyslog.d/49-haproxy.conf]
   - update_hosts: null
   - connectivity_tests: null
   - openstack-network-agents-metadata: null
@@ -75,7 +78,8 @@ tasks:
   - cluster-haproxy: null
   - globals: null
   - glance: null
-  - tools: null
+  - prepare_symlinks:
+      no_puppet_run: true
   - openstack-haproxy: null
   - cgroups: null
   - aodh: null
@@ -90,7 +94,10 @@ tasks:
   - openstack-haproxy-stats: null
   - ironic-api:
       no_puppet_run: true
-  - top-role-mongo: null
+  - top-role-mongo:
+      skip:
+      - Mongodb_user[User ceilometer on db ceilometer]
+      - Mongodb_user[User admin on db admin]
   - dns-client: null
   - cluster-vrouter: null
   - murano-rabbitmq:
