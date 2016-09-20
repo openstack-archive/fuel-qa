@@ -44,7 +44,7 @@ from proboscis.asserts import assert_true
 
 
 @logwrap
-def validate_amount_nodes(
+def validate_minimal_amount_nodes(
         nodes, expected_amount,
         state='discover', online=True):
     """Validate amount of nodes in state
@@ -58,7 +58,7 @@ def validate_amount_nodes(
     fnodes = [
         node for node in nodes
         if node['online'] == online and node['status'] == state]
-    if len(fnodes) != expected_amount:
+    if len(fnodes) < expected_amount:
         raise Exception(
             'Nodes in state {state} (online: {online}): '
             '{amount}, while expected: {expected}'.format(

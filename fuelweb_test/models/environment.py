@@ -137,7 +137,7 @@ class EnvironmentModel(object):
         if not skip_timesync:
             self.sync_time()
 
-        checkers.validate_amount_nodes(
+        checkers.validate_minimal_amount_nodes(
             nodes=self.fuel_web.client.list_nodes(),
             expected_amount=len(devops_nodes)
         )
