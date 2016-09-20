@@ -46,9 +46,10 @@ from fuelweb_test.settings import DISABLE_SSL
 from fuelweb_test.settings import PATH_TO_CERT
 from fuelweb_test.settings import VERIFY_SSL
 
-
+# pylint: disable=protected-access
 KeystoneSession._REDIRECT_STATUSES =\
     KeystoneSession._REDIRECT_STATUSES + (308, )
+# pylint: enable=protected-access
 logger.info("Temprary solution for keystone session class, bug: #1610914."
             "Status code 308 was added to the tuple redirects")
 
@@ -315,7 +316,8 @@ class Common(object):
                 checkers.check_swift_ring(controller_ip)
                 break
             except AssertionError:
-                result = ssh.execute_on_remote(ip=controller_ip, cmd=cmd)
+                result = ssh.check_call(
+                    ip=controller_ip, command=cmd, raise_on_err=False)
                 logger.debug("command execution result is {0}".format(result))
         else:
             checkers.check_swift_ring(controller_ip)
