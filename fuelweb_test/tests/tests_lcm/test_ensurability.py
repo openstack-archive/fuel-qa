@@ -311,7 +311,7 @@ class TaskEnsurability(LCMTestBasic):
         self.env.make_snapshot('ensurability_{}'.format(deployment))
 
     @test(depends_on=[SetupLCMEnvironment.lcm_deploy_1_ctrl_1_cmp_3_ceph],
-          groups=['lcm_non_ha',
+          groups=['lcm_non_ha_2',
                   'test_ensurability',
                   'ensurability_1_ctrl_1_cmp_3_ceph'])
     @log_snapshot_after_test

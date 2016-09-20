@@ -13,7 +13,8 @@ tasks:
   - fuel_pkgs: null
   - openstack-network-agents-l3: null
   - openstack-network-agents-metadata: null
-  - tools: null
+  - prepare_symlinks:
+      no_puppet_run: true
   - rsync_core_puppet:
       type: sync
   - enable_nova_compute_service: null
@@ -22,6 +23,7 @@ tasks:
       type: skipped
   - copy_keys:
       type: copy_files
+  - tools: null
   - copy_deleted_nodes:
       type: copy_files
   - setup_repositories: null
@@ -30,8 +32,6 @@ tasks:
   - allocate_hugepages: null
   - copy_changed_admin_user:
       type: copy_files
-  - plugins_setup_repositories:
-      no_puppet_run: true
   - ceph-compute:
       no_puppet_run: true
   - ssl-keys-saving: null
@@ -53,6 +53,7 @@ tasks:
       - Service[nova-compute]
   - sync_time:
       type: shell
+  - ntp-client: null
   - openstack-network-compute-nova: null
   - plugins_rsync:
       no_puppet_run: true
@@ -63,7 +64,8 @@ tasks:
   - hosts: null
   - copy_haproxy_keys:
       type: copy_files
-  - ntp-client: null
+  - plugins_setup_repositories:
+      no_puppet_run: true
   - pkg_upgrade:
       no_puppet_run: true
   - ssl-add-trust-chain: null
