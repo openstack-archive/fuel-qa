@@ -28,7 +28,7 @@ tasks:
   - primary-openstack-network-plugins-l2:
       resources: []
   - radosgw-keystone:
-      resources: []
+      no_puppet_run: true
   - virtual_ips:
       resources: []
   - primary-dns-server:
@@ -83,8 +83,12 @@ tasks:
       resources: []
   - copy_keys:
       type: copy_files
+  - tools:
+      resources: []
   - enable_rados:
       no_puppet_run: true
+  - delete_old_admin_user:
+      resources: []
   - ntp-check:
       resources: []
   - aodh-db:
@@ -96,7 +100,7 @@ tasks:
   - memcached:
       resources: []
   - allocate_hugepages:
-      no_puppet_run: true
+      resources: []
   - openrc-delete:
       resources:
       - File[/root/openrc]
@@ -125,7 +129,8 @@ tasks:
       resources:
       - Keystone_endpoint[RegionOne/neutron::network]
   - logging:
-      resources: []
+      resources:
+      - File[/etc/rsyslog.d/49-haproxy.conf]
   - nova-keystone:
       resources:
       - Keystone_endpoint[RegionOne/nova::compute]
@@ -161,7 +166,8 @@ tasks:
   - apache:
       resources: []
   - globals:
-      resources: []
+      resources:
+      - File[/etc/hiera/globals.yaml]
   - aodh-keystone:
       no_puppet_run: true
   - glance:
@@ -176,7 +182,6 @@ tasks:
       - Glance_api_config[glance_store/swift_store_endpoint_type]
       - Glance_glare_config[DEFAULT/default_log_levels]
       - Glance_api_config[glance_store/stores]
-      - Glance_cache_config[DEFAULT/image_cache_max_size]
       - Glance_swift_config[ref1/user_domain_id]
       - Glance_glare_config[glance_store/default_store]
       - Glance_registry_config[DEFAULT/default_log_levels]
@@ -200,8 +205,8 @@ tasks:
       - Glance_glare_config[glance_store/swift_store_container]
       - Glance_api_config[glance_store/swift_store_container]
       - Glance_api_config[glance_store/swift_store_region]
-  - tools:
-      resources: []
+  - prepare_symlinks:
+      no_puppet_run: true
   - openstack-haproxy:
       resources: []
   - cgroups:
@@ -237,7 +242,7 @@ tasks:
   - ironic-api:
       no_puppet_run: true
   - primary-ceph-radosgw:
-      resources: []
+      no_puppet_run: true
   - dns-client:
       resources: []
   - cluster-vrouter:
@@ -293,9 +298,12 @@ tasks:
   - murano:
       no_puppet_run: true
   - ceph_ready_check:
-      type: shell
+      resources:
+      - Exec[ceph_ready_check]
   - enable_quorum:
       type: shell
+  - copy_changed_admin_user:
+      type: copy_files
   - openstack-haproxy-nova:
       resources:
       - File[/etc/haproxy/conf.d/040-nova-api.cfg]
@@ -324,7 +332,6 @@ tasks:
   - swift-proxy_storage:
       resources:
       - Swift_dispersion_config[dispersion/dispersion_coverage]
-      - Ring_account_device[10.109.2.2:6002/1]
       - File[/var/lib/puppet/concat/_etc_rsyncd.conf]
       - File[/etc/swift/dispersion.conf]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/31_swift-proxy-formpost]
@@ -334,15 +341,15 @@ tasks:
       - Package[swift-object]
       - File[/var/lib/puppet/concat/_etc_swift_account-server.conf]
       - File[/etc/swift/swift.conf]
+      - Ring_account_device[10.109.33.3:6002/2]
       - File[/var/lib/glance]
       - Service[swift-account-server]
       - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/10_swift_server_frag-swift_server]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/35_swift_slo]
-      - Ring_object_device[10.109.2.2:6000/2]
+      - Ring_object_device[10.109.33.3:6000/1]
       - Package[swift-plugin-s3]
       - File[/etc/swift/account-server.conf]
       - Service[swift-account-replicator]
-      - Service[swift-container-server]
       - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments.concat.out]
       - File[/var/lib/puppet/concat/_etc_swift_account-server.conf/fragments.concat.out]
       - File[/var/lib/puppet/concat/_etc_swift_account-server.conf/fragments]
@@ -371,12 +378,13 @@ tasks:
       - Service[swift-account-auditor]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments.concat]
       - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments]
-      - Ring_container_device[10.109.2.2:6001/1]
       - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/10_swift_backups_frag-swift_backups]
       - Swift_config[swift-constraints/max_header_size]
       - File[/etc/swift]
       - Service[swift-container-sync]
+      - Service[swift-object-reconstructor]
       - File[/var/lib/puppet/concat/_etc_swift_object-server.conf/fragments.concat]
+      - Ring_account_device[10.109.33.3:6002/1]
       - File[/etc/swift/object-server/]
       - File[/var/lib/puppet/concat/_etc_swift_object-server.conf/fragments/00_swift-object-6000]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/81_swift_container_quotas]
@@ -385,18 +393,19 @@ tasks:
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/00_swift_proxy]
       - File[/var/cache/swift]
       - File[/var/lib/puppet/concat/_etc_swift_account-server.conf/fragments.concat]
-      - Ring_container_device[10.109.2.2:6001/2]
+      - Service[swift-container-reconciler]
       - File[/var/lib/swift]
       - File[/etc/xinetd.d/rsync]
+      - Ring_container_device[10.109.33.3:6001/2]
       - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/10_account_frag-account]
       - Swift_dispersion_config[dispersion/concurrency]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/22_swift_authtoken]
       - Swift_config[swift-hash/swift_hash_path_suffix]
-      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/80_swift_account_quotas]
+      - Service[swift-account-reaper]
       - Swift_dispersion_config[dispersion/retries]
       - Package[swift-account]
       - File[/etc/swift/proxy-server.conf]
-      - Service[swift-account-reaper]
+      - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/80_swift_account_quotas]
       - Exec[concat_/etc/swift/container-server.conf]
       - File[/var/lib/puppet/concat/_etc_swift_container-server.conf/fragments.concat]
       - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/10_object_frag-object]
@@ -407,15 +416,17 @@ tasks:
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/29_swift-proxy-tempurl]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/27_swift_swift3]
       - Exec[create_object]
-      - Ring_object_device[10.109.2.2:6000/1]
+      - Ring_container_device[10.109.33.3:6001/1]
+      - Service[swift-container-server]
       - Swift_dispersion_config[dispersion/auth_key]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments.concat.out]
+      - Ring_object_device[10.109.33.3:6000/2]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/28_swift_s3token]
-      - File[/var/lib/puppet/concat/_etc_swift_object-server.conf/fragments]
+      - File[/var/lib/glance/node]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments/32_swift-proxy-staticweb]
       - Exec[concat_/etc/swift/account-server.conf]
       - Service[swift-container-auditor]
-      - File[/var/lib/glance/node]
+      - File[/var/lib/puppet/concat/_etc_swift_object-server.conf/fragments]
       - Exec[concat_/etc/swift/proxy-server.conf]
       - Service[swift-object-replicator]
       - File[/etc/rsyncd.conf]
@@ -426,7 +437,6 @@ tasks:
       - File[/etc/swift/account-server/]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf]
       - File[/var/lib/puppet/concat/_etc_swift_account-server.conf/fragments/00_swift-account-6002]
-      - Ring_account_device[10.109.2.2:6002/2]
       - File[/var/lib/puppet/concat/_etc_rsyncd.conf/fragments/10_container_frag-container]
       - File[/var/lib/puppet/concat/_etc_swift_proxy-server.conf/fragments]
       - File[/var/lib/puppet/concat/_etc_swift_container-server.conf/fragments.concat.out]
@@ -442,6 +452,7 @@ tasks:
   - primary-openstack-controller:
       resources:
       - Nova_config[DEFAULT/quota_driver]
+      - Haproxy_backend_status[nova-api]
       - Nova_config[DEFAULT/debug]
       - Nova_config[DEFAULT/scheduler_default_filters]
       - Nova_config[DEFAULT/default_log_levels]
@@ -462,6 +473,8 @@ tasks:
       resources: []
   - copy_haproxy_keys:
       type: copy_files
+  - pkg_upgrade:
+      no_puppet_run: true
   - openstack-network-networks:
       resources: []
   - ssl-add-trust-chain:

@@ -9,8 +9,8 @@ tasks:
       resources: []
   - fuel_pkgs:
       resources: []
-  - tools:
-      resources: []
+  - prepare_symlinks:
+      no_puppet_run: true
   - enable_cinder_volume_service:
       resources: []
   - rsync_core_puppet:
@@ -21,6 +21,8 @@ tasks:
       type: skipped
   - copy_keys:
       type: copy_files
+  - tools:
+      resources: []
   - copy_deleted_nodes:
       type: copy_files
   - setup_repositories:
@@ -28,9 +30,9 @@ tasks:
   - dns-client:
       resources: []
   - allocate_hugepages:
-      no_puppet_run: true
-  - plugins_setup_repositories:
-      no_puppet_run: true
+      resources: []
+  - copy_changed_admin_user:
+      type: copy_files
   - ssl-keys-saving:
       no_puppet_run: true
   - copy_keys_ceph:
@@ -46,9 +48,10 @@ tasks:
       resources: []
   - sync_time:
       type: shell
+  - ntp-client:
+      resources: []
   - plugins_rsync:
-      resources:
-      - Exec[sync_time_shell]
+      no_puppet_run: true
   - connectivity_tests:
       resources: []
   - configuration_symlink:
@@ -57,8 +60,10 @@ tasks:
       resources: []
   - copy_haproxy_keys:
       type: copy_files
-  - ntp-client:
-      resources: []
+  - plugins_setup_repositories:
+      no_puppet_run: true
+  - pkg_upgrade:
+      no_puppet_run: true
   - ssl-add-trust-chain:
       no_puppet_run: true
   - reserved_ports:

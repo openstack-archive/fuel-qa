@@ -8,7 +8,8 @@ tasks:
   - override_configuration: null
   - globals: null
   - fuel_pkgs: null
-  - tools: null
+  - prepare_symlinks:
+      no_puppet_run: true
   - rsync_core_puppet:
       type: sync
   - cgroups: null
@@ -16,6 +17,7 @@ tasks:
       type: skipped
   - copy_keys:
       type: copy_files
+  - tools: null
   - copy_deleted_nodes:
       type: copy_files
   - setup_repositories: null
@@ -23,8 +25,6 @@ tasks:
   - allocate_hugepages: null
   - copy_changed_admin_user:
       type: copy_files
-  - plugins_setup_repositories:
-      no_puppet_run: true
   - ssl-keys-saving: null
   - copy_keys_ceph:
       type: copy_files
@@ -34,6 +34,7 @@ tasks:
   - logging: null
   - sync_time:
       type: shell
+  - ntp-client: null
   - plugins_rsync:
       no_puppet_run: true
   - connectivity_tests: null
@@ -42,7 +43,8 @@ tasks:
   - hosts: null
   - copy_haproxy_keys:
       type: copy_files
-  - ntp-client: null
+  - plugins_setup_repositories:
+      no_puppet_run: true
   - pkg_upgrade:
       no_puppet_run: true
   - ssl-add-trust-chain: null

@@ -58,6 +58,9 @@ common:
   resume_guests_state_on_host_boot:
     type: checkbox
     value: false
+  run_ping_checker:
+    type: checkbox
+    value: true
   task_deploy:
     type: hidden
     value: true
@@ -366,6 +369,9 @@ storage:
   admin_key:
     type: hidden
     value: AQDzghZXAAAAABAA7obspvgNjPa/HBWSOUzI1w==
+  auth_s3_keystone_ceph:
+    type: checkbox
+    value: false
   bootstrap_osd_key:
     type: hidden
     value: AQDzghZXAAAAABAAWaiWslWwse+hsaKLzbtQFw==
