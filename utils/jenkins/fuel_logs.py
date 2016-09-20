@@ -484,7 +484,7 @@ class PuppetLog(AbstractLog):
 
     def parse(self, content):
         """
-        Parse the sting with Puppet log content
+        Parse the string with Puppet log content
         :param content: Puppet log
         :type content: str
         :return:
