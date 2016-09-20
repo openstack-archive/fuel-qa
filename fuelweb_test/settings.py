@@ -457,6 +457,8 @@ UPGRADE_BACKUP_FILES_REMOTE_DIR = os.environ.get(
 
 SNAPSHOT = os.environ.get('SNAPSHOT', '')
 
+MIRROR_HOST = os.environ.get('MIRROR_HOST', 'mirror.fuel-infra.org')
+
 # Repos paths and files
 MOS_REPOS = os.environ.get('MOS_REPOS',
                            'http://mirror.fuel-infra.org/mos-repos/')
