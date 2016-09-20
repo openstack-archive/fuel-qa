@@ -22,11 +22,12 @@ tasks:
   - nova-db:
       resources: []
   - workloads_collector_add:
-      resources: []
+      resources:
+      - Keystone_tenant[services]
   - primary-openstack-network-plugins-l2:
       resources: []
   - radosgw-keystone:
-      resources: []
+      no_puppet_run: true
   - virtual_ips:
       resources: []
   - primary-dns-server:
@@ -81,8 +82,12 @@ tasks:
       resources: []
   - copy_keys:
       type: copy_files
+  - tools:
+      resources: []
   - enable_rados:
       no_puppet_run: true
+  - delete_old_admin_user:
+      resources: []
   - ntp-check:
       resources: []
   - aodh-db:
@@ -94,7 +99,7 @@ tasks:
   - memcached:
       resources: []
   - allocate_hugepages:
-      resources: []
+      no_puppet_run: true
   - openrc-delete:
       resources:
       - File[/root/openrc]
@@ -123,7 +128,8 @@ tasks:
       resources:
       - Keystone_endpoint[RegionOne/neutron::network]
   - logging:
-      resources: []
+      resources:
+      - File[/etc/rsyslog.d/49-haproxy.conf]
   - nova-keystone:
       resources:
       - Keystone_endpoint[RegionOne/nova::compute]
@@ -173,8 +179,8 @@ tasks:
       - Glance_api_config[DEFAULT/debug]
       - Glance_glare_config[DEFAULT/debug]
       - Glance_registry_config[DEFAULT/debug]
-  - tools:
-      resources: []
+  - prepare_symlinks:
+      no_puppet_run: true
   - openstack-haproxy:
       resources: []
   - cgroups:
@@ -214,7 +220,7 @@ tasks:
       - Ironic_config[api/public_endpoint]
       - Ironic_config[DEFAULT/debug]
   - primary-ceph-radosgw:
-      resources: []
+      no_puppet_run: true
   - dns-client:
       resources: []
   - cluster-vrouter:
@@ -266,9 +272,11 @@ tasks:
   - murano:
       no_puppet_run: true
   - ceph_ready_check:
-      type: shell
+      no_puppet_run: true
   - enable_quorum:
       type: shell
+  - copy_changed_admin_user:
+      type: copy_files
   - openstack-haproxy-nova:
       resources:
       - File[/etc/haproxy/conf.d/040-nova-api.cfg]
@@ -309,6 +317,7 @@ tasks:
       resources:
       - Nova_config[DEFAULT/quota_driver]
       - Nova_config[DEFAULT/debug]
+      - Nova_config[DEFAULT/notification_driver]
       - Nova_config[DEFAULT/scheduler_default_filters]
       - Nova_config[DEFAULT/default_log_levels]
   - openstack-cinder:
@@ -329,6 +338,8 @@ tasks:
       resources: []
   - copy_haproxy_keys:
       type: copy_files
+  - pkg_upgrade:
+      no_puppet_run: true
   - openstack-network-networks:
       resources: []
   - ssl-add-trust-chain:
