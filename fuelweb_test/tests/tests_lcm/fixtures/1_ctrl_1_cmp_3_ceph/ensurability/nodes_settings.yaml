@@ -9,12 +9,12 @@ controller:
   hugepages:
     dpdk:
       type: number
-      value: 128
+      value: 64
     nova:
       type: custom_hugepages
       value:
         '1048576': 1
-        '2048': 550
+        '2048': 120
 ceph-osd:
   cpu_pinning:
     dpdk:
@@ -26,12 +26,12 @@ ceph-osd:
   hugepages:
     dpdk:
       type: number
-      value: 128
+      value: 64
     nova:
       type: custom_hugepages
       value:
         '1048576': 1
-        '2048': 550
+        '2048': 120
 compute:
   cpu_pinning:
     dpdk:
@@ -43,9 +43,9 @@ compute:
   hugepages:
     dpdk:
       type: number
-      value: 128
+      value: 64
     nova:
       type: custom_hugepages
       value:
         '1048576': 1
-        '2048': 550
+        '2048': 120
