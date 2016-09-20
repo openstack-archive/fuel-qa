@@ -17,7 +17,9 @@ tasks:
   - ceilometer-keystone:
       no_puppet_run: true
   - nova-db: null
-  - workloads_collector_add: null
+  - workloads_collector_add:
+      skip:
+      - Keystone_tenant[services]
   - primary-openstack-network-plugins-l2: null
   - radosgw-keystone:
       no_puppet_run: true
@@ -56,6 +58,7 @@ tasks:
   - cinder-keystone: null
   - copy_keys:
       type: copy_files
+  - tools: null
   - enable_rados:
       no_puppet_run: true
   - delete_old_admin_user: null
@@ -88,7 +91,9 @@ tasks:
       type: upload_file
   - create-cinder-types: null
   - neutron-keystone: null
-  - logging: null
+  - logging:
+      skip:
+      - File[/etc/rsyslog.d/49-haproxy.conf]
   - nova-keystone: null
   - update_hosts: null
   - ironic-keystone: null
@@ -107,7 +112,8 @@ tasks:
   - aodh-keystone:
       no_puppet_run: true
   - glance: null
-  - tools: null
+  - prepare_symlinks:
+      no_puppet_run: true
   - openstack-haproxy: null
   - cgroups: null
   - murano-cfapi-keystone:
@@ -159,7 +165,7 @@ tasks:
   - murano:
       no_puppet_run: true
   - ceph_ready_check:
-      type: shell
+      no_puppet_run: true
   - enable_quorum:
       type: shell
   - copy_changed_admin_user:
@@ -178,7 +184,9 @@ tasks:
   - swift-proxy_storage: null
   - primary-openstack-network-agents-dhcp: null
   - openstack-haproxy-heat: null
-  - primary-openstack-controller: null
+  - primary-openstack-controller:
+      skip:
+      - Nova_config[DEFAULT/notification_driver]
   - openstack-cinder: null
   - ceph_create_pools:
       no_puppet_run: true
