@@ -87,7 +87,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
           depends_on_groups=['prepare_upgrade_smoke_before_backup'])
     @log_snapshot_after_test
     def upgrade_smoke_backup(self):
-        """Create upgrade backup file for ceph HA cluster
+        """Create upgrade backup file for non-HA cluster
 
         Scenario:
         1. Revert "prepare_upgrade_smoke_before_backup" snapshot
@@ -255,7 +255,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
           depends_on_groups=['upgrade_smoke_restore'])
     @log_snapshot_after_test
     def upgrade_smoke_reset_deploy(self):
-        """Reset existing cluster 7.0 cluster and redeploy
+        """Reset existing cluster and redeploy
 
         Scenario:
         1. Revert "upgrade_smoke_restore".
@@ -364,6 +364,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(8)
         self.check_ostf(cluster_id)
+        self.env.make_snapshot("upgrade_smoke_new_deployment")
 
     @test(depends_on_groups=["upgrade_smoke_scale"],
           groups=["upgrade_smoke_tests", "upgrade_smoke_restart_node"])
