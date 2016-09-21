@@ -43,6 +43,7 @@ class ExamplePluginPostDeploy(TestBasic):
 
         self.__primary_controller = None
         self.__controllers = None
+        self.__plugin_nodes = None
         self.__cluster_id = None
 
     def deploy_cluster_wait(self, check_services=True):
@@ -57,14 +58,14 @@ class ExamplePluginPostDeploy(TestBasic):
             mode=DEPLOYMENT_MODE,
             settings={
                 "net_provider": 'neutron',
-                "net_segment_type": NEUTRON_SEGMENT['vlan'],
-                'propagate_task_deploy': True
+                "net_segment_type": NEUTRON_SEGMENT['vlan']
             }
         )
 
     def clean_up(self):
         del self.primary_controller
         del self.controllers
+        del self.plugin_nodes
         del self.cluster_id
 
     @property
@@ -77,6 +78,7 @@ class ExamplePluginPostDeploy(TestBasic):
     def cluster_id(self, cluster_id):
         del self.controllers
         del self.primary_controller
+        del self.plugin_nodes
         self.__cluster_id = cluster_id
 
     @cluster_id.deleter
@@ -86,7 +88,7 @@ class ExamplePluginPostDeploy(TestBasic):
     @property
     def controllers(self):
         if self.__controllers is None:
-            self.__controllers = self.__get_controller_nodelist()
+            self.__controllers = self.__get_nodelist_with_role('controller')
         return self.__controllers
 
     @controllers.deleter
@@ -103,6 +105,17 @@ class ExamplePluginPostDeploy(TestBasic):
     def primary_controller(self):
         self.__primary_controller = None
 
+    @property
+    def plugin_nodes(self):
+        if self.__plugin_nodes is None:
+            self.__plugin_nodes = \
+                self.__get_nodelist_with_role('fuel_plugin_example_v4')
+        return self.__plugin_nodes
+
+    @plugin_nodes.deleter
+    def plugin_nodes(self):
+        self.__plugin_nodes = None
+
     @upload_manifests
     def __get_cluster_id(self):
         return self.fuel_web.get_last_created_cluster()
@@ -116,7 +129,7 @@ class ExamplePluginPostDeploy(TestBasic):
             plugin_file_name=basename(EXAMPLE_PLUGIN_V4_PATH))
 
     def check_plugin_v4_is_running(self):
-        for node in self.controllers:
+        for node in self.plugin_nodes:
             self.__check_plugin_v4_on_node(node=node)
 
     def __check_plugin_v4_on_node(self, node="slave-01"):
@@ -139,11 +152,11 @@ class ExamplePluginPostDeploy(TestBasic):
         options = {'metadata/enabled': True}
         self.fuel_web.update_plugin_data(self.cluster_id, plugin_name, options)
 
-    def __get_controller_nodelist(self):
+    def __get_nodelist_with_role(self, role='controller'):
         devops_nodes = [
             self.fuel_web.get_devops_node_by_nailgun_node(node) for node
             in self.fuel_web.client.list_cluster_nodes(self.cluster_id)
-            if 'controller' in node['roles'] and 'ready' in node['status']]
+            if role in node['roles'] and 'ready' in node['status']]
         return [node.name for node in devops_nodes]
 
     def __get_primary_controller(self):
@@ -190,11 +203,12 @@ class ExamplePluginPostDeploy(TestBasic):
             3. Install plugin
             4. Enable plugin
             5. Add 3 nodes with controller role
-            6. Add 2 node with compute role
-            7. Deploy the cluster
-            8. Run network verification
-            9. Check plugin on ALL controller nodes
-            10. Run OSTF
+            6. Add 1 node with compute role
+            7. Add 1 node with fuel_plugin_example_v4 role
+            8. Deploy the cluster
+            9. Run network verification
+            10. Check plugin on ALL fuel_plugin_example_v4 nodes
+            11. Run OSTF
 
         Duration 100m
         Snapshot three_ctrl_install_enable_after_create
@@ -215,27 +229,28 @@ class ExamplePluginPostDeploy(TestBasic):
 
         self.show_step(5)
         self.show_step(6)
+        self.show_step(7)
         self.fuel_web.update_nodes(
             self.cluster_id,
             {
                 'slave-01': ['controller'],
                 'slave-02': ['controller'],
                 'slave-03': ['controller'],
-                'slave-04': ['compute'],
+                'slave-04': ['fuel_plugin_example_v4'],
                 'slave-05': ['compute'],
             }
         )
 
-        self.show_step(7)
+        self.show_step(8)
         self.deploy_cluster_wait()
 
-        self.show_step(8)
+        self.show_step(9)
         self.fuel_web.verify_network(cluster_id=self.cluster_id)
 
-        self.show_step(9)
+        self.show_step(10)
         self.check_plugin_v4_is_running()
 
-        self.show_step(10)
+        self.show_step(11)
         self.fuel_web.run_ostf(cluster_id=self.cluster_id)
 
         self.env.make_snapshot("three_ctrl_install_enable_after_create")
@@ -309,7 +324,8 @@ class ExamplePluginPostDeploy(TestBasic):
         depends_on=[three_ctrl_install_after_create],
         groups=[
             "install_plugin_after_create",
-            "three_ctrl_enable_installed_after_create_redeploy"])
+            "three_ctrl_enable_installed_after_create_redeploy"],
+        enabled=False)
     @log_snapshot_after_test
     @setup_teardown(setup=clean_up, teardown=clean_up)
     def three_ctrl_enable_installed_after_create_redeploy(self):
@@ -362,9 +378,10 @@ class ExamplePluginPostDeploy(TestBasic):
 
         Scenario:
             1. Enable plugin
-            2. Deploy 2 new controller nodes at cluster (Nodes Under Test)
+            2. Deploy 2 new fuel_plugin_example_v4 node at cluster
+            (Nodes Under Test)
             3. Run network verification
-            4. Check plugin on ALL controller nodes
+            4. Check plugin on ALL fuel_plugin_example_v4 nodes
             5. Run OSTF
 
         Duration 130m
@@ -381,8 +398,8 @@ class ExamplePluginPostDeploy(TestBasic):
         self.fuel_web.update_nodes(
             self.cluster_id,
             {
-                'slave-06': ['controller'],
-                'slave-07': ['controller'],
+                'slave-06': ['fuel_plugin_example_v4'],
+                'slave-07': ['fuel_plugin_example_v4'],
             }
         )
         self.deploy_cluster_wait()
@@ -471,7 +488,8 @@ class ExamplePluginPostDeploy(TestBasic):
         depends_on=[three_ctrl_install_after_deploy],
         groups=[
             "install_plugin_after_deploy",
-            "three_ctrl_enable_installed_after_deploy_redeploy"])
+            "three_ctrl_enable_installed_after_deploy_redeploy"],
+        enabled=False)
     @log_snapshot_after_test
     @setup_teardown(setup=clean_up, teardown=clean_up)
     def three_ctrl_enable_installed_after_deploy_redeploy(self):
@@ -524,9 +542,10 @@ class ExamplePluginPostDeploy(TestBasic):
 
         Scenario:
             1. Enable plugin
-            2. Deploy 2 new controller nodes at cluster (Nodes Under Test)
+            2. Deploy 2 new fuel_plugin_example_v4 node at cluster
+            (Nodes Under Test)
             3. Run network verification
-            4. Check plugin on ALL controller nodes
+            4. Check plugin on ALL fuel_plugin_example_v4 nodes
             5. Run OSTF
 
         Duration 130m
@@ -543,8 +562,8 @@ class ExamplePluginPostDeploy(TestBasic):
         self.fuel_web.update_nodes(
             self.cluster_id,
             {
-                'slave-06': ['controller'],
-                'slave-07': ['controller'],
+                'slave-06': ['fuel_plugin_example_v4'],
+                'slave-07': ['fuel_plugin_example_v4']
             }
         )
         self.deploy_cluster_wait()
