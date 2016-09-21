@@ -32,12 +32,12 @@ class TestCloneEnv(base_test_data.TestBasic):
     @log_snapshot_after_test
     def test_clone_environment(self):
         """Test clone environment
+
         Scenario:
             1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
             2. Clone cluster
             3. Check status code
             4. Check that clusters are equal
-
         """
 
         if not self.env.d_env.has_snapshot(
@@ -118,11 +118,11 @@ class TestCloneEnv(base_test_data.TestBasic):
     @log_snapshot_after_test
     def test_clone_nonexistent_cluster(self):
         """Test clone environment with nonexistent cluster id as argument
+
         Scenario:
             1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
             2. Try to clone nonexistent environment
             3. Check status code
-
         """
         if not self.env.d_env.has_snapshot(
                 "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
@@ -146,11 +146,11 @@ class TestCloneEnv(base_test_data.TestBasic):
     @log_snapshot_after_test
     def test_clone_wo_name_in_body(self):
         """Test clone without name in POST body
+
         Scenario:
             1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
             2. Try to clone environment without name in POST body
             3. Check status code
-
         """
         if not self.env.d_env.has_snapshot(
                 "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
@@ -179,11 +179,11 @@ class TestCloneEnv(base_test_data.TestBasic):
     @log_snapshot_after_test
     def test_clone_wo_release_id_in_body(self):
         """Test clone without release id in POST body
+
         Scenario:
             1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
             2. Try to clone environment without release id in POST body
             3. Check status code
-
         """
         if not self.env.d_env.has_snapshot(
                 "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
@@ -209,11 +209,11 @@ class TestCloneEnv(base_test_data.TestBasic):
     @log_snapshot_after_test
     def test_clone_with_empty_body(self):
         """Test clone with empty body
+
         Scenario:
             1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
             2. Try to clone environment with empty body
             3. Check status code
-
         """
         if not self.env.d_env.has_snapshot(
                 "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
@@ -235,12 +235,12 @@ class TestCloneEnv(base_test_data.TestBasic):
     @log_snapshot_after_test
     def test_clone_with_nonexistent_release_id(self):
         """Test clone with nonexistent release id in POST body
+
         Scenario:
             1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
             2. Try to clone environment with nonexistent
             release id in POST body
             3. Check status code
-
         """
         if not self.env.d_env.has_snapshot(
                 "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
@@ -267,12 +267,12 @@ class TestCloneEnv(base_test_data.TestBasic):
     @log_snapshot_after_test
     def test_clone_with_incorrect_release_id(self):
         """Test clone with incorrect release id in POST body
+
         Scenario:
             1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
             2. Try to clone environment with incorrect
-            release id in POST body
+               release id in POST body
             3. Check status code
-
         """
         if not self.env.d_env.has_snapshot(
                 "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"):
@@ -299,12 +299,12 @@ class TestCloneEnv(base_test_data.TestBasic):
     @log_snapshot_after_test
     def test_double_clone_environment(self):
         """Test double clone environment
+
         Scenario:
             1. Revert snapshot "upgrade_ha_ceph_for_all_ubuntu_neutron_vlan"
             2. Clone cluster
             3. Clone cluster again
             4. Check status code
-
         """
 
         if not self.env.d_env.has_snapshot(

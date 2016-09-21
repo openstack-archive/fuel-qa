@@ -87,7 +87,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
           depends_on_groups=['prepare_upgrade_smoke_before_backup'])
     @log_snapshot_after_test
     def upgrade_smoke_backup(self):
-        """Create upgrade backup file for ceph HA cluster
+        """Create upgrade backup file for non-HA cluster
 
         Scenario:
         1. Revert "prepare_upgrade_smoke_before_backup" snapshot
@@ -212,12 +212,13 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.show_step(2)
         self.show_step(3)
         cluster_id = self.fuel_web.get_last_created_cluster()
-        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[3:6])
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[3:7])
         self.fuel_web.update_nodes(
             cluster_id,
             {'slave-04': ['controller'],
              'slave-05': ['controller'],
-             'slave-06': ['controller']})
+             'slave-06': ['controller'],
+             'slave-07': ['compute', 'cinder']})
         self.show_step(4)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(5)
@@ -228,7 +229,8 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.show_step(7)
         self.show_step(8)
-        nodes_to_remove = {'slave-06': ['controller']}
+        nodes_to_remove = {'slave-06': ['controller'],
+                           'slave-07': ['compute', 'cinder']}
 
         nailgun_nodes = self.fuel_web.update_nodes(
             cluster_id, nodes_to_remove, False, True)
@@ -263,7 +265,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
           depends_on_groups=['upgrade_smoke_restore'])
     @log_snapshot_after_test
     def upgrade_smoke_reset_deploy(self):
-        """Reset existing cluster 7.0 cluster and redeploy
+        """Reset existing cluster and redeploy
 
         Scenario:
         1. Revert "upgrade_smoke_restore".
@@ -372,6 +374,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.fuel_web.deploy_cluster_wait(cluster_id)
         self.show_step(8)
         self.check_ostf(cluster_id)
+        self.env.make_snapshot("upgrade_smoke_new_deployment")
 
     @test(depends_on_groups=["upgrade_smoke_scale"],
           groups=["upgrade_smoke_tests", "upgrade_smoke_restart_node"])
