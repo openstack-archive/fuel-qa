@@ -35,6 +35,7 @@ class TestReassignNode(TestBasic):
     @log_snapshot_after_test
     def reassign_node_to_cloned_environment(self):
         """Test reassign node
+
         Scenario:
             1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Clone cluster
@@ -114,6 +115,7 @@ class TestReassignNode(TestBasic):
     @log_snapshot_after_test
     def reassign_node_to_nonexistent_cluster(self):
         """Test reassign node to nonexistent cluster
+
         Scenario:
             1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Reassign node to nonexistent cluster
@@ -148,6 +150,7 @@ class TestReassignNode(TestBasic):
     @log_snapshot_after_test
     def reassign_node_with_empty_body(self):
         """Test reassign node with empty body
+
         Scenario:
             1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Clone cluster
@@ -185,6 +188,7 @@ class TestReassignNode(TestBasic):
     @log_snapshot_after_test
     def reassign_node_with_incorrect_node(self):
         """Test reassign node with incorrect node in POST body
+
         Scenario:
             1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Clone cluster
@@ -226,6 +230,7 @@ class TestReassignNode(TestBasic):
     @log_snapshot_after_test
     def reassign_nonexistent_node_to_cloned_environment(self):
         """Test reassign node with nonexistent node in POST body
+
         Scenario:
             1. Revert snapshot "upgrade_ceph_ha_restore"
             2. Clone cluster
