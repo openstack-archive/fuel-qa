@@ -141,7 +141,7 @@ class GraphExtension(TestBasic):
           groups=["graph_extension_api"])
     @log_snapshot_after_test
     def graph_extension_api(self):
-        """Upload and execute graph for env with 4 slaves (CLI)
+        """Upload and execute graph for env with 4 slaves (API)
 
         Scenario:
             1. Revert snapshot "extension_graph_prepare_env"
