@@ -56,19 +56,20 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
         Scenario:
             1. Revert snapshot with 9 slaves
             2. Create cluster (HA) with Neutron VLAN/VXLAN/GRE
-            3. Add 3 controller + ceph nodes
-            4. Add 2 compute + ceph nodes
-            5. Upload 'upgrades' network template
-            6. Create custom network groups basing
-               on template endpoints assignments
-            7. Run network verification
-            8. Deploy cluster
-            9. Run network verification
-            10. Run health checks (OSTF)
-            11. Check L3 network configuration on slaves
-            12. Check that services are listening on their networks only
-            13. Install fuel-octane package
-            14. Create backups for upgrade procedure
+            3. Add 3 controller
+            4. Add 3 ceph osd
+            5. Add 2 compute
+            6. Upload 'upgrades' network template
+            7. Create custom network groups basing on template endpoints
+               assignments
+            8. Run network verification
+            9. Deploy cluster
+            10. Run network verification
+            11. Run health checks (OSTF)
+            12. Check L3 network configuration on slaves
+            13. Check that services are listening on their networks only
+            14. Install fuel-octane package
+            15. Create backups for upgrade procedure
 
         Duration 180m
         Snapshot upgrade_net_tmpl_backup
@@ -95,6 +96,7 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
 
             self.show_step(3)
             self.show_step(4)
+            self.show_step(5)
             self.fuel_web.update_nodes(
                 cluster_id,
                 {'slave-01': ['controller'],
@@ -107,11 +109,11 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
                  'slave-08': ['compute']},
                 update_interfaces=False)
 
-            self.show_step(5)
+            self.show_step(6)
             network_template = get_network_template("upgrades")
             self.fuel_web.client.upload_network_template(
                 cluster_id=cluster_id, network_template=network_template)
-            self.show_step(6)
+            self.show_step(7)
             # pylint: disable=redefined-variable-type
             if settings.UPGRADE_FUEL_FROM == "7.0":
                 network = '10.200.0.0/16'
@@ -126,26 +128,26 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
             logger.debug('Networks: {0}'.format(
                 self.fuel_web.client.get_network_groups()))
 
-            self.show_step(7)
-            self.fuel_web.verify_network(cluster_id)
-
             self.show_step(8)
-            self.fuel_web.deploy_cluster_wait(cluster_id, timeout=180 * 60)
+            self.fuel_web.verify_network(cluster_id)
 
             self.show_step(9)
-            self.fuel_web.verify_network(cluster_id)
+            self.fuel_web.deploy_cluster_wait(cluster_id, timeout=180 * 60)
+
             self.show_step(10)
+            self.fuel_web.verify_network(cluster_id)
+            self.show_step(11)
             # Live migration test could fail
             # https://bugs.launchpad.net/fuel/+bug/1471172
             # https://bugs.launchpad.net/fuel/+bug/1604749
             self.check_ostf(cluster_id=cluster_id,
                             test_sets=['smoke', 'sanity', 'ha'],
                             ignore_known_issues=True)
-            self.show_step(11)
+            self.show_step(12)
             self.check_ipconfig_for_template(cluster_id, network_template,
                                              networks)
 
-            self.show_step(12)
+            self.show_step(13)
             self.check_services_networks(cluster_id, network_template)
 
             self.env.make_snapshot(intermediate_snapshot)
@@ -266,7 +268,7 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
         self.check_ostf(cluster_id=cluster_id,
                         test_sets=['smoke', 'sanity', 'ha'],
                         ignore_known_issues=True)
-        self.env.make_snapshot("reset_deploy_net_tmpl", is_make=True)
+        self.env.make_snapshot("reset_deploy_net_tmpl")
 
     @test(depends_on_groups=["upgrade_net_tmpl_restore"],
           groups=["replace_controller_net_tmpl", "upgrade_net_tmpl_tests"])
@@ -358,4 +360,4 @@ class TestUpgradeNetworkTemplates(TestNetworkTemplatesBase,
         self.check_ostf(cluster_id=cluster_id,
                         test_sets=['smoke', 'sanity', 'ha'],
                         ignore_known_issues=True)
-        self.env.make_snapshot("restart_node_net_tmpl", is_make=True)
+        self.env.make_snapshot("restart_node_net_tmpl")

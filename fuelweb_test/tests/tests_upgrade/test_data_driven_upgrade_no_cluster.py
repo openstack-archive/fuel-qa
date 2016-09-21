@@ -146,7 +146,7 @@ class UpgradeNoCluster(DataDrivenUpgradeBase):
         self.fuel_web.verify_network(cluster_id)
         self.show_step(7)
         self.check_ostf(cluster_id)
-        self.env.make_snapshot("upgrade_no_cluster_deploy", is_make=True)
+        self.env.make_snapshot("upgrade_no_cluster_deploy")
 
     @test(groups=['upgrade_no_cluster_tests',
                   'upgrade_no_cluster_deploy_old_cluster'],
