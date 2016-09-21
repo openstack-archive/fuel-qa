@@ -185,7 +185,7 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
     @test(groups=['upgrade_ceph_ha_tests', 'upgrade_ceph_ha_restore'])
     @log_snapshot_after_test
     def upgrade_ceph_ha_restore(self):
-        """Reinstall Fuel and restore data with Tun+Ceph+HA cluster
+        """Reinstall Fuel and restore data with Vlan+Ceph+HA cluster
 
         Scenario:
         1. Revert "upgrade_ceph_ha_backup" snapshot
