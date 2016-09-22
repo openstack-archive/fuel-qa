@@ -480,7 +480,8 @@ class VMwareActions(object):
         vm = os_conn.create_server(image=image,
                                    availability_zone=self.vcenter_az,
                                    security_groups=[sg],
-                                   net_id=net['id'])
+                                   net_id=net['id'],
+                                   timeout=210)
         floating_ip = os_conn.assign_floating_ip(vm)
         helpers.wait(lambda: helpers.tcp_ping(floating_ip.ip, 22), timeout=180,
                      timeout_msg="Node {ip} is not accessible by SSH.".format(
@@ -535,7 +536,8 @@ class VMwareActions(object):
         vm = os_conn.create_server(availability_zone=self.vcenter_az,
                                    image=False,
                                    net_id=net['id'],
-                                   block_device_mapping=block_device_mapping)
+                                   block_device_mapping=block_device_mapping,
+                                   timeout=210)
         floating_ip = os_conn.assign_floating_ip(vm)
         helpers.wait(lambda: helpers.tcp_ping(floating_ip.ip, 22), timeout=180,
                      timeout_msg="Node {ip} is not accessible by SSH.".format(
@@ -567,7 +569,7 @@ class VMwareActions(object):
         for service in vmware_services:
             logger.info("Check {}".format(service.host))
             os_conn.enable_nova_service(service)
-            vm = os_conn.create_server(image=image, timeout=180,
+            vm = os_conn.create_server(image=image, timeout=210,
                                        availability_zone=self.vcenter_az,
                                        net_id=net['id'], security_groups=[sg])
             vm_host = getattr(vm, 'OS-EXT-SRV-ATTR:host')
@@ -616,9 +618,9 @@ class VMwareActions(object):
         vm = os_conn.create_server(image=image,
                                    availability_zone=self.vcenter_az,
                                    net_id=net['id'], security_groups=[sg],
-                                   flavor_id=flavor.id, timeout=666)
+                                   flavor_id=flavor.id, timeout=900)
         floating_ip = os_conn.assign_floating_ip(vm)
-        helpers.wait(lambda: helpers.tcp_ping(floating_ip.ip, 22), timeout=180,
+        helpers.wait(lambda: helpers.tcp_ping(floating_ip.ip, 22), timeout=210,
                      timeout_msg="Node {ip} is not accessible by SSH.".format(
                          ip=floating_ip.ip))
 
@@ -640,9 +642,9 @@ class VMwareActions(object):
         vm = os_conn.create_server(image=image,
                                    availability_zone=self.vcenter_az,
                                    net_id=net['id'], security_groups=[sg],
-                                   flavor_id=flavor.id, timeout=666)
+                                   flavor_id=flavor.id, timeout=900)
         floating_ip = os_conn.assign_floating_ip(vm)
-        helpers.wait(lambda: helpers.tcp_ping(floating_ip.ip, 22), timeout=180,
+        helpers.wait(lambda: helpers.tcp_ping(floating_ip.ip, 22), timeout=210,
                      timeout_msg="Node {ip} is not accessible by SSH.".format(
                          ip=floating_ip.ip))
 
@@ -676,7 +678,7 @@ class VMwareActions(object):
         os_conn.create_server(name=vm_name, image=image,
                               availability_zone=self.vcenter_az,
                               net_id=net['id'], security_groups=[sg],
-                              min_count=count)
+                              min_count=count, timeout=210)
 
         for i in range(1, count + 1):
             vm = os_conn.get_server_by_name('{name}-{index}'.format(
@@ -706,7 +708,7 @@ class VMwareActions(object):
                              properties={"vmware_disktype": "sparse"})
         vm = os_conn.create_server(image=image,
                                    availability_zone=self.vcenter_az,
-                                   net_id=net['id'])
+                                   net_id=net['id'], timeout=210)
         os_conn.delete_instance(vm)
         os_conn.verify_srv_deleted(vm)
 
@@ -714,7 +716,7 @@ class VMwareActions(object):
                              properties={"vmware_disktype": "preallocated "})
         vm = os_conn.create_server(image=image,
                                    availability_zone=self.vcenter_az,
-                                   net_id=net['id'])
+                                   net_id=net['id'], timeout=210)
         os_conn.delete_instance(vm)
         os_conn.verify_srv_deleted(vm)
 
@@ -722,7 +724,7 @@ class VMwareActions(object):
                              properties={"vmware_disktype": "thin "})
         vm = os_conn.create_server(image=image,
                                    availability_zone=self.vcenter_az,
-                                   net_id=net['id'])
+                                   net_id=net['id'], timeout=210)
         os_conn.delete_instance(vm)
         os_conn.verify_srv_deleted(vm)
 
@@ -837,7 +839,7 @@ class VMwareActions(object):
             net_id=net['id'],
             availability_zone=vcenter_az,
             image=vc_image,
-            timeout=200,
+            timeout=210,
             security_groups=[sec_group],
             min_count=inst_count
         )
