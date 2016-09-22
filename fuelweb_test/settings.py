@@ -367,14 +367,15 @@ DEBUG_MODE = get_var_as_bool('DEBUG_MODE', True)
 VCENTER_IP = os.environ.get('VCENTER_IP')
 VCENTER_USERNAME = os.environ.get('VCENTER_USERNAME')
 VCENTER_PASSWORD = os.environ.get('VCENTER_PASSWORD')
-VCENTER_CERT_BYPASS = os.environ.get('VCENTER_CERT_BYPASS', True)
+VCENTER_CERT_BYPASS = get_var_as_bool('VCENTER_CERT_BYPASS', True)
 VCENTER_CERT_URL = os.environ.get('VCENTER_CERT_URL')
 VCENTER_DATACENTER = os.environ.get('VC_DATACENTER')
 VCENTER_DATASTORE = os.environ.get('VC_DATASTORE')
 VCENTER_GLANCE_IP = os.environ.get('VCENTER_GLANCE_IP')
 VCENTER_GLANCE_USERNAME = os.environ.get('VCENTER_GLANCE_USERNAME')
 VCENTER_GLANCE_PASSWORD = os.environ.get('VCENTER_GLANCE_PASSWORD')
-VCENTER_GLANCE_CERT_BYPASS = os.environ.get('VCENTER_GLANCE_CERT_BYPASS', True)
+VCENTER_GLANCE_CERT_BYPASS = get_var_as_bool('VCENTER_GLANCE_CERT_BYPASS',
+                                             True)
 VCENTER_GLANCE_CERT_URL = os.environ.get('VCENTER_GLANCE_CERT_URL')
 VMWARE_IMG_URL = os.environ.get('VMWARE_IMG_URL')
 VMWARE_IMG_NAME = os.environ.get('VMWARE_IMG_NAME')
@@ -697,8 +698,8 @@ REPEAT_COUNT = os.environ.get("REPEAT_COUNT", 2)
 # in the 'repetitive_restart' test group
 RESTART_COUNT = os.environ.get("RESTART_COUNT", 10)
 
-# is using in stop on deploy test
-PROGRESS_TO_STOP = os.environ.get("PROGRESS_TO_STOP", 60)
+# Is used for stop_on_deploy test
+PROGRESS_TO_STOP = int(os.environ.get("PROGRESS_TO_STOP", 60))
 
 # RH-related variables
 # Need to update these variables, when image with RH for
