@@ -397,6 +397,8 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
             raise SkipTest()
 
         cluster_id = self.cluster_id
+        logger.info('Deploy will be stopped on {}%'.format(
+            settings.PROGRESS_TO_STOP))
         self.fuel_web.deploy_cluster_wait_progress(
             cluster_id, progress=settings.PROGRESS_TO_STOP)
         self.fuel_web.stop_deployment_wait(cluster_id)

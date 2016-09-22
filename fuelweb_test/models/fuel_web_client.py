@@ -1412,6 +1412,14 @@ class FuelWebClient29(object):
     def task_wait_progress(self, task, timeout, interval=5, progress=None):
         logger.info('start to wait with timeout {0} '
                     'interval {1}'.format(timeout, interval))
+
+        logger.info('Progress is {}'.format(progress))
+        time.sleep(3 * 60)
+        pr = self.client.get_task(task['id'])['progress']
+        logger.info('Current progress is {}'.format(pr))
+        logger.info(type(pr))
+        logger.info(type(progress))
+
         wait(
             lambda: self.client.get_task(
                 task['id'])['progress'] >= progress,

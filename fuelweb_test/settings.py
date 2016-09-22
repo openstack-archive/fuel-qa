@@ -698,7 +698,7 @@ REPEAT_COUNT = os.environ.get("REPEAT_COUNT", 2)
 RESTART_COUNT = os.environ.get("RESTART_COUNT", 10)
 
 # is using in stop on deploy test
-PROGRESS_TO_STOP = os.environ.get("PROGRESS_TO_STOP", 60)
+PROGRESS_TO_STOP = int(os.environ.get("PROGRESS_TO_STOP", 60))
 
 # RH-related variables
 # Need to update these variables, when image with RH for
