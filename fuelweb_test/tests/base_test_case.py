@@ -209,7 +209,7 @@ class TestBasic(object):
             ))
         if settings.PATCHING_DISABLE_UPDATES:
             cmd = "find /etc/yum.repos.d/ -type f -regextype posix-egrep" \
-                  " -regex '.*/mos+\-(updates|security).repo' | " \
+                  " -regex '.*/mos+\-(updates|security|holdback).repo' | " \
                   "xargs -n1 -i sed -i 's/enabled=1/enabled=0/' -i {}"
             self.ssh_manager.execute_on_remote(
                 ip=self.ssh_manager.admin_ip,
