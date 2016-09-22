@@ -618,7 +618,7 @@ class VMwareActions(object):
                                    net_id=net['id'], security_groups=[sg],
                                    flavor_id=flavor.id, timeout=666)
         floating_ip = os_conn.assign_floating_ip(vm)
-        helpers.wait(lambda: helpers.tcp_ping(floating_ip.ip, 22), timeout=180,
+        helpers.wait(lambda: helpers.tcp_ping(floating_ip.ip, 22), timeout=210,
                      timeout_msg="Node {ip} is not accessible by SSH.".format(
                          ip=floating_ip.ip))
 
@@ -642,7 +642,7 @@ class VMwareActions(object):
                                    net_id=net['id'], security_groups=[sg],
                                    flavor_id=flavor.id, timeout=666)
         floating_ip = os_conn.assign_floating_ip(vm)
-        helpers.wait(lambda: helpers.tcp_ping(floating_ip.ip, 22), timeout=180,
+        helpers.wait(lambda: helpers.tcp_ping(floating_ip.ip, 22), timeout=210,
                      timeout_msg="Node {ip} is not accessible by SSH.".format(
                          ip=floating_ip.ip))
 
