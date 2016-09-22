@@ -75,6 +75,34 @@ class EnvCustomizationsCheck(TestBasic):
 
         return file_path in report.stdout_str
 
+    def patch_cudet(self):
+        """Add a workaround for LP #1625638.
+
+        Enable cudet to use downloaded 9.1 packages db until it is officially
+        published.
+        """
+        logger.info("Workaround until LP #1625638 is fixed: \n"
+                    " - download 9.1 packages db to be used by cudet;\n"
+                    " - patch cudet/main.py to avoid using online db.")
+
+        cmd = "wget {0} -O {1}"
+        centos_db_cmd = cmd.format(
+            "https://jenkins-sandbox.infra.mirantis.net/job/generate-packages"
+            "-database/8/artifact/9.0-centos-mu-1.sqlite",
+            "/usr/share/cudet/db/versions/9.1/centos.sqlite")
+        ubuntu_db_cmd = cmd.format(
+            "https://jenkins-sandbox.infra.mirantis.net/job/generate-packages"
+            "-database/9/artifact/9.0-ubuntu-mu-1.sqlite",
+            "/usr/share/cudet/db/versions/9.1/ubuntu.sqlite")
+        for cmd in (centos_db_cmd, ubuntu_db_cmd):
+            self.ssh_manager.check_call(
+                self.ssh_manager.admin_ip, cmd, timeout=60)
+
+        cmd = ("sed -i '/.*def update_db.*/ a \\\\treturn False' "
+               "/usr/lib/python2.7/site-packages/cudet/main.py")
+        self.ssh_manager.check_call(
+            self.ssh_manager.admin_ip, cmd, timeout=60)
+
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=['customizations_check_env'])
     @log_snapshot_after_test
@@ -130,6 +158,12 @@ class EnvCustomizationsCheck(TestBasic):
 
         self.show_step(9)
         self.env.admin_install_pkg('python-cudet')
+
+        # Check if LP #1625638 is fixed and patch cudet if not
+        result = self.ssh_manager.check_call(
+            self.ssh_manager.admin_ip, "cudet", timeout=60)
+        if "ERROR" in result.stdout_str:
+            self.patch_cudet()
 
         self.env.make_snapshot(self.SNAPSHOT_NAME, is_make=True)
 
