@@ -78,11 +78,12 @@ class RedeployAfterStopWithVMware(ActionTest, BaseActions, VMwareActions):
         4. Configure dvs settings (depends on yaml config)
         5. Add nodes (depends on yaml config)
         6. Configure vmware settings with incorrect values
-        7. Stop on cluster deploy (needs env variable PROGRESS_TO_STOP=50)
-        8. Configure vmware settings (depends on yaml config)
-        9. Check networks
-        10. Deploy cluster
-        11. Run OSTF
+        7. Check networks
+        8. Stop on cluster deploy (needs env variable PROGRESS_TO_STOP=50)
+        9. Configure vmware settings (depends on yaml config)
+        10. Check networks
+        11. Deploy cluster
+        12. Run OSTF
 
     Duration 3h 00min
     Snapshot cluster_actions_redeploy_stopped
@@ -98,6 +99,7 @@ class RedeployAfterStopWithVMware(ActionTest, BaseActions, VMwareActions):
         'configure_dvs_plugin',
         'add_nodes',
         'configure_vcenter_incorrect',
+        'network_check',
         'stop_on_deploy',
         'wait_mcollective',
         'configure_vcenter',
