@@ -340,10 +340,10 @@ class DataDrivenUpgradeBase(TestBasic):
             self.fuel_web.cold_restart_nodes(discover_d_nodes)
 
         # LP: 1561092 mcollective can stuck after upgrade
-        logger.info("Applying fix for LP:1561092")
-        for node in d_nodes:
-            with self.fuel_web.get_ssh_for_node(node_name=node.name) as remote:
-                remote.check_call("service mcollective restart")
+        # logger.info("Applying fix for LP:1561092")
+        # for node in d_nodes:
+        #     with self.fuel_web.get_ssh_for_node(node_name=node.name) as remote:
+        #         remote.check_call("service mcollective restart")
 
     def revert_source(self):
         assert_is_not_none(self.source_snapshot_name,
