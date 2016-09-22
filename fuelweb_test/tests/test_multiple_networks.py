@@ -31,75 +31,18 @@ from fuelweb_test.settings import DEPLOYMENT_MODE_HA
 from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import NODEGROUPS
-from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.tests.base_test_case import SetupEnvironment
+from fuelweb_test.tests.test_net_templates_base import TestNetworkTemplatesBase
 from fuelweb_test import logger
 
 
 @test(groups=["multiple_cluster_networks", "thread_7"])
-class TestMultipleClusterNets(TestBasic):
+class TestMultipleClusterNets(TestNetworkTemplatesBase):
     """TestMultipleClusterNets."""  # TODO documentation
 
     def __init__(self):
         self.netconf_all_groups = None
         super(TestMultipleClusterNets, self).__init__()
-
-    @staticmethod
-    def get_modified_ranges(net_dict, net_name, group_id):
-        for net in net_dict['networks']:
-            if net_name in net['name'] and net['group_id'] == group_id:
-                cidr = net['cidr']
-                sliced_list = list(netaddr.IPNetwork(str(cidr)))[5:-5]
-                return [str(sliced_list[0]), str(sliced_list[-1])]
-
-    @staticmethod
-    def change_default_admin_range(networks, number_excluded_ips):
-        """Change IP range for admin network by excluding N of first addresses
-        from default range
-        :param networks: list, environment networks configuration
-        :param number_excluded_ips: int, number of IPs to remove from range
-        """
-        default_admin_network = [n for n in networks
-                                 if (n['name'] == "fuelweb_admin" and
-                                     n['group_id'] is None)]
-        asserts.assert_true(len(default_admin_network) == 1,
-                            "Default 'admin/pxe' network not found "
-                            "in cluster network configuration!")
-        default_admin_range = [netaddr.IPAddress(str(ip)) for ip
-                               in default_admin_network[0]["ip_ranges"][0]]
-        new_admin_range = [default_admin_range[0] + number_excluded_ips,
-                           default_admin_range[1]]
-        default_admin_network[0]["ip_ranges"][0] = [str(ip)
-                                                    for ip in new_admin_range]
-        return default_admin_network[0]["ip_ranges"][0]
-
-    @staticmethod
-    def is_ip_in_range(ip_addr, ip_range_start, ip_range_end):
-        return netaddr.IPAddress(str(ip_addr)) in netaddr.iter_iprange(
-            str(ip_range_start), str(ip_range_end))
-
-    @staticmethod
-    def is_update_dnsmasq_running(tasks):
-        for task in tasks:
-            if task['name'] == "update_dnsmasq" and \
-               task["status"] == "running":
-                return True
-        return False
-
-    @staticmethod
-    def update_network_ranges(net_data, update_data):
-        for net in net_data['networks']:
-            for group in update_data:
-                for net_name in update_data[group]:
-                    if net_name in net['name'] and net['group_id'] == group:
-                        net['ip_ranges'] = update_data[group][net_name]
-                        net['meta']['notation'] = 'ip_ranges'
-        return net_data
-
-    @staticmethod
-    def get_ranges(net_data, net_name, group_id):
-        return [net['ip_ranges'] for net in net_data['networks'] if
-                net_name in net['name'] and group_id == net['group_id']][0]
 
     @test(depends_on=[SetupEnvironment.prepare_release],
           groups=["deploy_neutron_tun_ha_nodegroups"])
