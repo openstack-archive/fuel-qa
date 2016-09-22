@@ -177,7 +177,13 @@ class TestBasic(object):
         time.sleep(10)
         self.env.set_admin_keystone_password()
         self.env.sync_time(['admin'])
-        if settings.UPDATE_MASTER:
+        if settings.FORCE_DISABLE_UPDATES:
+            cmd = "yum-config-manager --disable mos9.0-* --save"
+            self.ssh_manager.check_call(
+                ip=self.ssh_manager.admin_ip,
+                command=cmd
+            )
+        elif settings.UPDATE_MASTER:
             if settings.UPDATE_FUEL_MIRROR:
                 for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
                     conf_file = '/etc/yum.repos.d/temporary-{}.repo'.format(i)
@@ -207,14 +213,6 @@ class TestBasic(object):
             logger.info('Enabled sending of statistics to {0}:{1}'.format(
                 settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
             ))
-        if settings.PATCHING_DISABLE_UPDATES:
-            cmd = "find /etc/yum.repos.d/ -type f -regextype posix-egrep" \
-                  " -regex '.*/mos+\-(updates|security).repo' | " \
-                  "xargs -n1 -i sed -i 's/enabled=1/enabled=0/' -i {}"
-            self.ssh_manager.execute_on_remote(
-                ip=self.ssh_manager.admin_ip,
-                cmd=cmd
-            )
         if settings.DISABLE_OFFLOADING:
             logger.info(
                 '========================================'

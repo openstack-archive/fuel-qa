@@ -37,9 +37,9 @@ def replace_ubuntu_repos(repos_attr, upstream_host):
         repos = repos_attr['value']
     if help_data.EXTRA_DEB_REPOS:
         repos = add_ubuntu_extra_mirrors(repos=repos)
-    if help_data.PATCHING_DISABLE_UPDATES:
-        repos = [repo for repo in repos if repo['name']
-                 not in ('mos-updates', 'mos-security')]
+    if help_data.FORCE_DISABLE_UPDATES:
+        repos = [repo for repo in repos if
+                 'ubuntu' in repo['name'] or repo['name'] == 'mos']
 
     return repos
 
@@ -64,7 +64,7 @@ def replace_centos_repos(repos_attr, upstream_host):
         repos = repos_attr['value']
     if help_data.EXTRA_RPM_REPOS:
         repos = add_centos_extra_mirrors(repos=repos)
-    if help_data.PATCHING_DISABLE_UPDATES:
+    if help_data.FORCE_DISABLE_UPDATES:
         repos = [repo for repo in repos if repo['name']
                  not in ('mos-updates', 'mos-security')]
 
