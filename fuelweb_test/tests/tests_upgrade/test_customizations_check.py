@@ -26,6 +26,7 @@ from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
+from gates_tests.helpers import exceptions
 
 
 @test(groups=['env_customizations_check'])
@@ -74,6 +75,40 @@ class EnvCustomizationsCheck(TestBasic):
             self.ssh_manager.admin_ip, "cat {0}".format(node_report_path))
 
         return file_path in report.stdout_str
+
+    def patch_cudet(self):
+        """Add a workaround for LP #1625638.
+
+        Enable cudet to use downloaded 9.1 packages db until it is officially
+        published.
+        """
+        logger.info("Workaround until LP #1625638 is fixed: \n"
+                    " - download 9.1 packages db to be used by cudet;\n"
+                    " - patch cudet/main.py to avoid using online db.")
+
+        centos_db_link = os.environ.get('CENTOS_DB_LINK')
+        ubuntu_db_link = os.environ.get('UBUNTU_DB_LINK')
+
+        if not centos_db_link:
+            raise exceptions.FuelQAVariableNotSet('CENTOS_DB_LINK', '<link>')
+        if not ubuntu_db_link:
+            raise exceptions.FuelQAVariableNotSet('UBUNTU_DB_LINK', '<link>')
+
+        cmd = "wget {0} -O {1}"
+        centos_db_cmd = cmd.format(
+            centos_db_link,
+            "/usr/share/cudet/db/versions/9.1/centos.sqlite")
+        ubuntu_db_cmd = cmd.format(
+            ubuntu_db_link,
+            "/usr/share/cudet/db/versions/9.1/ubuntu.sqlite")
+        for cmd in (centos_db_cmd, ubuntu_db_cmd):
+            self.ssh_manager.check_call(
+                self.ssh_manager.admin_ip, cmd, timeout=60)
+
+        cmd = ("sed -i '/.*def update_db.*/ a \\\\treturn False' "
+               "/usr/lib/python2.7/site-packages/cudet/main.py")
+        self.ssh_manager.check_call(
+            self.ssh_manager.admin_ip, cmd, timeout=60)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=['customizations_check_env'])
@@ -130,6 +165,12 @@ class EnvCustomizationsCheck(TestBasic):
 
         self.show_step(9)
         self.env.admin_install_pkg('python-cudet')
+
+        # Check if LP #1625638 is fixed and patch cudet if not
+        result = self.ssh_manager.check_call(
+            self.ssh_manager.admin_ip, "cudet", timeout=60)
+        if "ERROR" in result.stdout_str:
+            self.patch_cudet()
 
         self.env.make_snapshot(self.SNAPSHOT_NAME, is_make=True)
 
