@@ -227,7 +227,7 @@ class CommandLineTest(test_cli_base.CommandLine):
         self.assert_all_tasks_completed(cluster_id=cluster_id)
         # Verify networks
         self.show_step(9)
-        network_configuration = self.get_net_config_cli(task['id'])
+        network_configuration = self.get_net_config_cli()
         assert_equal(network_settings,
                      network_configuration,
                      message='Network settings are not equal before'

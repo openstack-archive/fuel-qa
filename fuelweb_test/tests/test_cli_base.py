@@ -445,7 +445,17 @@ class CommandLine(TestBasic):
         self.upload_node_interfaces(node_id, interfaces)
 
     @logwrap
-    def get_net_config_cli(self, task_id):
+    def get_net_config_cli(self, task_id=None):
+        if task_id is None:
+            all_deployment_tasks = sorted(
+                [
+                    tsk_ for tsk_ in self.get_all_tasks_list()
+                    if tsk_['name'] == 'deployment'],
+                key=lambda _tsk: _tsk['id'],
+                reverse=True
+            )
+            task_id = all_deployment_tasks[0]
+
         cmd = 'fuel2 task network-configuration download {0}'.format(task_id)
         out = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
