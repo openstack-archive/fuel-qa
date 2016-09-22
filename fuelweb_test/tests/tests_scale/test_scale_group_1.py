@@ -15,6 +15,7 @@
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers import checkers
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -175,3 +176,106 @@ class HaScaleGroup1(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("add_ceph_stop")
+
+
+@test(groups=["five_controllers_ceph_restart"])
+class FiveControllerCephRestart(TestBasic):
+    """HAFiveControllerCephNeutronRestart."""  # TODO documentation
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_all],
+          groups=["deploy_reset_five_ceph_controllers"])
+    @log_snapshot_after_test
+    def deploy_reset_five_ceph_controllers(self):
+        """Deployment with 5 controllers, NeutronVLAN, with Ceph for volumes,
+           stop on deployment
+
+        Scenario:
+        1. Start deploy environment, 5 controller, 2 compute, 2 ceph nodes,
+           Neutron VLAN
+        2. Change default partitioning scheme for both ceph nodes for 'vdc'
+        3. Stop process on controller deployment
+        4. Change openstack username, password, tenant
+        5. Deploy cluster
+        6. Wait for HA services to be ready
+        7. Wait for for OS services to be ready
+        8. Verify networks
+        9. Run OSTF tests
+
+        Duration 120m
+        Snapshot deploy_reset_five_ceph_controllers
+
+        """
+
+        self.env.revert_snapshot("ready_with_all_slaves")
+
+        self.show_step(1)
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE,
+            settings={
+                'volumes_lvm': False,
+                'volumes_ceph': True,
+                'images_ceph': True,
+                'osd_pool_size': "2",
+                "net_provider": 'neutron',
+                "net_segment_type": NEUTRON_SEGMENT['vlan'],
+                'tenant': 'simpleVlan',
+                'user': 'simpleVlan',
+                'password': 'simpleVlan'
+            }
+        )
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['controller'],
+                'slave-05': ['controller'],
+                'slave-06': ['compute'],
+                'slave-07': ['compute'],
+                'slave-08': ['ceph-osd'],
+                'slave-09': ['ceph-osd']
+            }
+        )
+
+        self.show_step(2)
+        ceph_nodes = self.fuel_web.\
+            get_nailgun_cluster_nodes_by_roles(cluster_id, ['ceph-osd'],
+                                               role_status='pending_roles')
+        for ceph_node in ceph_nodes:
+            ceph_image_size = self.fuel_web.\
+                update_node_partitioning(ceph_node, node_role='ceph')
+
+        self.fuel_web.deploy_cluster_wait_progress(cluster_id=cluster_id,
+                                                   progress=5)
+        self.show_step(3)
+        self.fuel_web.stop_deployment_wait(cluster_id)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:9], timeout=10 * 60)
+        self.show_step(4)
+        attributes = self.fuel_web.client.get_cluster_attributes(cluster_id)
+        access_attr = attributes['editable']['access']
+        access_attr['user']['value'] = 'myNewUser'
+        access_attr['password']['value'] = 'myNewPassword'
+        access_attr['tenant']['value'] = 'myNewTenant'
+        self.fuel_web.client.update_cluster_attributes(cluster_id, attributes)
+
+        self.show_step(5)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.show_step(6)
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+        self.show_step(7)
+        self.fuel_web.assert_os_services_ready(cluster_id, timeout=10 * 60)
+        self.show_step(8)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(9)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            test_sets=['ha', 'smoke', 'sanity'])
+
+        for ceph in ceph_nodes:
+            checkers.check_ceph_image_size(ceph['ip'],
+                                           expected_size=ceph_image_size)
+
+        self.env.make_snapshot("deploy_reset_five_ceph_controllers")
