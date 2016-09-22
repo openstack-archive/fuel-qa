@@ -122,8 +122,8 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
                     repo["name"] = "ubuntu-2"
 
         cmds = [
-            "fuel-mirror create -P ubuntu -G mos",
-            "fuel-mirror create -P ubuntu -G ubuntu",
+            "fuel-mirror create -P ubuntu -G mos > mirror-mos.log 2>&1",
+            "fuel-mirror create -P ubuntu -G ubuntu > mirror-ubuntu.log 2>&1",
             "fuel-mirror apply --default -P ubuntu -G mos",
             "fuel-mirror apply --default -P ubuntu -G ubuntu",
             "mv {cfg}{{,.liberty.yaml}}".format(cfg=self.FUEL_MIRROR_CFG_FILE),
