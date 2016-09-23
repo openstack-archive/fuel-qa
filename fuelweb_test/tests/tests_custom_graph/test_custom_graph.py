@@ -288,7 +288,7 @@ class TestCustomGraph(TestBasic):
 
         self.show_step(6)  # Provision the cluster
         self.fuel_web.provisioning_cluster_wait(cluster_id)
-
+        self.env.check_slaves_are_ready()
         self.show_step(7)  # Create custom graph 'custom_graph'
         self.show_step(8)  # Upload tasks to 'custom_graph'
         tasks_filename = 'custom_graph_tasks.yaml'
@@ -553,7 +553,7 @@ class TestCustomGraph(TestBasic):
 
         self.show_step(6)  # Create cluster
         self.fuel_web.provisioning_cluster_wait(cluster_id)
-
+        self.env.check_slaves_are_ready()
         self.show_step(7)  # Upload 'custom_graph' tasks to release
         graph_type = 'custom_graph'
         tasks_filename = 'custom_graph_tasks.yaml'
@@ -769,7 +769,7 @@ class TestCustomGraph(TestBasic):
 
         self.show_step(8)  # Provision the cluster
         self.fuel_web.provisioning_cluster_wait(cluster_id)
-
+        self.env.check_slaves_are_ready()
         self.show_step(9)  # Deploy the cluster
         self.fuel_web.deploy_custom_graph_wait(cluster_id, graph_type)
 
@@ -846,7 +846,7 @@ class TestCustomGraph(TestBasic):
 
         self.show_step(6)  # Create cluster
         self.fuel_web.provisioning_cluster_wait(cluster_id)
-
+        self.env.check_slaves_are_ready()
         self.show_step(7)  # Upload 'custom_graph' tasks to release
         graph_type = 'custom_graph'
         tasks_filename = 'custom_graph_tasks.yaml'
