@@ -139,6 +139,30 @@ class AdminActions(BaseActions):
                     fuel_settings.pop(key)
                 fuel_settings['NTP1'] = router
 
+        logger.warning("Disable all online mos-repos")
+        cmd = "yum-config-manager --disable mos9.0-* --save"
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=cmd
+        )
+
+        backup_path = "/var/astute.yaml"
+        path = "/etc/fuel/astute.yaml"
+
+        astute_yaml = YamlEditor(
+            path,
+            ip=self.admin_ip).get_content()
+
+        YamlEditor(backup_path,
+                   ip=self.admin_ip
+                   ).write_content(astute_yaml)
+
+        with YamlEditor(path,
+                        ip=self.admin_ip) as editor:
+            editor.content['BOOTSTRAP']['repos'] = \
+                [repo for repo in editor.content[
+                    'BOOTSTRAP']['repos'] if "mos-" not in repo['name']]
+
         self.save_fuel_settings(fuel_settings)
 
     @logwrap
