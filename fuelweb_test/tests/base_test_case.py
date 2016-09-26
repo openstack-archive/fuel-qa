@@ -180,11 +180,30 @@ class TestBasic(object):
         self.env.set_admin_keystone_password()
         self.env.sync_time(['admin'])
         if settings.FORCE_DISABLE_UPDATES:
+            logger.warning("Disable all online mos-repos")
             cmd = "yum-config-manager --disable mos9.0-* --save"
             self.ssh_manager.check_call(
                 ip=self.ssh_manager.admin_ip,
                 command=cmd
             )
+
+            backup_path = "/var/astute.yaml"
+            path = "/etc/fuel/astute.yaml"
+
+            astute_yaml = YamlEditor(
+                path,
+                ip=self.env.d_env.get_admin_node_ip()).get_content()
+
+            YamlEditor(backup_path,
+                       ip=self.env.d_env.get_admin_node_ip()
+                       ).write_content(astute_yaml)
+
+            with YamlEditor(path,
+                            ip=self.env.d_env.get_admin_node_ip()) as editor:
+                editor.content['BOOTSTRAP']['repos'] = \
+                    [repo for repo in editor.content[
+                        'BOOTSTRAP']['repos'] if "mos-" not in repo['name']]
+
         elif settings.UPDATE_MASTER:
             if settings.UPDATE_FUEL_MIRROR:
                 for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
@@ -201,12 +220,25 @@ class TestBasic(object):
                     )
             if settings.EXTRA_DEB_REPOS:
                 path = "/etc/fuel/astute.yaml"
-                with YamlEditor(path,
-                                ip=self.env.get_admin_node_ip()) as editor:
+                with YamlEditor(
+                        path,
+                        ip=self.env.d_env.get_admin_node_ip()) as editor:
                     editor.content['BOOTSTRAP']['repos'] = \
                         replace_repos.replace_ubuntu_repos(
                             {'value': editor.content['BOOTSTRAP']['repos']},
                             upstream_host='archive.ubuntu.com')
+
+            logger.warning("Restore online mos repos for bootstrap")
+            backup_path = "/var/astute.yaml"
+            backup = YamlEditor(backup_path,
+                                ip=self.env.d_env.get_admin_node_ip()
+                                ).get_content()
+            path = "/etc/fuel/astute.yaml"
+            with YamlEditor(path,
+                            ip=self.env.d_env.get_admin_node_ip()) as editor:
+                editor.content['BOOTSTRAP']['repos'] = backup['BOOTSTRAP'][
+                    'repos']
+
             self.env.admin_install_updates()
         if settings.MULTIPLE_NETWORKS:
             self.env.describe_other_admin_interfaces(
