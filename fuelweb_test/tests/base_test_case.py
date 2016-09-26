@@ -179,13 +179,29 @@ class TestBasic(object):
         time.sleep(10)
         self.env.set_admin_keystone_password()
         self.env.sync_time(['admin'])
+
+        if settings.FORCE_DISABLE_UPDATES and settings.UPDATE_MASTER:
+            raise EnvironmentError(
+                "Cannot use FORCE_DISABLE_UPDATES and UPDATE_MASTER together")
         if settings.FORCE_DISABLE_UPDATES:
             cmd = "yum-config-manager --disable mos9.0-* --save"
             self.ssh_manager.check_call(
                 ip=self.ssh_manager.admin_ip,
                 command=cmd
             )
+
         elif settings.UPDATE_MASTER:
+            logger.warning("Restore online mos repos")
+            backup_path = "/var/astute.yaml"
+            admin_ip = self.env.get_admin_node_ip()
+            backup = YamlEditor(backup_path,
+                                ip=admin_ip
+                                ).get_content()
+            with YamlEditor(settings.FUEL_SETTINGS_YAML,
+                            ip=admin_ip) as editor:
+                editor.content['BOOTSTRAP']['repos'] = backup['BOOTSTRAP'][
+                    'repos']
+
             if settings.UPDATE_FUEL_MIRROR:
                 for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
                     conf_file = '/etc/yum.repos.d/temporary-{}.repo'.format(i)
@@ -200,9 +216,10 @@ class TestBasic(object):
                         cmd=cmd
                     )
             if settings.EXTRA_DEB_REPOS:
-                path = "/etc/fuel/astute.yaml"
-                with YamlEditor(path,
-                                ip=self.env.get_admin_node_ip()) as editor:
+                path = settings.FUEL_SETTINGS_YAML
+                with YamlEditor(
+                        path,
+                        ip=admin_ip) as editor:
                     editor.content['BOOTSTRAP']['repos'] = \
                         replace_repos.replace_ubuntu_repos(
                             {'value': editor.content['BOOTSTRAP']['repos']},
