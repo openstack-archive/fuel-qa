@@ -55,7 +55,15 @@ def validate_minimal_amount_nodes(
     fnodes = [
         node for node in nodes
         if node['online'] == online and node['status'] == state]
+    logger.info('Nodes TAKEN ')
+    for node in nodes:
+        logger.info("Node {!r}, status {!r}, online {!r}".format(node['id'], node['status'], node['online']))
+    logger.info('Nodes FILTERED')
+    for node in fnodes:
+        logger.info("Node {!r}, status {!r}, online {!r}".format(node['id'], node['status'], node['online']))
+
     if len(fnodes) < expected_amount:
+        logger.error("RAISED!")
         raise Exception(
             'Nodes in state {state} (online: {online}): '
             '{amount}, while expected: {expected}'.format(

@@ -118,10 +118,11 @@ class EnvironmentModel(object):
         if not skip_timesync:
             self.sync_time()
 
-        checkers.validate_minimal_amount_nodes(
-            nodes=self.nailgun_nodes(devops_nodes),
-            expected_amount=len(devops_nodes)
-        )
+        wait_pass(
+            lambda: checkers.validate_minimal_amount_nodes(
+                nodes=self.nailgun_nodes(devops_nodes),
+                expected_amount=len(devops_nodes)),
+            timeout=30)
 
         return self.nailgun_nodes(devops_nodes)
 
