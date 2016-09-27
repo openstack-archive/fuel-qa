@@ -47,10 +47,12 @@ from fuelweb_test.tests.base_test_case import TestBasic
 class DataDrivenUpgradeBase(TestBasic):
 
     IGNORED_OSTF_TESTS = {
-        '7.0': ['Instance live migration'],
-        '8.0': ['Launch instance with file injection'],
-        '9.0': [],
-        '9.1': []
+        '7.0': ['Check that required services are running',
+                'Instance live migration'],
+        '8.0': ['Check that required services are running',
+                'Launch instance with file injection'],
+        '9.0': ['Instance live migration'],
+        '9.1': ['Instance live migration']
     }
 
     OCTANE_COMMANDS = {
