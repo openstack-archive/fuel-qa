@@ -12,8 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from ipaddr import IPAddress
-from ipaddr import IPNetwork
+import netaddr
+
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis.asserts import fail
@@ -39,7 +39,7 @@ class TestNetworkTemplatesBase(TestBasic):
                         '"{0}", which does not exist!'.format(nodegroup))
             group_id = [n['id'] for n in nodegroups if
                         n['name'] == nodegroup][0]
-            ip_network = IPNetwork(ip_network)
+            ip_network = netaddr.IPNetwork(ip_network)
             ip_subnets = ip_network.subnet(
                 int(ip_prefixlen) - int(ip_network.prefixlen))
             for network, interface in networks:
@@ -75,11 +75,11 @@ class TestNetworkTemplatesBase(TestBasic):
         network_types = tmpl['templates_for_node_role'][role]
         for network_type in network_types:
             endpoints.update(tmpl['network_scheme'][network_type]['endpoints'])
-        for type in tmpl['network_scheme']:
-            for net_role in tmpl['network_scheme'][type]['roles']:
+        for scheme_type in tmpl['network_scheme']:
+            for net_role in tmpl['network_scheme'][scheme_type]['roles']:
                 if net_role in skip_net_roles:
                     endpoints.discard(
-                        tmpl['network_scheme'][type]['roles'][net_role])
+                        tmpl['network_scheme'][scheme_type]['roles'][net_role])
         for net in tmpl['network_assignments']:
             if tmpl['network_assignments'][net]['ep'] in endpoints:
                 networks.add(net)
@@ -131,13 +131,14 @@ class TestNetworkTemplatesBase(TestBasic):
         raw_addresses = self.get_interface_ips(remote, iface_name)
         raw_ips = [raw_addr.split('/')[0] for raw_addr in raw_addresses]
         try:
-            ips = [IPAddress(raw_ip) for raw_ip in raw_ips]
+            ips = [netaddr.IPAddress(str(raw_ip)) for raw_ip in raw_ips]
         except ValueError:
             fail('Device {0} on remote node does not have a valid '
                  'IPv4 address assigned!'.format(iface_name))
             return
-        actual_networks = [IPNetwork(raw_addr) for raw_addr in raw_addresses]
-        network = IPNetwork(cidr)
+        actual_networks = [netaddr.IPNetwork(str(raw_addr)) for
+                           raw_addr in raw_addresses]
+        network = netaddr.IPNetwork(str(cidr))
         assert_true(network in actual_networks,
                     'Network(s) on {0} device differs than {1}: {2}'.format(
                         iface_name, cidr, raw_addresses))
@@ -152,7 +153,7 @@ class TestNetworkTemplatesBase(TestBasic):
                     "corresponds to used networking template...")
         # Network for Neutron is configured in namespaces (l3/dhcp agents)
         # and a bridge for it doesn't have IP, so skipping it for now
-        skip_roles = set(['neutron/private'])
+        skip_roles = {'neutron/private'}
         for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
             node_networks = set()
             node_group_name = [ng['name'] for ng in

@@ -31,8 +31,8 @@ from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import POOLS
 from fuelweb_test.settings import PUBLIC_TEST_IP
 
-from ipaddr import IPAddress
-from ipaddr import IPNetwork
+from netaddr import IPAddress
+from netaddr import IPNetwork
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
@@ -771,7 +771,7 @@ def check_stats_private_info(collector_remote, postgres_actions,
         _has_private_data = False
         # Check that stats doesn't contain private data (e.g.
         # specific passwords, settings, emails)
-        for _private in private_data.keys():
+        for _private in private_data:
             _regex = r'(?P<key>"\S+"): (?P<value>[^:]*"{0}"[^:]*)'.format(
                 private_data[_private])
             for _match in re.finditer(_regex, data):
@@ -787,7 +787,7 @@ def check_stats_private_info(collector_remote, postgres_actions,
                 _has_private_data = True
         # Check that stats doesn't contain private types of data (e.g. any kind
         # of passwords)
-        for _data_type in secret_data_types.keys():
+        for _data_type in secret_data_types:
             _regex = (r'(?P<secret>"[^"]*{0}[^"]*": (\{{[^\}}]+\}}|\[[^\]+]\]|'
                       r'"[^"]+"))').format(secret_data_types[_data_type])
 
@@ -805,7 +805,7 @@ def check_stats_private_info(collector_remote, postgres_actions,
         return _has_private_data
 
     def _contain_public_ip(data, _used_networks):
-        _has_puplic_ip = False
+        _has_public_ip = False
         _ip_regex = (r'\b((\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\.){3}'
                      r'(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\b')
         _not_public_regex = [
@@ -820,15 +820,16 @@ def check_stats_private_info(collector_remote, postgres_actions,
             # If IP address isn't public and doesn't belong to defined for
             # deployment pools (e.g. admin, public, storage), then skip it
             if any(re.search(_r, _match.group()) for _r in _not_public_regex) \
-                    and not any(IPAddress(_match.group()) in IPNetwork(net) for
+                    and not any(IPAddress(str(_match.group())) in
+                                IPNetwork(str(net)) for
                                 net in _used_networks):
                 continue
-            logger.debug('Usage statistics with piblic IP(s):\n {0}'.
+            logger.debug('Usage statistics with public IP(s):\n {0}'.
                          format(data))
             logger.error('Found public IP in usage statistics: "{0}"'.format(
                 _match.group()))
-            _has_puplic_ip = True
-        return _has_puplic_ip
+            _has_public_ip = True
+        return _has_public_ip
 
     private_data = {
         'hostname': _settings['HOSTNAME'],
@@ -1129,11 +1130,11 @@ def check_auto_mode(remote):
 
 def is_ntpd_active(remote, ntpd_ip):
     cmd = 'ntpdate -d -p 4 -t 0.2 -u {0}'.format(ntpd_ip)
-    return (not remote.execute(cmd)['exit_code'])
+    return not remote.execute(cmd)['exit_code']
 
 
 def check_repo_managment(remote):
-    """Check repo managment
+    """Check repo management
 
     run 'yum -y clean all && yum check-update' or
         'apt-get clean all && apt-get update' exit code should be 0
