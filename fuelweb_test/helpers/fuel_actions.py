@@ -141,6 +141,15 @@ class AdminActions(BaseActions):
                     fuel_settings.pop(key)
                 fuel_settings['NTP1'] = router
 
+        backup_path = "/var/astute.yaml"
+        YamlEditor(backup_path,
+                   ip=self.admin_ip
+                   ).write_content(fuel_settings)
+
+        fuel_settings['BOOTSTRAP']['repos'] = \
+            [repo for repo in fuel_settings[
+                'BOOTSTRAP']['repos'] if "mos-" not in repo['name']]
+
         self.save_fuel_settings(fuel_settings)
 
     @logwrap
