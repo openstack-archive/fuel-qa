@@ -623,3 +623,8 @@ IRONIC_USER_IMAGE_URL = os.environ.get(
                              "trusty-server-cloudimg-amd64.tar.gz")
 
 NOVA_QUOTAS_ENABLED = get_var_as_bool("NOVA_QUOTAS_ENABLED", False)
+
+SSH_IMAGE_CREDENTIALS = {
+    'username': os.environ.get('SSH_IMAGE_CREDENTIALS_LOGIN', "cirros"),
+    'password': os.environ.get('SSH_IMAGE_CREDENTIALS_PASSWORD', "cubswin:)")
+}
