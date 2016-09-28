@@ -541,3 +541,8 @@ NESSUS_PASSWORD = os.environ.get("NESSUS_PASSWORD")
 NESSUS_SSL_VERIFY = get_var_as_bool("NESSUS_SSL_VERIFY", False)
 
 NOVA_QUOTAS_ENABLED = get_var_as_bool("NOVA_QUOTAS_ENABLED", False)
+
+SSH_IMAGE_CREDENTIALS = {
+    'username': os.environ.get('SSH_IMAGE_CREDENTIALS_LOGIN', "cirros"),
+    'password': os.environ.get('SSH_IMAGE_CREDENTIALS_PASSWORD', "cubswin:)")
+}
